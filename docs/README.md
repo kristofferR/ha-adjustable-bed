@@ -119,6 +119,7 @@ dependencies from Home Assistant's own manifests.
 | [Design notes](#controller-and-protocol-reference) | Codecs and profiles, protocol inventory, execution capabilities, command lifecycle and paired runtimes |
 | [Linak reversal assessment](design/linak-reversal-assessment.md) | Dated evidence and bounded follow-up |
 | [APK Protocol Audit workflow](apk-analysis/phase4-coordinator-workflow.md) | Coordination and evidence gates |
+| [APK tracker rules](apk-analysis/TRACKERS.md) | What the #436, #443 and #447 issue bodies hold, and the guard that keeps them clean |
 | [Analysis tooling](apk-analysis/TOOLING.md) | Protocol-neutral decompiler setup and stack coverage |
 | [Analyst prompt](apk-analysis/phase4-analyst-prompt.md) and [schema](apk-analysis/analysis.schema.json) | Pinned clean-room inputs |
 | [Audit tooling](../tools/phase4_v2/README.md) and [preflight](../tools/phase4_v2/preflight/README.md) | Artifact identity, routing and historical inventory |

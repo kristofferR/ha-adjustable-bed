@@ -1,0 +1,978 @@
+[
+  {
+    "app": "avocadoecobase",
+    "alias": "B6RU",
+    "target": "B6RM",
+    "manual": true,
+    "scan_admitted": false,
+    "library_name_only": false
+  },
+  {
+    "app": "avocadoecobase",
+    "alias": "ZR90",
+    "target": "S9RM",
+    "manual": true,
+    "scan_admitted": false,
+    "library_name_only": false
+  },
+  {
+    "app": "avocadoecobase",
+    "alias": "200IV2",
+    "target": "A8RM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "avocadoecobase",
+    "alias": "200I",
+    "target": "A8RM",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "avocadoecobase",
+    "alias": "400I",
+    "target": "A0RM",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "avocadoecobase",
+    "alias": "800I",
+    "target": "A1RM",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "avocadoecobase",
+    "alias": "FC200",
+    "target": "A8RM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "avocadoecobase",
+    "alias": "MPE_HJ001",
+    "target": "ZRA2",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "avocadoecobase",
+    "alias": "MPE_HJ002",
+    "target": "TWRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "avocadoecobase",
+    "alias": "MPE_HJ003",
+    "target": "WPRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "avocadoecobase",
+    "alias": "MPE_HJ005",
+    "target": "WPRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "avocadoecobase",
+    "alias": "MPE_HJ006",
+    "target": "BNRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "avocadoecobase",
+    "alias": "MPE_HJ008",
+    "target": "BLRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "avocadoecobase",
+    "alias": "MPE_HJ010",
+    "target": "ZRA2",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "avocadoecobase",
+    "alias": "MPE_HJ011",
+    "target": "ZRA2",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "avocadoecobase",
+    "alias": "MPE_HJ012",
+    "target": "ZRA2",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "avocadoecobase",
+    "alias": "MPE_HJ006-1",
+    "target": "BNRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": true
+  },
+  {
+    "app": "avocadoecobase",
+    "alias": "L&P-ADJBED",
+    "target": "ZRS3",
+    "manual": false,
+    "scan_admitted": false,
+    "library_name_only": true
+  },
+  {
+    "app": "avocadoecobase",
+    "alias": "L&P ADJBED",
+    "target": "ZRS3",
+    "manual": false,
+    "scan_admitted": false,
+    "library_name_only": true
+  },
+  {
+    "app": "avocadoecobase",
+    "alias": "ZRS4",
+    "target": "ZRS4",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "avocadoecobase",
+    "alias": "ZRS5",
+    "target": "ZRS5",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "avocadoecobase",
+    "alias": "COOL",
+    "target": "QRRM",
+    "manual": true,
+    "scan_admitted": false,
+    "library_name_only": false
+  },
+  {
+    "app": "avocadoecobase",
+    "alias": "208A14",
+    "target": "A8RM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "avocadoecobase",
+    "alias": "200U&I",
+    "target": "A0RM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "coastersleep",
+    "alias": "B6RU",
+    "target": "B6RM",
+    "manual": true,
+    "scan_admitted": false,
+    "library_name_only": false
+  },
+  {
+    "app": "coastersleep",
+    "alias": "ZR90",
+    "target": "S9RM",
+    "manual": true,
+    "scan_admitted": false,
+    "library_name_only": false
+  },
+  {
+    "app": "coastersleep",
+    "alias": "200IV2",
+    "target": "A8RM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "coastersleep",
+    "alias": "200I",
+    "target": "A8RM",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "coastersleep",
+    "alias": "400I",
+    "target": "A0RM",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "coastersleep",
+    "alias": "800I",
+    "target": "A1RM",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "coastersleep",
+    "alias": "FC200",
+    "target": "A8RM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "coastersleep",
+    "alias": "MPE_HJ001",
+    "target": "ZRA2",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "coastersleep",
+    "alias": "MPE_HJ002",
+    "target": "TWRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "coastersleep",
+    "alias": "MPE_HJ003",
+    "target": "WPRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "coastersleep",
+    "alias": "MPE_HJ005",
+    "target": "WPRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "coastersleep",
+    "alias": "MPE_HJ006",
+    "target": "BNRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "coastersleep",
+    "alias": "MPE_HJ008",
+    "target": "BLRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "coastersleep",
+    "alias": "MPE_HJ010",
+    "target": "ZRA2",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "coastersleep",
+    "alias": "MPE_HJ011",
+    "target": "ZRA2",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "coastersleep",
+    "alias": "MPE_HJ012",
+    "target": "ZRA2",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "coastersleep",
+    "alias": "MPE_HJ006-1",
+    "target": "BNRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": true
+  },
+  {
+    "app": "coastersleep",
+    "alias": "L&P-ADJBED",
+    "target": "ZRS3",
+    "manual": false,
+    "scan_admitted": false,
+    "library_name_only": true
+  },
+  {
+    "app": "coastersleep",
+    "alias": "L&P ADJBED",
+    "target": "ZRS3",
+    "manual": false,
+    "scan_admitted": false,
+    "library_name_only": true
+  },
+  {
+    "app": "coastersleep",
+    "alias": "ZRS4",
+    "target": "ZRS4",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "coastersleep",
+    "alias": "ZRS5",
+    "target": "ZRS5",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "coastersleep",
+    "alias": "COOL",
+    "target": "QRRM",
+    "manual": true,
+    "scan_admitted": false,
+    "library_name_only": false
+  },
+  {
+    "app": "coastersleep",
+    "alias": "208A14",
+    "target": "A8RM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "coastersleep",
+    "alias": "200U&I",
+    "target": "A0RM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "fortywinks",
+    "alias": "B6RU",
+    "target": "B6RM",
+    "manual": true,
+    "scan_admitted": false,
+    "library_name_only": false
+  },
+  {
+    "app": "fortywinks",
+    "alias": "ZR90",
+    "target": "S9RM",
+    "manual": true,
+    "scan_admitted": false,
+    "library_name_only": false
+  },
+  {
+    "app": "fortywinks",
+    "alias": "200IV2",
+    "target": "A8RM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "fortywinks",
+    "alias": "200I",
+    "target": "A8RM",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "fortywinks",
+    "alias": "400I",
+    "target": "A0RM",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "fortywinks",
+    "alias": "800I",
+    "target": "A1RM",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "fortywinks",
+    "alias": "FC200",
+    "target": "A8RM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "fortywinks",
+    "alias": "MPE_HJ001",
+    "target": "ZRA2",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "fortywinks",
+    "alias": "MPE_HJ002",
+    "target": "TWRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "fortywinks",
+    "alias": "MPE_HJ003",
+    "target": "WPRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "fortywinks",
+    "alias": "MPE_HJ005",
+    "target": "WPRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "fortywinks",
+    "alias": "MPE_HJ006",
+    "target": "BNRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "fortywinks",
+    "alias": "MPE_HJ008",
+    "target": "BLRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "fortywinks",
+    "alias": "MPE_HJ010",
+    "target": "ZRA2",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "fortywinks",
+    "alias": "MPE_HJ011",
+    "target": "ZRA2",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "fortywinks",
+    "alias": "MPE_HJ012",
+    "target": "ZRA2",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "fortywinks",
+    "alias": "MPE_HJ006-1",
+    "target": "BNRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": true
+  },
+  {
+    "app": "fortywinks",
+    "alias": "L&P-ADJBED",
+    "target": "ZRS3",
+    "manual": false,
+    "scan_admitted": false,
+    "library_name_only": true
+  },
+  {
+    "app": "fortywinks",
+    "alias": "L&P ADJBED",
+    "target": "ZRS3",
+    "manual": false,
+    "scan_admitted": false,
+    "library_name_only": true
+  },
+  {
+    "app": "fortywinks",
+    "alias": "ZRS4",
+    "target": "ZRS4",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "fortywinks",
+    "alias": "ZRS5",
+    "target": "ZRS5",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "fortywinks",
+    "alias": "ZRS6",
+    "target": "ZRS6",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "fortywinks",
+    "alias": "COOL",
+    "target": "QRRM",
+    "manual": true,
+    "scan_admitted": false,
+    "library_name_only": false
+  },
+  {
+    "app": "fortywinks",
+    "alias": "208A14",
+    "target": "A8RM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "fortywinks",
+    "alias": "200U&I",
+    "target": "A0RM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "milemont",
+    "alias": "B6RU",
+    "target": "B6RM",
+    "manual": true,
+    "scan_admitted": false,
+    "library_name_only": false
+  },
+  {
+    "app": "milemont",
+    "alias": "ZR90",
+    "target": "S9RM",
+    "manual": true,
+    "scan_admitted": false,
+    "library_name_only": false
+  },
+  {
+    "app": "milemont",
+    "alias": "200IV2",
+    "target": "A8RM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "milemont",
+    "alias": "200I",
+    "target": "A8RM",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "milemont",
+    "alias": "400I",
+    "target": "A0RM",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "milemont",
+    "alias": "800I",
+    "target": "A1RM",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "milemont",
+    "alias": "FC200",
+    "target": "A8RM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "milemont",
+    "alias": "MPE_HJ001",
+    "target": "ZRA2",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "milemont",
+    "alias": "MPE_HJ002",
+    "target": "TWRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "milemont",
+    "alias": "MPE_HJ003",
+    "target": "WPRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "milemont",
+    "alias": "MPE_HJ005",
+    "target": "WPRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "milemont",
+    "alias": "MPE_HJ006",
+    "target": "BNRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "milemont",
+    "alias": "MPE_HJ008",
+    "target": "BLRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "milemont",
+    "alias": "MPE_HJ010",
+    "target": "ZRA2",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "milemont",
+    "alias": "MPE_HJ011",
+    "target": "ZRA2",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "milemont",
+    "alias": "MPE_HJ012",
+    "target": "ZRA2",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "milemont",
+    "alias": "MPE_HJ006-1",
+    "target": "BNRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": true
+  },
+  {
+    "app": "milemont",
+    "alias": "L&P-ADJBED",
+    "target": "ZRS3",
+    "manual": false,
+    "scan_admitted": false,
+    "library_name_only": true
+  },
+  {
+    "app": "milemont",
+    "alias": "L&P ADJBED",
+    "target": "ZRS3",
+    "manual": false,
+    "scan_admitted": false,
+    "library_name_only": true
+  },
+  {
+    "app": "milemont",
+    "alias": "ZRS4",
+    "target": "ZRS4",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "milemont",
+    "alias": "ZRS5",
+    "target": "ZRS5",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "milemont",
+    "alias": "COOL",
+    "target": "QRRM",
+    "manual": true,
+    "scan_admitted": false,
+    "library_name_only": false
+  },
+  {
+    "app": "milemont",
+    "alias": "208A14",
+    "target": "A8RM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "milemont",
+    "alias": "200U&I",
+    "target": "A0RM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "superior",
+    "alias": "B6RU",
+    "target": "B6RM",
+    "manual": true,
+    "scan_admitted": false,
+    "library_name_only": false
+  },
+  {
+    "app": "superior",
+    "alias": "ZR90",
+    "target": "S9RM",
+    "manual": true,
+    "scan_admitted": false,
+    "library_name_only": false
+  },
+  {
+    "app": "superior",
+    "alias": "200IV2",
+    "target": "A8RM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "superior",
+    "alias": "200I",
+    "target": "A8RM",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "superior",
+    "alias": "400I",
+    "target": "A0RM",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "superior",
+    "alias": "800I",
+    "target": "A1RM",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "superior",
+    "alias": "FC200",
+    "target": "A8RM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "superior",
+    "alias": "MPE_HJ001",
+    "target": "ZRA2",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "superior",
+    "alias": "MPE_HJ002",
+    "target": "TWRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "superior",
+    "alias": "MPE_HJ003",
+    "target": "WPRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "superior",
+    "alias": "MPE_HJ005",
+    "target": "WPRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "superior",
+    "alias": "MPE_HJ006",
+    "target": "BNRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "superior",
+    "alias": "MPE_HJ008",
+    "target": "BLRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "superior",
+    "alias": "MPE_HJ010",
+    "target": "ZRA2",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "superior",
+    "alias": "MPE_HJ011",
+    "target": "ZRA2",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "superior",
+    "alias": "MPE_HJ012",
+    "target": "ZRA2",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "superior",
+    "alias": "MPE_HJ006-1",
+    "target": "BNRM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": true
+  },
+  {
+    "app": "superior",
+    "alias": "L&P-ADJBED",
+    "target": "ZRS3",
+    "manual": false,
+    "scan_admitted": false,
+    "library_name_only": true
+  },
+  {
+    "app": "superior",
+    "alias": "L&P ADJBED",
+    "target": "ZRS3",
+    "manual": false,
+    "scan_admitted": false,
+    "library_name_only": true
+  },
+  {
+    "app": "superior",
+    "alias": "ZRS4",
+    "target": "ZRS4",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "superior",
+    "alias": "ZRS5",
+    "target": "ZRS5",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "superior",
+    "alias": "ZRS6",
+    "target": "ZRS6",
+    "manual": true,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "superior",
+    "alias": "COOL",
+    "target": "QRRM",
+    "manual": true,
+    "scan_admitted": false,
+    "library_name_only": false
+  },
+  {
+    "app": "superior",
+    "alias": "208A14",
+    "target": "A8RM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  },
+  {
+    "app": "superior",
+    "alias": "200U&I",
+    "target": "A0RM",
+    "manual": false,
+    "scan_admitted": true,
+    "library_name_only": false
+  }
+]

@@ -462,6 +462,7 @@ enable additional commands.
 | Comfort Motion app | `jiecang_wake`, `jiecang_stop_wake`; use HA automations for scheduling | [Comfort Motion](beds/jiecang.md#comfort-motion-app) |
 | Richmat RMControl products | `rmcontrol_alarm`, `rmcontrol_anti_snore` | [RMControl](beds/richmat.md#rmcontrol) |
 | Richmat app profiles | `richmat_mh_alarm`, `richmat_mh_aroma`, `richmat_mh_waist_alarm`, `richmat_mh_light_color` | [Richmat app profiles](beds/richmat.md#richmat-mh-apps) |
+| Classic Richmat apps (Avocado Eco Base, CoasterSleep, Forty Winks, Milemont, Superior) | `richmat_classic` ([operations](#classic-richmat-app-settings)) | [Classic Richmat apps](beds/richmat.md#classic-richmat-apps) |
 | Sleep Number Fuzion / BAM-MCR | `sleep_number_command` | [Command and parameter reference](beds/sleep-number-services.md) |
 
 Controller alarm actions program the bed itself, rather than creating a Home
@@ -716,3 +717,31 @@ Use `sync_clock`, `hold_control`, and the profile's refresh/strength/timer butto
 for other controls. See the [protocol guide](beds/eshine-okin.md#clock-and-alarms)
 for packet values, timing and hardware-unverified status. This is separate from
 the E6000 app profile.
+
+## Classic Richmat app settings
+
+`adjustable_bed.richmat_classic` targets the selected Avocado Eco Base,
+CoasterSleep, Forty Winks, Milemont or Superior app profile. It validates every
+selected physical target before sending settings.
+
+| Operation | Fields | Effect |
+|---|---|---|
+| `query` | None | Query alarm metadata when present, lamp and aroma capabilities. |
+| `alarm` | `action`, `time` | Schedule one action from the layout’s diagnostics `alarm_actions`, at minute precision. |
+| `cancel_alarm` | None | Cancel the bed alarm. |
+| `rgb` | `rgb_color` | One RGB write, when the app’s lamp capability/menu is available. |
+| `lamp_slider` / `lamp_save` | `minutes`, 0-15 | Preserve the app’s distinct seconds/minutes encodings. |
+| `aroma` | `aroma_times: [mode2_minutes, mode3_minutes, pause_hours]` | Write three settings, ranges 1-60, 1-60 and 1-12. |
+| `massage_popup` | `popup`: `15`, `30`, `45` or `toggle` | Choose an option bound to the current layout’s popup. |
+| `massage_timer` | `progress`: 0-5 | D1RM/D9RM slider, preserving pass-through values 1 and 4. |
+| `desk_target` | `height` | Target within the desk’s current reported app ruler range. |
+| `desk_unit` | `unit`: `cm` or `inches` | Set the source unit value. |
+| `desk_recall` | `slot`: 1-4, optional `duration_ms`: 1-60000 | Hold the selected desk button with 200 ms refresh. Slot 4 is reset. |
+| `desk_reset` | None | Confirm a newly reported desk error once; the last reported error remains visible. |
+
+Alarm, light and aroma actions retain the app’s capability and layout gates.
+Alarm delay is until the next chosen local wall-clock time; the same minute
+means tomorrow. There is no inferred weekly schedule. Desk actions require
+FWRM/WFRM. App mode labels do not authorize one-address side pairing. Wi-Fi,
+cloud and bed network/group administration are excluded.
+See the [protocol guide](beds/richmat.md#classic-richmat-apps) for the frames.

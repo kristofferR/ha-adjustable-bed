@@ -5,7 +5,8 @@ Nordic, Prefix55, PrefixAA); its remote codes select features, not frames.
 ``BEDTECH`` and ``LEGGETT_WILINKE`` are their own bed types. These three take
 their frames from the pre-v5 controllers. The catalog apps keep their per-model
 tables as data and use this module for their transports: RMControl 21.3.7
-(row018), the five Richmat MH apps (row055) and HJBed 2.1.2 (row121).
+(row018), the five Richmat MH apps (row055), HJBed 2.1.2 (row121) and the five
+classic apps (row066).
 """
 
 from __future__ import annotations
@@ -218,3 +219,11 @@ RICHMAT_MH: Final[dict[str, RichmatProfile]] = {
 HJBED: Final = RichmatProfile(
     key="hjbed", execution=STREAM_HOLD, transports=("w1", "n1", "w5", "w4", "w3", "w2")
 )
+# The five classic resource-driven apps (row066) share one builder and service
+# order; each keeps its own catalog in ``cluster018_data``. The first present
+# service wins, and Nordic UART takes the bare resource bytes.
+CLASSIC_TRANSPORTS: Final[tuple[TransportKey, ...]] = ("w1", "w2", "n1", "w4")
+RICHMAT_CLASSIC: Final[dict[str, RichmatProfile]] = {
+    app: RichmatProfile(key=f"richmat_classic_{app}", transports=CLASSIC_TRANSPORTS)
+    for app in ("avocadoecobase", "coastersleep", "fortywinks", "milemont", "superior")
+}

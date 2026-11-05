@@ -1,11 +1,11 @@
-"""R1 Richmat 6E: Richmat, its app routes, BedTech, WiLinke and HJBed."""
+"""R1 Richmat 6E: Richmat, its app routes, BedTech, WiLinke, HJBed and the classic apps."""
 
 from __future__ import annotations
 
 import re
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.profiles.richmat import RichmatProfile
+from custom_components.adjustable_bed.profiles.richmat import RICHMAT_CLASSIC, RichmatProfile
 from tests.codec_families import CodecFamily, CodecGuide
 from tests.richmat_vectors import FROZEN_FRAMES
 
@@ -17,6 +17,7 @@ _VARIANTS = {
     "richmat_prefix55": const.RICHMAT_VARIANT_PREFIX55,
     "richmat_prefixaa": const.RICHMAT_VARIANT_PREFIXAA,
     "hjbed": "hj_bedbjrn",
+    **{f"richmat_classic_{app}": app for app in RICHMAT_CLASSIC},
 }
 
 
@@ -49,6 +50,7 @@ FAMILY = CodecFamily(
             "richmat",
             "richmat_best_mattress",
             "richmat_blvd_home",
+            "richmat_classic_apps",
             "richmat_harmony",
             "richmat_idealbed",
             "richmat_revive",
@@ -59,5 +61,7 @@ FAMILY = CodecFamily(
         spelled=_spelled,
         frozen=frozenset().union(*FROZEN_FRAMES.values()),
         variant=lambda key, _bed_type: _VARIANTS.get(key),
+        # A layout every classic app ships.
+        entry_data={"richmat_classic_apps": {const.CONF_PRODUCT_TYPE: "6BRM"}},
     ),
 )

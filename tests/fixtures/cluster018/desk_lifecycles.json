@@ -1,0 +1,246 @@
+[
+  {
+    "id": "F4-65008",
+    "slot": 1,
+    "kind": "cancel_ignored",
+    "expected_first": "6e96000408",
+    "source_events": [
+      "D1",
+      "TICK",
+      "HIDE",
+      "C1",
+      "TICK",
+      "TICK",
+      "SHOW",
+      "M1",
+      "TICK",
+      "U1",
+      "TICK"
+    ]
+  },
+  {
+    "id": "F4-65009",
+    "slot": 1,
+    "kind": "disconnect_resume",
+    "expected_first": "6e96000408",
+    "source_events": [
+      "D1",
+      "TICK",
+      "DISCONNECT",
+      "TICK",
+      "CONNECTED",
+      "TICK",
+      "SERVICES",
+      "TICK",
+      "DESTROY",
+      "TICK",
+      "SERVICES",
+      "TICK"
+    ]
+  },
+  {
+    "id": "F4-65010",
+    "slot": 1,
+    "kind": "pause_and_ringing",
+    "expected_first": "6e96000408",
+    "source_events": [
+      "D1",
+      "TICK",
+      "PAUSE",
+      "TICK",
+      "RING",
+      "TICK",
+      "C1",
+      "TICK",
+      "U1",
+      "TICK"
+    ]
+  },
+  {
+    "id": "F4-65011",
+    "slot": 2,
+    "kind": "cancel_ignored",
+    "expected_first": "6e9600080c",
+    "source_events": [
+      "D2",
+      "TICK",
+      "HIDE",
+      "C2",
+      "TICK",
+      "TICK",
+      "SHOW",
+      "M2",
+      "TICK",
+      "U2",
+      "TICK"
+    ]
+  },
+  {
+    "id": "F4-65012",
+    "slot": 2,
+    "kind": "disconnect_resume",
+    "expected_first": "6e9600080c",
+    "source_events": [
+      "D2",
+      "TICK",
+      "DISCONNECT",
+      "TICK",
+      "CONNECTED",
+      "TICK",
+      "SERVICES",
+      "TICK",
+      "DESTROY",
+      "TICK",
+      "SERVICES",
+      "TICK"
+    ]
+  },
+  {
+    "id": "F4-65013",
+    "slot": 2,
+    "kind": "pause_and_ringing",
+    "expected_first": "6e9600080c",
+    "source_events": [
+      "D2",
+      "TICK",
+      "PAUSE",
+      "TICK",
+      "RING",
+      "TICK",
+      "C2",
+      "TICK",
+      "U2",
+      "TICK"
+    ]
+  },
+  {
+    "id": "F4-65014",
+    "slot": 3,
+    "kind": "cancel_ignored",
+    "expected_first": "6e96001014",
+    "source_events": [
+      "D3",
+      "TICK",
+      "HIDE",
+      "C3",
+      "TICK",
+      "TICK",
+      "SHOW",
+      "M3",
+      "TICK",
+      "U3",
+      "TICK"
+    ]
+  },
+  {
+    "id": "F4-65015",
+    "slot": 3,
+    "kind": "disconnect_resume",
+    "expected_first": "6e96001014",
+    "source_events": [
+      "D3",
+      "TICK",
+      "DISCONNECT",
+      "TICK",
+      "CONNECTED",
+      "TICK",
+      "SERVICES",
+      "TICK",
+      "DESTROY",
+      "TICK",
+      "SERVICES",
+      "TICK"
+    ]
+  },
+  {
+    "id": "F4-65016",
+    "slot": 3,
+    "kind": "pause_and_ringing",
+    "expected_first": "6e96001014",
+    "source_events": [
+      "D3",
+      "TICK",
+      "PAUSE",
+      "TICK",
+      "RING",
+      "TICK",
+      "C3",
+      "TICK",
+      "U3",
+      "TICK"
+    ]
+  },
+  {
+    "id": "F4-65017",
+    "slot": 4,
+    "kind": "cancel_ignored",
+    "expected_first": "6e95000003",
+    "source_events": [
+      "D4",
+      "TICK",
+      "HIDE",
+      "C4",
+      "TICK",
+      "TICK",
+      "SHOW",
+      "M4",
+      "TICK",
+      "U4",
+      "TICK"
+    ]
+  },
+  {
+    "id": "F4-65018",
+    "slot": 4,
+    "kind": "disconnect_resume",
+    "expected_first": "6e95000003",
+    "source_events": [
+      "D4",
+      "TICK",
+      "DISCONNECT",
+      "TICK",
+      "CONNECTED",
+      "TICK",
+      "SERVICES",
+      "TICK",
+      "DESTROY",
+      "TICK",
+      "SERVICES",
+      "TICK"
+    ]
+  },
+  {
+    "id": "F4-65019",
+    "slot": 4,
+    "kind": "pause_and_ringing",
+    "expected_first": "6e95000003",
+    "source_events": [
+      "D4",
+      "TICK",
+      "PAUSE",
+      "TICK",
+      "RING",
+      "TICK",
+      "C4",
+      "TICK",
+      "U4",
+      "TICK"
+    ]
+  },
+  {
+    "id": "F4-65020",
+    "slot": 1,
+    "kind": "owner_replacement",
+    "expected_first": "6e96000408",
+    "source_events": [
+      "D1",
+      "TICK",
+      "D2",
+      "TICK",
+      "C2",
+      "TICK",
+      "U4",
+      "TICK"
+    ]
+  }
+]

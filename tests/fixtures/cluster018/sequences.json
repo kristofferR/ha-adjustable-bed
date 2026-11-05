@@ -1,0 +1,1063 @@
+[
+  {
+    "member": "com.richmat.milemont",
+    "id": "RF1-P2",
+    "input": {
+      "kind": "RAW10_IDLE",
+      "wire": "RAW",
+      "layout": "GXRM",
+      "node": 4,
+      "armed": true,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": false,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.milemont",
+    "id": "RF1-P1",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "FRAMED",
+      "layout": "GXRM",
+      "node": 4,
+      "armed": true,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "6e01006edd",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": false,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-1-P1-keep",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 1,
+      "armed": false,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "POLL",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "2e",
+        "sleep_before_ms": 0
+      },
+      {
+        "frame": "6e",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": false,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-quick-1-P1-keep",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 1,
+      "armed": false,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "6e",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": false,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-1-P1-armed",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 1,
+      "armed": true,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "POLL",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "2b",
+        "sleep_before_ms": 0
+      },
+      {
+        "frame": "6e",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": true,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-quick-1-P1-armed",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 1,
+      "armed": true,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "6e",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": false,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-1-P2-keep",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 1,
+      "armed": false,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "POLL",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "6e01002e9d",
+        "sleep_before_ms": 0
+      },
+      {
+        "frame": "6e01006edd",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": false,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-quick-1-P2-keep",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 1,
+      "armed": false,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "6e01006edd",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": false,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-1-P2-armed",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 1,
+      "armed": true,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "POLL",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "6e01002b9a",
+        "sleep_before_ms": 0
+      },
+      {
+        "frame": "6e01006edd",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": true,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-quick-1-P2-armed",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 1,
+      "armed": true,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "6e01006edd",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": false,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-3-P1-keep",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 3,
+      "armed": false,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "POLL",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "2f",
+        "sleep_before_ms": 0
+      },
+      {
+        "frame": "6e",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": false,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-quick-3-P1-keep",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 3,
+      "armed": false,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "6e",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": false,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-3-P1-armed",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 3,
+      "armed": true,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "POLL",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "2c",
+        "sleep_before_ms": 0
+      },
+      {
+        "frame": "6e",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": true,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-quick-3-P1-armed",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 3,
+      "armed": true,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "6e",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": false,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-3-P2-keep",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 3,
+      "armed": false,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "POLL",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "6e01002f9e",
+        "sleep_before_ms": 0
+      },
+      {
+        "frame": "6e01006edd",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": false,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-quick-3-P2-keep",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 3,
+      "armed": false,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "6e01006edd",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": false,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-3-P2-armed",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 3,
+      "armed": true,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "POLL",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "6e01002c9b",
+        "sleep_before_ms": 0
+      },
+      {
+        "frame": "6e01006edd",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": true,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-quick-3-P2-armed",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 3,
+      "armed": true,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "6e01006edd",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": false,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-4-P1-keep",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 4,
+      "armed": false,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "POLL",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "30",
+        "sleep_before_ms": 0
+      },
+      {
+        "frame": "6e",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": false,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-quick-4-P1-keep",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 4,
+      "armed": false,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "6e",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": false,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-4-P1-armed",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 4,
+      "armed": true,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "POLL",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "2d",
+        "sleep_before_ms": 0
+      },
+      {
+        "frame": "6e",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": true,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-quick-4-P1-armed",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 4,
+      "armed": true,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "6e",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": false,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-4-P2-keep",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 4,
+      "armed": false,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "POLL",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "6e0100309f",
+        "sleep_before_ms": 0
+      },
+      {
+        "frame": "6e01006edd",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": false,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-quick-4-P2-keep",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 4,
+      "armed": false,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "6e01006edd",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": false,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-4-P2-armed",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 4,
+      "armed": true,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "POLL",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "6e01002d9c",
+        "sleep_before_ms": 0
+      },
+      {
+        "frame": "6e01006edd",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": true,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-quick-4-P2-armed",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 4,
+      "armed": true,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "6e01006edd",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": false,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-6-P1-keep",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 6,
+      "armed": false,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "POLL",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "b2",
+        "sleep_before_ms": 0
+      },
+      {
+        "frame": "6e",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": false,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-quick-6-P1-keep",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 6,
+      "armed": false,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "6e",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": false,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-6-P1-armed",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 6,
+      "armed": true,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "POLL",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "b3",
+        "sleep_before_ms": 0
+      },
+      {
+        "frame": "6e",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": true,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-quick-6-P1-armed",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "RAW",
+      "layout": "E3RM",
+      "node": 6,
+      "armed": true,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "6e",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": false,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-6-P2-keep",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 6,
+      "armed": false,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "POLL",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "6e0100b221",
+        "sleep_before_ms": 0
+      },
+      {
+        "frame": "6e01006edd",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": false,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-quick-6-P2-keep",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 6,
+      "armed": false,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "6e01006edd",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": false,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-6-P2-armed",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 6,
+      "armed": true,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "POLL",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "6e0100b322",
+        "sleep_before_ms": 0
+      },
+      {
+        "frame": "6e01006edd",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": true,
+      "arm": "UNARMED_LITERAL0"
+    }
+  },
+  {
+    "member": "com.richmat.superior",
+    "id": "repair-e3-quick-6-P2-armed",
+    "input": {
+      "kind": "SEQUENCE",
+      "wire": "FRAMED",
+      "layout": "E3RM",
+      "node": 6,
+      "armed": true,
+      "curMode": 0,
+      "events": [
+        "DOWN",
+        "UP",
+        "POLL"
+      ]
+    },
+    "writes": [
+      {
+        "frame": "6e01006edd",
+        "sleep_before_ms": 50
+      }
+    ],
+    "final": {
+      "mode": -1,
+      "i": 0,
+      "z": false,
+      "arm": "UNARMED_LITERAL0"
+    }
+  }
+]

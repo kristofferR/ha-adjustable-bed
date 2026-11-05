@@ -507,6 +507,9 @@ BED_TYPE_SERENITY: Final = "serenity"  # Explicit Jordan's Serenity app profile
 BED_TYPE_TRANQUIL: Final = "tranquil"  # Explicit Jordan's Tranquil app profile
 # Glideaway model is selected manually; no advertisement-derived model rule.
 BED_TYPE_GOODVIBE: Final = "goodvibe"
+BED_TYPE_CLUSTER018: Final = "richmat_classic_apps"
+# Opt-in to the classic apps' third-service fallback when no fixed service exists.
+CONF_CLUSTER018_THIRD_SERVICE: Final = "cluster018_third_service"
 BED_TYPE_HJBED: Final = "hjbed"
 HJBED_SCAN_KEYWORDS: Final = ("QRRM", "COOL", "MPE_", "209A", "ZRA1")
 BED_TYPE_GLIDEAWAY_MOTION: Final = "glideaway_motion"
@@ -533,7 +536,7 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc5": "MC5: Hi Lo Lift / Massage Plus",
 }
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
-    {BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, "casper_base"}
+    {BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, "casper_base", BED_TYPE_CLUSTER018}
 )
 # Explicit OKIN Bedding app profiles sharing the Serenity controller core.
 OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
@@ -695,6 +698,7 @@ BED_TYPE_TEMPUR_AU: Final = 'tempur_au'
 CLUSTER033_BED_TYPES: Final = frozenset({BED_TYPE_TEMPUR_CURVE, BED_TYPE_QPLUS_APP, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_OMAZZ_ADJUSTO_III, BED_TYPE_ERGOMOTION_APP, BED_TYPE_ROW_CONTROL, BED_TYPE_ERGO_SLIM, BED_TYPE_TEMPUR_AU})
 
 SUPPORTED_BED_TYPES: Final = [
+    BED_TYPE_CLUSTER018,
     BED_TYPE_ERGOMOTION_4,
     BED_TYPE_GMMOTOR, BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB,
     *sorted(CLUSTER033_BED_TYPES),
@@ -852,6 +856,7 @@ SUPPORTED_BED_TYPES: Final = [
 # every member, so adding a post-connect mutation later fails loudly.
 OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
     {
+        BED_TYPE_CLUSTER018,
         BED_TYPE_ERGOMOTION_4,
         *CLUSTER033_BED_TYPES,
         BED_TYPE_BEDSENSE,
@@ -2925,6 +2930,7 @@ def bed_type_has_position_feedback(bed_type: str | None, protocol_variant: str |
 # not remain "unknown" forever (#322, #344, #501).
 BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
     {
+        BED_TYPE_CLUSTER018,
         BED_TYPE_ERGOMOTION_4,
         BED_TYPE_DOUBLESLEEP,
         # The app exposes raw motor-index/desk reports, without a proven

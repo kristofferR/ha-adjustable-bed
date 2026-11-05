@@ -1122,6 +1122,7 @@ def default_scenario(bed_type: str) -> Scenario:
         const.BED_TYPE_RICHMAT: const.RICHMAT_VARIANT_WILINKE,
         const.BED_TYPE_HJBED: "hj_bedbjrn",
         const.BED_TYPE_DOUBLESLEEP: "p1",
+        const.BED_TYPE_CLUSTER018: "avocadoecobase",
     }.get(bed_type)
     kwargs: dict[str, Any] = {}
     replies: dict[str, str] = {}
@@ -1138,6 +1139,8 @@ def default_scenario(bed_type: str) -> Scenario:
         }
     if bed_type == const.BED_TYPE_SLEEPTRACKER:
         data[const.CONF_PRODUCT_TYPE] = "unknown"
+    if bed_type == const.BED_TYPE_CLUSTER018:
+        data[const.CONF_PRODUCT_TYPE] = "GORM"  # three app modes
     if bed_type == const.BED_TYPE_SLEEPYS_ELITE_APP:
         data[const.CONF_SLEEPYS_ELITE_SELECTOR] = "BOX24"
     if bed_type == const.BED_TYPE_RICHMAT:
@@ -1335,6 +1338,20 @@ def route_scenarios() -> list[Scenario]:
                     layout_id=layout,
                 )
             )
+    # Classic Richmat apps: each app's own catalog, a desk, memory-arm and Hold
+    # layouts, and the bare-byte Nordic UART route.
+    if const.BED_TYPE_CLUSTER018 in const.SUPPORTED_BED_TYPES:
+        for app, layout, layout_id in CLASSIC_ROUTES:
+            scenarios.append(
+                Scenario(
+                    id=f"{const.BED_TYPE_CLUSTER018}:{app}:{layout}"
+                    + ("" if layout_id == const.BED_TYPE_CLUSTER018 else ":nordic"),
+                    bed_type=const.BED_TYPE_CLUSTER018,
+                    protocol_variant=app,
+                    entry_data={const.CONF_PRODUCT_TYPE: layout},
+                    layout_id=layout_id,
+                )
+            )
     # eShine (com.okin.eshine): each explicit product over the UART layout.
     if "eshine_okin" in const.SUPPORTED_BED_TYPES:
         for profile in const.ESHINE_OKIN_PROFILES:
@@ -1347,6 +1364,18 @@ def route_scenarios() -> list[Scenario]:
                 )
             )
     return scenarios
+
+
+# App, layout and stored GATT layout. FWRM is a desk, JDRM arms memory saves and
+# YGRM has the Hold selector and alarm actions. The framed layout offers only the
+# fourth fixed service (W4), which the app frames like the first.
+CLASSIC_ROUTES: tuple[tuple[str, str, str], ...] = (
+    ("avocadoecobase", "GORM", "richmat_classic_apps_nordic"),
+    ("coastersleep", "FWRM", "richmat_classic_apps"),
+    ("fortywinks", "CORN", "richmat_classic_apps"),
+    ("milemont", "JDRM", "richmat_classic_apps"),
+    ("superior", "YGRM", "richmat_classic_apps"),
+)
 
 
 # Product key and stored layout. 6ERM mixes sustained, short and short-and-long
@@ -1410,6 +1439,7 @@ PROPERTY_ROUTES: tuple[str, ...] = (
     "keeson:simon_li",
     "limoss",
     "richmat",
+    "richmat_classic_apps",
     "richmat_idealbed:model_3i",
     "serenity",
     "svane",
