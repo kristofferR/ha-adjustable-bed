@@ -33,6 +33,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.pairing import build_pair_entry_data
+from custom_components.adjustable_bed.profile_migration import _async_preview_labels
 
 
 @pytest.mark.parametrize(
@@ -194,3 +195,46 @@ async def test_stored_explicit_profile_keeps_its_motor_count(hass):
     result = await flow.async_step_settings({CONF_MOTOR_COUNT: 2})
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert entry.data[CONF_MOTOR_COUNT] == 3
+
+
+@pytest.mark.parametrize(
+    ("bed_type", "variant"),
+    [(BED_TYPE_LEGGETT_OKIN, None), (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN)],
+)
+async def test_untouched_configure_form_keeps_a_legacy_entrys_controls(
+    hass, enable_custom_integrations, bed_type, variant
+):
+    """#676: Configure shows an absent app profile as the default four-motor one.
+
+    Saving the ordinary form unchanged must keep the controls the entry already
+    runs: the factory runs that same default profile for an absent one.
+    """
+    data = {
+        CONF_ADDRESS: "11:22:33:44:55:66",
+        CONF_NAME: "Prodigy",
+        CONF_BED_TYPE: bed_type,
+        CONF_MOTOR_COUNT: 2,
+    }
+    if variant is not None:
+        data[CONF_PROTOCOL_VARIANT] = variant
+    entry = MockConfigEntry(domain=DOMAIN, data=data)
+    entry.add_to_hass(hass)
+    before = await _async_preview_labels(hass, entry, dict(entry.data))
+    assert before
+
+    menu = await hass.config_entries.options.async_init(entry.entry_id)
+    form = await hass.config_entries.options.async_configure(
+        menu["flow_id"], {"next_step_id": "settings"}
+    )
+    shown = form["data_schema"]({})
+    assert shown[CONF_LEGGETT_APP_PROFILE] == LEGGETT_APP_DEFAULT_PROFILE
+    result = await hass.config_entries.options.async_configure(form["flow_id"], shown)
+
+    assert result["type"] == FlowResultType.CREATE_ENTRY, result
+    saved = {**entry.data, **entry.options}
+    assert saved[CONF_BED_TYPE] == bed_type
+    assert saved.get(CONF_PROTOCOL_VARIANT) == variant
+    # The saved profile and its motor count are the ones the entry already ran.
+    assert saved[CONF_LEGGETT_APP_PROFILE] == LEGGETT_APP_DEFAULT_PROFILE
+    assert saved[CONF_MOTOR_COUNT] == LEGGETT_APP_MOTOR_COUNTS[LEGGETT_APP_DEFAULT_PROFILE]
+    assert await _async_preview_labels(hass, entry, saved) == before

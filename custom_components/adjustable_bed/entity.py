@@ -24,15 +24,18 @@ ATTR_HOLD_LEASE_MOTOR = "hold_lease_motor"
 def hold_lease_attributes(
     controllers: Iterable[BedController | SideBoundController | None],
     motor: str | None = None,
+    *,
+    control: str | None = None,
 ) -> dict[str, str]:
     """Advertise a renewable hold when every physical target declares one mode.
 
-    The hold service refuses a lease otherwise, so a combined control offers a
-    hold only when both sides agree.
+    ``control`` is the entity's held control; without one the entity leases a
+    motor route. The hold service refuses a lease otherwise, so a combined
+    control offers a hold only when both sides agree.
     """
     # A controller without execution facts (an offline stub) declares no hold.
     modes = {
-        execution.hold if isinstance(execution, ExecutionCapabilities) else None
+        execution.hold_for(control) if isinstance(execution, ExecutionCapabilities) else None
         for execution in (getattr(controller, "execution", None) for controller in controllers)
     }
     if len(modes) != 1 or (mode := modes.pop()) is None:
