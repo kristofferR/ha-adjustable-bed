@@ -539,19 +539,13 @@ async def test_pin_collection_routes_through_verification(hass):
 
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context = hass, {"source": "user"}
-    flow._disconnect_choice_confirmed = True
+    flow._selected_bed_type = "octo"
     with patch.object(flow, "_finish_with_verify", AsyncMock()) as verify:
-        # The PIN is on the setup form itself, shown only for the Octo rows.
-        result = await flow.async_step_manual_entry(
-            {
-                "address": "AA:BB:CC:DD:EE:FF",
-                "bed_type": "octo",
-                "name": "Octo bed",
-                "disconnect_after_command": False,
-                # An explicit route, so the route step does not come first.
-                "protocol_variant": "auto",
-                CONF_OCTO_PIN: " 1234 ",
-            }
+        # The PIN is on Octo's final settings.
+        result = await flow.async_step_manual_entry({"address": "AA:BB:CC:DD:EE:FF"})
+        assert CONF_OCTO_PIN in {marker.schema for marker in result["data_schema"].schema}
+        result = await flow.async_step_finish_settings(
+            {"name": "Octo bed", "disconnect_after_command": False, CONF_OCTO_PIN: " 1234 "}
         )
     assert verify.await_args is not None, result
     data, title = verify.await_args.args

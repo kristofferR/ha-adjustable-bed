@@ -24,7 +24,7 @@ from custom_components.adjustable_bed.detection import (
     detect_bed_type,
     get_bed_type_options,
 )
-from tests.form_helpers import shown_markers
+from tests.form_helpers import NEW_BED_ROUTES, finish_new_bed, form_fields, start_new_bed
 from tests.test_controller_contract import _FactoryCoordinator
 
 
@@ -70,18 +70,15 @@ def test_shared_name_and_service_do_not_select_the_serenity_app(name):
     assert detect_bed_type(info) != BED_TYPE_SERENITY
 
 
-@pytest.mark.parametrize("step", ["manual_entry", "manual_config", "bluetooth_confirm"])
-async def test_setup_hides_unproven_motor_count_and_fixed_refresh_delay(hass, step):
+def _okin_flow(hass):
+    """A setup for a shared OKIN receiver, which names no app."""
     from unittest.mock import AsyncMock
 
     from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
-    from custom_components.adjustable_bed.const import CONF_MOTOR_COUNT, CONF_MOTOR_PULSE_DELAY_MS
 
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}
-    flow._selected_bed_type = BED_TYPE_SERENITY
-    flow._disambiguated_bed_type = BED_TYPE_SERENITY
     info = MagicMock()
     info.name = "OKIN-003444"
     info.address = "AA:BB:CC:DD:EE:FF"
@@ -90,11 +87,28 @@ async def test_setup_hides_unproven_motor_count_and_fixed_refresh_delay(hass, st
     info.source = "auto"
     flow._discovery_info = info
     flow._async_transport_note = AsyncMock(return_value="")
-    form = await getattr(flow, f"async_step_{step}")()
-    assert form["type"] == "form"
-    markers = shown_markers(form)
-    assert CONF_MOTOR_COUNT not in markers
-    assert CONF_MOTOR_PULSE_DELAY_MS not in markers
+    return flow
+
+
+async def _final_settings(hass, route: str, choice: str):
+    """The flow and final settings of a new bed set up as ``choice``."""
+    flow = _okin_flow(hass)
+    result = await start_new_bed(flow, route, choice)
+    if result["step_id"] == "jordans_family":
+        # The Jordan's row asks which app.
+        result = await flow.async_step_jordans_family({"choice": "serenity"})
+    assert result["step_id"] == "finish_settings"
+    return flow, result
+
+
+@pytest.mark.parametrize("route", NEW_BED_ROUTES)
+async def test_setup_hides_unproven_motor_count_and_fixed_refresh_delay(hass, route):
+    from custom_components.adjustable_bed.const import CONF_MOTOR_COUNT, CONF_MOTOR_PULSE_DELAY_MS
+
+    _flow, form = await _final_settings(hass, route, BED_TYPE_SERENITY)
+    fields = {marker.schema for marker in form_fields(form["data_schema"])}
+    assert CONF_MOTOR_COUNT not in fields
+    assert CONF_MOTOR_PULSE_DELAY_MS not in fields
 
 
 async def test_options_switch_from_generic_profile_preserves_explicit_serenity_defaults(hass):
@@ -146,82 +160,42 @@ async def test_options_switch_from_generic_profile_preserves_explicit_serenity_d
     assert controller.memory_slot_count == 2
 
 
-@pytest.mark.parametrize("step", ["manual_entry", "manual_config", "bluetooth_confirm"])
-async def test_switching_to_the_app_ignores_fields_it_sets_itself(hass, step):
+@pytest.mark.parametrize("route", NEW_BED_ROUTES)
+async def test_the_final_settings_ignore_fields_the_app_sets_itself(hass, route):
+    """A client that ignores the form cannot change what the app sets."""
     from unittest.mock import AsyncMock
 
-    from homeassistant.const import CONF_ADDRESS, CONF_NAME
+    from homeassistant.const import CONF_NAME
 
-    from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
-    from custom_components.adjustable_bed.const import (
-        BED_TYPE_OCTO,
-        CONF_BED_TYPE,
-        CONF_MOTOR_COUNT,
-        CONF_MOTOR_PULSE_DELAY_MS,
-    )
+    from custom_components.adjustable_bed.const import CONF_MOTOR_COUNT, CONF_MOTOR_PULSE_DELAY_MS
 
-    flow = AdjustableBedConfigFlow()
-    flow.hass = hass
-    flow.context = {}
-    flow._selected_bed_type = flow._disambiguated_bed_type = BED_TYPE_OCTO
-    info = MagicMock()
-    info.name = "OKIN-003444"
-    info.address = "AA:BB:CC:DD:EE:FF"
-    info.service_uuids = ["62741523-52f9-8864-b1ab-3b3a8d65950b"]
-    info.manufacturer_data = {}
-    info.source = "auto"
-    flow._discovery_info = info
-    flow._async_transport_note = AsyncMock(return_value="")
-    flow._disconnect_choice_confirmed = True
+    flow, form = await _final_settings(hass, route, BED_TYPE_SERENITY)
     flow._finish_with_verify = AsyncMock(return_value={"type": "create_entry"})
-    await getattr(flow, f"async_step_{step}")(
-        {
-            CONF_BED_TYPE: BED_TYPE_SERENITY,
-            CONF_NAME: "Edited bed",
-            CONF_ADDRESS: "11:22:33:44:55:66",
-            CONF_MOTOR_COUNT: 4,
-            CONF_MOTOR_PULSE_DELAY_MS: "300",
-        }
+    await finish_new_bed(
+        flow,
+        form,
+        {CONF_NAME: "Edited bed", CONF_MOTOR_COUNT: 4, "timing": {CONF_MOTOR_PULSE_DELAY_MS: "300"}},
     )
-    # The Jordan's row asks which app.
-    await flow.async_step_jordans_family({"choice": "serenity"})
     saved = flow._finish_with_verify.await_args.args[0]
     assert (saved[CONF_MOTOR_COUNT], saved[CONF_MOTOR_PULSE_DELAY_MS]) == (2, 100)
 
 
-@pytest.mark.parametrize("step", ["manual_entry", "manual_config", "bluetooth_confirm"])
-async def test_one_form_shows_each_selected_profiles_fields(hass, step):
-    from unittest.mock import AsyncMock
-
-    from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+@pytest.mark.parametrize("route", NEW_BED_ROUTES)
+async def test_the_final_settings_show_each_routes_own_fields(hass, route):
     from custom_components.adjustable_bed.const import (
         BED_TYPE_LINAK,
-        CONF_BED_TYPE,
         CONF_MOTOR_COUNT,
         CONF_MOTOR_PULSE_DELAY_MS,
         CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     )
 
-    flow = AdjustableBedConfigFlow()
-    flow.hass = hass
-    flow.context = {}
-    flow._selected_bed_type = BED_TYPE_SERENITY
-    flow._disambiguated_bed_type = BED_TYPE_SERENITY
-    info = MagicMock()
-    info.name = "OKIN-003444"
-    info.address = "AA:BB:CC:DD:EE:FF"
-    info.service_uuids = ["62741523-52f9-8864-b1ab-3b3a8d65950b"]
-    info.manufacturer_data = {}
-    info.source = "auto"
-    flow._discovery_info = info
-    flow._async_transport_note = AsyncMock(return_value="")
-    form = await getattr(flow, f"async_step_{step}")()
-
-    octo = shown_markers(form, **{CONF_BED_TYPE: BED_TYPE_OCTO})
+    _flow, form = await _final_settings(hass, route, BED_TYPE_OCTO)
+    octo = {marker.schema for marker in form_fields(form["data_schema"])}
     assert CONF_MOTOR_COUNT not in octo
     assert CONF_OCTO_MOTOR_COUNT_OVERRIDE in octo
     assert CONF_MOTOR_PULSE_DELAY_MS in octo
-    linak = shown_markers(form, **{CONF_BED_TYPE: BED_TYPE_LINAK})
-    assert {CONF_MOTOR_COUNT, CONF_MOTOR_PULSE_DELAY_MS} <= set(linak)
+    _flow, form = await _final_settings(hass, route, BED_TYPE_LINAK)
+    linak = {marker.schema for marker in form_fields(form["data_schema"])}
+    assert {CONF_MOTOR_COUNT, CONF_MOTOR_PULSE_DELAY_MS} <= linak
     assert CONF_OCTO_MOTOR_COUNT_OVERRIDE not in linak
 

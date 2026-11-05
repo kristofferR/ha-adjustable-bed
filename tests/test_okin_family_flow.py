@@ -377,14 +377,13 @@ async def test_discovered_cst_bed_is_asked_with_its_apps_first(
     result = await manager.async_configure(
         result["flow_id"], {"bed_type_choice": const.BED_TYPE_OKIN_CST}
     )
-    assert result["step_id"] == "bluetooth_confirm"
-    result = await manager.async_configure(result["flow_id"], result["data_schema"]({}))
     assert result["step_id"] == "okin_family"
     offered = choices(result)
     cst_apps = [f"okin_cst:{v}" for v in const.OKIN_CST_VARIANTS if v != const.VARIANT_AUTO]
     apps = ["serenity", "tranquil", "customatic_zseries:z230", "customatic_zseries:z280"]
     routes = ["furnimove", "okin_uuid", "okin_dot", "okin_rf_eco_bt"]
-    assert offered == [*cst_apps, *apps, *routes, "keep"]
+    # A discovered bed's question also searches every other app.
+    assert offered == [*cst_apps, *apps, *routes, "another", "keep"]
     manager.async_abort(result["flow_id"])
 
 

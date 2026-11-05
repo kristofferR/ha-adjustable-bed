@@ -32,7 +32,8 @@ from custom_components.adjustable_bed.detection import (
     detect_bed_type_detailed,
     refine_okin_shared_uuid_protocol_from_gatt,
 )
-from tests.form_helpers import shown_markers
+from custom_components.adjustable_bed.furnimove_profiles import FURNIMOVE_PROFILES
+from tests.form_helpers import form_fields
 
 
 @pytest.mark.parametrize("chosen", [BED_TYPE_FURNIMOVE, BED_TYPE_OKIN_RF_ECO_BT])
@@ -46,14 +47,28 @@ async def test_bluetooth_confirm_uses_the_selected_app_fields(hass, chosen):
     )
     flow._disambiguated_bed_type = chosen
     result = await flow.async_step_bluetooth_confirm()
-    fields = set(shown_markers(result))
+    # The Okin question asks which app; the detected receiver is its Keep.
+    assert result["step_id"] == "okin_family"
+    result = await flow.async_step_okin_family(
+        {"choice": "furnimove" if chosen == BED_TYPE_FURNIMOVE else "keep"}
+    )
+    if result["step_id"] == "keep_detected":
+        # Keep says what it sets up first.
+        result = await flow.async_step_keep_continue()
+    if result["step_id"] == "profile_questions":
+        # FurniMove asks its handset first.
+        result = await flow.async_step_profile_questions(
+            {CONF_FURNIMOVE_REMOTE: next(iter(FURNIMOVE_PROFILES))}
+        )
+    assert result["step_id"] == "finish_settings"
+    fields = {marker.schema for marker in form_fields(result["data_schema"])}
     if chosen == BED_TYPE_FURNIMOVE:
         assert fields.isdisjoint({
             CONF_PROTOCOL_VARIANT, CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_MOTOR_PULSE_DELAY_MS,
         })
     else:
         # The receiver has one route, so setup asks for none.
-        assert CONF_PROTOCOL_VARIANT not in fields and "advanced" not in fields
+        assert CONF_PROTOCOL_VARIANT not in fields
         assert CONF_MOTOR_PULSE_DELAY_MS in fields
 
 

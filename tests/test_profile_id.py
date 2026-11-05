@@ -42,6 +42,7 @@ from custom_components.adjustable_bed.const import (
     CONF_PRODUCT_TYPE,
     CONF_PROFILE_ID,
     CONF_PROFILE_MIGRATION,
+    CONF_PROFILE_REVIEW_PENDING,
     CONF_PROTOCOL_VARIANT,
     CONF_SIDE,
     CONF_VIBRADORM_APP_PROFILE,
@@ -71,6 +72,7 @@ from custom_components.adjustable_bed.profile_id import (
     resolve_profile_id,
     with_profile_ids,
 )
+from custom_components.adjustable_bed.profile_review import v5_profile_review_mark
 from custom_components.adjustable_bed.validators import VARIANTS_BY_BED_TYPE
 from tests.codec_families import families
 from tests.codec_families._standalone import STANDALONE
@@ -194,6 +196,8 @@ async def test_migration_stores_an_id_for_every_former_route(hass: HomeAssistant
         migrated = dict(entry.data)
         profile_id = migrated.pop(CONF_PROFILE_ID)
         record = migrated.pop(CONF_PROFILE_MIGRATION)
+        # Only a route that gained an app in v5 is asked about it once more.
+        assert migrated.pop(CONF_PROFILE_REVIEW_PENDING, None) == v5_profile_review_mark(stored)
         assert (entry.version, entry.minor_version) == (5, 3)
         assert migrated == stored
         assert dict(entry.options) == {"motor_pulse_count": 7}

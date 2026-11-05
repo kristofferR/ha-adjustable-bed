@@ -20,7 +20,7 @@ from custom_components.adjustable_bed.pairing import (
     inheritable_child_fields,
     supports_single_address_pairing,
 )
-from tests.form_helpers import shown_markers
+from tests.form_helpers import NEW_BED_ROUTES, finish_new_bed, shown_markers, start_new_bed
 
 ADDRESS = "11:22:33:44:55:66"
 
@@ -37,22 +37,18 @@ def app_data(**extra):
     }
 
 
-@pytest.mark.parametrize("step", ["manual_entry", "manual_config", "bluetooth_confirm"])
-async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_service_info, step):
+@pytest.mark.parametrize("route", NEW_BED_ROUTES)
+async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_service_info, route):
     flow = AdjustableBedConfigFlow()
     flow.context = {}
     flow.hass = hass
     flow._discovery_info = mock_bluetooth_service_info
-    flow._disconnect_choice_confirmed = True
-    result = await getattr(flow, f"async_step_{step}")(
-        {
-            CONF_ADDRESS: ADDRESS,
-            CONF_NAME: "App bed",
-            const.CONF_BED_TYPE: const.BED_TYPE_LIMOSS_REMOTE,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
-            const.CONF_PREFERRED_ADAPTER: "auto",
-        }
-    )
+    settings = {
+        CONF_NAME: "App bed",
+        const.CONF_DISCONNECT_AFTER_COMMAND: False,
+        const.CONF_PREFERRED_ADAPTER: "auto",
+    }
+    result = await start_new_bed(flow, route, const.BED_TYPE_LIMOSS_REMOTE)
     # Limoss Remote arrives as the app itself, so the family question is
     # answered; its own questions come on the generic step.
     assert result["step_id"] == "profile_questions"
@@ -67,9 +63,9 @@ async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_se
         }
     )
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_profile_questions(
+        result = await finish_new_bed(flow, await flow.async_step_profile_questions(
             {const.CONF_PRODUCT_TYPE: "chair", const.CONF_REVERSE_MOTORS[3]: True}
-        )
+        ), settings)
     assert finish.await_args.args[0][const.CONF_PRODUCT_TYPE] == "chair"
     assert finish.await_args.args[0][const.CONF_REVERSE_MOTORS[3]] is True
     assert finish.await_args.args[0][const.CONF_DISABLE_ANGLE_SENSING] is True

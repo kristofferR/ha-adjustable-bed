@@ -44,8 +44,8 @@ Declarations are keyed like a [profile id](profile-id.md): `bed_type`,
 `bed_type:variant`, `bed_type@app` or `bed_type:variant@app`, and the most
 specific key that matches a route wins, so a variant entry replaces its bed
 type's entry. `app_profiles.hidden_generic_fields` reads `owns` plus the generic
-fields the profile asks itself (motor count, variant), so no generic form asks
-them twice. A question with whole-number choices accepts the text a select
+fields the profile asks itself (motor count, variant), so neither the final
+settings nor Configure asks them twice. A question with whole-number choices accepts the text a select
 returns.
 
 ## Setup and Configure
@@ -54,21 +54,20 @@ returns.
   [Guided setup changes](guided-setup-changes.md)) chooses the app first, then
   hands the staged route to `profile_questions`.
 - The app question (`select_app`) and the brand list (`select_family`) offer
-  rows of the bed-type list, so a row picked there acts as picking it on the
-  form: an app's own row answers the family question, so it is not asked
-  again, and a family row, which names its apps, leads to the question. The
+  rows of the bed-type list, and a row picked there stages its route: an app's
+  own row answers the family question, so it is not asked again, and a family
+  row, which names its apps, leads to the question. The
   brand list shows each brand group's family rows, or the group's own rows
   when it has no family question; protocol rows stay in the app question's
   full list.
-- A family row's form is drawn for one route, and the family step resets angle
-  sensing and the pulse settings to the chosen route's defaults. A route the
-  question can choose therefore declares each generic field its own old row
-  showed that its profile does not set: motor count when it offers several,
-  massage when its controls depend on it, and angle sensing when it reports
-  positions. Pulse count and delay keep each route's defaults and stay in
-  Configure. `tests/test_family_setup_fields.py` runs every answer of every
-  family row and of every route a form can be drawn for, and fails when such a
-  field cannot be set. It also saves each answer's route as an entry and fails
+- The final settings come after the app's questions, so every route the
+  question can choose reaches the generic fields its profile does not set
+  there: motor count when it offers several, massage when its controls depend
+  on it, and angle sensing when it reports positions. A family step that sets
+  one itself, such as an L&P app's motor count, settles it.
+  `tests/test_family_setup_fields.py` runs every answer of every family row
+  and of every route a journey can start on, and fails when such a field
+  cannot be set. It also saves each answer's route as an entry and fails
   when that entry cannot reach another route of the question: through
   Reconfigure for a guided family, or Configure's list outside it.
 - Configure asks the questions that are not the managed family's route keys:
@@ -80,7 +79,7 @@ returns.
   (`left_settings`, `right_settings`) asks its profile's questions instead and
   saves the answers to that receiver only.
 - `tests/test_setup_questions.py` checks that each declared question has its
-  `strings.json` label in the generic step (or its Advanced section) and in
+  `strings.json` label in `profile_questions` (or its Advanced section) and in
   Configure, so a field cannot ship unlabelled.
 
 ## Per-side settings
@@ -110,47 +109,44 @@ say ([#745](https://github.com/kristofferR/ha-adjustable-bed/issues/745)):
 `tests/test_app_profiles.py` checks that every declared question belongs to its
 side and that the table repeats none of them.
 
-## Generic forms
+## The new-bed journey
 
-The generic setup forms (`bluetooth_confirm`, `manual_config`, `manual_entry`)
-are drawn once for every bed-type row. Each field that belongs to some rows is
-a native conditional field on the bed-type field, listing both each row's label
-(what the picker submits) and its choice (what the API may submit):
+A new bed is set up in one order (#676 direction A):
 
-- a bed type's own settings (Octo PIN and motor count, Jensen PIN, Richmat
-  remote and RMControl product, CB24 side) show
-  only for its rows;
-- a generic field shows except for the rows whose profile owns it, and a
-  field every row owns is left out;
-- the Advanced route section shows only for the drawn bed type's generic rows.
-  Another bed type with several routes asks for them in the `route` step;
-- Svane's app profiles are asked on the form for its generic row. For that
-  row, a generic field hinges on the route field instead, which reads as
-  absent for other rows. A Svane app row sets its own route.
+1. **The app.** A discovered bed's first question is its detected family's:
+   the family step itself, with "Another app or remote" before its Keep, or,
+   for a route without one, `bluetooth_confirm`, which lists that bed type's
+   own rows. A family that settles the route from the receiver without asking
+   is confirmed on `bluetooth_confirm` too, before its own questions. "Another
+   app or remote" opens `select_app` for the same device. Every other route
+   starts with `select_app`, and a typed address (`manual_entry`) follows it.
+2. **The app's questions.** The family step and the profile's declared
+   questions, exactly as Reconfigure asks them.
+3. **The final settings** (`finish_settings`), drawn for the one route the
+   journey staged: the name, the Bluetooth adapter and disconnect after each
+   command; the generic fields the profile neither sets nor asks, and that no
+   family step set itself (`_journey_set`); a bed type's own settings (Octo PIN
+   and motor count, CB24 side); the route's labelled routes, when it has
+   several, in a collapsed Advanced section; and the pulse count and delay and
+   the idle timeout, collapsed under "Advanced connection and timing". A
+   client that submits a field the form does not show cannot set it.
+4. Pairing, then the connection check.
 
-Defaults cannot follow a changed row. A field whose default depends on the bed
-type (motor count, pulse count and delay) that is left at the default it was
-drawn with saves the chosen profile's default instead; a value the user changed
-is kept. Disconnect after each command asks again instead when the two defaults
-differ, and when a family question then picks another route, an answer left as
-drawn takes that route's own default; a changed one is kept. Guided changes
-leave it alone, as Configure keeps an existing entry's value.
+Defaults are the staged route's own: a family answer that changed the route
+gave it Configure's defaults, and the final settings start from them.
 
-**Disable angle sensing** shows only for rows with a route that reports
-positions, and starts off (positions are read): every such route's own default.
-Its key, label and meaning are those of Configure and the receiver steps; only
-its default and visibility differ by row. Turning it on is therefore always the
-user's change, and is kept, whichever row the form was drawn for. A route
-without position reports, or a row the form did not show it for, saves the
-route's own default, so a question that asks it later starts there. The
-controllers of some of those routes can read positions, such as Octo, SBI and
-the Reverie models without position reports, but the integration does not read
-them there, so an untouched setup leaves them unread.
+**Disable angle sensing** shows only where a route of the staged bed type
+reports positions, and starts off (positions are read): every such route's own
+default. Turning it on is therefore always the user's change. A route without
+position reports saves its own default. The controllers of some of those routes
+can read positions, such as Octo, SBI and the Reverie models without position
+reports, but the integration does not read them there, so an untouched setup
+leaves them unread.
 
 Configure conditions owned generic fields, and the L&P app field, on its route
-field the same way. It still redraws after a bed-type change, and after a route
-change that alters the motor count choices or position feedback: those change
-defaults and the route list, which a field condition cannot.
+field. It redraws after a bed-type change, and after a route change that alters
+the motor count choices or position feedback: those change defaults and the
+route list, which a field condition cannot.
 
 ## Dedicated steps
 
@@ -170,7 +166,6 @@ flows, so a new step cannot appear unrecorded and a removed one cannot linger.
 | `starcode_m5x5`, `starcode_m1x12` | Their lift groups name other config entries, which a declaration's checks cannot see |
 | `cluster033_app` | A custom product picks its keys in multi-select lists, which a question cannot ask yet |
 | `fsm_relax` | The eight memory names are one multi-value text field, which a question cannot ask yet |
-| `route` | The routes of a bed type other than the one the form was drawn for; a section's choices cannot change with the row |
 
 ## Shared steps
 
@@ -179,8 +174,9 @@ These steps serve every bed type or route, so no profile owns them.
 | Step | Purpose |
 |---|---|
 | `user`, `scan`, `scan_result`, `manual`, `select_app`, `select_family`, `bluetooth`, `bluetooth_disambiguate` | Find the bed and pick its app or bed type: `select_app` lists the bed-type list's rows, and its last answer opens the brand list (`select_family`), whose rows are the family rows and the brands without one |
-| `bluetooth_confirm`, `manual_config`, `manual_entry` | The generic setup forms |
-| `disconnect_after_command` | The connection-lifetime choice |
+| `bluetooth_confirm` | A discovered bed's app question, from its bed type's own rows, when no family question asks it |
+| `manual_entry` | The address of a bed that is not in range |
+| `finish_settings` | The [final settings](#the-new-bed-journey) |
 | `profile_questions` | The declared questions |
 | `bluetooth_pairing`, `manual_pairing`, `pairing_replace_confirm`, `pairing_progress`, `pairing_result` | Bonding |
 | `setup_progress`, `verify_connection` | Connection check and capability checklist |

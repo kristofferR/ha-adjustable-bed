@@ -16,6 +16,7 @@ from custom_components.adjustable_bed.config_flow import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.pairing import supports_single_address_pairing
+from tests.form_helpers import NEW_BED_ROUTES, finish_new_bed, start_new_bed
 
 ADDRESS = "11:22:33:44:55:66"
 
@@ -31,24 +32,20 @@ def app_data(**extra):
     }
 
 
-@pytest.mark.parametrize("step", ["manual_entry", "manual_config", "bluetooth_confirm"])
+@pytest.mark.parametrize("route", NEW_BED_ROUTES)
 async def test_every_setup_route_collects_explicit_C_D_without_requesting_bond(
-    hass, mock_bluetooth_service_info, step
+    hass, mock_bluetooth_service_info, route
 ):
     flow = AdjustableBedConfigFlow()
     flow.context = {}
     flow.hass = hass
     flow._discovery_info = mock_bluetooth_service_info
-    flow._disconnect_choice_confirmed = True
-    result = await getattr(flow, f"async_step_{step}")(
-        {
-            CONF_ADDRESS: ADDRESS,
-            CONF_NAME: "App bed",
-            const.CONF_BED_TYPE: const.BED_TYPE_STARCODE_ABM5_4,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
-            const.CONF_PREFERRED_ADAPTER: "auto",
-        }
-    )
+    settings = {
+        CONF_NAME: "App bed",
+        const.CONF_DISCONNECT_AFTER_COMMAND: False,
+        const.CONF_PREFERRED_ADAPTER: "auto",
+    }
+    result = await start_new_bed(flow, route, const.BED_TYPE_STARCODE_ABM5_4)
     # The StarCode apps' row asks which app first.
     assert result["step_id"] == "starcode_family"
     result = await flow.async_step_starcode_family({"choice": "m5x4"})
@@ -60,12 +57,24 @@ async def test_every_setup_route_collects_explicit_C_D_without_requesting_bond(
         patch.object(flow, "async_step_bluetooth_pairing", new=AsyncMock()) as bluetooth_pairing,
         patch.object(flow, "async_step_manual_pairing", new=AsyncMock()) as manual_pairing,
     ):
-        completed = await flow.async_step_starcode_app(
+        result = await flow.async_step_starcode_app(
             {
                 const.CONF_STARCODE_COMMAND_SELECTOR: "BOX15",
                 const.CONF_STARCODE_TRANSPORT_SELECTOR: "auto",
             }
         )
+        if route == "typed":
+            # A typed address has no Bluetooth name to settle the transport.
+            assert result["errors"] == {
+                const.CONF_STARCODE_TRANSPORT_SELECTOR: "starcode_app_invalid"
+            }
+            result = await flow.async_step_starcode_app(
+                {
+                    const.CONF_STARCODE_COMMAND_SELECTOR: "BOX15",
+                    const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX3633",
+                }
+            )
+        completed = await finish_new_bed(flow, result, settings)
     assert completed["type"] == FlowResultType.CREATE_ENTRY
     bluetooth_pairing.assert_not_awaited()
     manual_pairing.assert_not_awaited()

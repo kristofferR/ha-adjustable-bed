@@ -105,10 +105,10 @@ a setting reads is removed. Schema 5.2 drops two stored keys nothing reads (see
 [profile id design note](design/profile-id.md#aliases) records why each pair
 stays separate.
 
-The forms that write those keys did change. Setup is one form whose fields
-follow the chosen row, many brands share one row that asks which app or
-receiver runs the bed, and app settings that had a step of their own are now
-questions on one profile step. Rows that left the top-level list keep their bed
+The forms that write those keys did change. Setup asks the app first, many
+brands share one row that asks which app or receiver runs the bed, app settings
+that had a step of their own are now questions on one profile step, and the
+bed's own settings come last. Rows that left the top-level list keep their bed
 type and ID, so every saved entry still loads unchanged. **Setup and
 Configure** under [Behavior Changes](#behavior-changes) describes each change.
 
@@ -219,10 +219,15 @@ every other bed stay serialized, including Leggett Okin Prodigy 2 and 2L
 Customatic Z-Series. See the
 [merged stream](COMMAND_LIFECYCLE.md#merged-stream-for-concurrent-motors).
 
-**A cover's Stop never waits behind another motor.** On a standalone bed, a
-cover's own Stop now pre-empts a move on another motor of the same bed: that
-move ends with its own release, then the Stop's frames go out. In 4.x the Stop
-queued behind the other motor's pulses, about a second on a Leggett Okin bed.
+**A cover's Stop never waits behind another motor.** A cover's own Stop now
+pre-empts a move on another motor of the same bed, or of the same side of a
+paired bed: that move ends with its own release, then the Stop's frames go out.
+In 4.x the Stop queued behind the other motor's pulses, about a second on a
+Leggett Okin bed. It never pre-empts work on the other side of a one-address
+pair alone. A native Both move drives both sides in one frame, so a Stop on
+either side ends it on both, as a side Stop already did. A sequential pair's
+cycling side halts on its link drop after the move's release instead of taking
+another frame.
 Customatic covers now have one scheduler resource per motor; before, any
 Customatic cover action replaced a move on another motor, and now a second
 motor's cover move queues behind the first, as on other beds. A declared
@@ -281,14 +286,19 @@ Across all bed types ([#826](https://github.com/kristofferR/ha-adjustable-bed/pu
   and variant steps, plus **Not sure** for diagnostics.
   Discovered beds are named with their family.
 
-- Setup is one form for every bed-type row. A bed type's own fields, such as
-  the Octo PIN and motor count or the CB24 side, show only when its row is
-  chosen, using Home Assistant 2026.11's conditional form fields. The
-  follow-up steps that asked them are gone.
+- A discovered bed's first question is its detected family's: that family's
+  own question, or its bed type's rows, with **Another app or remote** for the
+  full list. Setup no longer opens one form with a preselected bed type and an
+  **Auto-detect** row; a family question's **Keep** saves the detected route.
+- The bed's own settings come last, drawn for the route you chose: the name,
+  adapter and disconnect choice, the settings the app does not set itself and
+  a bed type's own fields, such as the Octo PIN or the CB24 side. Pulse count,
+  pulse delay and the idle timeout are collapsed under **Advanced connection
+  and timing**. The separate route and connection-lifetime follow-up steps are
+  gone.
 - Fresh setup no longer shows a separate protocol variant field. An app entry
   always sets its own route. A bed type with several receiver routes lists them
-  in a collapsed **Advanced: receiver route** section, or in a short **Receiver
-  route** step when you choose another bed type.
+  in a collapsed **Advanced: receiver route** section of the final settings.
 - The bed type list is searchable by label, including app names such as
   MotoSleep / Power Bob. Compatibility IDs such as `okimat` and `dewertokin`
   show friendly labels, and **Configure** adds "(saved as `<id>`)".
@@ -357,6 +367,11 @@ For existing beds ([#792](https://github.com/kristofferR/ha-adjustable-bed/pull/
   later release offers an app you were not shown. For a family with a guided
   change, the repair opens the guided change, and so does **A better profile
   may be available** when every suggestion belongs to that family ([#872](https://github.com/kristofferR/ha-adjustable-bed/pull/872)).
+- Existing generic Solace entries are asked once, through **Do you use Woosa
+  Sleep with ...?** under Repairs, whether they use the Woosa Sleep app,
+  which shares their names. The upgrade to v5 raises it, including for
+  entries whose earlier app review ended; it opens the guided change or keeps
+  the current setup.
 - On a two-address pair, **Change left receiver settings** and **Change right
   receiver settings** also ask that receiver's own app questions, such as a
   Sleepy's motor count or a Malouf model, and save them to that receiver only

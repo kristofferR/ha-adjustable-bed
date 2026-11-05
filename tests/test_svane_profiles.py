@@ -5,7 +5,6 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-import voluptuous as vol
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from pytest_homeassistant.common import MockConfigEntry
 
@@ -44,7 +43,13 @@ from custom_components.adjustable_bed.sensor import _sensor_entities_for
 from custom_components.adjustable_bed.svane_state import get_svane_session
 from custom_components.adjustable_bed.switch import _switch_entities_for
 from tests.app_state_helpers import stored_app_state
-from tests.form_helpers import shown_markers
+from tests.form_helpers import (
+    NEW_BED_ROUTES,
+    finish_new_bed,
+    form_answers,
+    form_fields,
+    start_new_bed,
+)
 from tests.test_malouf_app_entities import configure_entity_runtime
 from tests.test_svane import make_controller, written
 
@@ -79,23 +84,30 @@ async def test_stored_profile_factory_preserves_old_routes_and_explicit_jmc(
     assert not requires_pairing(BED_TYPE_SVANE, variant)
 
 
-@pytest.mark.parametrize("step", ["manual_entry", "manual_config", "bluetooth_confirm"])
-async def test_all_setup_forms_explicit_profile_without_unproven_layout_or_timing(hass, step):
+def _svane_flow(hass, name: str = "Svane Bed", service_uuids=(HEAD,)) -> AdjustableBedConfigFlow:
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}
-    flow._selected_bed_type = flow._disambiguated_bed_type = BED_TYPE_SVANE
     info = MagicMock()
-    info.name = "Svane Bed"
+    info.name = name
     info.address = "AA:BB:CC:DD:EE:FF"
-    info.service_uuids = [HEAD]
+    info.service_uuids = list(service_uuids)
     info.manufacturer_data = {}
     info.source = "auto"
     flow._discovery_info = info
     flow._async_transport_note = AsyncMock(return_value="")
-    form = await getattr(flow, "async_step_" + step)()
-    fields = set(shown_markers(form))
-    # The Jensen / Svane question asks the app profile after this form.
+    return flow
+
+
+@pytest.mark.parametrize("route", NEW_BED_ROUTES)
+async def test_all_setup_forms_explicit_profile_without_unproven_layout_or_timing(hass, route):
+    flow = _svane_flow(hass)
+    result = await start_new_bed(flow, route, BED_TYPE_SVANE)
+    # The Jensen / Svane question asks the app profile before the final settings.
+    assert result["step_id"] == "jensen_family"
+    form = await flow.async_step_jensen_family({"choice": "svane_bed"})
+    assert form["step_id"] == "finish_settings"
+    fields = {marker.schema for marker in form_fields(form["data_schema"])}
     assert CONF_PROTOCOL_VARIANT not in fields
     assert not fields.intersection(
         {
@@ -344,24 +356,15 @@ async def test_paired_persistence_and_parent_to_standalone_migration_remain_targ
     await parent.async_shutdown()
 
 
-@pytest.mark.parametrize("step", ["manual_entry", "manual_config", "bluetooth_confirm"])
-async def test_another_bed_type_shows_the_generic_choices_svane_hides(hass, step):
-    flow = AdjustableBedConfigFlow()
-    flow.hass = hass
-    flow.context = {}
-    flow._selected_bed_type = flow._disambiguated_bed_type = BED_TYPE_SVANE
-    info = MagicMock()
-    info.name = "Svane Bed"
-    info.address = "AA:BB:CC:DD:EE:FF"
-    info.service_uuids = [HEAD]
-    info.manufacturer_data = {}
-    info.source = "auto"
-    flow._discovery_info = info
-    flow._async_transport_note = AsyncMock(return_value="")
-    form = await getattr(flow, "async_step_" + step)()
-    fields = shown_markers(form, **{CONF_BED_TYPE: "okin_cst"})
+@pytest.mark.parametrize("route", NEW_BED_ROUTES)
+async def test_another_bed_type_shows_the_generic_choices_svane_hides(hass, route):
+    flow = _svane_flow(hass)
+    form = await start_new_bed(flow, route, "linak")
+    assert form["step_id"] == "finish_settings"
+    fields = {marker.schema for marker in form_fields(form["data_schema"])}
     assert CONF_MOTOR_COUNT in fields
-    assert CONF_PROTOCOL_VARIANT not in fields
+    # Its routes are only in the collapsed Advanced section.
+    assert CONF_PROTOCOL_VARIANT not in {marker.schema for marker in form["data_schema"].schema}
 
 
 @pytest.mark.parametrize(
@@ -374,32 +377,23 @@ async def test_another_bed_type_shows_the_generic_choices_svane_hides(hass, step
     ],
 )
 async def test_new_explicit_svane_selection_uses_case_sensitive_app_name_rule(hass, name, expected):
-    flow = AdjustableBedConfigFlow()
-    flow.hass = hass
-    flow.context = {}
-    info = MagicMock()
-    info.name = name
-    info.address = "AA:BB:CC:DD:EE:FF"
-    info.service_uuids = []
-    info.manufacturer_data = {}
-    info.source = "auto"
-    flow._discovery_info = info
+    flow = _svane_flow(hass, name, ())
     flow._disambiguated_bed_type = BED_TYPE_SVANE
     finish = AsyncMock()
     flow._finish_with_verify = finish
-    result = await flow.async_step_bluetooth_confirm(
-        {CONF_BED_TYPE: BED_TYPE_SVANE, "disconnect_after_command": False}
-    )
+    result = await flow.async_step_bluetooth_confirm()
     # The Svane Remote app's case-sensitive JMC rule suggests its JMC400 profile.
+    assert result["step_id"] == "jensen_family"
     choice = next(marker for marker in result["data_schema"].schema if marker == "choice")
     answer = {SVANE_VARIANT_JMC: "svane_jmc400", VARIANT_AUTO: "svane_bed"}[expected]
     assert choice.default() == answer
-    await flow.async_step_jensen_family({"choice": choice.default()})
+    result = await flow.async_step_jensen_family({"choice": choice.default()})
+    await finish_new_bed(flow, result, {"disconnect_after_command": False})
     assert finish.await_args.args[0][CONF_PROTOCOL_VARIANT] == expected
 
 
-@pytest.mark.parametrize("step", ["manual_config", "manual_entry"])
-async def test_every_setup_route_suggests_by_the_same_name_rule(hass, step):
+@pytest.mark.parametrize("route", ["picked", "typed"])
+async def test_every_setup_route_suggests_by_the_same_name_rule(hass, route):
     """Manual setup reads the scanned name, so it suggests what Bluetooth setup does."""
     info = MagicMock()
     info.name = "JMC400"
@@ -410,15 +404,12 @@ async def test_every_setup_route_suggests_by_the_same_name_rule(hass, step):
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context = hass, {}
     flow._async_transport_note = AsyncMock(return_value="")
-    flow._disconnect_choice_confirmed = True
-    submitted = {CONF_BED_TYPE: BED_TYPE_SVANE, CONF_ADDRESS: info.address, CONF_NAME: "Bed"}
-    if step == "manual_config":
-        flow._discovery_info = info
+    flow._discovery_info = info
     with patch(
         "custom_components.adjustable_bed.config_flow.bluetooth.async_last_service_info",
         return_value=info,
     ):
-        result = await getattr(flow, f"async_step_{step}")(submitted)
+        result = await start_new_bed(flow, route, BED_TYPE_SVANE, info.address)
     assert result["step_id"] == "jensen_family"
     choice = next(marker for marker in result["data_schema"].schema if marker == "choice")
     assert choice.default() == "svane_jmc400"
@@ -458,41 +449,27 @@ async def test_current_disconnect_hook_runs_once_before_connecting_return(hass, 
     assert coordinator.client is controller.client
 
 
-async def _accept_svane_form_as(hass, bed_type: str, **changed):
-    """Draw the setup form for Svane, then submit it for ``bed_type`` as shown."""
-    flow = AdjustableBedConfigFlow()
-    flow.hass = hass
-    flow.context = {}
-    flow._selected_bed_type = flow._disambiguated_bed_type = BED_TYPE_SVANE
-    flow._show_full_bed_type_list = True
-    info = MagicMock()
-    info.name = "Svane Bed"
-    info.address = "AA:BB:CC:DD:EE:FF"
-    info.service_uuids = [HEAD]
-    info.manufacturer_data = {}
-    info.source = "auto"
-    flow._discovery_info = info
-    flow._async_transport_note = AsyncMock(return_value="")
-    flow._disconnect_choice_confirmed = True
-    flow._route_chosen = (bed_type, VARIANT_AUTO)
+async def _accept_final_settings_as(hass, bed_type: str, **changed):
+    """Reach a new bed's final settings for ``bed_type``, then submit them as shown."""
+    flow = _svane_flow(hass)
     flow._finish_with_verify = AsyncMock(return_value={"type": "create_entry"})
-    form = await flow.async_step_bluetooth_confirm()
-    shown = shown_markers(form, **{CONF_BED_TYPE: bed_type})
-    submitted = {
-        name: marker.default()
-        for name, marker in shown.items()
-        if not isinstance(marker.default, vol.Undefined)
-    }
-    submitted.update({CONF_BED_TYPE: bed_type, **changed})
-    await flow.async_step_bluetooth_confirm(submitted)
+    form = await start_new_bed(flow, "discovered", bed_type)
+    assert form["step_id"] == "finish_settings"
+    submitted = form_answers(form)
+    for key, value in changed.items():
+        if key in submitted.get("timing", {}):
+            submitted["timing"][key] = value
+        else:
+            submitted[key] = value
+    await flow.async_step_finish_settings(submitted)
     return flow._finish_with_verify.await_args.args[0]
 
 
-async def test_untouched_fields_take_the_newly_chosen_bed_types_defaults(hass):
-    """Svane's angle-sensing default must not switch off Linak's position feedback."""
+async def test_untouched_fields_take_the_chosen_bed_types_defaults(hass):
+    """The final settings are drawn for the chosen bed, so they save its defaults."""
     from custom_components.adjustable_bed.const import BED_TYPE_LINAK
 
-    saved = await _accept_svane_form_as(hass, BED_TYPE_LINAK)
+    saved = await _accept_final_settings_as(hass, BED_TYPE_LINAK)
     assert saved[CONF_DISABLE_ANGLE_SENSING] is False
     assert (saved[CONF_MOTOR_PULSE_COUNT], saved[CONF_MOTOR_PULSE_DELAY_MS]) == (
         get_motor_pulse_defaults(BED_TYPE_LINAK)
@@ -502,7 +479,7 @@ async def test_untouched_fields_take_the_newly_chosen_bed_types_defaults(hass):
 async def test_a_field_the_user_changed_keeps_its_value(hass):
     from custom_components.adjustable_bed.const import BED_TYPE_LINAK
 
-    saved = await _accept_svane_form_as(
+    saved = await _accept_final_settings_as(
         hass, BED_TYPE_LINAK, **{CONF_MOTOR_COUNT: 4, CONF_MOTOR_PULSE_COUNT: "7"}
     )
     assert (saved[CONF_MOTOR_COUNT], saved[CONF_MOTOR_PULSE_COUNT]) == (4, 7)

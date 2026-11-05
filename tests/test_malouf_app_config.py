@@ -27,27 +27,20 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_PAIR_CHILDREN,
-    CONF_PREFERRED_ADAPTER,
     DOMAIN,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.pairing import build_pair_entry_data
+from tests.form_helpers import NEW_BED_ROUTES, finish_new_bed, start_new_bed
 
 
-@pytest.mark.parametrize("step", ["manual_entry", "manual_config", "bluetooth_confirm"])
-async def test_setup_routes_require_app_and_model(hass, mock_bluetooth_service_info, step):
+@pytest.mark.parametrize("route", NEW_BED_ROUTES)
+async def test_setup_routes_require_app_and_model(hass, mock_bluetooth_service_info, route):
     flow = AdjustableBedConfigFlow()
     flow.context = {}
     flow.hass = hass
     flow._discovery_info = mock_bluetooth_service_info
-    flow._disconnect_choice_confirmed = True
-    result = await getattr(flow, f"async_step_{step}")({
-        CONF_ADDRESS: "11:22:33:44:55:66",
-        CONF_NAME: "App bed",
-        CONF_BED_TYPE: BED_TYPE_MALOUF_APP,
-        CONF_DISCONNECT_AFTER_COMMAND: False,
-        CONF_PREFERRED_ADAPTER: "auto",
-    })
+    result = await start_new_bed(flow, route, BED_TYPE_MALOUF_APP)
     # The family row asks for the app; it chose none to keep.
     assert result["step_id"] == "malouf_family"
     result = await flow.async_step_malouf_family({"choice": "lucid"})
@@ -57,7 +50,11 @@ async def test_setup_routes_require_app_and_model(hass, mock_bluetooth_service_i
     with pytest.raises(vol.Invalid, match="required key"):
         schema({})
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_profile_questions(schema({CONF_MALOUF_APP_MODEL: "Premium"}))
+        await finish_new_bed(
+            flow,
+            await flow.async_step_profile_questions(schema({CONF_MALOUF_APP_MODEL: "Premium"})),
+            {CONF_NAME: "App bed", CONF_DISCONNECT_AFTER_COMMAND: False},
+        )
     saved = finish.call_args.args[0]
     assert saved[CONF_MALOUF_APP_PROFILE] == "lucid"
     assert saved[CONF_MALOUF_APP_MODEL] == "Premium"

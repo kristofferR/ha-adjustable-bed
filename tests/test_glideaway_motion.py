@@ -41,6 +41,7 @@ from custom_components.adjustable_bed.controller_factory import create_controlle
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.detection import get_bed_type_options
 from custom_components.adjustable_bed.validators import is_valid_variant_for_bed_type
+from tests.form_helpers import finish_new_bed, start_new_bed
 
 ZERO = bytes.fromhex("e6fe16000000000005")
 # C01..C25, accepted command-table.md. Sustained saves share recall frames.
@@ -515,15 +516,9 @@ async def test_manual_setup_saves_explicit_app_model(hass, model):
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}
-    flow._disconnect_choice_confirmed = True
     flow._finish_with_verify = AsyncMock(return_value={"type": "create_entry"})
-    await flow.async_step_manual_entry(
-        {
-            CONF_ADDRESS: "AA:BB:CC:DD:EE:68",
-            CONF_BED_TYPE: f"glideaway_motion:{model}",
-            CONF_PROTOCOL_VARIANT: "auto",
-        }
-    )
+    result = await start_new_bed(flow, "typed", f"glideaway_motion:{model}", "AA:BB:CC:DD:EE:68")
+    await finish_new_bed(flow, result)
     saved = flow._finish_with_verify.await_args.args[0]
     assert saved[CONF_BED_TYPE] == BED_TYPE_GLIDEAWAY_MOTION
     assert saved[CONF_PROTOCOL_VARIANT] == model

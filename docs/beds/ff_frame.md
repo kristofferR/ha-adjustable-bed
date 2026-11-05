@@ -89,7 +89,9 @@ The **Woosa Sleep app** row in the bed-type list answers the question itself and
 shows the same note. For an existing bed, open the entry's three-dot menu and
 **Reconfigure** (see
 [Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed));
-**Keep** leaves the entry as it is. A Solace route change has nothing to check:
+**Keep** leaves the entry as it is. A Solace entry from before v5 on the name
+routes is asked once, through a repair, whether it uses Woosa Sleep. A Solace
+route change has nothing to check:
 the controller never refuses a link, and Configure never checked one either. A
 review lists the added and removed controls before **Apply this change** saves
 it. **Configure** keeps routine settings; the app changes only through

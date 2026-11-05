@@ -61,7 +61,7 @@ from custom_components.adjustable_bed.detection import (
     get_bed_type_options,
     resolve_bed_type_choice,
 )
-from tests.form_helpers import shown_markers
+from tests.form_helpers import finish_new_bed, shown_markers, start_new_bed
 
 
 def test_profiles_that_always_show_massage_hide_the_generic_choice() -> None:
@@ -246,17 +246,10 @@ async def test_setup_resolves_an_app_entry_to_its_bed_type_and_variant(
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}
-    flow._disconnect_choice_confirmed = True
     flow._finish_with_verify = AsyncMock(return_value={"type": "create_entry"})
-    await flow.async_step_manual_entry(
-        {
-            CONF_ADDRESS: "AA:BB:CC:DD:EE:02",
-            CONF_BED_TYPE: bed_type_choice(BED_TYPE_KEESON, variant),
-            CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
-        }
-    )
+    await start_new_bed(flow, "typed", bed_type_choice(BED_TYPE_KEESON, variant), "AA:BB:CC:DD:EE:02")
     # These apps' screen sets the motor count before setup finishes.
-    await flow.async_step_profile_questions({CONF_MOTOR_COUNT: "2"})
+    await finish_new_bed(flow, await flow.async_step_profile_questions({CONF_MOTOR_COUNT: "2"}))
     saved = flow._finish_with_verify.await_args.args[0]
     assert (saved[CONF_BED_TYPE], saved[CONF_PROTOCOL_VARIANT]) == (
         BED_TYPE_KEESON,

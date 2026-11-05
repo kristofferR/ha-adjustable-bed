@@ -35,6 +35,7 @@ async def test_cover_commands_use_physical_position_axis_resource() -> None:
         entity_unique_id=lambda key: key,
         name="Test bed",
         async_execute_controller_command=AsyncMock(),
+        async_stop_motor=AsyncMock(),
     )
     cover = AdjustableBedCover(
         coordinator,
@@ -56,7 +57,9 @@ async def test_cover_commands_use_physical_position_axis_resource() -> None:
     assert [
         call.kwargs["resource"]
         for call in coordinator.async_execute_controller_command.await_args_list
-    ] == ["motor:back", "motor:back", "motor:back"]
+    ] == ["motor:back", "motor:back"]
+    # The Stop is a motor-scoped STOP on the same physical axis.
+    assert coordinator.async_stop_motor.await_args.args[1] == "motor:back"
 
 
 async def test_pairlink_controller_hold_metadata_reaches_sided_cover_attributes() -> None:

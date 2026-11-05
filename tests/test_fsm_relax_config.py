@@ -19,7 +19,7 @@ from custom_components.adjustable_bed.config_flow import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.detection import get_bed_type_options
-from tests.form_helpers import answer_app
+from tests.form_helpers import answer_app, suggested
 
 
 def data():
@@ -185,7 +185,8 @@ async def test_public_ffe0_discovery_requires_choice_only_for_exact_app_candidat
     result = await hass.config_entries.flow.async_init(
         const.DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=info,
     )
-    assert result["step_id"] == ("bluetooth_disambiguate" if chooser else "bluetooth_confirm")
+    # A plain Limoss name asks the Limoss question, whose apps include FSM Relax.
+    assert result["step_id"] == ("bluetooth_disambiguate" if chooser else "limoss_family")
     if chooser:
         schema = result["data_schema"]
         for candidate in (const.BED_TYPE_LIMOSS, const.BED_TYPE_FSM_RELAX):
@@ -194,7 +195,7 @@ async def test_public_ffe0_discovery_requires_choice_only_for_exact_app_candidat
             result["flow_id"], user_input={"bed_type_choice": const.BED_TYPE_FSM_RELAX},
         )
         assert selected["step_id"] == "bluetooth_confirm"
-        assert "Selected: FSM Relax" in selected["description_placeholders"]["detection_note"]
+        assert suggested(selected, const.CONF_BED_TYPE) == const.BED_TYPE_FSM_RELAX
     hass.config_entries.flow.async_abort(result["flow_id"])
 
 
@@ -214,8 +215,16 @@ async def test_public_explicit_profile_finishes_without_pairing_backend(
         if route == "manual":
             result = await hass.config_entries.flow.async_init(const.DOMAIN, context={"source": SOURCE_USER})
             result = await hass.config_entries.flow.async_configure(result["flow_id"], user_input={CONF_ADDRESS: "manual"})
+            # Typed setup picks the Limoss / Stawett row and answers its question.
             result = await answer_app(hass, result, const.BED_TYPE_LIMOSS)
             assert result["step_id"] == "manual_entry"
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], user_input={CONF_ADDRESS: "AA:BB:CC:DD:EE:FF"}
+            )
+            assert result["step_id"] == "limoss_family"
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], user_input={"choice": "fsm_relax"}
+            )
         else:
             info = mock_bluetooth_service_info
             info.name = "limossBed"
@@ -227,34 +236,26 @@ async def test_public_explicit_profile_finishes_without_pairing_backend(
             )
             if result["step_id"] == "bluetooth_disambiguate":
                 result = await hass.config_entries.flow.async_configure(result["flow_id"], user_input={"bed_type_choice": const.BED_TYPE_FSM_RELAX})
+            # The Limoss question takes the chosen app, so its route is confirmed.
             assert result["step_id"] == "bluetooth_confirm"
-        submitted = {
-            CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
-            CONF_NAME: "App profile",
-            # Typed setup picks the Limoss / Stawett row and answers its question.
-            const.CONF_BED_TYPE: (
-                const.BED_TYPE_LIMOSS if route == "manual" else const.BED_TYPE_FSM_RELAX
-            ),
-            const.CONF_MOTOR_COUNT: 2,
-            const.CONF_HAS_MASSAGE: False,
-            const.CONF_DISABLE_ANGLE_SENSING: True,
-            const.CONF_PREFERRED_ADAPTER: const.ADAPTER_AUTO,
-            const.CONF_DISCONNECT_AFTER_COMMAND: True,
-        }
-        if route == "bluetooth":
-            # The form drawn for FSM Relax leaves these to its app step.
-            for key in (CONF_ADDRESS, const.CONF_MOTOR_COUNT, const.CONF_HAS_MASSAGE, const.CONF_DISABLE_ANGLE_SENSING):
-                submitted.pop(key)
-        result = await hass.config_entries.flow.async_configure(result["flow_id"], user_input=submitted)
-        if route == "manual":
-            assert result["step_id"] == "limoss_family"
             result = await hass.config_entries.flow.async_configure(
-                result["flow_id"], user_input={"choice": "fsm_relax"}
+                result["flow_id"],
+                user_input={const.CONF_BED_TYPE: suggested(result, const.CONF_BED_TYPE)},
             )
         assert result["step_id"] == "fsm_relax"
         result = await hass.config_entries.flow.async_configure(result["flow_id"], user_input={
             key: value for key, value in data().items() if key != const.CONF_BED_TYPE
         })
+        # The app sets its layout, so only the bed's own settings remain.
+        assert result["step_id"] == "finish_settings"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={
+                CONF_NAME: "App profile",
+                const.CONF_PREFERRED_ADAPTER: const.ADAPTER_AUTO,
+                const.CONF_DISCONNECT_AFTER_COMMAND: True,
+            },
+        )
         assert result["type"] == FlowResultType.CREATE_ENTRY
         saved = result["data"]
         assert saved[const.CONF_BED_TYPE] == const.BED_TYPE_FSM_RELAX

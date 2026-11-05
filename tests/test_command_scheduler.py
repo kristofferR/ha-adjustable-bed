@@ -614,11 +614,16 @@ async def test_repeated_scoped_cancellation_keeps_distinct_generation_and_latest
         ("lighting", "motor:legs", False),
         ("configuration", "motor:legs", False),
         ("side:right:motor:back", "side:left:motor:legs", False),
+        # A native Both move drives this side too, in the same frame.
+        ("side:left:motor:back,side:right:motor:back", "side:left:motor:legs", True),
     ],
 )
+@pytest.mark.parametrize("via", ["admitted", "queued"])
 async def test_motor_stop_preempts_motion_holding_the_writer(
-    holder: str, stop: str, preempted: bool
+    holder: str, stop: str, preempted: bool, via: str
 ) -> None:
+    """An admitted STOP and a queued STOP-kind command (one side of a
+    one-address pair) pre-empt the same motion."""
     scheduler = DeviceCommandScheduler("preempt")
     started = asyncio.Event()
     release = asyncio.Event()
@@ -637,15 +642,29 @@ async def test_motor_stop_preempts_motion_holding_the_writer(
         seen.append(context.cancel_reason)
 
     held = asyncio.create_task(
-        scheduler.execute(CommandIntent(hold, resources=command_resources(holder)))
+        scheduler.execute(
+            CommandIntent(hold, resources=command_resources(*holder.split(",")))
+        )
     )
     await started.wait()
 
     async def stop_operation(context) -> None:
         return
 
-    stop_task = scheduler.admit_stop(stop_operation, command_resources(stop))
-    await stop_task
+    if via == "admitted":
+        stop_task = scheduler.admit_stop(stop_operation, command_resources(stop))
+    else:
+        stop_task = asyncio.create_task(
+            scheduler.execute(
+                CommandIntent(
+                    stop_operation,
+                    resources=command_resources(stop),
+                    kind=CommandKind.STOP,
+                    cancel_running=False,
+                )
+            )
+        )
+    await asyncio.sleep(0)
     release.set()
-    await held
+    await asyncio.gather(stop_task, held)
     assert seen == [CommandOutcome.STOPPED if preempted else None]

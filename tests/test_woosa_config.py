@@ -100,14 +100,16 @@ async def test_manual_setup_saves_woosa_profile(hass: HomeAssistant) -> None:
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {"source": "user"}
-    flow._selected_bed_type = BED_TYPE_SOLACE
+    flow._selected_bed_type, flow._selected_protocol_variant = BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA
     with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
-        result = await flow.async_step_manual_entry(
-            {**_entry_data(), CONF_MOTOR_COUNT: 4}
-        )
+        result = await flow.async_step_manual_entry({CONF_ADDRESS: _entry_data()[CONF_ADDRESS]})
         # The Woosa Sleep row is the answer; its different controls are shown first.
         assert result["step_id"] == "solace_woosa"
         result = await flow.async_step_solace_woosa({})
+        # The app's fixed layout ignores a motor count a client still submits.
+        result = await flow.async_step_finish_settings(
+            {CONF_NAME: "Bedroom bed", CONF_MOTOR_COUNT: 4, CONF_DISCONNECT_AFTER_COMMAND: False}
+        )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["data"][CONF_PROTOCOL_VARIANT] == SOLACE_VARIANT_WOOSA
     assert result["data"][CONF_MOTOR_COUNT] == 2

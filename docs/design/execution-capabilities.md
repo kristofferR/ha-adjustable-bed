@@ -432,18 +432,35 @@ writer means no extra BLE concurrency. None of the candidates reports motor
 positions, so seeks join later; holds and timed moves come first.
 
 **STOP pre-emption.** A STOP never waits behind another motor's command. A
-motor-scoped STOP admission (`DeviceCommandScheduler.admit_stop`, which a
-standalone cover's own Stop uses) pre-empts whatever motion holds the writer
-in its bed or side: any active command on `motor:*` of that namespace, not only
-the stopped motor. The in-flight write and that command's own cleanup finish,
-then the STOP's frames go out, ahead of anything queued behind the STOP epoch.
-A merged stream that owns the stopped motor keeps the writer and ends only that
-member, with its cleanup next, before any further tick. Commands on other
-resources (lighting, configuration) and the other side of a one-address pair
-are never pre-empted. A declared side-wide cover Stop is a `motor:*` STOP that
-ends every motor's work, the stream included. Uncontended, a cover Stop writes
-exactly what it wrote before. Paired topologies keep their own side Stop
-routing.
+motor-scoped STOP admission (`DeviceCommandScheduler.admit_stop`) or a queued
+`CommandKind.STOP` command pre-empts whatever motion holds the writer in its
+bed or side: any active command on `motor:*` of that namespace, not only the
+stopped motor. The in-flight write and that command's own cleanup finish, then
+the STOP's frames go out, ahead of anything queued. A merged stream that owns
+the stopped motor keeps the writer and ends only that member, with its cleanup
+next, before any further tick. Commands on other resources (lighting,
+configuration) and work confined to the other side of a one-address pair are
+never pre-empted. A native Both move drives both sides in one frame, so it
+cannot end on one side alone: a Stop on either side ends it on both, as
+overlapping replacement and a side STOP always have. Waiting it out instead
+would leave the stopping side moving for up to its lease ceiling. A pair's
+side-lane admission matches wildcards, so a side-wide Stop also drops a move
+still queued on that side's lane. A declared side-wide cover Stop is a `motor:*` STOP that ends every
+motor's work, the stream included. Uncontended, a cover Stop writes exactly
+what it wrote before.
+
+Every cover Stop goes through `async_stop_motor` on its runtime. A standalone
+bed admits the STOP. A pair's side bypasses the side lanes, as a side STOP does,
+through `PairTopology.stop_motor`: a two-address receiver admits the STOP; a
+one-address side, whose scheduler the other side shares, queues a STOP-kind
+command so the shared STOP epoch, and the other side's queued work, stay
+untouched. A sequential pair moves a side only inside a cycle that drops the
+side's link when the command ends, and the drop halts it (the topology's
+dead-man model). There the Stop pre-empts a cycling side's command, whose own
+release goes out, and adds no frame of its own: one would race the cycle's
+disconnect, which does not wait for the command lock, or reconnect the side
+and open the second link the topology avoids. A connected side outside a cycle
+gets the motor's stop, and a disconnected one already halted.
 
 **#591.** When a candidate exists, the cover advertises
 `execution.speeds` as `supported_speeds`. An omitted speed keeps today's

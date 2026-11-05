@@ -489,16 +489,14 @@ async def test_bluetooth_confirmation_rejects_incompatible_product(
     hass: HomeAssistant, mock_bluetooth_service_info, variant: str
 ) -> None:
     from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
-    from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_PROTOCOL_VARIANT
+    from custom_components.adjustable_bed.const import CONF_PROTOCOL_VARIANT
 
     flow = AdjustableBedConfigFlow()
-    flow.hass = hass
+    flow.hass, flow.context = hass, {}
     flow._discovery_info = mock_bluetooth_service_info
     flow._finish_with_verify = AsyncMock()
-    result = await flow.async_step_bluetooth_confirm({
-        CONF_BED_TYPE: BED_TYPE_RICHMAT,
-        CONF_PROTOCOL_VARIANT: variant,
-    })
+    flow._disambiguated_bed_type = BED_TYPE_RICHMAT
+    result = await flow.async_step_bluetooth_confirm()
     assert result["step_id"] == "richmat_family"
     result = await flow.async_step_richmat_family({"choice": "rmcontrol"})
     assert result["step_id"] == "profile_questions"

@@ -11,7 +11,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from homeassistant.const import ATTR_ASSUMED_STATE, ATTR_ENTITY_ID, CONF_ADDRESS, STATE_UNKNOWN
+from homeassistant.const import ATTR_ASSUMED_STATE, ATTR_ENTITY_ID, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
@@ -35,10 +35,10 @@ from custom_components.adjustable_bed.const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
     KEESON_VARIANT_AVANTI_BASES,
-    VARIANT_AUTO,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.detection import bed_type_choice, get_bed_type_options
+from tests.form_helpers import finish_new_bed, start_new_bed
 
 # Share transport/HA fixture helpers only; Avanti's command vectors stay below.
 from .test_ore_comfort_bed import _char, _controller, _entry, _services, _waits, _written
@@ -238,20 +238,11 @@ async def test_avanti_app_choice_and_side_owned_layout(hass: HomeAssistant) -> N
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}
-    flow._disconnect_choice_confirmed = True
     flow._finish_with_verify = AsyncMock(return_value={"type": "create_entry"})
-    await flow.async_step_manual_entry(
-        {
-            CONF_ADDRESS: "AA:BB:CC:DD:06:50",
-            CONF_BED_TYPE: choice,
-            CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
-            CONF_MOTOR_COUNT: 4,
-        }
-    )
-    # The app's screen sets the motor count; the entered one is its default.
-    screen = await flow.async_step_profile_questions()
+    # The app's screen asks the motor count.
+    screen = await start_new_bed(flow, "typed", choice, "AA:BB:CC:DD:06:50")
     assert screen["step_id"] == "profile_questions"
-    await flow.async_step_profile_questions({CONF_MOTOR_COUNT: "4"})
+    await finish_new_bed(flow, await flow.async_step_profile_questions({CONF_MOTOR_COUNT: "4"}))
     saved = flow._finish_with_verify.await_args.args[0]
     assert (saved[CONF_BED_TYPE], saved[CONF_PROTOCOL_VARIANT], saved[CONF_MOTOR_COUNT]) == (
         BED_TYPE_KEESON,

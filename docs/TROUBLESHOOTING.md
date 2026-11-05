@@ -66,6 +66,12 @@ that bed type:
 Handing off to **Configure** or the guided change does not answer the repair.
 It stays open until you save a change or choose to keep the current setup.
 
+Version 5 asks once more where a bed type gained an app after that review.
+Generic Solace beds (the HomeKobo, Sealy MotionFlex and Sweet Night route) get
+**"Do you use Woosa Sleep with ...?"**, because Woosa Sleep shares their names
+and only the app tells them apart. It opens the guided change, or keeps the
+current setup.
+
 The repair reads **"... matches the ... profile"** instead when the bed's
 advertisement now identifies another bed type than the one it was set up
 with. So far this applies to Keeson beds whose name contains, but does not

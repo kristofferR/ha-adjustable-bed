@@ -196,15 +196,8 @@ async def test_manual_setup_asks_the_chosen_apps_layout_on_the_generic_step(hass
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {"source": "user"}
-    flow._selected_bed_type = BED_TYPE_CLUSTER018
-    result = await flow.async_step_manual_entry(
-        {
-            CONF_ADDRESS: "AA:BB:CC:DD:EE:18",
-            CONF_NAME: "Classic bed",
-            CONF_BED_TYPE: f"{BED_TYPE_CLUSTER018}:fortywinks",
-            CONF_DISCONNECT_AFTER_COMMAND: False,
-        }
-    )
+    flow._selected_bed_type, flow._selected_protocol_variant = BED_TYPE_CLUSTER018, "fortywinks"
+    result = await flow.async_step_manual_entry({CONF_ADDRESS: "AA:BB:CC:DD:EE:18"})
     assert result["step_id"] == "profile_questions"
     assert result["description_placeholders"] == {"profile": "Forty Winks"}
     # Forty Winks ships every other app's layouts, so a diagnostic one is the refusal.
@@ -212,6 +205,10 @@ async def test_manual_setup_asks_the_chosen_apps_layout_on_the_generic_step(hass
     assert invalid["errors"] == {CONF_PRODUCT_TYPE: "cluster018_layout"}
     with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
         result = await flow.async_step_profile_questions({CONF_PRODUCT_TYPE: "ZRS6:CORN"})
+        assert result["step_id"] == "finish_settings"
+        result = await flow.async_step_finish_settings(
+            {CONF_NAME: "Classic bed", CONF_DISCONNECT_AFTER_COMMAND: False}
+        )
     assert result["type"] == FlowResultType.CREATE_ENTRY
     data = result["data"]
     assert (data[CONF_BED_TYPE], data[CONF_PROTOCOL_VARIANT], data[CONF_PRODUCT_TYPE]) == (

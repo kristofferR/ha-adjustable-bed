@@ -348,8 +348,6 @@ async def test_zseries_pulse_count_range_is_validated_in_setup_and_options(hass,
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}
-    flow._selected_bed_type = BED_TYPE_ZSERIES
-    flow._disambiguated_bed_type = BED_TYPE_ZSERIES
     info = MagicMock()
     info.name = "OKIN-003444"
     info.address = "AA:BB:CC:DD:EE:FF"
@@ -359,8 +357,17 @@ async def test_zseries_pulse_count_range_is_validated_in_setup_and_options(hass,
     flow._discovery_info = info
     flow._async_transport_note = AsyncMock(return_value="")
     if error:
-        form = await flow.async_step_bluetooth_confirm(
-            {CONF_BED_TYPE: BED_TYPE_ZSERIES, CONF_NAME: "Bed", CONF_MOTOR_PULSE_COUNT: count}
+        from custom_components.adjustable_bed.const import ZSERIES_VARIANT_Z230
+        from custom_components.adjustable_bed.detection import bed_type_choice
+        from tests.form_helpers import form_answers, start_new_bed
+
+        form = await start_new_bed(
+            flow, "discovered", bed_type_choice(BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z230)
+        )
+        while form["step_id"] != "finish_settings":
+            form = await getattr(flow, f"async_step_{form['step_id']}")(form_answers(form))
+        form = await flow.async_step_finish_settings(
+            {CONF_NAME: "Bed", "timing": {CONF_MOTOR_PULSE_COUNT: count}}
         )
         assert form["type"] == "form"
         assert form["errors"][CONF_MOTOR_PULSE_COUNT] == "invalid_pulse_count_range"

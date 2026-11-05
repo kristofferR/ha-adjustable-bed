@@ -33,35 +33,28 @@ from custom_components.adjustable_bed.redaction import (
     redact_sleeptracker_sessions,
 )
 from custom_components.adjustable_bed.services import async_register_services
+from tests.form_helpers import NEW_BED_ROUTES, finish_new_bed, start_new_bed
 
 
-@pytest.mark.parametrize("step", ["manual_entry", "manual_config", "bluetooth_confirm"])
+@pytest.mark.parametrize("route", NEW_BED_ROUTES)
 async def test_every_setup_route_collects_processor_profile(
-    hass, mock_bluetooth_service_info, step
+    hass, mock_bluetooth_service_info, route
 ):
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}
     flow._discovery_info = mock_bluetooth_service_info
-    flow._disconnect_choice_confirmed = True
-    result = await getattr(flow, "async_step_" + step)(
-        {
-            "address": "AA:BB:CC:01:02:03",
-            "bed_type": const.BED_TYPE_SLEEPTRACKER,
-            "name": "Processor",
-            "motor_count": 2,
-            "has_massage": False,
-            "disable_angle_sensing": False,
-            "disconnect_after_command": False,
-            "preferred_adapter": "auto",
-        }
-    )
+    result = await start_new_bed(flow, route, const.BED_TYPE_SLEEPTRACKER, "AA:BB:CC:01:02:03")
     assert result["step_id"] == "profile_questions"
     values = result["data_schema"](
         {"product_type": "activebreeze_small", "sleeptracker_unit_number": 2}
     )
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_profile_questions(values)
+        await finish_new_bed(
+            flow,
+            await flow.async_step_profile_questions(values),
+            {"name": "Processor", "disconnect_after_command": False, "preferred_adapter": "auto"},
+        )
     data = finish.call_args.args[0]
     assert data["product_type"] == "activebreeze_small"
     assert data["sleeptracker_unit_number"] == 2
