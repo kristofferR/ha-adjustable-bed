@@ -285,6 +285,20 @@ async def test_side_scoped_callable_and_invalid_other_child(coordinator, instant
         await c.bind_side("left").select("side", "right")
 
 
+def test_restore_side_defaults_for_existing_state(coordinator):
+    c = controller(coordinator, "SOFA000001SB00H")
+    c.restore_persisted_app_state({"side": "right"})
+    c.restore_persisted_app_state({})
+    assert c.persisted_app_state["side"] == "left"
+
+
+@pytest.mark.parametrize("side", ["both", "", None, 1, ["right"]])
+def test_restore_rejects_invalid_side(coordinator, side):
+    c = controller(coordinator, "SOFA000001SB00H")
+    with pytest.raises(ValueError, match="selected side"):
+        c.restore_persisted_app_state({"side": side})
+
+
 async def test_number_and_select_callbacks_are_callable(coordinator, instant):
     c = controller(coordinator, "BT2010000")
     spec = next(s for s in c.controller_number_specs if s.key == "motomotion_treble")

@@ -198,6 +198,7 @@ class MotoMotionController(BedController):
     def persisted_app_state(self) -> Mapping[str, object]:
         return {
             "bind_code": self._bind_code,
+            "side": self._side,
             "custom_eq": self._custom_eq.copy(),
             "rgb": self._rgb.copy(),
             "dimensions": self._dimensions.copy(),
@@ -211,6 +212,10 @@ class MotoMotionController(BedController):
         }
 
     def restore_persisted_app_state(self, state: Mapping[str, object]) -> None:
+        side = state.get("side", "left")
+        if not isinstance(side, str) or side not in ("left", "right"):
+            raise ValueError("Invalid MotoMotion selected side")
+        self._side = side
         bind = state.get("bind_code", "")
         if not isinstance(bind, str) or (
             bind and (len(bind) != 16 or any(c not in "0123456789abcdef" for c in bind))

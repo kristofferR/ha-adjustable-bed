@@ -89,6 +89,53 @@ async def test_dynamic_number_select_sensor_use_real_command_serialization(hass,
     await c.async_shutdown()
 
 
+async def test_selected_side_survives_disconnect_and_controller_replacement(hass):
+    from custom_components.adjustable_bed.motomotion_protocol import ascii_command
+    from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
+
+    c = runtime(hass, "SOFA000001SB00H")
+    await c.async_prime_offline_controller()
+    ctrl = c._controller = MotoMotionController(c)
+    await c._async_restore_app_state(ctrl)
+    c._client = MagicMock()
+    c._client.is_connected = True
+    c._client.stop_notify = AsyncMock()
+    c._client.disconnect = AsyncMock(
+        side_effect=lambda: setattr(c._client, "is_connected", False)
+    )
+    side = AdjustableBedControllerSelect(
+        c, next(s for s in ctrl.controller_select_specs if s.key == "motomotion_side")
+    )
+    with (
+        patch.object(c, "async_ensure_connected", AsyncMock(return_value=True)),
+        patch.object(c, "_async_refresh_controller_auth", AsyncMock()),
+    ):
+        await side.async_select_option("right")
+    await c.async_disconnect("idle_timeout")
+    assert c.controller is None
+
+    replacement = c._controller = MotoMotionController(c)
+    await c._async_restore_app_state(replacement)
+    c._client = MagicMock()
+    c._client.is_connected = True
+    c._client.write_gatt_char = AsyncMock()
+    c._client.stop_notify = AsyncMock()
+    c._client.disconnect = AsyncMock()
+    char = SimpleNamespace(uuid="ffe1", handle=13)
+    replacement._session = (c._client, char, char)
+    with (
+        patch.object(c, "async_ensure_connected", AsyncMock(return_value=True)),
+        patch.object(c, "_async_refresh_controller_auth", AsyncMock()),
+    ):
+        await c.async_execute_controller_command(
+            lambda controller: controller.async_execute_motomotion_action("motomotion_light_toggle")
+        )
+    assert side.current_option == "right"
+    assert c._client.write_gatt_char.await_args.args[1] == ascii_command(262, 10000)
+    c._client.is_connected = False
+    await c.async_shutdown()
+
+
 async def test_public_user_action_validates_all_targets_before_any_write(hass):
     from homeassistant.exceptions import ServiceValidationError
 
