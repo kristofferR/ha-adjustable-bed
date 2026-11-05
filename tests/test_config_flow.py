@@ -2962,8 +2962,9 @@ class TestManualFlow:
                     CONF_PREFERRED_ADAPTER: "auto",
                 },
             )
-            if result.get("step_id") == "route":
-                result = await _answer_route(hass, result)
+            # The form was drawn for this bed type, so its routes were its own
+            # Advanced section and no route step follows.
+            assert result.get("step_id") != "route"
             assert result.get("step_id") != "disconnect_after_command"
             result = await _advance_progress(hass, result)
 
@@ -3211,8 +3212,9 @@ class TestManualFlow:
                     CONF_PREFERRED_ADAPTER: "auto",
                 },
             )
-            if result.get("step_id") == "route":
-                result = await _answer_route(hass, result)
+            # The form was drawn for this bed type, so its routes were its own
+            # Advanced section and no route step follows.
+            assert result.get("step_id") != "route"
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["data"][CONF_KAIDI_ROOM_ID] == 0x12345678
@@ -3291,8 +3293,9 @@ class TestManualFlow:
                     CONF_PREFERRED_ADAPTER: "auto",
                 },
             )
-            if result.get("step_id") == "route":
-                result = await _answer_route(hass, result)
+            # The form was drawn for this bed type, so its routes were its own
+            # Advanced section and no route step follows.
+            assert result.get("step_id") != "route"
             result = await _advance_progress(hass, result)
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
