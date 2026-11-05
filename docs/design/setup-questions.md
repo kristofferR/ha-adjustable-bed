@@ -56,6 +56,10 @@ returns.
   the app, layout and route change only through the guided change. An entry
   that Configure switches into a managed family from another bed type answers
   that family's route questions there, since it has no guided change yet.
+- A two-address pair's shared Configure form asks no declared questions, since
+  each receiver may run another profile. Each receiver's own step
+  (`left_settings`, `right_settings`) asks its profile's questions instead and
+  saves the answers to that receiver only.
 - `tests/test_setup_questions.py` checks that each declared question has its
   `strings.json` label in the generic step (or its Advanced section) and in
   Configure, so a field cannot ship unlabelled.
@@ -145,7 +149,7 @@ These steps serve every bed type or route, so no profile owns them.
 
 | Step | Purpose |
 |---|---|
-| `init`, `settings`, `left_settings`, `right_settings` | Settings |
+| `init`, `settings`, `left_settings`, `right_settings` | Settings; each receiver step also asks that receiver's declared questions |
 | `change_app` | Points to Reconfigure |
 | `pair_sides`, `revert_sides`, `unpair` | Side controls and splitting a pair |
 | `remove_bond_side`, `remove_bond`, `remove_bond_progress`, `remove_bond_result` | Bond removal |
