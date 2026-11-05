@@ -925,3 +925,11 @@ class LimossRemoteController(BedController):
 
     async def move_feet_stop(self) -> None:
         await self.stop_all()
+
+
+def require_app_route(client: BleakClient) -> None:
+    """Raise unless the link has the app's service and notifying command characteristic.
+
+    The controller's own lookup, so a guided change requires what the runtime does.
+    """
+    _characteristic(client)

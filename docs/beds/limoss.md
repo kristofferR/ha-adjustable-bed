@@ -139,6 +139,31 @@ is 0 none, 1 light, 2 massage, 3 both.
 | `keyboard/08/3` | `12` `13` `64` `22` `23` `65` `50` `51` `70` `52` `53` |
 <!-- /generated -->
 
+### Home Assistant setup
+
+The bed-type list has one **Limoss / Stawett: Limoss Remote and FSM Relax apps,
+Stawett and older Limoss controls** row, and the **Limoss / Stawett** brand
+opens the same question. The receiver's name and service are shared, so setup
+asks which app you use:
+
+| Answer | Route |
+|---|---|
+| Limoss Remote app | [Limoss Remote](#limoss-remote): bed or chair, light, massage, reversals and the optional artwork theme |
+| FSM Relax app | [FSM Relax](#fsm-relax): bed or chair, light, massage, reversals and the eight memory names |
+| No app: Stawett or older Limoss controls | The [legacy route](#legacy-route) |
+
+Each route keeps its own controls, feedback and memory format; none is
+translated into another. For an existing bed, open the entry's three-dot menu
+and **Reconfigure** (see
+[Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed));
+**Keep** leaves the entry as it is. A change to Limoss Remote first checks for
+the app's FFE0 service and its notifying FFE1 characteristic. Leaving Limoss
+Remote with its light or massage enabled sends the app's OFF commands before
+saving, as Configure does; if they fail or are cancelled, the saved setup stays.
+A change also drops the old app's own settings. **Configure** keeps routine
+settings, including Limoss Remote's light, massage, reversals and theme; the app
+changes only through **Reconfigure**.
+
 ## Wire codec
 
 `codec/limoss.py` owns the transport, the frame, the cipher, the command bodies and
@@ -346,8 +371,9 @@ controller's.
 
 #### Setup
 
-- Detection: none. Select **Limoss Remote app** explicitly under Limoss, then
-  choose bed or chair and its local lamp and massage controls.
+- Detection: none. Answer **Limoss Remote app** in the
+  [Limoss question](#home-assistant-setup), then choose bed or chair and its
+  local lamp and massage controls.
 - The source selects the first exact FFE0 service, then its first exact FFE1
   characteristic, which must support notification and a write property. Each
   write binds that selected object, including after reconnect; unsubscribe uses
@@ -580,8 +606,8 @@ bodies, and its key tables match the report's rendered tables.
 
 #### Setup
 
-- Detection: none on its own. Select **FSM Relax app (explicit chair/bed
-  profile)**. The exact case-sensitive lowercase `limoss` name adds FSM Relax as an
+- Detection: none on its own. Answer **FSM Relax app** in the
+  [Limoss question](#home-assistant-setup). The exact case-sensitive lowercase `limoss` name adds FSM Relax as an
   ambiguous candidate to the Limoss detection, so the choice stays explicit; the
   focused chooser also applies when that candidate advertises FFE0.
 - The source also checks complete raw scan-record text at an index greater than

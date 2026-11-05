@@ -50,7 +50,9 @@ async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_se
             const.CONF_PREFERRED_ADAPTER: "auto",
         }
     )
-    assert result["step_id"] == "limoss_remote"
+    # Limoss Remote arrives as the app itself, so the family question is
+    # answered; its own questions come on the generic step.
+    assert result["step_id"] == "profile_questions"
     fields = {key.schema for key in result["data_schema"].schema}
     assert {const.CONF_PRODUCT_TYPE, const.CONF_HAS_LIGHT, const.CONF_HAS_MASSAGE} <= fields
     assert not fields.intersection(
@@ -62,7 +64,7 @@ async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_se
         }
     )
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_limoss_remote(
+        await flow.async_step_profile_questions(
             {const.CONF_PRODUCT_TYPE: "chair", const.CONF_REVERSE_MOTORS[3]: True}
         )
     assert finish.await_args.args[0][const.CONF_PRODUCT_TYPE] == "chair"
@@ -82,9 +84,9 @@ async def test_invalid_profile_never_finishes_setup(hass, invalid):
     flow = AdjustableBedConfigFlow()
     flow.context = {}
     flow.hass = hass
-    flow._manual_data = {CONF_ADDRESS: ADDRESS}
+    flow._manual_data = {CONF_ADDRESS: ADDRESS, const.CONF_BED_TYPE: const.BED_TYPE_LIMOSS_REMOTE}
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        result = await flow.async_step_limoss_remote(invalid)
+        result = await flow.async_step_profile_questions(invalid)
     assert result["errors"]
     finish.assert_not_awaited()
 
@@ -193,25 +195,21 @@ async def test_options_disable_finishes_exact_off_bursts_before_saving(hass, fai
 
 
 def test_limoss_group_requires_explicit_app_or_legacy_selection():
-    from custom_components.adjustable_bed.actuator_groups import (
-        ACTUATOR_GROUPS,
-        get_actuator_group_for_bed_type,
-        get_bed_type_for_group,
+    """The brand opens the Limoss question, which offers both apps and the generic controls."""
+    from custom_components.adjustable_bed.actuator_groups import get_bed_type_for_group
+    from custom_components.adjustable_bed.config_flow import _LIMOSS_APPS
+    from custom_components.adjustable_bed.const import (
+        BED_TYPE_FSM_RELAX,
+        BED_TYPE_LIMOSS,
+        BED_TYPE_LIMOSS_REMOTE,
     )
-    from custom_components.adjustable_bed.const import BED_TYPE_LIMOSS, BED_TYPE_LIMOSS_REMOTE
 
-    assert get_bed_type_for_group("limoss") is None
-    variants = ACTUATOR_GROUPS["limoss"]["variants"]
-    assert variants is not None
-    assert {variant["type"] for variant in variants} == {
-        BED_TYPE_LIMOSS, BED_TYPE_LIMOSS_REMOTE,
+    assert get_bed_type_for_group("limoss") == BED_TYPE_LIMOSS
+    assert {bed_type for bed_type, _variant, _step in _LIMOSS_APPS.values()} == {
+        BED_TYPE_LIMOSS,
+        BED_TYPE_LIMOSS_REMOTE,
+        BED_TYPE_FSM_RELAX,
     }
-    assert get_actuator_group_for_bed_type(BED_TYPE_LIMOSS) == (
-        "limoss", "Legacy Limoss / Stawett",
-    )
-    assert get_actuator_group_for_bed_type(BED_TYPE_LIMOSS_REMOTE) == (
-        "limoss", "Limoss Remote app",
-    )
 
 
 async def test_options_keep_the_apps_own_massage_question(hass):

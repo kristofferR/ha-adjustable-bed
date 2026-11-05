@@ -217,6 +217,7 @@ from .const import (
     REVERIE_NIGHTSTAND_SERVICE_UUID,
     REVERIE_PAIRLINK_SERVICE_UUID,
     REVERIE_SERVICE_UUID,
+    RICHMAT_MH_BED_TYPES,
     RICHMAT_NAME_PATTERNS,
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_WILINKE_SERVICE_UUIDS,
@@ -726,7 +727,10 @@ FAMILY_STEP_ROUTES: Final = frozenset(
         BED_TYPE_LOGICDATA,
         BED_TYPE_LOGICDATA_AIR_PUMP,
         BED_TYPE_REVERIE,
+        *RICHMAT_MH_BED_TYPES,
         BED_TYPE_SLEEP_NUMBER_MCR,
+        BED_TYPE_LIMOSS_REMOTE,
+        BED_TYPE_FSM_RELAX,
     }
 )
 # A family row whose picker label names every route behind it; saved entries
@@ -764,9 +768,17 @@ _FAMILY_ROW_LABELS: Final[dict[str, str]] = {
     BED_TYPE_REVERIE_NIGHTSTAND: (
         "Reverie: Nightstand app, Protocol 110 and Protocol 108 receivers"
     ),
+    BED_TYPE_RICHMAT: (
+        "Richmat: RMControl, Revive Control, Best Mattress, Blvd Home, HARMONY, Idealbed, "
+        "Avocado Eco Base, CoasterSleep, Forty Winks, Milemont, Superior, SleepFunction "
+        "and SVEN & SON apps, and Richmat remotes"
+    ),
     BED_TYPE_SLEEP_NUMBER: (
         "Sleep Number: SleepIQ app, Fuzion (Climate 360, FlexFit) and BAM/MCR "
         "(i8, 360 FlexFit 2) bases"
+    ),
+    BED_TYPE_LIMOSS: (
+        "Limoss / Stawett: Limoss Remote and FSM Relax apps, Stawett and older Limoss controls"
     ),
 }
 
@@ -812,6 +824,8 @@ _HIDDEN_APP_ROWS: Final = frozenset(
         # The Remacro apps are answers of the Remacro question.
         (BED_TYPE_REMACRO, REMACRO_VARIANT_THE_BRICK),
         (BED_TYPE_REMACRO, REMACRO_VARIANT_JEROMES),
+        # The classic Richmat apps are answers of the Richmat question.
+        *((BED_TYPE_CLUSTER018, app) for app in CLUSTER018_APPS),
     }
 )
 # Configure still accepts a hidden app row by its value, as a repair submits it.

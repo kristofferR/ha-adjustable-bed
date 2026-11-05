@@ -26,7 +26,11 @@ from custom_components.adjustable_bed.const import (
     requires_pairing,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
-from custom_components.adjustable_bed.detection import detect_bed_type, get_bed_type_options
+from custom_components.adjustable_bed.detection import (
+    BED_TYPE_DISPLAY_NAMES,
+    detect_bed_type,
+    get_bed_type_options,
+)
 from custom_components.adjustable_bed.light import _light_entities_for
 from custom_components.adjustable_bed.number import _number_entities_for
 from custom_components.adjustable_bed.select import _select_entities_for
@@ -44,7 +48,10 @@ def test_profile_registration(bed_type: str) -> None:
     assert not requires_pairing(bed_type)  # the app has no pairing, PIN or encryption
     assert _motor_count_options(bed_type) == [2]
     assert get_actuator_group_for_bed_type(bed_type)[0] == "richmat_apps"
-    assert any(option["value"] == bed_type for option in get_bed_type_options())
+    # The app is an answer of the one Richmat row, which names it.
+    assert not any(option["value"] == bed_type for option in get_bed_type_options())
+    richmat_row = next(o for o in get_bed_type_options() if o["value"] == "richmat")
+    assert BED_TYPE_DISPLAY_NAMES[bed_type].removesuffix(" app (Richmat)") in richmat_row["label"]
     assert is_valid_variant_for_bed_type(bed_type, VARIANT_AUTO)
     assert _name_rule_setup_name(bed_type, "7IRM0001") == {CONF_BLE_DEVICE_NAME: "7IRM0001"}
     assert _name_rule_setup_name(bed_type, "AA:BB:CC:DD:EE:FF") == {}
@@ -277,7 +284,8 @@ async def test_two_address_pair_refuses_a_combined_model_change(hass) -> None:
     with patch("homeassistant.components.bluetooth.async_last_service_info", return_value=None):
         result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: "model_farm"})
     assert result["type"] is FlowResultType.FORM
-    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "app_profile_unpair_first"}
+    # The model is each receiver's own question, never the shared form's.
+    assert result["errors"] == {"base": "app_profile_unpair_first"}
     stored = [c[CONF_PROTOCOL_VARIANT] for c in entry.data[CONF_PAIR_CHILDREN]]
     assert stored == ["model_vorm", "model_vorm"]
 

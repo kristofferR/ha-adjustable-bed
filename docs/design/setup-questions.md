@@ -114,7 +114,7 @@ flows, so a new step cannot appear unrecorded and a removed one cannot linger.
 
 | Step | Why it is not data |
 |---|---|
-| Family steps (`jiecang_family`, `okin_family`, `keeson_family`, `solace_family`, `leggett_family`, `sleepys_family`, `malouf_family`, `customatic_family`, `jordans_family`, `starcode_family`, `remacro_family`, `logicdata_family`, `reverie_family`, `sleep_number_family`, `jensen_family`, `vibradorm`) | They choose the profile itself, and Keep, before any profile's questions exist |
+| Family steps (`jiecang_family`, `okin_family`, `keeson_family`, `solace_family`, `leggett_family`, `sleepys_family`, `malouf_family`, `customatic_family`, `jordans_family`, `starcode_family`, `remacro_family`, `logicdata_family`, `reverie_family`, `richmat_family`, `sleep_number_family`, `jensen_family`, `limoss_family`, `vibradorm`) | They choose the profile itself, and Keep, before any profile's questions exist |
 | `keeson_app`, `keeson_restonic`, `keeson_route` | Each picks the Keeson variant, which is the profile, not one of its answers |
 | `solace_woosa` | A note before choosing Woosa Sleep; it asks nothing |
 | `jiecang_legacy` | Part of the Jiecang journey: a remote route chosen in place of an app needs the motor count and cadence the app had fixed |
@@ -124,15 +124,6 @@ flows, so a new step cannot appear unrecorded and a removed one cannot linger.
 | `cluster033_app` | A custom product picks its keys in multi-select lists, which a question cannot ask yet |
 | `fsm_relax` | The eight memory names are one multi-value text field, which a question cannot ask yet |
 | `route` | The routes of a bed type other than the one the form was drawn for; a section's choices cannot change with the row |
-
-### Not converted yet
-
-These app steps ask plain questions a declaration could express. They stay
-listed so the gap is visible until each converts.
-
-| Step | Questions |
-|---|---|
-| `limoss_remote` | Product, light, massage, reversals and remote theme |
 
 ## Shared steps
 
@@ -183,18 +174,22 @@ These steps serve every bed type or route, so no profile owns them.
 | `doublesleep` | Saved app model, seeded from the platform name, and the BLE driver. |
 | `sleeptracker` | Foundation, app layout, unit number, snapshot side, restricted session and processor type; a lumbar layout derives the third motor. |
 | `motion_bed` | Exact Bluetooth name, seeded from the advertisement; restored profile and retained preset and movement layouts. `normalize` stores Auto as no retained layout. |
-| `malouf_app` | Model (the chosen app's picker, plus a saved model it no longer lists), primary/secondary role and transport (Advanced). Fixes angle sensing off; `normalize` drops a model the picker did not offer. |
+| `malouf_app@malouf`, `malouf_app@lucid` | Model (the chosen app's picker, plus a saved model it no longer lists), primary/secondary role and transport (Advanced). Fixes angle sensing off; `normalize` drops a model the picker did not offer. |
+| `malouf_app` | The app too, with every app's models, for an entry switched in from another bed type with Configure's bed-type list; the app and model are checked together on save. |
 | `malouf_new_okin`, `malouf_legacy_okin` | Motor count, layout and memory positions. |
 | `logicdata_app@phone`, `logicdata_app@tablet` | Command family; the layout for P1 only, since P2 is the middle layout its `normalize` sets; light; transport (Advanced). Owns motor count and pulse delay; fixes angle sensing off. |
 | `logicdata_app@sleep_smart` | Command family, the two-motor standard or split-series layout, light, transport (Advanced). |
 | `logicdata_app` | The app too, for an entry switched in from another bed type with Configure's bed-type list; its combinations are checked on save. |
 | `reverie`, `reverie_nightstand` | The model the app shows (the protocol variant), and angle sensing. |
+| `richmat` | The RMControl product, or None for the remote controls; the RMControl side when a product is chosen; otherwise the Richmat remote code; the packet dialect (Advanced). An RMControl product with a Prefix55 or PrefixAA dialect is refused on save. |
+| `richmat_revive`, `richmat_best_mattress`, `richmat_blvd_home`, `richmat_harmony`, `richmat_idealbed` | The app's model (the protocol variant), or Auto from the raw Bluetooth name; a name the app cannot resolve is refused on save. |
 | `sleep_number` | The side this Fuzion entry controls (the protocol variant), and angle sensing. |
 | `sleep_number_mcr` | Angle sensing only, since one entry exposes both sides. |
 | `logicdata` | SimplicityFrame's motor count: the family row's form is drawn for the apps, whose layout sets it. |
 | `vibradorm` | The legacy setup's motor count, massage motors and angle sensing: a form drawn for a detected app or V-MAT Basic sets these itself. |
 | `jensen` | The JMC400 box's PIN (free text; empty uses the default), motor count, massage motors and angle sensing: the family row's form is drawn for Svane, which sets these itself. |
 | `svane:jensen_linon` | Motor count. |
+| `limoss_remote` | Bed or chair, light, massage, the four reversals and the optional artwork theme; the connected device supplies its key layout. |
 
 The other profiles declare only the generic fields they own, converted from the
 former side tables.
