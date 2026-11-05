@@ -139,13 +139,21 @@ a prepared reservation, where a streamer cannot start.
   out next, before any further tick. A side or bed-wide STOP, a disconnect or
   unload ends every member at the stop epoch, and a later member waits for that
   STOP to finish before a new streamer starts.
-- A STOP never waits behind another motor's command. A standalone cover's own
-  Stop is a motor-scoped STOP admission that pre-empts whatever motion holds
-  the writer on that bed, a serial move on another motor included: the write
-  in flight and that command's own cleanup finish, then the STOP's frames go
-  out, ahead of anything queued. Commands on other resources, such as lighting
-  or configuration, are not pre-empted, and neither is the other side of a
-  one-address pair. Paired topologies keep their own side Stop routing.
+- A STOP never waits behind another motor's command. A cover's own Stop is a
+  motor-scoped STOP that pre-empts whatever motion holds the writer on that bed
+  or side, a serial move on another motor included: the write in flight and
+  that command's own cleanup finish, then the STOP's frames go out, ahead of
+  anything queued. Commands on other resources, such as lighting or
+  configuration, are not pre-empted, and neither is the other side of a
+  one-address pair, nor a native Both move that drives it.
+- On a pair, a side's cover Stop bypasses the side lanes, as a side STOP does.
+  A two-address receiver takes it as a STOP admission. The two sides of a
+  one-address pair share one scheduler, so there it is a queued STOP that
+  leaves the shared STOP epoch alone. On a sequential pair a side moves only
+  inside a cycle that drops its link when the command ends, which halts it: a
+  cycling side's command is pre-empted and sends its own release, and the Stop
+  adds no frame that would race the drop or reopen a second link. A
+  disconnected sequential side is already halted.
 - An ordinary command on a streamed motor, such as a preset, replaces the
   whole stream, as it replaces a serial move.
 - A cleanup or release failure ends the stream and is reported to the members

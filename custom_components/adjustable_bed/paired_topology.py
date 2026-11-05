@@ -32,7 +32,12 @@ from uuid import uuid4
 
 from homeassistant.exceptions import HomeAssistantError
 
-from .command_scheduler import CommandHandle, CommandOutcome, PreparedCommandInvalidated
+from .command_scheduler import (
+    CommandHandle,
+    CommandOutcome,
+    PreparedCommandInvalidated,
+    command_resources,
+)
 from .const import (
     PAIR_CONNECTION_MODE_CONCURRENT,
     PAIR_CONNECTION_MODE_SEQUENTIAL,
@@ -43,12 +48,14 @@ from .const import (
 )
 
 if TYPE_CHECKING:
+    from .beds.base import BedController
     from .paired_coordinator import BedChild, PairedBedCoordinator, SingleAddressPairedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
 type PairTarget = tuple[str, BedChild]
 type ChildOperation = Callable[[BedChild], Coroutine[Any, Any, None]]
+type ChildCommand = Callable[[BedController], Coroutine[Any, Any, None]]
 type ConnectionAttemptCursor = tuple[int | None, Mapping[str, object] | None]
 type GuardedDisconnect = Callable[[str], Coroutine[Any, Any, bool | None]]
 
@@ -260,6 +267,30 @@ async def stop_targets(targets: list[PairTarget]) -> dict[str, BaseException]:
     return errors
 
 
+async def stop_motor_targets(
+    targets: list[PairTarget], stop_fn: ChildCommand, resource: str
+) -> dict[str, BaseException]:
+    """Stop one motor on every target, never letting one side skip another.
+
+    Each receiver pre-empts the motion holding that side's writer, so the stop
+    never waits behind another motor's move (#516).
+    """
+    with hold_command_connections(targets):
+        results = await asyncio.gather(
+            *(
+                child.async_stop_motor(stop_fn, resource, stream_member=False)
+                for _, child in targets
+            ),
+            return_exceptions=True,
+        )
+    errors: dict[str, BaseException] = {}
+    for (side, child), result in zip(targets, results, strict=True):
+        if isinstance(result, BaseException):
+            errors[side] = result
+            _LOGGER.warning("Motor STOP failed on %s side (%s): %s", side, child.address, result)
+    return errors
+
+
 # ---------------------------------------------------------------------------
 # Connection-slot evidence for automatic fallback
 # ---------------------------------------------------------------------------
@@ -417,6 +448,12 @@ class PairTopology(ABC):
     @abstractmethod
     async def stop_children(self, targets: list[PairTarget]) -> dict[str, BaseException]:
         """Send STOP to every target, collecting individual failures."""
+
+    async def stop_motor(
+        self, targets: list[PairTarget], stop_fn: ChildCommand, resource: str
+    ) -> dict[str, BaseException]:
+        """Stop one motor on every target, collecting individual failures (#516)."""
+        return await stop_motor_targets(targets, stop_fn, resource)
 
     @abstractmethod
     async def connect_children(self, *, started_local_sides: Collection[str] = ()) -> bool:
@@ -1325,6 +1362,34 @@ class SequentialTwoLinkTopology(PairTopology):
                 for side, child in targets
                 if child.is_connected or ready_disconnected_transport(child)
             ]
+        )
+
+    async def stop_motor(
+        self, targets: list[PairTarget], stop_fn: ChildCommand, resource: str
+    ) -> dict[str, BaseException]:
+        """Stop one motor on connected sides only, never reconnecting one.
+
+        A side moves only inside a cycle, which releases its link once the
+        command ends, and the drop halts it. A cycling side's running command
+        is pre-empted instead: its own release goes out, then the cycle drops
+        the link. A STOP frame of its own would race that drop, or reopen the
+        second link this topology avoids. A connected side outside a cycle gets
+        the motor's stop; a disconnected one already halted.
+        """
+        cycling = self._admission.active_children
+        scope = command_resources("motor:*" if resource.startswith("motor:") else resource)
+        for _, child in targets:
+            if child in cycling:
+                child.request_command_cancel(resources=scope)
+        return await stop_motor_targets(
+            [
+                (side, child)
+                for side, child in targets
+                if child not in cycling
+                and (child.is_connected or ready_disconnected_transport(child))
+            ],
+            stop_fn,
+            resource,
         )
 
     async def connect_children(self, *, started_local_sides: Collection[str] = ()) -> bool:

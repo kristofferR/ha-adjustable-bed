@@ -492,6 +492,29 @@ class PairedBedCoordinator:
         """Send STOP through the current topology's fan-out, collecting failures."""
         return await self._topology.stop_children(targets)
 
+    async def async_stop_motor(
+        self,
+        stop_fn: CommandFn,
+        resource: str,
+        *,
+        side: str,
+        stream_member: bool = True,
+    ) -> None:
+        """Stop one motor on the side(s) at once, never behind another motor (#516).
+
+        Like a side STOP, this bypasses the side lanes: on each receiver it
+        pre-empts the motion holding that side's writer, then runs ``stop_fn``.
+        """
+        del stream_member  # paired topologies never stream
+        targets = self._targets_for(side)
+        # A movement for this motor still queued on a side lane drops.
+        for target_side, _ in targets:
+            self._admission.bump(target_side, command_resources(resource))
+        async with self._connection_mode_transition_lock:
+            errors = await self._topology.stop_motor(targets, stop_fn, resource)
+        if errors:
+            raise PairedSideError("stop", errors)
+
     # ------------------------------------------------------------------ lifecycle
     async def async_connect(self) -> bool:
         """Connect children that are ready for ordinary control."""
@@ -1013,6 +1036,20 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
             kind=CommandKind.STOP,
         )
 
+    async def async_stop_motor(
+        self, stop_fn: CommandFn, resource: str, *, stream_member: bool = True
+    ) -> None:
+        """Stop one motor of this side at once (#516).
+
+        Both sides share the receiver's scheduler, so this is a queued STOP: it
+        pre-empts this side's motion only, never the other side's, and leaves
+        the shared STOP epoch alone.
+        """
+        del stream_member  # one-address sides never stream
+        await self.async_execute_controller_command(
+            stop_fn, resource=resource, kind=CommandKind.STOP
+        )
+
 
 class SingleAddressPairedCoordinator(PairedBedCoordinator):
     """Paired surface backed by one coordinator and one physical BLE link."""
@@ -1293,6 +1330,13 @@ class PairedSideProxy(EntityRuntimeView):
 
     async def async_stop_command(self) -> None:
         await self._pair_parent.async_stop_command(side=self._pair_side)
+
+    async def async_stop_motor(
+        self, stop_fn: ControllerCommand, resource: str, *, stream_member: bool = True
+    ) -> None:
+        await self._pair_parent.async_stop_motor(
+            stop_fn, resource, side=self._pair_side, stream_member=stream_member
+        )
 
 
 def entity_runtimes(

@@ -734,6 +734,21 @@ def _motion_scope(resources: Collection[str]) -> frozenset[str]:
     return frozenset(scope)
 
 
+def _holds_motion_within(active: Collection[str], stop: Collection[str]) -> bool:
+    """Whether ``active`` drives motion only inside the STOP's bed or side.
+
+    A STOP on one side of a one-address pair never pre-empts a command that
+    also drives the other side, such as a native Both move.
+    """
+    scope = _motion_scope(stop)
+    if not _resources_overlap(active, scope):
+        return False
+    namespaces = {item.removesuffix("motor:*") for item in scope}
+    return "" in namespaces or all(
+        any(resource.startswith(namespace) for namespace in namespaces) for resource in active
+    )
+
+
 def _resources_overlap(left: Collection[str], right: Collection[str]) -> bool:
     if "*" in left or "*" in right:
         return True
@@ -917,6 +932,19 @@ class DeviceCommandScheduler:
             if active is not None and self._handles_conflict(active, handle):
                 handle.context.preempted_contexts = (active.context,)
             replaces_active = self._replace_conflicts_locked(handle)
+        active = self._active
+        if (
+            handle.intent.kind is CommandKind.STOP
+            and not replaces_active
+            and active is not None
+            and not active.future.done()
+            and _holds_motion_within(active.intent.resources, handle.intent.resources)
+        ):
+            # A queued STOP never waits behind another motor's motion on its
+            # bed or side either (#516): that command's cleanup, then this.
+            handle.context.preempted_contexts = (active.context,)
+            active.context.request_cancel(CommandOutcome.STOPPED)
+            replaces_active = True
         # A replacement for the operation currently owning the link must be
         # next after that operation's cleanup. Otherwise an older,
         # unrelated prepared group can sit in front of a motor STOP/reverse
@@ -1089,7 +1117,7 @@ class DeviceCommandScheduler:
         holds_motion = (
             active is not None
             and not overlaps
-            and _resources_overlap(active.intent.resources, _motion_scope(normalized_resources))
+            and _holds_motion_within(active.intent.resources, normalized_resources)
         )
         preempted_contexts = (active.context,) if active is not None and (
             overlaps or holds_motion
