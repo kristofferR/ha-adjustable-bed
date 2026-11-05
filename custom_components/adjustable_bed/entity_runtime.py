@@ -131,6 +131,12 @@ class EntityRuntime(Protocol):
 
     async def async_stop_command(self) -> None: ...
 
+    async def async_stop_motor(
+        self, stop_fn: ControllerCommand, resource: str, *, stream_member: bool = True
+    ) -> None:
+        """Stop one motor at once, never behind another motor's command (#516)."""
+        ...
+
 
 class EntityRuntimeView(ABC):
     """Explicit read/query forwarding; subclasses own movement routing."""

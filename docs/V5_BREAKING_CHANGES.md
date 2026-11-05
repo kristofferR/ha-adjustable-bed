@@ -219,10 +219,15 @@ every other bed stay serialized, including Leggett Okin Prodigy 2 and 2L
 Customatic Z-Series. See the
 [merged stream](COMMAND_LIFECYCLE.md#merged-stream-for-concurrent-motors).
 
-**A cover's Stop never waits behind another motor.** On a standalone bed, a
-cover's own Stop now pre-empts a move on another motor of the same bed: that
-move ends with its own release, then the Stop's frames go out. In 4.x the Stop
-queued behind the other motor's pulses, about a second on a Leggett Okin bed.
+**A cover's Stop never waits behind another motor.** A cover's own Stop now
+pre-empts a move on another motor of the same bed, or of the same side of a
+paired bed: that move ends with its own release, then the Stop's frames go out.
+In 4.x the Stop queued behind the other motor's pulses, about a second on a
+Leggett Okin bed. It never pre-empts work on the other side of a one-address
+pair alone. A native Both move drives both sides in one frame, so a Stop on
+either side ends it on both, as a side Stop already did. A sequential pair's
+cycling side halts on its link drop after the move's release instead of taking
+another frame.
 Customatic covers now have one scheduler resource per motor; before, any
 Customatic cover action replaced a move on another motor, and now a second
 motor's cover move queues behind the first, as on other beds. A declared
@@ -362,6 +367,11 @@ For existing beds ([#792](https://github.com/kristofferR/ha-adjustable-bed/pull/
   later release offers an app you were not shown. For a family with a guided
   change, the repair opens the guided change, and so does **A better profile
   may be available** when every suggestion belongs to that family ([#872](https://github.com/kristofferR/ha-adjustable-bed/pull/872)).
+- Existing generic Solace entries are asked once, through **Do you use Woosa
+  Sleep with ...?** under Repairs, whether they use the Woosa Sleep app,
+  which shares their names. The upgrade to v5 raises it, including for
+  entries whose earlier app review ended; it opens the guided change or keeps
+  the current setup.
 - On a two-address pair, **Change left receiver settings** and **Change right
   receiver settings** also ask that receiver's own app questions, such as a
   Sleepy's motor count or a Malouf model, and save them to that receiver only

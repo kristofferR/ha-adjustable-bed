@@ -387,24 +387,35 @@ async def test_advertised_app_candidates_join_the_review(hass: HomeAssistant) ->
 
 
 async def test_review_waits_for_an_advertisement_that_could_add_an_app(hass: HomeAssistant) -> None:
-    entry = _entry(hass, BED_TYPE_SOLACE, variant=None)
+    entry = _entry(hass, BED_TYPE_OCTO, variant=None)
     with patch(_HISTORY, return_value=None):
         async_refresh_profile_review_issue(hass, entry)
     assert _issue(hass, entry) is None
-    assert entry.data[CONF_PROFILE_REVIEW_PENDING] == "solace:auto"
+    assert entry.data[CONF_PROFILE_REVIEW_PENDING] == "octo:auto"
+
+    with patch(_HISTORY, return_value=_advertisement("RC2", "0000ffe0-0000-1000-8000-00805f9b34fb")):
+        async_refresh_profile_review_issue(hass, entry)
+    # Nothing to offer once the advertisement is known: the mark is retired.
+    assert _issue(hass, entry) is None
+    assert CONF_PROFILE_REVIEW_PENDING not in entry.data
+
+
+async def test_a_solace_review_asks_about_woosa_and_adds_motion_bed_once_advertised(
+    hass: HomeAssistant,
+) -> None:
+    entry = _entry(hass, BED_TYPE_SOLACE, variant=None)
+    with patch(_HISTORY, return_value=None):
+        async_refresh_profile_review_issue(hass, entry)
+    # Woosa Sleep shares the name routes' names, so no advertisement decides it.
+    issue = _issue(hass, entry)
+    assert issue is not None and issue.translation_key == "app_profile_woosa"
+    assert issue.translation_placeholders["apps"] == "- Woosa Sleep app (Solace)"
 
     with patch(_HISTORY, return_value=_advertisement("QMS-IQ 1234", SOLACE_SERVICE_UUID)):
         async_refresh_profile_review_issue(hass, entry)
     issue = _issue(hass, entry)
-    assert issue is not None
-    assert issue.translation_placeholders["apps"] == "- Motion Bed app"
-
-    other = _entry(hass, BED_TYPE_OCTO, variant=None, **{CONF_ADDRESS: "AA:BB:CC:DD:EE:31"})
-    with patch(_HISTORY, return_value=_advertisement("RC2", "0000ffe0-0000-1000-8000-00805f9b34fb")):
-        async_refresh_profile_review_issue(hass, other)
-    # Nothing to offer once the advertisement is known: the mark is retired.
-    assert _issue(hass, other) is None
-    assert CONF_PROFILE_REVIEW_PENDING not in other.data
+    assert issue is not None and issue.translation_key == "app_profile_review"
+    assert issue.translation_placeholders["apps"] == "- Motion Bed app\n- Woosa Sleep app (Solace)"
 
 
 def _paired(hass: HomeAssistant, mode: str) -> MockConfigEntry:
@@ -481,10 +492,12 @@ def test_review_text_is_translated_identically() -> None:
     strings, english = (
         json.loads((root / name).read_text()) for name in ("strings.json", "translations/en.json")
     )
-    for key in ("app_profile_review", "app_profile_match"):
+    for key in ("app_profile_review", "app_profile_match", "app_profile_woosa"):
         issue = strings["issues"][key]
         assert issue == english["issues"][key]
-        assert set(issue["fix_flow"]["step"]) == {"init", "configure", "unpair", "managed"}
+        # Solace has a guided change, so the Woosa review opens only its managed step.
+        steps = {"managed"} if key == "app_profile_woosa" else {"init", "configure", "unpair", "managed"}
+        assert set(issue["fix_flow"]["step"]) == steps
         assert "entry_missing" in issue["fix_flow"]["abort"]
         assert "—" not in json.dumps(issue, ensure_ascii=False)
     assert strings["selector"]["app_profile_review"] == {

@@ -114,7 +114,11 @@ from .position_estimate import (
 )
 from .profile_id import migrate_v5_data, with_profile_ids
 from .profile_recommendations import async_watch_profile_recommendations
-from .profile_review import async_refresh_profile_review_issue, profile_review_mark
+from .profile_review import (
+    async_refresh_profile_review_issue,
+    profile_review_mark,
+    v5_profile_review_mark,
+)
 from .remacro_discovery import (
     async_watch_remacro_fallback,
     clear_remacro_model_issues,
@@ -588,17 +592,17 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         # record of where it came from. The saved bed type, variant and app keys
         # are not touched. Schema 5 entries cannot load on 4.x; restoring a Home
         # Assistant backup is the only way back.
-        hass.config_entries.async_update_entry(
-            entry,
-            data=migrate_v5_data(
-                entry.data,
-                entry.options,
-                from_version=original_version[0],
-                from_minor_version=original_version[1],
-            ),
-            version=5,
-            minor_version=1,
+        data = migrate_v5_data(
+            entry.data,
+            entry.options,
+            from_version=original_version[0],
+            from_minor_version=original_version[1],
         )
+        # A route that gained an app in v5, such as Woosa Sleep on the Solace
+        # name routes, is reviewed once more.
+        if (mark := v5_profile_review_mark(data)) is not None:
+            data[CONF_PROFILE_REVIEW_PENDING] = mark
+        hass.config_entries.async_update_entry(entry, data=data, version=5, minor_version=1)
 
     if entry.version == 5 and entry.minor_version < 2:
         # v5.1 -> v5.2: drop the keys the CONF_* audit found obsolete and list
