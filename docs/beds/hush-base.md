@@ -44,7 +44,7 @@
 
 **Notify characteristic:** first notify-capable characteristic in the selected coherent service.
 **Write mode:** selected write characteristic must support write; use no-response when also offered.
-**Format:** Nordic sends one opcode byte. Other bed services send `6e 01 SIDE OP SUM8`; side is 0 or 1. Shared services never identify a product.
+**Format:** Nordic sends one opcode byte. Other bed services send `6e 01 SIDE OP SUM8`; side is 0 or 1. Shared services never identify a product. The frames are the Casper Base app's library frames, built by `codec/casper.py`; each model is a profile in `profiles/hush.py`.
 
 ### Sleep transport
 
@@ -54,7 +54,7 @@ Frames contain the 14-byte envelope, sequence and compact ordered JSON, split at
 
 ## Detection / Setup
 
-1. Select **Hush Base app (select product)** and the exact model. There is no automatic Hush profile selection from an app name or shared UUID.
+1. Choose **Hush Base app (select product)** in the app list, then the exact model on the profile setup step; the app's own twelve come first. There is no automatic Hush profile selection from an app name or shared UUID.
 2. The twelve models above are fresh Hush setup choices. Labels marked **restored profile** represent the app's wider saved-index domain, not additional fresh Hush setup models.
 3. Connect before enabling native Left/Right controls. Nordic has no side byte; one-address pairing is rejected there. Two-address pairs keep independent profile and connection ownership.
 4. Add a separate **Hush Base sleep sensor** entry for each sensor. Choose RM/MM or HJ/SXB explicitly. Sensor partitions and actuator sides are different concepts.
