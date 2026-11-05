@@ -303,6 +303,8 @@ class SertaMPRemoteController(AppController):
             acknowledgement is not None
             and context is not None
             and context.kind is CommandKind.STOP
+            # Only the bed-wide release STOP; a cover's own Stop keeps its zero.
+            and "*" in context.resources
             and context.scheduler_token is acknowledgement[0]
             and context.admitted_stop_epoch == acknowledgement[1]
             and self._session_cancel is acknowledgement[2]

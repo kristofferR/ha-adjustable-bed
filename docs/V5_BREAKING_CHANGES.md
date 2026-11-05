@@ -176,13 +176,23 @@ replaced the first. This covers Leggett Okin Prodigy CE (head, feet, pillow and
 lumbar) and U Series (head, feet and pillow)
 ([#814](https://github.com/kristofferR/ha-adjustable-bed/pull/814)), and Svane
 Remote head and feet on both its routes
-([#827](https://github.com/kristofferR/ha-adjustable-bed/pull/827)). Every
-`timed_move` on these motors joins the stream, even a single move. A motor's own
-Stop ends only that motor. Paired beds, `hold_control` and every other bed stay
-serialized, including Leggett Okin Prodigy 2 and 2L
-([#835](https://github.com/kristofferR/ha-adjustable-bed/pull/835)), and
-Customatic, whose concurrent motors are still under review. See the
+([#827](https://github.com/kristofferR/ha-adjustable-bed/pull/827)), and the
+Customatic Clarity and Jerome's (back and legs) and Remedy (back, legs and
+lumbar) apps. Every `timed_move` on these motors joins the stream, even a single
+move. A motor's own Stop ends only that motor. Paired beds, `hold_control` and
+every other bed stay serialized, including Leggett Okin Prodigy 2 and 2L
+([#835](https://github.com/kristofferR/ha-adjustable-bed/pull/835)) and
+Customatic Z-Series. See the
 [merged stream](COMMAND_LIFECYCLE.md#merged-stream-for-concurrent-motors).
+
+**A cover's Stop never waits behind another motor.** On a standalone bed, a
+cover's own Stop now pre-empts a move on another motor of the same bed: that
+move ends with its own release, then the Stop's frames go out. In 4.x the Stop
+queued behind the other motor's pulses, about a second on a Leggett Okin bed.
+Customatic covers now have one scheduler resource per motor; before, any
+Customatic cover action replaced a move on another motor, and now a second
+motor's cover move queues behind the first, as on other beds. A declared
+side-wide cover Stop ends every motor's work.
 
 **Calibrated position estimates ([#601](https://github.com/kristofferR/ha-adjustable-bed/issues/601)).**
 Opt-in, per motor, for OCTO Standard and the Richmat remote-code profiles. A
