@@ -17,14 +17,22 @@ from homeassistant.util import dt as dt_util
 from ..cluster018_caller import RETAIN, Selection, effective_status, transition
 from ..cluster018_profiles import Control, controls, load_catalog
 from ..cluster018_protocol import (
+    ALARM_QUERY,
+    AROMA_QUERY,
+    DESK_CONFIRM,
+    DESK_QUERY,
+    INITIALIZE,
+    LAMP_QUERY,
     Worker,
     alarm,
     alarm_delay,
     aroma,
     control,
+    desk_button,
     desk_target,
-    direct,
+    desk_unit,
     lamp_timer,
+    massage_popup,
     massage_timer,
     release,
     rgb,
@@ -34,6 +42,7 @@ from ..cluster018_receive import MalformedFrame, ReceiveState
 from ..cluster018_requests import Request
 from ..cluster018_transport import Transport, select
 from ..const import CONF_MOTOR_PULSE_COUNT, CONF_PRODUCT_TYPE, CONF_PROTOCOL_VARIANT
+from ..profiles.richmat import RICHMAT_CLASSIC
 from .base import (
     CONTROLLER_GESTURE_RELEASE,
     BedController,
@@ -61,6 +70,7 @@ class Cluster018Controller(BedController):
         super().__init__(coordinator)
         self._device_name = device_name
         self.app = str(coordinator.entry.data[CONF_PROTOCOL_VARIANT])
+        self.profile = RICHMAT_CLASSIC[self.app]
         self.layout = str(coordinator.entry.data[CONF_PRODUCT_TYPE]).strip().upper()
         if self.layout in ("TEST", "RMCS"):
             raise ValueError("Diagnostic endurance and motor-mapping layouts are excluded")
@@ -210,7 +220,7 @@ class Cluster018Controller(BedController):
     async def _reply_unit(self, session: Transport, unit: int) -> None:
         async def send(controller: BedController) -> None:
             if controller is self and self._session is session:
-                await self._send(direct(0x91, 0, unit))
+                await self._send(desk_unit(bool(unit)))
         if self._session is session:
             try:
                 await self._coordinator.async_execute_controller_command(send, cancel_running=False, resource="configuration")
@@ -234,10 +244,10 @@ class Cluster018Controller(BedController):
             if self.layout in ("WFRM", "FWRM"):
                 # RemoteFragment.initData issues this independently of the
                 # delayed, notification-conditioned FRAMED transport startup.
-                await self._send(direct(0x94))
+                await self._send(DESK_QUERY)
             if session.wire == "FRAMED" and session.has_notifications:
                 await asyncio.sleep(0.3)
-                await self._send(direct(0x94) if self.layout in ("WFRM", "FWRM") else direct(2, 1, 0))
+                await self._send(DESK_QUERY if self.layout in ("WFRM", "FWRM") else INITIALIZE)
         except BaseException:
             self._session = None
             raise
@@ -557,7 +567,7 @@ class Cluster018Controller(BedController):
         self.validate_cluster018_request(request)
         op = request.operation
         if op == "query":
-            frames = ([direct(8, 1, 1)] if any(c.alarm_clock is not None for c in self._controls) else []) + [direct(0x0A, 0, 1), direct(0x1A)]
+            frames = ([ALARM_QUERY] if any(c.alarm_clock is not None for c in self._controls) else []) + [LAMP_QUERY, AROMA_QUERY]
             delay = 500
         elif op in ("alarm", "cancel_alarm"):
             now = dt_util.now()
@@ -579,7 +589,7 @@ class Cluster018Controller(BedController):
             frames, delay = [aroma(code, value) for code, value in zip((0x1B, 0x1C, 0x1D), request.aroma_values, strict=True)], 150
         elif op == "massage_popup":
             assert request.popup is not None
-            frames, delay = [direct(1, 0, {"15": 0x5F, "30": 0x63, "45": 0x61, "toggle": 0x5E}[request.popup])], 0
+            frames, delay = [massage_popup(request.popup)], 0
         elif op == "massage_timer":
             assert request.progress is not None
             frames, delay = [massage_timer(self.layout, request.progress)], 0
@@ -588,12 +598,12 @@ class Cluster018Controller(BedController):
             frames, delay = [desk_target(request.height)], 0
         elif op == "desk_unit":
             self._unit_switch = request.unit == "inches"
-            frames, delay = [direct(0x91, 0, int(request.unit == "inches"))], 0
+            frames, delay = [desk_unit(request.unit == "inches")], 0
         elif op == "desk_reset":
-            frames, delay = [direct(0x95)], 0
+            frames, delay = [DESK_CONFIRM], 0
         elif op == "desk_recall":
             assert request.slot is not None
-            packet = direct(0x95) if request.slot == 4 else direct(0x96, 0, (4, 8, 16)[request.slot - 1])
+            packet = desk_button(request.slot)
             elapsed = 0
             while elapsed < request.duration_ms and not self._coordinator.cancel_command.is_set():
                 await self.write_command(packet)

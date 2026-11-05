@@ -437,7 +437,7 @@ def test_unexpected_disconnect_invalidates_session_and_publishes_status():
 
 
 async def test_real_coordinator_disconnect_keeps_latest_local_selector_owner(hass):
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import DOMAIN
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -478,7 +478,7 @@ async def test_real_coordinator_disconnect_keeps_latest_local_selector_owner(has
 
 
 async def test_native_release_entity_keeps_the_admitted_mode_through_cleanup(hass, monkeypatch):
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.beds.base import CONTROLLER_GESTURE_RELEASE
     from custom_components.adjustable_bed.button import ControllerActionButton

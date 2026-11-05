@@ -1,4 +1,4 @@
-"""R1 Richmat 6E: Richmat, its app routes, BedTech, WiLinke and HJBed."""
+"""R1 Richmat 6E: Richmat, its app routes, BedTech, WiLinke, HJBed and the classic apps."""
 
 from __future__ import annotations
 
@@ -49,6 +49,7 @@ FAMILY = CodecFamily(
             "richmat",
             "richmat_best_mattress",
             "richmat_blvd_home",
+            "richmat_classic_apps",
             "richmat_harmony",
             "richmat_idealbed",
             "richmat_revive",

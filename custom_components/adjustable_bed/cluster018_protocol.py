@@ -2,6 +2,8 @@
 
 These are the older resource-driven apps, not RMControl 21.3.7. Model data
 selects operands and gestures; a transport match never selects a product.
+Every frame is built by the Richmat 6E codec (``codec/richmat.py``); this module
+names the classic apps' own opcodes and their source quirks.
 """
 
 from __future__ import annotations
@@ -9,7 +11,9 @@ from __future__ import annotations
 import struct
 from dataclasses import dataclass
 from decimal import ROUND_HALF_EVEN, Decimal
-from typing import Literal
+from typing import Final, Literal
+
+from .codec import richmat as codec
 
 Wire = Literal["RAW", "FRAMED"]
 
@@ -39,22 +43,33 @@ def decode_resource(value: str | None) -> bytes | None:
 
 
 def direct(opcode: int, first: int = 0, second: int = 0) -> bytes:
-    """Four source byte fields followed by their additive checksum."""
-    body = bytes((0x6E, opcode & 255, first & 255, second & 255))
-    return body + bytes((sum(body) & 255,))
+    """``6E opcode first second sum8``: the settings frames, independent of the wire."""
+    return codec.frame(codec.BED, opcode, first, second)
+
+
+RELEASE: Final = bytes((codec.STOP,))
+"""The release operand, which RAW sends bare and FRAMED wraps in the current mode."""
+INITIALIZE: Final = direct(0x02, 0x01)
+DESK_QUERY: Final = direct(0x94)
+ALARM_QUERY: Final = direct(0x08, 0x01, 0x01)
+LAMP_QUERY: Final = direct(0x0A, 0x00, 0x01)
+AROMA_QUERY: Final = direct(0x1A)
+DESK_CONFIRM: Final = direct(0x95)
+"""Desk fourth button, and the confirmation of a newly reported desk error."""
+MASSAGE_POPUP: Final = {"15": 0x5F, "30": 0x63, "45": 0x61, "toggle": 0x5E}
 
 
 def control(payload: bytes, wire: Wire, mode: int = 0) -> bytes:
-    """RAW copies every byte; FRAMED consumes only the first operand."""
-    return payload if wire == "RAW" else direct(1, mode, payload[0])
+    """RAW copies every resource byte; FRAMED consumes only the first operand."""
+    return payload if wire == "RAW" else codec.command(payload[0], mode)
 
 
 def release(wire: Wire, mode: int = 0) -> bytes:
-    return control(b"\x6e", wire, mode)
+    return control(RELEASE, wire, mode)
 
 
 def rgb(red: int, green: int, blue: int) -> bytes:
-    return direct(0x0C, 255, red) + direct(0x0D, green, blue)
+    return codec.rgb(red, green, blue)
 
 
 def lamp_timer(minutes: int, *, save: bool = False) -> bytes:
@@ -62,13 +77,27 @@ def lamp_timer(minutes: int, *, save: bool = False) -> bytes:
     if not 0 <= minutes <= 15:
         raise ValueError("Lamp timer must be between 0 and 15 minutes")
     value = minutes if save else minutes * 60 if minutes else 65535
-    return direct(0x0B, value >> 8, value)
+    return codec.light_timer(value >> 8, value)
 
 
 def alarm(delay_minutes: int, command: int) -> tuple[bytes, bytes]:
     if not 0 <= delay_minutes <= 1440:
         raise ValueError("Alarm delay must be between 0 and 1440 minutes")
-    return direct(5, delay_minutes, 0), direct(6, delay_minutes >> 8, command)
+    return codec.countdown(delay_minutes, command)
+
+
+def massage_popup(choice: str) -> bytes:
+    """The massage popup's 15, 30 and 45 minute timers and its toggle."""
+    return codec.command(MASSAGE_POPUP[choice])
+
+
+def desk_unit(inches: bool) -> bytes:
+    return direct(0x91, 0, int(inches))
+
+
+def desk_button(slot: int) -> bytes:
+    """Desk recall buttons 1 to 3; the fourth button is :data:`DESK_CONFIRM`."""
+    return DESK_CONFIRM if slot == 4 else direct(0x96, 0, (4, 8, 16)[slot - 1])
 
 
 def alarm_delay(now_minutes: int, target_minutes: int | None) -> int:
@@ -89,7 +118,7 @@ def massage_timer(layout: str, progress: int) -> bytes:
     code = {0: 0x5E if layout == "D1RM" else 0x8B, 2: 0x5F, 3: 0x63, 5: 0x61}.get(
         progress, progress
     )
-    return direct(1, 0, code)
+    return codec.command(code)
 
 
 def float32(value: float) -> float:
@@ -168,7 +197,7 @@ class Worker:
         if mode == 0:
             self.mode = -1
             self.counter = 0
-            return (Emission(50, b"\x6e"),)
+            return (Emission(50, RELEASE),)
         if mode == 1:
             return (Emission(0, self.payload),)
         if mode == 3:
@@ -182,7 +211,7 @@ class Worker:
             self.mode = -1
             result = () if mode == 4 and self.fired else (Emission(0, self.payload),)
             if mode in (2, 4):
-                result += (Emission(150, b"\x6e"),)
+                result += (Emission(150, RELEASE),)
             if mode == 4:
                 self.counter = 0
                 self.fired = False
