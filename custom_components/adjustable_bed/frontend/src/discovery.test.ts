@@ -1538,6 +1538,20 @@ test("Good Vibe Sleep exposes app controls, side selection and independent sleep
   expect(bedIsEmpty(bed)).toBe(false);
 });
 
+test("Classic Richmat app actions, selectors and state stay in the utility section", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("button.lounge", "cluster018_action"),
+    entry("button.release", "cluster018_release"),
+    entry("select.mode", "cluster018_mode"),
+    entry("select.hold", "cluster018_hold"),
+    entry("sensor.status", "cluster018_status"),
+  ]), "dev1");
+  expect(bed.utility).toEqual(["button.lounge", "button.release"]);
+  expect(bed.utilitySelects).toEqual(["select.mode", "select.hold"]);
+  expect(bed.utilityStates).toEqual(["sensor.status"]);
+  expect(bedIsEmpty(bed)).toBe(false);
+});
+
 test("eShine product actions and feedback appear on the card and retain side routing", () => {
   const hass = hassWith([
     entry("button.chord", "eshine_okin_flat_zero_g", "left"),
