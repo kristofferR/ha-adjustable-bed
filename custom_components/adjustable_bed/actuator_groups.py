@@ -21,6 +21,7 @@ from .const import (
     BED_TYPE_GMMOTOR,
     BED_TYPE_GMMOTOR_SLEEP_MM,
     BED_TYPE_GMMOTOR_SLEEP_SXB,
+    BED_TYPE_ISLEEP,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
@@ -66,6 +67,7 @@ from .const import (
     BED_TYPE_TRANQUIL,
     BED_TYPE_ZSERIES,
     GLIDEAWAY_MOTION_MODELS,
+    KAIDI_VARIANT_FLOYD,
     KEESON_VARIANT_ADJUSTABLE_LITE,
     KEESON_VARIANT_AMERICANSTAR,
     KEESON_VARIANT_AVANTI_BASES,
@@ -242,8 +244,28 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
     },
     "kaidi": {
         "display": "Kaidi",
-        "description": "Rize Remedy III, Floyd Home, ISleep (Mouselet devices)",
-        "variants": None,  # Single protocol
+        "description": "Rize Beds, Floyd Home and ISleep apps (Mouselet devices)",
+        "variants": [
+            {
+                "type": BED_TYPE_KAIDI,
+                "label": "Rize Beds app",
+                "description": "Rize Beds bases; detects the advertised Kaidi product",
+                "hint": "Keep this choice for an existing working Kaidi device.",
+            },
+            {
+                "type": BED_TYPE_KAIDI,
+                "variant": KAIDI_VARIANT_FLOYD,
+                "label": "Floyd Home app",
+                "description": "Floyd Home product 139 (Tranquility II)",
+                "hint": "Select this for a bed set up in the Floyd Home app.",
+            },
+            {
+                "type": BED_TYPE_ISLEEP,
+                "label": "ISleep app",
+                "description": "ISleep bases with an explicit product and room ID",
+                "hint": "Select this for a bed set up in the ISleep app.",
+            },
+        ],
     },
     "keeson": {
         "display": "Keeson",
@@ -641,7 +663,6 @@ SINGLE_TYPE_GROUPS: Final[dict[str, str]] = {
     "comfort_motion": BED_TYPE_COMFORT_MOTION,
     "ergomotion": BED_TYPE_ERGOMOTION,
     "jensen": BED_TYPE_JENSEN,
-    "kaidi": BED_TYPE_KAIDI,
     "linak": BED_TYPE_LINAK,
     "motosleep": BED_TYPE_MOTOSLEEP,
     "octo": BED_TYPE_OCTO,

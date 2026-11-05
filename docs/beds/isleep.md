@@ -9,7 +9,7 @@
 - ISleep bases (Kaidi OEM) advertising one of eight products: 129, 130, 131,
   132, 133, 134, 142 and 143 (see the
   [Kaidi product table](kaidi.md#apk-backed-product-ids))
-- Selected only through the explicit **ISleep (com.kaidi_test4)** setup profile.
+- Selected only through the explicit **ISleep app (Kaidi, com.kaidi_test4)** setup profile.
   A name, MAC prefix or service UUID alone does not select it.
 
 ## Apps
@@ -165,7 +165,7 @@ entities.
 
 ### Home Assistant setup
 
-Choose **ISleep (com.kaidi_test4)** and confirm its product ID, signed 32-bit
+Choose **ISleep app (Kaidi, com.kaidi_test4)** and confirm its product ID, signed 32-bit
 room ID and advertised actuator descriptor. The profile owns layout, massage,
 feedback and movement timing. A two-address pair keeps these settings per side.
 Adopt existing rooms explicitly; enrollment of fresh mode09 devices is a

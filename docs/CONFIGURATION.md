@@ -325,7 +325,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Jensen (JMC400, LinON Entry) | `jensen` | 4 | 300 ms |
 | Leggett & Platt WiLinke (MlRM) | `leggett_wilinke` | 10 | 110 ms |
 | Limoss / Stawett (TEA encrypted) | `limoss` | 12 | 80 ms |
-| Linak (Bed Control and Performance Series apps): Performance Series (legacy, 300 ms hold cadence) | `linak` `performance_legacy` | 4 | 300 ms |
+| Linak (Bed Control, Bed Connect and Performance Series apps): Performance Series (legacy, 300 ms hold cadence) | `linak` `performance_legacy` | 4 | 300 ms |
 | Logicdata SimplicityFrame (SILVERmotion) | `logicdata` | 10 | 30 ms |
 | Malouf (FFE5 protocol) | `malouf_legacy_okin` | 7 | 150 ms |
 | Malouf Base / Lucid Base apps | `malouf_app` | 7 | 150 ms |

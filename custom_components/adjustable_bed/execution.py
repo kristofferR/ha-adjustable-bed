@@ -31,10 +31,26 @@ class ExecutionCapabilities:
     """Measured motion one frame buys. None when unproven."""
     concurrent: frozenset[str] = field(default_factory=frozenset)
     """Motor resources that may run in one window. Empty means serialized."""
+    hold_controls: frozenset[str] | None = None
+    """Held controls the hold is scoped to; None scopes it to the whole controller.
+
+    A set admits renewable holds only on these ``hold_control`` controls. Every
+    other held control and every motor route keeps its finite behavior, for a
+    controller whose held buttons also carry gestures a lease would change.
+    """
 
     def __post_init__(self) -> None:
         if self.hold is not None and self.hold not in HOLD_MODES:
             raise ValueError(f"Unknown hold mode {self.hold!r}")
+        if self.hold_controls is not None:
+            if self.hold is None:
+                raise ValueError("hold_controls scopes a hold; declare hold first")
+            if not isinstance(self.hold_controls, frozenset):
+                raise TypeError("hold_controls must be a frozenset of held controls")
+            if not self.hold_controls or any(
+                not isinstance(item, str) or not item for item in self.hold_controls
+            ):
+                raise ValueError("hold_controls must name at least one held control")
         if self.sustain_ms is not None:
             if self.hold is None:
                 raise ValueError("sustain_ms describes a hold; declare hold first")
@@ -54,6 +70,12 @@ class ExecutionCapabilities:
             return None
         return LATCHED_HOLD_CEILING_MS if self.hold == "latched" else HOLD_CEILING_MS
 
+    def hold_for(self, control: str | None = None) -> HoldMode | None:
+        """The hold mode a lease may use on held ``control``, or on a motor route when None."""
+        if self.hold_controls is not None and control not in self.hold_controls:
+            return None
+        return self.hold
+
     @property
     def declared(self) -> frozenset[str]:
         """Names of the capabilities this value declares, for evidence checks."""
@@ -63,6 +85,7 @@ class ExecutionCapabilities:
                 ("hold", self.hold),
                 ("sustain_ms", self.sustain_ms),
                 ("concurrent", self.concurrent),
+                ("hold_controls", self.hold_controls),
             )
             if value
         )

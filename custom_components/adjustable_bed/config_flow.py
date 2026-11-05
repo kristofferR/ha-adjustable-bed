@@ -829,7 +829,8 @@ def _apply_setup_bed_type_choice(
 
     An app entry always sets its own variant. A generic entry starts from the
     route detection or brand selection suggested for that bed type, else from
-    its automatic route, and the route step may refine it.
+    its automatic route, and the route step may refine it. It never inherits
+    the variant of an app entry the form was drawn for.
     """
     choice = user_input.get(CONF_BED_TYPE)
     if not isinstance(choice, str):
@@ -841,7 +842,10 @@ def _apply_setup_bed_type_choice(
         return
     if CONF_PROTOCOL_VARIANT in user_input:
         return
-    if bed_type in (default_bed_type, BED_TYPE_AUTO_DETECT):
+    if bed_type in (default_bed_type, BED_TYPE_AUTO_DETECT) and (
+        bed_type,
+        default_variant,
+    ) not in APP_VARIANT_CHOICES:
         user_input[CONF_PROTOCOL_VARIANT] = default_variant
         return
     routes = _setup_routes(bed_type)
@@ -4587,6 +4591,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         requested_variant = user_input.get(CONF_PROTOCOL_VARIANT, shown_variant or VARIANT_AUTO)
         owned = hidden_generic_fields(requested, requested_variant)
         if not hidden_generic_fields(shown_bed_type, shown_variant) - owned:
+            # An app entry's variant is the route it chose, not a stale field.
+            if (requested, requested_variant) in APP_VARIANT_CHOICES:
+                owned -= {CONF_PROTOCOL_VARIANT}
             for key in owned:
                 user_input.pop(key, None)
             return None
