@@ -63,6 +63,7 @@ from .const import (
     BED_TYPE_SOLACE,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
+    BED_TYPE_STARCODE_M1X12,
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_TRANQUIL,
     BED_TYPE_ZSERIES,
@@ -117,15 +118,27 @@ class ActuatorGroup(TypedDict):
 ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
 
     "starcode_abm5_4": {
-        "display": "AdjustableM5X4 app",
-        "description": "Explicit app profile with independent command and Bluetooth selectors",
+        "display": "StarCode apps",
+        "description": "AdjustableM5X4, AdjustableM5X5 and Adjustable Comfort M1X12 apps",
         "variants": [
             {
                 "type": BED_TYPE_STARCODE_ABM5_4,
                 "label": "AdjustableM5X4",
                 "description": "Two control axes, one memory and app-specific massage/light controls",
                 "hint": "Choose the app profile explicitly; shared Bluetooth names do not identify it.",
-            }
+            },
+            {
+                "type": BED_TYPE_STARCODE_M5X5,
+                "label": "AdjustableM5X5",
+                "description": "CB25, F23 and kneading beds with independently addressed lifts",
+                "hint": "Select the app class and exact Bluetooth name in the next step",
+            },
+            {
+                "type": BED_TYPE_STARCODE_M1X12,
+                "label": "Adjustable Comfort M1X12",
+                "description": "CB25, F23 and kneading beds with up to two ELEVATE accessories",
+                "hint": "Select the app class and exact Bluetooth name in the next step",
+            },
         ],
     },
     "glideaway_motion": {
@@ -154,11 +167,11 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
     },
     "customatic": {
         "display": "Customatic apps",
-        "description": "Clarity, Jerome's C, Remedy and Z-Series app profiles",
+        "description": "Clarity (Rize Clarity), Jerome's C, Remedy (Rize Remedy) and Z-Series apps",
         "variants": [
             {
                 "type": BED_TYPE_CUSTOMATIC_CLARITY,
-                "label": "Clarity",
+                "label": "Clarity (Rize Clarity)",
                 "description": "Two motors, memory controls and light toggle",
                 "hint": "Choose the Clarity app shown on your phone.",
             },
@@ -170,7 +183,7 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
             },
             {
                 "type": BED_TYPE_CUSTOMATIC_REMEDY,
-                "label": "Remedy",
+                "label": "Remedy (Rize Remedy)",
                 "description": "Back, legs and lumbar, memory controls and light toggle",
                 "hint": "Choose the Remedy app shown on your phone.",
             },

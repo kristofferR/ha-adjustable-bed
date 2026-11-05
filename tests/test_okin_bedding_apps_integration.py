@@ -32,6 +32,8 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.detection import (
+    FAMILY_STEP_ROUTES,
+    HIDDEN_APP_CHOICES,
     bed_type_choice,
     detect_bed_type,
     get_bed_type_options,
@@ -60,7 +62,12 @@ async def test_explicit_profile_is_offline_constructible_and_never_auto_detected
     assert controller.protocol_diagnostics["cst_profile"] == profile
     assert controller.memory_slot_count == slots
     assert get_actuator_group_for_bed_type(bed_type) == group
-    assert bed_type_choice(bed_type, variant) in {option["value"] for option in get_bed_type_options()}
+    # Behind its family's row, which names the app.
+    assert bed_type_choice(bed_type, variant) in FAMILY_STEP_ROUTES | HIDDEN_APP_CHOICES
+    assert any(
+        ("Tranquil" if bed_type == BED_TYPE_TRANQUIL else "Z-Series") in option["label"]
+        for option in get_bed_type_options()
+    )
     assert _motor_count_options(bed_type) == [2]
     assert _normalize_fixed_motor_count(bed_type, "auto", 4) == 2
     assert get_motor_pulse_defaults(bed_type) == (10, 100)

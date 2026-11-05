@@ -49,6 +49,9 @@ async def test_every_setup_route_collects_explicit_C_D_without_requesting_bond(
             const.CONF_PREFERRED_ADAPTER: "auto",
         }
     )
+    # The StarCode apps' row asks which app first.
+    assert result["step_id"] == "starcode_family"
+    result = await flow.async_step_starcode_family({"choice": "m5x4"})
     assert result["step_id"] == "starcode_app"
     fields = {marker.schema for marker in result["data_schema"].schema}
     assert fields == {const.CONF_STARCODE_COMMAND_SELECTOR, const.CONF_STARCODE_TRANSPORT_SELECTOR}

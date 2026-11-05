@@ -76,4 +76,6 @@ release is recorded per family below, separately from the code change.
 | Family | Guided change | Connection check | Physical validation |
 |--------|---------------|------------------|---------------------|
 | Vibradorm, VMAT, Caresse Diamant, Werkmeister, V-MAT Basic | Yes | Endpoint roles, VMAT native bond | Pending user reports after release |
+| Customatic Clarity, Jerome's C, Remedy | Yes | The one command characteristic | Pending user reports after release |
+| Customatic Z-Series, Jordan's Serenity and Tranquil | Yes | The command and notification characteristics | Pending user reports after release |
 | Sleepy's Elite app, BOX15, BOX24, BOX25 | Yes | The control box's setup and response characteristics; each receiver route's command characteristic | Pending user reports after release |
