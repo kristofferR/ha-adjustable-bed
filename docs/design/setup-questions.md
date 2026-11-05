@@ -103,8 +103,9 @@ say ([#745](https://github.com/kristofferR/ha-adjustable-bed/issues/745)):
 - **The label** the refusal names, and whether every variant of the bed type is
   a side's own choice (`variant_owned`).
 - **Settings no question asks:** a detected product type or Bluetooth name,
-  values an action saves (such as the Serta MP memory targets), a model's
-  derived motors and massage, and the app key a family step picks.
+  values an action saves (such as the Serta MP memory targets), the motors and
+  massage a model, handset, layout or control box derives, and the app key a
+  family step picks.
 
 `tests/test_app_profiles.py` checks that every declared question belongs to its
 side and that the table repeats none of them.
