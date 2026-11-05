@@ -9,16 +9,11 @@ from typing import cast
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
-
-# HA 2026.9 defines this here; 2026.10 re-exports it from const.
-from homeassistant.components.light import (
-    ATTR_RGB_COLOR,  # pyright: ignore[reportPrivateImportUsage]
-    ATTR_RGBW_COLOR,  # pyright: ignore[reportPrivateImportUsage]
-)
+from homeassistant.components.light import ATTR_RGB_COLOR, ATTR_RGBW_COLOR
 from homeassistant.components.light.const import ColorMode
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds import octo as octo_module
 from custom_components.adjustable_bed.beds.base import BedController

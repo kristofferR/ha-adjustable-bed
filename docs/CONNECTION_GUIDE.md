@@ -1,7 +1,7 @@
 # Adjustable Bed Connection Guide
 
 This guide explains how to connect your adjustable bed. The integration requires
-Home Assistant 2026.9.0 or newer.
+Home Assistant 2026.11.0 or newer.
 
 ## Understanding Bluetooth Connectivity
 

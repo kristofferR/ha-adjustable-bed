@@ -6,7 +6,7 @@ import pytest
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.storage import Store
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.reverie import ReverieController
 from custom_components.adjustable_bed.beds.reverie_comfort import ReverieComfortRequest

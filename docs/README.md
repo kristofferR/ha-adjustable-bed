@@ -1,7 +1,7 @@
 # Documentation
 
 These guides describe `main`. The integration requires **Home Assistant
-2026.9.0+**. The release version lives in
+2026.11.0+**. The release version lives in
 [`manifest.json`](../custom_components/adjustable_bed/manifest.json) and
 [`pyproject.toml`](../pyproject.toml).
 

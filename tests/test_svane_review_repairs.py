@@ -7,7 +7,7 @@ import pytest
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.exceptions import ServiceValidationError
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.svane import FEET, HEAD, OLD, OLD_CHAR, UP
 from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow

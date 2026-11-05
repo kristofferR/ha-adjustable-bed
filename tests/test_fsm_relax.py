@@ -17,7 +17,7 @@ from custom_components.adjustable_bed.fsm_relax_state import FsmRelaxSession
 
 async def test_actual_coordinator_drop_immediately_invalidates_owned_session(hass):
     from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import BED_TYPE_FSM_RELAX, CONF_BED_TYPE, DOMAIN
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -53,7 +53,7 @@ async def test_actual_coordinator_drop_immediately_invalidates_owned_session(has
 
 async def test_initializing_disconnect_fails_query_and_rejects_same_client_old_callback(hass):
     from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import BED_TYPE_FSM_RELAX, CONF_BED_TYPE, DOMAIN
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator

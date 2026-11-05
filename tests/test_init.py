@@ -14,7 +14,7 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 # Import enable_custom_integrations fixture
 from custom_components.adjustable_bed import (
@@ -164,7 +164,7 @@ class TestIntegrationSetup:
         hass: HomeAssistant,
         mock_config_entry,
         mock_async_ble_device_from_address,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """Test setup fails on connection timeout."""
@@ -185,7 +185,7 @@ class TestIntegrationSetup:
         hass: HomeAssistant,
         mock_config_entry,
         mock_async_ble_device_from_address,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """A setup timeout must tear down the half-open connection."""
@@ -215,7 +215,7 @@ class TestIntegrationSetup:
         hass: HomeAssistant,
         mock_config_entry,
         mock_async_ble_device_from_address,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """A stalled cleanup disconnect must not block the setup retry."""
@@ -265,7 +265,7 @@ class TestIntegrationSetup:
         self,
         hass: HomeAssistant,
         mock_config_entry,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
         attempts,
         expected,
@@ -293,7 +293,7 @@ class TestIntegrationSetup:
         self,
         hass: HomeAssistant,
         mock_config_entry,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """Test setup fails when connection fails."""
@@ -312,7 +312,7 @@ class TestIntegrationSetup:
         self,
         hass: HomeAssistant,
         mock_config_entry,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """Setup-retry entries should still have a device registry target for diagnostics."""
@@ -334,7 +334,7 @@ class TestIntegrationSetup:
     async def test_setup_gen2_connect_failure_creates_pairing_repair(
         self,
         hass: HomeAssistant,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """An unbonded Gen2 timeout gets the guided pairing repair from #385."""
@@ -373,7 +373,7 @@ class TestIntegrationSetup:
     async def test_setup_gen2_connect_failure_with_bond_skips_pairing_repair(
         self,
         hass: HomeAssistant,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """A bonded Gen2 entry that cannot connect is a transient failure, not
@@ -412,7 +412,7 @@ class TestIntegrationSetup:
     async def test_setup_gen2_failure_after_bond_skips_pairing_repair(
         self,
         hass: HomeAssistant,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """A bond established during this setup attempt must be observed dynamically."""
@@ -465,7 +465,7 @@ class TestIntegrationSetup:
     async def test_setup_non_gated_pairing_bed_connect_failure_skips_repair(
         self,
         hass: HomeAssistant,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """Ordinary pairing-required beds (e.g. Okin CST) keep the existing
@@ -503,7 +503,7 @@ class TestIntegrationSetup:
     async def test_setup_entry_loads_diagnostic_device_without_connection(
         self,
         hass: HomeAssistant,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """Diagnostic entries should still load so they can be targeted by actions."""
@@ -808,7 +808,7 @@ class TestIntegrationUnload:
         enable_custom_integrations,
     ):
         """Test services are kept when other entries remain."""
-        from pytest_homeassistant_custom_component.common import MockConfigEntry
+        from pytest_homeassistant.common import MockConfigEntry
 
         # Set up first entry
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
@@ -1120,12 +1120,12 @@ class TestServices:
         self,
         hass: HomeAssistant,
         mock_config_entry,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
         tmp_path: Path,
     ):
         """Support bundles should still target devices whose entry is in SETUP_RETRY."""
-        del mock_bluetooth_adapters, enable_custom_integrations
+        del mock_bluetooth_api, enable_custom_integrations
         from homeassistant.helpers import device_registry as dr
 
         with patch(

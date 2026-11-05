@@ -10,7 +10,7 @@ blueprint:
   domain: script
   source_url: https://github.com/kristofferR/ha-adjustable-bed/blob/main/blueprints/script/adjustable_bed/section_control.yaml
   homeassistant:
-    min_version: "2026.9.0"
+    min_version: "2026.11.0"
   input:
     section:
       name: Bed section

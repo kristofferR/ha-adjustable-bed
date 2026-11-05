@@ -8,7 +8,7 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.setup import async_setup_component
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.command_scheduler import CommandKind, current_command_context
 from custom_components.adjustable_bed.const import DOMAIN
@@ -19,6 +19,7 @@ from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordin
 from custom_components.adjustable_bed.paired_devices import child_device_info
 from custom_components.adjustable_bed.services import async_register_services
 
+from .entry_entities import async_add_entry_entities
 from .test_cluster033 import coordinator as transport
 
 LOCAL = bytes.fromhex("e5fe175001008034")
@@ -203,7 +204,7 @@ async def test_serta_factory_notifications_publish_calibrated_cover_states(
     covers = _cover_entities_for(hass, coord)
     for cover in covers:
         cover.entity_id = "cover.repair_" + cover.entity_description.key
-    await hass.data["cover"].async_add_entities(covers)
+    await async_add_entry_entities(hass, coord.entry, "cover", covers)
     assert {s.key: s.max_angle for s in ctrl.motor_control_specs} == ctrl.motor_max_angles
     assert {
         c.entity_description.key: c.entity_description.max_angle for c in covers

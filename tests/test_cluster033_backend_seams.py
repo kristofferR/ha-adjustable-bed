@@ -17,6 +17,7 @@ from custom_components.adjustable_bed.codec import keeson as codec
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.services import async_register_services
 
+from .entry_entities import async_add_entry_entities
 from .test_cluster033_hold_admission import _connected_pair, _target
 
 ZERO = bytes.fromhex("e5fe160000000006")
@@ -252,7 +253,7 @@ async def _published_buttons(hass, monkeypatch):
     entities = _combined_motor_buttons_for(pair, list(pair.children.values()))
     for entity in entities:
         entity.entity_id = f"button.current_{entity._motor_key}_{entity._direction}"
-    await hass.data["button"].async_add_entities(entities)
+    await async_add_entry_entities(hass, pair.entry, "button", entities)
     return pair, parent, children, triples, entities
 
 

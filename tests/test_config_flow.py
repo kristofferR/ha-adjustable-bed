@@ -27,7 +27,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import config_validation as cv
 from homeassistant.setup import async_setup_component
 from probatio import to_field_list
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.address_lock import async_get_connect_lock
 from custom_components.adjustable_bed.bluetooth_bond import (
@@ -3509,11 +3509,11 @@ class TestUserFlow:
         self,
         hass: HomeAssistant,
         mock_bluetooth_service_info: BluetoothServiceInfoBleak,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """Retrying entries should surface recovery instructions instead of disappearing."""
-        del mock_bluetooth_adapters, enable_custom_integrations
+        del mock_bluetooth_api, enable_custom_integrations
         existing_entry = MockConfigEntry(
             domain=DOMAIN,
             title="Retrying Bed",

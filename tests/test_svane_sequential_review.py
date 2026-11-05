@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.exceptions import HomeAssistantError
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.svane import SvaneController
 from custom_components.adjustable_bed.const import (

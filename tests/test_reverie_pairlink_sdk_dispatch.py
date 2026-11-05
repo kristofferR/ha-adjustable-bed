@@ -303,7 +303,7 @@ async def test_real_coordinator_exhausted_connect_failure_projects_library6(
     mock_establish_connection,
 ) -> None:
     from bleak.exc import BleakError
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.beds.reverie_pairlink import ReveriePairlinkController
     from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import (

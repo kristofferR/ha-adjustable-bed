@@ -7,7 +7,7 @@ import pytest
 from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.const import (
     BED_TYPE_FURNIMOVE,

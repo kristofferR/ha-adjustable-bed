@@ -367,7 +367,7 @@ async def test_held_named_preset_and_chord_use_same_frames_without_invented_save
 @pytest.mark.parametrize("profile", ESHINE_OKIN_PROFILES)
 async def test_factory_and_manual_selection(hass, profile):
     from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
     from custom_components.adjustable_bed.const import CONF_BED_TYPE, DOMAIN
@@ -411,7 +411,7 @@ async def ha_target(hass):
     from homeassistant.config_entries import ConfigEntryState
     from homeassistant.const import CONF_ADDRESS, CONF_NAME
     from homeassistant.helpers import device_registry as dr
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed import services
     from custom_components.adjustable_bed.const import CONF_BED_TYPE, DOMAIN

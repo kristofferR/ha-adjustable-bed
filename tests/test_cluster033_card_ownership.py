@@ -11,6 +11,7 @@ from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
 from custom_components.adjustable_bed.paired_coordinator import PairedSideProxy
 
+from .entry_entities import async_add_entry_entities
 from .test_cluster033_hold_admission import _connected_pair
 
 
@@ -45,7 +46,7 @@ async def _cover_pair(hass, monkeypatch):
         )
         cover.entity_id = f"cover.card_{side}"
         covers[side] = cover
-    await hass.data["cover"].async_add_entities(list(covers.values()))
+    await async_add_entry_entities(hass, pair.entry, "cover", covers.values())
     return pair, parent, children, triples, starts, covers
 
 
