@@ -934,7 +934,7 @@ def _bed_type_selector(
     """Return the bed-type selector, keeping a default the list does not offer."""
     options = get_bed_type_options()
     if show_saved_id:
-        # The StarCode and Richmat MH apps and the Reverie and Sleep Number
+        # The StarCode and Richmat apps and the Reverie and Sleep Number
         # receivers have no guided change, so Configure lists each by its own
         # label; setup asks behind the family row.
         unguided = {
@@ -943,12 +943,25 @@ def _bed_type_selector(
             *(bed_type for bed_type, _service in _SLEEP_NUMBER_ROUTES.values()),
             *RICHMAT_MH_BED_TYPES,
         }
+        # The classic Richmat apps are app rows, each with the app's own label.
+        unguided_apps = {
+            bed_type_choice(BED_TYPE_CLUSTER018, app): APP_VARIANT_CHOICES[BED_TYPE_CLUSTER018, app]
+            for app in CLUSTER018_APP_NAMES
+        }
         options = sorted(
             [
-                *(option for option in options if option["value"] not in unguided),
+                *(
+                    option
+                    for option in options
+                    if option["value"] not in unguided and option["value"] not in unguided_apps
+                ),
                 *(
                     SelectOptionDict(value=bed_type, label=bed_type_label(bed_type))
                     for bed_type in unguided
+                ),
+                *(
+                    SelectOptionDict(value=value, label=label)
+                    for value, label in unguided_apps.items()
                 ),
             ],
             key=lambda option: option["label"].lower(),

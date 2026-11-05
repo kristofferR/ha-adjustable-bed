@@ -336,3 +336,29 @@ async def test_an_mh_app_from_the_brand_list_reaches_its_model_question(
         "model_vorm",
     )
 
+
+async def test_configure_switches_a_remote_entry_to_a_classic_app(hass):
+    from custom_components.adjustable_bed.cluster018_models import MODEL_CHOICES
+
+    entry = entry_for(hass, **{const.CONF_RMCONTROL_PRODUCT: ""})
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass, flow.handler = hass, entry.entry_id
+    form = await flow.async_step_settings()
+    selector = form["data_schema"].schema[fields(form)[const.CONF_BED_TYPE]]
+    # Each classic app keeps its own label in Configure's list.
+    choice = selector("Forty Winks")
+    assert choice == "richmat_classic_apps:fortywinks"
+    form = await flow.async_step_settings({const.CONF_BED_TYPE: choice})
+    assert const.CONF_PRODUCT_TYPE in fields(form)
+    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_RICHMAT
+    layout = next(
+        code for code in MODEL_CHOICES["fortywinks"] if code not in ("TEST", "RMCS", "ZRS6")
+    )
+    with patch.object(hass.config_entries, "async_schedule_reload"):
+        result = await flow.async_step_settings({const.CONF_PRODUCT_TYPE: layout})
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert (entry.data[const.CONF_BED_TYPE], entry.data[const.CONF_PROTOCOL_VARIANT]) == (
+        const.BED_TYPE_CLUSTER018,
+        "fortywinks",
+    )
+    assert entry.data[const.CONF_PRODUCT_TYPE] == layout
