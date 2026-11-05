@@ -1031,3 +1031,19 @@ product. The explicit profile owns its axes, massage/light capabilities and
 for sustained presets. Each side of a two-address pair keeps its own profile.
 Single-address split controls are unavailable. See the
 [guide](beds/eshine-okin.md) and [dispositions](apk-analysis/dispositions/row122-eshine.md).
+
+## Classic Richmat app profiles
+
+Choose Avocado Eco Base, CoasterSleep, Forty Winks, Milemont or Superior by app
+name, then choose the exact four-character layout. Each app has its own layout
+list. A shared UUID or a similarly named remote does not select that profile.
+
+- `protocol_variant`: the selected app.
+- `product_type`: a layout shipped in that app.
+- `cluster018_third_service`: explicit opt-in to the app’s third-service property
+  fallback when none of its fixed services is present.
+- Pulse count bounds a native movement; timing and capabilities come from the
+  selected app layout.
+
+Native selectors expose only that layout's app modes, memory-arm, head/foot and
+Hold/Release choices. See the [protocol guide](beds/richmat-classic-apps.md).

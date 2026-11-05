@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from .bf_cherish import BfCherishController as BfCherishController
     from .casper_base import CasperBaseController as CasperBaseController
     from .casper_sleep import CasperSleepController as CasperSleepController
+    from .cluster018 import Cluster018Controller as Cluster018Controller
     from .comfort_enhancements import ComfortEnhancementsController as ComfortEnhancementsController
     from .comfort_motion import ComfortMotionController as ComfortMotionController
     from .coolbase import CoolBaseController as CoolBaseController
@@ -121,6 +122,7 @@ _EXPORT_MODULES = {
     'SertaMPRemoteController': 'serta_mp_remote',
     'OmazzAdjustoIIIController': 'omazz_adjusto_iii',
     'ErgomotionAppController': 'ergomotion_app',
+    'Cluster018Controller': 'cluster018',
     'Ergomotion4Controller': 'ergomotion4',
     'RowControlController': 'row_control',
     'ErgoSlimController': 'ergo_slim',
@@ -213,6 +215,7 @@ __all__ = [
     'SertaMPRemoteController',
     'OmazzAdjustoIIIController',
     'ErgomotionAppController',
+    'Cluster018Controller',
     'Ergomotion4Controller',
     'RowControlController',
     'ErgoSlimController',

@@ -252,6 +252,7 @@ export function bedEntitiesForDevice(
         if (key === "eshine_okin_massage") { (bed.massage.states ??= []).push(id); break; }
         if (key === "eshine_okin_alarm") { bed.utilityStates?.push(id); break; }
         if (key.startsWith("goodvibe_")) { bed.utilityStates?.push(id); break; }
+        if (key === "cluster018_status") { bed.utilityStates?.push(id); break; }
         if (key.startsWith("doublesleep_")) {
           if (/^doublesleep_(massage_|sonic_)/.test(key)) (bed.massage.states ??= []).push(id);
           else if (key === "doublesleep_light") (bed.lights.states ??= []).push(id);
@@ -455,7 +456,7 @@ export function bedEntitiesForDevice(
         } else if (key === "richmat_mh_preset") {
           // App-labelled presets share one translation key; keep each entity.
           presetMap.set(`${key}:${id}`, id);
-        } else if (key === "hjbed_action" || key === "goodvibe_action") {
+        } else if (key === "hjbed_action" || key === "goodvibe_action" || key === "cluster018_action" || key === "cluster018_release") {
           bed.utility.push(id);
         } else if (key.startsWith("richmat_mh_")) {
           // Saves, app actions, the smart set lock and detection controls.
@@ -577,7 +578,7 @@ export function bedEntitiesForDevice(
           (bed.utilitySelects ??= []).push(id);
           break;
         }
-        if (key === "goodvibe_massage_timer" || key === "goodvibe_light_duration" || key === "hjbed_layout" || key === "motion_bed_active_module" || key.startsWith("okin_app_"))
+        if (key.startsWith("cluster018_") || key === "goodvibe_massage_timer" || key === "goodvibe_light_duration" || key === "hjbed_layout" || key === "motion_bed_active_module" || key.startsWith("okin_app_"))
           (bed.utilitySelects ??= []).push(id);
         else if (key === "reverie_stk_side")
           (bed.utilitySelects ??= []).push(id);

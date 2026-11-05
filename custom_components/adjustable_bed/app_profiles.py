@@ -155,6 +155,7 @@ _ALWAYS_MASSAGE: Final = frozenset({CONF_HAS_MASSAGE})
 _NECTAR_MOVE: Final = _FIXED_LAYOUT | _ALWAYS_MASSAGE | {CONF_DISABLE_ANGLE_SENSING}
 
 _HIDDEN_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
+    "richmat_classic_apps": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "ergomotion_4": _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     "gmmotor": GENERIC_FIELDS,
     "gmmotor_sleep_mm": GENERIC_FIELDS,
@@ -273,6 +274,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "casper_sleep_sxb": SideProfile("Casper Base SXB sensor"),
     BED_TYPE_COMFORT_ENHANCEMENTS: SideProfile("Comfort Enhancements", variant_owned=True),
     BED_TYPE_GOODVIBE: SideProfile("Good Vibe Sleep", variant_owned=True),
+    "richmat_classic_apps": SideProfile("Classic Richmat apps", frozenset({CONF_PRODUCT_TYPE, "cluster018_third_service"}), variant_owned=True),
     BED_TYPE_HJBED: SideProfile("HJBed", variant_owned=True),
     BED_TYPE_GLIDEAWAY_MOTION: SideProfile("Glideaway Motion", variant_owned=True),
     BED_TYPE_ISLEEP: SideProfile("ISleep", frozenset({CONF_PRODUCT_TYPE, "kaidi_room_id", "kaidi_sofa_acu_no"})),

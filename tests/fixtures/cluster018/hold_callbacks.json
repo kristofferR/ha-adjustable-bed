@@ -1,0 +1,1072 @@
+[
+  {
+    "app": "avocadoecobase",
+    "layout": "APRM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "coastersleep",
+    "layout": "APRM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "fortywinks",
+    "layout": "APRM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "milemont",
+    "layout": "APRM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "superior",
+    "layout": "APRM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "avocadoecobase",
+    "layout": "APRM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "coastersleep",
+    "layout": "APRM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "fortywinks",
+    "layout": "APRM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "milemont",
+    "layout": "APRM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "superior",
+    "layout": "APRM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "avocadoecobase",
+    "layout": "AQRM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "coastersleep",
+    "layout": "AQRM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "fortywinks",
+    "layout": "AQRM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "milemont",
+    "layout": "AQRM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "superior",
+    "layout": "AQRM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "avocadoecobase",
+    "layout": "AQRM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "coastersleep",
+    "layout": "AQRM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "fortywinks",
+    "layout": "AQRM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "milemont",
+    "layout": "AQRM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "superior",
+    "layout": "AQRM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "avocadoecobase",
+    "layout": "BRRM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2",
+        "btnSnore",
+        "btnTv",
+        "btnZg"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long",
+        "btnSnoreLong",
+        "btnTvLong",
+        "btnZgLong"
+      ],
+      "flat_status": 2,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "coastersleep",
+    "layout": "BRRM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2",
+        "btnSnore",
+        "btnTv",
+        "btnZg"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long",
+        "btnSnoreLong",
+        "btnTvLong",
+        "btnZgLong"
+      ],
+      "flat_status": 2,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "fortywinks",
+    "layout": "BRRM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2",
+        "btnSnore",
+        "btnTv",
+        "btnZg"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long",
+        "btnSnoreLong",
+        "btnTvLong",
+        "btnZgLong"
+      ],
+      "flat_status": 2,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "milemont",
+    "layout": "BRRM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2",
+        "btnSnore",
+        "btnTv",
+        "btnZg"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long",
+        "btnSnoreLong",
+        "btnTvLong",
+        "btnZgLong"
+      ],
+      "flat_status": 2,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "superior",
+    "layout": "BRRM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2",
+        "btnSnore",
+        "btnTv",
+        "btnZg"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long",
+        "btnSnoreLong",
+        "btnTvLong",
+        "btnZgLong"
+      ],
+      "flat_status": 2,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "avocadoecobase",
+    "layout": "BRRM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2",
+        "btnSnore",
+        "btnTv",
+        "btnZg"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long",
+        "btnSnoreLong",
+        "btnTvLong",
+        "btnZgLong"
+      ],
+      "flat_status": 1,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "coastersleep",
+    "layout": "BRRM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2",
+        "btnSnore",
+        "btnTv",
+        "btnZg"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long",
+        "btnSnoreLong",
+        "btnTvLong",
+        "btnZgLong"
+      ],
+      "flat_status": 1,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "fortywinks",
+    "layout": "BRRM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2",
+        "btnSnore",
+        "btnTv",
+        "btnZg"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long",
+        "btnSnoreLong",
+        "btnTvLong",
+        "btnZgLong"
+      ],
+      "flat_status": 1,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "milemont",
+    "layout": "BRRM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2",
+        "btnSnore",
+        "btnTv",
+        "btnZg"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long",
+        "btnSnoreLong",
+        "btnTvLong",
+        "btnZgLong"
+      ],
+      "flat_status": 1,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "superior",
+    "layout": "BRRM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2",
+        "btnSnore",
+        "btnTv",
+        "btnZg"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long",
+        "btnSnoreLong",
+        "btnTvLong",
+        "btnZgLong"
+      ],
+      "flat_status": 1,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "avocadoecobase",
+    "layout": "C2RM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "coastersleep",
+    "layout": "C2RM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "fortywinks",
+    "layout": "C2RM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "milemont",
+    "layout": "C2RM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "superior",
+    "layout": "C2RM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "avocadoecobase",
+    "layout": "C2RM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "coastersleep",
+    "layout": "C2RM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "fortywinks",
+    "layout": "C2RM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "milemont",
+    "layout": "C2RM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "superior",
+    "layout": "C2RM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "avocadoecobase",
+    "layout": "C9RM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "coastersleep",
+    "layout": "C9RM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "fortywinks",
+    "layout": "C9RM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "milemont",
+    "layout": "C9RM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "superior",
+    "layout": "C9RM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "avocadoecobase",
+    "layout": "C9RM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "coastersleep",
+    "layout": "C9RM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "fortywinks",
+    "layout": "C9RM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "milemont",
+    "layout": "C9RM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "superior",
+    "layout": "C9RM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [],
+      "affected_save_ids": [],
+      "flat_status": "NO_BRANCH",
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "avocadoecobase",
+    "layout": "YFRM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long"
+      ],
+      "flat_status": 2,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "coastersleep",
+    "layout": "YFRM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long"
+      ],
+      "flat_status": 2,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "fortywinks",
+    "layout": "YFRM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long"
+      ],
+      "flat_status": 2,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "milemont",
+    "layout": "YFRM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long"
+      ],
+      "flat_status": 2,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "superior",
+    "layout": "YFRM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long"
+      ],
+      "flat_status": 2,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "avocadoecobase",
+    "layout": "YFRM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long"
+      ],
+      "flat_status": 1,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "coastersleep",
+    "layout": "YFRM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long"
+      ],
+      "flat_status": 1,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "fortywinks",
+    "layout": "YFRM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long"
+      ],
+      "flat_status": 1,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "milemont",
+    "layout": "YFRM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long"
+      ],
+      "flat_status": 1,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "superior",
+    "layout": "YFRM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long"
+      ],
+      "flat_status": 1,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "avocadoecobase",
+    "layout": "YGRM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2",
+        "btnSnore",
+        "btnTv",
+        "btnZg"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long",
+        "btnSnoreLong",
+        "btnTvLong",
+        "btnZgLong"
+      ],
+      "flat_status": 2,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "coastersleep",
+    "layout": "YGRM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2",
+        "btnSnore",
+        "btnTv",
+        "btnZg"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long",
+        "btnSnoreLong",
+        "btnTvLong",
+        "btnZgLong"
+      ],
+      "flat_status": 2,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "fortywinks",
+    "layout": "YGRM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2",
+        "btnSnore",
+        "btnTv",
+        "btnZg"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long",
+        "btnSnoreLong",
+        "btnTvLong",
+        "btnZgLong"
+      ],
+      "flat_status": 2,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "milemont",
+    "layout": "YGRM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2",
+        "btnSnore",
+        "btnTv",
+        "btnZg"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long",
+        "btnSnoreLong",
+        "btnTvLong",
+        "btnZgLong"
+      ],
+      "flat_status": 2,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "superior",
+    "layout": "YGRM",
+    "expected": {
+      "setReleaseHold": true,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2",
+        "btnSnore",
+        "btnTv",
+        "btnZg"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long",
+        "btnSnoreLong",
+        "btnTvLong",
+        "btnZgLong"
+      ],
+      "flat_status": 2,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "avocadoecobase",
+    "layout": "YGRM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2",
+        "btnSnore",
+        "btnTv",
+        "btnZg"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long",
+        "btnSnoreLong",
+        "btnTvLong",
+        "btnZgLong"
+      ],
+      "flat_status": 1,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "coastersleep",
+    "layout": "YGRM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2",
+        "btnSnore",
+        "btnTv",
+        "btnZg"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long",
+        "btnSnoreLong",
+        "btnTvLong",
+        "btnZgLong"
+      ],
+      "flat_status": 1,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "fortywinks",
+    "layout": "YGRM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2",
+        "btnSnore",
+        "btnTv",
+        "btnZg"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long",
+        "btnSnoreLong",
+        "btnTvLong",
+        "btnZgLong"
+      ],
+      "flat_status": 1,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "milemont",
+    "layout": "YGRM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2",
+        "btnSnore",
+        "btnTv",
+        "btnZg"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long",
+        "btnSnoreLong",
+        "btnTvLong",
+        "btnZgLong"
+      ],
+      "flat_status": 1,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  },
+  {
+    "app": "superior",
+    "layout": "YGRM",
+    "expected": {
+      "setReleaseHold": false,
+      "affected_recall_ids": [
+        "btnM1",
+        "btnM2",
+        "btnSnore",
+        "btnTv",
+        "btnZg"
+      ],
+      "affected_save_ids": [
+        "btnM1Long",
+        "btnM2Long",
+        "btnSnoreLong",
+        "btnTvLong",
+        "btnZgLong"
+      ],
+      "flat_status": 1,
+      "queue_mode_i_z": "not reset by widget mutation"
+    }
+  }
+]

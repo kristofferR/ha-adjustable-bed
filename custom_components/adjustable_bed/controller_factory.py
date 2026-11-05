@@ -694,6 +694,14 @@ async def create_controller(
         from .beds.eshine_okin import EshineOkinController
         return EshineOkinController(coordinator, profile=protocol_variant or "")
 
+    if bed_type == "richmat_classic_apps":
+        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.cluster018", __package__)
+        from .beds.cluster018 import Cluster018Controller
+        from .cluster018_profiles import load_catalog
+        await coordinator.hass.async_add_executor_job(load_catalog, protocol_variant)
+        return Cluster018Controller(coordinator, device_name=device_name)
+
+
     if bed_type == BED_TYPE_HJBED:
         await coordinator.hass.async_add_import_executor_job(import_module, ".beds.hjbed", __package__)
         from .beds.hjbed import HJBedController
