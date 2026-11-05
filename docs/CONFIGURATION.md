@@ -26,7 +26,8 @@ You can configure the integration in two places:
 ### Initial Setup
 
 During initial setup you choose the bed type, then the options that bed type
-asks for, such as motor count and massage support.
+asks for, such as motor count and massage support. The form shows only the
+fields of the row you choose.
 
 - The bed-type list is searchable: type part of an app, brand or controller
   name. A discovered bed starts on the detected row.
@@ -34,7 +35,9 @@ asks for, such as motor count and massage support.
   choosing its row, or a discovered bed of that family, asks which app or
   remote controls the bed, because a bed's name and Bluetooth services do not
   tell these apps apart. Where offered, the question's keep answer saves the
-  detected route.
+  detected route. The Okin CST, Remacro and StarCode rows ask their app the
+  same way, and the Reverie and Sleep Number rows ask only when the bed's
+  advertised service does not settle the receiver.
 - An app row sets its own route. A bed type with several receiver routes lists
   them in a collapsed **Advanced: receiver route** section, or in a short
   **Receiver route** step (see [Protocol Variants](#protocol-variants)).
@@ -82,8 +85,10 @@ or from the bed's repair. Today this covers the
 [Keeson family](beds/keeson.md#home-assistant-setup), the
 [Solace family](beds/ff_frame.md#home-assistant-setup), the
 [Leggett & Platt family](beds/leggett-platt.md#home-assistant-setup), the
-[Sleepy's Elite family](beds/sleepys.md#home-assistant-setup) and the
-[Customatic and Jordan's apps](beds/okin-nframe.md#customatic-family); more families follow.
+[Sleepy's Elite family](beds/sleepys.md#home-assistant-setup), the
+[Customatic and Jordan's apps](beds/okin-nframe.md#customatic-family), the
+[Malouf / Lucid family](beds/malouf.md#malouf-base--lucid-base-family) and the
+[LOGICDATA family](beds/logicdata.md#detection--setup); more families follow.
 
 1. Choose the app you use, then the layout or remote the app shows. **Keep
    current setup** leaves the entry exactly as it is.

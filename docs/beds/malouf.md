@@ -327,7 +327,9 @@ its exact model. Detection: none, this is an explicit choice.
 - Setup offers the app's packaged model picker (see [Models](#models)). Some
   models are only reachable through the apps' persisted model selection; options
   keep an existing persisted-only model for that same app. The app changes only
-  through Reconfigure, which offers the new app's models.
+  through Reconfigure, which offers the new app's models. An entry of another
+  bed type that Configure switches to the app answers the app and model on one
+  form; it lists every app's models and refuses a model the chosen app lacks.
 - Choose the physical primary/secondary role used in the app. Home Assistant's
   Left/Right names do not prove that role.
 - Automatic transport selection uses the observed Bluetooth name (`X1RM` or

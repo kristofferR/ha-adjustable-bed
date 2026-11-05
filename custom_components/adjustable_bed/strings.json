@@ -452,6 +452,7 @@
           "motion_bed_movement": "Retained movement layout",
           "jensen_pin": "Jensen PIN",
           "disable_angle_sensing": "Disable angle sensing",
+          "malouf_app_profile": "Android app",
           "rmcontrol_product": "RMControl product",
           "rmcontrol_side": "RMControl side",
           "richmat_remote": "Richmat remote"
@@ -497,6 +498,7 @@
           "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count.",
           "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060. Leave it empty to use the default.",
           "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
+          "malouf_app_profile": "Choose the app you use with this bed. Shared Bluetooth identifiers do not identify an app.",
           "rmcontrol_product": "The exact product code RMControl shows for this bed. A similar-looking code doesn't unlock its controls. Choose None to use the Richmat remote controls instead.",
           "rmcontrol_side": "The side selected in RMControl. It picks the side the app's commands address, not a paired bed's left or right in Home Assistant.",
           "richmat_remote": "The Richmat remote code, which picks the remote's buttons, presets and lights. A code the Bluetooth name carries is preselected; use Auto if you don't know it."
@@ -1218,6 +1220,7 @@
           "motion_bed_movement": "Retained movement layout",
           "jensen_pin": "Jensen PIN",
           "disable_angle_sensing": "Disable angle sensing",
+          "malouf_app_profile": "Android app",
           "rmcontrol_product": "RMControl 21.3.7 product",
           "rmcontrol_side": "RMControl side",
           "richmat_remote": "Richmat remote"
@@ -1261,6 +1264,7 @@
           "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count.",
           "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
           "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
+          "malouf_app_profile": "Choose the app you use with this bed. Shared Bluetooth identifiers do not identify an app.",
           "rmcontrol_product": "Choose the exact product code used in RMControl, or None to use the Richmat remote controls. Nordic and WiLinke only; hardware unverified.",
           "rmcontrol_side": "Use the side selected in RMControl. This applies only when an RMControl product is selected.",
           "richmat_remote": "Select the Richmat remote code (use auto if unsure)."
@@ -1323,6 +1327,7 @@
           "motion_bed_movement": "Retained movement layout",
           "jensen_pin": "Jensen PIN",
           "disable_angle_sensing": "Disable angle sensing",
+          "malouf_app_profile": "Android app",
           "rmcontrol_product": "RMControl 21.3.7 product",
           "rmcontrol_side": "RMControl side",
           "richmat_remote": "Richmat remote"
@@ -1366,6 +1371,7 @@
           "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count.",
           "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
           "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
+          "malouf_app_profile": "Choose the app you use with this bed. Shared Bluetooth identifiers do not identify an app.",
           "rmcontrol_product": "Choose the exact product code used in RMControl, or None to use the Richmat remote controls. Nordic and WiLinke only; hardware unverified.",
           "rmcontrol_side": "Use the side selected in RMControl. This applies only when an RMControl product is selected.",
           "richmat_remote": "Select the Richmat remote code (use auto if unsure)."
