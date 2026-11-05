@@ -152,7 +152,7 @@ def test_a_generic_field_the_profile_asks_is_hidden_from_generic_forms():
 
 
 def test_a_saved_route_new_setups_do_not_offer_stays_selectable():
-    code, _motors = SETUP_PROFILES[const.BED_TYPE_OKIN_DOT].questions
+    code = SETUP_PROFILES[const.BED_TYPE_OKIN_DOT].questions[0]
     saved = {const.CONF_BED_TYPE: const.BED_TYPE_OKIN_DOT, const.CONF_PROTOCOL_VARIANT: "90167"}
     assert "90167" in (code.options(saved) or {})
     assert "90167" not in (code.options({const.CONF_BED_TYPE: const.BED_TYPE_OKIN_DOT}) or {})

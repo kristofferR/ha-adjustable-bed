@@ -16,10 +16,13 @@ from custom_components.adjustable_bed.config_flow import (
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.profile_migration import (
+    LEGGETT_FAMILY,
+    OKIN_FAMILY,
     VIBRADORM_FAMILY,
     MigrationSnapshot,
     async_control_changes,
     managed_family,
+    reconfigure_family,
 )
 from custom_components.adjustable_bed.profile_review import (
     carry_profile_review,
@@ -158,6 +161,24 @@ def test_managed_family_covers_either_paired_side():
     }
     assert managed_family(data) is VIBRADORM_FAMILY
     assert managed_family({const.CONF_BED_TYPE: const.BED_TYPE_LINAK}) is None
+
+
+def test_a_route_another_familys_question_chooses_reconfigures_but_keeps_its_review():
+    """Reconfigure asks the question; Repairs keeps the path the review's apps need."""
+    for data, family in (
+        ({const.CONF_BED_TYPE: const.BED_TYPE_OKIN_CST}, OKIN_FAMILY),
+        ({const.CONF_BED_TYPE: const.BED_TYPE_LEGGETT_LP_LEGACY}, LEGGETT_FAMILY),
+        (
+            {
+                const.CONF_BED_TYPE: const.BED_TYPE_RICHMAT,
+                const.CONF_RICHMAT_REMOTE: const.RICHMAT_REMOTE_LP_QRRM,
+            },
+            LEGGETT_FAMILY,
+        ),
+    ):
+        assert reconfigure_family(data) is family
+        assert managed_family(data) is None
+    assert reconfigure_family({const.CONF_BED_TYPE: const.BED_TYPE_RICHMAT}) is None
 
 
 def test_split_carries_an_open_review_and_an_earlier_keep_to_each_bed():

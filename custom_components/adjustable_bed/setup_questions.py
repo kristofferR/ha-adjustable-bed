@@ -46,6 +46,7 @@ from .const import (
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LIMOSS_REMOTE,
+    BED_TYPE_LOGICDATA,
     BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
@@ -63,6 +64,7 @@ from .const import (
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
+    BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPTRACKER,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
@@ -75,6 +77,7 @@ from .const import (
     BED_TYPE_SVANE,
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_TRANQUIL,
+    BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
@@ -148,6 +151,7 @@ from .const import (
     KEESON_VARIANT_AVANTI_BASES,
     KEESON_VARIANT_BEDSENSE_BASES,
     KEESON_VARIANT_DYNASTY_BASES,
+    KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
     KEESON_VARIANT_INNOVA,
     KEESON_VARIANT_MAXCOIL_UNA,
@@ -178,6 +182,7 @@ from .const import (
     VIBRADORM_RESTORED_CONTROLS,
     VIBRADORM_WERKMEISTER_CONTROLS,
     VMATBASIC_PROFILES,
+    bed_type_has_position_feedback,
 )
 
 if TYPE_CHECKING:
@@ -602,6 +607,13 @@ def _motor_counts(bed_type: str) -> Callable[[Mapping[str, Any]], Mapping[Any, s
         return {count: str(count) for count in counts}
 
     return choices
+
+
+def _angle_sensing(bed_type: str, variant: str = VARIANT_AUTO) -> tuple[Question, ...]:
+    """Ask whether to ignore a route's position reports; a route without them asks nothing."""
+    if not bed_type_has_position_feedback(bed_type, variant):
+        return ()
+    return (Question(CONF_DISABLE_ANGLE_SENSING, default=False),)
 
 
 def _furnimove_handsets(data: Mapping[str, Any]) -> Mapping[Any, str]:
@@ -1236,12 +1248,16 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         derive=_furnimove_table,
     ),
     # The remote code picks the buttons and presets; the motor count sizes them.
+    # The Okin row's form is drawn for FurniMove, whose handset table sets
+    # massage and angle sensing, so a remote route asks them here.
     **{
         bed_type: _asking(
             bed_type,
             questions=(
                 Question(CONF_PROTOCOL_VARIANT, _routes(bed_type), "auto"),
                 Question(CONF_MOTOR_COUNT, _motor_counts(bed_type), 2),
+                Question(CONF_HAS_MASSAGE, default=False),
+                *_angle_sensing(bed_type),
             ),
         )
         for bed_type in (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT, BED_TYPE_OKIN_DOT)
@@ -1254,6 +1270,12 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         )
         for variant in _SCREEN_VARIANTS
     },
+    # The one older Keeson remote route with position reports. The family step
+    # resets angle sensing to each route's default, so this route asks it.
+    f"{BED_TYPE_KEESON}:{KEESON_VARIANT_ERGOMOTION}": _asking(
+        f"{BED_TYPE_KEESON}:{KEESON_VARIANT_ERGOMOTION}",
+        questions=_angle_sensing(BED_TYPE_KEESON, KEESON_VARIANT_ERGOMOTION),
+    ),
     # The legacy app's model code, protocol mode and confirmed characteristics.
     BED_TYPE_LEGGETT_LP_LEGACY: _asking(
         BED_TYPE_LEGGETT_LP_LEGACY,
@@ -1265,6 +1287,16 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         ),
         normalize=_lp_legacy_normalize,
         validate=_lp_legacy_errors,
+    ),
+    # The Vibradorm question's legacy setup asks the settings its old row showed:
+    # a form drawn for a detected V-MAT Basic or app setup sets them itself.
+    BED_TYPE_VIBRADORM: _asking(
+        BED_TYPE_VIBRADORM,
+        questions=(
+            Question(CONF_MOTOR_COUNT, _motor_counts(BED_TYPE_VIBRADORM), 2),
+            Question(CONF_HAS_MASSAGE, default=False),
+            *_angle_sensing(BED_TYPE_VIBRADORM),
+        ),
     ),
     # The Vibradorm family step picks the app; each app asks its own controls.
     f"{BED_TYPE_VIBRADORM_APP}@werkmeister": _asking(
@@ -1422,6 +1454,12 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         )
         for bed_type in (BED_TYPE_MALOUF_NEW_OKIN, BED_TYPE_MALOUF_LEGACY_OKIN)
     },
+    # SimplicityFrame sizes its motor controls from the count. The LOGICDATA
+    # row's form is drawn for the apps, whose layout sets it.
+    BED_TYPE_LOGICDATA: _asking(
+        BED_TYPE_LOGICDATA,
+        questions=(Question(CONF_MOTOR_COUNT, _motor_counts(BED_TYPE_LOGICDATA), 2),),
+    ),
     # The Sleepy's family step picks the app or receiver. The app's control box
     # selector sets its routes; it belongs to one physical bed.
     BED_TYPE_SLEEPYS_ELITE_APP: _asking(
@@ -1437,11 +1475,14 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         for bed_type in (BED_TYPE_SLEEPYS_BOX15, BED_TYPE_SLEEPYS_BOX24)
     },
     # BOX25 shows massage only when asked; Auto picks the packet dialect from the
-    # receiver's Device Information.
+    # receiver's Device Information. The Sleepy's row's form is drawn for the
+    # app, which sets the motors and angle sensing, so BOX25 asks them too.
     BED_TYPE_SLEEPYS_BOX25: _asking(
         BED_TYPE_SLEEPYS_BOX25,
         questions=(
+            Question(CONF_MOTOR_COUNT, _motor_counts(BED_TYPE_SLEEPYS_BOX25), 2),
             Question(CONF_HAS_MASSAGE, default=False),
+            *_angle_sensing(BED_TYPE_SLEEPYS_BOX25),
             Question(
                 CONF_PROTOCOL_VARIANT, _routes(BED_TYPE_SLEEPYS_BOX25), "auto", advanced=True
             ),
@@ -1450,10 +1491,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     # The Reverie question confirms the receiver; the model the app shows sets
     # the controls of either one. Nothing detects the model, so the app's own
     # list and its explicit Other fallback are offered, never an automatic one.
+    # Both receivers report positions; the family step resets angle sensing to
+    # the confirmed receiver's default, so each asks it.
     **{
         bed_type: _asking(
             bed_type,
-            questions=(Question(CONF_PROTOCOL_VARIANT, _reverie_models, "Other"),),
+            questions=(
+                Question(CONF_PROTOCOL_VARIANT, _reverie_models, "Other"),
+                *_angle_sensing(bed_type),
+            ),
         )
         for bed_type in (BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND)
     },
@@ -1483,12 +1529,17 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         for bed_type in RICHMAT_MH_BED_TYPES
     },
     # A Fuzion entry controls one side; a standalone BAM/MCR entry exposes both,
-    # so only Fuzion asks. Auto keeps the left side, as before.
+    # so only Fuzion asks. Auto keeps the left side, as before. Both transports
+    # report positions, and each asks angle sensing as Reverie does.
     BED_TYPE_SLEEP_NUMBER: _asking(
         BED_TYPE_SLEEP_NUMBER,
         questions=(
             Question(CONF_PROTOCOL_VARIANT, _routes(BED_TYPE_SLEEP_NUMBER), "auto"),
+            *_angle_sensing(BED_TYPE_SLEEP_NUMBER),
         ),
+    ),
+    BED_TYPE_SLEEP_NUMBER_MCR: _asking(
+        BED_TYPE_SLEEP_NUMBER_MCR, questions=_angle_sensing(BED_TYPE_SLEEP_NUMBER_MCR)
     ),
     # The Limoss Remote app's bed or chair, its local light and massage choices,
     # reversals and artwork theme. The connected device supplies the key layout.

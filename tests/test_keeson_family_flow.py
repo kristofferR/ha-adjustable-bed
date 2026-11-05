@@ -186,10 +186,19 @@ async def test_a_route_change_takes_configures_route_defaults(hass, enable_custo
         result["flow_id"],
         {const.CONF_PROTOCOL_VARIANT: const.KEESON_VARIANT_ERGOMOTION, const.CONF_MOTOR_COUNT: 2},
     )
+    # The Ergomotion route reports positions, so it asks angle sensing, which
+    # starts at the route's default: on.
+    assert result["step_id"] == "profile_questions"
+    sensing = next(
+        marker
+        for marker in result["data_schema"].schema
+        if marker.schema == const.CONF_DISABLE_ANGLE_SENSING
+    )
+    assert sensing.default() is False
+    result = await manager.async_configure(result["flow_id"], {})
     result = await manager.async_configure(result["flow_id"], {"confirm": True})
     assert result["reason"] == "reconfigure_successful"
     assert entry.data[const.CONF_PROTOCOL_VARIANT] == const.KEESON_VARIANT_ERGOMOTION
-    # The Ergomotion route reports positions, so angle sensing turns on.
     assert entry.data[const.CONF_DISABLE_ANGLE_SENSING] is False
 
 

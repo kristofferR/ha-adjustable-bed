@@ -60,7 +60,8 @@ Okin layout, so LP Control on an LP BED receiver keeps the default one.
 
 For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
 [Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed));
-**Keep** leaves the entry as it is. A change to the Okin or Gen2 route pairs the
+**Keep** leaves the entry as it is. An entry on the legacy app or on the L&P
+app's QRRM remote gets the same question. A change to the Okin or Gen2 route pairs the
 bed before the review, as setup does; the MlRM, Richmat and legacy routes switch
 unchecked, as Configure did. A saved `leggett_platt` entry keeps that ID. A
 review lists the added and removed controls before **Apply this change** saves

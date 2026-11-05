@@ -131,7 +131,7 @@ use. Shared names and Bluetooth services never decide it.
 | Adjustable Lite, Simon Li, Heal Every Night or OKIN-Seating app | The app | [Adjustable Lite](#adjustable-lite-profile), [Simon Li, Heal Every Night and OKIN-Seating](#simon-li-heal-every-night-and-okin-seating-profiles) |
 | Purple Smart Base, Member's Mark or Linx / Juna Sleep | Which of them | [Purple](#purple-variant), [Base](#base-basei4i5), [JSON/A00A](#jsona00a-variant-juna-linx-ergo-health) |
 | Cool Base app (with fan) | | [Cool Base](#cool-base) |
-| No app: another Keeson remote route | The route and motor count | Any [Keeson route](#profile-summary), such as KSBT or KSBT03CR |
+| No app: another Keeson remote route | The route and motor count; the Ergomotion route also asks whether to read positions | Any [Keeson route](#profile-summary), such as KSBT or KSBT03CR |
 | I don't know: keep the detected controls | | The detected or chosen route |
 
 An app row in the bed-type list answers the question itself; the one

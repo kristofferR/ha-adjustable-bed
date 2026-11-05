@@ -3720,7 +3720,10 @@ class TestOptionsFlow:
         mock_coordinator_connected,
         motor_count: int,
     ) -> None:
-        """The frontend receives string selections while storage keeps integers."""
+        """A text selection from the frontend is saved as an integer.
+
+        The legacy route asks its motor count as a declared question.
+        """
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="VMAT",
@@ -3741,8 +3744,8 @@ class TestOptionsFlow:
         initial = await _open_options_form(hass, entry.entry_id)
         serialized = to_field_list(initial["data_schema"], custom_serializer=cv.custom_serializer)
         field = next(item for item in serialized if item["name"] == CONF_MOTOR_COUNT)
-        assert field["default"] == str(motor_count)
-        assert field["options"] == [(str(count), str(count)) for count in (2, 3, 4)]
+        assert field["default"] == motor_count
+        assert field["options"] == [(count, str(count)) for count in (2, 3, 4)]
 
         saved = await hass.config_entries.options.async_configure(
             initial["flow_id"], {CONF_MOTOR_COUNT: str(motor_count)}
@@ -3756,7 +3759,7 @@ class TestOptionsFlow:
         marker = next(
             marker for marker in reopened["data_schema"].schema if marker.schema == CONF_MOTOR_COUNT
         )
-        assert marker.default() == str(motor_count)
+        assert marker.default() == motor_count
 
     async def test_leggett_okin_options_restore_motor_count_and_hide_positions(
         self,

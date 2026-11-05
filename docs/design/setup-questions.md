@@ -53,6 +53,17 @@ returns.
 - Setup asks every declared question. A family step (see
   [Guided setup changes](guided-setup-changes.md)) chooses the app first, then
   hands the staged route to `profile_questions`.
+- A family row's form is drawn for one route, and the family step resets angle
+  sensing and the pulse settings to the chosen route's defaults. A route the
+  question can choose therefore declares each generic field its own old row
+  showed that its profile does not set: motor count when it offers several,
+  massage when its controls depend on it, and angle sensing when it reports
+  positions. Pulse count and delay keep each route's defaults and stay in
+  Configure. `tests/test_family_setup_fields.py` runs every answer of every
+  family row and of every route a form can be drawn for, and fails when such a
+  field cannot be set. It also saves each answer's route as an entry and fails
+  when that entry cannot reach another route of the question: through
+  Reconfigure for a guided family, or Configure's list outside it.
 - Configure asks the questions that are not the managed family's route keys:
   the app, layout and route change only through the guided change. An entry
   that Configure switches into a managed family from another bed type answers
@@ -86,7 +97,9 @@ a native conditional field on the bed-type field, listing both each row's label
 Defaults cannot follow a changed row. A field whose default depends on the bed
 type (motor count, angle sensing, pulse count and delay) that is left at the
 default it was drawn with saves the chosen profile's default instead; a value
-the user changed is kept. Disconnect after each command asks again instead
+the user changed is kept. Angle sensing the form did not show for the chosen
+row saves that route's own default, so a question that asks it later starts
+there. Disconnect after each command asks again instead
 when the two defaults differ.
 
 Configure conditions owned generic fields, and the L&P app field, on its route
@@ -146,8 +159,9 @@ These steps serve every bed type or route, so no profile owns them.
 |---|---|
 | `jiecang_app` | Layout (the chosen app's), light, transport (Advanced). Owns motor count and pulse delay; fixes angle sensing off. |
 | `furnimove` | Handset ID; the handset table derives the motor count and massage, and angle sensing is off. |
-| `okin_uuid`, `okimat`, `okin_dot` | Remote code (a saved code new setups no longer offer stays this entry's choice) and motor count. |
+| `okin_uuid`, `okimat`, `okin_dot` | Remote code (a saved code new setups no longer offer stays this entry's choice), motor count and massage motors; `okin_uuid` and `okimat` also angle sensing. The family row's form is drawn for FurniMove, which sets massage and angle sensing itself. |
 | `keeson:` ORE apps and INNOVA | The app's 2M, 3M or 4M screen, which is the motor count. |
+| `keeson:ergomotion` | Angle sensing: the one older Keeson remote route that reports positions. |
 | `bedsense` | Layout, or the layout from the Bluetooth name. |
 | `leggett_lp_legacy` | Model code, protocol mode and the confirmed write and notification characteristics (free text). Its `normalize` cleans the code and UUIDs before they are checked. |
 | `vibradorm_app@werkmeister` | Remote (control type). |
@@ -156,7 +170,7 @@ These steps serve every bed type or route, so no profile owns them.
 | `vmatbasic` | Product; for CBI and XT-Box, the floor light level and timer (the exact ranges are checked on save). |
 | `sleepys_elite_app` | Control box selector; the BOX25 selectors derive massage and position feedback. |
 | `sleepys_box15`, `sleepys_box24` | Motor count. |
-| `sleepys_box25` | Massage, and the packet dialect (Advanced). |
+| `sleepys_box25` | Motor count, massage, angle sensing, and the packet dialect (Advanced). The family row's form is drawn for the app, which sets the motors and angle sensing itself. |
 | `gmmotor` | Catalog product, suggested from the raw Bluetooth name, and the app side the product must offer; angle sensing is off. |
 | `isleep` | Product, room ID and actuator descriptor, seeded from the advertisement; the product's axes derive the motor count. A single-address pair keeps a product with separate side controls. |
 | `doublesleep` | Saved app model, seeded from the platform name, and the BLE driver. |
@@ -168,10 +182,13 @@ These steps serve every bed type or route, so no profile owns them.
 | `logicdata_app@phone`, `logicdata_app@tablet` | Command family; the layout for P1 only, since P2 is the middle layout its `normalize` sets; light; transport (Advanced). Owns motor count and pulse delay; fixes angle sensing off. |
 | `logicdata_app@sleep_smart` | Command family, the two-motor standard or split-series layout, light, transport (Advanced). |
 | `logicdata_app` | The app too, for an entry switched in from another bed type with Configure's bed-type list; its combinations are checked on save. |
-| `reverie`, `reverie_nightstand` | The model the app shows (the protocol variant). |
+| `reverie`, `reverie_nightstand` | The model the app shows (the protocol variant), and angle sensing. |
 | `richmat` | The RMControl product, or None for the remote controls; the RMControl side when a product is chosen; otherwise the Richmat remote code; the packet dialect (Advanced). An RMControl product with a Prefix55 or PrefixAA dialect is refused on save. |
 | `richmat_revive`, `richmat_best_mattress`, `richmat_blvd_home`, `richmat_harmony`, `richmat_idealbed` | The app's model (the protocol variant), or Auto from the raw Bluetooth name; a name the app cannot resolve is refused on save. |
-| `sleep_number` | The side this Fuzion entry controls (the protocol variant); BAM/MCR asks nothing, since one entry exposes both sides. |
+| `sleep_number` | The side this Fuzion entry controls (the protocol variant), and angle sensing. |
+| `sleep_number_mcr` | Angle sensing only, since one entry exposes both sides. |
+| `logicdata` | SimplicityFrame's motor count: the family row's form is drawn for the apps, whose layout sets it. |
+| `vibradorm` | The legacy setup's motor count, massage motors and angle sensing: a form drawn for a detected app or V-MAT Basic sets these itself. |
 | `jensen` | The JMC400 box's PIN (free text; empty uses the default), motor count, massage motors and angle sensing: the family row's form is drawn for Svane, which sets these itself. |
 | `svane:jensen_linon` | Motor count. |
 | `limoss_remote` | Bed or chair, light, massage, the four reversals and the optional artwork theme; the connected device supplies its key layout. |

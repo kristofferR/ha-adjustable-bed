@@ -150,7 +150,7 @@ rows of their own. Setup asks which app or receiver runs the bed:
 | Answer | Route |
 |---|---|
 | MFRM Sleepy's Elite app: the control box it lists | The [explicit app profile](#explicit-sleepys-elite-app-profile), then the control box the app shows |
-| BOX25 receiver on the Nordic UART service | [BOX25](#box25-protocol-nordic-uart), then massage and, under **Advanced**, the packet dialect (Auto reads Device Information) |
+| BOX25 receiver on the Nordic UART service | [BOX25](#box25-protocol-nordic-uart), then the motor count, massage, whether to read positions and, under **Advanced**, the packet dialect (Auto reads Device Information) |
 | BOX24 receiver on the OKIN 64-bit service | [BOX24](#box24-protocol-7-byte-packets), then the motor count |
 | BOX15 receiver on the FFE5 service | [BOX15](#box15-protocol-9-byte-packets-with-checksum), then the motor count |
 | An app the profile review suggests | That app's own setup, for example [Adjustable bed (Lumbar)](okin-nframe.md#adjustable-bed-lumbar) on a BOX25 receiver |

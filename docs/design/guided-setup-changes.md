@@ -39,7 +39,12 @@ Vibradorm's role checks and native bond rules stay Vibradorm's.
 ## Entry points
 
 - **Reconfigure** opens the wizard for a family registered in
-  `MANAGED_FAMILIES`.
+  `MANAGED_FAMILIES`. A family also names, in `asks_for`, the routes of other
+  bed types its question chooses that have no guided change of their own
+  (Okin CST for Okin; the legacy L&P app and the L&P app's QRRM remote for
+  L&P), so an entry on one can reach the family's other routes. Configure
+  keeps changing their own settings, and Repairs keeps its usual path for
+  them, since the question may not offer what a review suggests.
 - **Configure** shows one generic **Change app or layout** item for those
   families. Home Assistant cannot hand an options flow to a config flow, so
   the item points to Reconfigure.

@@ -98,8 +98,10 @@ optional feature.
 ### Setup
 
 The bed-type picker has one **Vibradorm: VMAT, Caresse Diamant, Werkmeister,
-V-MAT Basic** entry. Choose **Legacy setup** inside it for this controller, or
-choose the app and matching remote/product. Existing entries keep their saved
+V-MAT Basic** entry. Choose **Legacy setup** inside it for this controller,
+which then asks the motor count, whether massage motors are fitted and whether
+to read positions before pairing, or choose the app and matching
+remote/product. Existing entries keep their saved
 controller until you explicitly reconfigure them. See the
 [guided setup and migration](#guided-setup-and-migration).
 
@@ -107,7 +109,8 @@ controller until you explicitly reconfigure them. See the
 
 The bed-type list has one **Vibradorm: VMAT, Caresse Diamant, Werkmeister,
 V-MAT Basic** choice. Choose the app you use on your phone, then its remote or
-product. **Legacy setup** remains available inside this choice for fresh setup.
+product. **Legacy setup** remains available inside this choice for fresh setup,
+and in Reconfigure an app or V-MAT Basic entry can move back to it.
 The family choice shares setup navigation, while each selected app keeps its
 existing controller, features and Bluetooth pairing requirements.
 

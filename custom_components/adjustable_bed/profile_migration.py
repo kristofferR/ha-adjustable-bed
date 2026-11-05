@@ -55,6 +55,7 @@ from .const import (
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
+    BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
@@ -66,10 +67,12 @@ from .const import (
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_FFE,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
+    BED_TYPE_RICHMAT,
     BED_TYPE_SERENITY,
     BED_TYPE_SERTA,
     BED_TYPE_SLEEPYS_BOX15,
@@ -95,6 +98,7 @@ from .const import (
     CONF_LOGICDATA_APP_TRANSPORT,
     CONF_MALOUF_APP_PROFILE,
     CONF_PROTOCOL_VARIANT,
+    CONF_RICHMAT_REMOTE,
     CONF_SLEEPYS_ELITE_SELECTOR,
     CONF_VIBRADORM_APP_PROFILE,
     CONF_VIBRADORM_CONTROL_TYPE,
@@ -102,6 +106,7 @@ from .const import (
     CONF_VMATBASIC_PROFILE,
     DOMAIN,
     PAIR_SIDES,
+    RICHMAT_REMOTE_LP_QRRM,
     grants_one_connection_per_pairing_window,
     requires_pairing,
 )
@@ -125,6 +130,10 @@ class ManagedFamily:
     # Whether a staged route has exact endpoint or bond requirements, so the
     # change must pass a connection check before it can be confirmed.
     requires_check: Callable[[Mapping[str, Any]], bool]
+    # A route outside ``bed_types`` that the family question also chooses. It
+    # has no guided change of its own, so Reconfigure asks this family's
+    # question for it; Configure still changes its own settings.
+    asks_for: Callable[[Mapping[str, Any]], bool] = lambda _data: False
 
 
 VIBRADORM_FAMILY: Final = ManagedFamily(
@@ -165,6 +174,9 @@ OKIN_FAMILY: Final = ManagedFamily(
     bed_types=_OKIN_ROUTES,
     route_keys=(CONF_FURNIMOVE_REMOTE, CONF_PROTOCOL_VARIANT),
     requires_check=lambda data: data.get(CONF_BED_TYPE) in _OKIN_ROUTES,
+    # The question for an Okin CST bed lists its products first, then these
+    # routes. Configure still picks a CST product.
+    asks_for=lambda data: data.get(CONF_BED_TYPE) == BED_TYPE_OKIN_CST,
 )
 
 # The Keeson controllers fall back across their write roles and never refuse a
@@ -215,6 +227,12 @@ LEGGETT_FAMILY: Final = ManagedFamily(
     )
     and not grants_one_connection_per_pairing_window(
         data.get(CONF_BED_TYPE, ""), data.get(CONF_PROTOCOL_VARIANT)
+    ),
+    # The legacy L&P app and the L&P app on a QRRM remote are answers too.
+    asks_for=lambda data: data.get(CONF_BED_TYPE) == BED_TYPE_LEGGETT_LP_LEGACY
+    or (
+        data.get(CONF_BED_TYPE) == BED_TYPE_RICHMAT
+        and data.get(CONF_RICHMAT_REMOTE) == RICHMAT_REMOTE_LP_QRRM
     ),
 )
 
@@ -333,17 +351,41 @@ MANAGED_FAMILIES: Final[tuple[ManagedFamily, ...]] = (
 )
 
 
-def managed_family(entry_data: Mapping[str, Any]) -> ManagedFamily | None:
-    """Return the guided family of the entry's receiver, or of either paired side."""
-    bed_types = {entry_data.get(CONF_BED_TYPE)}
+def _receivers(entry_data: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    """Return the entry's receiver, or each side of a pair as well."""
+    receivers = [entry_data]
     if is_paired(entry_data):
-        bed_types.update(
-            effective_child_data(entry_data, side).get(CONF_BED_TYPE)
+        receivers.extend(
+            effective_child_data(entry_data, side)
             for side in PAIR_SIDES
             if get_child(entry_data, side) is not None
         )
+    return receivers
+
+
+def managed_family(entry_data: Mapping[str, Any]) -> ManagedFamily | None:
+    """Return the guided family of the entry's receiver, or of either paired side."""
+    bed_types = {receiver.get(CONF_BED_TYPE) for receiver in _receivers(entry_data)}
     return next(
         (family for family in MANAGED_FAMILIES if family.bed_types & bed_types),
+        None,
+    )
+
+
+def reconfigure_family(entry_data: Mapping[str, Any]) -> ManagedFamily | None:
+    """Return the family whose question Reconfigure asks for the entry.
+
+    That is the guided family, or a family whose question also chooses the
+    entry's route (``asks_for``). Repairs and Configure's refusals follow only
+    the guided family, since that question may not offer what they suggest.
+    """
+    return managed_family(entry_data) or next(
+        (
+            family
+            for family in MANAGED_FAMILIES
+            for receiver in _receivers(entry_data)
+            if family.asks_for(receiver)
+        ),
         None,
     )
 

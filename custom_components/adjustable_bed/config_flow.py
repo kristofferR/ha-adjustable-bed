@@ -309,7 +309,6 @@ from .const import (
     OKIN_CST_THREE_MOTOR_VARIANTS,
     OKIN_CST_VARIANTS,
     OKIN_DOT_FURNIMOVE_VARIANTS,
-    ORE_COMFORT_BED_VARIANTS,
     PAIR_MODE_SEPARATE_ADDRESS,
     PAIR_MODE_SINGLE_ADDRESS,
     PAIR_SIDES,
@@ -428,7 +427,7 @@ from .profile_migration import (
     ManagedFamily,
     MigrationSnapshot,
     async_control_changes,
-    managed_family,
+    reconfigure_family,
 )
 from .profiles.keeson import APP_LAYOUTS, APP_NAMES, DEFAULT_LAYOUTS
 from .remacro_discovery import remacro_entry_problem, remacro_manufacturer_data
@@ -2162,8 +2161,6 @@ _KEESON_GROUPS: Final[dict[str, tuple[tuple[str, str | None], ...]]] = {
         (BED_TYPE_KEESON, KEESON_VARIANT_JSON),
     ),
 }
-# The apps whose 2M, 3M or 4M screen sets the motor count (keeson.md).
-_KEESON_SCREEN_APPS: Final = ORE_COMFORT_BED_VARIANTS | {KEESON_VARIANT_INNOVA}
 _KEESON_RESTONIC: Final = frozenset({KEESON_VARIANT_RESTONIC_A, KEESON_VARIANT_RESTONIC_B})
 
 
@@ -2184,6 +2181,13 @@ _LEGGETT_ROUTES: Final[dict[str, tuple[str, Mapping[str, str]]]] = {
     "lp_app_qrrm": (BED_TYPE_RICHMAT, {CONF_RICHMAT_REMOTE: RICHMAT_REMOTE_LP_QRRM}),
     "lp_legacy": (BED_TYPE_LEGGETT_LP_LEGACY, {}),
 }
+# The legacy L&P app's own settings.
+_LP_LEGACY_KEYS: Final = (
+    CONF_LP_LEGACY_MODEL,
+    CONF_LP_LEGACY_MODE,
+    CONF_LP_LEGACY_WRITE_UUID,
+    CONF_LP_LEGACY_READ_UUID,
+)
 # The umbrella ID's variant for each route it can run.
 _LEGGETT_ALIAS_VARIANTS: Final[dict[str, str]] = {
     BED_TYPE_LEGGETT_GEN2: LEGGETT_VARIANT_GEN2,
@@ -2907,7 +2911,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     ) -> ConfigFlowResult:
         """Stage a guided app or layout change without changing the working entry."""
         entry = self._get_reconfigure_entry()
-        family = managed_family(entry.data)
+        family = reconfigure_family(entry.data)
         if family is None:
             return self.async_abort(reason="reconfigure_not_supported")
         if self._migration is None:
@@ -2962,24 +2966,24 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     ) -> ConfigFlowResult:
         """Choose by app or keep the historical setup, never infer a profile."""
         assert self._manual_data is not None
+        # On a legacy entry the legacy setup is the saved route, so it keeps it.
+        on_legacy = (
+            self._migration is not None
+            and self._migration.data.get(CONF_BED_TYPE) == BED_TYPE_VIBRADORM
+        )
         choices = {
             "vmat": "VMAT",
             "caresse": "Caresse Diamant",
             "werkmeister": "Werkmeister",
             "vmatbasic": "V-MAT Basic",
-            "legacy": "Keep current setup" if self._migration is not None else "Legacy setup",
+            "legacy": "Keep current setup" if on_legacy else "Legacy setup",
         }
+        if self._migration is not None and not on_legacy:
+            choices["keep"] = "Keep current setup"
         choice = (user_input or {}).get("app")
         if choice in choices:
-            if choice == "legacy":
-                if self._migration is not None:
-                    return await self.async_step_migration_keep()
-                self._manual_data[CONF_BED_TYPE] = BED_TYPE_VIBRADORM
-                return await (
-                    self.async_step_bluetooth_pairing()
-                    if self._vibradorm_app_bluetooth_pairing
-                    else self.async_step_manual_pairing()
-                )
+            if choice == "keep" or (choice == "legacy" and on_legacy):
+                return await self.async_step_migration_keep()
             self._migration_verified = False
             same_profile = (
                 choice == "vmatbasic" and self._manual_data.get(CONF_BED_TYPE) == BED_TYPE_VMATBASIC
@@ -2991,6 +2995,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 for key in (*VIBRADORM_APP_CONFIG_KEYS, *VMATBASIC_CONFIG_KEYS):
                     self._manual_data.pop(key, None)
                 self._manual_data.pop(CONF_VIBRADORM_APP_METADATA, None)
+            if choice == "legacy":
+                # A form drawn for a detected app or V-MAT Basic, or an app
+                # entry, set none of the legacy settings, so they are asked.
+                self._select_family_route(BED_TYPE_VIBRADORM, None)
+                return await self.async_step_profile_questions()
             if choice == "vmatbasic":
                 self._manual_data[CONF_BED_TYPE] = BED_TYPE_VMATBASIC
                 return await self.async_step_profile_questions()
@@ -3036,7 +3045,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             from .controller_factory import require_logicdata_route
 
             require_logicdata_route(client, data)
-        elif self._migration_family is VIBRADORM_FAMILY:
+        elif self._migration_family is VIBRADORM_FAMILY and data[CONF_BED_TYPE] != BED_TYPE_VIBRADORM:
+            # The legacy controller has no app roles; pairing proves its bond.
             _validate_vibradorm_setup_roles(client, data)
         elif self._migration_family is JIECANG_FAMILY:
             from .beds.jiecang_app import require_app_transport
@@ -3291,10 +3301,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
     async def _async_continue_logicdata_route(self) -> ConfigFlowResult:
         """Ask an app's own command family and layout, then finish the route."""
+        from .setup_questions import setup_profile_for
+
         assert self._manual_data is not None
-        if self._manual_data[CONF_BED_TYPE] == BED_TYPE_LOGICDATA_APP:
+        # The row's form was drawn for the apps, so SimplicityFrame asks its
+        # motor count here too.
+        if (profile := setup_profile_for(self._manual_data)) is not None and profile.questions:
             return await self.async_step_profile_questions()
-        # SimplicityFrame continues to its pairing step; the pump to its check.
+        # The pump continues to its check.
         return await self._async_finish_family_route()
 
     async def async_step_jiecang_family(
@@ -3591,7 +3605,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return await getattr(self, f"async_step_{_APP_SETUP_STEPS[bed_type]}")()
         if variant in _KEESON_RESTONIC:
             return await self.async_step_keeson_restonic()
-        if variant in _KEESON_SCREEN_APPS:
+        return await self._async_ask_keeson_route()
+
+    async def _async_ask_keeson_route(self) -> ConfigFlowResult:
+        """Ask the staged route's declared questions, such as an app screen's motor count."""
+        from .setup_questions import setup_profile_for
+
+        assert self._manual_data is not None
+        if (profile := setup_profile_for(self._manual_data)) is not None and profile.questions:
             return await self.async_step_profile_questions()
         return await self._async_finish_family_route()
 
@@ -3666,7 +3687,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if user_input is not None and user_input.get(CONF_PROTOCOL_VARIANT) in routes:
             self._select_family_route(BED_TYPE_KEESON, user_input[CONF_PROTOCOL_VARIANT])
             data[CONF_MOTOR_COUNT] = int(user_input[CONF_MOTOR_COUNT])
-            return await self._async_finish_family_route()
+            return await self._async_ask_keeson_route()
         return self.async_show_form(
             step_id="keeson_route",
             data_schema=_route_and_motors_schema(data, routes, motor_counts),
@@ -3751,6 +3772,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             if incoming == BED_TYPE_LEGGETT_PLATT and bed_type in _LEGGETT_ALIAS_VARIANTS:
                 # The same route under its saved ID; never rewrite the ID.
                 bed_type, variant = BED_TYPE_LEGGETT_PLATT, _LEGGETT_ALIAS_VARIANTS[bed_type]
+            if bed_type != data[CONF_BED_TYPE]:
+                # The legacy app's and the QRRM remote's own settings mean
+                # nothing on another route.
+                for key in (*_LP_LEGACY_KEYS, CONF_RICHMAT_REMOTE):
+                    data.pop(key, None)
             self._select_family_route(bed_type, variant)
             data.update(extra)
             if CONF_LEGGETT_APP_PROFILE in extra:
@@ -5284,6 +5310,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         bed_type=selected_bed_type,
                         protocol_variant=protocol_variant,
                     )
+                # A form that did not show the field saves the route's own default.
+                disable_angle_sensing = user_input.get(
+                    CONF_DISABLE_ANGLE_SENSING,
+                    not bed_type_has_position_feedback(selected_bed_type, protocol_variant),
+                )
                 _LOGGER.info(
                     "User confirmed bed setup: name=%s, type=%s (detected: %s), variant=%s, address=%s, motors=%s, massage=%s, disable_angle_sensing=%s, adapter=%s, pulse_count=%s, pulse_delay=%s",
                     user_input.get(CONF_NAME, self._discovery_info.name or "Adjustable Bed"),
@@ -5293,10 +5324,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     self._discovery_info.address,
                     user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
                     user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
-                    user_input.get(
-                        CONF_DISABLE_ANGLE_SENSING,
-                        DEFAULT_DISABLE_ANGLE_SENSING,
-                    ),
+                    disable_angle_sensing,
                     preferred_adapter,
                     motor_pulse_count,
                     motor_pulse_delay_ms,
@@ -5308,9 +5336,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     CONF_NAME: user_input.get(CONF_NAME, self._discovery_info.name),
                     CONF_MOTOR_COUNT: user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
                     CONF_HAS_MASSAGE: user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
-                    CONF_DISABLE_ANGLE_SENSING: user_input.get(
-                        CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING
-                    ),
+                    CONF_DISABLE_ANGLE_SENSING: disable_angle_sensing,
                     CONF_PREFERRED_ADAPTER: preferred_adapter,
                     CONF_MOTOR_PULSE_COUNT: motor_pulse_count,
                     CONF_MOTOR_PULSE_DELAY_MS: motor_pulse_delay_ms,
@@ -6139,6 +6165,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         bed_type=bed_type,
                         protocol_variant=protocol_variant,
                     )
+                # A form that did not show the field saves the route's own default.
+                disable_angle_sensing = user_input.get(
+                    CONF_DISABLE_ANGLE_SENSING,
+                    not bed_type_has_position_feedback(bed_type, protocol_variant),
+                )
                 _LOGGER.info(
                     "Manual bed configuration: address=%s, type=%s, variant=%s, name=%s, motors=%s, massage=%s, disable_angle_sensing=%s, adapter=%s, pulse_count=%s, pulse_delay=%s",
                     address,
@@ -6147,7 +6178,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     user_input.get(CONF_NAME, "Adjustable Bed"),
                     user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
                     user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
-                    user_input.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING),
+                    disable_angle_sensing,
                     preferred_adapter,
                     motor_pulse_count,
                     motor_pulse_delay_ms,
@@ -6160,9 +6191,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     CONF_NAME: user_input.get(CONF_NAME, "Adjustable Bed"),
                     CONF_MOTOR_COUNT: user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
                     CONF_HAS_MASSAGE: user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
-                    CONF_DISABLE_ANGLE_SENSING: user_input.get(
-                        CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING
-                    ),
+                    CONF_DISABLE_ANGLE_SENSING: disable_angle_sensing,
                     CONF_PREFERRED_ADAPTER: preferred_adapter,
                     CONF_MOTOR_PULSE_COUNT: motor_pulse_count,
                     CONF_MOTOR_PULSE_DELAY_MS: motor_pulse_delay_ms,
@@ -6415,6 +6444,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         return self.async_abort(reason="already_configured")
                     self._set_device_title_placeholders(user_input.get(CONF_NAME), address)
 
+                    # A form that did not show the field saves the route's own default.
+                    disable_angle_sensing = user_input.get(
+                        CONF_DISABLE_ANGLE_SENSING,
+                        not bed_type_has_position_feedback(bed_type, protocol_variant),
+                    )
                     _LOGGER.info(
                         "Manual bed configuration: address=%s, type=%s, variant=%s, name=%s, motors=%s, massage=%s, disable_angle_sensing=%s, adapter=%s, pulse_count=%s, pulse_delay=%s",
                         address,
@@ -6423,7 +6457,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         user_input.get(CONF_NAME, "Adjustable Bed"),
                         user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
                         user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
-                        user_input.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING),
+                        disable_angle_sensing,
                         preferred_adapter,
                         motor_pulse_count,
                         motor_pulse_delay_ms,
@@ -6436,9 +6470,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         CONF_NAME: user_input.get(CONF_NAME, "Adjustable Bed"),
                         CONF_MOTOR_COUNT: user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
                         CONF_HAS_MASSAGE: user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
-                        CONF_DISABLE_ANGLE_SENSING: user_input.get(
-                            CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING
-                        ),
+                        CONF_DISABLE_ANGLE_SENSING: disable_angle_sensing,
                         CONF_PREFERRED_ADAPTER: preferred_adapter,
                         CONF_MOTOR_PULSE_COUNT: motor_pulse_count,
                         CONF_MOTOR_PULSE_DELAY_MS: motor_pulse_delay_ms,
@@ -9003,7 +9035,7 @@ class AdjustableBedOptionsFlow(
         """
         menu_options = ["settings"]
         data = self.config_entry.data
-        if managed_family(data) is not None:
+        if reconfigure_family(data) is not None:
             menu_options.append("change_app")
         if is_paired(data):
             if data.get(CONF_PAIR_MODE) == PAIR_MODE_SEPARATE_ADDRESS:
