@@ -12,6 +12,7 @@ host.
 from __future__ import annotations
 
 import logging
+from collections.abc import Mapping
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
@@ -255,9 +256,7 @@ class CombineBedsRepairFlow(RepairsFlow):
                 result.get("type") is not FlowResultType.FORM
                 or result.get("step_id") != "pair_beds"
             ):
-                return self.async_abort(
-                    reason=result.get("reason") or "pairing_flow_failed"
-                )
+                return self._abort_like(result)
             self._pairing_flow_id = result["flow_id"]
 
         result = await self.hass.config_entries.flow.async_configure(
@@ -277,7 +276,19 @@ class CombineBedsRepairFlow(RepairsFlow):
                 description_placeholders=self._description_placeholders(),
             )
         self._pairing_flow_id = None
-        return self.async_abort(reason=result.get("reason") or "pairing_flow_failed")
+        return self._abort_like(result)
+
+    def _abort_like(self, result: Mapping[str, Any]) -> RepairsFlowResult:
+        """End this flow as the pairing config flow ended.
+
+        Keep its translation domain, so a reason Home Assistant owns, such as
+        ``already_in_progress``, still resolves.
+        """
+        return self.async_abort(
+            reason=result.get("reason") or "pairing_flow_failed",
+            description_placeholders=result.get("description_placeholders"),
+            translation_domain=result.get("translation_domain"),
+        )
 
 
 class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):

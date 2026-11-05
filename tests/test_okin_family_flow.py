@@ -352,3 +352,63 @@ def test_endpoint_check_matches_what_each_route_writes(bed_type, endpoints, ok):
     else:
         with pytest.raises(ConnectionError):
             require_okin_route_endpoint(client, bed_type)  # type: ignore[arg-type]
+
+
+async def test_discovered_cst_bed_is_asked_with_its_apps_first(
+    hass, enable_custom_integrations, mock_bluetooth_service_info_okimat
+):
+    """A bed chosen as Okin CST on discovery (#573) gets the Okin question."""
+    from homeassistant.config_entries import SOURCE_BLUETOOTH
+
+    info = mock_bluetooth_service_info_okimat
+    info.name = "OKIN-003444"
+    manager = hass.config_entries.flow
+    result = await manager.async_init(
+        const.DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=info
+    )
+    assert result["step_id"] == "bluetooth_disambiguate"
+    result = await manager.async_configure(
+        result["flow_id"], {"bed_type_choice": const.BED_TYPE_OKIN_CST}
+    )
+    assert result["step_id"] == "bluetooth_confirm"
+    result = await manager.async_configure(result["flow_id"], result["data_schema"]({}))
+    assert result["step_id"] == "okin_family"
+    offered = choices(result)
+    cst_apps = [f"okin_cst:{v}" for v in const.OKIN_CST_VARIANTS if v != const.VARIANT_AUTO]
+    apps = ["serenity", "tranquil", "customatic_zseries:z230", "customatic_zseries:z280"]
+    routes = ["furnimove", "okin_uuid", "okin_dot", "okin_rf_eco_bt"]
+    assert offered == [*cst_apps, *apps, *routes, "keep"]
+    manager.async_abort(result["flow_id"])
+
+
+@pytest.mark.parametrize(
+    ("choice", "bed_type", "variant"),
+    [
+        ("okin_cst:cst_resident", const.BED_TYPE_OKIN_CST, "cst_resident"),
+        ("okin_cst:cst_nectar_move", const.BED_TYPE_OKIN_CST, "cst_nectar_move"),
+        ("serenity", const.BED_TYPE_SERENITY, None),
+        ("keep", const.BED_TYPE_OKIN_CST, "auto"),
+    ],
+)
+async def test_cst_answer_saves_its_route(hass, choice, bed_type, variant):
+    flow = setup_flow(hass, const.BED_TYPE_OKIN_CST)
+    assert flow._manual_data is not None
+    flow._manual_data[const.CONF_PROTOCOL_VARIANT] = const.VARIANT_AUTO
+    with patch.object(flow, "_async_finish_family_route", new=AsyncMock()) as finish:
+        await flow.async_step_okin_family({"choice": choice})
+    finish.assert_awaited_once()
+    assert flow._manual_data[const.CONF_BED_TYPE] == bed_type
+    assert flow._manual_data.get(const.CONF_PROTOCOL_VARIANT) == variant
+
+
+@pytest.mark.parametrize(
+    "variant", [const.OKIN_CST_VARIANT_NECTAR_MOVE, const.OKIN_CST_VARIANT_CAREFREE]
+)
+async def test_a_chosen_cst_app_skips_the_question(hass, variant):
+    """The Nectar Move row, or an explicit product, already names the app."""
+    flow = setup_flow(hass, const.BED_TYPE_OKIN_CST)
+    assert flow._manual_data is not None
+    flow._manual_data[const.CONF_PROTOCOL_VARIANT] = variant
+    with patch.object(flow, "_async_finish_family_route", new=AsyncMock()) as finish:
+        await flow.async_step_okin_family()
+    finish.assert_awaited_once()
