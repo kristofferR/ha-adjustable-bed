@@ -40,6 +40,7 @@ from .const import (
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
     CONF_DISABLE_ANGLE_SENSING,
+    CONF_DISABLE_DISCOVERY,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_KAIDI_ADV_TYPE,
@@ -56,6 +57,7 @@ from .const import (
     CONF_PAIR_MODE,
     CONF_PAIRLINK_HOST_SOURCE,
     CONF_PAIRLINK_ROLE,
+    CONF_PROFILE_MIGRATION,
     CONF_PROFILE_REVIEW_PENDING,
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_REMOTE,
@@ -310,6 +312,74 @@ def migrate_v4_2_data(data: Mapping[str, Any]) -> dict[str, Any]:
     return migrated
 
 
+# Keys no code reads on v5; docs/design/config-keys.md records the evidence.
+# Schema 5.2 drops them wherever an entry stores configuration.
+V5_2_OBSOLETE_KEYS: Final = frozenset(
+    {
+        # Integration-wide since it was added: its own Store is the only reader,
+        # so a per-entry copy is never read.
+        CONF_DISABLE_DISCOVERY,
+        # Written on every pair since schema 4 and never read: the entry's
+        # schema version is what versions pair data.
+        "pair_schema_version",
+    }
+)
+
+
+def _drop_obsolete_keys(
+    data: Mapping[str, Any], location: str, dropped: dict[str, list[str]]
+) -> dict[str, Any]:
+    """Return ``data`` without obsolete keys, recording what each location lost.
+
+    Paired sides and the original entries they restore on unpair are cleaned
+    too, so a later split never brings an obsolete key back.
+    """
+    kept = {key: value for key, value in data.items() if key not in V5_2_OBSOLETE_KEYS}
+    if removed := sorted(V5_2_OBSOLETE_KEYS.intersection(data)):
+        dropped[location] = removed
+    for key in (KEY_ORIGIN_DATA, KEY_ORIGIN_OPTIONS):
+        if isinstance(nested := kept.get(key), Mapping):
+            kept[key] = _drop_obsolete_keys(nested, f"{location}.{key}", dropped)
+    if isinstance(children := kept.get(CONF_PAIR_CHILDREN), list):
+        kept[CONF_PAIR_CHILDREN] = [
+            _drop_obsolete_keys(child, f"{location}.{child.get(CONF_SIDE, index)}", dropped)
+            if isinstance(child, Mapping)
+            else child
+            for index, child in enumerate(children)
+        ]
+    return kept
+
+
+def migrate_v5_2_entry(
+    data: Mapping[str, Any],
+    options: Mapping[str, Any],
+    *,
+    from_version: int,
+    from_minor_version: int,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Return entry data and options without the obsolete keys.
+
+    The migration record lists each dropped key by where it was stored
+    (``data``, ``options``, ``data.left``, ``data.left.origin_options`` and so
+    on). An entry without a record yet gets one from the schema it came from.
+    Nothing to drop leaves both unchanged.
+    """
+    dropped: dict[str, list[str]] = {}
+    new_data = _drop_obsolete_keys(data, "data", dropped)
+    new_options = _drop_obsolete_keys(options, "options", dropped)
+    if dropped:
+        record = new_data.get(CONF_PROFILE_MIGRATION)
+        new_data[CONF_PROFILE_MIGRATION] = {
+            **(
+                record
+                if isinstance(record, Mapping)
+                else {"from_version": from_version, "from_minor_version": from_minor_version}
+            ),
+            "dropped_keys": dropped,
+        }
+    return new_data, new_options
+
+
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Migrate config entries to newer schema versions.
 
@@ -386,6 +456,19 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
             ),
             version=5,
             minor_version=1,
+        )
+
+    if entry.version == 5 and entry.minor_version < 2:
+        # v5.1 -> v5.2: drop the keys the CONF_* audit found obsolete and list
+        # them in the migration record.
+        data, options = migrate_v5_2_entry(
+            entry.data,
+            entry.options,
+            from_version=original_version[0],
+            from_minor_version=original_version[1],
+        )
+        hass.config_entries.async_update_entry(
+            entry, data=data, options=options, minor_version=2
         )
 
     _LOGGER.debug(

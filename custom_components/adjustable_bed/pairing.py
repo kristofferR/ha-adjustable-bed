@@ -52,7 +52,6 @@ from .const import (
     CONF_PAIR_ID,
     CONF_PAIR_MEMBER_ADDRESSES,
     CONF_PAIR_MODE,
-    CONF_PAIR_SCHEMA_VERSION,
     CONF_PREFERRED_ADAPTER,
     CONF_PRODUCT_TYPE,
     CONF_PROFILE_ID,
@@ -70,7 +69,6 @@ from .const import (
     OKIN_CB24_VARIANT_NEW,
     PAIR_MODE_SEPARATE_ADDRESS,
     PAIR_MODE_SINGLE_ADDRESS,
-    PAIR_SCHEMA_VERSION,
     PAIR_SIDES,
     RONDURE_VARIANT_SIDE_A,
     RONDURE_VARIANT_SIDE_B,
@@ -261,7 +259,6 @@ CHILD_INHERITANCE_EXCLUDED_KEYS: Final = frozenset(
         CONF_PAIR_MODE,
         CONF_PAIR_CHILDREN,
         CONF_PAIR_MEMBER_ADDRESSES,
-        CONF_PAIR_SCHEMA_VERSION,
         CONF_PAIR_CONNECTION_MODE,
         *RUNTIME_BOND_KEYS,
         *VMATBASIC_CONFIG_KEYS,
@@ -413,7 +410,6 @@ _PAIR_ONLY_DESCRIPTOR_KEYS = frozenset(
         CONF_PAIR_MODE,
         CONF_PAIR_CHILDREN,
         CONF_PAIR_MEMBER_ADDRESSES,
-        CONF_PAIR_SCHEMA_VERSION,
         CONF_PAIR_CONNECTION_MODE,
     }
 )
@@ -642,7 +638,6 @@ def build_pair_entry_data(
     data: dict[str, Any] = {
         CONF_PAIR_ID: make_pair_id([left_addr, right_addr]),
         CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
-        CONF_PAIR_SCHEMA_VERSION: PAIR_SCHEMA_VERSION,
         CONF_BED_TYPE: left_data.get(CONF_BED_TYPE),
         CONF_NAME: name,
         CONF_PAIR_MEMBER_ADDRESSES: [left_addr.upper(), right_addr.upper()],
@@ -753,7 +748,6 @@ def build_single_address_pair_entry_data(
         {
             CONF_PAIR_ID: make_pair_id([address]),
             CONF_PAIR_MODE: PAIR_MODE_SINGLE_ADDRESS,
-            CONF_PAIR_SCHEMA_VERSION: PAIR_SCHEMA_VERSION,
             CONF_NAME: name,
             CONF_PAIR_MEMBER_ADDRESSES: [address.upper()],
             CONF_PAIR_CHILDREN: [left, right],

@@ -2768,6 +2768,11 @@ class TestBluetoothDiscoveryFlow:
                 CONF_PREFERRED_ADAPTER: "auto",
             },
         )
+        # The Okin question asks which app runs the CST bed (#573); keep it.
+        assert result["step_id"] == "okin_family"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input={"choice": "keep"}
+        )
 
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "bluetooth_pairing"
@@ -2994,7 +2999,11 @@ class TestManualFlow:
                 CONF_PREFERRED_ADAPTER: "auto",
             },
         )
-        result = await _answer_route(hass, result, OKIN_CST_VARIANT_MF900)
+        # The Okin question names each CST product's app.
+        assert result["step_id"] == "okin_family"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"choice": f"{BED_TYPE_OKIN_CST}:{OKIN_CST_VARIANT_MF900}"}
+        )
 
         assert result["step_id"] == "manual_pairing"
         result = await _complete_setup_pairing(hass, result)
