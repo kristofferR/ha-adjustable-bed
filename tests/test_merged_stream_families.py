@@ -64,6 +64,9 @@ class Family:
     """Whether frames written after the stream ended hold the full release."""
     max_gap_ms: int
     """Longest a streaming motor may go without a refresh."""
+    min_gap_ms: int = 0
+    """Shortest spacing between one motor's refreshes; composing families
+    refresh at once on every membership change, by design."""
 
 
 def _word_carries(keys: dict[str, int]) -> Callable[[str, str], bool]:
@@ -105,7 +108,8 @@ FAMILIES = {
         "useries", ("head", "feet"), _word_carries(dict(LEGGETT_PROFILES["useries"].keys)),
         _zeros(4), 100 + 10,
     ),
-    "svane_p1": Family("svane_p1", ("back", "legs"), _p1_carries, _p1_release, 200 + 30),
+    # P1 refreshes each axis once per 200 ms pass, timed from its previous write.
+    "svane_p1": Family("svane_p1", ("back", "legs"), _p1_carries, _p1_release, 200 + 30, 190),
     "svane_p2": Family("svane_p2", ("back", "legs"), _p2_carries, _p2_release, 100 + 10),
     "clarity": Family(
         "clarity", ("back", "legs"), _word_carries(dict(CUSTOMATIC_PROFILES["clarity"].keys)),
@@ -305,5 +309,7 @@ async def test_neither_motor_starves_the_other(bed: Bed, churned: int) -> None:
     gaps = bed.gaps(steady_motor, start, end)
     assert len(gaps) > 2
     assert max(gaps) <= bed.family.max_gap_ms, gaps
+    # Nor is the steady motor refreshed sooner than its own pacing allows.
+    assert min(gaps[1:-1]) >= bed.family.min_gap_ms, gaps
     bed.coordinator._command_scheduler.request_cancel()
     await asyncio.gather(steady, *churn, return_exceptions=True)

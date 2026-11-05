@@ -796,21 +796,27 @@ class SvaneController(BedController):
             assert last is not None
             self._stream_next_at = last + STREAM_TICK_S
             return
+        # Each write's end is recorded even when the stream interrupts it: the
+        # frame may still have reached the bed, so the next refresh waits.
         head_due, _ = self._stream_due(head_m, feet_m, now)
         if head_m is not None and now >= head_due - _STREAM_SLACK_S:
             pressed = head_m not in self._stream_written
             self._stream_written.add(head_m)
-            await self._start_role(HEAD, UP if head else DOWN, SvaneCommands.MOTOR_MOVE)
-            self._stream_last = (loop.time(), self._stream_last[1])
-            self._stream_head_pressed = pressed
+            try:
+                await self._start_role(HEAD, UP if head else DOWN, SvaneCommands.MOTOR_MOVE)
+            finally:
+                self._stream_last = (loop.time(), self._stream_last[1])
+                self._stream_head_pressed = pressed
         _, feet_due = self._stream_due(head_m, feet_m, loop.time())
         if feet_m is not None and loop.time() >= feet_due - _STREAM_SLACK_S:
             self._stream_written.add(feet_m)
-            if self.profile == "jmc":
-                await self._start_role(OLD, OLD_CHAR, SvaneCommands.motion(None, feet))
-            else:
-                await self._start_role(FEET, UP if feet else DOWN, SvaneCommands.MOTOR_MOVE)
-            self._stream_last = (self._stream_last[0], loop.time())
+            try:
+                if self.profile == "jmc":
+                    await self._start_role(OLD, OLD_CHAR, SvaneCommands.motion(None, feet))
+                else:
+                    await self._start_role(FEET, UP if feet else DOWN, SvaneCommands.MOTOR_MOVE)
+            finally:
+                self._stream_last = (self._stream_last[0], loop.time())
         self._stream_next_at = min(self._stream_due(head_m, feet_m, loop.time()))
 
     async def end_stream_member(
