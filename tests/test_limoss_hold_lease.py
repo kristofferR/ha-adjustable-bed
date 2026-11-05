@@ -181,13 +181,8 @@ async def clock(bed: Bed) -> AsyncIterator[Any]:
     Entered after ``bed`` is set up, so Home Assistant itself starts on the real
     loop.
     """
-    baseline = asyncio.all_tasks()
     with virtual_clock() as fake:
         yield fake
-    strays = [t for t in asyncio.all_tasks() - baseline if t is not asyncio.current_task()]
-    for stray in strays:
-        stray.cancel()
-    await asyncio.gather(*strays, return_exceptions=True)
 
 
 async def _hold(bed: Bed, generation: int, duration: float = 0.3) -> None:

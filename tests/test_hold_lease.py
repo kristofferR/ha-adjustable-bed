@@ -33,14 +33,8 @@ TICK = 0.005
 @pytest.fixture(autouse=True)
 async def clock() -> AsyncIterator[Any]:
     """Virtual time: lease deadlines, renewals and ticks are exact, never real timers."""
-    baseline = asyncio.all_tasks()
     with virtual_clock() as fake:
         yield fake
-    # Virtual timers a finished hold left armed would otherwise linger.
-    strays = [t for t in asyncio.all_tasks() - baseline if t is not asyncio.current_task()]
-    for stray in strays:
-        stray.cancel()
-    await asyncio.gather(*strays, return_exceptions=True)
 
 
 class FakeHold:
