@@ -158,9 +158,10 @@ These steps serve every bed type or route, so no profile owns them.
 | `profile_questions` | The declared questions |
 | `bluetooth_pairing`, `manual_pairing`, `pairing_replace_confirm`, `pairing_progress`, `pairing_result` | Bonding |
 | `setup_progress`, `verify_connection` | Connection check and capability checklist |
+| `keep_detected`, `keep_back`, `keep_continue` | Keep on a new bed: what the detected controls are, their pairing, and the way to an app later |
 | `pair_beds` | Combine two beds |
 | `diagnostic`, `diagnostic_confirm`, `diagnostic_manual` | Browse an unsupported device |
-| `reconfigure`, `migration_split`, `migration_keep`, `migration_confirm` | The [guided change](guided-setup-changes.md) |
+| `reconfigure`, `migration_split`, `migration_keep`, `migration_check`, `migration_pairing`, `migration_check_failed`, `migration_confirm` | The [guided change](guided-setup-changes.md) |
 
 ### Configure
 

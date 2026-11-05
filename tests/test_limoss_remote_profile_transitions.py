@@ -115,7 +115,7 @@ async def test_leaving_remote_finishes_old_native_off_transaction_before_save(
         client.write_gatt_char.assert_not_awaited()
         if failure == "cancel":
             save = asyncio.create_task(
-                manager.async_configure(first["flow_id"], {"confirm": True})
+                manager.async_configure(first["flow_id"], {"action": "apply"})
             )
             try:
                 await asyncio.wait_for(entered.wait(), timeout=2)
@@ -127,11 +127,11 @@ async def test_leaving_remote_finishes_old_native_off_transaction_before_save(
                 save.cancel()
                 await asyncio.gather(save, return_exceptions=True)
         else:
-            result = await manager.async_configure(first["flow_id"], {"confirm": True})
+            result = await manager.async_configure(first["flow_id"], {"action": "apply"})
             if failure == "error":
                 assert result.get("errors") == {"base": "limoss_remote_feature_update_failed"}
             else:
-                assert result["reason"] == "reconfigure_successful"
+                assert result["reason"] == "migration_applied"
         if failure is not None:
             assert coordinator.entry.data == before
             assert controller.underbed_light and controller.massage

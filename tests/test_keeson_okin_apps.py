@@ -887,8 +887,8 @@ async def test_heal_settings_survive_a_profile_change_and_end_with_the_entry(
     result = await manager.async_configure(result["flow_id"], {"choice": "okin_seating_apps"})
     result = await manager.async_configure(result["flow_id"], {"choice": "keeson:simon_li"})
     assert result["step_id"] == "migration_confirm"
-    result = await manager.async_configure(result["flow_id"], {"confirm": True})
-    assert result["reason"] == "reconfigure_successful"
+    result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     await hass.async_block_till_done()
     assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_SIMON_LI
 
