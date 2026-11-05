@@ -114,7 +114,12 @@ scripted command on them sends the same bytes as on `main`. The classic Richmat
 apps (Avocado Eco Base, CoasterSleep, Forty Winks, Milemont and Superior,
 [#825](https://github.com/kristofferR/ha-adjustable-bed/pull/825)) arrived on
 `main` after 4.3.0 and are included too, with their layout asked on the profile
-setup step.
+setup step. MotoMotion
+([#869](https://github.com/kristofferR/ha-adjustable-bed/pull/869)) and the
+BedJet PowerLayer frame
+([#891](https://github.com/kristofferR/ha-adjustable-bed/pull/891)) arrived the
+same way: MotoMotion's exact Bluetooth name is asked on the profile setup step,
+and the PowerLayer uses the generic setup form.
 
 ## New Entities, Attributes and Actions
 
@@ -362,6 +367,10 @@ timings changed, and the other updates only added scenarios:
 - `richmat_classic_apps`: new scenarios for the classic Richmat apps from
   `main`, including the Nordic UART route, the desk and the write-mode
   branches ([#862](https://github.com/kristofferR/ha-adjustable-bed/pull/862)).
+- `motomotion`, `bedjet_powerlayer`: new scenarios for the beds from `main`,
+  three MotoMotion panels and the PowerLayer frame, sending the same bytes as on
+  `main` ([#869](https://github.com/kristofferR/ha-adjustable-bed/pull/869),
+  [#891](https://github.com/kristofferR/ha-adjustable-bed/pull/891)).
 
 These deliberate changes are outside the scripted commands:
 

@@ -58,7 +58,7 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `motor_pulse_user_set` | Internal | Setup and Configure record whether the user changed the pulse fields | `coordinator.py` (a profile default applies otherwise) |
 | `product_type` | User | App steps (Limoss Remote, FSM Relax, Ergomotion 4 apps), Configure; a question of `richmat_classic_apps`, `gmmotor`, `isleep`, `doublesleep` and `sleeptracker` | `controller_factory.py`, `pairing.py` |
 | `reverse_motor_1`, `reverse_motor_2`, `reverse_motor_3`, `reverse_motor_4` | User | Limoss Remote and FSM Relax steps, Configure | `controller_factory.py` |
-| `ble_device_name` | User | Setup stores the advertised name; the StarCode steps and Configure ask it; a question of `motion_bed` | Name rules in controllers, `coordinator.py` |
+| `ble_device_name` | User | Setup stores the advertised name; the StarCode steps and Configure ask it; a question of `motion_bed` and `motomotion` | Name rules in controllers, `coordinator.py` |
 | `preferred_adapter` | User | Setup and Configure | `coordinator.py`, repairs |
 | `connection_profile` | User | Configure | `coordinator.py` |
 | `disconnect_after_command` | User | `disconnect_after_command` step, Configure | `coordinator.py` |

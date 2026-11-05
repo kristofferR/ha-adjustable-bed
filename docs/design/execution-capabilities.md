@@ -176,6 +176,8 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `goodvibe` | S stream | B | B | goodvibe | sustained controls refresh every 100 ms, then release `6e`; hold declared per control, on the held controls whose effective gesture is a sustained press (see [per-control scope](#per-control-hold-scope)). #516 and #591 not assessed yet |
 | `sleepys_elite_app` | S stream | U | U | sleepy | selector STOP once at release; hold declared |
 | `motosleep` | B | B | B | moto | report BLOCKED |
+| `motomotion` | S stream | B | B | motomotion, row113 | held motor keys refresh every 100 ms, first write after 100 ms, then send STOP three times 50 ms after release; memory recall refreshes the same way but stops only on `SOFA` names with index 12 `E`, and the shared Home control ends by stopping its refresh with no release frame. Not declared: the controls need a per-control scope (see [per-control scope](#per-control-hold-scope)) and their own review. #516 and #591 not assessed yet |
+| `bedjet_powerlayer` | B | B | B | none | no accepted app report: the commands and the self-stopping movement come from a community capture and the contributor's hardware, so the hold stays undeclared |
 | `sleep_number` | B | B | B | sleepiq | report PARTIAL |
 | `sleep_number_mcr` | B | B | B | none | no accepted report |
 | `sleepstar` | B | B | B | none | no accepted report |
@@ -648,6 +650,7 @@ Report workspaces are machine-local under
 | minghua | `com.okin.minghua.R` | 1.0.1 | COMPLETE | `com.okin.minghua.R-1.0.1-2026-10-02-queue-903926b6-20261002-060-002/report/` |
 | motionflex | `com.sealy.motionflex` | 1.0.3 | COMPLETE | `com.sealy.motionflex-1.0.3-20260830/report/` |
 | moto | `com.HHC.MotoMotion` | 3.1.9 | BLOCKED | `com.HHC.MotoMotion-3.1.9-2026-11-03-bulk101-188-002/report/` |
+| motomotion | `com.HHC.MotoMotion` | 3.1.9 | COMPLETE | `com.HHC.MotoMotion-3.1.9-2026-11-03-bulk101-188-002/work/report-repair-sol-003/` |
 | nectar | `com.okin.bedding.nectarmotion` | 1.0.1 | COMPLETE | `com.okin.bedding.nectarmotion-1.0.1-2026-10-26-39bdcafa-003/report/` |
 | octo | `de.octoactuators.octosmartcontrolapp` | 1.03.02 | COMPLETE | `de.octoactuators.octosmartcontrolapp-1.03.02-2026-10-26-39bdcafa-repair-001/report/` |
 | omazz | `com.sfd.Omazz` | 1.0.5 | COMPLETE | `com.sfd.Omazz-1.0.5-2026-10-26-39bdcafa-repair-001/report/` |

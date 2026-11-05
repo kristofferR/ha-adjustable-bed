@@ -57,7 +57,7 @@ Padding does not truncate A/C values. B masks words to 16 bits. D saturates each
 
 ## Detection / Setup
 
-Choose **MotoMotion app** and enter the exact Bluetooth local name. The Home Assistant display name never selects a panel. Discovery offers a candidate without overriding another app's confident match. Shared service UUIDs alone do not select this app.
+Choose **MotoMotion app (exact Bluetooth name)** in the bed-type list; searching for MotoMotion finds it. The next question asks the exact Bluetooth local name, filled in from the advertisement when there is one. Configure asks the same name and checks it the same way. The Home Assistant display name never selects a panel. Discovery offers a candidate without overriding another app's confident match. Shared service UUIDs alone do not select this app.
 
 Name lengths and zero-based indices follow the app’s UTF-16 code units. A supplementary Unicode character occupies two units in both profile selection and receive routing.
 
