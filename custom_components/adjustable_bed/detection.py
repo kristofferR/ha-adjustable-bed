@@ -19,6 +19,7 @@ from .cluster018_profiles import APP_NAMES as CLUSTER018_APPS
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
+    BED_TYPE_BEDJET_POWERLAYER,
     BED_TYPE_BEDSENSE,
     # Legacy/brand-specific bed types
     # NOTE: BED_TYPE_BEDTECH and BED_TYPE_OKIN_64BIT can now be partially auto-detected:
@@ -124,6 +125,8 @@ from .const import (
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
     # Detection constants
+    BEDJET_ADVERTISED_SERVICE_UUID,
+    BEDJET_POWERLAYER_NAME_PATTERNS,
     BEDTECH_MANUFACTURER_ID,
     BEDTECH_NAME_PATTERNS,
     BEDTECH_SERVICE_UUID,
@@ -683,6 +686,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_STAR_ELEVATE: "DewertOkin ELEVATE (two-actuator lift)",
     BED_TYPE_SOLACE: "Solace",
     BED_TYPE_SUTA: "SUTA Smart Home (AT protocol)",
+    BED_TYPE_BEDJET_POWERLAYER: "BedJet PowerLayer adjustable frame",
     BED_TYPE_SVANE: "Svane Remote app",
     BED_TYPE_TIMOTION_AHF: "TiMOTION AHF",
     BED_TYPE_VIBRADORM: "Vibradorm: VMAT, Caresse Diamant, Werkmeister, V-MAT Basic",
@@ -1732,6 +1736,28 @@ def _detect_bed_type_detailed(
                     confidence=0.3,
                     signals=signals,
                 )
+
+    # Check for the BedJet PowerLayer frame. The frame and the BedJet climate
+    # blower both advertise the 1000 service and only the frame exposes 1001
+    # once connected, so the advertised name is the only discovery-time signal
+    # that separates them. Claiming the shared UUID would offer bed setup for
+    # climate units this integration cannot drive.
+    if any(device_name.startswith(pattern) for pattern in BEDJET_POWERLAYER_NAME_PATTERNS):
+        signals.append("name:bedjet_powerlayer")
+        confidence = 0.6
+        if BEDJET_ADVERTISED_SERVICE_UUID.lower() in service_uuids:
+            signals.append("uuid:bedjet_1000")
+            confidence = 0.9
+        _LOGGER.info(
+            "Detected BedJet PowerLayer at %s (name: %s)",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(
+            bed_type=BED_TYPE_BEDJET_POWERLAYER,
+            confidence=confidence,
+            signals=signals,
+        )
 
     # Check for Octo Star2 variant before generic Star* matching.
     if OCTO_STAR2_SERVICE_UUID.lower() in service_uuids:

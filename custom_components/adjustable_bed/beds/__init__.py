@@ -12,6 +12,7 @@ from .base import BedController
 if TYPE_CHECKING:
     from .adjustable_lumbar import AdjustableLumbarController as AdjustableLumbarController
     from .adjustamattress import AdjustaMattressController as AdjustaMattressController
+    from .bedjet_powerlayer import BedJetPowerLayerController as BedJetPowerLayerController
     from .bedsense import BedSenseController as BedSenseController
     from .bf_cherish import BfCherishController as BfCherishController
     from .casper_base import CasperBaseController as CasperBaseController
@@ -144,6 +145,7 @@ _EXPORT_MODULES = {
     "SimmonsController": "simmons",
     "AdjustaMattressController": "adjustamattress",
     "AdjustableLumbarController": "adjustable_lumbar",
+    "BedJetPowerLayerController": "bedjet_powerlayer",
     "RichmatMhController": "richmat_mh",
     "CustomaticController": "customatic",
     "CoolBaseController": "coolbase",
@@ -224,6 +226,7 @@ __all__ = [
     # Base class
     "BedController",
     # Protocol-based controllers
+    "BedJetPowerLayerController",
     "DewertOkinRfGatewayController",
     "DewertOkinUuidRfGatewayController",
     "OkinCB24Controller",

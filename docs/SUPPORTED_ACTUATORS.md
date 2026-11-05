@@ -37,6 +37,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [Vibradorm](beds/vibradorm.md) | Position feedback, memory and lights; [Caresse / Werkmeister](beds/vibradorm_app.md), [VMAT](beds/vmat.md) and [V-MAT Basic](beds/vmatbasic.md) remote-specific controls |
 | [SUTA Smart Home](beds/suta.md) | AT command protocol, 4 memory slots, discrete lights |
 | [TiMOTION AHF](beds/timotion-ahf.md) | Fixed app-labelled controls, raw lock/lamp diagnostics, AHF name detection; physical behavior unverified |
+| [BedJet PowerLayer](beds/bedjet-powerlayer.md) | Head/foot movement, 4 presets, 3 memory recalls, calibrated degree feedback (frame only, not the BedJet climate unit) |
 | [Limoss](beds/limoss.md) | TEA-encrypted packets, position feedback, dynamic capabilities; [Limoss Remote](beds/limoss-remote.md) and [FSM Relax](beds/fsm_relax.md) bed/chair layouts and local memories |
 | [Motion Bed app](beds/motion_bed.md) | Layouts chosen by the app's Bluetooth name, named presets, massage, lighting, sync, audio and sleep controls, module selection |
 | [Cool Base](beds/coolbase.md) | Keeson BaseI5 with fan control |
@@ -220,5 +221,6 @@ Community contributors who helped reverse-engineer specific protocols:
 | Vibradorm | [kristofferR](https://github.com/kristofferR) |
 | SUTA Smart Home | [kristofferR](https://github.com/kristofferR) |
 | TiMOTION AHF | [kristofferR](https://github.com/kristofferR) |
+| BedJet PowerLayer | [natekspencer](https://github.com/natekspencer/ha-bedjet) and [Tim-GitHub](https://github.com/Tim-GitHub) |
 | Mattress Firm 900 | [David Delahoz](https://github.com/daviddelahoz/BLEAdjustableBase) |
 | Nectar | [MaximumWorf](https://github.com/MaximumWorf/homeassistant-nectar) |

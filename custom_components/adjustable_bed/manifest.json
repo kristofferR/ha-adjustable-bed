@@ -246,6 +246,12 @@
       "local_name": "SUTA*"
     },
     {
+      "local_name": "BEDJET_BF*"
+    },
+    {
+      "local_name": "BEDFRM*"
+    },
+    {
       "local_name": "Mouselet*"
     },
     {
