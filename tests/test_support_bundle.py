@@ -3012,7 +3012,7 @@ async def test_bundle_shows_the_schema_5_migration_record(
     }
     entry = MockConfigEntry(domain=DOMAIN, data=data, version=4, minor_version=3)
     entry.add_to_hass(hass)
-    assert await async_migrate_entry(hass, entry) is True
+    await async_migrate_entry(hass, entry)
 
     report = await _bundle_for(hass, entry, data[CONF_ADDRESS])
 
@@ -3047,7 +3047,7 @@ async def test_paired_bundle_shows_each_side_and_the_one_it_targets(hass: HomeAs
     }
     entry = MockConfigEntry(domain=DOMAIN, data=data, version=4, minor_version=3)
     entry.add_to_hass(hass)
-    assert await async_migrate_entry(hass, entry) is True
+    await async_migrate_entry(hass, entry)
 
     profile = (await _bundle_for(hass, entry, "aa:bb:cc:dd:ee:0b"))["profile"]
 

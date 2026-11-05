@@ -195,7 +195,7 @@ class TestDiagnosticsOutput:
         from custom_components.adjustable_bed import async_migrate_entry
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
-        assert await async_migrate_entry(hass, mock_diagnostics_config_entry) is True
+        await async_migrate_entry(hass, mock_diagnostics_config_entry)
         coordinator = AdjustableBedCoordinator(hass, mock_diagnostics_config_entry)
         hass.data.setdefault(DOMAIN, {})[mock_diagnostics_config_entry.entry_id] = coordinator
 

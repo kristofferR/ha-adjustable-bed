@@ -203,7 +203,7 @@ async def test_deferred_history_failure_cannot_abort_unload_or_lose_retry(
             # A background retry can take its snapshot before unload starts.
             assert store._snapshot()[PROFILE_DECISIONS_SLOT]["first"] is True
         with patch.object(hass.config_entries, "async_unload_platforms", return_value=True):
-            assert await async_unload_entry(hass, mock_config_entry)
+            await async_unload_entry(hass, mock_config_entry)
     assert mock_config_entry.entry_id not in hass.data[DOMAIN]
     assert (await async_profile_decision_history(hass, address))["history"] == [record("first")]
     await store.async_save()

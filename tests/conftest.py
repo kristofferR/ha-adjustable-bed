@@ -839,6 +839,10 @@ def mock_bluetooth_api() -> Generator[None]:
             return_value=None,
         ),
         patch(
+            "homeassistant.components.bluetooth.async_register_advertisement_callback",
+            return_value=lambda: None,
+        ),
+        patch(
             "homeassistant.components.bluetooth.async_setup",
             new=AsyncMock(return_value=True),
         ),

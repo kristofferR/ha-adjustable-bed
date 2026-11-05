@@ -75,7 +75,7 @@ def remacro_issue_id(address: str) -> str:
 
 
 def clear_remacro_model_issues(hass: HomeAssistant, addresses: Iterable[str]) -> None:
-    """Delete the Remacro model issues for beds no remaining entry owns."""
+    """Delete the Remacro model issues for beds that no longer run Remacro."""
     for address in addresses:
         async_delete_issue(hass, DOMAIN, remacro_issue_id(address))
 
@@ -112,6 +112,7 @@ def update_remacro_model_issue(
         hass,
         DOMAIN,
         issue_id,
+        config_entry_id=entry_id,
         # Another app lists the model, so switching the profile fixes it.
         is_fixable=problem == "not_in_app",
         severity=IssueSeverity.WARNING,

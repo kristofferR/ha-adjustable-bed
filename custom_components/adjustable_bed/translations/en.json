@@ -8580,6 +8580,12 @@
     },
     "saved_position_unavailable": {
       "message": "\"{position}\" includes a motor that is no longer estimated. Update or delete it."
+    },
+    "paired_entry_has_no_sides": {
+      "message": "This paired bed has no sides saved. Delete it and add the beds again."
+    },
+    "single_address_pair_unsupported": {
+      "message": "This bed's protocol has no side selector, so it cannot show separate sides. Open its options and split the pair to use it as one bed."
     }
   },
   "issues": {
