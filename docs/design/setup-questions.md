@@ -83,6 +83,33 @@ returns.
   `strings.json` label in the generic step (or its Advanced section) and in
   Configure, so a field cannot ship unlabelled.
 
+## Per-side settings
+
+A two-address pair joins two receivers, and each may run another profile.
+`per_side_profile` in `app_profiles.py` names the settings that belong to one
+of them: the shared Configure form refuses to change them, and each receiver's
+own step sets them. Every question a route's declarations ask, under any app,
+is one of them, since that step asks and saves each receiver's answers. They
+are derived, never listed again.
+
+The table in `app_profiles.py` stays hand-kept for what the declarations cannot
+say ([#745](https://github.com/kristofferR/ha-adjustable-bed/issues/745)):
+
+- **Which routes are per side.** An app or product belongs to one bed, so the
+  shared form may not move either side to, from or between such routes. Generic
+  receivers such as the Okin remotes, Vibradorm or Jensen ask questions too, yet
+  a pair of them may change together. A declaration says what a route asks, not
+  whether its route is one bed's app.
+- **The label** the refusal names, and whether every variant of the bed type is
+  a side's own choice (`variant_owned`).
+- **Settings no question asks:** a detected product type or Bluetooth name,
+  values an action saves (such as the Serta MP memory targets), the motors and
+  massage a model, handset, layout or control box derives, and the app key a
+  family step picks.
+
+`tests/test_app_profiles.py` checks that every declared question belongs to its
+side and that the table repeats none of them.
+
 ## Generic forms
 
 The generic setup forms (`bluetooth_confirm`, `manual_config`, `manual_entry`)
