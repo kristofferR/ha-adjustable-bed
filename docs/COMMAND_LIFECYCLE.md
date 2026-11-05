@@ -111,8 +111,9 @@ finite pulses. The device scheduler owns the lease:
   The scheduler starts it on the clock as the controller operation begins,
   after connecting, and clamps every renewal to it, so slow acknowledged writes
   cannot stretch a counted refresh past it. Reaching it ends the hold as expiry
-  does, with the controller's release. The lease ends it sooner when renewals
-  stop.
+  does, with the controller's release: no frame starts after it, and a write
+  already in flight completes first, since it cannot be retracted. The lease
+  ends it sooner when renewals stop.
 - The dashboard card holds through `timed_move` or `hold_control`, renewing
   every 250 ms with a 750 ms lease. Release, unmount and a hidden page stop the
   renewals and send the usual STOP. Entities advertise the hold with
