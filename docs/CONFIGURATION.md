@@ -87,8 +87,9 @@ or from the bed's repair. Today this covers the
 [Leggett & Platt family](beds/leggett-platt.md#home-assistant-setup), the
 [Sleepy's Elite family](beds/sleepys.md#home-assistant-setup), the
 [Customatic and Jordan's apps](beds/okin-nframe.md#customatic-family), the
-[Malouf / Lucid family](beds/malouf.md#malouf-base--lucid-base-family) and the
-[LOGICDATA family](beds/logicdata.md#detection--setup); more families follow.
+[Malouf / Lucid family](beds/malouf.md#malouf-base--lucid-base-family), the
+[LOGICDATA family](beds/logicdata.md#detection--setup) and the
+[Limoss family](beds/limoss.md#home-assistant-setup); more families follow.
 
 1. Choose the app you use, then the layout or remote the app shows. **Keep
    current setup** leaves the entry exactly as it is.
@@ -582,7 +583,7 @@ that side, then combine them again.
 | Adjustable bed (Lumbar) | [Automatic or fixed command table](beds/okin-nframe.md#adjustable-bed-lumbar). |
 | StarCode apps | One question for the app, then its own settings. Configure lists each StarCode app, so an entry can move to another without being removed. [M5X4](beds/okin-nframe.md#adjustablem5x4): command and transport selectors. [M5X5](beds/starcode-m5x5.md): layout and up to three configured lift entries. [M1X12](beds/starcode-m1x12.md): layout and up to two ELEVATE accessories. |
 | Motion Bed | [Layout and retained settings](beds/ff_frame.md#motion-bed); preserve the original Bluetooth name. |
-| Limoss | [Limoss Remote](beds/limoss.md#limoss-remote): bed/chair layout, light/massage and reversal settings. |
+| Limoss | [One question](beds/limoss.md#home-assistant-setup) for the Limoss Remote or FSM Relax app, or the older controls. [Limoss Remote](beds/limoss.md#limoss-remote): bed/chair layout, light/massage and reversal settings. Change an existing bed's app with **Reconfigure**. |
 | FSM Relax | [Bed/chair layout, light/massage and reversal settings](beds/limoss.md#fsm-relax). |
 | GM Control | [Exact product/configuration and app side](beds/gmmotor.md#detection--setup); independent MM/SXB module entries. |
 | Legacy OKIN CB24 | [Single-address controls](#single-address-left--right-controls): both sides, Side A / Left, or Side B / Right. |

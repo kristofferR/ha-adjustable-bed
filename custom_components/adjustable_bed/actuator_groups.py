@@ -30,7 +30,6 @@ from .const import (
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LIMOSS,
-    BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
@@ -424,11 +423,8 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
     },
     "limoss": {
         "display": "Limoss / Stawett",
-        "description": "Limoss and Stawett bases (TEA-encrypted protocol)",
-        "variants": [
-            {"type": BED_TYPE_LIMOSS, "label": "Legacy Limoss / Stawett", "description": "Existing generic controls", "hint": "Keep this choice for an existing working device."},
-            {"type": BED_TYPE_LIMOSS_REMOTE, "label": "Limoss Remote app", "description": "App bed/chair layouts and eight local memories", "hint": "Select this explicitly for the Limoss Remote Android app."},
-        ],
+        "description": "Limoss Remote and FSM Relax apps, Stawett and older Limoss controls",
+        "variants": None,  # The family step asks for the app or the generic controls.
     },
     "malouf": {
         "display": "Malouf / Lucid",
@@ -620,9 +616,10 @@ SINGLE_TYPE_GROUPS: Final[dict[str, str]] = {
     "comfort_motion": BED_TYPE_COMFORT_MOTION,
     "ergomotion": BED_TYPE_ERGOMOTION,
     "jensen": BED_TYPE_SVANE,
+    "limoss": BED_TYPE_LIMOSS,
     "linak": BED_TYPE_LINAK,
-    "malouf": BED_TYPE_MALOUF_APP,
     "logicdata": BED_TYPE_LOGICDATA_APP,
+    "malouf": BED_TYPE_MALOUF_APP,
     "motosleep": BED_TYPE_MOTOSLEEP,
     "octo": BED_TYPE_OCTO,
     "reverie": BED_TYPE_REVERIE_NIGHTSTAND,

@@ -455,7 +455,12 @@
           "malouf_app_profile": "Android app",
           "rmcontrol_product": "RMControl product",
           "rmcontrol_side": "RMControl side",
-          "richmat_remote": "Richmat remote"
+          "richmat_remote": "Richmat remote",
+          "reverse_motor_1": "Reverse motor channel 1",
+          "reverse_motor_2": "Reverse motor channel 2",
+          "reverse_motor_3": "Reverse motor channel 3",
+          "reverse_motor_4": "Reverse motor channel 4",
+          "limoss_remote_theme": "App artwork theme"
         },
         "data_description": {
           "jiecang_app_layout": "Select the layout configured in the app. The device name and motor count do not identify the layout.",
@@ -501,7 +506,8 @@
           "malouf_app_profile": "Choose the app you use with this bed. Shared Bluetooth identifiers do not identify an app.",
           "rmcontrol_product": "The exact product code RMControl shows for this bed. A similar-looking code doesn't unlock its controls. Choose None to use the Richmat remote controls instead.",
           "rmcontrol_side": "The side selected in RMControl. It picks the side the app's commands address, not a paired bed's left or right in Home Assistant.",
-          "richmat_remote": "The Richmat remote code, which picks the remote's buttons, presets and lights. A code the Bluetooth name carries is preselected; use Auto if you don't know it."
+          "richmat_remote": "The Richmat remote code, which picks the remote's buttons, presets and lights. A code the Bluetooth name carries is preselected; use Auto if you don't know it.",
+          "limoss_remote_theme": "Optional: the artwork theme chosen in the Limoss Remote app, kept as a local preference. It changes no controls."
         },
         "sections": {
           "advanced": {
@@ -577,20 +583,6 @@
           "has_light": "Enable light controls",
           "has_massage": "Has massage feature",
           "fsm_relax_memory_names": "Eight local memory names (blank resets M1 to M8)",
-          "reverse_motor_1": "Reverse motor channel 1",
-          "reverse_motor_2": "Reverse motor channel 2",
-          "reverse_motor_3": "Reverse motor channel 3",
-          "reverse_motor_4": "Reverse motor channel 4"
-        }
-      },
-      "limoss_remote": {
-        "title": "Limoss Remote App Controls",
-        "description": "Select the product and local controls used in the Limoss Remote app. The connected device supplies its key layout and memory capacity. These settings do not measure hardware state.",
-        "data": {
-          "product_type": "Bed or chair",
-          "has_light": "Enable light controls",
-          "has_massage": "Has massage feature",
-          "limoss_remote_theme": "App artwork theme",
           "reverse_motor_1": "Reverse motor channel 1",
           "reverse_motor_2": "Reverse motor channel 2",
           "reverse_motor_3": "Reverse motor channel 3",
@@ -798,6 +790,13 @@
         "description": "Sleep Number bases use one of two Bluetooth transports, and the base's advertised service, not the model name, tells them apart. Home Assistant could not see which service this bed advertises. Check it with a Bluetooth scanner app such as nRF Connect: Fuzion bases (Climate 360, FlexFit) advertise `09d23fae-...`, older BAM/MCR bases (i8, 360 FlexFit 2) advertise `ffffd1fd-...`.",
         "data": {
           "choice": "Transport"
+        }
+      },
+      "limoss_family": {
+        "title": "Which app controls this Limoss receiver?",
+        "description": "Limoss Remote, FSM Relax and the older Limoss controls share the receiver's Bluetooth name and service, so the name doesn't choose one. Choose the app you use on your phone, or the older controls if you use none. Each has its own controls and memory format, and none is translated into another.",
+        "data": {
+          "choice": "App"
         }
       },
       "jiecang_legacy": {
@@ -1223,7 +1222,12 @@
           "malouf_app_profile": "Android app",
           "rmcontrol_product": "RMControl 21.3.7 product",
           "rmcontrol_side": "RMControl side",
-          "richmat_remote": "Richmat remote"
+          "richmat_remote": "Richmat remote",
+          "reverse_motor_1": "Reverse motor channel 1",
+          "reverse_motor_2": "Reverse motor channel 2",
+          "reverse_motor_3": "Reverse motor channel 3",
+          "reverse_motor_4": "Reverse motor channel 4",
+          "limoss_remote_theme": "App artwork theme"
         },
         "data_description": {
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
@@ -1330,7 +1334,12 @@
           "malouf_app_profile": "Android app",
           "rmcontrol_product": "RMControl 21.3.7 product",
           "rmcontrol_side": "RMControl side",
-          "richmat_remote": "Richmat remote"
+          "richmat_remote": "Richmat remote",
+          "reverse_motor_1": "Reverse motor channel 1",
+          "reverse_motor_2": "Reverse motor channel 2",
+          "reverse_motor_3": "Reverse motor channel 3",
+          "reverse_motor_4": "Reverse motor channel 4",
+          "limoss_remote_theme": "App artwork theme"
         },
         "data_description": {
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
@@ -9396,6 +9405,14 @@
         "protocol_110": "Protocol 110 receiver (Nightstand service)",
         "protocol_108": "Protocol 108 receiver (older service)",
         "keep": "I don't know: keep the detected receiver"
+      }
+    },
+    "limoss_family_choice": {
+      "options": {
+        "limoss_remote": "Limoss Remote app: bed or chair layouts and eight local memories",
+        "fsm_relax": "FSM Relax app: bed or chair profile with app-labelled controls",
+        "generic": "No app: Stawett or older Limoss controls",
+        "keep": "Keep the current controls"
       }
     },
     "malouf_family_choice": {

@@ -729,6 +729,8 @@ FAMILY_STEP_ROUTES: Final = frozenset(
         BED_TYPE_REVERIE,
         *RICHMAT_MH_BED_TYPES,
         BED_TYPE_SLEEP_NUMBER_MCR,
+        BED_TYPE_LIMOSS_REMOTE,
+        BED_TYPE_FSM_RELAX,
     }
 )
 # A family row whose picker label names every route behind it; saved entries
@@ -774,6 +776,9 @@ _FAMILY_ROW_LABELS: Final[dict[str, str]] = {
     BED_TYPE_SLEEP_NUMBER: (
         "Sleep Number: SleepIQ app, Fuzion (Climate 360, FlexFit) and BAM/MCR "
         "(i8, 360 FlexFit 2) bases"
+    ),
+    BED_TYPE_LIMOSS: (
+        "Limoss / Stawett: Limoss Remote and FSM Relax apps, Stawett and older Limoss controls"
     ),
 }
 
