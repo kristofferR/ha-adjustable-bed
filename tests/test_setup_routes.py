@@ -13,11 +13,22 @@ from custom_components.adjustable_bed.app_profiles import hidden_generic_fields
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
+    _apply_setup_bed_type_choice,
     _labelled_routes,
     _route_section,
     _setup_routes,
 )
-from custom_components.adjustable_bed.detection import bed_type_label, get_bed_type_options
+from custom_components.adjustable_bed.detection import (
+    APP_VARIANT_CHOICES,
+    bed_type_choice,
+    bed_type_label,
+    get_bed_type_options,
+    resolve_bed_type_choice,
+)
+from custom_components.adjustable_bed.kaidi_protocol import (
+    KAIDI_ADV_TYPE_BROADCAST,
+    KaidiAdvertisement,
+)
 
 ADDRESS = "11:22:33:44:55:66"
 
@@ -205,6 +216,98 @@ def test_every_listed_app_is_searchable_by_name(name):
     assert any(name.lower() in option["label"].lower() for option in get_bed_type_options())
 
 
+_FLOYD = bed_type_choice(const.BED_TYPE_KAIDI, const.KAIDI_VARIANT_FLOYD)
+
+
+@pytest.mark.parametrize(
+    ("name", "choices"),
+    [
+        # Okin apps also carry the Rize brand; only Kaidi's app is "Rize Beds".
+        ("Rize Beds", {const.BED_TYPE_KAIDI}),
+        ("Floyd Home", {const.BED_TYPE_KAIDI, _FLOYD}),
+        ("ISleep", {const.BED_TYPE_KAIDI, const.BED_TYPE_ISLEEP}),
+        ("Kaidi", {const.BED_TYPE_KAIDI, _FLOYD, const.BED_TYPE_ISLEEP}),
+        ("Bed Connect", {const.BED_TYPE_LINAK}),
+        ("Power Bob", {const.BED_TYPE_MOTOSLEEP}),
+    ],
+)
+def test_an_app_name_finds_only_its_own_rows(name, choices):
+    found = {
+        option["value"]
+        for option in get_bed_type_options()
+        if name.lower() in option["label"].lower()
+    }
+    assert found == choices
+
+
+@pytest.mark.parametrize("choice", sorted(bed_type_choice(*key) for key in APP_VARIANT_CHOICES))
+async def test_fitting_the_form_keeps_every_app_entrys_route(hass, choice):
+    """A profile that owns its variant must not drop the one its app entry chose."""
+    flow = AdjustableBedConfigFlow()
+    flow.hass = hass
+    flow.context = {"source": SOURCE_USER}
+    shown_type, shown_variant = None, const.VARIANT_AUTO
+    for _ in range(2):
+        submitted = {CONF_ADDRESS: ADDRESS, const.CONF_BED_TYPE: choice}
+        _apply_setup_bed_type_choice(submitted, shown_type, shown_variant)
+        if await flow._async_fit_setup_form(submitted, shown_type, shown_variant, "manual_entry") is None:
+            break
+        # The form is drawn again for the app, and submitted as shown.
+        shown_type, shown_variant = flow._selected_bed_type, flow._selected_protocol_variant
+    else:
+        pytest.fail("the form was drawn again for the app it was drawn for")
+    assert (submitted[const.CONF_BED_TYPE], submitted[const.CONF_PROTOCOL_VARIANT]) == (
+        resolve_bed_type_choice(choice)
+    )
+
+
+@pytest.mark.parametrize(
+    ("choice", "product_id", "resolved"),
+    [
+        (const.BED_TYPE_KAIDI, 136, const.KAIDI_VARIANT_SEAT_1),
+        (_FLOYD, 139, const.KAIDI_VARIANT_FLOYD),
+    ],
+)
+async def test_kaidi_app_rows_keep_the_advertised_mesh_metadata(
+    hass, enable_custom_integrations, choice, product_id, resolved
+):
+    """Picking a Kaidi app by its label still caches the room, target and product."""
+    label = {option["value"]: option["label"] for option in get_bed_type_options()}[choice]
+    result = await _manual_entry(hass)
+    advertisement = KaidiAdvertisement(
+        adv_type=KAIDI_ADV_TYPE_BROADCAST,
+        room_id=0x12345678,
+        vaddr=0x01020304,
+        product_id=product_id,
+        sofa_acu_no=0x2004,
+    )
+    with (
+        patch(
+            "custom_components.adjustable_bed.config_flow.resolve_kaidi_advertisement",
+            return_value=advertisement,
+        ),
+        patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False),
+    ):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_ADDRESS: ADDRESS, const.CONF_BED_TYPE: label, CONF_NAME: "Kaidi Bed"},
+        )
+        if result.get("step_id") == "route":
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], {"advanced": {const.CONF_PROTOCOL_VARIANT: const.VARIANT_AUTO}}
+            )
+    assert result["type"] is FlowResultType.CREATE_ENTRY, result
+    data = result["data"]
+    assert (data[const.CONF_BED_TYPE], data[const.CONF_PROTOCOL_VARIANT]) == (
+        resolve_bed_type_choice(choice)[0],
+        resolve_bed_type_choice(choice)[1] or const.VARIANT_AUTO,
+    )
+    assert data[const.CONF_KAIDI_ROOM_ID] == 0x12345678
+    assert data[const.CONF_KAIDI_TARGET_VADDR] == 0x01020304
+    assert data[const.CONF_KAIDI_PRODUCT_ID] == product_id
+    assert data[const.CONF_KAIDI_RESOLVED_VARIANT] == resolved
+
+
 @pytest.mark.parametrize(
     "bed_type",
     [const.BED_TYPE_JIECANG_APP, const.BED_TYPE_MALOUF_APP, const.BED_TYPE_LOGICDATA_APP],
@@ -266,9 +369,6 @@ def test_every_picker_label_maps_back_to_one_choice():
 @pytest.mark.parametrize("bed_type", [const.BED_TYPE_GOODVIBE, const.BED_TYPE_ESHINE_OKIN])
 def test_product_apps_choose_their_route_from_the_app_entry(bed_type):
     """Each product is its own app entry: no global variant and no route step."""
-    from custom_components.adjustable_bed.config_flow import _apply_setup_bed_type_choice
-    from custom_components.adjustable_bed.detection import resolve_bed_type_choice
-
     assert _setup_routes(bed_type) == {}
     rows = [
         option

@@ -4517,6 +4517,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         requested_variant = user_input.get(CONF_PROTOCOL_VARIANT, shown_variant or VARIANT_AUTO)
         owned = hidden_generic_fields(requested, requested_variant)
         if not hidden_generic_fields(shown_bed_type, shown_variant) - owned:
+            # An app entry's variant is the route it chose, not a stale field.
+            if (requested, requested_variant) in APP_VARIANT_CHOICES:
+                owned -= {CONF_PROTOCOL_VARIANT}
             for key in owned:
                 user_input.pop(key, None)
             return None
