@@ -33,14 +33,22 @@ A motor qualifies only when its protocol has reliable directional movement and
 its own STOP. Other beds may follow once that is established for their
 protocol. Where motors run together (concurrent `timed_move` calls), each
 motor's estimate counts from the first frame that moves it to the frame that
-stops it, so motors that stop at different moments each get their own time. Beds with position feedback do not need it. Single-address paired
-beds are not supported.
+stops it, so motors that stop at different moments each get their own time.
+Beds with position feedback do not need it.
+
+A paired bed with two Bluetooth addresses is supported, and each side is
+calibrated on its own. No single-address paired bed (one controller with Left
+and Right sides behind one address) supports estimates yet. Only the OCTO
+Standard and Richmat remote-code controllers declare estimated motors, and
+neither forms a single-address pair. A single-address family becomes eligible
+only after accepted protocol audit evidence proves its STOP and release
+behavior.
 
 ## Setting Up
 
 Open **Settings > Devices & services > Adjustable Bed**, select **Configure**,
-then **Estimated positions**. A paired bed has one entry per side, and each side
-is calibrated on its own.
+then **Estimated positions**. A paired bed with two addresses has one entry per
+side, and each side is calibrated on its own.
 
 1. **Choose motors.** Tick the motors to estimate and confirm that you
    understand positions are estimated. Motors whose protocol has no proven stop
