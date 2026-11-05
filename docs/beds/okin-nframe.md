@@ -17,7 +17,7 @@ and the Adjustable bed (Lumbar) app.
 
 | Profile | Models |
 |---|---|
-| [Okimat](#okimat) | Okimat beds, Lucid L600, Rize beds (II, Contempo, Bob, Sanctuary, Aviada, MF900, Resident), Glory, Tranquil, Jobs 賈伯斯, Nectar Motion, Customatic Demo, RF ECO BT bed receivers, other beds with Okin motors |
+| [Okimat](#okimat) | Okimat beds, Lucid L600, Customatic Demo, RF ECO BT bed receivers, other beds with Okin motors; the apps marked ⚠️ under [Apps](#apps) are unverified |
 | [DewertOkin](#dewertokin) | A H Beard, Hankook Gallery, beds with the DewertOkin HE150 controller, DewertOkin Bluetooth RF-Gateway receivers; see [DewertOkin brands](#dewertokin-brands) |
 | [RF ECO BT stair lift](#rf-eco-bt-stair-lift) | Elda BTH / RF ECO BT / MEGAMAT staircase from [#344](https://github.com/kristofferR/ha-adjustable-bed/issues/344); Device Information model `MEGAMAT MBZ`, advertising as `OKIN-050226` |
 | [Customatic](#customatic-family) | Customatic Clarity, Jerome's C and Remedy bases |
@@ -43,16 +43,14 @@ Customatic app profiles.
 
 | Analyzed | App | Package ID | Profile |
 |---|---|---|---|
-| ✅ | [OKIN ComfortBed II-N](https://play.google.com/store/apps/details?id=com.ore.jalon.neworebeding) | `com.ore.jalon.neworebeding` | [Okimat](#okimat) |
-| ✅ | [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) | `com.ore.okincomfortbed` | [Okimat](#okimat) |
-| ✅ | [OKIN Smart Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.smartbedwifi) | `com.okin.bedding.smartbedwifi` | [Okimat](#okimat), [OKIN SmartBed CB24](#okin-smartbed-cb24) |
-| ✅ | Rize II | `com.okin.bedding.rizeii` | [Okimat](#okimat) |
-| ✅ | Rize Resident | `com.okin.bedding.rizeResident` | [Okimat](#okimat), [Okin CST](#okin-cst) |
-| ✅ | Glory | `com.okin.bedding.glory` | [Okimat](#okimat), [Customatic Z-Series](#customatic-z-series) |
-| ✅ | Tranquil | `com.okin.bedding.tranquil` | [Okimat](#okimat), [Jordan's Tranquil](#jordans-tranquil) |
-| ✅ | Jobs 賈伯斯 | `com.okin.bedding.jobs` | [Okimat](#okimat) |
-| ✅ | Nectar Motion | `com.okin.bedding.nectarmotion` | [Okimat](#okimat) |
-| ✅ | Support 挺你 | `com.okin.bedding.support` | [Okimat](#okimat) |
+| ⚠️ | [OKIN ComfortBed II-N](https://play.google.com/store/apps/details?id=com.ore.jalon.neworebeding) | `com.ore.jalon.neworebeding` | [Okimat](#okimat), unverified |
+| ⚠️ | [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) | `com.ore.okincomfortbed` | [Okimat](#okimat), unverified |
+| ✅ | [OKIN Smart Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.smartbedwifi) | `com.okin.bedding.smartbedwifi` | [OKIN SmartBed CB24](#okin-smartbed-cb24); [Okimat](#okimat) unverified |
+| ⚠️ | Rize II | `com.okin.bedding.rizeii` | [Okimat](#okimat), unverified |
+| ✅ | [Resident Adjustable Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.rizeResident) 1.0.1 | `com.okin.bedding.rizeResident` | [Okin CST](#okin-cst) (Rize Resident) |
+| ✅ | [Customatic Technologies Z-Series](https://play.google.com/store/apps/details?id=com.okin.bedding.glory) 1.0.4 (5) | `com.okin.bedding.glory` | [Customatic Z-Series](#customatic-z-series) |
+| ✅ | [Jordan's Tranquil](https://play.google.com/store/apps/details?id=com.okin.bedding.tranquil) 1.0.2 (3) | `com.okin.bedding.tranquil` | [Jordan's Tranquil](#jordans-tranquil) |
+| ⚠️ | Jobs 賈伯斯 | `com.okin.bedding.jobs` | [Okimat](#okimat), unverified |
 | ✅ | [OKIN Smart Remote / FurniMove](https://play.google.com/store/apps/details?id=com.okin.okinsmartcomfort) 2.2.0 (19) | `com.okin.okinsmartcomfort` | [Okimat](#okimat), [DewertOkin](#dewertokin), [RF ECO BT stair lift](#rf-eco-bt-stair-lift), [Okin DOT](#okin-dot) |
 | ✅ | [Customatic Clarity](https://play.google.com/store/apps/details?id=com.okin.bedding.customaticclarity) 1.0.1 | `com.okin.bedding.customaticclarity` | [Customatic Clarity](#customatic-clarity) |
 | ✅ | [Customatic Jerome's](https://play.google.com/store/apps/details?id=com.okin.bedding.customaticjeromes) 1.0.1 | `com.okin.bedding.customaticjeromes` | [Customatic Jerome's](#customatic-jeromes) |
@@ -65,19 +63,23 @@ Customatic app profiles.
 | ✅ | [OKIN SleepEase / DoubleSleep](https://play.google.com/store/apps/details?id=com.okin.doublesleep) 1.2.24 (code 109) | `com.okin.doublesleep` | [OKIN SleepEase](#okin-sleepease) |
 | ✅ | [MFRM Sleepy's Elite](https://play.google.com/store/apps/details?id=com.okin.bedding.sleepy) | `com.okin.bedding.sleepy` | [Sleepy's legacy CB25](#sleepys-legacy-cb25) |
 | ✅ | [AdjustableM5X4](https://play.google.com/store/apps/details?id=com.starcode.abm5_4) 1.0.1 (3) | `com.starcode.abm5_4` | [AdjustableM5X4](#adjustablem5x4) |
-| ✅ | [Rize Sanctuary](https://play.google.com/store/apps/details?id=com.okin.bedding.rizeSanctuary) 1.0.1 (2) | `com.okin.bedding.rizeSanctuary` | [Okin CST](#okin-cst) |
-| ✅ | [Rize Aviada](https://play.google.com/store/apps/details?id=com.okin.bedding.rizeaviada) 1.0.1 (2) | `com.okin.bedding.rizeaviada` | [Okin CST](#okin-cst) |
-| ✅ | [Rize Bob](https://play.google.com/store/apps/details?id=com.okin.bedding.rizebob) 1.0.1 (2) | `com.okin.bedding.rizebob` | [Okin CST](#okin-cst) |
-| ✅ | [Rize Contempo](https://play.google.com/store/apps/details?id=com.okin.bedding.rizecontempo) 1.0.2 (3) | `com.okin.bedding.rizecontempo` | [Okin CST](#okin-cst) |
-| ✅ | [Rize II Carefree](https://play.google.com/store/apps/details?id=com.okin.bedding.rizeiicarefree) 1.0.1 (2) | `com.okin.bedding.rizeiicarefree` | [Okin CST](#okin-cst) |
-| ✅ | [Rize II Clarity](https://play.google.com/store/apps/details?id=com.okin.bedding.rizeiiclarity) 1.0.1 (2) | `com.okin.bedding.rizeiiclarity` | [Okin CST](#okin-cst) |
-| ✅ | [Mattress Firm 900 - O / MFirm 900-O](https://play.google.com/store/apps/details?id=com.okin.bedding.rizemf900) 1.1.2 (4) | `com.okin.bedding.rizemf900` | [Okin CST](#okin-cst) |
-| ✅ | [Support](https://play.google.com/store/apps/details?id=com.okin.bedding.support) 1.0.4 (5) | `com.okin.bedding.support` | [Okin CST](#okin-cst) |
-| ✅ | [Nectar Motion](https://play.google.com/store/apps/details?id=com.okin.bedding.nectarmotion) 1.0.1 (2), Nectar Move profile | `com.okin.bedding.nectarmotion` | [Okin CST](#okin-cst) |
+| ✅ | [Jordan's Sanctuary - O](https://play.google.com/store/apps/details?id=com.okin.bedding.rizeSanctuary) 1.0.1 (2) | `com.okin.bedding.rizeSanctuary` | [Okin CST](#okin-cst) (Rize Sanctuary) |
+| ✅ | [Rize Aviada - O](https://play.google.com/store/apps/details?id=com.okin.bedding.rizeaviada) 1.0.1 (2) | `com.okin.bedding.rizeaviada` | [Okin CST](#okin-cst) (Rize Aviada) |
+| ✅ | [POWER BOB ULTRA-O](https://play.google.com/store/apps/details?id=com.okin.bedding.rizebob) 1.0.1 (2) | `com.okin.bedding.rizebob` | [Okin CST](#okin-cst) (Rize Bob) |
+| ✅ | [Rize Contemporary III - O](https://play.google.com/store/apps/details?id=com.okin.bedding.rizecontempo) 1.0.2 (3) | `com.okin.bedding.rizecontempo` | [Okin CST](#okin-cst) (Rize Contempo) |
+| ✅ | [Carefree](https://play.google.com/store/apps/details?id=com.okin.bedding.rizeiicarefree) 1.0.1 (2) | `com.okin.bedding.rizeiicarefree` | [Okin CST](#okin-cst) (Rize II Carefree) |
+| ✅ | [Rize Clarity II - O](https://play.google.com/store/apps/details?id=com.okin.bedding.rizeiiclarity) 1.0.1 (2) | `com.okin.bedding.rizeiiclarity` | [Okin CST](#okin-cst) (Rize II Clarity) |
+| ✅ | [Mattress Firm 900 - O / MFirm 900 - O](https://play.google.com/store/apps/details?id=com.okin.bedding.rizemf900) 1.1.2 (4) | `com.okin.bedding.rizemf900` | [Okin CST](#okin-cst) (Rize MF900, the Auto profile) |
+| ✅ | [Support 挺你 科技調整床](https://play.google.com/store/apps/details?id=com.okin.bedding.support) 1.0.4 (5) | `com.okin.bedding.support` | [Okin CST](#okin-cst) (Support) |
+| ✅ | [Nectar Move](https://play.google.com/store/apps/details?id=com.okin.bedding.nectarmotion) 1.0.1 (2) | `com.okin.bedding.nectarmotion` | [Okin CST](#okin-cst) (Nectar Move) |
 | ✅ | [Jordan's Serenity](https://play.google.com/store/apps/details?id=com.okin.bedding.serenity) 1.0.1 (code 2) | `com.okin.bedding.serenity` | [Jordan's Serenity](#jordans-serenity) |
 | ✅ | Adjustable bed | `com.okin.bedding.adjustbed` | [Okin 64-Bit](#okin-64-bit) |
 | ✅ | [Adjustable bed(Lumbar)](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustablelumbar) 1.2.2 (code 33) | `com.okin.bedding.adjustablelumbar` | [Adjustable bed (Lumbar)](#adjustable-bed-lumbar) |
 | ✅ | [eShine](https://play.google.com/store/apps/details?id=com.okin.eshine) 1.1.8 (22) | `com.okin.eshine` | Own guide, [eShine E2000 / E3000 / E3100 / E5000](eshine-okin.md): its 40-bit command words match this codec, but its `07 04` clock and `07 05` alarm frames do not |
+
+⚠️ Legacy analysis only: these apps have no accepted APK Protocol Audit report,
+so the profile listed for them is unverified and setup does not name them. An
+accepted report replaces the profile column of the rows it covers.
 
 Beds controlled with FurniMove handset IDs normally use the explicit
 [FurniMove / OKIN Smart Remote](furnimove.md) app profile.
@@ -171,6 +173,12 @@ RF remote to answer.
    (Lumbar), switch to that app's profile.
 6. When detection found a route, **I don't know: keep the detected controls**
    saves it.
+
+A bed set up as [Okin CST](#okin-cst), from its row or the discovery question,
+is asked the same question with its own apps first: each CST product app, then
+Jordan's Serenity, Jordan's Tranquil and Customatic Z-Series, then the answers
+above. Keep saves Okin CST with its MF900 profile. Okin CST is not part of the
+guided change, so an existing CST entry keeps Configure.
 
 For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
 [Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)).
@@ -3226,6 +3234,15 @@ artifact hashes are listed under [Analysis provenance](#cst-analysis-provenance)
 - Support
 - Nectar Motion using the Nectar Move app profile
 - Bluetooth names vary; some report as `OKIN-XXXXXX`
+
+##### Choosing the app
+
+Choose the **Okin CST** row, whose label names each app, or choose **Okin CST**
+when discovery asks which Okin protocol the bed uses. Setup then asks the
+[Okin question](#home-assistant-setup) with the CST apps first, for example
+**Resident Adjustable Bed app (Rize Resident)**, because **Auto** keeps the
+MF900 profile rather than detecting the product. The Nectar Move app has its
+own **Nectar Move** row, which answers the question itself.
 
 ##### Protocol Details
 
