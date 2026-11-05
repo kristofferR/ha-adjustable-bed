@@ -128,7 +128,8 @@ an **Estimated** chip on the section heading. When you have set a maximum angle
 for the back or legs in the options, the bed graphic draws the estimate dashed
 and translucent, so it never looks like measured feedback. With the card's
 [percentage graphic](CONFIGURATION.md#dashboard-card-graphics-and-dialog) on,
-it also draws an estimate without a maximum angle, labeled "≈ 42%".
+it draws every estimate as a percentage pose: "≈ 42%" while tracking, grey with
+"Was ≈ 42%" when unconfirmed, and faint, flat and "?" when unknown.
 
 An alert at the top of the card explains when an estimate cannot be trusted:
 

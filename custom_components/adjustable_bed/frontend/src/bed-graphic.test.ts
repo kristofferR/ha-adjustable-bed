@@ -6,6 +6,12 @@ import type { BedEntities, HomeAssistant, MotorEntity } from "./types";
 
 const motor = (key: string): MotorEntity => ({ key, position: `number.bed_${key}` });
 
+// Every string a template renders, at any depth.
+const texts = (value: unknown): string[] => Array.isArray(value) ? value.flatMap(texts)
+  : value && typeof value === "object" && "values" in value
+    ? (value as {values: unknown[]}).values.flatMap(texts)
+    : typeof value === "string" ? [value] : [];
+
 test("bed graphic requires both upper and lower feedback groups", () => {
   expect(selectBedGraphicMotors([motor("back")])).toBeUndefined();
   expect(selectBedGraphicMotors([motor("legs")])).toBeUndefined();
@@ -112,9 +118,7 @@ test("rendered schematic labels never present percentage travel as measured degr
   });
   expect(template.values).toContain("rotate(37.5 150 70)");
   expect(template.values).toContain("rotate(-18.75 150 70)");
-  const labels = template.values.flatMap(value =>
-    value && typeof value === "object" && "values" in value
-      ? (value as {values: unknown[]}).values : []);
+  const labels = texts(template);
   expect(labels).toContain("Head 50%");
   expect(labels).toContain("Feet 25%");
   expect(labels).not.toContain("Head 38°");
@@ -122,24 +126,36 @@ test("rendered schematic labels never present percentage travel as measured degr
 
 test("a paired estimate is drawn dashed per side", async () => {
   const { renderDualBedGraphic } = await import("./bed-graphic");
-  const side = (estimated: boolean) => ({
-    upper: { angle: 20 }, lower: { angle: 10 }, moving: false, estimated,
+  const side = (feedback?: "estimated") => ({
+    upper: { angle: 20, feedback }, lower: { angle: 10, feedback }, moving: false,
   });
   const strings = (template: { strings: readonly string[]; values: readonly unknown[] }): string => [
     ...template.strings,
     ...template.values.flatMap((v) =>
       v && typeof v === "object" && "strings" in v ? [strings(v as never)] : [String(v)]),
   ].join("");
-  const svg = strings(renderDualBedGraphic({ left: side(true), right: side(false) }) as never);
-  expect(svg.match(/is-estimated/g)?.length).toBe(1);
+  const svg = strings(renderDualBedGraphic({ left: side("estimated"), right: side() }) as never);
+  expect(svg.match(/is-estimated/g)?.length).toBe(2);
+  expect(svg.match(/is-measured/g)?.length).toBe(2);
 });
 
-test("estimates use degrees with a maximum angle, otherwise only an opt-in percentage pose", () => {
+test("each estimate state has its own panel, percentages only when switched on", () => {
+  const text = (key: string, params?: Record<string, string>) =>
+    `${key === "estimate.readout_was" ? "Was ≈" : "≈"} ${params?.percent}%`;
   const tracking = { motor: "back", entityId: "number.bed_back_est", state: "tracking" as const, percent: 40 };
-  expect(estimatedGraphicPanel(tracking)).toBeUndefined();
-  expect(estimatedGraphicPanel(tracking, true)).toEqual({ angle: 30, readout: "40%" });
-  expect(estimatedGraphicPanel({ ...tracking, maxAngle: 60 }, true)).toEqual({ angle: 24 });
-  expect(estimatedGraphicPanel({ ...tracking, state: "unconfirmed" }, true)).toBeUndefined();
+  // Off, v5's degree drawing: only a tracking estimate with a maximum angle.
+  expect(estimatedGraphicPanel(tracking, false, text)).toBeUndefined();
+  expect(estimatedGraphicPanel({ ...tracking, maxAngle: 60 }, false, text))
+    .toEqual({ angle: 24, readout: "≈ 24°", feedback: "estimated" });
+  expect(estimatedGraphicPanel({ ...tracking, state: "unconfirmed", maxAngle: 60 }, false, text)).toBeUndefined();
+  // On, every state is drawn and none looks measured.
+  expect(estimatedGraphicPanel(tracking, true, text)).toEqual({ angle: 30, readout: "≈ 40%", feedback: "estimated" });
+  expect(estimatedGraphicPanel({ ...tracking, state: "unconfirmed" }, true, text))
+    .toEqual({ angle: 30, readout: "Was ≈ 40%", feedback: "unconfirmed" });
+  for (const unknown of [{ ...tracking, state: "unknown" as const }, { ...tracking, state: "not_calibrated" as const },
+    { ...tracking, state: "unconfirmed" as const, percent: undefined }])
+    expect(estimatedGraphicPanel(unknown, true, text)).toEqual({ feedback: "unknown" });
+  expect(estimatedGraphicPanel(undefined, true, text)).toBeUndefined();
 
   const bed = { motors: [
     { key: "back", estimate: "number.bed_back_est" }, { key: "legs", estimate: "number.bed_legs_est" },
@@ -150,15 +166,18 @@ test("estimates use degrees with a maximum angle, otherwise only an opt-in perce
   expect(bedHasGraphicFeedback(bed, hass, true)).toBe(true);
 });
 
-test("an estimated percentage label is marked as an estimate", () => {
+test("stacked labels put each motor name above its value, unknown drawn flat", () => {
   const template = renderBedGraphic({
-    upper: { label: "Head", angle: 30, readout: "40%" },
-    lower: { label: "Feet", angle: 15, readout: "20%" },
-    moving: false, estimated: true,
+    stackLabels: true,
+    upper: { label: "Head", angle: 30, readout: "≈ 40%", feedback: "estimated" },
+    middle: { label: "Lumbar" },
+    lower: { label: "Feet", feedback: "unknown" },
+    moving: false,
   });
-  const labels = template.values.flatMap(value =>
-    value && typeof value === "object" && "values" in value
-      ? (value as {values: unknown[]}).values : []);
-  expect(labels).toContain("Head ≈ 40%");
-  expect(labels).not.toContain("Head 40%");
+  const markup = texts(template).join("|");
+  expect(markup).toContain("Head|≈ 40%");
+  expect(markup).toContain("Lumbar|?");
+  expect(markup).toContain("Feet|?");
+  expect(template.values).toContain("rotate(0 178 70)");
+  expect(texts(template)).toEqual(expect.arrayContaining(["is-estimated", "is-unknown"]));
 });

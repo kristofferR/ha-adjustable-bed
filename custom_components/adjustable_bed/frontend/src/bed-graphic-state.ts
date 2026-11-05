@@ -1,5 +1,5 @@
-import type { BedGraphicPanel } from "./bed-graphic";
-import { type MotorEstimate, estimatedAngle } from "./estimates";
+import { type BedGraphicPanel, clampGraphicAngle } from "./bed-graphic";
+import { type MotorEstimate, estimateReadout, estimatedAngle } from "./estimates";
 import type { BedEntities, HomeAssistant, MotorEntity } from "./types";
 
 export interface BedGraphicMotors {
@@ -78,17 +78,28 @@ export function bedGraphicPanel(
 }
 
 /**
- * A tracking estimate's panel: degrees when the axis' maximum angle is set,
- * otherwise a schematic percentage pose when that graphic is on. The caller
- * marks the graphic estimated, so it is drawn dashed and labeled "≈".
+ * How a motor's estimate is drawn: the one place estimate styles are chosen.
+ * Without the percentage graphic, only a tracking estimate with a maximum
+ * angle is drawn, in degrees. With it, a tracking estimate is "≈ 40%", an
+ * unconfirmed one "Was ≈ 40%" at its last estimate, and any other a flat "?".
  */
 export function estimatedGraphicPanel(
   estimate: MotorEstimate | undefined,
-  allowPercentage = false,
+  allowPercentage: boolean,
+  text: (key: string, params?: Record<string, string>) => string,
 ): BedGraphicPanel | undefined {
-  const angle = estimatedAngle(estimate);
-  if (angle !== undefined) return { angle };
-  if (!allowPercentage || estimate?.state !== "tracking" || estimate.percent === undefined)
-    return undefined;
-  return percentagePanel(estimate.percent);
+  if (!estimate) return undefined;
+  if (!allowPercentage) {
+    const angle = estimatedAngle(estimate);
+    return angle === undefined ? undefined
+      : { angle, readout: `≈ ${Math.round(clampGraphicAngle(angle))}°`, feedback: "estimated" };
+  }
+  const { percent, state } = estimate;
+  if (percent === undefined || (state !== "tracking" && state !== "unconfirmed"))
+    return { feedback: "unknown" };
+  return {
+    ...percentagePanel(percent),
+    readout: estimateReadout(estimate, text),
+    feedback: state === "tracking" ? "estimated" : "unconfirmed",
+  };
 }

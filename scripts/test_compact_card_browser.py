@@ -68,6 +68,11 @@ window.base={type:'custom:adjustable-bed-card',device_id:'pair',layout:'compact'
 card.hass=hass;card.setConfig(base);document.querySelector('main').append(card);
 window.configure=async (config={})=>{card.setConfig({...base,...config});await card.updateComplete;};
 """
+# Graphic labels as text; a stacked name and value are joined by a space.
+LABELS = "els=>els.map(e=>e.children.length?[...e.children].map(t=>t.textContent).join(' '):e.textContent)"
+# The computed stroke and fill of each panel's first surface.
+SURFACES = """els=>els.map(e=>{const s=getComputedStyle(e.querySelector('.bed-surface'));
+  return [e.getAttribute('class'),s.strokeDasharray,s.fillOpacity];})"""
 HTML = """<style>
 body{background:#141719;color:#e8eaed;font:16px system-ui;margin:24px}
 main{width:320px;max-width:100%}ha-card{display:block;border:1px solid #3a4045;border-radius:12px;background:#222629}
@@ -439,7 +444,7 @@ async def main():
         await page.evaluate(
             "configure({device_id:'left',show_percentage_graphic:true,show_lumbar_graphic:true})"
         )
-        assert await card.locator(".bed-graphic-label").all_text_contents() == [
+        assert await card.locator(".bed-graphic-label").evaluate_all(LABELS) == [
             "Back 50%",
             "Lumbar ?",
             "Legs 25%",
@@ -448,13 +453,13 @@ async def main():
             await card.locator(".bed-panel[transform]").last.get_attribute("transform")
             == "rotate(37.5 122 70)"
         )
-        assert await card.locator(".bed-lumbar-panel").get_attribute("opacity") == "0.35"
+        assert "is-unknown" in await card.locator(".bed-lumbar-panel").get_attribute("class")
         await page.evaluate("""async () => {
           hass={...hass,states:{...hass.states,'number.left_lumbar_position':{...hass.states['number.left_lumbar_position'],state:'100'}}};
           card.hass=hass;await card.updateComplete;
         }""")
-        assert await card.locator(".bed-lumbar-panel").get_attribute("opacity") == "1"
-        assert await card.locator(".bed-graphic-label").nth(1).text_content() == "Lumbar 100%"
+        assert "is-measured" in await card.locator(".bed-lumbar-panel").get_attribute("class")
+        assert (await card.locator(".bed-graphic-label").evaluate_all(LABELS))[1] == "Lumbar 100%"
         # Hide only the SVG labels, preserving panels, readouts and full details.
         readout = await card.locator(".compact-position").inner_text()
         await page.evaluate(
@@ -472,7 +477,7 @@ async def main():
         await page.evaluate(
             "configure({device_id:'left',layout:'full',show_percentage_graphic:true,show_lumbar_graphic:true})"
         )
-        assert await card.locator(".bed-graphic-label").all_text_contents() == [
+        assert await card.locator(".bed-graphic-label").evaluate_all(LABELS) == [
             "Back 50%",
             "Lumbar 100%",
             "Legs 25%",
@@ -572,23 +577,33 @@ async def main():
         renewals = await page.evaluate(f"{leases}.length")
         await page.wait_for_timeout(600)
         assert await page.evaluate(f"{leases}.length") == renewals
-        # The percentage graphic labels an estimate it draws as one.
-        await page.evaluate("""async () => {
-          const states={...hass.states},entities={...hass.entities};
-          for (const [key,value] of [['back','40'],['legs','20']]) {
-            delete entities['number.left_'+key+'_position'];
-            const entity_id='number.left_'+key+'_position_estimated';
-            entities[entity_id]={entity_id,device_id:'left',platform:'adjustable_bed',translation_key:key+'_position_estimated'};
-            states[entity_id]={entity_id,state:value,attributes:{estimate_state:'tracking'}};
-          }
-          hass={...hass,states,entities};card.hass=hass;
-          await configure({device_id:'left',layout:'full',show_percentage_graphic:true});
-        }""")
-        assert await card.locator(".bed-graphic.is-estimated").count() == 1
-        assert await card.locator(".bed-graphic-label").all_text_contents() == [
-            "Back ≈ 40%",
-            "Legs ≈ 20%",
-        ]
+        # The percentage graphic draws each estimate state in its own style:
+        # dashed, grey and dashed with its last estimate, or faint dotted flat.
+        for state, labels, dash, fill in [
+            ("tracking", ["Back ≈ 40%", "Legs ≈ 20%"], "5px, 4px", "0.45"),
+            ("unconfirmed", ["Back Was ≈ 40%", "Legs Was ≈ 20%"], "5px, 4px", "0.3"),
+            ("unknown", ["Back ?", "Legs ?"], "1px, 3px", "0.08"),
+        ]:
+            await page.evaluate(
+                """async (state) => {
+              const states={...hass.states},entities={...hass.entities};
+              for (const [key,value] of [['back','40'],['legs','20']]) {
+                delete entities['number.left_'+key+'_position'];
+                const entity_id='number.left_'+key+'_position_estimated';
+                entities[entity_id]={entity_id,device_id:'left',platform:'adjustable_bed',translation_key:key+'_position_estimated'};
+                states[entity_id]={entity_id,state:value,attributes:{estimate_state:state,last_estimate:Number(value)}};
+              }
+              hass={...hass,states,entities};card.hass=hass;
+              await configure({device_id:'left',layout:'full',show_percentage_graphic:true});
+            }""",
+                state,
+            )
+            assert await card.locator(".bed-graphic-label").evaluate_all(LABELS) == labels
+            surfaces = await card.locator(".bed-graphic .bed-panel").evaluate_all(SURFACES)
+            style = "estimated" if state == "tracking" else state
+            assert all(
+                f"is-{style}" in cls and d == dash and f == fill for cls, d, f in surfaces
+            ), surfaces
         await page.evaluate(
             "async () => {hass=nativeHass;card.hass=hass;await configure({show_motors:true})}"
         )

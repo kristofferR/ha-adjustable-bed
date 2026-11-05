@@ -874,7 +874,7 @@ noted.
 
 | Option | Default | Effect |
 |--------|---------|--------|
-| `show_percentage_graphic` | `false` | Draws percentage position feedback as a schematic pose, from flat at 0% to fully raised at 100%. Labels keep the percentage. Degree feedback keeps its measured angle |
+| `show_percentage_graphic` | `false` | Draws percentage position feedback and estimates as a schematic pose, from flat at 0% to fully raised at 100%. Labels keep the percentage. Degree feedback keeps its measured angle |
 | `show_lumbar_graphic` | `false` | Adds a separate lumbar section between head and feet, with its own label, and orders readouts head, lumbar, feet. Beds without a lumbar motor keep two panels |
 | `show_graphic_labels` | `true` | `false` hides only the labels beneath the graphic. Compact readouts, tooltips and controls stay |
 | `open_dialog` | `false` | Compact layout only. Clicking the bed graphic or the expand button opens the full card in a dialog instead of following `navigation_path` |
@@ -883,14 +883,25 @@ noted.
 The percentage pose uses a fixed 0 to 75° drawing range. It is not your bed's
 physical angle, and the lumbar geometry is not a model of the bed's linkage.
 If either the head or feet panel has no numeric feedback, the card shows the
-unavailable placeholder, never a flat bed. Unknown lumbar feedback only dims
-the lumbar section and shows `?`.
+unavailable placeholder, never a flat bed. Unknown lumbar feedback draws only
+the lumbar section faint, dotted and flat, with `?`. With either option on,
+each label shows the motor name above its value.
 
-On a bed with [estimated positions](ESTIMATED_POSITIONS.md), the graphic draws
-a tracking estimate dashed. Without the percentage graphic it needs the axis'
-maximum angle. With it, an estimate without one is drawn as a percentage pose.
-Either way its labels read `≈`, such as `Back ≈ 40%`, so an estimate never
-looks like measured feedback. Unconfirmed and unknown estimates are not drawn.
+On a bed with [estimated positions](ESTIMATED_POSITIONS.md), an estimate never
+looks like measured feedback. Without the percentage graphic, the card draws
+only a tracking estimate, dashed and in degrees, when the axis' maximum angle
+is set. With it, every estimate state is drawn as a percentage pose, and a
+compact card shows the matching chip on its graphic:
+
+| Position | Drawn as | Label |
+|----------|----------|-------|
+| Measured | Solid | `40%` |
+| Estimated | Dashed and translucent | `≈ 40%` |
+| Unconfirmed after a restart | Grey and dashed, at the last estimate | `Was ≈ 40%` |
+| Unknown, or not calibrated | Faint, dotted and flat | `?` |
+
+The lumbar section follows the same rule. Only back, legs, head and feet have
+estimates, so on an estimated bed the lumbar section is unknown.
 
 ### Full card in a dialog
 

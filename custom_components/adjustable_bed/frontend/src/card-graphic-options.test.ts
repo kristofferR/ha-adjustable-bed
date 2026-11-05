@@ -16,8 +16,9 @@ else Reflect.deleteProperty(globalThis, "window");
 
 type Feedback = "°" | "%" | "estimate";
 
-// Back 40, legs 20 and lumbar 60, as degrees, percentages or tracking estimates.
-function fixture(feedback: Feedback, estimateState = "tracking"): HomeAssistant {
+// Back 40, legs 20 and lumbar 60, as degrees, percentages or estimates.
+// Estimates exist only for back and legs, never lumbar.
+function fixture(feedback: Feedback, estimateState = "tracking", maxAngle?: number): HomeAssistant {
   const hass: HomeAssistant = {
     states: {}, entities: {}, devices: { bed: { id: "bed", name: "Bed" } },
     locale: { language: "en" }, language: "en", themes: {},
@@ -30,9 +31,12 @@ function fixture(feedback: Feedback, estimateState = "tracking"): HomeAssistant 
   };
   for (const [motor, value] of [["back", "40"], ["legs", "20"], ["lumbar", "60"]] as const) {
     add(`cover.bed_${motor}`, motor, "open");
-    if (feedback === "estimate")
-      add(`number.bed_${motor}_estimated`, `${motor}_position_estimated`, value, { estimate_state: estimateState });
-    else add(`number.bed_${motor}_position`, `${motor}_position`, value, { unit_of_measurement: feedback });
+    if (feedback !== "estimate")
+      add(`number.bed_${motor}_position`, `${motor}_position`, value, { unit_of_measurement: feedback });
+    else if (motor !== "lumbar")
+      add(`number.bed_${motor}_estimated`, `${motor}_position_estimated`, value, {
+        estimate_state: estimateState, last_estimate: Number(value), ...(maxAngle ? { max_angle: maxAngle } : {}),
+      });
   }
   add("button.bed_stop", "stop", "unknown");
   return hass;
@@ -48,6 +52,13 @@ function serialize(value: unknown): string {
   if (typeof value === "function") return "ƒ";
   if (typeof value === "symbol" || value === undefined || value === null) return "";
   return String(value);
+}
+
+// The labels beneath the graphic; a stacked name and value joined by a space.
+function graphicLabels(markup: string): string[] {
+  return [...markup.matchAll(
+    /class="bed-graphic-label">(?:<tspan[^>]*>([^<]*)<\/tspan><tspan[^>]*>([^<]*)<\/tspan>|([^<]*))<\/text>/g,
+  )].map(([, name, value, inline]) => inline ?? `${name} ${value}`);
 }
 
 function render(hass: HomeAssistant, config: Partial<AdjustableBedCardConfig>): string {
@@ -73,36 +84,54 @@ test("cards without the new options render exactly as with them switched off", (
 
 test("by default the graphic keeps two degree panels and opens no dialog", () => {
   const degrees = render(fixture("°"), {});
-  expect(degrees).toContain("Back 40°");
-  expect(degrees).toContain("Legs 20°");
+  expect(graphicLabels(degrees)).toEqual(["Back 40°", "Legs 20°"]);
   expect(degrees).not.toContain("bed-lumbar-panel");
   // Percentages, and estimates without a maximum angle, are not drawn.
   expect(render(fixture("%"), {})).not.toContain("bed-graphic");
   expect(render(fixture("estimate"), {})).not.toContain("bed-graphic");
+  expect(render(fixture("estimate", "unconfirmed", 75), {})).not.toContain("bed-graphic");
+  // A tracking estimate with a maximum angle keeps v5's dashed degrees, unchipped.
+  const estimate = render(fixture("estimate", "tracking", 75), {});
+  expect(graphicLabels(estimate)).toEqual(["Back ≈ 30°", "Legs ≈ 15°"]);
+  expect(estimate).toContain("is-estimated");
+  expect(render(fixture("estimate", "tracking", 75), { layout: "compact" })).not.toContain("compact-estimate-chip");
   const compact = render(fixture("°"), { layout: "compact" });
   expect(compact).toContain('class="compact-graphic" role="img"');
   expect(compact).not.toContain("bed-details-dialog");
   expect(compact).not.toContain("compact-open");
 });
 
-test("switched on, measured percentages and lumbar draw a schematic pose", () => {
+test("switched on, measured percentages and lumbar draw a solid pose with stacked labels", () => {
   const out = render(fixture("%"), { show_percentage_graphic: true, show_lumbar_graphic: true });
-  expect(out).toContain("Back 40%");
-  expect(out).toContain("Lumbar 60%");
-  expect(out).toContain("Legs 20%");
+  expect(graphicLabels(out)).toEqual(["Back 40%", "Lumbar 60%", "Legs 20%"]);
+  expect(out).toContain("<tspan");
   expect(out).toContain("bed-lumbar-panel");
-  expect(out).not.toContain("is-estimated");
+  expect(out).toContain("is-measured");
+  expect(out).not.toMatch(/is-(estimated|unconfirmed|unknown)/);
 });
 
-test("the percentage graphic says when it draws an estimate", () => {
-  const out = render(fixture("estimate"), { show_percentage_graphic: true, show_lumbar_graphic: true });
-  expect(out).toContain("is-estimated");
-  expect(out).toContain("Back ≈ 40%");
-  expect(out).toContain("Lumbar ≈ 60%");
-  expect(out).not.toContain("Back 40%");
-  // Only a tracking estimate is a position; an unconfirmed one is never drawn.
-  expect(render(fixture("estimate", "unconfirmed"), { show_percentage_graphic: true }))
-    .not.toContain("bed-graphic");
+test("the percentage graphic draws each estimate state in its own style", () => {
+  const options = { show_percentage_graphic: true, show_lumbar_graphic: true };
+  const cases = [
+    ["tracking", ["Back ≈ 40%", "Lumbar ?", "Legs ≈ 20%"], "is-estimated", "Estimated"],
+    ["unconfirmed", ["Back Was ≈ 40%", "Lumbar ?", "Legs Was ≈ 20%"], "is-unconfirmed", "Unconfirmed"],
+    ["unknown", ["Back ?", "Lumbar ?", "Legs ?"], "is-unknown", "Unknown"],
+  ] as const;
+  for (const [state, labels, style, chip] of cases) {
+    const out = render(fixture("estimate", state), options);
+    expect(graphicLabels(out)).toEqual([...labels]);
+    expect(out).toContain(style);
+    expect(out).not.toContain("is-measured");
+    // There is no lumbar estimate, so lumbar is unknown in every state.
+    expect(out).toMatch(/bed-lumbar-panel is-unknown/);
+    const compact = render(fixture("estimate", state), { ...options, layout: "compact" });
+    expect(compact).toContain(`chip-${state === "tracking" ? "estimated" : state}`);
+    expect(compact).toContain(chip);
+  }
+  // Unknown is drawn flat.
+  const unknown = render(fixture("estimate", "unknown"), options);
+  expect(unknown).toContain("rotate(0 122 70)");
+  expect(unknown).toContain("rotate(0 178 70)");
 });
 
 test("the dialog editor stores tap to move and saved positions for the dialog only", () => {

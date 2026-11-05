@@ -116,9 +116,11 @@ interface PairedPane {
 
 interface BedGraphicState extends DualBedGraphicSide {
   showLabels?: boolean;
+  stackLabels?: boolean;
   upperMotor: MotorEntity;
   lowerMotor: MotorEntity;
   middleMotor?: MotorEntity;
+  // Drawn from estimates (#601) rather than measured feedback.
   estimated?: boolean;
 }
 
@@ -640,10 +642,18 @@ export class AdjustableBedCard extends LitElement {
         : renderBedGraphic({ ...left, upper: { ...left.upper, label: left.middle ? left.upper.label : undefined }, lower: { ...left.lower, label: left.middle ? left.lower.label : undefined } })
       : html`<div class="compact-no-position"><ha-icon icon="mdi:bed-outline"></ha-icon>
           <span>${localize(this.hass, "compact.no_position")}</span></div>`;
+    // Without a Position heading here, the percentage graphic carries the
+    // estimate chip itself.
+    const chip = this._config?.show_percentage_graphic === true && allKnown &&
+      graphics.some((graphic) => graphic?.estimated)
+      ? estimateChip(sides.flatMap((pane) => bedEstimates(this.hass, pane.bed.motors)))
+      : undefined;
+    const marked = html`${content}${chip ? html`<span class="estimate-chip chip-${chip}
+      compact-estimate-chip">${this._t(`estimate.chip_${chip}`)}</span>` : nothing}`;
     return this._config?.open_dialog || cardNavigationPath(this._config?.navigation_path)
       ? html`<button class="compact-graphic" @click=${this._openDetails}
-          aria-label="${localize(this.hass, "compact.open")}. ${description}">${content}</button>`
-      : html`<div class="compact-graphic" role="img" aria-label=${description}>${content}</div>`;
+          aria-label="${localize(this.hass, "compact.open")}. ${description}">${marked}</button>`
+      : html`<div class="compact-graphic" role="img" aria-label=${description}>${marked}</div>`;
   }
 
   private _compactReadouts(sides: PairedPane[]): TemplateResult | typeof nothing {
@@ -1121,18 +1131,18 @@ export class AdjustableBedCard extends LitElement {
       return unit === "°" || (percentage && unit === "%");
     });
     // Measured feedback wins. A bed without any is drawn from its estimates,
-    // dashed and labeled "≈", never like measured feedback.
+    // in an estimate style, never like measured feedback.
     const estimated = withPosition.length === 0;
     const panel = (motor: MotorEntity): BedGraphicPanel | undefined => estimated
-      ? estimatedGraphicPanel(motorEstimate(hass, motor), percentage)
+      ? estimatedGraphicPanel(motorEstimate(hass, motor), percentage, (k, p) => this._t(k, p))
       : bedGraphicPanel(motor, hass, percentage);
     const graphicMotors = selectBedGraphicMotors(
       estimated ? bed.motors.filter((motor) => panel(motor) !== undefined) : withPosition,
     );
     if (!graphicMotors) return undefined;
     const { upper, lower } = graphicMotors;
-    const middle = this._config?.show_lumbar_graphic === true
-      ? bed.motors.find((motor) => motor.key === "lumbar") : undefined;
+    const lumbar = this._config?.show_lumbar_graphic === true;
+    const middle = lumbar ? bed.motors.find((motor) => motor.key === "lumbar") : undefined;
     const upperPanel = panel(upper);
     const lowerPanel = panel(lower);
     // Missing data on either required panel must never look like a flat bed.
@@ -1145,6 +1155,7 @@ export class AdjustableBedCard extends LitElement {
     return {
       upperMotor: upper,
       showLabels: this._config?.show_graphic_labels !== false,
+      stackLabels: percentage || lumbar,
       lowerMotor: lower,
       middleMotor: middle,
       upper: { label: this._motorName(upper), ...upperPanel },
@@ -2378,9 +2389,10 @@ export class AdjustableBedCard extends LitElement {
     .compact-tabs .dual-swatch, .compact-readouts .dual-swatch { width: 6px; height: 6px; }
     .compact-tabs .compact-tab-label { min-width: 0; }
     .compact-target { color: var(--secondary-text-color); font-size: .8rem; padding: 6px 0; }
-    .compact-graphic { display: block; box-sizing: border-box; width: 100%; padding: 0;
+    .compact-graphic { position: relative; display: block; box-sizing: border-box; width: 100%; padding: 0;
       border: 0; border-radius: 8px; background: none; color: var(--primary-text-color); }
     button.compact-graphic { cursor: pointer; }
+    .compact-estimate-chip { position: absolute; top: 0; right: 0; }
     .compact-graphic .bed-graphic { display: block; width: 100%; height: 132px; max-width: 300px; margin: auto; }
     .compact-glance .compact-graphic .bed-graphic { height: 112px; }
     .compact-no-position { min-height: 90px; display: flex; flex-direction: column;
@@ -2639,17 +2651,31 @@ export class AdjustableBedCard extends LitElement {
     .bed-graphic.is-moving {
       opacity: 0.95;
     }
-    .dual-bed-side.is-estimated .dual-bed-surface {
+    /* How a panel's position is known (#601). Only measured feedback is solid.
+       Set per panel, so a lumbar section follows the same rule. */
+    .bed-panel.is-estimated .bed-surface,
+    .dual-bed-panel.is-estimated .dual-bed-surface {
       fill-opacity: 0.45;
-      stroke: currentColor;
       stroke-width: 1.5;
       stroke-dasharray: 5 4;
     }
-    .bed-graphic.is-estimated .bed-surface {
-      fill-opacity: 0.45;
-      stroke: rgb(var(--ab-graphic-rgb));
+    .bed-panel.is-estimated .bed-surface { stroke: rgb(var(--ab-graphic-rgb)); }
+    .dual-bed-panel.is-estimated .dual-bed-surface { stroke: currentColor; }
+    .is-unconfirmed .bed-surface,
+    .is-unconfirmed .dual-bed-surface {
+      fill: var(--secondary-text-color);
+      fill-opacity: 0.3;
+      stroke: var(--secondary-text-color);
       stroke-width: 1.5;
       stroke-dasharray: 5 4;
+    }
+    .is-unknown .bed-surface,
+    .is-unknown .dual-bed-surface {
+      fill-opacity: 0.08;
+      stroke: var(--secondary-text-color);
+      stroke-width: 1.5;
+      stroke-dasharray: 1 3;
+      stroke-linecap: round;
     }
     .estimate-chip {
       border-radius: 999px;

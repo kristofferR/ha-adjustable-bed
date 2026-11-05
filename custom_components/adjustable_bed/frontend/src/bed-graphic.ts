@@ -6,20 +6,25 @@ import { type TemplateResult, svg } from "lit";
 
 export type BedGraphicTone = "theme" | "left" | "right";
 
+// How a panel's position is known. Only measured feedback is drawn solid; each
+// estimate state (#601) has its own style, set per panel by the card's CSS.
+export type PanelFeedback = "measured" | "estimated" | "unconfirmed" | "unknown";
+
 export interface BedGraphicPanel {
   label?: string;
-  angle?: number; // degrees, 0 = flat
-  readout?: string; // original percentage, when angle is only a schematic pose
+  angle?: number; // degrees, 0 = flat; undefined = unknown, drawn flat
+  readout?: string; // the value text, when it is not the measured angle
+  feedback?: PanelFeedback; // omitted = measured, or unknown without an angle
 }
 
 export interface BedGraphicOptions {
   showLabels?: boolean;
+  // The motor name above its value, so three labels never overlap.
+  stackLabels?: boolean;
   upper: BedGraphicPanel; // head end (left)
   lower: BedGraphicPanel; // foot end (right)
   middle?: BedGraphicPanel; // lumbar support, when this motor exists
   moving: boolean;
-  // A travel-time estimate is drawn dashed and translucent, never like feedback.
-  estimated?: boolean;
 }
 
 export interface DualBedGraphicSide {
@@ -27,8 +32,6 @@ export interface DualBedGraphicSide {
   lower: BedGraphicPanel;
   middle?: BedGraphicPanel;
   moving: boolean;
-  // A travel-time estimate is drawn dashed and translucent, never like feedback.
-  estimated?: boolean;
 }
 
 export interface DualBedGraphicOptions {
@@ -37,16 +40,22 @@ export interface DualBedGraphicOptions {
 }
 
 // Clamp so an out-of-range reading can never fold the mattress through the base.
-const clamp = (deg: number): number => Math.max(0, Math.min(75, deg));
+export const clampGraphicAngle = (deg: number): number => Math.max(0, Math.min(75, deg));
+
+const feedbackClass = (p: BedGraphicPanel): `is-${PanelFeedback}` =>
+  `is-${p.angle === undefined ? "unknown" : p.feedback ?? "measured"}`;
+
+const value = (p: BedGraphicPanel): string =>
+  p.angle === undefined ? "?" : p.readout ?? `${Math.round(clampGraphicAngle(p.angle))}°`;
 
 /** Schematic geometry: lumbar extension changes only the middle support. */
 export function bedGraphicGeometry(opts: BedGraphicOptions) {
   const upperHinge = opts.middle ? 122 : 150;
   const lowerHinge = opts.middle ? 178 : 150;
-  const lift = clamp(opts.middle?.angle ?? 0) / 75 * 28;
+  const lift = clampGraphicAngle(opts.middle?.angle ?? 0) / 75 * 28;
   return {
-    upperTransform: `rotate(${clamp(opts.upper.angle ?? 0)} ${upperHinge} 70)`,
-    lowerTransform: `rotate(${-clamp(opts.lower.angle ?? 0)} ${lowerHinge} 70)`,
+    upperTransform: `rotate(${clampGraphicAngle(opts.upper.angle ?? 0)} ${upperHinge} 70)`,
+    lowerTransform: `rotate(${-clampGraphicAngle(opts.lower.angle ?? 0)} ${lowerHinge} 70)`,
     upperWidth: upperHinge - 42,
     lowerX: lowerHinge,
     lowerWidth: 258 - lowerHinge,
@@ -64,19 +73,16 @@ export function renderBedGraphic(
   const upperT = geometry.upperTransform;
   const lowerT = geometry.lowerTransform;
 
-  const fmt = (p: BedGraphicPanel): string => {
-    const label = p.label ? `${p.label} ` : "";
-    if (p.angle === undefined) return `${label}?`;
-    // An estimate, in degrees or as a percentage pose, is never labeled like
-    // measured feedback.
-    const value = p.readout ?? `${Math.round(clamp(p.angle))}°`;
-    return `${label}${opts.estimated ? "≈ " : ""}${value}`;
-  };
+  const label = (x: number, p: BedGraphicPanel) => opts.stackLabels && p.label
+    ? svg`<text x=${x} y="124" text-anchor="middle" class="bed-graphic-label"><tspan
+        x=${x}>${p.label}</tspan><tspan x=${x} dy="14">${value(p)}</tspan></text>`
+    : svg`<text x=${x} y="128" text-anchor="middle" class="bed-graphic-label">${
+        `${p.label ? `${p.label} ` : ""}${value(p)}`}</text>`;
 
   return svg`
     <svg
-      class="bed-graphic bed-graphic-${tone} ${opts.moving ? "is-moving" : ""} ${opts.estimated ? "is-estimated" : ""}"
-      viewBox="0 -44 300 180"
+      class="bed-graphic bed-graphic-${tone} ${opts.moving ? "is-moving" : ""}"
+      viewBox=${opts.stackLabels ? "0 -44 300 190" : "0 -44 300 180"}
       role="img"
       aria-hidden="true"
     >
@@ -98,24 +104,24 @@ export function renderBedGraphic(
 
       <g class="bed-side-layer" fill="url(#abSingleMattress)">
         <!-- foot panel (right of hinge) -->
-        <g class="bed-panel" transform=${lowerT}>
+        <g class="bed-panel ${feedbackClass(opts.lower)}" transform=${lowerT}>
           <rect class="bed-surface" x=${geometry.lowerX} y="58" width=${geometry.lowerWidth} height="18" rx="6" />
         </g>
 
         <!-- head/back panel (left of hinge) with pillow -->
-        <g class="bed-panel" transform=${upperT}>
+        <g class="bed-panel ${feedbackClass(opts.upper)}" transform=${upperT}>
           <rect class="bed-surface" x="42" y="58" width=${geometry.upperWidth} height="18" rx="6" />
           <rect class="bed-surface bed-pillow" x="50" y="49" width="40" height="11" rx="5" />
         </g>
-        ${opts.middle ? svg`<g class="bed-panel bed-lumbar-panel" opacity=${opts.middle.angle === undefined ? "0.35" : "1"}>
+        ${opts.middle ? svg`<g class="bed-panel bed-lumbar-panel ${feedbackClass(opts.middle)}">
           <path class="bed-surface" d=${geometry.middlePath} />
         </g>` : ""}
       </g>
 
       ${opts.showLabels !== false ? svg`
-      <text x=${opts.middle ? 80 : 86} y="128" text-anchor="middle" class="bed-graphic-label">${fmt(opts.upper)}</text>
-      ${opts.middle ? svg`<text x="150" y="128" text-anchor="middle" class="bed-graphic-label">${fmt(opts.middle)}</text>` : ""}
-      <text x=${opts.middle ? 220 : 214} y="128" text-anchor="middle" class="bed-graphic-label">${fmt(opts.lower)}</text>
+      ${label(opts.middle ? 80 : 86, opts.upper)}
+      ${opts.middle ? label(150, opts.middle) : ""}
+      ${label(opts.middle ? 220 : 214, opts.lower)}
       ` : ""}
     </svg>
   `;
@@ -127,39 +133,27 @@ export function renderBedGraphic(
 export function renderDualBedGraphic(
   opts: DualBedGraphicOptions,
 ): TemplateResult {
-  const leftUpper = clamp(opts.left.upper.angle ?? 0);
-  const leftLower = clamp(opts.left.lower.angle ?? 0);
-  const rightUpper = clamp(opts.right.upper.angle ?? 0);
-  const rightLower = clamp(opts.right.lower.angle ?? 0);
-
-  const side = (
-    name: "left" | "right",
-    upper: number,
-    lower: number,
-    moving: boolean,
-    estimated = false,
-    middle?: BedGraphicPanel,
-  ): TemplateResult => {
-    const geometry = bedGraphicGeometry({upper: {angle: upper}, lower: {angle: lower}, middle, moving});
+  const side = (name: "left" | "right", opts: DualBedGraphicSide): TemplateResult => {
+    const geometry = bedGraphicGeometry(opts);
     return svg`
     <g
-      class="dual-bed-side dual-bed-side-${name} ${moving ? "is-moving" : ""} ${estimated ? "is-estimated" : ""}"
+      class="dual-bed-side dual-bed-side-${name} ${opts.moving ? "is-moving" : ""}"
       fill=${`url(#abDual${name === "left" ? "Left" : "Right"})`}
     >
       <g
-        class="dual-bed-panel"
+        class="dual-bed-panel ${feedbackClass(opts.lower)}"
         transform=${geometry.lowerTransform}
       >
         <rect class="dual-bed-surface" x=${geometry.lowerX} y="58" width=${geometry.lowerWidth} height="18" rx="6" />
       </g>
       <g
-        class="dual-bed-panel"
+        class="dual-bed-panel ${feedbackClass(opts.upper)}"
         transform=${geometry.upperTransform}
       >
         <rect class="dual-bed-surface" x="42" y="58" width=${geometry.upperWidth} height="18" rx="6" />
         <rect class="dual-bed-surface dual-bed-pillow" x="50" y="49" width="40" height="11" rx="5" />
       </g>
-      ${middle ? svg`<g class="dual-bed-panel bed-lumbar-panel" opacity=${middle.angle === undefined ? "0.35" : "1"}>
+      ${opts.middle ? svg`<g class="dual-bed-panel bed-lumbar-panel ${feedbackClass(opts.middle)}">
         <path class="dual-bed-surface" d=${geometry.middlePath} />
       </g>` : ""}
     </g>
@@ -192,22 +186,8 @@ export function renderDualBedGraphic(
       <rect class="dual-bed-frame" x="30" y="78" width="240" height="8" rx="4" fill="url(#abDualFrame)" />
       <rect class="dual-bed-frame" x="34" y="83" width="6" height="24" rx="3" fill="url(#abDualFrame)" />
       <rect class="dual-bed-frame" x="260" y="83" width="6" height="24" rx="3" fill="url(#abDualFrame)" />
-      ${side(
-        "right",
-        rightUpper,
-        rightLower,
-        opts.right.moving,
-        opts.right.estimated,
-        opts.right.middle,
-      )}
-      ${side(
-        "left",
-        leftUpper,
-        leftLower,
-        opts.left.moving,
-        opts.left.estimated,
-        opts.left.middle,
-      )}
+      ${side("right", opts.right)}
+      ${side("left", opts.left)}
     </svg>
   `;
 }
