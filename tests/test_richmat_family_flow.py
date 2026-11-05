@@ -95,6 +95,15 @@ def test_configure_accepts_the_hidden_apps_by_id():
         assert selector(choice) == choice
 
 
+def test_configure_lists_each_mh_app_by_its_own_label():
+    selector = _bed_type_selector(const.BED_TYPE_RICHMAT, show_saved_id=True)
+    rows = selector.rows()
+    for bed_type in const.RICHMAT_MH_BED_TYPES:
+        label = bed_type_label(bed_type)
+        assert rows[label] == bed_type
+        assert selector(label) == bed_type
+
+
 async def test_the_richmat_row_asks_the_app(hass):
     result = await setup_flow(hass).async_step_richmat_family()
     assert result["step_id"] == "richmat_family"
@@ -246,6 +255,25 @@ async def test_configure_returns_an_rmcontrol_entry_to_the_remote(hass):
     assert entry.data[const.CONF_RMCONTROL_PRODUCT] == ""
 
 
+async def test_configure_switches_a_remote_entry_to_an_mh_app(hass):
+    entry = entry_for(hass, **{const.CONF_RMCONTROL_PRODUCT: ""})
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass, flow.handler = hass, entry.entry_id
+    form = await flow.async_step_settings()
+    selector = form["data_schema"].schema[fields(form)[const.CONF_BED_TYPE]]
+    choice = selector(bed_type_label(const.BED_TYPE_RICHMAT_REVIVE))
+    form = await flow.async_step_settings({const.CONF_BED_TYPE: choice})
+    assert form["type"] is FlowResultType.FORM
+    assert const.CONF_PROTOCOL_VARIANT in fields(form)
+    # Switching apps first asks its model, without changing the saved entry.
+    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_RICHMAT
+    with patch.object(hass.config_entries, "async_schedule_reload"):
+        result = await flow.async_step_settings({const.CONF_PROTOCOL_VARIANT: "model_vorm"})
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_RICHMAT_REVIVE
+    assert entry.data[const.CONF_PROTOCOL_VARIANT] == "model_vorm"
+
+
 async def test_each_receiver_of_a_pair_answers_for_itself(hass, enable_custom_integrations):
     from tests.test_paired_receiver_questions import child, pair_entry, receiver_form
     from tests.test_paired_receiver_questions import fields as receiver_fields
@@ -307,3 +335,4 @@ async def test_an_mh_app_from_the_brand_list_reaches_its_model_question(
         const.BED_TYPE_RICHMAT_REVIVE,
         "model_vorm",
     )
+
