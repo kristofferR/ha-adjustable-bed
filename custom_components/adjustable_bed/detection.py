@@ -720,6 +720,7 @@ FAMILY_STEP_ROUTES: Final = frozenset(
         BED_TYPE_TRANQUIL,
         BED_TYPE_STARCODE_M5X5,
         BED_TYPE_STARCODE_M1X12,
+        BED_TYPE_REVERIE,
     }
 )
 # A family row whose picker label names every route behind it; saved entries
@@ -741,6 +742,9 @@ _FAMILY_ROW_LABELS: Final[dict[str, str]] = {
     BED_TYPE_SERENITY: "Jordan's: Serenity and Tranquil apps",
     BED_TYPE_STARCODE_ABM5_4: (
         "StarCode apps: AdjustableM5X4, AdjustableM5X5 and Adjustable Comfort M1X12"
+    ),
+    BED_TYPE_REVERIE_NIGHTSTAND: (
+        "Reverie: Nightstand app, Protocol 110 and Protocol 108 receivers"
     ),
 }
 
