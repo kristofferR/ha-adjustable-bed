@@ -103,3 +103,20 @@ def test_configure_lists_both_receivers_by_their_own_labels():
     shown = {option["label"] for option in picker.config["options"]}
     for bed_type in (const.BED_TYPE_REVERIE, const.BED_TYPE_REVERIE_NIGHTSTAND):
         assert bed_type_label(bed_type) in shown
+
+
+async def test_the_model_question_offers_the_apps_models_with_its_other_fallback(hass):
+    flow = setup_flow(
+        hass, const.BED_TYPE_REVERIE_NIGHTSTAND, [const.REVERIE_NIGHTSTAND_SERVICE_UUID]
+    )
+    result = await flow.async_step_reverie_family()
+    marker, validator = next(
+        (marker, validator)
+        for marker, validator in result["data_schema"].schema.items()
+        if marker.schema == const.CONF_PROTOCOL_VARIANT
+    )
+    # Nothing detects the model, so no automatic choice that saving would turn into Other.
+    assert marker.default() == "Other"
+    assert const.VARIANT_AUTO not in validator.container
+    assert "9T" in validator.container
+

@@ -676,6 +676,12 @@ def _sleepys_app_features(data: Mapping[str, Any]) -> Mapping[str, Any]:
     }
 
 
+def _reverie_models(_data: Mapping[str, Any]) -> Mapping[Any, str]:
+    from .beds.reverie_profiles import REVERIE_MODEL_CHOICES
+
+    return REVERIE_MODEL_CHOICES
+
+
 def _asking(key: str, **declared: Any) -> SetupProfile:
     """Add questions and rules to a profile's owned-field declaration."""
     return replace(_BASE.get(key, SetupProfile()), **declared)
@@ -839,10 +845,12 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         ),
     ),
     # The Reverie question confirms the receiver; the model the app shows sets
-    # the controls of either one.
+    # the controls of either one. Nothing detects the model, so the app's own
+    # list and its explicit Other fallback are offered, never an automatic one.
     **{
         bed_type: _asking(
-            bed_type, questions=(Question(CONF_PROTOCOL_VARIANT, _routes(bed_type), "auto"),)
+            bed_type,
+            questions=(Question(CONF_PROTOCOL_VARIANT, _reverie_models, "Other"),),
         )
         for bed_type in (BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND)
     },
