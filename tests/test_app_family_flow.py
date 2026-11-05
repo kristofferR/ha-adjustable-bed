@@ -14,7 +14,7 @@ from custom_components.adjustable_bed.config_flow import (
     AdjustableBedOptionsFlow,
     _bed_type_selector,
 )
-from custom_components.adjustable_bed.detection import get_bed_type_options
+from custom_components.adjustable_bed.detection import bed_type_label, get_bed_type_options
 from custom_components.adjustable_bed.profile_id import resolve_profile_id
 from custom_components.adjustable_bed.profile_migration import SLEEPYS_FAMILY
 from tests.test_sleepys_family_flow import finish_check, gatt_client, reconfigure
@@ -275,3 +275,46 @@ async def test_configure_sends_an_app_change_to_the_guided_change(hass):
     )
     assert result["errors"] == {"base": "migration_reconfigure_required"}
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_SERENITY
+
+
+async def test_configure_corrects_an_m5x4_entry_to_m5x5(hass):
+    name = "STAR252201000001"
+    entry = entry_for(
+        hass,
+        {
+            const.CONF_BED_TYPE: const.BED_TYPE_STARCODE_ABM5_4,
+            const.CONF_BLE_DEVICE_NAME: name,
+        },
+    )
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass, flow.handler = hass, entry.entry_id
+    form = await flow._async_options_form(None, step_id="settings")
+    picker = next(
+        validator
+        for marker, validator in form["data_schema"].schema.items()
+        if marker.schema == const.CONF_BED_TYPE
+    )
+    # The StarCode apps have no guided change, so Configure lists each by its label.
+    shown = {option["label"] for option in picker.config["options"]}
+    for app in (
+        const.BED_TYPE_STARCODE_ABM5_4,
+        const.BED_TYPE_STARCODE_M5X5,
+        const.BED_TYPE_STARCODE_M1X12,
+    ):
+        assert bed_type_label(app) in shown
+        assert picker(bed_type_label(app)) == app
+    form = await flow._async_options_form(
+        {const.CONF_BED_TYPE: const.BED_TYPE_STARCODE_M5X5}, step_id="settings"
+    )
+    assert const.CONF_STARCODE_M5X5_PROFILE in {
+        marker.schema for marker in form["data_schema"].schema
+    }
+    with patch.object(hass.config_entries, "async_schedule_reload"):
+        result = await flow._async_options_form(
+            {const.CONF_STARCODE_M5X5_PROFILE: "cb25", const.CONF_BLE_DEVICE_NAME: name},
+            step_id="settings",
+        )
+    assert result["type"] == "create_entry"
+    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_STARCODE_M5X5
+    assert entry.data[const.CONF_STARCODE_M5X5_PROFILE] == "cb25"
+

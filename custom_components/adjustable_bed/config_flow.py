@@ -930,6 +930,20 @@ def _bed_type_selector(
 ) -> _SearchableSelect:
     """Return the bed-type selector, keeping a default the list does not offer."""
     options = get_bed_type_options()
+    if show_saved_id:
+        # The StarCode apps have no guided change, so Configure lists each by its
+        # own label; setup asks for them behind their family row.
+        unguided = {bed_type for bed_type, _variant, _step in _STARCODE_APPS.values()}
+        options = sorted(
+            [
+                *(option for option in options if option["value"] not in unguided),
+                *(
+                    SelectOptionDict(value=bed_type, label=bed_type_label(bed_type))
+                    for bed_type in unguided
+                ),
+            ],
+            key=lambda option: option["label"].lower(),
+        )
     family_row = (
         BED_TYPE_VIBRADORM
         if default in (BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC)
