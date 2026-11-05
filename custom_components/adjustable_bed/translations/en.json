@@ -483,7 +483,18 @@
           "lp_legacy_model": "Legacy app model code",
           "lp_legacy_mode": "Legacy app protocol mode",
           "lp_legacy_write_uuid": "Write characteristic UUID",
-          "lp_legacy_read_uuid": "Notification characteristic UUID"
+          "lp_legacy_read_uuid": "Notification characteristic UUID",
+          "vibradorm_control_type": "Saved app control layout",
+          "vibradorm_restored": "Use retained Caresse settings",
+          "vibradorm_floor_light": "Retained floor lighting",
+          "vibradorm_floor_default": "Remembered floor brightness",
+          "vibradorm_rgb": "Retained mood lighting",
+          "has_massage": "Retained massage controls",
+          "vibradorm_light_extension": "Retained lighting extension",
+          "vibradorm_vmat_remote": "VMAT remote",
+          "vmatbasic_profile": "V-MAT Basic product profile",
+          "vmatbasic_floor_level": "Saved floor brightness",
+          "vmatbasic_floor_minutes": "Saved floor timer (minutes)"
         },
         "data_description": {
           "jiecang_app_layout": "Select the layout configured in the app. The device name and motor count do not identify the layout.",
@@ -494,7 +505,14 @@
           "lp_legacy_model": "Select the exact four-character model code shown by the legacy L&P Adjustable Base app. Codes are not inferred from the Bluetooth name.",
           "lp_legacy_mode": "Select the protocol mode confirmed for this bed.",
           "lp_legacy_write_uuid": "Enter the full UUID of the command characteristic confirmed for this bed. No default is assumed.",
-          "lp_legacy_read_uuid": "Optional full UUID of the notification characteristic confirmed for this bed. Leave empty to disable app response notifications."
+          "lp_legacy_read_uuid": "Optional full UUID of the notification characteristic confirmed for this bed. Leave empty to disable app response notifications.",
+          "vibradorm_restored": "Advanced: match settings already saved by the Caresse app. Standard controls match a fresh app setup. Retained controls and feature flags do not verify your bed model.",
+          "vibradorm_control_type": "Choose the control layout already used in your app. Each choice defines the available movement groups and memory controls.",
+          "vibradorm_floor_default": "Advanced: the floor-light level remembered by your app (1–8). This is a local setting, not a measured light state. A retained level of 8 is valid even when the lighting extension limits the level slider to 6.",
+          "vibradorm_vmat_remote": "Choose the same remote ordinal shown in VMAT. This sets its controls and features; Bluetooth metadata cannot identify the remote.",
+          "vmatbasic_profile": "Choose the product shown in the V-MAT Basic app. Advertisements and model strings cannot select its controls.",
+          "vmatbasic_floor_level": "Optional requested setting. CBI accepts 0–255, including explicit zero; an absent CBI button setting uses 255. XT-Box accepts 1–6. This is not measured brightness.",
+          "vmatbasic_floor_minutes": "CBI accepts 0–1439 minutes; XT-Box accepts 0–255. Zero is an explicit timer setting."
         },
         "sections": {
           "advanced": {
@@ -542,42 +560,6 @@
           "malouf_app_model": "Choose the exact model selected in the app. Model controls are independent of the Bluetooth transport.",
           "malouf_app_transport": "Automatic uses the advertised device name and discovered services. Select a known transport only when automatic selection is ambiguous.",
           "malouf_app_primary": "Match the physical primary/secondary setting in the app. Home Assistant Left/Right labels do not change this role."
-        }
-      },
-      "vibradorm_app": {
-        "title": "Caresse / Werkmeister / VMAT controls",
-        "description": "Select the app and its existing control layout. These choices determine which controls are available. Each physical side keeps its own settings.",
-        "data": {
-          "vibradorm_app_profile": "Bed app",
-          "vibradorm_control_type": "Saved app control layout",
-          "vibradorm_restored": "Use retained Caresse settings",
-          "vibradorm_floor_light": "Retained floor lighting",
-          "vibradorm_floor_default": "Remembered floor brightness",
-          "vibradorm_rgb": "Retained mood lighting",
-          "has_massage": "Retained massage controls",
-          "vibradorm_light_extension": "Retained lighting extension",
-          "vibradorm_vmat_remote": "VMAT remote"
-        },
-        "data_description": {
-          "vibradorm_app_profile": "Choose the app used with this bed. Bluetooth identifiers cannot identify the app or its controls.",
-          "vibradorm_restored": "Advanced: match settings already saved by the Caresse app. Standard controls match a fresh app setup. Retained controls and feature flags do not verify your bed model.",
-          "vibradorm_control_type": "Choose the control layout already used in your app. Each choice defines the available movement groups and memory controls.",
-          "vibradorm_floor_default": "Advanced: the floor-light level remembered by your app (1–8). This is a local setting, not a measured light state. A retained level of 8 is valid even when the lighting extension limits the level slider to 6.",
-          "vibradorm_vmat_remote": "Choose the same remote ordinal shown in VMAT. This sets its controls and features; Bluetooth metadata cannot identify the remote."
-        }
-      },
-      "vmatbasic": {
-        "title": "V-MAT Basic product",
-        "description": "Select the exact product profile. Native pairing is advisory; no app authentication is performed.",
-        "data": {
-          "vmatbasic_profile": "V-MAT Basic product profile",
-          "vmatbasic_floor_level": "Saved floor brightness",
-          "vmatbasic_floor_minutes": "Saved floor timer (minutes)"
-        },
-        "data_description": {
-          "vmatbasic_profile": "Choose the product shown in the V-MAT Basic app. Advertisements and model strings cannot select its controls.",
-          "vmatbasic_floor_level": "Optional requested setting. CBI accepts 0–255, including explicit zero; an absent CBI button setting uses 255. XT-Box accepts 1–6. This is not measured brightness.",
-          "vmatbasic_floor_minutes": "CBI accepts 0–1439 minutes; XT-Box accepts 0–255. Zero is an explicit timer setting."
         }
       },
       "starcode_app": {

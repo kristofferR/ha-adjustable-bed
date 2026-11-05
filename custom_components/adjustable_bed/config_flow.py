@@ -6,7 +6,6 @@ import asyncio
 import contextlib
 import dataclasses
 import logging
-import math
 import sys
 from collections.abc import AsyncIterator, Callable, Mapping
 from dataclasses import dataclass
@@ -1817,73 +1816,6 @@ def _starcode_lift_errors(
     return {}
 
 
-def _add_vibradorm_app_schema_fields(
-    schema: dict[vol.Marker, Any], current_data: dict[str, Any] | None = None
-) -> None:
-    """Collect explicit app controls, never infer them from Bluetooth metadata."""
-    data = current_data or {}
-    app = data.get(CONF_VIBRADORM_APP_PROFILE)
-    schema[vol.Required(CONF_VIBRADORM_APP_PROFILE, default=app or vol.UNDEFINED)] = vol.In(
-        VIBRADORM_APP_PROFILES
-    )
-    if app == "werkmeister":
-        schema[
-            vol.Required(
-                CONF_VIBRADORM_CONTROL_TYPE,
-                default=data.get(CONF_VIBRADORM_CONTROL_TYPE, "5"),
-            )
-        ] = vol.In(VIBRADORM_WERKMEISTER_CONTROLS)
-    elif app == "vmat":
-        from .vibradorm_vmat_profiles import VMAT_REMOTES
-
-        schema[
-            vol.Required(
-                CONF_VIBRADORM_VMAT_REMOTE,
-                default=data.get(CONF_VIBRADORM_VMAT_REMOTE, vol.UNDEFINED),
-            )
-        ] = vol.In(
-            {
-                remote: f"Remote {remote} ({profile.asset})"
-                for remote, profile in VMAT_REMOTES.items()
-            }
-        )
-    elif app == "caresse":
-        schema[
-            vol.Optional(CONF_VIBRADORM_RESTORED, default=data.get(CONF_VIBRADORM_RESTORED, False))
-        ] = bool
-        if data.get(CONF_VIBRADORM_RESTORED, False):
-            schema[
-                vol.Required(
-                    CONF_VIBRADORM_CONTROL_TYPE,
-                    default=data.get(CONF_VIBRADORM_CONTROL_TYPE, "2"),
-                )
-            ] = vol.In(VIBRADORM_RESTORED_CONTROLS)
-            for key in (
-                CONF_VIBRADORM_FLOOR_LIGHT,
-                CONF_VIBRADORM_RGB,
-                CONF_HAS_MASSAGE,
-                CONF_VIBRADORM_LIGHT_EXTENSION,
-            ):
-                schema[vol.Optional(key, default=data.get(key, False))] = bool
-            schema[
-                vol.Optional(
-                    CONF_VIBRADORM_FLOOR_DEFAULT,
-                    default=data.get(
-                        CONF_VIBRADORM_FLOOR_DEFAULT,
-                        6 if data.get(CONF_VIBRADORM_LIGHT_EXTENSION) else 8,
-                    ),
-                )
-            ] = vol.All(int, vol.Range(min=1, max=8))
-
-
-def _vibradorm_app_form_changed(previous: Mapping[str, Any], submitted: Mapping[str, Any]) -> bool:
-    """Rebuild dependent fields after the app or retained-settings choice changes."""
-    return any(
-        key in submitted and submitted[key] != previous.get(key)
-        for key in (CONF_VIBRADORM_APP_PROFILE, CONF_VIBRADORM_RESTORED)
-    )
-
-
 def _vibradorm_app_data(
     previous: Mapping[str, Any], submitted: Mapping[str, Any]
 ) -> dict[str, Any]:
@@ -1932,8 +1864,12 @@ def _vibradorm_app_data(
             data[key] = False
         data[CONF_VIBRADORM_FLOOR_DEFAULT] = 6
     else:
-        if not previous.get(CONF_VIBRADORM_RESTORED, False):
-            # The fresh profile's hidden default is not a retained preference.
+        if (
+            not previous.get(CONF_VIBRADORM_RESTORED, False)
+            and CONF_VIBRADORM_FLOOR_DEFAULT not in submitted
+        ):
+            # The fresh profile's hidden default is not a retained preference,
+            # but a level answered on the same form is.
             data.pop(CONF_VIBRADORM_FLOOR_DEFAULT, None)
         data.setdefault(CONF_VIBRADORM_CONTROL_TYPE, "2")
         for key in (
@@ -1993,53 +1929,15 @@ def _vibradorm_app_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return {}
 
 
-def _vmatbasic_integer(value: object) -> int:
-    """Keep whole numeric form values without silently truncating fractions."""
-    if isinstance(value, str):
-        try:
-            return int(value)
-        except ValueError as error:
-            raise vol.Invalid("Expected a whole number") from error
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise vol.Invalid("Expected a whole number")
-    if not math.isfinite(value) or value != int(value):
-        raise vol.Invalid("Expected a whole number")
-    return int(value)
-
-
-def _add_vmatbasic_schema_fields(schema: dict[vol.Marker, Any], data: Mapping[str, Any]) -> None:
-    schema[
-        vol.Required(
-            CONF_VMATBASIC_PROFILE, default=data.get(CONF_VMATBASIC_PROFILE, vol.UNDEFINED)
-        )
-    ] = vol.In(VMATBASIC_PROFILES)
-    profile = data.get(CONF_VMATBASIC_PROFILE)
-    if profile in {"cbi", "xtbox"}:
-        schema[
-            vol.Optional(
-                CONF_VMATBASIC_FLOOR_LEVEL,
-                default=data.get(CONF_VMATBASIC_FLOOR_LEVEL, vol.UNDEFINED),
-            )
-        ] = vol.All(
-            _vmatbasic_integer,
-            vol.Range(min=1 if profile == "xtbox" else 0, max=6 if profile == "xtbox" else 255),
-        )
-        schema[
-            vol.Optional(
-                CONF_VMATBASIC_FLOOR_MINUTES, default=data.get(CONF_VMATBASIC_FLOOR_MINUTES, 0)
-            )
-        ] = vol.All(_vmatbasic_integer, vol.Range(min=0, max=255 if profile == "xtbox" else 1439))
-
-
 def _vmatbasic_data(previous: Mapping[str, Any], submitted: Mapping[str, Any]) -> dict[str, Any]:
-    data, updates = dict(previous), dict(submitted)
+    data = dict(previous)
     if CONF_VMATBASIC_PROFILE in submitted and submitted[CONF_VMATBASIC_PROFILE] != previous.get(
         CONF_VMATBASIC_PROFILE
     ):
+        # The old product's settings go; the ones answered for the new one stay.
         for key in VMATBASIC_CONFIG_KEYS - {CONF_VMATBASIC_PROFILE}:
             data.pop(key, None)
-            updates.pop(key, None)
-    data.update(updates)
+    data.update(submitted)
     if data.get(CONF_VMATBASIC_PROFILE) == "basic":
         for key in VMATBASIC_CONFIG_KEYS - {CONF_VMATBASIC_PROFILE}:
             data.pop(key, None)
@@ -2270,13 +2168,29 @@ def _configure_questions(data: Mapping[str, Any]) -> SetupProfile | None:
     )
 
 
-def _question_field(question: Question, data: Mapping[str, Any]) -> tuple[vol.Marker, Any]:
-    """Return one declared question's form marker and validator."""
-    from .setup_questions import REQUIRED
+def _question_field(
+    question: Question, data: Mapping[str, Any], *, visible: bool = False
+) -> tuple[vol.Marker, Any]:
+    """Return one declared question's form marker and validator.
+
+    With ``visible`` the question's condition renders as a native conditional
+    field; otherwise the caller has already decided the question is asked.
+    """
+    from homeassistant import data_entry_flow
+
+    from .setup_questions import OPTIONAL, REQUIRED
 
     default = question.default_for(data)
-    marker_type = vol.Required if default is REQUIRED else vol.Optional
-    marker = marker_type(question.key, default=vol.UNDEFINED if default is REQUIRED else default)
+    marker_type = (
+        data_entry_flow.Required if default is REQUIRED else data_entry_flow.Optional
+    )
+    marker = marker_type(
+        question.key,
+        default=vol.UNDEFINED if default in (REQUIRED, OPTIONAL) else default,
+        visible=question.when if visible else None,
+    )
+    if question.validator is not None:
+        return marker, question.validator
     options = question.options(data)
     if question.text:
         return marker, str
@@ -2294,8 +2208,14 @@ def _profile_question_schema(
     """Render a profile's questions, its advanced ones in a collapsed section."""
     schema: dict[vol.Marker, Any] = {}
     advanced: dict[vol.Marker, Any] = {}
+    shown = {question.key for question in profile.questions}
     for question in profile.questions:
-        marker, validator = _question_field(question, data)
+        # A condition on an answer this form does not ask, such as a route
+        # Configure leaves to the guided change, is settled by the saved setup.
+        visible = question.condition_fields() <= shown
+        if not visible and not question.asked(data):
+            continue
+        marker, validator = _question_field(question, data, visible=visible)
         (advanced if question.advanced and advanced_section else schema)[marker] = validator
     if advanced:
         schema[vol.Optional("advanced")] = section(vol.Schema(advanced), {"collapsed": True})
@@ -2310,11 +2230,14 @@ def _profile_answers(
     An untouched Advanced section submits nothing, so its questions keep their
     staged or declared default.
     """
-    from .setup_questions import REQUIRED
+    from .setup_questions import OPTIONAL, REQUIRED
 
     submitted = {**user_input, **(user_input.get("advanced") or {})}
     answers = {}
     for question in profile.questions:
+        if not question.asked({**data, **submitted}):
+            # A hidden question is neither required nor saved.
+            continue
         if question.key in submitted:
             _marker, validator = _question_field(question, data)
             try:
@@ -2322,7 +2245,7 @@ def _profile_answers(
                 answers[question.key] = validator(submitted[question.key])
             except vol.Invalid:
                 answers[question.key] = submitted[question.key]
-        elif user_input and (default := question.default_for(data)) is not REQUIRED:
+        elif user_input and (default := question.default_for(data)) not in (REQUIRED, OPTIONAL):
             answers[question.key] = default
     return answers
 
@@ -2521,8 +2444,6 @@ _OPTIONS_APP_FIELDS: Final[dict[str, Callable[[dict[vol.Marker, Any], dict[str, 
     BED_TYPE_ISLEEP: _add_isleep_schema_fields,
     BED_TYPE_FSM_RELAX: _add_fsm_relax_schema_fields,
     BED_TYPE_GMMOTOR: _add_gmmotor_schema_fields,
-    BED_TYPE_VIBRADORM_APP: _add_vibradorm_app_schema_fields,
-    BED_TYPE_VMATBASIC: _add_vmatbasic_schema_fields,
     BED_TYPE_LIMOSS_REMOTE: _add_limoss_remote_schema_fields,
     BED_TYPE_SLEEPYS_ELITE_APP: _add_sleepys_elite_schema_field,
 }
@@ -2937,10 +2858,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 self._manual_data.pop(CONF_VIBRADORM_APP_METADATA, None)
             if choice == "vmatbasic":
                 self._manual_data[CONF_BED_TYPE] = BED_TYPE_VMATBASIC
-                return await self.async_step_vmatbasic()
+                return await self.async_step_profile_questions()
             self._manual_data[CONF_BED_TYPE] = BED_TYPE_VIBRADORM_APP
             self._manual_data[CONF_VIBRADORM_APP_PROFILE] = choice
-            return await self.async_step_vibradorm_app()
+            return await self.async_step_profile_questions()
         return self.async_show_form(
             step_id="vibradorm",
             data_schema=vol.Schema(
@@ -3574,8 +3495,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             profile.validate(candidate) if user_input is not None and profile.validate else {}
         )
         if user_input is not None and not errors:
-            data.update(candidate)
-            data.update(profile.settled(data))
+            # What normalizing dropped stays dropped.
+            self._manual_data = {**candidate, **profile.settled(candidate)}
             return await self._async_finish_family_route()
         return self.async_show_form(
             step_id="profile_questions",
@@ -3584,31 +3505,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             description_placeholders={
                 "profile": profile.title(data) if profile.title else bed_type_label(data[CONF_BED_TYPE])
             },
-        )
-
-    async def async_step_vmatbasic(
-        self,
-        user_input: dict[str, Any] | None = None,
-    ) -> ConfigFlowResult:
-        """Require explicit app/product selection without inferring or requiring a bond."""
-        assert self._manual_data is not None
-        previous = self._manual_data
-        data = _vmatbasic_data(previous, user_input or {})
-        changed = user_input is not None and data.get(CONF_VMATBASIC_PROFILE) != previous.get(
-            CONF_VMATBASIC_PROFILE
-        )
-        errors = _vmatbasic_errors(data) if user_input is not None else {}
-        self._manual_data = data
-        if (
-            user_input is not None
-            and not errors
-            and (not changed or data[CONF_VMATBASIC_PROFILE] == "basic")
-        ):
-            return await self._finish_with_verify(data, data.get(CONF_NAME, "Adjustable Bed"))
-        schema: dict[vol.Marker, Any] = {}
-        _add_vmatbasic_schema_fields(schema, data)
-        return self.async_show_form(
-            step_id="vmatbasic", data_schema=vol.Schema(schema), errors=errors
         )
 
     async def async_step_starcode_app(
@@ -3762,52 +3658,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         _add_starcode_m1x12_schema_fields(schema, data, self.hass)
         return self.async_show_form(
             step_id="starcode_m1x12", data_schema=vol.Schema(schema), errors=errors
-        )
-
-    async def async_step_vibradorm_app(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Select the app's exact controls before its information/bond transaction."""
-        assert self._manual_data is not None
-        previous = dict(self._manual_data)
-        data = _vibradorm_app_data(previous, user_input or {})
-        if any(
-            data.get(key) != previous.get(key)
-            for key in (
-                CONF_VIBRADORM_APP_PROFILE,
-                CONF_VIBRADORM_CONTROL_TYPE,
-                CONF_VIBRADORM_VMAT_REMOTE,
-            )
-        ):
-            data.pop(CONF_VIBRADORM_APP_METADATA, None)
-        changed = user_input is not None and _vibradorm_app_form_changed(previous, user_input)
-        errors = _vibradorm_app_errors(data) if user_input is not None and not changed else {}
-        self._manual_data = data
-        if user_input is not None and not changed and not errors:
-            from .beds.vibradorm_app import validate_vibradorm_app_profile
-
-            control = data[CONF_VIBRADORM_CONTROL_TYPE]
-            profile = validate_vibradorm_app_profile(
-                data[CONF_VIBRADORM_APP_PROFILE],
-                "other" if control == "other" else int(control),
-                restored=data[CONF_VIBRADORM_RESTORED],
-                floor_light=data[CONF_VIBRADORM_FLOOR_LIGHT],
-                rgb=data[CONF_VIBRADORM_RGB],
-                massage=data[CONF_HAS_MASSAGE],
-                light_extension=data[CONF_VIBRADORM_LIGHT_EXTENSION],
-                remote=data.get(CONF_VIBRADORM_VMAT_REMOTE),
-            )
-            data[CONF_MOTOR_COUNT] = max(2, len(profile.groups))
-            data[CONF_HAS_MASSAGE] = profile.massage
-            data[CONF_DISABLE_ANGLE_SENSING] = True
-            data[CONF_MOTOR_PULSE_USER_SET] = False
-            if self._vibradorm_app_bluetooth_pairing:
-                return await self.async_step_bluetooth_pairing()
-            return await self.async_step_manual_pairing()
-        schema: dict[vol.Marker, Any] = {}
-        _add_vibradorm_app_schema_fields(schema, data)
-        return self.async_show_form(
-            step_id="vibradorm_app", data_schema=vol.Schema(schema), errors=errors
         )
 
     async def async_step_isleep(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
@@ -9651,7 +9501,7 @@ class AdjustableBedOptionsFlow(
                 return await self._async_options_form(None, step_id=step_id)
 
             bed_type = requested_bed_type
-            stale_vibradorm_keys: frozenset[str] = frozenset()
+            stale_profile_keys: frozenset[str] = frozenset()
             if bed_type == BED_TYPE_REVERIE_PAIRLINK and not separate_address_pair:
                 pairlink_errors = _validate_pairlink_option_values(
                     self.hass,
@@ -9836,13 +9686,20 @@ class AdjustableBedOptionsFlow(
                 declared := _configure_questions({**current_data, CONF_BED_TYPE: bed_type})
             ) is not None:
                 answers = _profile_answers(declared, user_input, current_data)
-                app_data = declared.staged({**current_data, **user_input}, answers)
+                before = {**current_data, **user_input}
+                app_data = declared.staged(before, answers)
                 if declared.validate and (app_errors := declared.validate(app_data)):
                     return self.async_show_form(
                         step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors
                     )
-                user_input.update({key: app_data[key] for key in answers})
+                # The answers, and whatever normalizing corrected, are saved.
+                user_input.update(
+                    {key: value for key, value in app_data.items() if before.get(key) != value}
+                )
                 user_input.update(declared.settled(app_data))
+                # What normalizing dropped, such as retained settings an answer no
+                # longer allows, leaves the saved entry too.
+                stale_profile_keys = frozenset(current_data) - frozenset(app_data)
             if bed_type == BED_TYPE_STARCODE_ABM5_4 and not separate_address_pair:
                 from .beds.starcode_abm5_4_profiles import SELECTORS
 
@@ -10011,74 +9868,6 @@ class AdjustableBedOptionsFlow(
                     return self.async_show_form(
                         step_id=step_id, data_schema=vol.Schema(schema_dict), errors=lift_errors
                     )
-            if bed_type == BED_TYPE_VIBRADORM_APP and not separate_address_pair:
-                app_data = _vibradorm_app_data(current_data, user_input)
-                if _vibradorm_app_form_changed(current_data, user_input):
-                    self._remember_pending_changes(schema_dict, user_input)
-                    self._pending_data.update(
-                        {
-                            key: app_data[key]
-                            for key in (*VIBRADORM_APP_CONFIG_KEYS, CONF_HAS_MASSAGE)
-                            if key in app_data
-                        }
-                    )
-                    if discovery_disabled_input is not None:
-                        self._pending_data[CONF_DISABLE_DISCOVERY] = discovery_disabled_input
-                    return await self._async_options_form(None, step_id=step_id)
-                app_errors = _vibradorm_app_errors(app_data)
-                if app_errors:
-                    return self.async_show_form(
-                        step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors
-                    )
-                from .beds.vibradorm_app import validate_vibradorm_app_profile
-
-                control = app_data[CONF_VIBRADORM_CONTROL_TYPE]
-                profile = validate_vibradorm_app_profile(
-                    app_data[CONF_VIBRADORM_APP_PROFILE],
-                    "other" if control == "other" else int(control),
-                    restored=app_data[CONF_VIBRADORM_RESTORED],
-                    floor_light=app_data[CONF_VIBRADORM_FLOOR_LIGHT],
-                    rgb=app_data[CONF_VIBRADORM_RGB],
-                    massage=app_data[CONF_HAS_MASSAGE],
-                    light_extension=app_data[CONF_VIBRADORM_LIGHT_EXTENSION],
-                    remote=app_data.get(CONF_VIBRADORM_VMAT_REMOTE),
-                )
-                user_input.update(
-                    {key: app_data[key] for key in VIBRADORM_APP_CONFIG_KEYS if key in app_data}
-                )
-                stale_vibradorm_keys = VIBRADORM_APP_CONFIG_KEYS - app_data.keys()
-                user_input[CONF_MOTOR_COUNT] = max(2, len(profile.groups))
-                user_input[CONF_HAS_MASSAGE] = profile.massage
-                user_input[CONF_DISABLE_ANGLE_SENSING] = True
-                user_input[CONF_MOTOR_PULSE_USER_SET] = False
-            if bed_type == BED_TYPE_VMATBASIC and not separate_address_pair:
-                app_data = _vmatbasic_data(current_data, user_input)
-                if app_data.get(CONF_VMATBASIC_PROFILE) != current_data.get(CONF_VMATBASIC_PROFILE):
-                    for key in VMATBASIC_CONFIG_KEYS:
-                        self._pending_data.pop(key, None)
-                        self._pending_changed_data.pop(key, None)
-                        user_input.pop(key, None)
-                    self._pending_data.update(app_data)
-                    return await self._async_options_form(None, step_id=step_id)
-                app_errors = _vmatbasic_errors(app_data)
-                if app_errors:
-                    return self.async_show_form(
-                        step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors
-                    )
-                user_input.update(
-                    {key: app_data[key] for key in VMATBASIC_CONFIG_KEYS if key in app_data}
-                )
-                user_input.update(
-                    {
-                        CONF_MOTOR_COUNT: 2,
-                        CONF_HAS_MASSAGE: False,
-                        CONF_DISABLE_ANGLE_SENSING: True,
-                        CONF_MOTOR_PULSE_COUNT: 34,
-                        CONF_MOTOR_PULSE_DELAY_MS: 30,
-                        CONF_MOTOR_PULSE_USER_SET: False,
-                    }
-                )
-
             if bed_type == BED_TYPE_SVANE:
                 svane_variant = user_input.get(
                     CONF_PROTOCOL_VARIANT, current_data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
@@ -10309,7 +10098,7 @@ class AdjustableBedOptionsFlow(
                     if bed_type == BED_TYPE_MOTION_BED:
                         _normalize_motion_bed_data(new_data)
                     self._apply_bed_type_change_cleanup(new_data, bed_type, requested_variant)
-                    for key in stale_vibradorm_keys:
+                    for key in stale_profile_keys:
                         new_data.pop(key, None)
                     if (commit_error := await commit_global_settings()) is not None:
                         return commit_error
@@ -10345,21 +10134,8 @@ class AdjustableBedOptionsFlow(
             if bed_type == BED_TYPE_MOTION_BED and not separate_address_pair:
                 _normalize_motion_bed_data(new_data)
             self._apply_bed_type_change_cleanup(new_data, bed_type, requested_variant)
-            for key in stale_vibradorm_keys:
+            for key in stale_profile_keys:
                 new_data.pop(key, None)
-            if bed_type == BED_TYPE_VMATBASIC and not separate_address_pair:
-                # Rebuild from the selected profile so removed optional fields cannot
-                # return from the original entry during the final options merge.
-                for key in VMATBASIC_CONFIG_KEYS:
-                    new_data.pop(key, None)
-                selected_data = _vmatbasic_data(current_data, user_input)
-                new_data.update(
-                    {
-                        key: selected_data[key]
-                        for key in VMATBASIC_CONFIG_KEYS
-                        if key in selected_data
-                    }
-                )
             if bed_type == BED_TYPE_VIBRADORM_APP and any(
                 new_data.get(key) != self.config_entry.data.get(key)
                 for key in (
