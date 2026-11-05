@@ -3,7 +3,9 @@
 v4.0.2 had none of the app profiles, so an older entry keeps the generic route
 it was set up with, even where an app profile now controls the bed correctly.
 The minor-version 3 migration marks each older entry whose route gained app
-profiles: ``CONF_PROFILE_REVIEW_PENDING`` stores the route it reviews. While
+profiles: ``CONF_PROFILE_REVIEW_PENDING`` stores the route it reviews. The v5
+migration marks once more the entries whose route gained an app after that
+(``_V5_ROUTE_APPS``, such as Woosa Sleep on the Solace name routes). While
 the entry still uses that route, setup raises one fixable issue per entry
 listing only the relevant apps:
 
@@ -106,6 +108,7 @@ from .const import (
     REMACRO_VARIANT_JEROMES,
     REMACRO_VARIANT_THE_BRICK,
     RICHMAT_MH_BED_TYPES,
+    SOLACE_VARIANT_WOOSA,
     VARIANT_AUTO,
     ZSERIES_VARIANT_Z230,
     ZSERIES_VARIANT_Z280,
@@ -124,6 +127,8 @@ from .validators import get_variants_for_bed_type
 ISSUE_PREFIX: Final = "app_profile_review_"
 _REVIEW: Final = "app_profile_review"
 _MATCH: Final = "app_profile_match"
+# The review offers only Woosa Sleep, so its title can ask about that app.
+_WOOSA: Final = "app_profile_woosa"
 _KEEP: Final = "keep"
 # Detection must be this sure before it may contradict a stored route.
 _DRIFT_MIN_CONFIDENCE: Final = 0.7
@@ -168,6 +173,18 @@ _OKIN_BEDDING_APPS: Final = (
     bed_type_choice(BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z280),
 )
 _AUTO: Final = frozenset({VARIANT_AUTO})
+
+# Routes that gained an app after v4.3 reviewed every older entry. The v5
+# migration asks those entries once more (``v5_profile_review_mark``).
+_V5_ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
+    # Woosa Sleep drives the Solace name routes' frame and controller and
+    # shares their names, so only the app tells them apart (#676).
+    _RouteApps(
+        frozenset({BED_TYPE_SOLACE}),
+        _AUTO,
+        (bed_type_choice(BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA),),
+    ),
+)
 
 _ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
     # Keeson auto ran KSBT for KSBT names and Base for other FFE5 beds.
@@ -250,6 +267,7 @@ _ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
             bed_type_choice(BED_TYPE_REMACRO, REMACRO_VARIANT_JEROMES),
         ),
     ),
+    *_V5_ROUTE_APPS,
 )
 
 # Detection rules that now pick another primary route than v4.0.2 did for the
@@ -290,14 +308,16 @@ def _is_app_choice(bed_type: str, variant: object) -> bool:
     return isinstance(variant, str) and (bed_type, variant) in APP_VARIANT_CHOICES
 
 
-def related_app_choices(bed_type: object, variant: object) -> list[str]:
+def related_app_choices(
+    bed_type: object, variant: object, routes: tuple[_RouteApps, ...] = _ROUTE_APPS
+) -> list[str]:
     """Known app choices for a generic route, not proof of a better match."""
     if not isinstance(bed_type, str) or _is_app_choice(bed_type, variant):
         return []
     stored_variant = variant if isinstance(variant, str) else VARIANT_AUTO
     return [
         choice
-        for route in _ROUTE_APPS
+        for route in routes
         if bed_type in route.bed_types and (route.variants is None or stored_variant in route.variants)
         for choice in route.choices
     ]
@@ -428,6 +448,26 @@ def profile_review_mark(entry_data: Mapping[str, Any]) -> str | None:
     return None
 
 
+def v5_profile_review_mark(entry_data: Mapping[str, Any]) -> str | None:
+    """Return the review mark for an entry whose route gained an app in v5.
+
+    v4.3 already reviewed every older entry and retired the reviews it had
+    nothing to offer, so only the v5 migration can reach them again. An open
+    review for the current route already lists the new app. A kept review is
+    asked again, since it was not shown that app.
+    """
+    if _pending(entry_data):
+        return None
+    if any(
+        related_app_choices(
+            target.get(CONF_BED_TYPE), target.get(CONF_PROTOCOL_VARIANT), _V5_ROUTE_APPS
+        )
+        for target in _targets(entry_data)
+    ):
+        return _route_signature(entry_data)
+    return None
+
+
 def _pending(entry_data: Mapping[str, Any]) -> bool:
     mark = entry_data.get(CONF_PROFILE_REVIEW_PENDING)
     return bool(mark) and mark == _route_signature(entry_data)
@@ -537,7 +577,11 @@ def async_refresh_profile_review_issue(hass: HomeAssistant, entry: ConfigEntry) 
         is_fixable=True,
         is_persistent=False,
         severity=IssueSeverity.WARNING,
-        translation_key=_MATCH if review.drift else _REVIEW,
+        translation_key=_MATCH
+        if review.drift
+        else _WOOSA
+        if review.choices == (bed_type_choice(BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA),)
+        else _REVIEW,
         translation_placeholders=_placeholders(entry, review.choices, review.choices[0]),
         data={"entry_id": entry.entry_id},
     )
