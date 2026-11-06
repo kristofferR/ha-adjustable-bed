@@ -49,7 +49,9 @@
 
 - Stored profiles define their own motors, presets, memory slots, massage,
   light, RGB, music, alarm, fan/heating and sensor-menu sets in
-  [`casper_base_catalog.py`](../../custom_components/adjustable_bed/casper_base_catalog.py).
+  [`casper_base_catalog.py`](../../custom_components/adjustable_bed/casper_base_catalog.py);
+  each product is a profile in
+  [`profiles/casper.py`](../../custom_components/adjustable_bed/profiles/casper.py).
 - Fresh PRO/MAX do not gain music, sensor menus or repeating alarms from a reply.
 
 ### Controls
@@ -89,7 +91,7 @@
 ### Packet Format
 
 Builders in
-[`casper_base_protocol.py`](../../custom_components/adjustable_bed/casper_base_protocol.py).
+[`codec/casper.py`](../../custom_components/adjustable_bed/codec/casper.py), shared with Hush Base.
 The checksum is the low byte of the sum of all preceding bytes.
 
 | Packet | Template |
@@ -158,7 +160,9 @@ use separate entries.
 
 ## Commands
 
-Opcodes come from `ACTIONS` and `PRODUCTS` in
+Opcodes come from the selected product's profile in
+[`profiles/casper.py`](../../custom_components/adjustable_bed/profiles/casper.py), which reads
+`ACTIONS` and `PRODUCTS` from
 [`casper_base_catalog.py`](../../custom_components/adjustable_bed/casper_base_catalog.py);
 frames are `control()` output for side `00`. On the one-byte layout only the
 opcode is sent.

@@ -32,10 +32,10 @@ docstring names its routes and their evidence.
 | Malouf (O2 Okin-like Malouf frames) | `codec/malouf.py` | `profiles/malouf.py` | [Malouf](../beds/malouf.md) | `tests/malouf_vectors.py` |
 | MotoMotion `$#` frames (from `main`) | `codec/motomotion.py` | `profiles/motomotion.py` | [MotoMotion](../beds/motomotion.md) | `tests/motomotion_vectors.py` |
 | BedJet PowerLayer `01` keys (from `main`) | `codec/bedjet_powerlayer.py` | `profiles/bedjet_powerlayer.py` | [BedJet PowerLayer](../beds/bedjet-powerlayer.md) | `tests/bedjet_powerlayer_vectors.py` |
-| Casper 6E: Hush Base (from `main`) | `codec/casper.py` | `profiles/hush.py` | [Hush Base](../beds/hush-base.md) | `tests/hush_vectors.py` |
+| Casper 6E: Casper Base and Hush Base | `codec/casper.py` | `profiles/casper.py`, `profiles/hush.py` | [Casper Base](../beds/casper-base.md), [Hush Base](../beds/hush-base.md) | `tests/casper_base_vectors.py`, `tests/hush_vectors.py` |
 
-Which bed types each family backs, and which are still pending, is in its
-registration module (see [Registering a family](#registering-a-family)).
+Which bed types each family backs is in its registration module (see
+[Registering a family](#registering-a-family)).
 
 ## Registering a family
 
@@ -48,17 +48,15 @@ a shared registry.
   - `bed_types`: the bed types whose controller is a profile over this codec;
   - `app_routes`: for bed types whose profile is an app choice, the config key
     and its choices;
-  - `pending`: bed types planned for this family, each with its #745 item;
   - `guide`: the guide path, how to find the frames it spells, the frozen frames
     they must belong to, and the protocol variant that reaches each profile.
 
   `tests/codec_families/_standalone.py` lists the bed types that stay
   standalone, with their reasons. `tests/test_codec_contract.py` discovers the
   modules and requires every supported bed type exactly once across
-  `bed_types`, `pending` and the standalone list. A `bed_types` entry must build
-  a controller whose `profile` is one of the family's classes with vectors for
-  its key; a pending or standalone one must not. Migrating a bed type moves it
-  from `pending` to `bed_types`.
+  `bed_types` and the standalone list. A `bed_types` entry must build a
+  controller whose `profile` is one of the family's classes with vectors for
+  its key; a standalone one must not.
 - **Docs:** `scripts/codec_docs/<family>.py` exports `BLOCKS`, a list of
   `(guide, block name, renderer)`, and optionally `bed_types()`, the bed types
   per profile key that its profile summary lists. Shared helpers are in
