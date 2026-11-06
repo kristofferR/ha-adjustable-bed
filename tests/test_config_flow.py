@@ -81,6 +81,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_RF_ECO_BT,
@@ -3527,10 +3528,12 @@ class TestOptionsFlow:
         assert CONF_POSITION_MODE not in markers
         assert CONF_BACK_MAX_ANGLE not in markers
 
+    @pytest.mark.parametrize("initial_type", [BED_TYPE_OKIN_CST, BED_TYPE_OKIN_7BYTE])
     async def test_options_flow_can_change_bed_type_and_rebuild_dependent_fields(
         self,
         hass: HomeAssistant,
         enable_custom_integrations,
+        initial_type: str,
     ) -> None:
         """Changing type rebuilds the form, then saves type-specific settings."""
         del enable_custom_integrations
@@ -3540,7 +3543,7 @@ class TestOptionsFlow:
             data={
                 CONF_ADDRESS: "AA:BB:CC:DD:EE:96",
                 CONF_NAME: "Okin CST Bed",
-                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_BED_TYPE: initial_type,
                 CONF_MOTOR_COUNT: 3,
                 CONF_BLE_BOND_ESTABLISHED: True,
                 CONF_BLE_BOND_MARKER_UNRELIABLE: True,
@@ -3561,7 +3564,7 @@ class TestOptionsFlow:
         option_values = {
             bed_type_selector(option["value"]) for option in bed_type_selector.config["options"]
         }
-        assert bed_type_selector(bed_type_marker.default()) == BED_TYPE_OKIN_CST
+        assert bed_type_selector(bed_type_marker.default()) == initial_type
         assert BED_TYPE_OCTO in option_values
 
         rebuilt = await hass.config_entries.options.async_configure(

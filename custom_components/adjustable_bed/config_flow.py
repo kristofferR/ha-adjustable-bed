@@ -1503,20 +1503,6 @@ def _motor_count_options(
     return [2, 3, 4]
 
 
-def _motor_count_options_for_all_variants(bed_type: str | None) -> list[int]:
-    """Return the union of motor counts selectable across protocol variants."""
-    variants = get_variants_for_bed_type(bed_type)
-    if variants is None:
-        return _motor_count_options(bed_type)
-    return sorted(
-        {
-            motor_count
-            for variant in variants
-            for motor_count in _motor_count_options(bed_type, variant)
-        }
-    )
-
-
 def _is_valid_motor_count(
     bed_type: str | None,
     protocol_variant: str,
@@ -9218,7 +9204,7 @@ class AdjustableBedOptionsFlow(
             _apply_bed_type_choice(user_input, shown_choice)
         has_position_feedback = bed_type_has_position_feedback(bed_type, form_variant)
         form_pulse_defaults = get_motor_pulse_defaults(bed_type, form_variant)
-        motor_count_options = _motor_count_options_for_all_variants(bed_type)
+        motor_count_options = _motor_count_options(bed_type, form_variant)
         try:
             form_motor_count = int(current_data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT))
         except TypeError, ValueError:
@@ -9753,6 +9739,8 @@ class AdjustableBedOptionsFlow(
                     data_schema=vol.Schema(schema_dict),
                     errors={CONF_MOTOR_COUNT: "invalid_motor_count_for_bed_type"},
                 )
+            # A profile can hide this field; still persist its normalized default.
+            user_input[CONF_MOTOR_COUNT] = requested_motor_count
             if has_position_feedback != bed_type_has_position_feedback(
                 bed_type,
                 requested_variant,
