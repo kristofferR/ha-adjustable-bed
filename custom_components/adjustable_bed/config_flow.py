@@ -8524,6 +8524,10 @@ class AdjustableBedOptionsFlow(
         # held for the whole confirmation/removal transaction so every lookup,
         # lock and persistence write targets the same address.
         self._bond_removal_side: str | None = None
+        # Casper/Hush side support depends on the GATT service the bed exposes,
+        # which is only known while connected. ``None`` means not checked yet.
+        self._side_transport_supported: bool | None = None
+        self._side_transport_probe_failed: bool = False
 
     def _remember_pending_changes(
         self,
@@ -9042,16 +9046,33 @@ class AdjustableBedOptionsFlow(
         runtime = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
         controller = getattr(runtime, "capability_controller", None)
         needs_casper_transport_proof = self.config_entry.data.get(CONF_BED_TYPE) in {"casper_base", "hush_base"}
-        casper_not_connected = needs_casper_transport_proof and (
-            runtime is None or not runtime.is_connected
-        )
+        casper_not_connected = False
+        if needs_casper_transport_proof and self._side_transport_supported is None:
+            if runtime is not None and runtime.is_connected and controller is not None:
+                self._side_transport_supported = bool(
+                    getattr(controller, "supports_single_address_pairing", False)
+                )
+            elif runtime is None or (self._side_transport_probe_failed and user_input is None):
+                casper_not_connected = True
+            else:
+                # These beds usually hand their connection back a second after
+                # each command, so connect on demand instead of asking the user
+                # to catch a live connection.
+                self._side_transport_probe_failed = False
+                self.async_begin_operation(
+                    name=self.config_entry.title,
+                    action=SetupAction.CONNECTING,
+                    placeholders={"name": self.config_entry.title},
+                )
+                return await self.async_step_pair_sides_probe()
         motomotion_unsupported = self.config_entry.data.get(CONF_BED_TYPE) == BED_TYPE_MOTOMOTION and not supports_single_address_pairing(BED_TYPE_MOTOMOTION, ble_device_name=self.config_entry.data.get(CONF_BLE_DEVICE_NAME))
         if (
             motomotion_unsupported
             or casper_not_connected
-            or (needs_casper_transport_proof and controller is None)
+            or self._side_transport_supported is False
             or (
-                controller is not None
+                not needs_casper_transport_proof
+                and controller is not None
                 and not getattr(controller, "supports_single_address_pairing", True)
             )
         ):
@@ -9061,7 +9082,7 @@ class AdjustableBedOptionsFlow(
                 errors={
                     "base": (
                         "casper_pairing_needs_connection"
-                        if casper_not_connected or (needs_casper_transport_proof and controller is None)
+                        if casper_not_connected
                         else "single_address_pairing_unsupported"
                     )
                 },
@@ -9116,6 +9137,42 @@ class AdjustableBedOptionsFlow(
             step_id="pair_sides",
             data_schema=vol.Schema({vol.Required("confirm", default=False): bool}),
         )
+
+    async def async_step_pair_sides_probe(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Connect to a Casper/Hush bed to learn whether it has a side byte."""
+        return await self.async_run_operation_step(
+            step_id="pair_sides_probe",
+            worker=self._async_side_transport_worker,
+            next_step_id="pair_sides",
+        )
+
+    async def _async_side_transport_worker(self) -> OperationResult:
+        """Read side support from the live controller during one command."""
+        runtime = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+        supported: bool | None = None
+
+        async def probe(controller: BedController) -> None:
+            nonlocal supported
+            supported = bool(getattr(controller, "supports_single_address_pairing", False))
+
+        try:
+            if runtime is not None:
+                await runtime.async_execute_controller_command(
+                    probe,
+                    cancel_running=False,
+                    resource="configuration",
+                    read_positions_after_operation=False,
+                )
+        except Exception as err:  # noqa: BLE001 - report, the user can retry
+            _LOGGER.debug("Side support check for %s failed: %s", self.config_entry.title, err)
+        if supported is None:
+            # A command preempted during preparation returns without running.
+            self._side_transport_probe_failed = True
+            return OperationResult(outcome=OperationOutcome.CONNECTION_FAILED)
+        self._side_transport_supported = supported
+        return OperationResult(outcome=OperationOutcome.SUCCESS)
 
     async def _async_options_form(
         self,

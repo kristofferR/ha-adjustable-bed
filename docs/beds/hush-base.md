@@ -56,7 +56,7 @@ Frames contain the 14-byte envelope, sequence and compact ordered JSON, split at
 
 1. Choose **Hush Base app (select product)** in the app list, then the exact model on the profile setup step; the app's own twelve come first. There is no automatic Hush profile selection from an app name or shared UUID.
 2. The twelve models above are fresh Hush setup choices. Labels marked **restored profile** represent the app's wider saved-index domain, not additional fresh Hush setup models.
-3. Connect before enabling native Left/Right controls. Nordic has no side byte; one-address pairing is rejected there. Two-address pairs keep independent profile and connection ownership.
+3. Enabling native Left/Right controls (Configure → Enable Left / Right / Both controls) connects to the bed to read its transport. Nordic has no side byte; one-address pairing is rejected there. Two-address pairs keep independent profile and connection ownership.
 4. Add a separate **Hush Base sleep sensor** entry for each sensor. Choose RM/MM or HJ/SXB explicitly. Sensor partitions and actuator sides are different concepts.
 5. Add **Hush Base remote finder (RCRM handset)** to connect to the handset. There is no locator packet.
 

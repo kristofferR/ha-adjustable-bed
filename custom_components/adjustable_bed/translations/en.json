@@ -1464,7 +1464,7 @@
       "starcode_m1x12_profile_mismatch": "Choose the M1X12 profile matching the exact Bluetooth name.",
       "starcode_invalid_m1x12_lifts": "Select up to two distinct configured Adjustable Comfort M1X12 ELEVATE entries with different Bluetooth addresses.",
       "starcode_m1x12_elevate_reconfigure": "Reconfigure this ELEVATE entry as Adjustable Comfort M1X12 ELEVATE before linking it.",
-      "casper_pairing_needs_connection": "Connect to the bed first so Home Assistant can verify that its Bluetooth protocol supports Left/Right/Both controls.",
+      "casper_pairing_needs_connection": "Home Assistant could not connect to the bed to check whether it supports Left/Right/Both controls. Close the bed's phone app, make sure the bed is powered and in range, then submit to try again.",
       "doublesleep_profile": "Select a supported SleepEase model and BLE driver.",
       "gmmotor_product": "Choose an exact admitted GM Control product.",
       "gmmotor_side": "This product does not expose the selected app side.",
@@ -1473,6 +1473,7 @@
       "cluster018_layout": "Choose a layout shipped in the selected app."
     },
     "progress": {
+      "connecting": "Connecting over Bluetooth…",
       "unpairing": "Removing the Bluetooth bond…",
       "disconnecting": "Disconnecting…",
       "verifying_pin": "Checking PIN acceptance…"

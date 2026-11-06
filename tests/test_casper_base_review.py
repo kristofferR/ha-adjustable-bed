@@ -166,7 +166,6 @@ async def test_eligible_pair_options_create_side_entities_and_route_actions(
         ("casperpro", 1, True, False, None),
         ("caspermax", 1, True, False, None),
         ("hushl400sh", 0, True, True, "single_address_pairing_unsupported"),
-        ("hushl400sh", 1, False, True, "casper_pairing_needs_connection"),
     ],
 )
 async def test_pair_options_reject_unproved_or_unsupported_transport(
@@ -186,6 +185,69 @@ async def test_pair_options_reject_unproved_or_unsupported_transport(
         assert result["errors"] == {"base": error}
         assert "pair_mode" not in entry.data
 
+
+
+async def _open_pair_sides(hass, entry):
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "pair_sides"}
+    )
+    assert result["type"] == FlowResultType.SHOW_PROGRESS
+    await hass.async_block_till_done()
+    return await hass.config_entries.options.async_configure(result["flow_id"])
+
+
+@pytest.mark.parametrize(
+    ("transport", "error"), [(1, None), (0, "single_address_pairing_unsupported")]
+)
+async def test_pair_options_connect_a_disconnected_bed_to_prove_its_transport(
+    hass, enable_custom_integrations, transport, error
+):
+    entry, inner, controller = runtime(hass, "hushl300sh", transport=transport)
+    client, inner._client = inner._client, None
+
+    async def connect(reset_timer=True):
+        inner._client = client
+        await inner.async_start_notify()
+        return True
+
+    with patch.object(inner, "async_ensure_connected", side_effect=connect) as ensure:
+        result = await _open_pair_sides(hass, entry)
+    ensure.assert_awaited_once()
+    assert result["step_id"] == "pair_sides"
+    assert result.get("errors") == ({"base": error} if error else None)
+    if error:
+        return
+    with (
+        patch.object(hass.config_entries, "async_unload", AsyncMock(return_value=True)),
+        patch.object(hass.config_entries, "async_setup", AsyncMock(return_value=True)),
+    ):
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"], {"confirm": True}
+        )
+        await hass.async_block_till_done()
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert entry.data["pair_mode"] == "single_address"
+    inner._cancel_disconnect_timer()
+
+
+async def test_pair_options_report_a_failed_connection_and_retry_on_submit(
+    hass, enable_custom_integrations
+):
+    entry, inner, _ = runtime(hass, "hushl300sh")
+    inner._client = None
+    with patch.object(inner, "async_ensure_connected", AsyncMock(return_value=False)) as ensure:
+        result = await _open_pair_sides(hass, entry)
+        assert result["errors"] == {"base": "casper_pairing_needs_connection"}
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"], {"confirm": True}
+        )
+        assert result["type"] == FlowResultType.SHOW_PROGRESS
+        await hass.async_block_till_done()
+        result = await hass.config_entries.options.async_configure(result["flow_id"])
+    assert ensure.await_count == 2
+    assert result["errors"] == {"base": "casper_pairing_needs_connection"}
+    assert "pair_mode" not in entry.data
 
 def bt_ordinary(enabled):
     return bytes((0x6E, 0x90, 0xB0, 0x20 if enabled else 0, 0))
