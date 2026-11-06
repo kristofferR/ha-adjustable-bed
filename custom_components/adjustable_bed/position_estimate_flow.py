@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-ESTIMATE_MOTORS = ("back", "legs", "head", "feet")
+ESTIMATE_MOTORS = ("back", "legs", "head", "feet", "tv_lift")
 CONF_ACKNOWLEDGE = "acknowledge"
 CONF_MEASURE = "measure"
 _STOP_TIMEOUT_S = 10.0
@@ -68,6 +68,8 @@ def not_offered_motors(controller: BedController | SideBoundController | None) -
 
 
 def _label(key: str) -> str:
+    if key == "tv_lift":
+        return "TV lift"
     return key.replace("_", " ").capitalize()
 
 

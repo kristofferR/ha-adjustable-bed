@@ -2227,6 +2227,7 @@ class OctoController(BedController, OctoPacketCodec):
     def estimated_position_motor_groups(self) -> Mapping[str, tuple[str, ...]]:
         """Every OCTO motor control is a directional stream ended by the STOP frame."""
         groups = {
+            "tv_lift": ("tv_lift",),
             "back": ("back",),
             "legs": ("legs",),
             "back_legs": ("back", "legs"),

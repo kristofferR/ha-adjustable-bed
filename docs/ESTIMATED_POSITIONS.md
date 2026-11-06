@@ -26,7 +26,7 @@ example when the bed is flat at night.
 
 | Bed | Estimated motors |
 |-----|------------------|
-| [OCTO Smart Control](beds/octo.md) (Standard variant) | Back, legs, head and feet; the combined steps update every motor they move |
+| [OCTO Smart Control](beds/octo.md) (Standard variant) | TV lift, back, legs, head and feet; the combined steps update every motor they move |
 | [Richmat](beds/richmat.md) remote-code profiles | Head and feet; the combined head and feet step updates both |
 
 A motor qualifies only when its protocol has reliable directional movement and
@@ -45,6 +45,12 @@ only after accepted protocol audit evidence proves its STOP and release
 behavior.
 
 ## Setting Up
+
+For a TV lift, the zero reference is fully lowered, and 100% is fully raised.
+Calibrate its raising and lowering times separately. The lift has no measured
+height feedback: remote movement and restarts require the same reference
+confirmation as bed motors. It remains a standalone device. Saved positions
+can be named, for example, **TV open** or **TV closed**.
 
 Open **Settings > Devices & services > Adjustable Bed**, select **Configure**,
 then **Estimated positions**. A paired bed with two addresses has one entry per

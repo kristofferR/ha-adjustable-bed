@@ -2839,6 +2839,8 @@ set_position_reference:
         select:
           multiple: true
           options:
+            - value: tv_lift
+              label: TV lift
             - value: back
               label: Back
             - value: legs

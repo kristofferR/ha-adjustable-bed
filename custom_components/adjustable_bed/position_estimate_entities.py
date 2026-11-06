@@ -47,6 +47,7 @@ MAX_ANGLE_OPTIONS = {
 }
 
 ESTIMATED_MOTOR_ICONS = {
+    "tv_lift": "mdi:television-classic",
     "back": "mdi:human-handsup",
     "legs": "mdi:human-handsdown",
     "head": "mdi:head",

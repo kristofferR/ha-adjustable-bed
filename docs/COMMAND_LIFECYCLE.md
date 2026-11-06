@@ -170,9 +170,11 @@ release time. Exercise cold commands, overlapping replacements, STOP during
 startup/read/cleanup, full recalls, combined failure cleanup, and several minutes
 of idle after release. Keep raw device logs private.
 
-Controller-declared motor holds also bound ordinary native cover actions. The
-cover uses the existing one-second caller pulse and the declared start/release
-policy; assistive card activation uses the same bounded movement service.
+Controller-declared motor holds also bound ordinary native cover actions. Most
+covers use a one-second caller pulse and the declared start/release policy.
+OCTO Standard covers, including the TV lift, retain their configured motor pulse
+count and delay for native Open/Close actions. The bundled card uses the separate
+bounded hold service while pressed and sends STOP on release.
 A motor-specific cover Stop ends only its own axis's work, but pre-empts
 motion on another axis that holds the writer. Declared side-wide cover Stops
 end every motor's work, and bed Stops retain their physical side scope.
