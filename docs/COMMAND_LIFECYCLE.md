@@ -173,7 +173,9 @@ of idle after release. Keep raw device logs private.
 Controller-declared motor holds also bound ordinary native cover actions. Most
 covers use a one-second caller pulse and the declared start/release policy.
 OCTO Standard covers, including the TV lift, retain their configured motor pulse
-count and delay for native Open/Close actions. The bundled card uses the separate
+count and delay for native Open/Close actions. Long PIN-enabled movements refresh
+authentication inside the same command lane, including during pulse delays. The
+bundled card uses the separate
 bounded hold service while pressed and sends STOP on release.
 A motor-specific cover Stop ends only its own axis's work, but pre-empts
 motion on another axis that holds the writer. Declared side-wide cover Stops
