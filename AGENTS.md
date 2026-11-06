@@ -354,14 +354,24 @@ When creating a release:
    - `custom_components/adjustable_bed/manifest.json` - the `"version"` field
    - `pyproject.toml` - the `version` field in `[project]`
 
-2. Commit, tag, and push:
+2. Rebuild and validate the committed dashboard card bundle after changing the
+   manifest version. The bundle embeds that version even when its source is unchanged:
+   ```bash
+   cd custom_components/adjustable_bed/frontend
+   bun install --frozen-lockfile
+   bun run check
+   bun test
+   ```
+   Include `frontend/dist/adjustable-bed-card.js` in the release commit.
+
+3. Commit, tag, and push:
    ```bash
    git commit -m "chore: Bump version to X.Y.Z"
    git tag vX.Y.Z
    git push && git push origin vX.Y.Z
    ```
 
-3. Create a GitHub release with `gh release create` including a changelog with:
+4. Create a GitHub release with `gh release create` including a changelog with:
    - **What's New** - New features, new bed support
    - **Bug Fixes** - List of fixes with brief descriptions
    - Do NOT include an "Upgrading" section - users already know how to update
