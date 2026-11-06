@@ -24,6 +24,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.typing import ConfigType
 
 from .beds.remacro_protocol import add_remacro_model
+from .beta_feedback import async_setup_beta_feedback
 from .combine_suggestion import async_load_dismissal
 from .const import (
     BED_TYPE_BEDTECH,
@@ -283,6 +284,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     await async_register_frontend(hass)
 
     await async_register_services(hass)
+    await async_setup_beta_feedback(hass)
     return True
 
 
