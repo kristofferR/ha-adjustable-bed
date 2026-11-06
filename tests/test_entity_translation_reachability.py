@@ -1,4 +1,4 @@
-"""Entity translations hold no paired-side variant that no entity can be given."""
+"""Entity translations hold exactly the keys entities can be given."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ from tests.entity_translation_reachability import (
     TRANSLATION_FILES,
     entity_strings,
     factory_controllers,
+    missing_translations,
     unreachable_side_variants,
 )
 
@@ -15,6 +16,11 @@ from tests.entity_translation_reachability import (
 async def test_every_side_variant_is_reachable() -> None:
     controllers = await factory_controllers()
     assert unreachable_side_variants(entity_strings(), controllers) == {}
+
+
+async def test_every_key_an_entity_can_be_given_is_translated() -> None:
+    """A missing key names the entity after its device alone, such as "Bed Left" (#711)."""
+    assert missing_translations(entity_strings(), await factory_controllers()) == {}
 
 
 async def test_controller_state_sensors_and_unpaired_platforms_carry_no_side_variant() -> None:

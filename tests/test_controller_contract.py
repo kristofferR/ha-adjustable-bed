@@ -153,6 +153,10 @@ class _FactoryCoordinator(SimpleNamespace):
         """Accept controller-published diagnostic state during construction."""
         del updates
 
+    def handle_controller_state_update(self, key: str, value: Any) -> None:
+        """Accept one controller-published state value during construction."""
+        del key, value
+
 
 def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
     """Return a deterministic protocol variant for factory-completeness tests."""
