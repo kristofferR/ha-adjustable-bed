@@ -1,4 +1,4 @@
-"""Explicit Casper Base app controller, package-local row101 specifications."""
+"""Casper Base app controller: drives ``codec/casper.py`` from the selected profile."""
 
 from __future__ import annotations
 
@@ -7,11 +7,10 @@ import logging
 import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import partial
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Protocol
 
 from homeassistant.util import dt as dt_util
 
-from ..casper_base_catalog import ACTIONS, PRODUCTS
 from ..casper_base_protocol import (
     RGB_TIMERS,
     Event,
@@ -22,6 +21,7 @@ from ..casper_base_protocol import (
 )
 from ..codec.casper import (
     GATT,
+    STOP,
     alarm_pair,
     control,
     extra,
@@ -30,6 +30,7 @@ from ..codec.casper import (
     special,
     time_sync,
 )
+from ..profiles.casper import ACTIONS, PROFILES, Action, ProductRow
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -45,10 +46,15 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-type ProductSpec = tuple[
-    str, tuple[int, ...], tuple[int, ...], tuple[int, ...], tuple[int, ...], tuple[int, ...],
-    bool, bool, bool, bool, bool, bool,
-]
+
+class ProductProfile(Protocol):
+    """What this controller reads from a Casper Base or Hush Base profile."""
+
+    @property
+    def key(self) -> str: ...
+
+    @property
+    def row(self) -> ProductRow: ...
 
 
 def action_label(name: str) -> str:
@@ -72,16 +78,17 @@ async def invoke(
 class CasperBaseController(BedController):
     """Use selected product actions with live coherent service/characteristic pairing."""
 
-    product_catalog: ClassVar[Mapping[str, ProductSpec]] = PRODUCTS
-    action_catalog: ClassVar[Sequence[tuple[str, int, int | None]]] = ACTIONS
+    profiles: ClassVar[Mapping[str, ProductProfile]] = PROFILES
+    action_catalog: ClassVar[Sequence[Action]] = ACTIONS
 
     def __init__(self, coordinator: AdjustableBedCoordinator, *, product: str) -> None:
         super().__init__(coordinator)
-        selected = product
-        if selected not in self.product_catalog:
+        profile = self.profiles.get(product)
+        if profile is None:
             raise ValueError("Choose an explicit Casper Base product profile")
-        self.product = self.product_catalog[selected]
-        self.model = selected
+        self.profile = profile
+        self.product = profile.row
+        self.model = product
         self._write_char: BleakGATTCharacteristic | None = None
         self._notify_char: BleakGATTCharacteristic | None = None
         self._single = False
@@ -216,7 +223,7 @@ class CasperBaseController(BedController):
                 await self._opcode(opcode)
         finally:
             if release:
-                await self._opcode(0x6E, cleanup=True)
+                await self._opcode(STOP, cleanup=True)
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
@@ -534,7 +541,7 @@ class CasperBaseController(BedController):
     move_feet_down = move_legs_down
 
     async def stop_all(self) -> None:
-        await self._opcode(0x6E, cleanup=True)
+        await self._opcode(STOP, cleanup=True)
 
     move_head_stop = stop_all
     move_back_stop = stop_all

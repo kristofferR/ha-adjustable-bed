@@ -14,6 +14,7 @@ from typing import Final
 
 from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ..hush_catalog import INDICES, PRODUCTS
+from .casper import ProductRow
 
 # The app's own products; the others are restored profiles.
 CURRENT: Final = range(46, 58)
@@ -25,13 +26,13 @@ class HushProfile:
 
     key: str
     index: int
-    row: tuple[object, ...]
+    row: ProductRow
     # No hold yet: see docs/design/execution-capabilities.md.
     execution: ExecutionCapabilities = NO_EXECUTION_CAPABILITIES
 
     @property
     def label(self) -> str:
-        return str(self.row[0])
+        return self.row[0]
 
     @property
     def current(self) -> bool:

@@ -11,8 +11,8 @@ from typing import TYPE_CHECKING
 from homeassistant.util import dt as dt_util
 
 from ..casper_base_protocol import RGB_TIMERS, Request, alarm_countdown
-from ..codec.casper import alarm_pair, control
-from ..hush_catalog import ACTIONS, PRODUCTS
+from ..codec.casper import STOP, alarm_pair, control
+from ..hush_catalog import ACTIONS
 from ..hush_protocol import HushMainReceive, decode
 from ..profiles.hush import PROFILES
 from .base import ControllerButtonSpec
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 class HushBaseController(CasperBaseController):
     """Reuse proven shared frames with the Hush catalog and page predicates."""
 
-    product_catalog = PRODUCTS
+    profiles = PROFILES
     # Dedicated music-page descriptors are not product-list memberships.
     action_catalog = (
         *ACTIONS,
@@ -42,7 +42,6 @@ class HushBaseController(CasperBaseController):
 
     def __init__(self, coordinator: AdjustableBedCoordinator, *, product: str) -> None:
         super().__init__(coordinator, product=product)
-        self.profile = PROFILES[product]
         self._generation = 0
         self._operation_generation: ContextVar[int | None] = ContextVar(
             "hush_operation_generation", default=None
@@ -226,7 +225,7 @@ class HushBaseController(CasperBaseController):
         try:
             await self._opcode(self.actions[action][0])
         finally:
-            await self._opcode(0x6E, cleanup=True)
+            await self._opcode(STOP, cleanup=True)
 
     async def _poll_snore(self, source: str) -> None:
         try:

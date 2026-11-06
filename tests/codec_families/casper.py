@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
+from custom_components.adjustable_bed.profiles.casper import CasperProfile
 from custom_components.adjustable_bed.profiles.hush import HushProfile
+from tests import casper_base_vectors, hush_vectors
 from tests.codec_families import CodecFamily
-from tests.hush_vectors import FROZEN_FRAMES
 
 FAMILY = CodecFamily(
-    profiles={HushProfile: FROZEN_FRAMES},
-    bed_types=frozenset({"hush_base"}),
-    pending={
-        "casper_base": "#745 Casper Base: its frames come from codec/casper.py; freeze its"
-        " row101 vectors and move its product catalog to a profile",
+    profiles={
+        CasperProfile: casper_base_vectors.FROZEN_FRAMES,
+        HushProfile: hush_vectors.FROZEN_FRAMES,
     },
+    bed_types=frozenset({"casper_base", "hush_base"}),
 )
