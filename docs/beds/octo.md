@@ -376,6 +376,12 @@ those states from command timing.
 
 ### One-motor TV lift
 
+- Native Open/Close actions use the configured **Motor pulse count** and
+  **Motor pulse delay**, as on Standard OCTO bed motors. The bundled card's
+  press-and-hold controls move until released. For a repeatable timed action,
+  use `adjustable_bed.hold_control` with `control: tv_lift_up` or
+  `tv_lift_down` and `duration` in seconds (0.1–60). Timed travel does not prove
+  arrival at a position.
 - The official OCTO device list identifies `RTV` as **Lift 1M**, and the
   official app controls it through Standard OCTO motor 1 (`0x02`).
 - An automatically discovered `RTV` defaults to one motor and exposes one **TV

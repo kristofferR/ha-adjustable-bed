@@ -21,6 +21,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .beds.base import ControllerMotorHoldSpec
 from .const import (
+    BED_TYPE_OCTO,
     BED_TYPE_SLEEPYS_ELITE_APP,
     BEDS_WITH_PERCENTAGE_POSITIONS,
     DOMAIN,
@@ -480,7 +481,9 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
                 self.entity_description.key,
             )
             hold = self.entity_description.hold
-            if hold is not None:
+            # OCTO's native actions use its configured pulses; hold metadata
+            # describes the card gesture, not a replacement travel duration.
+            if hold is not None and self._coordinator.bed_type != BED_TYPE_OCTO:
                 control = hold.up_control if direction == "open" else hold.down_control
 
                 async def bounded_movement(controller: BedController) -> None:
