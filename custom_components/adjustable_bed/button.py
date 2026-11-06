@@ -1434,12 +1434,15 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
         super().__init__(coordinator)
         self._spec = spec
         self._attr_unique_id = coordinator.entity_unique_id(spec.key)
-        self._attr_name = spec.name
         self._attr_icon = spec.icon
+        # Home Assistant prefers any _attr_name, even None, over the translation,
+        # so only set it when the name is not translated.
+        if spec.translation_key is None or spec.key.startswith(
+            ("preset_memory_", "program_memory_")
+        ):
+            self._attr_name = spec.name
         if spec.translation_key is not None:
             self._attr_translation_key = coordinator.entity_translation_key(spec.translation_key)
-            if not spec.key.startswith(("preset_memory_", "program_memory_")):
-                self._attr_name = None
             if spec.translation_placeholders is not None:
                 self._attr_translation_placeholders = dict(spec.translation_placeholders)
 
