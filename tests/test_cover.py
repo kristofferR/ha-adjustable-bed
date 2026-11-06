@@ -1,12 +1,16 @@
 """Tests for adjustable bed cover entities."""
 
+import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 from custom_components.adjustable_bed.beds.base import (
     ControllerMotorHoldSpec,
     MotorControlSpec,
 )
+from custom_components.adjustable_bed.beds.octo import OctoController
 from custom_components.adjustable_bed.beds.reverie_pairlink import ReveriePairlinkController
 from custom_components.adjustable_bed.beds.reverie_pairlink_runtime import (
     PairlinkCredentials,
@@ -14,6 +18,7 @@ from custom_components.adjustable_bed.beds.reverie_pairlink_runtime import (
     PairlinkRole,
     PairlinkRuntime,
 )
+from custom_components.adjustable_bed.const import BED_TYPE_OCTO
 from custom_components.adjustable_bed.cover import (
     AdjustableBedCover,
     AdjustableBedCoverEntityDescription,
@@ -23,6 +28,46 @@ from custom_components.adjustable_bed.cover import (
 
 async def _noop(_controller) -> None:
     return None
+
+
+@pytest.mark.parametrize("pulse_count", [1, 50, 99])
+@pytest.mark.parametrize(("motor_count", "motor"), [(1, "tv_lift"), (2, "back"), (2, "legs")])
+@pytest.mark.parametrize("direction", ["open", "close"])
+async def test_octo_cover_respects_configured_pulses(
+    pulse_count: int, motor_count: int, motor: str, direction: str
+) -> None:
+    """Native OCTO actions keep configured travel even when the card supports holds."""
+    coordinator = MagicMock()
+    coordinator.bed_type = BED_TYPE_OCTO
+    coordinator.motor_count = motor_count
+    coordinator.motor_pulse_count = pulse_count
+    coordinator.motor_pulse_delay_ms = 350
+    coordinator.cancel_command = asyncio.Event()
+    coordinator.entry.data = {}
+    controller = OctoController(coordinator)
+    controller._legacy_motor_layout_available = True
+    controller._write_octo_command = AsyncMock()
+    spec = next(spec for spec in controller.motor_control_specs if spec.key == motor)
+
+    async def execute(command, **_kwargs) -> None:
+        await command(controller)
+
+    coordinator.async_execute_controller_command = AsyncMock(side_effect=execute)
+    cover = AdjustableBedCover(coordinator, _build_cover_description(spec))
+    cover.async_write_ha_state = MagicMock()
+
+    if direction == "open":
+        await cover.async_open_cover()
+    else:
+        await cover.async_close_cover()
+
+    movement, stop = controller._write_octo_command.await_args_list
+    assert movement.kwargs["repeat_count"] == pulse_count
+    assert movement.kwargs["repeat_delay_ms"] == 350
+    assert movement.kwargs["data"] == [4 if motor == "legs" else 2]
+    assert movement.kwargs["command"] == [2, 0x70 if direction == "open" else 0x71]
+    assert stop.kwargs["command"] == [2, 0x73]
+    assert not stop.kwargs["cancel_event"].is_set()
 
 
 async def test_cover_commands_use_physical_position_axis_resource() -> None:
