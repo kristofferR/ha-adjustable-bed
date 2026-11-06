@@ -325,7 +325,7 @@ async def test_shared_common_option_and_rendered_profile_keep_mixed_routes(hass,
                 if callable(marker.default)}
     rendered[CONF_PROTOCOL_VARIANT] = representative
     rendered[CONF_IDLE_DISCONNECT_SECONDS] = 50
-    result = await flow._async_options_form(rendered, step_id="settings")
+    result = await flow._async_options_form(form["data_schema"](rendered), step_id="settings")
     assert result["type"] == "create_entry"
     assert get_child(entry.data, SIDE_LEFT)[CONF_PROTOCOL_VARIANT] == representative
     assert get_child(entry.data, SIDE_RIGHT)[CONF_PROTOCOL_VARIANT] == opposite
