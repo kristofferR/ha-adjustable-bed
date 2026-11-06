@@ -12,6 +12,7 @@ from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.codec import casper as codec
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.profiles.casper import ACTIONS, PROFILES, CasperProfile
+from tests import casper_base_vectors, hush_vectors
 from tests.casper_base_vectors import FROZEN_FRAMES, SHARED_FRAMES
 from tests.casper_frames import rebuild
 from tests.test_controller_contract import _FactoryCoordinator, _make_connected_client
@@ -74,6 +75,16 @@ def test_each_product_sends_its_catalog_opcodes(key):
     queries = {codec.special(name, single=s).hex() for name in codec.SPECIAL for s in (True, False)}
     sent = commands | queries
     assert sent <= FROZEN_FRAMES[key], sorted(sent - FROZEN_FRAMES[key])
+
+
+@pytest.mark.parametrize("vectors", [casper_base_vectors, hush_vectors], ids=["casper", "hush"])
+@pytest.mark.parametrize(
+    "opcode", [codec.STOP, codec.LIGHT_OFF, codec.ANTI_SNORE, codec.MUSIC_BLUETOOTH]
+)
+def test_the_codecs_fixed_commands_are_frozen_in_both_apps(vectors, opcode):
+    frozen = vectors.SHARED_FRAMES.union(*vectors.FROZEN_FRAMES.values())
+    for single in (True, False):
+        assert codec.control(opcode, single=single).hex() in frozen
 
 
 def test_the_snapshot_route_sends_only_its_products_frames():

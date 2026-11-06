@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 from homeassistant.util import dt as dt_util
 
 from ..casper_base_protocol import RGB_TIMERS, Request, alarm_countdown
-from ..codec.casper import STOP, alarm_pair, control
+from ..codec.casper import MUSIC_BLUETOOTH, STOP, alarm_pair, control
 from ..hush_catalog import ACTIONS
 from ..hush_protocol import HushMainReceive, decode
 from ..profiles.hush import PROFILES
@@ -208,7 +208,7 @@ class HushBaseController(CasperBaseController):
             self._music_debounce_until = now + 2
             generation = self._generation
             if not self._music_bluetooth:
-                await self._send(control(0xD8, single=self._single, side=0))
+                await self._send(control(MUSIC_BLUETOOTH, single=self._single, side=0))
             await asyncio.sleep(max(0, now + 0.9 - asyncio.get_running_loop().time()))
             if generation != self._generation:
                 raise ConnectionError("Music operation belongs to a previous connection")

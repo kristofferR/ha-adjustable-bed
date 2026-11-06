@@ -20,7 +20,10 @@ from ..casper_base_protocol import (
     decode_main,
 )
 from ..codec.casper import (
+    ANTI_SNORE,
     GATT,
+    LIGHT_OFF,
+    MUSIC_BLUETOOTH,
     STOP,
     alarm_pair,
     control,
@@ -202,7 +205,7 @@ class CasperBaseController(BedController):
                 if self._music_bluetooth:
                     self._music_bluetooth = False
                     self._publish()
-                    await self._send(control(0xD8, single=self._single, side=0))
+                    await self._send(control(MUSIC_BLUETOOTH, single=self._single, side=0))
                 await asyncio.sleep(max(0, now + 0.9 - asyncio.get_running_loop().time()))
             elif action == "MusicBlueToothSwitch":
                 self._music_bluetooth = not self._music_bluetooth
@@ -444,7 +447,7 @@ class CasperBaseController(BedController):
         elif op == "light_seconds":
             packets = (light_seconds(r.value),)
         elif op == "light_off":
-            packets = (control(0x75, single=self._single),)
+            packets = (control(LIGHT_OFF, single=self._single),)
         elif op == "rgb_power":
             packets = (extra(4, 4, (0, int(r.enabled))),)
         elif op == "rgb_color":
@@ -513,7 +516,7 @@ class CasperBaseController(BedController):
             self._snore_count += 1
         if self._snore_count >= 5:
             # Automatic path always uses default left, independent of manual side.
-            await self._send(control(0x46, single=self._single, side=0))
+            await self._send(control(ANTI_SNORE, single=self._single, side=0))
             self._snore_count = 0
 
     async def _axis(self, name: str, direction: str) -> None:
