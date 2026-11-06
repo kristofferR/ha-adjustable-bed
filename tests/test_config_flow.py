@@ -13,6 +13,7 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import voluptuous as vol
 from bleak.exc import BleakError
 from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 from homeassistant.config_entries import (
@@ -80,6 +81,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_RF_ECO_BT,
@@ -3764,10 +3766,12 @@ class TestOptionsFlow:
         assert CONF_POSITION_MODE not in markers
         assert CONF_BACK_MAX_ANGLE not in markers
 
+    @pytest.mark.parametrize("initial_type", [BED_TYPE_OKIN_CST, BED_TYPE_OKIN_7BYTE])
     async def test_options_flow_can_change_bed_type_and_rebuild_dependent_fields(
         self,
         hass: HomeAssistant,
         enable_custom_integrations,
+        initial_type: str,
     ) -> None:
         """Changing type rebuilds the form, then saves type-specific settings."""
         del enable_custom_integrations
@@ -3777,7 +3781,7 @@ class TestOptionsFlow:
             data={
                 CONF_ADDRESS: "AA:BB:CC:DD:EE:96",
                 CONF_NAME: "Okin CST Bed",
-                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_BED_TYPE: initial_type,
                 CONF_MOTOR_COUNT: 3,
                 CONF_BLE_BOND_ESTABLISHED: True,
                 CONF_BLE_BOND_MARKER_UNRELIABLE: True,
@@ -3795,21 +3799,32 @@ class TestOptionsFlow:
             marker for marker in initial["data_schema"].schema if marker.schema == CONF_BED_TYPE
         )
         bed_type_selector = initial["data_schema"].schema[bed_type_marker]
-        option_values = {option["value"] for option in bed_type_selector.config["options"]}
-        assert bed_type_marker.default() == BED_TYPE_OKIN_CST
+        assert bed_type_selector.config["custom_value"] is True
+        with pytest.raises(vol.Invalid):
+            bed_type_selector("Not a supported bed type")
+        option_values = {
+            bed_type_selector(option["value"])
+            for option in bed_type_selector.config["options"]
+        }
+        assert bed_type_selector(bed_type_marker.default()) == initial_type
         assert BED_TYPE_OCTO in option_values
+        octo_label = next(
+            option["label"]
+            for option in bed_type_selector.config["options"]
+            if bed_type_selector(option["value"]) == BED_TYPE_OCTO
+        )
 
         rebuilt = await hass.config_entries.options.async_configure(
             initial["flow_id"],
             user_input={
-                CONF_BED_TYPE: BED_TYPE_OCTO,
+                CONF_BED_TYPE: octo_label,
                 CONF_MOTOR_COUNT: 3,
             },
         )
 
         assert rebuilt["type"] == FlowResultType.FORM
         rebuilt_markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
-        assert rebuilt_markers[CONF_BED_TYPE].default() == BED_TYPE_OCTO
+        assert rebuilt_markers[CONF_BED_TYPE].default() == octo_label
         assert CONF_MOTOR_COUNT not in rebuilt_markers
         assert rebuilt_markers[CONF_OCTO_MOTOR_COUNT_OVERRIDE].default() == "auto"
         assert CONF_PROTOCOL_VARIANT in rebuilt_markers
@@ -3939,9 +3954,9 @@ class TestOptionsFlow:
             marker for marker in initial["data_schema"].schema if marker.schema == CONF_BED_TYPE
         )
         selector = initial["data_schema"].schema[marker]
-        option_values = {option["value"] for option in selector.config["options"]}
+        option_values = {selector(option["value"]) for option in selector.config["options"]}
 
-        assert marker.default() == BED_TYPE_OKIMAT
+        assert selector(marker.default()) == BED_TYPE_OKIMAT
         assert BED_TYPE_OKIMAT in option_values
 
         saved = await hass.config_entries.options.async_configure(
@@ -4055,7 +4070,7 @@ class TestOptionsFlow:
             marker for marker in initial["data_schema"].schema if marker.schema == CONF_BED_TYPE
         )
         selector = initial["data_schema"].schema[bed_type_marker]
-        assert choice in {option["value"] for option in selector.config["options"]}
+        assert choice in {selector(option["value"]) for option in selector.config["options"]}
 
         rebuilt = await hass.config_entries.options.async_configure(
             initial["flow_id"], user_input={CONF_BED_TYPE: choice}
