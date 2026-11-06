@@ -10,7 +10,8 @@ from the latest continuation of each shard:
 - products 50 to 53: ``s07_products_050_053/continuation-sol-004``;
 - products 54 to 57: ``s08_products_054_057/continuation-sol-003``;
 - shared builders: ``s01_shared_ble/continuation-sol-002`` (sent frames only,
-  not responses) and ``s03_auxiliary/continuation-sol-002``.
+  not responses), including its builder matrix's music-page controls at
+  side 0, and ``s03_auxiliary/continuation-sol-002``.
 
 Two s01 builder vectors exercise library selectors the Hush route never sends,
 the mattress check ``5E 1A 00 01`` and the motor angle query ``6E 9A 30 01``,
@@ -1202,6 +1203,13 @@ SHARED_FRAMES: frozenset[str] = frozenset(
         "6e0100309f",
         "6e010046b5",
         "6e010061d0",
+        "6e0100c433",
+        "6e0100d241",
+        "6e0100d342",
+        "6e0100d443",
+        "6e0100d544",
+        "6e0100d645",
+        "6e0100d746",
         "6e0100d847",
         "6e01010070",
         "6e01012d9d",
@@ -1265,6 +1273,13 @@ SHARED_FRAMES: frozenset[str] = frozenset(
         "6e200d050101020000004601eb",
         "6e200d0501010700061e30fffc",
         "6e200d080301380b0307080905",
+        "c4",
+        "d2",
+        "d3",
+        "d4",
+        "d5",
+        "d6",
+        "d7",
         "d8",
     }
 )

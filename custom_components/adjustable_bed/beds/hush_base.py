@@ -12,9 +12,8 @@ from homeassistant.util import dt as dt_util
 
 from ..casper_base_protocol import RGB_TIMERS, Request, alarm_countdown
 from ..codec.casper import MUSIC_BLUETOOTH, STOP, alarm_pair, control
-from ..hush_catalog import ACTIONS
 from ..hush_protocol import HushMainReceive, decode
-from ..profiles.hush import PROFILES
+from ..profiles.hush import ACTIONS, PROFILES
 from .base import ControllerButtonSpec
 from .casper_base import CasperBaseController
 
@@ -28,17 +27,7 @@ class HushBaseController(CasperBaseController):
     """Reuse proven shared frames with the Hush catalog and page predicates."""
 
     profiles = PROFILES
-    # Dedicated music-page descriptors are not product-list memberships.
-    action_catalog = (
-        *ACTIONS,
-        ("MusicSwitchSoundTrack", 0xC4, None),
-        ("MusicShakeMode", 0xD6, None),
-        ("MusicVolumuDown", 0xD5, None),
-        ("MusicVolumuUp", 0xD4, None),
-        ("MusicNextSong", 0xD3, None),
-        ("MusicPausePlay", 0xD7, None),
-        ("MusicPreviousSong", 0xD2, None),
-    )
+    action_catalog = ACTIONS
 
     def __init__(self, coordinator: AdjustableBedCoordinator, *, product: str) -> None:
         super().__init__(coordinator, product=product)
@@ -212,7 +201,8 @@ class HushBaseController(CasperBaseController):
             await asyncio.sleep(max(0, now + 0.9 - asyncio.get_running_loop().time()))
             if generation != self._generation:
                 raise ConnectionError("Music operation belongs to a previous connection")
-            await self._send(control(0xC4, single=self._single, side=0))
+            sound_track = next(short for name, short, _ in self.action_catalog if name == action)
+            await self._send(control(sound_track, single=self._single, side=0))
             return
         # Every fan icon releases, including modes/timers; text null-long commands
         # are intentionally unavailable instead of emitting the ambiguous zero.

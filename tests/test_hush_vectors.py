@@ -10,8 +10,8 @@ import pytest
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.codec import casper as codec
 from custom_components.adjustable_bed.controller_factory import create_controller
-from custom_components.adjustable_bed.hush_catalog import ACTIONS
-from custom_components.adjustable_bed.profiles.hush import CURRENT, PROFILES, HushProfile
+from custom_components.adjustable_bed.hush_catalog import ACTIONS as CATALOG_ACTIONS
+from custom_components.adjustable_bed.profiles.hush import ACTIONS, CURRENT, PROFILES, HushProfile
 from tests.casper_frames import rebuild
 from tests.hush_vectors import FROZEN_FRAMES, SHARED_FRAMES
 from tests.test_controller_contract import _FactoryCoordinator, _make_connected_client
@@ -43,6 +43,16 @@ def test_each_product_sends_its_catalog_opcodes(key):
     }
     commands = {codec.control(opcode).hex() for opcode in opcodes}
     assert commands <= FROZEN_FRAMES[key], sorted(commands - FROZEN_FRAMES[key])
+
+
+def test_the_music_page_sends_frozen_frames():
+    """The profile's actions beyond the catalog are the music page's, each frozen."""
+    assert ACTIONS[: len(CATALOG_ACTIONS)] == CATALOG_ACTIONS
+    music = ACTIONS[len(CATALOG_ACTIONS) :]
+    assert music and all(name.startswith("Music") and long is None for name, _, long in music)
+    for _, short, _ in music:
+        for single in (True, False):
+            assert codec.control(short, single=single).hex() in ALL_FRAMES
 
 
 def test_the_controller_builds_no_frame_of_its_own():

@@ -13,11 +13,24 @@ from dataclasses import dataclass
 from typing import Final
 
 from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
+from ..hush_catalog import ACTIONS as _CATALOG_ACTIONS
 from ..hush_catalog import INDICES, PRODUCTS
-from .casper import ProductRow
+from .casper import Action, ProductRow
 
 # The app's own products; the others are restored profiles.
 CURRENT: Final = range(46, 58)
+# The catalog's actions, then the music page's own controls, which no product
+# list includes.
+ACTIONS: Final[tuple[Action, ...]] = (
+    *_CATALOG_ACTIONS,
+    ("MusicSwitchSoundTrack", 0xC4, None),
+    ("MusicShakeMode", 0xD6, None),
+    ("MusicVolumuDown", 0xD5, None),
+    ("MusicVolumuUp", 0xD4, None),
+    ("MusicNextSong", 0xD3, None),
+    ("MusicPausePlay", 0xD7, None),
+    ("MusicPreviousSong", 0xD2, None),
+)
 
 
 @dataclass(frozen=True)
