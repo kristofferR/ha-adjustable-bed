@@ -181,10 +181,9 @@ A new app is normally a profile plus its vectors, not a new controller.
    harness (`tests/test_jiecang_vectors.py`). An existing codec is the right one
    only if it reproduces every frozen literal byte for byte. Shared names, UUIDs,
    packet resemblance or constructor calls are not proof. Each codec family
-   registers in its own `tests/codec_families/<family>.py`: the bed types it
-   backs, and the ones still `pending` with their #745 item. Standalone bed types
-   are in `tests/codec_families/_standalone.py`. A migration moves a bed type
-   from `pending` to `bed_types`; `tests/test_codec_contract.py` checks them all.
+   registers in its own `tests/codec_families/<family>.py` with the bed types it
+   backs. Standalone bed types are in `tests/codec_families/_standalone.py`;
+   `tests/test_codec_contract.py` checks them all.
    - **A codec reproduces the vectors:** add a profile to its
      `profiles/<family>.py`. Timing, layouts, presets, memory slots, setup
      schedules and name rules are profile data, from this app's evidence only.

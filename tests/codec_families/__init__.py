@@ -53,15 +53,12 @@ class CodecFamily:
     - ``profiles``: profile class -> frozen vectors by profile key.
     - ``bed_types``: bed types whose controller is a profile over this codec.
     - ``app_routes``: codec-backed bed types whose app profile is a choice.
-    - ``pending``: bed types planned for this family, each with its #745 item.
-      Migrating one moves it from ``pending`` to ``bed_types``.
     - ``guide``: what the docs tests check in the family's codec guide.
     """
 
     profiles: Mapping[type, Mapping[str, frozenset[str]]]
     bed_types: frozenset[str]
     app_routes: AppRoutes = field(default_factory=dict)
-    pending: Mapping[str, str] = field(default_factory=dict)
     guide: CodecGuide | None = None
 
 
