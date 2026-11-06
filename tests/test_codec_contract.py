@@ -2,16 +2,15 @@
 
 Each codec family registers itself in its own module under
 ``tests/codec_families/``: its profile classes with their frozen vectors, the
-bed types that are profiles over its codec, its app routes and the bed types
-still pending migration onto it. ``tests/codec_families/_standalone.py`` lists
-the bed types that stay standalone controllers. Every supported bed type must
-appear exactly once across them.
+bed types that are profiles over its codec and its app routes.
+``tests/codec_families/_standalone.py`` lists the bed types that stay
+standalone controllers. Every supported bed type must appear exactly once
+across them.
 
 A bed type is codec-backed when its controller's ``profile`` is a registered
 profile class with frozen vectors for its key. Profile keys are scoped to their
 profile class, so two families may share one (Jiecang and Limoss both call
-their pre-v5 route ``legacy``). Migrating a bed type moves it from ``pending``
-to ``bed_types`` in its family module; the test fails until you do.
+their pre-v5 route ``legacy``).
 """
 
 from __future__ import annotations
@@ -63,14 +62,13 @@ def test_every_bed_type_is_listed_exactly_once() -> None:
     listed = Counter(
         [
             *(bed_type for family in FAMILIES.values() for bed_type in family.bed_types),
-            *(bed_type for family in FAMILIES.values() for bed_type in family.pending),
             *STANDALONE,
         ]
     )
     assert not {bed_type for bed_type, count in listed.items() if count > 1}, "listed twice"
     assert not set(listed) - set(SUPPORTED_BED_TYPES), "listed but not supported"
     assert not set(SUPPORTED_BED_TYPES) - set(listed), (
-        "add these to a family's bed_types or pending, or to _standalone.py"
+        "add these to a family's bed_types or to _standalone.py"
     )
 
 
@@ -80,8 +78,6 @@ def test_registrations_are_explained() -> None:
     for name, family in FAMILIES.items():
         assert family.profiles and family.bed_types, name
         assert set(family.app_routes) <= family.bed_types, name
-        for bed_type, item in family.pending.items():
-            assert item.startswith("#745 "), (name, bed_type)
     assert all(STANDALONE.values())
 
 

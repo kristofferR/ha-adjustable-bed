@@ -128,7 +128,7 @@ def test_every_former_route_resolves_to_its_own_round_tripping_id() -> None:
     # The id space covers every codec family bed type and every standalone controller.
     registered = {*STANDALONE}
     for family in families().values():
-        registered |= family.bed_types | set(family.pending)
+        registered |= family.bed_types
     assert registered <= {route.bed_type for route in seen.values()}
 
 

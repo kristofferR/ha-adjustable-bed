@@ -11,10 +11,9 @@ from typing import TYPE_CHECKING
 from homeassistant.util import dt as dt_util
 
 from ..casper_base_protocol import RGB_TIMERS, Request, alarm_countdown
-from ..codec.casper import alarm_pair, control
-from ..hush_catalog import ACTIONS, PRODUCTS
+from ..codec.casper import MUSIC_BLUETOOTH, STOP, alarm_pair, control
 from ..hush_protocol import HushMainReceive, decode
-from ..profiles.hush import PROFILES
+from ..profiles.hush import ACTIONS, PROFILES
 from .base import ControllerButtonSpec
 from .casper_base import CasperBaseController
 
@@ -27,22 +26,11 @@ if TYPE_CHECKING:
 class HushBaseController(CasperBaseController):
     """Reuse proven shared frames with the Hush catalog and page predicates."""
 
-    product_catalog = PRODUCTS
-    # Dedicated music-page descriptors are not product-list memberships.
-    action_catalog = (
-        *ACTIONS,
-        ("MusicSwitchSoundTrack", 0xC4, None),
-        ("MusicShakeMode", 0xD6, None),
-        ("MusicVolumuDown", 0xD5, None),
-        ("MusicVolumuUp", 0xD4, None),
-        ("MusicNextSong", 0xD3, None),
-        ("MusicPausePlay", 0xD7, None),
-        ("MusicPreviousSong", 0xD2, None),
-    )
+    profiles = PROFILES
+    action_catalog = ACTIONS
 
     def __init__(self, coordinator: AdjustableBedCoordinator, *, product: str) -> None:
         super().__init__(coordinator, product=product)
-        self.profile = PROFILES[product]
         self._generation = 0
         self._operation_generation: ContextVar[int | None] = ContextVar(
             "hush_operation_generation", default=None
@@ -209,11 +197,12 @@ class HushBaseController(CasperBaseController):
             self._music_debounce_until = now + 2
             generation = self._generation
             if not self._music_bluetooth:
-                await self._send(control(0xD8, single=self._single, side=0))
+                await self._send(control(MUSIC_BLUETOOTH, single=self._single, side=0))
             await asyncio.sleep(max(0, now + 0.9 - asyncio.get_running_loop().time()))
             if generation != self._generation:
                 raise ConnectionError("Music operation belongs to a previous connection")
-            await self._send(control(0xC4, single=self._single, side=0))
+            sound_track = next(short for name, short, _ in self.action_catalog if name == action)
+            await self._send(control(sound_track, single=self._single, side=0))
             return
         # Every fan icon releases, including modes/timers; text null-long commands
         # are intentionally unavailable instead of emitting the ambiguous zero.
@@ -226,7 +215,7 @@ class HushBaseController(CasperBaseController):
         try:
             await self._opcode(self.actions[action][0])
         finally:
-            await self._opcode(0x6E, cleanup=True)
+            await self._opcode(STOP, cleanup=True)
 
     async def _poll_snore(self, source: str) -> None:
         try:

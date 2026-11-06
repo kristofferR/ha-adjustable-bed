@@ -5,6 +5,8 @@ Hush Base 1.0.5, row126). Every frame ends in the low byte of the sum of the
 bytes before it:
 
 - Command: ``6E 01 side opcode sum``, or the bare opcode on Nordic UART.
+  The library's fixed commands are STOP ``6E``, light off ``75``, the
+  anti-snore preset ``46`` and the music Bluetooth switch ``D8``.
 - Query: ``6E 02 01 00`` (exit limit), ``6E 08 01 01`` (clock),
   ``6E 0A 00 01`` (light) and ``6E 15 01 01`` (music).
 - Extended record: ``6E 20 len category subtype operation values sum``, where
@@ -14,8 +16,8 @@ bytes before it:
   and the single alarm ``6E 06 high mode`` with ``6E 05 low 00``.
 - Clock: the extended record 8/3 with the local calendar.
 
-Which opcodes a product sends, its pages and gestures belong to its profile
-(``profiles/hush.py``) or the Casper Base catalog, never to this module.
+Which opcodes a product's controls send, its pages and gestures belong to its
+profile (``profiles/casper.py`` or ``profiles/hush.py``), never to this module.
 """
 
 from __future__ import annotations
@@ -32,6 +34,11 @@ GATT: Final = (
     ("0000fff0-0000-1000-8000-00805f9b34fb", "0000fff2-0000-1000-8000-00805f9b34fb"),
     ("0000e0ff-3c17-d293-8e48-14fe2e4da212", "00000002-3c17-d293-8e48-14fe2e4da212"),
 )
+STOP: Final = 0x6E
+LIGHT_OFF: Final = 0x75
+# Sent on the default side when an external detector reports snoring.
+ANTI_SNORE: Final = 0x46
+MUSIC_BLUETOOTH: Final = 0xD8
 SPECIAL: Final = {
     "exit_limit": (0x6E, 2, 1, 0),
     "clock": (0x6E, 8, 1, 1),

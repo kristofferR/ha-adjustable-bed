@@ -4,11 +4,11 @@ from dataclasses import dataclass, field
 from enum import IntFlag
 from typing import Final, overload
 
-from . import casper_base_catalog as _casper_base_catalog
 from . import hush_catalog as _hush_catalog
 from . import richmat_mh_catalog as _richmat_mh_catalog
 from .goodvibe_catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
 from .hjbed_catalog import PROFILE_CHOICES as HJBED_PROFILES
+from .profiles import casper as _casper_profiles
 
 DOMAIN: Final = "adjustable_bed"
 
@@ -562,11 +562,11 @@ BED_TYPE_GMMOTOR_SLEEP_SXB: Final = "gmmotor_sleep_sxb"
 BED_TYPE_CASPER_SLEEP_MM: Final = "casper_sleep_mm"
 BED_TYPE_CASPER_SLEEP_SXB: Final = "casper_sleep_sxb"
 CASPER_BASE_VARIANTS: Final = {
-    key: value[0] + (" (stored profile)" if key not in ("casperpro", "caspermax") else "")
-    for key, value in _casper_base_catalog.PRODUCTS.items()
+    key: profile.label + ("" if profile.current else " (stored profile)")
+    for key, profile in _casper_profiles.PROFILES.items()
 }
 CASPER_BASE_SIDE_VARIANTS: Final = frozenset(
-    key for key, value in _casper_base_catalog.PRODUCTS.items() if value[11]
+    key for key, profile in _casper_profiles.PROFILES.items() if profile.row[11]
 )
 BED_TYPE_RICHMAT_REVIVE: Final = "richmat_revive"  # com.richmat.revive3
 BED_TYPE_RICHMAT_BEST_MATTRESS: Final = "richmat_best_mattress"  # com.richmat.best_mattress
