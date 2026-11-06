@@ -141,8 +141,8 @@ angle sensing is disabled.
 
 - One-address Left/Right/Both controls are available only for the stored
   L400SH and L300SH layouts on a framed transport.
-- Connect first so Home Assistant can verify the transport before enabling
-  sides.
+- Enabling sides connects to the bed first so Home Assistant can verify the
+  transport.
 - Right sends side byte `01`; Both sends the left frame, then the right frame.
 - Two-address pairs retain each side's own product selection.
 - Music-page commands and the automatic anti-snore trigger use default left, as

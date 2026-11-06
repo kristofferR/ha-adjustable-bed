@@ -199,7 +199,7 @@ These steps serve every bed type or route, so no profile owns them.
 |---|---|
 | `init`, `settings`, `left_settings`, `right_settings` | Settings; each receiver step also asks that receiver's declared questions |
 | `change_app` | Points to Reconfigure |
-| `pair_sides`, `revert_sides`, `unpair` | Side controls and splitting a pair |
+| `pair_sides`, `pair_sides_probe`, `revert_sides`, `unpair` | Side controls (the probe connects to read the transport) and splitting a pair |
 | `remove_bond_side`, `remove_bond`, `remove_bond_progress`, `remove_bond_result` | Bond removal |
 | `estimated_positions`, `left_estimated_positions`, `right_estimated_positions`, `estimate_top`, `estimate_bottom`, `estimate_raise`, `estimate_lower`, `estimate_lowering`, `estimate_lowered`, `estimate_flat`, `estimate_flat_lower`, `estimate_flat_confirm`, `estimate_review`, `estimate_retry`, `estimate_retry_again`, `estimate_cancel` | Measuring estimated positions |
 
