@@ -38,7 +38,7 @@ ATTR_NAME = "name"
 ATTR_POSITION = "position"
 ATTR_CREATE_BUTTON = "create_button"
 ATTR_MOTORS = "motors"
-ESTIMATED_MOTORS = ("back", "legs", "head", "feet")
+ESTIMATED_MOTORS = ("back", "legs", "head", "feet", "tv_lift")
 
 _DEVICE = {vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1, max=1))}
 _NAME = vol.All(cv.string, vol.Length(min=1, max=MAX_POSITION_NAME_LENGTH))

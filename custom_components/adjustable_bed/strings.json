@@ -1321,7 +1321,8 @@
           "head": "Head",
           "feet": "Feet",
           "measure": "Measure travel times now",
-          "acknowledge": "I understand that positions are estimated"
+          "acknowledge": "I understand that positions are estimated",
+          "tv_lift": "TV lift"
         },
         "data_description": {
           "measure": "Raise and lower each motor once and tap when it stops. Leave this off to type the times yourself.",
@@ -1337,7 +1338,8 @@
           "head": "Head",
           "feet": "Feet",
           "measure": "Measure travel times now",
-          "acknowledge": "I understand that positions are estimated"
+          "acknowledge": "I understand that positions are estimated",
+          "tv_lift": "TV lift"
         },
         "data_description": {
           "measure": "Raise and lower each motor once and tap when it stops. Leave this off to type the times yourself.",
@@ -1353,7 +1355,8 @@
           "head": "Head",
           "feet": "Feet",
           "measure": "Measure travel times now",
-          "acknowledge": "I understand that positions are estimated"
+          "acknowledge": "I understand that positions are estimated",
+          "tv_lift": "TV lift"
         },
         "data_description": {
           "measure": "Raise and lower each motor once and tap when it stops. Leave this off to type the times yourself.",
@@ -1362,24 +1365,24 @@
       },
       "estimate_flat": {
         "title": "Calibrate {motor}",
-        "description": "Step {step} of {steps}, {motor}.\n\nThe {motor} must be completely flat before it is measured. Lower it with the card or the remote, or let this step lower it. Only you can confirm that it is flat.",
+        "description": "Step {step} of {steps}, {motor}.\n\nThe {motor} must be fully lowered before it is measured. Lower it with the card or the remote, or let this step lower it. Only you can confirm that it is fully lowered.",
         "menu_options": {
-          "estimate_flat_confirm": "It is flat, raise it now",
+          "estimate_flat_confirm": "It is fully lowered, raise it now",
           "estimate_flat_lower": "Lower it for me",
           "estimate_cancel": "Cancel, nothing is saved"
         }
       },
       "estimate_lowering": {
         "title": "Lowering {motor}",
-        "description": "The {motor} is moving down. Select **It is flat now** once it has stopped moving. Movement stops by itself after {max_s} s.",
+        "description": "The {motor} is moving down. Select **It is fully lowered now** once it has stopped moving. Movement stops by itself after {max_s} s.",
         "menu_options": {
-          "estimate_lowered": "It is flat now",
+          "estimate_lowered": "It is fully lowered now",
           "estimate_cancel": "Stop, something is wrong"
         }
       },
       "estimate_raise": {
         "title": "Calibrate {motor}",
-        "description": "Step {step} of {steps}, {motor}.\n\nThe {motor} is moving up from flat. Select **Reached the top** the moment it stops moving.\n\nThe time runs from the first movement command. Movement stops by itself after {max_s} s if you do nothing. Tapping adds a small delay; you can fine tune the times on the last step.",
+        "description": "Step {step} of {steps}, {motor}.\n\nThe {motor} is moving up from fully lowered. Select **Reached the top** the moment it stops moving.\n\nThe time runs from the first movement command. Movement stops by itself after {max_s} s if you do nothing. Tapping adds a small delay; you can fine tune the times on the last step.",
         "menu_options": {
           "estimate_top": "Reached the top",
           "estimate_cancel": "Stop, something is wrong. Nothing is saved"
@@ -1403,7 +1406,7 @@
       },
       "estimate_review": {
         "title": "Review calibration",
-        "description": "Step {step} of {steps}.\n\nThe seconds each motor takes for its full travel. Adjust them to fine tune, or type them if you timed the bed with a stopwatch. Motors you just measured ended flat, so their reference is set and they start at 0%. Times can be measured again any time from this menu; changing them keeps your saved positions.",
+        "description": "Step {step} of {steps}.\n\nThe seconds each motor takes for its full travel. Adjust them to fine tune, or type them if you timed the bed with a stopwatch. Motors you just measured ended fully lowered, so their reference is set and they start at 0%. Times can be measured again any time from this menu; changing them keeps your saved positions.",
         "data": {
           "back_up": "Back, full travel up",
           "back_down": "Back, full travel down",
@@ -1412,7 +1415,9 @@
           "head_up": "Head, full travel up",
           "head_down": "Head, full travel down",
           "feet_up": "Feet, full travel up",
-          "feet_down": "Feet, full travel down"
+          "feet_down": "Feet, full travel down",
+          "tv_lift_up": "TV lift, full travel up",
+          "tv_lift_down": "TV lift, full travel down"
         }
       }
     },
@@ -6177,6 +6182,15 @@
       },
       "right_back_up_right": {
         "name": "Right: Right back Up"
+      },
+      "set_tv_lift_reference": {
+        "name": "Set TV lift reference"
+      },
+      "set_tv_lift_reference_left": {
+        "name": "Left: Set TV lift reference"
+      },
+      "set_tv_lift_reference_right": {
+        "name": "Right: Set TV lift reference"
       }
     },
     "cover": {
@@ -9237,6 +9251,15 @@
       },
       "octo_light_duration_right": {
         "name": "Right: Light duration"
+      },
+      "tv_lift_position_estimated": {
+        "name": "TV lift position (estimated)"
+      },
+      "tv_lift_position_estimated_left": {
+        "name": "Left: TV lift position (estimated)"
+      },
+      "tv_lift_position_estimated_right": {
+        "name": "Right: TV lift position (estimated)"
       }
     },
     "select": {

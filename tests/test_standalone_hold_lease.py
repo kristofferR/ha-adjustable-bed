@@ -30,9 +30,10 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
+    CONF_OCTO_MOTOR_COUNT_OVERRIDE,
 )
 from custom_components.adjustable_bed.execution import HOLD_CEILING_MS
-from tests.hold_lease_wire import HeldWire, Write, intervals, leased_hold
+from tests.hold_lease_wire import End, HeldWire, Write, intervals, leased_hold
 from tests.test_controller_contract import _create_controller_for_bed_type
 
 DECLARED = (
@@ -158,6 +159,21 @@ async def test_a_lease_streams_past_a_finite_press_then_expiry_releases(scenario
     # Expiry sends exactly the release the finite press ends with, and no motion.
     assert _hex(wire.after) == _finite_release(finite, case.held)
     assert case.held not in _hex(wire.after)
+
+
+@pytest.mark.parametrize("end", ["expire", "stop"])
+async def test_octo_tv_lift_hold_refreshes_and_releases(end: End) -> None:
+    wire = await leased_hold(
+        "octo:standard",
+        lambda controller: controller.hold_control("tv_lift_up", HOLD_CEILING_MS),
+        entry_data={CONF_OCTO_MOTOR_COUNT_OVERRIDE: "1"},
+        end_after_s=1,
+        end=end,
+    )
+    motion = _motion(wire, CASES["octo:standard"].held)
+    assert len(motion) == 3
+    assert all(350 <= gap <= 360 for gap in intervals(motion))
+    assert _hex(wire.after) == ["40027300000b40"] * (2 if end == "stop" else 1)
 
 
 async def test_stop_preempts_the_lease_and_releases(scenario: str) -> None:

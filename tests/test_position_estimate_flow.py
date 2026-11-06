@@ -20,6 +20,7 @@ from custom_components.adjustable_bed.const import (
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
+    CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
@@ -81,7 +82,10 @@ class Bench:
 
 @pytest.fixture
 async def entry(
-    hass: HomeAssistant, mock_octo_ready_transport: None, enable_custom_integrations: None
+    hass: HomeAssistant,
+    mock_octo_ready_transport: None,
+    enable_custom_integrations: None,
+    request: pytest.FixtureRequest,
 ) -> MockConfigEntry:
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -90,7 +94,8 @@ async def entry(
             "address": ADDRESS,
             "name": "Bedroom bed",
             CONF_BED_TYPE: BED_TYPE_OCTO,
-            CONF_MOTOR_COUNT: 2,
+            CONF_MOTOR_COUNT: getattr(request, "param", 2),
+            CONF_OCTO_MOTOR_COUNT_OVERRIDE: str(getattr(request, "param", 2)),
             CONF_HAS_MASSAGE: False,
             CONF_DISABLE_ANGLE_SENSING: True,
             CONF_PREFERRED_ADAPTER: "auto",
@@ -119,8 +124,9 @@ async def open_estimates(hass: HomeAssistant, entry: MockConfigEntry) -> Any:
     )
 
 
+@pytest.mark.parametrize(("entry", "motor"), [(2, "back"), (1, "tv_lift")], indirect=["entry"])
 async def test_measures_raising_and_lowering_then_sets_flat(
-    hass: HomeAssistant, entry: MockConfigEntry, monkeypatch: pytest.MonkeyPatch
+    hass: HomeAssistant, entry: MockConfigEntry, monkeypatch: pytest.MonkeyPatch, motor: str
 ) -> None:
     bench = Bench(hass, monkeypatch)
     options = hass.config_entries.options
@@ -128,12 +134,13 @@ async def test_measures_raising_and_lowering_then_sets_flat(
     assert result["type"] is FlowResultType.FORM
     flow_id = result["flow_id"]
 
-    result = await options.async_configure(flow_id, {"back": True, "legs": False, "measure": True})
+    selected = {motor: True, "measure": True}
+    if motor == "back":
+        selected["legs"] = False
+    result = await options.async_configure(flow_id, selected)
     assert result["errors"] == {"acknowledge": "estimate_acknowledge_required"}
 
-    result = await options.async_configure(
-        flow_id, {"back": True, "legs": False, "measure": True, "acknowledge": True}
-    )
+    result = await options.async_configure(flow_id, {**selected, "acknowledge": True})
     assert result["step_id"] == "estimate_flat"
     assert result["description_placeholders"]["step"] == "2"
 
@@ -147,20 +154,20 @@ async def test_measures_raising_and_lowering_then_sets_flat(
     bench.now += 16.9
     result = await options.async_configure(flow_id, {"next_step_id": "estimate_bottom"})
     assert result["step_id"] == "estimate_review"
-    assert [(m, d) for m, d, _ms in bench.moves] == [("back", "up"), ("back", "down")]
+    assert [(m, d) for m, d, _ms in bench.moves] == [(motor, "up"), (motor, "down")]
     assert bench.moves[0][2] == 60000
     assert bench.stops == 2
 
-    result = await options.async_configure(flow_id, {"back_up": 18.0, "back_down": 16.9})
+    result = await options.async_configure(flow_id, {f"{motor}_up": 18.0, f"{motor}_down": 16.9})
     assert result["type"] is FlowResultType.CREATE_ENTRY
     await hass.async_block_till_done()
     manager = pe.position_estimates(hass, entry.entry_id)
     assert manager is not None
-    back = manager.beds[ADDRESS].motors["back"]
+    back = manager.beds[ADDRESS].motors[motor]
     assert (back.up_s, back.down_s) == (18.0, 16.9)
     assert back.state is EstimateState.TRACKING and back.percent == 0.0
     # The reload created the new motor's entities and kept its confirmation.
-    state = hass.states.get("number.bedroom_bed_back_position_estimated")
+    state = hass.states.get(f"number.bedroom_bed_{motor}_position_estimated")
     assert state is not None and state.state == "0"
 
 

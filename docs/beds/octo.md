@@ -70,7 +70,7 @@ checked; see [Analysis provenance](#analysis-provenance).
 | Bed Motor Control | ✅ (1-4 motors from `CAP_MOTORCOUNT`; explicit 1-4 override) |
 | One-motor TV/Bed Lift | ✅ (Standard variant; dedicated TV Lift entity, hardware validation pending) |
 | Position Feedback | ❌ |
-| [Estimated Positions](../ESTIMATED_POSITIONS.md) | ✅ (opt-in, Standard variant; back, legs, head and feet, hardware validation pending) |
+| [Estimated Positions](../ESTIMATED_POSITIONS.md) | ✅ (opt-in, Standard variant; TV lift, back, legs, head and feet, hardware validation pending) |
 | Memory Presets | ✅ (dynamically detected, Standard variant only) |
 | Combined Back + Legs Control | ✅ (two-motor Standard and Star2 variants; hold-capable in the bundled card) |
 | Under-bed Lights | ✅ (Standard variant only; on/off switch, RGB / RGBW light entity on `CAP_LIGHT_RGB` / `CAP_LIGHT_RGBWI`) |
@@ -378,6 +378,18 @@ those states from command timing.
 
 ### One-motor TV lift
 
+- Native Open/Close actions use the configured **Motor pulse count** and
+  **Motor pulse delay**, as on Standard OCTO bed motors. The bundled card's
+  press-and-hold and optional tap-to-move controls use renewable holds and STOP.
+- For a repeatable timed action, use `adjustable_bed.hold_control` with
+  `control: tv_lift_up` or `tv_lift_down` and `duration` in seconds (0.1–60).
+  Timed travel does not prove arrival at a position.
+- For percentage height and named saved heights, enable **Configure > Estimated
+  positions** and calibrate **TV lift**. Fully lowered is 0%, fully raised is
+  100%. The card shows an estimated-height slider and saved positions; reference
+  recovery and remote-use invalidation follow the
+  [estimated-position rules](../ESTIMATED_POSITIONS.md). Calibration, tracking
+  and recall are tested offline; their physical accuracy remains unverified.
 - The official OCTO device list identifies `RTV` as **Lift 1M**, and the
   official app controls it through Standard OCTO motor 1 (`0x02`).
 - An automatically discovered `RTV` defaults to one motor and exposes one **TV

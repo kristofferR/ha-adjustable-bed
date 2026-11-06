@@ -416,6 +416,7 @@ def test_octo_and_richmat_declare_their_estimated_motors() -> None:
         assert isinstance(prop, property) and prop.fget is not None
         return prop.fget(stub)
 
+    assert groups(OctoController, ("tv_lift",)) == {"tv_lift": ("tv_lift",)}
     assert groups(OctoController, ("back", "legs", "back_legs")) == {
         "back": ("back",),
         "legs": ("legs",),

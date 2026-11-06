@@ -21,6 +21,7 @@ from custom_components.adjustable_bed.const import (
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
+    CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
@@ -37,6 +38,7 @@ async def octo_bed(
     hass_storage: dict[str, Any],
     mock_octo_ready_transport: None,
     enable_custom_integrations: None,
+    request: pytest.FixtureRequest,
 ) -> MockConfigEntry:
     """An OCTO bed with calibrated back and legs and a stored 40% back estimate."""
     hass_storage[pe.storage_key(ENTRY_ID)] = {
@@ -53,6 +55,11 @@ async def octo_bed(
             "positions": [],
         },
     }
+    motor_count = getattr(request, "param", 2)
+    if motor_count == 1:
+        hass_storage[pe.storage_key(ENTRY_ID)]["data"]["beds"][ADDRESS] = {
+            "tv_lift": {"up_s": 20.0, "down_s": 10.0, "percent": 40.0}
+        }
     entry = MockConfigEntry(
         domain=DOMAIN,
         title="Bedroom bed",
@@ -60,7 +67,8 @@ async def octo_bed(
             "address": ADDRESS,
             "name": "Bedroom bed",
             CONF_BED_TYPE: BED_TYPE_OCTO,
-            CONF_MOTOR_COUNT: 2,
+            CONF_MOTOR_COUNT: motor_count,
+            CONF_OCTO_MOTOR_COUNT_OVERRIDE: str(motor_count),
             CONF_HAS_MASSAGE: False,
             CONF_DISABLE_ANGLE_SENSING: True,
             CONF_PREFERRED_ADAPTER: "auto",
@@ -127,19 +135,12 @@ async def test_cover_moves_are_timed_and_remote_use_invalidates(
     clock = [0.0]
     monkeypatch.setattr(pe, "_clock", lambda: clock[0])
 
-    async def hold(_self: OctoController, control: str, duration_ms: int) -> None:
-        assert control == "back_up"
-        # Write latency stretches a requested 1 s stream; all of it is travel.
+    async def move(_self: OctoController) -> None:
+        # Time the configured native movement, not a fixed one-second hold.
         clock[0] += 1.2
 
-    async def delay(seconds: float) -> None:
-        clock[0] += seconds  # the declared start and release delays are not travel
-
     await call(hass, "set_position_reference", motors=["back"])
-    with (
-        patch.object(OctoController, "hold_control", hold),
-        patch("custom_components.adjustable_bed.cover.asyncio.sleep", delay),
-    ):
+    with patch.object(OctoController, "move_back_up", move):
         await hass.services.async_call(
             "cover", "open_cover", {"entity_id": entity_id(hass, "cover", "back")}, blocking=True
         )
@@ -163,6 +164,61 @@ async def test_cover_moves_are_timed_and_remote_use_invalidates(
         blocking=True,
     )
     assert hass.states.get(back).state == "0"
+
+
+@pytest.mark.parametrize("octo_bed", [1], indirect=True)
+async def test_tv_lift_estimate_slider_saved_position_and_reference(
+    hass: HomeAssistant, octo_bed: MockConfigEntry, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A standalone lift can calibrate, move to a percentage and recall a saved height."""
+    clock = [0.0]
+    monkeypatch.setattr(pe, "_clock", lambda: clock[0])
+    moves: list[tuple[str, int]] = []
+
+    async def hold(_self: OctoController, control: str, duration_ms: int) -> None:
+        moves.append((control, duration_ms))
+        clock[0] += duration_ms / 1000
+
+    async def delay(_seconds: float) -> None:
+        return
+
+    lift_id = entity_id(hass, "number", "tv_lift_position_estimated")
+    state = hass.states.get(lift_id)
+    assert state is not None and state.state == STATE_UNKNOWN
+    assert state.name == "Bedroom bed TV lift position (estimated)"
+    assert state.attributes["icon"] == "mdi:television-classic"
+    assert "max_angle" not in state.attributes
+    cover_state = hass.states.get(entity_id(hass, "cover", "tv_lift"))
+    assert cover_state is not None
+    assert cover_state.attributes["hold_lease_mode"] == "stream"
+    assert cover_state.attributes["hold_lease_motor"] == "tv_lift"
+    await call(hass, "set_position_reference", motors=["tv_lift"])
+
+    with (
+        patch.object(OctoController, "hold_control", hold),
+        patch("custom_components.adjustable_bed.services.asyncio.sleep", delay),
+    ):
+        await hass.services.async_call(
+            "number", "set_value", {"entity_id": lift_id, "value": 50}, blocking=True
+        )
+        assert hass.states.get(lift_id).state == "50"
+        await call(hass, "save_position", name="TV open")
+        await hass.services.async_call(
+            "number", "set_value", {"entity_id": lift_id, "value": 0}, blocking=True
+        )
+        await call(hass, "recall_position", position="TV open")
+
+    assert moves == [("tv_lift_up", 10000), ("tv_lift_down", 5000), ("tv_lift_up", 10000)]
+    assert hass.states.get(lift_id).state == "50"
+    await call(hass, "mark_position_unknown")
+    assert hass.states.get(lift_id).state == STATE_UNKNOWN
+    await hass.services.async_call(
+        "button",
+        "press",
+        {"entity_id": entity_id(hass, "button", "set_tv_lift_reference")},
+        blocking=True,
+    )
+    assert hass.states.get(lift_id).state == "0"
 
 
 async def test_saved_position_gets_an_optional_button(

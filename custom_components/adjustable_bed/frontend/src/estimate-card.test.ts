@@ -18,7 +18,7 @@ else Reflect.deleteProperty(globalThis, "window");
 
 type Call = { service: string; data: Record<string, unknown> };
 
-function fixture(backState: "tracking" | "unknown") {
+function fixture(backState: "tracking" | "unknown", tvLift = false) {
   const calls: Call[] = [];
   const entity = (id: string, key: string) => ({
     entity_id: id, platform: "adjustable_bed", device_id: "bed", translation_key: key,
@@ -48,10 +48,20 @@ function fixture(backState: "tracking" | "unknown") {
       },
     },
     devices: {}, themes: {}, language: "en", locale: { language: "en" },
+    formatEntityName: (state: { entity_id: string }) => state.entity_id,
     callService: async (_domain: string, service: string, data: Record<string, unknown>) => {
       calls.push({ service, data });
     },
   } as unknown as HomeAssistant;
+  if (tvLift) {
+    hass.entities["cover.back"].translation_key = "tv_lift";
+    hass.entities["number.back_est"].translation_key = "tv_lift_position_estimated";
+    delete hass.entities["cover.legs"];
+    delete hass.entities["number.legs_est"];
+    hass.states["sensor.saved"].attributes.positions = [
+      { id: "p1", name: "TV open", button: true, beds: { bed: { tv_lift: 42 } } },
+    ];
+  }
   const card = new AdjustableBedCard() as unknown as Record<string, unknown> & {
     hass: HomeAssistant;
     _estimateDialog?: Record<string, unknown>;
@@ -108,6 +118,35 @@ test("tapping a tracking saved position recalls it by id", async () => {
   recall();
   await Promise.resolve();
   expect(calls).toEqual([{ service: "recall_position", data: { device_id: "bed", position: "p1" } }]);
+});
+
+test("TV lift estimated height and saved heights use the lift motor", async () => {
+  const { card, ctx, bed, calls } = fixture("tracking", true);
+  expect(bed.motors).toHaveLength(1);
+  expect(bed.motors[0].key).toBe("tv_lift");
+  expect(bed.motors[0].estimate).toBe("number.back_est");
+  const controls = card._motors(bed, undefined, undefined, ctx);
+  expect(text(controls)).toContain("TV lift");
+  expect(text(controls)).toContain("≈ 42%");
+  const events: Event[] = [];
+  card.dispatchEvent = (event: Event) => { events.push(event); return true; };
+  const [openHeight] = clicks(controls, "position-label");
+  expect(openHeight).toBeFunction();
+  openHeight();
+  expect(events[0].type).toBe("hass-more-info");
+  expect((events[0] as CustomEvent).detail).toEqual({ entityId: "number.back_est" });
+  const [recall] = clicks(card._savedPositions(ctx), "tile-label").slice(1);
+  recall();
+  await Promise.resolve();
+  expect(calls.at(-1)).toEqual({
+    service: "recall_position", data: { device_id: "bed", position: "p1" },
+  });
+  card._estimateDialog = { kind: "reference", ctx, choice: "flat", phase: "choose" };
+  expect(text(card._estimateDialogTemplate())).toContain("Fully lowered now");
+  clicks(card._estimateDialogTemplate(), "dialog-btn primary").at(-1)!();
+  expect(calls.at(-1)).toEqual({
+    service: "set_position_reference", data: { device_id: "bed", motors: ["tv_lift"] },
+  });
 });
 
 test("lower to flat moves first, then the user confirms flat", async () => {

@@ -1253,6 +1253,7 @@ export class AdjustableBedCard extends LitElement {
   ): TemplateResult {
     const tapping = this._hold.tapDirection(m);
     const readout = tapping ? localize(this.hass, `tap.moving_${tapping}`) : this._readout(m);
+    const positionEntity = m.position ?? m.estimate;
     const canStop = !!m.cover || !!stopId;
     const label = html`
       <span>${this._motorName(m)}</span>
@@ -1262,11 +1263,11 @@ export class AdjustableBedCard extends LitElement {
     `;
     return html`
       <div class="row">
-        ${m.position
+        ${positionEntity
           ? html`<button
               class="row-label position-label"
-              aria-label=${entityLabel(this.hass, m.position)}
-              @click=${() => this._moreInfo(m.position!)}
+              aria-label=${entityLabel(this.hass, positionEntity)}
+              @click=${() => this._moreInfo(positionEntity)}
             >${label}</button>`
           : html`<div class="row-label">${label}</div>`}
         <div class="control-group">

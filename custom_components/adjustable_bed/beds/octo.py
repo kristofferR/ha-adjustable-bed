@@ -1548,10 +1548,6 @@ class OctoController(BedController, OctoPacketCodec):
         """Stream a selected motor or memory command, then send a fresh STOP."""
         self.validate_hold_control(control, duration_ms)
         cancel_event = self._coordinator.cancel_command
-        pin_client = self.client if self._pin else None
-        pin_session_generation = self._session_generation
-        if self._pin and not self._held_session_is_current(pin_client, pin_session_generation):
-            raise ConnectionError("OCTO session changed during held operation")
         memory_slot = None
         if control.startswith("memory_"):
             memory_slot = int(control.removeprefix("memory_"))
@@ -1568,7 +1564,7 @@ class OctoController(BedController, OctoPacketCodec):
         writes = max(1, -(-duration_ms // OCTO_PROTOCOL_HOLD_INTERVAL_MS))
         remaining_ms = duration_ms - (writes - 1) * OCTO_PROTOCOL_HOLD_INTERVAL_MS
         try:
-            if pin_client is None:
+            if not self._pin:
                 await self._write_octo_command(
                     command,
                     data,
@@ -1582,60 +1578,85 @@ class OctoController(BedController, OctoPacketCodec):
                     except TimeoutError:
                         pass
             else:
-                loop = asyncio.get_running_loop()
-                hold_deadline = loop.time() + duration_ms / 1000
-                refresh_interval = float(OCTO_PIN_KEEPALIVE_INTERVAL)
-                time_epsilon = 0.000001
-                last_auth_at = self._pin_last_auth_at
-                next_refresh_at = (last_auth_at if last_auth_at is not None else loop.time()) + (
-                    refresh_interval
+                await self._write_with_pin_refresh(
+                    command,
+                    data,
+                    repeat_count=writes,
+                    repeat_delay_ms=OCTO_PROTOCOL_HOLD_INTERVAL_MS,
+                    cancel_event=cancel_event,
+                    duration_ms=duration_ms,
                 )
-                remaining_writes = writes
-                next_movement_at = loop.time()
-                while not cancel_event.is_set():
-                    now = loop.time()
-                    if now >= hold_deadline - time_epsilon:
-                        break
-                    if not self._held_session_is_current(pin_client, pin_session_generation):
-                        raise ConnectionError("OCTO session changed during held operation")
-                    if now >= next_refresh_at - time_epsilon:
-                        refreshed = await self._send_keepalive_pin(cancel_event=cancel_event)
-                        if cancel_event.is_set():
-                            break
-                        if not self._held_session_is_current(pin_client, pin_session_generation):
-                            raise ConnectionError("OCTO session changed during held operation")
-                        if not refreshed:
-                            raise ConnectionError(
-                                "OCTO PIN refresh could not be sent during held operation"
-                            )
-                        last_auth_at = self._pin_last_auth_at
-                        next_refresh_at = (
-                            last_auth_at if last_auth_at is not None else loop.time()
-                        ) + refresh_interval
-                        continue
-
-                    if remaining_writes and now >= next_movement_at - time_epsilon:
-                        movement_started_at = loop.time()
-                        await self._write_octo_command(
-                            command,
-                            data,
-                            cancel_event=cancel_event,
-                        )
-                        remaining_writes -= 1
-                        next_movement_at = movement_started_at + (
-                            OCTO_PROTOCOL_HOLD_INTERVAL_MS / 1000
-                        )
-                        continue
-
-                    wake_at = min(hold_deadline, next_refresh_at)
-                    if remaining_writes:
-                        wake_at = min(wake_at, next_movement_at)
-                    try:
-                        await asyncio.wait_for(cancel_event.wait(), timeout=wake_at - now)
-                    except TimeoutError:
-                        pass
         finally:
             await self._stop_motors()
+
+    async def _write_with_pin_refresh(
+        self,
+        command: list[int],
+        data: list[int],
+        *,
+        repeat_count: int,
+        repeat_delay_ms: int,
+        cancel_event: asyncio.Event,
+        duration_ms: int | None = None,
+    ) -> None:
+        """Refresh authentication inside a pulse train's existing command lane."""
+        client = self.client
+        session_generation = self._session_generation
+        loop = asyncio.get_running_loop()
+        deadline = None if duration_ms is None else loop.time() + duration_ms / 1000
+        refresh_interval = float(OCTO_PIN_KEEPALIVE_INTERVAL)
+        epsilon = 0.000001
+        last_auth_at = self._pin_last_auth_at
+        next_refresh_at = (
+            last_auth_at if last_auth_at is not None else loop.time()
+        ) + refresh_interval
+        remaining_writes = repeat_count
+        next_movement_at = loop.time()
+        while not cancel_event.is_set():
+            now = loop.time()
+            if deadline is None:
+                if not remaining_writes:
+                    break
+            elif now >= deadline - epsilon:
+                break
+            if not self._held_session_is_current(client, session_generation):
+                raise ConnectionError("OCTO session changed during held operation")
+            if now >= next_refresh_at - epsilon:
+                refreshed = await self._send_keepalive_pin(cancel_event=cancel_event)
+                if cancel_event.is_set():
+                    break
+                if not self._held_session_is_current(client, session_generation):
+                    raise ConnectionError("OCTO session changed during held operation")
+                if not refreshed:
+                    raise ConnectionError(
+                        "OCTO PIN refresh could not be sent during held operation"
+                    )
+                last_auth_at = self._pin_last_auth_at
+                next_refresh_at = (
+                    last_auth_at if last_auth_at is not None else loop.time()
+                ) + refresh_interval
+                continue
+
+            if remaining_writes and now >= next_movement_at - epsilon:
+                movement_started_at = loop.time()
+                await self._write_octo_command(command, data, cancel_event=cancel_event)
+                remaining_writes -= 1
+                # Native pulses retain the configured delay after each write;
+                # bounded holds retain their existing start-to-start cadence.
+                next_movement_at = (
+                    loop.time() if deadline is None else movement_started_at
+                ) + repeat_delay_ms / 1000
+                continue
+
+            wake_at = next_refresh_at
+            if deadline is not None:
+                wake_at = min(wake_at, deadline)
+            if remaining_writes:
+                wake_at = min(wake_at, next_movement_at)
+            try:
+                await asyncio.wait_for(cancel_event.wait(), timeout=wake_at - now)
+            except TimeoutError:
+                pass
 
     @staticmethod
     def _held_motor_command(control: str) -> tuple[int, str]:
@@ -1982,6 +2003,17 @@ class OctoController(BedController, OctoPacketCodec):
         # Clamp to minimum of 1 to prevent invalid values
         pulse_count = max(1, self._coordinator.motor_pulse_count)
         pulse_delay = max(1, self._coordinator.motor_pulse_delay_ms)
+        if self._pin:
+            await self._write_with_pin_refresh(
+                [0x02, direction_byte],
+                [motor_bits],
+                repeat_count=pulse_count,
+                repeat_delay_ms=pulse_delay,
+                cancel_event=cancel_event
+                if cancel_event is not None
+                else self._coordinator.cancel_command,
+            )
+            return
         await self._write_octo_command(
             command=[0x02, direction_byte],
             data=[motor_bits],
@@ -2227,6 +2259,7 @@ class OctoController(BedController, OctoPacketCodec):
     def estimated_position_motor_groups(self) -> Mapping[str, tuple[str, ...]]:
         """Every OCTO motor control is a directional stream ended by the STOP frame."""
         groups = {
+            "tv_lift": ("tv_lift",),
             "back": ("back",),
             "legs": ("legs",),
             "back_legs": ("back", "legs"),
