@@ -791,10 +791,10 @@ def _has_vibradorm_receiver(data: Mapping[str, Any]) -> bool:
     )
 
 
-def _bed_type_selector(
+def _bed_type_options(
     default: str | None, *, auto_detect_label: str | None = None
-) -> SelectSelector:
-    """Return the bed-type selector, keeping a default the list does not offer."""
+) -> list[SelectOptionDict]:
+    """Return bed-type choices, keeping a default the list does not offer."""
     options = get_bed_type_options()
     if default in (BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC):
         # Keep the saved route when the single family row is left unchanged.
@@ -814,7 +814,51 @@ def _bed_type_selector(
         )
     if auto_detect_label is not None:
         options.insert(0, SelectOptionDict(value=BED_TYPE_AUTO_DETECT, label=auto_detect_label))
-    return SelectSelector(SelectSelectorConfig(options=options, mode=SelectSelectorMode.DROPDOWN))
+    return options
+
+
+def _bed_type_selector(
+    default: str | None, *, auto_detect_label: str | None = None
+) -> SelectSelector:
+    """Return the bed-type selector for setup."""
+    return SelectSelector(
+        SelectSelectorConfig(
+            options=_bed_type_options(default, auto_detect_label=auto_detect_label),
+            mode=SelectSelectorMode.DROPDOWN,
+        )
+    )
+
+
+class _SearchableSelect(SelectSelector):
+    """Use HA's searchable picker with labels, accepting only listed choices."""
+
+    def __init__(self, options: list[SelectOptionDict]) -> None:
+        self._choices = {option["label"]: option["value"] for option in options}
+        self._labels = {option["value"]: option["label"] for option in options}
+        # HA uses the searchable picker only with custom_value enabled and
+        # displays its submitted value, so submit labels and validate them here.
+        super().__init__(
+            SelectSelectorConfig(
+                options=[
+                    SelectOptionDict(value=option["label"], label=option["label"])
+                    for option in options
+                ],
+                mode=SelectSelectorMode.DROPDOWN,
+                custom_value=True,
+            )
+        )
+
+    def shown(self, choice: str) -> str:
+        """Return the label the picker displays for a saved choice."""
+        return self._labels.get(choice, choice)
+
+    def __call__(self, data: Any) -> Any:
+        # HA's selector typing does not declare __call__.
+        listed: Any = SelectSelector(
+            SelectSelectorConfig(options=[*self._choices, *self._labels])
+        )
+        value = listed(cast(Any, super()).__call__(data))
+        return self._choices.get(value, value)
 
 
 def _hide_owned_generic_fields(
@@ -941,20 +985,6 @@ def _motor_count_options(
     if bed_type == BED_TYPE_SOLACE and protocol_variant == SOLACE_VARIANT_WOOSA:
         return [2]
     return [2, 3, 4]
-
-
-def _motor_count_options_for_all_variants(bed_type: str | None) -> list[int]:
-    """Return the union of motor counts selectable across protocol variants."""
-    variants = get_variants_for_bed_type(bed_type)
-    if variants is None:
-        return _motor_count_options(bed_type)
-    return sorted(
-        {
-            motor_count
-            for variant in variants
-            for motor_count in _motor_count_options(bed_type, variant)
-        }
-    )
 
 
 def _is_valid_motor_count(
@@ -8383,7 +8413,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             _apply_bed_type_choice(user_input, shown_choice)
         has_position_feedback = bed_type_has_position_feedback(bed_type, form_variant)
         form_pulse_defaults = get_motor_pulse_defaults(bed_type, form_variant)
-        motor_count_options = _motor_count_options_for_all_variants(bed_type)
+        motor_count_options = _motor_count_options(bed_type, form_variant)
         try:
             form_motor_count = int(current_data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT))
         except TypeError, ValueError:
@@ -8410,9 +8440,13 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             await async_is_discovery_disabled(self.hass),
         )
 
+        # Keep the long list searchable even when editing a saved legacy type.
+        bed_type_selector = _SearchableSelect(_bed_type_options(shown_choice))
         # Build schema
         schema_dict: dict[vol.Marker, Any] = {
-            vol.Optional(CONF_BED_TYPE, default=shown_choice): _bed_type_selector(shown_choice),
+            vol.Optional(
+                CONF_BED_TYPE, default=bed_type_selector.shown(shown_choice)
+            ): bed_type_selector,
             vol.Optional(
                 CONF_HAS_MASSAGE,
                 default=current_data.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
@@ -8921,6 +8955,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
                     data_schema=vol.Schema(schema_dict),
                     errors={CONF_MOTOR_COUNT: "invalid_motor_count_for_bed_type"},
                 )
+            # A profile can hide this field; still persist its normalized default.
+            user_input[CONF_MOTOR_COUNT] = requested_motor_count
             if has_position_feedback != bed_type_has_position_feedback(
                 bed_type,
                 requested_variant,
