@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.common import MockConfigEntry, MockEntityPlatform
 
 from custom_components.adjustable_bed.beds.base import (
     BedController,
@@ -242,7 +242,6 @@ async def test_custom_translation_key_and_live_side_bound_controller_dispatch(ha
     coordinator.async_execute_controller_command = AsyncMock(side_effect=dispatch)
     assert button.unique_id == "bed_vibradorm_app_sync_left"
     assert button.translation_key == "vibradorm_app_sync_left"
-    assert button.name is None
     await button.async_press()
     assert written(current) == ["00ff"]
     assert written(previous) == []
@@ -326,3 +325,33 @@ async def test_app_action_namespace_cleanup_preserves_current_other_side_and_unr
         assert registry.async_get(other.entity_id) is not None
         assert registry.async_get(unrelated.entity_id) is not None
         assert registry.async_get(different_platform.entity_id) is not None
+
+
+async def test_translated_action_names_come_from_the_translation(
+    hass: HomeAssistant, enable_custom_integrations
+):
+    """A translated action must not be named after the device alone (#711)."""
+    coordinator = MagicMock()
+    coordinator.device_info = {}
+    coordinator.entity_side = None
+    coordinator.entity_unique_id.side_effect = lambda key: f"bed_{key}"
+    coordinator.entity_translation_key.side_effect = lambda key: key
+    coordinator.register_controller_state_callback.return_value = lambda: None
+    press = AsyncMock()
+    buttons = [
+        ControllerActionButton(
+            coordinator,
+            ControllerButtonSpec(
+                "motor_reset",
+                "MotorReset",
+                press,
+                translation_key="hush_base_action",
+                translation_placeholders={"action": "Motor Reset"},
+            ),
+        ),
+        ControllerActionButton(coordinator, ControllerButtonSpec("untranslated", "Remote", press)),
+    ]
+    platform = MockEntityPlatform(hass, domain="button", platform_name=DOMAIN)
+    await platform.platform_data.async_load_translations()
+    await platform.async_add_entities(buttons)
+    assert [hass.states.get(b.entity_id).name for b in buttons] == ["Motor Reset", "Remote"]
