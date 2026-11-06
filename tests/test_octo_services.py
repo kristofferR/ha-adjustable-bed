@@ -46,6 +46,7 @@ from custom_components.adjustable_bed.const import (
     SIDE_RIGHT,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
 from custom_components.adjustable_bed.paired_coordinator import SingleAddressPairedCoordinator
 from custom_components.adjustable_bed.services import async_register_services
 
@@ -177,6 +178,16 @@ async def _active_octo_service_target(
     return entry, coordinator, controller, device
 
 
+def _native_octo_cover(
+    coordinator: AdjustableBedCoordinator, controller: OctoController
+) -> AdjustableBedCover:
+    cover = AdjustableBedCover(
+        coordinator, _build_cover_description(controller.motor_control_specs[0])
+    )
+    cover.async_write_ha_state = MagicMock()
+    return cover
+
+
 def _install_virtual_octo_clock(
     monkeypatch: pytest.MonkeyPatch,
     coordinator: AdjustableBedCoordinator,
@@ -247,6 +258,49 @@ def _install_virtual_octo_clock(
     return state
 
 
+@pytest.mark.parametrize(("motor_count", "motor"), [(1, "tv_lift"), (2, "back")])
+@pytest.mark.parametrize(
+    ("pulse_count", "pulse_delay", "elapsed_since_auth_ms", "expected_refreshes"),
+    [(99, 350, 0, 1), (99, 500, 20_000, 2), (1, 350, 20_000, 0)],
+)
+async def test_native_octo_cover_preserves_pulses_and_refreshes_pin_in_lane(
+    hass: HomeAssistant,
+    mock_bleak_client: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+    motor_count: int,
+    motor: str,
+    pulse_count: int,
+    pulse_delay: int,
+    elapsed_since_auth_ms: int,
+    expected_refreshes: int,
+) -> None:
+    _entry, coordinator, controller, _device = await _active_octo_service_target(
+        hass, mock_bleak_client, pin="1234"
+    )
+    coordinator._motor_pulse_count = pulse_count
+    coordinator._motor_pulse_delay_ms = pulse_delay
+    controller._discovered_motor_count = motor_count
+    spec = next(spec for spec in controller.motor_control_specs if spec.key == motor)
+    cover = AdjustableBedCover(coordinator, _build_cover_description(spec))
+    cover.async_write_ha_state = MagicMock()
+    state = _install_virtual_octo_clock(monkeypatch, coordinator, controller, mock_bleak_client)
+    state.elapsed_ms = elapsed_since_auth_ms
+    controller._pin_last_auth_at = 0
+
+    await cover.async_open_cover()
+
+    assert len(state.motor_times) == pulse_count
+    assert all(
+        current - previous == pulse_delay
+        for previous, current in zip(state.motor_times, state.motor_times[1:], strict=False)
+    )
+    assert len(state.pin_times) == expected_refreshes
+    assert state.pin_owned_lane == [True] * expected_refreshes
+    assert state.pin_times == [25_000 * (index + 1) for index in range(expected_refreshes)]
+    assert state.elapsed_ms == elapsed_since_auth_ms + (pulse_count - 1) * pulse_delay
+    assert state.packets[-1] == controller._build_packet([0x02, 0x73])
+
+
 @pytest.mark.parametrize(
     ("service", "pin", "duration", "expected_refreshes"),
     [
@@ -310,6 +364,8 @@ async def test_registered_octo_motor_and_memory_holds_refresh_pin_in_lane(
         ("goto_preset", 0, 2),
         ("hold_control", 20_000, 3),
         ("goto_preset", 20_000, 3),
+        ("native_cover", 0, 2),
+        ("native_cover", 20_000, 2),
     ],
 )
 async def test_registered_octo_hold_refresh_uses_monotonic_due_time(
@@ -346,7 +402,12 @@ async def test_registered_octo_hold_refresh_uses_monotonic_due_time(
         "back_up" if service == "hold_control" else 1
     )
 
-    await hass.services.async_call(DOMAIN, service, data, blocking=True)
+    if service == "native_cover":
+        coordinator._motor_pulse_count = 99
+        await _native_octo_cover(coordinator, controller).async_open_cover()
+        assert len(state.motor_times) == 99
+    else:
+        await hass.services.async_call(DOMAIN, service, data, blocking=True)
 
     assert len(state.pin_times) == expected_refreshes
     assert state.pin_times[0] <= OCTO_PIN_KEEPALIVE_INTERVAL * 1000 + 200
@@ -355,7 +416,7 @@ async def test_registered_octo_hold_refresh_uses_monotonic_due_time(
         for previous, current in zip(state.pin_times, state.pin_times[1:], strict=False)
     ), state.pin_times
     assert state.pin_owned_lane == [True] * expected_refreshes
-    operation_times = state.motor_times if service == "hold_control" else state.memory_times
+    operation_times = state.memory_times if service == "goto_preset" else state.motor_times
     assert operation_times
     assert operation_times[-1] < elapsed_since_auth_ms + 60_000
     assert all(
@@ -365,10 +426,12 @@ async def test_registered_octo_hold_refresh_uses_monotonic_due_time(
     assert state.packets[-1] == controller._build_packet([0x02, 0x73])
 
 
+@pytest.mark.parametrize("native", [False, True])
 async def test_registered_stop_cancels_long_octo_hold_before_in_lane_refresh(
     hass: HomeAssistant,
     mock_bleak_client: MagicMock,
     monkeypatch: pytest.MonkeyPatch,
+    native: bool,
 ) -> None:
     """STOP cancels the admitted hold, which sends cleanup without late auth."""
     _entry, coordinator, controller, device = await _active_octo_service_target(
@@ -393,14 +456,18 @@ async def test_registered_stop_cancels_long_octo_hold_before_in_lane_refresh(
         mock_bleak_client,
         after_write=pause_after_first_motor,
     )
-    hold = asyncio.create_task(
-        hass.services.async_call(
+    coordinator._motor_pulse_count = 99
+    movement = (
+        _native_octo_cover(coordinator, controller).async_open_cover()
+        if native
+        else hass.services.async_call(
             DOMAIN,
             "hold_control",
             {"device_id": device.id, "control": "back_up", "duration": 60},
             blocking=True,
         )
     )
+    hold = asyncio.create_task(movement)
     await first_write.wait()
     stop = asyncio.create_task(
         hass.services.async_call(DOMAIN, "stop_all", {"device_id": device.id}, blocking=True)
@@ -422,16 +489,19 @@ async def test_registered_stop_cancels_long_octo_hold_before_in_lane_refresh(
 
 
 @pytest.mark.parametrize("change", ["session", "controller", "client"])
+@pytest.mark.parametrize("native", [False, True])
 async def test_long_octo_hold_does_not_refresh_or_move_after_link_identity_changes(
     hass: HomeAssistant,
     mock_bleak_client: MagicMock,
     monkeypatch: pytest.MonkeyPatch,
     change: str,
+    native: bool,
 ) -> None:
     """A stale held controller never authenticates or moves on a replacement link."""
     _entry, coordinator, controller, device = await _active_octo_service_target(
         hass, mock_bleak_client, pin="1234"
     )
+    coordinator._motor_pulse_count = 99
     refresh_chunk = OCTO_PIN_KEEPALIVE_INTERVAL * 1000 // OCTO_PROTOCOL_HOLD_INTERVAL_MS
     replacement_client = MagicMock() if change == "client" else None
     if replacement_client is not None:
@@ -466,11 +536,15 @@ async def test_long_octo_hold_does_not_refresh_or_move_after_link_identity_chang
         after_write=replace_after_first_refresh_window,
     )
     with pytest.raises(ConnectionError, match="OCTO session changed during held operation"):
-        await hass.services.async_call(
-            DOMAIN,
-            "hold_control",
-            {"device_id": device.id, "control": "back_up", "duration": 60},
-            blocking=True,
+        await (
+            _native_octo_cover(coordinator, controller).async_open_cover()
+            if native
+            else hass.services.async_call(
+                DOMAIN,
+                "hold_control",
+                {"device_id": device.id, "control": "back_up", "duration": 60},
+                blocking=True,
+            )
         )
 
     pin_packet = controller._build_packet([0x20, OCTO_SYSTEM_PIN_AUTH], [1, 2, 3, 4])
