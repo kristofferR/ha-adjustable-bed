@@ -13,7 +13,7 @@ from homeassistant.util import dt as dt_util
 
 from ...codec import richmat as codec
 from ...controller_state import StateKey
-from ...execution import ExecutionCapabilities
+from ...execution import ExecutionProfile
 from ...profiles.casper import (
     ACTIONS,
     ANTI_SNORE,
@@ -66,7 +66,7 @@ SNORE_POLL_S = 3
 """The external snore detector is sampled this often, first after one period."""
 
 
-class ProductProfile(Protocol):
+class ProductProfile(ExecutionProfile, Protocol):
     """What this controller reads from a Casper Base or Hush Base profile."""
 
     @property
@@ -74,9 +74,6 @@ class ProductProfile(Protocol):
 
     @property
     def row(self) -> ProductRow: ...
-
-    @property
-    def execution(self) -> ExecutionCapabilities: ...
 
 
 def action_label(name: str) -> str:
