@@ -97,6 +97,17 @@ def position_target(axis: int, target: int) -> bytes:
     return bytes((0x03, 0xF0, axis, target, 0x00))
 
 
+def record(opcode: int, fields: Sequence[int]) -> bytes:
+    """Encode a ``count opcode fields`` setting record of seven or eight field bytes.
+
+    The opcode's meaning is app data: ``04`` is the clock, ``05`` the alarm, and
+    ``06`` SIMMONS SmartBed's second alarm slot but Serenity's clock.
+    """
+    if len(fields) not in (7, 8):
+        raise ValueError("A setting record carries seven or eight bytes")
+    return bytes((len(fields), opcode, *fields))
+
+
 def clock(fields: Sequence[int]) -> bytes:
     """Encode the 9-byte ``07 04`` clock frame from seven date and time bytes.
 
@@ -104,14 +115,14 @@ def clock(fields: Sequence[int]) -> bytes:
     """
     if len(fields) != 7:
         raise ValueError("The clock frame carries seven date and time bytes")
-    return bytes((0x07, 0x04, *fields))
+    return record(0x04, fields)
 
 
-def alarm(fields: Sequence[int]) -> bytes:
-    """Encode an alarm frame: the field count (7 or 8), ``05``, then the fields."""
-    if len(fields) not in (7, 8):
-        raise ValueError("The alarm frame carries seven or eight bytes")
-    return bytes((len(fields), 0x05, *fields))
+def alarm(fields: Sequence[int], slot: int = 1) -> bytes:
+    """Encode an alarm record in ``slot``: ``05`` for slot 1, ``06`` for slot 2."""
+    if slot not in (1, 2):
+        raise ValueError("Alarm slot must be 1 or 2")
+    return record(0x04 + slot, fields)
 
 
 def word_of(data: bytes) -> int:

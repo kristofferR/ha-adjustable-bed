@@ -1811,13 +1811,10 @@ def render(snapshot: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
-# Commands whose output legitimately follows set iteration order, which a second
-# hash seed must be allowed to change: Svane releases a two-axis hold by iterating
-# a set of roles. Keyed by bed type, so every Svane route is covered. Any other
-# difference between seeds fails the check.
-SEED_DEPENDENT: frozenset[tuple[str, str]] = frozenset(
-    {("svane", "hold_head_up_feet_down"), ("svane", "hold_head_down_feet_up")}
-)
+# Commands whose output may follow set iteration order, as (bed type, command),
+# which a second hash seed is allowed to change. Empty: every controller now
+# writes in a fixed order, so any difference between seeds fails the check.
+SEED_DEPENDENT: frozenset[tuple[str, str]] = frozenset()
 
 
 def seed_differences(first: str, second: str) -> list[str]:

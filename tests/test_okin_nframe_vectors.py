@@ -146,9 +146,18 @@ def _rebuild(data: bytes) -> bytes | None:
         return codec.frame(int.from_bytes(data[2:], "big"), data[0])
     if data[1] == 0x04:
         return codec.clock(data[2:])
-    if data[1] == 0x05:
-        return codec.alarm(data[2:])
+    if data[1] in (0x05, 0x06):
+        return codec.alarm(data[2:], data[1] - 0x04)
     return None
+
+
+def test_alarm_slots() -> None:
+    """SIMMONS SmartBed sets and clears both slots; single-alarm apps use slot 1."""
+    assert codec.alarm(bytes.fromhex("8205071e000101")).hex() == "07058205071e000101"
+    assert codec.alarm(bytes.fromhex("8205071e000101"), 2).hex() == "07068205071e000101"
+    assert codec.alarm(bytes(7), 2).hex() == "070600000000000000"
+    with pytest.raises(ValueError):
+        codec.alarm(bytes(7), 3)
 
 
 @pytest.mark.parametrize(

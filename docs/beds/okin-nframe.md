@@ -431,10 +431,12 @@ P4 sends. There is no checksum, sequence number or authentication payload.
 **Other frames of the 40-bit routes:** two-byte `00 <code>` requests
 (`codec.request()`), 6-byte `04 E0 <parameter> <value> <value2> 00` setting
 frames (`codec.extended()`) and 5-byte `03 F0 <axis> <target> 00` position
-targets (`codec.position_target()`), the 9-byte `07 04` clock (`codec.clock()`)
-and alarm frames that carry their field count first, `07 05` or `08 05`
-(`codec.alarm()`). What each one asks for, and how an app derives its clock and
-alarm fields, is profile data. eShine and AdjustaMattress P3 and P4 send them.
+targets (`codec.position_target()`), and setting records that carry their field
+count first, then an opcode (`codec.record()`): the 9-byte `07 04` clock
+(`codec.clock()`) and alarms `07 05` or `08 05`, plus SIMMONS SmartBed's second
+slot `07 06` (`codec.alarm()`). Serenity's clock is `07 06` too. What each one
+asks for, and how an app derives its fields, is profile data. eShine,
+AdjustaMattress P3 and P4, SIMMONS SmartBed and Serenity send them.
 SIMMONS OKIN names carry the same 32-bit masks in a Keeson E6 frame,
 `E6 FE 16 <word, little-endian> 00 <checksum>`, built by `codec/keeson.py`.
 

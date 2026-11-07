@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import binascii
 import time
 
 from .casper_base_protocol import Event, MainReceive, decode_main
+from .codec.richmat import is_valid, is_valid_crc
 
 
 class HushMainReceive(MainReceive):
@@ -43,19 +43,18 @@ class HushMainReceive(MainReceive):
                     break
                 packet = bytes(self.pending[:size])
                 del self.pending[:size]
-                valid = (
-                    binascii.crc_hqx(packet[:-2], 0) == int.from_bytes(packet[-2:], "big")
-                    if kind == 0x40
-                    else sum(packet[:-1]) & 255 == packet[-1]
-                )
-                if valid:
+                if (is_valid_crc if kind == 0x40 else is_valid)(packet):
                     out.append(packet)
             else:
                 # Retain complete ordinary frames, including marker-valued data.
                 size = len(self.pending)
                 if size not in (5, 7, 16):
                     size = next(
-                        (n for n in (5, 7, 16) if len(self.pending) > n and self.pending[n] == 0x6E),
+                        (
+                            n
+                            for n in (5, 7, 16)
+                            if len(self.pending) > n and self.pending[n] == 0x6E
+                        ),
                         0,
                     )
                     if not size:

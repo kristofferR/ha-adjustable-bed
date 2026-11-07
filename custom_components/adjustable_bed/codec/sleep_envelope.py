@@ -22,10 +22,15 @@ LENGTH_OFFSET: Final = 12
 
 
 def frame(body: bytes, request_id: int, *, total: int = 1, sequence: int = 0) -> bytes:
-    """Frame a JSON body; an empty body frames to nothing (GM Control's source)."""
+    """Frame a JSON body; an empty body frames to nothing (GM Control's source).
+
+    The length field is 16 bits, so a longer body cannot be framed.
+    """
     if not body:
         return b""
     size = len(body)
+    if size > 0xFFFF:
+        raise ValueError("Sleep payload exceeds the envelope's 16-bit length field")
     header = (0, request_id, total, sequence, size + 7, 0, 0, 0x11, 0x03, 0x43, 0x55, 0x44)
     return bytes(value & 0xFF for value in (*header, size, size >> 8)) + body
 

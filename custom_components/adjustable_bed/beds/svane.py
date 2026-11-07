@@ -144,14 +144,15 @@ class SvaneController(BedController):
             raise ValueError("Unknown Svane profile")
         self.profile = profile
         self.session = session or SvaneSession()
-        self._started: set[tuple[str, str]] = set()
+        # Insertion-ordered, so releases follow start order on every run.
+        self._started: dict[tuple[str, str], None] = {}
         self._subscriptions: list[BleakGATTCharacteristic] = []
         self._notification_tokens: dict[BleakGATTCharacteristic, object] = {}
         self._descriptor_state = 0
         self._initialized = False
         self._active_head: bool | None = None
         self._active_feet: bool | None = None
-        self._pending_release: set[str] = set()
+        self._pending_release: dict[str, None] = {}
         self._wake = asyncio.Event()
         self._reset_stream()
         self._device_info_task: asyncio.Task[None] | None = None
@@ -593,11 +594,11 @@ class SvaneController(BedController):
             self.session.head_release_epoch += 1
         else:
             self.session.feet_release_epoch += 1
-        self._pending_release.add(axis)
+        self._pending_release[axis] = None
         self._wake.set()
 
     async def _consume_release(self) -> None:
-        pending, self._pending_release = self._pending_release, set()
+        pending, self._pending_release = self._pending_release, {}
         self._wake.clear()
         for axis in pending:
             service = HEAD if axis == "head" else FEET
@@ -651,7 +652,7 @@ class SvaneController(BedController):
         self._active_head, self._active_feet = MOTIONS[control]
         admission = _hold_admission.get() or self.prepare_svane_hold_admission()
         self._pending_release = {
-            axis
+            axis: None
             for axis, current, baseline in (
                 ("head", self.session.head_release_epoch, admission.release_epochs[0]),
                 ("feet", self.session.feet_release_epoch, admission.release_epochs[1]),
@@ -667,13 +668,13 @@ class SvaneController(BedController):
                 if head is None and feet is None:
                     break
                 if self.profile == "jmc" and head is not None:
-                    self._started.add((OLD, OLD_CHAR))
+                    self._started[(OLD, OLD_CHAR)] = None
                     await self._write(OLD, OLD_CHAR, jmc.motion(head, feet))
                     if feet is not None:
                         feet_started = True
                 else:
                     if head is not None:
-                        self._started.add((HEAD, UP if head else DOWN))
+                        self._started[(HEAD, UP if head else DOWN)] = None
                         await self._write(HEAD, UP if head else DOWN, SvaneCommands.MOTOR_MOVE)
                     if feet is not None:
                         await self._motor_wait(
@@ -692,7 +693,7 @@ class SvaneController(BedController):
                             if self.profile == "jmc"
                             else (FEET, UP if feet else DOWN)
                         )
-                        self._started.add(role)
+                        self._started[role] = None
                         await self._write(
                             *role,
                             jmc.motion(None, feet)
@@ -731,7 +732,7 @@ class SvaneController(BedController):
         return axes.get("back"), axes.get("legs")
 
     async def _start_role(self, service: str, char: str, data: bytes) -> None:
-        self._started.add((service, char))
+        self._started[(service, char)] = None
         await self._write(service, char, data)
 
     def _stream_due(
@@ -856,14 +857,14 @@ class SvaneController(BedController):
             except Exception as error:
                 errors.append(error)
             else:
-                self._started.discard((service, char))
+                self._started.pop((service, char), None)
         if errors:
             raise errors[0]
 
     async def stop_all(self) -> None:
         self._active_head = self._active_feet = None
         if self.profile == "jmc":
-            self._started.add((OLD, OLD_CHAR))
+            self._started[(OLD, OLD_CHAR)] = None
         await self._release(tuple(self._started))
 
     def validate_timed_movement(self, motor: str, direction: str, duration_ms: int) -> None:

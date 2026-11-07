@@ -134,7 +134,7 @@ async def test_untracked_jmc_stop_failure_retains_exact_role_for_retry(failure):
     controller.client.write_gatt_char.side_effect = [error, None]
     with pytest.raises(type(error)):
         await controller.stop_all()
-    assert controller._started == {(OLD, OLD_CHAR)}
+    assert list(controller._started) == [(OLD, OLD_CHAR)]
     await controller.stop_all()
     assert written(controller) == [(OLD, OLD_CHAR, "100000000000")] * 2
     assert not controller._started

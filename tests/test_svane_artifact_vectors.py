@@ -445,7 +445,7 @@ async def test_artifact_literal_destination(
     ):
         await controller.hold_control(action.lower(), 130)
     elif action.startswith("STOP_"):
-        controller._started.add((service, char))
+        controller._started[(service, char)] = None
         await controller.stop_all()
     elif action == "SVANE_POSITION":
         await controller.execute_app_control("position")

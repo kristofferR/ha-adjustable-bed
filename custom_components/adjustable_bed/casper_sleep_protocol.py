@@ -21,11 +21,7 @@ NOTIFY = "00000003-3c17-d293-8e48-14fe2e4da212"
 def envelope(payload: dict[str, Json], sequence: int) -> bytes:
     """Frame a JSON message in the sleep-sensor envelope (``codec/sleep_envelope.py``)."""
     body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode()
-    packet = sleep_envelope.frame(body, sequence)
-    if len(body) > 0xFFFF:  # Casper's hex-string length keeps its four leading digits.
-        length = int(format(len(body), "x")[:4], 16).to_bytes(2, "little")
-        packet = packet[: sleep_envelope.LENGTH_OFFSET] + length + body
-    return packet
+    return sleep_envelope.frame(body, sequence)
 
 
 def wire_command(kind: SensorKind, action: str) -> str:

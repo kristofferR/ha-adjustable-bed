@@ -33,18 +33,12 @@
 
 ## Protocol Details
 
-| Transport | Service UUID | Write characteristic |
-|-----------|--------------|----------------------|
-| Bed | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` |
-| Bed | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` |
-| Bed | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` |
-| Bed | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` |
-| Bed | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` |
-| Bed | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` |
-
-**Notify characteristic:** first notify-capable characteristic in the selected coherent service.
-**Write mode:** selected write characteristic must support write; use no-response when also offered.
-**Format:** Nordic sends one opcode byte. Other bed services send `6e 01 SIDE OP SUM8`; side is 0 or 1. Shared services never identify a product. The frames are the Casper Base app's library frames, built by `codec/casper.py`; each model is a profile in `profiles/hush.py`.
+Hush Base beds speak the [Richmat 6E](richmat.md) wire format. The
+[Casper and Hush family](richmat.md#casper-and-hush-family) and its
+[Hush Base profile](richmat.md#hush-base) give the transports, the session
+setup, every frame and catalog code this route sends, the notifications and the
+timing. Each model is a profile in
+[`profiles/hush.py`](../../custom_components/adjustable_bed/profiles/hush.py).
 
 ### Sleep transport
 
@@ -58,93 +52,41 @@ Frames contain the 14-byte envelope, sequence and compact ordered JSON, built by
 2. The twelve models above are fresh Hush setup choices. Labels marked **restored profile** represent the app's wider saved-index domain, not additional fresh Hush setup models.
 3. Enabling native Left/Right controls (Configure → Enable Left / Right / Both controls) connects to the bed to read its transport. Nordic has no side byte; one-address pairing is rejected there. Two-address pairs keep independent profile and connection ownership.
 4. Add a separate **Hush Base sleep sensor** entry for each sensor. Choose RM/MM or HJ/SXB explicitly. Sensor partitions and actuator sides are different concepts.
-5. Add **Hush Base remote finder (RCRM handset)** to connect to the handset. There is no locator packet.
+5. Add **Hush Base remote finder (RCRM handset)** to connect to the handset (see [Remote finder](#remote-finder)).
+
+### Remote finder
+
+The **Hush Base remote finder (RCRM handset)** entry only connects to the
+handset. There is no locator packet.
 
 ## Commands
 
-The following opcode catalog is gated by the exact selected product; entries with the same label can have different opcodes. Every motor operation finishes with `6e` STOP using the same side and connection.
-
-| Action | Short opcode | Program opcode |
-|--------|--------------|----------------|
-| HeadUp | `24` | Unavailable |
-| HeadDown | `25` | Unavailable |
-| FootUp | `26` | Unavailable |
-| FootDown | `27` | Unavailable |
-| LumberUp | `3f` | Unavailable |
-| LumberDown | `40` | Unavailable |
-| LightBoard | `3c` | Unavailable |
-| MotorReset | `31` | Unavailable |
-| MassageHeadInstensityStrengthen | `4c` | Unavailable |
-| MassageFootInstensityStrengthen | `4e` | Unavailable |
-| MassageModeChange | `48` | Unavailable |
-| MassageModeAllOff | `47` | Unavailable |
-| Massage10MinuteTimer | `5f` | Unavailable |
-| Massage20MinuteTimer | `63` | Unavailable |
-| Massage30MinuteTimer | `61` | Unavailable |
-| TVPosition | `58` | `64` |
-| LoungePosition | `59` | `65` |
-| AntiSnoring | `46` | `69` |
-| ZeroGravity | `45` | `66` |
-| MemoryPosition1 | `2e` | `2b` |
-| PillowUp | `3f` | Unavailable |
-| PillowDown | `40` | Unavailable |
-| LumberUp | `41` | Unavailable |
-| LumberDown | `42` | Unavailable |
-| LightBoard | `50` | Unavailable |
-| BedLight | `3c` | Unavailable |
-| MassageModeAllOff | `5e` | Unavailable |
-| HeadAndFootUp | `29` | Unavailable |
-| HeadAndFootDown | `2a` | Unavailable |
-| PillowUp | `41` | Unavailable |
-| PillowDown | `42` | Unavailable |
-| MusicBlueToothSwitch | `d8` | Unavailable |
-| MemoryPosition2 | `2f` | `2c` |
-| Motor3Up | `71` | Unavailable |
-| Motor3Down | `72` | Unavailable |
-| MemoryPosition3 | `30` | `2d` |
-| CoaxingSleepMode | `86` | `89` |
-| Fan1InstensityStrengthen | `8a` | Unavailable |
-| Fan2InstensityStrengthen | `8b` | Unavailable |
-| FanAllOff | `a1` | Unavailable |
-| FanConstantMode | `a3` | Unavailable |
-| FanPulseMode | `a4` | Unavailable |
-| FanWaveMode | `a5` | Unavailable |
-| HeatingLowGear | `78` | Unavailable |
-| HeatingHighGear | `79` | Unavailable |
-| HeatingOff | `77` | Unavailable |
-| FanChangeMode | `a2` | Unavailable |
-| FanForwardAndBackwardChange | `8c` | Unavailable |
-| FanTimer2Hour | `a6` | Unavailable |
-| FanTimer3Hour | `a7` | Unavailable |
-| FanTimer5Hour | `a8` | Unavailable |
-| MassageModeAllOff | `dc` | Unavailable |
-| ReleasePressurPosition | `c5` | Unavailable |
-| MassageModeConstant | `3a` | Unavailable |
-| MassageModePulse | `38` | Unavailable |
-| MassageModeWave | `39` | Unavailable |
-| CoaxingSleepMode | `76` | `89` |
+The selected product gates its catalog actions; entries with the same label can
+have different codes. Every motor operation finishes with STOP on the same side
+and connection. The [Hush Base profile](richmat.md#hush-base) lists every code.
 
 ### Configuration actions
 
 Use `adjustable_bed.hush_base` with a `device_id` and `operation`. All targets validate before writes. The standard covers/buttons and card expose product controls.
 
-| Operation | Packet / behavior |
-|-----------|-------------------|
-| `light_rgb` | `6e 0c ff R SUM8` plus `6e 0d G B SUM8` in one write |
-| `light_seconds` | `6e 0b HI LO SUM8`, seconds; zero uses `ff ff` |
-| `light_off` | Generic opcode `75`, default side 0 |
-| `rgb_color` | Extended category 04/subtype 01, `[00,R,G,B]` |
-| `rgb_power` | 04/04, `[00,enable]` |
-| `rgb_timer` | 04/02, `[00,minutes//256,minutes&255]`; choices 5,8,10,13,15,18,21,24,27,30,120,210,300,390,480 |
-| `rgb_mode`, `rgb_groove`, `rgb_breathe` | 04/05 `[00,01,mode]`, 04/05 `[00,02,mode]`, 04/06 `[00]` |
-| `alarm`, `alarm_cancel` | Low `6e 05 LO 00 SUM8` first, then high/mode `6e 06 HI MODE SUM8` |
-| `repeat_alarm` | Extended 05/01 `[id,reserved,hour,minute,mode,weekday-mask]` |
-| `repeat_delete`, `repeat_query` | Extended 05/02 `[id]`; 05/01 query `[00]` |
-| `time_sync` | Extended 08/03 `[year-1970,month,day,hour,minute,second]` |
-| `sleep_name` | Extended 06/03 query `[00]` |
-| `snore_detector` | Explicit external status source; five positive 3-second samples emit generic `46` on side 0; zero resets |
+| Operation | Behavior |
+|-----------|----------|
+| `light_rgb` | Ordinary light colour, `rgb_color` |
+| `light_seconds` | Ordinary light duration in seconds; zero is always on |
+| `light_off` | Ordinary light off |
+| `rgb_color`, `rgb_power` | RGB strip colour, or power |
+| `rgb_timer` | RGB strip timer in minutes; choices 5,8,10,13,15,18,21,24,27,30,120,210,300,390,480 |
+| `rgb_mode`, `rgb_groove`, `rgb_breathe` | RGB colour mode, groove mode, or breathe |
+| `alarm`, `alarm_cancel` | Single alarm at the next local `hour`:`minute`, recalling `mode`; or cancel it |
+| `repeat_alarm` | Repeating alarm `slot` with `hour`, `minute`, `mode`, `days` and `enabled` |
+| `repeat_delete`, `repeat_query` | Delete a repeating alarm `slot`, or request the list |
+| `time_sync` | Send Home Assistant's local calendar time |
+| `sleep_name` | Request the sleep module's advertised name |
+| `snore_detector` | Explicit external status source; five positive 3-second samples recall anti-snore on side 0; zero resets |
 
-Extended frames are `6e 20 LENGTH CATEGORY SUBTYPE OPERATION PAYLOAD SUM8`. Query operation is 0, write operation is 1. Responses use 2/3 where defined. Transmit RGB minutes use base 256; receive timer values use base 60.
+The [Casper and Hush family](richmat.md#casper-and-hush-family) lists the frame
+each operation sends; Hush sends a single alarm's low frame first (see the
+[Hush Base profile](richmat.md#hush-base)).
 
 ### Independent sleep actions
 
@@ -165,20 +107,18 @@ The live request survives link loss/controller replacement through HA's per-addr
 
 The diagnostic state retains capability events, alarms, RGB, music, raw motor/desk, lock, heating, fan, blanket and atomization values. Sleep entries expose left/right live values, report data, device time, sensitivity and anti-snore settings.
 
-- Ordinary formats have 5, 7 or 16 bytes and no checksum requirement.
-- `6e20` and `6e21` use byte length and SUM8. `6e40` uses two-byte length and CRC16-XMODEM; firmware installation is excluded.
-- HA bounds malformed packets, preserves marker-valued ordinary data and expires stale partial bed frames after 500 ms.
 - No raw axis is assigned a physical motor or calibrated unit without evidence.
+- The [Hush Base profile](richmat.md#hush-base) lists the bed notifications, their
+  framing and checksums.
 
 ## Command Timing
 
+The bed's write tick, motor hold, soundtrack switch and detector poll are in the
+Richmat guide's [catalog app timing](richmat.md#catalog-app-timing).
+
 | Timing | Value |
 |--------|-------|
-| Bed write tick | 100 ms before each write |
-| Motor hold | Configured pulse count at 100 ms, followed by protocol STOP |
-| Music source | Two-second admission guard; `d8` when Bluetooth flag is false, then `c4` after 900 ms |
 | Sensor live poll | Two seconds |
-| External snore poll | Three seconds |
 | HA query bound | Five seconds, an HA bound rather than a firmware acknowledgement |
 | Report permission | One second |
 

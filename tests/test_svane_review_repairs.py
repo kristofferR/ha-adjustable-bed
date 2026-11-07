@@ -35,7 +35,7 @@ from tests.test_svane_services import target
 async def test_failed_release_remains_admitted_for_public_stop_retry(profile):
     controller = make_controller(profile)
     role = (HEAD, UP) if profile == "multi" else (OLD, OLD_CHAR)
-    controller._started.add(role)
+    controller._started[role] = None
     controller.client.write_gatt_char.side_effect = [BleakError("first STOP failed"), None]
     with pytest.raises(BleakError):
         await controller.stop_all()
@@ -133,7 +133,7 @@ async def test_task_cancelled_release_is_retried_with_the_same_proven_frame(prof
 
     controller = make_controller(profile)
     role = (HEAD, UP) if profile == "multi" else (OLD, OLD_CHAR)
-    controller._started.add(role)
+    controller._started[role] = None
     started = asyncio.Event()
 
     async def blocked_write(*args, **kwargs):

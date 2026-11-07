@@ -11,8 +11,9 @@ from typing import TYPE_CHECKING
 from homeassistant.util import dt as dt_util
 
 from ..casper_base_protocol import RGB_TIMERS, Request, alarm_countdown
-from ..codec.casper import MUSIC_BLUETOOTH, STOP, alarm_pair, control
+from ..codec import richmat as codec
 from ..hush_protocol import HushMainReceive, decode
+from ..profiles.casper import MUSIC_BLUETOOTH
 from ..profiles.hush import ACTIONS, PROFILES
 from .base import ControllerButtonSpec
 from .casper_base import CasperBaseController
@@ -21,6 +22,15 @@ if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
     from ..coordinator import AdjustableBedCoordinator
+
+TICK_S = 0.1
+"""Every write waits one tick."""
+SOUNDTRACK_GUARD_S = 2
+"""A soundtrack switch within this time of the last one is dropped."""
+SOUNDTRACK_DELAY_S = 0.9
+"""The soundtrack switch follows its Bluetooth switch after this delay."""
+SNORE_POLL_S = 3
+"""The external snore detector is sampled this often, first after one period."""
 
 
 class HushBaseController(CasperBaseController):
@@ -92,7 +102,7 @@ class HushBaseController(CasperBaseController):
         admitted = self._operation_generation.get()
         if admitted is not None and admitted != generation:
             raise ConnectionError("Hush operation belongs to a previous connection")
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(TICK_S)
         if (
             client is None
             or characteristic is None
@@ -168,7 +178,7 @@ class HushBaseController(CasperBaseController):
             )
             # Hush save/cancel queues the low frame before the high/mode frame.
             mode = self.alarm_opcode(request.mode) if op == "alarm" else 0
-            for packet in reversed(alarm_pair(minutes, mode)):
+            for packet in codec.countdown(minutes, mode):
                 await self._send(packet)
         else:
             await super().async_execute_casper_base_request(request)
@@ -194,15 +204,16 @@ class HushBaseController(CasperBaseController):
             now = asyncio.get_running_loop().time()
             if now < self._music_debounce_until:
                 return
-            self._music_debounce_until = now + 2
+            self._music_debounce_until = now + SOUNDTRACK_GUARD_S
             generation = self._generation
             if not self._music_bluetooth:
-                await self._send(control(MUSIC_BLUETOOTH, single=self._single, side=0))
-            await asyncio.sleep(max(0, now + 0.9 - asyncio.get_running_loop().time()))
+                await self._send(codec.function(MUSIC_BLUETOOTH, single=self._single))
+            delay = now + SOUNDTRACK_DELAY_S - asyncio.get_running_loop().time()
+            await asyncio.sleep(max(0, delay))
             if generation != self._generation:
                 raise ConnectionError("Music operation belongs to a previous connection")
             sound_track = next(short for name, short, _ in self.action_catalog if name == action)
-            await self._send(control(sound_track, single=self._single, side=0))
+            await self._send(codec.function(sound_track, single=self._single))
             return
         # Every fan icon releases, including modes/timers; text null-long commands
         # are intentionally unavailable instead of emitting the ambiguous zero.
@@ -215,12 +226,12 @@ class HushBaseController(CasperBaseController):
         try:
             await self._opcode(self.actions[action][0])
         finally:
-            await self._opcode(STOP, cleanup=True)
+            await self._opcode(codec.STOP, cleanup=True)
 
     async def _poll_snore(self, source: str) -> None:
         try:
             while True:
-                await asyncio.sleep(3)
+                await asyncio.sleep(SNORE_POLL_S)
                 state = self._coordinator.hass.states.get(source)
                 try:
                     result = int(state.state) if state is not None else None

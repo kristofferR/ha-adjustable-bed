@@ -155,12 +155,12 @@ def p1_alarm_frame(slot1: list[int], slot2: list[int]) -> bytes:
 
 def p2_alarm_frame(slot: int, weekday: int, wire_type: int, hour: int, minute: int) -> bytes:
     """Program one SmartBed record."""
-    return wire([0x07, 0x04 + slot, weekday, wire_type, hour, minute, 0x00, 0x01, 0x01])
+    return okin_nframe.alarm(wire([weekday, wire_type, hour, minute, 0x00, 0x01, 0x01]), slot)
 
 
 def p2_disable_frame(slot: int) -> bytes:
     """Disable one SmartBed record."""
-    return bytes((0x07, 0x04 + slot)) + bytes(7)
+    return okin_nframe.alarm(bytes(7), slot)
 
 
 @dataclass(frozen=True, slots=True)

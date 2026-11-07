@@ -26,13 +26,12 @@ docstring names its routes and their evidence.
 | K1 Keeson E5/E6 | `codec/keeson.py` | `profiles/keeson.py` | [Keeson](../beds/keeson.md) | `tests/keeson_vectors.py` |
 | O1 Okin N-frame | `codec/okin_nframe.py` | `profiles/okin_nframe.py` | [Okin N-frame](../beds/okin-nframe.md) | `tests/okin_nframe_vectors.py` |
 | O2 Okin 5A | `codec/okin_5a.py` | `profiles/okin_5a.py` | [Okin 5A](../beds/okin-5a.md) | `tests/okin_5a_vectors.py` |
-| R1 Richmat 6E | `codec/richmat.py` | `profiles/richmat.py` | [Richmat](../beds/richmat.md) | `tests/richmat_vectors.py` |
+| R1 Richmat 6E | `codec/richmat.py` | `profiles/richmat.py`, `profiles/casper.py`, `profiles/hush.py` | [Richmat](../beds/richmat.md) | `tests/richmat_vectors.py`, `tests/casper_base_vectors.py`, `tests/hush_vectors.py` |
 | S1 FFFF frame | `codec/ff_frame.py` | `profiles/ff_frame.py` | [FFFF frame](../beds/ff_frame.md) | `tests/ff_frame_vectors.py` |
 | L1 Limoss DD | `codec/limoss.py` | `profiles/limoss.py` | [Limoss](../beds/limoss.md) | `tests/limoss_vectors.py` |
 | Malouf (O2 Okin-like Malouf frames) | `codec/malouf.py` | `profiles/malouf.py` | [Malouf](../beds/malouf.md) | `tests/malouf_vectors.py` |
 | HHC `$#` frames: MotoMotion (from `main`), MotoSleep and Power Bob | `codec/motomotion.py` | `profiles/motomotion.py`, `profiles/motosleep.py` | [HHC `$#` frames](../beds/motomotion.md) | `tests/motomotion_vectors.py` |
 | BedJet PowerLayer `01` keys (from `main`) | `codec/bedjet_powerlayer.py` | `profiles/bedjet_powerlayer.py` | [BedJet PowerLayer](../beds/bedjet-powerlayer.md) | `tests/bedjet_powerlayer_vectors.py` |
-| Casper 6E: Casper Base and Hush Base | `codec/casper.py` | `profiles/casper.py`, `profiles/hush.py` | [Casper Base](../beds/casper-base.md), [Hush Base](../beds/hush-base.md) | `tests/casper_base_vectors.py`, `tests/hush_vectors.py` |
 | Kaidi mesh: Rize Seat, Floyd Home and ISleep | `codec/kaidi.py` | `profiles/kaidi.py` | [Kaidi](../beds/kaidi.md) | `tests/kaidi_vectors.py` |
 | JMC400: Jensen Adjustable Sleep and Svane Remote | `codec/jmc.py` | `profiles/jmc.py` | [JMC400](../beds/jmc.md) | `tests/jmc_vectors.py` |
 | Vibradorm VMAT: generic route, Caresse, Werkmeister, VMAT and V-MAT Basic | `codec/vibradorm.py` | `profiles/vibradorm.py`, `profiles/vmatbasic.py` | [Vibradorm](../beds/vibradorm.md) | `tests/vibradorm_vectors.py` |

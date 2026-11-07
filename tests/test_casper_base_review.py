@@ -19,7 +19,7 @@ from custom_components.adjustable_bed.beds.casper_sleep import (
     CasperSleepController,
 )
 from custom_components.adjustable_bed.casper_base_protocol import Request
-from custom_components.adjustable_bed.codec.casper import extra
+from custom_components.adjustable_bed.codec.richmat import record_20_len
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.paired_coordinator import SingleAddressPairedCoordinator
@@ -75,7 +75,10 @@ async def test_sensor_translation_keys_preserve_case_sensitive_state(hass, kind)
     specs = controller.controller_state_sensor_specs
     for filename in ("strings.json", "translations/en.json"):
         translations = json.loads((root / filename).read_text())["entity"]["sensor"]
-        assert all(re.fullmatch(r"[a-z0-9]+(?:[a-z0-9_-]*[a-z0-9])?", spec.translation_key) for spec in specs)
+        assert all(
+            re.fullmatch(r"[a-z0-9]+(?:[a-z0-9_-]*[a-z0-9])?", spec.translation_key)
+            for spec in specs
+        )
         assert all(spec.translation_key in translations for spec in specs)
     for spec in specs[1:]:
         assert spec.key == spec.state_key
@@ -186,7 +189,6 @@ async def test_pair_options_reject_unproved_or_unsupported_transport(
         assert "pair_mode" not in entry.data
 
 
-
 async def _open_pair_sides(hass, entry):
     result = await hass.config_entries.options.async_init(entry.entry_id)
     result = await hass.config_entries.options.async_configure(
@@ -249,12 +251,13 @@ async def test_pair_options_report_a_failed_connection_and_retry_on_submit(
     assert result["errors"] == {"base": "casper_pairing_needs_connection"}
     assert "pair_mode" not in entry.data
 
+
 def bt_ordinary(enabled):
     return bytes((0x6E, 0x90, 0xB0, 0x20 if enabled else 0, 0))
 
 
 def bt_extended(enabled):
-    return extra(9, 3, (0, int(enabled)), operation=2)
+    return record_20_len(9, 3, 2, (0, int(enabled)))
 
 
 @pytest.mark.parametrize("split", range(1, 6))
@@ -268,7 +271,10 @@ async def test_marker_checksum_notification_updates_music_source_state(split):
     controller._on_notification(None, bytearray(packet[:split]))
     controller._on_notification(None, bytearray(packet[split:]))
     assert controller.events["accessories"] == {
-        "usb": False, "play": True, "music_follow": True, "bluetooth": False
+        "usb": False,
+        "play": True,
+        "music_follow": True,
+        "bluetooth": False,
     }
     assert not controller._music_bluetooth
     c.client.write_gatt_char.reset_mock()
