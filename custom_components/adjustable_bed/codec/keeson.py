@@ -221,6 +221,18 @@ def clock(now: datetime) -> bytes:
 ALARM_DISMISS: Final = checked(b"\xe1\x80\x04")
 # Asks for the stored alarm records (Glideaway Motion, AdjustaMattress P1).
 ALARM_QUERY: Final = checked(b"\xe2\x80\x03\x00")
+ALARM_WEEKLY: Final = 0x03
+ALARM_ONE_TIME: Final = 0x02
+
+
+def alarm_table(table: int, records: bytes) -> bytes:
+    """Encode an ``ED 80 table`` frame: up to three four-byte records, zero-padded.
+
+    Each app chooses what its four record bytes mean.
+    """
+    if len(records) > 12 or len(records) % 4:
+        raise ValueError("An alarm table carries up to three four-byte records")
+    return checked(bytes((0xED, 0x80, table)) + records.ljust(12, b"\x00"))
 
 
 @dataclass(frozen=True)

@@ -16,6 +16,7 @@ Protocol summary:
 from __future__ import annotations
 
 import asyncio
+import binascii
 import logging
 import struct
 from typing import TYPE_CHECKING
@@ -40,10 +41,6 @@ _XXTEA_KEY: tuple[int, int, int, int] = (
 )
 _XXTEA_DELTA = 0x9E3779B9
 _U32_MASK = 0xFFFFFFFF
-
-# CRC-CCITT constants
-_CRC_INIT = 0xFFFF
-_CRC_POLY = 0x1021
 
 # SLIP framing constants (RFC 1055)
 _SLIP_END = 0xC0
@@ -153,19 +150,6 @@ def _xxtea_decrypt(data: bytes, key: tuple[int, int, int, int]) -> bytes:
     return struct.pack(f"<{n}I", *v)
 
 
-def _crc16_ccitt(data: bytes) -> int:
-    """Compute CRC-CCITT (0xFFFF initial, polynomial 0x1021)."""
-    crc = _CRC_INIT
-    for byte in data:
-        crc ^= byte << 8
-        for _ in range(8):
-            if crc & 0x8000:
-                crc = ((crc << 1) ^ _CRC_POLY) & 0xFFFF
-            else:
-                crc = (crc << 1) & 0xFFFF
-    return crc
-
-
 def _slip_encode(data: bytes) -> bytes:
     """Apply SLIP framing to data.
 
@@ -238,7 +222,7 @@ class LogicdataController(BedController):
         encrypted = _xxtea_encrypt(padded, _XXTEA_KEY)
 
         # Step 3: CRC16 over encrypted data
-        crc = _crc16_ccitt(encrypted)
+        crc = binascii.crc_hqx(encrypted, 0xFFFF)
         with_crc = encrypted + struct.pack(">H", crc)
 
         # Step 4: Length prefix (1 byte for payload length)

@@ -1,5 +1,6 @@
 """Source vectors for the independent GM Control 4.6.6 app profile."""
 
+import binascii
 from datetime import UTC, datetime, timedelta, timezone
 
 import pytest
@@ -13,7 +14,6 @@ from custom_components.adjustable_bed.gmmotor_protocol import (
     clock_frames,
     countdown_frames,
     countdown_minutes,
-    crc16,
     delete_alarm,
     desk_packet,
     light_color,
@@ -128,9 +128,8 @@ def test_three_byte_crc_header_is_safely_retained() -> None:
     buffer = FrameBuffer()
     assert buffer.extract(bytes.fromhex("6e4000")) == ()
     body = bytes.fromhex("6e400006")
-    frame = body + crc16(body).to_bytes(2, "big")
+    frame = body + binascii.crc_hqx(body, 0).to_bytes(2, "big")
     assert buffer.extract(frame[3:]) == ((64, frame),)
-    assert crc16(b"123456789") == 0x31C3
 
 
 def test_required_fields_fail_without_synthetic_app_defaults() -> None:

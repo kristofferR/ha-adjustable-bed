@@ -150,7 +150,7 @@ class AlarmSlot:
 
 def p1_alarm_frame(slot1: list[int], slot2: list[int]) -> bytes:
     """Program both OKIN records: hour, minute, weekday, type for each slot."""
-    return checked([*P1_ALARM_HEADER, *slot1, *slot2, 0, 0, 0, 0])
+    return keeson.alarm_table(keeson.ALARM_WEEKLY, wire([*slot1, *slot2]))
 
 
 def p2_alarm_frame(slot: int, weekday: int, wire_type: int, hour: int, minute: int) -> bytes:

@@ -143,8 +143,8 @@ def frame(
                 )
             return okin_nframe.request(0xC0)
         if model == "P1":
-            record = bytes((0xED, 0x80, 0x03, hour, minute, repeat, alarm_type or 19))
-            return keeson_codec.checked(record + bytes(8))
+            record = bytes((hour, minute, repeat, alarm_type or 19))
+            return keeson_codec.alarm_table(keeson_codec.ALARM_WEEKLY, record)
         if model == "P2":
             tail = (
                 (17, 17, 255)
