@@ -362,7 +362,7 @@ def _decode_extra(frame: bytes) -> Notification | None:
 
 def decode_notification(frame: bytes) -> Notification | None:
     """Decode a complete checksum-valid frame; unknown/malformed frames have no effect."""
-    if len(frame) < 5 or frame[0] != 0x6E or sum(frame[:-1]) & 255 != frame[-1]:
+    if len(frame) < 5 or frame[0] != 0x6E or not codec.is_valid(frame):
         return None
     if frame[1] == 0x20:
         if len(frame) < 7 or frame[2] != len(frame):
@@ -404,7 +404,7 @@ class NotificationBuffer:
             if len(self._buffer) < length:
                 break
             frame = bytes(self._buffer[:length])
-            if sum(frame[:-1]) & 255 != frame[-1]:
+            if not codec.is_valid(frame):
                 del self._buffer[0]
                 continue
             del self._buffer[:length]

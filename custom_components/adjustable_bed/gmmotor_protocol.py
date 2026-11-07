@@ -205,7 +205,7 @@ class FrameBuffer:
         accepted: list[tuple[int, bytes]] = []
         for kind, frame in frames:
             if len(frame) > 2 and kind in (32, 33):
-                if sum(frame[:-1]) & 255 == frame[-1]:
+                if codec.is_valid(frame):
                     accepted.append((kind, frame))
             elif len(frame) > 3 and kind == 64:
                 if codec.is_valid_crc(frame):
