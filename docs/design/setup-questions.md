@@ -73,8 +73,8 @@ returns.
   lists them, and Configure keeps them by name.
 - A family row reads `<apps> · <family>`, and each row of that family's
   journey `<app> · <family>`. The family is the one the row's journey asks:
-  `FAMILY_ROWS` names each family row's family, and `_APP_SETUP_STEPS` maps a
-  route to its family's question, so the label cannot name another family. A
+  each family's declaration (`app_families.py`) names its row, the routes
+  behind it and its answers, so the label cannot name another family. A
   row outside every family journey is its own brand and names itself. Saved
   entries keep their own route's label.
 - The final settings come after the app's questions, so every route the

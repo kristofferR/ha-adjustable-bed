@@ -453,6 +453,8 @@ BED_TYPE_OKIN_CST: Final = "okin_cst"  # OKIN CSTProtocol (14-byte dual-field co
 BED_TYPE_OKIN_RF_ECO_BT: Final = "okin_rf_eco_bt"  # Single-actuator staircase
 BED_TYPE_FURNIMOVE: Final = "furnimove"
 CONF_FURNIMOVE_REMOTE: Final = "furnimove_remote"
+# Set once the user confirms an RF ECO BT bed is a single-actuator staircase.
+CONF_STAIRCASE_LAYOUT_CONFIRMED: Final = "rf_eco_staircase_confirmed"
 BED_TYPE_LEGGETT_LP_LEGACY: Final = "leggett_lp_legacy"
 BED_TYPE_LEGGETT_GEN2: Final = "leggett_gen2"  # Leggett Gen2 ASCII protocol
 BED_TYPE_LEGGETT_OKIN: Final = "leggett_okin"  # Leggett Okin binary protocol

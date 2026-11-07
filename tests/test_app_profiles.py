@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.app_families import FAMILY_STEP_ROUTES
 from custom_components.adjustable_bed.app_profiles import (
     _every_profile_setting,
     hidden_generic_fields,
@@ -68,7 +69,6 @@ from custom_components.adjustable_bed.const import (
     ZSERIES_VARIANT_Z280,
 )
 from custom_components.adjustable_bed.detection import (
-    FAMILY_STEP_ROUTES,
     HIDDEN_APP_CHOICES,
     bed_type_choice,
     get_bed_type_options,

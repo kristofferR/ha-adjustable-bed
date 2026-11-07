@@ -57,6 +57,41 @@ from .adapter import (
     read_ble_device_info,
 )
 from .address_lock import async_get_connect_lock
+from .app_families import (
+    APP_FAMILIES,
+    CUSTOMATIC_FAMILY,
+    FAMILY_ROW_SEPARATOR,
+    FAMILY_STEP_ROUTES,
+    GUIDED_FAMILIES,
+    JENSEN_FAMILY,
+    JIECANG_FAMILY,
+    JORDANS_FAMILY,
+    KEESON_FAMILY,
+    LEGGETT_FAMILY,
+    LIMOSS_FAMILY,
+    LOGICDATA_FAMILY,
+    MALOUF_FAMILY,
+    OKIN_FAMILY,
+    REMACRO_FAMILY,
+    REMOVED,
+    REVERIE_FAMILY,
+    RICHMAT_FAMILY,
+    SLEEP_NUMBER_FAMILY,
+    SLEEPYS_FAMILY,
+    SOLACE_FAMILY,
+    STARCODE_FAMILY,
+    VIBRADORM_FAMILY,
+    Answer,
+    AppFamily,
+    Form,
+    Then,
+    Visit,
+    answer_family,
+    family_row_label,
+    question_family,
+    row_family,
+    shown_row,
+)
 from .app_profiles import (
     foreign_settings,
     hidden_generic_fields,
@@ -105,15 +140,11 @@ from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_BEDSENSE,
     BED_TYPE_CLUSTER018,
-    BED_TYPE_COMFORT_MOTION,
-    BED_TYPE_COOLBASE,
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_DOUBLESLEEP,
-    BED_TYPE_ERGOMOTION_4,
-    BED_TYPE_ERGOMOTION_APP,
     BED_TYPE_ESHINE_OKIN,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
@@ -122,20 +153,13 @@ from .const import (
     BED_TYPE_HJBED,
     BED_TYPE_ISLEEP,
     BED_TYPE_JENSEN,
-    BED_TYPE_JIECANG,
-    BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
-    BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
-    BED_TYPE_LEGGETT_WILINKE,
-    BED_TYPE_LIMOSS,
     BED_TYPE_LIMOSS_REMOTE,
-    BED_TYPE_LOGICDATA,
     BED_TYPE_LOGICDATA_AIR_PUMP,
-    BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
@@ -148,26 +172,15 @@ from .const import (
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REMACRO,
-    BED_TYPE_REVERIE,
-    BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
-    BED_TYPE_SERENITY,
-    BED_TYPE_SERTA_MP_REMOTE,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
-    BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPTRACKER,
-    BED_TYPE_SLEEPYS_BOX15,
-    BED_TYPE_SLEEPYS_BOX24,
-    BED_TYPE_SLEEPYS_BOX25,
-    BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SOLACE,
     BED_TYPE_STARCODE_ABM5_4,
-    BED_TYPE_STARCODE_M1X12,
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_SVANE,
-    BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
@@ -189,20 +202,10 @@ from .const import (
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
-    CONF_JIECANG_APP_PROFILE,
     CONF_KAIDI_RESOLVED_VARIANT,
     CONF_LEGGETT_APP_PROFILE,
     CONF_LEGS_MAX_ANGLE,
     CONF_LIMOSS_REMOTE_THEME,
-    CONF_LOGICDATA_APP_PROFILE,
-    CONF_LP_LEGACY_MODE,
-    CONF_LP_LEGACY_MODEL,
-    CONF_LP_LEGACY_READ_UUID,
-    CONF_LP_LEGACY_WRITE_UUID,
-    CONF_MALOUF_APP_MODEL,
-    CONF_MALOUF_APP_PRIMARY,
-    CONF_MALOUF_APP_PROFILE,
-    CONF_MALOUF_APP_TRANSPORT,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
@@ -223,10 +226,7 @@ from .const import (
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
     CONF_REVERSE_MOTORS,
-    CONF_RICHMAT_REMOTE,
     CONF_RMCONTROL_PRODUCT,
-    CONF_RMCONTROL_SIDE,
-    CONF_SLEEPYS_ELITE_SELECTOR,
     CONF_STARCODE_LIFT_ENTRIES,
     CONF_STARCODE_M1X12_PROFILE,
     CONF_STARCODE_M5X5_PROFILE,
@@ -257,34 +257,14 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
     IDLE_DISCONNECT_KEEP_CONNECTED,
-    JIECANG_APP_PROFILES,
-    KEESON_VARIANT_ADJUSTABLE_LITE,
-    KEESON_VARIANT_AMERICANSTAR,
-    KEESON_VARIANT_AVANTI_BASES,
-    KEESON_VARIANT_BASE,
-    KEESON_VARIANT_BEDSENSE_BASES,
-    KEESON_VARIANT_DYNASTY_BASES,
-    KEESON_VARIANT_HEAL_EVERY_NIGHT,
-    KEESON_VARIANT_INNOVA,
-    KEESON_VARIANT_JSON,
-    KEESON_VARIANT_MAXCOIL_UNA,
-    KEESON_VARIANT_OKIN_SEATING,
-    KEESON_VARIANT_PURPLE,
-    KEESON_VARIANT_RESTONIC_A,
-    KEESON_VARIANT_RESTONIC_B,
-    KEESON_VARIANT_SIMON_LI,
-    KEESON_VARIANT_SLEEP_HARMONY,
     LEGGETT_APP_DEFAULT_PROFILE,
     LEGGETT_APP_MOTOR_COUNTS,
     LEGGETT_APP_PROFILES,
     LEGGETT_VARIANT_GEN2,
-    LEGGETT_VARIANT_MLRM,
-    LEGGETT_VARIANT_OKIN,
     NAME_RULE_VARIANTS_BY_BED_TYPE,
     OCTO_VARIANT_STAR2,
     OKIN_BEDDING_APP_BED_TYPES,
     OKIN_CST_THREE_MOTOR_VARIANTS,
-    OKIN_CST_VARIANTS,
     OKIN_DOT_FURNIMOVE_VARIANTS,
     PAIR_MODE_SEPARATE_ADDRESS,
     PAIR_MODE_SINGLE_ADDRESS,
@@ -294,26 +274,16 @@ from .const import (
     POSITION_MODE_ACCURACY,
     POSITION_MODE_SPEED,
     PRODUCT_TYPES,
-    REMACRO_VARIANT_JEROMES,
-    REMACRO_VARIANT_THE_BRICK,
-    REVERIE_NIGHTSTAND_SERVICE_UUID,
-    REVERIE_SERVICE_UUID,
     RICHMAT_MH_APPS,
     RICHMAT_MH_BED_TYPES,
-    RICHMAT_REMOTE_AUTO,
-    RICHMAT_REMOTE_LP_QRRM,
-    RICHMAT_REMOTES,
     RICHMAT_VARIANT_NORDIC,
     RICHMAT_VARIANT_WILINKE,
     RUNTIME_BOND_KEYS,
     SIDE_LEFT,
     SIDE_RIGHT,
-    SLEEP_NUMBER_MCR_SERVICE_UUID,
-    SLEEP_NUMBER_SERVICE_UUID,
     SOLACE_VARIANT_WOOSA,
     STARCODE_APP_CONNECTION_TIMEOUT_SECONDS,
     SVANE_VARIANT_JENSEN_LINON,
-    SVANE_VARIANT_JMC,
     SVANE_VARIANTS,
     VARIANT_AUTO,
     VARIANT_REQUIRED_BED_TYPES,
@@ -326,8 +296,6 @@ from .const import (
     VMATBASIC_CONFIG_KEYS,
     VMATBASIC_PROFILES,
     ZSERIES_PULSE_COUNT_RANGE,
-    ZSERIES_VARIANT_Z230,
-    ZSERIES_VARIANT_Z280,
     DetectionResult,
     bed_type_has_position_feedback,
     disconnect_after_command_default_enabled,
@@ -343,9 +311,6 @@ from .const import (
 )
 from .detection import (
     APP_VARIANT_CHOICES,
-    FAMILY_ROW_SEPARATOR,
-    FAMILY_ROWS,
-    FAMILY_STEP_ROUTES,
     HIDDEN_APP_CHOICES,
     PRODUCT_QUESTION_BED_TYPES,
     PROTOCOL_ROUTES,
@@ -354,9 +319,7 @@ from .detection import (
     detect_bed_type,
     detect_bed_type_detailed,
     detect_richmat_remote_from_name,
-    family_row_label,
     get_bed_type_options,
-    is_jensen_linon_name,
     is_mac_like_name,
     resolve_bed_type_choice,
 )
@@ -389,21 +352,6 @@ from .pairing_candidates import (
 from .position_estimate_flow import EstimatedPositionsFlowMixin
 from .profile_id import with_profile_ids
 from .profile_migration import (
-    CUSTOMATIC_FAMILY,
-    JENSEN_FAMILY,
-    JIECANG_FAMILY,
-    JORDANS_FAMILY,
-    KEESON_FAMILY,
-    LEGGETT_FAMILY,
-    LIMOSS_FAMILY,
-    LOGICDATA_FAMILY,
-    MALOUF_FAMILY,
-    MANAGED_FAMILIES,
-    OKIN_FAMILY,
-    SLEEPYS_FAMILY,
-    SOLACE_FAMILY,
-    VIBRADORM_FAMILY,
-    ManagedFamily,
     MigrationSnapshot,
     async_control_changes,
     reconfigure_family,
@@ -844,9 +792,6 @@ def _variant_errors_to_base(errors: dict[str, str]) -> dict[str, str]:
     return errors
 
 
-_VIBRADORM_FAMILY_TYPES: Final = VIBRADORM_FAMILY.bed_types
-
-
 def _bed_type_selector(
     default: str | None, *, show_saved_id: bool = False
 ) -> _SearchableSelect:
@@ -859,9 +804,11 @@ def _bed_type_selector(
         # label; setup asks behind the family row. Configure lists the
         # protocol-named routes the same way.
         unguided = {
-            *(bed_type for bed_type, _variant in _STARCODE_APPS.values()),
-            *(bed_type for bed_type, _service in _REVERIE_ROUTES.values()),
-            *(bed_type for bed_type, _service in _SLEEP_NUMBER_ROUTES.values()),
+            *(
+                answer.bed_type
+                for family in (STARCODE_FAMILY, REVERIE_FAMILY, SLEEP_NUMBER_FAMILY)
+                for answer in family.answers.values()
+            ),
             *RICHMAT_MH_BED_TYPES,
             BED_TYPE_JENSEN,
             # Protocol-named routes are off the setup list but stay selectable.
@@ -890,28 +837,7 @@ def _bed_type_selector(
             ],
             key=lambda option: option["label"].lower(),
         )
-    family_row = (
-        BED_TYPE_VIBRADORM
-        if default in (BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC)
-        else BED_TYPE_JIECANG_APP
-        if default in (BED_TYPE_JIECANG, BED_TYPE_COMFORT_MOTION) and not show_saved_id
-        else BED_TYPE_FURNIMOVE
-        if default in OKIN_FAMILY.bed_types - {BED_TYPE_FURNIMOVE} and not show_saved_id
-        else BED_TYPE_LEGGETT_OKIN
-        if default in LEGGETT_FAMILY.bed_types - {BED_TYPE_LEGGETT_OKIN} and not show_saved_id
-        else BED_TYPE_SLEEPYS_ELITE_APP
-        if default in SLEEPYS_FAMILY.bed_types - {BED_TYPE_SLEEPYS_ELITE_APP}
-        and not show_saved_id
-        else BED_TYPE_MALOUF_APP
-        if default in MALOUF_FAMILY.bed_types - {BED_TYPE_MALOUF_APP} and not show_saved_id
-        else BED_TYPE_LOGICDATA_APP
-        if default in (BED_TYPE_LOGICDATA, BED_TYPE_LOGICDATA_AIR_PUMP) and not show_saved_id
-        else BED_TYPE_SVANE
-        if default == BED_TYPE_JENSEN and not show_saved_id
-        else _APP_FAMILY_ROWS.get(default or "")
-        if not show_saved_id
-        else None
-    )
+    family_row = shown_row(default, configure=show_saved_id) if default is not None else None
     if family_row is not None and default is not None:
         # The family row keeps the route it was drawn for; its step offers Keep.
         for option in options:
@@ -1077,8 +1003,8 @@ def _family_rows(detected: str | None = None) -> list[tuple[str, str]]:
             choice
             for choice in choices
             if choice is not None
-            and choice in _APP_SETUP_STEPS
-            and _APP_SETUP_STEPS[choice] in _FAMILY_STEPS
+            and (family := question_family(choice)) is not None
+            and family.picks_route
         ]
         for choice in families or choices:
             if choice is not None:
@@ -1095,14 +1021,12 @@ def _brand_first(choice: str, label: str) -> str:
 
     A detected route takes its family row's value, so the row is found by label.
     """
-    row = next(
-        (row for row, _names in FAMILY_ROWS.items() if row == choice or family_row_label(row) == label),
-        None,
+    family = row_family(choice) or next(
+        (family for family in APP_FAMILIES if family_row_label(family.row) == label), None
     )
-    if row is None:
+    if family is None:
         return label
-    family, apps = FAMILY_ROWS[row]
-    return f"{family}: {apps}"
+    return f"{family.name}: {family.apps}"
 
 
 def _family_name(info: BluetoothServiceInfoBleak) -> str:
@@ -1278,71 +1202,44 @@ async def _async_turn_off_limoss_remote_features(
     return True
 
 
-def _checked_family(migrating: ManagedFamily, staged: Mapping[str, Any]) -> ManagedFamily:
+def _checked_family(migrating: AppFamily, staged: Mapping[str, Any]) -> AppFamily:
     """The family whose check a staged route needs.
 
     A LOGICDATA route reached from another family's change, as the Comfort Motion
     review suggests one, still needs its own link check.
     """
-    if staged.get(CONF_BED_TYPE) in LOGICDATA_FAMILY.bed_types:
+    if staged.get(CONF_BED_TYPE) in LOGICDATA_FAMILY.managed:
         return LOGICDATA_FAMILY
     return migrating
 
 
+# Routes whose app is asked only by declared questions, on the generic step.
+_DECLARED_QUESTION_ROUTES: Final = frozenset(
+    {
+        # The app is its variant, chosen from the bed-type list.
+        BED_TYPE_CLUSTER018,
+        *CLUSTER033_BED_TYPES,
+        "ergomotion_4",
+        # One row each asks the app's exact product.
+        *PRODUCT_QUESTION_BED_TYPES,
+        # The layout is BedSense's own question.
+        BED_TYPE_BEDSENSE,
+        # Each app's own answers.
+        BED_TYPE_MOTION_BED,
+        BED_TYPE_DOUBLESLEEP,
+        BED_TYPE_SLEEPTRACKER,
+        BED_TYPE_ISLEEP,
+        BED_TYPE_GMMOTOR,
+        BED_TYPE_MOTOMOTION,
+        "hush_base",
+        BED_TYPE_LEGGETT_LP_LEGACY,
+        *STARCODE_FAMILY.direct,
+    }
+)
+# The step that asks a new bed's app: its family's question, else its declared questions.
 _APP_SETUP_STEPS: Final[dict[str, str]] = {
-    # Declared questions only: the app is its variant, chosen from the bed-type list.
-    BED_TYPE_CLUSTER018: "profile_questions",
-    **dict.fromkeys(CLUSTER033_BED_TYPES | {"ergomotion_4"}, "profile_questions"),
-    # One row each asks the app's exact product.
-    **dict.fromkeys(PRODUCT_QUESTION_BED_TYPES, "profile_questions"),
-    BED_TYPE_VIBRADORM: "vibradorm",
-    # The LOGICDATA question asks the app, and for Sleep Smart the bed base or pump.
-    **dict.fromkeys(
-        (BED_TYPE_LOGICDATA, BED_TYPE_LOGICDATA_APP, BED_TYPE_LOGICDATA_AIR_PUMP),
-        "logicdata_family",
-    ),
-    **dict.fromkeys(JIECANG_FAMILY.bed_types, "jiecang_family"),
-    **dict.fromkeys(OKIN_FAMILY.bed_types, "okin_family"),
-    # A new Okin CST bed answers the Okin question with its apps first; CST is
-    # not a guided family, so an existing entry keeps Configure.
-    BED_TYPE_OKIN_CST: "okin_family",
-    **dict.fromkeys(KEESON_FAMILY.bed_types, "keeson_family"),
-    **dict.fromkeys(SOLACE_FAMILY.bed_types, "solace_family"),
-    **dict.fromkeys(LEGGETT_FAMILY.bed_types, "leggett_family"),
-    # Declared questions only: the layout is BedSense's own question.
-    BED_TYPE_BEDSENSE: "profile_questions",
-    # The StarCode apps' row asks the app; each app keeps its own step.
-    BED_TYPE_STARCODE_ABM5_4: "starcode_family",
-    # Declared questions only: each app's own answers, on the generic step.
-    **dict.fromkeys(
-        (
-            BED_TYPE_MOTION_BED,
-            BED_TYPE_DOUBLESLEEP,
-            BED_TYPE_SLEEPTRACKER,
-            BED_TYPE_ISLEEP,
-            BED_TYPE_GMMOTOR,
-            BED_TYPE_MOTOMOTION,
-            "hush_base",
-        ),
-        "profile_questions",
-    ),
-    **dict.fromkeys(LIMOSS_FAMILY.bed_types, "limoss_family"),
-    **dict.fromkeys((BED_TYPE_STARCODE_M1X12, BED_TYPE_STARCODE_M5X5), "profile_questions"),
-    BED_TYPE_VIBRADORM_APP: "vibradorm",
-    BED_TYPE_VMATBASIC: "vibradorm",
-    BED_TYPE_LEGGETT_LP_LEGACY: "profile_questions",
-    **dict.fromkeys(CUSTOMATIC_FAMILY.bed_types, "customatic_family"),
-    **dict.fromkeys(JORDANS_FAMILY.bed_types, "jordans_family"),
-    BED_TYPE_REMACRO: "remacro_family",
-    BED_TYPE_REVERIE: "reverie_family",
-    BED_TYPE_REVERIE_NIGHTSTAND: "reverie_family",
-    BED_TYPE_SLEEP_NUMBER: "sleep_number_family",
-    BED_TYPE_SLEEP_NUMBER_MCR: "sleep_number_family",
-    **dict.fromkeys(SLEEPYS_FAMILY.bed_types, "sleepys_family"),
-    # The classic apps keep their own declared questions above.
-    **dict.fromkeys({BED_TYPE_RICHMAT, *RICHMAT_MH_BED_TYPES}, "richmat_family"),
-    **dict.fromkeys(JENSEN_FAMILY.bed_types, "jensen_family"),
-    **dict.fromkeys(MALOUF_FAMILY.bed_types, "malouf_family"),
+    **dict.fromkeys(_DECLARED_QUESTION_ROUTES, "profile_questions"),
+    **{bed_type: family.step for family in APP_FAMILIES for bed_type in family.asks},
 }
 
 
@@ -1747,242 +1644,6 @@ def _show_profile_fields(
         _hide_owned_generic_fields(schema, bed_type, variant, keep)
 
 
-# The Okin family's own routes, by the answer that selects each.
-_OKIN_ROUTES: Final[dict[str, str]] = {
-    "furnimove": BED_TYPE_FURNIMOVE,
-    "okin_uuid": BED_TYPE_OKIN_UUID,
-    "okin_dot": BED_TYPE_OKIN_DOT,
-    "okin_rf_eco_bt": BED_TYPE_OKIN_RF_ECO_BT,
-}
-# English labels; strings.json translates the same keys.
-_OKIN_ROUTE_LABELS: Final[dict[str, str]] = {
-    "furnimove": "FurniMove / OKIN Smart Remote app",
-    "okin_uuid": "No app: Okimat or OKIN handset code (requires pairing)",
-    "okin_dot": "No app: DOT remote (RF34 or RF6707)",
-    "okin_rf_eco_bt": "No app: single-actuator staircase, RF ECO BT (requires pairing)",
-}
-_OKIN_KEEP_LABEL: Final = "I don't know: keep the detected controls"
-# The Okin CST products, each the route of the app its accepted report names
-# (cluster 011, Nectar Move).
-_OKIN_CST_APPS: Final[dict[str, str]] = {
-    f"{BED_TYPE_OKIN_CST}:{variant}": variant
-    for variant in OKIN_CST_VARIANTS
-    if variant != VARIANT_AUTO
-}
-
-
-# The Keeson question's answers that expand into one exact app or route each.
-_KEESON_GROUPS: Final[dict[str, tuple[tuple[str, str | None], ...]]] = {
-    "ergomotion_apps": (
-        (BED_TYPE_ERGOMOTION_APP, None),
-        (BED_TYPE_ERGOMOTION_4, None),
-        (BED_TYPE_SERTA_MP_REMOTE, None),
-    ),
-    "ore_apps": (
-        (BED_TYPE_KEESON, KEESON_VARIANT_AVANTI_BASES),
-        (BED_TYPE_KEESON, KEESON_VARIANT_AMERICANSTAR),
-        (BED_TYPE_KEESON, KEESON_VARIANT_BEDSENSE_BASES),
-        (BED_TYPE_KEESON, KEESON_VARIANT_INNOVA),
-        (BED_TYPE_KEESON, KEESON_VARIANT_MAXCOIL_UNA),
-        (BED_TYPE_KEESON, KEESON_VARIANT_DYNASTY_BASES),
-    ),
-    "okin_seating_apps": (
-        (BED_TYPE_KEESON, KEESON_VARIANT_ADJUSTABLE_LITE),
-        (BED_TYPE_KEESON, KEESON_VARIANT_SIMON_LI),
-        (BED_TYPE_KEESON, KEESON_VARIANT_HEAL_EVERY_NIGHT),
-        (BED_TYPE_KEESON, KEESON_VARIANT_OKIN_SEATING),
-    ),
-    "purple_base_json": (
-        (BED_TYPE_KEESON, KEESON_VARIANT_PURPLE),
-        (BED_TYPE_KEESON, KEESON_VARIANT_BASE),
-        (BED_TYPE_KEESON, KEESON_VARIANT_JSON),
-    ),
-}
-_KEESON_RESTONIC: Final = frozenset({KEESON_VARIANT_RESTONIC_A, KEESON_VARIANT_RESTONIC_B})
-
-
-# The L&P question's answers: each app's own route and layout, by its report.
-_LEGGETT_ROUTES: Final[dict[str, tuple[str, Mapping[str, str]]]] = {
-    "prodigy_ce": (BED_TYPE_LEGGETT_OKIN, {CONF_LEGGETT_APP_PROFILE: "prodigy4"}),
-    "prodigy2": (BED_TYPE_LEGGETT_OKIN, {CONF_LEGGETT_APP_PROFILE: "prodigy2"}),
-    "prodigy2l": (BED_TYPE_LEGGETT_OKIN, {CONF_LEGGETT_APP_PROFILE: "prodigy2l"}),
-    "useries": (BED_TYPE_LEGGETT_OKIN, {CONF_LEGGETT_APP_PROFILE: "useries"}),
-    # LP Control drives an LP BED receiver with its Okin profile; the route
-    # keeps its default layout, which no LP Control product is proven to change.
-    "lp_control_okin": (
-        BED_TYPE_LEGGETT_OKIN,
-        {CONF_LEGGETT_APP_PROFILE: LEGGETT_APP_DEFAULT_PROFILE},
-    ),
-    "lp_control_gen2": (BED_TYPE_LEGGETT_GEN2, {}),
-    "lp_app_mlrm": (BED_TYPE_LEGGETT_WILINKE, {}),
-    "lp_app_qrrm": (BED_TYPE_RICHMAT, {CONF_RICHMAT_REMOTE: RICHMAT_REMOTE_LP_QRRM}),
-    "lp_legacy": (BED_TYPE_LEGGETT_LP_LEGACY, {}),
-}
-# The legacy L&P app's own settings.
-_LP_LEGACY_KEYS: Final = (
-    CONF_LP_LEGACY_MODEL,
-    CONF_LP_LEGACY_MODE,
-    CONF_LP_LEGACY_WRITE_UUID,
-    CONF_LP_LEGACY_READ_UUID,
-)
-# The umbrella ID's variant for each route it can run.
-_LEGGETT_ALIAS_VARIANTS: Final[dict[str, str]] = {
-    BED_TYPE_LEGGETT_GEN2: LEGGETT_VARIANT_GEN2,
-    BED_TYPE_LEGGETT_OKIN: LEGGETT_VARIANT_OKIN,
-    BED_TYPE_LEGGETT_WILINKE: LEGGETT_VARIANT_MLRM,
-}
-
-
-# The Jensen / Svane question's answers: each app with the bed it runs, as the
-# bed type and variant each selects.
-_JENSEN_ROUTES: Final[dict[str, tuple[str, str | None]]] = {
-    "jensen_jmc400": (BED_TYPE_JENSEN, None),
-    "jensen_linon": (BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON),
-    "svane_bed": (BED_TYPE_SVANE, VARIANT_AUTO),
-    "svane_jmc400": (BED_TYPE_SVANE, SVANE_VARIANT_JMC),
-}
-
-
-def _jensen_suggestion(bed_type: str, variant: str, name: str | None) -> str:
-    """Return the answer the apps' own name rules pick for this bed.
-
-    The Svane Remote app picks its JMC400 profile for a name with ``JMC``, and
-    the Jensen app its LinOn profile for "Adjustable Bed" or "Jensen Bed".
-    Every setup route suggests the same answer; the user confirms it.
-    """
-    from .svane_state import svane_profile_for_selected_name
-
-    for answer, route in _JENSEN_ROUTES.items():
-        if route == (bed_type, variant) and variant != VARIANT_AUTO:
-            return answer
-    if bed_type == BED_TYPE_JENSEN:
-        return "jensen_jmc400"
-    if name != "Svane Bed" and is_jensen_linon_name(name):
-        return "jensen_linon"
-    if svane_profile_for_selected_name(name) == "jmc":
-        return "svane_jmc400"
-    return "svane_bed"
-
-
-# The Malouf question's answers, with the app each stages: the apps first,
-# then the receiver routes.
-_MALOUF_ROUTES: Final[dict[str, tuple[str, str | None]]] = {
-    "malouf": (BED_TYPE_MALOUF_APP, "malouf"),
-    "lucid": (BED_TYPE_MALOUF_APP, "lucid"),
-    "nordic_uart": (BED_TYPE_MALOUF_NEW_OKIN, None),
-    "ffe5": (BED_TYPE_MALOUF_LEGACY_OKIN, None),
-}
-
-
-# The Sleepy's question's answers: the app first, then the receiver routes.
-_SLEEPYS_ROUTES: Final[dict[str, str]] = {
-    "app": BED_TYPE_SLEEPYS_ELITE_APP,
-    "box25": BED_TYPE_SLEEPYS_BOX25,
-    "box24": BED_TYPE_SLEEPYS_BOX24,
-    "box15": BED_TYPE_SLEEPYS_BOX15,
-}
-
-
-# The LOGICDATA question's answers: each app's bed type and app profile. Sleep
-# Smart's bed base and air mattress pump are separate devices.
-_LOGICDATA_ROUTES: Final[dict[str, tuple[str, str | None]]] = {
-    "silvermotion": (BED_TYPE_LOGICDATA, None),
-    "phone": (BED_TYPE_LOGICDATA_APP, "phone"),
-    "tablet": (BED_TYPE_LOGICDATA_APP, "tablet"),
-    "sleep_smart": (BED_TYPE_LOGICDATA_APP, "sleep_smart"),
-    "sleep_smart_pump": (BED_TYPE_LOGICDATA_AIR_PUMP, None),
-}
-
-
-# The app-family questions' answers: each app's bed type and variant.
-_AppAnswer = tuple[str, str | None]
-_CUSTOMATIC_APPS: Final[dict[str, _AppAnswer]] = {
-    "clarity": (BED_TYPE_CUSTOMATIC_CLARITY, None),
-    "jeromes": (BED_TYPE_CUSTOMATIC_JEROMES, None),
-    "remedy": (BED_TYPE_CUSTOMATIC_REMEDY, None),
-    "zseries_z230": (BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z230),
-    "zseries_z280": (BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z280),
-}
-_JORDANS_APPS: Final[dict[str, _AppAnswer]] = {
-    "serenity": (BED_TYPE_SERENITY, None),
-    "tranquil": (BED_TYPE_TRANQUIL, None),
-}
-_STARCODE_APPS: Final[dict[str, _AppAnswer]] = {
-    "m5x4": (BED_TYPE_STARCODE_ABM5_4, None),
-    "m5x5": (BED_TYPE_STARCODE_M5X5, None),
-    "m1x12": (BED_TYPE_STARCODE_M1X12, None),
-}
-# The Reverie question's answers: each receiver route and the service it advertises.
-_REVERIE_ROUTES: Final[dict[str, tuple[str, str]]] = {
-    "protocol_110": (BED_TYPE_REVERIE_NIGHTSTAND, REVERIE_NIGHTSTAND_SERVICE_UUID),
-    "protocol_108": (BED_TYPE_REVERIE, REVERIE_SERVICE_UUID),
-}
-# The Sleep Number question's answers: each transport and the service it advertises.
-_SLEEP_NUMBER_ROUTES: Final[dict[str, tuple[str, str]]] = {
-    "fuzion": (BED_TYPE_SLEEP_NUMBER, SLEEP_NUMBER_SERVICE_UUID),
-    "mcr": (BED_TYPE_SLEEP_NUMBER_MCR, SLEEP_NUMBER_MCR_SERVICE_UUID),
-}
-# The Remacro question's answers: the variant that selects each store app.
-_REMACRO_APPS: Final[dict[str, str]] = {
-    # Auto is the Slumberland app, as in v4.0.2.
-    "slumberland": VARIANT_AUTO,
-    "the_brick": REMACRO_VARIANT_THE_BRICK,
-    "jeromes": REMACRO_VARIANT_JEROMES,
-}
-# The Richmat question's answers: each app's bed type and variant. RMControl and
-# the remote controls share the Richmat route; the RMControl product tells them apart.
-_RICHMAT_APPS: Final[dict[str, tuple[str, str | None]]] = {
-    "rmcontrol": (BED_TYPE_RICHMAT, None),
-    **{app: (bed_type, None) for bed_type, app in RICHMAT_MH_APPS.items()},
-    **{app: (BED_TYPE_CLUSTER018, app) for app in CLUSTER018_APP_NAMES},
-    "remote": (BED_TYPE_RICHMAT, None),
-}
-
-# The Limoss question's answers: the two apps, then the generic controls the
-# family row and detection choose.
-_LIMOSS_APPS: Final[dict[str, _AppAnswer]] = {
-    "limoss_remote": (BED_TYPE_LIMOSS_REMOTE, None),
-    "fsm_relax": (BED_TYPE_FSM_RELAX, None),
-    "generic": (BED_TYPE_LIMOSS, None),
-}
-# The family question each app answer belongs to.
-_ANSWER_STEPS: Final[dict[tuple[str, str | None], str]] = {
-    **dict.fromkeys(_CUSTOMATIC_APPS.values(), "customatic_family"),
-    **dict.fromkeys(_JORDANS_APPS.values(), "jordans_family"),
-    **dict.fromkeys(_STARCODE_APPS.values(), "starcode_family"),
-    **dict.fromkeys(_LIMOSS_APPS.values(), "limoss_family"),
-    **dict.fromkeys(_RICHMAT_APPS.values(), "richmat_family"),
-}
-# Each app family's picker row, by the routes behind it. The first answer is the row.
-_APP_FAMILY_ROWS: Final[dict[str, str]] = {
-    **{
-        bed_type: next(iter(apps.values()))[0]
-        for apps in (_CUSTOMATIC_APPS, _JORDANS_APPS, _STARCODE_APPS)
-        for bed_type, variant in list(apps.values())[1:]
-        # A model answer is a hidden app row, which keeps its own label.
-        if variant is None
-    },
-    BED_TYPE_REVERIE: BED_TYPE_REVERIE_NIGHTSTAND,
-    BED_TYPE_SLEEP_NUMBER_MCR: BED_TYPE_SLEEP_NUMBER,
-    BED_TYPE_LIMOSS_REMOTE: BED_TYPE_LIMOSS,
-    BED_TYPE_FSM_RELAX: BED_TYPE_LIMOSS,
-}
-
-
-# The Keeson question's answers, in the order the form lists them.
-_KEESON_CHOICES: Final = (
-    "sleep_harmony",
-    "restonic",
-    "ergomotion_apps",
-    "ore_apps",
-    "okin_seating_apps",
-    "purple_base_json",
-    "coolbase",
-    "other_route",
-    "keep",
-)
-
-
 def _keeson_route_label(bed_type: str, variant: str | None) -> str:
     """Label one exact Keeson answer: its app row, or its bed type or route."""
     if variant is None:
@@ -2017,53 +1678,6 @@ def _apply_route_defaults(data: dict[str, Any], bed_type: str, variant: str | No
     data[CONF_DISABLE_ANGLE_SENSING] = not bed_type_has_position_feedback(bed_type, route_variant)
 
 
-_JIECANG_LEGACY_ROUTES: Final[dict[str, str]] = {
-    "legacy_jiecang": BED_TYPE_JIECANG,
-    "legacy_lierda": BED_TYPE_COMFORT_MOTION,
-}
-
-
-def _route_motor_counts(data: Mapping[str, Any]) -> Mapping[Any, str]:
-    return {count: str(count) for count in _motor_count_options(data[CONF_BED_TYPE])}
-
-
-# A legacy remote route chosen in place of a Jiecang app: the app had fixed the
-# motors, so the route asks its own.
-_LEGACY_MOTORS: Final = SetupProfile(
-    questions=(Question(CONF_MOTOR_COUNT, _route_motor_counts, DEFAULT_MOTOR_COUNT),)
-)
-# The remote style chosen in the Restonic BT app's settings; A is its default.
-_RESTONIC_STYLE: Final = SetupProfile(
-    questions=(
-        Question(
-            CONF_PROTOCOL_VARIANT,
-            {
-                KEESON_VARIANT_RESTONIC_A: "Remote A (6 buttons)",
-                KEESON_VARIANT_RESTONIC_B: "Remote B (10 buttons)",
-            },
-            KEESON_VARIANT_RESTONIC_A,
-        ),
-    ),
-    title=lambda _data: "Restonic BT",
-)
-# An older Keeson remote's route and the bed's motor count.
-_KEESON_REMOTE_ROUTE: Final = SetupProfile(
-    questions=(
-        Question(
-            CONF_PROTOCOL_VARIANT,
-            lambda _data: _labelled_routes(BED_TYPE_KEESON),
-            lambda _data: next(iter(_labelled_routes(BED_TYPE_KEESON))),
-        ),
-        Question(
-            CONF_MOTOR_COUNT,
-            _route_motor_counts,
-            lambda data: _motor_count_options(data[CONF_BED_TYPE])[0],
-        ),
-    ),
-    title=lambda _data: "Keeson remote",
-)
-
-
 def _configure_questions(
     data: Mapping[str, Any], saved_bed_type: object = None
 ) -> SetupProfile | None:
@@ -2082,8 +1696,8 @@ def _configure_questions(
     family = next(
         (
             family
-            for family in MANAGED_FAMILIES
-            if data.get(CONF_BED_TYPE) in family.bed_types and saved in family.bed_types
+            for family in GUIDED_FAMILIES
+            if data.get(CONF_BED_TYPE) in family.managed and saved in family.managed
         ),
         None,
     )
@@ -2349,34 +1963,6 @@ _OCTO_PIN_MESSAGES: Final[dict[OctoPinStatus, str]] = {
 _PROBE_ADVERTISEMENT_WAIT_SECONDS = 10.0
 
 
-# A family step asks which app runs the bed; it collects no app settings itself.
-_FAMILY_STEPS: Final = frozenset(
-    {
-        "jiecang_family",
-        "okin_family",
-        "keeson_family",
-        "solace_family",
-        "leggett_family",
-        "sleepys_family",
-        "customatic_family",
-        "jordans_family",
-        "malouf_family",
-        "remacro_family",
-        "jensen_family",
-        "reverie_family",
-        "richmat_family",
-        "sleep_number_family",
-        "limoss_family",
-    }
-)
-# Steps that ask which app runs the bed: a discovered bed's first question.
-_APP_QUESTION_STEPS: Final = _FAMILY_STEPS | {"vibradorm", "logicdata_family", "starcode_family"}
-# Each family question's name, from its family row.
-_FAMILY_NAMES: Final[dict[str, str]] = {
-    _APP_SETUP_STEPS[bed_type]: family for bed_type, (family, _apps) in FAMILY_ROWS.items()
-}
-
-
 def _row_family(choice: str) -> str | None:
     """Return the family of a bed-type list row: the family its journey asks.
 
@@ -2384,8 +1970,8 @@ def _row_family(choice: str) -> str | None:
     app or AdjustableM5X5, though its own bed type opens only its own step.
     """
     bed_type, variant = resolve_bed_type_choice(choice)
-    step = _ANSWER_STEPS.get((bed_type, variant)) or _APP_SETUP_STEPS.get(bed_type)
-    return _FAMILY_NAMES.get(step) if step is not None else None
+    family = answer_family(bed_type, variant) or question_family(bed_type)
+    return family.name if family is not None else None
 
 
 def _with_family(option: SelectOptionDict) -> SelectOptionDict:
@@ -2399,10 +1985,12 @@ def _with_family(option: SelectOptionDict) -> SelectOptionDict:
         return option
     app = option["label"].removesuffix(f" ({family})")
     return SelectOptionDict(value=option["value"], label=f"{app}{FAMILY_ROW_SEPARATOR}{family}")
+
+
+# Routes whose choice opens the app's own settings.
 APP_SETTINGS_BED_TYPES: Final = (
-    frozenset(
-        bed_type for bed_type, step in _APP_SETUP_STEPS.items() if step not in _FAMILY_STEPS
-    )
+    _DECLARED_QUESTION_ROUTES
+    | {bed_type for family in APP_FAMILIES if not family.picks_route for bed_type in family.asks}
     # FSM Relax asks its own settings after the Limoss question, and the Malouf
     # family step stages the app, whose model is asked after it.
     | {BED_TYPE_FSM_RELAX, BED_TYPE_MALOUF_APP}
@@ -2596,7 +2184,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             self._manual_data = self._migration.staged(entry.title)
         if is_paired(entry.data):
             return await self.async_step_migration_split(user_input)
-        return await getattr(self, f"async_step_{family.key}")(user_input)
+        return await getattr(self, f"async_step_{family.step}")(user_input)
 
     async def async_step_migration_split(
         self, user_input: dict[str, Any] | None = None
@@ -2641,65 +2229,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Choose by app or keep the historical setup, never infer a profile."""
-        if (another := await self._async_another_app(user_input)) is not None:
-            return another
-        assert self._manual_data is not None
-        # On a legacy entry the legacy setup is the saved route, so it keeps it.
-        on_legacy = (
-            self._migration is not None
-            and self._migration.data.get(CONF_BED_TYPE) == BED_TYPE_VIBRADORM
-        )
-        choices = {
-            "vmat": "VMAT",
-            "caresse": "Caresse Diamant",
-            "werkmeister": "Werkmeister",
-            "vmatbasic": "V-MAT Basic",
-            "legacy": "Keep current setup" if on_legacy else "Legacy setup",
-        }
-        if self._migration is not None and not on_legacy:
-            choices["keep"] = "Keep current setup"
-        choice = (user_input or {}).get("app")
-        if choice in choices:
-            if choice == "keep" or (choice == "legacy" and on_legacy):
-                return await self.async_step_migration_keep()
-            self._migration_verified = False
-            same_profile = (
-                choice == "vmatbasic" and self._manual_data.get(CONF_BED_TYPE) == BED_TYPE_VMATBASIC
-            ) or (
-                self._manual_data.get(CONF_BED_TYPE) == BED_TYPE_VIBRADORM_APP
-                and self._manual_data.get(CONF_VIBRADORM_APP_PROFILE) == choice
-            )
-            if not same_profile:
-                for key in (*VIBRADORM_APP_CONFIG_KEYS, *VMATBASIC_CONFIG_KEYS):
-                    self._manual_data.pop(key, None)
-                self._manual_data.pop(CONF_VIBRADORM_APP_METADATA, None)
-            if choice == "legacy":
-                # A form drawn for a detected app or V-MAT Basic, or an app
-                # entry, set none of the legacy settings, so they are asked.
-                self._select_family_route(BED_TYPE_VIBRADORM, None)
-                return await self.async_step_profile_questions()
-            if choice == "vmatbasic":
-                self._manual_data[CONF_BED_TYPE] = BED_TYPE_VMATBASIC
-            else:
-                self._manual_data[CONF_BED_TYPE] = BED_TYPE_VIBRADORM_APP
-                self._manual_data[CONF_VIBRADORM_APP_PROFILE] = choice
-            return await self.async_step_profile_questions()
-        return self.async_show_form(
-            step_id="vibradorm",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("app"): SelectSelector(
-                        SelectSelectorConfig(
-                            options=[
-                                SelectOptionDict(value=value, label=label)
-                                for value, label in choices.items()
-                            ],
-                            mode=SelectSelectorMode.DROPDOWN,
-                        )
-                    )
-                }
-            ),
-        )
+        return await self._async_family_step(VIBRADORM_FAMILY, user_input)
 
     def _migration_unchanged(self) -> bool:
         return self._migration is not None and self._migration.matches(
@@ -2908,148 +2438,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     async def async_step_logicdata_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Ask which LOGICDATA app runs the bed, and for Sleep Smart the bed base or pump.
-
-        The apps share Bluetooth services, so nothing about the bed chooses one.
-        """
-        if (another := await self._async_another_app(user_input)) is not None:
-            return another
-        assert self._manual_data is not None
-        data = self._manual_data
-        incoming, _variant = self._incoming("logicdata_family")
-        guided = self._migration is not None
-        # Keep saves the route detection or the saved setup chose; the family
-        # row alone chose no app to keep.
-        can_keep = guided or incoming != BED_TYPE_LOGICDATA_APP
-        # The pump is its own physical device, never a route a bed entry changes to.
-        answers = [
-            answer
-            for answer, (bed_type, _app) in _LOGICDATA_ROUTES.items()
-            if not (guided and bed_type == BED_TYPE_LOGICDATA_AIR_PUMP)
-        ]
-        choice = (user_input or {}).get("choice")
-        if choice == "keep" and can_keep:
-            if guided:
-                return await self.async_step_migration_keep()
-            return await self._async_keep_detected(
-                "logicdata_family", self._async_continue_route
-            )
-        if choice in answers:
-            bed_type, app = _LOGICDATA_ROUTES[choice]
-            if (bed_type, app) != (data[CONF_BED_TYPE], data.get(CONF_LOGICDATA_APP_PROFILE)):
-                # Another app's command family, layout and transport mean nothing here.
-                for key in LOGICDATA_FAMILY.route_keys:
-                    data.pop(key, None)
-            self._select_family_route(bed_type, None)
-            if app is not None:
-                data[CONF_LOGICDATA_APP_PROFILE] = app
-            return await self._async_continue_route()
-        return self.async_show_form(
-            step_id="logicdata_family",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("choice"): SelectSelector(
-                        SelectSelectorConfig(
-                            options=[*answers, *(["keep"] if can_keep else [])],
-                            translation_key="logicdata_family_choice",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-            description_placeholders={"current": bed_type_label(incoming)},
-        )
+        """Ask which LOGICDATA app runs the bed, and for Sleep Smart the bed base or pump."""
+        return await self._async_family_step(LOGICDATA_FAMILY, user_input)
 
     async def async_step_jiecang_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Ask which app or remote controls the bed; never infer it from the bed's name."""
-        if (another := await self._async_another_app(user_input)) is not None:
-            return another
-        from .profile_review import suggested_apps
-
-        assert self._manual_data is not None
-        incoming, _variant = self._incoming("jiecang_family")
-        # Keep saves the route detection or the saved setup chose; the family
-        # row alone chose no route to keep.
-        can_keep = self._migration is not None or incoming in _JIECANG_LEGACY_ROUTES.values()
-        choices = [*JIECANG_APP_PROFILES, *_JIECANG_LEGACY_ROUTES, *(["keep"] if can_keep else [])]
-        # Another family's app the review suggests for this route, such as the
-        # LOGICDATA app for a Comfort Motion bed, continues in that family's question.
-        apps = [
-            app
-            for app in suggested_apps(self.hass, self._manual_data)
-            if resolve_bed_type_choice(app)[0] not in JIECANG_FAMILY.bed_types
-        ]
-        choice = (user_input or {}).get("choice")
-        if choice in apps:
-            data = self._manual_data
-            for key in JIECANG_FAMILY.route_keys:
-                data.pop(key, None)
-            bed_type, variant = resolve_bed_type_choice(choice)
-            self._select_family_route(bed_type, variant)
-            if (step := _APP_SETUP_STEPS.get(bed_type)) is not None:
-                return await getattr(self, f"async_step_{step}")()
-            return await self._async_finish_family_route()
-        if choice in choices:
-            data = self._manual_data
-            if choice == "keep":
-                if self._migration is not None:
-                    return await self.async_step_migration_keep()
-                return await self._async_keep_detected(
-                    "jiecang_family", self._async_finish_family_route
-                )
-            same_app = (
-                data.get(CONF_BED_TYPE) == BED_TYPE_JIECANG_APP
-                and data.get(CONF_JIECANG_APP_PROFILE) == choice
-            )
-            if not same_app:
-                for key in JIECANG_FAMILY.route_keys:
-                    data.pop(key, None)
-            self._migration_verified = False
-            if choice in _JIECANG_LEGACY_ROUTES:
-                data[CONF_BED_TYPE] = _JIECANG_LEGACY_ROUTES[choice]
-                if incoming == BED_TYPE_JIECANG_APP:
-                    # The apps set the layout and cadence themselves, so the
-                    # saved motor count means nothing here: ask the route's own.
-                    data.pop(CONF_MOTOR_COUNT, None)
-                    return await self._async_ask(_LEGACY_MOTORS, self._async_jiecang_legacy)
-                return await self._async_finish_family_route()
-            data[CONF_BED_TYPE] = BED_TYPE_JIECANG_APP
-            data[CONF_JIECANG_APP_PROFILE] = choice
-            return await self.async_step_profile_questions()
-        return self.async_show_form(
-            step_id="jiecang_family",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("choice"): SelectSelector(
-                        SelectSelectorConfig(
-                            # Each suggested app is translated as a choice of its own.
-                            options=[
-                                *(key for key in choices if key != "keep"),
-                                *apps,
-                                *(["keep"] if can_keep else []),
-                            ],
-                            translation_key="jiecang_family_choice",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-            description_placeholders={"current": bed_type_label(incoming)},
-        )
-
-    async def _async_jiecang_legacy(self, answers: Mapping[str, Any]) -> ConfigFlowResult:
-        """Stage a legacy remote route's motor count, with the route's own cadence."""
-        assert self._manual_data is not None
-        data = self._manual_data
-        data[CONF_MOTOR_COUNT] = answers[CONF_MOTOR_COUNT]
-        self._journey_set.add(CONF_MOTOR_COUNT)
-        pulse_count, pulse_delay = get_motor_pulse_defaults(data[CONF_BED_TYPE], VARIANT_AUTO)
-        data[CONF_MOTOR_PULSE_COUNT] = pulse_count
-        data[CONF_MOTOR_PULSE_DELAY_MS] = pulse_delay
-        data[CONF_MOTOR_PULSE_USER_SET] = False
-        return await self._async_finish_family_route()
+        return await self._async_family_step(JIECANG_FAMILY, user_input)
 
     async def _async_finish_family_route(self) -> ConfigFlowResult:
         """Continue a route chosen in a family step: a new bed's settings, pairing, the check."""
@@ -3077,151 +2473,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Ask which app or remote controls an Okin receiver; its GATT cannot tell."""
-        if (another := await self._async_another_app(user_input)) is not None:
-            return another
-        from .furnimove_repair import CONF_STAIRCASE_LAYOUT_CONFIRMED
-        from .profile_review import choice_label, related_app_choices
-
-        assert self._manual_data is not None
-        data = self._manual_data
-        first = "okin_family" not in self._family_incoming
-        incoming, incoming_variant = self._incoming("okin_family")
-        if (
-            first
-            and self._migration is None
-            and (
-                (incoming, incoming_variant) in APP_VARIANT_CHOICES
-                or incoming == BED_TYPE_OKIN_CST
-                and incoming_variant in _OKIN_CST_APPS.values()
-            )
-        ):
-            # An app row, such as Nectar Move, or an explicit CST product
-            # already answered the question.
-            return await self._async_finish_family_route()
-        # The apps the app review suggests for this route stay one answer away.
-        apps = related_app_choices(incoming, incoming_variant)
-        # A detected or chosen Okin CST bed is offered its own apps first.
-        cst_apps = _OKIN_CST_APPS if incoming == BED_TYPE_OKIN_CST else {}
-        # A FurniMove row or gateway chose no handset, so there is nothing to keep.
-        can_keep = self._migration is not None or incoming != BED_TYPE_FURNIMOVE
-        choice = (user_input or {}).get("choice")
-        if choice == "keep" and can_keep:
-            if self._migration is not None:
-                return await self.async_step_migration_keep()
-            return await self._async_keep_detected(
-                "okin_family",
-                self.async_step_profile_questions
-                if incoming in (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT, BED_TYPE_OKIN_DOT)
-                else self._async_finish_family_route,
-            )
-        if choice in cst_apps:
-            self._select_family_route(BED_TYPE_OKIN_CST, cst_apps[choice])
-            return await self._async_finish_family_route()
-        if choice in _OKIN_ROUTES or choice in apps:
-            bed_type, variant = (
-                (_OKIN_ROUTES[choice], None)
-                if choice in _OKIN_ROUTES
-                else resolve_bed_type_choice(choice)
-            )
-            if incoming == BED_TYPE_OKIMAT and bed_type == BED_TYPE_OKIN_UUID:
-                # The same route under its saved ID; never rewrite the ID.
-                bed_type = BED_TYPE_OKIMAT
-            self._migration_verified = False
-            if bed_type != data[CONF_BED_TYPE]:
-                for key in (*OKIN_FAMILY.route_keys, CONF_STAIRCASE_LAYOUT_CONFIRMED):
-                    data.pop(key, None)
-                self._select_family_route(bed_type, variant)
-            if bed_type == BED_TYPE_FURNIMOVE:
-                return await self.async_step_profile_questions()
-            if bed_type in (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT, BED_TYPE_OKIN_DOT):
-                return await self.async_step_profile_questions()
-            if bed_type == BED_TYPE_OKIN_RF_ECO_BT:
-                # Choosing the staircase is the explicit confirmation its repair asks for.
-                data[CONF_STAIRCASE_LAYOUT_CONFIRMED] = True
-                data[CONF_MOTOR_COUNT] = 1
-                self._journey_set.add(CONF_MOTOR_COUNT)
-            return await self._async_finish_family_route()
-        routes = [
-            SelectOptionDict(value=key, label=label) for key, label in _OKIN_ROUTE_LABELS.items()
-        ]
-        app_options = [
-            *(
-                SelectOptionDict(value=key, label=OKIN_CST_VARIANTS[variant])
-                for key, variant in cst_apps.items()
-            ),
-            *(SelectOptionDict(value=app, label=choice_label(app)) for app in apps),
-        ]
-        options = [
-            # The detected family's apps come first, then the other Okin answers.
-            *([*app_options, *routes] if cst_apps else [*routes, *app_options]),
-            *([SelectOptionDict(value="keep", label=_OKIN_KEEP_LABEL)] if can_keep else []),
-        ]
-        return self.async_show_form(
-            step_id="okin_family",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("choice"): SelectSelector(
-                        SelectSelectorConfig(
-                            options=options,
-                            translation_key="okin_family_choice",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-            description_placeholders={"current": bed_type_label(incoming)},
-        )
+        return await self._async_family_step(OKIN_FAMILY, user_input)
 
     async def async_step_keeson_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Ask which app or remote runs a Keeson bed; shared names cannot tell."""
-        if (another := await self._async_another_app(user_input)) is not None:
-            return another
-        assert self._manual_data is not None
-        data = self._manual_data
-        first = "keeson_family" not in self._family_incoming
-        incoming, variant = self._incoming("keeson_family")
-        if first and self._migration is None and (incoming, variant) in APP_VARIANT_CHOICES:
-            # An app row already answered the question.
-            return await self._async_continue_keeson_route()
-        choice = (user_input or {}).get("choice")
-        if choice == "keep":
-            if self._migration is not None:
-                return await self.async_step_migration_keep()
-            return await self._async_keep_detected("keeson_family", self._async_finish_family_route)
-        if choice in _KEESON_GROUPS:
-            self._keeson_group = choice
-            return await self.async_step_keeson_app()
-        if choice == "restonic":
-            return await self._async_ask_restonic_style()
-        if choice == "other_route":
-            self._select_family_route(BED_TYPE_KEESON, data.get(CONF_PROTOCOL_VARIANT))
-            return await self._async_ask(_KEESON_REMOTE_ROUTE, self._async_keeson_remote_route)
-        if choice in ("sleep_harmony", "coolbase"):
-            self._select_family_route(
-                *(
-                    (BED_TYPE_KEESON, KEESON_VARIANT_SLEEP_HARMONY)
-                    if choice == "sleep_harmony"
-                    else (BED_TYPE_COOLBASE, None)
-                )
-            )
-            return await self._async_finish_family_route()
-        return self.async_show_form(
-            step_id="keeson_family",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("choice"): SelectSelector(
-                        SelectSelectorConfig(
-                            options=list(_KEESON_CHOICES),
-                            translation_key="keeson_family_choice",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-            description_placeholders={"current": bed_type_label(incoming)},
-        )
+        return await self._async_family_step(KEESON_FAMILY, user_input)
 
     def _select_family_route(self, bed_type: str, variant: str | None) -> None:
         """Stage one family route, with Configure's defaults when it changes.
@@ -3237,34 +2495,21 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return
         _apply_route_defaults(data, bed_type, variant)
 
-    async def _async_continue_keeson_route(self) -> ConfigFlowResult:
-        """Ask what the staged route still needs, then finish it."""
-        assert self._manual_data is not None
-        data = self._manual_data
-        bed_type = data[CONF_BED_TYPE]
-        variant = data.get(CONF_PROTOCOL_VARIANT)
-        if bed_type in _APP_SETUP_STEPS and bed_type not in KEESON_FAMILY.bed_types:
-            # Its own app step owns the layout.
-            return await getattr(self, f"async_step_{_APP_SETUP_STEPS[bed_type]}")()
-        if variant in _KEESON_RESTONIC:
-            return await self._async_ask_restonic_style()
-        return await self._async_continue_route()
-
     async def async_step_keeson_app(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Expand a grouped answer into its exact app or route."""
-        assert self._keeson_group is not None
+        assert self._narrowing is not None
+        family, grouped = self._narrowing
         # Purple, Base and JSON are plain routes, not app rows, so key every
         # answer by its own bed type and variant.
         routes = {
-            f"{bed_type}:{variant}" if variant else bed_type: (bed_type, variant)
-            for bed_type, variant in _KEESON_GROUPS[self._keeson_group]
+            f"{answer.bed_type}:{answer.variant}" if answer.variant else answer.bed_type: answer
+            for answer in grouped.group
         }
         choice = (user_input or {}).get("choice")
-        if choice in routes:
-            self._select_family_route(*routes[choice])
-            return await self._async_continue_keeson_route()
+        if isinstance(choice, str) and choice in routes:
+            return await self._async_stage_answer(family, self._visit(family), routes[choice])
         return self.async_show_form(
             step_id="keeson_app",
             data_schema=vol.Schema(
@@ -3272,8 +2517,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     vol.Required("choice"): SelectSelector(
                         SelectSelectorConfig(
                             options=[
-                                SelectOptionDict(value=key, label=_keeson_route_label(*route))
-                                for key, route in routes.items()
+                                SelectOptionDict(
+                                    value=key, label=_keeson_route_label(answer.bed_type, answer.variant)
+                                )
+                                for key, answer in routes.items()
                             ],
                             mode=SelectSelectorMode.LIST,
                         )
@@ -3282,528 +2529,222 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             ),
         )
 
-    async def _async_ask_restonic_style(self) -> ConfigFlowResult:
-        """Ask the remote style chosen in the Restonic BT app's settings."""
-
-        async def chosen(answers: Mapping[str, Any]) -> ConfigFlowResult:
-            self._select_family_route(BED_TYPE_KEESON, answers[CONF_PROTOCOL_VARIANT])
-            return await self._async_finish_family_route()
-
-        return await self._async_ask(_RESTONIC_STYLE, chosen)
-
-    async def _async_keeson_remote_route(self, answers: Mapping[str, Any]) -> ConfigFlowResult:
-        """Stage an older Keeson remote route and its motor count."""
-        assert self._manual_data is not None
-        self._select_family_route(BED_TYPE_KEESON, answers[CONF_PROTOCOL_VARIANT])
-        self._manual_data[CONF_MOTOR_COUNT] = answers[CONF_MOTOR_COUNT]
-        self._journey_set.add(CONF_MOTOR_COUNT)
-        return await self._async_continue_route()
-
     async def async_step_solace_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Ask which app runs a QMS-named bed; several apps share those names."""
-        if (another := await self._async_another_app(user_input)) is not None:
-            return another
-        assert self._manual_data is not None
-        first = "solace_family" not in self._family_incoming
-        incoming, variant = self._incoming("solace_family")
-        if first and self._migration is None and variant == SOLACE_VARIANT_WOOSA:
-            # The Woosa Sleep row already answered the question.
-            return await self.async_step_solace_woosa()
-        choice = (user_input or {}).get("choice")
-        if choice == "keep":
-            if self._migration is not None:
-                return await self.async_step_migration_keep()
-            return await self._async_keep_detected("solace_family", self._async_finish_family_route)
-        if choice == "name_route":
-            self._select_family_route(BED_TYPE_SOLACE, VARIANT_AUTO)
-            return await self._async_finish_family_route()
-        if choice == "woosa":
-            return await self.async_step_solace_woosa()
-        if choice == "motion_bed":
-            self._select_family_route(BED_TYPE_MOTION_BED, None)
-            return await self.async_step_profile_questions()
-        if choice == "bedsense":
-            self._select_family_route(BED_TYPE_BEDSENSE, None)
-            return await self.async_step_profile_questions()
-        return self.async_show_form(
-            step_id="solace_family",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("choice"): SelectSelector(
-                        SelectSelectorConfig(
-                            options=["name_route", "woosa", "motion_bed", "bedsense", "keep"],
-                            translation_key="solace_family_choice",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-            description_placeholders={"current": bed_type_label(incoming)},
-        )
+        return await self._async_family_step(SOLACE_FAMILY, user_input)
 
     async def async_step_solace_woosa(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Say what Woosa Sleep controls differ before choosing it."""
         if user_input is not None:
-            self._select_family_route(BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA)
-            return await self._async_finish_family_route()
+            woosa = dataclasses.replace(SOLACE_FAMILY.answers["woosa"], step=None)
+            return await self._async_stage_answer(SOLACE_FAMILY, self._visit(SOLACE_FAMILY), woosa)
         return self.async_show_form(step_id="solace_woosa", data_schema=vol.Schema({}))
 
     async def async_step_leggett_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Ask which L&P app or remote runs the bed; each app has its own layout."""
-        if (another := await self._async_another_app(user_input)) is not None:
-            return another
-        assert self._manual_data is not None
-        data = self._manual_data
-        incoming, _variant = self._incoming("leggett_family")
-        choice = (user_input or {}).get("choice")
-        if choice == "keep":
-            if self._migration is not None:
-                return await self.async_step_migration_keep()
-            return await self._async_keep_detected("leggett_family", self._async_finish_family_route)
-        if choice in _LEGGETT_ROUTES:
-            bed_type, extra = _LEGGETT_ROUTES[choice]
-            variant: str | None = None
-            if incoming == BED_TYPE_LEGGETT_PLATT and bed_type in _LEGGETT_ALIAS_VARIANTS:
-                # The same route under its saved ID; never rewrite the ID.
-                bed_type, variant = BED_TYPE_LEGGETT_PLATT, _LEGGETT_ALIAS_VARIANTS[bed_type]
-            if bed_type != data[CONF_BED_TYPE]:
-                # The legacy app's and the QRRM remote's own settings mean
-                # nothing on another route.
-                for key in (*_LP_LEGACY_KEYS, CONF_RICHMAT_REMOTE):
-                    data.pop(key, None)
-            self._select_family_route(bed_type, variant)
-            data.update(extra)
-            if CONF_LEGGETT_APP_PROFILE in extra:
-                # The app's own layout.
-                data[CONF_MOTOR_COUNT] = LEGGETT_APP_MOTOR_COUNTS[extra[CONF_LEGGETT_APP_PROFILE]]
-                self._journey_set.add(CONF_MOTOR_COUNT)
-            elif CONF_LEGGETT_APP_PROFILE in data and not _is_leggett_app_type(
-                bed_type, variant
-            ):
-                data.pop(CONF_LEGGETT_APP_PROFILE)
-            if bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
-                return await self.async_step_profile_questions()
-            return await self._async_finish_family_route()
-        return self.async_show_form(
-            step_id="leggett_family",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("choice"): SelectSelector(
-                        SelectSelectorConfig(
-                            options=[*_LEGGETT_ROUTES, "keep"],
-                            translation_key="leggett_family_choice",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-            description_placeholders={"current": bed_type_label(incoming)},
-        )
+        return await self._async_family_step(LEGGETT_FAMILY, user_input)
 
     async def async_step_jensen_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Ask which app and bed a Jensen or Svane controller runs.
-
-        The JMC400 name and the LinonPI services each occur with both apps, so
-        they never decide the profile; the apps' own name rules only suggest it.
-        """
-        if (another := await self._async_another_app(user_input)) is not None:
-            return another
-        assert self._manual_data is not None
-        data = self._manual_data
-        incoming = self._incoming("jensen_family")
-        choice = (user_input or {}).get("choice")
-        if choice == "keep" and self._migration is not None:
-            return await self.async_step_migration_keep()
-        if isinstance(choice, str) and choice in _JENSEN_ROUTES:
-
-            self._select_family_route(*_JENSEN_ROUTES[choice])
-            # The form before this step was drawn for Svane, so a route with
-            # settings of its own asks them now.
-            return await self._async_continue_route()
-        # An unnamed advertisement reports the address as its name, which no
-        # name rule reads; the next source then names the bed.
-        advertised = (
-            self._discovery_info
-            if self._discovery_info is not None
-            else bluetooth.async_last_service_info(
-                self.hass, data[CONF_ADDRESS], connectable=False
-            )
-        )
-        name = next(
-            (
-                candidate
-                for candidate in (
-                    advertised.name if advertised is not None else None,
-                    data.get(CONF_BLE_DEVICE_NAME),
-                )
-                if isinstance(candidate, str) and candidate and not is_mac_like_name(candidate)
-            ),
-            None,
-        )
-        return self.async_show_form(
-            step_id="jensen_family",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        "choice", default=_jensen_suggestion(*incoming, name)
-                    ): SelectSelector(
-                        SelectSelectorConfig(
-                            options=[
-                                *_JENSEN_ROUTES,
-                                *(["keep"] if self._migration is not None else []),
-                            ],
-                            translation_key="jensen_family_choice",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-        )
+        """Ask which app and bed a Jensen or Svane controller runs."""
+        return await self._async_family_step(JENSEN_FAMILY, user_input)
 
     async def async_step_sleepys_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Ask which app or receiver runs a Sleepy's Elite bed; never infer it from the bed."""
-        if (another := await self._async_another_app(user_input)) is not None:
-            return another
-        from .profile_review import choice_label, suggested_apps
-
-        assert self._manual_data is not None
-        data = self._manual_data
-        incoming, _variant = self._incoming("sleepys_family")
-        # The apps the app review suggests for this route stay one answer away.
-        apps = [
-            app
-            for app in suggested_apps(self.hass, data)
-            if resolve_bed_type_choice(app)[0] not in SLEEPYS_FAMILY.bed_types
-        ]
-        # Keep saves the route detection or the saved setup chose; the family
-        # row alone chose no control box to keep.
-        can_keep = self._migration is not None or incoming != BED_TYPE_SLEEPYS_ELITE_APP
-        choice = (user_input or {}).get("choice")
-        if choice == "keep" and can_keep:
-            if self._migration is not None:
-                return await self.async_step_migration_keep()
-            return await self._async_keep_detected(
-                "sleepys_family", self._async_continue_sleepys_route
-            )
-        if choice in _SLEEPYS_ROUTES or choice in apps:
-            bed_type, variant = (
-                (_SLEEPYS_ROUTES[choice], None)
-                if choice in _SLEEPYS_ROUTES
-                else resolve_bed_type_choice(choice)
-            )
-            if bed_type != data[CONF_BED_TYPE]:
-                # A new route starts from its own defaults, never another
-                # route's control box or dialect.
-                data.pop(CONF_SLEEPYS_ELITE_SELECTOR, None)
-            self._select_family_route(bed_type, variant)
-            return await self._async_continue_sleepys_route()
-        options = [
-            *(SelectOptionDict(value=key, label=key) for key in _SLEEPYS_ROUTES),
-            *(SelectOptionDict(value=app, label=choice_label(app)) for app in apps),
-            *([SelectOptionDict(value="keep", label="keep")] if can_keep else []),
-        ]
-        return self.async_show_form(
-            step_id="sleepys_family",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("choice"): SelectSelector(
-                        SelectSelectorConfig(
-                            options=options,
-                            translation_key="sleepys_family_choice",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-            description_placeholders={"current": bed_type_label(incoming)},
-        )
-
-    async def _async_continue_sleepys_route(self) -> ConfigFlowResult:
-        """Ask what the staged route still needs, then finish it."""
-
-        assert self._manual_data is not None
-        data = self._manual_data
-        step = _APP_SETUP_STEPS.get(data[CONF_BED_TYPE])
-        if step is not None and step != "sleepys_family":
-            # A suggested app's own step owns its settings.
-            return await getattr(self, f"async_step_{step}")()
-        return await self._async_continue_route()
+        return await self._async_family_step(SLEEPYS_FAMILY, user_input)
 
     async def async_step_customatic_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Ask which Customatic app runs the bed, and for Z-Series the model."""
-        return await self._async_app_family("customatic_family", _CUSTOMATIC_APPS, user_input)
+        return await self._async_family_step(CUSTOMATIC_FAMILY, user_input)
 
     async def async_step_jordans_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Ask which Jordan's app runs the bed."""
-        return await self._async_app_family("jordans_family", _JORDANS_APPS, user_input)
+        return await self._async_family_step(JORDANS_FAMILY, user_input)
 
     async def async_step_starcode_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Ask which StarCode app runs the bed, then that app's own settings."""
-        return await self._async_app_family("starcode_family", _STARCODE_APPS, user_input)
+        return await self._async_family_step(STARCODE_FAMILY, user_input)
 
     async def async_step_reverie_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Confirm the Reverie receiver from the service the bed advertises."""
-        return await self._async_service_family("reverie_family", _REVERIE_ROUTES, user_input)
+        return await self._async_family_step(REVERIE_FAMILY, user_input)
 
     async def async_step_sleep_number_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Confirm the Sleep Number transport from the service the bed advertises."""
-        return await self._async_service_family(
-            "sleep_number_family", _SLEEP_NUMBER_ROUTES, user_input
-        )
-
-    async def _async_service_family(
-        self,
-        step_id: str,
-        routes: Mapping[str, tuple[str, str]],
-        user_input: dict[str, Any] | None,
-    ) -> ConfigFlowResult:
-        """Confirm a family's route from the service the bed advertises.
-
-        The receiver's service, not the app or name, decides the route. Only a
-        bed whose advertisement shows none of the services, or several, is
-        asked. The first route is the family's picker row.
-        """
-        if (another := await self._async_another_app(user_input)) is not None:
-            return another
-
-        assert self._manual_data is not None
-        data = self._manual_data
-        incoming, _variant = self._incoming(step_id)
-        info = self._discovery_info or bluetooth.async_last_service_info(
-            self.hass, data[CONF_ADDRESS], connectable=False
-        )
-        advertised = {uuid.lower() for uuid in (info.service_uuids if info else ())}
-        confirmed = [key for key, (_bed_type, service) in routes.items() if service in advertised]
-        choice = (user_input or {}).get("choice")
-        if choice is None and len(confirmed) == 1:
-            choice = confirmed[0]
-        if choice == "keep" or (isinstance(choice, str) and choice in routes):
-            if choice != "keep":
-                self._select_family_route(routes[choice][0], None)
-            if choice == "keep" and self._migration is None:
-                return await self._async_keep_detected(step_id, self._async_continue_route)
-            return await self._async_continue_route()
-        # A route detection or the saved setup chose stays one answer away.
-        can_keep = incoming != next(iter(routes.values()))[0]
-        return self.async_show_form(
-            step_id=step_id,
-            data_schema=vol.Schema(
-                {
-                    vol.Required("choice"): SelectSelector(
-                        SelectSelectorConfig(
-                            options=[*routes, *(["keep"] if can_keep else [])],
-                            translation_key=f"{step_id}_choice",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-        )
+        return await self._async_family_step(SLEEP_NUMBER_FAMILY, user_input)
 
     async def async_step_richmat_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Ask which Richmat app or remote runs the bed; shared names and services cannot tell.
-
-        An app chosen elsewhere, such as from a brand's list, already answered.
-        """
-        if (another := await self._async_another_app(user_input)) is not None:
-            return another
-        assert self._manual_data is not None
-        data = self._manual_data
-        first = "richmat_family" not in self._family_incoming
-        if first and self._incoming("richmat_family")[0] != BED_TYPE_RICHMAT:
-            return await self._async_continue_richmat_route()
-        choice = (user_input or {}).get("choice")
-        if isinstance(choice, str) and choice in _RICHMAT_APPS:
-            bed_type, variant = _RICHMAT_APPS[choice]
-            self._select_family_route(bed_type, variant)
-            if bed_type == BED_TYPE_RICHMAT:
-                # RMControl still names its product; the remote controls have none.
-                data[CONF_RMCONTROL_PRODUCT] = None if choice == "rmcontrol" else ""
-            else:
-                for key in (CONF_RMCONTROL_PRODUCT, CONF_RMCONTROL_SIDE, CONF_RICHMAT_REMOTE):
-                    data.pop(key, None)
-            return await self._async_continue_richmat_route()
-        return self.async_show_form(
-            step_id="richmat_family",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("choice"): SelectSelector(
-                        SelectSelectorConfig(
-                            options=list(_RICHMAT_APPS),
-                            translation_key="richmat_family_choice",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-        )
-
-    async def _async_continue_richmat_route(self) -> ConfigFlowResult:
-        """Stage what the chosen Richmat route reads from the bed's name, then ask its questions."""
-        assert self._manual_data is not None
-        data = self._manual_data
-        bed_type = data[CONF_BED_TYPE]
-        info = self._discovery_info or bluetooth.async_last_service_info(
-            self.hass, data[CONF_ADDRESS], connectable=False
-        )
-        name = info.name if info is not None else None
-        if bed_type in RICHMAT_MH_APPS:
-            # The app's name rule reads the raw advertised name.
-            data.update(_name_rule_setup_name(bed_type, name))
-        elif bed_type == BED_TYPE_RICHMAT and CONF_RICHMAT_REMOTE not in data:
-            # A listed code the name carries is the default; an unlisted one is
-            # kept as detected.
-            code = detect_richmat_remote_from_name(name)
-            data[CONF_RICHMAT_REMOTE] = (
-                code.upper()
-                if code and code.upper() in RICHMAT_REMOTES
-                else code or RICHMAT_REMOTE_AUTO
-            )
-        return await self.async_step_profile_questions()
+        """Ask which Richmat app or remote runs the bed; shared names and services cannot tell."""
+        return await self._async_family_step(RICHMAT_FAMILY, user_input)
 
     async def async_step_remacro_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Ask which store app runs a Remacro bed, offering the apps that list its model.
-
-        The advertisement picks the model, never the app. A model no app lists,
-        or none seen yet, runs the fallback controls on any app.
-        """
-        if (another := await self._async_another_app(user_input)) is not None:
-            return another
-        from .beds.remacro_protocol import (
-            MODELS,
-            advertised_model_id,
-            app_for_variant,
-            apps_listing,
-        )
-
-        assert self._manual_data is not None
-        data = self._manual_data
-        manufacturer_data = remacro_manufacturer_data(
-            self.hass,
-            data[CONF_ADDRESS],
-            self._discovery_info.manufacturer_data if self._discovery_info is not None else None,
-        )
-        model_id = advertised_model_id(manufacturer_data)
-        listing = apps_listing(model_id)
-        apps = [
-            key
-            for key, variant in _REMACRO_APPS.items()
-            if not listing or app_for_variant(variant) in listing
-        ]
-        choice = (user_input or {}).get("choice")
-        if isinstance(choice, str) and choice in apps:
-            # The bed type stays; only the app changes, so the form's settings stay.
-            data[CONF_PROTOCOL_VARIANT] = _REMACRO_APPS[choice]
-            self._manual_data = self._maybe_add_advertisement_metadata(
-                data, manufacturer_data=manufacturer_data
-            )
-            return await self._async_finish_family_route()
-        model = (
-            "none seen yet"
-            if model_id is None
-            else MODELS[model_id].name
-            if model_id in MODELS
-            else f"company ID {model_id}"
-        )
-        return self.async_show_form(
-            step_id="remacro_family",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("choice"): SelectSelector(
-                        SelectSelectorConfig(
-                            options=apps,
-                            translation_key="remacro_family_choice",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-            description_placeholders={"model": model},
-        )
+        """Ask which store app runs a Remacro bed, offering the apps that list its model."""
+        return await self._async_family_step(REMACRO_FAMILY, user_input)
 
     async def async_step_limoss_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Ask which app runs a Limoss receiver, or keep its generic controls."""
-        return await self._async_app_family(
-            "limoss_family", _LIMOSS_APPS, user_input, row=BED_TYPE_LIMOSS
-        )
+        return await self._async_family_step(LIMOSS_FAMILY, user_input)
 
-    async def _async_app_family(
-        self,
-        step_id: str,
-        apps: Mapping[str, _AppAnswer],
-        user_input: dict[str, Any] | None,
-        *,
-        row: str | None = None,
+    async def _async_family_step(
+        self, family: AppFamily, user_input: dict[str, Any] | None
     ) -> ConfigFlowResult:
-        """Ask which app of a family runs the bed; the apps share names and services.
+        """Ask a family's question from its declaration (``app_families.py``).
 
-        Only the family row asks: an app chosen elsewhere, such as from a brand's
-        list, already answered. A guided change asks again and offers Keep. The
-        row is the first answer's route unless given.
+        A discovered bed's question also offers every other app. A route the
+        question already settled continues; Keep keeps the saved or detected
+        route; an answer stages its route and the settings it names.
         """
         if (another := await self._async_another_app(user_input)) is not None:
             return another
-        assert self._manual_data is not None
-        data = self._manual_data
-        row = row or next(iter(apps.values()))[0]
-        # Another family's guided change can hand over a suggested app.
-        guided = self._migration_family is not None and self._migration_family.key == step_id
-        first = step_id not in self._family_incoming
-        # An app's own row, or a route arriving from another family,
-        # already answered.
-        if first and not guided and self._incoming(step_id)[0] != row:
+        visit = self._visit(family)
+        if family.settled(visit):
             return await self._async_continue_route()
-        choice = (user_input or {}).get("choice")
-        if choice == "keep" and guided:
-            return await self.async_step_migration_keep()
-        if isinstance(choice, str) and choice in apps:
-            bed_type, variant = apps[choice]
-            changed = bed_type != data[CONF_BED_TYPE]
-            self._select_family_route(bed_type, variant)
-            if changed:
-                # A new app starts without the old one's own settings, as in Configure.
-                AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(data, bed_type)  # noqa: SLF001
-            return await self._async_continue_route()
+        offered = family.offered(visit)
+        choice = (user_input or {}).get(family.field)
+        if choice is None:
+            choice = family.preselect(visit)
+        if isinstance(choice, str) and (answer := offered.get(choice)) is not None:
+            if answer.keep:
+                if visit.guided:
+                    return await self.async_step_migration_keep()
+                return await self._async_keep_detected(
+                    family.step,
+                    self._async_finish_family_route
+                    if family.keep_then is Then.FINISH
+                    else self._async_continue_route,
+                )
+            if answer.step is not None:
+                self._narrowing = (family, answer)
+                return await getattr(self, f"async_step_{answer.step}")()
+            return await self._async_stage_answer(family, visit, answer)
+        options: list[str] | list[SelectOptionDict] = (
+            list(offered)
+            if family.form is Form.KEYS
+            else [
+                SelectOptionDict(
+                    value=key,
+                    label=answer.label or (family.keep_label if answer.keep else key),
+                )
+                for key, answer in offered.items()
+            ]
+        )
+        selector = SelectSelector(
+            SelectSelectorConfig(options=options, mode=SelectSelectorMode.DROPDOWN)
+            if family.form is Form.DROPDOWN
+            else SelectSelectorConfig(
+                options=options,
+                translation_key=f"{family.step}_choice",
+                mode=SelectSelectorMode.LIST,
+            )
+        )
+        marker = (
+            vol.Required(family.field, default=family.suggest(visit))
+            if family.suggest is not None
+            else vol.Required(family.field)
+        )
         return self.async_show_form(
-            step_id=step_id,
-            data_schema=vol.Schema(
-                {
-                    vol.Required("choice"): SelectSelector(
-                        SelectSelectorConfig(
-                            options=[*apps, *(["keep"] if guided else [])],
-                            translation_key=f"{step_id}_choice",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
+            step_id=family.step,
+            data_schema=vol.Schema({marker: selector}),
+            description_placeholders=(
+                family.placeholders(visit) if family.placeholders is not None else None
             ),
         )
+
+    def _visit(self, family: AppFamily) -> Visit:
+        """Return what the family's question knows now, recording where it started."""
+        assert self._manual_data is not None
+        first = family.step not in self._family_incoming
+        return Visit(
+            hass=self.hass,
+            family=family,
+            data=self._manual_data,
+            incoming=self._incoming(family.step),
+            first=first,
+            guided=self._migration is not None,
+            guiding=self._migration_family is family,
+            saved=self._migration.data if self._migration is not None else None,
+            discovery=self._discovery_info,
+        )
+
+    async def _async_stage_answer(
+        self, family: AppFamily, visit: Visit, answer: Answer
+    ) -> ConfigFlowResult:
+        """Stage an answer's route and settings, ask its own questions, then continue."""
+        assert self._manual_data is not None
+        data = self._manual_data
+        answer = family.saved_id(visit.incoming[0], answer)
+        changed = family.changes_route(data, answer)
+        if changed:
+            for key in family.clears:
+                data.pop(key, None)
+        if answer.keeps_settings:
+            self._migration_verified = False
+            self._migration_preview = {}
+            data[CONF_BED_TYPE] = answer.bed_type
+            if answer.variant is not None:
+                data[CONF_PROTOCOL_VARIANT] = answer.variant
+        else:
+            self._select_family_route(answer.bed_type, answer.variant)
+        if changed and family.clears_other_profiles:
+            # A new app starts without the old one's own settings, as in Configure.
+            AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(data, answer.bed_type)  # noqa: SLF001
+        for key, value in answer.data.items():
+            if value is REMOVED:
+                data.pop(key, None)
+                continue
+            data[key] = value
+            if key in GENERIC_FIELDS:
+                self._journey_set.add(key)
+        if (ask := answer.ask) is None:
+            return await self._async_then(family, answer)
+
+        async def answered(answers: Mapping[str, Any]) -> ConfigFlowResult:
+            assert self._manual_data is not None
+            if CONF_PROTOCOL_VARIANT in answers:
+                self._select_family_route(answer.bed_type, answers[CONF_PROTOCOL_VARIANT])
+            asked = {key: value for key, value in answers.items() if key != CONF_PROTOCOL_VARIANT}
+            self._manual_data.update(asked)
+            self._journey_set.update(asked.keys() & GENERIC_FIELDS)
+            self._manual_data.update(ask.settled(self._manual_data))
+            return await self._async_then(family, answer)
+
+        return await self._async_ask(ask, answered)
+
+    async def _async_then(self, family: AppFamily, answer: Answer) -> ConfigFlowResult:
+        """Continue after an answer: its route's questions, its own app question, or finish."""
+        assert self._manual_data is not None
+        if answer.then is Then.FINISH:
+            return await self._async_finish_family_route()
+        if answer.then is Then.OWN_STEP:
+            step = _APP_SETUP_STEPS.get(self._manual_data[CONF_BED_TYPE])
+            if step is not None and step != family.step:
+                return await getattr(self, f"async_step_{step}")()
+        return await self._async_continue_route()
 
     async def _async_continue_route(self) -> ConfigFlowResult:
         """Ask the staged route's declared questions, if it has any, then finish it."""
@@ -3864,56 +2805,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     async def async_step_malouf_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Ask which app or receiver runs a Malouf or Lucid bed; never infer it from the bed.
-
-        Shared services and retail names identify neither the app nor the hardware.
-        """
-        if (another := await self._async_another_app(user_input)) is not None:
-            return another
-        assert self._manual_data is not None
-        data = self._manual_data
-        incoming, _variant = self._incoming("malouf_family")
-        # Keep saves the receiver detection or the saved setup chose; the family
-        # row alone chose no app to keep.
-        can_keep = self._migration is not None or incoming != BED_TYPE_MALOUF_APP
-        choice = (user_input or {}).get("choice")
-        if choice == "keep" and can_keep:
-            if self._migration is not None:
-                return await self.async_step_migration_keep()
-            return await self._async_keep_detected(
-                "malouf_family", self.async_step_profile_questions
-            )
-        if isinstance(choice, str) and choice in _MALOUF_ROUTES:
-            bed_type, app = _MALOUF_ROUTES[choice]
-            if (bed_type, app) != (data[CONF_BED_TYPE], data.get(CONF_MALOUF_APP_PROFILE)):
-                # Another app or receiver starts from its own defaults, never
-                # another app's model, role or transport.
-                for key in (
-                    CONF_MALOUF_APP_PROFILE,
-                    CONF_MALOUF_APP_MODEL,
-                    CONF_MALOUF_APP_TRANSPORT,
-                    CONF_MALOUF_APP_PRIMARY,
-                ):
-                    data.pop(key, None)
-            self._select_family_route(bed_type, None)
-            if app is not None:
-                data[CONF_MALOUF_APP_PROFILE] = app
-            return await self.async_step_profile_questions()
-        return self.async_show_form(
-            step_id="malouf_family",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("choice"): SelectSelector(
-                        SelectSelectorConfig(
-                            options=[*_MALOUF_ROUTES, *(["keep"] if can_keep else [])],
-                            translation_key="malouf_family_choice",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-            description_placeholders={"current": bed_type_label(incoming)},
-        )
+        """Ask which app or receiver runs a Malouf or Lucid bed; never infer it from the bed."""
+        return await self._async_family_step(MALOUF_FAMILY, user_input)
 
     @staticmethod
     def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
@@ -3938,12 +2831,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         ) = None
         # Guided change of an existing entry (profile_migration).
         self._migration: MigrationSnapshot | None = None
-        self._migration_family: ManagedFamily | None = None
+        self._migration_family: AppFamily | None = None
         self._migration_verified = False
         self._migration_endpoints_checked = False
         # The route each family question started from, by its step.
         self._family_incoming: dict[str, tuple[str, str]] = {}
-        self._keeson_group: str | None = None
+        # The family and answer a narrowing step, such as keeson_app, expands.
+        self._narrowing: tuple[AppFamily, Answer] | None = None
         # What the connection check resolved for the staged route, for the
         # confirm step's control list only.
         self._migration_preview: dict[str, Any] = {}
@@ -4036,7 +2930,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         seen: set[str] = set()
         disambiguation_types: list[str] = []
         for candidate in (bed_type, *(detection_result.ambiguous_types or ())):
-            if candidate in _VIBRADORM_FAMILY_TYPES:
+            if candidate in VIBRADORM_FAMILY.asks:
                 candidate = BED_TYPE_VIBRADORM
             if candidate not in seen:
                 seen.add(candidate)
@@ -4621,8 +3515,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 return await self.async_step_bluetooth_disambiguate()
             if detected is None:
                 return await self._async_search_every_app()
-            if (question := _APP_SETUP_STEPS.get(detected)) in _APP_QUESTION_STEPS:
+            if (family := question_family(detected)) is not None:
                 # The family's question is this bed's app question.
+                question = family.step
                 self._another_app_step = question
                 result = await self._async_start_new_bed(detected, None)
                 if result.get("type") is not FlowResultType.FORM or result.get("step_id") == question:
@@ -4691,7 +3586,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     def _reset_family_state(self) -> None:
         """Forget the route each family question started from, for a new journey."""
         self._family_incoming.clear()
-        self._keeson_group = None
+        self._narrowing = None
         self._asking = None
 
     async def _async_ask(
@@ -8616,7 +7511,7 @@ class AdjustableBedOptionsFlow(
             original_type = self.config_entry.data.get(CONF_BED_TYPE)
             selected_type = user_input.get(CONF_BED_TYPE, original_type)
             family = next(
-                (family for family in MANAGED_FAMILIES if original_type in family.bed_types),
+                (family for family in GUIDED_FAMILIES if original_type in family.managed),
                 None,
             )
             original_profile = {**self.config_entry.data, **self.config_entry.options}
@@ -8636,7 +7531,7 @@ class AdjustableBedOptionsFlow(
             if (
                 not separate_address_pair
                 and family is not None
-                and selected_type in family.bed_types
+                and selected_type in family.managed
                 and (
                     selected_type != original_type
                     or any(

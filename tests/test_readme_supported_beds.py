@@ -11,11 +11,11 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from custom_components.adjustable_bed.app_families import FAMILY_STEP_ROUTES
 from custom_components.adjustable_bed.const import BED_TYPE_DIAGNOSTIC, SUPPORTED_BED_TYPES
 from custom_components.adjustable_bed.detection import (
     APP_VARIANT_CHOICES,
     BED_TYPE_DISPLAY_NAMES,
-    FAMILY_STEP_ROUTES,
     get_bed_type_options,
 )
 

@@ -469,9 +469,9 @@ async def test_paired_bed_explains_splitting_instead_of_switching(
 def test_every_offered_app_is_a_selectable_profile() -> None:
     selectable = {option["value"] for option in get_bed_type_options()}
     offered = {choice for route in _ROUTE_APPS for choice in route.choices}
+    from custom_components.adjustable_bed.app_families import FAMILY_STEP_ROUTES
     from custom_components.adjustable_bed.const import BED_TYPE_VIBRADORM
     from custom_components.adjustable_bed.detection import (
-        FAMILY_STEP_ROUTES,
         HIDDEN_APP_CHOICES,
     )
 

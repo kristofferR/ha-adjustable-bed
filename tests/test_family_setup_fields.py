@@ -19,9 +19,9 @@ from homeassistant.const import CONF_ADDRESS
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.app_families import APP_FAMILIES, GUIDED_FAMILIES
 from custom_components.adjustable_bed.config_flow import (
     _APP_SETUP_STEPS,
-    _FAMILY_STEPS,
     _SETUP_ROUTE_EXCLUSIONS,
     AdjustableBedConfigFlow,
     _bed_type_selector,
@@ -38,10 +38,7 @@ from custom_components.adjustable_bed.detection import (
     resolve_bed_type_choice,
 )
 from custom_components.adjustable_bed.profile_id import app_profile_key, resolve_profile_id
-from custom_components.adjustable_bed.profile_migration import (
-    MANAGED_FAMILIES,
-    reconfigure_family,
-)
+from custom_components.adjustable_bed.profile_migration import reconfigure_family
 from custom_components.adjustable_bed.setup_questions import setup_profile_for
 from custom_components.adjustable_bed.validators import (
     get_variants_for_bed_type,
@@ -54,11 +51,10 @@ from tests.form_helpers import options_of as _options
 from tests.test_controller_contract import _FactoryCoordinator, _make_connected_client
 
 ADDRESS = "11:22:33:44:55:66"
-# Steps that pick the route, by the field that picks it. The family steps ask
-# "choice", except Vibradorm's.
+# Steps that pick the route, by the field that picks it.
 _ROUTE_STEPS = {
-    **dict.fromkeys(_FAMILY_STEPS | {"logicdata_family", "starcode_family", "keeson_app"}, "choice"),
-    "vibradorm": "app",
+    **{family.step: family.field for family in APP_FAMILIES},
+    "keeson_app": "choice",
 }
 
 
@@ -311,11 +307,11 @@ async def _family_routes(hass, row: str) -> dict[str, dict[str, Any]]:
 
 def _configure_routes(data: dict[str, Any]) -> set[str]:
     """The routes Configure lists by name, outside the entry's guided family."""
-    family = next((f for f in MANAGED_FAMILIES if data[const.CONF_BED_TYPE] in f.bed_types), None)
+    family = next((f for f in GUIDED_FAMILIES if data[const.CONF_BED_TYPE] in f.managed), None)
     routes = set()
     for choice in _bed_type_selector(_route(data), show_saved_id=True).rows().values():
         bed_type, variant = resolve_bed_type_choice(choice)
-        if family is not None and bed_type in family.bed_types:
+        if family is not None and bed_type in family.managed:
             # Configure sends a change within a guided family to Reconfigure.
             continue
         variants = [variant] if variant else [None, *(get_variants_for_bed_type(bed_type) or {})]

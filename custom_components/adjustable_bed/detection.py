@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 
 from bleak.exc import BleakError
 
+from .app_families import FAMILY_STEP_ROUTES, family_row_label
 from .cluster018_discovery import matching_apps as cluster018_matching_apps
 from .cluster018_profiles import APP_NAMES as CLUSTER018_APPS
 from .const import (
@@ -222,7 +223,6 @@ from .const import (
     REVERIE_NIGHTSTAND_SERVICE_UUID,
     REVERIE_PAIRLINK_SERVICE_UUID,
     REVERIE_SERVICE_UUID,
-    RICHMAT_MH_BED_TYPES,
     RICHMAT_NAME_PATTERNS,
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_WILINKE_SERVICE_UUIDS,
@@ -725,124 +725,6 @@ def resolve_bed_type_choice(choice: str) -> tuple[str, str | None]:
     if separator and (bed_type, variant) in APP_VARIANT_CHOICES:
         return bed_type, variant
     return choice, None
-
-
-# Routes reached through their family's one picker row and family step.
-FAMILY_STEP_ROUTES: Final = frozenset(
-    {
-        BED_TYPE_VIBRADORM_APP,
-        BED_TYPE_VMATBASIC,
-        BED_TYPE_JIECANG,
-        BED_TYPE_COMFORT_MOTION,
-        BED_TYPE_OKIN_UUID,
-        BED_TYPE_OKIN_DOT,
-        BED_TYPE_OKIN_RF_ECO_BT,
-        BED_TYPE_LEGGETT_GEN2,
-        BED_TYPE_LEGGETT_WILINKE,
-        BED_TYPE_SLEEPYS_BOX15,
-        BED_TYPE_SLEEPYS_BOX24,
-        BED_TYPE_SLEEPYS_BOX25,
-        BED_TYPE_JENSEN,
-        BED_TYPE_MALOUF_NEW_OKIN,
-        BED_TYPE_MALOUF_LEGACY_OKIN,
-        BED_TYPE_CUSTOMATIC_JEROMES,
-        BED_TYPE_CUSTOMATIC_REMEDY,
-        BED_TYPE_TRANQUIL,
-        BED_TYPE_STARCODE_M5X5,
-        BED_TYPE_STARCODE_M1X12,
-        BED_TYPE_LOGICDATA,
-        BED_TYPE_LOGICDATA_AIR_PUMP,
-        BED_TYPE_REVERIE,
-        *RICHMAT_MH_BED_TYPES,
-        BED_TYPE_SLEEP_NUMBER_MCR,
-        BED_TYPE_LIMOSS_REMOTE,
-        BED_TYPE_FSM_RELAX,
-    }
-)
-# Each family's one row: the family, and the apps and routes behind it. The
-# picker shows "<apps> · <family>"; saved entries keep their own route's label.
-FAMILY_ROWS: Final[dict[str, tuple[str, str]]] = {
-    BED_TYPE_FURNIMOVE: (
-        "Okin",
-        "FurniMove / OKIN Smart Remote app, Okimat, Lucid, DOT and RF ECO BT remotes",
-    ),
-    BED_TYPE_LEGGETT_OKIN: (
-        "Leggett & Platt",
-        "Prodigy CE, Prodigy 2, Prodigy 2L, U Series, LP Control and L&P Adjustable Base apps",
-    ),
-    BED_TYPE_SLEEPYS_ELITE_APP: (
-        "Sleepy's Elite",
-        "MFRM Sleepy's Elite app, BOX15, BOX24 and BOX25 receivers",
-    ),
-    BED_TYPE_MALOUF_APP: (
-        "Malouf / Lucid",
-        "Malouf Base and Lucid Base apps, Nordic UART and FFE5 receivers",
-    ),
-    BED_TYPE_CUSTOMATIC_CLARITY: (
-        "Customatic",
-        "Clarity (Rize Clarity), Jerome's C, Remedy (Rize Remedy) and Z-Series apps",
-    ),
-    BED_TYPE_SERENITY: ("Jordan's", "Serenity and Tranquil apps"),
-    BED_TYPE_LOGICDATA_APP: (
-        "LOGICDATA",
-        (
-            "SILVERmotion (SimplicityFrame), MOTIONrelax phone and tablet, and Sleep Smart Air "
-            "Mattress apps"
-        ),
-    ),
-    BED_TYPE_SVANE: (
-        "Jensen / Svane",
-        "Jensen Adjustable Sleep app (JMC400 and LinOn beds) and Svane Remote app",
-    ),
-    BED_TYPE_STARCODE_ABM5_4: (
-        "StarCode",
-        "AdjustableM5X4, AdjustableM5X5 and Adjustable Comfort M1X12 apps",
-    ),
-    BED_TYPE_REMACRO: ("Remacro", "Slumberland, The Brick and Jerome's apps"),
-    BED_TYPE_REVERIE_NIGHTSTAND: (
-        "Reverie",
-        "Nightstand app, Protocol 110 and Protocol 108 receivers",
-    ),
-    BED_TYPE_RICHMAT: (
-        "Richmat",
-        (
-            "RMControl, Revive Control, Best Mattress, Blvd Home, HARMONY, Idealbed, "
-            "RUF | Betten (Motor 2), W.Silver Products, AMERICANSTAR, Bailey's Bed Control, TX, "
-            "Avocado Eco Base, CoasterSleep, Forty Winks, Milemont, Superior, SleepFunction and "
-            "SVEN & SON apps, and Richmat remotes"
-        ),
-    ),
-    BED_TYPE_SLEEP_NUMBER: (
-        "Sleep Number",
-        "SleepIQ app, Fuzion (Climate 360, FlexFit) and BAM/MCR (i8, 360 FlexFit 2) bases",
-    ),
-    BED_TYPE_LIMOSS: (
-        "Limoss / Stawett",
-        "Limoss Remote and FSM Relax apps, Stawett and older Limoss controls",
-    ),
-    BED_TYPE_KEESON: (
-        "Keeson",
-        "Member's Mark, Purple, Sleep Harmony and Linx / Juna Sleep apps, some Ergomotion Sync beds",
-    ),
-    BED_TYPE_SOLACE: ("Solace", "HomeKobo, Sealy MotionFlex and Sweet Night apps"),
-    BED_TYPE_JIECANG_APP: (
-        "Jiecang",
-        (
-            "ERGOBALANCE, Dream Motion, Dream Motion HD and Comfort Motion apps, Glide and Lierda"
-            " remotes"
-        ),
-    ),
-    BED_TYPE_VIBRADORM: ("Vibradorm", "VMAT, Caresse Diamant, Werkmeister, V-MAT Basic"),
-}
-FAMILY_ROW_SEPARATOR: Final = " · "
-
-
-def family_row_label(bed_type: str) -> str | None:
-    """Return a family row's picker label, "<apps> · <family>", or None."""
-    if (row := FAMILY_ROWS.get(bed_type)) is None:
-        return None
-    family, apps = row
-    return f"{apps}{FAMILY_ROW_SEPARATOR}{family}"
 
 
 def bed_type_label(bed_type: str | None) -> str:

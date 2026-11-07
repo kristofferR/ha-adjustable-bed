@@ -744,7 +744,7 @@ def _reviews_within_guided_family(
     candidates = (recommendation.suggested,) if recommendation.suggested else recommendation.choices
     return bool(candidates) and all(
         not choice.startswith(_REMOTE_PREFIX)
-        and choice.partition(":")[0] in family.bed_types
+        and choice.partition(":")[0] in family.managed
         for choice in candidates
     )
 

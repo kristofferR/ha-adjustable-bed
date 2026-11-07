@@ -23,6 +23,7 @@ from custom_components.adjustable_bed.const import (
     CONF_PAIR_MODE,
     CONF_PROTOCOL_VARIANT,
     CONF_SIDE,
+    CONF_STAIRCASE_LAYOUT_CONFIRMED,
     DOMAIN,
     PAIR_MODE_SEPARATE_ADDRESS,
     SIDE_LEFT,
@@ -32,7 +33,6 @@ from custom_components.adjustable_bed.furnimove_repair import (
     CONF_FURNIMOVE_ROUTE_KEPT,
     CONF_OKIMAT_MODEL_ON_CST,
     CONF_OKIN_CST_KEPT,
-    CONF_STAIRCASE_LAYOUT_CONFIRMED,
     FurniMoveLayoutRepairFlow,
     async_refresh_furnimove_layout_issues,
 )
