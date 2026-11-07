@@ -9,8 +9,6 @@ snapshot's Good Vibe sleep routes.
 
 from __future__ import annotations
 
-import json
-
 import pytest
 
 from custom_components.adjustable_bed.casper_base_protocol import Request
@@ -160,16 +158,15 @@ def test_responses_are_sized_by_the_low_length_byte() -> None:
     assert sleep_envelope.response_size(packet[:12]) is None
 
 
-def test_each_app_keeps_its_own_limits() -> None:
-    # Casper's hex-string length field keeps four leading digits above 0xFFFF.
-    long = {"x": "a" * 0x10000}
-    header = bytes.fromhex("000101000f000011034355440010")
-    assert envelope(long, 1)[:14] == header
-    body = json.dumps(long, separators=(",", ":")).encode()
-    assert sleep_envelope.frame(body, 1)[:14] == header[:12] + b"\x08\x00"
-    # Good Vibe rejects what the codec would mask.
+def test_bodies_longer_than_the_length_field_are_rejected() -> None:
+    assert len(sleep_envelope.frame(b"a" * 0xFFFF, 1)) == 0xFFFF + sleep_envelope.HEADER_SIZE
+    with pytest.raises(ValueError, match="16-bit length"):
+        sleep_envelope.frame(b"a" * 0x10000, 1)
+    with pytest.raises(ValueError, match="16-bit length"):
+        envelope({"x": "a" * 0x10000}, 1)
+    with pytest.raises(ValueError, match="16-bit length"):
+        sleep_packet(1, "s_time", "a" * 0x10000)
+    # Good Vibe keeps its own sequence range.
     for sequence in (0, 255):
         with pytest.raises(ValueError, match="Sequence"):
             sleep_packet(sequence, "q_realtime", None)
-    with pytest.raises(ValueError, match="frame length"):
-        sleep_packet(1, "s_time", "a" * 0x10000)

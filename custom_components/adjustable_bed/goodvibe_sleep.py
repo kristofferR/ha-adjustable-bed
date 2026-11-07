@@ -16,7 +16,7 @@ from .goodvibe_schemas import parse_schema
 
 
 def sleep_packet(sequence: int, command: str, value: object) -> bytes:
-    """The ordinary request, with the app's sequence and length limits."""
+    """The ordinary request, with the app's sequence limit."""
     if not 1 <= sequence <= 254:
         raise ValueError("Sequence must be 1–254")
     body = json.dumps(
@@ -25,8 +25,6 @@ def sleep_packet(sequence: int, command: str, value: object) -> bytes:
         separators=(",", ":"),
         allow_nan=False,
     ).encode()
-    if len(body) > 65535:
-        raise ValueError("Sleep payload exceeds the supported ordinary frame length")
     return sleep_envelope.frame(body, sequence)
 
 
