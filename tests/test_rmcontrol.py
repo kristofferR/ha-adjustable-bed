@@ -537,7 +537,8 @@ async def test_reconnect_waits_for_delayed_menu_capabilities() -> None:
     await ctrl.rmcontrol_anti_snore_switch(True)
 
 
-async def test_missing_capability_reply_times_out_and_late_reply_still_enables() -> None:
+async def test_unanswered_light_probe_completes_discovery_and_late_reply_still_enables() -> None:
+    """A bed without a light never answers; discovery ends so the entity sweep can run."""
     ctrl = controller("6ERM", nordic=True)
     client = ctrl._coordinator.client
     client.start_notify = AsyncMock()
@@ -546,7 +547,9 @@ async def test_missing_capability_reply_times_out_and_late_reply_still_enables()
     with patch("custom_components.adjustable_bed.beds.rmcontrol._CAPABILITY_TIMEOUT", 0):
         await ctrl.start_notify()
     assert not ctrl.supports_light_color_control
-    assert not ctrl.controller_entity_discovery_complete
+    assert ctrl.controller_entity_discovery_complete
+    # The sweep keeps the light rows a late reply would bring back.
+    assert {("select", "light_timer"), ("light", "under_bed_lights")} <= ctrl.retained_entity_keys
     assert ctrl._notify_uuid is not None
     ctrl._accept_notification(Notification("capability", {"light": True}))
     assert ctrl.supports_light_color_control

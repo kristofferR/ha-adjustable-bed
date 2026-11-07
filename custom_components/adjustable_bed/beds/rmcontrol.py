@@ -204,10 +204,11 @@ class RmcontrolController(RichmatController):
 
     @property
     def controller_entity_discovery_complete(self) -> bool:
-        """Return whether probes that gate controller entities have answered."""
-        # Alarm and sleep-advertisement replies only gate services and telemetry.
-        # A missing light reply can still hide a light or timer select, so keep
-        # pairing/reload blocked only while that entity-bearing probe is pending.
+        """Return whether probes that gate controller entities have finished.
+
+        Alarm and sleep-advertisement replies only gate services and telemetry.
+        The light probe finishes when the bed answers or its timeout expires.
+        """
         return "light" not in self._pending_capabilities
 
     @property
@@ -935,9 +936,12 @@ class RmcontrolController(RichmatController):
                 async with asyncio.timeout(_CAPABILITY_TIMEOUT):
                     await self._capabilities_ready.wait()
             except TimeoutError:
-                # Some beds omit optional menu replies. Keep basic controls
-                # usable and accept late replies through the same callback.
+                # Some beds omit optional menu replies, and a bed without a light
+                # never answers its probe: discovery ends without it. Basic
+                # controls stay usable, the light rows stay retained, and a late
+                # reply still arrives through the same callback.
                 _LOGGER.debug("RMControl capability probes unanswered: %s", self._pending_capabilities)
+                self._pending_capabilities.clear()
         except BaseException:
             try:
                 await self.stop_notify()
