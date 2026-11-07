@@ -934,6 +934,65 @@ class TestSleepNumberEntities:
         assert hass.states.get(footwarming_left_entity_id).state == "heat"
         assert hass.states.get(footwarming_right_entity_id).state == "off"
 
+    async def test_single_address_side_names_carry_the_side_once(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ) -> None:
+        """A side device named "Bed Left" must not add a second "Left" to its entities."""
+        del mock_coordinator_connected, enable_custom_integrations
+        from homeassistant.data_entry_flow import FlowResultType
+        from homeassistant.helpers import entity_registry as er
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:43",
+                CONF_NAME: "Bed",
+                CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER,
+                CONF_PROTOCOL_VARIANT: SLEEP_NUMBER_VARIANT_LEFT,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:43",
+            entry_id="sleep_number_single_address_names",
+        )
+        entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        result = await hass.config_entries.options.async_init(entry.entry_id)
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"], {"next_step_id": "pair_sides"}
+        )
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"], {"confirm": True}
+        )
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        await hass.async_block_till_done()
+
+        registry = er.async_get(hass)
+        expected = {
+            ("number", "sleep_number_setting"): "Sleep Number Setting",
+            ("select", "thermal_timer"): "Climate Timer",
+            ("select", "footwarming_timer"): "Footwarming Timer",
+            ("climate", "sleep_number_thermal_climate"): "Climate",
+            ("climate", "footwarming_climate"): "Footwarming",
+        }
+        for side, label in (("left", "Left"), ("right", "Right")):
+            for (platform, base), name in expected.items():
+                # The unique ID keeps the side the standalone bed gave it.
+                entity_id = registry.async_get_entity_id(
+                    platform, DOMAIN, f"AA:BB:CC:DD:EE:43_{base}_{side}"
+                )
+                assert entity_id is not None, (platform, base, side)
+                state = hass.states.get(entity_id)
+                assert state is not None
+                assert state.attributes["friendly_name"] == f"Bed {label} {name}"
+
     async def test_sleep_number_setup_removes_legacy_single_side_entities(
         self,
         hass: HomeAssistant,

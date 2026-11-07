@@ -568,10 +568,12 @@ async def test_right_child_level_consumes_right_delivered_state(coordinator, ins
     assert coordinator.controller_state["motomotion_heat_left"] == 0
     assert coordinator.controller_state["motomotion_heat_right"] == 2
     with c.side_scope("right"):
-        assert {s.key for s in c.controller_state_sensor_specs} == {
-        "motomotion_status",
-        "motomotion_heat_right",
-        "motomotion_massage_right",
+        specs = c.controller_state_sensor_specs
+    # The "Bed Right" side device already names the side.
+    assert {(s.key, s.translation_key) for s in specs} == {
+        ("motomotion_status", "motomotion_status"),
+        ("motomotion_heat_right", "motomotion_heat"),
+        ("motomotion_massage_right", "motomotion_massage"),
     }
 
 

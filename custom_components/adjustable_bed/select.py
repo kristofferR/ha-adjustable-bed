@@ -21,7 +21,7 @@ from .const import (
 from .controller_state import ControllerState, StateKey, sided
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
-from .entity_runtime import EntityRuntime, own_sides
+from .entity_runtime import EntityRuntime, named_for_side, own_sides
 from .entity_sweep import PlatformEntities, records_entities
 from .octo_runtime import octo_controller
 from .paired_coordinator import entity_runtimes
@@ -229,7 +229,7 @@ def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                 entities.append(
                     AdjustableBedSideStateSelect(
                         coordinator,
-                        side_description,
+                        named_for_side(coordinator, side_description, side_description.side),
                         thermal_timer_options,
                     )
                 )
@@ -269,7 +269,7 @@ def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                 entities.append(
                     AdjustableBedSideStateSelect(
                         coordinator,
-                        side_description,
+                        named_for_side(coordinator, side_description, side_description.side),
                         footwarming_timer_options,
                     )
                 )
@@ -309,7 +309,7 @@ def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
             entities.append(
                 AdjustableBedSideStateSelect(
                     coordinator,
-                    side_description,
+                    named_for_side(coordinator, side_description, side_description.side),
                     foundation_preset_options,
                 )
             )

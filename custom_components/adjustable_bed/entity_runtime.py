@@ -5,10 +5,12 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Collection, Coroutine, Iterator, Sequence
 from contextlib import ExitStack, contextmanager
+from dataclasses import replace
 from datetime import datetime
 from typing import TYPE_CHECKING, Protocol
 
 from homeassistant.helpers.device_registry import ChildDeviceInfo, DeviceInfo
+from homeassistant.helpers.entity import EntityDescription
 
 from .beds.base import BedController
 from .controller_state import ControllerState
@@ -165,6 +167,18 @@ def own_sides(runtime: EntityRuntime, sides: Sequence[str]) -> tuple[str, ...]:
     if side is None:
         return tuple(sides)
     return (side,) if side in sides else ()
+
+
+def named_for_side[D: EntityDescription](runtime: EntityRuntime, description: D, side: str) -> D:
+    """Name a natively sided ``description`` for the runtime's device.
+
+    A single-address side device's name already carries its side, so its own
+    side's entity takes the side-neutral base translation. The key, and with it
+    the unique ID, keeps the side.
+    """
+    if runtime.controller_side != side:
+        return description
+    return replace(description, translation_key=description.key.removesuffix(f"_{side}"))
 
 
 class EntityRuntimeView(ABC):

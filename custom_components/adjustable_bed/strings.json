@@ -4417,6 +4417,12 @@
       "motomotion_status": {
         "name": "MotoMotion status"
       },
+      "motomotion_heat": {
+        "name": "Heat level"
+      },
+      "motomotion_massage": {
+        "name": "Massage level"
+      },
       "motomotion_heat_left": {
         "name": "Left heat level"
       },
@@ -5069,6 +5075,9 @@
       },
       "footwarming_timer_right": {
         "name": "Footwarming Timer Right"
+      },
+      "foundation_preset": {
+        "name": "Foundation Preset"
       },
       "foundation_preset_left": {
         "name": "Foundation Preset Left"

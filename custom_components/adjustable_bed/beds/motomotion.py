@@ -1157,13 +1157,13 @@ class MotoMotionController(BedController):
 
         if not self.profile.sides:
             return specs
-        sides = (
-            (self.command_side,) if self.command_side in ("left", "right") else ("left", "right")
-        )
+        bound = self.command_side in ("left", "right")
+        sides = (self.command_side,) if bound else ("left", "right")
+        # A single-address side device's name already carries its side.
         return specs + tuple(
             ControllerStateSensorSpec(
                 f"motomotion_{kind}_{side}",
-                f"motomotion_{kind}_{side}",
+                f"motomotion_{kind}" if bound else f"motomotion_{kind}_{side}",
                 _field_key(f"{kind}_{side}"),
                 "mdi:seat",
             )

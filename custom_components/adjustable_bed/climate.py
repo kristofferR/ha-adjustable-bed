@@ -19,7 +19,7 @@ from homeassistant.core import HomeAssistant, callback
 from .const import DOMAIN
 from .controller_state import AnyStateKey, ControllerState, StateKey, sided
 from .entity import AdjustableBedEntity
-from .entity_runtime import EntityRuntime, own_sides
+from .entity_runtime import EntityRuntime, named_for_side, own_sides
 from .entity_sweep import PlatformEntities, records_entities
 from .paired_coordinator import entity_runtimes
 from .state_keys import (
@@ -195,7 +195,7 @@ def _climate_entities_for(
         entities.extend(
             AdjustableBedClimate(
                 coordinator,
-                _build_side_thermal_climate_description(side),
+                named_for_side(coordinator, _build_side_thermal_climate_description(side), side),
             )
             for side in thermal_sides
         )
@@ -207,7 +207,7 @@ def _climate_entities_for(
         entities.extend(
             AdjustableBedClimate(
                 coordinator,
-                _build_side_footwarming_climate_description(side),
+                named_for_side(coordinator, _build_side_footwarming_climate_description(side), side),
             )
             for side in footwarming_sides
         )

@@ -56,8 +56,18 @@ from custom_components.adjustable_bed.light import (
 from custom_components.adjustable_bed.number import (
     MASSAGE_NUMBER_DESCRIPTIONS,
     NUMBER_DESCRIPTIONS,
+    SLEEP_NUMBER_SETTING_LEFT_DESCRIPTION,
+    SLEEP_NUMBER_SETTING_RIGHT_DESCRIPTION,
 )
-from custom_components.adjustable_bed.select import MASSAGE_TIMER_DESCRIPTION
+from custom_components.adjustable_bed.select import (
+    FOOTWARMING_TIMER_LEFT_DESCRIPTION,
+    FOOTWARMING_TIMER_RIGHT_DESCRIPTION,
+    FOUNDATION_PRESET_LEFT_DESCRIPTION,
+    FOUNDATION_PRESET_RIGHT_DESCRIPTION,
+    MASSAGE_TIMER_DESCRIPTION,
+    THERMAL_TIMER_LEFT_DESCRIPTION,
+    THERMAL_TIMER_RIGHT_DESCRIPTION,
+)
 from custom_components.adjustable_bed.sensor import (
     MASSAGE_SENSOR_DESCRIPTIONS,
     SENSOR_DESCRIPTIONS,
@@ -204,22 +214,42 @@ def _description_keys(descriptions: Iterable[EntityDescription]) -> set[str]:
     return {description.translation_key or description.key for description in descriptions}
 
 
+def _native_side_keys(descriptions: Iterable[EntityDescription]) -> set[str]:
+    """Return natively sided keys and the base each takes on its single-address side device."""
+    keys = _description_keys(descriptions)
+    return keys | {
+        key.removesuffix(suffix) for key in keys for suffix in ("_left", "_right") if key.endswith(suffix)
+    }
+
+
 def _spec_keys(controllers: Iterable[BedController]) -> dict[str, set[str]]:
-    """Return the translation keys controller specs state, per platform."""
+    """Return the translation keys controller specs state, per platform.
+
+    A controller bound to one side of a single-address pair names its specs for
+    that side's device, so each side binding counts too.
+    """
     keys: dict[str, set[str]] = {}
     for controller in controllers:
-        for platform, specs in (
-            ("cover", controller.motor_control_specs),
-            ("button", controller.controller_button_specs),
-            ("select", controller.controller_select_specs),
-            ("number", (*controller.controller_number_specs, *controller.position_number_specs)),
-            ("sensor", controller.controller_state_sensor_specs),
-            ("binary_sensor", controller.controller_state_binary_sensor_specs),
-        ):
-            keys.setdefault(platform, set()).update(
-                spec.translation_key for spec in specs if spec.translation_key is not None
-            )
+        _add_spec_keys(keys, controller)
+        if controller.supports_single_address_pairing:
+            for side in ("left", "right"):
+                with controller.side_scope(side):
+                    _add_spec_keys(keys, controller)
     return keys
+
+
+def _add_spec_keys(keys: dict[str, set[str]], controller: BedController) -> None:
+    for platform, specs in (
+        ("cover", controller.motor_control_specs),
+        ("button", controller.controller_button_specs),
+        ("select", controller.controller_select_specs),
+        ("number", (*controller.controller_number_specs, *controller.position_number_specs)),
+        ("sensor", controller.controller_state_sensor_specs),
+        ("binary_sensor", controller.controller_state_binary_sensor_specs),
+    ):
+        keys.setdefault(platform, set()).update(
+            spec.translation_key for spec in specs if spec.translation_key is not None
+        )
 
 
 def _is_side_variant(key: str, keys: Iterable[str]) -> bool:
@@ -250,21 +280,34 @@ def required_keys(
         "button": _description_keys(BUTTON_DESCRIPTIONS) | {"product_action"},
         "light": _description_keys((LIGHT_DESCRIPTION, ASSUMED_LIGHT_DESCRIPTION)),
         "climate": _description_keys(
+            (SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION, FOOTWARMING_CLIMATE_DESCRIPTION)
+        )
+        | _native_side_keys(
             (
-                SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION,
-                FOOTWARMING_CLIMATE_DESCRIPTION,
                 *map(_build_side_thermal_climate_description, sides),
                 *map(_build_side_footwarming_climate_description, sides),
             )
         ),
-        "select": _description_keys((MASSAGE_TIMER_DESCRIPTION,)),
+        "select": _description_keys((MASSAGE_TIMER_DESCRIPTION,))
+        | _native_side_keys(
+            (
+                THERMAL_TIMER_LEFT_DESCRIPTION,
+                THERMAL_TIMER_RIGHT_DESCRIPTION,
+                FOOTWARMING_TIMER_LEFT_DESCRIPTION,
+                FOOTWARMING_TIMER_RIGHT_DESCRIPTION,
+                FOUNDATION_PRESET_LEFT_DESCRIPTION,
+                FOUNDATION_PRESET_RIGHT_DESCRIPTION,
+            )
+        ),
         "cover": _description_keys(COVER_DESCRIPTIONS),
-        "number": _description_keys((*NUMBER_DESCRIPTIONS, *MASSAGE_NUMBER_DESCRIPTIONS)),
+        "number": _description_keys((*NUMBER_DESCRIPTIONS, *MASSAGE_NUMBER_DESCRIPTIONS))
+        | _native_side_keys(
+            (SLEEP_NUMBER_SETTING_LEFT_DESCRIPTION, SLEEP_NUMBER_SETTING_RIGHT_DESCRIPTION)
+        ),
         "switch": _description_keys(SWITCH_DESCRIPTIONS),
         "sensor": _description_keys((*SENSOR_DESCRIPTIONS, *MASSAGE_SENSOR_DESCRIPTIONS)),
-        "binary_sensor": _description_keys(
-            (*BINARY_SENSOR_DESCRIPTIONS, *map(_build_side_presence_description, sides))
-        ),
+        "binary_sensor": _description_keys(BINARY_SENSOR_DESCRIPTIONS)
+        | _native_side_keys(map(_build_side_presence_description, sides)),
     }
     for platform, keys in descriptions.items():
         required.setdefault(platform, set()).update(keys)

@@ -23,7 +23,7 @@ from .const import DOMAIN
 from .controller_state import ControllerState, StateKey, sided
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
-from .entity_runtime import EntityRuntime, own_sides
+from .entity_runtime import EntityRuntime, named_for_side, own_sides
 from .entity_sweep import PlatformEntities, records_entities
 from .paired_coordinator import entity_runtimes
 from .state_keys import BED_PRESENCE, BED_PRESENCE_SIDE
@@ -102,7 +102,10 @@ def _binary_sensor_entities_for(
             if not bed_presence_sides:
                 entities.append(AdjustableBedPresenceSensor(coordinator, description))
             entities.extend(
-                AdjustableBedPresenceSensor(coordinator, _build_side_presence_description(side))
+                AdjustableBedPresenceSensor(
+                    coordinator,
+                    named_for_side(coordinator, _build_side_presence_description(side), side),
+                )
                 for side in bed_presence_sides
             )
             continue

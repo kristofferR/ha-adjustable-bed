@@ -31,7 +31,7 @@ from .const import (
 from .controller_state import ControllerState, StateKey, sided
 from .entity import AdjustableBedEntity, RenamesInPlace
 from .entity_discovery import async_setup_dynamic_entities
-from .entity_runtime import EntityRuntime, controller_side_scope, own_sides
+from .entity_runtime import EntityRuntime, controller_side_scope, named_for_side, own_sides
 from .entity_sweep import PlatformEntities, records_entities
 from .octo_runtime import octo_controller
 from .paired_coordinator import (
@@ -441,17 +441,11 @@ def _number_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
             entities.append(
                 AdjustableBedSideStateNumber(
                     coordinator,
-                    AdjustableBedSideStateNumberEntityDescription(
-                        key=side_description.key,
-                        translation_key=side_description.translation_key,
-                        icon=side_description.icon,
+                    replace(
+                        named_for_side(coordinator, side_description, side_description.side),
                         native_min_value=controller.sleep_number_setting_min,
                         native_max_value=controller.sleep_number_setting_max,
                         native_step=controller.sleep_number_setting_step,
-                        mode=side_description.mode,
-                        state_key=side_description.state_key,
-                        set_fn=side_description.set_fn,
-                        side=side_description.side,
                     ),
                 )
             )
