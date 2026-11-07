@@ -41,6 +41,7 @@ Each codec has one guide, with a section per profile:
 | [Richmat](beds/richmat.md) | Richmat, RMControl, BedTech, L&P MlRM, the Richmat MH apps and HJBed |
 | [Limoss](beds/limoss.md) | Limoss, Limoss Remote and FSM Relax |
 | [FFFF frame](beds/ff_frame.md) | Solace, Woosa Sleep, BedSense and Motion Bed |
+| [JMC400](beds/jmc.md) | Jensen JMC400 and the Svane Remote app's JMC400 route |
 
 Beds with their own wire format have their own guide in [`beds/`](beds/). Every
 guide follows the [bed guide format](BED_GUIDE_FORMAT.md) and records its
