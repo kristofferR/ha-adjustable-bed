@@ -4,8 +4,10 @@ Every frame ends in ``sum8``, the low byte of the sum of the bytes before it.
 A command is ``6E 01 side code sum8``; ``code 6E`` is the release (STOP). Other
 second bytes select a function: queries, light timer and colour, countdown
 alarm. Extended frames carry their own length: ``6E len 20 domain command
-operation data sum8``; notifications, and Good Vibe Sleep's settings, put the
-length after ``20`` instead. Nordic UART transports take the bare command byte.
+operation data sum8``; notifications, Good Vibe Sleep's settings and the Casper
+Base and Hush Base apps' records put the length after ``20`` instead. ``6E 40``
+notifications carry a two-byte length and end in a CRC-16/XMODEM. Nordic UART
+transports take the bare command byte.
 
 Legacy Richmat routes also frame the command behind a ``55`` or ``AA`` header,
 and the RGB-strip remotes use ``04 len cmd 01 00 payload 00 00 sum8``. Which
@@ -15,6 +17,7 @@ transport, framing, codes and timing a bed uses belongs to its profile
 
 from __future__ import annotations
 
+import binascii
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import datetime
@@ -70,6 +73,11 @@ def frame(*values: int) -> bytes:
 def is_valid(data: bytes) -> bool:
     """Whether the last byte is the ``sum8`` of the others."""
     return len(data) >= 2 and sum(data[:-1]) & 0xFF == data[-1]
+
+
+def is_valid_crc(data: bytes) -> bool:
+    """Whether a ``6E 40`` frame ends in the big-endian CRC-16/XMODEM of the others."""
+    return len(data) > 2 and binascii.crc_hqx(data[:-2], 0) == int.from_bytes(data[-2:], "big")
 
 
 def command(code: int, side: int = 0, *, header: int = BED) -> bytes:
@@ -147,8 +155,13 @@ def time_sync(
         build(
             8, 2, 1, (*int(now.timestamp()).to_bytes(4, "big"), int(offset.total_seconds() / 3600))
         ),
-        build(8, 3, 1, (now.year - 1970, now.month, now.day, now.hour, now.minute, now.second)),
+        calendar(now, build=build),
     )
+
+
+def calendar(now: datetime, *, build: Record = record) -> bytes:
+    """The local calendar record: ``08 03 01 year-1970 month day hour minute second``."""
+    return build(8, 3, 1, (now.year - 1970, now.month, now.day, now.hour, now.minute, now.second))
 
 
 def light_timer(high: int, low: int) -> bytes:

@@ -1,4 +1,4 @@
-"""Casper Base app controller: drives ``codec/casper.py`` from the selected profile."""
+"""Casper Base app controller: drives ``codec/richmat.py`` from the selected profile."""
 
 from __future__ import annotations
 
@@ -19,21 +19,19 @@ from ..casper_base_protocol import (
     alarm_countdown,
     decode_main,
 )
-from ..codec.casper import (
+from ..codec import richmat as codec
+from ..profiles.casper import (
+    ACTIONS,
     ANTI_SNORE,
-    GATT,
     LIGHT_OFF,
     MUSIC_BLUETOOTH,
-    STOP,
-    alarm_pair,
-    control,
-    extra,
-    light_rgb,
-    light_seconds,
-    special,
-    time_sync,
+    PROFILES,
+    QUERIES,
+    TRANSPORTS,
+    Action,
+    ProductRow,
+    light_duration,
 )
-from ..profiles.casper import ACTIONS, PROFILES, Action, ProductRow
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -48,6 +46,19 @@ if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+# Service -> (write characteristic, bare opcodes), in the library's lookup order.
+GATT = {
+    transport.service_uuid: (transport.write_uuid, transport.single)
+    for transport in (codec.TRANSPORTS[key] for key in TRANSPORTS)
+}
+TICK_S = 0.1
+"""Every write, the first and each queued one, waits one tick."""
+SOUNDTRACK_GUARD_S = 2
+"""A soundtrack switch within this time of the last one is dropped."""
+SOUNDTRACK_DELAY_S = 0.9
+"""The soundtrack switch follows its Bluetooth switch after this delay."""
+SNORE_POLL_S = 3
+"""The external snore detector is sampled this often, first after one period."""
 
 
 class ProductProfile(Protocol):
@@ -105,7 +116,7 @@ class CasperBaseController(BedController):
 
     @property
     def control_characteristic_uuid(self) -> str:
-        return self._write_char.uuid if self._write_char else GATT[1][1]
+        return self._write_char.uuid if self._write_char else codec.TRANSPORTS["w1"].write_uuid
 
     @property
     def supports_single_address_pairing(self) -> bool:
@@ -167,8 +178,7 @@ class CasperBaseController(BedController):
         return (0, 1) if side == "both" else (1,) if side == "right" else (0,)
 
     async def _send(self, packet: bytes, *, cleanup: bool = False) -> None:
-        # First send and each subsequent queued write wait for a 100 ms tick.
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(TICK_S)
         await self._write_gatt_with_retry(
             self.control_characteristic_uuid,
             packet,
@@ -179,7 +189,7 @@ class CasperBaseController(BedController):
 
     async def _opcode(self, opcode: int, *, cleanup: bool = False) -> None:
         for side in self._sides():
-            await self._send(control(opcode, single=self._single, side=side), cleanup=cleanup)
+            await self._send(codec.function(opcode, side, single=self._single), cleanup=cleanup)
 
     async def async_perform_casper_base_action(
         self, action: str, *, save: bool = False, music_page: bool = False
@@ -190,7 +200,8 @@ class CasperBaseController(BedController):
             # Music page callbacks belong to its capability-gated page, not a product list.
             if self.product[8] and "music_available" in self.events and action.startswith("Music"):
                 item = next(
-                    ((short, long) for name, short, long in self.action_catalog if name == action), None
+                    ((short, long) for name, short, long in self.action_catalog if name == action),
+                    None,
                 )
         if item is None or (save and item[1] is None):
             raise ValueError("Action unavailable for the selected product")
@@ -201,16 +212,17 @@ class CasperBaseController(BedController):
                 now = asyncio.get_running_loop().time()
                 if now < self._music_debounce_until:
                     return
-                self._music_debounce_until = now + 2
+                self._music_debounce_until = now + SOUNDTRACK_GUARD_S
                 if self._music_bluetooth:
                     self._music_bluetooth = False
                     self._publish()
-                    await self._send(control(MUSIC_BLUETOOTH, single=self._single, side=0))
-                await asyncio.sleep(max(0, now + 0.9 - asyncio.get_running_loop().time()))
+                    await self._send(codec.function(MUSIC_BLUETOOTH, single=self._single))
+                delay = now + SOUNDTRACK_DELAY_S - asyncio.get_running_loop().time()
+                await asyncio.sleep(max(0, delay))
             elif action == "MusicBlueToothSwitch":
                 self._music_bluetooth = not self._music_bluetooth
                 self._publish()
-            await self._send(control(opcode, single=self._single, side=0))
+            await self._send(codec.function(opcode, single=self._single))
             return
         moving = action.endswith(("Up", "Down")) and not action.startswith("Music")
         release = moving or action in (
@@ -226,7 +238,7 @@ class CasperBaseController(BedController):
                 await self._opcode(opcode)
         finally:
             if release:
-                await self._opcode(STOP, cleanup=True)
+                await self._opcode(codec.STOP, cleanup=True)
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
@@ -304,12 +316,11 @@ class CasperBaseController(BedController):
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         if self.client is None:
             raise ConnectionError("Not connected")
-        choices = {service: (index, write) for index, (service, write) in enumerate(GATT)}
         for service in self.client.services:
-            match = choices.get(service.uuid.lower())
+            match = GATT.get(service.uuid.lower())
             if match is None:
                 continue
-            index, uuid = match
+            uuid, single = match
             write = next(
                 (
                     c
@@ -320,17 +331,17 @@ class CasperBaseController(BedController):
             )
             notify = next((c for c in service.characteristics if "notify" in c.properties), None)
             if write is not None:
-                self._write_char, self._notify_char, self._single = write, notify, index == 0
+                self._write_char, self._notify_char, self._single = write, notify, single
                 self._write_with_response = "write-without-response" not in write.properties
                 break
         if self._write_char is None:
             raise ValueError("No supported writable Casper Base service")
         if self._notify_char is not None:
             await self.client.start_notify(self._notify_char, self._build_notification_callback())
-        for name in ("exit_limit", "clock", "light", "music"):
-            await self._send(special(name, single=self._single))
+        for action, code in QUERIES:
+            await self._send(codec.function(code, action=action, single=self._single))
         if self.product[10]:
-            await self._send(time_sync(dt_util.now()))
+            await self._send(codec.calendar(dt_util.now(), build=codec.record_20_len))
         self._publish()
 
     def _build_notification_callback(self) -> Callable[[BleakGATTCharacteristic, bytearray], None]:
@@ -440,47 +451,48 @@ class CasperBaseController(BedController):
                 )
             return
         packets: tuple[bytes, ...]
+        record = codec.record_20_len
         if op == "sleep_name":
-            packets = (extra(6, 3, (0,), operation=0),)
+            packets = (record(6, 3, 0, (0,)),)
         elif op == "light_rgb":
-            packets = (light_rgb(r.rgb),)
+            packets = (codec.rgb(*r.rgb),)
         elif op == "light_seconds":
-            packets = (light_seconds(r.value),)
+            packets = (codec.light_timer(*light_duration(r.value)),)
         elif op == "light_off":
-            packets = (control(LIGHT_OFF, single=self._single),)
+            packets = (codec.function(LIGHT_OFF, single=self._single),)
         elif op == "rgb_power":
-            packets = (extra(4, 4, (0, int(r.enabled))),)
+            packets = (record(4, 4, 1, (0, int(r.enabled))),)
         elif op == "rgb_color":
-            packets = (extra(4, 1, (0, *r.rgb)),)
+            packets = (record(4, 1, 1, (0, *r.rgb)),)
         elif op == "rgb_timer":
-            packets = (extra(4, 2, (0, r.value // 256, r.value & 255)),)
+            packets = (record(4, 2, 1, (0, r.value // 256, r.value & 255)),)
         elif op in ("rgb_mode", "rgb_groove"):
-            packets = (extra(4, 5, (0, 2 if op == "rgb_groove" else 1, r.value)),)
+            packets = (record(4, 5, 1, (0, 2 if op == "rgb_groove" else 1, r.value)),)
         elif op == "rgb_breathe":
-            packets = (extra(4, 6, (0,)),)
+            packets = (record(4, 6, 1, (0,)),)
         elif op == "alarm_cancel":
-            packets = alarm_pair(0, 0)
+            # The high and mode frame goes first.
+            packets = codec.countdown(0, 0)[::-1]
         elif op == "alarm":
             now = dt_util.now()
             minutes = alarm_countdown(r.hour, r.minute, now)
-            packets = alarm_pair(minutes, self.alarm_opcode(r.mode))
+            packets = codec.countdown(minutes, self.alarm_opcode(r.mode))[::-1]
         elif op == "repeat_alarm":
             mask = sum(1 << (7 - day) for day in set(r.days)) | int(r.enabled)
             existing = next((alarm for alarm in self.alarms if alarm["id"] == r.slot), {})
             reserved = existing.get("reserved", 0)
             if type(reserved) is not int:
                 raise ValueError("Invalid stored alarm byte")
-            packets = (
-                extra(5, 1, (r.slot, reserved, r.hour, r.minute, self.alarm_opcode(r.mode), mask)),
-            )
+            fields = (r.slot, reserved, r.hour, r.minute, self.alarm_opcode(r.mode), mask)
+            packets = (record(5, 1, 1, fields),)
         elif op == "repeat_delete":
-            packets = (extra(5, 2, (r.slot,)),)
+            packets = (record(5, 2, 1, (r.slot,)),)
         elif op == "repeat_query":
             self.alarms.clear()
             self._publish()
-            packets = (extra(5, 1, (0,), operation=0),)
+            packets = (record(5, 1, 0, (0,)),)
         elif op == "time_sync":
-            packets = (time_sync(dt_util.now()),)
+            packets = (codec.calendar(dt_util.now(), build=record),)
         else:
             raise ValueError("Unknown Casper Base operation")
         for packet in packets:
@@ -489,7 +501,7 @@ class CasperBaseController(BedController):
     async def _poll_snore(self, source: str) -> None:
         try:
             while True:
-                await asyncio.sleep(3)
+                await asyncio.sleep(SNORE_POLL_S)
                 state = self._coordinator.hass.states.get(source)
                 try:
                     result = int(state.state) if state is not None else None
@@ -516,7 +528,7 @@ class CasperBaseController(BedController):
             self._snore_count += 1
         if self._snore_count >= 5:
             # Automatic path always uses default left, independent of manual side.
-            await self._send(control(ANTI_SNORE, single=self._single, side=0))
+            await self._send(codec.function(ANTI_SNORE, single=self._single))
             self._snore_count = 0
 
     async def _axis(self, name: str, direction: str) -> None:
@@ -544,7 +556,7 @@ class CasperBaseController(BedController):
     move_feet_down = move_legs_down
 
     async def stop_all(self) -> None:
-        await self._opcode(STOP, cleanup=True)
+        await self._opcode(codec.STOP, cleanup=True)
 
     move_head_stop = stop_all
     move_back_stop = stop_all

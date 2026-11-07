@@ -15,7 +15,7 @@ from custom_components.adjustable_bed.beds.hush_sleep import (
     HushSleepController,
 )
 from custom_components.adjustable_bed.casper_base_protocol import Request
-from custom_components.adjustable_bed.codec.casper import control
+from custom_components.adjustable_bed.codec.richmat import function
 from custom_components.adjustable_bed.const import HUSH_BASE_VARIANTS
 from custom_components.adjustable_bed.hush_catalog import ACTIONS, INDICES, PRODUCTS
 from custom_components.adjustable_bed.pairing import supports_single_address_pairing
@@ -81,7 +81,7 @@ async def test_transport_side_stop_and_initialization(transport, side):
     finally:
         controller._command_side.reset(token)
     expected_sides = (0, 1) if side == "both" else (1,) if side == "right" else (0,)
-    assert frames(c) == [control(0x6E, single=transport == 0, side=s).hex() for s in expected_sides]
+    assert frames(c) == [function(0x6E, s, single=transport == 0).hex() for s in expected_sides]
 
 
 async def test_profile_is_explicit_and_light_policy_is_hush_specific():

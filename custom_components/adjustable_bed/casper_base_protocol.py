@@ -1,6 +1,6 @@
 """Casper Base 1.0.8 requests and notifications, independently accepted row101 evidence.
 
-The frames are built by ``codec/casper.py``. These specifications belong to this
+The frames are built by ``codec/richmat.py``. These specifications belong to this
 package. Shared UUIDs do not identify an app.
 """
 
@@ -9,6 +9,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Final, Literal
+
+from .codec.richmat import is_valid
 
 RGB_TIMERS: Final = (5, 8, 10, 13, 15, 18, 21, 24, 27, 30, 120, 210, 300, 390, 480)
 ALARM_MODES: Final = {
@@ -83,7 +85,11 @@ class MainReceive:
                 size = len(self.pending)
                 if size not in (5, 7, 16):
                     size = next(
-                        (n for n in (5, 7, 16) if len(self.pending) > n and self.pending[n] == 0x6E),
+                        (
+                            n
+                            for n in (5, 7, 16)
+                            if len(self.pending) > n and self.pending[n] == 0x6E
+                        ),
                         0,
                     )
                     if not size:
@@ -93,7 +99,7 @@ class MainReceive:
                         raise ValueError("Unsupported ordinary frame boundary")
             packet = bytes(self.pending[:size])
             del self.pending[:size]
-            if packet[1:2] != b"\x20" or sum(packet[:-1]) & 255 == packet[-1]:
+            if packet[1:2] != b"\x20" or is_valid(packet):
                 out.append(packet)
         return out
 
@@ -187,7 +193,7 @@ def decode_main(b: bytes) -> Event | None:
 
 
 def decode_extra(b: bytes) -> Event | None:
-    if len(b) < 7 or len(b) != b[2] or sum(b[:-1]) & 255 != b[-1]:
+    if len(b) < 7 or len(b) != b[2] or not is_valid(b):
         return None
     category, subtype, op = b[3:6]
     if category == 10 and 1 <= subtype <= 6:
