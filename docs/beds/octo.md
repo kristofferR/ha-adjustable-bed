@@ -148,7 +148,10 @@ authoritative capability records. Malformed replies remain strict failures.
 
 Capabilities are retained as typed records containing the feature ID, read-only
 flag, characteristic bytes, value type and value bytes. Writes replace only the
-value bytes and preserve the advertised metadata. Device information and
+value bytes and preserve the advertised metadata. A record is active when its
+first characteristic byte is `0x01`. Like the app, the integration does not
+treat the read-only flag as a gate: some receivers, such as the RC2, flag every
+record read-only but still accept writes, which echo the flag unchanged. Device information and
 capabilities are stored per physical receiver when a pair is configured.
 
 The integration queries capabilities via `[0x20, 0x71]`. Known feature IDs:
@@ -163,7 +166,7 @@ The integration queries capabilities via `[0x20, 0x71]`. Known feature IDs:
 | `0x000011` | Remote-control lock | Lock state, 1 byte |
 | `0x000101` | CAP_SYNCHRO | Synchro/linked mode support |
 | `0x000102` | CAP_LIGHT | Under-bed light support (on/off) |
-| `0x000103` | Light duration | Minutes, 2 bytes big-endian |
+| `0x000103` | Light duration | Minutes, 1 byte (0-60) |
 | `0x000104` | CAP_LIGHT_RGBWI | RGB + White + Intensity light control |
 | `0x000105` | Automatic light | Motion-triggered lighting, 1 byte |
 | `0x000106` | Light sensitivity | 2 bytes big-endian |
@@ -666,7 +669,7 @@ authoritative. The app exposes these direct BLE controls:
 | Light sensitivity, 6 / 35 / 85 | Select |
 | Remote teach | Button, only when active and PIN-unlocked |
 
-- Read-only and inactive records do not create writable controls.
+- Inactive records do not create controls. The read-only flag does not hide them.
 - The RGB and RGBWI records keep their own metadata and values. Switching color
   modes writes only the requested record; the RGBWI intensity remains unchanged
   unless an RGBW brightness value is sent.

@@ -2442,17 +2442,11 @@ class TestOctoRGBWILightEntity:
         assert len(regained) == 1
         assert regained[0].unique_id == unique_id
 
-    @pytest.mark.parametrize(
-        ("characteristic", "readonly"),
-        ((b"\x01", 1), (b"\x00", 0)),
-    )
-    async def test_readonly_or_gated_color_record_is_not_advertised(
+    async def test_inactive_color_record_is_not_advertised(
         self,
         hass: HomeAssistant,
         mock_octo_config_entry,
         mock_octo_ready_transport,
-        characteristic: bytes,
-        readonly: int,
     ) -> None:
         coordinator = AdjustableBedCoordinator(hass, mock_octo_config_entry)
         await coordinator.async_connect()
@@ -2462,10 +2456,9 @@ class TestOctoRGBWILightEntity:
             _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x01"),
             _capability(
                 OCTO_FEATURE_LIGHT_RGB,
-                characteristic,
+                b"\x00",
                 bytes((1, 2, 3)),
                 value_type=0x03,
-                readonly=readonly,
             ),
         )
 
@@ -2792,11 +2785,11 @@ class TestOctoCapabilityControls:
                 _capability(
                     OCTO_FEATURE_LIGHT_DURATION,
                     b"\x01\xa4",
-                    b"\x00\x05",
+                    b"\x05",
                     value_type=0x34,
                 ),
                 lambda: controller.set_light_duration(0),
-                b"\x00\x00",
+                b"\x00",
             ),
             (
                 _capability(OCTO_FEATURE_LIGHT_AUTO, b"\x01\xa5", b"\x00", value_type=0x35),
@@ -2838,7 +2831,7 @@ class TestOctoCapabilityControls:
                 assert controller._light_duration_minutes == 0
             controller.write_command.reset_mock()
 
-    async def test_readonly_remote_teach_uses_exact_action_and_requires_unlocked_pin(
+    async def test_remote_teach_uses_exact_action_and_requires_unlocked_pin(
         self,
     ) -> None:
         coordinator = MagicMock()
@@ -2848,10 +2841,11 @@ class TestOctoCapabilityControls:
         controller._session_ready = True
         controller._features_complete.set()
         controller.write_command = AsyncMock()
+        # The app gates teach on the active characteristic only; #965's record has value 0.
         record = _capability(
             OCTO_FEATURE_REMOTE_TEACH,
             b"\x01",
-            b"\x01",
+            b"\x00",
             value_type=1,
             readonly=1,
         )
@@ -2876,20 +2870,40 @@ class TestOctoCapabilityControls:
         )
         controller.write_command.assert_awaited_once_with(expected, 1, 100, None)
 
-    async def test_setting_writer_rejects_readonly_or_inactive_record(self) -> None:
+    async def test_readonly_flagged_light_record_stays_writable(self) -> None:
+        # #965 (RC2): every record is flagged readonly. The app never gates on the
+        # flag; it echoes the record with only the value replaced.
         coordinator = MagicMock()
         coordinator.motor_count = 2
         coordinator.entry.data = {}
         controller = OctoController(coordinator)
         controller._session_ready = True
         controller.write_command = AsyncMock()
-        readonly = _capability(
-            OCTO_FEATURE_REMOTE_CONTROL_LOCK,
-            b"\x01",
-            b"\x00",
-            readonly=1,
+        _activate_capabilities(
+            controller,
+            _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x00", value_type=1, readonly=1),
+            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x05", value_type=1, readonly=1),
         )
-        controller._capability_records = {readonly.feature_id: readonly}
+
+        assert controller.supports_discrete_light_control is True
+        assert not controller.legacy_light_fallback
+        assert controller.light_auto_off_seconds == 300
+        await controller.lights_on()
+
+        expected = controller._build_packet(
+            [0x20, 0x72], [0x00, 0x01, 0x02, 0x01, 0x01, 0x01, 0x01, 0x01]
+        )
+        controller.write_command.assert_awaited_once_with(expected, 1, 100, None)
+
+    async def test_setting_writer_rejects_inactive_record(self) -> None:
+        coordinator = MagicMock()
+        coordinator.motor_count = 2
+        coordinator.entry.data = {}
+        controller = OctoController(coordinator)
+        controller._session_ready = True
+        controller.write_command = AsyncMock()
+        inactive = _capability(OCTO_FEATURE_REMOTE_CONTROL_LOCK, b"\x00", b"\x00")
+        controller._capability_records = {inactive.feature_id: inactive}
         controller._apply_capability_records(controller._capability_records)
 
         assert controller.supports_remote_control_lock is False
@@ -2905,7 +2919,7 @@ class TestOctoCapabilityControls:
         controller = OctoController(coordinator)
         controller._session_ready = True
         controller.write_command = AsyncMock()
-        record = _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x00\x05")
+        record = _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x05")
         light = _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x00")
         controller._capability_records = {record.feature_id: record, light.feature_id: light}
         controller._apply_capability_records(controller._capability_records)
@@ -2933,7 +2947,7 @@ class TestOctoCapabilityControls:
 
         assert controller.light_auto_off_seconds == 300
 
-    @pytest.mark.parametrize("malformed_duration", (b"\x05", b"\x00\x3d"))
+    @pytest.mark.parametrize("malformed_duration", (b"\x00\x05", b"\x3d"))
     def test_malformed_light_duration_does_not_become_legacy_default(
         self, malformed_duration: bytes
     ) -> None:
@@ -3026,7 +3040,7 @@ class TestOctoCapabilityControls:
                 assert len(timers) == 2 and not timers[1][2].cancel.called
 
                 records = dict(controller._capability_records)
-                duration = _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x00\x02")
+                duration = _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x02")
                 records[duration.feature_id] = duration
                 controller._capability_records = records
                 controller._apply_capability_records(records)
@@ -3101,7 +3115,7 @@ class TestOctoCapabilityControls:
         _activate_capabilities(
             controller,
             _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x00"),
-            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x00\x05"),
+            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x05"),
             _capability(OCTO_FEATURE_LIGHT_RGB, b"\x01", bytes((12, 34, 56)), value_type=0x03),
         )
         controller.lights_on = AsyncMock()
@@ -3145,7 +3159,7 @@ class TestOctoCapabilityControls:
                 expired.assert_called_once()
             assert light._light_auto_off_timer is None
 
-    def test_light_auto_off_updates_readonly_observation_without_granting_write_access(self):
+    def test_light_auto_off_updates_observation_without_writing(self):
         coordinator = MagicMock(motor_count=2)
         coordinator.entry.data = {}
         controller = OctoController(coordinator)
@@ -3153,10 +3167,9 @@ class TestOctoCapabilityControls:
         _activate_capabilities(
             controller,
             _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x01", readonly=1),
-            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x00\x05"),
+            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x05"),
         )
 
-        assert controller.supports_discrete_light_control is False
         controller.on_light_auto_off()
 
         record = controller._capability_records[OCTO_FEATURE_LIGHT]
@@ -3179,7 +3192,7 @@ class TestOctoCapabilityControls:
             _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x00"),
             _capability(OCTO_FEATURE_PIN, b"\x01", b"\x00\x01"),
             _capability(OCTO_FEATURE_REMOTE_CONTROL_LOCK, b"\x01", b"\x00"),
-            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x00\x05"),
+            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x05"),
         )
         assert controller.light_auto_off_seconds == 300
         controller.write_command = AsyncMock()
@@ -3251,7 +3264,7 @@ class TestOctoCapabilityControls:
         _activate_capabilities(
             controller,
             _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x00"),
-            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x00\x05"),
+            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x05"),
             _capability(OCTO_FEATURE_LIGHT_RGB, b"\x01", bytes((12, 34, 56)), value_type=0x03),
         )
         from homeassistant.helpers import entity_registry as er
@@ -3357,7 +3370,7 @@ class TestOctoCapabilityControls:
                 bytes((10, 20, 30)),
                 value_type=0x03,
             ),
-            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x00\x05"),
+            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x05"),
         )
         lights = _light_entities_for(hass, coordinator)
         assert len(lights) == 1 and isinstance(lights[0], AdjustableBedLight)
