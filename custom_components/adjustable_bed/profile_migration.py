@@ -88,6 +88,7 @@ from .const import (
     BED_TYPE_ZSERIES,
     CONF_BED_TYPE,
     CONF_FURNIMOVE_REMOTE,
+    CONF_HAS_MASSAGE,
     CONF_JIECANG_APP_LAYOUT,
     CONF_JIECANG_APP_PROFILE,
     CONF_JIECANG_APP_TRANSPORT,
@@ -97,11 +98,16 @@ from .const import (
     CONF_LOGICDATA_APP_PROFILE,
     CONF_LOGICDATA_APP_TRANSPORT,
     CONF_MALOUF_APP_PROFILE,
+    CONF_MALOUF_APP_TRANSPORT,
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_REMOTE,
     CONF_SLEEPYS_ELITE_SELECTOR,
     CONF_VIBRADORM_APP_PROFILE,
     CONF_VIBRADORM_CONTROL_TYPE,
+    CONF_VIBRADORM_FLOOR_LIGHT,
+    CONF_VIBRADORM_LIGHT_EXTENSION,
+    CONF_VIBRADORM_RESTORED,
+    CONF_VIBRADORM_RGB,
     CONF_VIBRADORM_VMAT_REMOTE,
     CONF_VMATBASIC_PROFILE,
     DOMAIN,
@@ -113,9 +119,17 @@ from .const import (
 from .pairing import effective_child_data, get_child, is_paired
 
 if TYPE_CHECKING:
+    from bleak import BleakClient
+
     from .entity_runtime import EntityRuntime
 
 _LOGGER = logging.getLogger(__name__)
+
+
+# Checks a staged route's exact endpoints or GATT roles on the candidate link,
+# raising when one is missing, and returns what it resolved for the confirm
+# step's control list.
+EndpointCheck = Callable[["HomeAssistant", "BleakClient", Mapping[str, Any]], Mapping[str, Any]]
 
 
 @dataclass(frozen=True, slots=True)
@@ -134,6 +148,124 @@ class ManagedFamily:
     # has no guided change of its own, so Reconfigure asks this family's
     # question for it; Configure still changes its own settings.
     asks_for: Callable[[Mapping[str, Any]], bool] = lambda _data: False
+    # The check a route that ``requires_check`` passes before it can be confirmed.
+    endpoint_check: EndpointCheck | None = None
+
+
+def _vibradorm_roles(
+    _hass: HomeAssistant, client: BleakClient, data: Mapping[str, Any]
+) -> Mapping[str, Any]:
+    """The staged app's or V-MAT Basic product's GATT roles; pairing proves the legacy bond."""
+    bed_type = data[CONF_BED_TYPE]
+    if bed_type == BED_TYPE_VMATBASIC:
+        from .beds.vmatbasic import validate_profile_roles
+
+        validate_profile_roles(client, data[CONF_VMATBASIC_PROFILE])
+    elif bed_type == BED_TYPE_VIBRADORM_APP:
+        from .beds.vibradorm_app import validate_profile_roles as validate_app_roles
+        from .profiles.vibradorm import validate_vibradorm_app_profile
+
+        control = data[CONF_VIBRADORM_CONTROL_TYPE]
+        validate_app_roles(
+            client,
+            validate_vibradorm_app_profile(
+                data[CONF_VIBRADORM_APP_PROFILE],
+                "other" if control == "other" else int(control),
+                restored=data[CONF_VIBRADORM_RESTORED],
+                floor_light=data[CONF_VIBRADORM_FLOOR_LIGHT],
+                rgb=data[CONF_VIBRADORM_RGB],
+                massage=data[CONF_HAS_MASSAGE],
+                light_extension=data[CONF_VIBRADORM_LIGHT_EXTENSION],
+                remote=data.get(CONF_VIBRADORM_VMAT_REMOTE),
+            ),
+        )
+    return {}
+
+
+def _jiecang_transport(
+    _hass: HomeAssistant, client: BleakClient, data: Mapping[str, Any]
+) -> Mapping[str, Any]:
+    from .beds.jiecang_app import require_app_transport
+
+    require_app_transport(client, data)
+    return {}
+
+
+def _okin_endpoint(
+    _hass: HomeAssistant, client: BleakClient, data: Mapping[str, Any]
+) -> Mapping[str, Any]:
+    if data[CONF_BED_TYPE] in _OKIN_ROUTES:
+        from .controller_factory import require_okin_route_endpoint
+
+        require_okin_route_endpoint(client, data[CONF_BED_TYPE])
+    return {}
+
+
+def _sleepys_route(
+    _hass: HomeAssistant, client: BleakClient, data: Mapping[str, Any]
+) -> Mapping[str, Any]:
+    if data[CONF_BED_TYPE] in _SLEEPYS_ROUTES:
+        from .controller_factory import require_sleepys_route
+
+        require_sleepys_route(client, data)
+    return {}
+
+
+def _app_roles(
+    _hass: HomeAssistant, client: BleakClient, data: Mapping[str, Any]
+) -> Mapping[str, Any]:
+    """The staged Customatic or Jordan's app's own command endpoint or roles."""
+    bed_type = data[CONF_BED_TYPE]
+    if bed_type in (BED_TYPE_ZSERIES, *_JORDANS_ROUTES):
+        from .beds.serenity import require_app_roles
+
+        require_app_roles(
+            client,
+            f"zseries_{data[CONF_PROTOCOL_VARIANT]}" if bed_type == BED_TYPE_ZSERIES else bed_type,
+        )
+    elif bed_type in _CUSTOMATIC_ROUTES:
+        from .beds.customatic import require_command_endpoint
+
+        require_command_endpoint(client, bed_type.removeprefix("customatic_"))
+    return {}
+
+
+def _malouf_transport(
+    hass: HomeAssistant, client: BleakClient, data: Mapping[str, Any]
+) -> Mapping[str, Any]:
+    """The app's transport, read from the advertised name as the runtime reads it."""
+    if data[CONF_BED_TYPE] != BED_TYPE_MALOUF_APP:
+        return {}
+    from homeassistant.components import bluetooth
+
+    from .beds.malouf_app import require_app_transport
+
+    advertised = bluetooth.async_last_service_info(hass, data[CONF_ADDRESS], connectable=False)
+    # The entry keeps the user's choice, which may stay automatic.
+    return {
+        CONF_MALOUF_APP_TRANSPORT: require_app_transport(
+            client, data, advertised.device.name if advertised else None
+        )
+    }
+
+
+def _logicdata_route(
+    _hass: HomeAssistant, client: BleakClient, data: Mapping[str, Any]
+) -> Mapping[str, Any]:
+    from .controller_factory import require_logicdata_route
+
+    require_logicdata_route(client, data)
+    return {}
+
+
+def _limoss_remote_route(
+    _hass: HomeAssistant, client: BleakClient, data: Mapping[str, Any]
+) -> Mapping[str, Any]:
+    if data[CONF_BED_TYPE] == BED_TYPE_LIMOSS_REMOTE:
+        from .beds.limoss_remote import require_app_route
+
+        require_app_route(client)
+    return {}
 
 
 VIBRADORM_FAMILY: Final = ManagedFamily(
@@ -146,6 +278,7 @@ VIBRADORM_FAMILY: Final = ManagedFamily(
         CONF_VMATBASIC_PROFILE,
     ),
     requires_check=lambda _data: True,
+    endpoint_check=_vibradorm_roles,
 )
 
 # The app controllers need their app's exact GATT roles; the legacy Jiecang and
@@ -155,6 +288,7 @@ JIECANG_FAMILY: Final = ManagedFamily(
     bed_types=frozenset({BED_TYPE_JIECANG, BED_TYPE_COMFORT_MOTION, BED_TYPE_JIECANG_APP}),
     route_keys=(CONF_JIECANG_APP_PROFILE, CONF_JIECANG_APP_LAYOUT, CONF_JIECANG_APP_TRANSPORT),
     requires_check=lambda data: data.get(CONF_BED_TYPE) == BED_TYPE_JIECANG_APP,
+    endpoint_check=_jiecang_transport,
 )
 
 _OKIN_ROUTES: Final = frozenset(
@@ -177,6 +311,7 @@ OKIN_FAMILY: Final = ManagedFamily(
     # The question for an Okin CST bed lists its products first, then these
     # routes. Configure still picks a CST product.
     asks_for=lambda data: data.get(CONF_BED_TYPE) == BED_TYPE_OKIN_CST,
+    endpoint_check=_okin_endpoint,
 )
 
 # The Keeson controllers fall back across their write roles and never refuse a
@@ -252,6 +387,7 @@ SLEEPYS_FAMILY: Final = ManagedFamily(
     bed_types=_SLEEPYS_ROUTES,
     route_keys=(CONF_SLEEPYS_ELITE_SELECTOR, CONF_PROTOCOL_VARIANT),
     requires_check=lambda data: data.get(CONF_BED_TYPE) in _SLEEPYS_ROUTES,
+    endpoint_check=_sleepys_route,
 )
 
 _CUSTOMATIC_ROUTES: Final = frozenset(
@@ -270,6 +406,7 @@ CUSTOMATIC_FAMILY: Final = ManagedFamily(
     bed_types=_CUSTOMATIC_ROUTES,
     route_keys=(CONF_PROTOCOL_VARIANT,),
     requires_check=lambda data: data.get(CONF_BED_TYPE) in _CUSTOMATIC_ROUTES,
+    endpoint_check=_app_roles,
 )
 
 _JORDANS_ROUTES: Final = frozenset({BED_TYPE_SERENITY, BED_TYPE_TRANQUIL})
@@ -279,6 +416,7 @@ JORDANS_FAMILY: Final = ManagedFamily(
     bed_types=_JORDANS_ROUTES,
     route_keys=(),
     requires_check=lambda data: data.get(CONF_BED_TYPE) in _JORDANS_ROUTES,
+    endpoint_check=_app_roles,
 )
 
 _MALOUF_ROUTES: Final = frozenset(
@@ -292,6 +430,7 @@ MALOUF_FAMILY: Final = ManagedFamily(
     bed_types=_MALOUF_ROUTES,
     route_keys=(CONF_MALOUF_APP_PROFILE,),
     requires_check=lambda data: data.get(CONF_BED_TYPE) == BED_TYPE_MALOUF_APP,
+    endpoint_check=_malouf_transport,
 )
 
 _LOGICDATA_ROUTES: Final = frozenset({BED_TYPE_LOGICDATA, BED_TYPE_LOGICDATA_APP})
@@ -309,6 +448,7 @@ LOGICDATA_FAMILY: Final = ManagedFamily(
         CONF_LOGICDATA_APP_TRANSPORT,
     ),
     requires_check=lambda data: data.get(CONF_BED_TYPE) in _LOGICDATA_ROUTES,
+    endpoint_check=_logicdata_route,
 )
 
 # The Jensen and Svane controllers resolve their GATT roles only when they
@@ -332,6 +472,7 @@ LIMOSS_FAMILY: Final = ManagedFamily(
     bed_types=frozenset({BED_TYPE_LIMOSS, BED_TYPE_LIMOSS_REMOTE, BED_TYPE_FSM_RELAX}),
     route_keys=(),
     requires_check=lambda data: data.get(CONF_BED_TYPE) == BED_TYPE_LIMOSS_REMOTE,
+    endpoint_check=_limoss_remote_route,
 )
 
 MANAGED_FAMILIES: Final[tuple[ManagedFamily, ...]] = (

@@ -118,7 +118,7 @@ async def test_the_starcode_row_hands_each_app_to_its_own_step(hass):
     result = await flow.async_step_starcode_family()
     assert choices(result) == ["m5x4", "m5x5", "m1x12"]
     result = await flow.async_step_starcode_family({"choice": "m5x5"})
-    assert result["step_id"] == "starcode_m5x5"
+    assert result["step_id"] == "profile_questions"
     assert flow._manual_data[const.CONF_BED_TYPE] == const.BED_TYPE_STARCODE_M5X5
 
 

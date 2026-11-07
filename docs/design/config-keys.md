@@ -52,13 +52,13 @@ original data and options keep them under `origin_data` and `origin_options`.
 |---|---|---|---|
 | `motor_count` | User | Setup and Configure; a question of the Keeson ORE apps and INNOVA, the Okin remotes and Sleepy's BOX15 and BOX24; owned by the declarations that fix it | `coordinator.py`, controllers, entity platforms |
 | `has_massage` | User | Setup and Configure; a question of `vibradorm_app@caresse` and `sleepys_box25`; owned by the declarations that fix or derive it; turned off by [schema 5.3](#massage-off-in-schema-53) where the profile has no massage | Controllers, entity platforms |
-| `has_light` | User | The chair-and-bed app steps, `cluster033_app` and Configure; a question of `jiecang_app` and `logicdata_app` | `controller_factory.py`, `coordinator.py` |
+| `has_light` | User | A question of `jiecang_app`, `logicdata_app`, `limoss_remote`, `fsm_relax` and `ergomotion_4` | `controller_factory.py`, `coordinator.py` |
 | `disable_angle_sensing` | User | Setup and Configure; owned by the declarations that fix it | `coordinator.py` |
 | `motor_pulse_count` | User | Setup and Configure; owned by the declarations that fix it | `coordinator.py`, `beds/cluster018.py` |
 | `motor_pulse_delay_ms` | User | Setup and Configure; owned by the declarations that fix it | `coordinator.py` |
 | `motor_pulse_user_set` | Internal | Setup and Configure record whether the user changed the pulse fields | `coordinator.py` (a profile default applies otherwise) |
-| `product_type` | User | App steps (Limoss Remote, FSM Relax, Ergomotion 4 apps), Configure; a question of `richmat_classic_apps`, `gmmotor`, `isleep`, `doublesleep` and `sleeptracker` | `controller_factory.py`, `pairing.py` |
-| `reverse_motor_1`, `reverse_motor_2`, `reverse_motor_3`, `reverse_motor_4` | User | Limoss Remote and FSM Relax steps, Configure | `controller_factory.py` |
+| `product_type` | User | A question of `limoss_remote`, `fsm_relax`, the Keeson app layouts and `ergomotion_4`, `richmat_classic_apps`, `gmmotor`, `isleep`, `doublesleep` and `sleeptracker` | `controller_factory.py`, `pairing.py` |
+| `reverse_motor_1`, `reverse_motor_2`, `reverse_motor_3`, `reverse_motor_4` | User | A question of `limoss_remote` and `fsm_relax` | `controller_factory.py` |
 | `ble_device_name` | User | Setup stores the advertised name; the StarCode steps and Configure ask it; a question of `motion_bed` and `motomotion` | Name rules in controllers, `coordinator.py` |
 | `preferred_adapter` | User | Setup and Configure | `coordinator.py`, repairs |
 | `connection_profile` | User | Configure | `coordinator.py` |
@@ -110,12 +110,12 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `rmcontrol_side` | Profile | A question of `richmat` with an RMControl product | `coordinator.py`, `coordinator_connection.py` |
 | `cb24_bed_selection` | User | A question of `okin_cb24` | `coordinator.py` |
 | `gmmotor_side` | Profile | A question of `gmmotor` | `controller_factory.py` |
-| `starcode_abm5_4_command_selector` | User | `starcode_app` step, Configure | `controller_factory.py` |
-| `starcode_abm5_4_ui_selector` | Internal | `starcode_app` copies the command selector | `controller_factory.py` |
-| `starcode_abm5_4_transport_selector` | User | `starcode_app` step (or its connection probe), Configure | `controller_factory.py` |
-| `starcode_m5x5_profile` | User | `starcode_m5x5` step, Configure | `controller_factory.py`, `starcode_accessory_group.py` |
-| `starcode_m1x12_profile` | User | `starcode_m1x12` step, Configure | `controller_factory.py`, `starcode_accessory_group.py` |
-| `starcode_lift_entries` | User | StarCode and ELEVATE steps, Configure | `starcode_accessory_group.py`, `pairing_candidates.py` |
+| `starcode_abm5_4_command_selector` | User | A question of `starcode_abm5_4` | `controller_factory.py` |
+| `starcode_abm5_4_ui_selector` | Internal | `starcode_abm5_4` copies a changed command selector | `controller_factory.py` |
+| `starcode_abm5_4_transport_selector` | User | A question of `starcode_abm5_4`, or the setup connection probe | `controller_factory.py` |
+| `starcode_m5x5_profile` | User | A question of `starcode_m5x5` | `controller_factory.py`, `starcode_accessory_group.py` |
+| `starcode_m1x12_profile` | User | A question of `starcode_m1x12` | `controller_factory.py`, `starcode_accessory_group.py` |
+| `starcode_lift_entries` | User | A question of `starcode_m5x5`, `starcode_m1x12` and `star_elevate` | `starcode_accessory_group.py`, `pairing_candidates.py` |
 | `motion_bed_restored` | Profile | A question of `motion_bed` | `controller_factory.py` |
 | `motion_bed_preset` | Profile | A question of `motion_bed` | `controller_factory.py` |
 | `motion_bed_movement` | Profile | A question of `motion_bed` | `controller_factory.py` |
@@ -126,11 +126,12 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `sleeptracker_processor_type` | Profile | A question of `sleeptracker` | `controller_factory.py` |
 | `limoss_remote_theme` | User | `limoss_remote` step, Configure | `controller_factory.py` |
 | `limoss_remote_state` | Internal | `coordinator.py` keeps the remote's state | `controller_factory.py` |
-| `fsm_relax_memory_names` | User | `fsm_relax` step, Configure | `controller_factory.py` |
-| `ergomotion4_model_keys` | User | `cluster033_app` step for a custom product, Configure | `beds/ergomotion4.py` |
-| `ergomotion4_massage_keys` | User | `cluster033_app` step for a custom product, Configure | `beds/ergomotion4.py` |
-| `ergomotion4_product_name` | User | `cluster033_app` step for a custom product, Configure | `beds/ergomotion4.py` |
-| `ergomotion4_rgb` | User | `cluster033_app` step for a custom product, Configure | `beds/ergomotion4.py` |
+| `fsm_relax_memory_names` | User | A question of `fsm_relax` | `controller_factory.py` |
+| `serta_mp_memory_1_head`, `serta_mp_memory_1_foot`, `serta_mp_memory_2_head`, `serta_mp_memory_2_foot`, `serta_mp_memory_3_head`, `serta_mp_memory_3_foot`, `serta_mp_memory_4_head`, `serta_mp_memory_4_foot` | User | A question of `serta_mp_remote` | `controller_factory.py` |
+| `ergomotion4_model_keys` | User | A question of `ergomotion_4`, for an Other product | `beds/ergomotion4.py` |
+| `ergomotion4_massage_keys` | User | A question of `ergomotion_4`, for an Other product | `beds/ergomotion4.py` |
+| `ergomotion4_product_name` | User | A question of `ergomotion_4`, for an Other product | `beds/ergomotion4.py` |
+| `ergomotion4_rgb` | User | A question of `ergomotion_4`, for an Other product | `beds/ergomotion4.py` |
 | `pairlink_role` | User | Configure, for Reverie Pairlink | `beds/reverie_pairlink_runtime.py`, `coordinator_connection.py` |
 | `pairlink_host_source` | User | Configure, for Reverie Pairlink | `__init__.py` |
 | `pairlink_home_id` | User | Configure, for Reverie Pairlink | `beds/reverie_pairlink_runtime.py` |

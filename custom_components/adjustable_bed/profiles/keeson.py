@@ -1138,11 +1138,6 @@ def app_profile(app: str, layout: str | None = None) -> AppProfile:
     )
 
 
-SERTA_MEMORY_KEYS: Final = frozenset(
-    f"serta_mp_memory_{slot}_{axis}" for slot in range(1, 5) for axis in ("head", "foot")
-)
-
-
 def is_ksbt03c_name(name: str | None) -> bool:
     """KSBT03C boxes (for example Ergomotion RIO 5.0); KSBT03CR is a different box."""
     normalized = (name or "").strip().lower()

@@ -469,18 +469,15 @@ async def test_catalog_action_bytes(vector):
 
 async def test_configuration_and_actual_entity_exposure(hass):
     from custom_components.adjustable_bed.button import _button_entities_for
-    from custom_components.adjustable_bed.config_flow import (
-        _add_cluster033_schema_fields,
-        _normalize_cluster033_data,
-    )
     from custom_components.adjustable_bed.detection import get_bed_type_options
+    from custom_components.adjustable_bed.setup_questions import SETUP_PROFILES
 
     data = {"bed_type": "ergomotion_4", "product_type": "M30"}
-    schema = {}
-    _add_cluster033_schema_fields(schema, data)
-    _normalize_cluster033_data(data)
-    assert data["disable_angle_sensing"] is True
-    assert data["has_massage"] is False
+    profile = SETUP_PROFILES["ergomotion_4"]
+    assert profile.validate is not None and profile.validate(data) == {}
+    settled = profile.settled(data)
+    assert settled["disable_angle_sensing"] is True
+    assert settled["has_massage"] is False
     assert any(choice["value"] == "ergomotion_4" for choice in get_bed_type_options())
     ctrl, coord = await ready("M30")
     coord.controller = coord.capability_controller = ctrl

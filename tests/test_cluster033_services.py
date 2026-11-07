@@ -11,16 +11,13 @@ from homeassistant.exceptions import ServiceValidationError
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
 from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.button import ControllerActionButton
-from custom_components.adjustable_bed.config_flow import (
-    _add_cluster033_schema_fields,
-    _normalize_cluster033_data,
-)
 from custom_components.adjustable_bed.const import DOMAIN, SIDE_BOTH
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.detection import get_bed_type_options
 from custom_components.adjustable_bed.profiles.keeson import APP_LAYOUTS, APP_NAMES, app_profile
 from custom_components.adjustable_bed.services import async_register_services
+from custom_components.adjustable_bed.setup_questions import SETUP_PROFILES
 
 from .test_cluster033 import NOW, coordinator, ready
 
@@ -158,16 +155,18 @@ def test_findable_app_and_side_owned_options(app, layouts):
         "protocol_variant",
         "motor_pulse_delay_ms",
     } <= hidden_generic_fields(app, None)
+    profile = SETUP_PROFILES[app]
+    assert profile.questions[0].key == "product_type"
+    assert profile.validate is not None
     for layout in layouts:
         data = {"bed_type": app, "product_type": layout}
-        _normalize_cluster033_data(data)
-        assert data["motor_count"] == 2
-        assert data["disable_angle_sensing"] is (app != "serta_mp_remote")
-        schema = {}
-        _add_cluster033_schema_fields(schema, data)
-        assert "product_type" in {marker.schema for marker in schema}
-    with pytest.raises(ValueError):
-        _normalize_cluster033_data({"bed_type": app, "product_type": "Not a layout"})
+        assert profile.validate(data) == {}
+        settled = profile.settled(data)
+        assert settled["motor_count"] == 2
+        assert settled["disable_angle_sensing"] is (app != "serta_mp_remote")
+    assert profile.validate({"bed_type": app, "product_type": "Not a layout"}) == {
+        "base": "cluster033_layout"
+    }
 
 
 @pytest.mark.parametrize(

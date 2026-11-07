@@ -74,7 +74,7 @@ from custom_components.adjustable_bed.detection import (
     get_bed_type_options,
     resolve_bed_type_choice,
 )
-from custom_components.adjustable_bed.profiles.keeson import SERTA_MEMORY_KEYS
+from custom_components.adjustable_bed.setup_questions import CONF_SERTA_MP_MEMORIES
 from tests.form_helpers import finish_new_bed, shown_markers, start_new_bed
 
 
@@ -347,7 +347,7 @@ def test_a_bed_type_change_leaves_no_other_profiles_settings(bed_type: str) -> N
             },
         ),
         (BED_TYPE_FSM_RELAX, {CONF_FSM_RELAX_MEMORY_NAMES: ["Read"] * 8}),
-        ("serta_mp_remote", dict.fromkeys(SERTA_MEMORY_KEYS, 20)),
+        ("serta_mp_remote", dict.fromkeys(CONF_SERTA_MP_MEMORIES, 20)),
     ],
 )
 async def test_configure_drops_the_old_apps_settings_with_its_bed_type(

@@ -43,7 +43,7 @@
       "code": [
         "custom_components/adjustable_bed/ergomotion4_profiles.py::PRODUCTS",
         "custom_components/adjustable_bed/beds/ergomotion4.py::custom_product",
-        "custom_components/adjustable_bed/config_flow.py::_add_cluster033_schema_fields",
+        "custom_components/adjustable_bed/setup_questions.py::_app_layout_profile",
         "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE"
       ],
       "tests": [

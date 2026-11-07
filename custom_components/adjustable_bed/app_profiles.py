@@ -70,8 +70,6 @@ from .const import (
     BED_TYPE_ZSERIES,
     CONF_BLE_DEVICE_NAME,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_FSM_RELAX_MEMORY_NAMES,
-    CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_JIECANG_APP_PROFILE,
     CONF_KAIDI_PRODUCT_ID,
@@ -87,12 +85,8 @@ from .const import (
     CONF_PAIRLINK_PASSWORD_HEX,
     CONF_PAIRLINK_PASSWORD_TEXT,
     CONF_PAIRLINK_ROLE,
-    CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
-    CONF_REVERSE_MOTORS,
-    CONF_STARCODE_LIFT_ENTRIES,
-    CONF_STARCODE_M1X12_PROFILE,
-    CONF_STARCODE_M5X5_PROFILE,
+    CONF_STARCODE_UI_SELECTOR,
     CONF_VIBRADORM_APP_METADATA,
     CONF_VIBRADORM_APP_PROFILE,
     KAIDI_VARIANT_FLOYD,
@@ -110,9 +104,7 @@ from .const import (
     RICHMAT_MH_BED_TYPES,
     SOLACE_VARIANT_WOOSA,
     STAR_ELEVATE_VARIANT_M1X12,
-    STARCODE_APP_CONFIG_KEYS,
 )
-from .profiles.keeson import SERTA_MEMORY_KEYS
 
 
 def hidden_generic_fields(bed_type: str | None, variant: str | None) -> frozenset[str]:
@@ -141,19 +133,15 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "gmmotor_sleep_sxb": SideProfile("GM Control SXB sleep module"),
     BED_TYPE_BF: SideProfile("BF"),
     BED_TYPE_CHERISH: SideProfile("Cherish"),
-    'tempur_curve': SideProfile('Tempur Curve', frozenset({CONF_PRODUCT_TYPE})),
-    'qplus_app': SideProfile('Q-Plus Adjustable Remote', frozenset({CONF_PRODUCT_TYPE, CONF_PROTOCOL_VARIANT})),
-    'serta_mp_remote': SideProfile('Serta MP Remote', SERTA_MEMORY_KEYS | {CONF_PRODUCT_TYPE}),
-    'omazz_adjusto_iii': SideProfile('Omazz Adjusto III', frozenset({CONF_PRODUCT_TYPE})),
-    'ergomotion_app': SideProfile('Ergomotion (app)', frozenset({CONF_PRODUCT_TYPE})),
-    "ergomotion_4": SideProfile("Ergomotion 4.0", frozenset({
-        CONF_PRODUCT_TYPE, CONF_HAS_LIGHT, CONF_BLE_DEVICE_NAME,
-        "ergomotion4_model_keys", "ergomotion4_massage_keys", "ergomotion4_rgb",
-        "ergomotion4_product_name",
-    })),
-    'row_control': SideProfile('ROW Control', frozenset({CONF_PRODUCT_TYPE})),
-    'ergo_slim': SideProfile('Ergo Slim', frozenset({CONF_PRODUCT_TYPE})),
-    'tempur_au': SideProfile('TEMPUR AU', frozenset({CONF_PRODUCT_TYPE})),
+    "tempur_curve": SideProfile("Tempur Curve"),
+    "qplus_app": SideProfile("Q-Plus Adjustable Remote"),
+    "serta_mp_remote": SideProfile("Serta MP Remote"),
+    "omazz_adjusto_iii": SideProfile("Omazz Adjusto III"),
+    "ergomotion_app": SideProfile("Ergomotion (app)"),
+    "ergomotion_4": SideProfile("Ergomotion 4.0", frozenset({CONF_BLE_DEVICE_NAME})),
+    "row_control": SideProfile("ROW Control"),
+    "ergo_slim": SideProfile("Ergo Slim"),
+    "tempur_au": SideProfile("TEMPUR AU"),
     "casper_base": SideProfile("Casper Base product", variant_owned=True),
     "hush_base": SideProfile("Hush Base product", variant_owned=True),
     "casper_sleep_mm": SideProfile("Casper Base MM sensor"),
@@ -171,18 +159,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_GLIDEAWAY_MOTION: SideProfile("Glideaway Motion", variant_owned=True),
     BED_TYPE_ISLEEP: SideProfile("ISleep"),
     BED_TYPE_BEDSENSE: SideProfile("BedSense", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
-    BED_TYPE_FSM_RELAX: SideProfile(
-        "FSM Relax",
-        frozenset(
-            {
-                CONF_PRODUCT_TYPE,
-                CONF_HAS_LIGHT,
-                CONF_HAS_MASSAGE,
-                CONF_FSM_RELAX_MEMORY_NAMES,
-                *CONF_REVERSE_MOTORS,
-            }
-        ),
-    ),
+    BED_TYPE_FSM_RELAX: SideProfile("FSM Relax"),
     BED_TYPE_LIMOSS_REMOTE: SideProfile("Limoss Remote"),
     BED_TYPE_FURNIMOVE: SideProfile("FurniMove", frozenset({CONF_HAS_MASSAGE})),
     BED_TYPE_LOGICDATA_APP: SideProfile("Logicdata bed app"),
@@ -200,15 +177,10 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_SLEEPTRACKER: SideProfile("Sleeptracker Smart Bed"),
     BED_TYPE_SLEEPYS_ELITE_APP: SideProfile("Sleepy's Elite app", frozenset({CONF_HAS_MASSAGE})),
     BED_TYPE_MOTION_BED: SideProfile("Motion Bed"),
-    BED_TYPE_STARCODE_ABM5_4: SideProfile("AdjustableM5X4", STARCODE_APP_CONFIG_KEYS),
-    BED_TYPE_STARCODE_M5X5: SideProfile(
-        "AdjustableM5X5",
-        frozenset({CONF_STARCODE_M5X5_PROFILE, CONF_BLE_DEVICE_NAME, CONF_STARCODE_LIFT_ENTRIES}),
-    ),
-    BED_TYPE_STARCODE_M1X12: SideProfile(
-        "Adjustable Comfort M1X12",
-        frozenset({CONF_STARCODE_M1X12_PROFILE, CONF_BLE_DEVICE_NAME, CONF_STARCODE_LIFT_ENTRIES}),
-    ),
+    # The command selector's change sets the app's UI selector.
+    BED_TYPE_STARCODE_ABM5_4: SideProfile("AdjustableM5X4", frozenset({CONF_STARCODE_UI_SELECTOR})),
+    BED_TYPE_STARCODE_M5X5: SideProfile("AdjustableM5X5"),
+    BED_TYPE_STARCODE_M1X12: SideProfile("Adjustable Comfort M1X12"),
     BED_TYPE_VIBRADORM_APP: SideProfile("Vibradorm app", frozenset({CONF_VIBRADORM_APP_PROFILE})),
     BED_TYPE_VMATBASIC: SideProfile("V-MAT Basic"),
     BED_TYPE_ESHINE_OKIN: SideProfile("eShine E2000/E3000/E3100/E5000", variant_owned=True),
@@ -309,7 +281,6 @@ def _declared_questions(bed_type: str, variant: str | None) -> frozenset[str]:
 # lists: repair markers, app metadata and its own settings outside a profile.
 _STORED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_OKIN_CST: frozenset({"okimat_model_on_cst", "okin_cst_kept"}),
-    BED_TYPE_STAR_ELEVATE: frozenset({CONF_STARCODE_LIFT_ENTRIES}),
     BED_TYPE_VIBRADORM_APP: frozenset({CONF_VIBRADORM_APP_METADATA}),
 }
 # Settings every route reads, which no profile owns.

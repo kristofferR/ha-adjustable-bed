@@ -21,6 +21,7 @@ A `SetupProfile` has:
 | `derive` | The owned fields the profile computes from its answers, such as a FurniMove handset table's motor count and massage. |
 | `title` | The name the step shows for the staged route. |
 | `seed` | Fills setup's defaults from the bed's advertisement before the first form, such as the ISleep product and room or the Motion Bed name. It never replaces a chosen value, and Configure does not run it. |
+| `check` | Errors that read Home Assistant through the flow's `FlowContext`: other config entries, such as a StarCode main's lifts, or the live link Configure must not disturb. It runs once `validate` finds nothing. |
 
 A `Question` stores its answer under `key`. Its `choices` are fixed labels or a
 function of the staged setup, such as the layouts the chosen app supports;
@@ -31,7 +32,15 @@ default, and `staged_when` limits when a staged answer is the default at all,
 for a value the profile stored itself. `validator` replaces the one the choices
 imply, for a range or a format. An `advanced` question sits in a collapsed
 Advanced section in setup. A `searchable` question's choices are a picker the
-user searches by label, for a long list such as a Good Vibe Sleep product.
+user searches by label, for a long list such as a Good Vibe Sleep product. A
+`multiple` question takes a list: several of its choices, such as an Ergomotion
+4.0 product's feature keys, or several lines of text, such as FSM Relax's eight
+memory names. `context_choices` reads the choices from Home Assistant instead,
+such as the config entries a StarCode main can drive as lifts.
+
+`FlowContext` is what a question or check may read beyond the staged setup:
+Home Assistant, the entry Configure edits (none in setup) and whether setup can
+check the connection before it saves.
 
 `when` is the condition for asking a question: a Home Assistant field condition
 on another answer of the same form (`{"field": ..., "value": ...}`, or an
@@ -191,10 +200,6 @@ flows, so a new step cannot appear unrecorded and a removed one cannot linger.
 | `solace_woosa` | A note before choosing Woosa Sleep; it asks nothing |
 | `jiecang_legacy` | Part of the Jiecang journey: a remote route chosen in place of an app needs the motor count and cadence the app had fixed |
 | `verify_octo_pin` | Authentication: setup finishes only after the bed accepts the PIN, or the user corrects it |
-| `starcode_app` | Probes the transport over a live connection when the Bluetooth name cannot settle it |
-| `starcode_m5x5`, `starcode_m1x12` | Their lift groups name other config entries, which a declaration's checks cannot see |
-| `cluster033_app` | A custom product picks its keys in multi-select lists, which a question cannot ask yet |
-| `fsm_relax` | The eight memory names are one multi-value text field, which a question cannot ask yet |
 
 ## Shared steps
 
@@ -266,6 +271,11 @@ These steps serve every bed type or route, so no profile owns them.
 | `vibradorm` | The legacy setup's motor count, massage motors and angle sensing: a form drawn for a detected app or V-MAT Basic sets these itself. |
 | `jensen` | The JMC400 box's PIN (free text; empty uses the default), motor count, massage motors and angle sensing: the family row's form is drawn for Svane, which sets these itself. |
 | `svane:jensen_linon` | Motor count. |
+| `starcode_abm5_4` | The saved command selector and the transport, or the transport from the original Bluetooth name, which setup seeds from the advertisement. A changed command selector sets the app's UI selector. Setup without a scanner needs a transport now; Configure checks a changed one on the live link without connecting. A failed connection check reopens these questions. |
+| `starcode_m5x5`, `starcode_m1x12` | The exact Bluetooth name, the bedding class it selects and the lifts this main drives, which are other config entries. |
+| `star_elevate` | The lifts an ELEVATE main drives. |
+| `fsm_relax` | Bed or chair, light, massage, the four reversals and the eight memory names. |
+| `tempur_curve`, `qplus_app`, `serta_mp_remote`, `omazz_adjusto_iii`, `ergomotion_app`, `row_control`, `ergo_slim`, `tempur_au`, `ergomotion_4` | The layout the app shows. Q-Plus also asks its A, B or Both addressing, Serta MP Remote its four local memories' head and foot angles, and Ergomotion 4.0's Other product its model keys, massage keys, name, light and RGB. The app's labelled controls own every generic field. |
 | `octo` | The PIN (free text; empty when the bed has none) and the motor layout: the advertised count or an explicit 1 to 4. Octo has no app step, so setup asks them in the final settings. Owns the motor count. |
 | `okin_cb24` | The native CB24 side: both, A or B. Asked in the final settings. |
 | `limoss_remote` | Bed or chair, light, massage, the four reversals and the optional artwork theme; the connected device supplies its key layout. |

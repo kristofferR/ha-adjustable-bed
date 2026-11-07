@@ -334,7 +334,25 @@
           "limoss_remote_theme": "App artwork theme",
           "octo_pin": "Octo PIN",
           "octo_motor_count_override": "OCTO motor count",
-          "cb24_bed_selection": "CB24 bed side"
+          "cb24_bed_selection": "CB24 bed side",
+          "starcode_abm5_4_command_selector": "Saved command/parser selector",
+          "starcode_abm5_4_transport_selector": "Bluetooth transport selector",
+          "ergomotion4_model_keys": "Other product: ordered model keys",
+          "ergomotion4_massage_keys": "Other product: massage keys",
+          "ergomotion4_rgb": "Other product: RGB lighting",
+          "ergomotion4_product_name": "Other product: exact app product name",
+          "fsm_relax_memory_names": "Eight local memory names (blank resets M1 to M8)",
+          "starcode_m5x5_profile": "AdjustableM5X5 bed class",
+          "starcode_m1x12_profile": "M1X12 app profile",
+          "starcode_lift_entries": "Independently addressed lifts",
+          "serta_mp_memory_1_head": "Local memory 1, head angle",
+          "serta_mp_memory_1_foot": "Local memory 1, foot angle",
+          "serta_mp_memory_2_head": "Local memory 2, head angle",
+          "serta_mp_memory_2_foot": "Local memory 2, foot angle",
+          "serta_mp_memory_3_head": "Local memory 3, head angle",
+          "serta_mp_memory_3_foot": "Local memory 3, foot angle",
+          "serta_mp_memory_4_head": "Local memory 4, head angle",
+          "serta_mp_memory_4_foot": "Local memory 4, foot angle"
         },
         "data_description": {
           "jiecang_app_layout": "Select the layout configured in the app. The device name and motor count do not identify the layout.",
@@ -384,7 +402,24 @@
           "limoss_remote_theme": "Optional: the artwork theme chosen in the Limoss Remote app, kept as a local preference. It changes no controls.",
           "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
           "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
-          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector."
+          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector.",
+          "starcode_abm5_4_command_selector": "Match the saved command/parser selector. The app initially saves none; manufacturer classification may update it without changing its UI selector.",
+          "starcode_abm5_4_transport_selector": "Use the original Bluetooth device name unless matching a proven app transport explicitly.",
+          "ergomotion4_model_keys": "For Other catalog product only. Enter the model keys in their catalog order, for example o1, o2, o3.",
+          "ergomotion4_massage_keys": "For Other catalog product only. Use the feature keys belonging to that exact product.",
+          "ergomotion4_product_name": "Keep the exact app name. Names containing 4194 select the inverted RGB format.",
+          "fsm_relax_memory_names": "One name per local memory, M1 to M8. A blank name resets its memory's default name.",
+          "starcode_m5x5_profile": "Choose CB25, F23 or kneading to match the exact Bluetooth name. ELEVATE lifts use the DewertOkin ELEVATE bed type.",
+          "starcode_m1x12_profile": "Choose the profile matching the exact Bluetooth name; this app choice is never inferred from shared services or manufacturer data.",
+          "starcode_lift_entries": "Choose other configured lift entries: up to three AdjustableM5X5 or DewertOkin ELEVATE entries for an AdjustableM5X5 main, or up to two ELEVATE entries set to Adjustable Comfort M1X12 ELEVATE for an M1X12 main. Each keeps its own Bluetooth address and controls.",
+          "serta_mp_memory_1_head": "The head angle the app's local memory 1 moves to, in degrees.",
+          "serta_mp_memory_1_foot": "The foot angle the app's local memory 1 moves to, in degrees.",
+          "serta_mp_memory_2_head": "The head angle the app's local memory 2 moves to, in degrees.",
+          "serta_mp_memory_2_foot": "The foot angle the app's local memory 2 moves to, in degrees.",
+          "serta_mp_memory_3_head": "The head angle the app's local memory 3 moves to, in degrees.",
+          "serta_mp_memory_3_foot": "The foot angle the app's local memory 3 moves to, in degrees.",
+          "serta_mp_memory_4_head": "The head angle the app's local memory 4 moves to, in degrees.",
+          "serta_mp_memory_4_foot": "The foot angle the app's local memory 4 moves to, in degrees."
         },
         "sections": {
           "advanced": {
@@ -426,91 +461,11 @@
           "outcome_inconclusive": "PIN verification could not be completed. This does not mean the PIN is wrong. Wake the bed, close other apps connected to it, and check that your Bluetooth adapter or proxy is available. Submit to retry; the entry has not been saved."
         }
       },
-      "starcode_app": {
-        "title": "AdjustableM5X4 app profile",
-        "description": "Choose the selector saved by your app. The original Bluetooth device name selects transport independently; shared identifiers cannot identify this app. Each physical side retains its own settings.",
-        "data": {
-          "starcode_abm5_4_command_selector": "Saved command/parser selector",
-          "starcode_abm5_4_transport_selector": "Bluetooth transport selector"
-        },
-        "data_description": {
-          "starcode_abm5_4_command_selector": "Match the saved command/parser selector. The app initially saves none; manufacturer classification may update it without changing its UI selector.",
-          "starcode_abm5_4_transport_selector": "Use the original Bluetooth device name unless matching a proven app transport explicitly."
-        }
-      },
-      "starcode_m5x5": {
-        "title": "AdjustableM5X5 app",
-        "description": "Confirm the exact bedding class and optional accessory group. Shared Bluetooth services do not identify an app.",
-        "data": {
-          "ble_device_name": "Exact Bluetooth name",
-          "starcode_m5x5_profile": "AdjustableM5X5 bed class",
-          "starcode_lift_entries": "Independently addressed lifts (up to three)"
-        },
-        "data_description": {
-          "ble_device_name": "Enter the unchanged Bluetooth name, preserving case. A friendly display name cannot identify the app class or remote.",
-          "starcode_m5x5_profile": "Choose CB25, F23 or kneading to match the exact Bluetooth name. ELEVATE lifts use the DewertOkin ELEVATE bed type.",
-          "starcode_lift_entries": "Choose up to three other configured AdjustableM5X5 or DewertOkin ELEVATE entries. This main and the three lifts keep separate Bluetooth addresses and controls."
-        }
-      },
-      "fsm_relax": {
-        "title": "FSM Relax app profile",
-        "description": "Select the app layout and optional controls explicitly. Raw memories have no known physical units. Shared Bluetooth advertisements do not identify this app profile.",
-        "data": {
-          "product_type": "Bed or chair",
-          "has_light": "Enable light controls",
-          "has_massage": "Has massage feature",
-          "fsm_relax_memory_names": "Eight local memory names (blank resets M1 to M8)",
-          "reverse_motor_1": "Reverse motor channel 1",
-          "reverse_motor_2": "Reverse motor channel 2",
-          "reverse_motor_3": "Reverse motor channel 3",
-          "reverse_motor_4": "Reverse motor channel 4"
-        }
-      },
       "vibradorm": {
         "title": "Vibradorm setup",
         "description": "Choose the app you normally use on your phone. We’ll ask for the matching remote or product next. You can keep your current setup, or choose Legacy setup for the previous controls.",
         "data": {
           "app": "App or current setup"
-        }
-      },
-      "starcode_m1x12": {
-        "title": "Adjustable Comfort M1X12 app",
-        "description": "Select this app explicitly. The shared Bluetooth service, manufacturer and ELEVATE name do not identify the app.",
-        "data": {
-          "ble_device_name": "Exact Bluetooth name",
-          "starcode_m1x12_profile": "M1X12 app profile",
-          "starcode_lift_entries": "M1X12 ELEVATE accessories (up to two)"
-        },
-        "data_description": {
-          "ble_device_name": "Enter the unchanged Bluetooth name. The exact prefix selects CB25, F23 or kneading after you choose this app.",
-          "starcode_m1x12_profile": "Choose the profile matching the exact Bluetooth name; this app choice is never inferred from shared services or manufacturer data.",
-          "starcode_lift_entries": "Choose up to two separately configured ELEVATE entries explicitly set to Adjustable Comfort M1X12 ELEVATE. Existing ELEVATE entries are not changed when linking."
-        }
-      },
-      "cluster033_app": {
-        "title": "App controls",
-        "description": "Choose the layout shown by your bed app. Layouts do not identify physical motor count. Q-Plus A/B/Both selects app wire addressing, independently from paired Left/Right sides.",
-        "data": {
-          "product_type": "App layout",
-          "protocol_variant": "Q-Plus bed selection",
-          "serta_mp_memory_1_head": "Local memory 1, head angle",
-          "serta_mp_memory_1_foot": "Local memory 1, foot angle",
-          "serta_mp_memory_2_head": "Local memory 2, head angle",
-          "serta_mp_memory_2_foot": "Local memory 2, foot angle",
-          "serta_mp_memory_3_head": "Local memory 3, head angle",
-          "serta_mp_memory_3_foot": "Local memory 3, foot angle",
-          "serta_mp_memory_4_head": "Local memory 4, head angle",
-          "serta_mp_memory_4_foot": "Local memory 4, foot angle",
-          "ergomotion4_model_keys": "Other product: ordered model keys",
-          "ergomotion4_massage_keys": "Other product: massage keys",
-          "ergomotion4_rgb": "Other product: RGB lighting",
-          "ergomotion4_product_name": "Other product: exact app product name",
-          "has_light": "Other product: lighting"
-        },
-        "data_description": {
-          "ergomotion4_model_keys": "For Other catalog product only. Enter the model keys in their catalog order, for example o1, o2, o3.",
-          "ergomotion4_massage_keys": "For Other catalog product only. Use the feature keys belonging to that exact product.",
-          "ergomotion4_product_name": "Keep the exact app name. Names containing 4194 select the inverted RGB format."
         }
       },
       "migration_confirm": {
@@ -960,7 +915,16 @@
           "ergomotion4_rgb": "Other product: RGB lighting",
           "ergomotion4_product_name": "Other product: exact app product name",
           "cluster018_third_service": "Allow the app’s third-service fallback",
-          "octo_motor_count_override": "OCTO motor count"
+          "octo_motor_count_override": "OCTO motor count",
+          "starcode_m1x12_profile": "M1X12 app profile",
+          "serta_mp_memory_1_head": "Local memory 1, head angle",
+          "serta_mp_memory_1_foot": "Local memory 1, foot angle",
+          "serta_mp_memory_2_head": "Local memory 2, head angle",
+          "serta_mp_memory_2_foot": "Local memory 2, foot angle",
+          "serta_mp_memory_3_head": "Local memory 3, head angle",
+          "serta_mp_memory_3_foot": "Local memory 3, foot angle",
+          "serta_mp_memory_4_head": "Local memory 4, head angle",
+          "serta_mp_memory_4_foot": "Local memory 4, foot angle"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -1028,7 +992,8 @@
           "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count.",
           "sleepys_elite_selector": "Choose the selector saved for this physical bed. Paired sides keep their selector independently.",
           "cluster018_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes.",
-          "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout."
+          "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
+          "starcode_m1x12_profile": "Choose the profile matching the exact Bluetooth name; this app choice is never inferred from shared services or manufacturer data."
         }
       },
       "remove_bond": {
@@ -1153,7 +1118,25 @@
           "limoss_remote_theme": "App artwork theme",
           "octo_pin": "Octo PIN",
           "octo_motor_count_override": "OCTO motor count",
-          "cb24_bed_selection": "CB24 bed side"
+          "cb24_bed_selection": "CB24 bed side",
+          "starcode_abm5_4_command_selector": "Saved command/parser selector",
+          "starcode_abm5_4_transport_selector": "Bluetooth transport selector",
+          "ergomotion4_model_keys": "Other product: ordered model keys",
+          "ergomotion4_massage_keys": "Other product: massage keys",
+          "ergomotion4_rgb": "Other product: RGB lighting",
+          "ergomotion4_product_name": "Other product: exact app product name",
+          "fsm_relax_memory_names": "Eight local memory names (blank resets M1 to M8)",
+          "starcode_m5x5_profile": "AdjustableM5X5 bed class",
+          "starcode_m1x12_profile": "M1X12 app profile",
+          "starcode_lift_entries": "Independently addressed lifts",
+          "serta_mp_memory_1_head": "Local memory 1, head angle",
+          "serta_mp_memory_1_foot": "Local memory 1, foot angle",
+          "serta_mp_memory_2_head": "Local memory 2, head angle",
+          "serta_mp_memory_2_foot": "Local memory 2, foot angle",
+          "serta_mp_memory_3_head": "Local memory 3, head angle",
+          "serta_mp_memory_3_foot": "Local memory 3, foot angle",
+          "serta_mp_memory_4_head": "Local memory 4, head angle",
+          "serta_mp_memory_4_foot": "Local memory 4, foot angle"
         },
         "data_description": {
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
@@ -1271,7 +1254,25 @@
           "limoss_remote_theme": "App artwork theme",
           "octo_pin": "Octo PIN",
           "octo_motor_count_override": "OCTO motor count",
-          "cb24_bed_selection": "CB24 bed side"
+          "cb24_bed_selection": "CB24 bed side",
+          "starcode_abm5_4_command_selector": "Saved command/parser selector",
+          "starcode_abm5_4_transport_selector": "Bluetooth transport selector",
+          "ergomotion4_model_keys": "Other product: ordered model keys",
+          "ergomotion4_massage_keys": "Other product: massage keys",
+          "ergomotion4_rgb": "Other product: RGB lighting",
+          "ergomotion4_product_name": "Other product: exact app product name",
+          "fsm_relax_memory_names": "Eight local memory names (blank resets M1 to M8)",
+          "starcode_m5x5_profile": "AdjustableM5X5 bed class",
+          "starcode_m1x12_profile": "M1X12 app profile",
+          "starcode_lift_entries": "Independently addressed lifts",
+          "serta_mp_memory_1_head": "Local memory 1, head angle",
+          "serta_mp_memory_1_foot": "Local memory 1, foot angle",
+          "serta_mp_memory_2_head": "Local memory 2, head angle",
+          "serta_mp_memory_2_foot": "Local memory 2, foot angle",
+          "serta_mp_memory_3_head": "Local memory 3, head angle",
+          "serta_mp_memory_3_foot": "Local memory 3, foot angle",
+          "serta_mp_memory_4_head": "Local memory 4, head angle",
+          "serta_mp_memory_4_foot": "Local memory 4, foot angle"
         },
         "data_description": {
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",

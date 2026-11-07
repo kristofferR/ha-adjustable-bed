@@ -345,7 +345,7 @@ async def test_another_app_restarts_the_journey_for_the_same_bed(
     flow = hass.config_entries.flow._progress[result["flow_id"]]
     assert flow._manual_data[const.CONF_BED_TYPE] == const.BED_TYPE_LINAK
     # The Okin question's own state is gone, so nothing of it is kept.
-    assert flow._okin_incoming is None
+    assert "okin_family" not in flow._family_incoming
     hass.config_entries.flow.async_abort(result["flow_id"])
 
 
