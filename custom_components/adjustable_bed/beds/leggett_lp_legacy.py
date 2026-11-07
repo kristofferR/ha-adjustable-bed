@@ -2,6 +2,7 @@
 
 The app's control labels do not establish a common physical motor layout. Keep
 its per-control packet mode and event states instead of assigning generic axes.
+A profile over the Richmat 6E codec: the layout catalog holds the app's tokens.
 """
 
 from __future__ import annotations
@@ -13,7 +14,9 @@ from time import monotonic
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+from ..codec import richmat as codec
 from ..lp_legacy_profiles import LpLegacyAction, LpLegacyControl, get_lp_legacy_profile
+from ..profiles.richmat import LP_LEGACY
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -27,12 +30,12 @@ if TYPE_CHECKING:
 
     from ..coordinator import AdjustableBedCoordinator
 
-_TICK_SECONDS = 0.1
-_LONG_PRESS_TICKS = 31
-_NOTIFICATION_EFFECTS = {
-    bytes.fromhex("6E 09 01 00 78"): "app_status_5",
-    bytes.fromhex("6E 07 01 01 77"): "alarm_routine_1",
-    bytes.fromhex("6E 07 01 02 78"): "alarm_routine_2",
+TICK_S = 0.1
+LONG_PRESS_TICKS = 31
+NOTIFICATION_EFFECTS = {
+    codec.frame(codec.BED, 0x09, 0x01, 0x00): "app_status_5",
+    codec.frame(codec.BED, 0x07, 0x01, 0x01): "alarm_routine_1",
+    codec.frame(codec.BED, 0x07, 0x01, 0x02): "alarm_routine_2",
 }
 
 
@@ -65,7 +68,8 @@ class LeggettLpLegacyController(BedController):
         super().__init__(coordinator)
         if mode not in ("legacy", "framed"):
             raise ValueError("LP legacy mode must be legacy or framed")
-        self._profile = get_lp_legacy_profile(model)
+        self.profile = LP_LEGACY
+        self._layout = get_lp_legacy_profile(model)
         self._mode = mode
         self._write_uuid = str(UUID(write_uuid))
         self._read_uuid = str(UUID(read_uuid)) if read_uuid else None
@@ -107,9 +111,9 @@ class LeggettLpLegacyController(BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        labels = Counter(control.label for control in self._profile.controls)
+        labels = Counter(control.label for control in self._layout.controls)
         specs = []
-        for control in self._profile.controls:
+        for control in self._layout.controls:
             label = control.label
             if labels[label] > 1:
                 label = f"{label} ({control.key})"
@@ -117,7 +121,7 @@ class LeggettLpLegacyController(BedController):
                 suffix = " (long press)" if gesture == "long_press" else ""
                 specs.append(
                     ControllerButtonSpec(
-                        key=f"lp_legacy_{self._profile.code.lower()}_{self._mode}_{control.key}_{gesture}",
+                        key=f"lp_legacy_{self._layout.code.lower()}_{self._mode}_{control.key}_{gesture}",
                         name=f"{label}{suffix}",
                         press_fn=_button_callback(control.key, gesture),
                     )
@@ -171,7 +175,7 @@ class LeggettLpLegacyController(BedController):
     async def _wait_ticks(self, ticks: int, *, started_at: float | None = None) -> bool:
         """Return whether the requested app time elapsed without cancellation."""
         cancel = self._coordinator.cancel_command
-        delay = ticks * _TICK_SECONDS
+        delay = ticks * TICK_S
         if started_at is not None:
             delay = max(0.0, delay - (monotonic() - started_at))
         try:
@@ -183,7 +187,7 @@ class LeggettLpLegacyController(BedController):
 
     async def execute_control(self, control_id: str, gesture: str = "press") -> None:
         """Run one exact app gesture; callers must hold the coordinator command lock."""
-        control = next((item for item in self._profile.controls if item.key == control_id), None)
+        control = next((item for item in self._layout.controls if item.key == control_id), None)
         if control is None or gesture not in self._gestures(control):
             raise ValueError("Control gesture is not proven for this LP profile and packet mode")
         packet = self._packet(control.press)
@@ -208,9 +212,9 @@ class LeggettLpLegacyController(BedController):
                 completed = True
             elif control.press.state == 3:
                 if gesture == "long_press":
-                    if not await self._wait_ticks(_LONG_PRESS_TICKS):
+                    if not await self._wait_ticks(LONG_PRESS_TICKS):
                         return
-                    ticks = _LONG_PRESS_TICKS
+                    ticks = LONG_PRESS_TICKS
                     await self.write_command(packet)
                 completed = True
             elif control.press.state == 5:
@@ -244,7 +248,7 @@ class LeggettLpLegacyController(BedController):
     def _notification_handler(self, sender: BleakGATTCharacteristic, data: bytearray) -> None:
         frame = bytes(data)
         self.forward_raw_notification(sender.uuid, frame)
-        effect = _NOTIFICATION_EFFECTS.get(frame)
+        effect = NOTIFICATION_EFFECTS.get(frame)
         if effect is not None:
             self.forward_controller_state_updates(
                 {

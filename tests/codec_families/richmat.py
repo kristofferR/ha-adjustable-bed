@@ -1,4 +1,4 @@
-"""R1 Richmat 6E: Richmat, its app routes, BedTech, WiLinke, HJBed, the classic apps and Good Vibe."""
+"""R1 Richmat 6E: Richmat, its app routes, BedTech, WiLinke and the catalog apps."""
 
 from __future__ import annotations
 
@@ -49,6 +49,7 @@ FAMILY = CodecFamily(
             "eshine",
             "goodvibe",
             "hjbed",
+            "leggett_lp_legacy",
             "leggett_wilinke",
             "richmat",
             "richmat_best_mattress",
@@ -64,7 +65,14 @@ FAMILY = CodecFamily(
         spelled=_spelled,
         frozen=frozenset().union(*FROZEN_FRAMES.values()),
         variant=lambda key, _bed_type: _VARIANTS.get(key),
-        # A layout every classic app ships.
-        entry_data={"richmat_classic_apps": {const.CONF_PRODUCT_TYPE: "6BRM"}},
+        entry_data={
+            # A layout every classic app ships.
+            "richmat_classic_apps": {const.CONF_PRODUCT_TYPE: "6BRM"},
+            "leggett_lp_legacy": {
+                const.CONF_LP_LEGACY_MODEL: "6BRM",
+                const.CONF_LP_LEGACY_MODE: "legacy",
+                const.CONF_LP_LEGACY_WRITE_UUID: "11111111-2222-3333-4444-555555555555",
+            },
+        },
     ),
 )

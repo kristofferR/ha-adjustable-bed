@@ -6,7 +6,8 @@ Nordic, Prefix55, PrefixAA); its remote codes select features, not frames.
 their frames from the pre-v5 controllers. The catalog apps keep their per-model
 tables as data and use this module for their transports: RMControl 21.3.7
 (row018), the five Richmat MH apps (row055), HJBed 2.1.2 (row121), the five
-classic apps (row066) and Good Vibe Sleep 2.0.1 (row116).
+classic apps (row066), Good Vibe Sleep 2.0.1 (row116) and the legacy L&P
+Adjustable Base 2.2.1 (row019).
 """
 
 from __future__ import annotations
@@ -262,3 +263,8 @@ ESHINE: Final = RichmatProfile(
         "massage_timer_30": 0x61,
     },
 )
+
+# L&P Adjustable Base 2.2.1 (row019): its per-layout tokens are
+# ``lp_legacy_profiles.json``. It writes to the characteristics the user
+# configures, so it drives none of the codec's transports.
+LP_LEGACY: Final = RichmatProfile(key="leggett_lp_legacy", transports=())
