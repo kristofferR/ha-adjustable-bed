@@ -30,7 +30,7 @@ from .services import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
 
 
 SERVICE_SIMMONS_SET_ALARM = "simmons_set_alarm"
@@ -38,7 +38,6 @@ SERVICE_SIMMONS_SET_ALARM = "simmons_set_alarm"
 
 async def handle_simmons_set_alarm(call: ServiceCall) -> None:
     """Program or disable one of the two SIMMONS alarms through the command queue."""
-    from .beds.base import SideBoundController
     from .beds.simmons import SimmonsController
 
     alarm_time = call.data[ATTR_TIME]
@@ -61,13 +60,10 @@ async def handle_simmons_set_alarm(call: ServiceCall) -> None:
             if target.bed_type != BED_TYPE_SIMMONS:
                 raise ServiceValidationError(f"Device '{target.name}' is not a SIMMONS app bed")
 
-    def simmons(controller: BedController | SideBoundController) -> SimmonsController:
-        target = (
-            controller._controller if isinstance(controller, SideBoundController) else controller
-        )
-        if not isinstance(target, SimmonsController):
+    def simmons(controller: BedController) -> SimmonsController:
+        if not isinstance(controller, SimmonsController):
             raise ServiceValidationError("Requires the SIMMONS app profile")
-        return target
+        return controller
 
     preflighted = await _preflight_capability(
         targets,
@@ -78,10 +74,10 @@ async def handle_simmons_set_alarm(call: ServiceCall) -> None:
 
     fields = {**options, "hour": alarm_time.hour, "minute": alarm_time.minute, "weekdays": weekdays}
 
-    async def check(controller: BedController | SideBoundController) -> None:
+    async def check(controller: BedController) -> None:
         await simmons(controller).check_simmons_alarm(**fields)
 
-    async def program(controller: BedController | SideBoundController) -> None:
+    async def program(controller: BedController) -> None:
         await simmons(controller).configure_simmons_alarm(**fields)
 
     try:

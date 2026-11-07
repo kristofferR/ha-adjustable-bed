@@ -314,6 +314,18 @@ class LinakController(BedController):
         return True
 
     @property
+    def exposes_discrete_light_as_light(self) -> bool:
+        return True
+
+    @property
+    def light_state_starts_off(self) -> bool:
+        return True
+
+    @property
+    def position_number_pruning(self) -> frozenset[str] | None:
+        return frozenset()
+
+    @property
     def supports_discrete_light_control(self) -> bool:
         """Expose hardware-verified AUX on/off for the modern profile (issue #615)."""
         return self._profile is LinakProfile.BED_CONTROL

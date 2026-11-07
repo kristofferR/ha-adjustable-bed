@@ -86,19 +86,20 @@ async def handle_sleep_number_command(call: ServiceCall) -> ServiceResponse:
         for coordinator, side in targets:
             for target in _command_targets(coordinator, side):
                 controller = await _validation_controller(coordinator, target, preflighted)
-                if isinstance(coordinator, PairedBedCoordinator):
-                    physical_side = next(
+                physical_side = (
+                    next(
                         child_side for child_side, child in coordinator.children.items()
                         if child is target
                     )
-                    controller_view = controller.bind_side(physical_side)
-                else:
-                    controller_view = controller
-                if command not in controller_view.sleep_number_command_names:
-                    raise ServiceValidationError(
-                        f"Sleep Number command {command!r} is not supported by {target.name}"
-                    )
-                controller_view.validate_sleep_number_command(command, parameters)
+                    if isinstance(coordinator, PairedBedCoordinator)
+                    else None
+                )
+                with controller.side_scope(physical_side):
+                    if command not in controller.sleep_number_command_names:
+                        raise ServiceValidationError(
+                            f"Sleep Number command {command!r} is not supported by {target.name}"
+                        )
+                    controller.validate_sleep_number_command(command, parameters)
 
         for coordinator, side in targets:
             address_sides = (
@@ -118,14 +119,12 @@ async def handle_sleep_number_command(call: ServiceCall) -> ServiceResponse:
                 physical_side = controller.command_side or address_sides.get(
                     controller._coordinator.address.upper()
                 )
-                controller_view = (
-                    controller.bind_side(physical_side) if physical_side is not None else controller
-                )
-                controller_view.validate_sleep_number_command(command, parameters)
-                key = physical_side or "single"
-                results[key] = _json_value(
-                    await controller_view.async_execute_sleep_number_command(command, parameters)
-                )
+                with controller.side_scope(physical_side):
+                    controller.validate_sleep_number_command(command, parameters)
+                    key = physical_side or "single"
+                    results[key] = _json_value(
+                        await controller.async_execute_sleep_number_command(command, parameters)
+                    )
 
             await _execute_sided(
                 coordinator, side, control, resource="*", cancel_running=command in MOTION_COMMANDS

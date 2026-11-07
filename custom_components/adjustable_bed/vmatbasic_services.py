@@ -16,7 +16,7 @@ from .services import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
 
 
 async def _hold_vmatbasic_floor(
@@ -29,7 +29,7 @@ async def _hold_vmatbasic_floor(
     if len(physical) != 1 or physical[0].bed_type != BED_TYPE_VMATBASIC:
         raise ServiceValidationError("Target one physical V-MAT Basic receiver for floor refresh")
 
-    def validate(controller: BedController | SideBoundController) -> None:
+    def validate(controller: BedController) -> None:
         if control not in controller.held_control_options:
             raise ServiceValidationError("XT floor refresh requires the XT-Box profile")
 

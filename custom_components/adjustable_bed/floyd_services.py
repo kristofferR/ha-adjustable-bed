@@ -22,7 +22,7 @@ from .services import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
 
 
 SERVICE_FLOYD_ACTION = "floyd_action"
@@ -42,7 +42,7 @@ async def handle_floyd_action(call: ServiceCall) -> None:
     ):
         raise ServiceValidationError("Assign one standalone Floyd bed at a time")
 
-    def validate(controller: BedController | SideBoundController) -> None:
+    def validate(controller: BedController) -> None:
         controller.validate_floyd_action(action, internal_side, confirm, room_id)
 
     preflighted = await _preflight_capability(

@@ -187,6 +187,22 @@ NOT_ACTIONS = frozenset(
     }
 )
 
+# Actions declared on BedController after this plan was frozen. Capturing them
+# adds rows and shifts later virtual timings, so they wait for a deliberate
+# snapshot regeneration rather than a refactor that only declares them.
+UNPLANNED_ACTIONS = frozenset(
+    {
+        "auxiliary_action",
+        "preset_incline",
+        "preset_lounge",
+        "preset_swing",
+        "turn_footwarming_off",
+        "turn_footwarming_on",
+        "turn_thermal_off",
+        "turn_thermal_on",
+    }
+)
+
 Call = Callable[[Any], Awaitable[Any]]
 
 
@@ -263,7 +279,7 @@ def _base_actions() -> list[str]:
     names = []
     for name, fn in inspect.getmembers(BedController, inspect.iscoroutinefunction):
         params = list(inspect.signature(fn).parameters.values())[1:]
-        if name.startswith("_") or name in NOT_ACTIONS:
+        if name.startswith("_") or name in NOT_ACTIONS | UNPLANNED_ACTIONS:
             continue
         if all(p.default is not inspect.Parameter.empty for p in params):
             names.append(name)

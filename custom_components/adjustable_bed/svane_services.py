@@ -29,7 +29,7 @@ from .services import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
     from .beds.svane import SvaneHoldAdmission
 
 
@@ -134,7 +134,7 @@ async def _hold_svane(call: ServiceCall, control: str, duration_ms: int) -> None
     targets, preflighted, admissions = await _svane_live_targets(call, control, duration_ms)
     try:
 
-        async def hold(controller: BedController | SideBoundController) -> None:
+        async def hold(controller: BedController) -> None:
             from .beds.svane import SvaneController
 
             if not isinstance(controller, SvaneController):
@@ -161,7 +161,7 @@ async def handle_svane_release_axis(call: ServiceCall) -> None:
     )
     if missing:
         raise _missing_device_error(missing[0])
-    controllers: list[BedController | SideBoundController] = []
+    controllers: list[BedController] = []
     for parent, side in targets:
         for target in _command_targets(parent, side):
             if target.bed_type != BED_TYPE_SVANE:

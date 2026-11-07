@@ -860,6 +860,8 @@ class SleepysEliteAppController(BedController):
                     start_delay_ms=_APP_HOLD_MIN_MS,
                     release_delay_ms=_APP_REFRESH_MS,
                     stop_scope="side",
+                    press_hold_ms=SLEEPYS_ELITE_NATIVE_ACTION_MS,
+                    press_is_native=True,
                 ),
             )
             for axis, up, down in (

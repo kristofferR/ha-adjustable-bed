@@ -69,6 +69,7 @@ from .const import (
     TIMED_MOVE_MOTOR_OPTIONS,
     bed_type_has_position_feedback,
 )
+from .entity_runtime import controller_side_scope
 from .execution import HOLD_CEILING_MS
 from .paired_coordinator import (
     BedChild,
@@ -85,7 +86,7 @@ from .position_estimate import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, ControllerMotorHoldSpec, SideBoundController
+    from .beds.base import BedController, ControllerMotorHoldSpec
     from .beds.limoss_remote import LimossRemoteController
     from .beds.svane import SvaneHoldAdmission
 
@@ -433,7 +434,7 @@ def _get_support_bundle_target_from_device(
 
 async def _get_controller_for_service(
     coordinator: BedChild,
-) -> BedController | SideBoundController:
+) -> BedController:
     """Return an active controller for service validation/execution.
 
     Service calls may arrive while the coordinator is idle-disconnected and
@@ -483,7 +484,7 @@ async def _validation_controller(
     coordinator: BedTarget,
     target: BedChild,
     preflighted: PreflightedSides,
-) -> BedController | SideBoundController:
+) -> BedController:
     """Return a controller for capability VALIDATION without opening a BLE link
     when avoidable.
 
@@ -632,16 +633,21 @@ async def _release_preflighted(preflighted: PreflightedSides) -> None:
 
 
 @contextlib.asynccontextmanager
-async def _release_idle_on_validation_failure(
+async def _side_validation(
+    parent: BedTarget,
     coordinator: BedChild,
-) -> AsyncIterator[None]:
-    """Release a bed reconnected for a per-motor service if validation fails.
+    preflighted: PreflightedSides,
+) -> AsyncIterator[BedController]:
+    """Yield one side's validation controller, bound to that side.
 
+    Release a bed reconnected for a per-motor service if validation fails.
     _get_controller_for_service reconnects with reset_timer=False; without
     this an invalid set_position/timed_move would leave the BLE link open
     with no idle timer (the preset preflight path already guards this way)."""
     try:
-        yield
+        controller = await _validation_controller(parent, coordinator, preflighted)
+        with controller_side_scope(coordinator):
+            yield controller
     except ServiceValidationError:
         if coordinator.is_connected:
             with contextlib.suppress(Exception):
@@ -658,10 +664,11 @@ def _timed_move_resource(target: BedChild, motor: str) -> str:
     """Read the selected motor's existing scheduler resource without awaiting."""
     controller = target.capability_controller
     if controller is not None:
-        spec = next(
-            (item for item in controller.motor_control_specs if item.key == motor),
-            None,
-        )
+        with controller_side_scope(target):
+            spec = next(
+                (item for item in controller.motor_control_specs if item.key == motor),
+                None,
+            )
         if spec is not None:
             return spec.scheduler_resource or f"motor:{spec.position_key or spec.key}"
     return f"motor:{motor}"
@@ -705,43 +712,44 @@ async def handle_goto_preset(call: ServiceCall) -> None:
             for coordinator, side in targets:
                 for target in _command_targets(coordinator, side):
                     controller = await _validation_controller(coordinator, target, preflighted)
-                    if not controller.supports_memory_presets:
-                        raise ServiceValidationError(
-                            f"Device '{target.name}' does not support memory presets",
-                            translation_domain=DOMAIN,
-                            translation_key="memory_presets_not_supported",
-                            translation_placeholders={"device_name": target.name},
-                        )
-                    # Validate preset against controller's memory slot count
-                    slot_count = controller.memory_slot_count
-                    if preset > slot_count:
-                        raise ServiceValidationError(
-                            f"Device '{target.name}' only supports memory presets 1-{slot_count}. "
-                            f"Preset {preset} is not available for this bed type.",
-                            translation_domain=DOMAIN,
-                            translation_key="invalid_preset_number",
-                            translation_placeholders={
-                                "device_name": target.name,
-                                "max_preset": str(slot_count),
-                                "requested_preset": str(preset),
-                            },
-                        )
-                    if hold_ms is not None and not controller.supports_held_memory_recall:
-                        raise ServiceValidationError(
-                            f"Device '{target.name}' does not accept a preset hold duration",
-                            translation_domain=DOMAIN,
-                            translation_key="preset_duration_not_supported",
-                            translation_placeholders={"device_name": target.name},
-                        )
-                    try:
-                        controller.validate_memory_recall(preset)
-                    except ValueError as error:
-                        raise ServiceValidationError(str(error)) from error
+                    with controller_side_scope(target):
+                        if not controller.supports_memory_presets:
+                            raise ServiceValidationError(
+                                f"Device '{target.name}' does not support memory presets",
+                                translation_domain=DOMAIN,
+                                translation_key="memory_presets_not_supported",
+                                translation_placeholders={"device_name": target.name},
+                            )
+                        # Validate preset against controller's memory slot count
+                        slot_count = controller.memory_slot_count
+                        if preset > slot_count:
+                            raise ServiceValidationError(
+                                f"Device '{target.name}' only supports memory presets 1-{slot_count}. "
+                                f"Preset {preset} is not available for this bed type.",
+                                translation_domain=DOMAIN,
+                                translation_key="invalid_preset_number",
+                                translation_placeholders={
+                                    "device_name": target.name,
+                                    "max_preset": str(slot_count),
+                                    "requested_preset": str(preset),
+                                },
+                            )
+                        if hold_ms is not None and not controller.supports_held_memory_recall:
+                            raise ServiceValidationError(
+                                f"Device '{target.name}' does not accept a preset hold duration",
+                                translation_domain=DOMAIN,
+                                translation_key="preset_duration_not_supported",
+                                translation_placeholders={"device_name": target.name},
+                            )
+                        try:
+                            controller.validate_memory_recall(preset)
+                        except ValueError as error:
+                            raise ServiceValidationError(str(error)) from error
         except ServiceValidationError:
             await _release_preflighted(preflighted)
             raise
 
-        async def recall(controller: BedController | SideBoundController) -> None:
+        async def recall(controller: BedController) -> None:
             if hold_ms is None:
                 await controller.preset_memory(preset)
             else:
@@ -776,7 +784,7 @@ async def handle_save_preset(call: ServiceCall) -> None:
     if missing:
         raise _missing_device_error(missing[0])
 
-    def validate_remote_slot(controller: LimossRemoteController | SideBoundController) -> None:
+    def validate_remote_slot(controller: LimossRemoteController) -> None:
         if (
             not controller.supports_memory_programming
             or not 1 <= preset <= controller.memory_slot_count
@@ -793,27 +801,28 @@ async def handle_save_preset(call: ServiceCall) -> None:
             for coordinator, side in targets:
                 for target in _command_targets(coordinator, side):
                     controller = await _validation_controller(coordinator, target, preflighted)
-                    if not controller.supports_memory_programming:
-                        raise ServiceValidationError(
-                            f"Device '{target.name}' does not support programming memory presets",
-                            translation_domain=DOMAIN,
-                            translation_key="memory_programming_not_supported",
-                            translation_placeholders={"device_name": target.name},
-                        )
-                    # Validate preset against controller's memory slot count
-                    slot_count = controller.memory_slot_count
-                    if preset > slot_count:
-                        raise ServiceValidationError(
-                            f"Device '{target.name}' only supports memory presets 1-{slot_count}. "
-                            f"Preset {preset} is not available for this bed type.",
-                            translation_domain=DOMAIN,
-                            translation_key="invalid_preset_number",
-                            translation_placeholders={
-                                "device_name": target.name,
-                                "max_preset": str(slot_count),
-                                "requested_preset": str(preset),
-                            },
-                        )
+                    with controller_side_scope(target):
+                        if not controller.supports_memory_programming:
+                            raise ServiceValidationError(
+                                f"Device '{target.name}' does not support programming memory presets",
+                                translation_domain=DOMAIN,
+                                translation_key="memory_programming_not_supported",
+                                translation_placeholders={"device_name": target.name},
+                            )
+                        # Validate preset against controller's memory slot count
+                        slot_count = controller.memory_slot_count
+                        if preset > slot_count:
+                            raise ServiceValidationError(
+                                f"Device '{target.name}' only supports memory presets 1-{slot_count}. "
+                                f"Preset {preset} is not available for this bed type.",
+                                translation_domain=DOMAIN,
+                                translation_key="invalid_preset_number",
+                                translation_placeholders={
+                                    "device_name": target.name,
+                                    "max_preset": str(slot_count),
+                                    "requested_preset": str(preset),
+                                },
+                            )
         except ServiceValidationError:
             await _release_preflighted(preflighted)
             raise
@@ -880,8 +889,7 @@ async def _set_position_plan(
     position: float,
 ) -> dict[str, Any]:
     """Validate one physical side and return its seek configuration."""
-    async with _release_idle_on_validation_failure(coordinator):
-        controller = await _validation_controller(parent, coordinator, preflighted)
+    async with _side_validation(parent, coordinator, preflighted) as controller:
 
         # Bed type / motor count come from the coordinator's own entry (the
         # child's ChildEntryView for a paired-side target - children aren't in
@@ -1231,8 +1239,7 @@ async def _timed_move_plan(
     hold_lease: bool = False,
 ) -> tuple[Callable[[BedController], Coroutine[Any, Any, None]], int, int, str]:
     """Validate one physical side and build its timed command."""
-    async with _release_idle_on_validation_failure(coordinator):
-        controller = await _validation_controller(parent, coordinator, preflighted)
+    async with _side_validation(parent, coordinator, preflighted) as controller:
         if hold_lease:
             _require_hold_execution(coordinator, controller)
             duration_ms = _hold_ceiling(controller, duration_ms)
@@ -1433,14 +1440,14 @@ def _hold_lease(call: ServiceCall, action: str, duration_ms: int) -> HoldLease |
     )
 
 
-def _hold_ceiling(controller: BedController | SideBoundController, duration_ms: int) -> int:
+def _hold_ceiling(controller: BedController, duration_ms: int) -> int:
     """Bound a renewable hold by its mode's ceiling: latched beds move until STOP."""
     return min(duration_ms, controller.execution.hold_ceiling_ms or duration_ms)
 
 
 def _require_hold_execution(
     target: BedChild,
-    controller: BedController | SideBoundController,
+    controller: BedController,
     control: str | None = None,
 ) -> None:
     """Allow a lease only where the controller declares an open-ended hold.
@@ -1702,7 +1709,7 @@ async def _async_timed_move(
 
 async def _preflight_each(
     targets: list[tuple[BedTarget, str]],
-    check: Callable[[BedChild, BedController | SideBoundController], None],
+    check: Callable[[BedChild, BedController], None],
 ) -> PreflightedSides:
     """Check every physical target before any write.
 
@@ -1713,7 +1720,9 @@ async def _preflight_each(
     try:
         for coordinator, side in targets:
             for target in _command_targets(coordinator, side):
-                check(target, await _validation_controller(coordinator, target, preflighted))
+                controller = await _validation_controller(coordinator, target, preflighted)
+                with controller_side_scope(target):
+                    check(target, controller)
     except asyncio.CancelledError:
         await _release_preflighted(preflighted)
         raise
@@ -1729,11 +1738,11 @@ async def _preflight_capability(
     targets: list[tuple[BedTarget, str]],
     capability: str,
     label: str,
-    validate: Callable[[BedController | SideBoundController], None] | None = None,
+    validate: Callable[[BedController], None] | None = None,
 ) -> PreflightedSides:
     """Validate a capability on every physical target before any write."""
 
-    def check(target: BedChild, controller: BedController | SideBoundController) -> None:
+    def check(target: BedChild, controller: BedController) -> None:
         if not getattr(controller, capability, False):
             raise ServiceValidationError(f"Device '{target.name}' does not support {label}")
         if validate is not None:
@@ -1796,7 +1805,7 @@ async def handle_rename(call: ServiceCall) -> None:
 
     disconnect: set[int] = set()
 
-    def check(target: BedChild, controller: BedController | SideBoundController) -> None:
+    def check(target: BedChild, controller: BedController) -> None:
         if not controller.supports_device_rename:
             raise ServiceValidationError(
                 f"Device '{target.name}' does not support Bluetooth rename",
@@ -1811,7 +1820,7 @@ async def handle_rename(call: ServiceCall) -> None:
 
     preflighted = await _preflight_each(targets, check)
 
-    async def rename(controller: BedController | SideBoundController) -> None:
+    async def rename(controller: BedController) -> None:
         await controller.rename_device(name)
 
     try:
@@ -1895,7 +1904,7 @@ async def handle_hold_control(call: ServiceCall) -> None:
 
 
 def _require_held_control(
-    target: BedChild, controller: BedController | SideBoundController, control: str
+    target: BedChild, controller: BedController, control: str
 ) -> None:
     """Reject a control the target's controller does not declare, listing valid ones."""
     options = controller.held_control_options
@@ -1973,7 +1982,7 @@ async def _hold_targets(
         for coordinator, side in targets
     ]
 
-    def check(target: BedChild, controller: BedController | SideBoundController) -> None:
+    def check(target: BedChild, controller: BedController) -> None:
         _require_held_control(target, controller, control)
         if lease is not None:
             _require_hold_execution(target, controller, control)
@@ -1982,7 +1991,7 @@ async def _hold_targets(
     admissions = [_hold_admission(coordinator, side) for coordinator, side in targets]
     preflighted = await _preflight_each(targets, check)
 
-    async def hold(controller: BedController | SideBoundController) -> None:
+    async def hold(controller: BedController) -> None:
         await controller.hold_control(
             control, duration_ms if lease is None else _hold_ceiling(controller, duration_ms)
         )
@@ -2026,7 +2035,7 @@ async def handle_configure_alarm_schedule(call: ServiceCall) -> None:
             if controller is None or controller.alarm_table_schedule_spec is None:
                 raise ServiceValidationError(f"Device '{target.name}' has no available alarm-table contract")
 
-    def check(target: BedChild, controller: BedController | SideBoundController) -> None:
+    def check(target: BedChild, controller: BedController) -> None:
         spec = controller.alarm_table_schedule_spec
         if spec is None:
             raise ServiceValidationError(f"Device '{target.name}' has no alarm-table contract")
@@ -2051,7 +2060,7 @@ async def handle_sync_clock(call: ServiceCall) -> None:
 
     targets = _call_targets(call)
 
-    async def sync(controller: BedController | SideBoundController) -> None:
+    async def sync(controller: BedController) -> None:
         await controller.sync_clock()
 
     if _profile_route(targets, {BED_TYPE_ZSERIES: "zseries"}, SERVICE_SYNC_CLOCK):
@@ -2059,7 +2068,7 @@ async def handle_sync_clock(call: ServiceCall) -> None:
         await _execute_zseries_alarm(call, "Z-Series clock synchronization", sync)
         return
 
-    def check(target: BedChild, controller: BedController | SideBoundController) -> None:
+    def check(target: BedChild, controller: BedController) -> None:
         if not controller.supports_clock_sync:
             raise ServiceValidationError(
                 f"Device '{target.name}' does not support clock synchronization",

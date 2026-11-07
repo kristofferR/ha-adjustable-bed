@@ -1425,18 +1425,20 @@ class TestButtonEntities:
         timer_controller.massage_mode_step_is_timer = True
         mode_controller = MagicMock(spec=BedController)
         mode_controller.massage_mode_step_is_timer = False
+        timer_side = SimpleNamespace(controller_side=None, capability_controller=timer_controller)
+        mode_side = SimpleNamespace(controller_side=None, capability_controller=mode_controller)
 
         assert (
             _button_translation_key(
                 description,
-                (timer_controller, timer_controller),
+                (timer_side, timer_side),
             )
             == "massage_timer_step"
         )
         assert (
             _button_translation_key(
                 description,
-                (timer_controller, mode_controller),
+                (timer_side, mode_side),
             )
             == "massage_mode_step"
         )

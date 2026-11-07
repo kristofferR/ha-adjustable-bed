@@ -150,6 +150,7 @@ def _target(name, bed_type, **controller):
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     coordinator.name = name
     coordinator.bed_type = bed_type
+    coordinator.controller_side = None
     coordinator.capability_controller = SimpleNamespace(**controller)
     return coordinator
 

@@ -32,7 +32,6 @@ from .base import (
     ControllerSelectSpec,
     MotorCommandCallable,
     MotorControlSpec,
-    SideBoundController,
 )
 from .remacro_protocol import (
     APP_JEROMES,
@@ -79,8 +78,6 @@ def _remacro(
 ) -> MotorCommandCallable:
     async def invoke(controller: BedController) -> None:
         target: object = controller
-        if isinstance(target, SideBoundController):
-            target = target._controller
         if not isinstance(target, RemacroController):
             raise TypeError("This control requires the Remacro controller")
         await action(target)

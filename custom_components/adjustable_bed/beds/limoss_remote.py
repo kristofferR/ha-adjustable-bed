@@ -22,7 +22,6 @@ from .base import (
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
-    SideBoundController,
 )
 from .limoss_remote_protocol import (
     APP_SEQUENCE,
@@ -81,12 +80,8 @@ def _characteristic(client: BleakClient) -> BleakGATTCharacteristic:
 
 
 def _action(action: str) -> MotorCommandCallable:
-    async def invoke(controller: BedController | SideBoundController) -> None:
-        if (
-            isinstance(controller, LimossRemoteController)
-            or isinstance(controller, SideBoundController)
-            and isinstance(controller._controller, LimossRemoteController)
-        ):
+    async def invoke(controller: BedController) -> None:
+        if isinstance(controller, LimossRemoteController):
             await controller.execute_app_action(action)
         else:
             raise TypeError("Requires the explicit Limoss Remote profile")
@@ -95,17 +90,14 @@ def _action(action: str) -> MotorCommandCallable:
 
 
 async def apply_limoss_remote_features(
-    controller: BedController | SideBoundController,
+    controller: BedController,
     light: bool,
     massage: bool,
     *,
     persist: bool = True,
 ) -> None:
-    """Use the live, possibly side-bound controller for an options transaction."""
-    if isinstance(controller, LimossRemoteController) or (
-        isinstance(controller, SideBoundController)
-        and isinstance(controller._controller, LimossRemoteController)
-    ):
+    """Use the live controller for an options transaction."""
+    if isinstance(controller, LimossRemoteController):
         await controller.set_optional_features(light, massage, persist=persist)
         return
     raise ValueError("Requires the current Limoss Remote profile")
@@ -184,6 +176,10 @@ class LimossRemoteController(BedController):
     @property
     def supports_position_feedback(self) -> bool:
         return False
+
+    @property
+    def memory_slot_names_allow_blank(self) -> bool:
+        return True
 
     @property
     def position_number_specs(self) -> tuple:

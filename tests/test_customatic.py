@@ -247,8 +247,8 @@ async def test_invalid_duration_has_no_release_or_commands(duration: int) -> Non
 async def test_named_button_callback_real_delivery(action: str, expected: str) -> None:
     controller = make_controller()
     spec = next(spec for spec in controller.controller_button_specs if spec.name == action)
-    with patch("asyncio.sleep", new=AsyncMock()):
-        await spec.press_fn(controller.bind_side("left"))
+    with patch("asyncio.sleep", new=AsyncMock()), controller.side_scope("left"):
+        await spec.press_fn(controller)
     assert written(controller) == [expected] * 24
 
 
@@ -348,8 +348,8 @@ async def test_motor_entity_callbacks_delegate_to_bound_controller(
     original = make_controller("remedy")
     target = make_controller("remedy")
     spec = next(spec for spec in original.motor_control_specs if spec.key == axis)
-    with patch("asyncio.sleep", new=AsyncMock()):
-        await (spec.open_fn if up else spec.close_fn)(target.bind_side("right"))
+    with patch("asyncio.sleep", new=AsyncMock()), target.side_scope("right"):
+        await (spec.open_fn if up else spec.close_fn)(target)
     assert written(original) == []
     assert written(target) == [expected] * 2 + ["040200000000"]
 

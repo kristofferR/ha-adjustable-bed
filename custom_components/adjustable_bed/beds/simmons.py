@@ -42,7 +42,6 @@ from .base import (
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
-    SideBoundController,
 )
 from .simmons_protocol import (
     ALARM_MODES,
@@ -149,10 +148,8 @@ def _raw(report: AlarmReport) -> AlarmSlot:
 
 
 def _action(name: str) -> MotorCommandCallable:
-    async def invoke(controller: BedController | SideBoundController) -> None:
-        target = (
-            controller._controller if isinstance(controller, SideBoundController) else controller
-        )
+    async def invoke(controller: BedController) -> None:
+        target = controller
         if not isinstance(target, SimmonsController):
             raise TypeError("This action requires the SIMMONS app profile")
         await target.execute_simmons_action(name)

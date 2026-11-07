@@ -142,8 +142,8 @@ async def test_artifact_command_sequences(case, hold_clock):
     ctrl._wait.side_effect = wait
     side = {"Both": "both", "Left": "left", "Right": "right"}[case["side"]]
     action = ACTIONS[case["command"]]
-    bound = ctrl.bind_side(side)
-    await bound._run_action(action.key)
+    with ctrl.side_scope(side):
+        await ctrl._run_action(action.key)
     expected = case["press"] + ([["wait", 100]] + case["release"] if case["held"] else [])
     assert trace == expected
     assert ctrl.command_side is None
@@ -237,7 +237,8 @@ async def test_side_state_is_not_published_as_both_sides():
     assert coord.controller_state["right_app_timer_status"] == 3
     assert coord.controller_state["left_app_timer_status"] is None
     assert coord.controller_state["app_timer_status"] is None
-    specs = ctrl.bind_side("right").controller_state_sensor_specs
+    with ctrl.side_scope("right"):
+        specs = ctrl.controller_state_sensor_specs
     assert specs[0].state_key == "right_app_timer_status"
 
 
@@ -256,8 +257,8 @@ async def test_product_session_init_and_pairing_contract(product):
         else [b"\x00\xb0"] * 3
     )
     if not p1:
-        with pytest.raises(ValueError, match="side selector"):
-            ctrl.bind_side("left")._frame(1)
+        with pytest.raises(ValueError, match="side selector"), ctrl.side_scope("left"):
+            ctrl._frame(1)
 
 
 @pytest.mark.parametrize("variant", ["base", "ergomotion"])
@@ -272,7 +273,8 @@ async def test_legacy_p1_side_routing_and_cancelled_release(variant):
         ("right", "e6fe16010000000103"),
         ("both", "e5fe160100000005"),
     ):
-        assert ctrl.bind_side(side)._build_command(1).hex() == expected
+        with ctrl.side_scope(side):
+            assert ctrl._build_command(1).hex() == expected
     assert ctrl.supports_single_address_pairing
     assert supports_single_address_pairing("keeson", variant)
     assert ctrl._build_command(1).hex() == "e5fe160100000005"
@@ -288,7 +290,8 @@ async def test_cancelled_hold_releases_original_side_on_fresh_event():
         return True
 
     ctrl._wait.side_effect = cancel
-    await ctrl.bind_side("left").hold_control("c054", 1000)
+    with ctrl.side_scope("left"):
+        await ctrl.hold_control("c054", 1000)
     assert packets(coord) == [
         bytes.fromhex("e6fe16010000000202"),
         bytes.fromhex("e6fe16000000000203"),
@@ -302,7 +305,8 @@ async def test_cancelled_hold_releases_original_side_on_fresh_event():
         return True
 
     ctrl._wait.side_effect = disconnect
-    await ctrl.bind_side("right").hold_control("c054", 1000)
+    with ctrl.side_scope("right"):
+        await ctrl.hold_control("c054", 1000)
     assert packets(coord) == [bytes.fromhex("e6fe16010000000103")]
 
 
@@ -323,11 +327,11 @@ async def test_hold_deadline_includes_transport_time(hold_clock, ordinary_press,
 
     coord.client.write_gatt_char.side_effect = write
     ctrl._wait.side_effect = wait
-    bound = ctrl.bind_side("left")
-    if ordinary_press:
-        await bound._run_action("c054")
-    else:
-        await bound.hold_control("c054", 1000)
+    with ctrl.side_scope("left"):
+        if ordinary_press:
+            await ctrl._run_action("c054")
+        else:
+            await ctrl.hold_control("c054", 1000)
 
     assert all(at < 1000 for at, _ in writes[:-1])
     assert {payload for _, payload in writes[:-1]} == {"e6fe16010000000202"}
@@ -339,8 +343,8 @@ async def test_hold_deadline_includes_transport_time(hold_clock, ordinary_press,
 async def test_failed_pulse_still_attempts_release():
     ctrl, coord = await ready()
     coord.client.write_gatt_char.side_effect = [RuntimeError("failed"), None]
-    with pytest.raises(RuntimeError, match="failed"):
-        await ctrl.bind_side("right")._run_action("c059")
+    with pytest.raises(RuntimeError, match="failed"), ctrl.side_scope("right"):
+        await ctrl._run_action("c059")
     assert packets(coord)[-1].hex() == "e6fe16000000000104"
 
 

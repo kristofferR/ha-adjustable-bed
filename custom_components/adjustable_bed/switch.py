@@ -15,11 +15,8 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
-    BED_TYPE_LINAK,
     BED_TYPE_REMACRO,
-    BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SVANE,
-    BED_TYPE_VIBRADORM_APP,
     DOMAIN,
     OKIN_BEDDING_APP_BED_TYPES,
 )
@@ -42,10 +39,8 @@ class AdjustableBedSwitchEntityDescription(SwitchEntityDescription):
 
     turn_on_fn: Callable[[BedController], Coroutine[Any, Any, None]]
     turn_off_fn: Callable[[BedController], Coroutine[Any, Any, None]]
-    # Capability property name to check on controller (e.g., "supports_lights")
-    required_capability: str | None = None
-    # Only create entity for these bed types (None = all bed types)
-    required_bed_types: tuple[str, ...] | None = None
+    # Controller capability gating the entity, e.g. ``lambda c: c.supports_lights``.
+    is_supported: Callable[[BedController], bool] | None = None
     # True if the switch has separate on/off commands (enables state tracking)
     # When False, the switch is treated as toggle-only (no state tracking)
     has_discrete_control: bool = False
@@ -60,7 +55,7 @@ SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
         icon="mdi:lightbulb-auto",
         turn_on_fn=lambda ctrl: ctrl.set_automatic_light(True),
         turn_off_fn=lambda ctrl: ctrl.set_automatic_light(False),
-        required_capability="supports_automatic_light",
+        is_supported=lambda c: c.supports_automatic_light,
         has_discrete_control=True,
         state_key="automatic_light",
     ),
@@ -70,7 +65,7 @@ SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
         icon="mdi:lightbulb",
         turn_on_fn=lambda ctrl: ctrl.lights_on(),
         turn_off_fn=lambda ctrl: ctrl.lights_off(),
-        required_capability="supports_discrete_light_control",
+        is_supported=lambda c: c.supports_discrete_light_control,
     ),
     AdjustableBedSwitchEntityDescription(
         key="linak_automatic_drive",
@@ -78,7 +73,7 @@ SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
         icon="mdi:car-shift-pattern",
         turn_on_fn=lambda ctrl: ctrl.set_automatic_drive(True),
         turn_off_fn=lambda ctrl: ctrl.set_automatic_drive(False),
-        required_capability="supports_automatic_drive",
+        is_supported=lambda c: c.supports_automatic_drive,
         entity_registry_enabled_default=False,
         has_discrete_control=True,
         state_key="linak_automatic_drive",
@@ -89,7 +84,7 @@ SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
         icon="mdi:link-variant",
         turn_on_fn=lambda ctrl: ctrl.set_synchro(True),
         turn_off_fn=lambda ctrl: ctrl.set_synchro(False),
-        required_capability="supports_synchro",
+        is_supported=lambda c: c.supports_synchro,
         entity_registry_enabled_default=False,
         has_discrete_control=True,
         state_key="synchro_mode",
@@ -100,7 +95,7 @@ SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
         icon="mdi:remote-lock",
         turn_on_fn=lambda ctrl: ctrl.set_remote_control_lock(True),
         turn_off_fn=lambda ctrl: ctrl.set_remote_control_lock(False),
-        required_capability="supports_remote_control_lock",
+        is_supported=lambda c: c.supports_remote_control_lock,
         has_discrete_control=True,
         state_key="remote_control_lock",
     ),
@@ -193,7 +188,7 @@ def _switch_entities_for(
                 or controller.supports_light_state_feedback
                 or controller.supported_color_modes == frozenset(("onoff",))
                 or (
-                    coordinator.bed_type in (BED_TYPE_LINAK, BED_TYPE_SLEEP_NUMBER_MCR)
+                    controller.exposes_discrete_light_as_light
                     and controller.supports_discrete_light_control
                 )
             )
@@ -206,16 +201,11 @@ def _switch_entities_for(
             if entity_id is not None:
                 registry.async_remove(entity_id)
             continue
-        # Skip switches restricted to specific bed types
-        if description.required_bed_types is not None:
-            if coordinator.bed_type not in description.required_bed_types:
-                continue
         # Skip switches that require capabilities the controller doesn't have
-        if description.required_capability is not None:
+        if description.is_supported is not None:
             if controller is None:
                 continue
-            # Default to False: only create entity if controller explicitly supports it
-            if not getattr(controller, description.required_capability, False):
+            if not description.is_supported(controller):
                 # Older releases may have created this switch before the
                 # capability was dropped (e.g. BedTech discrete lights, #410);
                 # remove the stale registry entry so a dead control doesn't
@@ -273,10 +263,12 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
         self.entity_description = description
         self._set_sided_translation_key(description.translation_key, description.key)
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
-        self._app_floor_intent = (
-            description.key == "under_bed_lights" and coordinator.bed_type == BED_TYPE_VIBRADORM_APP
-        )
         controller = coordinator.capability_controller
+        self._app_floor_intent = (
+            description.key == "under_bed_lights"
+            and controller is not None
+            and controller.light_switch_follows_level_intent
+        )
         if description.state_key is None:
             self._attr_is_on = False
             if description.key == "under_bed_lights" and (

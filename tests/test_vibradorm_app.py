@@ -516,8 +516,10 @@ async def test_immutable_specs_callbacks_dispatch_side_bound_live_controller():
         observed.append(c.command_side)
 
     c.client.write_gatt_char.side_effect = delivery
-    await select.select_fn(c.bind_side("right"), "sunrise")
-    await number.set_fn(c.bind_side("right"), 17)
+    with c.side_scope("right"):
+        await select.select_fn(c, "sunrise")
+    with c.side_scope("right"):
+        await number.set_fn(c, 17)
     assert observed == ["right"]
     assert c._timer_minutes == 17 and not c._timer_enabled
     assert c.command_side is None

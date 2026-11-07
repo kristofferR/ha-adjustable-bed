@@ -25,7 +25,7 @@ from .services import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
 
 
 SERVICE_GLIDEAWAY_SET_ALARM = "glideaway_set_alarm"
@@ -46,7 +46,7 @@ async def handle_glideaway_set_alarm(call: ServiceCall) -> None:
                 raise ServiceValidationError(f"Device '{target.name}' is not a Glideaway Motion app bed")
     preflighted = await _preflight_capability(targets, "supports_clock_alarm", "Glideaway alarms")
 
-    async def program(controller: BedController | SideBoundController) -> None:
+    async def program(controller: BedController) -> None:
         await controller.configure_clock_alarm(
             enabled=enabled, weekdays=(),
             hour=alarm_time.hour if alarm_time is not None else 0,

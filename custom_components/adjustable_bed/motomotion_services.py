@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .beds.base import BedController, SideBoundController
+from .beds.base import BedController
 from .codec.motomotion import Position
 from .const import DOMAIN
 from .motomotion_requests import Request
@@ -79,7 +79,7 @@ async def handle(call: ServiceCall) -> None:
     if missing:
         raise _missing_device_error(missing[0])
 
-    def validate(controller: BedController | SideBoundController) -> None:
+    def validate(controller: BedController) -> None:
         controller.validate_motomotion_request(request)
 
     preflighted = await _preflight_capability(

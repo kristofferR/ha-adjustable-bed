@@ -413,7 +413,7 @@ def failing_right(delay: float) -> Callable[[Any], Awaitable[None]]:
     """Fail the right side mid-movement while the left keeps moving."""
 
     async def action(controller: Any) -> None:
-        side = getattr(controller, "_side", None) or controller.client.address
+        side = controller.command_side or controller.client.address
         if side == SIDE_RIGHT:
             await asyncio.sleep(delay)
             raise RuntimeError("right side failed")

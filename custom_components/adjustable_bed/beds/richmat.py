@@ -39,7 +39,7 @@ from ..const import (
 )
 from ..position_estimate import notify_release_failed
 from ..profiles.richmat import GGRM_ACTIONS, RICHMAT, Button, RichmatProfile
-from .base import BedController, ControllerButtonSpec, MotorControlSpec, SideBoundController
+from .base import BedController, ControllerButtonSpec, MotorControlSpec
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -77,7 +77,7 @@ _FRAMINGS: dict[str, codec.Framing] = {
 
 
 async def _ggrm_button_action(controller: BedController, *, command: int) -> None:
-    target = controller._controller if isinstance(controller, SideBoundController) else controller
+    target = controller
     if not isinstance(target, RichmatController):
         raise TypeError("This action requires the GGRM remote profile")
     await target.tap_ggrm_action(command)

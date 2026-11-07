@@ -55,6 +55,7 @@ async def service_target(hass: HomeAssistant):
     coordinator.name = "Leggett bed"
     coordinator.bed_type = BED_TYPE_LEGGETT_OKIN
     coordinator.entry = SimpleNamespace(data={})
+    coordinator.controller_side = None
     coordinator.capability_controller = controller
 
     async def execute(command, **kwargs):
@@ -116,6 +117,7 @@ async def test_profile_constraints_are_preflighted_before_any_device_write(
     useries.name = "U Series"
     useries.bed_type = BED_TYPE_LEGGETT_OKIN
     useries.entry = SimpleNamespace(data={})
+    useries.controller_side = None
     useries.capability_controller = SimpleNamespace(
         supports_sleep_timer=True,
         sleep_timer_memory_options=(0, 1, 2, 3),

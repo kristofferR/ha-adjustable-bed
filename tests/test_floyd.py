@@ -292,6 +292,7 @@ def service_target(controller: FloydController):
     target = MagicMock(spec=AdjustableBedCoordinator)
     target.name = "Floyd"
     target.bed_type = BED_TYPE_KAIDI
+    target.controller_side = None
     target.capability_controller = controller
 
     async def execute(command, **kwargs):
@@ -310,6 +311,7 @@ async def test_service_validates_all_targets_before_overwrite(hass, floyd: Floyd
     await async_register_services(hass)
     first = service_target(floyd)
     second = service_target(floyd)
+    second.controller_side = None
     second.capability_controller = SimpleNamespace(supports_floyd_actions=False)
     with patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=(
         [(first, "both"), (second, "both")], [],

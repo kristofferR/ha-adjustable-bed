@@ -28,6 +28,7 @@ def target():
     )
     c = MagicMock(spec=AdjustableBedCoordinator)
     c.controller = c.capability_controller = ctrl
+    c.controller_side = None
 
     async def execute(command, **kw):
         await command(ctrl)

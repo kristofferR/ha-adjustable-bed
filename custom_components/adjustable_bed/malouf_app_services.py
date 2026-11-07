@@ -31,7 +31,7 @@ from .services import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
 
 
 SERVICE_MALOUF_SET_ALARM = "malouf_set_alarm"
@@ -42,7 +42,7 @@ async def _preflight_malouf(
     targets: list[tuple[BedTarget, str]],
     capability: str,
     label: str,
-    validate: Callable[[BedController | SideBoundController], None] | None = None,
+    validate: Callable[[BedController], None] | None = None,
 ) -> PreflightedSides:
     """Validate the explicit app profile on every physical target before writing."""
     for coordinator, side in targets:
@@ -66,7 +66,7 @@ async def handle_malouf_set_alarm(call: ServiceCall) -> None:
     if missing:
         raise _missing_device_error(missing[0])
 
-    def validate_alarm(controller: BedController | SideBoundController) -> None:
+    def validate_alarm(controller: BedController) -> None:
         if (
             call.data[ATTR_ENABLED]
             and call.data[ATTR_PRESET] not in controller.clock_alarm_preset_options
@@ -77,7 +77,7 @@ async def handle_malouf_set_alarm(call: ServiceCall) -> None:
         targets, "supports_clock_alarm", "Malouf clock alarms", validate=validate_alarm
     )
 
-    async def program(controller: BedController | SideBoundController) -> None:
+    async def program(controller: BedController) -> None:
         await controller.configure_clock_alarm(
             enabled=call.data[ATTR_ENABLED],
             weekdays=weekdays,

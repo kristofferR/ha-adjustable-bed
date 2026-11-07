@@ -57,7 +57,6 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
     PositionNumberSpec,
-    SideBoundController,
 )
 
 if TYPE_CHECKING:
@@ -328,13 +327,8 @@ async def _shield_cleanup(operation: Coroutine[Any, Any, None]) -> None:
 
 
 def _button(action: str) -> MotorCommandCallable:
-    async def invoke(controller: BedController | SideBoundController) -> None:
+    async def invoke(controller: BedController) -> None:
         if isinstance(controller, VibradormAppController):
-            await controller.execute_app_action(action)
-            return
-        if isinstance(controller, SideBoundController) and isinstance(
-            controller._controller, VibradormAppController
-        ):
             await controller.execute_app_action(action)
             return
         raise TypeError("Requires a Vibradorm app profile")
@@ -344,11 +338,6 @@ def _button(action: str) -> MotorCommandCallable:
 
 async def _timer_number(controller: BedController, value: float) -> None:
     if isinstance(controller, VibradormAppController):
-        await controller.set_pending_floor_timer(value)
-        return
-    if isinstance(controller, SideBoundController) and isinstance(
-        controller._controller, VibradormAppController
-    ):
         await controller.set_pending_floor_timer(value)
         return
     raise TypeError("Requires a Vibradorm app profile")
@@ -543,6 +532,14 @@ class VibradormAppController(BedController):
     @property
     def supports_light_toggle_control(self) -> bool:
         return self.supports_lights
+
+    @property
+    def prunes_stale_light_level(self) -> bool:
+        return True
+
+    @property
+    def light_switch_follows_level_intent(self) -> bool:
+        return True
 
     @property
     def supports_discrete_light_control(self) -> bool:

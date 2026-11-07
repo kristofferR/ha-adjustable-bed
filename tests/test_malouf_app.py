@@ -234,8 +234,8 @@ async def test_paired_logical_side_does_not_change_configured_role() -> None:
     ctrl = make_controller("richmat_framed", primary=False)
     with patch(
         "custom_components.adjustable_bed.beds.malouf_app.asyncio.sleep", new_callable=AsyncMock
-    ):
-        await ctrl.bind_side("left").move_back_up()
+    ), ctrl.side_scope("left"):
+        await ctrl.move_back_up()
     assert written(ctrl)[0].hex() == "6e01012494"
     assert written(ctrl)[-1].hex() == "6e01006edd"
 
@@ -571,13 +571,14 @@ async def test_callback_specs_invoke_current_controller_after_reconnect() -> Non
     spec = next(spec for spec in old.motor_control_specs if spec.key == "malouf_tilt_head")
     with patch(
         "custom_components.adjustable_bed.beds.malouf_app.asyncio.sleep", new_callable=AsyncMock
-    ):
-        await spec.open_fn(current.bind_side("right"))
+    ), current.side_scope("right"):
+        await spec.open_fn(current)
     assert written(old) == []
     assert written(current) == [b"\x41", b"\x41", b"\x6e"]
     old_read = make_controller("okin_new", "Premium", "lucid")
     current_read = make_controller("okin_new", "Premium", "lucid")
-    await old_read.controller_button_specs[0].press_fn(current_read.bind_side("left"))
+    with current_read.side_scope("left"):
+        await old_read.controller_button_specs[0].press_fn(current_read)
     assert written(old_read) == []
     assert written(current_read)[0].hex() == "0502000020000000"
 
@@ -985,8 +986,8 @@ async def test_lucid_oz_long_hold_editor_slot2_save_vectors(
     assert (spec.key, spec.name) == ("malouf_oz_save_memory_2", "Save Memory 2")
     with patch(
         "custom_components.adjustable_bed.beds.malouf_app.asyncio.sleep", new_callable=AsyncMock
-    ) as sleep:
-        await spec.press_fn(ctrl.bind_side("left"))
+    ) as sleep, ctrl.side_scope("left"):
+        await spec.press_fn(ctrl)
     assert written(ctrl) == [bytes.fromhex(expected)] * count
     if initial_delay is not None:
         assert sleep.call_args_list[0].args == (initial_delay,)
@@ -1023,6 +1024,7 @@ async def test_oz_memory_editor_is_restricted_to_exact_lucid_models(app: str, mo
 async def test_oz_memory_editor_callback_uses_current_controller() -> None:
     old = make_controller("richmat_framed", "GoodLifeBase", "lucid", primary=False)
     current = make_controller("richmat_framed", "GoodLifeBase", "lucid", primary=False)
-    await old.controller_button_specs[0].press_fn(current.bind_side("right"))
+    with current.side_scope("right"):
+        await old.controller_button_specs[0].press_fn(current)
     assert written(old) == []
     assert written(current) == [bytes.fromhex("6e01002c9b")]

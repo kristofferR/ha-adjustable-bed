@@ -41,6 +41,7 @@ def _target(name: str = "Bed") -> tuple[MagicMock, SimpleNamespace]:
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     coordinator.name = name
     coordinator.bed_type = BED_TYPE_RICHMAT_REVIVE
+    coordinator.controller_side = None
     coordinator.capability_controller = controller
 
     async def execute(command, **kwargs):

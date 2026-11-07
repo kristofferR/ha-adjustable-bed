@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
 from functools import partial
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
 from homeassistant.config_entries import ConfigEntry
@@ -22,7 +22,7 @@ from .const import (
 )
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
-from .entity_runtime import EntityRuntime
+from .entity_runtime import EntityRuntime, own_sides
 from .octo_runtime import octo_controller
 from .paired_coordinator import entity_runtimes
 
@@ -36,10 +36,10 @@ _LOGGER = logging.getLogger(__name__)
 class AdjustableBedControllerStateSelectDescription(SelectEntityDescription):
     """Describes a controller-state-backed select entity."""
 
-    required_capability: str
-    options_attr: str
+    is_supported: Callable[[BedController], bool]
+    options_fn: Callable[[BedController], list[str]]
     state_key: str
-    setter_name: str
+    select_fn: Callable[[BedController, str], Coroutine[Any, Any, None]]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -47,7 +47,7 @@ class AdjustableBedSideStateSelectDescription(SelectEntityDescription):
     """Describes a side-specific select entity backed by controller state."""
 
     state_key: str
-    setter_name: str
+    select_fn: Callable[[BedController, str, str], Coroutine[Any, Any, None]]
     side: str
 
 
@@ -61,30 +61,30 @@ LIGHT_TIMER_DESCRIPTION = AdjustableBedControllerStateSelectDescription(
     key="light_timer",
     translation_key="light_timer",
     icon="mdi:timer-outline",
-    required_capability="supports_light_timer",
-    options_attr="light_timer_options",
+    is_supported=lambda c: c.supports_light_timer,
+    options_fn=lambda c: c.light_timer_options,
     state_key="light_timer_option",
-    setter_name="set_light_timer",
+    select_fn=lambda c, option: c.set_light_timer(option),
 )
 
 THERMAL_TIMER_DESCRIPTION = AdjustableBedControllerStateSelectDescription(
     key="thermal_timer",
     translation_key="thermal_timer",
     icon="mdi:thermometer-lines",
-    required_capability="supports_thermal_climate",
-    options_attr="thermal_timer_options",
+    is_supported=lambda c: c.supports_thermal_climate,
+    options_fn=lambda c: c.thermal_timer_options,
     state_key="thermal_timer_option",
-    setter_name="set_thermal_timer",
+    select_fn=lambda c, option: c.set_thermal_timer(option),
 )
 
 FOOTWARMING_TIMER_DESCRIPTION = AdjustableBedControllerStateSelectDescription(
     key="footwarming_timer",
     translation_key="footwarming_timer",
     icon="mdi:shoe-print",
-    required_capability="supports_footwarming_climate",
-    options_attr="footwarming_timer_options",
+    is_supported=lambda c: c.supports_footwarming_climate,
+    options_fn=lambda c: c.footwarming_timer_options,
     state_key="footwarming_timer_option",
-    setter_name="set_footwarming_timer",
+    select_fn=lambda c, option: c.set_footwarming_timer(option),
 )
 
 THERMAL_TIMER_LEFT_DESCRIPTION = AdjustableBedSideStateSelectDescription(
@@ -92,7 +92,7 @@ THERMAL_TIMER_LEFT_DESCRIPTION = AdjustableBedSideStateSelectDescription(
     translation_key="thermal_timer_left",
     icon="mdi:thermometer-lines",
     state_key="thermal_timer_option_left",
-    setter_name="set_thermal_timer_for_side",
+    select_fn=lambda c, side, option: c.set_thermal_timer_for_side(side, option),
     side="left",
 )
 
@@ -101,7 +101,7 @@ THERMAL_TIMER_RIGHT_DESCRIPTION = AdjustableBedSideStateSelectDescription(
     translation_key="thermal_timer_right",
     icon="mdi:thermometer-lines",
     state_key="thermal_timer_option_right",
-    setter_name="set_thermal_timer_for_side",
+    select_fn=lambda c, side, option: c.set_thermal_timer_for_side(side, option),
     side="right",
 )
 
@@ -110,7 +110,7 @@ FOOTWARMING_TIMER_LEFT_DESCRIPTION = AdjustableBedSideStateSelectDescription(
     translation_key="footwarming_timer_left",
     icon="mdi:shoe-print",
     state_key="footwarming_timer_option_left",
-    setter_name="set_footwarming_timer_for_side",
+    select_fn=lambda c, side, option: c.set_footwarming_timer_for_side(side, option),
     side="left",
 )
 
@@ -119,7 +119,7 @@ FOOTWARMING_TIMER_RIGHT_DESCRIPTION = AdjustableBedSideStateSelectDescription(
     translation_key="footwarming_timer_right",
     icon="mdi:shoe-print",
     state_key="footwarming_timer_option_right",
-    setter_name="set_footwarming_timer_for_side",
+    select_fn=lambda c, side, option: c.set_footwarming_timer_for_side(side, option),
     side="right",
 )
 
@@ -128,7 +128,7 @@ FOUNDATION_PRESET_LEFT_DESCRIPTION = AdjustableBedSideStateSelectDescription(
     translation_key="foundation_preset_left",
     icon="mdi:bed-double-outline",
     state_key="foundation_preset_left",
-    setter_name="set_foundation_preset_for_side",
+    select_fn=lambda c, side, option: c.set_foundation_preset_for_side(side, option),
     side="left",
 )
 
@@ -137,7 +137,7 @@ FOUNDATION_PRESET_RIGHT_DESCRIPTION = AdjustableBedSideStateSelectDescription(
     translation_key="foundation_preset_right",
     icon="mdi:bed-double-outline",
     state_key="foundation_preset_right",
-    setter_name="set_foundation_preset_for_side",
+    select_fn=lambda c, side, option: c.set_foundation_preset_for_side(side, option),
     side="right",
 )
 
@@ -188,8 +188,8 @@ def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
         _async_remove_stale_select_entity(hass, coordinator, MASSAGE_TIMER_DESCRIPTION.key)
 
     if controller is not None:
-        if getattr(controller, LIGHT_TIMER_DESCRIPTION.required_capability, False):
-            timer_options = getattr(controller, LIGHT_TIMER_DESCRIPTION.options_attr, [])
+        if LIGHT_TIMER_DESCRIPTION.is_supported(controller):
+            timer_options = LIGHT_TIMER_DESCRIPTION.options_fn(controller)
             if timer_options:
                 _LOGGER.debug(
                     "Setting up %s select for %s (options: %s)",
@@ -211,9 +211,9 @@ def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
             _async_remove_stale_select_entity(hass, coordinator, LIGHT_TIMER_DESCRIPTION.key)
 
         thermal_timer_options = list(
-            getattr(controller, THERMAL_TIMER_DESCRIPTION.options_attr, [])
+            THERMAL_TIMER_DESCRIPTION.options_fn(controller)
         )
-        thermal_sides = controller.thermal_climate_sides
+        thermal_sides = own_sides(coordinator, controller.thermal_climate_sides)
         if thermal_sides and thermal_timer_options:
             _LOGGER.debug(
                 "Setting up side-specific thermal timer selects for %s (sides: %s, options: %s)",
@@ -235,7 +235,7 @@ def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                         thermal_timer_options,
                     )
                 )
-        elif getattr(controller, THERMAL_TIMER_DESCRIPTION.required_capability, False):
+        elif THERMAL_TIMER_DESCRIPTION.is_supported(controller):
             if thermal_timer_options:
                 _LOGGER.debug(
                     "Setting up %s select for %s (options: %s)",
@@ -252,9 +252,9 @@ def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                 )
 
         footwarming_timer_options = list(
-            getattr(controller, FOOTWARMING_TIMER_DESCRIPTION.options_attr, [])
+            FOOTWARMING_TIMER_DESCRIPTION.options_fn(controller)
         )
-        footwarming_sides = controller.footwarming_climate_sides
+        footwarming_sides = own_sides(coordinator, controller.footwarming_climate_sides)
         if footwarming_sides and footwarming_timer_options:
             _LOGGER.debug(
                 "Setting up side-specific footwarming timer selects for %s (sides: %s, options: %s)",
@@ -280,7 +280,7 @@ def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                         footwarming_timer_options,
                     )
                 )
-        elif getattr(controller, FOOTWARMING_TIMER_DESCRIPTION.required_capability, False):
+        elif FOOTWARMING_TIMER_DESCRIPTION.is_supported(controller):
             if footwarming_timer_options:
                 _LOGGER.debug(
                     "Setting up %s select for %s (options: %s)",
@@ -296,7 +296,9 @@ def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                     )
                 )
 
-    foundation_preset_sides = controller.foundation_preset_sides if controller else ()
+    foundation_preset_sides = (
+        own_sides(coordinator, controller.foundation_preset_sides) if controller else ()
+    )
     foundation_preset_options = controller.foundation_preset_options if controller else []
     if foundation_preset_sides and foundation_preset_options:
         _LOGGER.debug(
@@ -481,7 +483,8 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
                 else state.get("bf_cherish_massage_timer", state.get("woosa_massage_timer", 0))
             )
         else:
-            timer_mode = controller.get_massage_state().get("timer_mode")
+            with self._side_scope():
+                timer_mode = controller.get_massage_state().get("timer_mode")
 
         # Normalize: treat "0", 0, empty, or None as "Off"
         if not timer_mode or str(timer_mode) == "0":
@@ -601,7 +604,7 @@ class AdjustableBedControllerStateSelect(AdjustableBedEntity, SelectEntity):
         )
 
         async def _set_timer(ctrl: BedController) -> None:
-            await getattr(ctrl, self.entity_description.setter_name)(option)
+            await self.entity_description.select_fn(ctrl, option)
 
         await self._coordinator.async_execute_controller_command(_set_timer)
 
@@ -669,9 +672,6 @@ class AdjustableBedSideStateSelect(AdjustableBedEntity, SelectEntity):
             return
 
         async def _set_option(ctrl: BedController) -> None:
-            await getattr(cast(Any, ctrl), self.entity_description.setter_name)(
-                self.entity_description.side,
-                option,
-            )
+            await self.entity_description.select_fn(ctrl, self.entity_description.side, option)
 
         await self._coordinator.async_execute_controller_command(_set_option)

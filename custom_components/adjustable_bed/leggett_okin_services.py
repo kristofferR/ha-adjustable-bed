@@ -30,7 +30,7 @@ from .services import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
 
 
 SERVICE_LEGGETT_SLEEP_TIMER = "leggett_sleep_timer"
@@ -85,7 +85,7 @@ async def _handle_leggett_timer(call: ServiceCall, *, alarm: bool) -> None:
                             f"Device '{target.name}' requires a sleep duration from {options} minutes"
                         )
 
-        async def timer(controller: BedController | SideBoundController) -> None:
+        async def timer(controller: BedController) -> None:
             if start:
                 assert minutes is not None
                 if alarm:

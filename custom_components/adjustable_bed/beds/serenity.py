@@ -44,7 +44,6 @@ from .base import (
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
-    SideBoundController,
 )
 from .okin_cst import OkinCstController, _product
 
@@ -209,11 +208,8 @@ APPS: Final[dict[str, OkinBeddingApp]] = {
 
 
 def _callback(action: str) -> MotorCommandCallable:
-    async def invoke(controller: BedController | SideBoundController) -> None:
-        if not isinstance(controller, OkinBeddingAppController) and not (
-            isinstance(controller, SideBoundController)
-            and isinstance(controller._controller, OkinBeddingAppController)
-        ):
+    async def invoke(controller: BedController) -> None:
+        if not isinstance(controller, OkinBeddingAppController):
             raise TypeError("This action requires an OKIN Bedding app profile")
         await controller.execute_app_control(action)
 

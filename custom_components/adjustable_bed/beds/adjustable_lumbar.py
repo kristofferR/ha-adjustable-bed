@@ -37,7 +37,6 @@ from .base import (
     ControllerButtonSpec,
     MotorCommandCallable,
     MotorControlSpec,
-    SideBoundController,
 )
 
 if TYPE_CHECKING:
@@ -176,10 +175,8 @@ def _protocol_name(live: str | None, stored: object) -> str | None:
 
 
 def _action(name: str) -> MotorCommandCallable:
-    async def invoke(controller: BedController | SideBoundController) -> None:
-        target = (
-            controller._controller if isinstance(controller, SideBoundController) else controller
-        )
+    async def invoke(controller: BedController) -> None:
+        target = controller
         if not isinstance(target, AdjustableLumbarController):
             raise TypeError("This action requires the Adjustable bed (Lumbar) app profile")
         await target.execute_app_action(name)

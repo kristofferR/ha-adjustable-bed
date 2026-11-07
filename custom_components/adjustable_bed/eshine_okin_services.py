@@ -25,7 +25,7 @@ from .services import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
 
 
 SERVICE_ESHINE_SET_ALARM = "eshine_set_alarm"
@@ -46,14 +46,14 @@ async def handle_eshine_set_alarm(call: ServiceCall) -> None:
             if target.bed_type != BED_TYPE_ESHINE_OKIN:
                 raise ServiceValidationError("Choose an eShine E2000/E3000/E3100/E5000 app bed")
 
-    def validate(controller: BedController | SideBoundController) -> None:
+    def validate(controller: BedController) -> None:
         if enabled and preset not in controller.clock_alarm_preset_options:
             raise ServiceValidationError("This eShine profile does not expose the selected alarm action")
 
     preflighted = await _preflight_capability(
         targets, "supports_clock_alarm", "eShine alarms", validate=validate,
     )
-    async def program(controller: BedController | SideBoundController) -> None:
+    async def program(controller: BedController) -> None:
         if enabled:
             await controller.sync_clock()
         await controller.configure_clock_alarm(

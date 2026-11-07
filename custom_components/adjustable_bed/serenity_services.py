@@ -28,28 +28,26 @@ from .services import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
     from .beds.serenity import ZSeriesController
 
 
 SERVICE_ZSERIES_SET_ALARM = "zseries_set_alarm"
 
 
-def _zseries_controller(controller: BedController | SideBoundController) -> ZSeriesController:
-    """Return the Z-Series controller behind a possibly side-bound proxy."""
-    from .beds.base import SideBoundController as Bound
+def _zseries_controller(controller: BedController) -> ZSeriesController:
+    """Return the Z-Series controller behind a service target."""
     from .beds.serenity import ZSeriesController as ZSeries
 
-    inner = controller._controller if isinstance(controller, Bound) else controller
-    if not isinstance(inner, ZSeries):
+    if not isinstance(controller, ZSeries):
         raise ServiceValidationError("This action requires a Customatic Z-Series app controller")
-    return inner
+    return controller
 
 
 async def _execute_zseries_alarm(
     call: ServiceCall,
     label: str,
-    command: Callable[[BedController | SideBoundController], Coroutine[Any, Any, None]],
+    command: Callable[[BedController], Coroutine[Any, Any, None]],
 ) -> None:
     """Preflight every physical Z-Series target before any alarm or clock write."""
     targets, missing = _resolve_sided_targets(
@@ -134,7 +132,7 @@ async def handle_zseries_set_alarm(call: ServiceCall) -> None:
         raise ServiceValidationError("Z-Series alarms use minute precision")
     hour, minute = (alarm_time.hour, alarm_time.minute) if alarm_time is not None else (0, 0)
 
-    async def program(controller: BedController | SideBoundController) -> None:
+    async def program(controller: BedController) -> None:
         await controller.configure_clock_alarm(
             enabled=enabled,
             weekdays=(),

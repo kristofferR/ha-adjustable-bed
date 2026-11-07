@@ -48,7 +48,7 @@ def _spec(key: str = "back") -> MotorControlSpec:
 
 
 def test_cover_advertises_its_controller_hold_and_timed_motor():
-    runtime = SimpleNamespace(
+    runtime = SimpleNamespace(controller_side=None,
         capability_controller=STREAM,
         entity_side=SIDE_LEFT,
         device_info={},
@@ -79,7 +79,7 @@ def test_combined_motor_offers_a_hold_only_when_both_sides_agree(mode, right, ex
     spec = _spec()
     coordinator = MagicMock(pair_id="pair", device_info={}, connection_mode=mode)
     coordinator.children = {
-        side: SimpleNamespace(
+        side: SimpleNamespace(controller_side=None,
             capability_controller=SimpleNamespace(
                 execution=controller.execution, motor_control_specs=[spec]
             ),

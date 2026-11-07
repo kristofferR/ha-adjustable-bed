@@ -19,6 +19,7 @@ from tests.test_limoss_remote import make_controller
 def runtime(controller, side=None):
     coordinator = MagicMock()
     coordinator.bed_type = BED_TYPE_LIMOSS_REMOTE
+    coordinator.controller_side = None
     coordinator.capability_controller = controller
     coordinator.controller = controller
     coordinator.has_massage = False
@@ -122,6 +123,8 @@ def test_other_controller_empty_memory_name_keeps_existing_translated_fallback()
 
     coordinator = runtime(make_controller())
     coordinator.bed_type = "octo"
-    coordinator.controller = MagicMock(memory_slot_names=("",))
+    coordinator.controller = MagicMock(
+        memory_slot_names=("",), memory_slot_names_allow_blank=False
+    )
     description = next(row for row in BUTTON_DESCRIPTIONS if row.key == "preset_memory_1")
     assert _discovered_memory_slot_name(coordinator, description) is None

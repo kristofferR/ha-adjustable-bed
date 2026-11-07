@@ -14,7 +14,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
 from . import goodvibe_protocol as p
-from .beds.base import BedController, SideBoundController
+from .beds.base import BedController
 from .codec import richmat as codec
 from .const import DOMAIN
 from .goodvibe_catalog import ACTIONS
@@ -283,7 +283,7 @@ async def handle_goodvibe(call: ServiceCall) -> None:
 
     plans: dict[tuple[str, str], Request] = {}
 
-    def validate(controller: BedController | SideBoundController) -> None:
+    def validate(controller: BedController) -> None:
         target = selected(controller)
         plans[(target._address.upper(), target.product_key)] = request.plan(target)
 

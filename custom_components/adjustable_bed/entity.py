@@ -3,16 +3,18 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING, Any, Self
 
 from homeassistant.core import callback
 from homeassistant.helpers.entity import Entity
 
 from .const import TIMED_MOVE_MOTOR_OPTIONS
+from .entity_runtime import controller_side_scope
 from .execution import ExecutionCapabilities
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
     from .entity_runtime import EntityRuntime
 
 # A renewable hold (#483) the card may lease: the declared hold mode, and the
@@ -22,7 +24,7 @@ ATTR_HOLD_LEASE_MOTOR = "hold_lease_motor"
 
 
 def hold_lease_attributes(
-    controllers: Iterable[BedController | SideBoundController | None],
+    controllers: Iterable[BedController | None],
     motor: str | None = None,
     *,
     control: str | None = None,
@@ -82,6 +84,15 @@ class AdjustableBedEntity(RenamesInPlace):
         side = coordinator.entity_side
         if side is not None:
             self._attr_extra_state_attributes = {"bed_side": side}
+
+    def _side_scope(self) -> AbstractContextManager[None]:
+        """Bind this entity's side to a shared controller around a direct read."""
+        return controller_side_scope(self._coordinator)
+
+    def _async_write_ha_state(self) -> None:
+        """Read state with a shared controller bound to this entity's side."""
+        with self._side_scope():
+            super()._async_write_ha_state()
 
     def _set_sided_translation_key(self, key: str | None, fallback: str) -> None:
         """Apply a logical-side suffix only for single-address paired views."""

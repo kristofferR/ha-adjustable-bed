@@ -26,7 +26,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
-from .const import BED_TYPE_LINAK, BED_TYPE_SLEEP_NUMBER_MCR, DOMAIN
+from .const import DOMAIN
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
@@ -158,7 +158,7 @@ def _light_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> list
 
     if (
         controller.supports_light_state_feedback
-        or coordinator.bed_type in (BED_TYPE_LINAK, BED_TYPE_SLEEP_NUMBER_MCR)
+        or controller.exposes_discrete_light_as_light
         and controller.supports_discrete_light_control
     ):
         if octo is None:
@@ -320,13 +320,15 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             else None
         )
         self._attr_is_on = False
-        current_rgb = getattr(controller, "current_light_rgb_color", None)
+        current_rgb = controller.current_light_rgb_color if controller is not None else None
         if current_rgb is None:
             current_rgb = coordinator.controller_state.get("under_bed_lights_rgb")
         self._attr_rgb_color = _normalize_rgb_color(current_rgb) or self._default_rgb_color
         if ColorMode.RGBW in supported_modes:
             # Keep RGB, RGBW and intensity independent when both records exist.
-            current_rgbw = getattr(controller, "current_light_rgbw_color", None)
+            current_rgbw = (
+                controller.current_light_rgbw_color if controller is not None else None
+            )
             if current_rgbw is None:
                 current_rgbw = coordinator.controller_state.get("under_bed_lights_rgbw")
             normalized_rgbw = _normalize_rgbw_color(current_rgbw)
@@ -337,7 +339,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                 self._attr_rgbw_color = (r, g, b, 255)
             elif not is_octo:
                 self._attr_rgbw_color = (255, 255, 255, 255)
-            current_intensity = getattr(controller, "light_intensity", None)
+            current_intensity = controller.light_intensity if controller is not None else None
             if current_intensity is None:
                 current_intensity = coordinator.controller_state.get("light_intensity")
             if type(current_intensity) is int and (
@@ -593,7 +595,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
 
         async def _turn_on(ctrl: BedController) -> None:
             if not brightness_only:
-                if getattr(ctrl, "supports_explicit_light_on_control", False):
+                if ctrl.supports_explicit_light_on_control:
                     await ctrl.lights_on()
                 elif target_rgb is None:
                     if ctrl.supports_light_toggle_control:
@@ -623,7 +625,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         )
 
         async def _turn_on(ctrl: BedController) -> None:
-            if getattr(ctrl, "supports_explicit_light_on_control", False):
+            if ctrl.supports_explicit_light_on_control:
                 await ctrl.lights_on()
             await ctrl.set_light_color_rgbw(target_rgbw, intensity)
 
@@ -646,10 +648,10 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             return
 
         async def _turn_off(ctrl: BedController) -> None:
-            if getattr(ctrl, "supports_discrete_light_control", False):
+            if ctrl.supports_discrete_light_control:
                 await ctrl.lights_off()
                 return
-            if getattr(ctrl, "supports_light_toggle_control", False):
+            if ctrl.supports_light_toggle_control:
                 await ctrl.lights_toggle()
                 return
             raise NotImplementedError("Light off control not supported on this bed")
@@ -737,7 +739,7 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         self._attr_is_on: bool | None = None
         controller = coordinator.capability_controller
         self._feedback_only = controller is not None and controller.supports_light_state_feedback
-        self._initialize_off = coordinator.bed_type == BED_TYPE_LINAK
+        self._initialize_off = controller is not None and controller.light_state_starts_off
         self._unregister_callback: Callable[[], None] | None = None
         self._unregister_connection: Callable[[], None] | None = None
 
@@ -796,7 +798,10 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         """Update state from controller light telemetry when available."""
         if self._feedback_only:
             controller = self._coordinator.controller
-            value = controller.get_light_state().get("is_on") if controller is not None else None
+            with self._side_scope():
+                value = (
+                    controller.get_light_state().get("is_on") if controller is not None else None
+                )
         elif "under_bed_lights_on" in state:
             value = state["under_bed_lights_on"]
         else:

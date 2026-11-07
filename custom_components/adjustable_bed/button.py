@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable, Coroutine, Iterable, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.config_entries import ConfigEntry
@@ -15,22 +15,19 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import UndefinedType
 
-from .beds.base import CONTROLLER_GESTURE_RELEASE, ProductButtonSpec, SideBoundController
+from .beds.base import CONTROLLER_GESTURE_RELEASE, ProductButtonSpec
 from .const import (
-    BED_TYPE_JIECANG_APP,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_MOTION_BED,
     BED_TYPE_OCTO,
-    BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_TIMOTION_AHF,
     DOMAIN,
     PAIR_CONNECTION_MODE_CONCURRENT,
     SIDE_BOTH,
-    SLEEPYS_ELITE_NATIVE_ACTION_MS,
 )
 from .entity import AdjustableBedEntity, RenamesInPlace, hold_lease_attributes
 from .entity_discovery import async_setup_dynamic_entities
-from .entity_runtime import EntityRuntime
+from .entity_runtime import EntityRuntime, controller_side_scope
 from .octo_runtime import octo_controller
 from .paired_coordinator import (
     PairedBedCoordinator,
@@ -50,7 +47,6 @@ if TYPE_CHECKING:
         ControllerButtonSpec,
         ControllerMotorHoldSpec,
         MotorControlSpec,
-        SideBoundController,
     )
     from .coordinator import AdjustableBedCoordinator
 
@@ -74,8 +70,8 @@ class AdjustableBedButtonEntityDescription(ButtonEntityDescription):
         False  # If True, this is a coordinator-level action (connect/disconnect)
     )
     cancel_movement: bool = False  # If True, cancels any running motor command
-    # Capability property name to check on controller (e.g., "supports_preset_zero_g")
-    required_capability: str | None = None
+    # Controller capability gating the entity, e.g. ``lambda c: c.supports_preset_zero_g``.
+    is_supported: Callable[[BedController], bool] | None = None
     # Used to gate memory buttons by the controller's actual slot count.
     memory_slot: int | None = None
     # Whether this is a memory programming button (requires supports_memory_programming)
@@ -90,7 +86,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:numeric-1-box",
         press_fn=lambda ctrl: ctrl.preset_memory(1),
         cancel_movement=True,
-        required_capability="supports_memory_presets",
+        is_supported=lambda c: c.supports_memory_presets,
         memory_slot=1,
     ),
     AdjustableBedButtonEntityDescription(
@@ -99,7 +95,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:numeric-2-box",
         press_fn=lambda ctrl: ctrl.preset_memory(2),
         cancel_movement=True,
-        required_capability="supports_memory_presets",
+        is_supported=lambda c: c.supports_memory_presets,
         memory_slot=2,
     ),
     AdjustableBedButtonEntityDescription(
@@ -108,7 +104,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:numeric-3-box",
         press_fn=lambda ctrl: ctrl.preset_memory(3),
         cancel_movement=True,
-        required_capability="supports_memory_presets",
+        is_supported=lambda c: c.supports_memory_presets,
         memory_slot=3,
     ),
     AdjustableBedButtonEntityDescription(
@@ -117,7 +113,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:numeric-4-box",
         press_fn=lambda ctrl: ctrl.preset_memory(4),
         cancel_movement=True,
-        required_capability="supports_memory_presets",
+        is_supported=lambda c: c.supports_memory_presets,
         memory_slot=4,
     ),
     AdjustableBedButtonEntityDescription(
@@ -126,7 +122,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:numeric-5-box",
         press_fn=lambda ctrl: ctrl.preset_memory(5),
         cancel_movement=True,
-        required_capability="supports_memory_presets",
+        is_supported=lambda c: c.supports_memory_presets,
         memory_slot=5,
     ),
     AdjustableBedButtonEntityDescription(
@@ -135,7 +131,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:numeric-6-box",
         press_fn=lambda ctrl: ctrl.preset_memory(6),
         cancel_movement=True,
-        required_capability="supports_memory_presets",
+        is_supported=lambda c: c.supports_memory_presets,
         memory_slot=6,
     ),
     AdjustableBedButtonEntityDescription(
@@ -144,7 +140,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:numeric-7-box",
         press_fn=lambda ctrl: ctrl.preset_memory(7),
         cancel_movement=True,
-        required_capability="supports_memory_presets",
+        is_supported=lambda c: c.supports_memory_presets,
         memory_slot=7,
     ),
     AdjustableBedButtonEntityDescription(
@@ -153,7 +149,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:numeric-8-box",
         press_fn=lambda ctrl: ctrl.preset_memory(8),
         cancel_movement=True,
-        required_capability="supports_memory_presets",
+        is_supported=lambda c: c.supports_memory_presets,
         memory_slot=8,
     ),
     AdjustableBedButtonEntityDescription(
@@ -162,7 +158,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:bed",
         press_fn=lambda ctrl: ctrl.preset_flat(),
         cancel_movement=True,
-        required_capability="supports_preset_flat",
+        is_supported=lambda c: c.supports_preset_flat,
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_zero_g",
@@ -170,7 +166,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:rocket-launch",
         press_fn=lambda ctrl: ctrl.preset_zero_g(),
         cancel_movement=True,
-        required_capability="supports_preset_zero_g",
+        is_supported=lambda c: c.supports_preset_zero_g,
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_anti_snore",
@@ -178,7 +174,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:sleep-off",
         press_fn=lambda ctrl: ctrl.preset_anti_snore(),
         cancel_movement=True,
-        required_capability="supports_preset_anti_snore",
+        is_supported=lambda c: c.supports_preset_anti_snore,
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_tv",
@@ -186,15 +182,15 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:television",
         press_fn=lambda ctrl: ctrl.preset_tv(),
         cancel_movement=True,
-        required_capability="supports_preset_tv",
+        is_supported=lambda c: c.supports_preset_tv,
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_lounge",
         translation_key="preset_lounge",
         icon="mdi:seat-recline-normal",
-        press_fn=lambda ctrl: cast(Any, ctrl).preset_lounge(),
+        press_fn=lambda ctrl: ctrl.preset_lounge(),
         cancel_movement=True,
-        required_capability="supports_preset_lounge",
+        is_supported=lambda c: c.supports_preset_lounge,
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_reading",
@@ -202,23 +198,23 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:book-open-page-variant",
         press_fn=lambda ctrl: ctrl.preset_reading(),
         cancel_movement=True,
-        required_capability="supports_preset_reading",
+        is_supported=lambda c: c.supports_preset_reading,
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_swing",
         translation_key="preset_swing",
         icon="mdi:bed-clock",
-        press_fn=lambda ctrl: cast(Any, ctrl).preset_swing(),
+        press_fn=lambda ctrl: ctrl.preset_swing(),
         cancel_movement=True,
-        required_capability="supports_preset_swing",
+        is_supported=lambda c: c.supports_preset_swing,
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_incline",
         translation_key="preset_incline",
         icon="mdi:angle-acute",
-        press_fn=lambda ctrl: cast(Any, ctrl).preset_incline(),
+        press_fn=lambda ctrl: ctrl.preset_incline(),
         cancel_movement=True,
-        required_capability="supports_preset_incline",
+        is_supported=lambda c: c.supports_preset_incline,
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_both_up",
@@ -226,7 +222,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:arrow-up-bold",
         press_fn=lambda ctrl: ctrl.preset_both_up(),
         cancel_movement=True,
-        required_capability="supports_preset_both_up",
+        is_supported=lambda c: c.supports_preset_both_up,
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_yoga",
@@ -234,7 +230,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:yoga",
         press_fn=lambda ctrl: ctrl.preset_yoga(),
         cancel_movement=True,
-        required_capability="supports_preset_yoga",
+        is_supported=lambda c: c.supports_preset_yoga,
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_relaxing_bedtime",
@@ -242,29 +238,29 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:weather-night",
         press_fn=lambda ctrl: ctrl.preset_relaxing_bedtime(),
         cancel_movement=True,
-        required_capability="supports_relaxing_bedtime",
+        is_supported=lambda c: c.supports_relaxing_bedtime,
     ),
     AdjustableBedButtonEntityDescription(
         key="solace_music_toggle",
         translation_key="solace_music_toggle",
         icon="mdi:music",
         press_fn=lambda ctrl: ctrl.solace_music_toggle(),
-        required_capability="supports_solace_audio",
+        is_supported=lambda c: c.supports_solace_audio,
     ),
     AdjustableBedButtonEntityDescription(
         key="solace_music_off",
         translation_key="solace_music_off",
         icon="mdi:music-off",
         press_fn=lambda ctrl: ctrl.solace_music_off(),
-        required_capability="supports_solace_audio",
+        is_supported=lambda c: c.supports_solace_audio,
     ),
     AdjustableBedButtonEntityDescription(
         key="auxiliary_action",
         translation_key="auxiliary_action",
         icon="mdi:gesture-tap-button",
-        press_fn=lambda ctrl: cast(Any, ctrl).auxiliary_action(),
+        press_fn=lambda ctrl: ctrl.auxiliary_action(),
         cancel_movement=True,
-        required_capability="supports_auxiliary_action",
+        is_supported=lambda c: c.supports_auxiliary_action,
     ),
     # Program buttons (config category)
     AdjustableBedButtonEntityDescription(
@@ -273,7 +269,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:content-save",
         entity_category=EntityCategory.CONFIG,
         press_fn=lambda ctrl: ctrl.program_memory(1),
-        required_capability="supports_memory_presets",
+        is_supported=lambda c: c.supports_memory_presets,
         memory_slot=1,
         is_program_button=True,
     ),
@@ -283,7 +279,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:content-save",
         entity_category=EntityCategory.CONFIG,
         press_fn=lambda ctrl: ctrl.program_memory(2),
-        required_capability="supports_memory_presets",
+        is_supported=lambda c: c.supports_memory_presets,
         memory_slot=2,
         is_program_button=True,
     ),
@@ -293,7 +289,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:content-save",
         entity_category=EntityCategory.CONFIG,
         press_fn=lambda ctrl: ctrl.program_memory(3),
-        required_capability="supports_memory_presets",
+        is_supported=lambda c: c.supports_memory_presets,
         memory_slot=3,
         is_program_button=True,
     ),
@@ -303,7 +299,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:content-save",
         entity_category=EntityCategory.CONFIG,
         press_fn=lambda ctrl: ctrl.program_memory(4),
-        required_capability="supports_memory_presets",
+        is_supported=lambda c: c.supports_memory_presets,
         memory_slot=4,
         is_program_button=True,
     ),
@@ -313,7 +309,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:content-save",
         entity_category=EntityCategory.CONFIG,
         press_fn=lambda ctrl: ctrl.program_memory(5),
-        required_capability="supports_memory_presets",
+        is_supported=lambda c: c.supports_memory_presets,
         memory_slot=5,
         is_program_button=True,
     ),
@@ -323,7 +319,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:content-save",
         entity_category=EntityCategory.CONFIG,
         press_fn=lambda ctrl: ctrl.program_memory(6),
-        required_capability="supports_memory_presets",
+        is_supported=lambda c: c.supports_memory_presets,
         memory_slot=6,
         is_program_button=True,
     ),
@@ -333,7 +329,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:content-save",
         entity_category=EntityCategory.CONFIG,
         press_fn=lambda ctrl: ctrl.program_memory(7),
-        required_capability="supports_memory_presets",
+        is_supported=lambda c: c.supports_memory_presets,
         memory_slot=7,
         is_program_button=True,
     ),
@@ -343,7 +339,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:content-save",
         entity_category=EntityCategory.CONFIG,
         press_fn=lambda ctrl: ctrl.program_memory(8),
-        required_capability="supports_memory_presets",
+        is_supported=lambda c: c.supports_memory_presets,
         memory_slot=8,
         is_program_button=True,
     ),
@@ -354,7 +350,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         entity_category=EntityCategory.CONFIG,
         press_fn=lambda ctrl: ctrl.set_control_mode_press_and_hold(),
         cancel_movement=True,
-        required_capability="supports_control_mode_press_and_hold",
+        is_supported=lambda c: c.supports_control_mode_press_and_hold,
     ),
     AdjustableBedButtonEntityDescription(
         key="control_mode_press_and_release",
@@ -363,7 +359,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         entity_category=EntityCategory.CONFIG,
         press_fn=lambda ctrl: ctrl.set_control_mode_press_and_release(),
         cancel_movement=True,
-        required_capability="supports_control_mode_configuration",
+        is_supported=lambda c: c.supports_control_mode_configuration,
     ),
     # Stop button
     AdjustableBedButtonEntityDescription(
@@ -371,7 +367,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         translation_key="stop",
         icon="mdi:stop",
         press_fn=lambda ctrl: ctrl.stop_all(),
-        required_capability="supports_stop_all",
+        is_supported=lambda c: c.supports_stop_all,
     ),
     # Connection control buttons (diagnostic)
     AdjustableBedButtonEntityDescription(
@@ -396,7 +392,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:power",
         entity_category=EntityCategory.CONFIG,
         press_fn=lambda ctrl: ctrl.wake(),
-        required_capability="supports_wake_control",
+        is_supported=lambda c: c.supports_wake_control,
     ),
     AdjustableBedButtonEntityDescription(
         key="reset_defaults",
@@ -405,7 +401,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         entity_category=EntityCategory.CONFIG,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.reset_defaults(),
-        required_capability="supports_reset_defaults",
+        is_supported=lambda c: c.supports_reset_defaults,
     ),
     AdjustableBedButtonEntityDescription(
         key="factory_reset",
@@ -415,7 +411,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         entity_registry_enabled_default=False,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.factory_reset(),
-        required_capability="supports_factory_reset",
+        is_supported=lambda c: c.supports_factory_reset,
     ),
     # Massage buttons (only if has_massage)
     AdjustableBedButtonEntityDescription(
@@ -425,7 +421,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.impulse_toggle(),
-        required_capability="supports_impulse_control",
+        is_supported=lambda c: c.supports_impulse_control,
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_wave_frequency_up",
@@ -434,7 +430,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_wave_frequency_up(),
-        required_capability="supports_massage_wave_frequency_control",
+        is_supported=lambda c: c.supports_massage_wave_frequency_control,
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_wave_frequency_down",
@@ -443,7 +439,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_wave_frequency_down(),
-        required_capability="supports_massage_wave_frequency_control",
+        is_supported=lambda c: c.supports_massage_wave_frequency_control,
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_all_off",
@@ -452,7 +448,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_off(),
-        required_capability="supports_massage_off_control",
+        is_supported=lambda c: c.supports_massage_off_control,
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_all_toggle",
@@ -461,7 +457,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_toggle(),
-        required_capability="supports_massage_toggle_control",
+        is_supported=lambda c: c.supports_massage_toggle_control,
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_all_up",
@@ -470,7 +466,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_intensity_up(),
-        required_capability="supports_massage_intensity_up_control",
+        is_supported=lambda c: c.supports_massage_intensity_up_control,
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_all_down",
@@ -479,7 +475,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_intensity_down(),
-        required_capability="supports_massage_intensity_step_control",
+        is_supported=lambda c: c.supports_massage_intensity_step_control,
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_head_toggle",
@@ -488,7 +484,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_head_toggle(),
-        required_capability="supports_head_massage_toggle_control",
+        is_supported=lambda c: c.supports_head_massage_toggle_control,
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_head_up",
@@ -497,7 +493,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_head_up(),
-        required_capability="supports_head_massage_intensity_step_control",
+        is_supported=lambda c: c.supports_head_massage_intensity_step_control,
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_head_down",
@@ -506,7 +502,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_head_down(),
-        required_capability="supports_head_massage_intensity_step_control",
+        is_supported=lambda c: c.supports_head_massage_intensity_step_control,
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_foot_toggle",
@@ -515,7 +511,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_foot_toggle(),
-        required_capability="supports_foot_massage_toggle_control",
+        is_supported=lambda c: c.supports_foot_massage_toggle_control,
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_foot_up",
@@ -524,7 +520,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_foot_up(),
-        required_capability="supports_foot_massage_intensity_step_control",
+        is_supported=lambda c: c.supports_foot_massage_intensity_step_control,
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_foot_down",
@@ -533,7 +529,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_foot_down(),
-        required_capability="supports_foot_massage_intensity_step_control",
+        is_supported=lambda c: c.supports_foot_massage_intensity_step_control,
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_mode_step",
@@ -542,7 +538,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_mode_step(),
-        required_capability="supports_massage_mode_step_control",
+        is_supported=lambda c: c.supports_massage_mode_step_control,
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_wave_next",
@@ -551,7 +547,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_wave_next(),
-        required_capability="supports_massage_wave_direction_control",
+        is_supported=lambda c: c.supports_massage_wave_direction_control,
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_wave_previous",
@@ -560,7 +556,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_wave_previous(),
-        required_capability="supports_massage_wave_direction_control",
+        is_supported=lambda c: c.supports_massage_wave_direction_control,
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_intensity_level_1",
@@ -569,7 +565,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.set_massage_intensity_preset(1),
-        required_capability="supports_massage_intensity_preset_control",
+        is_supported=lambda c: c.supports_massage_intensity_preset_control,
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_intensity_level_2",
@@ -578,7 +574,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.set_massage_intensity_preset(2),
-        required_capability="supports_massage_intensity_preset_control",
+        is_supported=lambda c: c.supports_massage_intensity_preset_control,
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_intensity_level_3",
@@ -587,7 +583,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.set_massage_intensity_preset(3),
-        required_capability="supports_massage_intensity_preset_control",
+        is_supported=lambda c: c.supports_massage_intensity_preset_control,
     ),
     # Circulation massage buttons (only for beds with circulation massage support)
     AdjustableBedButtonEntityDescription(
@@ -597,7 +593,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_circulation_full_body(),
-        required_capability="supports_circulation_massage",
+        is_supported=lambda c: c.supports_circulation_massage,
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_circulation_head",
@@ -606,7 +602,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_circulation_head(),
-        required_capability="supports_circulation_massage",
+        is_supported=lambda c: c.supports_circulation_massage,
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_circulation_leg",
@@ -615,7 +611,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_circulation_leg(),
-        required_capability="supports_circulation_massage",
+        is_supported=lambda c: c.supports_circulation_massage,
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_circulation_hip",
@@ -624,7 +620,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_circulation_hip(),
-        required_capability="supports_circulation_massage",
+        is_supported=lambda c: c.supports_circulation_massage,
     ),
     # Light buttons
     AdjustableBedButtonEntityDescription(
@@ -632,50 +628,14 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         translation_key="toggle_light",
         icon="mdi:lightbulb",
         press_fn=lambda ctrl: ctrl.lights_toggle(),
-        required_capability="supports_light_toggle_control",
+        is_supported=lambda c: c.supports_light_toggle_control,
     ),
     AdjustableBedButtonEntityDescription(
         key="light_cycle",
         translation_key="light_cycle",
         icon="mdi:lightbulb-multiple",
         press_fn=lambda ctrl: ctrl.lights_on(),
-        required_capability="supports_light_cycle",
-    ),
-    # Light/Sound therapy buttons (KSBT04C / Beautyrest Baselogic)
-    AdjustableBedButtonEntityDescription(
-        key="toggle_sound",
-        translation_key="toggle_sound",
-        icon="mdi:volume-high",
-        press_fn=lambda ctrl: ctrl.sound_toggle(),
-        required_capability="supports_sound_toggle",
-    ),
-    AdjustableBedButtonEntityDescription(
-        key="toggle_light_and_sound",
-        translation_key="toggle_light_and_sound",
-        icon="mdi:lightbulb-group",
-        press_fn=lambda ctrl: ctrl.light_and_sound_toggle(),
-        required_capability="supports_therapy_modes",
-    ),
-    AdjustableBedButtonEntityDescription(
-        key="therapy_mode_1",
-        translation_key="therapy_mode_1",
-        icon="mdi:numeric-1-circle",
-        press_fn=lambda ctrl: ctrl.therapy_mode_one(),
-        required_capability="supports_therapy_modes",
-    ),
-    AdjustableBedButtonEntityDescription(
-        key="therapy_mode_2",
-        translation_key="therapy_mode_2",
-        icon="mdi:numeric-2-circle",
-        press_fn=lambda ctrl: ctrl.therapy_mode_two(),
-        required_capability="supports_therapy_modes",
-    ),
-    AdjustableBedButtonEntityDescription(
-        key="therapy_mode_3",
-        translation_key="therapy_mode_3",
-        icon="mdi:numeric-3-circle",
-        press_fn=lambda ctrl: ctrl.therapy_mode_three(),
-        required_capability="supports_therapy_modes",
+        is_supported=lambda c: c.supports_light_cycle,
     ),
     # Utility buttons (Okin split-base sync / handset child lock). Both are
     # long holds, so cancel any running motor command like the other
@@ -686,7 +646,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:sync",
         press_fn=lambda ctrl: ctrl.sync_positions(),
         cancel_movement=True,
-        required_capability="supports_sync",
+        is_supported=lambda c: c.supports_sync,
     ),
     AdjustableBedButtonEntityDescription(
         key="child_lock_toggle",
@@ -694,7 +654,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:lock",
         press_fn=lambda ctrl: ctrl.child_lock_toggle(),
         cancel_movement=True,
-        required_capability="supports_child_lock",
+        is_supported=lambda c: c.supports_child_lock,
     ),
     # Motor movement buttons (for discrete motor control beds)
     AdjustableBedButtonEntityDescription(
@@ -703,7 +663,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:arrow-up",
         press_fn=lambda ctrl: ctrl.move_head_up(),
         cancel_movement=True,
-        required_capability="has_discrete_motor_control",
+        is_supported=lambda c: c.has_discrete_motor_control,
     ),
     AdjustableBedButtonEntityDescription(
         key="head_down",
@@ -711,7 +671,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:arrow-down",
         press_fn=lambda ctrl: ctrl.move_head_down(),
         cancel_movement=True,
-        required_capability="has_discrete_motor_control",
+        is_supported=lambda c: c.has_discrete_motor_control,
     ),
     AdjustableBedButtonEntityDescription(
         key="legs_up",
@@ -719,7 +679,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:arrow-up",
         press_fn=lambda ctrl: ctrl.move_legs_up(),
         cancel_movement=True,
-        required_capability="has_discrete_motor_control",
+        is_supported=lambda c: c.has_discrete_motor_control,
     ),
     AdjustableBedButtonEntityDescription(
         key="legs_down",
@@ -727,7 +687,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:arrow-down",
         press_fn=lambda ctrl: ctrl.move_legs_down(),
         cancel_movement=True,
-        required_capability="has_discrete_motor_control",
+        is_supported=lambda c: c.has_discrete_motor_control,
     ),
 )
 
@@ -780,7 +740,8 @@ async def async_setup_entry(
         def build_paired_buttons() -> list[ButtonEntity]:
             entities: list[ButtonEntity] = []
             for runtime in static_runtimes:
-                entities.extend(_button_entities_for(hass, runtime))
+                with controller_side_scope(runtime):
+                    entities.extend(_button_entities_for(hass, runtime))
             # A pair whose every side lacks a global STOP frame gets no combined Stop.
             if not all(remacro_side_lacks_global_stop(child) for child in children):
                 entities.append(PairedBedStopButton(coordinator))
@@ -790,7 +751,7 @@ async def async_setup_entry(
             _async_remove_stale_combined_button_entities(hass, coordinator, children, entities)
             return entities
 
-        if any(runtime.bed_type == BED_TYPE_JIECANG_APP for runtime in static_runtimes):
+        if any(_has_dynamic_buttons(runtime) for runtime in static_runtimes):
             async_setup_dynamic_entities(
                 hass,
                 entry,
@@ -809,10 +770,7 @@ async def async_setup_entry(
 
     initial: list[ButtonEntity] = []
     for runtime in entity_runtimes(coordinator):
-        if (
-            octo_controller(runtime.capability_controller) is not None
-            or runtime.bed_type == BED_TYPE_JIECANG_APP
-        ):
+        if _has_dynamic_buttons(runtime):
             async_setup_dynamic_entities(
                 hass,
                 entry,
@@ -824,6 +782,11 @@ async def async_setup_entry(
             initial.extend(_button_entities_for(hass, runtime))
     async_add_entities(initial)
     _async_follow_motion_bed_module_actions(hass, entry, coordinator, async_add_entities, initial)
+
+
+def _has_dynamic_buttons(runtime: EntityRuntime) -> bool:
+    controller = runtime.capability_controller
+    return controller is not None and controller.has_dynamic_buttons
 
 
 def _async_follow_motion_bed_module_actions(
@@ -959,7 +922,7 @@ def _button_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
             }
             if (
                 namespace == "motion_bed_"
-                and coordinator.bed_type == BED_TYPE_MOTION_BED
+                and controller.supports_motion_bed_actions
                 and any(
                     spec.key == "motion_bed_active_module"
                     for spec in controller.controller_select_specs
@@ -1042,14 +1005,7 @@ def _combined_button_entities_for(
             # The combined stop is the dedicated PairedBedStopButton (same
             # {pair_id}_stop_both unique_id); don't also build a generic one.
             continue
-        if not all(
-            _should_add_button(
-                description,
-                child.capability_controller,
-                _massage_entities_enabled(child, child.capability_controller),
-            )
-            for child in eligible
-        ):
+        if not all(_child_should_add_button(description, child) for child in eligible):
             continue
         entities.append(PairedBedCombinedButton(coordinator, description))
 
@@ -1060,9 +1016,19 @@ def _combined_button_entities_for(
     return entities
 
 
+def _child_should_add_button(
+    description: AdjustableBedButtonEntityDescription, child: EntityRuntime
+) -> bool:
+    with controller_side_scope(child):
+        controller = child.capability_controller
+        return _should_add_button(
+            description, controller, _massage_entities_enabled(child, controller)
+        )
+
+
 def _massage_entities_enabled(
     coordinator: EntityRuntime,
-    controller: BedController | SideBoundController | None,
+    controller: BedController | None,
 ) -> bool:
     """Return the effective configured or protocol-declared massage capability."""
     if coordinator.bed_type == BED_TYPE_TIMOTION_AHF:
@@ -1088,15 +1054,21 @@ def _combined_motor_buttons_for(
     common: set[str] | None = None
     for child in eligible:
         controller = child.capability_controller
-        if (
-            controller is None
-            or not getattr(controller, "supports_motor_control", False)
-            or getattr(controller, "has_discrete_motor_control", False)
-        ):
+        with controller_side_scope(child):
+            cover_based = (
+                controller is not None
+                and controller.supports_motor_control
+                and not controller.has_discrete_motor_control
+            )
+            side_specs = (
+                {spec.key: spec for spec in controller.motor_control_specs}
+                if controller is not None and cover_based
+                else {}
+            )
+        if not cover_based:
             # Not a cover-based bed (discrete motors get combined buttons above),
             # or no capability source for this side.
             return []
-        side_specs = {spec.key: spec for spec in controller.motor_control_specs}
         if not specs_by_key:
             specs_by_key = side_specs
         keys = set(side_specs)
@@ -1146,7 +1118,7 @@ def _async_migrate_massage_intensity_button_unique_ids(
 
 def _should_add_button(
     description: AdjustableBedButtonEntityDescription,
-    controller: BedController | SideBoundController | None,
+    controller: BedController | None,
     has_massage: bool,
 ) -> bool:
     """Return whether the button should be exposed for the current controller."""
@@ -1171,10 +1143,8 @@ def _should_add_button(
         ):
             return False
 
-    if description.required_capability is not None:
-        if controller is None:
-            return False
-        if not getattr(controller, description.required_capability, False):
+    if description.is_supported is not None:
+        if controller is None or not description.is_supported(controller):
             return False
 
     if description.memory_slot is not None and controller is not None:
@@ -1197,17 +1167,20 @@ def _should_add_button(
 
 def _button_translation_key(
     description: AdjustableBedButtonEntityDescription,
-    controllers: Iterable[BedController | SideBoundController | None],
+    runtimes: Iterable[EntityRuntime],
 ) -> str:
-    """Return the action label shared by every participating controller."""
-    resolved_controllers = tuple(controllers)
+    """Return the action label shared by every participating runtime."""
+
+    def timer_step(runtime: EntityRuntime) -> bool:
+        with controller_side_scope(runtime):
+            controller = runtime.capability_controller
+            return controller is not None and controller.massage_mode_step_is_timer
+
+    resolved_runtimes = tuple(runtimes)
     if (
         description.key == "massage_mode_step"
-        and resolved_controllers
-        and all(
-            controller is not None and controller.massage_mode_step_is_timer
-            for controller in resolved_controllers
-        )
+        and resolved_runtimes
+        and all(timer_step(runtime) for runtime in resolved_runtimes)
     ):
         return "massage_timer_step"
     return description.translation_key or description.key
@@ -1216,7 +1189,7 @@ def _button_translation_key(
 def _async_remove_stale_button_entities(
     hass: HomeAssistant,
     coordinator: EntityRuntime,
-    controller: BedController | SideBoundController,
+    controller: BedController,
     has_massage: bool,
 ) -> None:
     """Remove button entities that are no longer supported for this controller."""
@@ -1276,7 +1249,7 @@ def _discovered_memory_slot_name(
 
     name = names[slot - 1]
     # The app permits explicit blank names; preserve other profiles' prior fallback.
-    if name is None or (not name and coordinator.bed_type != BED_TYPE_LIMOSS_REMOTE):
+    if name is None or (not name and not controller.memory_slot_names_allow_blank):
         return None
     return f"Save {name}" if description.is_program_button else name
 
@@ -1358,7 +1331,7 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         translation_key = _button_translation_key(
             description,
-            (coordinator.capability_controller,),
+            (coordinator,),
         )
         self._attr_translation_key = coordinator.entity_translation_key(translation_key)
 
@@ -1491,16 +1464,19 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
     @property
     def available(self) -> bool:
         controller = self._coordinator.capability_controller
-        return super().available and (
-            controller is None or controller.controller_button_available(self._spec.key)
-        )
+        if controller is None:
+            return super().available
+        # Home Assistant also reads availability outside state writes.
+        with self._side_scope():
+            return super().available and controller.controller_button_available(self._spec.key)
 
     async def async_press(self) -> None:
         """Execute the named action with its declared replacement policy."""
         if self._spec.release_only:
             controller = self._coordinator.capability_controller
             if controller is not None:
-                controller.on_gesture_release()
+                with self._side_scope():
+                    controller.on_gesture_release()
             token = CONTROLLER_GESTURE_RELEASE.set(True)
             try:
                 await self._coordinator.async_stop_command()
@@ -1607,7 +1583,7 @@ class PairedBedCombinedButton(RenamesInPlace, ButtonEntity):
         self.entity_description = description
         base_translation_key = _button_translation_key(
             description,
-            (child.capability_controller for child in coordinator.children.values()),
+            coordinator.children.values(),
         )
         self._attr_translation_key = (
             f"{base_translation_key}_both"
@@ -1649,7 +1625,8 @@ class PairedBedCombinedButton(RenamesInPlace, ButtonEntity):
                     raise ValueError(
                         f"Cannot validate memory for unavailable device '{child.name}'"
                     )
-                controller.validate_memory_recall(description.memory_slot)
+                with controller_side_scope(child):
+                    controller.validate_memory_recall(description.memory_slot)
         press_fn = description.press_fn
         if _moves_untimed(description.key):
             press_fn = invalidate_on_command(self.hass, press_fn)
@@ -1790,16 +1767,14 @@ class PairedBedCombinedMotorButton(RenamesInPlace, ButtonEntity):
 
     async def async_press(self) -> None:
         """Move this motor on both sides."""
-        if self._hold_spec is not None and all(
-            child.bed_type == BED_TYPE_SLEEPYS_ELITE_APP
-            for child in self._coordinator.children.values()
-        ):
+        native_press_ms = _paired_native_press_ms(self._coordinator, self._motor_key)
+        if self._hold_spec is not None and native_press_ms is not None:
             control = (
                 self._hold_spec.up_control if self._direction == "up" else self._hold_spec.down_control
             )
 
             async def finite_app_move(controller: BedController) -> None:
-                await controller.hold_control(control, SLEEPYS_ELITE_NATIVE_ACTION_MS)
+                await controller.hold_control(control, native_press_ms)
 
             await self._coordinator.async_execute_controller_command(
                 track_motor_command(self.hass, self._motor_key, self._direction, finite_app_move),
@@ -1855,11 +1830,33 @@ def _paired_hold_lease_attributes(
 
 def _paired_motor_available(coordinator: PairedBedCoordinator, motor: str) -> bool:
     """Require an exact current motor capability on every physical side."""
+
+    def available(child: EntityRuntime) -> bool:
+        with controller_side_scope(child):
+            controller = child.capability_controller
+            return controller is not None and any(
+                spec.key == motor for spec in controller.motor_control_specs
+            )
+
     return bool(coordinator.children) and all(
-        (controller := child.capability_controller) is not None
-        and any(spec.key == motor for spec in controller.motor_control_specs)
-        for child in coordinator.children.values()
+        available(child) for child in coordinator.children.values()
     )
+
+
+def _paired_native_press_ms(coordinator: PairedBedCoordinator, motor: str) -> int | None:
+    """Return the press duration every side's hold times itself, else None."""
+    durations: set[int | None] = set()
+    for child in coordinator.children.values():
+        controller = child.capability_controller
+        if controller is None:
+            return None
+        with controller_side_scope(child):
+            hold = next(
+                (spec.hold for spec in controller.motor_control_specs if spec.key == motor),
+                None,
+            )
+        durations.add(hold.press_hold_ms if hold is not None and hold.press_is_native else None)
+    return durations.pop() if len(durations) == 1 else None
 
 
 def _paired_motor_hold_spec(
@@ -1879,10 +1876,11 @@ def _paired_motor_hold_spec(
         controller = child.capability_controller
         if controller is None:
             return None
-        spec = next(
-            (candidate for candidate in controller.motor_control_specs if candidate.key == motor),
-            None,
-        )
+        with controller_side_scope(child):
+            spec = next(
+                (candidate for candidate in controller.motor_control_specs if candidate.key == motor),
+                None,
+            )
         if spec is None or spec.hold is None:
             return None
         if common is None:

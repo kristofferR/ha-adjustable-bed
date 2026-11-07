@@ -262,8 +262,11 @@ async def test_button_callback_preserves_bound_side(coordinator, side):
         observed_sides.append(controller._command_side.get())
 
     coordinator.client.write_gatt_char.side_effect = record_write
-    with patch.object(controller, "_wait_ticks", new=AsyncMock(return_value=True)):
-        await controller.controller_button_specs[0].press_fn(controller.bind_side(side))
+    with (
+        patch.object(controller, "_wait_ticks", new=AsyncMock(return_value=True)),
+        controller.side_scope(side),
+    ):
+        await controller.controller_button_specs[0].press_fn(controller)
 
     assert written(coordinator) == [control.press.legacy] * 2 + [control.release.legacy]
     assert observed_sides == [side] * 3

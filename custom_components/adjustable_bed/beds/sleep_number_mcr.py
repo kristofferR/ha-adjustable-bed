@@ -179,13 +179,17 @@ def _normalize_sleep_number_setting(value: int) -> int:
 
 def _motor_command(side: str, axis: str, direction: str) -> MotorCommandCallable:
     async def execute(controller: BedController) -> None:
-        bound = controller.bind_side(side)
-        if direction == "stop":
-            await bound.stop_all()
-        elif axis == "back":
-            await (bound.move_back_up() if direction == "up" else bound.move_back_down())
-        else:
-            await (bound.move_legs_up() if direction == "up" else bound.move_legs_down())
+        with controller.side_scope(side):
+            if direction == "stop":
+                await controller.stop_all()
+            elif axis == "back":
+                await (
+                    controller.move_back_up() if direction == "up" else controller.move_back_down()
+                )
+            else:
+                await (
+                    controller.move_legs_up() if direction == "up" else controller.move_legs_down()
+                )
 
     return execute
 
@@ -279,6 +283,14 @@ class SleepNumberMcrController(BedController):
     def supports_lights(self) -> bool:
         """Only expose lighting reported by foundation system status."""
         return bool(self._foundation_features and self._foundation_features.light)
+
+    @property
+    def exposes_discrete_light_as_light(self) -> bool:
+        return True
+
+    @property
+    def position_number_pruning(self) -> frozenset[str] | None:
+        return frozenset()
 
     @property
     def supports_discrete_light_control(self) -> bool:

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+from contextvars import ContextVar
 from functools import partial
 from types import SimpleNamespace
 from typing import cast
@@ -67,6 +68,8 @@ ADDR = {SIDE_LEFT: "AA:BB:CC:DD:EE:01", SIDE_RIGHT: "AA:BB:CC:DD:EE:02"}
 
 class RecordingChild:
     """A test double for a child coordinator that records an ordered trail."""
+
+    controller_side = None
 
     def __init__(
         self,
@@ -1186,52 +1189,48 @@ class SingleAddressInner:
         self.position_hydration_pause_count -= 1
 
 
-class RecordingLogicalController:
-    """Minimal side-bindable controller for shared-scheduler tests."""
+class _SideScopedController:
+    """Minimal controller whose calls see the side bound by ``side_scope``."""
 
     def __init__(self, _coordinator) -> None:
-        self.stop_sides: list[str] = []
+        self.stop_sides: list[str | None] = []
+        self._bound_side: ContextVar[str | None] = ContextVar("test_side", default=None)
 
-    def bind_side(self, side: str):
-        owner = self
+    @property
+    def command_side(self) -> str | None:
+        return self._bound_side.get()
 
-        class BoundController:
-            _side = side
+    @contextlib.contextmanager
+    def side_scope(self, side: str | None):
+        token = self._bound_side.set(side)
+        try:
+            yield
+        finally:
+            self._bound_side.reset(token)
 
-            async def stop_all(self) -> None:
-                owner.stop_sides.append(side)
-
-        return BoundController()
+    async def stop_all(self) -> None:
+        self.stop_sides.append(self.command_side)
 
 
-class DirectPositionController:
+class RecordingLogicalController(_SideScopedController):
+    """Minimal side-bindable controller for shared-scheduler tests."""
+
+
+class DirectPositionController(_SideScopedController):
     """Minimal side-bindable direct-position controller."""
 
     supports_direct_position_control = True
 
     def __init__(self, _coordinator) -> None:
-        self.targets: list[tuple[str, str, int]] = []
-        self.stop_sides: list[str] = []
+        super().__init__(_coordinator)
+        self.targets: list[tuple[str | None, str, int]] = []
 
-    def bind_side(self, side: str):
-        owner = self
+    @staticmethod
+    def angle_to_native_position(_motor: str, angle: float) -> int:
+        return round(angle)
 
-        class BoundController:
-            supports_direct_position_control = True
-
-            @staticmethod
-            def angle_to_native_position(_motor: str, angle: float) -> int:
-                return round(angle)
-
-            @staticmethod
-            async def set_motor_position(motor: str, position: int) -> None:
-                owner.targets.append((side, motor, position))
-
-            @staticmethod
-            async def stop_all() -> None:
-                owner.stop_sides.append(side)
-
-        return BoundController()
+    async def set_motor_position(self, motor: str, position: int) -> None:
+        self.targets.append((self.command_side, motor, position))
 
 
 class ScheduledSingleAddressInner(SingleAddressInner):
@@ -1404,7 +1403,7 @@ class TestSingleAddressCoordinator:
         sides = []
 
         async def record(controller):
-            sides.append(controller._side)
+            sides.append(controller.command_side)
 
         await coordinator.async_execute_controller_command(record, side=SIDE_BOTH)
 
@@ -1561,15 +1560,15 @@ class TestSingleAddressCoordinator:
         sides: list[str] = []
 
         async def old_both(controller) -> None:
-            sides.append(f"old:{controller._side}")
-            if controller._side == SIDE_LEFT:
+            sides.append(f"old:{controller.command_side}")
+            if controller.command_side == SIDE_LEFT:
                 context = current_command_context()
                 assert context is not None
                 left_started.set()
                 await context.cancel_event.wait()
 
         async def replacement(controller) -> None:
-            sides.append(f"new:{controller._side}")
+            sides.append(f"new:{controller.command_side}")
 
         both_task = asyncio.create_task(
             coordinator.async_execute_controller_command(

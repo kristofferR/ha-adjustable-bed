@@ -36,7 +36,7 @@ from .services import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
 
 
 SERVICE_FURNIMOVE_ACTION = "furnimove_action"
@@ -60,8 +60,8 @@ def _furnimove_targets(call: ServiceCall) -> list[tuple[BedTarget, str]]:
 
 async def _execute_furnimove(
     call: ServiceCall,
-    validate: Callable[[BedController | SideBoundController], None],
-    operation: Callable[[BedController | SideBoundController], Coroutine[Any, Any, None]],
+    validate: Callable[[BedController], None],
+    operation: Callable[[BedController], Coroutine[Any, Any, None]],
     *,
     cancel_running: bool = True,
 ) -> None:
@@ -88,7 +88,7 @@ async def handle_furnimove_action(call: ServiceCall) -> None:
     consumer = call.data["consumer"]
     selected_action: tuple[str, str] | None = None
 
-    def validate(controller: BedController | SideBoundController) -> None:
+    def validate(controller: BedController) -> None:
         nonlocal selected_action
         action = controller.validate_furnimove_action(
             row_index, duration_ms=duration_ms, consumer=consumer
@@ -99,7 +99,7 @@ async def handle_furnimove_action(call: ServiceCall) -> None:
             )
         selected_action = action
 
-    async def execute(controller: BedController | SideBoundController) -> None:
+    async def execute(controller: BedController) -> None:
         await controller.async_execute_furnimove_action(
             row_index, duration_ms=duration_ms, consumer=consumer
         )
@@ -132,12 +132,12 @@ async def _rename_furnimove(
     if name.strip().lower() in names:
         raise ServiceValidationError("Choose a different, unique FurniMove name")
 
-    def validate(controller: BedController | SideBoundController) -> None:
+    def validate(controller: BedController) -> None:
         controller.validate_furnimove_rename(name)
         if not controller.supports_device_rename:
             raise ValueError("This receiver has no writable rename characteristic")
 
-    async def execute(controller: BedController | SideBoundController) -> None:
+    async def execute(controller: BedController) -> None:
         await controller.rename_device(name)
 
     try:
@@ -162,10 +162,10 @@ async def handle_furnimove_massage_program(call: ServiceCall) -> None:
     """Choose an app massage program independently of arbitrary row labels."""
     program = call.data["program"]
 
-    def validate(controller: BedController | SideBoundController) -> None:
+    def validate(controller: BedController) -> None:
         controller.validate_furnimove_massage_program(program)
 
-    async def execute(controller: BedController | SideBoundController) -> None:
+    async def execute(controller: BedController) -> None:
         await controller.set_furnimove_massage_program(program)
 
     await _execute_furnimove(call, validate, execute)
@@ -203,10 +203,10 @@ async def handle_furnimove_move_simultaneously(call: ServiceCall) -> None:
     second_up = call.data[ATTR_SECOND_DIRECTION] == "up"
     duration_ms = call.data[ATTR_DURATION_MS]
 
-    def validate(controller: BedController | SideBoundController) -> None:
+    def validate(controller: BedController) -> None:
         controller.validate_furnimove_simultaneous(first, first_up, second, second_up, duration_ms)
 
-    async def execute(controller: BedController | SideBoundController) -> None:
+    async def execute(controller: BedController) -> None:
         await controller.move_simultaneously(first, first_up, second, second_up, duration_ms)
 
     await _execute_furnimove(call, validate, execute)

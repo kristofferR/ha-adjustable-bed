@@ -28,7 +28,6 @@ from .base import (
     ControllerStateSensorSpec,
     MotorControlSpec,
     PositionNumberSpec,
-    SideBoundController,
 )
 from .starcode_abm5_4_profiles import (
     FIRMWARE_UUID,
@@ -83,7 +82,7 @@ _MASSAGE = {
 
 
 def _controller(controller: BedController) -> StarcodeAbm5_4Controller:
-    target = controller._controller if isinstance(controller, SideBoundController) else controller
+    target = controller
     if not isinstance(target, StarcodeAbm5_4Controller):
         raise TypeError("Requires an AdjustableM5X4 profile")
     if controller.command_side is not None:

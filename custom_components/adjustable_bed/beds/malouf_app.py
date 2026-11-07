@@ -24,7 +24,6 @@ from .base import (
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
-    SideBoundController,
 )
 
 if TYPE_CHECKING:
@@ -36,11 +35,8 @@ if TYPE_CHECKING:
 def _app_callback(action: str) -> MotorCommandCallable:
     """Resolve profile-specific controls against the current controller."""
 
-    async def invoke(controller: BedController | SideBoundController) -> None:
-        if not isinstance(controller, MaloufAppController) and not (
-            isinstance(controller, SideBoundController)
-            and isinstance(controller._controller, MaloufAppController)
-        ):
+    async def invoke(controller: BedController) -> None:
+        if not isinstance(controller, MaloufAppController):
             raise TypeError("This action requires a Malouf/Lucid app profile")
         await controller.execute_app_control(action)
 

@@ -49,6 +49,7 @@ def target(profile=BED_TYPE_CUSTOMATIC_REMEDY):
     coordinator.name = "Customatic bed"
     coordinator.bed_type = profile
     coordinator.entry = SimpleNamespace(data={})
+    coordinator.controller_side = None
     coordinator.capability_controller = controller
 
     async def execute(command, **kwargs):
@@ -178,6 +179,7 @@ async def test_cancelled_preflight_restores_connected_target_idle_timer(
 ):
     first, controller, resolve = service_target
     second, _ = target(BED_TYPE_CUSTOMATIC_CLARITY)
+    first.controller_side = None
     first.capability_controller = second.capability_controller = None
     first.controller = None
     first.is_connected = False
@@ -268,6 +270,7 @@ async def test_real_pair_preflights_later_side_before_either_command(
     for child, profile in [(left, BED_TYPE_CUSTOMATIC_REMEDY), (right, BED_TYPE_CUSTOMATIC_JEROMES)]:
         child.bed_type = profile
         child.entry = SimpleNamespace(data={})
+        child.controller_side = None
         child.capability_controller = controller
     pair = PairedBedCoordinator(hass, SimpleNamespace(data={CONF_PAIR_ID: "customatic-pair"}),
                                 {SIDE_LEFT: left, SIDE_RIGHT: right})
@@ -301,6 +304,7 @@ async def test_real_pair_fans_out_and_stops_both_after_partial_failure(
             self.bed_type = BED_TYPE_CUSTOMATIC_CLARITY
             self.entry = SimpleNamespace(data={})
             _, self.controller = target(BED_TYPE_CUSTOMATIC_CLARITY)
+            self.controller_side = None
             self.capability_controller = self.controller
 
         async def async_execute_controller_command(

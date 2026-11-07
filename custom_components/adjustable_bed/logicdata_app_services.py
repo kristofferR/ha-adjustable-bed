@@ -36,7 +36,7 @@ from .services import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
 
 
 SERVICE_LOGICDATA_SET_ALARM = "logicdata_set_alarm"
@@ -49,7 +49,7 @@ async def _preflight_logicdata(
     targets: list[tuple[BedTarget, str]],
     capability: str,
     label: str,
-    validate: Callable[[BedController | SideBoundController], None] | None = None,
+    validate: Callable[[BedController], None] | None = None,
     bed_types: Collection[str] = (BED_TYPE_LOGICDATA_APP,),
 ) -> PreflightedSides:
     """Restrict app-specific services before connecting or commanding any side."""
@@ -77,7 +77,7 @@ async def handle_logicdata_set_alarm(call: ServiceCall) -> None:
         targets, "supports_clock_alarm", "Logicdata clock alarms"
     )
 
-    async def program(controller: BedController | SideBoundController) -> None:
+    async def program(controller: BedController) -> None:
         await controller.configure_clock_alarm(
             enabled=call.data[ATTR_ENABLED],
             weekdays=weekdays,
@@ -124,7 +124,7 @@ async def handle_logicdata_hold_preset(call: ServiceCall) -> None:
         raise _missing_device_error(missing[0])
     preset = call.data[ATTR_PRESET]
 
-    def validate(controller: BedController | SideBoundController) -> None:
+    def validate(controller: BedController) -> None:
         if preset not in controller.held_preset_options:
             raise ServiceValidationError(
                 f"The selected app profile cannot hold the {preset} preset"
@@ -134,7 +134,7 @@ async def handle_logicdata_hold_preset(call: ServiceCall) -> None:
         targets, "supports_preset_hold", "Logicdata held preset recall", validate
     )
 
-    async def hold(controller: BedController | SideBoundController) -> None:
+    async def hold(controller: BedController) -> None:
         await controller.hold_preset(preset, duration_ms)
 
     try:

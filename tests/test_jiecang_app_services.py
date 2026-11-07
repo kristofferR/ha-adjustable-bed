@@ -46,6 +46,7 @@ async def service_target(hass: HomeAssistant):
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     coordinator.name = "Jiecang bed"
     coordinator.bed_type = BED_TYPE_JIECANG_APP
+    coordinator.controller_side = None
     coordinator.capability_controller = controller
 
     async def execute(command, **kwargs):
@@ -120,6 +121,7 @@ async def test_yoga_alarm_validates_every_target_before_writing(
     unsupported = MagicMock(spec=AdjustableBedCoordinator)
     unsupported.name = "Controller without Yoga"
     unsupported.bed_type = BED_TYPE_JIECANG_APP
+    unsupported.controller_side = None
     unsupported.capability_controller = SimpleNamespace(
         supports_clock_alarm=True, supports_preset_yoga=False
     )
@@ -185,6 +187,7 @@ async def test_all_targets_are_validated_before_writing(
     unsupported = MagicMock(spec=AdjustableBedCoordinator)
     unsupported.name = "Unsupported bed"
     unsupported.bed_type = BED_TYPE_JIECANG_APP
+    unsupported.controller_side = None
     unsupported.capability_controller = SimpleNamespace(**{capability: False})
     resolve.return_value = ([(coordinator, SIDE_BOTH), (unsupported, SIDE_BOTH)], [])
     with pytest.raises(ServiceValidationError, match="does not support"):

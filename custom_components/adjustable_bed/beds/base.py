@@ -11,7 +11,16 @@ import asyncio
 import inspect
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import Awaitable, Callable, Collection, Coroutine, Mapping, Sequence
+from collections.abc import (
+    Awaitable,
+    Callable,
+    Collection,
+    Coroutine,
+    Iterator,
+    Mapping,
+    Sequence,
+)
+from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Final, Literal
@@ -62,54 +71,6 @@ _LOGGER = logging.getLogger(__name__)
 CONTROLLER_GESTURE_RELEASE: ContextVar[bool] = ContextVar("controller_gesture_release", default=False)
 
 MotorCommandCallable = Callable[["BedController"], Coroutine[Any, Any, None]]
-
-
-class SideBoundController:
-    """View of one controller with a per-call logical bed side.
-
-    Single-address paired beds share one controller and one BLE command lock.
-    This proxy binds ``left``/``right``/``both`` for the duration of each method
-    call instead of mutating the controller's configured legacy variant.
-    """
-
-    def __init__(self, controller: BedController, side: str) -> None:
-        self._controller = controller
-        self._side = side
-
-    def __getattr__(self, name: str) -> Any:
-        token = self._controller._command_side.set(self._side)
-        try:
-            value = getattr(self._controller, name)
-        finally:
-            self._controller._command_side.reset(token)
-
-        # Side-list capability properties on Sleep Number already expose both
-        # sides for standalone entries. A bound logical child must only mint its
-        # own side's entities.
-        if name.endswith("_sides") and isinstance(value, (list, tuple)):
-            return (self._side,) if self._side in value else ()
-        if not callable(value):
-            return value
-
-        if inspect.iscoroutinefunction(value):
-
-            async def async_bound(*args: Any, **kwargs: Any) -> Any:
-                call_token = self._controller._command_side.set(self._side)
-                try:
-                    return await value(*args, **kwargs)
-                finally:
-                    self._controller._command_side.reset(call_token)
-
-            return async_bound
-
-        def bound(*args: Any, **kwargs: Any) -> Any:
-            call_token = self._controller._command_side.set(self._side)
-            try:
-                return value(*args, **kwargs)
-            finally:
-                self._controller._command_side.reset(call_token)
-
-        return bound
 
 
 @dataclass(frozen=True, slots=True)
@@ -199,6 +160,12 @@ class ControllerMotorHoldSpec:
     release_delay_ms: int = 0
     release_button_key: str | None = None
     stop_scope: Literal["motor", "side"] = field(default="motor", kw_only=True)
+    # A cover or button press holds the control this long. None keeps the
+    # plain motor route: the metadata then only describes the card's gesture.
+    press_hold_ms: int | None = field(default=1000, kw_only=True)
+    # The controller's hold prepares the motor and times the press itself, so a
+    # press skips movement preparation and the card's start/release delays.
+    press_is_native: bool = field(default=False, kw_only=True)
 
     def __post_init__(self) -> None:
         _validate_hold_metadata(self.up_control, self.start_delay_ms, self.release_delay_ms)
@@ -409,9 +376,22 @@ class BedController(ABC):
         """Return the logical side bound to the current command task."""
         return self._command_side.get()
 
-    def bind_side(self, side: str) -> SideBoundController:
-        """Return a controller view that binds all calls to ``side``."""
-        return SideBoundController(self, side)
+    @contextmanager
+    def side_scope(self, side: str | None) -> Iterator[None]:
+        """Bind ``side`` to calls on this controller inside the block.
+
+        Single-address paired beds share one controller and one BLE command
+        lock. Each logical side scopes its calls instead of mutating the
+        configured legacy variant. ``None`` leaves the current binding alone.
+        """
+        if side is None:
+            yield
+            return
+        token = self._command_side.set(side)
+        try:
+            yield
+        finally:
+            self._command_side.reset(token)
 
     @property
     def ble_lock(self) -> asyncio.Lock:
@@ -1583,6 +1563,62 @@ class BedController(ABC):
         return False
 
     @property
+    def has_dynamic_buttons(self) -> bool:
+        """Whether notifications can reveal additional buttons after setup."""
+        return False
+
+    @property
+    def reports_massage_state(self) -> bool:
+        """Whether notifications report the state read by massage sensors."""
+        return False
+
+    @property
+    def memory_slot_names_allow_blank(self) -> bool:
+        """Whether a blank bed-reported memory name replaces the translated one."""
+        return False
+
+    @property
+    def exposes_discrete_light_as_light(self) -> bool:
+        """Whether discrete light on/off is a light entity rather than a switch."""
+        return False
+
+    @property
+    def light_state_starts_off(self) -> bool:
+        """Whether an on/off light assumes off until the bed reports otherwise."""
+        return False
+
+    @property
+    def light_switch_follows_level_intent(self) -> bool:
+        """Whether the light switch shows the app's intended level, not readback."""
+        return False
+
+    @property
+    def position_number_pruning(self) -> frozenset[str] | None:
+        """Extra position-number keys pruned with the standard ones when unsupported.
+
+        Applied once entity discovery completes. None keeps unsupported sliders.
+        """
+        return None
+
+    @property
+    def prunes_stale_light_level(self) -> bool:
+        """Whether setup removes a light-level number this controller lacks."""
+        return False
+
+    @property
+    def prunes_stale_fan_level(self) -> bool:
+        """Whether setup removes a fan-level number this controller lacks."""
+        return False
+
+    @property
+    def prunes_stale_massage_numbers(self) -> bool:
+        """Whether setup removes every massage number this controller lacks.
+
+        Other controllers only retire the right-side intensity number.
+        """
+        return False
+
+    @property
     def controller_entity_discovery_complete(self) -> bool:
         """Whether setup has finished discovering controller-gated entities."""
         return True
@@ -1884,7 +1920,7 @@ class BedController(ABC):
     async def async_perform_casper_base_action(
         self, action: str, *, save: bool = False, music_page: bool = False
     ) -> None:
-        """Run one product action through the same typed side-bound controller view."""
+        """Run one product action on the side bound by the command."""
         raise NotImplementedError("Casper Base actions are unavailable")
 
     async def async_execute_casper_base_request(self, request: CasperBaseRequest) -> None:
@@ -2210,6 +2246,16 @@ class BedController(ABC):
         return False
 
     @property
+    def supports_synchro(self) -> bool:
+        """Return True if the bed can link the movement of both bed halves."""
+        return False
+
+    @property
+    def supports_auxiliary_action(self) -> bool:
+        """Return True if the bed exposes a profile-defined auxiliary action."""
+        return False
+
+    @property
     def supports_control_mode_press_and_hold(self) -> bool:
         """Return whether selecting hold mode is safe on this controller."""
         return self.supports_control_mode_configuration
@@ -2317,6 +2363,99 @@ class BedController(ABC):
         ``supports_sleep_number_setting`` instead.
         """
         return ()
+
+    async def set_sleep_number_setting(self, value: int) -> None:
+        """Set the single air chamber's firmness."""
+        raise NotImplementedError("Sleep Number setting not supported on this bed")
+
+    async def set_sleep_number_setting_for_side(self, side: str, value: int) -> None:
+        """Set one side's air chamber firmness."""
+        raise NotImplementedError("Sleep Number setting not supported on this bed")
+
+    async def set_foundation_preset_for_side(self, side: str, preset: str) -> None:
+        """Recall a named foundation preset on one side."""
+        raise NotImplementedError("Foundation presets not supported on this bed")
+
+    @property
+    def supports_thermal_climate(self) -> bool:
+        """Return True if the bed exposes heating/cooling climate control."""
+        return False
+
+    @property
+    def thermal_timer_options(self) -> list[str]:
+        """Return the selectable thermal climate timer options."""
+        return []
+
+    @property
+    def footwarming_timer_options(self) -> list[str]:
+        """Return the selectable foot-warming timer options."""
+        return []
+
+    async def turn_thermal_on(self) -> None:
+        """Turn the thermal climate on."""
+        raise NotImplementedError("Thermal climate not supported on this bed")
+
+    async def turn_thermal_off(self) -> None:
+        """Turn the thermal climate off."""
+        raise NotImplementedError("Thermal climate not supported on this bed")
+
+    async def turn_thermal_on_for_side(self, side: str) -> None:
+        """Turn one side's thermal climate on."""
+        raise NotImplementedError("Thermal climate not supported on this bed")
+
+    async def turn_thermal_off_for_side(self, side: str) -> None:
+        """Turn one side's thermal climate off."""
+        raise NotImplementedError("Thermal climate not supported on this bed")
+
+    async def set_thermal_preset(self, preset: str, hvac_mode: str | None = None) -> None:
+        """Set the thermal climate preset."""
+        raise NotImplementedError("Thermal climate not supported on this bed")
+
+    async def set_thermal_preset_for_side(
+        self, side: str, preset: str, hvac_mode: str | None = None
+    ) -> None:
+        """Set one side's thermal climate preset."""
+        raise NotImplementedError("Thermal climate not supported on this bed")
+
+    async def set_thermal_timer(self, timer_option: str) -> None:
+        """Set the thermal climate timer."""
+        raise NotImplementedError("Thermal climate not supported on this bed")
+
+    async def set_thermal_timer_for_side(self, side: str, timer_option: str) -> None:
+        """Set one side's thermal climate timer."""
+        raise NotImplementedError("Thermal climate not supported on this bed")
+
+    async def turn_footwarming_on(self) -> None:
+        """Turn the foot warmer on."""
+        raise NotImplementedError("Foot warming not supported on this bed")
+
+    async def turn_footwarming_off(self) -> None:
+        """Turn the foot warmer off."""
+        raise NotImplementedError("Foot warming not supported on this bed")
+
+    async def turn_footwarming_on_for_side(self, side: str) -> None:
+        """Turn one side's foot warmer on."""
+        raise NotImplementedError("Foot warming not supported on this bed")
+
+    async def turn_footwarming_off_for_side(self, side: str) -> None:
+        """Turn one side's foot warmer off."""
+        raise NotImplementedError("Foot warming not supported on this bed")
+
+    async def set_footwarming_preset(self, preset: str) -> None:
+        """Set the foot warmer preset."""
+        raise NotImplementedError("Foot warming not supported on this bed")
+
+    async def set_footwarming_preset_for_side(self, side: str, preset: str) -> None:
+        """Set one side's foot warmer preset."""
+        raise NotImplementedError("Foot warming not supported on this bed")
+
+    async def set_footwarming_timer(self, timer_option: str) -> None:
+        """Set the foot warmer timer."""
+        raise NotImplementedError("Foot warming not supported on this bed")
+
+    async def set_footwarming_timer_for_side(self, side: str, timer_option: str) -> None:
+        """Set one side's foot warmer timer."""
+        raise NotImplementedError("Foot warming not supported on this bed")
 
     @property
     def sleep_number_setting_min(self) -> int:
@@ -2693,6 +2832,22 @@ class BedController(ABC):
         """Move bed to a Reading position when the selected app exposes it."""
         raise NotImplementedError("Reading preset not supported on this bed")
 
+    async def preset_lounge(self) -> None:
+        """Move bed to the lounge position."""
+        raise NotImplementedError("Lounge preset not supported on this bed")
+
+    async def preset_swing(self) -> None:
+        """Start the physical swing/rocking mode."""
+        raise NotImplementedError("Swing mode not supported on this bed")
+
+    async def preset_incline(self) -> None:
+        """Move bed to the incline position."""
+        raise NotImplementedError("Incline preset not supported on this bed")
+
+    async def auxiliary_action(self) -> None:
+        """Run the profile-defined auxiliary action."""
+        raise NotImplementedError("Auxiliary action not supported on this bed")
+
     async def preset_tv(self) -> None:
         """Move bed to TV/lounge position.
 
@@ -2953,46 +3108,6 @@ class BedController(ABC):
         """Move two protocol-defined sections with one command."""
         raise NotImplementedError("Simultaneous movement not supported on this bed")
 
-    async def sound_toggle(self) -> None:
-        """Toggle the sound therapy feature.
-
-        Raises:
-            NotImplementedError: If the bed doesn't support sound therapy
-        """
-        raise NotImplementedError("Sound therapy not supported on this bed")
-
-    async def light_and_sound_toggle(self) -> None:
-        """Toggle the combined light and sound therapy feature.
-
-        Raises:
-            NotImplementedError: If the bed doesn't support therapy modes
-        """
-        raise NotImplementedError("Therapy modes not supported on this bed")
-
-    async def therapy_mode_one(self) -> None:
-        """Activate therapy mode 1.
-
-        Raises:
-            NotImplementedError: If the bed doesn't support therapy modes
-        """
-        raise NotImplementedError("Therapy modes not supported on this bed")
-
-    async def therapy_mode_two(self) -> None:
-        """Activate therapy mode 2.
-
-        Raises:
-            NotImplementedError: If the bed doesn't support therapy modes
-        """
-        raise NotImplementedError("Therapy modes not supported on this bed")
-
-    async def therapy_mode_three(self) -> None:
-        """Activate therapy mode 3.
-
-        Raises:
-            NotImplementedError: If the bed doesn't support therapy modes
-        """
-        raise NotImplementedError("Therapy modes not supported on this bed")
-
     async def set_synchro(self, enabled: bool) -> None:
         """Enable or disable synchronized movement of both bed halves.
 
@@ -3222,6 +3337,11 @@ class BedController(ABC):
         """
         raise NotImplementedError("Massage timer selection not supported on this bed")
 
+    @property
+    def legacy_massage_wave_available(self) -> bool:
+        """Return False while the legacy wave massage zone cannot be driven."""
+        return True
+
     def get_massage_state(self) -> dict[str, Any]:
         """Return current massage state for state feedback.
 
@@ -3321,6 +3441,21 @@ class BedController(ABC):
         raise NotImplementedError("RGBW light control not supported on this bed")
 
     # Light timer control (optional - for beds with auto-off timer)
+
+    @property
+    def current_light_rgb_color(self) -> tuple[int, int, int] | None:
+        """Return the reported RGB light color, when the bed reports one."""
+        return None
+
+    @property
+    def current_light_rgbw_color(self) -> tuple[int, int, int, int] | None:
+        """Return the reported RGBW light color, when the bed reports one."""
+        return None
+
+    @property
+    def light_intensity(self) -> int | None:
+        """Return the reported light intensity, when the bed reports one."""
+        return None
 
     @property
     def supports_light_timer(self) -> bool:

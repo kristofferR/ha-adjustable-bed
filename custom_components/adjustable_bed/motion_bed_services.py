@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .beds.base import BedController, SideBoundController
+from .beds.base import BedController
 from .const import BED_TYPE_MOTION_BED, DOMAIN
 from .motion_bed_protocol import (
     AirMode,
@@ -165,13 +165,13 @@ async def _execute(call: ServiceCall, request: MotionBedWrite | None = None) -> 
         for target in _command_targets(coordinator, side):
             if target.bed_type != BED_TYPE_MOTION_BED:
                 raise ServiceValidationError("Select a Motion Bed app device")
-    def validate(controller: BedController | SideBoundController) -> None:
+    def validate(controller: BedController) -> None:
         if request is not None:
             controller.validate_motion_bed_write(request)
         else:
             controller.validate_motion_bed_action(call.data["action"], branch=call.data["branch"],
                 duration=call.data["duration"], confirmed=call.data["confirmed"])
-    async def execute(controller: BedController | SideBoundController) -> None:
+    async def execute(controller: BedController) -> None:
         if request is not None:
             await controller.async_execute_motion_bed_write(request)
         else:

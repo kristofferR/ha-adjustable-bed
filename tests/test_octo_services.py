@@ -819,8 +819,8 @@ def test_combined_motor_button_keeps_controller_hold_metadata() -> None:
         held_control_options=("back_up", "back_down"),
     )
     coordinator.children = {
-        SIDE_LEFT: SimpleNamespace(bed_type=BED_TYPE_OCTO, capability_controller=controller),
-        SIDE_RIGHT: SimpleNamespace(bed_type=BED_TYPE_OCTO, capability_controller=controller),
+        SIDE_LEFT: SimpleNamespace(controller_side=None, bed_type=BED_TYPE_OCTO, capability_controller=controller),
+        SIDE_RIGHT: SimpleNamespace(controller_side=None, bed_type=BED_TYPE_OCTO, capability_controller=controller),
     }
 
     button = PairedBedCombinedMotorButton(coordinator, spec, "up")

@@ -24,7 +24,7 @@ from .services import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
     from .beds.octo import OctoController
 
 
@@ -73,7 +73,7 @@ async def handle_octo_enroll_pin(call: ServiceCall) -> None:
     coordinator, side, target, _controller = await _single_octo_service_target(call)
     enrollment_completed = False
 
-    async def enroll(controller: BedController | SideBoundController) -> None:
+    async def enroll(controller: BedController) -> None:
         nonlocal enrollment_completed
         octo = octo_controller(controller)
         if octo is None:
@@ -120,7 +120,7 @@ async def handle_octo_reset_defaults(call: ServiceCall) -> None:
         raise ServiceValidationError("Confirm the OCTO factory reset before continuing")
     coordinator, side, _target, _controller = await _single_octo_service_target(call)
 
-    async def reset(controller: BedController | SideBoundController) -> None:
+    async def reset(controller: BedController) -> None:
         octo = octo_controller(controller)
         if octo is None:
             raise ServiceValidationError(

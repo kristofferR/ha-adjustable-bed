@@ -20,7 +20,7 @@ from .services import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
 
 
 SERVICE_FSM_RELAX_CALIBRATE = "fsm_relax_calibrate"
@@ -37,7 +37,7 @@ async def handle_fsm_relax_calibrate(call: ServiceCall) -> None:
                 raise ServiceValidationError("This action requires the FSM Relax app profile")
     await _preflight_capability(targets, "supports_confirmed_calibration", "FSM Relax local action")
 
-    async def execute(controller: BedController | SideBoundController) -> None:
+    async def execute(controller: BedController) -> None:
         await controller.calibrate(confirmed=True)
 
     for coordinator, side in targets:

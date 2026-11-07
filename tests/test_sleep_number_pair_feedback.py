@@ -398,3 +398,21 @@ async def test_unbound_service_does_not_publish_other_side_as_default(monkeypatc
     callback.assert_called_once_with("right_legs", 42.0)
     assert controller.command_side is None
     assert controller._side == "left"
+
+
+async def test_combined_controls_read_each_side_capability(feedback_pair):
+    """A one-sided actuator must not appear as a combined both-sides control."""
+    from custom_components.adjustable_bed.button import _paired_motor_available
+    from custom_components.adjustable_bed.number import _combined_position_entities_for
+
+    inner = feedback_pair._single_inner
+    controller = SleepNumberController(inner)
+    controller._system_config = {"left_head_actuator": "yes", "right_head_actuator": "no"}
+    inner._controller = controller
+
+    assert not _paired_motor_available(feedback_pair, "back")
+    assert _paired_motor_available(feedback_pair, "legs")
+    sliders = _combined_position_entities_for(
+        feedback_pair, list(feedback_pair.children.values())
+    )
+    assert [slider.entity_description.key for slider in sliders] == ["legs_position"]

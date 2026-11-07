@@ -14,7 +14,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
-from .beds.base import BedController, SideBoundController
+from .beds.base import BedController
 from .const import DOMAIN
 from .doublesleep_protocol import ALARM_PRESETS, PRESETS, SAVE, alarm_days
 
@@ -145,11 +145,11 @@ async def handle_doublesleep(call: ServiceCall) -> None:
     if missing:
         raise _missing_device_error(missing[0])
 
-    def validate(controller: BedController | SideBoundController) -> None:
+    def validate(controller: BedController) -> None:
         # Shared preflight supplies a BedController (possibly side-bound).
         selected(controller).validate_request(request)
 
-    async def execute(controller: BedController | SideBoundController) -> None:
+    async def execute(controller: BedController) -> None:
         await selected(controller).request(request)
 
     try:

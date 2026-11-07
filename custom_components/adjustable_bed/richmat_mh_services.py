@@ -11,7 +11,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
-from .beds.base import BedController, SideBoundController
+from .beds.base import BedController
 from .beds.richmat_mh import ALARM_OPTION_CODES
 from .beds.richmat_mh_protocol import WAIST_ALARM_REPEAT, WAIST_SIDES, alarm_countdown_minutes
 from .const import DOMAIN
@@ -73,7 +73,7 @@ async def _execute(
     capability: str,
     label: str,
     command: Callable[[BedController], Awaitable[None]],
-    validate: Callable[[BedController | SideBoundController], None] | None = None,
+    validate: Callable[[BedController], None] | None = None,
 ) -> None:
     """Validate every physical target first, then write each one in turn."""
     targets, missing = _resolve_sided_targets(
@@ -113,7 +113,7 @@ async def handle_richmat_mh_alarm(call: ServiceCall) -> None:
         if when.second or when.microsecond:
             raise ServiceValidationError("Richmat MH alarms use minute precision")
 
-    def validate(controller: BedController | SideBoundController) -> None:
+    def validate(controller: BedController) -> None:
         controller.validate_richmat_mh_alarm(
             enabled=enabled, position=position, massage=massage, slot=slot
         )

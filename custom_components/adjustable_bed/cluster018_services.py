@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .beds.base import BedController, SideBoundController
+from .beds.base import BedController
 from .cluster018_requests import Operation, Request
 from .const import DOMAIN
 from .services import (
@@ -63,7 +63,7 @@ async def handle_cluster018(call: ServiceCall) -> None:
         for coordinator, side in targets
     }
 
-    def validate(controller: BedController | SideBoundController) -> None:
+    def validate(controller: BedController) -> None:
         controller.validate_cluster018_request(request)
 
     preflighted = await _preflight_capability(targets, "supports_cluster018", "Selected app settings", validate)

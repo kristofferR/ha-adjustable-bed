@@ -56,8 +56,8 @@ async def test_cancelled_running_hold_still_releases_bound_child() -> None:
     ctrl = controller("V9RM:1")
     ctrl._pause = AsyncMock(return_value=True)
     ctrl.write_command = AsyncMock(side_effect=[asyncio.CancelledError(), None])
-    with pytest.raises(asyncio.CancelledError):
-        await ctrl.bind_side("right").hold_control(named(ctrl, "deviceFunctionItemHeadUp"), 100)
+    with pytest.raises(asyncio.CancelledError), ctrl.side_scope("right"):
+        await ctrl.hold_control(named(ctrl, "deviceFunctionItemHeadUp"), 100)
     assert ctrl.write_command.call_args_list[-1].args[0] == bytes.fromhex("6e01016ede")
 
 

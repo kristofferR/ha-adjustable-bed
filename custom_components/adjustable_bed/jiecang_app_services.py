@@ -32,7 +32,7 @@ from .services import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
 
 
 SERVICE_JIECANG_SET_ALARM = "jiecang_set_alarm"
@@ -68,7 +68,7 @@ async def handle_jiecang_set_alarm(call: ServiceCall) -> None:
         raise _missing_device_error(missing[0])
     preflighted = await _preflight_jiecang(targets, "supports_clock_alarm", "Jiecang clock alarms")
 
-    async def program(controller: BedController | SideBoundController) -> None:
+    async def program(controller: BedController) -> None:
         await controller.configure_clock_alarm(
             enabled=call.data[ATTR_ENABLED],
             weekdays=weekdays,
@@ -106,7 +106,7 @@ async def handle_jiecang_wake(call: ServiceCall) -> None:
         targets, "supports_wake_routine", "Jiecang wake routines"
     )
 
-    async def wake(controller: BedController | SideBoundController) -> None:
+    async def wake(controller: BedController) -> None:
         await controller.execute_wake_routine(
             preset=call.data[ATTR_PRESET],
             head_level=call.data[ATTR_HEAD_LEVEL],
@@ -134,7 +134,7 @@ async def handle_jiecang_stop_wake(call: ServiceCall) -> None:
         targets, "supports_wake_routine", "Jiecang wake routines"
     )
 
-    async def stop(controller: BedController | SideBoundController) -> None:
+    async def stop(controller: BedController) -> None:
         await controller.stop_wake_routine()
 
     try:

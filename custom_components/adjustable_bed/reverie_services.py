@@ -43,7 +43,7 @@ from .services import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
     from .beds.reverie_pairlink_runtime import PairlinkComfortPlan
 
 
@@ -159,7 +159,7 @@ _REVERIE_ALARM_COMFORT_SCHEMA = vol.Schema(
 
 def _reverie_comfort_controller(
     coordinator: BedChild,
-    controller: BedController | SideBoundController,
+    controller: BedController,
 ) -> _ReverieComfortController:
     if coordinator.bed_type not in (
         BED_TYPE_REVERIE,
@@ -640,7 +640,7 @@ async def handle_reverie_pairlink_alarm_comfort(call: ServiceCall) -> None:
 
 
 def _validate_reverie_deferred_target(
-    coordinator: BedTarget, controller: BedController | SideBoundController
+    coordinator: BedTarget, controller: BedController
 ) -> None:
     """Deferred work must survive the paired command's connection policy."""
     if (

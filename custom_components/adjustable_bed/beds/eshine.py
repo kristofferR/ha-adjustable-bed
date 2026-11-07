@@ -14,7 +14,6 @@ from .base import (
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
-    SideBoundController,
 )
 from .eshine_protocol import NotificationStream, Value
 
@@ -97,10 +96,8 @@ type Action = Button | Literal["stop"]
 
 
 def _action(action: Action) -> MotorCommandCallable:
-    async def invoke(controller: BedController | SideBoundController) -> None:
-        target = (
-            controller._controller if isinstance(controller, SideBoundController) else controller
-        )
+    async def invoke(controller: BedController) -> None:
+        target = controller
         if not isinstance(target, EshineController):
             raise TypeError("This action requires the Eshine app profile")
         await target.execute_action(action)

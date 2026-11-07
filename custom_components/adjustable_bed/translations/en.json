@@ -1818,21 +1818,6 @@
       "light_cycle": {
         "name": "Light Cycle"
       },
-      "toggle_sound": {
-        "name": "Toggle Sound"
-      },
-      "toggle_light_and_sound": {
-        "name": "Toggle Light & Sound"
-      },
-      "therapy_mode_1": {
-        "name": "Therapy Mode 1"
-      },
-      "therapy_mode_2": {
-        "name": "Therapy Mode 2"
-      },
-      "therapy_mode_3": {
-        "name": "Therapy Mode 3"
-      },
       "stop": {
         "name": "Stop All"
       },
@@ -2285,51 +2270,6 @@
       },
       "light_cycle_both": {
         "name": "Both sides: Light Cycle"
-      },
-      "toggle_sound_left": {
-        "name": "Left: Toggle Sound"
-      },
-      "toggle_sound_right": {
-        "name": "Right: Toggle Sound"
-      },
-      "toggle_sound_both": {
-        "name": "Both sides: Toggle Sound"
-      },
-      "toggle_light_and_sound_left": {
-        "name": "Left: Toggle Light & Sound"
-      },
-      "toggle_light_and_sound_right": {
-        "name": "Right: Toggle Light & Sound"
-      },
-      "toggle_light_and_sound_both": {
-        "name": "Both sides: Toggle Light & Sound"
-      },
-      "therapy_mode_1_left": {
-        "name": "Left: Therapy Mode 1"
-      },
-      "therapy_mode_1_right": {
-        "name": "Right: Therapy Mode 1"
-      },
-      "therapy_mode_1_both": {
-        "name": "Both sides: Therapy Mode 1"
-      },
-      "therapy_mode_2_left": {
-        "name": "Left: Therapy Mode 2"
-      },
-      "therapy_mode_2_right": {
-        "name": "Right: Therapy Mode 2"
-      },
-      "therapy_mode_2_both": {
-        "name": "Both sides: Therapy Mode 2"
-      },
-      "therapy_mode_3_left": {
-        "name": "Left: Therapy Mode 3"
-      },
-      "therapy_mode_3_right": {
-        "name": "Right: Therapy Mode 3"
-      },
-      "therapy_mode_3_both": {
-        "name": "Both sides: Therapy Mode 3"
       },
       "stop_left": {
         "name": "Left: Stop All"

@@ -313,8 +313,7 @@ def test_fixed_product_profiles_expose_exact_reachable_entity_surface(
     switch_keys = {
         description.key
         for description in SWITCH_DESCRIPTIONS
-        if description.required_capability is None
-        or getattr(controller, description.required_capability, False)
+        if description.is_supported is None or description.is_supported(controller)
     }
     assert switch_keys == ({"under_bed_lights"} if expected.lights else set())
 

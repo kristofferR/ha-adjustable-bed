@@ -31,7 +31,6 @@ from .base import (
     ControllerNumberSpec,
     ControllerSelectSpec,
     ControllerStateSensorSpec,
-    SideBoundController,
 )
 
 if TYPE_CHECKING:
@@ -107,9 +106,7 @@ class Choices:
     )
 
 
-def selected(controller: BedController | SideBoundController) -> GoodVibeController:
-    if isinstance(controller, SideBoundController):
-        controller = controller._controller
+def selected(controller: BedController) -> GoodVibeController:
     if not isinstance(controller, GoodVibeController):
         raise TypeError("This action requires Good Vibe Sleep")
     return controller

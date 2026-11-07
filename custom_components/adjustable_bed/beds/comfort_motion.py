@@ -194,6 +194,14 @@ class ComfortMotionController(JiecangProfileController):
     # Massage
 
     @property
+    def has_dynamic_buttons(self) -> bool:
+        return True
+
+    @property
+    def prunes_stale_light_level(self) -> bool:
+        return True
+
+    @property
     def supports_massage(self) -> bool:
         return True
 

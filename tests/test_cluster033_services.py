@@ -40,6 +40,7 @@ def target(spec):
     )
     coord = MagicMock(spec=AdjustableBedCoordinator)
     coord.name = "App bed"
+    coord.controller_side = None
     coord.capability_controller = ctrl
 
     async def execute(command, **kwargs):

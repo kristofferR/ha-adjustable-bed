@@ -2,7 +2,7 @@
 
 from dataclasses import replace
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -28,7 +28,7 @@ PAIR_CHILDREN = {side: SimpleNamespace(bed_type="tempur_curve") for side in ("le
 
 def entity_runtime():
     return SimpleNamespace(
-        capability_controller=None,
+        controller_side=None, capability_controller=None,
         entity_side="left",
         device_info={},
         name="App left",
@@ -98,7 +98,7 @@ async def test_mixed_layout_parent_shares_hold_metadata_and_keeps_finite_press(m
     )
     parent.async_execute_controller_command = AsyncMock()
     runtimes = [
-        SimpleNamespace(capability_controller=ctrl, bed_type="qplus_app") for ctrl in (left, right)
+        SimpleNamespace(controller_side=None, capability_controller=ctrl, bed_type="qplus_app") for ctrl in (left, right)
     ]
     parent.children = dict(zip(("left", "right"), runtimes, strict=True))
     timed_move = AsyncMock()
@@ -115,7 +115,7 @@ async def test_mixed_layout_parent_shares_hold_metadata_and_keeps_finite_press(m
         )
     assert (
         _combined_motor_buttons_for(
-            parent, [runtimes[0], SimpleNamespace(capability_controller=None)]
+            parent, [runtimes[0], SimpleNamespace(controller_side=None, capability_controller=None)]
         )
         == []
     )
@@ -132,7 +132,7 @@ def test_parent_hold_intersection_is_direction_specific_and_requires_all_sides()
     def sides(specs):
         return [
             SimpleNamespace(
-                capability_controller=SimpleNamespace(
+                controller_side=None, capability_controller=SimpleNamespace(
                     supports_motor_control=True,
                     has_discrete_motor_control=False,
                     motor_control_specs=(spec,),
@@ -174,12 +174,20 @@ async def test_sequential_parent_with_identical_capabilities_keeps_only_finite_f
     ctrl = AppController(coordinator(), app_profile("tempur_curve"))
     parent = MagicMock(pair_id="pair", device_info={}, children={}, connection_mode="sequential")
     parent.async_execute_controller_command = AsyncMock()
-    runtimes = [SimpleNamespace(capability_controller=ctrl)] * 2
+    runtimes = [
+        SimpleNamespace(controller_side=None, capability_controller=ctrl, bed_type="qplus_app")
+    ] * 2
+    parent.children = dict(zip(("left", "right"), runtimes, strict=True))
     buttons = _combined_motor_buttons_for(parent, runtimes)
     assert len(buttons) == 4
     assert all("held_control" not in button.extra_state_attributes for button in buttons)
-    await buttons[0].async_press()
-    parent.async_execute_controller_command.assert_awaited_once()
+    with patch(
+        "custom_components.adjustable_bed.services._async_timed_move", new=AsyncMock()
+    ) as timed_move:
+        await buttons[0].async_press()
+    timed_move.assert_awaited_once_with(
+        [(parent, "both")], buttons[0]._motor_key, buttons[0]._direction, 1000
+    )
 
 
 def test_legacy_entity_without_base_attribute_dictionary_does_not_break_projection():

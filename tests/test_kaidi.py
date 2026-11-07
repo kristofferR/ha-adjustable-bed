@@ -725,7 +725,8 @@ async def test_seat_1_2_side_binding_targets_one_lane(
     """A Phase 3 logical side must not write to the other Kaidi lane."""
     controller = await _prepare_controller(mock_bleak_client, variant=KAIDI_VARIANT_SEAT_1_2)
 
-    await controller.bind_side(side).move_head_up()
+    with controller.side_scope(side):
+        await controller.move_head_up()
 
     calls = mock_bleak_client.write_gatt_char.await_args_list
     assert [call.args[1] for call in calls] == [
@@ -741,7 +742,8 @@ async def test_seat_1_2_both_binding_preserves_dual_write(
     """The logical both view should retain Kaidi's serialized two-lane write."""
     controller = await _prepare_controller(mock_bleak_client, variant=KAIDI_VARIANT_SEAT_1_2)
 
-    await controller.bind_side(SIDE_BOTH).preset_flat()
+    with controller.side_scope(SIDE_BOTH):
+        await controller.preset_flat()
 
     calls = mock_bleak_client.write_gatt_char.await_args_list
     assert [call.args[1] for call in calls] == [

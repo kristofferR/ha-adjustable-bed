@@ -150,7 +150,8 @@ class TestSleepNumberController:
         controller = coordinator.controller
         controller._send_bamkey_command = AsyncMock()
 
-        await controller.bind_side(SLEEP_NUMBER_VARIANT_RIGHT).set_motor_position("back", 57)
+        with controller.side_scope(SLEEP_NUMBER_VARIANT_RIGHT):
+            await controller.set_motor_position("back", 57)
 
         controller._send_bamkey_command.assert_awaited_once_with(
             SleepNumberCommands.SET_ACTUATOR_TARGET_POSITION,

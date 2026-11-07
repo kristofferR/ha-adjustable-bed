@@ -20,8 +20,6 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
-    BED_TYPE_ERGOMOTION,
-    BED_TYPE_KEESON,
     BED_TYPE_LINAK,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
@@ -32,7 +30,6 @@ from .const import (
     CONF_PROTOCOL_VARIANT,
     DEFAULT_MOTOR_COUNT,
     DOMAIN,
-    KEESON_VARIANT_ERGOMOTION,
     bed_type_has_position_feedback,
 )
 from .entity import AdjustableBedEntity
@@ -225,11 +222,7 @@ def _sensor_entities_for(
     # Set up massage state sensors (only for beds with massage and state feedback)
     # Keeson/Ergomotion beds have state feedback via BLE notifications
     if has_massage and controller is not None:
-        has_massage_feedback = bed_type == BED_TYPE_ERGOMOTION or (
-            bed_type == BED_TYPE_KEESON and protocol_variant == KEESON_VARIANT_ERGOMOTION
-        )
-
-        if has_massage_feedback:
+        if controller.reports_massage_state:
             _LOGGER.debug(
                 "Setting up massage state sensors for %s (variant: %s)",
                 coordinator.name,
@@ -441,7 +434,8 @@ class AdjustableBedMassageSensor(AdjustableBedEntity, SensorEntity):
         if controller is None:
             return None
 
-        state = controller.get_massage_state()
+        with self._side_scope():
+            state = controller.get_massage_state()
         value = state.get(self.entity_description.state_key)
 
         # Return appropriate type based on state key

@@ -562,6 +562,10 @@ class OctoController(BedController, OctoPacketCodec):
         )
 
     @property
+    def has_dynamic_buttons(self) -> bool:
+        return True
+
+    @property
     def has_dynamic_controller_entities(self) -> bool:
         """Octo capabilities are authoritative only after the live sentinel."""
         return True
@@ -2164,6 +2168,8 @@ class OctoController(BedController, OctoPacketCodec):
                 start_delay_ms=100,
                 release_delay_ms=100,
                 stop_scope="side",
+                # Native actions use the configured pulses instead.
+                press_hold_ms=None,
             )
 
         if motor_count == 1:

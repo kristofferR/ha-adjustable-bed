@@ -32,7 +32,7 @@ from .services import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
 
 
 SERVICE_SOLACE_AUDIO = "solace_audio"
@@ -75,7 +75,7 @@ async def handle_solace_audio(call: ServiceCall) -> None:
         "Solace music/audio control",
     )
 
-    async def control(controller: BedController | SideBoundController) -> None:
+    async def control(controller: BedController) -> None:
         if action == "query":
             await controller.solace_query_audio_volume()
         elif action == "set_volume":
@@ -115,7 +115,7 @@ async def handle_solace_set_alarm(call: ServiceCall) -> None:
     if missing:
         raise _missing_device_error(missing[0])
 
-    def validate_sound(controller: BedController | SideBoundController) -> None:
+    def validate_sound(controller: BedController) -> None:
         if call.data[ATTR_SOUND] not in controller.solace_alarm_sound_options:
             raise ServiceValidationError(
                 "This bed profile does not support the selected alarm sound"
@@ -128,7 +128,7 @@ async def handle_solace_set_alarm(call: ServiceCall) -> None:
         validate_sound,
     )
 
-    async def program(controller: BedController | SideBoundController) -> None:
+    async def program(controller: BedController) -> None:
         await controller.program_solace_alarm(
             enabled=call.data[ATTR_ENABLED],
             hour=alarm_time.hour,

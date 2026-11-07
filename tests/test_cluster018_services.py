@@ -60,7 +60,7 @@ async def test_stop_on_second_target_invalidates_its_pending_desk_hold(hass, res
     def scheduled_target(name, action):
         scheduler = DeviceCommandScheduler(name)
         ctrl = SimpleNamespace(supports_cluster018=True, validate_cluster018_request=lambda _request: None, async_execute_cluster018_request=action)
-        coord = SimpleNamespace(name=name, capability_controller=ctrl, entry=SimpleNamespace(data={}), _command_scheduler=scheduler)
+        coord = SimpleNamespace(name=name, controller_side=None, capability_controller=ctrl, entry=SimpleNamespace(data={}), _command_scheduler=scheduler)
 
         async def execute(command, *, expected_stop_epoch=None, **_kwargs):
             async def operation(_context):

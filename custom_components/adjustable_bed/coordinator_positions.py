@@ -30,7 +30,7 @@ from .position_seek import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
     from .coordinator import AdjustableBedCoordinator
 
 # Log under the coordinator's own logger, as before the split.
@@ -438,7 +438,7 @@ class CoordinatorPositionsMixin:
         await controller.read_positions(self._motor_count)
 
     async def _async_read_positions(
-        self: AdjustableBedCoordinator, controller: BedController | SideBoundController | None = None
+        self: AdjustableBedCoordinator, controller: BedController | None = None
     ) -> None:
         """Actively read current positions from the bed.
 

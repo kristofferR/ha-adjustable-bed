@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .beds.base import BedController, SideBoundController
+from .beds.base import BedController
 from .const import BED_TYPE_BF, BED_TYPE_CHERISH, DOMAIN
 
 
@@ -45,13 +45,13 @@ def register_services(hass: HomeAssistant) -> None:
                 if target.bed_type not in (BED_TYPE_BF, BED_TYPE_CHERISH):
                     raise ServiceValidationError("Select only BF or Cherish app beds")
 
-        def controller(value: BedController | SideBoundController) -> BfCherishController:
-            physical = value._controller if isinstance(value, SideBoundController) else value
+        def controller(value: BedController) -> BfCherishController:
+            physical = value
             if not isinstance(physical, BfCherishController):
                 raise ServiceValidationError("Requires a BF or Cherish app profile")
             return physical
 
-        def validate(value: BedController | SideBoundController) -> None:
+        def validate(value: BedController) -> None:
             alarm_frame(
                 controller(value).cherish,
                 dt_util.now(),
@@ -65,7 +65,7 @@ def register_services(hass: HomeAssistant) -> None:
             targets, "supports_clock_alarm", "BF/Cherish alarms", validate
         )
 
-        async def program(value: BedController | SideBoundController) -> None:
+        async def program(value: BedController) -> None:
             await controller(value).configure_clock_alarm(
                 enabled=enabled, hour=hour, minute=minute, preset=memory
             )

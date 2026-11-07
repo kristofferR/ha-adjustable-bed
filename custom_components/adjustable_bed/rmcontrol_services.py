@@ -11,7 +11,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
-from .beds.base import BedController, SideBoundController
+from .beds.base import BedController
 from .const import DOMAIN
 from .services import (
     SIDE_FIELD,
@@ -51,7 +51,7 @@ async def _execute(
     call: ServiceCall,
     capability: str,
     command: Callable[[BedController], Awaitable[None]],
-    validate: Callable[[BedController | SideBoundController], None] | None = None,
+    validate: Callable[[BedController], None] | None = None,
 ) -> None:
     targets, missing = _resolve_sided_targets(
         call.hass, call.data[CONF_DEVICE_ID], call.data.get("side")
@@ -131,7 +131,7 @@ async def handle_rmcontrol_alarm(call: ServiceCall) -> None:
     else:
         capability = "supports_rmcontrol_repeat_alarm"
 
-    def validate(controller: BedController | SideBoundController) -> None:
+    def validate(controller: BedController) -> None:
         if operation in ("single", "repeat"):
             controller.validate_rmcontrol_alarm_action(call.data["action"])
 

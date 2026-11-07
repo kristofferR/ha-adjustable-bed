@@ -37,7 +37,6 @@ from .base import (
     ControllerButtonSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
-    SideBoundController,
 )
 
 if TYPE_CHECKING:
@@ -83,7 +82,7 @@ def action_label(name: str) -> str:
 async def invoke(
     controller: BedController, action: str, *, save: bool = False, music_page: bool = False
 ) -> None:
-    target = controller._controller if isinstance(controller, SideBoundController) else controller
+    target = controller
     if not isinstance(target, CasperBaseController):
         raise TypeError("Casper Base controller required")
     await controller.async_perform_casper_base_action(action, save=save, music_page=music_page)

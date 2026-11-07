@@ -22,7 +22,12 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ..codec import keeson as codec
-from ..const import BED_MOTOR_PULSE_DEFAULTS, BED_TYPE_KEESON, KEESON_VARIANT_PURPLE
+from ..const import (
+    BED_MOTOR_PULSE_DEFAULTS,
+    BED_TYPE_KEESON,
+    KEESON_VARIANT_ERGOMOTION,
+    KEESON_VARIANT_PURPLE,
+)
 from ..profiles import keeson as profiles
 from ..profiles.keeson import (
     RESTONIC_A_CONTROLS as RESTONIC_A_CONTROLS,
@@ -227,6 +232,10 @@ class KeesonController(BedController):
     def supports_lights(self) -> bool:
         """KSBT04C light mappings are unverified; Purple Premium and Restonic A have no light."""
         return self.profile.lights is not None and self.profile.lights_listed
+
+    @property
+    def reports_massage_state(self) -> bool:
+        return self._variant == KEESON_VARIANT_ERGOMOTION
 
     @property
     def supports_discrete_light_control(self) -> bool:
@@ -1209,26 +1218,6 @@ class KeesonController(BedController):
             await self._sino_levels(foot=0 if self._foot_massage > 0 else 1)
         else:
             await self._step(KeesonCommands.MASSAGE_FOOT_UP)
-
-    async def sound_toggle(self) -> None:
-        """Raise until KSBT04C sound control is verified from captured traffic."""
-        raise NotImplementedError("KSBT04C sound control is not yet verified")
-
-    async def light_and_sound_toggle(self) -> None:
-        """Raise until KSBT04C light+sound control is verified from traffic."""
-        raise NotImplementedError("KSBT04C light+sound control is not yet verified")
-
-    async def therapy_mode_one(self) -> None:
-        """Raise until KSBT04C therapy mode packets are captured."""
-        raise NotImplementedError("KSBT04C therapy mode control is not yet verified")
-
-    async def therapy_mode_two(self) -> None:
-        """Raise until KSBT04C therapy mode packets are captured."""
-        raise NotImplementedError("KSBT04C therapy mode control is not yet verified")
-
-    async def therapy_mode_three(self) -> None:
-        """Raise until KSBT04C therapy mode packets are captured."""
-        raise NotImplementedError("KSBT04C therapy mode control is not yet verified")
 
     def get_massage_state(self) -> dict[str, Any]:
         """Return massage state from Ergomotion notifications or Sino tracking."""

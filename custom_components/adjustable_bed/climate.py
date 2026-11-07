@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -20,7 +20,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
 from .entity import AdjustableBedEntity
-from .entity_runtime import EntityRuntime
+from .entity_runtime import EntityRuntime, own_sides
 from .paired_coordinator import entity_runtimes
 
 if TYPE_CHECKING:
@@ -40,7 +40,7 @@ _THERMAL_CLIMATE_HEAT_FALLBACK_PRESET: str = "high"
 class AdjustableBedClimateEntityDescription(ClimateEntityDescription):
     """Describes an Adjustable Bed climate entity."""
 
-    required_capability: str
+    is_supported: Callable[[BedController], bool]
     hvac_state_key: str
     preset_state_key: str
     timer_state_key: str
@@ -49,9 +49,9 @@ class AdjustableBedClimateEntityDescription(ClimateEntityDescription):
     raw_mode_state_key: str | None = None
     supports_heat: bool
     supports_cool: bool
-    turn_on_method_name: str
-    turn_off_method_name: str
-    set_preset_method_name: str
+    turn_on_fn: Callable[[BedController], Coroutine[Any, Any, None]]
+    turn_off_fn: Callable[[BedController], Coroutine[Any, Any, None]]
+    set_preset_fn: Callable[[BedController, str], Coroutine[Any, Any, None]]
     base_preset_modes: tuple[str, ...]
     side: str | None = None
     supports_heating_state_key: str | None = None
@@ -62,7 +62,7 @@ SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION = AdjustableBedClimateEntityDescription
     key="sleep_number_thermal_climate",
     translation_key="sleep_number_thermal_climate",
     icon="mdi:thermometer",
-    required_capability="supports_thermal_climate",
+    is_supported=lambda c: c.supports_thermal_climate,
     hvac_state_key="thermal_hvac_mode",
     preset_state_key="thermal_preset",
     timer_state_key="thermal_timer_option",
@@ -70,9 +70,9 @@ SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION = AdjustableBedClimateEntityDescription
     raw_mode_state_key="thermal_mode",
     supports_heat=True,
     supports_cool=True,
-    turn_on_method_name="turn_thermal_on",
-    turn_off_method_name="turn_thermal_off",
-    set_preset_method_name="set_thermal_preset",
+    turn_on_fn=lambda c: c.turn_thermal_on(),
+    turn_off_fn=lambda c: c.turn_thermal_off(),
+    set_preset_fn=lambda c, preset: c.set_thermal_preset(preset),
     base_preset_modes=_THERMAL_CLIMATE_PRESETS_BASE,
     supports_heating_state_key="thermal_supports_heating",
     backend_state_key="thermal_backend",
@@ -82,7 +82,7 @@ FOOTWARMING_CLIMATE_DESCRIPTION = AdjustableBedClimateEntityDescription(
     key="footwarming_climate",
     translation_key="footwarming_climate",
     icon="mdi:foot-print",
-    required_capability="supports_footwarming_climate",
+    is_supported=lambda c: c.supports_footwarming_climate,
     hvac_state_key="footwarming_hvac_mode",
     preset_state_key="footwarming_preset",
     timer_state_key="footwarming_timer_option",
@@ -91,9 +91,9 @@ FOOTWARMING_CLIMATE_DESCRIPTION = AdjustableBedClimateEntityDescription(
     raw_mode_state_key="footwarming_level",
     supports_heat=True,
     supports_cool=False,
-    turn_on_method_name="turn_footwarming_on",
-    turn_off_method_name="turn_footwarming_off",
-    set_preset_method_name="set_footwarming_preset",
+    turn_on_fn=lambda c: c.turn_footwarming_on(),
+    turn_off_fn=lambda c: c.turn_footwarming_off(),
+    set_preset_fn=lambda c, preset: c.set_footwarming_preset(preset),
     base_preset_modes=_THERMAL_CLIMATE_PRESETS_BASE,
 )
 
@@ -104,7 +104,7 @@ def _build_side_thermal_climate_description(side: str) -> AdjustableBedClimateEn
         key=f"sleep_number_thermal_climate_{side}",
         translation_key=f"sleep_number_thermal_climate_{side}",
         icon=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.icon,
-        required_capability=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.required_capability,
+        is_supported=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.is_supported,
         hvac_state_key=f"thermal_hvac_mode_{side}",
         preset_state_key=f"thermal_preset_{side}",
         timer_state_key=f"thermal_timer_option_{side}",
@@ -112,9 +112,9 @@ def _build_side_thermal_climate_description(side: str) -> AdjustableBedClimateEn
         raw_mode_state_key=f"thermal_mode_{side}",
         supports_heat=True,
         supports_cool=True,
-        turn_on_method_name="turn_thermal_on_for_side",
-        turn_off_method_name="turn_thermal_off_for_side",
-        set_preset_method_name="set_thermal_preset_for_side",
+        turn_on_fn=lambda c: c.turn_thermal_on_for_side(side),
+        turn_off_fn=lambda c: c.turn_thermal_off_for_side(side),
+        set_preset_fn=lambda c, preset: c.set_thermal_preset_for_side(side, preset),
         base_preset_modes=_THERMAL_CLIMATE_PRESETS_BASE,
         side=side,
         supports_heating_state_key=f"thermal_supports_heating_{side}",
@@ -130,7 +130,7 @@ def _build_side_footwarming_climate_description(
         key=f"footwarming_climate_{side}",
         translation_key=f"footwarming_climate_{side}",
         icon=FOOTWARMING_CLIMATE_DESCRIPTION.icon,
-        required_capability=FOOTWARMING_CLIMATE_DESCRIPTION.required_capability,
+        is_supported=FOOTWARMING_CLIMATE_DESCRIPTION.is_supported,
         hvac_state_key=f"footwarming_hvac_mode_{side}",
         preset_state_key=f"footwarming_preset_{side}",
         timer_state_key=f"footwarming_timer_option_{side}",
@@ -139,9 +139,9 @@ def _build_side_footwarming_climate_description(
         raw_mode_state_key=f"footwarming_level_{side}",
         supports_heat=True,
         supports_cool=False,
-        turn_on_method_name="turn_footwarming_on_for_side",
-        turn_off_method_name="turn_footwarming_off_for_side",
-        set_preset_method_name="set_footwarming_preset_for_side",
+        turn_on_fn=lambda c: c.turn_footwarming_on_for_side(side),
+        turn_off_fn=lambda c: c.turn_footwarming_off_for_side(side),
+        set_preset_fn=lambda c, preset: c.set_footwarming_preset_for_side(side, preset),
         base_preset_modes=_THERMAL_CLIMATE_PRESETS_BASE,
         side=side,
     )
@@ -171,7 +171,7 @@ def _climate_entities_for(
 
     entities: list[AdjustableBedClimate] = []
 
-    thermal_sides = controller.thermal_climate_sides
+    thermal_sides = own_sides(coordinator, controller.thermal_climate_sides)
     if thermal_sides:
         _async_remove_stale_split_climate_entity(
             hass,
@@ -185,10 +185,10 @@ def _climate_entities_for(
             )
             for side in thermal_sides
         )
-    elif getattr(controller, SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.required_capability, False):
+    elif SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.is_supported(controller):
         entities.append(AdjustableBedClimate(coordinator, SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION))
 
-    footwarming_sides = controller.footwarming_climate_sides
+    footwarming_sides = own_sides(coordinator, controller.footwarming_climate_sides)
     if footwarming_sides:
         _async_remove_stale_split_climate_entity(
             hass,
@@ -202,7 +202,7 @@ def _climate_entities_for(
             )
             for side in footwarming_sides
         )
-    elif getattr(controller, FOOTWARMING_CLIMATE_DESCRIPTION.required_capability, False):
+    elif FOOTWARMING_CLIMATE_DESCRIPTION.is_supported(controller):
         entities.append(AdjustableBedClimate(coordinator, FOOTWARMING_CLIMATE_DESCRIPTION))
 
     return entities
@@ -399,11 +399,11 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
 
     async def async_turn_on(self) -> None:
         """Turn the climate entity on."""
-        await self._async_call_controller_method(self.entity_description.turn_on_method_name)
+        await self._async_call_controller("turn_on", self.entity_description.turn_on_fn)
 
     async def async_turn_off(self) -> None:
         """Turn the climate entity off."""
-        await self._async_call_controller_method(self.entity_description.turn_off_method_name)
+        await self._async_call_controller("turn_off", self.entity_description.turn_off_fn)
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set the HVAC mode."""
@@ -468,9 +468,9 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
             await self._async_call_thermal_preset(preset_mode, target)
             return
 
-        await self._async_call_controller_method(
-            self.entity_description.set_preset_method_name,
-            preset_mode,
+        set_preset_fn = self.entity_description.set_preset_fn
+        await self._async_call_controller(
+            f"set_preset({preset_mode})", lambda ctrl: set_preset_fn(ctrl, preset_mode)
         )
 
     async def _async_call_thermal_preset(
@@ -481,13 +481,13 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
 
         async def _invoke(ctrl: BedController) -> None:
             if self.entity_description.side is not None:
-                await ctrl.set_thermal_preset_for_side(  # type: ignore[attr-defined]
+                await ctrl.set_thermal_preset_for_side(
                     self.entity_description.side,
                     preset_mode,
                     hvac_mode=hvac_value,
                 )
             else:
-                await ctrl.set_thermal_preset(preset_mode, hvac_mode=hvac_value)  # type: ignore[attr-defined]
+                await ctrl.set_thermal_preset(preset_mode, hvac_mode=hvac_value)
 
         _LOGGER.info(
             "Climate command requested: set_thermal_preset(%s, hvac_mode=%s) on %s",
@@ -497,26 +497,16 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
         )
         await self._coordinator.async_execute_controller_command(_invoke)
 
-    async def _async_call_controller_method(self, method_name: str, *args: str) -> None:
-        """Execute a controller command method by name."""
+    async def _async_call_controller(
+        self,
+        action: str,
+        command_fn: Callable[[BedController], Coroutine[Any, Any, None]],
+    ) -> None:
+        """Execute one climate command through the controller command lock."""
         _LOGGER.info(
-            "Climate command requested: %s(%s) on %s",
-            method_name,
-            ", ".join(
-                (
-                    [self.entity_description.side]
-                    if self.entity_description.side is not None
-                    else []
-                )
-                + list(args)
-            ),
+            "Climate command requested: %s %s on %s",
+            self.entity_description.key,
+            action,
             self._coordinator.name,
         )
-
-        async def _invoke(ctrl: BedController) -> None:
-            if self.entity_description.side is not None:
-                await getattr(ctrl, method_name)(self.entity_description.side, *args)
-            else:
-                await getattr(ctrl, method_name)(*args)
-
-        await self._coordinator.async_execute_controller_command(_invoke)
+        await self._coordinator.async_execute_controller_command(command_fn)

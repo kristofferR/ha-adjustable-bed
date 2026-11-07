@@ -328,14 +328,14 @@ def test_combined_motor_hold_intersection_checks_direction_and_timing(
     changed_motor = replace(motor, hold=changed_hold)
     other_side_specs = tuple(changed_motor if spec.key == motor.key else spec for spec in specs)
 
-    left = SimpleNamespace(
+    left = SimpleNamespace(controller_side=None,
         capability_controller=SimpleNamespace(
             supports_motor_control=True,
             has_discrete_motor_control=False,
             motor_control_specs=specs,
         )
     )
-    right = SimpleNamespace(
+    right = SimpleNamespace(controller_side=None,
         capability_controller=SimpleNamespace(
             supports_motor_control=True,
             has_discrete_motor_control=False,

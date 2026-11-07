@@ -29,10 +29,6 @@ APPS = {
 
 
 async def _select(controller: BedController, setting: str, option: str) -> None:
-    from .base import SideBoundController
-
-    if isinstance(controller, SideBoundController):
-        controller = controller._controller
     if not isinstance(controller, Row061SleepController):
         raise ValueError("This action requires the separate Richmat sleep receiver")
     await controller.set_sleep_option(setting, option)

@@ -235,6 +235,7 @@ async def test_registered_preset_routes_use_actual_physical_children_and_native_
             )
             self.controller._coordinator.address = self.address
             self.controller._owner_address = self.address
+            self.controller_side = None
             self.capability_controller = self.controller
 
         async def async_execute_controller_command(

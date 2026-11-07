@@ -431,15 +431,14 @@ async def test_repeated_cancellation_waits_for_release_before_return(hass):
 
 
 async def test_alarm_service_validates_all_profiles_before_serialized_write(hass):
-    from custom_components.adjustable_bed.beds.base import SideBoundController
-
     ctrl, owner, client = make_controller(hass, True)
     target = MagicMock(bed_type=BED_TYPE_CHERISH)
     register_services(hass)
 
     async def execute(coordinator, side, command, **kwargs):
         assert kwargs == {"cancel_running": False, "resource": "configuration"}
-        await command(SideBoundController(ctrl, side))
+        with ctrl.side_scope(side):
+            await command(ctrl)
 
     async def preflight(targets, capability, label, validate):
         assert capability == "supports_clock_alarm"

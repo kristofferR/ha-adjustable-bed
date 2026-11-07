@@ -26,7 +26,6 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
     PositionNumberSpec,
-    SideBoundController,
 )
 
 if TYPE_CHECKING:
@@ -47,9 +46,7 @@ class Session:
     privacy: bool = False
 
 
-def selected(controller: BedController | SideBoundController) -> DoubleSleepController:
-    if isinstance(controller, SideBoundController):
-        controller = controller._controller
+def selected(controller: BedController) -> DoubleSleepController:
     if not isinstance(controller, DoubleSleepController):
         raise TypeError("This action requires OKIN SleepEase")
     return controller

@@ -281,10 +281,11 @@ async def test_side_scoped_callable_and_invalid_other_child(coordinator, instant
     c = controller(coordinator, "SOFA000001SC00H")
     c._state.rgb = ("0", "0", "0")
     spec = next(s for s in c.controller_button_specs if s.key == "motomotion_light_toggle")
-    await spec.press_fn(c.bind_side("right"))
+    with c.side_scope("right"):
+        await spec.press_fn(c)
     assert written(coordinator) == [ascii_command(k, 10120) for k in (315, 316, 317)]
-    with pytest.raises(ValueError):
-        await c.bind_side("left").select("side", "right")
+    with pytest.raises(ValueError), c.side_scope("left"):
+        await c.select("side", "right")
 
 
 def test_restore_side_defaults_for_existing_state(coordinator):
@@ -559,12 +560,14 @@ async def test_right_child_level_consumes_right_delivered_state(coordinator, ins
 
     c = controller(coordinator, "SOFA000001S000M")
     c._local_lr = (Comfort(heat=0), Comfort(heat=2))
-    await c.bind_side("right").async_execute_motomotion_action("motomotion_heat_up")
+    with c.side_scope("right"):
+        await c.async_execute_motomotion_action("motomotion_heat_up")
     assert written(coordinator) == [ascii_command(334, 10000)]
     c._publish()
     assert coordinator.controller_state["motomotion_heat_left"] == 0
     assert coordinator.controller_state["motomotion_heat_right"] == 2
-    assert {s.key for s in c.bind_side("right").controller_state_sensor_specs} == {
+    with c.side_scope("right"):
+        assert {s.key for s in c.controller_state_sensor_specs} == {
         "motomotion_status",
         "motomotion_heat_right",
         "motomotion_massage_right",

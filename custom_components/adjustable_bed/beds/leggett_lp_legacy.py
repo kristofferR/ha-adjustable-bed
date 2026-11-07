@@ -22,7 +22,6 @@ from .base import (
     ControllerButtonSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,
-    SideBoundController,
 )
 
 if TYPE_CHECKING:
@@ -42,11 +41,8 @@ NOTIFICATION_EFFECTS = {
 def _button_callback(control_id: str, gesture: str) -> MotorCommandCallable:
     """Bind the action identity while resolving the current controller at call time."""
 
-    async def press(controller: BedController | SideBoundController) -> None:
-        if not isinstance(controller, LeggettLpLegacyController) and not (
-            isinstance(controller, SideBoundController)
-            and isinstance(controller._controller, LeggettLpLegacyController)
-        ):
+    async def press(controller: BedController) -> None:
+        if not isinstance(controller, LeggettLpLegacyController):
             raise TypeError("LP legacy button requires its profile controller")
         await controller.execute_control(control_id, gesture)
 

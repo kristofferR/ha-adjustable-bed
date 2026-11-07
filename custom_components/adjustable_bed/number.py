@@ -7,7 +7,7 @@ from collections.abc import Callable, Coroutine, Sequence
 from dataclasses import dataclass, replace
 from functools import partial
 from math import isclose, isfinite
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.number import (
     NumberEntity,
@@ -23,16 +23,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .beds.base import ControllerNumberSpec, PositionNumberSpec
 from .const import (
     BED_TYPE_ISLEEP,
-    BED_TYPE_JENSEN,
-    BED_TYPE_JIECANG_APP,
-    BED_TYPE_LINAK,
-    BED_TYPE_LOGICDATA_APP,
-    BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPSTAR,
-    BED_TYPE_SOLACE,
-    BED_TYPE_STARCODE_M5X5,
-    BED_TYPE_SVANE,
-    BED_TYPE_VIBRADORM_APP,
     BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_BED_TYPE,
     CONF_HAS_MASSAGE,
@@ -43,7 +34,7 @@ from .const import (
 )
 from .entity import AdjustableBedEntity, RenamesInPlace
 from .entity_discovery import async_setup_dynamic_entities
-from .entity_runtime import EntityRuntime
+from .entity_runtime import EntityRuntime, controller_side_scope, own_sides
 from .octo_runtime import octo_controller
 from .paired_coordinator import (
     PairedBedCoordinator,
@@ -53,7 +44,7 @@ from .paired_coordinator import (
 from .position_estimate_entities import async_setup_estimate_numbers
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -164,7 +155,7 @@ class AdjustableBedSideStateNumberEntityDescription(NumberEntityDescription):
     """Describes a side-specific number entity backed by controller state."""
 
     state_key: str
-    setter_name: str
+    set_fn: Callable[[BedController, str, int], Coroutine[Any, Any, None]]
     side: str
 
 
@@ -273,7 +264,7 @@ SLEEP_NUMBER_SETTING_LEFT_DESCRIPTION = AdjustableBedSideStateNumberEntityDescri
     native_step=5,
     mode=NumberMode.SLIDER,
     state_key="sleep_number_left",
-    setter_name="set_sleep_number_setting_for_side",
+    set_fn=lambda c, side, value: c.set_sleep_number_setting_for_side(side, value),
     side="left",
 )
 
@@ -286,7 +277,7 @@ SLEEP_NUMBER_SETTING_RIGHT_DESCRIPTION = AdjustableBedSideStateNumberEntityDescr
     native_step=5,
     mode=NumberMode.SLIDER,
     state_key="sleep_number_right",
-    setter_name="set_sleep_number_setting_for_side",
+    set_fn=lambda c, side, value: c.set_sleep_number_setting_for_side(side, value),
     side="right",
 )
 
@@ -360,16 +351,14 @@ def _number_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
     if bed_type in BEDS_WITHOUT_ANGLE_FEEDBACK:
         _async_remove_stale_position_entities(hass, coordinator)
     elif (
-        bed_type in (BED_TYPE_LINAK, BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_STARCODE_M5X5)
-        and controller is not None
+        controller is not None
+        and (extra_position_keys := controller.position_number_pruning) is not None
         # Until capabilities resolve, the controller reports no axes; removing
         # sliders then would delete working entities (#714).
         and controller.controller_entity_discovery_complete
     ):
         supported_keys = {spec.key for spec in controller.position_number_specs}
-        position_keys = _POSITION_ENTITY_KEYS
-        if bed_type == BED_TYPE_STARCODE_M5X5:
-            position_keys = position_keys | {"lumbar_position"}
+        position_keys = _POSITION_ENTITY_KEYS | extra_position_keys
         _async_remove_stale_position_entities(
             hass,
             coordinator,
@@ -415,7 +404,10 @@ def _number_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
         registry = er.async_get(hass)
         for description in MASSAGE_NUMBER_DESCRIPTIONS:
             # The right-side control can remain after switching away from MOTIONrelax.
-            if bed_type != BED_TYPE_LOGICDATA_APP and description.key != "massage_right_intensity":
+            if (
+                not controller.prunes_stale_massage_numbers
+                and description.key != "massage_right_intensity"
+            ):
                 continue
             if description.massage_zone in supported_zones:
                 continue
@@ -478,18 +470,7 @@ def _number_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                 ),
             )
         )
-    elif (
-        bed_type
-        in (
-            BED_TYPE_SOLACE,
-            BED_TYPE_STARCODE_M5X5,
-            BED_TYPE_JIECANG_APP,
-            BED_TYPE_SVANE,
-            BED_TYPE_JENSEN,
-            BED_TYPE_VIBRADORM_APP,
-        )
-        and controller is not None
-    ):
+    elif controller is not None and controller.prunes_stale_light_level:
         _async_remove_stale_level_entity(hass, coordinator, LIGHT_LEVEL_DESCRIPTION)
 
     if controller is not None and controller.supports_fan_level_control:
@@ -499,11 +480,13 @@ def _number_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                 replace(FAN_LEVEL_DESCRIPTION, native_max_value=controller.fan_level_max),
             )
         )
-    elif bed_type == BED_TYPE_JENSEN and controller is not None:
+    elif controller is not None and controller.prunes_stale_fan_level:
         # A corrected config report can take away a fan the fallback assumed.
         _async_remove_stale_level_entity(hass, coordinator, FAN_LEVEL_DESCRIPTION)
 
-    sleep_number_sides = controller.sleep_number_setting_sides if controller else ()
+    sleep_number_sides = (
+        own_sides(coordinator, controller.sleep_number_setting_sides) if controller else ()
+    )
     if controller is not None and sleep_number_sides:
         _LOGGER.debug(
             "Setting up side-specific Sleep Number controls for %s (sides: %s)",
@@ -529,7 +512,7 @@ def _number_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                         native_step=controller.sleep_number_setting_step,
                         mode=side_description.mode,
                         state_key=side_description.state_key,
-                        setter_name=side_description.setter_name,
+                        set_fn=side_description.set_fn,
                         side=side_description.side,
                     ),
                 )
@@ -561,7 +544,7 @@ def _number_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
 
 
 def _controller_number_specs_for_entities(
-    controller: BedController | SideBoundController,
+    controller: BedController,
 ) -> tuple[ControllerNumberSpec, ...]:
     """Keep a controller-owned generic level setter off the duplicate entity list."""
     specs = controller.controller_number_specs
@@ -677,6 +660,11 @@ def _position_number_specs(
     degrees or percent, and which position_data key each one reads. See
     BedController.position_number_specs.
     """
+    with controller_side_scope(coordinator):
+        return _bound_position_number_specs(coordinator)
+
+
+def _bound_position_number_specs(coordinator: EntityRuntime) -> tuple[PositionNumberSpec, ...]:
     controller = coordinator.capability_controller
     if coordinator.disable_angle_sensing or controller is None:
         return ()
@@ -1014,11 +1002,11 @@ class AdjustableBedMassageNumber(AdjustableBedEntity, NumberEntity):
         """Keep legacy wave automation unavailable off its current source side."""
         controller = self._coordinator.capability_controller
         zone_available = (
-            getattr(controller, "legacy_massage_wave_available", True)
-            if self.entity_description.massage_zone == "wave"
-            else True
+            controller is None
+            or self.entity_description.massage_zone != "wave"
+            or controller.legacy_massage_wave_available
         )
-        return super().available and zone_available is not False
+        return super().available and zone_available
 
     @callback
     def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
@@ -1044,8 +1032,8 @@ class AdjustableBedMassageNumber(AdjustableBedEntity, NumberEntity):
             value = self._coordinator.controller_state.get(state_key) if state_key else None
             return float(value) if isinstance(value, (int, float)) else None
 
-        # Get massage state from controller
-        state = controller.get_massage_state()
+        with self._side_scope():
+            state = controller.get_massage_state()
         zone = self.entity_description.massage_zone
 
         # Map zone to state key
@@ -1248,7 +1236,7 @@ class AdjustableBedSleepNumberSettingNumber(AdjustableBedEntity, NumberEntity):
         )
 
         async def _set_sleep_number(ctrl: BedController) -> None:
-            await cast(Any, ctrl).set_sleep_number_setting(setting)
+            await ctrl.set_sleep_number_setting(setting)
 
         await self._coordinator.async_execute_controller_command(_set_sleep_number)
 
@@ -1307,9 +1295,6 @@ class AdjustableBedSideStateNumber(AdjustableBedEntity, NumberEntity):
         setting = round(value)
 
         async def _set_value(ctrl: BedController) -> None:
-            await getattr(cast(Any, ctrl), self.entity_description.setter_name)(
-                self.entity_description.side,
-                setting,
-            )
+            await self.entity_description.set_fn(ctrl, self.entity_description.side, setting)
 
         await self._coordinator.async_execute_controller_command(_set_value)

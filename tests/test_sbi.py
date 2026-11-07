@@ -213,9 +213,12 @@ class TestSBIPacketBuilding:
         command = SBICommands.MOTOR_HEAD_UP
 
         legacy = controller._build_command(command)
-        assert controller.bind_side(SIDE_LEFT)._build_command(command)[7] == 0x01
-        assert controller.bind_side(SIDE_RIGHT)._build_command(command)[7] == 0x02
-        assert controller.bind_side(SIDE_BOTH)._build_command(command) == legacy
+        with controller.side_scope(SIDE_LEFT):
+            assert controller._build_command(command)[7] == 0x01
+        with controller.side_scope(SIDE_RIGHT):
+            assert controller._build_command(command)[7] == 0x02
+        with controller.side_scope(SIDE_BOTH):
+            assert controller._build_command(command) == legacy
         assert controller._build_command(command) == legacy
 
     def test_side_a_packet_is_9_bytes(self):

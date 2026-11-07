@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .beds.base import BedController, SideBoundController
+from .beds.base import BedController
 from .const import DOMAIN
 from .hjbed_requests import Operation, Request
 from .services import (
@@ -71,7 +71,7 @@ async def handle_hjbed(call: ServiceCall) -> None:
     if missing:
         raise _missing_device_error(missing[0])
 
-    def validate(controller: BedController | SideBoundController) -> None:
+    def validate(controller: BedController) -> None:
         controller.validate_hjbed_request(request)
 
     preflighted = await _preflight_capability(

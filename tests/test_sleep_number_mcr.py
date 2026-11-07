@@ -201,9 +201,9 @@ async def test_invalid_commands_write_nothing(controller, command, parameters):
 
 
 async def test_bound_side_cannot_be_overridden(controller):
-    with pytest.raises(ValueError, match="override"):
-        await controller.bind_side("left").async_execute_sleep_number_command(
-            "position", {"side": "right", "axis": "head", "position": 20}
+    with pytest.raises(ValueError, match="override"), controller.side_scope("left"):
+        await controller.async_execute_sleep_number_command(
+        "position", {"side": "right", "axis": "head", "position": 20}
         )
 
 
@@ -212,8 +212,8 @@ async def test_movement_cancel_always_releases(controller):
     controller._read_foundation = AsyncMock(return_value=decode_foundation(foundation_reply()))
     controller._mcr_request = AsyncMock(side_effect=asyncio.CancelledError)
     controller._stop_side = AsyncMock()
-    with pytest.raises(asyncio.CancelledError):
-        await controller.bind_side("left").move_back_up()
+    with pytest.raises(asyncio.CancelledError), controller.side_scope("left"):
+        await controller.move_back_up()
     controller._stop_side.assert_awaited_once_with("left")
 
 
@@ -274,7 +274,8 @@ async def test_held_motion_keeps_selected_side_moving(
         foundation_reply(positions=positions),
     ]
     controller._coordinator.disable_angle_sensing = True
-    await controller.bind_side(side)._move_axis(axis, 100)
+    with controller.side_scope(side):
+        await controller._move_axis(axis, 100)
     calls = controller._mcr_request.await_args_list
     status_calls = [call for call in calls if call.args[:2] == (0x42, 0x12)]
     assert [call.args[2] for call in status_calls] == [0, selector, selector, 0]
@@ -376,8 +377,8 @@ async def test_running_fault_releases_and_publishes_positions(controller, motion
         foundation_reply(),
         foundation_reply(flags=(0, 16, 0, 0), positions=(0, 10, 0, 0)),
     ]
-    with pytest.raises(ValueError, match="current is over"):
-        await controller.bind_side("left").move_back_up()
+    with pytest.raises(ValueError, match="current is over"), controller.side_scope("left"):
+        await controller.move_back_up()
     assert controller._mcr_request.await_args_list[-2].kwargs["payload"] == b"MFHL110"
     assert controller._state["foundation_head_left"] == 10
 
@@ -476,8 +477,8 @@ async def test_hold_checks_fault_in_final_read_after_duration_expires(controller
         await asyncio.Event().wait()
 
     controller._foundation_delay = blocked
-    with pytest.raises(ValueError, match="current is over"):
-        await controller.bind_side("left").move_back_up()
+    with pytest.raises(ValueError, match="current is over"), controller.side_scope("left"):
+        await controller.move_back_up()
     assert controller._state["foundation_head_left_current"] == "over"
     assert controller._mcr_request.await_args_list[-2].kwargs["payload"] == b"MFHL110"
 
@@ -499,7 +500,8 @@ async def test_motion_cancellation_releases_and_refreshes(controller, motion, op
     controller._foundation_delay = cancel
     with pytest.raises(asyncio.CancelledError):
         if operation == "hold":
-            await controller.bind_side("left").move_back_up()
+            with controller.side_scope("left"):
+                await controller.move_back_up()
         elif operation == "target":
             await controller._set_position("left", "head", 50)
         else:
@@ -532,7 +534,8 @@ async def test_held_duration_expires_without_hanging_on_status(controller, motio
         await asyncio.Event().wait()
 
     controller._foundation_delay = blocked
-    await controller.bind_side("left").move_back_up()
+    with controller.side_scope("left"):
+        await controller.move_back_up()
     calls = controller._mcr_request.await_args_list
     assert calls[-3].kwargs["payload"] == b"MFHL110"
     assert calls[-1].args == (0x42, 0x28)
@@ -551,8 +554,8 @@ async def test_stalled_held_target_still_releases(controller, motion, monkeypatc
         return await normal(node, opcode, *args, **kwargs)
 
     controller._mcr_request.side_effect = request
-    with pytest.raises(TimeoutError):
-        await controller.bind_side("left").move_back_up()
+    with pytest.raises(TimeoutError), controller.side_scope("left"):
+        await controller.move_back_up()
     assert controller._mcr_request.await_args_list[-2].kwargs["payload"] == b"MFHL110"
 
 
@@ -573,7 +576,8 @@ async def test_hold_keeps_refreshing_while_opposite_actuator_moves(controller, m
         foundation_reply(flags=(0, 0, 1, 0)),
         foundation_reply(),
     ]
-    await controller.bind_side("left").move_back_up()
+    with controller.side_scope("left"):
+        await controller.move_back_up()
     calls = controller._mcr_request.await_args_list
     assert [call.args[2] for call in calls if call.args[:2] == (0x42, 0x12)] == [0, 3, 3, 0]
 
@@ -641,7 +645,8 @@ async def test_split_foundation_ignores_opposite_obstruction_events(controller, 
 
 
 async def test_hold_stops_before_reading_post_motion_obstruction_status(controller, motion):
-    await controller.bind_side("left").move_back_up()
+    with controller.side_scope("left"):
+        await controller.move_back_up()
     calls = controller._mcr_request.await_args_list
     assert calls[-3].kwargs["payload"] == b"MFHL110"
     assert calls[-2].args == (0x42, 0x12, 0)
@@ -1027,12 +1032,10 @@ async def test_position_services_use_explicit_side_percentages(hass, controller,
     assert [(call.kwargs["position_key"], call.kwargs["target_angle"]) for call in calls] == [
         (request["motor"], request["position"]) for request in requests
     ]
-    bound = MagicMock()
-    bound.move_back_up = AsyncMock()
-    controller.bind_side = MagicMock(return_value=bound)
+    sides: list[str | None] = []
+    controller.move_back_up = AsyncMock(side_effect=lambda: sides.append(controller.command_side))
     await calls[0].kwargs["move_up_fn"](controller)
-    controller.bind_side.assert_called_once_with("left")
-    bound.move_back_up.assert_awaited_once()
+    assert sides == ["left"]
 
 
 

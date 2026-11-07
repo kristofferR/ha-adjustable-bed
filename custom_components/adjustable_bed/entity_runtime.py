@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Collection, Coroutine, Mapping
+from collections.abc import Callable, Collection, Coroutine, Iterator, Mapping, Sequence
+from contextlib import ExitStack, contextmanager
 from datetime import datetime
 from typing import TYPE_CHECKING, Protocol
 
 from homeassistant.helpers.device_registry import ChildDeviceInfo, DeviceInfo
 
-from .beds.base import BedController, SideBoundController
+from .beds.base import BedController
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
@@ -48,10 +49,15 @@ class EntityRuntime(Protocol):
     def disable_angle_sensing(self) -> bool: ...
 
     @property
-    def controller(self) -> BedController | SideBoundController | None: ...
+    def controller(self) -> BedController | None: ...
 
     @property
-    def capability_controller(self) -> BedController | SideBoundController | None: ...
+    def capability_controller(self) -> BedController | None: ...
+
+    @property
+    def controller_side(self) -> str | None:
+        """Side bound to calls on a controller shared by both logical sides."""
+        ...
 
     @property
     def position_data(self) -> dict[str, float]: ...
@@ -138,6 +144,30 @@ class EntityRuntime(Protocol):
         ...
 
 
+@contextmanager
+def controller_side_scope(runtime: EntityRuntime) -> Iterator[None]:
+    """Bind the runtime's logical side to its live and capability controllers."""
+    side = runtime.controller_side
+    with ExitStack() as stack:
+        if side is not None:
+            live, capability = runtime.controller, runtime.capability_controller
+            for controller in (live, None if capability is live else capability):
+                if controller is not None:
+                    stack.enter_context(controller.side_scope(side))
+        yield
+
+
+def own_sides(runtime: EntityRuntime, sides: Sequence[str]) -> tuple[str, ...]:
+    """Restrict a per-side capability list to the runtime's bound side, if any.
+
+    A logical child sharing one controller mints only its own side's entities.
+    """
+    side = runtime.controller_side
+    if side is None:
+        return tuple(sides)
+    return (side,) if side in sides else ()
+
+
 class EntityRuntimeView(ABC):
     """Explicit read/query forwarding; subclasses own movement routing."""
 
@@ -181,12 +211,16 @@ class EntityRuntimeView(ABC):
         return self._entity_source.disable_angle_sensing
 
     @property
-    def controller(self) -> BedController | SideBoundController | None:
+    def controller(self) -> BedController | None:
         return self._entity_source.controller
 
     @property
-    def capability_controller(self) -> BedController | SideBoundController | None:
+    def capability_controller(self) -> BedController | None:
         return self._entity_source.capability_controller
+
+    @property
+    def controller_side(self) -> str | None:
+        return self._entity_source.controller_side
 
     @property
     def position_data(self) -> dict[str, float]:

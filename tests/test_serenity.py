@@ -221,8 +221,8 @@ async def test_literal_buttons_bound_callback(action: str) -> None:
     spec = next(
         spec for spec in controller.controller_button_specs if spec.key == f"serenity_{action}"
     )
-    with patch("asyncio.sleep", new=AsyncMock()):
-        await spec.press_fn(controller.bind_side("right"))
+    with patch("asyncio.sleep", new=AsyncMock()), controller.side_scope("right"):
+        await spec.press_fn(controller)
     assert written(controller)[0] == next(expected for _, key, expected in ROWS if key == action)
 
 
@@ -409,7 +409,8 @@ async def test_manufacturer_subscription_order_and_explicit_refresh_button() -> 
         for spec in controller.controller_button_specs
         if spec.key == "serenity_refresh_manufacturer"
     )
-    await spec.press_fn(controller.bind_side("left"))
+    with controller.side_scope("left"):
+        await spec.press_fn(controller)
     assert order == ["read"]
     assert written(controller) == []
 

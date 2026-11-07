@@ -11,7 +11,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .beds.base import BedController, SideBoundController
+from .beds.base import BedController
 from .const import BED_TYPE_SLEEPTRACKER, DOMAIN
 from .sleeptracker_protocol import FREQUENCIES, PRESETS, FanSide, Request
 
@@ -95,10 +95,10 @@ async def handle_sleeptracker(call: ServiceCall) -> None:
                 "Select the Sleeptracker app processor, not an Adjustable Lite UART base"
             )
 
-    def validate(controller: BedController | SideBoundController) -> None:
+    def validate(controller: BedController) -> None:
         controller.validate_sleeptracker_request(request)
 
-    async def execute(controller: BedController | SideBoundController) -> None:
+    async def execute(controller: BedController) -> None:
         await controller.async_execute_sleeptracker_request(request)
 
     try:

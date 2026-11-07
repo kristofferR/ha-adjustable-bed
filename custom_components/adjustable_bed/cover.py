@@ -21,11 +21,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .beds.base import ControllerMotorHoldSpec
 from .const import (
-    BED_TYPE_OCTO,
-    BED_TYPE_SLEEPYS_ELITE_APP,
     BEDS_WITH_PERCENTAGE_POSITIONS,
     DOMAIN,
-    SLEEPYS_ELITE_NATIVE_ACTION_MS,
 )
 from .entity import AdjustableBedEntity, hold_lease_attributes
 from .entity_discovery import async_setup_dynamic_entities
@@ -40,7 +37,6 @@ if TYPE_CHECKING:
         BedController,
         ControllerMotorHoldSpec,
         MotorControlSpec,
-        SideBoundController,
     )
 
 _LOGGER = logging.getLogger(__name__)
@@ -291,7 +287,7 @@ def _build_cover_description(
 def _async_remove_stale_cover_entities(
     hass: HomeAssistant,
     coordinator: EntityRuntime,
-    controller: BedController | SideBoundController,
+    controller: BedController,
 ) -> None:
     """Remove stale cover entities that should no longer be exposed."""
     registry = er.async_get(hass)
@@ -485,16 +481,9 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
                 self.entity_description.key,
             )
             hold = self.entity_description.hold
-            # OCTO's native actions use its configured pulses; hold metadata
-            # describes the card gesture, not a replacement travel duration.
-            if hold is not None and self._coordinator.bed_type != BED_TYPE_OCTO:
+            if hold is not None and hold.press_hold_ms is not None:
                 control = hold.up_control if direction == "open" else hold.down_control
-
-                duration_ms = (
-                    SLEEPYS_ELITE_NATIVE_ACTION_MS
-                    if self._coordinator.bed_type == BED_TYPE_SLEEPYS_ELITE_APP
-                    else 1000
-                )
+                duration_ms = hold.press_hold_ms
 
                 async def held(controller: BedController) -> None:
                     await controller.hold_control(control, duration_ms)
@@ -509,7 +498,7 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
 
                 async def bounded_movement(controller: BedController) -> None:
                     controller.validate_hold_control(control, duration_ms)
-                    if self._coordinator.bed_type == BED_TYPE_SLEEPYS_ELITE_APP:
+                    if hold.press_is_native:
                         await tracked_hold(controller)
                         return
                     await controller.prepare_for_movement()

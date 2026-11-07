@@ -27,7 +27,8 @@ async def test_desk_movement_and_reset_use_their_own_builder_and_cleanup() -> No
         bytes.fromhex("6e01006edd"),
     ]
     ctrl.write_command.reset_mock()
-    await ctrl.bind_side("right").hold_control("desk_reset", 100)
+    with ctrl.side_scope("right"):
+        await ctrl.hold_control("desk_reset", 100)
     assert [c.args[0] for c in ctrl.write_command.call_args_list] == [
         bytes.fromhex("6e95000003"),
         bytes.fromhex("6e01006edd"),

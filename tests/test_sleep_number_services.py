@@ -1,5 +1,6 @@
 """Sleep Number service routing and all-side validation."""
 
+import contextlib
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -19,7 +20,7 @@ def controller(side=None):
         command_side=side,
         _coordinator=SimpleNamespace(address="AA:BB"),
     )
-    result.bind_side = MagicMock(return_value=result)
+    result.side_scope = MagicMock(return_value=contextlib.nullcontext())
     return result
 
 

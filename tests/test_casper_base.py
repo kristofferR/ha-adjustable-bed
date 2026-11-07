@@ -138,7 +138,8 @@ async def test_side_binding_and_music_default_left():
     ctrl, c = make("hushl400sh")
     await ctrl.start_notify()
     c.client.write_gatt_char.reset_mock()
-    await ctrl.bind_side("right").async_perform_casper_base_action("MotorReset")
+    with ctrl.side_scope("right"):
+        await ctrl.async_perform_casper_base_action("MotorReset")
     assert frames(c) == ["6e010131a1"]
     ctrl, c = make("nisconup355b")
     await ctrl.start_notify()
@@ -394,11 +395,11 @@ async def test_side_bound_button_and_cover_callbacks_keep_their_side():
     ctrl, c = make("hushl400sh")
     await ctrl.start_notify()
     c.client.write_gatt_char.reset_mock()
-    right = ctrl.bind_side("right")
-    spec = next(s for s in right.controller_button_specs if s.key == "casper_motorreset")
-    await spec.press_fn(right)
-    assert frames(c) == ["6e010131a1"]
-    c.client.write_gatt_char.reset_mock()
-    back = next(s for s in right.motor_control_specs if s.key == "back")
-    await back.open_fn(right)
+    with ctrl.side_scope("right"):
+        spec = next(s for s in ctrl.controller_button_specs if s.key == "casper_motorreset")
+        await spec.press_fn(ctrl)
+        assert frames(c) == ["6e010131a1"]
+        c.client.write_gatt_char.reset_mock()
+        back = next(s for s in ctrl.motor_control_specs if s.key == "back")
+        await back.open_fn(ctrl)
     assert frames(c) == ["6e01012494"] * 3 + ["6e01016ede"]

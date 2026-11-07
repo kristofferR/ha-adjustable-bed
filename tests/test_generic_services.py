@@ -57,6 +57,7 @@ def target(bed_type: str = BED_TYPE_KEESON, name: str = "Bed", **capabilities: o
     coordinator.name = name
     coordinator.bed_type = bed_type
     coordinator.entry = SimpleNamespace(data={})
+    coordinator.controller_side = None
     coordinator.capability_controller = controller
 
     async def execute(command, **kwargs):
@@ -252,6 +253,7 @@ async def test_ahf_hold_control_preflights_status_and_lock_before_writes(
     controller._status_ready = status_ready
     controller._feature_mask = lock_mask
     coordinator, _ = target(BED_TYPE_TIMOTION_AHF)
+    coordinator.controller_side = None
     coordinator.capability_controller = controller
     select(resolve, (coordinator, controller))
 

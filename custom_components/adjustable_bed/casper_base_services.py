@@ -16,7 +16,7 @@ from .const import DOMAIN
 if TYPE_CHECKING:
     from homeassistant.helpers.typing import VolSchemaType
 
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
 
 OPERATIONS = (
     "remote_find",
@@ -101,7 +101,7 @@ async def handle(call: ServiceCall, *, hush: bool = False) -> None:
     if missing:
         raise _missing_device_error(missing[0])
 
-    def validate(controller: BedController | SideBoundController) -> None:
+    def validate(controller: BedController) -> None:
         controller.validate_casper_base_request(request)
 
     async def execute(controller: BedController) -> None:

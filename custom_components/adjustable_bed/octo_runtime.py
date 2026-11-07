@@ -9,16 +9,7 @@ if TYPE_CHECKING:
 
 
 def octo_controller(controller: object | None) -> OctoController | None:
-    """Return the underlying Standard OCTO controller when present.
-
-    Single-address paired children expose a ``SideBoundController`` proxy. Its
-    dynamic forwarding intentionally supports every bed controller, so unwrap
-    it before narrowing to the Octo-specific runtime contract.
-    """
-    from .beds.base import SideBoundController
-
-    if isinstance(controller, SideBoundController):
-        controller = controller._controller
+    """Return the Standard OCTO controller when present."""
     if not getattr(controller, "is_octo_smart_control", False):
         return None
 

@@ -28,7 +28,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import ChildDeviceInfo, DeviceInfo
 
-from .beds.base import CONTROLLER_GESTURE_RELEASE, BedController, SideBoundController
+from .beds.base import CONTROLLER_GESTURE_RELEASE, BedController
 from .command_scheduler import (
     CommandHandle,
     CommandKind,
@@ -782,14 +782,17 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
         return unregister
 
     @property
-    def controller(self) -> BedController | SideBoundController | None:
-        controller = self._single_inner.controller
-        return controller.bind_side(self._single_side) if controller is not None else None
+    def controller(self) -> BedController | None:
+        return self._single_inner.controller
 
     @property
-    def capability_controller(self) -> BedController | SideBoundController | None:
-        controller = self._single_inner.capability_controller
-        return controller.bind_side(self._single_side) if controller is not None else None
+    def capability_controller(self) -> BedController | None:
+        return self._single_inner.capability_controller
+
+    @property
+    def controller_side(self) -> str:
+        """Logical side bound to calls on the shared controller."""
+        return self._single_side
 
     def entity_unique_id(self, key: str) -> str:
         suffix = f"_{self._single_side}"
@@ -862,17 +865,17 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
     ) -> None:
         side_feedback = self._single_inner.bed_type == BED_TYPE_SLEEP_NUMBER
 
-        async def bound(controller: Any) -> None:
-            side_controller = controller.bind_side(self._single_side)
-            await command_fn(side_controller)
-            if (
-                side_feedback
-                and not self._single_inner.disable_angle_sensing
-                and not self._single_inner.cancel_command.is_set()
-            ):
-                # Read under the same command lock and side binding. An unbound
-                # background read would query the default side after this returns.
-                await self._single_inner._async_read_positions(side_controller)
+        async def bound(controller: BedController) -> None:
+            with controller.side_scope(self._single_side):
+                await command_fn(controller)
+                if (
+                    side_feedback
+                    and not self._single_inner.disable_angle_sensing
+                    and not self._single_inner.cancel_command.is_set()
+                ):
+                    # Read under the same command lock and side binding. An unbound
+                    # background read would query the default side after this returns.
+                    await self._single_inner._async_read_positions(controller)
 
         if side_feedback:
             read_positions_after_operation = False
@@ -935,8 +938,9 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
         cancel_running: bool = False, skip_disconnect: bool = False,
         preemptible: bool = True, run_if: Callable[[], bool] | None = None,
     ) -> T:
-        async def bound(controller: Any) -> Any:
-            return await query_fn(controller.bind_side(self._single_side))
+        async def bound(controller: BedController) -> T:
+            with controller.side_scope(self._single_side):
+                return await query_fn(controller)
 
         result = await self._single_inner.async_execute_controller_query(
             bound, cancel_running, skip_disconnect, preemptible, run_if
@@ -953,9 +957,13 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
         move_stop_fn: CommandFn,
     ) -> None:
         controller = self.capability_controller
-        if controller is not None and controller.supports_direct_position_control:
+        direct = False
+        if controller is not None:
+            with controller.side_scope(self._single_side):
+                direct = controller.supports_direct_position_control
+        if direct:
 
-            async def set_direct(bound: Any) -> None:
+            async def set_direct(bound: BedController) -> None:
                 native = bound.angle_to_native_position(position_key, target_angle)
                 await bound.set_motor_position(position_key, native)
                 self._single_inner._record_seek_result(
@@ -976,8 +984,9 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
             return
 
         def bind(fn: CommandFn) -> CommandFn:
-            async def bound(controller: Any) -> None:
-                await fn(controller.bind_side(self._single_side))
+            async def bound(controller: BedController) -> None:
+                with controller.side_scope(self._single_side):
+                    await fn(controller)
 
             return bound
 
@@ -997,10 +1006,10 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
         if self._single_inner.disable_angle_sensing:
             return
 
-        async def read(controller: Any) -> None:
-            bound = controller.bind_side(self._single_side)
-            await bound.prepare_for_position_read()
-            await bound.read_positions(self._single_inner.motor_count)
+        async def read(controller: BedController) -> None:
+            with controller.side_scope(self._single_side):
+                await controller.prepare_for_position_read()
+                await controller.read_positions(self._single_inner.motor_count)
 
         await self._single_inner.async_execute_controller_query(
             read, skip_disconnect=True
@@ -1022,11 +1031,12 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
         if cancel_running:
             self.request_command_cancel()
 
-        async def stop(controller: Any) -> None:
+        async def stop(controller: BedController) -> None:
             # This STOP can run in a scheduler worker created by an older call.
             token = CONTROLLER_GESTURE_RELEASE.set(gesture_release)
             try:
-                await controller.bind_side(self._single_side).stop_all()
+                with controller.side_scope(self._single_side):
+                    await controller.stop_all()
             finally:
                 CONTROLLER_GESTURE_RELEASE.reset(token)
 

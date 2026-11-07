@@ -1906,7 +1906,7 @@ class TestPairBedsConversion:
             await coordinator.async_prime_offline_controller()
             controller = coordinator.capability_controller
             assert controller is not None
-            hass.data[DOMAIN][entry.entry_id] = SimpleNamespace(
+            hass.data[DOMAIN][entry.entry_id] = SimpleNamespace(controller_side=None,
                 controller=controller,
                 capability_controller=controller,
             )
@@ -3456,8 +3456,8 @@ class TestSideServiceRouting:
             has_discrete_motor_control=False,
             motor_control_specs=[head_spec, back_legs_spec],
         )
-        left = SimpleNamespace(capability_controller=left_controller)
-        right = SimpleNamespace(capability_controller=right_controller)
+        left = SimpleNamespace(controller_side=None, capability_controller=left_controller)
+        right = SimpleNamespace(controller_side=None, capability_controller=right_controller)
         buttons = _combined_motor_buttons_for(coord, [left, right])
         head_up = next(b for b in buttons if b._attr_unique_id == "pair_x_head_up_both")
         assert head_up._move_fn is motor3_up
@@ -3468,7 +3468,7 @@ class TestSideServiceRouting:
         # A known left side is not enough to advertise a both-sides action. The
         # other side could have a different capability surface, so suppress all
         # combined motor controls until both sources are known.
-        unknown = SimpleNamespace(capability_controller=None)
+        unknown = SimpleNamespace(controller_side=None, capability_controller=None)
         assert _combined_motor_buttons_for(coord, [left, unknown]) == []
 
     def test_combined_app_holds_intersect_direction_and_timing_metadata(self):
@@ -3493,14 +3493,14 @@ class TestSideServiceRouting:
             )
 
         def make_combined(left_hold, right_hold):
-            left = SimpleNamespace(
+            left = SimpleNamespace(controller_side=None,
                 capability_controller=SimpleNamespace(
                     supports_motor_control=True,
                     has_discrete_motor_control=False,
                     motor_control_specs=[motor_spec(left_hold)],
                 )
             )
-            right = SimpleNamespace(
+            right = SimpleNamespace(controller_side=None,
                 capability_controller=SimpleNamespace(
                     supports_motor_control=True,
                     has_discrete_motor_control=False,
@@ -3513,10 +3513,10 @@ class TestSideServiceRouting:
                 connection_mode=PAIR_CONNECTION_MODE_CONCURRENT,
             )
             coord.children = {
-                SIDE_LEFT: SimpleNamespace(
+                SIDE_LEFT: SimpleNamespace(controller_side=None,
                     bed_type=BED_TYPE_OCTO, capability_controller=left.capability_controller
                 ),
-                SIDE_RIGHT: SimpleNamespace(
+                SIDE_RIGHT: SimpleNamespace(controller_side=None,
                     bed_type=BED_TYPE_OCTO, capability_controller=right.capability_controller
                 ),
             }
@@ -3760,11 +3760,11 @@ class TestPairedReceiverSettings:
         left_spec = make_spec(left_hold)
         right_spec = make_spec(right_hold)
         coord.children = {
-            SIDE_LEFT: SimpleNamespace(
+            SIDE_LEFT: SimpleNamespace(controller_side=None,
                 capability_controller=SimpleNamespace(motor_control_specs=[left_spec]),
                 bed_type=BED_TYPE_LINAK,
             ),
-            SIDE_RIGHT: SimpleNamespace(
+            SIDE_RIGHT: SimpleNamespace(controller_side=None,
                 capability_controller=SimpleNamespace(motor_control_specs=[right_spec]),
                 bed_type=BED_TYPE_LINAK,
             ),
@@ -3787,8 +3787,8 @@ class TestPairedReceiverSettings:
         spec = MotorControlSpec(motor, motor, AsyncMock(), AsyncMock(), AsyncMock())
         coord = MagicMock(pair_id="pair_x", device_info={}, connection_mode=mode)
         coord.children = {
-            SIDE_LEFT: SimpleNamespace(bed_type=BED_TYPE_OCTO),
-            SIDE_RIGHT: SimpleNamespace(bed_type=right_bed_type),
+            SIDE_LEFT: SimpleNamespace(controller_side=None, bed_type=BED_TYPE_OCTO),
+            SIDE_RIGHT: SimpleNamespace(controller_side=None, bed_type=right_bed_type),
         }
         for child in coord.children.values():
             child.capability_controller = SimpleNamespace(motor_control_specs=[spec])
@@ -3920,7 +3920,7 @@ class TestCombinedPositionSliders:
             if capability
             else None
         )
-        return SimpleNamespace(
+        return SimpleNamespace(controller_side=None,
             capability_controller=controller,
             disable_angle_sensing=disable_angle_sensing,
             entry=SimpleNamespace(data={CONF_BED_TYPE: BED_TYPE_LINAK}),

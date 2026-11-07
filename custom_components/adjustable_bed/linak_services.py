@@ -39,7 +39,7 @@ from .services import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
 
 
 SERVICE_LINAK_MOVE_SIMULTANEOUS = "linak_move_simultaneously"
@@ -99,7 +99,7 @@ async def handle_linak_move_simultaneously(call: ServiceCall) -> None:
         await _release_preflighted(preflighted)
         raise
 
-    async def move(controller: BedController | SideBoundController) -> None:
+    async def move(controller: BedController) -> None:
         await controller.move_simultaneously(
             first_motor,
             first_up,
@@ -145,7 +145,7 @@ async def handle_linak_set_alarm(call: ServiceCall) -> None:
         "Linak alarm programming",
     )
 
-    async def program(controller: BedController | SideBoundController) -> None:
+    async def program(controller: BedController) -> None:
         await controller.program_alarm(
             call.data[ATTR_SECONDS],
             steps,

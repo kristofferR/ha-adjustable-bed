@@ -579,8 +579,6 @@ async def test_light_preference_defaults_survive_controller_replacement(
 
 
 async def test_bound_side_is_scoped_and_release_keeps_original_side(coordinator, monkeypatch):
-    from custom_components.adjustable_bed.beds.base import SideBoundController
-
     key = next(
         k
         for k, v in PRODUCTS.items()
@@ -596,7 +594,8 @@ async def test_bound_side_is_scoped_and_release_keeps_original_side(coordinator,
     )
     monkeypatch.setattr(obj, "_delay", AsyncMock(return_value=True))
     spec = next(s for s in obj.controller_button_specs if s.key == "goodvibe_" + detail)
-    await spec.press_fn(SideBoundController(obj, "right"))
+    with obj.side_scope("right"):
+        await spec.press_fn(obj)
     assert writes(coordinator) == [
         action_frame(ACTIONS[detail], 1, False),
         bytes.fromhex("6e01016ede"),

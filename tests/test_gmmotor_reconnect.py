@@ -187,7 +187,8 @@ async def test_product_state_isolated_from_other_address_profile_and_admitted_ri
     # The right side is admitted by V9RM:1; its distinct catalog never gets E3RM flags.
     right = GmmotorController(c, profile="V9RM:1", side="right")
     assert right._ui_state == right.profile.initial_state == 0
-    assert right.bind_side("left").controller_button_specs
+    with right.side_scope("left"):
+        assert right.controller_button_specs
     fresh = GmmotorController(c, profile="E3RM")
     assert fresh._ui_state == 0  # Changing product starts a new app view.
 

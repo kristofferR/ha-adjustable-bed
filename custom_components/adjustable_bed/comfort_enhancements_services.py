@@ -23,7 +23,7 @@ from .services import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
     from .beds.comfort_enhancements import ComfortEnhancementsController
 
 
@@ -44,14 +44,14 @@ async def handle_comfort_enhancements_set_alarm(call: ServiceCall) -> None:
     }
     targets = _call_targets(call)
 
-    def validate(target: BedChild, controller: BedController | SideBoundController) -> None:
+    def validate(target: BedChild, controller: BedController) -> None:
         if target.bed_type != BED_TYPE_COMFORT_ENHANCEMENTS:
             raise ServiceValidationError("Choose a Comfort Enhancements app controller")
         cast("ComfortEnhancementsController", controller).validate_alarm(**fields)
 
     preflighted = await _preflight_each(targets, validate)
 
-    async def program(controller: BedController | SideBoundController) -> None:
+    async def program(controller: BedController) -> None:
         await cast("ComfortEnhancementsController", controller).set_alarm(**fields)
 
     try:

@@ -35,7 +35,6 @@ from .base import (
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
-    SideBoundController,
 )
 from .richmat_mh_protocol import (
     ALARM_MASSAGE_CODES,
@@ -1728,20 +1727,20 @@ def _problem_message(problem: ModelProblem | None) -> str:
     return "The app has no model for this Bluetooth name; choose the model explicitly"
 
 
-def richmat_mh_target(controller: BedController | SideBoundController) -> RichmatMhController:
+def richmat_mh_target(controller: BedController) -> RichmatMhController:
     """The Richmat MH controller behind an entity or service target."""
-    target = controller._controller if isinstance(controller, SideBoundController) else controller
+    target = controller
     if not isinstance(target, RichmatMhController):
         raise TypeError("This action requires a Richmat MH app profile")
     return target
 
 
-def _invoke(controller: BedController | SideBoundController, method: str, *args: Any) -> Any:
+def _invoke(controller: BedController, method: str, *args: Any) -> Any:
     return getattr(richmat_mh_target(controller), method)(*args)
 
 
 def _tap_action(code: int) -> MotorCommandCallable:
-    async def invoke(controller: BedController | SideBoundController) -> None:
+    async def invoke(controller: BedController) -> None:
         await richmat_mh_target(controller).tap(code)
 
     return invoke

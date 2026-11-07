@@ -25,7 +25,6 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
     PositionNumberSpec,
-    SideBoundController,
 )
 
 if TYPE_CHECKING:
@@ -39,10 +38,8 @@ __all__ = ["CHARACTERISTIC", "BedSenseController", "BedSenseSession", "bedsense_
 
 
 def _action(key: str) -> MotorCommandCallable:
-    async def run(controller: BedController | SideBoundController) -> None:
-        target = (
-            controller._controller if isinstance(controller, SideBoundController) else controller
-        )
+    async def run(controller: BedController) -> None:
+        target = controller
         if not isinstance(target, BedSenseController):
             raise TypeError("BedSense action requires its controller")
         await target.execute_action(key)

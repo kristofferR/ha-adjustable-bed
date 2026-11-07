@@ -27,7 +27,7 @@ from .entity_discovery import (
     async_remove_retired_rmcontrol_telemetry,
     async_setup_dynamic_entities,
 )
-from .entity_runtime import EntityRuntime
+from .entity_runtime import EntityRuntime, own_sides
 from .paired_coordinator import entity_runtimes
 
 if TYPE_CHECKING:
@@ -89,7 +89,7 @@ def _binary_sensor_entities_for(
             if controller is None or not controller.supports_bed_presence:
                 continue
 
-            bed_presence_sides = controller.bed_presence_sides
+            bed_presence_sides = own_sides(coordinator, controller.bed_presence_sides)
             if bed_presence_sides:
                 _async_remove_stale_presence_entity(hass, coordinator)
             else:

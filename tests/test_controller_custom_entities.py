@@ -123,7 +123,8 @@ def runtime_for(hass, controller, side=None, entry=None):
     async def execute(command, **kwargs):
         async with lock:
             live = runtime.controller
-            await command(live.bind_side(side) if side else live)
+            with live.side_scope(side):
+                await command(live)
 
     runtime.async_execute_controller_command = AsyncMock(side_effect=execute)
     return runtime

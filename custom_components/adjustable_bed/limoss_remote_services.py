@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 from collections.abc import AsyncIterator, Callable, Coroutine
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
@@ -35,7 +35,7 @@ from .services import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
     from .beds.limoss_remote import LimossRemoteController
 
 
@@ -63,35 +63,30 @@ async def _hold_limoss_remote(
     With a ``lease`` the hold streams until the lease ends (#483).
     """
 
-    def validate(controller: LimossRemoteController | SideBoundController) -> None:
+    def validate(controller: LimossRemoteController) -> None:
         if control not in controller.held_control_options:
             raise ValueError(f"The selected profile does not support combination '{control}'")
         if lease is not None and controller.execution.hold is None:
             raise ValueError("This profile does not support renewable holds")
 
-    async def hold(controller: BedController | SideBoundController) -> None:
+    async def hold(controller: BedController) -> None:
         await controller.hold_control(control, duration_ms)
 
     # One tracked movement per hold: renewals extend the running command.
     tracked = track_held_control(call.hass, control, hold)
 
-    async def execute(controller: LimossRemoteController | SideBoundController) -> None:
-        await tracked(cast("BedController", controller))
+    async def execute(controller: LimossRemoteController) -> None:
+        await tracked(controller)
 
     await _execute_limoss_remote(call, validate, execute, targets=targets, lease=lease)
 
 
 def _limoss_remote_controller(
-    controller: BedController | SideBoundController,
-) -> LimossRemoteController | SideBoundController:
-    from .beds.base import SideBoundController
+    controller: BedController,
+) -> LimossRemoteController:
     from .beds.limoss_remote import LimossRemoteController
 
     if isinstance(controller, LimossRemoteController):
-        return controller
-    if isinstance(controller, SideBoundController) and isinstance(
-        controller._controller, LimossRemoteController
-    ):
         return controller
     raise ServiceValidationError("This action requires the explicit Limoss Remote profile")
 
@@ -124,7 +119,7 @@ async def _limoss_remote_reload_transaction(
 
 async def _preflight_live_limoss_remote(
     targets: list[tuple[BedTarget, str]],
-    validate: Callable[[LimossRemoteController | SideBoundController], object],
+    validate: Callable[[LimossRemoteController], object],
 ) -> None:
     """Require each receiver's completed live startup before selected movement.
 
@@ -135,18 +130,18 @@ async def _preflight_live_limoss_remote(
         for target in _command_targets(coordinator, side):
             if target.bed_type != BED_TYPE_LIMOSS_REMOTE:
                 continue
-            refreshed: list[LimossRemoteController | SideBoundController] = []
+            refreshed: list[LimossRemoteController] = []
 
             async def query(
                 controller: BedController,
-            ) -> LimossRemoteController | SideBoundController:
+            ) -> LimossRemoteController:
                 selected = _limoss_remote_controller(controller)
                 await selected.start_notify()
                 return selected
 
             async def inspect(
                 child: BedChild,
-                results: list[LimossRemoteController | SideBoundController] = refreshed,
+                results: list[LimossRemoteController] = refreshed,
             ) -> None:
                 selected = await child.async_execute_controller_query(query, cancel_running=False)
                 if selected is not None:
@@ -174,15 +169,15 @@ async def _preflight_live_limoss_remote(
 
 async def _execute_limoss_remote(
     call: ServiceCall,
-    validate: Callable[[LimossRemoteController | SideBoundController], object],
-    execute: Callable[[LimossRemoteController | SideBoundController], Coroutine[Any, Any, None]],
+    validate: Callable[[LimossRemoteController], object],
+    execute: Callable[[LimossRemoteController], Coroutine[Any, Any, None]],
     *,
     targets: list[tuple[BedTarget, str]] | None = None,
     lease: HoldLease | None = None,
 ) -> None:
     targets = _limoss_remote_targets(call) if targets is None else targets
 
-    def check(controller: BedController | SideBoundController) -> None:
+    def check(controller: BedController) -> None:
         try:
             validate(_limoss_remote_controller(controller))
         except ValueError as error:
@@ -195,17 +190,12 @@ async def _execute_limoss_remote(
         )
         completed = 0
 
-        async def run(controller: BedController | SideBoundController) -> None:
-            from .beds.base import SideBoundController
-
+        async def run(controller: BedController) -> None:
             nonlocal completed
             selected = _limoss_remote_controller(controller)
             check(selected)
             await execute(selected)
-            physical = (
-                selected._controller if isinstance(selected, SideBoundController) else selected
-            )
-            if physical._coordinator.cancel_command.is_set():
+            if selected._coordinator.cancel_command.is_set():
                 raise asyncio.CancelledError
             completed += 1
 
@@ -242,7 +232,7 @@ def _limoss_remote_targets(call: ServiceCall) -> list[tuple[BedTarget, str]]:
 
 async def handle_limoss_remote_rename_memory(call: ServiceCall) -> None:
     slot, name = call.data[ATTR_PRESET], call.data[ATTR_NAME]
-    controllers: list[LimossRemoteController | SideBoundController] = []
+    controllers: list[LimossRemoteController] = []
     for coordinator, side in _limoss_remote_targets(call):
         for target in _command_targets(coordinator, side):
             controller = target.capability_controller
@@ -260,7 +250,7 @@ async def handle_limoss_remote_rename_memory(call: ServiceCall) -> None:
 
 
 async def handle_limoss_remote_calibrate(call: ServiceCall) -> None:
-    def validate(controller: LimossRemoteController | SideBoundController) -> None:
+    def validate(controller: LimossRemoteController) -> None:
         if call.data["confirmed"] is not True or controller.memory_slot_count == 0:
             raise ValueError(
                 "Calibration requires explicit confirmation and a memory-capable profile"
@@ -274,8 +264,6 @@ async def handle_limoss_remote_calibrate(call: ServiceCall) -> None:
 
 
 async def handle_limoss_remote_features(call: ServiceCall) -> None:
-    from .beds.base import SideBoundController
-    from .beds.limoss_remote import LimossRemoteController
 
     light, massage = call.data["underbed_light"], call.data["massage"]
     targets = _limoss_remote_targets(call)
@@ -290,11 +278,7 @@ async def handle_limoss_remote_features(call: ServiceCall) -> None:
                 cached = target.capability_controller
                 if cached is None:
                     raise ServiceValidationError("This receiver has no cached app profile")
-                selected = _limoss_remote_controller(cached)
-                physical = (
-                    selected._controller if isinstance(selected, SideBoundController) else selected
-                )
-                assert isinstance(physical, LimossRemoteController)
+                physical = _limoss_remote_controller(cached)
                 if (physical.underbed_light and not light) or (physical.massage and not massage):
                     disabling.append(target)
                 else:
@@ -308,14 +292,8 @@ async def handle_limoss_remote_features(call: ServiceCall) -> None:
                     if child in disabling
                 )
 
-        async def apply(controller: LimossRemoteController | SideBoundController) -> None:
-            physical = (
-                controller._controller
-                if isinstance(controller, SideBoundController)
-                else controller
-            )
-            assert isinstance(physical, LimossRemoteController)
-            touched.append((physical, physical.underbed_light, physical.massage))
+        async def apply(controller: LimossRemoteController) -> None:
+            touched.append((controller, controller.underbed_light, controller.massage))
             await controller.set_optional_features(light, massage, persist=False)
 
         try:
@@ -337,14 +315,8 @@ async def handle_limoss_remote_features(call: ServiceCall) -> None:
                     if cached is None:
                         raise ServiceValidationError("This receiver has no cached app profile")
                     selected = _limoss_remote_controller(cached)
-                    physical = (
-                        selected._controller
-                        if isinstance(selected, SideBoundController)
-                        else selected
-                    )
-                    assert isinstance(physical, LimossRemoteController)
-                    if (physical.underbed_light and not light) or (
-                        physical.massage and not massage
+                    if (selected.underbed_light and not light) or (
+                        selected.massage and not massage
                     ):
                         raise ServiceValidationError(
                             "The local feature selection changed; retry the action"

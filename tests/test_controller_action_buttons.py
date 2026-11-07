@@ -237,7 +237,8 @@ async def test_custom_translation_key_and_live_side_bound_controller_dispatch(ha
 
     async def dispatch(command, *, cancel_running):
         assert cancel_running is True
-        await command(current.bind_side("left"))
+        with current.side_scope("left"):
+            await command(current)
 
     coordinator.async_execute_controller_command = AsyncMock(side_effect=dispatch)
     assert button.unique_id == "bed_vibradorm_app_sync_left"

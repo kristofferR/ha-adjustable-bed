@@ -1096,6 +1096,11 @@ class AdjustableBedCoordinator(
         return self._controller
 
     @property
+    def controller_side(self) -> None:
+        """A physical bed's controller is never shared between logical sides."""
+        return None
+
+    @property
     def capability_controller(self) -> BedController | None:
         """Return the controller to read CAPABILITIES from (which entities to expose).
 

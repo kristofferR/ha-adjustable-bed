@@ -161,6 +161,7 @@ def _service_target(profile=BED_TYPE_ADJUSTABLE_LUMBAR):
     coordinator.name = "Lumbar"
     coordinator.bed_type = profile
     coordinator.entry = SimpleNamespace(data={})
+    coordinator.controller_side = None
     coordinator.capability_controller = controller
 
     async def execute(command, **kwargs):
@@ -199,6 +200,7 @@ async def test_hold_service_refuses_a_mixed_selection_before_any_write(hass):
     await async_register_services(hass)
     lumbar, lumbar_controller = _service_target()
     other, _ = _service_target("okin_64bit")
+    other.controller_side = None
     other.capability_controller = SimpleNamespace(held_control_options=())
     with (
         patch(

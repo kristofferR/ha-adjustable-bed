@@ -215,13 +215,13 @@ def test_existing_combined_entity_drops_hold_offer_after_live_sequential_transit
         pair_id="pair",
         device_info={},
         children={
-            side: SimpleNamespace(bed_type="tempur_curve", capability_controller=ctrl)
+            side: SimpleNamespace(controller_side=None, bed_type="tempur_curve", capability_controller=ctrl)
             for side in ("left", "right")
         },
         connection_mode="concurrent",
     )
     entities = _combined_motor_buttons_for(
-        parent, [SimpleNamespace(capability_controller=ctrl)] * 2
+        parent, [SimpleNamespace(controller_side=None, capability_controller=ctrl)] * 2
     )
     assert all("held_control" in entity.extra_state_attributes for entity in entities)
     parent.connection_mode = "sequential"

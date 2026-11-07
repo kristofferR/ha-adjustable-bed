@@ -779,6 +779,10 @@ class SolaceController(BedController):
         self.forward_controller_state_update("light_level", 0)
 
     @property
+    def prunes_stale_light_level(self) -> bool:
+        return True
+
+    @property
     def supports_light_level_control(self) -> bool:
         """Return whether the route proves levels 0 through 10."""
         return self.profile.light_levels

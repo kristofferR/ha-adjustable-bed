@@ -15,7 +15,7 @@ from .gmmotor_requests import Operation, Request
 if TYPE_CHECKING:
     from homeassistant.helpers.typing import VolSchemaType
 
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
 
 OPERATIONS = get_args(Operation.__value__)
 
@@ -62,7 +62,7 @@ async def handle(call: ServiceCall) -> None:
     if missing:
         raise _missing_device_error(missing[0])
 
-    def validate(controller: BedController | SideBoundController) -> None:
+    def validate(controller: BedController) -> None:
         controller.validate_gmmotor_request(request)
 
     async def execute(controller: BedController) -> None:

@@ -242,14 +242,17 @@ async def test_memory_preflight_offline_and_bound_views_preserve_device_local_ru
         await controller.stop_notify()
         target.client.is_connected = False
         for side in (const.SIDE_LEFT, const.SIDE_RIGHT):
-            bound = controller.bind_side(side)
-            bound.validate_memory_recall(8)
+            with controller.side_scope(side):
+                controller.validate_memory_recall(8)
             assert controller.session.slots[8] == {0: -1, 2: -(2**31)}
             assert controller._command_side.get() is None
         controller._quarantine()
         target._client = None
-        with pytest.raises(ValueError, match="quarantined"):
-            controller.bind_side(const.SIDE_RIGHT).validate_memory_recall(8)
+        with (
+            pytest.raises(ValueError, match="quarantined"),
+            controller.side_scope(const.SIDE_RIGHT),
+        ):
+            controller.validate_memory_recall(8)
         target._client = make_controller().client
         target.client.is_connected = False
         with pytest.raises(ConnectionError, match="subscription"):

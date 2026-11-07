@@ -32,6 +32,7 @@ async def service_target(hass: HomeAssistant):
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     coordinator.name = "App bed"
     coordinator.bed_type = BED_TYPE_MALOUF_APP
+    coordinator.controller_side = None
     coordinator.capability_controller = controller
 
     async def execute(command, **kwargs):
@@ -84,6 +85,7 @@ async def test_alarm_preset_is_validated_on_every_target_before_writing(hass, se
     second = MagicMock(spec=AdjustableBedCoordinator)
     second.name = "One-slot bed"
     second.bed_type = BED_TYPE_MALOUF_APP
+    second.controller_side = None
     second.capability_controller = SimpleNamespace(supports_clock_alarm=True,
         clock_alarm_preset_options=("zero_g", "memory_1"))
     resolve.return_value = ([(coordinator, SIDE_BOTH), (second, SIDE_BOTH)], [])
@@ -134,6 +136,7 @@ async def test_explicit_split_head_actions_route_main_dual_and_partner_foot(hass
         controller = MaloufAppController(coordinator, app_profile="lucid", model="S755",
                                         transport="richmat_framed")
         coordinator.controller = controller
+        coordinator.controller_side = None
         coordinator.capability_controller = controller
 
         async def execute(command, *, _controller=controller, **kwargs):

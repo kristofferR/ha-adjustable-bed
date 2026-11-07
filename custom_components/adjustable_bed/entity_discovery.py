@@ -9,7 +9,7 @@ from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
-from .entity_runtime import EntityRuntime
+from .entity_runtime import EntityRuntime, controller_side_scope
 from .octo_runtime import octo_controller
 
 
@@ -22,13 +22,25 @@ def async_setup_dynamic_entities(
     *,
     additional_coordinators: Iterable[EntityRuntime] = (),
 ) -> None:
-    """Register initial entities, then add each newly proven capability once."""
-    entities = list(build_entities())
+    """Register initial entities, then add each newly proven capability once.
+
+    A single runtime's builder runs with its side bound to a shared controller.
+    A builder spanning ``additional_coordinators`` binds each runtime itself.
+    """
+    additional_coordinators = tuple(additional_coordinators)
+
+    def build() -> list[Entity]:
+        if additional_coordinators:
+            return list(build_entities())
+        with controller_side_scope(coordinator):
+            return list(build_entities())
+
+    entities = build()
     known = {entity.unique_id: entity for entity in entities}
     async_add_entities(entities)
 
     def discover(_state: object) -> None:
-        candidates = list(build_entities())
+        candidates = build()
         # Builders may retire registry rows when a capability is withdrawn.
         # Forget those instances so a later positive reply can recreate them.
         for identity, entity in list(known.items()):
@@ -63,11 +75,12 @@ def async_remove_retired_rmcontrol_telemetry(
     controller = coordinator.capability_controller
     if controller is None or controller.has_dynamic_controller_entities:
         return
-    specs = (
-        controller.controller_state_sensor_specs
-        if domain == "sensor"
-        else controller.controller_state_binary_sensor_specs
-    )
+    with controller_side_scope(coordinator):
+        specs = (
+            controller.controller_state_sensor_specs
+            if domain == "sensor"
+            else controller.controller_state_binary_sensor_specs
+        )
     active_ids = {coordinator.entity_unique_id(spec.key) for spec in specs}
     prefix, suffix = coordinator.entity_unique_id("rmcontrol_").split("rmcontrol_", 1)
     prefix += "rmcontrol_"

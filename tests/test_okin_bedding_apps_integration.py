@@ -608,6 +608,7 @@ class _OneSlotChild:
     """A side on a one-slot Bluetooth path: a second simultaneous link fails."""
 
     slot: list[_OneSlotChild] = []
+    controller_side = None
 
     def __init__(self, name: str, store: dict) -> None:
         self.name = name

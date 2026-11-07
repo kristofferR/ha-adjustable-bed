@@ -905,8 +905,9 @@ async def test_side_state_translations_belong_to_real_declared_sensors(hass, sid
         c.handle_controller_state_update(key, 2)
         assert sensor.native_value == 2
     if sided:
-        right = ctrl.bind_side("right")
-        assert {s.key for s in right.controller_state_sensor_specs} & keys == {
+        with ctrl.side_scope("right"):
+            right_keys = {s.key for s in ctrl.controller_state_sensor_specs}
+        assert right_keys & keys == {
             "motomotion_heat_right",
             "motomotion_massage_right",
         }

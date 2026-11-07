@@ -165,6 +165,10 @@ class LogicdataAppController(BedController):
         return self.profile.factory_reset
 
     @property
+    def prunes_stale_massage_numbers(self) -> bool:
+        return True
+
+    @property
     def supports_massage(self) -> bool:
         return self._has_massage
 

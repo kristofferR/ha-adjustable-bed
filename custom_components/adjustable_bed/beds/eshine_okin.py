@@ -19,7 +19,6 @@ from .base import (
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
-    SideBoundController,
 )
 from .eshine_okin_protocol import (
     ALARM_TYPES,
@@ -50,10 +49,8 @@ class Session:
 
 
 def _action(action: str) -> MotorCommandCallable:
-    async def invoke(controller: BedController | SideBoundController) -> None:
-        target = (
-            controller._controller if isinstance(controller, SideBoundController) else controller
-        )
+    async def invoke(controller: BedController) -> None:
+        target = controller
         if not isinstance(target, EshineOkinController):
             raise TypeError("This action requires the eShine E2000/E3000/E3100/E5000 app")
         await target.execute_action(action)

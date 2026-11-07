@@ -223,11 +223,11 @@ async def test_both_finite_pulses_share_a_bounded_window(
 
     monkeypatch.setattr(bed.HJBedController, "_delay", late_timer)
     coordinator.client.write_gatt_char.side_effect = record_write
-    both = c.bind_side("both")
-    if action == "motor":
-        await both.move_head_up()
-    else:
-        await both.preset_memory(1)
+    with c.side_scope("both"):
+        if action == "motor":
+            await c.move_head_up()
+        else:
+            await c.preset_memory(1)
     movement = [(side, at) for side, command, at in writes if command == code]
     expected = (
         [0.0, 0.1]
@@ -511,10 +511,12 @@ async def test_no_stop_on_preset_cancel_and_release_button(coordinator, instant)
 async def test_side_bound_action_and_both_control(coordinator, instant):
     c = controller(coordinator, "990871")
     spec = next(spec for spec in c.controller_button_specs if spec.key == "hjbed_motor_reset")
-    await spec.press_fn(c.bind_side("right"))
+    with c.side_scope("right"):
+        await spec.press_fn(c)
     assert all(bytes.fromhex(f)[2] == 1 for f in written(coordinator))
     coordinator.client.write_gatt_char.reset_mock()
-    await c.bind_side("both").stop_all()
+    with c.side_scope("both"):
+        await c.stop_all()
     assert written(coordinator) == ["6e01006edd", "6e01016ede"]
 
 
@@ -857,7 +859,8 @@ async def test_both_hold_refreshes_and_releases_each_attempted_side(coordinator,
                 coordinator.cancel_command.set()
 
     coordinator.client.write_gatt_char.side_effect = release_after_four_writes
-    await c.bind_side("both").hold_control("hjbed_head_up", 60000)
+    with c.side_scope("both"):
+        await c.hold_control("hjbed_head_up", 60000)
     assert [side for side, _ in movement] == [0, 1, 0, 1]
     assert [at for _, at in movement] == pytest.approx([0.1, 0.2, 0.3, 0.4])
     assert written(coordinator)[-2:] == ["6e01006edd", "6e01016ede"]
@@ -871,8 +874,8 @@ async def test_both_cleanup_attempts_right_even_if_left_release_fails(coordinato
             raise ConnectionError("left release failed")
 
     coordinator.client.write_gatt_char.side_effect = fail_left_stop
-    with pytest.raises(ConnectionError, match="left release failed"):
-        await c.bind_side("both").hold_control("hjbed_head_up", 400)
+    with pytest.raises(ConnectionError, match="left release failed"), c.side_scope("both"):
+        await c.hold_control("hjbed_head_up", 400)
     assert written(coordinator)[-2:] == ["6e01006edd", "6e01016ede"]
 
 

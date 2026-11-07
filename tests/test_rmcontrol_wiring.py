@@ -439,7 +439,6 @@ async def test_retired_rmcontrol_cleanup_is_scoped_to_current_bed_and_side(
     inner.entry = entry
     inner.entity_unique_id.side_effect = lambda key: "bed_" + key
     ctrl = inner.capability_controller
-    ctrl.bind_side.return_value = ctrl
     ctrl.memory_slot_count = 0
     coordinator = SingleAddressSideCoordinator(inner, side, MagicMock()) if side else inner
     key_prefix = "product_action_" if domain == "button" else "rmcontrol_"

@@ -74,9 +74,12 @@ class TestOkinCB24Controller:
         command = KEYS["flat"]
 
         legacy = controller._build_command(command)
-        assert controller.bind_side(SIDE_LEFT)._build_command(command)[-1] == 0xAA
-        assert controller.bind_side(SIDE_RIGHT)._build_command(command)[-1] == 0xBB
-        assert controller.bind_side(SIDE_BOTH)._build_command(command) == legacy
+        with controller.side_scope(SIDE_LEFT):
+            assert controller._build_command(command)[-1] == 0xAA
+        with controller.side_scope(SIDE_RIGHT):
+            assert controller._build_command(command)[-1] == 0xBB
+        with controller.side_scope(SIDE_BOTH):
+            assert controller._build_command(command) == legacy
         assert controller._build_command(command) == legacy
 
     def test_cbnew_refuses_single_address_pairing(self) -> None:

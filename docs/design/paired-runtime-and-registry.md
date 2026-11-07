@@ -48,8 +48,9 @@ position polling remain paused throughout capture.
 parent `ConfigEntry`. Runtime persistence still updates only the matching child
 descriptor; background tasks and unload callbacks belong to the real entry.
 Coordinators accept the two supported entry forms directly, without a cast.
-The existing side-bound controller adapter remains a distinct controller type;
-this change does not redesign the protocol controller interface.
+A single-address side shares the physical controller itself. The runtime binds
+its side with `BedController.side_scope()` around commands, queries and state
+reads, and `own_sides()` limits per-side capability lists to that side.
 
 ## Registry transactions
 

@@ -26,7 +26,6 @@ from .base import (
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
-    SideBoundController,
 )
 
 if TYPE_CHECKING:
@@ -138,7 +137,7 @@ def validate_furnimove_name(name: str) -> None:
 
 
 def _action_callback(row_index: int) -> MotorCommandCallable:
-    async def invoke(controller: BedController | SideBoundController) -> None:
+    async def invoke(controller: BedController) -> None:
         await controller.async_execute_furnimove_action(row_index)
 
     return invoke

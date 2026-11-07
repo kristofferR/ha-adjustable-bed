@@ -26,7 +26,6 @@ from .base import (
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
-    SideBoundController,
 )
 
 if TYPE_CHECKING:
@@ -43,11 +42,8 @@ DEVICE_INFO_FIELDS: Final = (
     ("model", "00002a24-0000-1000-8000-00805f9b34fb"),
 )
 def _button_callback(action: str) -> MotorCommandCallable:
-    async def invoke(controller: BedController | SideBoundController) -> None:
-        if not isinstance(controller, CustomaticController) and not (
-            isinstance(controller, SideBoundController)
-            and isinstance(controller._controller, CustomaticController)
-        ):
+    async def invoke(controller: BedController) -> None:
+        if not isinstance(controller, CustomaticController):
             raise TypeError("This action requires a Customatic app profile")
         await controller.execute_app_control(action)
 
