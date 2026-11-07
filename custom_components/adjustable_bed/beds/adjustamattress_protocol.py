@@ -11,6 +11,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Literal
 
+from ..codec import keeson as keeson_codec
+from ..codec import okin_nframe
 from ..profiles import keeson as keeson_profiles
 
 Model = Literal["P1", "P2", "P3", "P4"]
@@ -95,15 +97,6 @@ def has_snore(model: Model, layout: int) -> bool:
     return model == "P4" and layout in (0, 3)
 
 
-def _bytes(values: list[int]) -> bytes:
-    return bytes(value & 255 for value in values)
-
-
-def _summed(values: list[int]) -> bytes:
-    # The complement covers source integers before Uint8List truncation.
-    return _bytes([*values, ~sum(values)])
-
-
 def frame(
     model: Model,
     action: str,
@@ -120,7 +113,7 @@ def frame(
 ) -> bytes | None:
     """Build a frame; None means the artifact has no new frame on this branch."""
     if action in LIFTS:
-        return bytes((5, 2, 0, 0, 0, LIFTS[action], 0))
+        return okin_nframe.frame40(LIFTS[action])
     if action in DEDICATED:
         prefix, code = DEDICATED[action]
         return keeson_profiles.encode(keeson_profiles.ADJUSTAMATTRESS_P2, prefix << 24 | code)
@@ -131,42 +124,38 @@ def frame(
         second, weekday = now.second, now.isoweekday()
         if action == "setCurrentTime":
             if model == "P1":
-                return _summed(
-                    [231, 128, 1, now.year - 1900, now.month, now.day, now.hour, now.minute, second]
+                year = (now.year - 1900) & 255
+                return keeson_codec.clock_fields(
+                    (year, now.month, now.day, now.hour, now.minute, second)
                 )
             if model == "P2":
                 return None
-            return _bytes(
-                [
-                    7,
-                    4,
-                    now.year - (2000 if model == "P3" else 1900),
-                    now.month - int(model == "P4"),
-                    now.day,
-                    weekday,
-                    now.hour,
-                    now.minute,
-                    second,
-                ]
-            )
+            # P3 counts years from 2000 and months from 1, P4 from 1900 and 0.
+            year = (now.year - (2000 if model == "P3" else 1900)) & 255
+            month = now.month - int(model == "P4")
+            return okin_nframe.clock((year, month, now.day, weekday, now.hour, now.minute, second))
         if action == "queryAlarm":
             if model == "P1":
-                return _summed([226, 128, 3, 0])
-            return (
-                _summed([226, 254, 22, second, now.minute, now.hour, weekday])
-                if model == "P2"
-                else b"\x00\xc0"
-            )
+                return keeson_codec.ALARM_QUERY
+            if model == "P2":
+                return keeson_codec.checked(
+                    bytes((0xE2, 0xFE, 0x16, second, now.minute, now.hour, weekday))
+                )
+            return okin_nframe.request(0xC0)
         if model == "P1":
-            return _summed([237, 128, 3, hour, minute, repeat, alarm_type or 19, *([0] * 8)])
+            record = bytes((0xED, 0x80, 0x03, hour, minute, repeat, alarm_type or 19))
+            return keeson_codec.checked(record + bytes(8))
         if model == "P2":
             tail = (
-                [17, 17, 255]
+                (17, 17, 255)
                 if alarm_type == 9
-                else [255, 255, {17: 8, 19: 9}.get(alarm_type, 255)]
+                else (255, 255, {17: 8, 19: 9}.get(alarm_type, 255))
             )
-            return _summed(
-                [235, 254, 22, second, now.minute, now.hour, minute, hour, weekday, repeat, *tail]
+            return keeson_codec.checked(
+                bytes(
+                    (0xEB, 0xFE, 0x16, second, now.minute, now.hour, minute, hour, weekday, repeat)
+                )
+                + bytes(tail)
             )
         kind = (
             8
@@ -177,20 +166,17 @@ def frame(
             if model == "P3" or alarm_type == 19
             else 5
         )
-        return _bytes(
-            [7, 5, repeat, kind, hour, minute, 0, int(repeat != 0), 1]
-            if model == "P3"
-            else [8, 5, repeat, kind, hour, minute, 0, int(repeat != 0), 0, 0]
-        )
+        fields = (repeat, kind, hour, minute, 0, int(repeat != 0))
+        return okin_nframe.alarm((*fields, 1) if model == "P3" else (*fields, 0, 0))
     if action == "queryControlBoxStatus":
-        return b"\x00\xb0" if model == "P4" else None
+        return okin_nframe.request(0xB0) if model == "P4" else None
     if action in ("queryMassage", "queryMassageOnce"):
         return (
             keeson_profiles.encode(keeson_profiles.ADJUSTAMATTRESS, 3)
             if model == "P1"
             else None
             if model == "P2"
-            else b"\x00\xb0"
+            else okin_nframe.request(0xB0)
         )
     if action == "_sendAntiSnoreCommand":
         return (
@@ -242,22 +228,22 @@ def frame(
             return keeson_profiles.encode(p2, 1 << 24 | code)
         if action == "underbedLighting":
             return None  # Retained-frame replay is excluded from HA control.
-    payload = [0] * 5
+    # P3 sends the 32-bit key word in a 40-bit frame, P4 in a 48-bit one.
     if action in MOVEMENT:
-        payload[3] = MOVEMENT[action]
+        word = MOVEMENT[action]
     elif action in ("zeroGravity", "lounge", "tv", "anti"):
-        payload[2] = {"zeroGravity": 16, "lounge": 32, "tv": 64, "anti": 128}[action]
+        word = {"zeroGravity": 16, "lounge": 32, "tv": 64, "anti": 128}[action] << 8
     elif action == "flatPosition":
-        payload[0] = 8
+        word = 8 << 24
     elif action in ("m1", "underbedLighting"):
-        payload[1] = 1 if action == "m1" else 2
+        word = (1 if action == "m1" else 2) << 16
     elif action == "waveAdd":
-        return bytes((5, 2, 16, 0, 0, 0, 0))  # P4 also uses 05 here.
+        return okin_nframe.frame40(16 << 24)  # P4 also uses the 40-bit frame here.
     elif action in CYCLIC or action in TIMERS:
-        payload[2] = 8 if action == "headStrengthAdd" else 4 if action == "footStrengthAdd" else 2
+        word = (8 if action == "headStrengthAdd" else 4 if action == "footStrengthAdd" else 2) << 8
     else:
         raise ValueError(f"Unknown action {action}")
-    return bytes([6 if model == "P4" else 5, 2, *payload, *([0] if model == "P4" else [])])
+    return okin_nframe.frame(word << 16, 6) if model == "P4" else okin_nframe.frame40(word)
 
 
 @dataclass
