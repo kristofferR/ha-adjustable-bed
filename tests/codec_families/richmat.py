@@ -1,4 +1,4 @@
-"""R1 Richmat 6E: Richmat, its app routes, BedTech, WiLinke, the catalog apps, Casper Base and Hush Base."""
+"""R1 Richmat 6E: Richmat, BedTech, WiLinke, the catalog apps, Casper Base and Hush Base."""
 
 from __future__ import annotations
 
