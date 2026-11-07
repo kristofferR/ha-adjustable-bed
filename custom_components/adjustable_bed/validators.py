@@ -51,14 +51,10 @@ from .const import (
     BED_TYPE_SVANE,
     BED_TYPE_ZSERIES,
     BEDSENSE_VARIANTS,
-    CASPER_BASE_VARIANTS,
     COMFORT_ENHANCEMENTS_VARIANTS,
     DOUBLESLEEP_VARIANTS,
     ESHINE_OKIN_PROFILES,
     GLIDEAWAY_MOTION_MODELS,
-    GOODVIBE_PROFILES,
-    HJBED_PROFILES,
-    HUSH_BASE_VARIANTS,
     KAIDI_VARIANTS,
     KEESON_VARIANTS,
     LEGGETT_VARIANTS,
@@ -72,7 +68,6 @@ from .const import (
     PAIRLINK_MODEL_CHOICES,
     REMACRO_VARIANTS,
     RICHMAT_MH_APPS,
-    RICHMAT_MH_VARIANTS_BY_APP,
     RICHMAT_VARIANTS,
     RONDURE_VARIANTS,
     SBI_VARIANTS,
@@ -86,7 +81,12 @@ from .const import (
     VARIANT_REQUIRED_BED_TYPES,
     ZSERIES_VARIANTS,
 )
+from .goodvibe_catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
+from .hjbed_catalog import PROFILE_CHOICES as HJBED_PROFILES
+from .profiles.casper import CASPER_BASE_VARIANTS
+from .profiles.hush import HUSH_BASE_VARIANTS
 from .richmat_classic_profiles import APP_NAMES as RICHMAT_CLASSIC_APPS
+from .richmat_mh_models import RICHMAT_MH_VARIANTS_BY_APP
 
 _LOGGER = logging.getLogger(__name__)
 

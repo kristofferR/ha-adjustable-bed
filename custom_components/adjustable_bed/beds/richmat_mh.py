@@ -22,9 +22,10 @@ from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 from homeassistant.util import dt as dt_util
 
-from ..const import CONF_BLE_DEVICE_NAME, RICHMAT_MH_MODEL_CHOICES, VARIANT_AUTO
+from ..const import CONF_BLE_DEVICE_NAME, VARIANT_AUTO
 from ..detection import is_mac_like_name
 from ..profiles.richmat import RICHMAT_MH
+from ..richmat_mh_models import RICHMAT_MH_MODEL_CHOICES
 from ..ruf_richmat_models import MODEL_IDS as RUF_RICHMAT_MODEL_IDS
 from .base import (
     BedController,

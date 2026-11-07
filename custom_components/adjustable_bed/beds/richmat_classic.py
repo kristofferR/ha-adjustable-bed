@@ -106,7 +106,7 @@ class RichmatClassicController(BedController):
         if self.layout in ("TEST", "RMCS"):
             raise ValueError("Diagnostic endurance and motor-mapping layouts are excluded")
         self._controls = controls(self.app, self.layout)
-        self._model = load_catalog(self.app)["models"][self.layout]
+        self._model = load_catalog(self.app).models[self.layout]
         self._selection = Selection()
         self._mode = 0
         self._worker = Worker()
@@ -174,7 +174,7 @@ class RichmatClassicController(BedController):
         progress = state.get("massage_progress", 0)
         mode = state.get("mode", 0)
         selection = state.get("selection", {})
-        if type(mode) is not int or mode not in self._model["modes"] or not isinstance(selection, Mapping):
+        if type(mode) is not int or mode not in self._model.modes or not isinstance(selection, Mapping):
             raise ValueError("Invalid saved app selection")
         flag, head, armed, hold = (selection.get("press_flag", "53"), selection.get("head", True), selection.get("armed", False), selection.get("hold"))
         if flag not in ("53", "54", "55") or type(head) is not bool or type(armed) is not bool or hold is not None and type(hold) is not bool:
@@ -567,7 +567,7 @@ class RichmatClassicController(BedController):
         return tuple(result)
 
     def _select(self, kind: str, value: str) -> None:
-        if kind == "mode" and int(value) in self._model["modes"]:
+        if kind == "mode" and int(value) in self._model.modes:
             self._mode = int(value)
         elif kind == "program" and value in ("recall", "armed"):
             self._selection = replace(self._selection, armed=value == "armed")
@@ -582,8 +582,8 @@ class RichmatClassicController(BedController):
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
         choices: dict[str, tuple[str, ...]] = {}
-        if len(self._model["modes"]) > 1:
-            choices["mode"] = tuple(str(v) for v in self._model["modes"])
+        if len(self._model.modes) > 1:
+            choices["mode"] = tuple(str(v) for v in self._model.modes)
         if any(c.mem_special or c.select_special for c in self._controls):
             choices["program"] = ("recall", "armed")
         if any(c.hold_affected for c in self._controls):
@@ -602,7 +602,7 @@ class RichmatClassicController(BedController):
         return tuple(specs)
 
     def _alarm_actions(self) -> dict[str, int]:
-        allowed = set(load_catalog(self.app)["alarm_allowlist"].values())
+        allowed = set(load_catalog(self.app).alarm_allowlist.values())
         return {f"node_{c.node}": int(c.alarm_clock, 16) for c in self._controls if c.rich_button and c.alarm_clock in allowed and c.alarm_clock is not None}
 
     def validate_richmat_classic_request(self, request: Request) -> None:

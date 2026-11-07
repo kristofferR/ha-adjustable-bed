@@ -8,6 +8,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from custom_components.adjustable_bed.catalog_json import load
 from custom_components.adjustable_bed.const import (
     BED_TYPE_RICHMAT_CLASSIC_APPS,
     CONF_DISABLE_ANGLE_SENSING,
@@ -53,7 +54,7 @@ def test_all_five_app_choices_are_findable_and_model_inventories_are_distinct():
         'avocadoecobase': 704, 'coastersleep': 715, 'fortywinks': 725, 'milemont': 700, 'superior': 725,
     }
     for app, models in MODEL_CHOICES.items():
-        assert set(models) == set(load_catalog(app)['models'])
+        assert set(models) == set(load_catalog(app).models)
 
 
 def test_runtime_catalog_matches_every_frozen_member_layout_contract():
@@ -63,9 +64,10 @@ def test_runtime_catalog_matches_every_frozen_member_layout_contract():
         expected = json.load(source)
     assert len(expected["models"]) == 3569
     for row in expected["models"]:
-        catalog = load_catalog(row["app"])
-        assert catalog["fields"] == expected["fields"]
-        encoded = json.dumps(catalog["models"][row["layout"]], separators=(",", ":"), sort_keys=True).encode()
+        catalog = load("richmat_classic_data", row["app"]).entries()
+        assert catalog["fields"].json() == expected["fields"]
+        model = catalog["models"].entries()[row["layout"]].json()
+        encoded = json.dumps(model, separators=(",", ":"), sort_keys=True).encode()
         assert hashlib.sha256(encoded).hexdigest() == row["sha256"], row
 
 
@@ -121,7 +123,7 @@ def test_zrs6_picker_choices_select_actual_member_local_layouts(app, layout):
     assert "ZRS6:" + layout in _layouts(app) and "ZRS6" not in _layouts(app)
     selected = _setup({"protocol_variant": app, "product_type": "ZRS6:" + layout})
     assert selected["product_type"] == layout
-    assert layout in load_catalog(app)["models"]
+    assert layout in load_catalog(app).models
     with pytest.raises(ValueError):
         _setup({"protocol_variant": app, "product_type": "ZRS6"})
 

@@ -21,11 +21,11 @@ from custom_components.adjustable_bed.beds.ruf_richmat import (
     waist_init,
 )
 from custom_components.adjustable_bed.beds.ruf_richmat_sleep import RufRichmatSleepController
-from custom_components.adjustable_bed.const import SUPPORTED_BED_TYPES
+from custom_components.adjustable_bed.const import RUF_RICHMAT_APPS, SUPPORTED_BED_TYPES
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.detection import BED_TYPE_DISPLAY_NAMES
 from custom_components.adjustable_bed.ruf_richmat_models import MODEL_IDS
-from custom_components.adjustable_bed.ruf_richmat_profiles import APPS, profiles
+from custom_components.adjustable_bed.ruf_richmat_profiles import profiles
 from custom_components.adjustable_bed.ruf_richmat_protocol import (
     AlarmRequest,
     alarm_frame,
@@ -74,7 +74,7 @@ def delays(monkeypatch):
 
 
 def test_all_selected_apps_are_findable_and_models_resolve():
-    for bed, app in APPS.items():
+    for bed, app in RUF_RICHMAT_APPS.items():
         assert bed in SUPPORTED_BED_TYPES and bed in BED_TYPE_DISPLAY_NAMES
         for model in MODEL_IDS[app]:
             assert resolve_model(app, f"model_{model}", None) == (model, None)
@@ -379,7 +379,7 @@ def test_sleep_json_has_exact_raw_rate_and_boolean_meaning():
     assert "ruf_richmat_sleep_right_heart_rate" not in state
 
 
-@pytest.mark.parametrize("bed,app", APPS.items())
+@pytest.mark.parametrize("bed,app", RUF_RICHMAT_APPS.items())
 async def test_factory_selects_real_app_controller(bed, app):
     c = coordinator()
 

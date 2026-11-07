@@ -1,13 +1,16 @@
-"""Package-local product catalogs for the accepted five older Richmat apps."""
+"""Package-local product catalogs for the accepted five older Richmat apps.
+
+Each app's catalog is ``richmat_classic_data/<app>.json.gz``, generated outside this
+repository from its accepted APK Protocol Audit report; no generator is checked in.
+"""
 
 from __future__ import annotations
 
-import gzip
-import json
 from dataclasses import dataclass
 from functools import lru_cache
-from pathlib import Path
-from typing import Final, TypedDict, cast
+from typing import Final
+
+from .catalog_json import Node, load
 
 # Entity keys and held controls start with KEY_PREFIX; 4.4 shipped them under
 # LEGACY_KEY_PREFIX, which the schema 5.4 migration and hold_control still read.
@@ -66,69 +69,99 @@ class Control:
         return self.view_id or f"Control {self.node}"
 
 
-class ModelData(TypedDict):
-    controls: list[list[object]]
-    modes: list[int]
-    views: list[str]
-    aliases: list[dict[str, object]]
+@dataclass(frozen=True, slots=True)
+class Model:
+    """One layout: its controls, operating modes, app views and name aliases."""
+
+    controls: tuple[Control, ...]
+    modes: tuple[int, ...]
+    views: tuple[str, ...]
+    aliases: tuple[tuple[str, str], ...]
 
 
-class CatalogData(TypedDict):
-    models: dict[str, ModelData]
-    fields: list[str]
+@dataclass(frozen=True, slots=True)
+class Catalog:
+    """One app's layouts and its alarm opcodes."""
+
+    models: dict[str, Model]
     alarm_allowlist: dict[str, str]
 
 
+# The catalog's control columns, in order.
+_COLUMNS = (
+    "node", "status", "threshold_ms", "tag", "view_id", "rich_button", "show_type", "extra",
+    "short", "short_old", "long", "visibility", "alarm_clock", "modes", "tvMem", "selectView",
+    "mem_special", "select_special", "hold_affected", "resource_keys", "ancestor_visibility",
+)
+
+
+def _control(node: Node) -> Control:
+    cells = node.row(len(_COLUMNS))
+    return Control(
+        node=cells[0].integer(),
+        status=cells[1].integer(),
+        threshold_ms=cells[2].integer(),
+        tag=cells[3].optional_text(),
+        view_id=cells[4].text(),
+        rich_button=cells[5].flag(),
+        show_type=cells[6].integer(),
+        extra=cells[7].optional_text(),
+        short=cells[8].optional_text(),
+        short_old=cells[9].optional_text(),
+        long=cells[10].optional_text(),
+        visibility=cells[11].text(),
+        alarm_clock=cells[12].optional_text(),
+        modes=tuple(mode.integer() for mode in cells[13].items()),
+        tv_mem=cells[14].flag(),
+        select_view=cells[15].flag(),
+        mem_special=cells[16].flag(),
+        select_special=cells[17].flag(),
+        hold_affected=cells[18].flag(),
+        resource_keys={key: value.text() for key, value in cells[19].entries().items()},
+        ancestor_visibility=tuple(value.text() for value in cells[20].items()),
+    )
+
+
+def _model(node: Node) -> Model:
+    data = node.record("controls", "modes", "views", "aliases")
+    aliases = (alias.record("from", "to") for alias in data["aliases"].items())
+    return Model(
+        controls=tuple(_control(row) for row in data["controls"].items()),
+        modes=tuple(mode.integer() for mode in data["modes"].items()),
+        views=tuple(view.text() for view in data["views"].items()),
+        aliases=tuple((alias["from"].text(), alias["to"].text()) for alias in aliases),
+    )
+
+
 @lru_cache(maxsize=5)
-def load_catalog(app: str) -> CatalogData:
-    """Load on the import executor before constructing a controller."""
+def load_catalog(app: str) -> Catalog:
+    """Load and validate on an executor before constructing a controller."""
     if app not in APP_NAMES:
         raise ValueError("Choose one of the five supported apps")
-    path = Path(__file__).with_name("richmat_classic_data") / f"{app}.json.gz"
-    with gzip.open(path, "rt") as source:
-        return cast(CatalogData, json.load(source))
+    data = load("richmat_classic_data", app).record("models", "fields", "alarm_allowlist")
+    if tuple(column.text() for column in data["fields"].items()) != _COLUMNS:
+        data["fields"].fail(f"the control columns {_COLUMNS}")
+    return Catalog(
+        models={layout: _model(model) for layout, model in data["models"].entries().items()},
+        alarm_allowlist={
+            key: value.text() for key, value in data["alarm_allowlist"].entries().items()
+        },
+    )
 
 
 def controls(app: str, layout: str) -> tuple[Control, ...]:
-    model = load_catalog(app)["models"].get(layout)
+    model = load_catalog(app).models.get(layout)
     if model is None:
         raise ValueError("This layout is absent from the selected app")
-    result: list[Control] = []
-    for row in model["controls"]:
-        result.append(
-            Control(
-                node=cast(int, row[0]),
-                status=cast(int, row[1]),
-                threshold_ms=cast(int, row[2]),
-                tag=cast(str | None, row[3]),
-                view_id=cast(str, row[4]),
-                rich_button=cast(bool, row[5]),
-                show_type=cast(int, row[6]),
-                extra=cast(str | None, row[7]),
-                short=cast(str | None, row[8]),
-                short_old=cast(str | None, row[9]),
-                long=cast(str | None, row[10]),
-                visibility=cast(str, row[11]),
-                alarm_clock=cast(str | None, row[12]),
-                modes=tuple(cast(list[int], row[13])),
-                tv_mem=cast(bool, row[14]),
-                select_view=cast(bool, row[15]),
-                mem_special=cast(bool, row[16]),
-                select_special=cast(bool, row[17]),
-                hold_affected=cast(bool, row[18]),
-                resource_keys=cast(dict[str, str], row[19]),
-                ancestor_visibility=tuple(cast(list[str], row[20])),
-            )
-        )
-    return tuple(result)
+    return model.controls
 
 
 def resolve_layout(app: str, value: str, *, from_name: bool = False, russian: bool = False) -> str:
     """Exact alias precedence and four-character manual/QR selection."""
-    catalog = load_catalog(app)["models"]
+    catalog = load_catalog(app).models
     aliases = {
-        str(alias["from"]).upper(): str(alias["to"]).upper()
-        for model in catalog.values() for alias in model["aliases"]
+        source.upper(): target.upper()
+        for model in catalog.values() for source, target in model.aliases
     }
     name = value.upper() if from_name else value.strip().upper()
     if from_name:
