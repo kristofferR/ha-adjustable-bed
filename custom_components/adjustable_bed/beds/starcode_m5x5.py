@@ -476,9 +476,10 @@ class StarcodeM5X5Controller(BedController):
         )
 
     def on_disconnect(self) -> None:
-        """Forget the light report of the dropped link."""
-        if "light_on" in self._state:
-            self.forward_controller_state_update(UNDER_BED_LIGHTS_ON, None)
+        """Forget every status report of the ended link."""
+        if self._state:
+            self.forward_controller_state_updates(*state_updates(dict.fromkeys(self._state)))
+        self._state.clear()
 
     async def read_light_state(self) -> tuple[StateUpdate, ...]:
         await self.query_status()
@@ -613,9 +614,7 @@ class StarcodeM5X5Controller(BedController):
         finally:
             self._ready = False
             self._notify_callback = None
-            if self._state:
-                self.forward_controller_state_updates(*state_updates(dict.fromkeys(self._state)))
-            self._state.clear()
+            self.on_disconnect()
             try:
                 if (
                     self._subscribed

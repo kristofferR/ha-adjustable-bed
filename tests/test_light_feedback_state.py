@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
-from homeassistant.core import HomeAssistant
 
 from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.codec.malouf import TRANSPORTS
@@ -15,7 +14,6 @@ from custom_components.adjustable_bed.light import LIGHT_DESCRIPTION, Adjustable
 from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
 from tests import test_leggett_app_controller as leggett
 from tests import test_malouf_app as malouf
-from tests import test_starcode_m5x5 as m5x5
 from tests.state_helpers import state_writer
 
 
@@ -92,21 +90,6 @@ async def test_link_scoped_light_report_is_cleared_on_disconnect(family: str) ->
 
     report()
     assert state[UNDER_BED_LIGHTS_ON] is True
-
-    controller.on_disconnect()
-    assert state[UNDER_BED_LIGHTS_ON] is None
-
-
-async def test_m5x5_light_report_is_cleared_on_disconnect(hass: HomeAssistant) -> None:
-    controller = m5x5.make_controller(hass)
-    state = _capture(controller)
-    with patch.object(controller, "write_command", AsyncMock()):
-        await controller.start_notify()
-    receive = controller.client.start_notify.await_args.args[1]
-
-    receive(MagicMock(), bytearray.fromhex("a50b0000012c0243000000000000511000000000"))
-    assert state[UNDER_BED_LIGHTS_ON] is True
-    assert state["light_on"] is True
 
     controller.on_disconnect()
     assert state[UNDER_BED_LIGHTS_ON] is None

@@ -996,6 +996,18 @@ async def test_alarm_free_slots_expire_on_query_notification_and_replacement(coo
     assert c._available_alarm_slots() == []
 
 
+async def test_dropped_link_expires_session_alarm_slots(coordinator, clocked):
+    c = controller(coordinator, "98ff11")
+    c._state.features.add("alarm")
+    await c.async_execute_hjbed_request(Request("delete", alarm_id=5))
+    assert coordinator.controller_state["hjbed_available_alarm_slots"] == [5]
+
+    c.on_disconnect()
+    assert coordinator.controller_state["hjbed_available_alarm_slots"] == []
+    with pytest.raises(ConnectionError):
+        c._current_session()
+
+
 async def test_failed_alarm_write_does_not_reallocate_an_uncertain_slot(coordinator, clocked):
     c = controller(coordinator, "98ff11")
     c._state.features.add("alarm")
