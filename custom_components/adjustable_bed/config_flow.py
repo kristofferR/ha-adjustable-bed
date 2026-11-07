@@ -2296,11 +2296,12 @@ def _parse_settings(
         except ValueError, TypeError:
             errors[key] = "invalid_number"
             continue
-        if values[key] < 1:
+        if key == CONF_MOTOR_PULSE_COUNT and _invalid_pulse_count(bed_type, values[key]):
+            # The profile's own range names the limits.
+            errors[key] = "invalid_pulse_count_range"
+        elif values[key] < 1:
             errors[key] = "invalid_number"
-    if not errors and _invalid_pulse_count(
-        bed_type, values.get(CONF_MOTOR_PULSE_COUNT, pulse_defaults[0])
-    ):
+    if CONF_MOTOR_PULSE_COUNT not in submitted and _invalid_pulse_count(bed_type, pulse_defaults[0]):
         errors[CONF_MOTOR_PULSE_COUNT] = "invalid_pulse_count_range"
     for key, default in _ANGLE_LIMITS.items():
         if key not in submitted:
