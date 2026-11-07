@@ -27,8 +27,8 @@ def test_base_and_factory_do_not_import_concrete_controllers():
     assert result.returncode == 0, result.stderr
 
 
-# Fails any bed-module import on the main (event loop) thread; the recording
-# import executor runs its jobs on a worker thread.
+# Fails any integration-module import on the main (event loop) thread; the
+# recording import executor runs its jobs on a worker thread.
 _LOOP_IMPORT_GUARD = textwrap.dedent('''
     import asyncio
     import importlib.abc
@@ -40,7 +40,7 @@ _LOOP_IMPORT_GUARD = textwrap.dedent('''
         main_thread = threading.get_ident()
         class ImportGuard(importlib.abc.MetaPathFinder):
             def find_spec(self, fullname, path=None, target=None):
-                if fullname.startswith("custom_components.adjustable_bed.beds."):
+                if fullname.startswith("custom_components.adjustable_bed."):
                     assert threading.get_ident() != main_thread, fullname
                 return None
 
@@ -102,7 +102,6 @@ def test_new_richmat_bed_settings_import_feature_table_off_event_loop():
             from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
             from custom_components.adjustable_bed import config_flow
             from custom_components.adjustable_bed.const import BED_TYPE_RICHMAT, CONF_BED_TYPE
-            from custom_components.adjustable_bed.detection import detect_bed_type_detailed
 
             features = "custom_components.adjustable_bed.beds.richmat.features"
             # The name shows the remote, whose features set the default motor count.
@@ -111,8 +110,6 @@ def test_new_richmat_bed_settings_import_feature_table_off_event_loop():
                 manufacturer_data={}, service_data={}, service_uuids=[], source="local",
                 device=None, advertisement=None, connectable=True, time=0, tx_power=None,
             )
-            # Detection's own lazy imports are not under test here.
-            detect_bed_type_detailed(info)
             assert features not in sys.modules
             install_loop_import_guard()
 
@@ -128,6 +125,59 @@ def test_new_richmat_bed_settings_import_feature_table_off_event_loop():
                     result = await flow.async_step_finish_settings()
                 assert result["step_id"] == "finish_settings"
                 assert features in sys.modules
+
+            asyncio.run(main())
+        ''')],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_detection_imports_nothing_on_event_loop():
+    result = subprocess.run(
+        [sys.executable, "-c", _LOOP_IMPORT_GUARD + textwrap.dedent('''
+            from bleak.backends.device import BLEDevice
+            from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
+            from custom_components.adjustable_bed import detection
+            from custom_components.adjustable_bed.discovery_hints import HINTS_BY_FAMILY
+            from custom_components.adjustable_bed.discovery_hints._hints import (
+                ManufacturerHint, NameHint, ServiceHint,
+            )
+
+            def info(name="", services=(), manufacturer=None):
+                return BluetoothServiceInfoBleak(
+                    name=name, address="AA:BB:CC:DD:EE:FF", rssi=-60,
+                    manufacturer_data=manufacturer or {}, service_data={},
+                    service_uuids=list(services), source="local",
+                    device=BLEDevice("AA:BB:CC:DD:EE:FF", name, None),
+                    advertisement=None, connectable=True, time=0, tx_power=None,
+                )
+
+            # One advertisement per declared hint covers every discoverable bed type.
+            advertisements = [info()]
+            for hints in HINTS_BY_FAMILY.values():
+                for hint in hints:
+                    match hint:
+                        case NameHint():
+                            advertisements += [info(glob[:-1].replace("*", "1") + "-1A2B")
+                                               for glob in hint.globs]
+                        case ServiceHint():
+                            advertisements.append(info(services=[hint.uuid]))
+                        case ManufacturerHint():
+                            payload = hint.data_start + bytes(range(1, 12))
+                            advertisements.append(info(manufacturer={hint.company_id: payload}))
+            # Name and payload together reach the app-specific refinements.
+            advertisements.append(info("SleepBT", manufacturer={89: bytes(range(1, 10))}))
+
+            install_loop_import_guard()
+
+            async def main():
+                detected = set()
+                for advertisement in advertisements:
+                    detected.add(detection.detect_bed_type_detailed(advertisement).bed_type)
+                    detection.detect_bed_type(advertisement)
+                    detection.detect_richmat_remote_from_name(advertisement.name)
+                assert "doublesleep" in detected, detected
 
             asyncio.run(main())
         ''')],
