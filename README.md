@@ -96,7 +96,7 @@ only know your bed's retail brand, check the [Supported Actuators guide](docs/SU
 | 🧪 [Hush Base app](docs/beds/hush-base.md) | L200–L500 and S175–S575 including SH variants; explicit restored profiles, independent MM/SXB sensors and RCRM handset; hardware unverified |
 | 🧪 [GM Control app](docs/beds/gmmotor.md) | Exact product catalogs, FWRM/WFRM desks, separate MM/SXB sleep modules; hardware unverified |
 | ❓ [Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior](docs/beds/richmat-classic-apps.md) | Explicit app and four-character layout; separate package-local catalogs, direct BLE controls and settings; hardware unverified |
-| ✅ [Richmat](docs/beds/richmat.md) | Casper, MLILY, Sven & Son, Avocado, Luuna, Jerome's; [RMControl](docs/beds/rmcontrol.md), [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](docs/beds/richmat-mh.md) |
+| ✅ [Richmat](docs/beds/richmat.md) | Casper, MLILY, Sven & Son, Avocado, Luuna, Jerome's; [RMControl](docs/beds/rmcontrol.md), [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](docs/beds/richmat-mh.md); ❓ [RUF Motor 2 / W.Silver Products / AMERICANSTAR (Richmat) / Bailey's Bed Control / TX and separate sleep receiver](docs/beds/ruf-richmat-apps.md) |
 | ✅ [MotoSleep](docs/beds/motosleep.md) | HHC, Power Bob, binary MOTO models |
 | ✅ [OCTO Smart Control](docs/beds/octo.md) | OCTO Smart Control; Star2 is a separate variant |
 | ✅ [Solace](docs/beds/solace.md) | Solace, Sealy, QMS, [Woosa Sleep](docs/beds/woosa.md) |

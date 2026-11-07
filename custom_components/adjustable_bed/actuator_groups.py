@@ -88,6 +88,7 @@ from .const import (
     ZSERIES_VARIANT_Z230,
     ZSERIES_VARIANT_Z280,
 )
+from .row061_profiles import DISPLAY_NAMES as ROW061_DISPLAY_NAMES
 
 
 class ActuatorVariant(TypedDict):
@@ -591,8 +592,14 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
     },
     "richmat_apps": {
         "display": "Richmat app profiles",
-        "description": "Revive Control, Best Mattress, Blvd Home, HARMONY and Idealbed apps",
+        "description": "RUF, W.Silver, AMERICANSTAR, Bailey, TX, Revive, Best Mattress, Blvd Home, HARMONY and Idealbed apps",
         "variants": [
+            *({"type": bed_type, "label": label,
+               "description": "Exact app/model controls and reported capabilities",
+               "hint": "Choose the app supplied with your bed."}
+              for bed_type, label in ROW061_DISPLAY_NAMES.items()),
+            {"type": "richmat_sleep_receiver", "label": "W.Silver / AMERICANSTAR / Bailey / TX sleep receiver",
+             "description": "Separate HJ_Bed receiver", "hint": "Choose its app in the next step."},
             {
                 "type": BED_TYPE_RICHMAT_REVIVE,
                 "label": "Revive Control app",

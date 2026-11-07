@@ -7,6 +7,8 @@ from typing import Final, overload
 from . import casper_base_catalog as _casper_base_catalog
 from . import hush_catalog as _hush_catalog
 from . import richmat_mh_catalog as _richmat_mh_catalog
+from . import row061_models as _row061_models
+from . import row061_profiles as _row061_profiles
 from .cluster018_profiles import APP_NAMES as CLUSTER018_APPS
 from .goodvibe_catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
 from .hjbed_catalog import PROFILE_CHOICES as HJBED_PROFILES
@@ -503,7 +505,8 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc5": "MC5: Hi Lo Lift / Massage Plus",
 }
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
-    {BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, "casper_base", "hush_base"}
+    {
+        "richmat_sleep_receiver",BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, "casper_base", "hush_base"}
 )
 # Explicit OKIN Bedding app profiles sharing the Serenity controller core.
 OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
@@ -548,6 +551,7 @@ RICHMAT_MH_APPS: Final[dict[str, str]] = {
     BED_TYPE_RICHMAT_BLVD_HOME: "blvd_home",
     BED_TYPE_RICHMAT_HARMONY: "harmony",
     BED_TYPE_RICHMAT_IDEALBED: "idealbed",
+    **_row061_profiles.APPS,
 }
 RICHMAT_MH_BED_TYPES: Final = frozenset(RICHMAT_MH_APPS)
 BED_TYPE_CUSTOMATIC_CLARITY: Final = "customatic_clarity"
@@ -739,6 +743,8 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_RICHMAT_BLVD_HOME,
     BED_TYPE_RICHMAT_HARMONY,
     BED_TYPE_RICHMAT_IDEALBED,
+    *_row061_profiles.APPS,
+    "richmat_sleep_receiver",
     # Explicit Customatic app profiles
     BED_TYPE_ZSERIES,
     BED_TYPE_CUSTOMATIC_CLARITY,
@@ -1735,7 +1741,9 @@ def _richmat_mh_model_choices(app: str) -> tuple[tuple[str, str], ...]:
 
 
 RICHMAT_MH_MODEL_CHOICES: Final[dict[str, tuple[tuple[str, str], ...]]] = {
-    app: _richmat_mh_model_choices(app) for app in _richmat_mh_catalog.MODELS
+    **{app: _richmat_mh_model_choices(app) for app in _richmat_mh_catalog.MODELS},
+    **{app: tuple((model, model.upper()) for model in models)
+       for app, models in _row061_models.MODEL_IDS.items()},
 }
 RICHMAT_MH_VARIANTS_BY_APP: Final[dict[str, dict[str, str]]] = {
     app: {
@@ -1747,6 +1755,11 @@ RICHMAT_MH_VARIANTS_BY_APP: Final[dict[str, dict[str, str]]] = {
     }
     for app, choices in RICHMAT_MH_MODEL_CHOICES.items()
 }
+for _app in ("wsilver2", "americanstar", "tx"):
+    RICHMAT_MH_VARIANTS_BY_APP[_app].update({
+        f"model_{model}_mattress": f"{model.upper()} with normal mattress (explicit opt-in)"
+        for model in _row061_models.MODEL_IDS[_app]
+    })
 # Explicit app bed types whose name rule reads the stored raw Bluetooth name.
 NAME_RULE_VARIANTS_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_BEDSENSE: frozenset({VARIANT_AUTO}),
@@ -2832,6 +2845,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
     *(v for v in ADJUSTAMATTRESS_VARIANTS if v != VARIANT_AUTO),
     ADJUSTABLE_LUMBAR_VARIANT_OKIN,
     ADJUSTABLE_LUMBAR_VARIANT_STAR,
+    "wsilver2", "americanstar", "bailey2", "tx",
     *dict.fromkeys(
         variant
         for variants in RICHMAT_MH_VARIANTS_BY_APP.values()
@@ -3073,6 +3087,7 @@ BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
         BED_TYPE_ESHINE_OKIN,
         # VER1 angle replies feed the app's arc labels, not the shared angle axes.
         *RICHMAT_MH_BED_TYPES,
+        "richmat_sleep_receiver",
         BED_TYPE_CUSTOMATIC_CLARITY,
         BED_TYPE_CUSTOMATIC_JEROMES,
         BED_TYPE_CUSTOMATIC_REMEDY,

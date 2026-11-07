@@ -3562,6 +3562,12 @@
       },
       "hjbed_sofa_travel_right": {
         "name": "Right Sofa travel"
+      },
+      "row061_mattress_left_pillow": {
+        "name": "Left mattress pillow"
+      },
+      "row061_mattress_right_pillow": {
+        "name": "Right mattress pillow"
       }
     },
     "sensor": {
@@ -4929,6 +4935,45 @@
       },
       "hush_sleep_settings": {
         "name": "Hush sleep settings"
+      },
+      "row061_mattress_left_alarm": {
+        "name": "Left mattress alarm"
+      },
+      "row061_sleep_left_heart_rate": {
+        "name": "Left heart rate"
+      },
+      "row061_sleep_left_breathing_rate": {
+        "name": "Left breathing rate"
+      },
+      "row061_sleep_left_occupancy": {
+        "name": "Left occupancy"
+      },
+      "row061_sleep_left_movement": {
+        "name": "Left movement"
+      },
+      "row061_mattress_right_alarm": {
+        "name": "Right mattress alarm"
+      },
+      "row061_sleep_right_heart_rate": {
+        "name": "Right heart rate"
+      },
+      "row061_sleep_right_breathing_rate": {
+        "name": "Right breathing rate"
+      },
+      "row061_sleep_right_occupancy": {
+        "name": "Right occupancy"
+      },
+      "row061_sleep_right_movement": {
+        "name": "Right movement"
+      },
+      "row061_calendar_alarms": {
+        "name": "Calendar alarms"
+      },
+      "row061_sleep_attributes": {
+        "name": "Sleep receiver firmware"
+      },
+      "row061_music_status": {
+        "name": "Bed audio status"
       }
     },
     "light": {
@@ -6145,6 +6190,149 @@
           "recline": "Recline",
           "tv": "Tv",
           "lay": "Lay"
+        }
+      },
+      "row061_mattress_left_pressure": {
+        "name": "Left mattress pressure",
+        "state": {
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        }
+      },
+      "row061_mattress_left_heat_level": {
+        "name": "Left mattress heat level",
+        "state": {
+          "off": "Off",
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        }
+      },
+      "row061_mattress_left_heat_duration": {
+        "name": "Left mattress heat duration",
+        "state": {
+          "2_hours": "2 hours",
+          "4_hours": "4 hours",
+          "6_hours": "6 hours",
+          "8_hours": "8 hours"
+        }
+      },
+      "row061_mattress_left_heat_area": {
+        "name": "Left mattress heat area",
+        "state": {
+          "off": "Off",
+          "back": "Back",
+          "legs": "Legs",
+          "both": "Both"
+        }
+      },
+      "row061_mattress_left_mode": {
+        "name": "Left mattress mode",
+        "state": {
+          "off": "Off",
+          "sleep": "Sleep",
+          "wake": "Wake",
+          "decompress": "Decompress",
+          "leg": "Leg"
+        }
+      },
+      "row061_mattress_left_pillow_duration": {
+        "name": "Left mattress pillow duration",
+        "state": {
+          "20_minutes": "20 minutes",
+          "40_minutes": "40 minutes",
+          "60_minutes": "60 minutes"
+        }
+      },
+      "row061_mattress_left_sleep_duration": {
+        "name": "Left mattress sleep duration",
+        "state": {
+          "15_minutes": "15 minutes",
+          "20_minutes": "20 minutes",
+          "30_minutes": "30 minutes"
+        }
+      },
+      "row061_mattress_right_pressure": {
+        "name": "Right mattress pressure",
+        "state": {
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        }
+      },
+      "row061_mattress_right_heat_level": {
+        "name": "Right mattress heat level",
+        "state": {
+          "off": "Off",
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        }
+      },
+      "row061_mattress_right_heat_duration": {
+        "name": "Right mattress heat duration",
+        "state": {
+          "2_hours": "2 hours",
+          "4_hours": "4 hours",
+          "6_hours": "6 hours",
+          "8_hours": "8 hours"
+        }
+      },
+      "row061_mattress_right_heat_area": {
+        "name": "Right mattress heat area",
+        "state": {
+          "off": "Off",
+          "back": "Back",
+          "legs": "Legs",
+          "both": "Both"
+        }
+      },
+      "row061_mattress_right_mode": {
+        "name": "Right mattress mode",
+        "state": {
+          "off": "Off",
+          "sleep": "Sleep",
+          "wake": "Wake",
+          "decompress": "Decompress",
+          "leg": "Leg"
+        }
+      },
+      "row061_mattress_right_pillow_duration": {
+        "name": "Right mattress pillow duration",
+        "state": {
+          "20_minutes": "20 minutes",
+          "40_minutes": "40 minutes",
+          "60_minutes": "60 minutes"
+        }
+      },
+      "row061_mattress_right_sleep_duration": {
+        "name": "Right mattress sleep duration",
+        "state": {
+          "15_minutes": "15 minutes",
+          "20_minutes": "20 minutes",
+          "30_minutes": "30 minutes"
+        }
+      },
+      "row061_sleep_mode": {
+        "name": "Mode",
+        "state": {
+          "single": "Single",
+          "double": "Double"
+        }
+      },
+      "row061_sleep_left_intervention": {
+        "name": "Left intervention",
+        "state": {
+          "off": "Off",
+          "on": "On"
+        }
+      },
+      "row061_sleep_right_intervention": {
+        "name": "Right intervention",
+        "state": {
+          "off": "Off",
+          "on": "On"
         }
       }
     },
@@ -8330,6 +8518,50 @@
         "side": {
           "name": "Paired side",
           "description": "Side of a paired bed to target."
+        }
+      }
+    },
+    "richmat_app_alarm": {
+      "name": "Set Richmat app alarm",
+      "description": "Set a model-supported calendar alarm or an initialized normal-mattress alarm.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "family": {
+          "name": "Alarm family"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "delete": {
+          "name": "Delete calendar alarm"
+        },
+        "time": {
+          "name": "Local time"
+        },
+        "mattress_side": {
+          "name": "Mattress side"
+        },
+        "repeat": {
+          "name": "Mattress repeat"
+        },
+        "intensity": {
+          "name": "Mattress intensity"
+        },
+        "slot": {
+          "name": "Calendar slot"
+        },
+        "mode": {
+          "name": "Calendar position opcode",
+          "description": "Decimal opcode from this model's alarm position list."
+        },
+        "weekdays": {
+          "name": "Calendar weekdays",
+          "description": "Leave empty for a one-time alarm."
+        },
+        "side": {
+          "name": "Paired bed side"
         }
       }
     }

@@ -189,6 +189,7 @@ _HIDDEN_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_ZSERIES: _FIXED_LAYOUT,
     BED_TYPE_SIMMONS: _FIXED_LAYOUT,
     **dict.fromkeys(RICHMAT_MH_BED_TYPES, _FIXED_LAYOUT),
+    "richmat_sleep_receiver": _FIXED_LAYOUT,
     BED_TYPE_LOGICDATA_AIR_PUMP: _FIXED_LAYOUT,
     # AHF has no massage. Motor count still sizes the legacy covers.
     BED_TYPE_TIMOTION_AHF: frozenset({CONF_HAS_MASSAGE}),
@@ -378,6 +379,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_ADJUSTABLE_LUMBAR: SideProfile("Adjustable bed (Lumbar)", variant_owned=True),
     BED_TYPE_SIMMONS: SideProfile("SIMMONS", variant_owned=True),
     **dict.fromkeys(RICHMAT_MH_BED_TYPES, SideProfile("Richmat app model", variant_owned=True)),
+    "richmat_sleep_receiver": SideProfile("Richmat sleep receiver app", variant_owned=True),
     BED_TYPE_REMACRO: SideProfile("Remacro app", variant_owned=True),
     BED_TYPE_REVERIE: SideProfile(
         "Reverie Protocol 108",
