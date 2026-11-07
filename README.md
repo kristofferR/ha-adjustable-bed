@@ -183,7 +183,7 @@ when choosing manually.
 
 **Didn't auto-detect?** Check the [Supported Actuators guide](docs/SUPPORTED_ACTUATORS.md) to find your bed's actuator brand, then add it manually.
 
-**Still stuck?** [Open an issue](https://github.com/kristofferR/ha-adjustable-bed/issues) with your bed brand/model and we'll help!
+**Still stuck?** [Request bed support](https://github.com/kristofferR/ha-adjustable-bed/issues/new?template=new-bed-support.yml) with your bed brand/model and we'll help!
 
 **Other beds:** [Eight Sleep](https://github.com/lukas-clarke/eight_sleep) has its own integration.
 
