@@ -286,7 +286,7 @@ def test_limoss_group_requires_explicit_app_or_legacy_selection():
     )
 
     assert ACTUATOR_GROUPS["limoss"] == ((BED_TYPE_LIMOSS, None),)
-    assert {bed_type for bed_type, _variant, _step in _LIMOSS_APPS.values()} == {
+    assert {bed_type for bed_type, _variant in _LIMOSS_APPS.values()} == {
         BED_TYPE_LIMOSS,
         BED_TYPE_LIMOSS_REMOTE,
         BED_TYPE_FSM_RELAX,

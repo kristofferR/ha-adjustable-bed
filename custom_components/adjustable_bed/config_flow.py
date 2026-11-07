@@ -859,7 +859,7 @@ def _bed_type_selector(
         # label; setup asks behind the family row. Configure lists the
         # protocol-named routes the same way.
         unguided = {
-            *(bed_type for bed_type, _variant, _step in _STARCODE_APPS.values()),
+            *(bed_type for bed_type, _variant in _STARCODE_APPS.values()),
             *(bed_type for bed_type, _service in _REVERIE_ROUTES.values()),
             *(bed_type for bed_type, _service in _SLEEP_NUMBER_ROUTES.values()),
             *RICHMAT_MH_BED_TYPES,
@@ -1894,23 +1894,23 @@ _LOGICDATA_ROUTES: Final[dict[str, tuple[str, str | None]]] = {
 }
 
 
-# The app-family questions' answers: each app's bed type, variant and own step.
-_AppAnswer = tuple[str, str | None, str | None]
+# The app-family questions' answers: each app's bed type and variant.
+_AppAnswer = tuple[str, str | None]
 _CUSTOMATIC_APPS: Final[dict[str, _AppAnswer]] = {
-    "clarity": (BED_TYPE_CUSTOMATIC_CLARITY, None, None),
-    "jeromes": (BED_TYPE_CUSTOMATIC_JEROMES, None, None),
-    "remedy": (BED_TYPE_CUSTOMATIC_REMEDY, None, None),
-    "zseries_z230": (BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z230, None),
-    "zseries_z280": (BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z280, None),
+    "clarity": (BED_TYPE_CUSTOMATIC_CLARITY, None),
+    "jeromes": (BED_TYPE_CUSTOMATIC_JEROMES, None),
+    "remedy": (BED_TYPE_CUSTOMATIC_REMEDY, None),
+    "zseries_z230": (BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z230),
+    "zseries_z280": (BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z280),
 }
 _JORDANS_APPS: Final[dict[str, _AppAnswer]] = {
-    "serenity": (BED_TYPE_SERENITY, None, None),
-    "tranquil": (BED_TYPE_TRANQUIL, None, None),
+    "serenity": (BED_TYPE_SERENITY, None),
+    "tranquil": (BED_TYPE_TRANQUIL, None),
 }
 _STARCODE_APPS: Final[dict[str, _AppAnswer]] = {
-    "m5x4": (BED_TYPE_STARCODE_ABM5_4, None, "profile_questions"),
-    "m5x5": (BED_TYPE_STARCODE_M5X5, None, "profile_questions"),
-    "m1x12": (BED_TYPE_STARCODE_M1X12, None, "profile_questions"),
+    "m5x4": (BED_TYPE_STARCODE_ABM5_4, None),
+    "m5x5": (BED_TYPE_STARCODE_M5X5, None),
+    "m1x12": (BED_TYPE_STARCODE_M1X12, None),
 }
 # The Reverie question's answers: each receiver route and the service it advertises.
 _REVERIE_ROUTES: Final[dict[str, tuple[str, str]]] = {
@@ -1941,16 +1941,16 @@ _RICHMAT_APPS: Final[dict[str, tuple[str, str | None]]] = {
 # The Limoss question's answers: the two apps, then the generic controls the
 # family row and detection choose.
 _LIMOSS_APPS: Final[dict[str, _AppAnswer]] = {
-    "limoss_remote": (BED_TYPE_LIMOSS_REMOTE, None, "profile_questions"),
-    "fsm_relax": (BED_TYPE_FSM_RELAX, None, "profile_questions"),
-    "generic": (BED_TYPE_LIMOSS, None, None),
+    "limoss_remote": (BED_TYPE_LIMOSS_REMOTE, None),
+    "fsm_relax": (BED_TYPE_FSM_RELAX, None),
+    "generic": (BED_TYPE_LIMOSS, None),
 }
 # The family question each app answer belongs to.
 _ANSWER_STEPS: Final[dict[tuple[str, str | None], str]] = {
-    **{answer[:2]: "customatic_family" for answer in _CUSTOMATIC_APPS.values()},
-    **{answer[:2]: "jordans_family" for answer in _JORDANS_APPS.values()},
-    **{answer[:2]: "starcode_family" for answer in _STARCODE_APPS.values()},
-    **{answer[:2]: "limoss_family" for answer in _LIMOSS_APPS.values()},
+    **dict.fromkeys(_CUSTOMATIC_APPS.values(), "customatic_family"),
+    **dict.fromkeys(_JORDANS_APPS.values(), "jordans_family"),
+    **dict.fromkeys(_STARCODE_APPS.values(), "starcode_family"),
+    **dict.fromkeys(_LIMOSS_APPS.values(), "limoss_family"),
     **dict.fromkeys(_RICHMAT_APPS.values(), "richmat_family"),
 }
 # Each app family's picker row, by the routes behind it. The first answer is the row.
@@ -1958,7 +1958,7 @@ _APP_FAMILY_ROWS: Final[dict[str, str]] = {
     **{
         bed_type: next(iter(apps.values()))[0]
         for apps in (_CUSTOMATIC_APPS, _JORDANS_APPS, _STARCODE_APPS)
-        for bed_type, variant, _step in list(apps.values())[1:]
+        for bed_type, variant in list(apps.values())[1:]
         # A model answer is a hidden app row, which keeps its own label.
         if variant is None
     },
@@ -2931,7 +2931,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             if guided:
                 return await self.async_step_migration_keep()
             return await self._async_keep_detected(
-                "logicdata_family", self._async_continue_logicdata_route
+                "logicdata_family", self._async_continue_route
             )
         if choice in answers:
             bed_type, app = _LOGICDATA_ROUTES[choice]
@@ -2942,7 +2942,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             self._select_family_route(bed_type, None)
             if app is not None:
                 data[CONF_LOGICDATA_APP_PROFILE] = app
-            return await self._async_continue_logicdata_route()
+            return await self._async_continue_route()
         return self.async_show_form(
             step_id="logicdata_family",
             data_schema=vol.Schema(
@@ -2958,18 +2958,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             ),
             description_placeholders={"current": bed_type_label(incoming)},
         )
-
-    async def _async_continue_logicdata_route(self) -> ConfigFlowResult:
-        """Ask an app's own command family and layout, then finish the route."""
-        from .setup_questions import setup_profile_for
-
-        assert self._manual_data is not None
-        # The row's form was drawn for the apps, so SimplicityFrame asks its
-        # motor count here too.
-        if (profile := setup_profile_for(self._manual_data)) is not None and profile.questions:
-            return await self.async_step_profile_questions()
-        # The pump continues to its check.
-        return await self._async_finish_family_route()
 
     async def async_step_jiecang_family(
         self, user_input: dict[str, Any] | None = None
@@ -3259,16 +3247,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return await getattr(self, f"async_step_{_APP_SETUP_STEPS[bed_type]}")()
         if variant in _KEESON_RESTONIC:
             return await self._async_ask_restonic_style()
-        return await self._async_ask_keeson_route()
-
-    async def _async_ask_keeson_route(self) -> ConfigFlowResult:
-        """Ask the staged route's declared questions, such as an app screen's motor count."""
-        from .setup_questions import setup_profile_for
-
-        assert self._manual_data is not None
-        if (profile := setup_profile_for(self._manual_data)) is not None and profile.questions:
-            return await self.async_step_profile_questions()
-        return await self._async_finish_family_route()
+        return await self._async_continue_route()
 
     async def async_step_keeson_app(
         self, user_input: dict[str, Any] | None = None
@@ -3317,7 +3296,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self._select_family_route(BED_TYPE_KEESON, answers[CONF_PROTOCOL_VARIANT])
         self._manual_data[CONF_MOTOR_COUNT] = answers[CONF_MOTOR_COUNT]
         self._journey_set.add(CONF_MOTOR_COUNT)
-        return await self._async_ask_keeson_route()
+        return await self._async_continue_route()
 
     async def async_step_solace_family(
         self, user_input: dict[str, Any] | None = None
@@ -3443,14 +3422,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if choice == "keep" and self._migration is not None:
             return await self.async_step_migration_keep()
         if isinstance(choice, str) and choice in _JENSEN_ROUTES:
-            from .setup_questions import setup_profile_for
 
             self._select_family_route(*_JENSEN_ROUTES[choice])
             # The form before this step was drawn for Svane, so a route with
             # settings of its own asks them now.
-            if (profile := setup_profile_for(data)) is not None and profile.questions:
-                return await self.async_step_profile_questions()
-            return await self._async_finish_family_route()
+            return await self._async_continue_route()
         # An unnamed advertisement reports the address as its name, which no
         # name rule reads; the next source then names the bed.
         advertised = (
@@ -3553,7 +3529,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
     async def _async_continue_sleepys_route(self) -> ConfigFlowResult:
         """Ask what the staged route still needs, then finish it."""
-        from .setup_questions import setup_profile_for
 
         assert self._manual_data is not None
         data = self._manual_data
@@ -3561,10 +3536,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if step is not None and step != "sleepys_family":
             # A suggested app's own step owns its settings.
             return await getattr(self, f"async_step_{step}")()
-        profile = setup_profile_for(data)
-        if profile is not None and profile.questions:
-            return await self.async_step_profile_questions()
-        return await self._async_finish_family_route()
+        return await self._async_continue_route()
 
     async def async_step_customatic_family(
         self, user_input: dict[str, Any] | None = None
@@ -3612,7 +3584,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """
         if (another := await self._async_another_app(user_input)) is not None:
             return another
-        from .setup_questions import setup_profile_for
 
         assert self._manual_data is not None
         data = self._manual_data
@@ -3628,15 +3599,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if choice == "keep" or (isinstance(choice, str) and choice in routes):
             if choice != "keep":
                 self._select_family_route(routes[choice][0], None)
-            profile = setup_profile_for(self._manual_data)
-            resume = (
-                self.async_step_profile_questions
-                if profile is not None and profile.questions
-                else self._async_finish_family_route
-            )
             if choice == "keep" and self._migration is None:
-                return await self._async_keep_detected(step_id, resume)
-            return await resume()
+                return await self._async_keep_detected(step_id, self._async_continue_route)
+            return await self._async_continue_route()
         # A route detection or the saved setup chose stays one answer away.
         can_keep = incoming != next(iter(routes.values()))[0]
         return self.async_show_form(
@@ -3812,18 +3777,18 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # An app's own row, or a route arriving from another family,
         # already answered.
         if first and not guided and self._incoming(step_id)[0] != row:
-            return await self._async_continue_app_family(apps)
+            return await self._async_continue_route()
         choice = (user_input or {}).get("choice")
         if choice == "keep" and guided:
             return await self.async_step_migration_keep()
         if isinstance(choice, str) and choice in apps:
-            bed_type, variant, _step = apps[choice]
+            bed_type, variant = apps[choice]
             changed = bed_type != data[CONF_BED_TYPE]
             self._select_family_route(bed_type, variant)
             if changed:
                 # A new app starts without the old one's own settings, as in Configure.
                 AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(data, bed_type)  # noqa: SLF001
-            return await self._async_continue_app_family(apps)
+            return await self._async_continue_route()
         return self.async_show_form(
             step_id=step_id,
             data_schema=vol.Schema(
@@ -3839,22 +3804,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             ),
         )
 
-    async def _async_continue_app_family(
-        self, apps: Mapping[str, _AppAnswer]
-    ) -> ConfigFlowResult:
-        """Continue with the staged app's own step, or finish its route."""
+    async def _async_continue_route(self) -> ConfigFlowResult:
+        """Ask the staged route's declared questions, if it has any, then finish it."""
         assert self._manual_data is not None
-        data = self._manual_data
-        step = next(
-            (
-                step
-                for bed_type, _variant, step in apps.values()
-                if bed_type == data[CONF_BED_TYPE]
-            ),
-            None,
-        )
-        if step is not None:
-            return await getattr(self, f"async_step_{step}")()
+        profile = setup_profile_for(self._manual_data)
+        if profile is not None and profile.questions:
+            return await self.async_step_profile_questions()
         return await self._async_finish_family_route()
 
     async def async_step_profile_questions(
@@ -8988,7 +8943,7 @@ class AdjustableBedOptionsFlow(
                     {
                         key: value
                         for key, value in app_data.items()
-                        if key in answers or before.get(key) != value
+                        if before.get(key) != value or user_input.get(key, value) != value
                     }
                 )
                 # An answer that picks the route, such as MC3, settles what that
