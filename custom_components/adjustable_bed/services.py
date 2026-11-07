@@ -1938,33 +1938,6 @@ def _require_held_control(
         )
 
 
-@dataclass(frozen=True, slots=True)
-class _HoldAdmission:
-    """Cancellation state captured before hold capability preflight awaits."""
-
-    stop_epoch: int | None = None
-    pair_generations: Mapping[str, tuple[int, ...]] | None = None
-    stop_epochs: Mapping[str, int] | None = None
-
-
-def _hold_admission(coordinator: BedTarget, side: str) -> _HoldAdmission:
-    """Snapshot STOP ownership before a hold's possibly blocking preflight."""
-    if not isinstance(coordinator, PairedBedCoordinator):
-        return _HoldAdmission(stop_epoch=coordinator.stop_epoch)
-
-    pair_generations: dict[str, tuple[int, ...]] = {}
-    stop_epochs: dict[str, int] = {}
-    for target_side, target in coordinator._targets_for(side):
-        pair_generations[target_side] = coordinator._pair_cancel_generation(
-            target_side, ALL_COMMAND_RESOURCES
-        )
-        stop_epochs[target_side] = target.stop_epoch
-    return _HoldAdmission(
-        pair_generations=pair_generations,
-        stop_epochs=stop_epochs or None,
-    )
-
-
 async def _hold_targets(
     targets: list[tuple[BedTarget, str]],
     control: str,
@@ -1982,7 +1955,7 @@ async def _hold_targets(
 
     # A STOP during any per-side capability/connect wait owns the event that
     # was current when the user pressed. Capture before _preflight_each awaits.
-    admissions = [_hold_admission(coordinator, side) for coordinator, side in targets]
+    admissions = [_capture_command_admission(coordinator, side) for coordinator, side in targets]
     preflighted = await _preflight_each(targets, check)
 
     async def hold(controller: BedController) -> None:
@@ -1997,9 +1970,7 @@ async def _hold_targets(
                 side,
                 track_held_control(getattr(coordinator, "hass", None), control, hold),
                 cancel_running=True,
-                expected_stop_epoch=admission.stop_epoch,
-                expected_pair_generations=admission.pair_generations,
-                expected_stop_epochs=admission.stop_epochs,
+                admission=admission,
                 lease=lease,
             )
     except (Exception, asyncio.CancelledError):
