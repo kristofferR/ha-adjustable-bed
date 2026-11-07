@@ -56,6 +56,7 @@ from ..const import (
 from ..diagnostic_payloads import format_payload
 from ..execution import HOLD_CEILING_MS, NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ..position_seek import PositionSeekPolicy
+from .lifecycle import CapabilitySnapshotPolicy, ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -3491,3 +3492,45 @@ class BedController(ABC):
             NotImplementedError: If the bed doesn't support circulation massage
         """
         raise NotImplementedError("Circulation massage not supported on this bed")
+
+    # --- Connection lifecycle ---------------------------------------------
+    # The coordinator calls these, in this order, on every connection once the
+    # controller exists and ``async_discover_capabilities()`` has run.
+
+    async def async_on_connect(self, session: ControllerSession) -> None:
+        """Run protocol startup; the default starts notifications.
+
+        Overrides own their startup order, so they call
+        ``session.async_start_notify()`` where their protocol needs it.
+        """
+        await session.async_start_notify()
+
+    async def async_after_connect(self, session: ControllerSession) -> None:  # noqa: B027
+        """Hydrate connect-time state after background schedules are refreshed."""
+
+    async def async_read_device_info(self, session: ControllerSession) -> bool:
+        """Read Device Information the protocol's app reads itself.
+
+        Only called for bed types that defer Device Information until after
+        startup. Return False to use the coordinator's generic read.
+        """
+        return False
+
+    async def async_refresh_auth(self) -> None:  # noqa: B027
+        """Re-authenticate a reused link before a command."""
+
+    async def async_resume_session(self) -> None:  # noqa: B027
+        """Re-arm authentication and keepalive on a link that stayed connected."""
+
+    async def stop_keepalive(self) -> None:  # noqa: B027
+        """Stop session-owned keepalive work before the link is released."""
+
+    @property
+    def reads_light_state_on_connect(self) -> bool:
+        """Whether ``async_on_connect`` already reads readable light state."""
+        return False
+
+    @property
+    def capability_snapshot_policy(self) -> CapabilitySnapshotPolicy | None:
+        """How ``capability_snapshot()`` persists; None keeps it session-only."""
+        return None

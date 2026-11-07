@@ -43,6 +43,7 @@ from .sleep_number_commands import (
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
+    from .lifecycle import ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -992,6 +993,16 @@ class SleepNumberController(BedController):
                 if cached is not None:
                     return self._presence_state_to_bool(cached)
             return await self.read_bed_presence()
+
+    async def async_on_connect(self, session: ControllerSession) -> None:
+        """Subscribe, then record the bond the Auth session check just proved."""
+        # Notification startup first validates the Auth session. Reuse that
+        # proof instead of reading Auth again after subscriptions exist.
+        await session.async_start_notify()
+        await session.async_record_verified_bond()
+
+    async def async_after_connect(self, session: ControllerSession) -> None:
+        await self.query_config()
 
     async def query_config(self) -> None:
         """Load Sleep Number feature state needed for entity creation.

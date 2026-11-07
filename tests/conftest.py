@@ -10,6 +10,7 @@ import os
 import struct
 import warnings
 from collections.abc import AsyncGenerator, Callable, Generator
+from types import MethodType
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import psutil
@@ -91,6 +92,17 @@ def make_controller_mock(**overrides: object) -> MagicMock:
             bool | int | float | str | tuple | list | dict | None | PositionSeekPolicy,
         ):
             setattr(controller, name, default)
+    # Connection lifecycle hooks keep the base behavior (start notifications).
+    for name in (
+        "async_discover_capabilities",
+        "async_on_connect",
+        "async_after_connect",
+        "async_read_device_info",
+        "async_refresh_auth",
+        "async_resume_session",
+        "stop_keepalive",
+    ):
+        setattr(controller, name, MethodType(getattr(BedController, name), controller))
     for name, value in overrides.items():
         setattr(controller, name, value)
     return controller

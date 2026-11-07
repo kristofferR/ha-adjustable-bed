@@ -117,8 +117,6 @@ from .const import (
     CONF_KAIDI_TARGET_VADDR,
     CONF_LEGS_MAX_ANGLE,
     CONF_LIMOSS_REMOTE_STATE,
-    CONF_MALOUF_LAYOUT,
-    CONF_MALOUF_MEMORY_SLOTS,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
@@ -156,15 +154,10 @@ from .const import (
     DEFAULT_OCTO_PIN,
     DEFAULT_POSITION_MODE,
     DEFAULT_PROTOCOL_VARIANT,
-    DEVICE_INFO_CHARS,
-    DEVICE_INFO_READ_TIMEOUT,
-    DEVICE_INFO_SERVICE_UUID,
     DOMAIN,
     LEGGETT_OKIN_SUPERSEDED_PULSE_DEFAULTS,
     LEGGETT_VARIANT_OKIN,
     LINAK_VARIANT_PERFORMANCE,
-    MALOUF_LAYOUT_AUTO,
-    MALOUF_MEMORY_SLOTS_AUTO,
     NAME_RULE_VARIANTS_BY_BED_TYPE,
     OCTO_VARIANT_STAR2,
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
@@ -348,10 +341,6 @@ class AdjustableBedCoordinator(
         self._observed_ble_device_name: str | None = None
         self._furnimove_bond_task: asyncio.Task[None] | None = None
         self._furnimove_bond_request: dict[str, object] = {"status": "not_requested"}
-        self._malouf_layout: str = entry.data.get(CONF_MALOUF_LAYOUT, MALOUF_LAYOUT_AUTO)
-        self._malouf_memory_slots: int = int(
-            entry.data.get(CONF_MALOUF_MEMORY_SLOTS, MALOUF_MEMORY_SLOTS_AUTO)
-        )
         self._richmat_remote: str = entry.data.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO)
         if self._bed_type == BED_TYPE_RICHMAT:
             self._richmat_remote = resolve_richmat_remote_code(
@@ -425,15 +414,6 @@ class AdjustableBedCoordinator(
         self._idle_disconnect_seconds: int = entry.data.get(
             CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
         )
-
-        # Octo-specific configuration
-        self._octo_pin: str = entry.data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN)
-
-        # Jensen-specific configuration
-        self._jensen_pin: str = entry.data.get(CONF_JENSEN_PIN, "")
-
-        # CB24-specific configuration (SmartBed by Okin split beds)
-        self._cb24_bed_selection: int = entry.data.get(CONF_CB24_BED_SELECTION, 0x00)
 
         self._client: BleakClient | None = None
         self._vmat_unready_client: BleakClient | None = None
@@ -976,16 +956,6 @@ class AdjustableBedCoordinator(
         return self._observed_ble_device_name
 
     @property
-    def malouf_layout(self) -> str:
-        """Return the configured Malouf actuator layout."""
-        return self._malouf_layout
-
-    @property
-    def malouf_memory_slots(self) -> int:
-        """Return the configured Malouf memory-slot override (0 means auto)."""
-        return self._malouf_memory_slots
-
-    @property
     def bed_type(self) -> str:
         """Return the bed type."""
         return self._bed_type
@@ -1206,12 +1176,12 @@ class AdjustableBedCoordinator(
                 protocol_variant=self._protocol_variant,
                 client=None,
                 device_name=self._name,
-                octo_pin=self._octo_pin,
+                octo_pin=self.entry.data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN),
                 richmat_remote=self._richmat_remote,
                 rmcontrol_product=self.entry.data.get(CONF_RMCONTROL_PRODUCT, ""),
                 rmcontrol_side=self.entry.data.get(CONF_RMCONTROL_SIDE, "left"),
-                jensen_pin=self._jensen_pin,
-                cb24_bed_selection=self._cb24_bed_selection,
+                jensen_pin=self.entry.data.get(CONF_JENSEN_PIN, ""),
+                cb24_bed_selection=self.entry.data.get(CONF_CB24_BED_SELECTION, 0x00),
                 capability_snapshot=octo_snapshot or linak_snapshot or jensen_snapshot,
             )
             if not preview:
@@ -1386,61 +1356,41 @@ class AdjustableBedCoordinator(
         client = self._vmat_unready_client
         return client is not None and client.is_connected
 
-    def _backfill_octo_snapshot(self) -> None:
-        """Persist this paired Octo side's freshly-discovered capabilities into its
-        child descriptor, so the OFFLINE side and reloads mint correct entities and
-        a firmware capability change is reflected. No-op for a single bed (not a
-        ``ChildEntryView``) or when nothing was discovered / it is unchanged.
+    def _persist_capability_snapshot(self) -> None:
+        """Persist the live controller's capability snapshot under this bed type.
+
+        No-op when the controller declares no snapshot policy, nothing was
+        discovered, or the stored snapshot is unchanged.
         """
-        if not isinstance(self.entry, ChildEntryView):
+        controller = self._controller
+        policy = controller.capability_snapshot_policy if controller is not None else None
+        if controller is None or policy is None:
             return
-        snapshot_fn = getattr(self._controller, "capability_snapshot", None)
-        snapshot = snapshot_fn() if callable(snapshot_fn) else None
+        if policy.paired_side_only and not isinstance(self.entry, ChildEntryView):
+            return
+        snapshot = controller.capability_snapshot()
         if not snapshot:
             return
         capabilities = dict(self.entry.data.get("capabilities") or {})
-        if capabilities.get("octo") == snapshot:
-            return  # unchanged — avoid a redundant persist
-        capabilities["octo"] = snapshot
+        if capabilities.get(self._bed_type) == snapshot:
+            return
+        capabilities[self._bed_type] = snapshot
+        if policy.deferred_reload:
+            self._begin_internal_entry_update(self._ble_bond_established)
+            if self._pending_internal_bond_marker is not None:
+                self._pending_capability_reload = True
         self._async_persist_config({**self.entry.data, "capabilities": capabilities})
-        # The offline controller minted from the pairing-time snapshot is now
-        # stale. Refresh it immediately so a later sequential release gates
-        # per-side entities off the freshly discovered capabilities before the
-        # next reload.
-        self._offline_controller = self._controller
+        if not policy.deferred_reload:
+            # The offline controller minted from the stored snapshot is now
+            # stale; gate entities off the fresh capabilities until reload.
+            self._offline_controller = controller
 
-    def _backfill_linak_snapshot(self) -> None:
-        """Persist a successful Linak model/capability resolution."""
-        snapshot_fn = getattr(self._controller, "capability_snapshot", None)
-        snapshot = snapshot_fn() if callable(snapshot_fn) else None
-        if not isinstance(snapshot, Mapping) or snapshot.get("discovery_complete") is not True:
-            return
-        capabilities = dict(self.entry.data.get("capabilities") or {})
-        if capabilities.get("linak") == snapshot:
-            return
-        capabilities["linak"] = snapshot
-        self._async_persist_config({**self.entry.data, "capabilities": capabilities})
-        self._offline_controller = self._controller
-
-    def _backfill_jensen_snapshot(self) -> None:
-        """Persist the Jensen config report when it changed.
-
-        Entities built from a missing or older report (a config timeout at
-        setup) are rebuilt by a reload deferred until the link is released, so
-        the command that opened this connection still runs.
-        """
-        snapshot_fn = getattr(self._controller, "capability_snapshot", None)
-        snapshot = snapshot_fn() if callable(snapshot_fn) else None
-        if not snapshot:
-            return
-        capabilities = dict(self.entry.data.get("capabilities") or {})
-        if capabilities.get("jensen") == snapshot:
-            return
-        capabilities["jensen"] = snapshot
-        self._begin_internal_entry_update(self._ble_bond_established)
-        if self._pending_internal_bond_marker is not None:
-            self._pending_capability_reload = True
-        self._async_persist_config({**self.entry.data, "capabilities": capabilities})
+    def _persist_capability_snapshot_after_operation(self) -> None:
+        """Reconcile a snapshot the operation may have resolved, once nothing is queued."""
+        controller = self._controller
+        policy = controller.capability_snapshot_policy if controller is not None else None
+        if policy is not None and policy.after_operations and not self._command_scheduler.has_pending:
+            self._persist_capability_snapshot()
 
     def _begin_internal_entry_update(self, bond_established: bool) -> None:
         """Mark the next entry update as an internal bond-marker write.
@@ -1794,68 +1744,6 @@ class AdjustableBedCoordinator(
                     self._address,
                 )
 
-    async def _async_read_sleepys_app_device_info(
-        self,
-        client: BleakClient,
-        session_generation: int,
-    ) -> None:
-        """Read the app's exact optional Device Information fields after notify setup."""
-
-        def session_is_current() -> bool:
-            return (
-                self._client is client
-                and client.is_connected
-                and self._position_connection_generation == session_generation
-            )
-
-        if not session_is_current():
-            return
-
-        if not any(
-            service.uuid.lower() == DEVICE_INFO_SERVICE_UUID for service in (client.services or ())
-        ):
-            _LOGGER.debug("Sleepy's Device Information service is absent on %s", self._address)
-            return
-
-        values: dict[str, str | None] = {
-            "manufacturer_name": None,
-            "software_revision": None,
-        }
-        for field in ("manufacturer_name", "software_revision"):
-            if not session_is_current():
-                return
-            try:
-                raw_value = await asyncio.wait_for(
-                    client.read_gatt_char(DEVICE_INFO_CHARS[field]),
-                    DEVICE_INFO_READ_TIMEOUT,
-                )
-            except Exception as err:
-                _LOGGER.debug(
-                    "Could not read Sleepy's Device Information %s from %s: %s",
-                    field,
-                    self._address,
-                    err,
-                )
-                continue
-
-            if not session_is_current():
-                return
-            try:
-                values[field] = raw_value.decode("utf-8").rstrip("\x00")
-            except UnicodeDecodeError as err:
-                _LOGGER.debug(
-                    "Could not decode Sleepy's Device Information %s from %s: %s",
-                    field,
-                    self._address,
-                    err,
-                )
-
-        if session_is_current():
-            self._store_ble_device_info(
-                values["manufacturer_name"],
-                values["software_revision"],
-            )
-
     def record_command_trace(
         self,
         *,
@@ -1932,10 +1820,7 @@ class AdjustableBedCoordinator(
         if self._controller is None:
             return
 
-        # Jensen can require a fresh PIN unlock command even on reused BLE connections.
-        if self._bed_type == BED_TYPE_JENSEN and hasattr(self._controller, "send_pin"):
-            _LOGGER.debug("Refreshing Jensen PIN unlock before command on %s", self._address)
-            await cast(Any, self._controller).send_pin()
+        await self._controller.async_refresh_auth()
 
     async def async_write_command(
         self,
@@ -2218,12 +2103,9 @@ class AdjustableBedCoordinator(
         if disconnected_transport:
             return
 
-        if self._bed_type == BED_TYPE_LINAK and not self._command_scheduler.has_pending:
-            # A cold Linak link can defer its actuator mask and timer channel
-            # until the first command. Persist the now-resolved snapshot after
-            # that command so the entry reload reconciles its capability-gated
-            # entities without interrupting a queued operation.
-            self._backfill_linak_snapshot()
+        # Persist a snapshot the command resolved (a cold Linak link defers its
+        # actuator mask) without interrupting a queued operation.
+        self._persist_capability_snapshot_after_operation()
 
         if self._client is None or not self._client.is_connected:
             return

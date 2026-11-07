@@ -46,6 +46,7 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
+from .lifecycle import CapabilitySnapshotPolicy
 from .linak_protocol import (
     LINAK_AXIS_MASKS,
     LinakAlarmStep,
@@ -64,6 +65,7 @@ from .linak_protocol import (
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
+    from .lifecycle import ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -562,9 +564,21 @@ class LinakController(BedController):
             "timer_candidate": self._timer_candidate,
         }
 
-    def capability_snapshot(self) -> dict[str, Any]:
-        """Return a serializable snapshot for offline entity gating."""
-        return self._capabilities.as_dict()
+    async def async_on_connect(self, session: ControllerSession) -> None:
+        """Subscribe, then persist a model resolution the subscription completed."""
+        await session.async_start_notify()
+        session.persist_capability_snapshot()
+
+    @property
+    def capability_snapshot_policy(self) -> CapabilitySnapshotPolicy:
+        # A cold link can defer its actuator mask and timer channel until the
+        # first command, so the snapshot is also reconciled after operations.
+        return CapabilitySnapshotPolicy(after_operations=True)
+
+    def capability_snapshot(self) -> dict[str, Any] | None:
+        """Return a serializable snapshot for offline entity gating, once resolved."""
+        snapshot = self._capabilities.as_dict()
+        return snapshot if snapshot.get("discovery_complete") is True else None
 
     @property
     def controller_entity_discovery_complete(self) -> bool:

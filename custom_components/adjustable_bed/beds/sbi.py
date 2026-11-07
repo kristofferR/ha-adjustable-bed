@@ -158,6 +158,10 @@ class SBIController(BedController):
         _LOGGER.debug("SBIController initialized with variant: %s", variant)
 
     @property
+    def protocol_diagnostics(self) -> dict[str, object]:
+        return {"variant": self._variant}
+
+    @property
     def control_characteristic_uuid(self) -> str:
         """Return the UUID of the control characteristic."""
         return self._char_uuid

@@ -1260,6 +1260,7 @@ class TestCoordinatorConnection:
             SimpleNamespace(position_key="back"),
             SimpleNamespace(position_key="legs"),
         )
+        controller.async_refresh_auth = AsyncMock()
         coordinator._controller = controller
 
         async def _read_positions() -> None:
@@ -1315,6 +1316,7 @@ class TestCoordinatorConnection:
             SimpleNamespace(position_key="back"),
             SimpleNamespace(position_key="legs"),
         )
+        controller.async_refresh_auth = AsyncMock()
         coordinator._controller = controller
 
         read_count = 0
@@ -1454,6 +1456,7 @@ class TestCoordinatorConnection:
         coordinator._client = MagicMock(is_connected=True)
         controller = MagicMock(position_number_specs=(SimpleNamespace(position_key="back"),))
         controller.prepare_for_position_read = AsyncMock()
+        controller.async_refresh_auth = AsyncMock()
         coordinator._controller = controller
 
         with (
@@ -1489,6 +1492,7 @@ class TestCoordinatorConnection:
             SimpleNamespace(position_key="back"),
             SimpleNamespace(position_key="legs"),
         )
+        controller.async_refresh_auth = AsyncMock()
         coordinator._controller = controller
 
         read_count = 0

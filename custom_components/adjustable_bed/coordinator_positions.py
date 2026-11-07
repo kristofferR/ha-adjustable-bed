@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Any, cast
 from homeassistant.core import callback
 
 from .command_scheduler import CommandKind, current_command_context
-from .const import BED_TYPE_LINAK, POSITION_FEEDBACK_TIMEOUT, bed_type_has_position_feedback
+from .const import POSITION_FEEDBACK_TIMEOUT, bed_type_has_position_feedback
 from .position_seek import (
     PositionFeedbackError,
     PositionSeekPolicy,
@@ -849,11 +849,9 @@ class CoordinatorPositionsMixin:
                     )
 
             finally:
-                if self._bed_type == BED_TYPE_LINAK and not self._command_scheduler.has_pending:
-                    # Seeks own their lock lifecycle instead of going through
-                    # _async_finish_controller_operation(), so reconcile a
-                    # deferred Linak snapshot here as well.
-                    self._backfill_linak_snapshot()
+                # Seeks own their lock lifecycle instead of going through
+                # _async_finish_controller_operation(), so reconcile here too.
+                self._persist_capability_snapshot_after_operation()
                 if self._client is not None and self._client.is_connected:
                     if (
                         self._disconnect_after_operation_enabled()

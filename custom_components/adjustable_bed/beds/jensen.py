@@ -33,9 +33,11 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
+from .lifecycle import CapabilitySnapshotPolicy
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
+    from .lifecycle import ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -162,6 +164,26 @@ class JensenController(BedController):
     def execution(self) -> ExecutionCapabilities:
         """The app refreshes held motion every 300 ms, then sends STOP once (#483)."""
         return ExecutionCapabilities(hold="stream")
+
+    async def async_after_connect(self, session: ControllerSession) -> None:
+        """Read the config report and persist it when it changed."""
+        await self.query_config()
+        session.persist_capability_snapshot()
+
+    async def async_refresh_auth(self) -> None:
+        # Jensen can require a fresh PIN unlock even on a reused BLE connection.
+        _LOGGER.debug("Refreshing Jensen PIN unlock before command on %s", self._coordinator.address)
+        await self.send_pin()
+
+    async def async_resume_session(self) -> None:
+        await self.send_pin()
+
+    @property
+    def capability_snapshot_policy(self) -> CapabilitySnapshotPolicy:
+        # Entities built from a missing or older report (a config timeout at
+        # setup) are rebuilt by a reload deferred until the link is released,
+        # so the command that opened this connection still runs.
+        return CapabilitySnapshotPolicy(deferred_reload=True)
 
     def capability_snapshot(self) -> dict[str, Any] | None:
         """Return the bed-reported features and box type, once known."""

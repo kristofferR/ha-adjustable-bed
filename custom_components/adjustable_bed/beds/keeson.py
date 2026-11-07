@@ -513,8 +513,11 @@ class KeesonController(BedController):
     def protocol_diagnostics(self) -> dict[str, Any]:
         """Record which Adjustable Lite remote the device name selected."""
         if not self.profile.status_poll_ms:
-            return {}
-        return {"adjustable_lite_remote": "KSBT03C" if self.profile.status_timer else "KSBT01C"}
+            return {"variant": self._variant}
+        return {
+            "variant": self._variant,
+            "adjustable_lite_remote": "KSBT03C" if self.profile.status_timer else "KSBT01C",
+        }
 
     @property
     def requires_notification_channel(self) -> bool:

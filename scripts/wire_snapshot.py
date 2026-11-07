@@ -184,6 +184,9 @@ NOT_ACTIONS = frozenset(
         "stop_notify",
         "read_bed_presence_cached",
         "async_validate_linked_readiness",
+        "async_refresh_auth",
+        "async_resume_session",
+        "stop_keepalive",
     }
 )
 

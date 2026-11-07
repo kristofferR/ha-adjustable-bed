@@ -43,6 +43,7 @@ from .sleep_number_mcr_protocol import (
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
+    from .lifecycle import ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -391,6 +392,15 @@ class SleepNumberMcrController(BedController):
         self._response_frames.clear()
         self._response_event.clear()
         self._quarantined_response_keys.clear()
+
+    async def async_on_connect(self, session: ControllerSession) -> None:
+        """Subscribe and initialize without idle gaps, which older firmware drops."""
+        await session.async_start_notify()
+        await self.query_config()
+
+    @property
+    def reads_light_state_on_connect(self) -> bool:
+        return True
 
     async def query_config(self) -> None:
         """Discover nodes and hydrate only supported feature families."""
