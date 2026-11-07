@@ -54,7 +54,7 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `has_massage` | User | Setup and Configure; a question of `vibradorm_app@caresse` and `sleepys_box25`; owned by the declarations that fix or derive it; turned off by [schema 5.3](#massage-off-in-schema-53) where the profile has no massage | Controllers, entity platforms |
 | `has_light` | User | A question of `jiecang_app`, `logicdata_app`, `limoss_remote`, `fsm_relax` and `ergomotion_4` | `controller_factory.py`, `coordinator.py` |
 | `disable_angle_sensing` | User | Setup and Configure; owned by the declarations that fix it | `coordinator.py` |
-| `motor_pulse_count` | User | Setup and Configure; owned by the declarations that fix it | `coordinator.py`, `beds/cluster018.py` |
+| `motor_pulse_count` | User | Setup and Configure; owned by the declarations that fix it | `coordinator.py`, `beds/richmat_classic.py` |
 | `motor_pulse_delay_ms` | User | Setup and Configure; owned by the declarations that fix it | `coordinator.py` |
 | `motor_pulse_user_set` | Internal | Setup and Configure record whether the user changed the pulse fields | `coordinator.py` (a profile default applies otherwise) |
 | `product_type` | User | A question of `limoss_remote`, `fsm_relax`, the Keeson app layouts and `ergomotion_4`, `richmat_classic_apps`, `gmmotor`, `isleep`, `doublesleep` and `sleeptracker` | `controller_factory.py`, `pairing.py` |
@@ -81,7 +81,7 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `lp_legacy_mode` | Profile | A question of `leggett_lp_legacy` | `controller_factory.py` |
 | `lp_legacy_write_uuid` | Profile | A question of `leggett_lp_legacy` | `controller_factory.py` |
 | `lp_legacy_read_uuid` | Profile | A question of `leggett_lp_legacy` | `controller_factory.py` |
-| `cluster018_third_service` | Profile | An Advanced question of `richmat_classic_apps` | `beds/cluster018.py` |
+| `richmat_classic_third_service` | Profile | An Advanced question of `richmat_classic_apps` | `beds/richmat_classic.py` |
 | `sleepys_elite_selector` | Profile | A question of `sleepys_elite_app` | `controller_factory.py` |
 | `vibradorm_control_type` | Profile | A question of `vibradorm_app@werkmeister` and `vibradorm_app@caresse`; derived for `vibradorm_app@vmat` | `controller_factory.py`, `coordinator_bonds.py` |
 | `vibradorm_vmat_remote` | Profile | A question of `vibradorm_app@vmat` | `controller_factory.py`, `coordinator_bonds.py` |
@@ -100,15 +100,15 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `malouf_app_model` | User | `malouf_app` profile questions, Configure | `controller_factory.py` |
 | `malouf_app_transport` | User | `malouf_app` profile questions, Configure | `controller_factory.py` |
 | `malouf_app_primary` | User | `malouf_app` profile questions, Configure | `controller_factory.py` |
-| `malouf_layout` | User | Malouf receiver profile questions, Configure | `coordinator.py` |
-| `malouf_memory_slots` | User | Malouf receiver profile questions, Configure | `coordinator.py` |
-| `octo_pin` | User | A question of `octo`, `verify_octo_pin`, the Octo PIN action | `coordinator.py`, `octo_services.py` |
+| `malouf_layout` | User | Malouf receiver profile questions, Configure | `beds/malouf.py` |
+| `malouf_memory_slots` | User | Malouf receiver profile questions, Configure | `beds/malouf.py` |
+| `octo_pin` | User | A question of `octo`, `verify_octo_pin`, the Octo PIN action | `coordinator.py`, `coordinator_connection.py`, `octo_runtime.py`, `octo_services.py` |
 | `octo_motor_count_override` | User | A question of `octo`; written by [schema 5.5](#octo-motor-layout-in-schema-55) where an Octo setup lacks it | `beds/octo.py`, `config_flow.py` |
-| `jensen_pin` | User | A question of `jensen`, Configure | `coordinator.py` |
+| `jensen_pin` | User | A question of `jensen`, Configure | `coordinator.py`, `coordinator_connection.py` |
 | `richmat_remote` | Profile | A question of `richmat` without an RMControl product; the Richmat question stages the code the Bluetooth name carries | `coordinator.py`, `profile_recommendations.py` |
 | `rmcontrol_product` | Profile | A question of `richmat`; the Richmat question's RMControl answer requires one | `coordinator.py`, `coordinator_connection.py` |
 | `rmcontrol_side` | Profile | A question of `richmat` with an RMControl product | `coordinator.py`, `coordinator_connection.py` |
-| `cb24_bed_selection` | User | A question of `okin_cb24` | `coordinator.py` |
+| `cb24_bed_selection` | User | A question of `okin_cb24` | `coordinator.py`, `coordinator_connection.py` |
 | `gmmotor_side` | Profile | A question of `gmmotor` | `controller_factory.py` |
 | `starcode_abm5_4_command_selector` | User | A question of `starcode_abm5_4` | `controller_factory.py` |
 | `starcode_abm5_4_ui_selector` | Internal | `starcode_abm5_4` copies a changed command selector | `controller_factory.py` |

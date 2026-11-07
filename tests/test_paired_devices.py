@@ -13,6 +13,7 @@ from custom_components.adjustable_bed.paired_devices import (
     KEY_PHYSICAL_DEVICES,
     async_register_children,
     async_restore_full_device,
+    side_identifier,
 )
 
 from .test_paired_registry import _registered_pair
@@ -38,6 +39,7 @@ async def test_native_conversion_and_restore_preserve_identity(hass):
     for original, side in zip(originals, ("left", "right"), strict=True):
         child = registry.async_get(original.id)
         assert isinstance(child, dr.ChildDeviceEntry)
+        assert child.name == coordinator.children[side].name
         assert child.name_by_user == original.name_by_user
         assert child.created_at == original.created_at
         assert not hasattr(child, "manufacturer")
@@ -63,6 +65,54 @@ async def test_native_conversion_and_restore_preserve_identity(hass):
             "created_at",
         ):
             assert getattr(current, key) == getattr(row, key)
+
+
+async def test_single_address_sides_carry_their_side_in_the_device_name(hass):
+    """Default-named side devices take the side name; a user's rename is kept."""
+    from homeassistant.helpers import translation
+
+    from custom_components.adjustable_bed import _async_ensure_paired_device_registry
+    from custom_components.adjustable_bed.const import (
+        CONF_PAIR_MODE,
+        DOMAIN,
+        PAIR_MODE_SINGLE_ADDRESS,
+    )
+    from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+    from custom_components.adjustable_bed.paired_coordinator import SingleAddressPairedCoordinator
+
+    from .test_paired_setup import LEFT_ADDR, _paired_entry
+
+    await translation.async_load_integrations(hass, {DOMAIN})
+    entry = _paired_entry(hass)
+    hass.config_entries.async_update_entry(
+        entry,
+        data={**entry.data, CONF_PAIR_MODE: PAIR_MODE_SINGLE_ADDRESS, "address": LEFT_ADDR},
+    )
+    coordinator = SingleAddressPairedCoordinator(hass, entry, AdjustableBedCoordinator(hass, entry))
+    _async_ensure_paired_device_registry(hass, entry, coordinator)
+    registry = dr.async_get(hass)
+    parent = registry.async_get_device_by_identifier(
+        next(iter(coordinator.device_info["identifiers"])), entry.entry_id
+    )
+    assert parent is not None
+    bed_name = coordinator.children["left"].name
+    # Side devices registered before sides were named shared the bed's name.
+    previous = {
+        side: registry.async_get_or_create_child(
+            config_entry_id=entry.entry_id,
+            identifiers={side_identifier(coordinator, side)},
+            parent_device_id=parent.id,
+            name=bed_name,
+        )
+        for side in ("left", "right")
+    }
+    registry.async_update_child_device(previous["right"].id, name_by_user="Guest side")
+
+    async_register_children(hass, coordinator)
+
+    left, right = (registry.async_get(previous[side].id) for side in ("left", "right"))
+    assert (left.name, left.name_by_user) == (f"{bed_name} Left", None)
+    assert (right.name, right.name_by_user) == (f"{bed_name} Right", "Guest side")
 
 
 @pytest.mark.parametrize("after", [False, True])
@@ -230,7 +280,7 @@ async def test_native_child_service_targets_are_side_safe(hass, single_address):
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
     registry = dr.async_get(hass)
     children = dr.async_child_entries_for_config_entry(registry, entry.entry_id)
-    left = next(child for child in children if child.name == coordinator.children["left"].name)
+    left = next(child for child in children if side_identifier(coordinator, "left") in child.identifiers)
     right = next(child for child in children if child.id != left.id)
     # Diagnostics still work when setup is unavailable, movement never does.
     assert _get_support_bundle_target_from_device(hass, left.id)[0] == LEFT_ADDR

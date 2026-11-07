@@ -22,6 +22,7 @@ import voluptuous as vol
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.helpers.field_visibility import ConditionOperator, FieldCondition
 
+from .bed_traits import bed_type_has_position_feedback
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
@@ -29,7 +30,6 @@ from .const import (
     BED_TYPE_BF,
     BED_TYPE_CASPER_BASE,
     BED_TYPE_CHERISH,
-    BED_TYPE_CLUSTER018,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ESHINE,
@@ -64,6 +64,7 @@ from .const import (
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
+    BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
@@ -87,11 +88,9 @@ from .const import (
     CB24_BED_SELECTION_A,
     CB24_BED_SELECTION_B,
     CB24_BED_SELECTION_DEFAULT,
-    CLUSTER033_BED_TYPES,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
     CONF_CB24_BED_SELECTION,
-    CONF_CLUSTER018_THIRD_SERVICE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_FSM_RELAX_MEMORY_NAMES,
     CONF_FURNIMOVE_REMOTE,
@@ -132,6 +131,7 @@ from .const import (
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
     CONF_REVERSE_MOTORS,
+    CONF_RICHMAT_CLASSIC_THIRD_SERVICE,
     CONF_RICHMAT_REMOTE,
     CONF_RMCONTROL_PRODUCT,
     CONF_RMCONTROL_SIDE,
@@ -160,12 +160,11 @@ from .const import (
     CONF_VMATBASIC_FLOOR_MINUTES,
     CONF_VMATBASIC_PROFILE,
     DEFAULT_OCTO_PIN,
-    GOODVIBE_PROFILES,
     HAS_LIGHT_DEFAULTS,
-    HJBED_PROFILES,
     JIECANG_APP_LAYOUTS,
     JIECANG_APP_TRANSPORTS,
     KAIDI_VARIANT_FLOYD,
+    KEESON_LAYOUT_APP_BED_TYPES,
     KEESON_VARIANT_AMERICANSTAR,
     KEESON_VARIANT_AVANTI_BASES,
     KEESON_VARIANT_BEDSENSE_BASES,
@@ -202,8 +201,9 @@ from .const import (
     VIBRADORM_RESTORED_CONTROLS,
     VIBRADORM_WERKMEISTER_CONTROLS,
     VMATBASIC_PROFILES,
-    bed_type_has_position_feedback,
 )
+from .goodvibe_catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
+from .hjbed_catalog import PROFILE_CHOICES as HJBED_PROFILES
 
 if TYPE_CHECKING:
     from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
@@ -235,7 +235,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "gmmotor_sleep_sxb": GENERIC_FIELDS,
     BED_TYPE_BF: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_CHERISH: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
-    **dict.fromkeys(CLUSTER033_BED_TYPES, _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT}),
+    **dict.fromkeys(KEESON_LAYOUT_APP_BED_TYPES, _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT}),
     # OCTO motor layout comes from its advertised capability record, with an
     # OCTO-specific explicit override in the profile's own setup/options UI.
     BED_TYPE_OCTO: frozenset({CONF_MOTOR_COUNT}),
@@ -893,7 +893,7 @@ _CLASSIC_EXCLUDED: Final = frozenset({"TEST", "RMCS", "ZRS6"})
 
 def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
     """The chosen app's own layout codes, aliases and ZRS6 layout picks."""
-    from .cluster018_models import LAYOUT_PICKER_CHOICES, MANUAL_ALIASES, MODEL_CHOICES
+    from .richmat_classic_models import LAYOUT_PICKER_CHOICES, MANUAL_ALIASES, MODEL_CHOICES
 
     app = str(data.get(CONF_PROTOCOL_VARIANT, ""))
     codes = {
@@ -906,7 +906,7 @@ def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
 
 def _classic_normalize(previous: Mapping[str, Any], answers: Mapping[str, Any]) -> dict[str, Any]:
     """Resolve an alias or a ZRS6 pick to the layout the app opens."""
-    from .cluster018_models import LAYOUT_PICKER_CHOICES, MANUAL_ALIASES
+    from .richmat_classic_models import LAYOUT_PICKER_CHOICES, MANUAL_ALIASES
 
     data = {**previous, **answers}
     if CONF_PRODUCT_TYPE in answers:
@@ -919,17 +919,17 @@ def _classic_normalize(previous: Mapping[str, Any], answers: Mapping[str, Any]) 
 
 def _classic_errors(data: Mapping[str, Any]) -> dict[str, str]:
     """Require a layout the chosen app ships; a shared service never selects one."""
-    from .cluster018_models import MODEL_CHOICES
+    from .richmat_classic_models import MODEL_CHOICES
 
     layout = data.get(CONF_PRODUCT_TYPE)
     shipped = MODEL_CHOICES.get(str(data.get(CONF_PROTOCOL_VARIANT, "")), ())
     if layout in _CLASSIC_EXCLUDED or layout not in shipped:
-        return {CONF_PRODUCT_TYPE: "cluster018_layout"}
+        return {CONF_PRODUCT_TYPE: "richmat_classic_layout"}
     return {}
 
 
 def _classic_title(data: Mapping[str, Any]) -> str:
-    from .cluster018_profiles import APP_NAMES
+    from .richmat_classic_profiles import APP_NAMES
 
     return APP_NAMES.get(str(data.get(CONF_PROTOCOL_VARIANT, "")), "Classic Richmat app")
 
@@ -1388,8 +1388,7 @@ def _limoss_remote_errors(data: Mapping[str, Any]) -> dict[str, str]:
 
 def _hush_products(_data: Mapping[str, Any]) -> Mapping[Any, str]:
     """The app's own twelve products first, then the profiles it restores."""
-    from .const import HUSH_BASE_VARIANTS
-    from .profiles.hush import PROFILES
+    from .profiles.hush import HUSH_BASE_VARIANTS, PROFILES
 
     return {
         key: HUSH_BASE_VARIANTS[key]
@@ -1630,7 +1629,7 @@ def _app_layout_errors(data: Mapping[str, Any]) -> dict[str, str]:
 
     bed_type = data[CONF_BED_TYPE]
     if data.get(CONF_PRODUCT_TYPE) not in _app_layouts(bed_type)(data):
-        return {"base": "cluster033_layout"}
+        return {"base": "keeson_app_layout"}
     if bed_type == "ergomotion_4" and data[CONF_PRODUCT_TYPE] == "custom":
         try:
             custom_product(
@@ -1641,7 +1640,7 @@ def _app_layout_errors(data: Mapping[str, Any]) -> dict[str, str]:
                 data.get(CONF_RGB, False),
             )
         except ValueError:
-            return {"base": "cluster033_layout"}
+            return {"base": "keeson_app_layout"}
     return {}
 
 
@@ -1861,7 +1860,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     ),
     # The app is the variant, chosen from the bed-type list. Its layout owns
     # every control and the app its own refresh; none reports positions.
-    BED_TYPE_CLUSTER018: SetupProfile(
+    BED_TYPE_RICHMAT_CLASSIC_APPS: SetupProfile(
         owns={
             CONF_MOTOR_COUNT: 2,
             CONF_HAS_MASSAGE: False,
@@ -1870,7 +1869,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         },
         questions=(
             Question(CONF_PRODUCT_TYPE, _classic_layouts),
-            Question(CONF_CLUSTER018_THIRD_SERVICE, default=False, advanced=True),
+            Question(CONF_RICHMAT_CLASSIC_THIRD_SERVICE, default=False, advanced=True),
         ),
         normalize=_classic_normalize,
         validate=_classic_errors,
@@ -2272,7 +2271,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     # Each app's exact layout, chosen from its own list.
     **{
         bed_type: _app_layout_profile(bed_type)
-        for bed_type in sorted(CLUSTER033_BED_TYPES | {"ergomotion_4"})
+        for bed_type in sorted(KEESON_LAYOUT_APP_BED_TYPES | {"ergomotion_4"})
     },
     # Standard OCTO Smart Control's PIN, and an explicit motor layout over the
     # advertised one. A route without an app step asks these in its final settings.

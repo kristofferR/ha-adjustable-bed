@@ -22,6 +22,8 @@ from bleak.exc import BleakError
 
 from ..codec import malouf as malouf_codec
 from ..const import (
+    CONF_MALOUF_LAYOUT,
+    CONF_MALOUF_MEMORY_SLOTS,
     MALOUF_LAYOUT_AUTO,
     MALOUF_LAYOUT_FOUR_MOTOR,
     MALOUF_LAYOUT_HEAD_TILT,
@@ -169,7 +171,7 @@ def _malouf_motor_control_specs(layout: str) -> tuple[MotorControlSpec, ...]:
 
 def _resolve_malouf_layout(coordinator: AdjustableBedCoordinator) -> str:
     """Resolve an actuator layout without using a retail model as a protocol."""
-    configured = coordinator.malouf_layout
+    configured: str = coordinator.entry.data.get(CONF_MALOUF_LAYOUT, MALOUF_LAYOUT_AUTO)
     if configured != MALOUF_LAYOUT_AUTO:
         return configured
     if coordinator.motor_count <= 2:
@@ -181,7 +183,7 @@ def _resolve_malouf_layout(coordinator: AdjustableBedCoordinator) -> str:
 
 def _resolve_malouf_memory_slots(coordinator: AdjustableBedCoordinator, layout: str) -> int:
     """Resolve memory capacity independently from command protocol."""
-    configured = coordinator.malouf_memory_slots
+    configured = int(coordinator.entry.data.get(CONF_MALOUF_MEMORY_SLOTS, MALOUF_MEMORY_SLOTS_AUTO))
     if configured != MALOUF_MEMORY_SLOTS_AUTO:
         return configured
     return 1 if layout == MALOUF_LAYOUT_TWO_MOTOR else 2

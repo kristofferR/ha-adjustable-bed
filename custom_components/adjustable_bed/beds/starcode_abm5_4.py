@@ -246,10 +246,6 @@ class StarcodeAbm5_4Controller(BedController):
         )
 
     @property
-    def supports_position_feedback(self) -> bool:
-        return False
-
-    @property
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
         return ()
 

@@ -9,11 +9,12 @@ import pytest
 from bleak.exc import BleakError
 from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.bed_traits import disconnect_after_command_default_enabled
 from custom_components.adjustable_bed.beds.gmmotor import GmmotorController
 from custom_components.adjustable_bed.beds.gmmotor_sleep import GmmotorSleepController
 from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.codec.sleep_envelope import frame
-from custom_components.adjustable_bed.const import DOMAIN, disconnect_after_command_default_enabled
+from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.gmmotor_notifications import Event
 from custom_components.adjustable_bed.gmmotor_requests import Request

@@ -211,6 +211,11 @@ A new app is normally a profile plus its vectors, not a new controller.
      Entity platforms read these directly, so a typo is a type error rather than a
      silently-wrong default. Do not invent a new capability by setting an
      undeclared attribute — add it to the base class first.
+   - Put connect-time startup in the controller's lifecycle hooks
+     (`async_on_connect`, `async_after_connect`, `capability_snapshot_policy`
+     and the others at the end of `beds/base.py`), never in the coordinator.
+     Entry setup a family needs before or instead of the first connection is
+     registered in `entry_hooks.py`.
    - Held and concurrent execution (#483, #516) is the profile's `execution`
      field, or an `execution` override on a standalone controller. Each
      declaration needs an evidence row in `tests/test_execution_capabilities.py`
@@ -260,12 +265,15 @@ A new app is normally a profile plus its vectors, not a new controller.
    ```
 
    Pass `position_key=` when the firmware reports an axis under a different name.
-   Also add the bed type to `BEDS_WITH_POSITION_FEEDBACK` in `const.py`, and to
-   `BEDS_WITH_PERCENTAGE_POSITIONS` if it reports 0-100 percentages rather than
-   degrees. A bed that reports no position data at all belongs in neither, or in
-   `BEDS_WITHOUT_ANGLE_FEEDBACK` if angle sensing would otherwise create degree
-   sensors stuck at "unknown". Note that `position_number_specs` requires a live
-   controller, so these entities only appear once the bed has connected.
+   Also give the bed type `position_feedback=True` in its `bed_traits.py` record,
+   plus `percentage_positions=True` if it reports 0-100 percentages rather than
+   degrees. A bed that reports no position data at all needs neither, or
+   `no_angle_feedback=True` if angle sensing would otherwise create degree
+   sensors stuck at "unknown". The same record declares a persistent connection
+   and connection-scoped state. The factory stamps it on the controller, whose
+   properties override it only to refine it at runtime. Note that
+   `position_number_specs` requires a live controller, so these entities only
+   appear once the bed has connected.
 
 11. **Create documentation** using the [bed guide format](docs/BED_GUIDE_FORMAT.md).
     A profile over an existing codec adds a profile section, with the format's

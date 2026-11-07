@@ -43,6 +43,7 @@ from .sleep_number_mcr_protocol import (
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
+    from .lifecycle import ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -261,11 +262,6 @@ class SleepNumberMcrController(BedController):
         return True
 
     @property
-    def requires_persistent_connection(self) -> bool:
-        """MCR beds are kept connected for the entry's lifetime."""
-        return True
-
-    @property
     def supports_motor_control(self) -> bool:
         """Expose motor controls after foundation discovery."""
         return self._foundation_features is not None
@@ -391,6 +387,15 @@ class SleepNumberMcrController(BedController):
         self._response_frames.clear()
         self._response_event.clear()
         self._quarantined_response_keys.clear()
+
+    async def async_on_connect(self, session: ControllerSession) -> None:
+        """Subscribe and initialize without idle gaps, which older firmware drops."""
+        await session.async_start_notify()
+        await self.query_config()
+
+    @property
+    def reads_light_state_on_connect(self) -> bool:
+        return True
 
     async def query_config(self) -> None:
         """Discover nodes and hydrate only supported feature families."""
@@ -701,11 +706,7 @@ class SleepNumberMcrController(BedController):
 
     @property
     def supports_position_feedback(self) -> bool:
-        return self._foundation_features is not None
-
-    @property
-    def reports_percentage_position(self) -> bool:
-        return True
+        return super().supports_position_feedback and self._foundation_features is not None
 
     @property
     def supports_direct_position_control(self) -> bool:

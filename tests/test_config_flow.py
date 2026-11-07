@@ -30,6 +30,7 @@ from probatio import to_field_list
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.address_lock import async_get_connect_lock
+from custom_components.adjustable_bed.bed_traits import bed_traits
 from custom_components.adjustable_bed.bluetooth_bond import (
     BluezReadStatus,
     BondRemovalResult,
@@ -96,8 +97,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SUTA,
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_VIBRADORM,
-    BEDS_WITH_POSITION_FEEDBACK,
-    BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ATTEMPTED_SOURCE,
@@ -478,8 +477,8 @@ class TestPairingInstructions:
         assert _is_valid_motor_count(BED_TYPE_OKIN_CST, "auto", 3)
         assert not _is_valid_motor_count(BED_TYPE_OKIN_CST, "auto", 2)
         assert not _is_valid_motor_count(BED_TYPE_OKIN_CST, "auto", 4)
-        assert BED_TYPE_OKIN_CST not in BEDS_WITH_POSITION_FEEDBACK
-        assert BED_TYPE_OKIN_CST in BEDS_WITHOUT_ANGLE_FEEDBACK
+        assert not bed_traits(BED_TYPE_OKIN_CST).position_feedback
+        assert bed_traits(BED_TYPE_OKIN_CST).no_angle_feedback
 
     async def test_okin_cst_product_profiles_constrain_motor_count(self) -> None:
         """CST profile selection must not expose absent lumbar controls."""
@@ -1755,6 +1754,9 @@ class TestBluetoothDiscoveryFlow:
 
     def test_disconnect_after_command_default_per_bed_type(self):
         """Beds that must hold the link open keep the option off; others get it on."""
+        from custom_components.adjustable_bed.bed_traits import (
+            disconnect_after_command_default_enabled,
+        )
         from custom_components.adjustable_bed.const import (
             BED_TYPE_COMFORT_MOTION,
             BED_TYPE_JENSEN,
@@ -1783,7 +1785,6 @@ class TestBluetoothDiscoveryFlow:
             KEESON_VARIANT_SINO,
             LEGGETT_VARIANT_MLRM,
             VARIANT_AUTO,
-            disconnect_after_command_default_enabled,
         )
 
         assert disconnect_after_command_default_enabled(BED_TYPE_LINAK, VARIANT_AUTO) is True

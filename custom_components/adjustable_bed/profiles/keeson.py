@@ -4,9 +4,9 @@ Each ``keeson`` protocol variant is a profile here, and so are the routes a
 device name or service resolves inside a variant (KSBT03C, Purple Premium Plus,
 Sleep Harmony base-i5, the Adjustable Lite KSBT03C remote, and the BetterLiving
 and CB1322 auto-detected tables). The ``ergomotion``, ``serta`` and ``okin_ffe``
-bed types are aliases of the variant profiles of the same name. The cluster033
+bed types are aliases of the variant profiles of the same name. The keeson_layout_app
 app bed types (Tempur Curve, Q-Plus, Serta MP Remote and the other
-``APP_LAYOUTS`` apps) are ``AppProfile`` layouts, driven by ``beds/cluster033.py``;
+``APP_LAYOUTS`` apps) are ``AppProfile`` layouts, driven by ``beds/keeson_layout_app.py``;
 Ergomotion 4.0 is one too, with its product catalog in ``ergomotion4_profiles.py``.
 
 App profiles take their words and timing from their accepted APK Protocol Audit
@@ -560,7 +560,7 @@ PROFILES: Final[dict[str, KeesonProfile]] = {
 }
 
 
-# Cluster033 apps (beds/cluster033.py): the Tempur Curve, Q-Plus, Serta MP Remote,
+# Keeson layout apps (beds/keeson_layout_app.py): the Tempur Curve, Q-Plus, Serta MP Remote,
 # Omazz, Ergomotion, ROW Control, Ergo Slim and TEMPUR AU apps, chosen by hand with
 # a layout. Each accepted report proves its own key table; repeated masks are
 # separate package receipts, not inferred family equivalence.
@@ -576,7 +576,7 @@ class AppAction:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class AppProfile:
-    """One cluster033 app layout over the K1 frame (P2 for Q-Plus MX)."""
+    """One Keeson layout app layout over the K1 frame (P2 for Q-Plus MX)."""
 
     key: str
     """The app's bed type; it names the frozen vectors and the app's caller rules."""

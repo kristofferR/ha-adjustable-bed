@@ -507,10 +507,6 @@ class VibradormAppController(BedController):
         )
 
     @property
-    def supports_position_feedback(self) -> bool:
-        return False
-
-    @property
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
         if self.profile.app_profile == "vmat":
             return ()

@@ -1887,7 +1887,7 @@ working save by copying another profile's bytes.
 This indexes the operands stored in the five shipped catalogs. Values are sets
 across the exact layouts that bind each resource, not universal capabilities.
 FRAMED values are wrapped as above. The complete node tables ship in
-`cluster018_data/`.
+`richmat_classic_data/`.
 
 | Bound resource | RAW short operand(s) | Current short operand(s) | Long operand(s) |
 |---|---|---|---|
@@ -2535,7 +2535,7 @@ builds the packet for the entry's mode.
 | (empty) | Nothing | `6E 01 00 00 6F` | Empty token; Legacy writes nothing |
 <!-- /generated -->
 
-The complete per-layout catalog is `lp_legacy_profiles.json`.
+The complete per-layout catalog is `lp_legacy_catalog.py`.
 
 ##### Event states
 

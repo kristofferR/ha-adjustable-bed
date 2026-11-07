@@ -21,7 +21,7 @@ from .base import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
-from .cluster033 import AppController
+from .keeson_layout_app import AppController
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic

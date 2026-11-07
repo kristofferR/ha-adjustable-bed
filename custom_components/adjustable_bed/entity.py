@@ -83,12 +83,6 @@ class AdjustableBedEntity(RenamesInPlace):
         if side is not None:
             self._attr_extra_state_attributes = {"bed_side": side}
 
-    def _set_sided_translation_key(self, key: str | None, fallback: str) -> None:
-        """Apply a logical-side suffix only for single-address paired views."""
-        self._attr_translation_key = self._coordinator.entity_translation_key(
-            key or fallback
-        )
-
     @property
     def available(self) -> bool:
         """Return True if entity is available.
