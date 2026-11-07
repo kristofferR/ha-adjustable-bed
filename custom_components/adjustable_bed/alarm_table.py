@@ -10,6 +10,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Literal
 
+from .codec import keeson
+
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class WeeklyAlarmRecord:
@@ -134,5 +136,5 @@ class AlarmTableScheduleSpec:
             )
             index += 4
         for frame in (weekly, one_time):
-            frame[-1] = ~sum(frame[:-1]) & 255
+            frame[-1] = keeson.checksum(bytes(frame[:-1]))
         return bytes(weekly), bytes(one_time)

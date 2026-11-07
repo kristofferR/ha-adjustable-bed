@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from .cluster018_protocol import float32, new_height, old_height, rounded
+from .codec import richmat as codec
 
 PREFIXES = (
     "6e90", "6e08", "6e94", "6e92", "6e97", "6e070101", "6e070102",
@@ -57,7 +58,7 @@ class ReceiveState:
                     break
                 candidate = remainder[found:found + length]
                 raw = bytes.fromhex(candidate)
-                if sum(raw[:-1]) & 255 == raw[-1]:
+                if codec.is_valid(raw):
                     return candidate
                 offset += found + 4
                 if offset > len(original):

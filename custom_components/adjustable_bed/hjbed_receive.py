@@ -9,13 +9,11 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from typing import cast
 
+from .codec import richmat as codec
+
 type Value = str | int | float | bool | None | list[Value] | dict[str, Value]
 type Event = tuple[str, Value]
 type EventSink = Callable[[str, Value], None]
-
-
-def sum8(values: list[int]) -> int:
-    return sum(values) & 255
 
 
 STATIC = [
@@ -123,7 +121,7 @@ def parse_frame(
     if len(f) < 2:
         return out
     if f[1] in (0x20, 0x21):
-        if check_integrity and sum8(f[:-1]) != f[-1]:
+        if check_integrity and not codec.is_valid(bytes(f)):
             return out
         if f[2] != n:
             return out
