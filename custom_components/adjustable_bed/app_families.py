@@ -369,6 +369,8 @@ class AppFamily:
     asks_for: Callable[[Mapping[str, Any]], bool] = _never
     # The check a route that ``requires_check`` passes before it can be confirmed.
     endpoint_check: EndpointCheck | None = None
+    # The modules ``endpoint_check`` imports, which the flow loads off the event loop.
+    check_imports: tuple[str, ...] = ()
 
     @property
     def asks(self) -> frozenset[str]:
@@ -668,6 +670,7 @@ VIBRADORM_FAMILY: Final = AppFamily(
     ),
     requires_check=lambda _data: True,
     endpoint_check=_vibradorm_roles,
+    check_imports=("beds.vmatbasic.controller", "beds.vibradorm.vmat_setup"),
 )
 
 
@@ -726,6 +729,7 @@ LOGICDATA_FAMILY: Final = AppFamily(
     route_keys=_LOGICDATA_ROUTE_KEYS,
     requires_check=_in(lambda: LOGICDATA_FAMILY.managed),
     endpoint_check=_logicdata_route,
+    check_imports=("beds.logicdata.app",),
 )
 
 
@@ -793,6 +797,7 @@ JIECANG_FAMILY: Final = AppFamily(
     route_keys=_JIECANG_ROUTE_KEYS,
     requires_check=lambda data: data.get(CONF_BED_TYPE) == BED_TYPE_JIECANG_APP,
     endpoint_check=_jiecang_transport,
+    check_imports=("beds.jiecang.app", "beds.comfort_motion"),
 )
 
 
@@ -1204,6 +1209,7 @@ SLEEPYS_FAMILY: Final = AppFamily(
     route_keys=(CONF_SLEEPYS_ELITE_SELECTOR, CONF_PROTOCOL_VARIANT),
     requires_check=_in(lambda: SLEEPYS_FAMILY.managed),
     endpoint_check=_sleepys_route,
+    check_imports=("beds.sleepys.app",),
 )
 
 
@@ -1239,6 +1245,7 @@ CUSTOMATIC_FAMILY: Final = AppFamily(
     route_keys=(CONF_PROTOCOL_VARIANT,),
     requires_check=_in(lambda: CUSTOMATIC_FAMILY.managed),
     endpoint_check=_app_roles,
+    check_imports=("beds.customatic.controller", "beds.serenity.controller"),
 )
 
 # Both Jordan's apps write the OKIN bedding apps' command characteristic.
@@ -1255,6 +1262,7 @@ JORDANS_FAMILY: Final = AppFamily(
     guided=True,
     requires_check=_in(lambda: JORDANS_FAMILY.managed),
     endpoint_check=_app_roles,
+    check_imports=("beds.serenity.controller",),
 )
 
 # Each StarCode app asks its own settings after the question; AdjustableM5X5
@@ -1300,6 +1308,7 @@ LIMOSS_FAMILY: Final = AppFamily(
     guided=True,
     requires_check=lambda data: data.get(CONF_BED_TYPE) == BED_TYPE_LIMOSS_REMOTE,
     endpoint_check=_limoss_remote_route,
+    check_imports=("beds.limoss.remote",),
 )
 
 
@@ -1538,6 +1547,7 @@ MALOUF_FAMILY: Final = AppFamily(
     route_keys=(CONF_MALOUF_APP_PROFILE,),
     requires_check=lambda data: data.get(CONF_BED_TYPE) == BED_TYPE_MALOUF_APP,
     endpoint_check=_malouf_transport,
+    check_imports=("beds.malouf.app",),
 )
 
 

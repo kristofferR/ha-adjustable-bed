@@ -9,6 +9,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...import_executor import async_import_modules
 from ...paired_coordinator import BedChild
 from ...services import (
     ATTR_ENABLED,
@@ -37,6 +38,7 @@ JIECANG_ALARM_PRESETS = (*JIECANG_WAKE_PRESETS, "yoga")
 
 async def handle_jiecang_set_alarm(call: ServiceCall) -> None:
     """Configure the Jiecang app controller's recurring clock alarm."""
+    await async_import_modules(call.hass, "beds.jiecang.controller")
     from .controller import JiecangProfileController
 
     alarm_time = call.data[ATTR_TIME]
@@ -70,6 +72,7 @@ async def handle_jiecang_set_alarm(call: ServiceCall) -> None:
 
 async def handle_jiecang_wake(call: ServiceCall) -> None:
     """Start the app's wake routine with its preset and massage levels."""
+    await async_import_modules(call.hass, "beds.jiecang.controller")
     from .controller import JiecangProfileController
 
     async def wake(controller: JiecangProfileController) -> None:
@@ -92,6 +95,7 @@ async def handle_jiecang_wake(call: ServiceCall) -> None:
 
 async def handle_jiecang_stop_wake(call: ServiceCall) -> None:
     """Stop active wake massage without changing the stored clock alarm."""
+    await async_import_modules(call.hass, "beds.jiecang.controller")
     from .controller import JiecangProfileController
 
     await _preflight_and_execute(

@@ -34,6 +34,7 @@ from .adapter import (
 )
 from .address_lock import async_get_connect_lock
 from .bed_traits import bed_traits
+from .beds.gmmotor.sessions import sleep_intent
 from .ble_auth import is_ble_authentication_error as _is_ble_authentication_error
 from .bluetooth_diagnostics import connection_reachability
 from .bluetooth_transport import async_connection_paths, async_path_for_source, client_source
@@ -83,6 +84,7 @@ from .detection import (
 )
 from .diagnostic_payloads import new_connection_attempt_details
 from .position_estimate import notify_connection_lost as notify_position_estimate_connection_lost
+from .support_proxy_logs import capture_proxy_logs
 from .unsupported import delete_pairing_required_issue
 
 if TYPE_CHECKING:
@@ -481,8 +483,6 @@ class CoordinatorConnectionMixin:
             ):
                 # A configured bed can pair and verify Auth here without going
                 # through config flow. Keep that attempt for a later bundle.
-                from .support_proxy_logs import capture_proxy_logs
-
                 async with capture_proxy_logs(
                     self.hass, self._address, self._preferred_adapter, retain=True
                 ):
@@ -2115,8 +2115,6 @@ class CoordinatorConnectionMixin:
         deadlock on the public ``async_disconnect`` re-acquiring the lock.
         """
         if self._bed_type in (BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB):
-            from .beds.gmmotor.sessions import sleep_intent
-
             # An explicit release also stops monitoring when a prior BLE drop
             # already discarded the live controller and client.
             sleep_intent(

@@ -9,6 +9,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...import_executor import async_import_modules
 from ...services import (
     ATTR_ENABLED,
     ATTR_PRESET,
@@ -27,6 +28,7 @@ MALOUF_ALARM_PRESETS = ("zero_g", "lounge", "tv", "anti_snore", "memory_1", "mem
 
 async def handle_malouf_set_alarm(call: ServiceCall) -> None:
     """Set or clear the app profile's clock alarm through its command lock."""
+    await async_import_modules(call.hass, "beds.malouf.app")
     from .app import MaloufAppController
 
     alarm_time = call.data[ATTR_TIME]

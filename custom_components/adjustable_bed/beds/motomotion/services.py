@@ -11,6 +11,7 @@ from homeassistant.helpers import config_validation as cv
 
 from ...codec.motomotion import Position
 from ...const import DOMAIN
+from ...import_executor import async_import_modules
 from ...services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
 from .requests import Request
 
@@ -57,6 +58,7 @@ SCHEMA = vol.Schema(FIELDS)
 
 
 async def handle(call: ServiceCall) -> None:
+    await async_import_modules(call.hass, "beds.motomotion.controller")
     from .controller import MotoMotionController
 
     request = Request(

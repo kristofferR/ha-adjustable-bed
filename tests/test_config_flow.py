@@ -1102,7 +1102,7 @@ class TestStaleProxyGattCache:
         mock = AsyncMock(side_effect=attempt)
         with (
             patch(
-                "custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs",
+                "custom_components.adjustable_bed.config_flow.capture_proxy_logs",
                 return_value=contextlib.AsyncExitStack(),
             ),
             patch.object(flow, "_attempt_pairing_with_capture", new=mock),
@@ -1132,7 +1132,7 @@ class TestStaleProxyRerouteRetry:
         attempt = AsyncMock(side_effect=[failed, BondRouteMismatchError("proxy-b"), verified])
         with (
             patch(
-                "custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs",
+                "custom_components.adjustable_bed.config_flow.capture_proxy_logs",
                 return_value=contextlib.AsyncExitStack(),
             ),
             patch.object(flow, "_attempt_pairing_with_capture", new=attempt),

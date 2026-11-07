@@ -9,6 +9,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...import_executor import async_import_modules
 from ...paired_coordinator import BedChild
 from ...services import (
     ATTR_ACTION,
@@ -93,6 +94,7 @@ async def handle_linak_move_simultaneously(call: ServiceCall) -> None:
 
 async def handle_linak_set_alarm(call: ServiceCall) -> None:
     """Program a Linak alarm using event, recurrence, and commit writes."""
+    await async_import_modules(call.hass, "beds.linak.controller")
     from .controller import LinakController
 
     steps = tuple(

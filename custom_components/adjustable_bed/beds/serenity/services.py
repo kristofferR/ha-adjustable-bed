@@ -12,6 +12,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...import_executor import async_import_modules
 from ...services import (
     ATTR_ENABLED,
     ATTR_TIME,
@@ -41,6 +42,7 @@ async def _execute_zseries_alarm(
     command: Callable[[ZSeriesController], Awaitable[None]],
 ) -> None:
     """Preflight every physical Z-Series target before any alarm or clock write."""
+    await async_import_modules(call.hass, "beds.serenity.controller")
     from .controller import ZSeriesController
 
     targets = _call_targets(call)

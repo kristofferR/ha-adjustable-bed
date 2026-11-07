@@ -15,6 +15,7 @@ from homeassistant.util import dt as dt_util
 
 from ...codec import richmat as codec
 from ...const import DOMAIN
+from ...import_executor import async_import_modules
 from ...services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
 from . import protocol as p
 from .catalog import ACTIONS
@@ -251,6 +252,7 @@ SCHEMA = vol.Schema(FIELDS)
 
 
 async def handle_goodvibe(call: ServiceCall) -> None:
+    await async_import_modules(call.hass, "beds.goodvibe.controller")
     from .controller import GoodVibeController
 
     request = Request(

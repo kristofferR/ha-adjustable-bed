@@ -11,6 +11,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...import_executor import async_import_modules
 from .protocol import FREQUENCIES, PRESETS, FanSide, Request
 
 if TYPE_CHECKING:
@@ -64,6 +65,7 @@ def build_request(service: str, data: Mapping[str, object]) -> Request:
 
 
 async def handle_sleeptracker(call: ServiceCall) -> None:
+    await async_import_modules(call.hass, "beds.sleeptracker.controller")
     from ...services import _call_targets, _preflight_and_execute
     from .controller import SleeptrackerController
 

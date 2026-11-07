@@ -13,6 +13,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 
 from ...const import BED_TYPE_FURNIMOVE, DOMAIN
+from ...import_executor import async_import_modules
 from ...pairing import iter_children
 from ...services import (
     ATTR_DURATION,
@@ -47,6 +48,7 @@ async def _execute_furnimove(
     validate: Callable[[FurniMoveController], None],
     operation: Callable[[FurniMoveController], Awaitable[None]],
 ) -> None:
+    await async_import_modules(call.hass, "beds.furnimove.controller")
     from .controller import FurniMoveController
 
     # Every consumer uses one mutable write role and global release.
@@ -93,6 +95,7 @@ async def _rename_furnimove(
     call: ServiceCall, targets: list[tuple[BedTarget, str]], name: str
 ) -> None:
     """Write the original validated name to this app's discovered rename role."""
+    await async_import_modules(call.hass, "beds.furnimove.controller")
     from .controller import validate_furnimove_name
 
     try:

@@ -10,6 +10,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...import_executor import async_import_modules
 from .protocol import (
     AirMode,
     AirTimer,
@@ -146,6 +147,7 @@ def build_motion_bed_request(service: str, data: Mapping[str, object]) -> Motion
 
 async def _execute(call: ServiceCall, request: MotionBedWrite | None = None) -> None:
     # Shared targeting includes paired child routing and preflights every receiver.
+    await async_import_modules(call.hass, "beds.motion_bed.controller")
     from ...services import _call_targets, _preflight_and_execute
     from .controller import MotionBedController
 

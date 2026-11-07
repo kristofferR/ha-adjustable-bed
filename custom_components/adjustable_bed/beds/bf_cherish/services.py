@@ -8,6 +8,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...import_executor import async_import_modules
 
 
 def register_services(hass: HomeAssistant) -> None:
@@ -16,6 +17,7 @@ def register_services(hass: HomeAssistant) -> None:
     async def set_alarm(call: ServiceCall) -> None:
         from homeassistant.util import dt as dt_util
 
+        await async_import_modules(call.hass, "beds.bf_cherish.controller")
         from .controller import BfCherishController, alarm_frame
 
         enabled = call.data["enabled"]

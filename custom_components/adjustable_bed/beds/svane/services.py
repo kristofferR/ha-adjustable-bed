@@ -11,6 +11,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 
 from ...const import BED_TYPE_SVANE, DOMAIN
+from ...import_executor import async_import_modules
 from ...paired_coordinator import BedChild, PairedBedCoordinator
 from ...services import (
     ATTR_MOTOR,
@@ -80,6 +81,7 @@ async def _svane_live_targets(
     duration_ms: int,
 ) -> tuple[list[tuple[BedTarget, str]], PreflightedSides, dict[int, SvaneHoldAdmission]]:
     """Capture all release boundaries, then validate each guarded live link."""
+    await async_import_modules(call.hass, "beds.svane.controller")
     from .controller import SvaneController
 
     targets = _call_targets(call)
@@ -146,6 +148,7 @@ async def _hold_svane(call: ServiceCall, control: str, duration_ms: int) -> None
 
 async def handle_svane_release_axis(call: ServiceCall) -> None:
     """Signal only the active writer, allowing the other held axis to continue."""
+    await async_import_modules(call.hass, "beds.svane.controller")
     from .controller import SvaneController
 
     targets = _call_targets(call)

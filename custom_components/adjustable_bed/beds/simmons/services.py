@@ -9,6 +9,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...import_executor import async_import_modules
 from ...services import (
     ATTR_CONFIRM_CUSTOM_MODE,
     ATTR_ENABLED,
@@ -31,6 +32,7 @@ SERVICE_SIMMONS_SET_ALARM = "simmons_set_alarm"
 
 async def handle_simmons_set_alarm(call: ServiceCall) -> None:
     """Program or disable one of the two SIMMONS alarms through the command queue."""
+    await async_import_modules(call.hass, "beds.simmons.controller")
     from .controller import SimmonsController
 
     alarm_time = call.data[ATTR_TIME]

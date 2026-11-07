@@ -9,6 +9,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...import_executor import async_import_modules
 from ...services import (
     DEVICE_IDS,
     SIDE_FIELD,
@@ -25,6 +26,7 @@ SERVICE_FLOYD_ACTION = "floyd_action"
 
 async def handle_floyd_action(call: ServiceCall) -> None:
     """Run Floyd presets or explicitly assign one unassigned standalone node."""
+    await async_import_modules(call.hass, "beds.kaidi.floyd")
     from ...coordinator import AdjustableBedCoordinator
     from .floyd import FloydController
 

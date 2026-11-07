@@ -9,6 +9,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...import_executor import async_import_modules
 from ...services import (
     ATTR_ACTION,
     ATTR_ENABLED,
@@ -42,6 +43,7 @@ SOLACE_ALARM_SOUNDS = (
 
 async def handle_solace_audio(call: ServiceCall) -> None:
     """Control MotionFlex music selection, preview, query, or volume."""
+    await async_import_modules(call.hass, "beds.solace.controller")
     from .controller import SolaceController
 
     action = call.data[ATTR_ACTION]
@@ -79,6 +81,7 @@ async def handle_solace_audio(call: ServiceCall) -> None:
 
 async def handle_solace_set_alarm(call: ServiceCall) -> None:
     """Program the selected app profile's alarm packet family."""
+    await async_import_modules(call.hass, "beds.solace.controller")
     from .controller import SolaceController
 
     weekday_numbers = tuple(

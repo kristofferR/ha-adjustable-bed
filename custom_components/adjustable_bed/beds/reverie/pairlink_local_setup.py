@@ -31,6 +31,7 @@ from ...const import (
 )
 from ...controller_factory import create_controller
 from ...coordinator import AdjustableBedCoordinator
+from ...import_executor import async_import_modules
 from ...pairing import KEY_ABSORBED_ENTRY_ID, get_child, is_paired
 
 if TYPE_CHECKING:
@@ -197,12 +198,13 @@ async def async_setup_pairlink_local_entry(
     peripheral role. ``finish`` completes the entry setup once the local
     profile runs; its failure releases the profile like any other.
     """
-    from .pairlink import ReveriePairlinkController
-    from .pairlink_profile import pairlink_host_adapter_inventory
-
     data = {**entry.data, **entry.options}
     if data.get(CONF_PAIRLINK_ROLE) != PAIRLINK_ROLE_PERIPHERAL:
         return False
+    await async_import_modules(hass, "beds.reverie.pairlink")
+    from .pairlink import ReveriePairlinkController
+    from .pairlink_profile import pairlink_host_adapter_inventory
+
     host_adapter_source = data.get(CONF_PAIRLINK_HOST_SOURCE)
     if not isinstance(host_adapter_source, str) or not host_adapter_source:
         raise ConfigEntryNotReady(
@@ -289,7 +291,7 @@ async def async_setup_pairlink_local_entry(
     return True
 
 
-def preflight_paired_pairlink_local_roles(
+async def async_preflight_paired_pairlink_local_roles(
     hass: HomeAssistant,
     entry: ConfigEntry,
     children: Mapping[str, AdjustableBedCoordinator],
@@ -299,6 +301,9 @@ def preflight_paired_pairlink_local_roles(
     list[PairlinkLocalLeaseTransfer],
 ]:
     """Validate every source and conflict before reserving any selected adapter."""
+    if all(child.bed_type != BED_TYPE_REVERIE_PAIRLINK for child in children.values()):
+        return (), [], []
+    await async_import_modules(hass, "beds.reverie.pairlink_profile")
     from .pairlink_profile import pairlink_host_adapter_inventory
 
     inventory = pairlink_host_adapter_inventory(hass)
@@ -388,6 +393,7 @@ async def async_start_paired_pairlink_local_child(
     adapter_inventory: tuple[PairlinkHostAdapterInventoryEntry, ...],
 ) -> None:
     """Start one prevalidated child-owned local Pairlink backend."""
+    await async_import_modules(hass, "beds.reverie.pairlink")
     from .pairlink import ReveriePairlinkController
 
     address = child.entry.data.get(CONF_ADDRESS)

@@ -9,6 +9,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...import_executor import async_import_modules
 from ...services import (
     ATTR_ENABLED,
     ATTR_TIME,
@@ -21,6 +22,7 @@ from ...services import (
 
 async def handle_comfort_enhancements_set_alarm(call: ServiceCall) -> None:
     """Program the app's current-day alarm, validating every side before writes."""
+    await async_import_modules(call.hass, "beds.comfort_enhancements.controller")
     from .controller import ComfortEnhancementsController
 
     enabled = call.data[ATTR_ENABLED]

@@ -96,7 +96,7 @@ async def test_public_setup_classification_preserves_original_when_unsubscribe_f
     unknown = BondEvidence(BondVerificationStatus.INCONCLUSIVE, BondOwner.from_path(path), "native", "now")
     module = "custom_components.adjustable_bed.config_flow."
     with (
-        patch("custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs", return_value=AsyncExitStack()),
+        patch("custom_components.adjustable_bed.config_flow.capture_proxy_logs", return_value=AsyncExitStack()),
         patch("bleak_retry_connector.establish_connection", new=AsyncMock(return_value=c.client)),
         patch(module + "async_predict_path", return_value=PathPrediction(path, (path,))),
         patch(module + "client_source", return_value=source),

@@ -59,7 +59,9 @@ from .const import (
     requires_pairing_after_service_discovery,
     supports_runtime_authentication_recovery,
 )
+from .import_executor import async_import_modules
 from .profiles.vibradorm import vibradorm_app_metadata_key
+from .support_proxy_logs import capture_proxy_logs
 from .unsupported import create_pairing_required_issue, delete_pairing_required_issue
 
 if TYPE_CHECKING:
@@ -712,6 +714,8 @@ class CoordinatorBondsMixin:
         metadata_progress: dict[str, str],
     ) -> bool:
         """Run first-bond information and native pairing in one absolute budget."""
+        # vmat_setup imports the app module.
+        await async_import_modules(self.hass, "beds.vibradorm.vmat_setup")
         from .beds.vibradorm.app import (
             VibradormAppMetadataProgress,
             async_prepare_vibradorm_app_pairing,
@@ -898,8 +902,6 @@ class CoordinatorBondsMixin:
 
             if self._client is not None and self._client.is_connected:
                 if self._bed_type == BED_TYPE_SLEEP_NUMBER:
-                    from .support_proxy_logs import capture_proxy_logs
-
                     async with capture_proxy_logs(
                         self.hass, self._address, self._preferred_adapter, retain=True
                     ):

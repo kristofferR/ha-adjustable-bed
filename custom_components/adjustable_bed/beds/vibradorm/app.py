@@ -1441,6 +1441,9 @@ async def build_controller(ctx: BuildContext) -> VibradormAppController:
         raise ValueError("Invalid retained Vibradorm control type")
     app_profile = data[CONF_VIBRADORM_APP_PROFILE]
     vmat = app_profile == "vmat"
+    if vmat:
+        # The controller's writes and subscriptions resolve V-MAT characteristics.
+        await ctx.preload("vibradorm.vmat_setup")
     restored = data.get(CONF_VIBRADORM_RESTORED, False)
     light_extension = data.get(CONF_VIBRADORM_LIGHT_EXTENSION)
     missing_default = 6 if (not restored and not vmat) or light_extension else 8

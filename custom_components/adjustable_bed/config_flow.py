@@ -331,6 +331,7 @@ from .discovery_settings import (
     async_is_discovery_disabled,
     async_set_discovery_disabled,
 )
+from .import_executor import async_import_modules
 from .pairing import (
     KEY_SINGLE_ADDRESS_ORIGIN_ENTITY_UNIQUE_IDS,
     build_pair_entry_data,
@@ -369,9 +370,11 @@ from .setup_questions import (
     FlowContext,
     Question,
     SetupProfile,
+    async_import_profile,
     setup_profile,
     setup_profile_for,
 )
+from .support_proxy_logs import capture_proxy_logs
 from .unsupported import (
     PROXY_PAIRING_RECOVERY_URL,
     build_misidentified_issue_url,
@@ -2253,6 +2256,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             # The confirm step lists the controls of what the check resolved.
             self._migration_preview = dict(check(self.hass, client, data))
 
+    async def _async_import_endpoint_check(self, data: Mapping[str, Any]) -> None:
+        """Import what the staged route's family check reads, off the event loop."""
+        if self._migration_family is not None:
+            await async_import_modules(
+                self.hass, *_checked_family(self._migration_family, data).check_imports
+            )
+
     def _migration_probe_check(self) -> Callable[[BleakClient], None] | None:
         """Return the probe's strict migration check, or None outside a migration."""
         if self._migration is None or self._pending_entry is None:
@@ -2765,6 +2775,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         asking = self._asking
         profile = asking[0] if asking is not None else setup_profile_for(data)
         assert profile is not None and profile.questions
+        await async_import_profile(self.hass, profile)
         if profile.seed is not None:
             self._manual_data = data = profile.seed(self.hass, data, self._discovery_info)
         context = FlowContext(self.hass, verifiable=self._verification_possible())
@@ -3711,8 +3722,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         variant: str = data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
         from .coordinator import AdjustableBedCoordinator
 
-        # The motor count default reads the route's tables.
+        # The motor count default and the profile's questions read the route's tables.
         await AdjustableBedCoordinator.async_import_tables(self.hass, data)
+        await async_import_profile(self.hass, _final_settings_questions(bed_type, variant))
         info = self._discovery_info
         signals = detect_bed_type_detailed(info).signals if info is not None else None
         hidden = {*hidden_generic_fields(bed_type, variant), *self._journey_set}
@@ -5354,8 +5366,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             NotImplementedError: the Bluetooth backend does not support pairing.
             NotAdvertisingError: the bed is not currently advertising.
         """
-        from .support_proxy_logs import capture_proxy_logs
-
         if not address:
             raise ValueError("No address provided for pairing")
 
@@ -5498,6 +5508,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             and self._manual_data is not None
             and self._manual_data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat"
         )
+        if self._migration is not None and self._manual_data is not None:
+            await self._async_import_endpoint_check(self._manual_data)
+        if bed_type == BED_TYPE_VIBRADORM_APP:
+            # vmat_setup imports the app module.
+            await async_import_modules(self.hass, "beds.vibradorm.vmat_setup")
         connect_lock = async_get_connect_lock(self.hass, address)
         if connect_lock.retained_setup_client is not None:
             with contextlib.suppress(Exception):
@@ -5929,6 +5944,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             if self._pending_entry.get(CONF_BED_TYPE) == BED_TYPE_STARCODE_ABM5_4
             else None
         )
+        await self._async_import_endpoint_check(self._pending_entry)
         report = await self._probe_capabilities(
             self._pending_entry[CONF_ADDRESS],
             self._pending_entry.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO),
@@ -6671,6 +6687,10 @@ def _shown_option_values(schema_dict: dict[Any, Any]) -> dict[str, Any]:
         return {}
 
 
+# What the Pairlink settings helpers import; pairlink_runtime loads cryptography.
+_PAIRLINK_SETTINGS_MODULES: Final = ("beds.reverie.pairlink_profile", "beds.reverie.pairlink_runtime")
+
+
 def _pairlink_settings_schema(
     hass: HomeAssistant,
     current_data: Mapping[str, Any],
@@ -6982,6 +7002,7 @@ class AdjustableBedOptionsFlow(
         """
         menu_options = ["settings"]
         data = self.config_entry.data
+        await async_import_profile(self.hass, setup_profile_for(data))
         if reconfigure_family(data) is not None:
             menu_options.append("change_app")
         if is_paired(data):
@@ -7069,11 +7090,13 @@ class AdjustableBedOptionsFlow(
             ),
         )
         if bed_type == BED_TYPE_REVERIE_PAIRLINK:
+            await async_import_modules(self.hass, *_PAIRLINK_SETTINGS_MODULES)
             schema.update(_pairlink_settings_schema(self.hass, current))
         _hide_owned_generic_fields(schema, bed_type, variant)
         # This receiver's own profile questions; the pair's shared form cannot
         # ask them, because each side may run another profile.
         questions = _configure_questions(current)
+        await async_import_profile(self.hass, questions)
         context = FlowContext(self.hass, self.config_entry.entry_id)
         if questions is not None:
             schema.update(
@@ -7381,6 +7404,10 @@ class AdjustableBedOptionsFlow(
                 current_data.pop(key, None)
         current_data = {**current_data, **self._pending_data}
         bed_type: str = current_data.get(CONF_BED_TYPE) or BED_TYPE_DIAGNOSTIC
+        # A rebuild for a newly selected bed type asks that profile's questions.
+        await async_import_profile(
+            self.hass, setup_profile_for({**current_data, CONF_BED_TYPE: bed_type})
+        )
 
         variants = get_variants_for_bed_type(bed_type)
         form_variant = self._variant_for_bed_type(bed_type, current_data)
@@ -7455,6 +7482,7 @@ class AdjustableBedOptionsFlow(
             ] = vol.In(variants)
 
         if bed_type == BED_TYPE_REVERIE_PAIRLINK and not separate_address_pair:
+            await async_import_modules(self.hass, *_PAIRLINK_SETTINGS_MODULES)
             schema_dict.update(_pairlink_settings_schema(self.hass, current_data))
 
         # Each route's own fields are on the form, shown only for that route.
@@ -7650,6 +7678,9 @@ class AdjustableBedOptionsFlow(
                 return await self._async_options_form(None, step_id=step_id)
 
             bed_type = requested_bed_type
+            await async_import_profile(
+                self.hass, setup_profile_for({**current_data, **user_input, CONF_BED_TYPE: bed_type})
+            )
             stale_profile_keys: frozenset[str] = frozenset()
             # What the declared profile sets itself, such as the generic fields it
             # owns. A paired save keeps only shown fields that changed, so these

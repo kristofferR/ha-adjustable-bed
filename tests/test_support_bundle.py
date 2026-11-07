@@ -2076,7 +2076,7 @@ class TestSupportBundleLoggingWarning:
                 MagicMock(return_value="/config/bundle.json"),
             ),
             patch(
-                "custom_components.adjustable_bed.download.register_download",
+                "custom_components.adjustable_bed.services.register_download",
                 MagicMock(return_value="/api/download/bundle.json"),
             ),
             patch(
@@ -2152,7 +2152,7 @@ class TestSupportBundleLoggingWarning:
                 MagicMock(return_value="/config/bundle.json"),
             ),
             patch(
-                "custom_components.adjustable_bed.download.register_download",
+                "custom_components.adjustable_bed.services.register_download",
                 MagicMock(return_value="/api/download/bundle.json"),
             ),
             patch(
@@ -2238,7 +2238,7 @@ class TestSupportBundlePreCaptureLogWarning:
                 MagicMock(return_value="/config/bundle.json"),
             ),
             patch(
-                "custom_components.adjustable_bed.download.register_download",
+                "custom_components.adjustable_bed.services.register_download",
                 MagicMock(return_value="/api/download/bundle.json"),
             ),
             patch(
@@ -2400,7 +2400,7 @@ class TestSupportBundleLogProbeSafety:
                 MagicMock(return_value="/config/bundle.json"),
             ),
             patch(
-                "custom_components.adjustable_bed.download.register_download",
+                "custom_components.adjustable_bed.services.register_download",
                 MagicMock(return_value="/api/download/bundle.json"),
             ),
             patch(
@@ -2451,7 +2451,7 @@ class TestSupportBundleLogProbeSafety:
                 AsyncMock(side_effect=RuntimeError("boom")),
             ),
             patch(
-                "custom_components.adjustable_bed.download.register_download",
+                "custom_components.adjustable_bed.services.register_download",
                 MagicMock(return_value="/api/download/bundle.json"),
             ),
             patch(
@@ -2510,7 +2510,7 @@ class TestSupportBundleLogProbeSafety:
                 MagicMock(return_value="/config/bundle.json"),
             ),
             patch(
-                "custom_components.adjustable_bed.download.register_download",
+                "custom_components.adjustable_bed.services.register_download",
                 MagicMock(return_value="/api/download/bundle.json"),
             ),
             patch(
@@ -2573,7 +2573,7 @@ class TestSupportBundleLogProbeSafety:
                 MagicMock(return_value="/config/bundle.json"),
             ),
             patch(
-                "custom_components.adjustable_bed.download.register_download",
+                "custom_components.adjustable_bed.services.register_download",
                 MagicMock(return_value="/api/download/bundle.json"),
             ),
             patch(
@@ -2625,7 +2625,7 @@ class TestSupportBundleLogProbeSafety:
                 AsyncMock(side_effect=_asyncio.CancelledError()),
             ),
             patch(
-                "custom_components.adjustable_bed.download.register_download",
+                "custom_components.adjustable_bed.services.register_download",
                 MagicMock(return_value="/api/download/bundle.json"),
             ),
             patch(
@@ -2674,7 +2674,7 @@ class TestSupportBundleLogProbeSafety:
                 MagicMock(return_value="/config/bundle.json"),
             ),
             patch(
-                "custom_components.adjustable_bed.download.register_download",
+                "custom_components.adjustable_bed.services.register_download",
                 MagicMock(return_value="/api/download/bundle.json"),
             ),
             patch(
@@ -2733,7 +2733,7 @@ class TestSupportBundleLogProbeSafety:
                 MagicMock(return_value="/config/bundle.json"),
             ),
             patch(
-                "custom_components.adjustable_bed.download.register_download",
+                "custom_components.adjustable_bed.services.register_download",
                 MagicMock(return_value="/api/download/bundle.json"),
             ),
             patch(
@@ -2793,7 +2793,7 @@ class TestSupportBundleLogProbeSafety:
                 MagicMock(return_value="/config/bundle.json"),
             ),
             patch(
-                "custom_components.adjustable_bed.download.register_download",
+                "custom_components.adjustable_bed.services.register_download",
                 MagicMock(return_value="/api/download/bundle.json"),
             ),
             patch(
@@ -2864,7 +2864,7 @@ class TestSupportBundleLogProbeSafety:
                 MagicMock(return_value="/config/bundle.json"),
             ),
             patch(
-                "custom_components.adjustable_bed.download.register_download",
+                "custom_components.adjustable_bed.services.register_download",
                 MagicMock(return_value="/api/download/bundle.json"),
             ),
             patch(
@@ -2932,7 +2932,7 @@ class TestSupportBundleLogProbeSafety:
                 MagicMock(return_value="/config/bundle.json"),
             ),
             patch(
-                "custom_components.adjustable_bed.download.register_download",
+                "custom_components.adjustable_bed.services.register_download",
                 MagicMock(return_value="/api/download/bundle.json"),
             ),
             patch(

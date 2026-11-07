@@ -13,6 +13,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
 from ...const import DOMAIN
+from ...import_executor import async_import_modules
 from ...services import SIDE_FIELD, _call_targets, _preflight_and_execute
 
 if TYPE_CHECKING:
@@ -49,6 +50,7 @@ async def _execute(
     command: Callable[[RmcontrolController], Awaitable[None]],
     validate: Callable[[RmcontrolController], None] | None = None,
 ) -> None:
+    await async_import_modules(call.hass, "beds.rmcontrol.controller")
     from .controller import RmcontrolController
 
     await _preflight_and_execute(

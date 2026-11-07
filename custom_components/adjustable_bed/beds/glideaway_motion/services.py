@@ -9,6 +9,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...import_executor import async_import_modules
 from ...services import (
     ATTR_ENABLED,
     ATTR_TIME,
@@ -24,6 +25,7 @@ SERVICE_GLIDEAWAY_SET_ALARM = "glideaway_set_alarm"
 
 async def handle_glideaway_set_alarm(call: ServiceCall) -> None:
     """Use the Glideaway app's automatic day selection and exact clock encoding."""
+    await async_import_modules(call.hass, "beds.glideaway_motion.controller")
     from .controller import GlideawayMotionController
 
     enabled = call.data[ATTR_ENABLED]

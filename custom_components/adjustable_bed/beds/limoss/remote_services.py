@@ -15,6 +15,7 @@ from homeassistant.helpers import config_validation as cv
 
 from ...command_scheduler import HoldLease
 from ...const import BED_TYPE_LIMOSS_REMOTE, DOMAIN
+from ...import_executor import async_import_modules
 from ...paired_coordinator import BedChild, PairedBedCoordinator
 from ...position_estimate import track_held_control
 from ...services import (
@@ -174,6 +175,7 @@ async def _execute_limoss_remote(
     targets: list[tuple[BedTarget, str]] | None = None,
     lease: HoldLease | None = None,
 ) -> None:
+    await async_import_modules(call.hass, "beds.limoss.remote")
     from .remote import LimossRemoteController
 
     targets = _limoss_remote_targets(call) if targets is None else targets
@@ -232,6 +234,7 @@ def _limoss_remote_targets(call: ServiceCall) -> list[tuple[BedTarget, str]]:
 
 
 async def handle_limoss_remote_rename_memory(call: ServiceCall) -> None:
+    await async_import_modules(call.hass, "beds.limoss.remote")
     slot, name = call.data[ATTR_PRESET], call.data[ATTR_NAME]
     controllers: list[LimossRemoteController] = []
     for coordinator, side in _limoss_remote_targets(call):
@@ -265,6 +268,7 @@ async def handle_limoss_remote_calibrate(call: ServiceCall) -> None:
 
 
 async def handle_limoss_remote_features(call: ServiceCall) -> None:
+    await async_import_modules(call.hass, "beds.limoss.remote")
 
     light, massage = call.data["underbed_light"], call.data["massage"]
     targets = _limoss_remote_targets(call)

@@ -16,7 +16,6 @@ from collections.abc import (
     Mapping,
 )
 from datetime import UTC, datetime
-from importlib import import_module
 from typing import TYPE_CHECKING, Any, Self, TypeVar, cast
 from uuid import uuid4
 from weakref import WeakKeyDictionary
@@ -186,6 +185,7 @@ from .detection import (
     is_mac_like_name,
 )
 from .execution import HOLD_CEILING_MS
+from .import_executor import async_import_modules
 from .pairing import (
     OFFLINE_CAPABILITY_SAFE_VARIANTS,
     filter_child_options,
@@ -329,9 +329,7 @@ class AdjustableBedCoordinator(
         (issue #368).
         """
         if profile_route(entry_profile_id(data)).bed_type == BED_TYPE_RICHMAT:
-            await hass.async_add_import_executor_job(
-                import_module, ".beds.richmat.features", __package__
-            )
+            await async_import_modules(hass, "beds.richmat.features")
 
     @classmethod
     async def async_create(
@@ -746,7 +744,6 @@ class AdjustableBedCoordinator(
             owns_loaded_child = callable(child_for_side) and child_for_side(side) is self
         if loaded is not self and not owns_loaded_child:
             return
-        from .beds.starcode.abm5_4 import StarcodeAbm5_4Controller
         from .beds.starcode.abm5_4_profiles import RetainedAppState
 
         retained_states = {
@@ -759,6 +756,11 @@ class AdjustableBedCoordinator(
         self._pending_capability_reload = False
         if not await self.hass.config_entries.async_reload(self.entry.entry_id):
             return
+        if not retained_states:
+            return
+        await async_import_modules(self.hass, "beds.starcode.abm5_4")
+        from .beds.starcode.abm5_4 import StarcodeAbm5_4Controller
+
         reloaded = self.hass.data.get(DOMAIN, {}).get(self.entry.entry_id)
         for child in self._starcode_reload_coordinators(reloaded):
             retained = retained_states.get((child.entry.entry_id, child.address))

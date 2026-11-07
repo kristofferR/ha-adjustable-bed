@@ -30,9 +30,9 @@ from .beds.remacro.discovery import (
 from .beds.reverie.pairlink_local_setup import (
     PAIRLINK_LOCAL_PROFILE_LEASES_KEY,
     PairlinkLocalLeaseTransfer,
+    async_preflight_paired_pairlink_local_roles,
     async_restore_pairlink_local_transfers,
     async_start_paired_pairlink_local_child,
-    preflight_paired_pairlink_local_roles,
     release_pairlink_local_profile_lease,
     release_pairlink_local_reservations,
 )
@@ -76,9 +76,11 @@ from .const import (
 )
 from .coordinator import AdjustableBedCoordinator, ChildEntryView
 from .coordinator_connection import PairingOnlyConnectionActiveError
+from .download import SupportBundleDownloadView
 from .entity_runtime import EntityRuntime
 from .entity_sweep import async_sweep_after_setup
 from .entry_hooks import ENTRY_PREPARE_STEPS, entry_hooks
+from .frontend import async_register_frontend
 from .paired_coordinator import PairedBedCoordinator, SingleAddressPairedCoordinator
 from .paired_devices import async_register_children
 from .paired_registry import (
@@ -258,12 +260,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     await async_load_dismissal(hass)
     async_setup_combine_beds_issue(hass)
 
-    from .download import SupportBundleDownloadView
-
     hass.http.register_view(SupportBundleDownloadView)
-
-    from .frontend import async_register_frontend
-
     await async_register_frontend(hass)
 
     await async_register_services(hass)
@@ -1013,9 +1010,11 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
     # A local Pairlink server is selected per physical child. Validate and
     # reserve all selected adapters before creating the parent device or
     # releasing the existing single-entry owners.
-    pairlink_inventory, pairlink_local_roles, pairlink_transfers = preflight_paired_pairlink_local_roles(
-        hass, entry, children
-    )
+    (
+        pairlink_inventory,
+        pairlink_local_roles,
+        pairlink_transfers,
+    ) = await async_preflight_paired_pairlink_local_roles(hass, entry, children)
 
     try:
         coordinator = PairedBedCoordinator(hass, entry, children)

@@ -443,7 +443,7 @@ async def test_setup_native_post_pair_observation_controls_result_and_marker(
         disconnect=AsyncMock(),
     )
     with (
-        patch("custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs"),
+        patch("custom_components.adjustable_bed.config_flow.capture_proxy_logs"),
         patch("bleak_retry_connector.establish_connection", new=AsyncMock(return_value=client)),
         patch(PREFIX + "async_predict_path", return_value=PathPrediction(path, (path,))),
         patch(PREFIX + "client_source", return_value=SOURCE),

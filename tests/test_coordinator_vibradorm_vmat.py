@@ -232,7 +232,7 @@ async def test_public_connect_retains_failed_setup_and_denies_reuse_replacement_
                 config_module = "custom_components.adjustable_bed.config_flow."
                 diagnostic_module = "custom_components.adjustable_bed.ble_diagnostics."
                 with (
-                    patch("custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs", return_value=AsyncExitStack()),
+                    patch("custom_components.adjustable_bed.config_flow.capture_proxy_logs", return_value=AsyncExitStack()),
                     patch("bleak_retry_connector.establish_connection", new=AsyncMock()) as config_connect,
                     patch(config_module + "async_predict_path", return_value=PathPrediction(path, (path,))),
                     patch(diagnostic_module + "select_adapter", new=AsyncMock(return_value=adapter)),

@@ -23,6 +23,7 @@ from .beds.remacro.discovery import async_prepare_remacro_entry
 from .beds.reverie.pairlink_local_setup import async_setup_pairlink_local_entry
 from .beds.richmat.qrrm_reclassification import async_reclassify_bedtech_qrrm_entry
 from .const import BED_TYPE_DIAGNOSTIC, BED_TYPE_FURNIMOVE, BED_TYPE_REVERIE_PAIRLINK
+from .import_executor import async_import_modules
 
 if TYPE_CHECKING:
     from .coordinator import AdjustableBedCoordinator
@@ -46,9 +47,9 @@ async def _async_load_offline_diagnostic_entry(
     reason: str,
 ) -> bool:
     """Load a diagnostic entry even when initial BLE connection fails."""
+    await async_import_modules(hass, "beds.diagnostic")
     from .beds.diagnostic import DiagnosticBedController
 
-    del hass
     _LOGGER.warning(
         "Loading diagnostic entry %s (%s) without an initial BLE connection so "
         "diagnostic actions remain available: %s",

@@ -3,6 +3,9 @@
 import subprocess
 import sys
 import textwrap
+from pathlib import Path
+
+import pytest
 
 
 def test_base_and_factory_do_not_import_concrete_controllers():
@@ -184,3 +187,23 @@ def test_detection_imports_nothing_on_event_loop():
         capture_output=True, text=True, check=False,
     )
     assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize(
+    "flows",
+    [
+        "test_new_install_setup_of_every_listed_bed",
+        "test_new_install_setup_of_discovered_beds",
+        "test_entry_setup_and_configure_of_every_listed_bed",
+    ],
+)
+def test_config_flows_import_nothing_on_event_loop(flows: str):
+    """Each run starts a fresh interpreter, so no earlier flow has loaded its modules."""
+    result = subprocess.run(
+        [
+            sys.executable, "-m", "pytest", "-n", "0", "-p", "no:cacheprovider", "-q",
+            f"tests/loop_import_flows.py::{flows}",
+        ],
+        capture_output=True, text=True, check=False, cwd=Path(__file__).parents[1],
+    )
+    assert result.returncode == 0, result.stdout[-6000:]

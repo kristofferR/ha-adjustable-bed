@@ -71,8 +71,10 @@ from .const import (
     SIDE_RIGHT,
     TIMED_MOVE_MOTOR_OPTIONS,
 )
+from .download import register_download
 from .entity_runtime import controller_side_scope
 from .execution import HOLD_CEILING_MS
+from .import_executor import async_import_modules
 from .paired_coordinator import (
     BedChild,
     PairedBedCoordinator,
@@ -86,6 +88,7 @@ from .position_estimate import (
     track_motor_command,
     track_stream_member,
 )
+from .support_logs import async_setup_support_logs
 
 if TYPE_CHECKING:
     from .beds.entity_specs import ControllerMotorHoldSpec
@@ -1193,20 +1196,22 @@ async def _timed_move_plan(
         except ValueError as err:
             raise ServiceValidationError(str(err)) from err
 
-        from .beds.svane.controller import SvaneController
-        from .beds.svane.services import _preflight_live_svane
+        if coordinator.bed_type == BED_TYPE_SVANE:
+            # The factory imported the Svane controller module, off the event loop.
+            from .beds.svane.controller import SvaneController
+            from .beds.svane.services import _preflight_live_svane
 
-        if coordinator.bed_type == BED_TYPE_SVANE and isinstance(controller, SvaneController):
-            svane_admission = svane_admission or controller.prepare_svane_hold_admission()
-            if (parent, coordinator) not in preflighted:
-                preflighted.append((parent, coordinator))
-            await _preflight_live_svane(
-                parent,
-                coordinator,
-                svane_admission,
-                f"{'head' if motor == 'back' else 'feet'}_{direction}",
-                duration_ms,
-            )
+            if isinstance(controller, SvaneController):
+                svane_admission = svane_admission or controller.prepare_svane_hold_admission()
+                if (parent, coordinator) not in preflighted:
+                    preflighted.append((parent, coordinator))
+                await _preflight_live_svane(
+                    parent,
+                    coordinator,
+                    svane_admission,
+                    f"{'head' if motor == 'back' else 'feet'}_{direction}",
+                    duration_ms,
+                )
 
         # The explicit app profile's direction is a held route. timed_move has
         # an elapsed duration, so delegate its bounded window and release to
@@ -1493,15 +1498,23 @@ async def _async_timed_move(
             coordinator, side, physical_resources
         )
 
-    from .beds.svane.controller import SvaneController
-
-    svane_admissions = {
-        _plan_key(target): controller.prepare_svane_hold_admission()
+    svane_controllers = [
+        (target, controller)
         for parent, side in targets
         for target in _command_targets(parent, side)
         if target.bed_type == BED_TYPE_SVANE
-        and isinstance(controller := target.capability_controller, SvaneController)
-    }
+        and (controller := target.capability_controller) is not None
+    ]
+    svane_admissions: dict[int, SvaneHoldAdmission] = {}
+    if svane_controllers:
+        # The factory imported the Svane controller module, off the event loop.
+        from .beds.svane.controller import SvaneController
+
+        svane_admissions = {
+            _plan_key(target): controller.prepare_svane_hold_admission()
+            for target, controller in svane_controllers
+            if isinstance(controller, SvaneController)
+        }
     preflighted: PreflightedSides = []
     plans: dict[
         int,
@@ -1804,6 +1817,8 @@ def _profile_route(
 
 async def handle_rename(call: ServiceCall) -> None:
     """Write a new Bluetooth name to every targeted controller that supports it."""
+    # The other family action modules load with the services, this one does not.
+    await async_import_modules(call.hass, "beds.vmatbasic.services")
     from .beds.furnimove.services import _rename_furnimove
     from .beds.vmatbasic.services import _rename_vmatbasic
 
@@ -1818,6 +1833,7 @@ async def handle_rename(call: ServiceCall) -> None:
         await _rename_furnimove(call, targets, name)
         return
     if route == "vmatbasic":
+        await async_import_modules(call.hass, "beds.vmatbasic.controller")
         await _rename_vmatbasic(targets, name)
         return
 
@@ -1877,6 +1893,8 @@ def _hold_seconds(value: object) -> Decimal:
 
 async def handle_hold_control(call: ServiceCall) -> None:
     """Hold one controller-declared control, then run its protocol release."""
+    # The other family action modules load with the services, this one does not.
+    await async_import_modules(call.hass, "beds.vmatbasic.services")
     from .beds.limoss.remote_services import _hold_limoss_remote
     from .beds.richmat_classic.profiles import current_control_name
     from .beds.svane.services import _hold_svane
@@ -1917,6 +1935,7 @@ async def handle_hold_control(call: ServiceCall) -> None:
         for coordinator, side in targets
         for target in _command_targets(coordinator, side)
     ):
+        await async_import_modules(call.hass, "beds.vmatbasic.controller")
         await _hold_vmatbasic_floor(targets, control, duration_ms)
     else:
         await _hold_targets(targets, control, duration_ms)
@@ -2039,6 +2058,7 @@ async def handle_configure_alarm_schedule(call: ServiceCall) -> None:
         dispatch=call.data["dispatch"],
         reference_time=dt_util.now(),
     )
+    await async_import_modules(call.hass, "beds.keeson.layout_app")
     from .beds.keeson.layout_app import AppController
 
     targets = _call_targets(call)
@@ -2108,7 +2128,8 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
         async_dismiss,
     )
 
-    from .download import register_download
+    # support_bundle imports support_report.
+    await async_import_modules(hass, "support_bundle")
     from .support_bundle import generate_support_bundle, save_support_bundle
     from .support_report import async_check_log_file, build_missing_log_notice
 
@@ -2352,14 +2373,8 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
                 async_dismiss(hass, log_notification_id)
 
 
-async def async_register_services(hass: HomeAssistant) -> None:
-    """Register the Adjustable Bed services (idempotent)."""
-    from .support_logs import async_setup_support_logs
-
-    async_setup_support_logs(hass)
-    if hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET):
-        return  # Services already registered
-
+def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
+    """Import the family action modules, which import this one, in the import executor."""
     from .beds.bf_cherish.services import register_services as register_bf_cherish_services
     from .beds.casper_base.services import async_register_casper_base_services
     from .beds.comfort_enhancements.services import async_register_comfort_enhancements_services
@@ -2392,47 +2407,58 @@ async def async_register_services(hass: HomeAssistant) -> None:
     from .beds.sleep_number.services import async_register_sleep_number_services
     from .beds.sleeptracker.services import async_register_sleeptracker_services
     from .beds.solace.services import async_register_solace_services
+    from .beds.starcode.accessory_group import register_group_services
     from .beds.svane.services import async_register_svane_services
     from .position_estimate_services import async_register_position_estimate_services
 
-    register_bf_cherish_services(hass)
-    async_register_motion_bed_services(hass)
-    async_register_casper_base_services(hass)
-    async_register_gmmotor_services(hass)
-    async_register_richmat_mh_services(hass)
-    async_register_position_estimate_services(hass)
-    async_register_ruf_richmat_services(hass)
-    async_register_richmat_classic_services(hass)
-    async_register_motomotion_services(hass)
-    async_register_hjbed_services(hass)
-    async_register_goodvibe_services(hass)
-    async_register_rmcontrol_services(hass)
-    async_register_sleep_number_services(hass)
-    async_register_doublesleep_services(hass)
-    async_register_sleeptracker_services(hass)
-    async_register_reverie_services(hass)
-    async_register_linak_services(hass)
-    async_register_solace_services(hass)
-    async_register_leggett_okin_services(hass)
-    async_register_floyd_services(hass)
-    async_register_octo_services(hass)
-    async_register_customatic_services(hass)
-    async_register_furnimove_services(hass)
-    async_register_fsm_relax_services(hass)
-    async_register_limoss_remote_services(hass)
-    async_register_serenity_services(hass)
-    async_register_eshine_okin_services(hass)
-    async_register_glideaway_motion_services(hass)
-    async_register_simmons_services(hass)
-    async_register_comfort_enhancements_services(hass)
-    async_register_malouf_app_services(hass)
-    async_register_logicdata_app_services(hass)
-    async_register_jiecang_app_services(hass)
-    async_register_svane_services(hass)
+    return (
+        register_bf_cherish_services,
+        async_register_motion_bed_services,
+        async_register_casper_base_services,
+        async_register_gmmotor_services,
+        async_register_richmat_mh_services,
+        async_register_position_estimate_services,
+        async_register_ruf_richmat_services,
+        async_register_richmat_classic_services,
+        async_register_motomotion_services,
+        async_register_hjbed_services,
+        async_register_goodvibe_services,
+        async_register_rmcontrol_services,
+        async_register_sleep_number_services,
+        async_register_doublesleep_services,
+        async_register_sleeptracker_services,
+        async_register_reverie_services,
+        async_register_linak_services,
+        async_register_solace_services,
+        async_register_leggett_okin_services,
+        async_register_floyd_services,
+        async_register_octo_services,
+        async_register_customatic_services,
+        async_register_furnimove_services,
+        async_register_fsm_relax_services,
+        async_register_limoss_remote_services,
+        async_register_serenity_services,
+        async_register_eshine_okin_services,
+        async_register_glideaway_motion_services,
+        async_register_simmons_services,
+        async_register_comfort_enhancements_services,
+        async_register_malouf_app_services,
+        async_register_logicdata_app_services,
+        async_register_jiecang_app_services,
+        async_register_svane_services,
+        register_group_services,
+    )
 
-    from .beds.starcode.accessory_group import register_group_services
 
-    register_group_services(hass)
+async def async_register_services(hass: HomeAssistant) -> None:
+    """Register the Adjustable Bed services (idempotent)."""
+    registrars = await hass.async_add_import_executor_job(_import_service_registrars)
+    async_setup_support_logs(hass)
+    if hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET):
+        return  # Services already registered
+
+    for register in registrars:
+        register(hass)
     hass.services.async_register(
         DOMAIN,
         SERVICE_GOTO_PRESET,

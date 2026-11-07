@@ -11,6 +11,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...import_executor import async_import_modules
 from ...services import (
     ATTR_DURATION,
     ATTR_ENABLED,
@@ -34,6 +35,7 @@ LOGICDATA_HOLD_PRESETS = ("flat", "zero_g", "anti_snore", "memory_1", "memory_2"
 
 async def handle_logicdata_set_alarm(call: ServiceCall) -> None:
     """Configure the Logicdata app controller's recurring clock alarm."""
+    await async_import_modules(call.hass, "beds.logicdata.app")
     from .app import LogicdataAppController
 
     alarm_time = call.data[ATTR_TIME]
@@ -75,6 +77,7 @@ def _preset_hold_duration_seconds(value: object) -> Decimal:
 
 async def handle_logicdata_hold_preset(call: ServiceCall) -> None:
     """Hold a MOTIONrelax P2 or Sleep Smart preset through the cancellable command queue."""
+    await async_import_modules(call.hass, "beds.logicdata.app")
     from .app import LogicdataAppController
 
     duration_ms = int(call.data[ATTR_DURATION] * 1000)

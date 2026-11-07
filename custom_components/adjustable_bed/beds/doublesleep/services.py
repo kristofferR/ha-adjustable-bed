@@ -14,6 +14,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
 from ...const import DOMAIN
+from ...import_executor import async_import_modules
 from .protocol import ALARM_PRESETS, PRESETS, SAVE, alarm_days
 
 type Action = Literal[
@@ -122,6 +123,7 @@ def build_request(data: Mapping[str, object]) -> Request:
 
 
 async def handle_doublesleep(call: ServiceCall) -> None:
+    await async_import_modules(call.hass, "beds.doublesleep.controller")
     from ...services import _call_targets, _preflight_and_execute
     from .controller import DoubleSleepController
 

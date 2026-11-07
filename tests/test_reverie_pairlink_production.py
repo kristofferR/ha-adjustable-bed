@@ -2272,8 +2272,8 @@ async def test_paired_local_children_start_distinct_selected_backends(
         pairlink_runtime as reverie_pairlink_runtime,
     )
     from custom_components.adjustable_bed.beds.reverie.pairlink_local_setup import (
+        async_preflight_paired_pairlink_local_roles,
         async_start_paired_pairlink_local_child,
-        preflight_paired_pairlink_local_roles,
     )
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
@@ -2308,7 +2308,7 @@ async def test_paired_local_children_start_distinct_selected_backends(
         entry_id="pairlink-pair-test",
         async_on_unload=unload_callbacks.append,
     )
-    selected_inventory, roles, transfers = preflight_paired_pairlink_local_roles(
+    selected_inventory, roles, transfers = await async_preflight_paired_pairlink_local_roles(
         hass,
         parent,
         {"left": first_child, "right": second_child},

@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...import_executor import async_import_modules
 from ...services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
 from .requests import Operation, Request
 
@@ -45,6 +46,7 @@ SCHEMA = vol.Schema(FIELDS)
 
 
 async def handle_hjbed(call: ServiceCall) -> None:
+    await async_import_modules(call.hass, "beds.hjbed.controller")
     from .controller import HJBedController
 
     request = Request(

@@ -9,6 +9,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...import_executor import async_import_modules
 from ...services import (
     ATTR_ENABLED,
     ATTR_TIME,
@@ -24,6 +25,7 @@ SERVICE_ESHINE_SET_ALARM = "eshine_set_alarm"
 
 async def handle_eshine_set_alarm(call: ServiceCall) -> None:
     """Configure the explicit com.okin.eshine profile's next-occurrence alarm."""
+    await async_import_modules(call.hass, "beds.eshine_okin.controller")
     from .controller import EshineOkinController
 
     enabled = call.data[ATTR_ENABLED]

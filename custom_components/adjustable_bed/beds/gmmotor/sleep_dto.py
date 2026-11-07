@@ -6,6 +6,7 @@ from collections.abc import Iterator, Mapping
 
 from .notifications import Value
 from .protocol import MalformedNotification
+from .sleep_layouts import LAYOUTS, NULL_BRANCHES
 
 type Path = tuple[str | int, ...]
 
@@ -95,8 +96,6 @@ def parse(address: str, value: dict[str, Value]) -> Value:
     Invalid-type failures are HA validation errors; this is not a claim that
     Python exceptions reproduce the Dart runtime's malformed-type exceptions.
     """
-    from .sleep_layouts import LAYOUTS, NULL_BRANCHES
-
     model = LAYOUTS[address]
     if not isinstance(model, dict) or not isinstance(model.get("fields"), dict):
         raise ValueError("Invalid generated sleep DTO model")
