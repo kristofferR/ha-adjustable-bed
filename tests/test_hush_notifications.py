@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from custom_components.adjustable_bed.codec.casper import extra
+from custom_components.adjustable_bed.codec.richmat import record_20_len
 from custom_components.adjustable_bed.hush_protocol import HushMainReceive, decode
 
 VECTORS = json.loads((Path(__file__).parent / "fixtures/hush_notifications.json").read_text())
@@ -56,7 +56,7 @@ def test_extended_integrity_fragmentation_and_nonprogress_rejection():
     ordinary = bytes.fromhex("6e90396e00")
     assert HushMainReceive().feed(ordinary) == [ordinary]
     # Bad packet must not prevent the next well-framed callback from being read.
-    assert decode(extra(17, 3, (1, 0, 45), operation=2)).values == {"position": 1, "value": 45}
+    assert decode(record_20_len(17, 3, 2, (1, 0, 45))).values == {"position": 1, "value": 45}
 
 
 @pytest.mark.parametrize(

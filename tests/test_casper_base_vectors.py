@@ -1,4 +1,4 @@
-"""The Casper Base report's frozen frames pass through the Casper codec byte for byte."""
+"""The Casper Base report's frozen frames pass through the Richmat codec byte for byte."""
 
 from __future__ import annotations
 
@@ -9,8 +9,9 @@ from pathlib import Path
 import pytest
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.codec import casper as codec
+from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.controller_factory import create_controller
+from custom_components.adjustable_bed.profiles import casper as library
 from custom_components.adjustable_bed.profiles.casper import ACTIONS, PROFILES, CasperProfile
 from tests import casper_base_vectors, hush_vectors
 from tests.casper_base_vectors import FROZEN_FRAMES, SHARED_FRAMES
@@ -70,21 +71,25 @@ def test_each_product_sends_its_catalog_opcodes(key):
         if opcode is not None
     }
     commands = {
-        codec.control(op, single=single).hex() for op in opcodes for single in (True, False)
+        codec.function(op, single=single).hex() for op in opcodes for single in (True, False)
     }
-    queries = {codec.special(name, single=s).hex() for name in codec.SPECIAL for s in (True, False)}
+    queries = {
+        codec.function(code, action=action, single=single).hex()
+        for action, code in library.QUERIES
+        for single in (True, False)
+    }
     sent = commands | queries
     assert sent <= FROZEN_FRAMES[key], sorted(sent - FROZEN_FRAMES[key])
 
 
 @pytest.mark.parametrize("vectors", [casper_base_vectors, hush_vectors], ids=["casper", "hush"])
 @pytest.mark.parametrize(
-    "opcode", [codec.STOP, codec.LIGHT_OFF, codec.ANTI_SNORE, codec.MUSIC_BLUETOOTH]
+    "opcode", [codec.STOP, library.LIGHT_OFF, library.ANTI_SNORE, library.MUSIC_BLUETOOTH]
 )
-def test_the_codecs_fixed_commands_are_frozen_in_both_apps(vectors, opcode):
+def test_the_librarys_fixed_commands_are_frozen_in_both_apps(vectors, opcode):
     frozen = vectors.SHARED_FRAMES.union(*vectors.FROZEN_FRAMES.values())
     for single in (True, False):
-        assert codec.control(opcode, single=single).hex() in frozen
+        assert codec.function(opcode, single=single).hex() in frozen
 
 
 def test_the_snapshot_route_sends_only_its_products_frames():

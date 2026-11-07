@@ -1,10 +1,12 @@
-"""The Hush Base 1.0.5 app's products as profiles over ``codec/casper.py``.
+"""The Hush Base 1.0.5 app's products as profiles over ``codec/richmat.py``.
 
 The app (``com.richmat.hushbase``, row126) lists twelve products of its own,
 catalog indices 46 to 57. It also restores products a phone saved under its
 shared catalog, the other indices from 1 to 71; those keep the Hush app's own
 rows. Each row in ``hush_catalog.py`` names the product, its action groups,
-alarm positions and page flags, from the accepted product joins.
+alarm positions and page flags, from the accepted product joins. The app ships
+the Casper Base library: its transports, queries and fixed opcodes are in
+``profiles/casper.py``.
 """
 
 from __future__ import annotations

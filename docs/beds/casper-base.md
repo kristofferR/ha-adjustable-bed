@@ -91,7 +91,7 @@
 ### Packet Format
 
 Builders in
-[`codec/casper.py`](../../custom_components/adjustable_bed/codec/casper.py), shared with Hush Base.
+[`codec/richmat.py`](../../custom_components/adjustable_bed/codec/richmat.py), shared with Hush Base.
 The checksum is the low byte of the sum of all preceding bytes.
 
 | Packet | Template |

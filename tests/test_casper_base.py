@@ -16,8 +16,9 @@ from custom_components.adjustable_bed.beds.casper_sleep import CasperSleepContro
 from custom_components.adjustable_bed.casper_base_catalog import ACTIONS, PRODUCTS
 from custom_components.adjustable_bed.casper_base_protocol import Event, Request
 from custom_components.adjustable_bed.casper_sleep_protocol import NOTIFY, SERVICES, WRITE, envelope
-from custom_components.adjustable_bed.codec.casper import GATT
+from custom_components.adjustable_bed.codec.richmat import TRANSPORTS
 from custom_components.adjustable_bed.detection import BED_TYPE_DISPLAY_NAMES
+from custom_components.adjustable_bed.profiles.casper import TRANSPORTS as PROFILE_TRANSPORTS
 from custom_components.adjustable_bed.validators import get_variants_for_bed_type
 
 
@@ -37,7 +38,8 @@ def make(model="casperpro", *, transport=1, kind=None):
     c.client.write_gatt_char = AsyncMock()
     c.client.start_notify = AsyncMock()
     c.client.stop_notify = AsyncMock()
-    service, write = GATT[transport]
+    gatt = TRANSPORTS[PROFILE_TRANSPORTS[transport]]
+    service, write = gatt.service_uuid, gatt.write_uuid
     chars = [char(write, "write", "write-without-response"), char("1234", "notify")]
     if kind:
         service = SERVICES[0]

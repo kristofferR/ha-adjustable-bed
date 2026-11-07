@@ -44,7 +44,7 @@
 
 **Notify characteristic:** first notify-capable characteristic in the selected coherent service.
 **Write mode:** selected write characteristic must support write; use no-response when also offered.
-**Format:** Nordic sends one opcode byte. Other bed services send `6e 01 SIDE OP SUM8`; side is 0 or 1. Shared services never identify a product. The frames are the Casper Base app's library frames, built by `codec/casper.py`; each model is a profile in `profiles/hush.py`.
+**Format:** Nordic sends one opcode byte. Other bed services send `6e 01 SIDE OP SUM8`; side is 0 or 1. Shared services never identify a product. The frames are the Casper Base app's library frames, built by `codec/richmat.py`; each model is a profile in `profiles/hush.py`.
 
 ### Sleep transport
 

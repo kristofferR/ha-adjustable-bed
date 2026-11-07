@@ -1,4 +1,4 @@
-"""The Hush Base report's frozen frames pass through the Casper codec byte for byte."""
+"""The Hush Base report's frozen frames pass through the Richmat codec byte for byte."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.codec import casper as codec
+from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.hush_catalog import ACTIONS as CATALOG_ACTIONS
 from custom_components.adjustable_bed.profiles.hush import ACTIONS, CURRENT, PROFILES, HushProfile
@@ -41,7 +41,7 @@ def test_each_product_sends_its_catalog_opcodes(key):
         for opcode in ACTIONS[index][1:]
         if opcode is not None and ACTIONS[index][0] != "PhoneLight"
     }
-    commands = {codec.control(opcode).hex() for opcode in opcodes}
+    commands = {codec.function(opcode).hex() for opcode in opcodes}
     assert commands <= FROZEN_FRAMES[key], sorted(commands - FROZEN_FRAMES[key])
 
 
@@ -52,7 +52,7 @@ def test_the_music_page_sends_frozen_frames():
     assert music and all(name.startswith("Music") and long is None for name, _, long in music)
     for _, short, _ in music:
         for single in (True, False):
-            assert codec.control(short, single=single).hex() in ALL_FRAMES
+            assert codec.function(short, single=single).hex() in ALL_FRAMES
 
 
 def test_the_controller_builds_no_frame_of_its_own():

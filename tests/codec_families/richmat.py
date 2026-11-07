@@ -1,11 +1,14 @@
-"""R1 Richmat 6E: Richmat, its app routes, BedTech, WiLinke and the catalog apps."""
+"""R1 Richmat 6E: Richmat, its app routes, BedTech, WiLinke, the catalog apps, Casper Base and Hush Base."""
 
 from __future__ import annotations
 
 import re
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.profiles.casper import CasperProfile
+from custom_components.adjustable_bed.profiles.hush import HushProfile
 from custom_components.adjustable_bed.profiles.richmat import RICHMAT_CLASSIC, RichmatProfile
+from tests import casper_base_vectors, hush_vectors
 from tests.codec_families import CodecFamily, CodecGuide
 from tests.richmat_vectors import FROZEN_FRAMES
 
@@ -20,6 +23,15 @@ _VARIANTS = {
     "goodvibe": "selector-0001",
     **{f"richmat_classic_{app}": app for app in RICHMAT_CLASSIC},
 }
+# The Casper Base and Hush Base products are their bed type's protocol variant.
+_PRODUCT_VARIANTS = frozenset({const.BED_TYPE_CASPER_BASE, const.BED_TYPE_HUSH_BASE})
+_FROZEN = frozenset().union(
+    *FROZEN_FRAMES.values(),
+    *(
+        vectors.SHARED_FRAMES.union(*vectors.FROZEN_FRAMES.values())
+        for vectors in (casper_base_vectors, hush_vectors)
+    ),
+)
 
 
 def _spelled(text: str) -> set[str]:
@@ -42,14 +54,20 @@ def _spelled(text: str) -> set[str]:
 
 
 FAMILY = CodecFamily(
-    profiles={RichmatProfile: FROZEN_FRAMES},
+    profiles={
+        RichmatProfile: FROZEN_FRAMES,
+        CasperProfile: casper_base_vectors.FROZEN_FRAMES,
+        HushProfile: hush_vectors.FROZEN_FRAMES,
+    },
     bed_types=frozenset(
         {
             "bailey_bed_control",
             "bedtech",
+            "casper_base",
             "eshine",
             "goodvibe",
             "hjbed",
+            "hush_base",
             "leggett_lp_legacy",
             "leggett_wilinke",
             "richmat",
@@ -68,8 +86,8 @@ FAMILY = CodecFamily(
     guide=CodecGuide(
         path="docs/beds/richmat.md",
         spelled=_spelled,
-        frozen=frozenset().union(*FROZEN_FRAMES.values()),
-        variant=lambda key, _bed_type: _VARIANTS.get(key),
+        frozen=_FROZEN,
+        variant=lambda key, bed_type: key if bed_type in _PRODUCT_VARIANTS else _VARIANTS.get(key),
         entry_data={
             # A layout every classic app ships.
             "richmat_classic_apps": {const.CONF_PRODUCT_TYPE: "6BRM"},

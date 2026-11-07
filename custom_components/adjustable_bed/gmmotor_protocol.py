@@ -7,7 +7,6 @@ row102 disposition ledger. Integers are masked only at the native byte boundary.
 
 from __future__ import annotations
 
-import binascii
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal
@@ -209,7 +208,7 @@ class FrameBuffer:
                 if sum(frame[:-1]) & 255 == frame[-1]:
                     accepted.append((kind, frame))
             elif len(frame) > 3 and kind == 64:
-                if binascii.crc_hqx(frame[:-2], 0) == int.from_bytes(frame[-2:], "big"):
+                if codec.is_valid_crc(frame):
                     accepted.append((kind, frame))
             else:
                 accepted.append((0, frame))

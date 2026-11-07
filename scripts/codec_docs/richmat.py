@@ -26,6 +26,8 @@ from custom_components.adjustable_bed.lp_legacy_profiles import (
     LP_LEGACY_PROFILE_CODES,
     get_lp_legacy_profile,
 )
+from custom_components.adjustable_bed.profiles import casper as casper_profiles
+from custom_components.adjustable_bed.profiles import hush as hush_profiles
 from custom_components.adjustable_bed.profiles import richmat as richmat_profiles
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
@@ -138,6 +140,17 @@ def bed_types() -> dict[str, tuple[str, ...]]:
         },
         "goodvibe": (_const.BED_TYPE_GOODVIBE,),
         "leggett_lp_legacy": (_const.BED_TYPE_LEGGETT_LP_LEGACY,),
+        # Each app's own products; the restored ones are choices on the same bed type.
+        **{
+            key: (_const.BED_TYPE_CASPER_BASE,)
+            for key, profile in casper_profiles.PROFILES.items()
+            if profile.current
+        },
+        **{
+            key: (_const.BED_TYPE_HUSH_BASE,)
+            for key, profile in hush_profiles.PROFILES.items()
+            if profile.current
+        },
     }
 
 
