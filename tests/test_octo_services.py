@@ -28,7 +28,7 @@ from custom_components.adjustable_bed.beds.octo import (
     OctoCapabilityRecord,
     OctoController,
 )
-from custom_components.adjustable_bed.button import ControllerActionButton, _button_entities_for
+from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OCTO,
     CONF_BED_TYPE,
@@ -624,7 +624,6 @@ async def test_octo_enroll_pin_sends_and_persists_one_physical_receiver(
     assert write.await_args.args == ([0x20, 0x41], [0, 3, 6, 9])
     assert isinstance(write.await_args.kwargs["cancel_event"], asyncio.Event)
     assert entry.data[CONF_OCTO_PIN] == "0369"
-    assert coordinator._octo_pin == "0369"
     assert controller._pin == "0369"
     command_kwargs = coordinator.async_execute_controller_command.await_args.kwargs
     assert command_kwargs["cancel_running"] is False
@@ -662,7 +661,7 @@ async def test_octo_enroll_pin_from_single_address_side_updates_physical_owner(
 
     write.assert_awaited_once()
     assert entry.data[CONF_OCTO_PIN] == "0420"
-    assert inner._octo_pin == "0420"
+    assert inner.entry.data[CONF_OCTO_PIN] == "0420"
     assert controller._pin == "0420"
 
 
@@ -695,7 +694,6 @@ async def test_octo_enroll_pin_is_not_persisted_when_scheduler_skips_callback(
 
     controller._write_octo_command.assert_not_awaited()
     assert entry.data[CONF_OCTO_PIN] == ""
-    assert coordinator._octo_pin == ""
     assert controller._pin == ""
 
 
@@ -738,23 +736,31 @@ async def test_octo_memory_action_specs_publish_card_metadata_for_standalone_and
     left = paired.children[SIDE_LEFT]
     side_button = ControllerActionButton(left, recall_spec)
     assert side_button.unique_id.endswith("_preset_memory_9_left")
-    assert side_button.translation_key == "preset_memory_9_left"
+    assert side_button.translation_key == "preset_memory_9"
     assert {
         key: side_button.extra_state_attributes[key] for key in standalone.extra_state_attributes
     } == standalone.extra_state_attributes
     assert side_button.extra_state_attributes["bed_side"] == SIDE_LEFT
 
 
-async def test_complete_memory_loss_retires_only_the_selected_octo_side_ids(
+async def test_complete_memory_loss_retires_both_sides_dynamic_ids(
     hass: HomeAssistant,
 ) -> None:
-    """Every dynamic slot above eight retires while its paired peer stays owned."""
+    """Every dynamic slot above eight retires on each side of a shared controller."""
+    from homeassistant.const import Platform
     from homeassistant.helpers import entity_registry as er
+
+    from custom_components.adjustable_bed.const import CONF_PAIR_MODE, PAIR_MODE_SINGLE_ADDRESS
+    from tests.test_entity_sweep import async_setup_platforms_and_sweep
 
     entry, inner, controller = await _target(hass)
     hass.config_entries.async_update_entry(
         entry,
-        data={**entry.data, CONF_PAIR_ID: "paired-octo"},
+        data={
+            **entry.data,
+            CONF_PAIR_ID: "paired-octo",
+            CONF_PAIR_MODE: PAIR_MODE_SINGLE_ADDRESS,
+        },
     )
     paired = SingleAddressPairedCoordinator(hass, entry, inner)
     left = paired.children[SIDE_LEFT]
@@ -775,13 +781,11 @@ async def test_complete_memory_loss_retires_only_the_selected_octo_side_ids(
         OCTO_FEATURE_MEMCOUNT: OctoCapabilityRecord(OCTO_FEATURE_MEMCOUNT, 0, b"\x01", 1, b"\x00")
     }
     controller._handle_feature_response([0xFF, 0xFF, 0xFF, 0, 0, 0])
-    _button_entities_for(hass, left)
+    await async_setup_platforms_and_sweep(hass, entry, paired, (Platform.BUTTON,))
 
     for key in ("preset_memory_9", "program_memory_9"):
-        assert registry.async_get_entity_id("button", DOMAIN, left.entity_unique_id(key)) is None
-        assert (
-            registry.async_get_entity_id("button", DOMAIN, right.entity_unique_id(key)) is not None
-        )
+        for runtime in (left, right):
+            assert registry.async_get_entity_id("button", DOMAIN, runtime.entity_unique_id(key)) is None
 
     slot_one = next(
         spec for spec in controller.controller_button_specs if spec.key == "preset_memory_1"

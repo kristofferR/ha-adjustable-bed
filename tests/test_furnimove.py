@@ -146,7 +146,6 @@ async def test_light_exposure_is_toggle_and_unpublished_initial_boolean() -> Non
         entry.args[0] == "furnimove_ubl"
         for entry in controller._coordinator.handle_controller_state_update.call_args_list
     )
-    assert controller.stale_motor_entity_keys == frozenset({"stair"})
 
 
 async def test_axes_main_release_tail_and_offline_no_stop_frame(monkeypatch) -> None:

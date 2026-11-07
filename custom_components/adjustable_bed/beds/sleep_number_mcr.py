@@ -41,6 +41,8 @@ from .base import (
     MotorControlSpec,
     PositionNumberSpec,
 )
+from .builder import BuildContext
+from .sleep_number_commands import SleepNumberActions
 from .sleep_number_mcr_protocol import (
     FoundationFeatures,
     classify_smartpump,
@@ -53,6 +55,7 @@ from .sleep_number_mcr_protocol import (
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
+    from .lifecycle import ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -210,25 +213,21 @@ def _motor_command(side: str, axis: str, direction: str) -> MotorCommandCallable
     return execute
 
 
-class SleepNumberMcrController(BedController):
+class SleepNumberMcrController(BedController, SleepNumberActions):
     """Controller for older Sleep Number BAM / MCR beds."""
 
     def __init__(
         self,
         coordinator: AdjustableBedCoordinator,
         *,
+        client_identifier: int,
         manufacturer_data: Mapping[int, bytes] | None = None,
     ) -> None:
         """Initialize the controller."""
         super().__init__(coordinator)
         self._bed_address = 0
         self._client_address = 0
-        identifier = coordinator.entry.data.get(CONF_SLEEP_NUMBER_MCR_CLIENT_ID)
-        self._client_identifier: int = (
-            identifier
-            if isinstance(identifier, int) and 0 < identifier < 1 << 64
-            else (secrets.randbits(64) or 1)
-        )
+        self._client_identifier = client_identifier
         self._foundation_features: FoundationFeatures | None = None
         self._nodes: set[int] = set()
         self._chambers: dict[str, int] = {}
@@ -281,11 +280,6 @@ class SleepNumberMcrController(BedController):
         return True
 
     @property
-    def requires_persistent_connection(self) -> bool:
-        """MCR beds are kept connected for the entry's lifetime."""
-        return True
-
-    @property
     def supports_motor_control(self) -> bool:
         """Expose motor controls after foundation discovery."""
         return self._foundation_features is not None
@@ -303,10 +297,6 @@ class SleepNumberMcrController(BedController):
     @property
     def exposes_discrete_light_as_light(self) -> bool:
         return True
-
-    @property
-    def position_number_pruning(self) -> frozenset[str] | None:
-        return frozenset()
 
     @property
     def supports_discrete_light_control(self) -> bool:
@@ -419,6 +409,15 @@ class SleepNumberMcrController(BedController):
         self._response_frames.clear()
         self._response_event.clear()
         self._quarantined_response_keys.clear()
+
+    async def async_on_connect(self, session: ControllerSession) -> None:
+        """Subscribe and initialize without idle gaps, which older firmware drops."""
+        await session.async_start_notify()
+        await self.query_config()
+
+    @property
+    def reads_light_state_on_connect(self) -> bool:
+        return True
 
     async def query_config(self) -> None:
         """Discover nodes and hydrate only supported feature families."""
@@ -727,11 +726,7 @@ class SleepNumberMcrController(BedController):
 
     @property
     def supports_position_feedback(self) -> bool:
-        return self._foundation_features is not None
-
-    @property
-    def reports_percentage_position(self) -> bool:
-        return True
+        return super().supports_position_feedback and self._foundation_features is not None
 
     @property
     def supports_direct_position_control(self) -> bool:
@@ -771,6 +766,7 @@ class SleepNumberMcrController(BedController):
                 open_fn=spec.open_fn,
                 close_fn=spec.close_fn,
                 stop_fn=spec.stop_fn,
+                motor=spec.translation_key,
             )
             for spec in self.motor_control_specs
         )
@@ -1952,3 +1948,27 @@ class SleepNumberMcrController(BedController):
             return _SIDE_NAME_TO_VALUE[side]
         except KeyError as err:
             raise ValueError(f"Unsupported Sleep Number MCR side: {side}") from err
+
+
+async def build_controller(ctx: BuildContext) -> SleepNumberMcrController:
+    """Build the controller with the app's persisted client identity.
+
+    The app persists a random client identity; it is not the bed's MAC address
+    or the assigned session address. A live link stores a new one; an offline
+    controller only borrows one.
+    """
+    coordinator = ctx.coordinator
+    stored = ctx.data.get(CONF_SLEEP_NUMBER_MCR_CLIENT_ID)
+    if type(stored) is int and 0 < stored < 1 << 64:
+        identifier = stored
+    else:
+        identifier = secrets.randbits(64) or 1
+        if ctx.client is not None:
+            coordinator._begin_internal_entry_update(coordinator._ble_bond_established)
+            coordinator._async_persist_config(
+                {**ctx.data, CONF_SLEEP_NUMBER_MCR_CLIENT_ID: identifier},
+                keys={CONF_SLEEP_NUMBER_MCR_CLIENT_ID},
+            )
+    return SleepNumberMcrController(
+        coordinator, client_identifier=identifier, manufacturer_data=ctx.manufacturer_data
+    )

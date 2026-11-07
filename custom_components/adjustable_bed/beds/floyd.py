@@ -87,10 +87,6 @@ class FloydController(KaidiController):
         return tuple(FLOYD.holds)
 
     @property
-    def supports_floyd_actions(self) -> bool:
-        return True
-
-    @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
         return (ControllerStateBinarySensorSpec(
             key="floyd_battery_mode", translation_key="floyd_battery_mode",

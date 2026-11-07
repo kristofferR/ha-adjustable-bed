@@ -1,7 +1,6 @@
 """Validated, named Motion Bed app configuration actions."""
 from __future__ import annotations
 
-import asyncio
 from collections.abc import Mapping
 from datetime import datetime
 
@@ -10,8 +9,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .beds.base import BedController
-from .const import BED_TYPE_MOTION_BED, DOMAIN
+from .const import DOMAIN
 from .motion_bed_protocol import (
     AirMode,
     AirTimer,
@@ -148,45 +146,32 @@ def build_motion_bed_request(service: str, data: Mapping[str, object]) -> Motion
 
 async def _execute(call: ServiceCall, request: MotionBedWrite | None = None) -> None:
     # Shared targeting includes paired child routing and preflights every receiver.
-    from .services import (
-        ATTR_SIDE,
-        CONF_DEVICE_ID,
-        _command_targets,
-        _execute_sided,
-        _missing_device_error,
-        _preflight_capability,
-        _release_preflighted,
-        _resolve_sided_targets,
-    )
-    targets, missing = _resolve_sided_targets(call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE))
-    if missing:
-        raise _missing_device_error(missing[0])
-    for coordinator, side in targets:
-        for target in _command_targets(coordinator, side):
-            if target.bed_type != BED_TYPE_MOTION_BED:
-                raise ServiceValidationError("Select a Motion Bed app device")
-    def validate(controller: BedController) -> None:
+    from .beds.motion_bed import MotionBedController
+    from .services import _call_targets, _preflight_and_execute
+
+    def validate(controller: MotionBedController) -> None:
         if request is not None:
             controller.validate_motion_bed_write(request)
         else:
             controller.validate_motion_bed_action(call.data["action"], branch=call.data["branch"],
                 duration=call.data["duration"], confirmed=call.data["confirmed"])
-    async def execute(controller: BedController) -> None:
+
+    async def execute(controller: MotionBedController) -> None:
         if request is not None:
             await controller.async_execute_motion_bed_write(request)
         else:
             await controller.async_execute_motion_bed_action(call.data["action"], branch=call.data["branch"],
                 duration=call.data["duration"], confirmed=call.data["confirmed"])
-    try:
-        preflighted = await _preflight_capability(targets, "supports_motion_bed_actions", "Motion Bed app controls", validate)
-    except ValueError as err:
-        raise ServiceValidationError(str(err)) from err
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(coordinator, side, execute, resource="*")
-    except (Exception, asyncio.CancelledError):
-        await _release_preflighted(preflighted)
-        raise
+
+    await _preflight_and_execute(
+        _call_targets(call),
+        MotionBedController,
+        "Motion Bed app controls",
+        execute,
+        validate=validate,
+        cancel_running=True,
+        resource="*",
+    )
 
 
 async def handle_motion_bed_action(call: ServiceCall) -> None:

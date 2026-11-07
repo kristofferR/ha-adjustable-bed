@@ -648,7 +648,7 @@ async def test_ha_service_preflights_all_targets(hass, coordinator, instant):
     async_register_hjbed_services(hass)
     with (
         patch(
-            "custom_components.adjustable_bed.hjbed_services._resolve_sided_targets",
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=(targets, []),
         ),
         pytest.raises(ServiceValidationError),
@@ -760,7 +760,6 @@ async def test_release_invalidates_pending_hold_without_extra_wire_stop(coordina
     runtime = MagicMock()
     runtime.device_info = {}
     runtime.entity_unique_id.side_effect = lambda key: "bed_" + key
-    runtime.entity_translation_key.side_effect = lambda key: key
 
     async def stop():
         async def on_wire(_context):
@@ -1047,7 +1046,6 @@ async def test_local_layout_select_uses_replacement_controller(coordinator, inst
     coordinator.device_info = {}
     coordinator.entity_side = None
     coordinator.entity_unique_id.side_effect = lambda key: "bed_" + key
-    coordinator.entity_translation_key.side_effect = lambda key: key
     old = controller(coordinator, profile)
     coordinator.capability_controller = old
     entity = AdjustableBedControllerSelect(coordinator, old.controller_select_specs[0])

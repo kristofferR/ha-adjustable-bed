@@ -23,7 +23,8 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 from bleak.exc import BleakError
 
 from ..app_session import app_session
-from ..const import REMACRO_READ_CHAR_UUID, REMACRO_WRITE_CHAR_UUID
+from ..card import CARD_LIGHT_LEVEL, CARD_LIGHTING, CardPlacement, CardSection
+from ..const import CONF_REMACRO_MODEL, REMACRO_READ_CHAR_UUID, REMACRO_WRITE_CHAR_UUID
 from ..controller_state import StateKey, StateUpdate
 from ..execution import ExecutionCapabilities
 from .base import (
@@ -34,6 +35,7 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
+from .builder import BuildContext
 from .remacro_protocol import (
     APP_JEROMES,
     APP_LED_SETTINGS_MODEL_IDS,
@@ -113,6 +115,9 @@ def remacro_session(
 
 class RemacroController(BedController):
     """One Remacro bed as shown by one app's model-specific control screen."""
+
+    # Every app writes WRITE_TYPE_NO_RESPONSE.
+    _write_with_response = False
 
     def __init__(
         self,
@@ -328,10 +333,6 @@ class RemacroController(BedController):
         return tuple(specs)
 
     @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset({"back", "legs", "head", "feet", "lumbar", "tilt", "all_motors"})
-
-    @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
         if not self._model.screen.split:
             return ()
@@ -343,6 +344,7 @@ class RemacroController(BedController):
                 options=("left", "right"),
                 select_fn=_select_side,
                 local_select_fn=self.select_control_side,
+                card=CardPlacement(CardSection.MOTORS),
             ),
         )
 
@@ -359,6 +361,7 @@ class RemacroController(BedController):
                 native_max_value=255,
                 native_step=1,
                 set_fn=_set_led_brightness,
+                card=CARD_LIGHT_LEVEL,
             ),
         )
 
@@ -373,6 +376,7 @@ class RemacroController(BedController):
                 press_fn=_remacro(lambda ctrl: ctrl.save_led_brightness()),
                 icon="mdi:content-save",
                 translation_key="remacro_led_brightness_save",
+                card=CARD_LIGHTING,
             ),
         )
 
@@ -385,23 +389,6 @@ class RemacroController(BedController):
         if self._app == APP_JEROMES:
             return self._serial.tap(code, parameter)
         return self._serial.hold(code, parameter)
-
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        # Every app writes WRITE_TYPE_NO_RESPONSE.
-        await self._write_gatt_with_retry(
-            REMACRO_WRITE_CHAR_UUID,
-            command,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            cancel_event=cancel_event,
-            response=False,
-        )
 
     async def _sleep(self, seconds: float) -> None:
         if seconds > 0:
@@ -740,3 +727,23 @@ class RemacroController(BedController):
 
 
 __all__ = ["APP_JEROMES", "APP_SLUMBERLAND", "APP_THE_BRICK", "RemacroController"]
+
+
+async def build_controller(ctx: BuildContext) -> RemacroController:
+    """Build the controller for the advertised model.
+
+    The live advertisement wins, as in the apps; the stored selector only
+    covers offline capability minting and missing history.
+    """
+    from .remacro_protocol import app_for_variant, remacro_led_level, resolve_model
+
+    coordinator = ctx.coordinator
+    app = app_for_variant(ctx.variant)
+    model = resolve_model(app, ctx.manufacturer_data, ctx.data.get(CONF_REMACRO_MODEL))
+    return RemacroController(
+        coordinator,
+        app=app,
+        model=model,
+        session=remacro_session(coordinator.hass, coordinator.address, app, model.model_id),
+        led_level=remacro_led_level(ctx.data, model.model_id),
+    )

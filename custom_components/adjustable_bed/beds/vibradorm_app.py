@@ -12,12 +12,24 @@ import math
 import sys
 from collections.abc import Callable, Coroutine, Mapping
 from dataclasses import asdict, dataclass, replace
-from typing import TYPE_CHECKING, Any, Final, TypedDict
+from typing import TYPE_CHECKING, Any, Final, Literal, TypedDict
 
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
+from ..card import CARD_LIGHT_MOOD, CARD_MASSAGE, CARD_UTILITY, CardPlacement, CardRole, CardSection
 from ..codec import vibradorm as codec
+from ..const import (
+    CONF_HAS_MASSAGE,
+    CONF_VIBRADORM_APP_PROFILE,
+    CONF_VIBRADORM_CONTROL_TYPE,
+    CONF_VIBRADORM_FLOOR_DEFAULT,
+    CONF_VIBRADORM_FLOOR_LIGHT,
+    CONF_VIBRADORM_LIGHT_EXTENSION,
+    CONF_VIBRADORM_RESTORED,
+    CONF_VIBRADORM_RGB,
+    CONF_VIBRADORM_VMAT_REMOTE,
+)
 from ..controller_state import StateKey, StateUpdate
 from ..execution import ExecutionCapabilities
 from ..profiles.vibradorm import (
@@ -60,7 +72,9 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
     PositionNumberSpec,
+    require_controller,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -364,6 +378,14 @@ async def _timer_number(controller: BedController, value: float) -> None:
     raise TypeError("Requires a Vibradorm app profile")
 
 
+_BUTTON_CARDS: Final = {
+    "floor_timer_toggle": CardPlacement(CardSection.LIGHTING, CardRole.TIMER_TOGGLE),
+    "mood_toggle": CardPlacement(CardSection.LIGHTING, CardRole.MOOD_TOGGLE),
+    "massage_automatic": CARD_MASSAGE,
+    "massage_individual": CARD_MASSAGE,
+}
+
+
 class VibradormAppController(BedController):
     def __init__(
         self,
@@ -518,10 +540,6 @@ class VibradormAppController(BedController):
         )
 
     @property
-    def supports_position_feedback(self) -> bool:
-        return False
-
-    @property
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
         if self.profile.app_profile == "vmat":
             return ()
@@ -554,10 +572,6 @@ class VibradormAppController(BedController):
     @property
     def supports_light_toggle_control(self) -> bool:
         return self.supports_lights
-
-    @property
-    def prunes_stale_light_level(self) -> bool:
-        return True
 
     @property
     def light_switch_follows_level_intent(self) -> bool:
@@ -652,6 +666,7 @@ class VibradormAppController(BedController):
                 name,
                 _button(action),
                 translation_key=f"vibradorm_app_{action}",
+                card=_BUTTON_CARDS.get(action, CARD_UTILITY),
             )
             for action, name in actions
         )
@@ -666,14 +681,16 @@ class VibradormAppController(BedController):
                     "vibradorm_app_mood_palette",
                     MOOD_PALETTE_OPTION,
                     tuple(self.mood_palette),
-                    lambda c, v: c.set_mood_palette(v),
+                    lambda c, v: require_controller(c, VibradormAppController).set_mood_palette(v),
+                    card=CARD_LIGHT_MOOD,
                 ),
                 ControllerSelectSpec(
                     "vibradorm_app_mood_effect",
                     "vibradorm_app_mood_effect",
                     MOOD_EFFECT_OPTION,
                     MOOD_EFFECTS,
-                    lambda c, v: c.set_mood_effect(v),
+                    lambda c, v: require_controller(c, VibradormAppController).set_mood_effect(v),
+                    card=CARD_LIGHT_MOOD,
                 ),
             ]
         if self.profile.massage:
@@ -683,7 +700,8 @@ class VibradormAppController(BedController):
                     "vibradorm_app_massage_wave",
                     MASSAGE_WAVE,
                     MASSAGE_WAVES,
-                    lambda c, v: c.set_massage_wave(v),
+                    lambda c, v: require_controller(c, VibradormAppController).set_massage_wave(v),
+                    card=CARD_MASSAGE,
                 )
             ]
         return tuple(specs)
@@ -702,6 +720,7 @@ class VibradormAppController(BedController):
                     1,
                     _timer_number,
                     "min",
+                    card=CardPlacement(CardSection.LIGHTING, CardRole.PENDING_TIMER_MINUTES),
                 )
             ]
         if self.profile.rgb:
@@ -713,7 +732,8 @@ class VibradormAppController(BedController):
                     0,
                     8,
                     1,
-                    lambda c, v: c.set_mood_speed(v),
+                    lambda c, v: require_controller(c, VibradormAppController).set_mood_speed(v),
+                    card=CARD_LIGHT_MOOD,
                 )
             ]
         if self.profile.massage:
@@ -725,7 +745,8 @@ class VibradormAppController(BedController):
                     1,
                     5,
                     1,
-                    lambda c, v: c.set_massage_speed(v),
+                    lambda c, v: require_controller(c, VibradormAppController).set_massage_speed(v),
+                    card=CARD_MASSAGE,
                 )
             ]
         return tuple(specs)
@@ -1394,3 +1415,49 @@ def _integer(value: float, minimum: int, maximum: int, label: str) -> int:
     ):
         raise ValueError(f"{label} must be an integer from {minimum} to {maximum}")
     return int(value)
+
+
+async def build_controller(ctx: BuildContext) -> VibradormAppController:
+    """Build the controller for the stored app profile and session intent."""
+    from ..vibradorm_app_state import get_vibradorm_app_session_intent
+
+    coordinator = ctx.coordinator
+    data = ctx.data
+    stored_control = data[CONF_VIBRADORM_CONTROL_TYPE]
+    control_type: int | Literal["other"]
+    if stored_control == "other":
+        control_type = "other"
+    elif isinstance(stored_control, int) and not isinstance(stored_control, bool):
+        control_type = stored_control
+    elif isinstance(stored_control, str):
+        control_type = int(stored_control)
+    else:
+        raise ValueError("Invalid retained Vibradorm control type")
+    app_profile = data[CONF_VIBRADORM_APP_PROFILE]
+    vmat = app_profile == "vmat"
+    restored = data.get(CONF_VIBRADORM_RESTORED, False)
+    light_extension = data.get(CONF_VIBRADORM_LIGHT_EXTENSION)
+    missing_default = 6 if (not restored and not vmat) or light_extension else 8
+    intent = get_vibradorm_app_session_intent(
+        coordinator.hass,
+        coordinator.address,
+        app_profile=app_profile,
+        control_type=control_type,
+        remembered_floor_default=data.get(CONF_VIBRADORM_FLOOR_DEFAULT, missing_default),
+        remote=data.get(CONF_VIBRADORM_VMAT_REMOTE),
+    )
+    return VibradormAppController(
+        coordinator,
+        app_profile=app_profile,
+        control_type=control_type,
+        restored=restored,
+        floor_light=data.get(CONF_VIBRADORM_FLOOR_LIGHT),
+        rgb=data.get(CONF_VIBRADORM_RGB, False),
+        massage=data.get(CONF_HAS_MASSAGE, False),
+        light_extension=data.get(CONF_VIBRADORM_LIGHT_EXTENSION, False),
+        floor_intent=intent.floor,
+        timer_intent=intent.timer,
+        remote=data.get(CONF_VIBRADORM_VMAT_REMOTE),
+        massage_intent=intent.massage if vmat else None,
+        mood_intent=intent.mood if vmat else None,
+    )

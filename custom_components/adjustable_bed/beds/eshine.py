@@ -6,6 +6,7 @@ import asyncio
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Final, Literal
 
+from ..card import CARD_MASSAGE, CARD_UTILITY
 from ..codec import richmat as codec
 from ..controller_state import StateKey
 from ..profiles.richmat import ESHINE, Button
@@ -217,6 +218,7 @@ class EshineController(BedController):
                 _action(button),
                 translation_key=f"eshine_{key}",
                 icon="mdi:content-save" if key.startswith("save_") else "mdi:vibrate",
+                card=CARD_MASSAGE if key.startswith("massage_") else CARD_UTILITY,
             )
             for key, (label, button) in EXTRA_BUTTONS.items()
         )

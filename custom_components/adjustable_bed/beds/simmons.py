@@ -20,6 +20,7 @@ from bleak.exc import BleakError
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.util import dt as dt_util
 
+from ..card import CARD_PRESETS
 from ..const import (
     CONF_BLE_DEVICE_NAME,
     DOMAIN,
@@ -44,6 +45,7 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
+from .builder import BuildContext
 from .simmons_protocol import (
     ALARM_MODES,
     FFE0_SERVICE,
@@ -318,8 +320,13 @@ class SimmonsController(BedController):
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         inclined = (
             tuple(
+                # Inclined-bed controls replace three presets.
                 ControllerButtonSpec(
-                    f"simmons_{key}", label, _action(key), translation_key=f"simmons_{key}"
+                    f"simmons_{key}",
+                    label,
+                    _action(key),
+                    translation_key=f"simmons_{key}",
+                    card=CARD_PRESETS,
                 )
                 for key, label in _INCLINED_LABELS.items()
             )
@@ -846,3 +853,10 @@ class SimmonsController(BedController):
                 ),
             ]
         self.forward_controller_state_updates(*updates)
+
+
+async def build_controller(ctx: BuildContext) -> SimmonsController:
+    """Build the controller; the app picks the packet format from a live BLE name."""
+    return SimmonsController(
+        ctx.coordinator, protocol_variant=ctx.variant, device_name=ctx.live_device_name
+    )

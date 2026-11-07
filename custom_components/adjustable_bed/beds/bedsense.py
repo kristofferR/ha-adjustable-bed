@@ -13,6 +13,14 @@ from typing import TYPE_CHECKING
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
+from ..card import (
+    CARD_HIDDEN,
+    CARD_LIGHT_STATE,
+    CARD_LIGHTING,
+    CARD_MASSAGE,
+    CARD_MASSAGE_TIMER,
+    CARD_UTILITY,
+)
 from ..codec import ff_frame as codec
 from ..const import CONF_BLE_DEVICE_NAME
 from ..controller_state import StateKey
@@ -27,6 +35,7 @@ from .base import (
     MotorControlSpec,
     PositionNumberSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -61,6 +70,15 @@ class BedSenseSession:
 def _state_key(name: str) -> StateKey[object]:
     """BedSense publishes its mixed-type session state under these names."""
     return StateKey[object](name)
+
+
+_SENSOR_CARDS = {
+    "massage_timer": CARD_MASSAGE_TIMER,
+    "light_duration": CARD_LIGHT_STATE,
+    **dict.fromkeys(
+        ("head_bar", "wave_bar", "head_steps", "foot_steps", "wave_steps"), CARD_MASSAGE
+    ),
+}
 
 
 class BedSenseController(BedController):
@@ -186,6 +204,9 @@ class BedSenseController(BedController):
                     scheduler_resource="*",
                     translation_key=f"bedsense_{category}",
                     translation_placeholders={"action": ACTIONS[key].label},
+                    card={"massage": CARD_MASSAGE, "light": CARD_LIGHTING}.get(
+                        category, CARD_UTILITY
+                    ),
                 )
             )
         specs.append(
@@ -222,6 +243,7 @@ class BedSenseController(BedController):
                 _state_key(f"bedsense_{key}"),
                 "mdi:information-outline",
                 attribute_keys=(_state_key("bedsense_state_source"),),
+                card=_SENSOR_CARDS.get(key, CARD_HIDDEN),
             )
             for key in (
                 "head_bar",
@@ -234,10 +256,6 @@ class BedSenseController(BedController):
                 "wave_steps",
             )
         )
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset(axis for axes in LAYOUTS.values() for axis in axes)
 
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
@@ -541,3 +559,15 @@ class BedSenseController(BedController):
     move_head_stop = stop_all
     move_legs_stop = stop_all
     move_feet_stop = stop_all
+
+
+async def build_controller(ctx: BuildContext) -> BedSenseController:
+    """Build the controller with the connection-independent app session."""
+    from ..app_session import app_session
+
+    return BedSenseController(
+        ctx.coordinator,
+        variant=ctx.variant or "auto",
+        device_name=ctx.live_device_name,
+        session=app_session(ctx.coordinator.hass, ctx.coordinator.address, "bedsense", BedSenseSession),
+    )

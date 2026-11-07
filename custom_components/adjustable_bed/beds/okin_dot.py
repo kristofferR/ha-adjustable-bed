@@ -38,6 +38,7 @@ from bleak.exc import BleakError
 from ..codec import okin_nframe as codec
 from ..const import NORDIC_UART_WRITE_CHAR_UUID, VARIANT_AUTO
 from ..profiles.okin_nframe import OKIN_DOT
+from .builder import BuildContext
 from .okin_uuid import OKIN_UUID_REMOTES, OkinUuidController
 from .okin_uuid_remotes import DEFAULT_OKIN_DOT_REMOTE
 
@@ -92,17 +93,6 @@ class OkinDotController(OkinUuidController):
         """Return the Nordic UART write characteristic used by DOT boxes."""
         return NORDIC_UART_WRITE_CHAR_UUID
 
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Clean up motor covers when the variant changes; no stair legacy here.
-
-        DOT boxes were never misdetected as the RF ECO BT stair profile, but
-        switching between DOT variants with different handset layouts (e.g.
-        RF34 Back/Legs -> RF1058 Head/Feet) should still remove the old axes
-        (active keys are skipped by the cleanup).
-        """
-        return frozenset({"back", "legs", "head", "feet"})
-
     def _build_command(self, command_value: int) -> bytes:
         """Build a DOT frame: [0x05, 0x02, <4-byte keycode big-endian>, 0x00]."""
         return codec.frame40(command_value)
@@ -155,3 +145,10 @@ class OkinDotController(OkinUuidController):
 
     async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
         """Position reads are not available on DOT boxes."""
+
+
+async def build_controller(ctx: BuildContext) -> OkinDotController:
+    """Build the controller for the configured remote variant."""
+    variant = ctx.variant or VARIANT_AUTO
+    _LOGGER.debug("Using Okin DOT variant: %s", variant)
+    return OkinDotController(ctx.coordinator, variant=variant)

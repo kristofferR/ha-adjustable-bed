@@ -84,10 +84,6 @@ class BedJetPowerLayerController(BedController):
         return False
 
     @property
-    def supports_position_feedback(self) -> bool:
-        return True
-
-    @property
     def supports_preset_zero_g(self) -> bool:
         return True
 

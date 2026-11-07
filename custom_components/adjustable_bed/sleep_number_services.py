@@ -11,10 +11,12 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.util.json import JsonValueType
 
-from .beds.base import BedController
+from .beds.base import BedController, controller_as
+from .beds.sleep_number_commands import SleepNumberActions
 from .const import DOMAIN
 from .paired_coordinator import PairedBedCoordinator
 from .services import (
+    ATTR_SIDE,
     SIDE_FIELD,
     PreflightedSides,
     _command_targets,
@@ -74,7 +76,7 @@ def _json_value(value: object) -> JsonValueType:
 async def handle_sleep_number_command(call: ServiceCall) -> ServiceResponse:
     """Validate every selected side before issuing any requested commands."""
     targets, missing = _resolve_sided_targets(
-        call.hass, [call.data[CONF_DEVICE_ID]], call.data.get("side")
+        call.hass, [call.data[CONF_DEVICE_ID]], call.data.get(ATTR_SIDE)
     )
     if missing:
         raise _missing_device_error(missing[0])
@@ -86,6 +88,7 @@ async def handle_sleep_number_command(call: ServiceCall) -> ServiceResponse:
         for coordinator, side in targets:
             for target in _command_targets(coordinator, side):
                 controller = await _validation_controller(coordinator, target, preflighted)
+                sleep_number = controller_as(controller, SleepNumberActions)
                 physical_side = (
                     next(
                         child_side for child_side, child in coordinator.children.items()
@@ -95,11 +98,14 @@ async def handle_sleep_number_command(call: ServiceCall) -> ServiceResponse:
                     else None
                 )
                 with controller.side_scope(physical_side):
-                    if command not in controller.sleep_number_command_names:
+                    if (
+                        sleep_number is None
+                        or command not in sleep_number.sleep_number_command_names
+                    ):
                         raise ServiceValidationError(
                             f"Sleep Number command {command!r} is not supported by {target.name}"
                         )
-                    controller.validate_sleep_number_command(command, parameters)
+                    sleep_number.validate_sleep_number_command(command, parameters)
 
         for coordinator, side in targets:
             address_sides = (
@@ -119,11 +125,16 @@ async def handle_sleep_number_command(call: ServiceCall) -> ServiceResponse:
                 physical_side = controller.command_side or address_sides.get(
                     controller._coordinator.address.upper()
                 )
+                sleep_number = controller_as(controller, SleepNumberActions)
+                if sleep_number is None:
+                    raise ServiceValidationError(
+                        f"Sleep Number command {command!r} is not supported by this bed"
+                    )
                 with controller.side_scope(physical_side):
-                    controller.validate_sleep_number_command(command, parameters)
+                    sleep_number.validate_sleep_number_command(command, parameters)
                     key = physical_side or "single"
                     results[key] = _json_value(
-                        await controller.async_execute_sleep_number_command(command, parameters)
+                        await sleep_number.async_execute_sleep_number_command(command, parameters)
                     )
 
             await _execute_sided(

@@ -14,6 +14,8 @@ from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
+from ..card import CARD_UTILITY
+from ..const import CONF_GMMOTOR_SIDE, CONF_PRODUCT_TYPE
 from ..controller_state import StateKey
 from ..gmmotor_catalog_types import Phase
 from ..gmmotor_notifications import Event, Value, common, desk21, extra
@@ -36,7 +38,7 @@ from ..gmmotor_protocol import (
     snore_enabled,
     stop_packet,
 )
-from ..gmmotor_requests import Request
+from ..gmmotor_requests import GmmotorActions, Request
 from ..gmmotor_sessions import product_ui_states
 from ..gmmotor_transport import Transport, native_write_lock, select_p1
 from .base import (
@@ -46,6 +48,7 @@ from .base import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -77,7 +80,7 @@ SLEEP_NAME: Final = StateKey[str]("gmmotor_sleep_name")
 INVALID_NOTIFICATIONS: Final = StateKey[int]("gmmotor_invalid_notifications")
 
 
-class GmmotorController(BedController):
+class GmmotorController(BedController, GmmotorActions):
     """One physical P1 session with an explicitly selected app product."""
 
     def __init__(
@@ -139,10 +142,6 @@ class GmmotorController(BedController):
 
     @property
     def supports_stop_all(self) -> bool:
-        return True
-
-    @property
-    def supports_gmmotor_controls(self) -> bool:
         return True
 
     @property
@@ -231,6 +230,7 @@ class GmmotorController(BedController):
                     SLEEP_NAME,
                     INVALID_NOTIFICATIONS,
                 ),
+                card=CARD_UTILITY,
             ),
         )
 
@@ -593,3 +593,20 @@ class GmmotorController(BedController):
 
     async def program_memory(self, memory_num: int) -> None:
         raise NotImplementedError("Use this product's named GM Control long-press action")
+
+
+async def build_controller(ctx: BuildContext) -> BedController:
+    """Build the bed or desk controller for the stored GMmotor profile."""
+    from ..gmmotor_profiles import profile_choices
+
+    profile = ctx.data.get(CONF_PRODUCT_TYPE, "")
+    if profile not in profile_choices():
+        profile = ""  # Source factory's unsupported-selector fallback.
+    if profile in ("FWRM", "WFRM"):
+        await ctx.preload("gmmotor_desk")
+        from .gmmotor_desk import GmmotorDeskController
+
+        return GmmotorDeskController(ctx.coordinator, profile=profile)
+    return GmmotorController(
+        ctx.coordinator, profile=profile, side=ctx.data.get(CONF_GMMOTOR_SIDE, "left")
+    )

@@ -34,7 +34,13 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
-from .reverie_comfort import ReverieComfortRequest, validate_comfort_request
+from .builder import BuildContext
+from .reverie_comfort import (
+    ReverieComfortActions,
+    ReverieComfortRequest,
+    RoutineSteps,
+    validate_comfort_request,
+)
 from .reverie_profiles import (
     REVERIE_MODEL_FALLBACK,
     ReverieModelProfile,
@@ -118,7 +124,7 @@ class ReverieCommands:
         return [0x52, position]
 
 
-class ReverieController(BedController):
+class ReverieController(BedController, ReverieComfortActions):
     """Controller for Reverie beds."""
 
     def __init__(
@@ -250,10 +256,6 @@ class ReverieController(BedController):
         if not self.model.positions:
             return ()
         return ("back_up", "back_down", "legs_up", "legs_down")
-
-    @property
-    def supports_position_feedback(self) -> bool:
-        return self.model.positions
 
     @property
     def requires_notification_channel(self) -> bool:
@@ -697,7 +699,7 @@ class ReverieController(BedController):
             self._comfort_sample_stable = False
 
     def validate_routine(
-        self, steps: list[tuple[ReverieComfortRequest | None, int]]
+        self, steps: RoutineSteps
     ) -> None:
         if not self.model.routines:
             raise ValueError(f"Model {self.model_id} has no routines")
@@ -791,7 +793,7 @@ class ReverieController(BedController):
         super().on_disconnect()
 
     async def async_start_routine(
-        self, steps: list[tuple[ReverieComfortRequest | None, int]]
+        self, steps: RoutineSteps
     ) -> None:
         """Replace the physical address routine queue and run its first item."""
         self.validate_routine(steps)
@@ -803,6 +805,8 @@ class ReverieController(BedController):
             if request is None:
                 stopped_on_missing = True
                 break
+            if duration is None:  # validate_routine already rejects this
+                raise ValueError("Routine step duration must be an integer number of minutes")
             self._routine_steps.append((request, duration))
         if stopped_on_missing or not self._routine_steps:
             return
@@ -1149,3 +1153,7 @@ class ReverieController(BedController):
         else:
             _LOGGER.warning("Unknown massage zone: %s", zone)
 
+
+async def build_controller(ctx: BuildContext) -> ReverieController:
+    """Build the controller for the selected Reverie model."""
+    return ReverieController(ctx.coordinator, model=ctx.variant)

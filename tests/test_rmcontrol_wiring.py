@@ -7,6 +7,7 @@ import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity import Entity
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.base import BedController, ProductButtonSpec
 from custom_components.adjustable_bed.button import AdjustableBedProductButton
@@ -21,6 +22,8 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.entity_discovery import async_setup_dynamic_entities
+from custom_components.adjustable_bed.entity_sweep import EntityLedger, PlatformEntities
+from custom_components.adjustable_bed.rmcontrol_protocol import Notification
 from custom_components.adjustable_bed.rmcontrol_services import (
     ALARM_SCHEMA,
     ANTI_SNORE_SCHEMA,
@@ -28,6 +31,41 @@ from custom_components.adjustable_bed.rmcontrol_services import (
     handle_rmcontrol_anti_snore,
 )
 from custom_components.adjustable_bed.setup_questions import setup_profile
+
+
+def _runtime() -> MagicMock:
+    runtime = MagicMock()
+    runtime.has_massage = False
+    runtime.controller_side = None
+    runtime.entity_unique_id.side_effect = lambda key: f"bed_{key}"
+    return runtime
+
+
+def _sink(
+    hass: HomeAssistant, entry: MockConfigEntry, runtime: MagicMock, domain: str
+) -> tuple[PlatformEntities, MagicMock]:
+    """A platform callback recording into a ledger that may sweep the entry."""
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = runtime
+    ledger = EntityLedger(hass, entry, runtime)
+    ledger.platforms_forwarded((domain,))
+    ledger.platform_finished(domain)
+    add = MagicMock()
+    return PlatformEntities(ledger, domain, add), add
+
+
+def _sweep(
+    hass: HomeAssistant,
+    entry: MockConfigEntry,
+    runtime: MagicMock,
+    built: dict[str, list[Entity]],
+) -> None:
+    """Sweep the entry as if each platform had just built ``built``."""
+    ledger = EntityLedger(hass, entry, runtime)
+    ledger.platforms_forwarded(built)
+    for domain, entities in built.items():
+        PlatformEntities(ledger, domain, MagicMock())(entities)
+        ledger.platform_finished(domain)
+    ledger.async_sweep()
 
 
 def _richmat_question(key: str):
@@ -60,7 +98,6 @@ def test_profile_removed_only_when_changing_protocol() -> None:
 async def test_extra_product_button_uses_current_controller_and_lock() -> None:
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     coordinator.entity_unique_id.side_effect = lambda key: f"bed_{key}"
-    coordinator.entity_translation_key.side_effect = lambda key: key
     coordinator.async_execute_controller_command = AsyncMock()
     action = AsyncMock()
     button = AdjustableBedProductButton(
@@ -92,13 +129,31 @@ async def test_alarm_required_fields_fail_before_connect(
         execute.assert_not_awaited()
 
 
+_RMCONTROL_GATES = (
+    "supports_rmcontrol_single_alarm",
+    "supports_rmcontrol_repeat_alarm",
+    "supports_rmcontrol_alarm_time_sync",
+    "supports_rmcontrol_anti_snore",
+)
+
+
+def _rmcontrol_with(gate: str) -> MagicMock:
+    """A product controller offering exactly one RMControl gate."""
+    from custom_components.adjustable_bed.beds.rmcontrol import RmcontrolController
+
+    controller = MagicMock(spec=RmcontrolController)
+    for name in _RMCONTROL_GATES:
+        setattr(controller, name, name == gate)
+    return controller
+
+
 async def test_repeat_alarm_names_are_converted_once(hass: HomeAssistant) -> None:
-    controller = MagicMock(spec=BedController)
+    controller = _rmcontrol_with("supports_rmcontrol_repeat_alarm")
     controller.rmcontrol_repeat_alarm = AsyncMock()
 
-    async def execute(call, capability, command, validate):
+    async def execute(call, supported, command, validate):
         validate(controller)
-        assert capability == "supports_rmcontrol_repeat_alarm"
+        assert supported(controller)
         await command(controller)
 
     data = ALARM_SCHEMA(
@@ -144,16 +199,20 @@ async def test_alarm_operations_require_their_specific_capability(
         if capability == "time_sync"
         else f"supports_rmcontrol_{capability}_alarm"
     )
-    assert execute.await_args.args[1] == expected
+    supported = execute.await_args.args[1]
+    assert supported(_rmcontrol_with(expected))
+    assert not any(
+        supported(_rmcontrol_with(gate)) for gate in _RMCONTROL_GATES if gate != expected
+    )
 
 
 async def test_snore_configuration_is_not_enable_switch(hass: HomeAssistant) -> None:
-    controller = MagicMock(spec=BedController)
+    controller = _rmcontrol_with("supports_rmcontrol_anti_snore")
     controller.rmcontrol_anti_snore_config = AsyncMock()
     controller.rmcontrol_anti_snore_switch = AsyncMock()
 
-    async def execute(call, capability, command):
-        assert capability == "supports_rmcontrol_anti_snore"
+    async def execute(call, supported, command):
+        assert supported(controller)
         await command(controller)
 
     data = ANTI_SNORE_SCHEMA(
@@ -181,22 +240,19 @@ def test_late_capability_adds_entities_once_and_unregisters(hass) -> None:
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     coordinator.capability_controller.has_dynamic_controller_entities = True
     entry = MagicMock()
-    add = MagicMock()
+    sink = MagicMock()
     initial = MagicMock(spec=Entity)
     initial.unique_id = "existing"
-    initial.entity_id = None
     late = MagicMock(spec=Entity)
     late.unique_id = "late_rgb"
-    late.entity_id = None
     current = [initial]
-    async_setup_dynamic_entities(hass, entry, coordinator, add, lambda: tuple(current))
-    add.assert_called_once_with([initial])
+    async_setup_dynamic_entities(entry, coordinator, sink, lambda: tuple(current))
     callback = coordinator.register_controller_state_callback.call_args.args[0]
     current.append(late)
     callback({})
     callback({})
-    assert add.call_count == 2
-    assert add.call_args.args == ([late],)
+    added = [call.args[0] for call in sink.add_published.call_args_list if call.args[0]]
+    assert added == [[initial], [late]]
     entry.async_on_unload.assert_called_once_with(
         coordinator.register_controller_state_callback.return_value
     )
@@ -205,7 +261,7 @@ def test_late_capability_adds_entities_once_and_unregisters(hass) -> None:
 def test_static_controller_does_not_gain_a_discovery_listener(hass) -> None:
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     coordinator.capability_controller.has_dynamic_controller_entities = False
-    async_setup_dynamic_entities(hass, MagicMock(), coordinator, MagicMock(), lambda: ())
+    async_setup_dynamic_entities(MagicMock(), coordinator, MagicMock(), lambda: ())
     coordinator.register_controller_state_callback.assert_not_called()
 
 
@@ -223,22 +279,22 @@ async def test_factory_uses_opt_in_product_and_preserves_legacy_without_it(hass)
         new_callable=AsyncMock,
         return_value=(False, "6e400002-b5a3-f393-e0a9-e50e24dcca9e", False),
     ):
-        selected = await create_controller(
-            coordinator, BED_TYPE_RICHMAT, "nordic", client,
-            rmcontrol_product="A3RM", rmcontrol_side="right",
-        )
+        coordinator.entry.data = {CONF_RMCONTROL_PRODUCT: "A3RM", CONF_RMCONTROL_SIDE: "right"}
+        selected = await create_controller(coordinator, BED_TYPE_RICHMAT, "nordic", client)
     assert isinstance(selected, RmcontrolController)
     assert selected.rmcontrol_product == "A3RM"
     assert selected.protocol_diagnostics["side"] == "right"
+    coordinator.entry.data = {}
     legacy = await create_controller(coordinator, BED_TYPE_RICHMAT, "nordic", client)
     assert type(legacy) is RichmatController
 
 
 async def test_factory_rejects_profile_with_unrelated_frame_variant(hass) -> None:
     with pytest.raises(ValueError, match="Nordic or WiLinke"):
-        await create_controller(
-            MagicMock(hass=hass), BED_TYPE_RICHMAT, "prefix55", MagicMock(), rmcontrol_product="A3RM"
-        )
+        coordinator = MagicMock(hass=hass)
+        coordinator.name = coordinator.entry.title = "Test bed"
+        coordinator.entry.data = {CONF_RMCONTROL_PRODUCT: "A3RM"}
+        await create_controller(coordinator, BED_TYPE_RICHMAT, "prefix55", MagicMock())
 
 
 @pytest.mark.parametrize("code", ["FWRM", "WFRM"])
@@ -286,9 +342,7 @@ async def test_dynamic_light_select_survives_reconnect_discovery(hass: HomeAssis
     from custom_components.adjustable_bed.rmcontrol_protocol import Notification
     from custom_components.adjustable_bed.select import _select_entities_for
 
-    coordinator = MagicMock()
-    coordinator.has_massage = False
-    coordinator.entity_unique_id.side_effect = lambda key: f"bed_{key}"
+    coordinator = _runtime()
     ctrl = RmcontrolController(coordinator, "A0RM")
     coordinator.capability_controller = ctrl
     entry = MockConfigEntry(domain=DOMAIN)
@@ -298,9 +352,9 @@ async def test_dynamic_light_select_survives_reconnect_discovery(hass: HomeAssis
         "select", DOMAIN, "bed_light_timer", config_entry=entry,
     )
     ctrl._accept_notification(Notification("capability", {"light": True}))
-    add = MagicMock()
+    sink, add = _sink(hass, entry, coordinator, "select")
     async_setup_dynamic_entities(
-        hass, entry, coordinator, add, lambda: _select_entities_for(hass, coordinator)
+        entry, coordinator, sink, lambda: _select_entities_for(hass, coordinator)
     )
     assert add.call_count == 1
     callback = coordinator.register_controller_state_callback.call_args.args[0]
@@ -330,10 +384,8 @@ async def test_light_registry_retains_only_possible_profile_capabilities(
 
     entry = MockConfigEntry(domain=DOMAIN)
     entry.add_to_hass(hass)
-    coordinator = MagicMock()
+    coordinator = _runtime()
     coordinator.entry = entry
-    coordinator.has_massage = False
-    coordinator.entity_unique_id.side_effect = lambda key: f"bed_{key}"
     coordinator.capability_controller = RmcontrolController(coordinator, product)
     registry = er.async_get(hass)
     light = registry.async_get_or_create(
@@ -342,8 +394,15 @@ async def test_light_registry_retains_only_possible_profile_capabilities(
     timer = registry.async_get_or_create(
         "select", DOMAIN, "bed_light_timer", config_entry=entry,
     )
-    _light_entities_for(hass, coordinator)
-    _select_entities_for(hass, coordinator)
+    _sweep(
+        hass,
+        entry,
+        coordinator,
+        {
+            "light": _light_entities_for(hass, coordinator),
+            "select": _select_entities_for(hass, coordinator),
+        },
+    )
     assert (registry.async_get(light.entity_id) is not None) == keep_light
     assert (registry.async_get(timer.entity_id) is not None) == keep_timer
 
@@ -417,72 +476,6 @@ def test_initial_product_answer_validates_transport(variant: str) -> None:
     )
 
 
-@pytest.mark.parametrize("domain", ["sensor", "binary_sensor", "button"])
-@pytest.mark.parametrize("side", [None, "left", "right"])
-async def test_retired_rmcontrol_cleanup_is_scoped_to_current_bed_and_side(
-    hass: HomeAssistant, domain: str, side: str | None
-) -> None:
-    from homeassistant.helpers import entity_registry as er
-    from pytest_homeassistant.common import MockConfigEntry
-
-    from custom_components.adjustable_bed.button import _button_entities_for
-    from custom_components.adjustable_bed.entity_discovery import (
-        async_remove_retired_rmcontrol_telemetry,
-    )
-    from custom_components.adjustable_bed.paired_coordinator import SingleAddressSideCoordinator
-
-    entry = MockConfigEntry(domain=DOMAIN)
-    entry.add_to_hass(hass)
-    registry = er.async_get(hass)
-    inner = MagicMock()
-    inner.address = "bed"
-    inner.entry = entry
-    inner.entity_unique_id.side_effect = lambda key: "bed_" + key
-    ctrl = inner.capability_controller
-    ctrl.memory_slot_count = 0
-    coordinator = SingleAddressSideCoordinator(inner, side, MagicMock()) if side else inner
-    key_prefix = "product_action_" if domain == "button" else "rmcontrol_"
-    retired_id = coordinator.entity_unique_id(key_prefix + "old")
-    active_id = coordinator.entity_unique_id(key_prefix + "current")
-    preserved_ids = ["other_" + key_prefix + "old", coordinator.entity_unique_id("other")]
-    if side:
-        other_side = "right" if side == "left" else "left"
-        preserved_ids.extend([
-            f"bed_{key_prefix}old_{other_side}",
-            f"bed_{key_prefix}current_{other_side}",
-            f"bed_{key_prefix}old",
-        ])
-    rows = {
-        key: registry.async_get_or_create(domain, DOMAIN, key, config_entry=entry)
-        for key in (retired_id, active_id, *preserved_ids)
-    }
-    ctrl.has_dynamic_controller_entities = False
-    spec = MagicMock(key="rmcontrol_current")
-    ctrl.controller_state_sensor_specs = (spec,)
-    ctrl.controller_state_binary_sensor_specs = (spec,)
-    ctrl.controller_button_specs = (
-        ProductButtonSpec(key="current", name="Current", press_fn=AsyncMock()),
-    )
-
-    def cleanup() -> None:
-        if domain == "button":
-            _button_entities_for(hass, coordinator)
-        else:
-            async_remove_retired_rmcontrol_telemetry(hass, entry, coordinator, domain)
-
-    cleanup()
-    assert registry.async_get(rows[retired_id].entity_id) is None
-    for key in (active_id, *preserved_ids):
-        assert registry.async_get(rows[key].entity_id) is not None
-    ctrl.controller_state_sensor_specs = ()
-    ctrl.controller_state_binary_sensor_specs = ()
-    ctrl.controller_button_specs = ()
-    cleanup()
-    assert registry.async_get(rows[active_id].entity_id) is None
-    for key in preserved_ids:
-        assert registry.async_get(rows[key].entity_id) is not None
-
-
 @pytest.mark.parametrize("variant", ["prefix55", "prefixaa"])
 async def test_bluetooth_confirmation_rejects_incompatible_product(
     hass: HomeAssistant, mock_bluetooth_service_info, variant: str
@@ -512,20 +505,18 @@ async def test_rmcontrol_restart_retains_event_driven_registry_rows(hass, domain
     from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.beds.rmcontrol import RmcontrolController
-    from custom_components.adjustable_bed.entity_discovery import (
-        async_remove_retired_rmcontrol_telemetry,
-    )
 
     entry = MockConfigEntry(domain=DOMAIN)
     entry.add_to_hass(hass)
     registry = er.async_get(hass)
-    row = registry.async_get_or_create(
-        domain, DOMAIN, "bed_rmcontrol_music_playing", config_entry=entry
-    )
-    coordinator = MagicMock()
-    coordinator.entity_unique_id.side_effect = lambda key: "bed_" + key
+    key = "rmcontrol_music_playing" if domain == "binary_sensor" else "rmcontrol_music_volume"
+    row = registry.async_get_or_create(domain, DOMAIN, "bed_" + key, config_entry=entry)
+    coordinator = _runtime()
     coordinator.capability_controller = RmcontrolController(coordinator, "A0RM")
-    async_remove_retired_rmcontrol_telemetry(hass, entry, coordinator, domain)
+    coordinator.capability_controller._accept_notification(
+        Notification("capability", {"light": True})
+    )
+    _sweep(hass, entry, coordinator, {domain: []})
     assert registry.async_get(row.entity_id) is not None
 
 
@@ -555,10 +546,10 @@ async def test_alarm_validates_every_product_before_writing(hass, operation, pai
         return [first, second] if paired else [coordinator]
 
     with (
-        patch("custom_components.adjustable_bed.rmcontrol_services._resolve_sided_targets",
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets",
               return_value=(targets, [])),
         patch("custom_components.adjustable_bed.services._command_targets", side_effect=physical),
-        patch("custom_components.adjustable_bed.rmcontrol_services._execute_sided",
+        patch("custom_components.adjustable_bed.services._execute_sided",
               new_callable=AsyncMock) as execute,
         pytest.raises(ServiceValidationError, match="absent or ambiguous"),
     ):

@@ -18,8 +18,7 @@ from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
-    _add_starcode_schema_fields,
-    _starcode_errors,
+    _profile_question_schema,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_STARCODE_M5X5,
@@ -40,6 +39,7 @@ from custom_components.adjustable_bed.pairing import build_pair_entry_data
 from custom_components.adjustable_bed.select import _select_entities_for
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
 from custom_components.adjustable_bed.services import async_register_services
+from custom_components.adjustable_bed.setup_questions import SETUP_PROFILES, FlowContext
 from tests.test_starcode_accessory_group import group, target
 
 
@@ -82,13 +82,13 @@ async def test_explicit_setup_and_factory(hass: HomeAssistant, profile: str, nam
         CONF_NAME: "Friendly name",
         CONF_BED_TYPE: BED_TYPE_STARCODE_M5X5,
     }
-    result = await flow.async_step_starcode_m5x5()
+    result = await flow.async_step_profile_questions()
     assert result["type"] == FlowResultType.FORM
-    assert result["step_id"] == "starcode_m5x5"
+    assert result["step_id"] == "profile_questions"
     with patch.object(
         flow, "_finish_with_verify", AsyncMock(return_value={"type": FlowResultType.CREATE_ENTRY})
     ) as finish:
-        await flow.async_step_starcode_m5x5(
+        await flow.async_step_profile_questions(
             {CONF_STARCODE_M5X5_PROFILE: profile, CONF_BLE_DEVICE_NAME: name}
         )
     data = finish.await_args.args[0]
@@ -103,13 +103,14 @@ async def test_explicit_setup_and_factory(hass: HomeAssistant, profile: str, nam
 
 async def test_name_and_lift_identity_validation(hass: HomeAssistant) -> None:
     main, *lifts = group(hass)
-    assert _starcode_errors(hass, main.entry.data, main.entry.entry_id) == {}
+    profile = SETUP_PROFILES[BED_TYPE_STARCODE_M5X5]
+    context = FlowContext(hass, main.entry.entry_id)
+    assert profile.errors(main.entry.data, context) == {}
     bad = {**main.entry.data, CONF_BLE_DEVICE_NAME: "star254205123456"}
-    assert CONF_STARCODE_M5X5_PROFILE in _starcode_errors(hass, bad)
+    assert CONF_STARCODE_M5X5_PROFILE in profile.errors(bad, FlowContext(hass))
     bad = {**main.entry.data, CONF_STARCODE_LIFT_ENTRIES: [t.entry.entry_id for t in lifts] * 2}
-    assert CONF_STARCODE_LIFT_ENTRIES in _starcode_errors(hass, bad)
-    schema = {}
-    _add_starcode_schema_fields(schema, main.entry.data, hass, main.entry.entry_id)
+    assert CONF_STARCODE_LIFT_ENTRIES in profile.errors(bad, FlowContext(hass))
+    schema = _profile_question_schema(profile, main.entry.data, context)
     accepted = vol.Schema(schema)(
         {
             CONF_STARCODE_M5X5_PROFILE: "cb25",
@@ -227,7 +228,7 @@ async def test_elevate_name_points_to_the_elevate_bed_type(hass: HomeAssistant) 
         CONF_NAME: "Lift",
         CONF_BED_TYPE: BED_TYPE_STARCODE_M5X5,
     }
-    result = await flow.async_step_starcode_m5x5(
+    result = await flow.async_step_profile_questions(
         {CONF_STARCODE_M5X5_PROFILE: "cb25", CONF_BLE_DEVICE_NAME: "ELEVATE123456"}
     )
     assert result["errors"] == {CONF_STARCODE_M5X5_PROFILE: "starcode_elevate_bed_type"}

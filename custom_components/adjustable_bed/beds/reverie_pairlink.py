@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Any, Final
 from bleak.exc import BleakError
 from homeassistant.helpers.storage import Store
 
+from ..card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_UTILITY
 from ..const import CONF_SIDE
 from ..controller_state import StateKey, StateUpdate
 from ..state_keys import (
@@ -42,7 +43,13 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
-from .reverie_comfort import ReverieComfortRequest, validate_comfort_request
+from .builder import BuildContext
+from .reverie_comfort import (
+    PairlinkComfortActions,
+    ReverieComfortRequest,
+    RoutineSteps,
+    validate_comfort_request,
+)
 from .reverie_pairlink_profile import (
     PAIRLINK_BED_TYPES,
     PairlinkAdvertisement,
@@ -191,7 +198,7 @@ class _TracedCentralWriter:
         await self._client.write_gatt_char(char_specifier, data, response=response)
 
 
-class ReveriePairlinkController(BedController):
+class ReveriePairlinkController(BedController, PairlinkComfortActions):
     """Controller for the app's R510L/Harmoniq Pairlink profiles."""
 
     def __init__(
@@ -400,11 +407,7 @@ class ReveriePairlinkController(BedController):
 
     @property
     def supports_position_feedback(self) -> bool:
-        return self._has_supported_model
-
-    @property
-    def reports_percentage_position(self) -> bool:
-        return True
+        return super().supports_position_feedback and self._has_supported_model
 
     @property
     def requires_notification_channel(self) -> bool:
@@ -513,12 +516,14 @@ class ReveriePairlinkController(BedController):
                 translation_key="reverie_pairlink_massage_timer",
                 state_key=MASSAGE_TIMER,
                 icon="mdi:timer-outline",
+                card=CARD_MASSAGE,
             ),
             ControllerStateSensorSpec(
                 key="reverie_pairlink_massage_mode",
                 translation_key="reverie_pairlink_massage_mode",
                 state_key=MASSAGE_MODE,
                 icon="mdi:waveform",
+                card=CARD_MASSAGE,
             ),
         )
 
@@ -534,6 +539,7 @@ class ReveriePairlinkController(BedController):
                 translation_key="reverie_pairlink_low_battery",
                 state_key=LOW_BATTERY,
                 icon="mdi:battery-low",
+                card=CARD_UTILITY,
             ),
         )
 
@@ -559,6 +565,7 @@ class ReveriePairlinkController(BedController):
                 state_key=MASSAGE_MODE_OPTION,
                 options=("0", "1", "2", "3", "4"),
                 select_fn=select_mode,
+                card=CARD_MASSAGE,
             ),
             ControllerSelectSpec(
                 key="reverie_pairlink_massage_rhythm",
@@ -566,6 +573,7 @@ class ReveriePairlinkController(BedController):
                 state_key=MASSAGE_RHYTHM_OPTION,
                 options=("off", "on"),
                 select_fn=select_rhythm,
+                card=CARD_MASSAGE,
             ),
         )
 
@@ -582,6 +590,7 @@ class ReveriePairlinkController(BedController):
                 native_max_value=255,
                 native_step=1,
                 set_fn=lambda _controller, value: self.set_massage_timer_byte(int(value)),
+                card=CARD_MASSAGE_TIMER,
             ),
         )
 
@@ -2707,7 +2716,7 @@ class ReveriePairlinkController(BedController):
         return current
 
     def validate_routine(
-        self, steps: list[tuple[ReverieComfortRequest | None, int | None]]
+        self, steps: RoutineSteps
     ) -> None:
         if not self._has_supported_model:
             raise ValueError("Pairlink routines are unavailable for the selected model")
@@ -2723,7 +2732,7 @@ class ReveriePairlinkController(BedController):
             self.validate_comfort_request(request)
 
     async def async_start_routine(
-        self, steps: list[tuple[ReverieComfortRequest | None, int | None]]
+        self, steps: RoutineSteps
     ) -> None:
         """Replace settings and times independently, then run the first setting."""
         self.validate_routine(steps)
@@ -2959,3 +2968,25 @@ def _validated_rgb_channel(channel: int) -> int:
     if isinstance(channel, bool) or not isinstance(channel, int):
         raise ValueError("Pairlink RGB channels must be integers")
     return min(255, max(0, channel))
+
+
+async def build_controller(ctx: BuildContext) -> ReveriePairlinkController:
+    """Build the controller around the entry's PairLink runtime, creating it once."""
+    coordinator = ctx.coordinator
+    runtime = coordinator._pairlink_runtime
+    if runtime is None:
+        runtime = create_pairlink_runtime_for_entry(
+            ctx.data, coordinator.entry.options, manufacturer_data=ctx.manufacturer_data
+        )
+        coordinator._pairlink_runtime = runtime
+    else:
+        runtime.refresh_configured_inputs(
+            ctx.data, coordinator.entry.options, manufacturer_data=ctx.manufacturer_data
+        )
+    return ReveriePairlinkController(
+        coordinator,
+        model=ctx.variant,
+        device_name=ctx.device_name,
+        manufacturer_data=ctx.manufacturer_data,
+        runtime=runtime,
+    )

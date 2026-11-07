@@ -13,15 +13,15 @@ from homeassistant.components.climate import (
 )
 from homeassistant.components.climate.const import ClimateEntityFeature, HVACMode
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfTemperature
+from homeassistant.const import Platform, UnitOfTemperature
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .card import CARD_CLIMATE
 from .const import DOMAIN
 from .controller_state import AnyStateKey, ControllerState, StateKey, sided
 from .entity import AdjustableBedEntity
 from .entity_runtime import EntityRuntime, own_sides
+from .entity_sweep import PlatformEntities, records_entities
 from .paired_coordinator import entity_runtimes
 from .state_keys import (
     FOOTWARMING_HVAC_MODE,
@@ -166,10 +166,11 @@ def _build_side_footwarming_climate_description(
     )
 
 
+@records_entities(Platform.CLIMATE)
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed climate entities."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
@@ -192,11 +193,6 @@ def _climate_entities_for(
 
     thermal_sides = own_sides(coordinator, controller.thermal_climate_sides)
     if thermal_sides:
-        _async_remove_stale_split_climate_entity(
-            hass,
-            coordinator,
-            SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.key,
-        )
         entities.extend(
             AdjustableBedClimate(
                 coordinator,
@@ -209,11 +205,6 @@ def _climate_entities_for(
 
     footwarming_sides = own_sides(coordinator, controller.footwarming_climate_sides)
     if footwarming_sides:
-        _async_remove_stale_split_climate_entity(
-            hass,
-            coordinator,
-            FOOTWARMING_CLIMATE_DESCRIPTION.key,
-        )
         entities.extend(
             AdjustableBedClimate(
                 coordinator,
@@ -225,22 +216,6 @@ def _climate_entities_for(
         entities.append(AdjustableBedClimate(coordinator, FOOTWARMING_CLIMATE_DESCRIPTION))
 
     return entities
-
-
-def _async_remove_stale_split_climate_entity(
-    hass: HomeAssistant,
-    coordinator: EntityRuntime,
-    key: str,
-) -> None:
-    """Remove a legacy non-sided climate entity when split entities exist."""
-    registry = er.async_get(hass)
-    entity_id = registry.async_get_entity_id(
-        "climate",
-        DOMAIN,
-        coordinator.entity_unique_id(key),
-    )
-    if entity_id is not None:
-        registry.async_remove(entity_id)
 
 
 class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
@@ -271,9 +246,9 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
         description: AdjustableBedClimateEntityDescription,
     ) -> None:
         """Initialize the climate entity."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_CLIMATE)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._attr_supported_features = (
             ClimateEntityFeature.PRESET_MODE

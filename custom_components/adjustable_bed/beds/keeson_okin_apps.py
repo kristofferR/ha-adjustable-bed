@@ -33,6 +33,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ..app_session import app_session
+from ..card import CARD_MASSAGE, CARD_PRESETS
 from ..command_scheduler import current_command_context
 from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
@@ -277,7 +278,7 @@ class OkinAppKeesonController(KeesonController):
 
     @property
     def protocol_diagnostics(self) -> dict[str, Any]:
-        diagnostics: dict[str, Any] = {"okin_app": self._variant}
+        diagnostics: dict[str, Any] = {**super().protocol_diagnostics, "okin_app": self._variant}
         if self._is_heal:
             diagnostics["okin_app_product"] = f"Healing {self._product + 4}"
             diagnostics["okin_app_settings"] = self._settings()
@@ -323,10 +324,6 @@ class OkinAppKeesonController(KeesonController):
         if self._is_simon:
             specs.append(self._axis("lumbar", "lumbar", "lumbar_up", "lumbar_down"))
         return tuple(specs)
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset({"head", "back", "feet", "tilt", "lumbar"})
 
     @property
     def held_control_options(self) -> tuple[str, ...]:
@@ -764,6 +761,7 @@ class OkinAppKeesonController(KeesonController):
                 translation_key=f"{ACTION_NAMESPACE}home",
                 press_fn=_press("preset_home"),
                 icon="mdi:home",
+                card=CARD_PRESETS,
             ),
         )
 
@@ -1007,6 +1005,7 @@ class OkinAppKeesonController(KeesonController):
                 native_max_value=high,
                 native_step=1,
                 set_fn=set_level,
+                card=CARD_MASSAGE,
             )
 
         return (

@@ -11,8 +11,14 @@ from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
+from ..card import CARD_LIGHT_LEVEL, CARD_LIGHTING, CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_UTILITY
 from ..command_scheduler import copy_context_without_command
-from ..const import CONF_BLE_DEVICE_NAME
+from ..const import (
+    CONF_BLE_DEVICE_NAME,
+    CONF_STARCODE_COMMAND_SELECTOR,
+    CONF_STARCODE_TRANSPORT_SELECTOR,
+    CONF_STARCODE_UI_SELECTOR,
+)
 from ..controller_state import AnyStateKey, StateKey
 from ..profiles.okin_nframe import (
     STARCODE_ABM5_4_FLAT_HOLD_MS,
@@ -30,6 +36,7 @@ from .base import (
     MotorControlSpec,
     PositionNumberSpec,
 )
+from .builder import BuildContext
 from .starcode_abm5_4_profiles import (
     FIRMWARE_UUID,
     MANUFACTURER_UUID,
@@ -261,10 +268,6 @@ class StarcodeAbm5_4Controller(BedController):
         )
 
     @property
-    def supports_position_feedback(self) -> bool:
-        return False
-
-    @property
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
         return ()
 
@@ -414,6 +417,11 @@ class StarcodeAbm5_4Controller(BedController):
                 scheduler_resource="lighting"
                 if action in ("light_plus", "light_minus", "light_on", "light_off")
                 else None,
+                card=CARD_LIGHTING
+                if action in ("light_plus", "light_minus", "light_on", "light_off")
+                else CARD_MASSAGE
+                if action == "massage_release"
+                else CARD_UTILITY,
             )
             for action in actions
         )
@@ -429,6 +437,7 @@ class StarcodeAbm5_4Controller(BedController):
                 MASSAGE_TIMER,
                 ("10", "20", "30"),
                 _timer,
+                card=CARD_MASSAGE_TIMER,
             ),
         )
 
@@ -445,6 +454,7 @@ class StarcodeAbm5_4Controller(BedController):
                 6,
                 1,
                 _brightness,
+                card=CARD_LIGHT_LEVEL,
             ),
         )
 
@@ -1263,3 +1273,14 @@ class StarcodeAbm5_4Controller(BedController):
     async def async_discover_capabilities(self) -> None:
         if not self._ready:
             await self.start_notify()
+
+
+async def build_controller(ctx: BuildContext) -> StarcodeAbm5_4Controller:
+    """Build the controller for the stored app selectors."""
+    data = ctx.data
+    return StarcodeAbm5_4Controller(
+        ctx.coordinator,
+        command_selector=data.get(CONF_STARCODE_COMMAND_SELECTOR, "none"),
+        ui_selector=data.get(CONF_STARCODE_UI_SELECTOR),
+        transport_selector=data.get(CONF_STARCODE_TRANSPORT_SELECTOR),
+    )

@@ -2,15 +2,15 @@
 
 Feedback is a delta: callers retain fields from other domains. Short frames are
 ignored safely instead of reproducing the application's out-of-bounds errors.
-StarCode-dialect frames come from ``codec/okin_5a.py`` and legacy-dialect frames
-from ``codec/okin_nframe.py``.
+Control frames for both dialects come from ``starcode_dialect.py``.
 """
 
 from collections.abc import Mapping
 from datetime import datetime
 from typing import Final
 
-from ..codec import okin_5a, okin_nframe
+from ..codec import okin_5a
+from .starcode_dialect import is_star
 
 type StateValue = str | int | float | bool | None | list[StateValue] | dict[str, StateValue]
 
@@ -21,39 +21,6 @@ _LIGHT: Final = ("off", "onOrWhite", "red", "orange", "yellow", "green", "blue",
 _SONIC: Final = ("none", "normal1", "normal2", "normal3", "sonic1", "sonic2", "sonic3")
 _MASSAGE: Final = ("off", "intensity1", "intensity2", "intensity3")
 _DURATION: Final = ("duration10Min", "duration10Min", "duration20Min", "duration30Min")
-
-
-def _is_star(dialect: str) -> bool:
-    if dialect not in ("legacy", "star"):
-        raise ValueError(f"Unknown AdjustableM5X5 dialect: {dialect}")
-    return dialect == "star"
-
-
-def manufacturer_dialect(data: bytes) -> str:
-    """Use exact character-code equality; substring or UTF-8 decoding is different."""
-    return "star" if "".join(chr(value) for value in data).lower() == "star" else "legacy"
-
-
-def normal_packet(key: int, dialect: str) -> bytes:
-    """Preserve the low 32 bits, including negative source integers."""
-    if not _is_star(dialect):
-        return okin_nframe.frame40(key & 0xFFFFFFFF)
-    return okin_5a.normal(key & 0xFFFFFFFF)
-
-
-def long_normal_packet(key: int) -> bytes:
-    """Legacy light on/off uses the separate ten-byte builder, a 64-bit Okin N-frame."""
-    return okin_nframe.frame(key & 0xFFFFFFFF, 8)
-
-
-def extended_packet(key: int, value: int, dialect: str) -> bytes:
-    if not _is_star(dialect):
-        return okin_nframe.extended(key & 0xFF, value & 0xFF)
-    return okin_5a.extended(key & 0xFF, value & 0xFF)
-
-
-def query_packet(dialect: str) -> bytes:
-    return okin_5a.request(0xB0) if _is_star(dialect) else okin_nframe.request(0xB0)
 
 
 def clock_packet(local_time: datetime) -> bytes:
@@ -207,7 +174,7 @@ def parse_notification(
     EQ's USB-only sonic update. ELEVATE lifts use the separate star_elevate type.
     No app debounce suppression is carried into Home Assistant.
     """
-    star = _is_star(dialect)
+    star = is_star(dialect)
     if profile not in ("cb25", "f23", "kneading"):
         raise ValueError(f"Unknown AdjustableM5X5 profile: {profile}")
     if len(data) < 2 or data[0] != 0xA5:

@@ -10,6 +10,7 @@ from collections.abc import Callable
 from time import monotonic
 from typing import TYPE_CHECKING, Final, TypedDict, cast
 
+from ..card import CARD_MASSAGE_TIMER
 from ..codec import keeson as codec
 from ..controller_state import StateKey, StateUpdate
 from ..ergomotion4_profiles import ACTIONS, PRODUCTS, Action, Product, Step
@@ -23,7 +24,7 @@ from .base import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
-from .cluster033 import APP_TIMER_STATUS, AppController
+from .keeson_layout_app import APP_TIMER_STATUS, AppController
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -644,6 +645,7 @@ class Ergomotion4Controller(AppController):
                 "app_timer_status",
                 _side_key(APP_TIMER_STATUS, self.command_side),
                 "mdi:timer-outline",
+                card=CARD_MASSAGE_TIMER,
             ),
         )
 

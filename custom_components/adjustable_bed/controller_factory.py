@@ -1,4 +1,16 @@
-"""Factory function for creating bed controllers."""
+"""Create bed controllers.
+
+Each bed type maps to a lazily imported bed module. A ``_ControllerSpec``
+names a controller class with fixed constructor arguments; a ``_BuilderSpec``
+names the module's builder, which turns a ``BuildContext`` (the entry, the
+route and what the live link observed) into a controller. Importing every
+controller module at integration load would cost startup time for protocols
+the user does not have, and the import must run in the import executor
+rather than the event loop (issue #368).
+
+tests/test_controller_contract.py resolves every entry, so a bad module, class
+or builder name fails the suite rather than a user's bed setup.
+"""
 
 from __future__ import annotations
 
@@ -6,24 +18,21 @@ import logging
 from collections.abc import Mapping
 from dataclasses import dataclass
 from importlib import import_module
-from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Final, Literal
-
-from homeassistant.const import CONF_NAME
+from types import MappingProxyType, ModuleType
+from typing import TYPE_CHECKING, Any, Final
 
 from .adapter import discover_services
-from .app_session import app_session
+from .bed_traits import bed_traits
+from .beds.builder import BuildContext, ControllerBuilder
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_BEDJET_POWERLAYER,
     BED_TYPE_BEDSENSE,
-    # Legacy/brand-specific bed types
     BED_TYPE_BEDTECH,
     BED_TYPE_BF,
     BED_TYPE_CASPER_BASE,
     BED_TYPE_CHERISH,
-    BED_TYPE_CLUSTER018,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
@@ -79,7 +88,6 @@ from .const import (
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_FFE,
-    # Protocol-based bed types (new)
     BED_TYPE_OKIN_HANDLE,
     BED_TYPE_OKIN_NORDIC,
     BED_TYPE_OKIN_ORE,
@@ -90,6 +98,7 @@ from .const import (
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
+    BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
     BED_TYPE_SCOTT_LIVING,
@@ -117,138 +126,22 @@ from .const import (
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
-    CB1322_MANUFACTURER_MARKERS,
-    CLUSTER033_BED_TYPES,
     CONF_BED_TYPE,
-    CONF_BLE_DEVICE_NAME,
-    CONF_FSM_RELAX_MEMORY_NAMES,
-    CONF_FURNIMOVE_REMOTE,
-    CONF_HAS_LIGHT,
-    CONF_HAS_MASSAGE,
-    CONF_JIECANG_APP_LAYOUT,
-    CONF_JIECANG_APP_PROFILE,
-    CONF_JIECANG_APP_TRANSPORT,
-    CONF_KAIDI_PRODUCT_ID,
-    CONF_KAIDI_SOFA_ACU_NO,
-    CONF_LEGGETT_APP_PROFILE,
-    CONF_LIMOSS_REMOTE_STATE,
-    CONF_LIMOSS_REMOTE_THEME,
-    CONF_LOGICDATA_APP_FAMILY,
-    CONF_LOGICDATA_APP_LAYOUT,
-    CONF_LOGICDATA_APP_PROFILE,
-    CONF_LOGICDATA_APP_TRANSPORT,
-    CONF_LP_LEGACY_MODE,
-    CONF_LP_LEGACY_MODEL,
-    CONF_LP_LEGACY_READ_UUID,
-    CONF_LP_LEGACY_WRITE_UUID,
-    CONF_MALOUF_APP_MODEL,
-    CONF_MALOUF_APP_PRIMARY,
-    CONF_MALOUF_APP_PROFILE,
-    CONF_MALOUF_APP_TRANSPORT,
-    CONF_MOTION_BED_MOVEMENT,
-    CONF_MOTION_BED_PRESET,
-    CONF_MOTION_BED_RESTORED,
-    CONF_PRODUCT_TYPE,
-    CONF_REMACRO_MODEL,
-    CONF_REVERSE_MOTORS,
-    CONF_SLEEPTRACKER_FOUNDATION,
-    CONF_SLEEPTRACKER_PROCESSOR_TYPE,
-    CONF_SLEEPTRACKER_RESTRICTED,
-    CONF_SLEEPTRACKER_SNAPSHOT_SIDE,
-    CONF_SLEEPTRACKER_UNIT,
     CONF_SLEEPYS_ELITE_SELECTOR,
-    CONF_STARCODE_COMMAND_SELECTOR,
-    CONF_STARCODE_M1X12_PROFILE,
-    CONF_STARCODE_M5X5_PROFILE,
-    CONF_STARCODE_TRANSPORT_SELECTOR,
-    CONF_STARCODE_UI_SELECTOR,
-    CONF_VIBRADORM_APP_PROFILE,
-    CONF_VIBRADORM_CONTROL_TYPE,
-    CONF_VIBRADORM_FLOOR_DEFAULT,
-    CONF_VIBRADORM_FLOOR_LIGHT,
-    CONF_VIBRADORM_LIGHT_EXTENSION,
-    CONF_VIBRADORM_RESTORED,
-    CONF_VIBRADORM_RGB,
-    CONF_VIBRADORM_VMAT_REMOTE,
-    CONF_VMATBASIC_FLOOR_LEVEL,
-    CONF_VMATBASIC_FLOOR_MINUTES,
-    CONF_VMATBASIC_PROFILE,
-    DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
-    DEWERTOKIN_RF_GATEWAY_MODEL,
-    DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
-    HAS_LIGHT_DEFAULTS,
-    KAIDI_VARIANT_FLOYD,
     KEESON_BASE_WRITE_CHAR_UUID,
-    KEESON_BETTERLIVING_SERVICE_UUIDS,
-    KEESON_FALLBACK_GATT_PAIRS,
-    KEESON_JSON_SERVICE_UUID,
-    KEESON_SINO_NAME_PATTERNS,
-    # Variants and UUIDs
-    KEESON_VARIANT_ADJUSTABLE_LITE,
     KEESON_VARIANT_ERGOMOTION,
-    KEESON_VARIANT_HEAL_EVERY_NIGHT,
-    KEESON_VARIANT_INNOVA,
-    KEESON_VARIANT_JSON,
-    KEESON_VARIANT_KSBT,
-    KEESON_VARIANT_KSBT04C,
-    KEESON_VARIANT_KSBT_CR,
     KEESON_VARIANT_OKIN,
-    KEESON_VARIANT_OKIN_SEATING,
-    KEESON_VARIANT_PURPLE,
-    KEESON_VARIANT_RESTONIC_A,
-    KEESON_VARIANT_RESTONIC_B,
     KEESON_VARIANT_SERTA,
-    KEESON_VARIANT_SIMON_LI,
-    KEESON_VARIANT_SINO,
-    KEESON_VARIANT_SLEEP_HARMONY,
-    LEGGETT_APP_DEFAULT_PROFILE,
+    LEGGETT_VARIANT_GEN2,
     LEGGETT_VARIANT_MLRM,
-    LEGGETT_VARIANT_OKIN,
-    LINAK_VARIANT_PERFORMANCE,
     LOGICDATA_CHAR_UUID,
-    MANUFACTURER_ID_OKIN,
-    NORDIC_UART_SERVICE_UUID,
     NORDIC_UART_WRITE_CHAR_UUID,
-    OCTO_STAR2_CHAR_UUID,
-    OCTO_STAR2_SERVICE_UUID,
-    OCTO_VARIANT_STAR2,
-    OKIMAT_SERVICE_UUID,
     OKIMAT_WRITE_CHAR_UUID,
-    OKIN_CB24_VARIANT_CB24,
-    OKIN_CB24_VARIANT_CB24_AB,
-    OKIN_CB24_VARIANT_CB27,
-    OKIN_CB24_VARIANT_CB27NEW,
-    OKIN_CB24_VARIANT_CB1221,
-    OKIN_CB24_VARIANT_DACHENG,
-    OKIN_CB24_VARIANT_NEW,
-    OKIN_CB24_VARIANT_OLD,
-    OKIN_CST_VARIANTS,
-    ORE_COMFORT_BED_VARIANTS,
     RICHMAT_MH_APPS,
-    RICHMAT_PROTOCOL_PREFIX55,
-    RICHMAT_PROTOCOL_PREFIXAA,
-    RICHMAT_VARIANT_NORDIC,
-    RICHMAT_VARIANT_PREFIX55,
-    RICHMAT_VARIANT_PREFIXAA,
-    RICHMAT_VARIANT_WILINKE,
     RICHMAT_WILINKE_SERVICE_UUIDS,
-    SBI_VARIANT_BOTH,
-    SLEEP_NUMBER_VARIANT_LEFT,
-    SLEEP_NUMBER_VARIANT_RIGHT,
     SLEEPYS_BOX24_WRITE_CHAR_UUID,
-    SLEEPYS_BOX25_FIXED_STAR_NAME_PREFIXES,
-    SLEEPYS_BOX25_VARIANT_LEGACY,
-    SLEEPYS_BOX25_VARIANT_STAR,
-    SOLACE_VARIANT_WOOSA,
-    STAR_ELEVATE_VARIANT_M1X12,
-    SVANE_VARIANT_JENSEN_LINON,
-    SVANE_VARIANT_JMC,
-    SVANE_VARIANT_MULTI,
     VARIANT_AUTO,
-    ZSERIES_VARIANTS,
 )
-from .kaidi_protocol import extract_kaidi_advertisement
-from .profiles.kaidi import resolve_kaidi_variant
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -257,87 +150,6 @@ if TYPE_CHECKING:
     from .coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def _infer_cb24_variant_from_okin_payload(payload: bytes) -> str | None:
-    """Infer CB24 sub-variant from OKIN manufacturer payload bytes.
-
-    The SmartBed APK profile matcher keys off scanRecord marker bytes:
-    - "DOT" + type/subtype bytes for dacheng/cb1221/cb24
-    - "AB" for cb24_ab
-    - "OK" for cb27
-
-    Home Assistant exposes manufacturer payload bytes (without Company ID),
-    so we search for those ASCII markers within the payload.
-    """
-    # APK places markers at the start of the manufacturer payload.
-    # Anchor all checks with startswith to avoid false positives from
-    # short patterns (e.g. "OK" is only 2 bytes) matching random data.
-    if payload.startswith(b"DOT") and len(payload) >= 5:
-        marker_type = payload[3]
-        marker_subtype = payload[4]
-        if marker_type == 0x01:
-            return OKIN_CB24_VARIANT_DACHENG
-        if marker_subtype == 0x01:
-            return OKIN_CB24_VARIANT_CB1221
-        return OKIN_CB24_VARIANT_CB24
-
-    if payload.startswith(b"AB"):
-        return OKIN_CB24_VARIANT_CB24_AB
-
-    if payload.startswith(b"OK"):
-        return OKIN_CB24_VARIANT_CB27
-
-    return None
-
-
-def _auto_detect_cb24_profile_variant(
-    device_name: str | None,
-    manufacturer_data: dict[int, bytes] | None,
-) -> str:
-    """Auto-detect SmartBed/CB24 profile variant from advertisement signals."""
-    if manufacturer_data and MANUFACTURER_ID_OKIN in manufacturer_data:
-        okin_payload = manufacturer_data[MANUFACTURER_ID_OKIN]
-        inferred_variant = _infer_cb24_variant_from_okin_payload(okin_payload)
-        if inferred_variant:
-            _LOGGER.debug(
-                "CB24 profile auto-detected from manufacturer payload: %s",
-                inferred_variant,
-            )
-            return inferred_variant
-
-    # OEM app behavior:
-    # - CB27NewDeviceProfile (NEW protocol): startswith("smartbed") and len == 18
-    # - all other CB24-family devices: legacy packets (default to CB24 profile)
-    if device_name:
-        name_lower = device_name.lower()
-        if name_lower.startswith("smartbed") and len(device_name) == 18:
-            _LOGGER.debug("CB24 profile auto-detected: cb27new (name len=18)")
-            return OKIN_CB24_VARIANT_CB27NEW
-        _LOGGER.debug("CB24 profile auto-detected: cb24 (name len=%d)", len(device_name))
-
-    return OKIN_CB24_VARIANT_CB24
-
-
-def _gatt_has_characteristic(
-    client: BleakClient | None,
-    service_uuid: str,
-    char_uuid: str,
-) -> bool:
-    """Return True if the connected client exposes a service/characteristic pair."""
-    if client is None or client.services is None:
-        return False
-
-    service_uuid_lower = service_uuid.lower()
-    char_uuid_lower = char_uuid.lower()
-    for service in client.services:
-        if str(service.uuid).lower() != service_uuid_lower:
-            continue
-        if service.get_characteristic(char_uuid_lower) is not None:
-            return True
-
-    return False
-
 
 # The command endpoints each Okin route's controller writes. An Okin UUID entry
 # also drives a DOT box, and FurniMove selects whichever of the two it finds.
@@ -404,38 +216,13 @@ def require_logicdata_route(client: BleakClient, data: Mapping[str, Any]) -> Non
     _require_write_endpoint(client, frozenset({LOGICDATA_CHAR_UUID.lower()}), BED_TYPE_LOGICDATA)
 
 
-def _is_dewertokin_dot_box(client: BleakClient | None) -> bool:
-    """Return True when a connected Okin box is a DOT PROTOCOL receiver.
-
-    FurniMove flags a connection as DOT when it exposes the Nordic UART write
-    characteristic; a DOT box has no Okin 62741523 service, so require both
-    signals to avoid demoting a standard Okimat box that happens to also
-    expose Nordic UART.
-    """
-    return _gatt_has_characteristic(
-        client, NORDIC_UART_SERVICE_UUID, NORDIC_UART_WRITE_CHAR_UUID
-    ) and not _gatt_has_characteristic(client, OKIMAT_SERVICE_UUID, OKIMAT_WRITE_CHAR_UUID)
-
-
-def _is_dewertokin_rf_gateway(client: BleakClient | None, ble_model: str | None) -> bool:
-    """Return True when a DewertOkin/Okin entry is the RF-Gateway command variant."""
-    if ble_model is not None and ble_model.strip().lower() == DEWERTOKIN_RF_GATEWAY_MODEL.lower():
-        return True
-
-    return _gatt_has_characteristic(
-        client,
-        DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
-        DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
-    )
 
 
 @dataclass(frozen=True, slots=True)
 class _ControllerSpec:
-    """Lazy pointer to a controller class, plus any fixed constructor kwargs.
+    """A controller class built from the coordinator and fixed constructor kwargs.
 
-    Controller modules are imported on demand: eagerly importing all ~50 of them
-    at integration load would cost startup time for protocols the user does not
-    have. ``module`` is resolved relative to ``.beds``.
+    ``module`` is resolved relative to ``.beds``.
     """
 
     module: str
@@ -443,17 +230,33 @@ class _ControllerSpec:
     kwargs: Mapping[str, Any] = MappingProxyType({})
 
 
-# Bed types whose construction is fully described by "import this class and pass
-# the coordinator (plus fixed kwargs)". Bed types needing runtime detection,
-# variant resolution, or constructor arguments derived from the advertisement
-# stay as explicit branches in create_controller().
-#
-# tests/test_controller_contract.py resolves every entry, so a bad module or
-# class name fails the suite rather than a user's bed setup.
+@dataclass(frozen=True, slots=True)
+class _BuilderSpec:
+    """A ``ControllerBuilder`` function in a ``.beds`` module."""
+
+    module: str
+    function: str = "build_controller"
+
+
+# Bed types whose construction is "import this class and pass the coordinator
+# plus fixed kwargs".
 _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_BF: _ControllerSpec("bf_cherish", "BfCherishController"),
     BED_TYPE_CHERISH: _ControllerSpec("bf_cherish", "BfCherishController", MappingProxyType({"cherish": True})),
     BED_TYPE_ESHINE: _ControllerSpec("eshine", "EshineController"),
+    BED_TYPE_GMMOTOR_SLEEP_MM: _ControllerSpec(
+        "gmmotor_sleep", "GmmotorSleepController", MappingProxyType({"sxb": False})
+    ),
+    BED_TYPE_GMMOTOR_SLEEP_SXB: _ControllerSpec(
+        "gmmotor_sleep", "GmmotorSleepController", MappingProxyType({"sxb": True})
+    ),
+    "hush_remote": _ControllerSpec("hush_sleep", "HushRemoteController"),
+    "hush_sleep_mm": _ControllerSpec(
+        "hush_sleep", "HushSleepController", MappingProxyType({"kind": "mm"})
+    ),
+    "hush_sleep_sxb": _ControllerSpec(
+        "hush_sleep", "HushSleepController", MappingProxyType({"kind": "sxb"})
+    ),
     BED_TYPE_ISLEEP: _ControllerSpec("isleep", "IsleepController"),
     "casper_remote": _ControllerSpec("casper_sleep", "CasperRemoteController"),
     "casper_sleep_mm": _ControllerSpec(
@@ -517,23 +320,104 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
 }
 
 
+# Bed types whose controller needs the variant, entry data, the advertisement
+# or the live GATT table. Each builder lives in its bed module.
+_BUILDERS: Final[dict[str, _BuilderSpec]] = {
+    **dict.fromkeys(RICHMAT_MH_APPS, _BuilderSpec("richmat_mh")),
+    BED_TYPE_ADJUSTABLE_LUMBAR: _BuilderSpec("adjustable_lumbar"),
+    BED_TYPE_ADJUSTAMATTRESS: _BuilderSpec("adjustamattress"),
+    BED_TYPE_BEDSENSE: _BuilderSpec("bedsense"),
+    BED_TYPE_CASPER_BASE: _BuilderSpec("casper_base"),
+    BED_TYPE_RICHMAT_CLASSIC_APPS: _BuilderSpec("richmat_classic"),
+    BED_TYPE_COMFORT_ENHANCEMENTS: _BuilderSpec("comfort_enhancements"),
+    BED_TYPE_COOLBASE: _BuilderSpec("coolbase"),
+    BED_TYPE_DEWERTOKIN: _BuilderSpec("okin_handle"),
+    BED_TYPE_DOUBLESLEEP: _BuilderSpec("doublesleep"),
+    BED_TYPE_ESHINE_OKIN: _BuilderSpec("eshine_okin"),
+    BED_TYPE_FSM_RELAX: _BuilderSpec("fsm_relax"),
+    BED_TYPE_FURNIMOVE: _BuilderSpec("furnimove"),
+    BED_TYPE_GLIDEAWAY_MOTION: _BuilderSpec("glideaway_motion"),
+    BED_TYPE_GMMOTOR: _BuilderSpec("gmmotor"),
+    BED_TYPE_GOODVIBE: _BuilderSpec("goodvibe"),
+    BED_TYPE_HJBED: _BuilderSpec("hjbed"),
+    "hush_base": _BuilderSpec("hush_base"),
+    BED_TYPE_JENSEN: _BuilderSpec("jensen"),
+    BED_TYPE_JIECANG_APP: _BuilderSpec("jiecang_app"),
+    BED_TYPE_KAIDI: _BuilderSpec("kaidi"),
+    BED_TYPE_KEESON: _BuilderSpec("keeson"),
+    BED_TYPE_LEGGETT_GEN2: _BuilderSpec("leggett_gen2"),
+    BED_TYPE_LEGGETT_LP_LEGACY: _BuilderSpec("leggett_lp_legacy"),
+    BED_TYPE_LEGGETT_OKIN: _BuilderSpec("leggett_okin"),
+    BED_TYPE_LEGGETT_PLATT: _BuilderSpec("leggett_gen2", "build_leggett_platt"),
+    BED_TYPE_LIMOSS_REMOTE: _BuilderSpec("limoss_remote"),
+    BED_TYPE_LINAK: _BuilderSpec("linak"),
+    BED_TYPE_LOGICDATA_APP: _BuilderSpec("logicdata_app"),
+    BED_TYPE_MALOUF_APP: _BuilderSpec("malouf_app"),
+    BED_TYPE_MOTION_BED: _BuilderSpec("motion_bed"),
+    BED_TYPE_MOTOMOTION: _BuilderSpec("motomotion"),
+    BED_TYPE_MOTOSLEEP: _BuilderSpec("motosleep"),
+    BED_TYPE_OCTO: _BuilderSpec("octo"),
+    BED_TYPE_OKIMAT: _BuilderSpec("okin_uuid"),
+    BED_TYPE_OKIN_64BIT: _BuilderSpec("okin_64bit"),
+    BED_TYPE_OKIN_CB24: _BuilderSpec("okin_cb24"),
+    BED_TYPE_OKIN_CST: _BuilderSpec("okin_cst"),
+    BED_TYPE_OKIN_DOT: _BuilderSpec("okin_dot"),
+    BED_TYPE_OKIN_HANDLE: _BuilderSpec("okin_handle"),
+    BED_TYPE_OKIN_UUID: _BuilderSpec("okin_uuid"),
+    BED_TYPE_REMACRO: _BuilderSpec("remacro"),
+    BED_TYPE_REVERIE: _BuilderSpec("reverie"),
+    BED_TYPE_REVERIE_NIGHTSTAND: _BuilderSpec("reverie_nightstand"),
+    BED_TYPE_REVERIE_PAIRLINK: _BuilderSpec("reverie_pairlink"),
+    BED_TYPE_RICHMAT: _BuilderSpec("richmat"),
+    "richmat_sleep_receiver": _BuilderSpec("ruf_richmat_sleep"),
+    BED_TYPE_RONDURE: _BuilderSpec("rondure"),
+    BED_TYPE_SBI: _BuilderSpec("sbi"),
+    BED_TYPE_SIMMONS: _BuilderSpec("simmons"),
+    BED_TYPE_SLEEP_NUMBER: _BuilderSpec("sleep_number"),
+    BED_TYPE_SLEEP_NUMBER_MCR: _BuilderSpec("sleep_number_mcr"),
+    BED_TYPE_SLEEPSTAR: _BuilderSpec("sleepstar"),
+    BED_TYPE_SLEEPTRACKER: _BuilderSpec("sleeptracker"),
+    BED_TYPE_SLEEPYS_BOX25: _BuilderSpec("sleepys_box25"),
+    BED_TYPE_SLEEPYS_ELITE_APP: _BuilderSpec("sleepys_app"),
+    BED_TYPE_SOLACE: _BuilderSpec("solace"),
+    BED_TYPE_STAR_ELEVATE: _BuilderSpec("star_elevate"),
+    BED_TYPE_STARCODE_ABM5_4: _BuilderSpec("starcode_abm5_4"),
+    BED_TYPE_STARCODE_M1X12: _BuilderSpec("starcode_m1x12"),
+    BED_TYPE_STARCODE_M5X5: _BuilderSpec("starcode_m5x5"),
+    BED_TYPE_SVANE: _BuilderSpec("svane"),
+    BED_TYPE_VIBRADORM_APP: _BuilderSpec("vibradorm_app"),
+    BED_TYPE_VMATBASIC: _BuilderSpec("vmatbasic"),
+    BED_TYPE_ZSERIES: _BuilderSpec("serenity", "build_zseries"),
+    # Keeson layout app profiles.
+    "ergo_slim": _BuilderSpec("ergo_slim"),
+    "ergomotion_app": _BuilderSpec("ergomotion_app"),
+    "omazz_adjusto_iii": _BuilderSpec("omazz_adjusto_iii"),
+    "qplus_app": _BuilderSpec("sbi", "build_qplus"),
+    "row_control": _BuilderSpec("row_control"),
+    "serta_mp_remote": _BuilderSpec("serta_mp_remote"),
+    "tempur_au": _BuilderSpec("tempur_au"),
+    "tempur_curve": _BuilderSpec("tempur_curve"),
+}
+
+
+async def _import_bed_module(coordinator: AdjustableBedCoordinator, module: str) -> ModuleType:
+    """Import a ``.beds`` module in the import executor (issue #368).
+
+    The executor import fills ``sys.modules``, so the second lookup never blocks.
+    """
+    name = f".beds.{module}"
+    await coordinator.hass.async_add_import_executor_job(import_module, name, __package__)
+    return import_module(name, __package__)
+
+
 async def _create_from_registry(
     coordinator: AdjustableBedCoordinator, bed_type: str
 ) -> BedController | None:
-    """Instantiate ``bed_type`` from the registry, or None if it needs a custom branch.
-
-    The registry deliberately imports controller modules lazily so startup does not
-    pay for every unused protocol. That import touches the filesystem, so it must
-    run in the import executor rather than the event loop; doing it inline made HA
-    log a "blocking call to import_module inside the event loop" warning (issue #368).
-    """
+    """Instantiate ``bed_type`` from its class spec, or None if it has none."""
     spec = _SIMPLE_CONTROLLERS.get(bed_type)
     if spec is None:
         return None
-
-    module = await coordinator.hass.async_add_import_executor_job(
-        import_module, f".beds.{spec.module}", __package__
-    )
+    module = await _import_bed_module(coordinator, spec.module)
     controller_cls: type[BedController] = getattr(module, spec.class_name)
     _LOGGER.debug(
         "Using %s for bed type %s%s",
@@ -550,1448 +434,79 @@ async def create_controller(
     protocol_variant: str | None,
     client: BleakClient | None,
     device_name: str | None = None,
-    octo_pin: str = "",
-    richmat_remote: str = "auto",
-    jensen_pin: str = "",
-    cb24_bed_selection: int = 0x00,
+    *,
     ble_manufacturer: str | None = None,
     ble_model: str | None = None,
     manufacturer_data: dict[int, bytes] | None = None,
-    capability_snapshot: Mapping[str, Any] | None = None,
-    rmcontrol_product: str = "",
-    rmcontrol_side: str = "left",
     advertisement_name: str | None = None,
 ) -> BedController:
-    """Create the appropriate bed controller.
+    """Create the controller for a bed type, carrying its static traits.
 
-    This factory function handles controller instantiation with lazy imports
-    to avoid loading all controller modules until needed.
-    Explicit branches preload their module in the import executor before using
-    a normal import, keeping first-use filesystem work off the loop while
-    retaining static types for constructors and protocol helpers.
+    Everything else a controller needs (PINs, app profiles, stored capability
+    snapshots) its builder reads from the config entry.
 
     Args:
-        coordinator: The AdjustableBedCoordinator instance
-        bed_type: The type of bed (from const.py BED_TYPE_* constants)
-        protocol_variant: Protocol variant for beds with multiple protocols
-        client: The BleakClient connection (needed for auto-detection)
-        device_name: Raw BLE device name from discovery/connection (if available)
-        octo_pin: PIN for Octo beds (default: empty string)
-        richmat_remote: Remote code for Richmat beds (default: "auto")
-        rmcontrol_product: Exact RMControl app product, empty retains legacy profiles.
-        rmcontrol_side: Side selected in the RMControl app profile.
-        jensen_pin: PIN for Jensen beds (default: empty string, uses "3060")
-        cb24_bed_selection: Bed selection for CB24 split beds (0x00=default, 0xAA=A, 0xBB=B)
-        ble_manufacturer: Manufacturer name from BLE Device Information Service (0x2A29)
-        ble_model: Model Number from BLE Device Information Service (0x2A24)
-        manufacturer_data: Last advertisement manufacturer payloads by Company ID
-
-    Returns:
-        The appropriate BedController subclass instance
+        client: The live link, or None for a client-free controller minted from
+            stored configuration.
+        device_name: BLE name of the live link, else the display name.
+        ble_manufacturer, ble_model: Device Information Service 0x2A29 and 0x2A24.
+        manufacturer_data: Last advertisement manufacturer payloads by Company ID.
+        advertisement_name: Name in the last advertisement.
 
     Raises:
-        ValueError: If bed_type is unknown
-        ConnectionError: If auto-detection is needed but client is not connected
+        ValueError: If the bed type is unknown or its configuration is invalid.
+        ConnectionError: If the route needs a live link that is missing.
     """
-    if bed_type == BED_TYPE_COMFORT_ENHANCEMENTS:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.comfort_enhancements", __package__
-        )
-        from .beds.comfort_enhancements import ComfortEnhancementsController
-
-        return ComfortEnhancementsController(coordinator, layout=protocol_variant or "")
-
-    if bed_type == BED_TYPE_ADJUSTAMATTRESS:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.adjustamattress", __package__
-        )
-        from .beds.adjustamattress import AdjustaMattressController
-
-        return AdjustaMattressController(
-            coordinator, protocol_variant=protocol_variant,
-            device_name=device_name if client is not None else None,
-        )
-
-    if bed_type == "hush_remote":
-        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.hush_sleep", __package__)
-        from .beds.hush_sleep import HushRemoteController
-
-        return HushRemoteController(coordinator)
-
-    if bed_type == "hush_base":
-        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.hush_base", __package__)
-        from .beds.hush_base import HushBaseController
-
-        return HushBaseController(coordinator, product=protocol_variant or "")
-
-    if bed_type in {"hush_sleep_mm", "hush_sleep_sxb"}:
-        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.hush_sleep", __package__)
-        from .beds.hush_sleep import HushSleepController
-
-        return HushSleepController(coordinator, kind="mm" if bed_type == "hush_sleep_mm" else "sxb")
-
-    if bed_type == BED_TYPE_CASPER_BASE:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.casper_base", __package__
-        )
-        from .beds.casper_base import CasperBaseController
-
-        return CasperBaseController(coordinator, product=protocol_variant or "")
-
-    if bed_type == BED_TYPE_GMMOTOR:
-        from .const import CONF_GMMOTOR_SIDE
-        from .gmmotor_profiles import profile_choices
-
-        profile = coordinator.entry.data.get(CONF_PRODUCT_TYPE, "")
-        if profile not in profile_choices():
-            profile = ""  # Source factory's unsupported-selector fallback.
-        side = coordinator.entry.data.get(CONF_GMMOTOR_SIDE, "left")
-        if profile in ("FWRM", "WFRM"):
-            await coordinator.hass.async_add_import_executor_job(
-                import_module, ".beds.gmmotor_desk", __package__
-            )
-            from .beds.gmmotor_desk import GmmotorDeskController
-
-            return GmmotorDeskController(coordinator, profile=profile)
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.gmmotor", __package__
-        )
-        from .beds.gmmotor import GmmotorController
-
-        return GmmotorController(coordinator, profile=profile, side=side)
-
-    if bed_type in (BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB):
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.gmmotor_sleep", __package__
-        )
-        from .beds.gmmotor_sleep import GmmotorSleepController
-
-        return GmmotorSleepController(coordinator, sxb=bed_type == BED_TYPE_GMMOTOR_SLEEP_SXB)
-
-    if bed_type == BED_TYPE_ADJUSTABLE_LUMBAR:
-        # The app's name rule picks the table unless the variant fixes the
-        # branch; offline controllers must not read the display name.
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.adjustable_lumbar", __package__
-        )
-        from .beds.adjustable_lumbar import AdjustableLumbarController
-
-        return AdjustableLumbarController(
-            coordinator,
-            protocol_variant=protocol_variant,
-            device_name=device_name if client is not None else None,
-        )
-
-    if bed_type == BED_TYPE_REVERIE_NIGHTSTAND:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.reverie_nightstand", __package__
-        )
-        from .beds.reverie_nightstand import ReverieNightstandController
-
-        return ReverieNightstandController(coordinator, model=protocol_variant)
-
-    if bed_type == BED_TYPE_REVERIE_PAIRLINK:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.reverie_pairlink", __package__
-        )
-        from .beds.reverie_pairlink import ReveriePairlinkController
-        from .beds.reverie_pairlink_runtime import create_pairlink_runtime_for_entry
-
-        pairlink_runtime = getattr(coordinator, "_pairlink_runtime", None)
-        if pairlink_runtime is None:
-            entry_data = getattr(coordinator.entry, "data", {})
-            entry_options = getattr(coordinator.entry, "options", {})
-            pairlink_runtime = create_pairlink_runtime_for_entry(
-                entry_data if isinstance(entry_data, Mapping) else {},
-                entry_options if isinstance(entry_options, Mapping) else {},
+    if bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant in (None, "", VARIANT_AUTO):
+        # Resolve the automatic route first, so the controller carries the traits
+        # of the protocol it actually speaks.
+        protocol_variant = await _detect_leggett_platt_variant(client)
+    spec = _BUILDERS.get(bed_type)
+    if spec is not None:
+        module = await _import_bed_module(coordinator, spec.module)
+        builder: ControllerBuilder = getattr(module, spec.function)
+        controller = await builder(
+            BuildContext(
+                coordinator=coordinator,
+                bed_type=bed_type,
+                variant=protocol_variant,
+                client=client,
+                device_name=device_name,
+                advertisement_name=advertisement_name,
                 manufacturer_data=manufacturer_data,
+                ble_manufacturer=ble_manufacturer,
+                ble_model=ble_model,
             )
-            coordinator._pairlink_runtime = pairlink_runtime
-        else:
-            pairlink_runtime.refresh_configured_inputs(
-                coordinator.entry.data,
-                getattr(coordinator.entry, "options", {}),
-                manufacturer_data=manufacturer_data,
-            )
-
-        return ReveriePairlinkController(
-            coordinator,
-            model=protocol_variant,
-            device_name=device_name,
-            manufacturer_data=manufacturer_data,
-            runtime=pairlink_runtime,
         )
-
-    if bed_type == BED_TYPE_REVERIE:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.reverie", __package__
-        )
-        from .beds.reverie import ReverieController
-
-        return ReverieController(coordinator, model=protocol_variant)
-
-    if bed_type == "richmat_sleep_receiver":
-        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.row061_sleep", __package__)
-        from .beds.row061_sleep import Row061SleepController
-
-        return Row061SleepController(coordinator, app=protocol_variant or "")
-
-    if bed_type in RICHMAT_MH_APPS:
-        # The app's name rule picks the model unless the variant fixes it;
-        # offline controllers must not read the display name.
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.richmat_mh", __package__
-        )
-        from .beds.richmat_mh import RichmatMhController
-        from .row061_profiles import APPS as row061_apps
-
-        controller_class = RichmatMhController
-        if bed_type in row061_apps:
-            await coordinator.hass.async_add_import_executor_job(
-                import_module, ".beds.row061", __package__
-            )
-            from .beds.row061 import Row061Controller
-            from .row061_profiles import profiles
-
-            await coordinator.hass.async_add_executor_job(profiles, row061_apps[bed_type])
-            controller_class = Row061Controller
-        return controller_class(
-            coordinator,
-            app=RICHMAT_MH_APPS[bed_type],
-            protocol_variant=protocol_variant,
-            device_name=device_name if client is not None else None,
-        )
-
-    if bed_type == BED_TYPE_SIMMONS:
-        # The app picks the packet format from the Bluetooth name unless the
-        # stored variant fixes it, so pass both.
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.simmons", __package__
-        )
-        from .beds.simmons import SimmonsController
-
-        # Offline capability controllers receive the display name, which the
-        # app's name rule must never read; they use the stored BLE name.
-        return SimmonsController(
-            coordinator,
-            protocol_variant=protocol_variant,
-            device_name=device_name if client is not None else None,
-        )
-
-    if bed_type == BED_TYPE_SOLACE:
-        if protocol_variant == SOLACE_VARIANT_WOOSA:
-            await coordinator.hass.async_add_import_executor_job(
-                import_module, ".beds.woosa", __package__
-            )
-            from .beds.woosa import WoosaController
-
-            return WoosaController(coordinator)
-
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.solace", __package__
-        )
-        from .beds.solace import SolaceController
-
-        return SolaceController(coordinator)
-
-    if bed_type == BED_TYPE_GOODVIBE:
-        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.goodvibe", __package__)
-        from .beds.goodvibe import GoodVibeController
-        return GoodVibeController(coordinator, profile=protocol_variant or "")
-
-    if bed_type == BED_TYPE_ESHINE_OKIN:
-        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.eshine_okin", __package__)
-        from .beds.eshine_okin import EshineOkinController
-        return EshineOkinController(coordinator, profile=protocol_variant or "")
-
-    if bed_type == BED_TYPE_CLUSTER018:
-        # The app's catalog is a gzip file: load it off the event loop first.
-        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.cluster018", __package__)
-        from .beds.cluster018 import Cluster018Controller
-        from .cluster018_profiles import load_catalog
-        await coordinator.hass.async_add_executor_job(load_catalog, protocol_variant)
-        return Cluster018Controller(coordinator, app=protocol_variant, device_name=device_name)
-
-    if bed_type == BED_TYPE_MOTOMOTION:
-        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.motomotion", __package__)
-        from .beds.motomotion import MotoMotionController
-        return MotoMotionController(coordinator, device_name=device_name if client is not None else None, manufacturer_data=manufacturer_data)
-
-    if bed_type == BED_TYPE_HJBED:
-        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.hjbed", __package__)
-        from .beds.hjbed import HJBedController
-        return HJBedController(coordinator, profile=protocol_variant or "")
-
-    if bed_type == BED_TYPE_GLIDEAWAY_MOTION:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.glideaway_motion", __package__
-        )
-        from .beds.glideaway_motion import GlideawayMotionController
-
-        return GlideawayMotionController(coordinator, model=protocol_variant)
-
-    if bed_type == BED_TYPE_ZSERIES:
-        # The app page is a user choice nothing on the bed identifies.
-        if protocol_variant not in ZSERIES_VARIANTS:
-            raise ValueError("Choose the Z-230 or Z-280 page selected in the Z-Series app")
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.serenity", __package__
-        )
-        from .beds.serenity import ZSeriesController
-
-        return ZSeriesController(coordinator, model=protocol_variant)
-
-    if bed_type == BED_TYPE_SVANE:
-        if protocol_variant == SVANE_VARIANT_JENSEN_LINON:
-            await coordinator.hass.async_add_import_executor_job(
-                import_module, ".beds.jensen_linon", __package__
-            )
-            from .beds.jensen_linon import JensenLinonController
-
-            return JensenLinonController(coordinator)
-
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.svane", __package__
-        )
-        from .beds.svane import SvaneController
-        from .svane_state import get_svane_session
-
-        if protocol_variant not in (None, SVANE_VARIANT_MULTI, SVANE_VARIANT_JMC):
-            raise ValueError("Unknown Svane Remote profile")
-        profile = "jmc" if protocol_variant == SVANE_VARIANT_JMC else "multi"
-        session = get_svane_session(coordinator.hass, coordinator.address, profile)
-        return SvaneController(coordinator, profile=profile, session=session)
-
-    if bed_type == BED_TYPE_SLEEP_NUMBER_MCR:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.sleep_number_mcr", __package__
-        )
-        from .beds.sleep_number_mcr import SleepNumberMcrController
-
-        return SleepNumberMcrController(coordinator, manufacturer_data=manufacturer_data)
-
-    # Protocol-based bed types (new naming convention)
-    if bed_type == BED_TYPE_OKIN_HANDLE:
-        if _is_dewertokin_rf_gateway(client, ble_model):
-            await coordinator.hass.async_add_import_executor_job(
-                import_module, ".beds.dewertokin_rf_gateway", __package__
-            )
-            from .beds.dewertokin_rf_gateway import DewertOkinRfGatewayController
-
-            _LOGGER.info(
-                "Auto-detected DewertOkin RF-Gateway command endpoint for %s",
-                coordinator.address,
-            )
-            return DewertOkinRfGatewayController(coordinator)
-
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.okin_handle", __package__
-        )
-        from .beds.okin_handle import OkinHandleController
-
-        return OkinHandleController(coordinator)
-
-    if bed_type == BED_TYPE_OKIN_DOT:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.okin_dot", __package__
-        )
-        from .beds.okin_dot import OkinDotController
-
-        variant = protocol_variant or VARIANT_AUTO
-        _LOGGER.debug("Using Okin DOT variant: %s", variant)
-        return OkinDotController(coordinator, variant=variant)
-
-    if bed_type in (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT):
-        variant = protocol_variant or "auto"
-        if _is_dewertokin_rf_gateway(client, ble_model):
-            await coordinator.hass.async_add_import_executor_job(
-                import_module, ".beds.dewertokin_rf_gateway", __package__
-            )
-            from .beds.dewertokin_rf_gateway import DewertOkinUuidRfGatewayController
-
-            _LOGGER.info(
-                "Auto-detected DewertOkin RF-Gateway command endpoint for %s "
-                "using Okin UUID variant %s",
-                coordinator.address,
-                variant,
-            )
-            return DewertOkinUuidRfGatewayController(coordinator, variant=variant)
-
-        if _is_dewertokin_dot_box(client):
-            await coordinator.hass.async_add_import_executor_job(
-                import_module, ".beds.okin_dot", __package__
-            )
-            from .beds.okin_dot import OkinDotController
-
-            _LOGGER.info(
-                "Auto-detected DewertOkin DOT PROTOCOL box for %s "
-                "(Nordic UART, no Okin 62741523 service); using variant %s",
-                coordinator.address,
-                variant,
-            )
-            return OkinDotController(coordinator, variant=variant)
-
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.okin_uuid", __package__
-        )
-        from .beds.okin_uuid import OkinUuidController
-
-        # Pass the configured variant (remote code) to the controller
-        _LOGGER.debug("Using Okin UUID variant: %s", variant)
-        return OkinUuidController(coordinator, variant=variant)
-
-    if bed_type == BED_TYPE_LEGGETT_OKIN:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.leggett_okin", __package__
-        )
-        from .beds.leggett_okin import LeggettOkinController
-
-        entry_data = getattr(getattr(coordinator, "entry", None), "data", {})
-        return LeggettOkinController(
-            coordinator,
-            app_profile=entry_data.get(CONF_LEGGETT_APP_PROFILE, LEGGETT_APP_DEFAULT_PROFILE),
-        )
-
-    if bed_type == BED_TYPE_FURNIMOVE:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.furnimove", __package__
-        )
-        from .beds.furnimove import FurniMoveController
-
-        return FurniMoveController(
-            coordinator, handset_id=coordinator.entry.data[CONF_FURNIMOVE_REMOTE]
-        )
-
-    if bed_type == BED_TYPE_LOGICDATA_APP:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.logicdata_app", __package__
-        )
-        from .beds.logicdata_app import LogicdataAppController
-
-        entry_data = coordinator.entry.data
-        return LogicdataAppController(
-            coordinator,
-            profile=entry_data[CONF_LOGICDATA_APP_PROFILE],
-            command_family=entry_data[CONF_LOGICDATA_APP_FAMILY],
-            layout=entry_data[CONF_LOGICDATA_APP_LAYOUT],
-            transport=entry_data.get(CONF_LOGICDATA_APP_TRANSPORT, "auto"),
-            has_light=entry_data.get(CONF_HAS_LIGHT, HAS_LIGHT_DEFAULTS[BED_TYPE_LOGICDATA_APP]),
-            has_massage=entry_data.get(CONF_HAS_MASSAGE, False),
-        )
-
-    if bed_type == BED_TYPE_REMACRO:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.remacro", __package__
-        )
-        from .beds.remacro import RemacroController, remacro_session
-        from .beds.remacro_protocol import app_for_variant, remacro_led_level, resolve_model
-
-        app = app_for_variant(protocol_variant)
-        # The live advertisement wins, as in the apps; the stored selector only
-        # covers offline capability minting and missing history.
-        model = resolve_model(
-            app, manufacturer_data, coordinator.entry.data.get(CONF_REMACRO_MODEL)
-        )
-        session = remacro_session(coordinator.hass, coordinator.address, app, model.model_id)
-        return RemacroController(
-            coordinator,
-            app=app,
-            model=model,
-            session=session,
-            led_level=remacro_led_level(coordinator.entry.data, model.model_id),
-        )
-
-    if bed_type == BED_TYPE_VMATBASIC:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.vmatbasic", __package__
-        )
-        from .beds.vmatbasic import VMatBasicController, get_vmatbasic_session_intent
-
-        data = coordinator.entry.data
-        return VMatBasicController(
-            coordinator,
-            profile=data[CONF_VMATBASIC_PROFILE],
-            floor_level=data.get(CONF_VMATBASIC_FLOOR_LEVEL),
-            floor_minutes=data.get(CONF_VMATBASIC_FLOOR_MINUTES, 0),
-            remember_settings=coordinator.remember_vmatbasic_settings,
-            session_intent=get_vmatbasic_session_intent(
-                coordinator.hass, coordinator.address, data[CONF_VMATBASIC_PROFILE]
-            ),
-        )
-
-    if bed_type == BED_TYPE_STARCODE_ABM5_4:
-        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.starcode_abm5_4", __package__)
-        from .beds.starcode_abm5_4 import StarcodeAbm5_4Controller
-
-        data = coordinator.entry.data
-        return StarcodeAbm5_4Controller(
-            coordinator,
-            command_selector=data.get(CONF_STARCODE_COMMAND_SELECTOR, "none"),
-            ui_selector=data.get(CONF_STARCODE_UI_SELECTOR),
-            transport_selector=data.get(CONF_STARCODE_TRANSPORT_SELECTOR),
-        )
-
-    if bed_type == BED_TYPE_DOUBLESLEEP:
-        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.doublesleep", __package__)
-        from .beds.doublesleep import DoubleSleepController
-        from .doublesleep_protocol import real_mac, select_model, select_protocol
-
-        data = {**coordinator.entry.data, **coordinator.entry.options}
-        name = advertisement_name or data.get(CONF_BLE_DEVICE_NAME, device_name or "")
-        if protocol_variant not in ("p1", "p2", "p3") and manufacturer_data is None:
-            raise ConnectionError("SleepEase automatic driver selection requires a live advertisement")
-        protocol = select_protocol(name, manufacturer_data or {})
-        if protocol_variant in ("p1", "p2", "p3"):
-            protocol = protocol_variant
-        model = int(data.get(CONF_PRODUCT_TYPE, select_model(device_name or name, manufacturer_data or {})))
-        return DoubleSleepController(coordinator, protocol=protocol, model=model, advertised_identity=real_mac(name, manufacturer_data or {}))
-
-    if bed_type == BED_TYPE_SLEEPTRACKER:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.sleeptracker", __package__
-        )
-        from .beds.sleeptracker import SleeptrackerController, SleeptrackerWaveSettings
-
-        data = coordinator.entry.data
-        model = data.get(CONF_PRODUCT_TYPE, "unknown")
-        return SleeptrackerController(
-            coordinator,
-            model=model,
-            unit_number=data.get(CONF_SLEEPTRACKER_UNIT, 0),
-            snapshot_side=data.get(CONF_SLEEPTRACKER_SNAPSHOT_SIDE, 0),
-            restricted=data.get(CONF_SLEEPTRACKER_RESTRICTED, False),
-            processor_type=data.get(CONF_SLEEPTRACKER_PROCESSOR_TYPE, 0),
-            manufacturer_data=manufacturer_data,
-            foundation=data.get(CONF_SLEEPTRACKER_FOUNDATION, "Unspecified"),
-            wave_settings=app_session(
-                coordinator.hass, coordinator.address, ("sleeptracker", model),
-                SleeptrackerWaveSettings,
-            ),
-        )
-
-    if bed_type == BED_TYPE_MOTION_BED:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.motion_bed", __package__
-        )
-        from .beds.motion_bed import MotionBedController
-        from .motion_bed_models import select_motion_bed
-
-        data = coordinator.entry.data
-        selection = select_motion_bed(
-            data.get(CONF_BLE_DEVICE_NAME, data.get(CONF_NAME, "")), restored=data.get(CONF_MOTION_BED_RESTORED, False),
-            preset_override=data.get(CONF_MOTION_BED_PRESET),
-            movement_override=data.get(CONF_MOTION_BED_MOVEMENT),
-        )
-        return MotionBedController(coordinator, selection=selection)
-
-    if bed_type == BED_TYPE_LIMOSS_REMOTE:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.limoss_remote", __package__
-        )
-        from .beds.limoss_remote import LimossRemoteController
-        from .beds.limoss_remote_protocol import LimossRemoteCapabilities
-        from .limoss_remote_state import get_limoss_remote_session, validate_limoss_remote_state
-
-        entry_data = coordinator.entry.data
-        state = validate_limoss_remote_state(entry_data.get(CONF_LIMOSS_REMOTE_STATE, {}))
-        cached = state.get("capabilities")
-        capabilities = LimossRemoteCapabilities(**cached) if isinstance(cached, dict) else None
-        reverse = tuple(entry_data.get(key, False) for key in CONF_REVERSE_MOTORS)
-        return LimossRemoteController(
-            coordinator, product=entry_data.get(CONF_PRODUCT_TYPE),
-            underbed_light=entry_data.get(CONF_HAS_LIGHT, False),
-            massage=entry_data.get(CONF_HAS_MASSAGE, False),
-            theme=entry_data.get(CONF_LIMOSS_REMOTE_THEME),
-            reverse_motors=(reverse[0], reverse[1], reverse[2], reverse[3]),
-            cached_capabilities=capabilities,
-            session=get_limoss_remote_session(coordinator.hass, coordinator.address),
-        )
-
-
-    if bed_type == BED_TYPE_FSM_RELAX:
-        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.fsm_relax", __package__)
-        from .beds.fsm_relax import FsmRelaxController, FsmRelaxSetup
-        from .fsm_relax_state import FsmRelaxSession, validate_names
-
-        data = {**coordinator.entry.data, **coordinator.entry.options}
-        reversals = tuple(data.get(key, False) for key in CONF_REVERSE_MOTORS)
-        setup = FsmRelaxSetup(data.get(CONF_PRODUCT_TYPE, "chair"),
-                              data.get(CONF_HAS_LIGHT, False),
-                              data.get(CONF_HAS_MASSAGE, False),
-                              (reversals[0], reversals[1], reversals[2], reversals[3]))
-        return FsmRelaxController(
-            coordinator,
-            setup=setup,
-            session=app_session(
-                coordinator.hass, coordinator.address, ("fsm_relax",), FsmRelaxSession
-            ),
-            names=validate_names(data.get(CONF_FSM_RELAX_MEMORY_NAMES, [""] * 8)),
-        )
-
-    if bed_type == BED_TYPE_STARCODE_M5X5:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.starcode_m5x5", __package__
-        )
-        from .beds.starcode_m5x5 import StarcodeM5X5Controller
-
-        return StarcodeM5X5Controller(
-            coordinator,
-            profile=coordinator.entry.data[CONF_STARCODE_M5X5_PROFILE],
-            device_name=coordinator.entry.data[CONF_BLE_DEVICE_NAME],
-        )
-
-    if bed_type == BED_TYPE_STARCODE_M1X12:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.starcode_m1x12", __package__
-        )
-        from .beds.starcode_m1x12 import StarcodeM1X12Controller
-
-        return StarcodeM1X12Controller(
-            coordinator,
-            profile=coordinator.entry.data[CONF_STARCODE_M1X12_PROFILE],
-            device_name=coordinator.entry.data[CONF_BLE_DEVICE_NAME],
-        )
-
-    if bed_type == BED_TYPE_STAR_ELEVATE:
-        if protocol_variant == STAR_ELEVATE_VARIANT_M1X12:
-            await coordinator.hass.async_add_import_executor_job(
-                import_module, ".beds.starcode_m1x12", __package__
-            )
-            from .beds.starcode_m1x12 import StarElevateM1X12Controller
-
-            return StarElevateM1X12Controller(coordinator)
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.star_elevate", __package__
-        )
-        from .beds.star_elevate import StarElevateController
-
-        return StarElevateController(coordinator)
-
-    if bed_type == BED_TYPE_VIBRADORM_APP:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.vibradorm_app", __package__
-        )
-        from .beds.vibradorm_app import VibradormAppController
-        from .vibradorm_app_state import get_vibradorm_app_session_intent
-
-        entry_data = coordinator.entry.data
-        stored_control = entry_data[CONF_VIBRADORM_CONTROL_TYPE]
-        control_type: int | Literal["other"]
-        if stored_control == "other":
-            control_type = "other"
-        elif isinstance(stored_control, int) and not isinstance(stored_control, bool):
-            control_type = stored_control
-        elif isinstance(stored_control, str):
-            control_type = int(stored_control)
-        else:
-            raise ValueError("Invalid retained Vibradorm control type")
-        restored = entry_data.get(CONF_VIBRADORM_RESTORED, False)
-        missing_default = 6 if not restored or entry_data.get(CONF_VIBRADORM_LIGHT_EXTENSION) else 8
-        if entry_data[CONF_VIBRADORM_APP_PROFILE] == "vmat":
-            missing_default = 6 if entry_data.get(CONF_VIBRADORM_LIGHT_EXTENSION) else 8
-        intent = get_vibradorm_app_session_intent(
-            coordinator.hass, coordinator.address,
-            app_profile=entry_data[CONF_VIBRADORM_APP_PROFILE], control_type=control_type,
-            remembered_floor_default=entry_data.get(CONF_VIBRADORM_FLOOR_DEFAULT, missing_default),
-            remote=entry_data.get(CONF_VIBRADORM_VMAT_REMOTE),
-        )
-        return VibradormAppController(
-            coordinator,
-            app_profile=entry_data[CONF_VIBRADORM_APP_PROFILE],
-            control_type=control_type,
-            restored=entry_data.get(CONF_VIBRADORM_RESTORED, False),
-            floor_light=entry_data.get(CONF_VIBRADORM_FLOOR_LIGHT),
-            rgb=entry_data.get(CONF_VIBRADORM_RGB, False),
-            massage=entry_data.get(CONF_HAS_MASSAGE, False),
-            light_extension=entry_data.get(CONF_VIBRADORM_LIGHT_EXTENSION, False),
-            floor_intent=intent.floor,
-            timer_intent=intent.timer,
-            remote=entry_data.get(CONF_VIBRADORM_VMAT_REMOTE),
-            massage_intent=intent.massage if entry_data[CONF_VIBRADORM_APP_PROFILE] == "vmat" else None,
-            mood_intent=intent.mood if entry_data[CONF_VIBRADORM_APP_PROFILE] == "vmat" else None,
-        )
-
-    if bed_type == BED_TYPE_JIECANG_APP:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.jiecang_app", __package__
-        )
-        from .beds.jiecang_app import JiecangAppController
-
-        entry_data = coordinator.entry.data
-        if entry_data[CONF_JIECANG_APP_PROFILE] == "comfort_motion":
-            await coordinator.hass.async_add_import_executor_job(
-                import_module, ".beds.comfort_motion", __package__
-            )
-            from .beds.comfort_motion import ComfortMotionController
-
-            return ComfortMotionController(
-                coordinator,
-                layout=entry_data[CONF_JIECANG_APP_LAYOUT],
-                transport=entry_data.get(CONF_JIECANG_APP_TRANSPORT, "auto"),
-                has_light=entry_data.get(CONF_HAS_LIGHT, True),
-            )
-        return JiecangAppController(
-            coordinator,
-            profile=entry_data[CONF_JIECANG_APP_PROFILE],
-            layout=entry_data[CONF_JIECANG_APP_LAYOUT],
-            transport=entry_data.get(CONF_JIECANG_APP_TRANSPORT, "auto"),
-            has_light=entry_data.get(CONF_HAS_LIGHT, HAS_LIGHT_DEFAULTS[BED_TYPE_JIECANG_APP]),
-        )
-
-    if bed_type == BED_TYPE_MALOUF_APP:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.malouf_app", __package__
-        )
-        from .beds.malouf_app import MaloufAppController
-
-        entry_data = coordinator.entry.data
-        return MaloufAppController(
-            coordinator,
-            app_profile=entry_data[CONF_MALOUF_APP_PROFILE],
-            model=entry_data[CONF_MALOUF_APP_MODEL],
-            transport=entry_data.get(CONF_MALOUF_APP_TRANSPORT, "auto"),
-            primary=entry_data.get(CONF_MALOUF_APP_PRIMARY, True),
-        )
-
-    if bed_type == BED_TYPE_KAIDI:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.kaidi", __package__
-        )
-        from .beds.kaidi import KaidiController
-
-        advertisement = extract_kaidi_advertisement(manufacturer_data)
-        entry_data = getattr(getattr(coordinator, "entry", None), "data", {})
-        resolution = resolve_kaidi_variant(
-            protocol_variant or VARIANT_AUTO,
-            product_id=(
-                advertisement.product_id
-                if advertisement is not None and advertisement.product_id is not None
-                else entry_data.get(CONF_KAIDI_PRODUCT_ID)
-            ),
-            sofa_acu_no=(
-                advertisement.sofa_acu_no
-                if advertisement is not None and advertisement.sofa_acu_no is not None
-                else entry_data.get(CONF_KAIDI_SOFA_ACU_NO)
-            ),
-        )
-        if resolution.variant is None:
-            raise ValueError(
-                "Kaidi product metadata could not be mapped to a command family. "
-                "Select a Kaidi protocol variant manually in options."
+    elif (registered := await _create_from_registry(coordinator, bed_type)) is not None:
+        controller = registered
+    else:
+        raise ValueError(f"Unknown bed type: {bed_type}")
+    controller.static_traits = bed_traits(bed_type, protocol_variant)
+    return controller
+
+
+async def _detect_leggett_platt_variant(client: BleakClient | None) -> str:
+    """Pick MlRM when the WiLinke service is present, otherwise Gen2."""
+    if client is None:
+        raise ConnectionError("Cannot auto-detect Leggett & Platt variant: no BLE client provided")
+
+    # Ensure services are discovered
+    if not client.services:
+        _LOGGER.debug("Services not populated, attempting discovery...")
+        address = getattr(client, "address", "unknown")
+        discovered = await discover_services(client, address)
+        if not discovered or not client.services:
+            raise ConnectionError(
+                "Cannot auto-detect Leggett & Platt variant: "
+                "failed to discover BLE services. "
+                "Please manually select a protocol variant in settings."
             )
 
-        if resolution.variant == KAIDI_VARIANT_FLOYD:
-            await coordinator.hass.async_add_import_executor_job(
-                import_module, ".beds.floyd", __package__
-            )
-            from .beds.floyd import FloydController
+    wilinke_uuids_lower = [uuid.lower() for uuid in RICHMAT_WILINKE_SERVICE_UUIDS]
+    if any(service.uuid.lower() in wilinke_uuids_lower for service in client.services):
+        _LOGGER.debug("Auto-detected MlRM Leggett & Platt variant (WiLinke UUID found)")
+        return LEGGETT_VARIANT_MLRM
+    _LOGGER.debug("Auto-detected Gen2 Leggett & Platt variant (no WiLinke UUID found)")
+    return LEGGETT_VARIANT_GEN2
 
-            return FloydController(
-                coordinator, device_name=device_name, manufacturer_data=manufacturer_data,
-            )
-
-        return KaidiController(
-            coordinator,
-            device_name=device_name,
-            manufacturer_data=manufacturer_data,
-            variant=resolution.variant,
-            variant_source=resolution.source,
-        )
-
-    if bed_type == BED_TYPE_OKIN_CB24:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.okin_cb24", __package__
-        )
-        from .beds.okin_cb24 import OkinCB24Controller
-
-        # Manual override via protocol_variant.
-        explicit_variant_selected = protocol_variant in {
-            OKIN_CB24_VARIANT_OLD,
-            OKIN_CB24_VARIANT_NEW,
-            OKIN_CB24_VARIANT_CB24,
-            OKIN_CB24_VARIANT_CB27,
-            OKIN_CB24_VARIANT_CB24_AB,
-            OKIN_CB24_VARIANT_CB1221,
-            OKIN_CB24_VARIANT_DACHENG,
-            OKIN_CB24_VARIANT_CB27NEW,
-        }
-
-        if explicit_variant_selected:
-            # Alias variants map to the corresponding protocol family.
-            profile_variant = protocol_variant
-            _LOGGER.debug("CB24 profile override: %s", profile_variant)
-        else:
-            profile_variant = _auto_detect_cb24_profile_variant(
-                device_name=device_name,
-                manufacturer_data=manufacturer_data,
-            )
-
-        return OkinCB24Controller(
-            coordinator,
-            bed_selection=cb24_bed_selection,
-            protocol_variant=profile_variant,
-        )
-
-    if bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.leggett_lp_legacy", __package__
-        )
-        from .beds.leggett_lp_legacy import LeggettLpLegacyController
-        from .lp_legacy_profiles import get_lp_legacy_profile
-
-        entry_data = getattr(getattr(coordinator, "entry", None), "data", {})
-        # The immutable app catalog is loaded once from disk, outside HA's loop.
-        await coordinator.hass.async_add_executor_job(
-            get_lp_legacy_profile, entry_data.get(CONF_LP_LEGACY_MODEL, "")
-        )
-        return LeggettLpLegacyController(
-            coordinator,
-            model=entry_data.get(CONF_LP_LEGACY_MODEL, ""),
-            mode=entry_data.get(CONF_LP_LEGACY_MODE, ""),
-            write_uuid=entry_data.get(CONF_LP_LEGACY_WRITE_UUID, ""),
-            read_uuid=entry_data.get(CONF_LP_LEGACY_READ_UUID) or None,
-        )
-
-    if bed_type == BED_TYPE_LEGGETT_GEN2:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.leggett_gen2", __package__
-        )
-        from .beds.leggett_gen2 import LeggettGen2Controller
-
-        return LeggettGen2Controller(coordinator, manufacturer_data=manufacturer_data)
-
-    if bed_type == BED_TYPE_LINAK:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.linak", __package__
-        )
-        from .beds.linak import LinakController
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.linak_protocol", __package__
-        )
-        from .beds.linak_protocol import LinakProfile
-
-        profile = (
-            LinakProfile.PERFORMANCE
-            if protocol_variant == LINAK_VARIANT_PERFORMANCE
-            else LinakProfile.BED_CONTROL
-        )
-        return LinakController(
-            coordinator,
-            profile=profile,
-            capability_snapshot=capability_snapshot,
-        )
-
-    # Brand-specific bed types
-    if bed_type == BED_TYPE_RICHMAT:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.richmat", __package__
-        )
-        from .beds.richmat import RichmatController, detect_richmat_variant
-
-        entry = getattr(coordinator, "entry", None)
-        richmat_kwargs = {
-            "entry_title": getattr(entry, "title", None),
-            "configured_name": getattr(coordinator, "name", None),
-            "device_name": device_name,
-        }
-
-        if rmcontrol_product:
-            await coordinator.hass.async_add_import_executor_job(
-                import_module, ".beds.rmcontrol", __package__
-            )
-            from .beds.rmcontrol import RmcontrolController, detect_rmcontrol_transport
-
-            if protocol_variant in {RICHMAT_VARIANT_PREFIX55, RICHMAT_VARIANT_PREFIXAA}:
-                raise ValueError("RMControl app profiles require Nordic or WiLinke transport")
-            if client is None or not client.is_connected:
-                raise ConnectionError("Cannot select RMControl transport: client not connected")
-            rmcontrol_framed, rmcontrol_char, rmcontrol_response = await detect_rmcontrol_transport(
-                client
-            )
-            if (
-                protocol_variant == RICHMAT_VARIANT_NORDIC
-                and rmcontrol_framed
-                or protocol_variant == RICHMAT_VARIANT_WILINKE
-                and not rmcontrol_framed
-            ):
-                raise ValueError("Configured RMControl transport disagrees with the GATT service")
-            return RmcontrolController(
-                coordinator,
-                rmcontrol_product=rmcontrol_product,
-                rmcontrol_side=rmcontrol_side,
-                is_wilinke=rmcontrol_framed,
-                char_uuid=rmcontrol_char,
-                remote_code=richmat_remote,
-                write_with_response=rmcontrol_response,
-                **richmat_kwargs,
-            )
-
-        # Use configured variant or auto-detect
-        if protocol_variant == RICHMAT_VARIANT_NORDIC:
-            _LOGGER.debug("Using Nordic Richmat variant (configured)")
-            return RichmatController(
-                coordinator,
-                is_wilinke=False,
-                remote_code=richmat_remote,
-                **richmat_kwargs,
-            )
-        elif protocol_variant == RICHMAT_VARIANT_WILINKE:
-            _LOGGER.debug("Using WiLinke Richmat variant (configured)")
-            # Still need to detect correct char_uuid - different WiLinke devices use different UUIDs
-            if client is None or not client.is_connected:
-                raise ConnectionError("Cannot use WiLinke variant: client not connected")
-            _, char_uuid, write_with_response = await detect_richmat_variant(client)
-            return RichmatController(
-                coordinator,
-                is_wilinke=True,
-                char_uuid=char_uuid,
-                remote_code=richmat_remote,
-                write_with_response=write_with_response,
-                **richmat_kwargs,
-            )
-        elif protocol_variant == RICHMAT_VARIANT_PREFIX55:
-            _LOGGER.debug("Using Prefix55 Richmat variant (configured)")
-            if client is None or not client.is_connected:
-                raise ConnectionError("Cannot use Prefix55 variant: client not connected")
-            _, char_uuid, write_with_response = await detect_richmat_variant(client)
-            return RichmatController(
-                coordinator,
-                is_wilinke=True,
-                remote_code=richmat_remote,
-                command_protocol=RICHMAT_PROTOCOL_PREFIX55,
-                char_uuid=char_uuid,
-                write_with_response=write_with_response,
-                **richmat_kwargs,
-            )
-        elif protocol_variant == RICHMAT_VARIANT_PREFIXAA:
-            _LOGGER.debug("Using PrefixAA Richmat variant (configured)")
-            if client is None or not client.is_connected:
-                raise ConnectionError("Cannot use PrefixAA variant: client not connected")
-            _, char_uuid, write_with_response = await detect_richmat_variant(client)
-            return RichmatController(
-                coordinator,
-                is_wilinke=True,
-                remote_code=richmat_remote,
-                command_protocol=RICHMAT_PROTOCOL_PREFIXAA,
-                char_uuid=char_uuid,
-                write_with_response=write_with_response,
-                **richmat_kwargs,
-            )
-        else:
-            # Auto-detect variant based on available services
-            _LOGGER.debug("Auto-detecting Richmat variant...")
-            if client is None or not client.is_connected:
-                raise ConnectionError("Cannot detect variant: client not connected")
-            is_wilinke, char_uuid, write_with_response = await detect_richmat_variant(client)
-            return RichmatController(
-                coordinator,
-                is_wilinke=is_wilinke,
-                char_uuid=char_uuid,
-                remote_code=richmat_remote,
-                write_with_response=write_with_response,
-                **richmat_kwargs,
-            )
-
-    if bed_type == BED_TYPE_KEESON and protocol_variant in ORE_COMFORT_BED_VARIANTS:
-        # Explicit app profile with its own controller; Auto never selects it.
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.ore_comfort_bed", __package__
-        )
-        from .beds.ore_comfort_bed import OreComfortBedController
-
-        return OreComfortBedController(coordinator, app=protocol_variant)
-
-    if bed_type == BED_TYPE_KEESON:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.keeson", __package__
-        )
-        from .beds.keeson import KeesonController
-
-        keeson_variant = protocol_variant
-        keeson_betterliving_presets = False
-        keeson_cb1322_presets = False
-        # Auto-detect Keeson sub-variant where possible.
-        # BetterLiving/OKIN-BLE beds use Sino (big-endian) and advertise
-        # fallback service UUIDs that overlap with Richmat WiLinke.
-        if keeson_variant in (None, "", VARIANT_AUTO):
-            service_uuids: set[str] = set()
-            if client is not None and client.services:
-                service_uuids = {service.uuid.lower() for service in client.services}
-
-            if KEESON_JSON_SERVICE_UUID.lower() in service_uuids:
-                _LOGGER.info(
-                    "Auto-detected Keeson JSON/A00A variant for %s (name: %s)",
-                    coordinator.address,
-                    device_name or "unknown",
-                )
-                keeson_variant = KEESON_VARIANT_JSON
-            else:
-                fallback_service_uuids = {uuid.lower() for uuid, _ in KEESON_FALLBACK_GATT_PAIRS}
-                has_fallback_uuid = bool(service_uuids & fallback_service_uuids)
-                has_dual_fallback_services = service_uuids >= KEESON_BETTERLIVING_SERVICE_UUIDS
-                normalized_name = (device_name or "").lower()
-                is_okin_ble_name = any(
-                    normalized_name.startswith(pattern) for pattern in KEESON_SINO_NAME_PATTERNS
-                )
-
-                if has_dual_fallback_services or (is_okin_ble_name and has_fallback_uuid):
-                    # Check manufacturer name for CB1322 sub-variant (OKIN protocol)
-                    mfr_lower = (ble_manufacturer or "").lower()
-                    if any(marker in mfr_lower for marker in CB1322_MANUFACTURER_MARKERS):
-                        _LOGGER.info(
-                            "Auto-detected Keeson OKIN (CB1322) variant for %s "
-                            "(name: %s, manufacturer: %s)",
-                            coordinator.address,
-                            device_name or "unknown",
-                            ble_manufacturer,
-                        )
-                        keeson_variant = KEESON_VARIANT_OKIN
-                        keeson_cb1322_presets = True
-                    else:
-                        _LOGGER.info(
-                            "Auto-detected Keeson Sino variant for %s (name: %s, services: %s)",
-                            coordinator.address,
-                            device_name or "unknown",
-                            sorted(service_uuids),
-                        )
-                        keeson_variant = KEESON_VARIANT_SINO
-                        keeson_betterliving_presets = True
-
-        # Auto-detect KSBT sub-variant from device name
-        if keeson_variant in (None, "", VARIANT_AUTO):
-            from .detection import keeson_variant_from_device_name
-
-            keeson_variant = keeson_variant_from_device_name(device_name)
-            if keeson_variant == KEESON_VARIANT_KSBT_CR:
-                _LOGGER.info(
-                    "Auto-detected KSBT03CR variant for %s (name: %s)",
-                    coordinator.address,
-                    device_name,
-                )
-            elif keeson_variant == KEESON_VARIANT_KSBT04C:
-                _LOGGER.warning(
-                    "Device %s advertises the ambiguous name %s; using the "
-                    "legacy generic KSBT04C profile. Select Purple or Sleep "
-                    "Harmony explicitly if that is the matching app family.",
-                    coordinator.address,
-                    device_name,
-                )
-
-        # Use configured variant or default to base
-        if keeson_variant == KEESON_VARIANT_JSON:
-            _LOGGER.debug("Using Keeson JSON/A00A variant")
-            return KeesonController(coordinator, variant=KEESON_VARIANT_JSON)
-        if keeson_variant == KEESON_VARIANT_KSBT:
-            _LOGGER.debug("Using KSBT Keeson variant (configured)")
-            return KeesonController(coordinator, variant="ksbt", device_name=device_name)
-        elif keeson_variant == KEESON_VARIANT_KSBT_CR:
-            _LOGGER.debug("Using KSBT03CR Keeson variant (7-byte, 0x05 prefix)")
-            return KeesonController(coordinator, variant="ksbt_cr", device_name=device_name)
-        elif keeson_variant == KEESON_VARIANT_KSBT04C:
-            _LOGGER.debug("Using generic KSBT04C Keeson variant (7-byte with checksum)")
-            return KeesonController(
-                coordinator,
-                variant=KEESON_VARIANT_KSBT04C,
-                device_name=device_name,
-            )
-        elif keeson_variant == KEESON_VARIANT_SLEEP_HARMONY:
-            _LOGGER.debug("Using explicit Sleep Harmony Keeson variant")
-            return KeesonController(
-                coordinator,
-                variant=KEESON_VARIANT_SLEEP_HARMONY,
-                device_name=device_name,
-            )
-        elif keeson_variant == KEESON_VARIANT_ADJUSTABLE_LITE:
-            _LOGGER.debug("Using explicit Adjustable Lite Keeson variant")
-            return KeesonController(
-                coordinator,
-                variant=KEESON_VARIANT_ADJUSTABLE_LITE,
-                device_name=device_name,
-            )
-        elif keeson_variant in (
-            KEESON_VARIANT_SIMON_LI,
-            KEESON_VARIANT_HEAL_EVERY_NIGHT,
-            KEESON_VARIANT_OKIN_SEATING,
-        ):
-            _LOGGER.debug("Using explicit Okin app profile %s", keeson_variant)
-            await coordinator.hass.async_add_import_executor_job(
-                import_module, ".beds.keeson_okin_apps", __package__
-            )
-            from .beds.keeson_okin_apps import OkinAppKeesonController
-
-            return OkinAppKeesonController(coordinator, variant=keeson_variant)
-        elif keeson_variant == KEESON_VARIANT_INNOVA:
-            # Explicit only: the INNOVA app scans without any name or service rule.
-            _LOGGER.debug("Using explicit INNOVA app profile")
-            await coordinator.hass.async_add_import_executor_job(
-                import_module, ".beds.innova", __package__
-            )
-            from .beds.innova import InnovaController
-
-            return InnovaController(coordinator)
-        elif keeson_variant in (KEESON_VARIANT_RESTONIC_A, KEESON_VARIANT_RESTONIC_B):
-            # Explicit only: the app's base-i4/base-i5 names are shared with other profiles.
-            _LOGGER.debug("Using explicit Restonic BT Keeson variant (%s)", keeson_variant)
-            return KeesonController(coordinator, variant=keeson_variant, device_name=device_name)
-        elif keeson_variant == KEESON_VARIANT_ERGOMOTION:
-            _LOGGER.debug("Using Ergomotion Keeson variant (with position feedback)")
-            return KeesonController(coordinator, variant="ergomotion")
-        elif keeson_variant == KEESON_VARIANT_OKIN:
-            _LOGGER.debug("Using OKIN FFE Keeson variant (0xE6 prefix)")
-            return KeesonController(
-                coordinator, variant="okin", cb1322_presets=keeson_cb1322_presets
-            )
-        elif keeson_variant == KEESON_VARIANT_SERTA:
-            _LOGGER.debug("Using Serta Keeson variant")
-            return KeesonController(coordinator, variant="serta")
-        elif keeson_variant == KEESON_VARIANT_PURPLE:
-            _LOGGER.debug("Using Purple Keeson variant")
-            return KeesonController(coordinator, variant="purple", device_name=device_name)
-        elif keeson_variant == KEESON_VARIANT_SINO:
-            _LOGGER.debug("Using Sino Keeson variant (big-endian)")
-            return KeesonController(
-                coordinator,
-                variant="sino",
-                betterliving_presets=keeson_betterliving_presets,
-            )
-        else:
-            # Auto or base variant
-            _LOGGER.debug("Using Base Keeson variant")
-            return KeesonController(coordinator, variant="base", device_name=device_name)
-
-    if bed_type == BED_TYPE_MOTOSLEEP:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.motosleep", __package__
-        )
-        from .beds.motosleep import MotoSleepController
-
-        return MotoSleepController(coordinator, device_name=device_name)
-
-    if bed_type == BED_TYPE_LEGGETT_PLATT:
-        # Use configured variant or auto-detect
-        if protocol_variant == LEGGETT_VARIANT_MLRM:
-            await coordinator.hass.async_add_import_executor_job(
-                import_module, ".beds.leggett_wilinke", __package__
-            )
-            from .beds.leggett_wilinke import LeggettWilinkeController
-
-            _LOGGER.debug("Using MlRM Leggett & Platt variant (configured)")
-            return LeggettWilinkeController(coordinator)
-        elif protocol_variant == LEGGETT_VARIANT_OKIN:
-            await coordinator.hass.async_add_import_executor_job(
-                import_module, ".beds.leggett_okin", __package__
-            )
-            from .beds.leggett_okin import LeggettOkinController
-
-            _LOGGER.debug("Using Okin Leggett & Platt variant (configured)")
-            entry_data = getattr(getattr(coordinator, "entry", None), "data", {})
-            return LeggettOkinController(
-                coordinator,
-                app_profile=entry_data.get(CONF_LEGGETT_APP_PROFILE, LEGGETT_APP_DEFAULT_PROFILE),
-            )
-        elif protocol_variant in (None, "", "auto"):
-            # Auto-detect: check if WiLinke service UUID is available (indicates MlRM)
-            if client is None:
-                raise ConnectionError(
-                    "Cannot auto-detect Leggett & Platt variant: no BLE client provided"
-                )
-
-            # Ensure services are discovered
-            if not client.services:
-                _LOGGER.debug("Services not populated, attempting discovery...")
-                address = getattr(client, "address", "unknown")
-                discovered = await discover_services(client, address)
-                if not discovered or not client.services:
-                    raise ConnectionError(
-                        "Cannot auto-detect Leggett & Platt variant: "
-                        "failed to discover BLE services. "
-                        "Please manually select a protocol variant in settings."
-                    )
-
-            # Check for WiLinke service UUID (indicates MlRM variant)
-            wilinke_uuids_lower = [uuid.lower() for uuid in RICHMAT_WILINKE_SERVICE_UUIDS]
-            for service in client.services:
-                if service.uuid.lower() in wilinke_uuids_lower:
-                    await coordinator.hass.async_add_import_executor_job(
-                        import_module, ".beds.leggett_wilinke", __package__
-                    )
-                    from .beds.leggett_wilinke import LeggettWilinkeController
-
-                    _LOGGER.debug("Using MlRM Leggett & Platt variant (auto-detected)")
-                    return LeggettWilinkeController(coordinator)
-
-            # Default to gen2 variant (most common L&P variant)
-            await coordinator.hass.async_add_import_executor_job(
-                import_module, ".beds.leggett_gen2", __package__
-            )
-            from .beds.leggett_gen2 import LeggettGen2Controller
-
-            _LOGGER.debug("Using Gen2 Leggett & Platt variant (no WiLinke UUID found)")
-            return LeggettGen2Controller(coordinator, manufacturer_data=manufacturer_data)
-        else:
-            # Explicit gen2 variant
-            await coordinator.hass.async_add_import_executor_job(
-                import_module, ".beds.leggett_gen2", __package__
-            )
-            from .beds.leggett_gen2 import LeggettGen2Controller
-
-            _LOGGER.debug("Using Gen2 Leggett & Platt variant (configured)")
-            return LeggettGen2Controller(coordinator, manufacturer_data=manufacturer_data)
-
-    if bed_type == BED_TYPE_DEWERTOKIN:
-        if _is_dewertokin_rf_gateway(client, ble_model):
-            await coordinator.hass.async_add_import_executor_job(
-                import_module, ".beds.dewertokin_rf_gateway", __package__
-            )
-            from .beds.dewertokin_rf_gateway import DewertOkinRfGatewayController
-
-            _LOGGER.info(
-                "Auto-detected DewertOkin RF-Gateway command endpoint for %s",
-                coordinator.address,
-            )
-            return DewertOkinRfGatewayController(coordinator)
-
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.okin_handle", __package__
-        )
-        from .beds.okin_handle import OkinHandleController
-
-        return OkinHandleController(coordinator)
-
-    if bed_type == BED_TYPE_OCTO:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.octo", __package__
-        )
-        from .beds.octo import OctoController, OctoStar2Controller
-
-        use_star2 = protocol_variant == OCTO_VARIANT_STAR2
-        if protocol_variant in (None, VARIANT_AUTO):
-            use_star2 = _gatt_has_characteristic(
-                client,
-                OCTO_STAR2_SERVICE_UUID,
-                OCTO_STAR2_CHAR_UUID,
-            )
-
-        if use_star2:
-            _LOGGER.debug(
-                "Using Star2 Octo variant (%s)",
-                "auto-detected from GATT"
-                if protocol_variant in (None, VARIANT_AUTO)
-                else "configured",
-            )
-            return OctoStar2Controller(coordinator)
-
-        _LOGGER.debug("Using standard Octo variant")
-        return OctoController(coordinator, pin=octo_pin, capability_snapshot=capability_snapshot)
-
-    if bed_type == BED_TYPE_JENSEN:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.jensen", __package__
-        )
-        from .beds.jensen import JensenController
-
-        return JensenController(
-            coordinator, pin=jensen_pin, capability_snapshot=capability_snapshot
-        )
-
-    if bed_type == BED_TYPE_OKIN_CST:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.okin_cst", __package__
-        )
-        from .beds.okin_cst import OkinCstController
-
-        variant = protocol_variant or VARIANT_AUTO
-        if variant not in OKIN_CST_VARIANTS:
-            _LOGGER.warning("Unknown Okin CST profile %s, using auto", variant)
-            variant = VARIANT_AUTO
-        return OkinCstController(coordinator, variant=variant)
-
-    if bed_type == BED_TYPE_SLEEP_NUMBER:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.sleep_number", __package__
-        )
-        from .beds.sleep_number import SleepNumberController
-
-        side = protocol_variant or VARIANT_AUTO
-        if side not in {VARIANT_AUTO, SLEEP_NUMBER_VARIANT_LEFT, SLEEP_NUMBER_VARIANT_RIGHT}:
-            _LOGGER.debug("Unknown Sleep Number side variant %s, defaulting to auto", side)
-            side = VARIANT_AUTO
-        return SleepNumberController(coordinator, side=side)
-
-    if bed_type == BED_TYPE_SLEEPSTAR:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.sleepstar", __package__
-        )
-        from .beds.sleepstar import SleepStarController
-
-        _LOGGER.debug("Using SleepSpa S9000AI SLEEPSTAR controller")
-        return SleepStarController(
-            coordinator,
-            manufacturer_data=manufacturer_data,
-        )
-
-    if bed_type == BED_TYPE_OKIN_64BIT:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.okin_64bit", __package__
-        )
-        from .beds.okin_64bit import Okin64BitController
-
-        # Use configured variant, default to Nordic UART (fire-and-forget)
-        variant = protocol_variant if protocol_variant and protocol_variant != "auto" else "nordic"
-        _LOGGER.debug("Using OKIN 64-bit variant: %s", variant)
-        return Okin64BitController(coordinator, variant=variant)
-
-    if bed_type == BED_TYPE_SLEEPYS_BOX25:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.sleepys_box25", __package__
-        )
-        from .beds.sleepys_box25 import (
-            SleepysBox25Controller,
-            SleepysBox25LegacyController,
-        )
-
-        variant = protocol_variant or VARIANT_AUTO
-        normalized_name = (device_name or "").strip().casefold()
-        fixed_star_name = any(
-            normalized_name.startswith(prefix) for prefix in SLEEPYS_BOX25_FIXED_STAR_NAME_PREFIXES
-        )
-        manufacturer_selects_star = "star" in (ble_manufacturer or "").casefold()
-
-        if variant == SLEEPYS_BOX25_VARIANT_LEGACY:
-            use_legacy = True
-            selection_reason = "configured legacy override"
-        elif variant == SLEEPYS_BOX25_VARIANT_STAR:
-            use_legacy = False
-            selection_reason = "configured StarCode override"
-        elif fixed_star_name:
-            use_legacy = False
-            selection_reason = "fixed StarCode product name"
-        elif manufacturer_selects_star:
-            use_legacy = False
-            selection_reason = "Device Information manufacturer contains 'star'"
-        else:
-            # This is the OEM runtime fallback for missing, unreadable, empty,
-            # or non-Star 0x2A29 values. Do not infer StarCode from NUS alone.
-            use_legacy = True
-            selection_reason = "Device Information legacy fallback"
-
-        if use_legacy:
-            _LOGGER.info("Using legacy BOX25 dialect (%s)", selection_reason)
-            return SleepysBox25LegacyController(coordinator)
-
-        _LOGGER.info("Using BOX25 StarCode dialect (%s)", selection_reason)
-        return SleepysBox25Controller(coordinator)
-
-    if bed_type == BED_TYPE_SLEEPYS_ELITE_APP:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.sleepys_app", __package__
-        )
-        from .beds.sleepys_app import SleepysEliteAppController
-
-        entry = getattr(coordinator, "entry", None)
-        entry_data = getattr(entry, "data", {})
-        entry_options = getattr(entry, "options", {})
-        selector = entry_options.get(
-            CONF_SLEEPYS_ELITE_SELECTOR,
-            entry_data.get(CONF_SLEEPYS_ELITE_SELECTOR),
-        )
-        if selector is None:
-            raise ValueError("Sleepy's Elite app profile requires an explicit selector")
-        return SleepysEliteAppController(coordinator, selector)
-
-    if bed_type == BED_TYPE_RONDURE:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.rondure", __package__
-        )
-        from .beds.rondure import RondureController
-        from .const import RONDURE_VARIANTS
-
-        # Validate and default variant
-        valid_variants = set(RONDURE_VARIANTS.keys())
-        if protocol_variant and protocol_variant != "auto" and protocol_variant in valid_variants:
-            variant = protocol_variant
-        else:
-            if protocol_variant and protocol_variant != "auto":
-                _LOGGER.warning(
-                    "Invalid Rondure variant '%s', defaulting to 'both'. Valid: %s",
-                    protocol_variant,
-                    list(valid_variants),
-                )
-            variant = "both"
-        _LOGGER.debug("Using Rondure controller with variant: %s", variant)
-        return RondureController(coordinator, variant=variant)
-
-    if bed_type == BED_TYPE_COOLBASE:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.coolbase", __package__
-        )
-        from .beds.coolbase import CoolBaseController
-
-        normalized_name = (device_name or "").lower()
-        dewert_okin_profile = normalized_name.startswith(("okin-ble", "btcb")) or (
-            (ble_manufacturer or "").strip().lower() == "dewertokin"
-        )
-        _LOGGER.debug(
-            "Using Cool Base controller (dewert_okin_profile=%s)",
-            dewert_okin_profile,
-        )
-        return CoolBaseController(coordinator, dewert_okin_profile=dewert_okin_profile)
-
-    if bed_type in CLUSTER033_BED_TYPES:
-        module_name, class_name = {
-            'tempur_curve': ('tempur_curve', 'TempurCurveController'),
-            'qplus_app': ('sbi', 'QPlusAppController'),
-            'serta_mp_remote': ('serta_mp_remote', 'SertaMPRemoteController'),
-            'omazz_adjusto_iii': ('omazz_adjusto_iii', 'OmazzAdjustoIIIController'),
-            'ergomotion_app': ('ergomotion_app', 'ErgomotionAppController'),
-            'row_control': ('row_control', 'RowControlController'),
-            'ergo_slim': ('ergo_slim', 'ErgoSlimController'),
-            'tempur_au': ('tempur_au', 'TempurAUController'),
-        }[bed_type]
-        module = await coordinator.hass.async_add_import_executor_job(
-            import_module, f".beds.{module_name}", __package__
-        )
-        data = coordinator.entry.data
-        kwargs = {"layout": data.get(CONF_PRODUCT_TYPE)}
-        if bed_type == "qplus_app":
-            kwargs["side"] = protocol_variant if protocol_variant in ("both", "side_a", "side_b") else "both"
-        if bed_type == "serta_mp_remote":
-            kwargs["memories"] = tuple(
-                (data.get(f"serta_mp_memory_{slot}_head", 15), data.get(f"serta_mp_memory_{slot}_foot", 0 if slot == 4 else 35))
-                for slot in range(1, 5)
-            )
-        return getattr(module, class_name)(coordinator, **kwargs)
-
-    if bed_type == BED_TYPE_SBI:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.sbi", __package__
-        )
-        from .beds.sbi import SBIController
-
-        # Use configured variant or default to "both" for dual-bed control
-        variant = (
-            protocol_variant
-            if protocol_variant and protocol_variant != "auto"
-            else SBI_VARIANT_BOTH
-        )
-        _LOGGER.debug("Using SBI controller with variant: %s", variant)
-        return SBIController(coordinator, variant=variant)
-
-    if bed_type == BED_TYPE_BEDSENSE:
-        await coordinator.hass.async_add_import_executor_job(
-            import_module, ".beds.bedsense", __package__
-        )
-        from .beds.bedsense import BedSenseController, BedSenseSession
-
-        return BedSenseController(
-            coordinator,
-            variant=protocol_variant or "auto",
-            device_name=device_name if client is not None else None,
-            session=app_session(coordinator.hass, coordinator.address, "bedsense", BedSenseSession),
-        )
-
-    controller = await _create_from_registry(coordinator, bed_type)
-    if controller is not None:
-        return controller
-
-    raise ValueError(f"Unknown bed type: {bed_type}")

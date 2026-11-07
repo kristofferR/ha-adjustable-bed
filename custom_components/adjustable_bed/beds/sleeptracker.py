@@ -10,6 +10,22 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final, Literal
 
 from .. import sleeptracker_protocol as p
+from ..card import (
+    CARD_CLIMATE,
+    CARD_LIGHT_TOGGLE,
+    CARD_LIGHTING,
+    CARD_MASSAGE,
+    CARD_UTILITY,
+    CardPlacement,
+)
+from ..const import (
+    CONF_PRODUCT_TYPE,
+    CONF_SLEEPTRACKER_FOUNDATION,
+    CONF_SLEEPTRACKER_PROCESSOR_TYPE,
+    CONF_SLEEPTRACKER_RESTRICTED,
+    CONF_SLEEPTRACKER_SNAPSHOT_SIDE,
+    CONF_SLEEPTRACKER_UNIT,
+)
 from ..controller_state import StateKey, StateUpdate
 from .base import (
     BedController,
@@ -22,6 +38,7 @@ from .base import (
     MotorControlSpec,
     PositionNumberSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -48,11 +65,13 @@ def _controller(controller: BedController) -> SleeptrackerController:
     return controller
 
 
-def _request_button(key: str, name: str, request: p.Request) -> ControllerButtonSpec:
+def _request_button(
+    key: str, name: str, request: p.Request, card: CardPlacement = CARD_UTILITY
+) -> ControllerButtonSpec:
     async def press(controller: BedController) -> None:
-        await controller.async_execute_sleeptracker_request(request)
+        await _controller(controller).async_execute_sleeptracker_request(request)
 
-    return ControllerButtonSpec(key, name, press, translation_key=key)
+    return ControllerButtonSpec(key, name, press, translation_key=key, card=card)
 
 
 def _axis_command(axis: p.Axis, action: str) -> MotorCommandCallable:
@@ -165,10 +184,6 @@ class SleeptrackerController(BedController):
 
     @property
     def requires_notification_channel(self) -> bool:
-        return True
-
-    @property
-    def supports_sleeptracker_controls(self) -> bool:
         return True
 
     @property
@@ -933,6 +948,7 @@ class SleeptrackerController(BedController):
                 "Toggle safety light",
                 lambda ctrl: ctrl.lights_toggle(),
                 translation_key="sleeptracker_light_toggle",
+                card=CARD_LIGHT_TOGGLE,
             ),
             ControllerButtonSpec(
                 "sleeptracker_refresh",
@@ -976,6 +992,7 @@ class SleeptrackerController(BedController):
                     "Safety light off",
                     off,
                     translation_key="sleeptracker_light_off",
+                    card=CARD_LIGHTING,
                 )
             )
         if self._model.premium:
@@ -984,6 +1001,7 @@ class SleeptrackerController(BedController):
                     "sleeptracker_massage_28hz",
                     "28 Hz massage",
                     p.Request("massage", massage_action="28Hz"),
+                    CARD_MASSAGE,
                 )
             )
             buttons.append(
@@ -991,6 +1009,7 @@ class SleeptrackerController(BedController):
                     "sleeptracker_massage_40hz",
                     "40 Hz massage",
                     p.Request("massage", massage_action="40Hz"),
+                    CARD_MASSAGE,
                 )
             )
             for mode in (1, 2):
@@ -999,6 +1018,7 @@ class SleeptrackerController(BedController):
                         f"sleeptracker_wind_down_{mode}",
                         f"Wind down {mode}",
                         p.Request("wind_down", mode=mode),
+                        CARD_MASSAGE,
                     )
                 )
             buttons.append(
@@ -1006,6 +1026,7 @@ class SleeptrackerController(BedController):
                     "sleeptracker_local_animation",
                     "Local bed animation",
                     p.Request("local_animation"),
+                    CARD_MASSAGE,
                 )
             )
 
@@ -1025,6 +1046,7 @@ class SleeptrackerController(BedController):
                     "Start relaxation wave",
                     wave_start,
                     translation_key="sleeptracker_wave_start",
+                    card=CARD_MASSAGE,
                 )
             )
         return tuple(buttons)
@@ -1045,6 +1067,7 @@ class SleeptrackerController(BedController):
                     tuple(str(hz) for hz in p.FREQUENCIES),
                     choose_connected,
                     local_select_fn=self._choose_wave_frequency,
+                    card=CARD_MASSAGE,
                 )
             )
             steps: tuple[tuple[str, tuple[str, ...], Literal["head", "foot", "pattern"]], ...] = (
@@ -1069,6 +1092,7 @@ class SleeptrackerController(BedController):
                         _option_key(key),
                         options,
                         step_to,
+                        card=CARD_MASSAGE,
                     )
                 )
         if self._model.breeze:
@@ -1098,6 +1122,7 @@ class SleeptrackerController(BedController):
                         _option_key(side + "_mode"),
                         ("off", "cool", "heat"),
                         select_mode,
+                        card=CARD_CLIMATE,
                     )
                 )
 
@@ -1122,6 +1147,7 @@ class SleeptrackerController(BedController):
                         _option_key(side + "_curve"),
                         ("constant", "curve"),
                         select_curve,
+                        card=CARD_CLIMATE,
                     )
                 )
         return tuple(specs)
@@ -1149,6 +1175,7 @@ class SleeptrackerController(BedController):
                     5,
                     minutes,
                     "min",
+                    card=CARD_MASSAGE,
                 )
             )
         if self._model.breeze:
@@ -1179,6 +1206,7 @@ class SleeptrackerController(BedController):
                         3,
                         1,
                         level,
+                        card=CARD_CLIMATE,
                     )
                 )
         return tuple(specs)
@@ -1207,6 +1235,7 @@ class SleeptrackerController(BedController):
                 "sleeptracker_light_on",
                 _field_key("light_on"),
                 "mdi:lightbulb",
+                card=CARD_LIGHTING,
             ),
         ) + (
             (
@@ -1215,8 +1244,31 @@ class SleeptrackerController(BedController):
                     "sleeptracker_wind_down_running",
                     _field_key("wind_down_running"),
                     "mdi:bed-clock",
+                    card=CARD_MASSAGE,
                 ),
             )
             if self._model.premium
             else ()
         )
+
+
+async def build_controller(ctx: BuildContext) -> SleeptrackerController:
+    """Build the controller for the stored foundation settings."""
+    from ..app_session import app_session
+
+    coordinator = ctx.coordinator
+    data = ctx.data
+    model = data.get(CONF_PRODUCT_TYPE, "unknown")
+    return SleeptrackerController(
+        coordinator,
+        model=model,
+        unit_number=data.get(CONF_SLEEPTRACKER_UNIT, 0),
+        snapshot_side=data.get(CONF_SLEEPTRACKER_SNAPSHOT_SIDE, 0),
+        restricted=data.get(CONF_SLEEPTRACKER_RESTRICTED, False),
+        processor_type=data.get(CONF_SLEEPTRACKER_PROCESSOR_TYPE, 0),
+        manufacturer_data=ctx.manufacturer_data,
+        foundation=data.get(CONF_SLEEPTRACKER_FOUNDATION, "Unspecified"),
+        wave_settings=app_session(
+            coordinator.hass, coordinator.address, ("sleeptracker", model), SleeptrackerWaveSettings
+        ),
+    )

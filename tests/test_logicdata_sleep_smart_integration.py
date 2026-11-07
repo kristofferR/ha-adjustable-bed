@@ -151,7 +151,7 @@ def _target(name, bed_type, **controller):
     coordinator.name = name
     coordinator.bed_type = bed_type
     coordinator.controller_side = None
-    coordinator.capability_controller = SimpleNamespace(**controller)
+    coordinator.capability_controller = MagicMock(spec=LogicdataAppController, **controller)
     return coordinator
 
 
@@ -161,7 +161,7 @@ async def services(hass: HomeAssistant):
     with (
         patch("custom_components.adjustable_bed.services._resolve_sided_targets") as resolve,
         patch(
-            "custom_components.adjustable_bed.logicdata_app_services._resolve_sided_targets",
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
             new=resolve,
         ),
     ):

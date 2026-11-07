@@ -57,3 +57,9 @@ class HushProfile:
 PROFILES: Final[dict[str, HushProfile]] = {
     key: HushProfile(key, INDICES[key], row) for key, row in PRODUCTS.items()
 }
+# Setup choices, and the products with the side flag.
+HUSH_BASE_VARIANTS: Final = {
+    key: profile.label + ("" if profile.current else " (restored profile)")
+    for key, profile in PROFILES.items()
+}
+HUSH_BASE_SIDE_VARIANTS: Final = frozenset(key for key, profile in PROFILES.items() if profile.row[11])

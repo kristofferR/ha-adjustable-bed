@@ -365,13 +365,6 @@ class TestRichmatFeatureDetection:
             "pillow",
             "lumbar",
         ]
-        assert controller.stale_motor_entity_keys == {
-            "back",
-            "legs",
-            "pillow",
-            "lumbar",
-            "head_feet",
-        }
 
     def test_head_only_remote_omits_combined_head_feet_control(self):
         """The combined step needs both axes, so a head-only remote must not get it."""

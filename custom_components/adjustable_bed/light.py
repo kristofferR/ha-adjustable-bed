@@ -19,18 +19,18 @@ from homeassistant.components.light import (
 )
 from homeassistant.components.light.const import ColorMode
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import STATE_OFF, STATE_ON
+from homeassistant.const import STATE_OFF, STATE_ON, Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
-from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
+from .card import CARD_LIGHTING
 from .const import DOMAIN
 from .controller_state import ControllerState
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
+from .entity_sweep import PlatformEntities, records_entities
 from .octo_runtime import octo_controller
 from .paired_coordinator import entity_runtimes
 from .state_keys import (
@@ -103,16 +103,16 @@ def _normalize_rgbw_color(value: Any) -> tuple[int, int, int, int] | None:
     return rgbw
 
 
+@records_entities(Platform.LIGHT)
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed light entities."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
     for runtime in entity_runtimes(coordinator):
         async_setup_dynamic_entities(
-            hass,
             entry,
             runtime,
             async_add_entities,
@@ -126,22 +126,16 @@ def _light_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> list
 
     if controller is None:
         # No controller to read capabilities from (e.g. a paired side offline at
-        # setup whose type can't be offline-minted). Don't run the stale cleanup
-        # here — we can't tell whether the bed has a light, and removing the
-        # existing registry entry would drop a real light that won't be recreated
-        # until the side reconnects and the platform re-runs.
+        # setup whose type can't be offline-minted).
         return []
 
     octo = octo_controller(controller)
     if octo is not None and not octo.controller_entity_discovery_complete:
-        # Preserve any existing registry row, but defer runtime construction:
-        # legacy snapshots cannot provide a legal HA color mode until CAP_END.
-        # No authoritative discovery means no registry cleanup or new capability.
+        # Defer construction: legacy snapshots cannot provide a legal HA color
+        # mode until CAP_END. The incomplete discovery also keeps the row.
         return []
 
     if octo is not None and not octo.supports_lights:
-        _async_remove_stale_light_entity(hass, coordinator)
-        _async_remove_stale_light_entity(hass, coordinator, ASSUMED_LIGHT_DESCRIPTION)
         return []
 
     toggle_only = (
@@ -151,18 +145,13 @@ def _light_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> list
         and not controller.supports_light_state_feedback
         and not controller.light_color_control_pending
     )
-    if not toggle_only:
-        _async_remove_stale_light_entity(hass, coordinator, ASSUMED_LIGHT_DESCRIPTION)
 
     if controller.supports_light_color_control:
-        if octo is None:
-            _async_remove_stale_switch_entity(hass, coordinator)
         return [AdjustableBedLight(coordinator, LIGHT_DESCRIPTION)]
 
     if octo is not None and octo.supports_discrete_light_control:
         # Main exposed OCTO's on/off-only capability as a switch. Keep its
         # registry identity and automations stable across this upgrade.
-        _async_remove_stale_light_entity(hass, coordinator)
         return []
 
     if (
@@ -170,43 +159,11 @@ def _light_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> list
         or controller.exposes_discrete_light_as_light
         and controller.supports_discrete_light_control
     ):
-        if octo is None:
-            _async_remove_stale_switch_entity(hass, coordinator)
         return [AdjustableBedOnOffLight(coordinator, LIGHT_DESCRIPTION)]
 
-    if not controller.light_color_control_pending:
-        _async_remove_stale_light_entity(hass, coordinator)
     if toggle_only:
         return [AdjustableBedAssumedLight(coordinator)]
     return []
-
-
-def _async_remove_stale_light_entity(
-    hass: HomeAssistant,
-    coordinator: EntityRuntime,
-    description: LightEntityDescription = LIGHT_DESCRIPTION,
-) -> None:
-    """Remove stale light entities when the controller no longer supports them."""
-    registry = er.async_get(hass)
-    entity_id = registry.async_get_entity_id(
-        "light",
-        DOMAIN,
-        coordinator.entity_unique_id(description.key),
-    )
-    if entity_id is not None:
-        registry.async_remove(entity_id)
-
-
-def _async_remove_stale_switch_entity(hass: HomeAssistant, coordinator: EntityRuntime) -> None:
-    """Remove the legacy switch when a light entity owns under-bed lights."""
-    registry = er.async_get(hass)
-    entity_id = registry.async_get_entity_id(
-        "switch",
-        DOMAIN,
-        coordinator.entity_unique_id(LIGHT_DESCRIPTION.key),
-    )
-    if entity_id is not None:
-        registry.async_remove(entity_id)
 
 
 class AdjustableBedAssumedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
@@ -220,9 +177,9 @@ class AdjustableBedAssumedLight(AdjustableBedEntity, RestoreEntity, LightEntity)
 
     def __init__(self, coordinator: EntityRuntime) -> None:
         """Start with an off estimate without sending a command to the bed."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_LIGHTING)
         description = self.entity_description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._attr_is_on = False
 
@@ -280,9 +237,9 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         description: LightEntityDescription,
     ) -> None:
         """Initialize the light."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_LIGHTING)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
 
         # Use the capability controller (live when connected, else the client-free
@@ -741,9 +698,9 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         description: LightEntityDescription,
     ) -> None:
         """Initialize the on/off light."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_LIGHTING)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._attr_is_on: bool | None = None
         controller = coordinator.capability_controller

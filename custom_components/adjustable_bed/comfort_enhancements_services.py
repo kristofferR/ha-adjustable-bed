@@ -2,33 +2,27 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
-
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .const import BED_TYPE_COMFORT_ENHANCEMENTS, DOMAIN
-from .paired_coordinator import BedChild
+from .const import DOMAIN
 from .services import (
     ATTR_ENABLED,
     ATTR_TIME,
+    DEVICE_IDS,
     SIDE_FIELD,
     _call_targets,
-    _execute_sided,
-    _preflight_each,
-    _release_preflighted,
+    _preflight_and_execute,
 )
-
-if TYPE_CHECKING:
-    from .beds.base import BedController
-    from .beds.comfort_enhancements import ComfortEnhancementsController
 
 
 async def handle_comfort_enhancements_set_alarm(call: ServiceCall) -> None:
     """Program the app's current-day alarm, validating every side before writes."""
+    from .beds.comfort_enhancements import ComfortEnhancementsController
+
     enabled = call.data[ATTR_ENABLED]
     alarm_time = call.data.get(ATTR_TIME)
     if enabled and alarm_time is None:
@@ -42,24 +36,17 @@ async def handle_comfort_enhancements_set_alarm(call: ServiceCall) -> None:
         "memory": call.data["memory"],
         "massage": call.data["massage"],
     }
-    targets = _call_targets(call)
 
-    def validate(target: BedChild, controller: BedController) -> None:
-        if target.bed_type != BED_TYPE_COMFORT_ENHANCEMENTS:
-            raise ServiceValidationError("Choose a Comfort Enhancements app controller")
-        cast("ComfortEnhancementsController", controller).validate_alarm(**fields)
+    async def program(controller: ComfortEnhancementsController) -> None:
+        await controller.set_alarm(**fields)
 
-    preflighted = await _preflight_each(targets, validate)
-
-    async def program(controller: BedController) -> None:
-        await cast("ComfortEnhancementsController", controller).set_alarm(**fields)
-
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(coordinator, side, program, cancel_running=False, resource="configuration")
-    except Exception:
-        await _release_preflighted(preflighted)
-        raise
+    await _preflight_and_execute(
+        _call_targets(call),
+        ComfortEnhancementsController,
+        "Comfort Enhancements alarms",
+        program,
+        validate=lambda controller: controller.validate_alarm(**fields),
+    )
 
 
 def async_register_comfort_enhancements_services(hass: HomeAssistant) -> None:
@@ -67,7 +54,7 @@ def async_register_comfort_enhancements_services(hass: HomeAssistant) -> None:
     hass.services.async_register(
         DOMAIN, "comfort_enhancements_set_alarm", handle_comfort_enhancements_set_alarm,
         schema=vol.Schema({
-            vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+            vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
             vol.Required(ATTR_ENABLED): cv.boolean,
             vol.Optional(ATTR_TIME): cv.time,
             vol.Optional("memory", default=0): vol.All(vol.Coerce(int), vol.In((0, 1, 2))),

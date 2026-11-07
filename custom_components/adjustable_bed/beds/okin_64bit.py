@@ -25,6 +25,7 @@ from ..const import (
 from ..profiles.okin_nframe import OKIN_64BIT_KEYS as _KEYS
 from ..profiles.okin_nframe import OKIN_64BIT_PROFILES, OkinNFrameProfile
 from .base import BedController
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -71,14 +72,18 @@ class Okin64BitController(BedController):
 
         # Any other variant uses the Nordic UART route.
         self._profile = OKIN_64BIT_PROFILES.get(variant, OKIN_64BIT_PROFILES["nordic"])
-        self._use_response = self._profile.write == "response"
+        self._write_with_response = self._profile.write == "response"
 
         _LOGGER.debug(
             "Okin64BitController initialized (variant: %s, char: %s, response: %s)",
             variant,
             self._char_uuid,
-            self._use_response,
+            self._write_with_response,
         )
+
+    @property
+    def protocol_diagnostics(self) -> dict[str, object]:
+        return {"variant": self._variant}
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -138,30 +143,6 @@ class Okin64BitController(BedController):
     def _build_command(self, word: int) -> bytes:
         """Frame one 64-bit word."""
         return codec.frame(word, 8)
-
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        """Write a command to the bed."""
-        _LOGGER.debug(
-            "Writing command to OKIN 64-bit bed: %s (repeat: %d, delay: %dms, response: %s)",
-            command.hex(),
-            repeat_count,
-            repeat_delay_ms,
-            self._use_response,
-        )
-        await self._write_gatt_with_retry(
-            self._char_uuid,
-            command,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            cancel_event=cancel_event,
-            response=self._use_response,
-        )
 
     async def _send_command(self, command: bytes, repeat: int | None = None) -> None:
         """Send a framed command at the entry's pulse settings."""
@@ -293,3 +274,10 @@ class Okin64BitController(BedController):
 
     async def massage_mode_step(self) -> None:
         await self.write_command(self._build_command(_KEYS["wave_mode"]))
+
+
+async def build_controller(ctx: BuildContext) -> Okin64BitController:
+    """Build the controller; Auto defaults to Nordic UART (fire-and-forget)."""
+    variant = ctx.variant if ctx.variant and ctx.variant != "auto" else "nordic"
+    _LOGGER.debug("Using OKIN 64-bit variant: %s", variant)
+    return Okin64BitController(ctx.coordinator, variant=variant)

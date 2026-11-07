@@ -2224,11 +2224,11 @@ async def test_local_profile_reservation_covers_adapter_aliases_before_bus_open(
     second_entry = _entry(address="00:10:20:30:40:51", host_source=alias_source)
     from homeassistant.components import bluetooth
 
-    from custom_components.adjustable_bed import (
-        _async_setup_pairlink_local_entry,
-        bluetooth_transport,
-    )
+    from custom_components.adjustable_bed import bluetooth_transport
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+    from custom_components.adjustable_bed.pairlink_local_setup import (
+        async_setup_pairlink_local_entry,
+    )
 
     monkeypatch.setattr(
         bluetooth,
@@ -2243,7 +2243,9 @@ async def test_local_profile_reservation_covers_adapter_aliases_before_bus_open(
     monkeypatch.setattr(transport, "_new_dbus_fast_bus", lambda: second_bus)
     second_coordinator = AdjustableBedCoordinator(hass, second_entry)
     with pytest.raises(ConfigEntryNotReady, match="already owns a Pairlink local profile"):
-        await _async_setup_pairlink_local_entry(hass, second_entry, second_coordinator)
+        await async_setup_pairlink_local_entry(
+            hass, second_entry, second_coordinator, AsyncMock()
+        )
 
     assert second_bus.events == []
     assert hass.data[DOMAIN]["_pairlink_local_profile_leases"] == {"hci3": first_entry.entry_id}
@@ -2261,15 +2263,15 @@ async def test_paired_local_children_start_distinct_selected_backends(
     del enable_custom_integrations
     from homeassistant.components import bluetooth
 
-    from custom_components.adjustable_bed import (
-        _async_start_paired_pairlink_local_child,
-        _preflight_paired_pairlink_local_roles,
-    )
     from custom_components.adjustable_bed.beds import (
         reverie_pairlink_profile,
         reverie_pairlink_runtime,
     )
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+    from custom_components.adjustable_bed.pairlink_local_setup import (
+        async_start_paired_pairlink_local_child,
+        preflight_paired_pairlink_local_roles,
+    )
 
     first_source = "AA:BB:CC:DD:EE:01"
     second_source = "AA:BB:CC:DD:EE:02"
@@ -2302,7 +2304,7 @@ async def test_paired_local_children_start_distinct_selected_backends(
         entry_id="pairlink-pair-test",
         async_on_unload=unload_callbacks.append,
     )
-    selected_inventory, roles, transfers = _preflight_paired_pairlink_local_roles(
+    selected_inventory, roles, transfers = preflight_paired_pairlink_local_roles(
         hass,
         parent,
         {"left": first_child, "right": second_child},
@@ -2352,7 +2354,7 @@ async def test_paired_local_children_start_distinct_selected_backends(
         FakePeripheralBackend,
     )
     for side, child, source, _adapter, _owner in roles:
-        await _async_start_paired_pairlink_local_child(
+        await async_start_paired_pairlink_local_child(
             hass,
             child,
             host_adapter_source=source,

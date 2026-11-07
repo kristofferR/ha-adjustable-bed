@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { afterAll, test } from "bun:test";
 import { plugin } from "bun";
+import { placed } from "./test-placements";
 
 plugin({
   name: "card-cover-stop-test-lit",
@@ -101,7 +102,7 @@ function makeFixture(mode, { coverHoldMetadata = true } = {}) {
   const calls = [];
   const pending = [];
   const clock = new FakeClock();
-  const hass = {
+  const hass = placed({
     entities: {},
     states: {},
     devices: { [root]: { id: root } },
@@ -118,7 +119,7 @@ function makeFixture(mode, { coverHoldMetadata = true } = {}) {
       }
       return Promise.resolve();
     },
-  };
+  });
 
   if (separateAddresses) {
     hass.devices[left] = { id: left, parent_device_id: root };
@@ -143,15 +144,15 @@ function makeFixture(mode, { coverHoldMetadata = true } = {}) {
   add(
     ids.bothStop,
     root,
-    singleAddress ? "stop_both" : "stop_both",
+    "stop_both",
     singleAddress ? { bed_side: "both" } : {},
   );
-  add(ids.leftStop, left, singleAddress ? "stop_left" : "stop", { bed_side: "left" });
-  add(ids.rightStop, right, singleAddress ? "stop_right" : "stop", { bed_side: "right" });
+  add(ids.leftStop, left, "stop", { bed_side: "left" });
+  add(ids.rightStop, right, "stop", { bed_side: "right" });
   add(
     ids.bothHeadUp,
     root,
-    singleAddress ? "head_up_both" : "head_up",
+    "head_up",
     singleAddress ? { bed_side: "both" } : {},
   );
 
@@ -167,9 +168,9 @@ function makeFixture(mode, { coverHoldMetadata = true } = {}) {
         }
       : {}),
   });
-  add(ids.leftHead, left, singleAddress ? "head_left" : "head", coverAttributes("left"));
-  add(ids.rightHead, right, singleAddress ? "head_right" : "head", coverAttributes("right"));
-  add(ids.leftFeet, left, singleAddress ? "feet_left" : "feet", coverAttributes("left"));
+  add(ids.leftHead, left, "head", coverAttributes("left"));
+  add(ids.rightHead, right, "head", coverAttributes("right"));
+  add(ids.leftFeet, left, "feet", coverAttributes("left"));
 
   const side = (deviceId, name) => bedEntitiesForDevice(
     hass,

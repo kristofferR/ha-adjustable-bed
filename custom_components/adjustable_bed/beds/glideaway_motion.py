@@ -17,6 +17,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ..card import CARD_MASSAGE_TIMER
 from ..codec import keeson as codec
 from ..const import GLIDEAWAY_MOTION_MODELS
 from ..controller_state import StateKey
@@ -28,6 +29,7 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -236,10 +238,6 @@ class GlideawayMotionController(BedController):
             )
             for axis in LAYOUTS[self.model]
         )
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset(AXES)
 
     async def move_back_up(self) -> None:
         await self._move_axis("back", True)
@@ -566,15 +564,9 @@ class GlideawayMotionController(BedController):
             "mdi:timer-outline",
             "min",
             attribute_keys=(STATE_TIMER_RAW,),
+            card=CARD_MASSAGE_TIMER,
         )
         return (alarm, timer) if self.supports_massage else (alarm,)
-
-    @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        return frozenset({"glideaway_motion_massage_timer", "glideaway_motion_alarm"}) - {
-            s.key for s in self.controller_state_sensor_specs
-        }
-
 
 def _axis_action(axis: str, up: bool) -> MotorCommandCallable:
     async def move(controller: BedController) -> None:
@@ -590,3 +582,8 @@ async def _wait_for_cancel(event: asyncio.Event, delay: float) -> None:
             await event.wait()
     except TimeoutError:
         pass
+
+
+async def build_controller(ctx: BuildContext) -> GlideawayMotionController:
+    """Build the controller for the selected model."""
+    return GlideawayMotionController(ctx.coordinator, model=ctx.variant)

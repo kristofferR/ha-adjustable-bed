@@ -8,6 +8,7 @@ from homeassistant.data_entry_flow import FlowResultType
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+from custom_components.adjustable_bed.profiles.hush import HUSH_BASE_VARIANTS
 from tests.test_setup_entry import _app_then_address, app_question, app_rows
 
 
@@ -25,7 +26,7 @@ async def test_the_product_is_asked_with_the_apps_own_twelve_first(
     markers = {str(marker): marker for marker in result["data_schema"].schema}
     products = list(result["data_schema"].schema[markers[const.CONF_PROTOCOL_VARIANT]].container)
     assert products[:2] == ["hushl400", "hushl400sh"]
-    assert len(products) == len(const.HUSH_BASE_VARIANTS)
+    assert len(products) == len(HUSH_BASE_VARIANTS)
     # Nothing detects the product, so the question has no default.
     assert isinstance(markers[const.CONF_PROTOCOL_VARIANT], vol.Required)
     assert markers[const.CONF_PROTOCOL_VARIANT].default is vol.UNDEFINED

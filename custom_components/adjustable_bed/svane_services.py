@@ -9,27 +9,25 @@ import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
-from homeassistant.helpers import config_validation as cv
 
+from .beds.base import BedController, controller_as
 from .const import BED_TYPE_SVANE, DOMAIN
 from .paired_coordinator import BedChild, PairedBedCoordinator
 from .services import (
     ATTR_MOTOR,
-    ATTR_SIDE,
+    DEVICE_IDS,
     SIDE_FIELD,
     BedTarget,
     PreflightedSides,
+    _call_targets,
     _command_targets,
     _execute_sided,
     _get_controller_for_service,
-    _missing_device_error,
     _release_preflighted,
     _require_held_control,
-    _resolve_sided_targets,
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController
     from .beds.svane import SvaneHoldAdmission
 
 
@@ -82,22 +80,14 @@ async def _svane_live_targets(
     duration_ms: int,
 ) -> tuple[list[tuple[BedTarget, str]], PreflightedSides, dict[int, SvaneHoldAdmission]]:
     """Capture all release boundaries, then validate each guarded live link."""
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
     from .beds.svane import SvaneController
 
+    targets = _call_targets(call)
     admissions: dict[int, SvaneHoldAdmission] = {}
     for parent, side in targets:
         for target in _command_targets(parent, side):
-            controller = target.capability_controller
-            if (
-                target.bed_type != BED_TYPE_SVANE
-                or controller is None
-                or not isinstance(controller, SvaneController)
-            ):
+            controller = controller_as(target.capability_controller, SvaneController)
+            if controller is None:
                 raise ServiceValidationError("Select a Svane Remote app profile")
             _require_held_control(target, controller, control)
             try:
@@ -156,12 +146,10 @@ async def _hold_svane(call: ServiceCall, control: str, duration_ms: int) -> None
 
 async def handle_svane_release_axis(call: ServiceCall) -> None:
     """Signal only the active writer, allowing the other held axis to continue."""
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    controllers: list[BedController] = []
+    from .beds.svane import SvaneController
+
+    targets = _call_targets(call)
+    controllers: list[SvaneController] = []
     for parent, side in targets:
         for target in _command_targets(parent, side):
             if target.bed_type != BED_TYPE_SVANE:
@@ -169,9 +157,10 @@ async def handle_svane_release_axis(call: ServiceCall) -> None:
             controller = target.controller or target.capability_controller
             if controller is None:
                 continue
-            if not controller.supports_held_control:
+            svane = controller_as(controller, SvaneController)
+            if svane is None or not svane.supports_held_control:
                 raise ServiceValidationError("Select an active Svane Remote app profile")
-            controllers.append(controller)
+            controllers.append(svane)
     for controller in controllers:
         controller.request_svane_axis_release(call.data[ATTR_MOTOR])
     # A streamed timed move (#516) on that axis ends alone; the other keeps going.
@@ -187,7 +176,7 @@ async def handle_svane_release_axis(call: ServiceCall) -> None:
 def async_register_svane_services(hass: HomeAssistant) -> None:
     """Register the Svane axis release action."""
     device_fields = {
-        vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+        vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
         **SIDE_FIELD,
     }
     hass.services.async_register(

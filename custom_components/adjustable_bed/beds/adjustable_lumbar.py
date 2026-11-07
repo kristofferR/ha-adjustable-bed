@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Final, Literal
 
 from bleak.exc import BleakError
 
+from ..card import CARD_MASSAGE, CARD_UTILITY
 from ..codec import okin_5a, okin_nframe
 from ..const import (
     ADJUSTABLE_LUMBAR_VARIANT_OKIN,
@@ -38,6 +39,7 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -312,6 +314,7 @@ class AdjustableLumbarController(BedController):
                 _action(key),
                 translation_key=f"adjustable_lumbar_{key}",
                 icon="mdi:content-save" if key.startswith("save_") else "mdi:gesture-tap",
+                card=CARD_MASSAGE if key in _WAVE_LABELS or key == "massage_on" else CARD_UTILITY,
             )
             for key, label in labels.items()
         )
@@ -610,3 +613,10 @@ class AdjustableLumbarController(BedController):
             await self.check_massage()
         else:
             raise ValueError(f"Unknown Adjustable bed (Lumbar) action '{action}'")
+
+
+async def build_controller(ctx: BuildContext) -> AdjustableLumbarController:
+    """Build the controller; the app's name rule picks the table unless the variant fixes it."""
+    return AdjustableLumbarController(
+        ctx.coordinator, protocol_variant=ctx.variant, device_name=ctx.live_device_name
+    )

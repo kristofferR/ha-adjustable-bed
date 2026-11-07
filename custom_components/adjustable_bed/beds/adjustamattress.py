@@ -12,6 +12,7 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ..app_session import app_session
+from ..card import CARD_LIGHTING, CARD_MASSAGE, CARD_PRESETS, CARD_UTILITY, CardPlacement
 from ..const import CONF_BLE_DEVICE_NAME
 from ..controller_state import StateKey
 from ..detection import is_mac_like_name
@@ -46,6 +47,7 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -85,6 +87,21 @@ BUTTON_KEYS = {
     "liftHead": "lift_head",
     "liftFoot": "lift_foot",
 }
+_MASSAGE_FIELDS = frozenset({"massage_time", "head_intensity", "foot_intensity", "wave"})
+_MASSAGE_BUTTONS = frozenset(
+    {"head_strength_add", "foot_strength_add", "wave_add", "massage_timer"}
+)
+
+
+def _button_card(key: str) -> CardPlacement:
+    """Place an app button, keyed as in BUTTON_KEYS, in the card."""
+    if key == "m1":
+        return CARD_PRESETS
+    if key == "underbed_lighting":
+        return CARD_LIGHTING
+    if key in _MASSAGE_BUTTONS or key.startswith(("timer", "query_massage")):
+        return CARD_MASSAGE
+    return CARD_UTILITY
 MAX_HOLD_MS = 60000  # Integration bound, also used by the card's hold service.
 
 
@@ -659,6 +676,7 @@ class AdjustaMattressController(BedController):
                 label,
                 _action(key),
                 translation_key=NS + BUTTON_KEYS.get(key, key),
+                card=_button_card(BUTTON_KEYS.get(key, key)),
                 scheduler_resource="*",
                 hold=ControllerHoldSpec(key, 0, 0) if key in self.held_control_options else None,
             )
@@ -711,6 +729,7 @@ class AdjustaMattressController(BedController):
                     local_select_fn=(lambda option, key=key: self._live_local_setting(key, option))
                     if local
                     else None,
+                    card=CARD_MASSAGE if key.endswith("_selector") else CARD_UTILITY,
                 )
             )
         return tuple(specs)
@@ -759,6 +778,7 @@ class AdjustaMattressController(BedController):
                 _field_key(key),
                 "mdi:information-outline",
                 native_unit_of_measurement="min" if key == "massage_time" else None,
+                card=CARD_MASSAGE if key in _MASSAGE_FIELDS else CARD_UTILITY,
             )
             for key in self._sensor_fields
         )
@@ -767,7 +787,7 @@ class AdjustaMattressController(BedController):
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
         return tuple(
             ControllerStateBinarySensorSpec(
-                NS + key, NS + key, _field_key(key), "mdi:information-outline"
+                NS + key, NS + key, _field_key(key), "mdi:information-outline", card=CARD_UTILITY
             )
             for key in self._binary_fields
         )
@@ -852,3 +872,10 @@ class AdjustaMattressController(BedController):
 
     async def program_memory(self, memory_num: int) -> None:
         raise NotImplementedError("The app defines no memory programming action")
+
+
+async def build_controller(ctx: BuildContext) -> AdjustaMattressController:
+    """Build the controller; the app's name rule reads only a live BLE name."""
+    return AdjustaMattressController(
+        ctx.coordinator, protocol_variant=ctx.variant, device_name=ctx.live_device_name
+    )

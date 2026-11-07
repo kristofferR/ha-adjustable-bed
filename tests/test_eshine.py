@@ -15,12 +15,12 @@ import pytest
 from bleak.exc import BleakError
 
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
+from custom_components.adjustable_bed.bed_traits import bed_traits
 from custom_components.adjustable_bed.beds.eshine import CODES, STATE_GROUPS, EshineController
 from custom_components.adjustable_bed.beds.eshine_protocol import NotificationStream
 from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.const import (
     BED_TYPE_ESHINE,
-    BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
@@ -206,7 +206,7 @@ async def test_profile_exposes_exact_controls_and_no_invented_queries():
     assert not ctrl.supports_memory_presets and ctrl.memory_slot_count == 0
     assert not ctrl.supports_single_address_pairing and not ctrl.supports_direct_position_control
     assert not ctrl.supports_position_feedback
-    assert BED_TYPE_ESHINE in BEDS_WITHOUT_ANGLE_FEEDBACK
+    assert bed_traits(BED_TYPE_ESHINE).no_angle_feedback
     assert len(ctrl.controller_button_specs) == 7
     assert {row["value"]: row["label"] for row in get_bed_type_options()}[
         BED_TYPE_ESHINE

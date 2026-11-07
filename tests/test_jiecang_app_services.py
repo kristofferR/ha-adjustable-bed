@@ -1,6 +1,5 @@
 """Service validation and serialized dispatch for the Jiecang app controllers."""
 
-from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -8,6 +7,7 @@ import voluptuous as vol
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 
+from custom_components.adjustable_bed.beds.jiecang_app import JiecangAppController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_JIECANG_APP,
     DOMAIN,
@@ -31,7 +31,8 @@ from custom_components.adjustable_bed.services import (
 async def service_target(hass: HomeAssistant):
     """Use real registered schemas and dispatch with a client-free controller."""
     await async_register_services(hass)
-    controller = SimpleNamespace(
+    controller = MagicMock(
+        spec=JiecangAppController,
         supports_clock_alarm=True,
         supports_preset_yoga=True,
         supports_wake_routine=True,
@@ -58,7 +59,7 @@ async def service_target(hass: HomeAssistant):
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(coordinator, SIDE_BOTH)], []),
         ) as resolve,
-        patch("custom_components.adjustable_bed.jiecang_app_services._resolve_sided_targets", new=resolve),
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets", new=resolve),
     ):
         yield coordinator, controller, resolve
 
@@ -122,7 +123,8 @@ async def test_yoga_alarm_validates_every_target_before_writing(
     unsupported.name = "Controller without Yoga"
     unsupported.bed_type = BED_TYPE_JIECANG_APP
     unsupported.controller_side = None
-    unsupported.capability_controller = SimpleNamespace(
+    unsupported.capability_controller = MagicMock(
+        spec=JiecangAppController,
         supports_clock_alarm=True, supports_preset_yoga=False
     )
     resolve.return_value = ([(coordinator, SIDE_BOTH), (unsupported, SIDE_BOTH)], [])
@@ -188,7 +190,7 @@ async def test_all_targets_are_validated_before_writing(
     unsupported.name = "Unsupported bed"
     unsupported.bed_type = BED_TYPE_JIECANG_APP
     unsupported.controller_side = None
-    unsupported.capability_controller = SimpleNamespace(**{capability: False})
+    unsupported.capability_controller = MagicMock(spec=JiecangAppController, **{capability: False})
     resolve.return_value = ([(coordinator, SIDE_BOTH), (unsupported, SIDE_BOTH)], [])
     with pytest.raises(ServiceValidationError, match="does not support"):
         await hass.services.async_call(

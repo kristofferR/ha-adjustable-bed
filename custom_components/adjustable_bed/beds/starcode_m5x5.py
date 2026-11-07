@@ -14,7 +14,16 @@ from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
+from ..card import (
+    CARD_LIGHT_LEVEL,
+    CARD_LIGHT_MOOD,
+    CARD_UTILITY,
+    CardPlacement,
+    CardRole,
+    CardSection,
+)
 from ..codec import okin_5a
+from ..const import CONF_BLE_DEVICE_NAME, CONF_STARCODE_M5X5_PROFILE
 from ..controller_state import StateUpdate
 from ..execution import ExecutionCapabilities
 from ..state_keys import UNDER_BED_LIGHTS_ON
@@ -30,15 +39,18 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
+from .builder import BuildContext
+from .starcode_dialect import (
+    extended_packet,
+    long_packet,
+    manufacturer_dialect,
+    normal_packet,
+    query_packet,
+)
 from .starcode_m5x5_protocol import (
     StateValue,
     clock_packet,
-    extended_packet,
-    long_normal_packet,
-    manufacturer_dialect,
-    normal_packet,
     parse_notification,
-    query_packet,
 )
 from .starcode_state import (
     FIRMWARE_VERSION,
@@ -204,22 +216,6 @@ class StarcodeM5X5Controller(BedController):
         return True
 
     @property
-    def supports_position_feedback(self) -> bool:
-        return True
-
-    @property
-    def reports_percentage_position(self) -> bool:
-        return True
-
-    @property
-    def position_number_pruning(self) -> frozenset[str] | None:
-        return frozenset({"lumbar_position"})
-
-    @property
-    def prunes_stale_light_level(self) -> bool:
-        return True
-
-    @property
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
         return tuple(
             build_position_number_spec(axis, max_value=100, unit=POSITION_UNIT_PERCENT)
@@ -261,10 +257,6 @@ class StarcodeM5X5Controller(BedController):
                 position_key="lumbar",
             ),
         )
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset(("head", "feet"))
 
     @property
     def memory_slot_count(self) -> int:
@@ -355,58 +347,16 @@ class StarcodeM5X5Controller(BedController):
         return self._ready
 
     @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        all_keys = (
-            "firmware",
-            "massage_time_raw",
-            "massage_head_level",
-            "massage_foot_level",
-            "massage_mode",
-            "light_brightness",
-            "light_color_index",
-            "light_rgb_mode",
-            "light_mode",
-            "motor_part4",
-            "motor_part5",
-            "motor_part6",
-            "alarm_0",
-            "alarm_1",
-            "sonic_time_raw",
-            "sonic_frequency",
-            "sonic_head_level",
-            "sonic_foot_level",
-            "sonic_mode",
-            "sonic_massage_type",
-            "eq_volume",
-            "eq_preset",
-            "eq_low_frequency",
-            "eq_high_frequency",
-            "kneading_time_raw",
-            "kneading_mode",
-        ) + tuple(f"eq_band_{i}" for i in range(8))
-        active = {spec.key for spec in self.controller_state_sensor_specs}
-        return frozenset(f"starcode_{key}" for key in all_keys) - active
-
-    @property
-    def stale_controller_state_binary_sensor_entity_keys(self) -> frozenset[str]:
-        all_keys = (
-            "firmware_read_ok",
-            "motor_stopped",
-            "massage_active",
-            "light_on",
-            "sonic_active",
-            "usb_on",
-            "kneading_on",
-            "kneading_demo",
-        )
-        active = {spec.key for spec in self.controller_state_binary_sensor_specs}
-        return frozenset(f"starcode_{key}" for key in all_keys) - active
-
-    @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         return tuple(
             ControllerButtonSpec(
-                f"starcode_{key}", label, _action(key), translation_key=f"starcode_{key}"
+                f"starcode_{key}",
+                label,
+                _action(key),
+                translation_key=f"starcode_{key}",
+                card=CardPlacement(CardSection.LIGHTING, CardRole.CYCLE)
+                if key == "light_cycle"
+                else CARD_UTILITY,
             )
             for key, label in (
                 ("save_tv", "Save Ascent"),
@@ -434,6 +384,7 @@ class StarcodeM5X5Controller(BedController):
                 6,
                 1,
                 brightness,
+                card=CARD_LIGHT_LEVEL,
             ),
         )
 
@@ -450,6 +401,7 @@ class StarcodeM5X5Controller(BedController):
                 LIGHT_COLOR_OPTION,
                 tuple(str(i) for i in range(8)),
                 color,
+                card=CARD_LIGHT_MOOD,
             ),
         )
 
@@ -819,7 +771,7 @@ class StarcodeM5X5Controller(BedController):
             if dialect == "star"
             else (0x40 if enabled else 0x80)
         )
-        packet = normal_packet(key, dialect) if dialect == "star" else long_normal_packet(key)
+        packet = normal_packet(key, dialect) if dialect == "star" else long_packet(key)
         await self._rgb(packet, 1 if self.profile in ("f23", "kneading") else 2)
 
     async def lights_cycle(self) -> None:
@@ -952,3 +904,12 @@ class StarcodeM5X5Controller(BedController):
         if isinstance(memory_num, bool) or memory_num not in (1, 2):
             raise ValueError("AdjustableM5X5 has two programmable memory slots")
         await self.app_action(f"save_memory_{memory_num}")
+
+
+async def build_controller(ctx: BuildContext) -> StarcodeM5X5Controller:
+    """Build the controller for the stored profile and BLE name."""
+    return StarcodeM5X5Controller(
+        ctx.coordinator,
+        profile=ctx.data[CONF_STARCODE_M5X5_PROFILE],
+        device_name=ctx.data[CONF_BLE_DEVICE_NAME],
+    )

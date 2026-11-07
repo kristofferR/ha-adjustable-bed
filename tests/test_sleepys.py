@@ -1004,7 +1004,6 @@ class TestSleepysBox25Controller:
             "tilt",
         ]
         assert controller.motor_control_specs[3].translation_key == "head_end_tilt"
-        assert controller.stale_motor_entity_keys == {"back", "legs"}
 
     async def test_star_status_notifications_propagate_and_clamp_motor_positions(
         self,

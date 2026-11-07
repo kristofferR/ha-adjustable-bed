@@ -3,6 +3,7 @@
 import { expect, test } from "bun:test";
 import type { TemplateResult } from "lit";
 import type { AdjustableBedCardConfig, HomeAssistant } from "./types";
+import { placed } from "./test-placements";
 
 const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
 Object.defineProperty(globalThis, "window", {
@@ -19,12 +20,12 @@ type Feedback = "°" | "%" | "estimate";
 // Back 40, legs 20 and lumbar 60, as degrees, percentages or estimates.
 // Estimates exist only for back and legs, never lumbar.
 function fixture(feedback: Feedback, estimateState = "tracking", maxAngle?: number): HomeAssistant {
-  const hass: HomeAssistant = {
+  const hass: HomeAssistant = placed({
     states: {}, entities: {}, devices: { bed: { id: "bed", name: "Bed" } },
     locale: { language: "en" }, language: "en", themes: {},
     formatEntityName: (stateObj) => hass.entities[stateObj.entity_id]?.name ?? "",
     callService: async () => undefined,
-  };
+  });
   const add = (entityId: string, key: string, state: string, attributes: Record<string, unknown> = {}) => {
     hass.entities[entityId] = { entity_id: entityId, device_id: "bed", platform: "adjustable_bed", translation_key: key };
     hass.states[entityId] = { entity_id: entityId, state, last_changed: "", last_updated: "", attributes };

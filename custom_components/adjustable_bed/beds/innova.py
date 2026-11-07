@@ -26,6 +26,7 @@ from typing import Any, Final
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
+from ..card import CARD_LIGHTING, CARD_MASSAGE, CARD_MASSAGE_TIMER
 from ..codec import keeson as codec
 from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
@@ -208,10 +209,6 @@ class InnovaController(KeesonController):
             # 3M: the third actuator uses bedLumbar IDs (0x40/0x80); 4M: lumbar.
             specs.append(spec("lumbar", "lumbar", "move_lumbar_up", "move_lumbar_down"))
         return tuple(specs)
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset({"tilt", "lumbar", "waist", "back_legs"})
 
     @property
     def _hold_interval_ms(self) -> int:
@@ -483,6 +480,7 @@ class InnovaController(KeesonController):
                 press_fn=_action("massage_level_step"),
                 icon="mdi:sine-wave",
                 translation_key=BUTTON_MASSAGE_LEVEL,
+                card=CARD_MASSAGE,
             ),
             ControllerButtonSpec(
                 key=BUTTON_MASSAGE_TIMER_HOLD,
@@ -490,6 +488,7 @@ class InnovaController(KeesonController):
                 press_fn=_action("massage_timer_hold"),
                 icon="mdi:timer-outline",
                 translation_key=BUTTON_MASSAGE_TIMER_HOLD,
+                card=CARD_MASSAGE,
             ),
         )
 
@@ -552,12 +551,9 @@ class InnovaController(KeesonController):
                 translation_key="innova_light",
                 state_key=STATE_LIGHT,
                 icon="mdi:lightbulb",
+                card=CARD_LIGHTING,
             ),
         )
-
-    @property
-    def stale_controller_state_binary_sensor_entity_keys(self) -> frozenset[str]:
-        return frozenset()
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
@@ -568,13 +564,10 @@ class InnovaController(KeesonController):
                 state_key=STATE_MASSAGE_TIMER,
                 icon="mdi:timer-outline",
                 native_unit_of_measurement="min",
+                card=CARD_MASSAGE_TIMER,
             ),
         )
 
     @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        return frozenset()
-
-    @property
     def protocol_diagnostics(self) -> dict[str, Any]:
-        return {"app": "INNOVA", "app_package": "com.ore.sfm 2.0 (3)", "layout": f"{self._layout}M"}
+        return {**super().protocol_diagnostics, "app": "INNOVA", "app_package": "com.ore.sfm 2.0 (3)", "layout": f"{self._layout}M"}

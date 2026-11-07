@@ -4,6 +4,7 @@ import type { TemplateResult } from "lit";
 import { bedEntitiesForDevice } from "./discovery";
 import type { MotorHold } from "./hold";
 import type { BedEntities, HomeAssistant } from "./types";
+import { placed } from "./test-placements";
 
 await import("lit");
 const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
@@ -26,7 +27,7 @@ interface CardUnderTest {
 function fixture() {
   const calls: Array<{ domain: string; service: string; data: Record<string, unknown> }> = [];
   let finish: (() => void) | undefined;
-  const hass = {
+  const hass = placed({
     entities: {
       "button.mx_memory1": { entity_id: "button.mx_memory1", platform: "adjustable_bed", device_id: "right-child", translation_key: "remote_action" },
       "button.right_stop": { entity_id: "button.right_stop", platform: "adjustable_bed", device_id: "right-child", translation_key: "stop" },
@@ -40,7 +41,7 @@ function fixture() {
       calls.push({ domain, service, data });
       if (service === "hold_control") await new Promise<void>((resolve) => { finish = resolve; });
     },
-  } as unknown as HomeAssistant;
+  } as unknown as HomeAssistant);
   const card = new AdjustableBedCard() as unknown as CardUnderTest;
   card.hass = hass;
   return { card, hass, calls, finish: () => finish?.() };
@@ -131,7 +132,7 @@ function ownershipFixture(mode: "native" | "legacy" | "via") {
     devices[owner(side)] = { id: owner(side), [mode === "via" ? "via_device_id" : "parent_device_id"]: root };
   }
   function add(id: string, side: "left" | "right" | "both", key: string, attributes = {}) {
-    entities[id] = { entity_id: id, device_id: owner(side), platform: "adjustable_bed", translation_key: mode === "legacy" ? `${key}_${side}` : key };
+    entities[id] = { entity_id: id, device_id: owner(side), platform: "adjustable_bed", translation_key: key };
     states[id] = { entity_id: id, state: "unknown", attributes: { bed_side: side, ...attributes }, last_changed: "", last_updated: "" };
   }
   for (const side of ["left", "right", "both"] as const) {
@@ -146,7 +147,7 @@ function ownershipFixture(mode: "native" | "legacy" | "via") {
     add(`button.${side}_mx`, side, "remote_action", { held_control: "mx_memory1", hold_start_delay_ms: 0, hold_release_delay_ms: 0 });
     add(`button.${side}_angle`, side, "remote_action", { held_control: "head_target_up", hold_start_delay_ms: 0, hold_release_delay_ms: 0 });
   }
-  const hass: HomeAssistant = { entities, states, devices, themes: {}, formatEntityName: (s) => s.entity_id, language: "en", locale: { language: "en" },
+  const hass: HomeAssistant = placed({ entities, states, devices, themes: {}, formatEntityName: (s) => s.entity_id, language: "en", locale: { language: "en" },
     callService: (domain, service, data = {}) => {
       calls.push({ domain, service, data });
       if (service === "hold_control" || service === "timed_move" || service === "open_cover" || data.entity_id === "button.finite_both") {
@@ -154,7 +155,7 @@ function ownershipFixture(mode: "native" | "legacy" | "via") {
       }
       return new Promise<void>((resolve) => stopFinishes.push(resolve));
     },
-  };
+  });
   const card = new AdjustableBedCard() as unknown as OwnershipCard;
   card.hass = hass;
   const bed = (side: "left" | "right" | "both") => bedEntitiesForDevice(hass, owner(side), mode === "legacy" ? side : undefined);

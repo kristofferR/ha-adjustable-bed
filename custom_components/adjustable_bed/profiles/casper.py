@@ -8,7 +8,7 @@ product, its control groups as indices into the action list and its page flags.
 
 The app's Richmat library, which Hush Base 1.0.5 (row126) also ships, sets the
 transports, connect queries and fixed opcodes below. This module stays free of
-codec imports: ``const.py`` reads it before the codec can load.
+codec imports, so setup and pairing can read its products without the codec.
 """
 
 from __future__ import annotations
@@ -83,3 +83,11 @@ class CasperProfile:
 PROFILES: Final[dict[str, CasperProfile]] = {
     key: CasperProfile(key, row) for key, row in _PRODUCTS.items()
 }
+# Setup choices, and the products with the side flag.
+CASPER_BASE_VARIANTS: Final = {
+    key: profile.label + ("" if profile.current else " (stored profile)")
+    for key, profile in PROFILES.items()
+}
+CASPER_BASE_SIDE_VARIANTS: Final = frozenset(
+    key for key, profile in PROFILES.items() if profile.row[11]
+)

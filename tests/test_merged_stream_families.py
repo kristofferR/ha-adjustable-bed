@@ -238,13 +238,12 @@ async def bed(hass: HomeAssistant, request: pytest.FixtureRequest) -> AsyncItera
         stack.enter_context(
             patch.object(bed.coordinator, "_async_refresh_controller_auth", AsyncMock())
         )
-        for module in ("services", "svane_services"):
-            stack.enter_context(
-                patch(
-                    f"custom_components.adjustable_bed.{module}._resolve_sided_targets",
-                    return_value=([(bed.coordinator, "both")], []),
-                )
+        stack.enter_context(
+            patch(
+                "custom_components.adjustable_bed.services._resolve_sided_targets",
+                return_value=([(bed.coordinator, "both")], []),
             )
+        )
         stack.enter_context(virtual_clock())
         yield bed
         await bed.coordinator.async_shutdown()

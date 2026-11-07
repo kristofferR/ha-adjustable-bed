@@ -197,7 +197,6 @@ export interface BedEntities {
   connect?: string;
   disconnect?: string;
   connectivity?: string; // binary_sensor.* ble_connection
-  presence: string[]; // binary_sensor.* bed_presence*
   lights: LightEntities;
   massage: { buttons: string[]; numbers: string[]; selects?: string[]; states?: string[]; timer?: string };
   climate: { entities: string[]; selects: string[]; numbers: string[] }; // numbers: fan_level

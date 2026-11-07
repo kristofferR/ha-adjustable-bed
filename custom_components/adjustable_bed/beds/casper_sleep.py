@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
-from ..casper_base_protocol import Request, SensorKind
+from ..casper_base_protocol import CasperBaseActions, Request, SensorKind
 from ..casper_sleep_protocol import (
     NOTIFY,
     SERVICES,
@@ -46,7 +46,7 @@ def live_key(side: str, field: str) -> StateKey[object]:
     return StateKey[object](f"casper_sleep_{side}_{field}")
 
 
-class CasperSleepController(BedController):
+class CasperSleepController(BedController, CasperBaseActions):
     """Own parser, command and timer state for one physical sensor."""
 
     def __init__(self, coordinator: AdjustableBedCoordinator, *, kind: SensorKind) -> None:
@@ -89,7 +89,7 @@ class CasperSleepController(BedController):
 
     @property
     def requires_persistent_connection(self) -> bool:
-        return self._poll is not None
+        return super().requires_persistent_connection or self._poll is not None
 
     @property
     def motor_control_specs(self) -> tuple:

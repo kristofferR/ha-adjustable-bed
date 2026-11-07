@@ -22,11 +22,21 @@ from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 from homeassistant.util import dt as dt_util
 
-from ..const import CONF_BLE_DEVICE_NAME, RICHMAT_MH_MODEL_CHOICES, VARIANT_AUTO
+from ..card import (
+    CARD_MASSAGE,
+    CARD_PRESETS,
+    CARD_UTILITY,
+    CardPlacement,
+    CardRole,
+    CardSection,
+    motor_card,
+)
+from ..const import CONF_BLE_DEVICE_NAME, RICHMAT_MH_APPS, RUF_RICHMAT_APPS, VARIANT_AUTO
 from ..controller_state import StateKey, StateUpdate
 from ..detection import is_mac_like_name
 from ..profiles.richmat import RICHMAT_MH
-from ..row061_models import MODEL_IDS as ROW061_MODEL_IDS
+from ..richmat_mh_models import RICHMAT_MH_MODEL_CHOICES
+from ..ruf_richmat_models import MODEL_IDS as RUF_RICHMAT_MODEL_IDS
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -37,6 +47,7 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
+from .builder import BuildContext
 from .richmat_mh_protocol import (
     ALARM_MASSAGE_CODES,
     ALARM_TASK_SLEEP_S,
@@ -186,10 +197,11 @@ def _waist_setting_key(side: str, field: str) -> StateKey[str | None]:
     return StateKey[str | None](f"richmat_mh_waist_{side}_{field}")
 
 
-_SENSOR_KEYS: Final = frozenset(
-    {DETECTION_KEY, ALARM_STATUS_KEY, MEMORY_ARRIVAL_KEY, *WAIST_ALARM_KEYS.values()}
-)
-_BINARY_SENSOR_KEYS: Final = frozenset({SMART_SET_LOCK_KEY, SMART_LIGHT_LOCK_KEY})
+# Tap kinds the card shows outside its utility section.
+_TAP_CARDS: Final = {"richmat_mh_preset": CARD_PRESETS, "richmat_mh_massage": CARD_MASSAGE}
+# Angle targets sit with the cover of the motor each angle number names.
+_ANGLE_MOTORS: Final = {"back": "back", "foot": "feet", "pillow": "pillow"}
+
 CALLBACK_FUNCTION_LED: Final = "0a"  # EPack.LED function: the light-page lock switch
 
 
@@ -247,7 +259,7 @@ def _catalog() -> Any:
 def load_model(app: str, model_id: str) -> Model | None:
     """Return a catalog model, or None when the app has no such live model."""
     if app in ("ruf", "wsilver2", "americanstar", "bailey2", "tx"):
-        from .row061 import load_app_model
+        from .ruf_richmat import load_app_model
 
         return load_app_model(app, model_id)
     catalog = _catalog()
@@ -270,7 +282,7 @@ def selectable_models(app: str) -> tuple[str, ...]:
 
 def _model_is_known(app: str, model: str) -> bool:
     """Validate new app selectors from static IDs without loading a catalog on HA's loop."""
-    if models := ROW061_MODEL_IDS.get(app):
+    if models := RUF_RICHMAT_MODEL_IDS.get(app):
         base = model.removesuffix("_mattress")
         return base in models and (model == base or app in ("wsilver2", "americanstar", "tx"))
     return load_model(app, model) is not None
@@ -717,10 +729,6 @@ class RichmatMhController(BedController):
             for axis in self._axes()
         )
 
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset(key for key, _ in _AXES.values())
-
     def motor_pulse_settings(self) -> tuple[int, int]:
         """The pulse count bounds a hold; the app's own interval is per control."""
         return self._coordinator.motor_pulse_count, 100
@@ -826,6 +834,7 @@ class RichmatMhController(BedController):
                     icon="mdi:content-save" if tap.translation_key == "richmat_mh_save" else "mdi:gesture-tap",
                     translation_key=tap.translation_key,
                     translation_placeholders={"action": tap.name},
+                    card=_TAP_CARDS.get(tap.translation_key, CARD_UTILITY),
                 )
             )
         if self._smart_set_lock():
@@ -887,6 +896,7 @@ class RichmatMhController(BedController):
                     state_key=WAIST_MODE_KEY,
                     options=WAIST_MODES,
                     select_fn=lambda ctrl, option: _invoke(ctrl, "set_waist_mode", option),
+                    card=CARD_MASSAGE,
                 )
             )
             for side in WAIST_SIDES:
@@ -901,6 +911,7 @@ class RichmatMhController(BedController):
                             select_fn=lambda ctrl, option, s=side, f=field: _invoke(
                                 ctrl, "set_waist_setting", s, f, option
                             ),
+                            card=CARD_MASSAGE,
                         )
                     )
         return tuple(specs)
@@ -916,6 +927,7 @@ class RichmatMhController(BedController):
                     LIGHT_TIMER_MINUTES_KEY, LIGHT_TIMER_MINUTES_KEY, LIGHT_TIMER_MINUTES_KEY,
                     0, 15, 1, lambda ctrl, v: _invoke(ctrl, "write_light_timer", int(v) * 60, int(v)),
                     native_unit_of_measurement="min",
+                    card=CardPlacement(CardSection.LIGHTING, CardRole.TIMER_MINUTES),
                 )
             )
         elif page is not None:
@@ -924,6 +936,7 @@ class RichmatMhController(BedController):
                     LIGHT_TIMER_KEY, LIGHT_TIMER_KEY, LIGHT_TIMER_KEY,
                     0, 300, 1, lambda ctrl, v: _invoke(ctrl, "write_light_timer", int(v), int(v)),
                     native_unit_of_measurement="s",
+                    card=CardPlacement(CardSection.LIGHTING, CardRole.TIMER),
                 )
             )
         for bits, name, low, high, _offset in self._angles():
@@ -933,6 +946,7 @@ class RichmatMhController(BedController):
                     key, key, key, low, high, 1,
                     lambda ctrl, v, b=bits: _invoke(ctrl, "set_angle", b, int(v)),
                     native_unit_of_measurement="°",
+                    card=motor_card(_ANGLE_MOTORS[name.lower()]),
                 )
             )
         for zone, _name, low, high in self._intensities():
@@ -941,6 +955,7 @@ class RichmatMhController(BedController):
                 ControllerNumberSpec(
                     key, key, key, low, high, 1,
                     lambda ctrl, v, z=zone: _invoke(ctrl, "write_massage_intensity", z, int(v)),
+                    card=CARD_MASSAGE,
                 )
             )
         return tuple(specs)
@@ -977,10 +992,6 @@ class RichmatMhController(BedController):
                 )
         return tuple(specs)
 
-    @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        return _SENSOR_KEYS - {spec.key for spec in self.controller_state_sensor_specs}
-
     def _smart_light_lock(self) -> bool:
         """The light page shows its lock switch; no listener sends from it in these apps."""
         f = self._features
@@ -994,10 +1005,6 @@ class RichmatMhController(BedController):
             if visible:
                 specs.append(ControllerStateBinarySensorSpec(key, key, key, "mdi:lock"))
         return tuple(specs)
-
-    @property
-    def stale_controller_state_binary_sensor_entity_keys(self) -> frozenset[str]:
-        return _BINARY_SENSOR_KEYS - {s.key for s in self.controller_state_binary_sensor_specs}
 
     @property
     def motor_mode_options(self) -> tuple[str, ...]:
@@ -1767,3 +1774,25 @@ def _tap_action(code: int) -> MotorCommandCallable:
         await richmat_mh_target(controller).tap(code)
 
     return invoke
+
+
+async def build_controller(ctx: BuildContext) -> RichmatMhController:
+    """Build the controller for the app's model.
+
+    The app's name rule picks the model unless the variant fixes it; offline
+    controllers must not read the display name.
+    """
+    controller_class = RichmatMhController
+    if ctx.bed_type in RUF_RICHMAT_APPS:
+        await ctx.preload("ruf_richmat")
+        from ..ruf_richmat_profiles import profiles
+        from .ruf_richmat import RufRichmatController
+
+        await ctx.coordinator.hass.async_add_executor_job(profiles, RUF_RICHMAT_APPS[ctx.bed_type])
+        controller_class = RufRichmatController
+    return controller_class(
+        ctx.coordinator,
+        app=RICHMAT_MH_APPS[ctx.bed_type],
+        protocol_variant=ctx.variant,
+        device_name=ctx.live_device_name,
+    )

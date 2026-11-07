@@ -29,6 +29,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 from homeassistant.exceptions import HomeAssistantError
 
+from ..card import CARD_MASSAGE, CARD_UTILITY
 from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_SERVICE_UUID,
@@ -37,6 +38,7 @@ from ..const import (
 from ..controller_state import StateKey
 from ..profiles import keeson as keeson_profiles
 from .base import BedController, ControllerButtonSpec, ControllerStateSensorSpec
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -216,6 +218,7 @@ class CoolBaseController(BedController):
                 icon,
                 translation_key=f"coolbase_{action}",
                 cancel_movement=cancel_movement,
+                card=CARD_MASSAGE if "massage" in action else CARD_UTILITY,
             )
             for action, icon, value, cancel_movement in actions
         )
@@ -249,15 +252,6 @@ class CoolBaseController(BedController):
             ControllerStateSensorSpec(
                 "coolbase_massage_mode", "coolbase_massage_mode", STATE_MASSAGE_MODE, "mdi:sine-wave"
             ),
-        )
-
-    @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        """Drop Cool Base state sensors if the entry resolves to the DewertOKIN profile."""
-        if not self._dewert_okin_profile:
-            return frozenset()
-        return frozenset(
-            {"coolbase_left_fan_level", "coolbase_right_fan_level", "coolbase_massage_mode"}
         )
 
     @property
@@ -668,3 +662,12 @@ class CoolBaseController(BedController):
     def massage_level(self) -> int | None:
         """Get the last reported massage mode (0-3)."""
         return self._massage_level
+
+
+async def build_controller(ctx: BuildContext) -> CoolBaseController:
+    """Build the controller, picking the DewertOkin profile from name or manufacturer."""
+    dewert_okin_profile = (ctx.device_name or "").lower().startswith(("okin-ble", "btcb")) or (
+        (ctx.ble_manufacturer or "").strip().lower() == "dewertokin"
+    )
+    _LOGGER.debug("Using Cool Base controller (dewert_okin_profile=%s)", dewert_okin_profile)
+    return CoolBaseController(ctx.coordinator, dewert_okin_profile=dewert_okin_profile)

@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 from homeassistant.util import dt as dt_util
 
+from ..card import CARD_MASSAGE, CARD_UTILITY
 from ..controller_state import StateKey
 from ..execution import ExecutionCapabilities
 from ..profiles.okin_nframe import ESHINE_PROFILES, ESHINE_REFRESH_MS
@@ -22,6 +23,7 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
+from .builder import BuildContext
 from .eshine_okin_protocol import (
     ALARM_TYPES,
     COMMANDS,
@@ -237,6 +239,7 @@ class EshineOkinController(BedController):
                 _action(key),
                 translation_key=f"eshine_okin_{key}",
                 hold=ControllerHoldSpec(key) if key in HELD else None,
+                card=CARD_MASSAGE if key.startswith("massage_") else CARD_UTILITY,
             )
             for key, name in labels.items()
         )
@@ -250,13 +253,10 @@ class EshineOkinController(BedController):
                 _group_key(group),
                 "mdi:alarm" if group == "alarm" else "mdi:vibrate",
                 attribute_keys=(_group_data_key(group),),
+                card=CARD_MASSAGE if group == "massage" else CARD_UTILITY,
             )
             for group in (("massage", "alarm") if self.supports_massage else ("alarm",))
         )
-
-    @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        return frozenset() if self.supports_massage else frozenset({"eshine_okin_massage"})
 
     def invalidate_diagnostics(self) -> None:
         self._observed.clear()
@@ -617,3 +617,8 @@ class EshineOkinController(BedController):
 
     async def massage_mode_step(self) -> None:
         await self.execute_action("massage_wave")
+
+
+async def build_controller(ctx: BuildContext) -> EshineOkinController:
+    """Build the controller for the selected profile."""
+    return EshineOkinController(ctx.coordinator, profile=ctx.variant or "")

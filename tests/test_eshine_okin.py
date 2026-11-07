@@ -12,6 +12,8 @@ import pytest
 from bleak.exc import BleakError
 
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
+from custom_components.adjustable_bed.bed_traits import bed_traits
+from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.beds.eshine_okin import EshineOkinController
 from custom_components.adjustable_bed.beds.eshine_okin_protocol import (
     COMMANDS,
@@ -25,7 +27,6 @@ from custom_components.adjustable_bed.beds.eshine_okin_protocol import (
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_ESHINE_OKIN,
-    BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
@@ -135,7 +136,7 @@ def test_explicit_profiles_and_entity_contracts(profile):
     options = get_bed_type_options()
     assert any("eShine" in name and "E2000" in name for name in (o["label"] for o in options))
     assert get_variants_for_bed_type(BED_TYPE_ESHINE_OKIN) == ESHINE_OKIN_PROFILES
-    assert BED_TYPE_ESHINE_OKIN in BEDS_WITHOUT_ANGLE_FEEDBACK
+    assert bed_traits(BED_TYPE_ESHINE_OKIN).no_angle_feedback
     assert {s.key for s in ctrl.motor_control_specs} == (
         {"head", "feet", "pillow"} if profile == "eshine_e5000" else {"head", "feet"}
     )
@@ -449,7 +450,9 @@ async def test_alarm_service_validation_and_serialized_execution(hass, ha_target
     await hass.services.async_call(DOMAIN, "eshine_set_alarm", data, blocking=True)
     coordinator.async_execute_controller_command.assert_awaited_once()
     command = coordinator.async_execute_controller_command.await_args.args[0]
-    controller = MagicMock(sync_clock=AsyncMock(), configure_clock_alarm=AsyncMock())
+    controller = MagicMock(
+        spec=EshineOkinController, sync_clock=AsyncMock(), configure_clock_alarm=AsyncMock()
+    )
     await command(controller)
     controller.sync_clock.assert_awaited_once()
     controller.configure_clock_alarm.assert_awaited_once_with(
@@ -467,7 +470,8 @@ async def test_alarm_service_validation_and_serialized_execution(hass, ha_target
     with pytest.raises(ServiceValidationError, match="does not expose"):
         await hass.services.async_call(DOMAIN, "eshine_set_alarm", data, blocking=True)
     coordinator._bed_type = "eshine"  # E6000 is a different app, despite shared branding.
-    with pytest.raises(ServiceValidationError, match="Choose an eShine"):
+    coordinator._controller = MagicMock(spec=BedController, requires_disconnected_transport=False)
+    with pytest.raises(ServiceValidationError, match="does not support eShine alarms"):
         await hass.services.async_call(DOMAIN, "eshine_set_alarm", data, blocking=True)
     coordinator.async_execute_controller_command.assert_not_awaited()
 
@@ -692,37 +696,17 @@ async def test_reported_light_drives_enabled_entity_and_safe_desired_state(
         await entity.async_will_remove_from_hass()
 
 
-async def test_profile_change_removes_obsolete_actions_and_retains_sibling_registry(
-    hass, ha_target
-):
-    from homeassistant.helpers import entity_registry as er
-
+async def test_profile_change_drops_obsolete_actions(hass, ha_target):
     from custom_components.adjustable_bed.button import _button_entities_for
-    from custom_components.adjustable_bed.const import DOMAIN
 
     coordinator, _ = ha_target
-    registry = er.async_get(hass)
     old_keys = [spec.key for spec in coordinator._controller.controller_button_specs]
-    old = {
-        key: registry.async_get_or_create(
-            "button",
-            DOMAIN,
-            coordinator.entity_unique_id(key),
-            config_entry=coordinator.entry,
-        ).entity_id
-        for key in old_keys
-    }
-    sibling = registry.async_get_or_create(
-        "button",
-        DOMAIN,
-        "other_address_eshine_okin_massage_on",
-        config_entry=coordinator.entry,
-    )
     coordinator._controller = EshineOkinController(coordinator, profile="eshine_e2000")
-    _button_entities_for(hass, coordinator)
-    for key, entity_id in old.items():
-        assert (registry.async_get(entity_id) is None) == key.startswith("eshine_okin_massage_")
-    assert registry.async_get(sibling.entity_id) is not None
+    built = {entity.unique_id for entity in _button_entities_for(hass, coordinator)}
+    for key in old_keys:
+        assert (coordinator.entity_unique_id(key) not in built) == key.startswith(
+            "eshine_okin_massage_"
+        )
 
 
 async def test_motor_covers_publish_controller_owned_hold_metadata(hass, ha_target):

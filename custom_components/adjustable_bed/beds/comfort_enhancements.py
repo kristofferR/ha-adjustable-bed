@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, cast
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
+from ..card import CARD_MASSAGE, CARD_PRESETS, CardPlacement
 from ..codec import keeson as codec
 from ..const import (
     COMFORT_ENHANCEMENTS_VARIANTS,
@@ -22,6 +23,7 @@ from ..const import (
 from ..profiles import keeson as keeson_profiles
 from ..state_keys import MASSAGE_TIMER_MINUTES, massage_intensity
 from .base import BedController, ControllerButtonSpec, MotorCommandCallable, MotorControlSpec
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -215,10 +217,6 @@ class ComfortEnhancementsController(BedController):
             )
             for axis in self._axes
         )
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset({"back", "legs", "both", "lumbar", "bed_height"})
 
     async def move_back_up(self) -> None:
         await self._move("back", True)
@@ -498,14 +496,17 @@ class ComfortEnhancementsController(BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        def button(key: str, name: str, fn: MotorCommandCallable) -> ControllerButtonSpec:
-            return ControllerButtonSpec(key, name, fn, translation_key=key)
+        def button(
+            key: str, name: str, fn: MotorCommandCallable, card: CardPlacement = CARD_MASSAGE
+        ) -> ControllerButtonSpec:
+            return ControllerButtonSpec(key, name, fn, translation_key=key, card=card)
 
         specs = [
             button(
                 "comfort_enhancements_quiet_sleep",
                 "Quiet sleep",
                 lambda c: cast(ComfortEnhancementsController, c)._preset(4),
+                CARD_PRESETS,
             )
         ]
         if self.supports_massage:
@@ -533,3 +534,8 @@ class ComfortEnhancementsController(BedController):
                 )
             )
         return tuple(specs)
+
+
+async def build_controller(ctx: BuildContext) -> ComfortEnhancementsController:
+    """Build the controller for the selected Comfort Enhancements layout."""
+    return ComfortEnhancementsController(ctx.coordinator, layout=ctx.variant or "")

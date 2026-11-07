@@ -14,6 +14,12 @@ from typing import TYPE_CHECKING, Final
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ..const import (
+    CONF_BLE_DEVICE_NAME,
+    CONF_MOTION_BED_MOVEMENT,
+    CONF_MOTION_BED_PRESET,
+    CONF_MOTION_BED_RESTORED,
+)
 from ..controller_state import StateKey
 from ..motion_bed_actions import ACTION_BY_KEY, MOTION_BED_ACTIONS, MotionBedAction
 from ..motion_bed_models import MotionBedSelection
@@ -35,7 +41,9 @@ from .base import (
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
+    require_controller,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -53,6 +61,15 @@ _MODULE_OWNERS: Mapping[str, str] = {
     "QinangFragment": "air", "AnmoSetActivity": "air", "PressSetActivity": "air",
     "LengnuanFragment": "thermal",
 }
+# Every screen a hub can show, whichever modules it reports.
+_HUB_OWNERS: frozenset[str] = frozenset(
+    {
+        "Setting2Activity", "MainMcuActivity", "ChangeDeviceActivity", "ConnectMcuActivity",
+        "DiandongFragment", "DianDongSetActivity", "AlarmActivity",
+        "QinangFragment", "AnmoSetActivity", "PressSetActivity",
+        "LengnuanFragment", "TimeSettingActivity",
+    }
+)
 # Entity identities follow a control's function, not the app screen hosting it.
 _SCREEN_PREFIX = re.compile(
     r"(?:kuaijie_k\w+?fragment|weitiao_w\w+?fragment|setting2activity|\w+?_(?:activity|fragment))_"
@@ -113,7 +130,9 @@ def button_actions_for(owners: frozenset[str]) -> Mapping[str, MotionBedAction]:
 
 def _action_callback(key: str) -> MotorCommandCallable:
     async def invoke(controller: BedController) -> None:
-        await controller.async_execute_motion_bed_action(key)
+        await require_controller(controller, MotionBedController).async_execute_motion_bed_action(
+            key
+        )
     return invoke
 
 
@@ -260,6 +279,13 @@ class MotionBedController(BedController):
             **self._state.to_updates(),
         }
 
+    @property
+    def retained_entity_keys(self) -> frozenset[tuple[str, str]]:
+        # A hub reports its modules after connecting; keep each module's controls.
+        if self.selection.surface != "hub":
+            return frozenset()
+        return frozenset(("button", key) for key in button_actions_for(_HUB_OWNERS))
+
     def _active_owners(self) -> frozenset[str]:
         owners: set[str] = {"Setting2Activity"}
         if self.selection.surface == "home":
@@ -333,7 +359,7 @@ class MotionBedController(BedController):
         if self.selection.surface != "hub":
             return ()
         async def select(controller: BedController, value: str) -> None:
-            await controller.set_motion_bed_surface(value)
+            await require_controller(controller, MotionBedController).set_motion_bed_surface(value)
         return (ControllerSelectSpec("motion_bed_active_module", "motion_bed_active_module",
                                      ACTIVE_MODULE, ("motor", "air", "thermal"), select),)
 
@@ -620,7 +646,7 @@ class MotionBedController(BedController):
         }[effect.action]
         async def execute(controller: BedController) -> None:
             if controller is self and current():
-                await controller.async_execute_motion_bed_internal_query(key)
+                await self.async_execute_motion_bed_internal_query(key)
         await self._coordinator.async_execute_controller_query(execute, cancel_running=False, skip_disconnect=True,
                                                                      run_if=current)
 
@@ -935,3 +961,19 @@ class MotionBedController(BedController):
     async def preset_flat(self) -> None: raise NotImplementedError("Use the app-labelled flat action")
     async def preset_memory(self, memory_num: int) -> None: raise NotImplementedError("Use the app-labelled memory action")
     async def program_memory(self, memory_num: int) -> None: raise NotImplementedError("Use confirmed Motion Bed programming")
+
+
+async def build_controller(ctx: BuildContext) -> MotionBedController:
+    """Build the controller for the stored or name-selected model."""
+    from homeassistant.const import CONF_NAME
+
+    from ..motion_bed_models import select_motion_bed
+
+    data = ctx.data
+    selection = select_motion_bed(
+        data.get(CONF_BLE_DEVICE_NAME, data.get(CONF_NAME, "")),
+        restored=data.get(CONF_MOTION_BED_RESTORED, False),
+        preset_override=data.get(CONF_MOTION_BED_PRESET),
+        movement_override=data.get(CONF_MOTION_BED_MOVEMENT),
+    )
+    return MotionBedController(ctx.coordinator, selection=selection)

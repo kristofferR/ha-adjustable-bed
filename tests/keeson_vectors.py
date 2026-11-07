@@ -7,10 +7,10 @@ their vectors are every frame the pre-v5 controller could send (bed type
 the Base and Ergomotion Left/Right side frames.
 JSON/A00A frames use the device identifier ``Bed``.
 
-The cluster033 apps (``tempur_curve`` ... ``tempur_au``) list every frame their
-accepted report spells, from ``tests/fixtures/cluster033/vectors.json``, that the
+The Keeson layout apps (``tempur_curve`` ... ``tempur_au``) list every frame their
+accepted report spells, from ``tests/fixtures/keeson_layout_app/vectors.json``, that the
 codec encodes. Their alarm tables (``alarm_table.py``) are checked against the same
-fixture in ``tests/test_cluster033.py``. Where a report lists a key in its action
+fixture in ``tests/test_keeson_layout_app.py``. Where a report lists a key in its action
 table without spelling the frame, the frame the pre-v5 controller sent is added.
 The E6 controllers (Glideaway Motion, AdjustaMattress) do the same
 with their reports; Malouf legacy OKIN, Sleepy's BOX15 and Scott Living have no

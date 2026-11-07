@@ -9,13 +9,26 @@ from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import EntityCategory
+from homeassistant.const import EntityCategory, Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import UndefinedType
 
 from .beds.base import CONTROLLER_GESTURE_RELEASE, ProductButtonSpec
+from .card import (
+    CARD_HIDDEN,
+    CARD_LIGHT_TOGGLE,
+    CARD_MASSAGE,
+    CARD_PRESETS,
+    CARD_STOP,
+    CARD_UTILITY,
+    CardPlacement,
+    CardRole,
+    CardSection,
+    memory_card,
+    motor_card,
+)
 from .const import (
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_MOTION_BED,
@@ -26,9 +39,10 @@ from .const import (
     SIDE_BOTH,
 )
 from .controller_state import ControllerState
-from .entity import AdjustableBedEntity, RenamesInPlace, hold_lease_attributes
+from .entity import AdjustableBedEntity, PlacedInCard, RenamesInPlace, hold_lease_attributes
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime, controller_side_scope
+from .entity_sweep import PlatformEntities, records_entities
 from .limoss_remote_state import LIMOSS_REMOTE_MEMORY_NAMES
 from .octo_runtime import octo_controller
 from .paired_coordinator import (
@@ -78,6 +92,17 @@ class AdjustableBedButtonEntityDescription(ButtonEntityDescription):
     memory_slot: int | None = None
     # Whether this is a memory programming button (requires supports_memory_programming)
     is_program_button: bool = False
+    # Memory and massage buttons are placed by memory_slot and requires_massage.
+    card: CardPlacement = CARD_UTILITY
+
+
+def _button_card(description: AdjustableBedButtonEntityDescription) -> CardPlacement:
+    """Return where a described button sits in the card."""
+    if description.memory_slot is not None:
+        return memory_card(description.memory_slot, save=description.is_program_button)
+    if description.requires_massage:
+        return CARD_MASSAGE
+    return description.card
 
 
 BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
@@ -157,6 +182,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="preset_flat",
         translation_key="preset_flat",
+        card=CARD_PRESETS,
         icon="mdi:bed",
         press_fn=lambda ctrl: ctrl.preset_flat(),
         cancel_movement=True,
@@ -165,6 +191,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="preset_zero_g",
         translation_key="preset_zero_g",
+        card=CARD_PRESETS,
         icon="mdi:rocket-launch",
         press_fn=lambda ctrl: ctrl.preset_zero_g(),
         cancel_movement=True,
@@ -173,6 +200,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="preset_anti_snore",
         translation_key="preset_anti_snore",
+        card=CARD_PRESETS,
         icon="mdi:sleep-off",
         press_fn=lambda ctrl: ctrl.preset_anti_snore(),
         cancel_movement=True,
@@ -181,6 +209,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="preset_tv",
         translation_key="preset_tv",
+        card=CARD_PRESETS,
         icon="mdi:television",
         press_fn=lambda ctrl: ctrl.preset_tv(),
         cancel_movement=True,
@@ -189,6 +218,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="preset_lounge",
         translation_key="preset_lounge",
+        card=CARD_PRESETS,
         icon="mdi:seat-recline-normal",
         press_fn=lambda ctrl: ctrl.preset_lounge(),
         cancel_movement=True,
@@ -197,6 +227,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="preset_reading",
         translation_key="preset_reading",
+        card=CARD_PRESETS,
         icon="mdi:book-open-page-variant",
         press_fn=lambda ctrl: ctrl.preset_reading(),
         cancel_movement=True,
@@ -205,6 +236,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="preset_swing",
         translation_key="preset_swing",
+        card=CARD_PRESETS,
         icon="mdi:bed-clock",
         press_fn=lambda ctrl: ctrl.preset_swing(),
         cancel_movement=True,
@@ -213,6 +245,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="preset_incline",
         translation_key="preset_incline",
+        card=CARD_PRESETS,
         icon="mdi:angle-acute",
         press_fn=lambda ctrl: ctrl.preset_incline(),
         cancel_movement=True,
@@ -221,6 +254,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="preset_both_up",
         translation_key="preset_both_up",
+        card=CARD_PRESETS,
         icon="mdi:arrow-up-bold",
         press_fn=lambda ctrl: ctrl.preset_both_up(),
         cancel_movement=True,
@@ -229,6 +263,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="preset_yoga",
         translation_key="preset_yoga",
+        card=CARD_PRESETS,
         icon="mdi:yoga",
         press_fn=lambda ctrl: ctrl.preset_yoga(),
         cancel_movement=True,
@@ -237,6 +272,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="preset_relaxing_bedtime",
         translation_key="preset_relaxing_bedtime",
+        card=CARD_PRESETS,
         icon="mdi:weather-night",
         press_fn=lambda ctrl: ctrl.preset_relaxing_bedtime(),
         cancel_movement=True,
@@ -348,6 +384,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="control_mode_press_and_hold",
         translation_key="control_mode_press_and_hold",
+        card=CARD_HIDDEN,
         icon="mdi:gesture-tap-hold",
         entity_category=EntityCategory.CONFIG,
         press_fn=lambda ctrl: ctrl.set_control_mode_press_and_hold(),
@@ -357,6 +394,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="control_mode_press_and_release",
         translation_key="control_mode_press_and_release",
+        card=CARD_HIDDEN,
         icon="mdi:gesture-tap",
         entity_category=EntityCategory.CONFIG,
         press_fn=lambda ctrl: ctrl.set_control_mode_press_and_release(),
@@ -367,6 +405,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="stop",
         translation_key="stop",
+        card=CARD_STOP,
         icon="mdi:stop",
         press_fn=lambda ctrl: ctrl.stop_all(),
         is_supported=lambda c: c.supports_stop_all,
@@ -376,6 +415,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         key="disconnect",
         name=None,
         translation_key="disconnect",
+        card=CardPlacement(CardSection.CONNECTION, CardRole.DISCONNECT),
         icon="mdi:bluetooth-off",
         entity_category=EntityCategory.DIAGNOSTIC,
         is_coordinator_action=True,
@@ -384,6 +424,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         key="connect",
         name=None,
         translation_key="connect",
+        card=CardPlacement(CardSection.CONNECTION, CardRole.CONNECT),
         icon="mdi:bluetooth-connect",
         entity_category=EntityCategory.DIAGNOSTIC,
         is_coordinator_action=True,
@@ -628,6 +669,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="toggle_light",
         translation_key="toggle_light",
+        card=CARD_LIGHT_TOGGLE,
         icon="mdi:lightbulb",
         press_fn=lambda ctrl: ctrl.lights_toggle(),
         is_supported=lambda c: c.supports_light_toggle_control,
@@ -635,6 +677,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="light_cycle",
         translation_key="light_cycle",
+        card=CardPlacement(CardSection.LIGHTING, CardRole.CYCLE),
         icon="mdi:lightbulb-multiple",
         press_fn=lambda ctrl: ctrl.lights_on(),
         is_supported=lambda c: c.supports_light_cycle,
@@ -662,6 +705,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="head_up",
         translation_key="head_up",
+        card=motor_card("head", CardRole.UP),
         icon="mdi:arrow-up",
         press_fn=lambda ctrl: ctrl.move_head_up(),
         cancel_movement=True,
@@ -670,6 +714,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="head_down",
         translation_key="head_down",
+        card=motor_card("head", CardRole.DOWN),
         icon="mdi:arrow-down",
         press_fn=lambda ctrl: ctrl.move_head_down(),
         cancel_movement=True,
@@ -678,6 +723,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="legs_up",
         translation_key="legs_up",
+        card=motor_card("legs", CardRole.UP),
         icon="mdi:arrow-up",
         press_fn=lambda ctrl: ctrl.move_legs_up(),
         cancel_movement=True,
@@ -686,6 +732,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="legs_down",
         translation_key="legs_down",
+        card=motor_card("legs", CardRole.DOWN),
         icon="mdi:arrow-down",
         press_fn=lambda ctrl: ctrl.move_legs_down(),
         cancel_movement=True,
@@ -707,10 +754,11 @@ def _moves_untimed(key: str, *, held: bool = False) -> bool:
     return held or key.startswith("preset_")
 
 
+@records_entities(Platform.BUTTON)
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed button entities."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
@@ -730,7 +778,6 @@ async def async_setup_entry(
         for runtime in entity_runtimes(coordinator):
             if octo_controller(runtime.capability_controller) is not None:
                 async_setup_dynamic_entities(
-                    hass,
                     entry,
                     runtime,
                     async_add_entities,
@@ -750,12 +797,10 @@ async def async_setup_entry(
             # Combined buttons read both children's live capabilities, so pass the
             # raw children (the button itself dispatches via the parent, side=both).
             entities.extend(_combined_button_entities_for(coordinator, children))
-            _async_remove_stale_combined_button_entities(hass, coordinator, children, entities)
             return entities
 
         if any(_has_dynamic_buttons(runtime) for runtime in static_runtimes):
             async_setup_dynamic_entities(
-                hass,
                 entry,
                 static_runtimes[0],
                 async_add_entities,
@@ -774,7 +819,6 @@ async def async_setup_entry(
     for runtime in entity_runtimes(coordinator):
         if _has_dynamic_buttons(runtime):
             async_setup_dynamic_entities(
-                hass,
                 entry,
                 runtime,
                 async_add_entities,
@@ -834,8 +878,7 @@ def _async_follow_motion_bed_module_actions(
 def _button_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> list[ButtonEntity]:
     """Build button entities for a single (child or standalone) coordinator."""
     # capability_controller: an offline paired side still gets its buttons built
-    # from a client-free controller minted from config (see coordinator); stale
-    # cleanup below runs against it too (only when non-None).
+    # from a client-free controller minted from config (see coordinator).
     controller = coordinator.capability_controller
     octo = octo_controller(controller)
     has_massage = _massage_entities_enabled(coordinator, controller)
@@ -849,10 +892,6 @@ def _button_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
 
     if controller is not None:
         _async_migrate_massage_intensity_button_unique_ids(hass, coordinator)
-        # Unresolved capabilities (for example Linak memory slots) are not proof
-        # that a button is gone, so keep existing entities until discovery ends.
-        if controller.controller_entity_discovery_complete:
-            _async_remove_stale_button_entities(hass, coordinator, controller, has_massage)
 
     entities: list[ButtonEntity] = []
     for description in BUTTON_DESCRIPTIONS:
@@ -870,104 +909,7 @@ def _button_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
             for spec in controller.controller_button_specs
             if isinstance(spec, ProductButtonSpec)
         )
-        desired = {coordinator.entity_unique_id(f"product_action_{spec.key}") for spec in specs}
-        prefix, suffix = coordinator.entity_unique_id("product_action_").split("product_action_", 1)
-        prefix += "product_action_"
-        registry = er.async_get(hass)
-        for row in list(er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)):
-            if (
-                row.domain == "button"
-                and row.platform == DOMAIN
-                and row.unique_id.startswith(prefix)
-                and row.unique_id.endswith(suffix)
-                and row.unique_id not in desired
-            ):
-                registry.async_remove(row.entity_id)
-
-        if octo is not None and octo.controller_entity_discovery_complete:
-            # Memory slots are discovered from the complete CAP_END list. Retire
-            # only this Octo runtime's slot identities, including slots above
-            # the old fixed 1..8 set, and keep child-side suffixes scoped.
-            memory_keys = {
-                spec.key
-                for spec in controller.controller_button_specs
-                if spec.key.startswith(("preset_memory_", "program_memory_"))
-            }
-            for slot_prefix in ("preset_memory_", "program_memory_"):
-                prefix, suffix = coordinator.entity_unique_id(slot_prefix).split(slot_prefix, 1)
-                prefix += slot_prefix
-                desired_memory = {
-                    coordinator.entity_unique_id(key)
-                    for key in memory_keys
-                    if key.startswith(slot_prefix)
-                }
-                for row in list(
-                    er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)
-                ):
-                    if (
-                        row.domain != "button"
-                        or row.platform != DOMAIN
-                        or not row.unique_id.startswith(prefix)
-                        or not row.unique_id.endswith(suffix)
-                    ):
-                        continue
-                    slot = row.unique_id[len(prefix) : len(row.unique_id) - len(suffix)]
-                    if slot.isdecimal() and row.unique_id not in desired_memory:
-                        registry.async_remove(row.entity_id)
         entities.extend(AdjustableBedProductButton(coordinator, spec) for spec in specs)
-        # Named app actions disappear when their profile or transport changes.
-        for namespace in ("octo_", "woosa_", "malouf_", "customatic_", "serenity_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "starcode_", "coolbase_", "remacro_", "fsm_relax_", "simmons_", "tranquil_", "zseries_", "adjustable_lumbar_", "logicdata_app_", "logicdata_air_pump_", "richmat_mh_", "svane_", "motion_bed_", "limoss_remote_", "okin_app_", "restonic_", "ore_comfort_", "innova_", "sleeptracker_", "doublesleep_", "bedsense_", "comfort_enhancements_", "timotion_ahf_", "sleepys_app_", "glideaway_motion_", "eshine_okin_"):
-            desired_actions = {
-                coordinator.entity_unique_id(spec.key)
-                for spec in controller.controller_button_specs
-                if spec.key.startswith(namespace)
-            }
-            if (
-                namespace == "motion_bed_"
-                and controller.supports_motion_bed_actions
-                and any(
-                    spec.key == "motion_bed_active_module"
-                    for spec in controller.controller_select_specs
-                )
-            ):
-                from .beds.motion_bed import button_actions_for
-
-                # Keep possible hub identities while inventory is unknown, but
-                # retire controls that only belong to the former home profile.
-                owners = frozenset(
-                    {
-                        "Setting2Activity",
-                        "MainMcuActivity",
-                        "ChangeDeviceActivity",
-                        "ConnectMcuActivity",
-                        "DiandongFragment",
-                        "DianDongSetActivity",
-                        "AlarmActivity",
-                        "QinangFragment",
-                        "AnmoSetActivity",
-                        "PressSetActivity",
-                        "LengnuanFragment",
-                        "TimeSettingActivity",
-                    }
-                )
-                desired_actions.update(
-                    coordinator.entity_unique_id(key) for key in button_actions_for(owners)
-                )
-            action_prefix, action_suffix = coordinator.entity_unique_id(namespace).split(
-                namespace, 1
-            )
-            action_prefix += namespace
-            for row in list(
-                er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)
-            ):
-                if (
-                    row.domain == "button"
-                    and row.platform == DOMAIN
-                    and row.unique_id.startswith(action_prefix)
-                    and row.unique_id.endswith(action_suffix)
-                    and row.unique_id not in desired_actions
-                ):
-                    registry.async_remove(row.entity_id)
         entities.extend(
             ControllerActionButton(coordinator, spec)
             for spec in controller.controller_button_specs
@@ -1188,53 +1130,6 @@ def _button_translation_key(
     return description.translation_key or description.key
 
 
-def _async_remove_stale_button_entities(
-    hass: HomeAssistant,
-    coordinator: EntityRuntime,
-    controller: BedController,
-    has_massage: bool,
-) -> None:
-    """Remove button entities that are no longer supported for this controller."""
-    registry = er.async_get(hass)
-    for description in BUTTON_DESCRIPTIONS:
-        if _should_add_button(description, controller, has_massage):
-            continue
-
-        entity_id = registry.async_get_entity_id(
-            "button",
-            DOMAIN,
-            coordinator.entity_unique_id(description.key),
-        )
-        if entity_id is not None:
-            registry.async_remove(entity_id)
-
-
-def _async_remove_stale_combined_button_entities(
-    hass: HomeAssistant,
-    coordinator: PairedBedCoordinator,
-    children: Sequence[EntityRuntime],
-    entities: list[ButtonEntity],
-) -> None:
-    """Remove pair-level controls no longer supported by both known sides."""
-    # A side whose capabilities are still unknown may yet support them.
-    if any(child.capability_controller is None for child in children):
-        return
-
-    desired_unique_ids = {
-        unique_id
-        for entity in entities
-        if (unique_id := entity.unique_id) is not None and unique_id.endswith("_both")
-    }
-    registry = er.async_get(hass)
-    for row in list(er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)):
-        if (
-            row.domain == "button"
-            and row.unique_id.endswith("_both")
-            and row.unique_id not in desired_unique_ids
-        ):
-            registry.async_remove(row.entity_id)
-
-
 def _discovered_memory_slot_name(
     coordinator: EntityRuntime,
     description: AdjustableBedButtonEntityDescription,
@@ -1260,10 +1155,10 @@ class AdjustableBedProductButton(AdjustableBedEntity, ButtonEntity):
     """An extra action from the exact selected product's command catalog."""
 
     def __init__(self, coordinator: EntityRuntime, spec: ProductButtonSpec) -> None:
-        super().__init__(coordinator)
+        super().__init__(coordinator, spec.card)
         self._spec = spec
         self._attr_unique_id = coordinator.entity_unique_id(f"product_action_{spec.key}")
-        self._attr_translation_key = coordinator.entity_translation_key("product_action")
+        self._attr_translation_key = "product_action"
         self._attr_translation_placeholders = {"action": spec.name}
         self._attr_icon = spec.icon
         self._attr_entity_registry_enabled_default = spec.entity_registry_enabled_default
@@ -1328,14 +1223,14 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
         description: AdjustableBedButtonEntityDescription,
     ) -> None:
         """Initialize the button."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, _button_card(description))
         self.entity_description = description
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         translation_key = _button_translation_key(
             description,
             (coordinator,),
         )
-        self._attr_translation_key = coordinator.entity_translation_key(translation_key)
+        self._attr_translation_key = translation_key
 
         # Beds that name their memory slots (Octo CAP_MEMINFO reports e.g.
         # Zero-G or Anti-Snore) are far more useful with that name than with
@@ -1423,7 +1318,7 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
     _attr_translation_key = "remote_action"
 
     def __init__(self, coordinator: EntityRuntime, spec: ControllerButtonSpec) -> None:
-        super().__init__(coordinator)
+        super().__init__(coordinator, spec.card)
         self._spec = spec
         self._attr_unique_id = coordinator.entity_unique_id(spec.key)
         self._attr_icon = spec.icon
@@ -1434,7 +1329,7 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
         ):
             self._attr_name = spec.name
         if spec.translation_key is not None:
-            self._attr_translation_key = coordinator.entity_translation_key(spec.translation_key)
+            self._attr_translation_key = spec.translation_key
             if spec.translation_placeholders is not None:
                 self._attr_translation_placeholders = dict(spec.translation_placeholders)
 
@@ -1536,7 +1431,7 @@ def _paired_entity_unique_id(coordinator: PairedBedCoordinator, key: str) -> str
     return f"{coordinator.pair_id}_{key}"
 
 
-class PairedBedStopButton(RenamesInPlace, ButtonEntity):
+class PairedBedStopButton(RenamesInPlace, PlacedInCard, ButtonEntity):
     """Combined STOP for a paired bed.
 
     Lives on the synthetic parent device and stops BOTH sides with the resilient
@@ -1551,6 +1446,7 @@ class PairedBedStopButton(RenamesInPlace, ButtonEntity):
         self._coordinator = coordinator
         self._attr_unique_id = _paired_entity_unique_id(coordinator, "stop_both")
         self._attr_device_info = coordinator.device_info
+        self._card = CARD_STOP
         if isinstance(coordinator, SingleAddressPairedCoordinator):
             self._attr_extra_state_attributes = {"bed_side": SIDE_BOTH}
 
@@ -1565,7 +1461,7 @@ class PairedBedStopButton(RenamesInPlace, ButtonEntity):
         await self._coordinator.async_stop_command(side=SIDE_BOTH)
 
 
-class PairedBedCombinedButton(RenamesInPlace, ButtonEntity):
+class PairedBedCombinedButton(RenamesInPlace, PlacedInCard, ButtonEntity):
     """A 'both sides' movement/preset button on the paired parent device.
 
     Reuses the per-side button's translation_key (the parent device name keeps it
@@ -1583,17 +1479,13 @@ class PairedBedCombinedButton(RenamesInPlace, ButtonEntity):
         """Initialize the combined button."""
         self._coordinator = coordinator
         self.entity_description = description
-        base_translation_key = _button_translation_key(
+        self._attr_translation_key = _button_translation_key(
             description,
             coordinator.children.values(),
         )
-        self._attr_translation_key = (
-            f"{base_translation_key}_both"
-            if isinstance(coordinator, SingleAddressPairedCoordinator)
-            else base_translation_key
-        )
         self._attr_unique_id = _paired_entity_unique_id(coordinator, f"{description.key}_both")
         self._attr_device_info = coordinator.device_info
+        self._card = _button_card(description)
         if isinstance(coordinator, SingleAddressPairedCoordinator):
             self._attr_extra_state_attributes = {"bed_side": SIDE_BOTH}
 
@@ -1677,7 +1569,7 @@ class PairedBedCombinedButton(RenamesInPlace, ButtonEntity):
         return attributes
 
 
-class PairedBedCombinedMotorButton(RenamesInPlace, ButtonEntity):
+class PairedBedCombinedMotorButton(RenamesInPlace, PlacedInCard, ButtonEntity):
     """A 'move both sides' up/down motion button on the paired parent device.
 
     Cover-based pairs (Linak etc.) have no discrete motor buttons and no combined
@@ -1706,14 +1598,12 @@ class PairedBedCombinedMotorButton(RenamesInPlace, ButtonEntity):
         self._resource = spec.scheduler_resource or f"motor:{spec.position_key or spec.key}"
         # Translation key from spec.translation_key (preserves controller-specific
         # label overrides); unique_id stays on the stable spec.key.
-        base_translation_key = f"{spec.translation_key}_{direction}"
-        self._attr_translation_key = (
-            f"{base_translation_key}_both"
-            if isinstance(coordinator, SingleAddressPairedCoordinator)
-            else base_translation_key
-        )
+        self._attr_translation_key = f"{spec.translation_key}_{direction}"
         self._attr_unique_id = _paired_entity_unique_id(coordinator, f"{spec.key}_{direction}_both")
         self._attr_device_info = coordinator.device_info
+        self._card = motor_card(
+            spec.translation_key, CardRole.UP if direction == "up" else CardRole.DOWN
+        )
         self._attr_extra_state_attributes = (
             {"bed_side": SIDE_BOTH}
             if isinstance(coordinator, SingleAddressPairedCoordinator)

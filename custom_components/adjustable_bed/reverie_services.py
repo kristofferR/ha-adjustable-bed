@@ -6,7 +6,7 @@ import asyncio
 import contextlib
 from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Protocol, cast
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 import voluptuous as vol
@@ -15,11 +15,16 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .beds.reverie_comfort import ReverieComfortRequest
+from .beds.base import BedController, controller_as, require_controller
+from .beds.reverie_comfort import (
+    PairlinkComfortActions,
+    ReverieComfortActions,
+    ReverieComfortRequest,
+    RoutineSteps,
+)
 from .command_scheduler import CommandHandle, PreparedCommandInvalidated
 from .const import (
     BED_TYPE_REVERIE,
-    BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
     DOMAIN,
     PAIR_CONNECTION_MODE_SEQUENTIAL,
@@ -51,51 +56,6 @@ SERVICE_REVERIE_SET_COMFORT = "reverie_set_comfort"
 SERVICE_REVERIE_PAIRLINK_ALARM_COMFORT = "reverie_pairlink_alarm_comfort"
 SERVICE_REVERIE_RUN_ROUTINE = "reverie_run_routine"
 SERVICE_REVERIE_TEST = "reverie_test"
-
-
-class _ReverieComfortController(Protocol):
-    """Typed bed-specific surface used by Reverie direct-action services."""
-
-    def validate_comfort_request(self, request: ReverieComfortRequest) -> None: ...
-
-    async def async_set_comfort(self, request: ReverieComfortRequest) -> None: ...
-
-    def validate_routine(
-        self, steps: list[tuple[ReverieComfortRequest | None, int | None]]
-    ) -> None: ...
-
-    async def async_start_routine(
-        self, steps: list[tuple[ReverieComfortRequest | None, int | None]]
-    ) -> None: ...
-
-    def validate_diagnostic(self) -> None: ...
-
-    async def async_start_diagnostic(self) -> None: ...
-
-
-class _PairlinkComfortController(_ReverieComfortController, Protocol):
-    """Private Pairlink extension used for all-target live comfort planning."""
-
-    def comfort_runtime_identity(self) -> object: ...
-
-    def prepare_comfort(self, request: ReverieComfortRequest) -> PairlinkComfortPlan: ...
-
-    def comfort_plan_is_current(
-        self,
-        request: ReverieComfortRequest,
-        plan: PairlinkComfortPlan,
-    ) -> bool: ...
-
-    async def async_set_comfort(
-        self,
-        request: ReverieComfortRequest,
-        *,
-        prepared_plan: PairlinkComfortPlan | None = None,
-    ) -> None: ...
-
-    async def async_start_diagnostic(self) -> None: ...
-
-    def validate_diagnostic(self) -> None: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -160,16 +120,13 @@ _REVERIE_ALARM_COMFORT_SCHEMA = vol.Schema(
 def _reverie_comfort_controller(
     coordinator: BedChild,
     controller: BedController,
-) -> _ReverieComfortController:
-    if coordinator.bed_type not in (
-        BED_TYPE_REVERIE,
-        BED_TYPE_REVERIE_NIGHTSTAND,
-        BED_TYPE_REVERIE_PAIRLINK,
-    ):
+) -> ReverieComfortActions:
+    reverie = controller_as(controller, ReverieComfortActions)
+    if reverie is None:
         raise ServiceValidationError(
             f"Device '{coordinator.name}' is not a supported Reverie protocol target"
         )
-    return cast(_ReverieComfortController, controller)
+    return reverie
 
 
 async def _prepare_reverie_comfort_target(
@@ -192,10 +149,8 @@ async def _prepare_reverie_comfort_target(
         return
 
     controller = target.controller or target.capability_controller
-    if controller is not None and (
-        getattr(controller, "requires_disconnected_transport", False) is True
-    ):
-        if getattr(controller, "disconnected_transport_ready", False) is not True:
+    if controller is not None and controller.requires_disconnected_transport:
+        if not controller.disconnected_transport_ready:
             raise ServiceValidationError(
                 f"Device '{target.name}' local Pairlink session is not ready"
             )
@@ -212,7 +167,11 @@ async def _prepare_reverie_comfort_target(
         raise ServiceValidationError(
             f"Device '{target.name}' has no active Pairlink controller"
         )
-    pairlink = cast(_PairlinkComfortController, controller)
+    pairlink = controller_as(controller, PairlinkComfortActions)
+    if pairlink is None:
+        raise ServiceValidationError(
+            f"Device '{target.name}' has no active Pairlink controller"
+        )
     try:
         pairlink.validate_comfort_request(request)
         plan = pairlink.prepare_comfort(request)
@@ -284,14 +243,6 @@ async def _execute_prepared_reverie_comfort(
         for target in physical
     ):
         return False
-    if any(
-        callable(getattr(controller, "comfort_runtime_identity", None))
-        and not callable(getattr(controller, "comfort_plan_is_current", None))
-        for target in physical
-        for controller in (target.target.controller or target.target.capability_controller,)
-    ):
-        return False
-
     by_parent: dict[PairedBedCoordinator, set[str]] = {}
     for target in physical:
         if target.parent is not None and target.side is not None:
@@ -330,13 +281,14 @@ async def _execute_prepared_reverie_comfort(
             if invalidated:
                 raise PreparedCommandInvalidated("Comfort request was stopped during preflight")
         for target in physical:
-            controller = target.target.controller or target.target.capability_controller
-            identity = getattr(controller, "comfort_runtime_identity", None)
-            if not callable(identity):
+            pairlink = controller_as(
+                target.target.controller or target.target.capability_controller,
+                PairlinkComfortActions,
+            )
+            if pairlink is None:
                 continue
-            plan = pairlink_plans.get(identity())
-            current = getattr(controller, "comfort_plan_is_current", None)
-            if plan is None or not callable(current) or not current(request, plan):
+            plan = pairlink_plans.get(pairlink.comfort_runtime_identity())
+            if plan is None or not pairlink.comfort_plan_is_current(request, plan):
                 raise ServiceValidationError(
                     f"Device '{target.target.name}' Pairlink comfort state changed during preflight"
                 )
@@ -349,20 +301,16 @@ async def _execute_prepared_reverie_comfort(
             if not dispatch_checked:
                 validate_pairlink_plans()
                 dispatch_checked = True
-            identity = getattr(controller, "comfort_runtime_identity", None)
-            if callable(identity):
-                plan = pairlink_plans.get(identity())
-                current = getattr(controller, "comfort_plan_is_current", None)
-                if plan is None or not callable(current) or not current(request, plan):
+            pairlink = controller_as(controller, PairlinkComfortActions)
+            if pairlink is not None:
+                plan = pairlink_plans.get(pairlink.comfort_runtime_identity())
+                if plan is None or not pairlink.comfort_plan_is_current(request, plan):
                     raise ServiceValidationError(
                         f"Device '{target.target.name}' Pairlink comfort state is no longer current"
                     )
-                await cast(_PairlinkComfortController, controller).async_set_comfort(
-                    request,
-                    prepared_plan=plan,
-                )
+                await pairlink.async_set_comfort(request, prepared_plan=plan)
                 return
-            await cast(_ReverieComfortController, controller).async_set_comfort(request)
+            await require_controller(controller, ReverieComfortActions).async_set_comfort(request)
 
         await target.target.async_execute_controller_command(
             apply,
@@ -525,17 +473,14 @@ async def handle_reverie_set_comfort(call: ServiceCall) -> None:
         raise
 
     async def set_comfort(controller: BedController) -> None:
-        pairlink_identity = getattr(controller, "comfort_runtime_identity", None)
-        if callable(pairlink_identity):
-            plan = pairlink_plans.get(pairlink_identity())
+        pairlink = controller_as(controller, PairlinkComfortActions)
+        if pairlink is not None:
+            plan = pairlink_plans.get(pairlink.comfort_runtime_identity())
             if plan is None:
                 raise ServiceValidationError("Pairlink comfort plan is missing for this target")
-            await cast(_PairlinkComfortController, controller).async_set_comfort(
-                request,
-                prepared_plan=plan,
-            )
+            await pairlink.async_set_comfort(request, prepared_plan=plan)
             return
-        await cast(_ReverieComfortController, controller).async_set_comfort(request)
+        await require_controller(controller, ReverieComfortActions).async_set_comfort(request)
 
     try:
         if pairlink_plans and await _execute_prepared_reverie_comfort(
@@ -607,16 +552,13 @@ async def handle_reverie_pairlink_alarm_comfort(call: ServiceCall) -> None:
         raise
 
     async def send_alarm_comfort(controller: BedController) -> None:
-        pairlink_identity = getattr(controller, "comfort_runtime_identity", None)
-        if not callable(pairlink_identity):
+        pairlink = controller_as(controller, PairlinkComfortActions)
+        if pairlink is None:
             raise ServiceValidationError("Pairlink alarm comfort received a non-Pairlink target")
-        plan = pairlink_plans.get(pairlink_identity())
+        plan = pairlink_plans.get(pairlink.comfort_runtime_identity())
         if plan is None:
             raise ServiceValidationError("Pairlink comfort plan is missing for this target")
-        await cast(_PairlinkComfortController, controller).async_set_comfort(
-            request,
-            prepared_plan=plan,
-        )
+        await pairlink.async_set_comfort(request, prepared_plan=plan)
 
     try:
         if pairlink_plans and await _execute_prepared_reverie_comfort(
@@ -658,7 +600,7 @@ async def handle_reverie_run_routine(call: ServiceCall) -> None:
     """Preflight all routine rows on every target before starting any queue."""
     explicit_side = call.data.get(ATTR_SIDE)
     raw_steps = call.data["steps"]
-    steps: list[tuple[ReverieComfortRequest | None, int | None]] = []
+    steps: RoutineSteps = []
     for item in raw_steps:
         request_data = item.get("comfort")
         request = _reverie_comfort_request(request_data) if request_data is not None else None
@@ -697,7 +639,9 @@ async def handle_reverie_run_routine(call: ServiceCall) -> None:
                 controller: BedController, parent: BedTarget = coordinator
             ) -> None:
                 _validate_reverie_deferred_target(parent, controller)
-                await cast(_ReverieComfortController, controller).async_start_routine(steps)
+                await require_controller(controller, ReverieComfortActions).async_start_routine(
+                    steps
+                )
 
             await _execute_sided(
                 coordinator,
@@ -746,7 +690,9 @@ async def handle_reverie_test(call: ServiceCall) -> None:
                 controller: BedController, parent: BedTarget = coordinator
             ) -> None:
                 _validate_reverie_deferred_target(parent, controller)
-                await cast(_ReverieComfortController, controller).async_start_diagnostic()
+                await require_controller(
+                    controller, ReverieComfortActions
+                ).async_start_diagnostic()
 
             await _execute_sided(
                 coordinator,

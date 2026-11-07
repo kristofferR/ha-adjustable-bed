@@ -76,7 +76,6 @@ async def test_cover_commands_use_physical_position_axis_resource() -> None:
         capability_controller=None,
         entity_side=None,
         device_info={},
-        entity_translation_key=lambda key: key,
         entity_unique_id=lambda key: key,
         name="Test bed",
         async_execute_controller_command=AsyncMock(),
@@ -123,7 +122,6 @@ async def test_pairlink_controller_hold_metadata_reaches_sided_cover_attributes(
         entry=SimpleNamespace(data={}, options={}),
         entity_side="left",
         device_info={},
-        entity_translation_key=lambda key: key,
         entity_unique_id=lambda key: key,
         name="Pairlink left",
         async_execute_controller_command=AsyncMock(),
@@ -165,7 +163,6 @@ def test_controller_hold_metadata_is_exposed_without_changing_other_cover_attrib
         capability_controller=None,
         entity_side="left",
         device_info={},
-        entity_translation_key=lambda key: key,
         entity_unique_id=lambda key: key,
     )
     cover = AdjustableBedCover(coordinator, description)
@@ -185,7 +182,6 @@ def test_cover_without_controller_hold_does_not_publish_hold_metadata() -> None:
         capability_controller=None,
         entity_side=None,
         device_info={},
-        entity_translation_key=lambda key: key,
         entity_unique_id=lambda key: key,
     )
     cover = AdjustableBedCover(

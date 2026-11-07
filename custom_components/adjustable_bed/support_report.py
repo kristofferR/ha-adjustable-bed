@@ -222,20 +222,6 @@ def _get_controller_info(coordinator: BedChild) -> dict[str, Any]:
             }
         )
 
-        # Add variant info for controllers that have it
-        is_wilinke = getattr(controller, "_is_wilinke", None)
-        if is_wilinke is not None:
-            info["richmat_is_wilinke"] = is_wilinke
-        variant = getattr(controller, "_variant", None)
-        if variant is not None:
-            info["variant"] = variant
-        variant_source = getattr(controller, "_variant_source", None)
-        if variant_source is not None:
-            info["variant_source"] = variant_source
-        char_uuid = getattr(controller, "_char_uuid", None)
-        if char_uuid is not None:
-            info["char_uuid"] = char_uuid
-
         # Whatever the connect-time protocol handshake resolved to (capabilities,
         # authentication state, ...). Empty for controllers with no handshake.
         protocol_state = controller.protocol_diagnostics

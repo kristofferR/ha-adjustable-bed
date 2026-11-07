@@ -28,8 +28,8 @@ def test_keeson_routes_match_the_profiles() -> None:
     }
 
 
-def test_keeson_guide_has_a_section_per_cluster033_app() -> None:
-    """Each cluster033 app has a section with its generated key table."""
+def test_keeson_guide_has_a_section_per_keeson_layout_app() -> None:
+    """Each Keeson layout app has a section with its generated key table."""
     text = (Path(__file__).resolve().parents[1] / docs.GUIDE).read_text(encoding="utf-8")
     for app in profiles.APP_LAYOUTS:
         assert f"\n### {docs._c033_heading(app)}\n" in text, app

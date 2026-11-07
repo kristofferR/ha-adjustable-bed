@@ -11,6 +11,7 @@ from math import isfinite
 from time import monotonic
 from typing import TYPE_CHECKING
 
+from ..card import CARD_UTILITY
 from ..codec import motomotion as codec
 from ..codec.motomotion import Position, ascii_command, binary_command, music_command
 from ..const import CONF_BLE_DEVICE_NAME
@@ -27,7 +28,9 @@ from .base import (
     ControllerNumberSpec,
     ControllerSelectSpec,
     ControllerStateSensorSpec,
+    require_controller,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -95,15 +98,17 @@ def select_unpair_characteristic(client: BleakClient) -> BleakGATTCharacteristic
 
 
 async def action(controller: BedController, key: str) -> None:
-    await controller.async_execute_motomotion_action(key)
+    await require_controller(controller, MotoMotionController).async_execute_motomotion_action(key)
 
 
 async def number(controller: BedController, value: float, *, key: str) -> None:
-    await controller.async_set_motomotion_number(key, value)
+    await require_controller(controller, MotoMotionController).async_set_motomotion_number(
+        key, value
+    )
 
 
 async def select(controller: BedController, value: str, *, key: str) -> None:
-    await controller.async_select_motomotion(key, value)
+    await require_controller(controller, MotoMotionController).async_select_motomotion(key, value)
 
 
 class MotoMotionController(BedController):
@@ -1148,6 +1153,7 @@ class MotoMotionController(BedController):
                         "massage",
                     )
                 ),
+                card=CARD_UTILITY,
             ),
         )
 
@@ -1162,6 +1168,7 @@ class MotoMotionController(BedController):
                 f"motomotion_{kind}_{side}",
                 _field_key(f"{kind}_{side}"),
                 "mdi:seat",
+                card=CARD_UTILITY,
             )
             for side in sides
             for kind in ("heat", "massage")
@@ -1253,3 +1260,12 @@ class MotoMotionController(BedController):
             )
         self._coordinator.save_app_state(self)
         self._publish()
+
+
+async def build_controller(ctx: BuildContext) -> MotoMotionController:
+    """Build the controller from the live name and advertisement."""
+    return MotoMotionController(
+        ctx.coordinator,
+        device_name=ctx.live_device_name,
+        manufacturer_data=ctx.manufacturer_data,
+    )

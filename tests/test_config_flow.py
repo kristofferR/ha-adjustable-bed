@@ -30,6 +30,7 @@ from probatio import to_field_list
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.address_lock import async_get_connect_lock
+from custom_components.adjustable_bed.bed_traits import bed_traits
 from custom_components.adjustable_bed.bluetooth_bond import (
     BluezReadStatus,
     BondRemovalResult,
@@ -96,8 +97,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SUTA,
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_VIBRADORM,
-    BEDS_WITH_POSITION_FEEDBACK,
-    BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ATTEMPTED_SOURCE,
@@ -478,8 +477,8 @@ class TestPairingInstructions:
         assert _is_valid_motor_count(BED_TYPE_OKIN_CST, "auto", 3)
         assert not _is_valid_motor_count(BED_TYPE_OKIN_CST, "auto", 2)
         assert not _is_valid_motor_count(BED_TYPE_OKIN_CST, "auto", 4)
-        assert BED_TYPE_OKIN_CST not in BEDS_WITH_POSITION_FEEDBACK
-        assert BED_TYPE_OKIN_CST in BEDS_WITHOUT_ANGLE_FEEDBACK
+        assert not bed_traits(BED_TYPE_OKIN_CST).position_feedback
+        assert bed_traits(BED_TYPE_OKIN_CST).no_angle_feedback
 
     async def test_okin_cst_product_profiles_constrain_motor_count(self) -> None:
         """CST profile selection must not expose absent lumbar controls."""
@@ -1755,6 +1754,9 @@ class TestBluetoothDiscoveryFlow:
 
     def test_disconnect_after_command_default_per_bed_type(self):
         """Beds that must hold the link open keep the option off; others get it on."""
+        from custom_components.adjustable_bed.bed_traits import (
+            disconnect_after_command_default_enabled,
+        )
         from custom_components.adjustable_bed.const import (
             BED_TYPE_COMFORT_MOTION,
             BED_TYPE_JENSEN,
@@ -1783,7 +1785,6 @@ class TestBluetoothDiscoveryFlow:
             KEESON_VARIANT_SINO,
             LEGGETT_VARIANT_MLRM,
             VARIANT_AUTO,
-            disconnect_after_command_default_enabled,
         )
 
         assert disconnect_after_command_default_enabled(BED_TYPE_LINAK, VARIANT_AUTO) is True
@@ -3356,7 +3357,7 @@ class TestOptionsFlow:
         assert rebuilt["type"] == FlowResultType.FORM
         markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
         assert markers[CONF_PROTOCOL_VARIANT].default() == requested_variant
-        assert markers[CONF_MOTOR_COUNT].default() == str(expected_count)
+        assert markers[CONF_MOTOR_COUNT].default() == expected_count
 
     async def test_richmat_options_can_replace_detected_qrrm_with_lp_profile(
         self,
@@ -3523,7 +3524,7 @@ class TestOptionsFlow:
         initial = await _open_options_form(hass, entry.entry_id)
         markers = {marker.schema: marker for marker in initial["data_schema"].schema}
 
-        assert markers[CONF_MOTOR_COUNT].default() == "4"
+        assert markers[CONF_MOTOR_COUNT].default() == 4
         assert CONF_DISABLE_ANGLE_SENSING not in markers
         assert CONF_POSITION_MODE not in markers
         assert CONF_BACK_MAX_ANGLE not in markers
@@ -3661,7 +3662,7 @@ class TestOptionsFlow:
         )
 
         rebuilt_markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
-        assert rebuilt_markers[CONF_MOTOR_COUNT].default() == "2"
+        assert rebuilt_markers[CONF_MOTOR_COUNT].default() == 2
         assert rebuilt_markers[CONF_DISABLE_ANGLE_SENSING].default() is False
         assert rebuilt_markers[CONF_PROTOCOL_VARIANT].default() == VARIANT_AUTO
         assert CONF_OCTO_PIN not in rebuilt_markers
@@ -3951,7 +3952,7 @@ class TestOptionsFlow:
             step_id="settings",
         )
         markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
-        assert markers[CONF_MOTOR_COUNT].default() == str(expected_count)
+        assert markers[CONF_MOTOR_COUNT].default() == expected_count
         saved = await flow._async_options_form(
             {
                 CONF_BED_TYPE: bed_type,

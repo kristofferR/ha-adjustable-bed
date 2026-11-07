@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import type { TemplateResult } from "lit";
 import { deviceName, entityLabel } from "./names";
 import type { EntityNameItem, HassEntity, HomeAssistant } from "./types";
+import { placed } from "./test-placements";
 
 const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
 Object.defineProperty(globalThis, "window", {
@@ -15,7 +16,7 @@ else Reflect.deleteProperty(globalThis, "window");
 // HA's formatter for one `{ type: "entity" }` item: the entity's own name, or
 // its device's name when it has none. The friendly name is never consulted.
 function fixture(): HomeAssistant {
-  const hass: HomeAssistant = {
+  const hass: HomeAssistant = placed({
     states: {}, entities: {}, devices: {
       bed: { id: "bed", name: "Bedroom bed" },
       pair: { id: "pair", name: "Bed" },
@@ -29,7 +30,7 @@ function fixture(): HomeAssistant {
       return entry?.name || deviceName(hass, entry?.device_id) || "";
     },
     callService: async () => undefined,
-  };
+  });
   return hass;
 }
 

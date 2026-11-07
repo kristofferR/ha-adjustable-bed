@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -21,7 +20,8 @@ from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinato
 
 
 def target():
-    ctrl = SimpleNamespace(
+    ctrl = MagicMock(
+        spec=CasperBaseController,
         supports_casper_base_controls=True,
         validate_casper_base_request=MagicMock(),
         async_execute_casper_base_request=AsyncMock(),

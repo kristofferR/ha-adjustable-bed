@@ -24,6 +24,7 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ..codec import okin_5a as star
+from ..codec.ff_frame import with_crc
 from ..const import (
     NORDIC_UART_READ_CHAR_UUID,
     NORDIC_UART_WRITE_CHAR_UUID,
@@ -46,6 +47,7 @@ from .base import (
     MotorControlSpec,
     PositionNumberSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -175,30 +177,14 @@ def build_daily_report_query(*, side: int, year: int, month: int, day: int) -> b
     return bytes([0x2A, 0, 0, 7, 0x84 if side == 0 else 0x85, 3, year - 2000, month, day])
 
 
-def crc16_modbus(data: bytes) -> int:
-    """Return the CRC-16/MODBUS used only by the inner environment protocol."""
-    crc = 0xFFFF
-    for value in data:
-        crc ^= value
-        for _ in range(8):
-            crc = ((crc >> 1) ^ 0xA001) if crc & 1 else crc >> 1
-    return crc & 0xFFFF
-
-
-def _with_modbus_crc(data: bytes) -> bytes:
-    """Append a low-byte-first MODBUS CRC to an environment payload."""
-    crc = crc16_modbus(data)
-    return data + bytes([crc & 0xFF, crc >> 8])
-
-
 def build_environment_address_query() -> bytes:
     """Build the broadcast query for the environment-sensor MODBUS address."""
-    return wrap_environment(_with_modbus_crc(bytes.fromhex("000200000001")))
+    return wrap_environment(with_crc(bytes.fromhex("000200000001")))
 
 
 def build_environment_register_query(address: int) -> bytes:
     """Build the seven-register environment query for a discovered address."""
-    return wrap_environment(_with_modbus_crc(bytes([address & 0xFF, 3, 0, 2, 0, 7])))
+    return wrap_environment(with_crc(bytes([address & 0xFF, 3, 0, 2, 0, 7])))
 
 
 VARIANT: Final = StateKey[str]("sleepstar_variant")
@@ -313,16 +299,6 @@ class SleepStarController(BedController):
     @property
     def requires_notification_channel(self) -> bool:
         """Return True because CB37 startup and state require RX notifications."""
-        return True
-
-    @property
-    def supports_position_feedback(self) -> bool:
-        """Return True for the app-proven six-part position report."""
-        return True
-
-    @property
-    def reports_percentage_position(self) -> bool:
-        """Return True because SLEEPSTAR positions use percentages."""
         return True
 
     @property
@@ -449,6 +425,7 @@ class SleepStarController(BedController):
                 open_fn=spec.open_fn,
                 close_fn=spec.close_fn,
                 stop_fn=spec.stop_fn,
+                motor=spec.translation_key,
             )
             for spec in self.motor_control_specs
             if spec.position_key is not None
@@ -504,11 +481,6 @@ class SleepStarController(BedController):
                 max_angle=100,
             ),
         )
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Return obsolete generic entity aliases to remove."""
-        return frozenset({"back", "legs"})
 
     def _track_task(self, coroutine: Any, *, name: str) -> asyncio.Task[Any]:
         """Create and retain a session-owned background task."""
@@ -1188,3 +1160,9 @@ class SleepStarController(BedController):
         if not 1 <= value <= 10:
             raise ValueError("SLEEPSTAR EQ profile value must be in range 1..10")
         await self.write_command(wrap_control_box(star.extended(13, value)))
+
+
+async def build_controller(ctx: BuildContext) -> SleepStarController:
+    """Build the controller with the advertised data."""
+    _LOGGER.debug("Using SleepSpa S9000AI SLEEPSTAR controller")
+    return SleepStarController(ctx.coordinator, manufacturer_data=ctx.manufacturer_data)

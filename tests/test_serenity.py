@@ -194,7 +194,6 @@ def test_exact_capabilities_no_guessed_extra_axes() -> None:
     assert not controller.supports_preset_incline
     assert not controller.supports_clock_alarm
     assert not controller.supports_clock_sync
-    assert not controller.supports_alarm
     assert not controller.supports_light_color_control
     assert not controller.supports_light_level_control
     assert not controller.supports_light_state_feedback
