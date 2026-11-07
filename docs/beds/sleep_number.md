@@ -183,7 +183,9 @@ pair a connection whose bond is still usable.
   text commands.
 - Framed requests use assigned session addresses, integrity checks, response
   correlation and fragmented transport.
-- On the wire, right is side 0 and left is side 1.
+- On the wire, right is side 0 and left is side 1. Two-side replies list right
+  first: pump status (node `0x02`, function `0x12`) is `[adjusting, right,
+  left]`, and chamber and favorite firmness replies use the same order.
 - Foundation and pump operations retain their distinct message layouts and
   capability checks.
 

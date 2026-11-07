@@ -898,6 +898,16 @@ async def test_massage_sentinel_preserves_timer(controller):
     assert controller._mcr_request.await_args.args[3][10:] == b"\xff\xff"
 
 
+async def test_pump_status_firmness_is_right_then_left(controller):
+    # Hardware capture from #939: after setting left to 55, the reply is 00 32 37.
+    controller._chambers_present = (True, True)
+    controller._async_send_frame = AsyncMock(
+        return_value=[SimpleNamespace(function_code=18, payload=bytes.fromhex("003237"), side=1)]
+    )
+    await controller._async_read_pump_status()
+    assert controller._sleep_numbers == {"left": 55, "right": 50}
+
+
 async def test_pump_single_chamber_does_not_expose_second_side(controller):
     controller._chambers = {"right": 0, "left": 0}
     controller._chambers_present = (True, True)

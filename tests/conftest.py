@@ -380,8 +380,8 @@ def mock_bleak_client() -> MagicMock:
             response_payload = bytes(
                 (
                     1,
-                    int(sleep_number_mcr_state["left_sleep_number"]),
                     int(sleep_number_mcr_state["right_sleep_number"]),
+                    int(sleep_number_mcr_state["left_sleep_number"]),
                     0,
                     0,
                 )
