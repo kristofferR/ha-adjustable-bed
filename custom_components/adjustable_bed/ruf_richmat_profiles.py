@@ -37,7 +37,7 @@ def profiles(app: str) -> dict[str, Profile]:
     """Load only the explicitly selected app's compact, artifact-derived catalog."""
     if app not in APPS.values():
         raise ValueError(f"Unknown app: {app}")
-    path = Path(__file__).with_name("row061_data") / f"{app}.json.gz"
+    path = Path(__file__).with_name("ruf_richmat_data") / f"{app}.json.gz"
     return cast(dict[str, Profile], json.loads(gzip.decompress(path.read_bytes())))
 
 

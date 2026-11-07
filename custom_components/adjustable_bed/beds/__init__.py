@@ -83,9 +83,9 @@ if TYPE_CHECKING:
     from .richmat import RichmatController as RichmatController
     from .richmat_mh import RichmatMhController as RichmatMhController
     from .rondure import RondureController as RondureController
-    from .row061 import Row061Controller as Row061Controller
-    from .row061_sleep import Row061SleepController as Row061SleepController
     from .row_control import RowControlController as RowControlController
+    from .ruf_richmat import RufRichmatController as RufRichmatController
+    from .ruf_richmat_sleep import RufRichmatSleepController as RufRichmatSleepController
     from .sbi import QPlusAppController as QPlusAppController
     from .sbi import SBIController as SBIController
     from .scott_living import ScottLivingController as ScottLivingController
@@ -152,8 +152,8 @@ _EXPORT_MODULES = {
     "AdjustaMattressController": "adjustamattress",
     "AdjustableLumbarController": "adjustable_lumbar",
     "BedJetPowerLayerController": "bedjet_powerlayer",
-    "Row061Controller": "row061",
-    "Row061SleepController": "row061_sleep",
+    "RufRichmatController": "ruf_richmat",
+    "RufRichmatSleepController": "ruf_richmat_sleep",
     "RichmatMhController": "richmat_mh",
     "CustomaticController": "customatic",
     "CoolBaseController": "coolbase",

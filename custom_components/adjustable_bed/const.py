@@ -7,8 +7,8 @@ from typing import Final, overload
 from . import casper_base_catalog as _casper_base_catalog
 from . import hush_catalog as _hush_catalog
 from . import richmat_mh_catalog as _richmat_mh_catalog
-from . import row061_models as _row061_models
-from . import row061_profiles as _row061_profiles
+from . import ruf_richmat_models as _ruf_richmat_models
+from . import ruf_richmat_profiles as _ruf_richmat_profiles
 from .cluster018_profiles import APP_NAMES as CLUSTER018_APPS
 from .goodvibe_catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
 from .hjbed_catalog import PROFILE_CHOICES as HJBED_PROFILES
@@ -551,7 +551,7 @@ RICHMAT_MH_APPS: Final[dict[str, str]] = {
     BED_TYPE_RICHMAT_BLVD_HOME: "blvd_home",
     BED_TYPE_RICHMAT_HARMONY: "harmony",
     BED_TYPE_RICHMAT_IDEALBED: "idealbed",
-    **_row061_profiles.APPS,
+    **_ruf_richmat_profiles.APPS,
 }
 RICHMAT_MH_BED_TYPES: Final = frozenset(RICHMAT_MH_APPS)
 BED_TYPE_CUSTOMATIC_CLARITY: Final = "customatic_clarity"
@@ -743,7 +743,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_RICHMAT_BLVD_HOME,
     BED_TYPE_RICHMAT_HARMONY,
     BED_TYPE_RICHMAT_IDEALBED,
-    *_row061_profiles.APPS,
+    *_ruf_richmat_profiles.APPS,
     "richmat_sleep_receiver",
     # Explicit Customatic app profiles
     BED_TYPE_ZSERIES,
@@ -1743,7 +1743,7 @@ def _richmat_mh_model_choices(app: str) -> tuple[tuple[str, str], ...]:
 RICHMAT_MH_MODEL_CHOICES: Final[dict[str, tuple[tuple[str, str], ...]]] = {
     **{app: _richmat_mh_model_choices(app) for app in _richmat_mh_catalog.MODELS},
     **{app: tuple((model, model.upper()) for model in models)
-       for app, models in _row061_models.MODEL_IDS.items()},
+       for app, models in _ruf_richmat_models.MODEL_IDS.items()},
 }
 RICHMAT_MH_VARIANTS_BY_APP: Final[dict[str, dict[str, str]]] = {
     app: {
@@ -1758,7 +1758,7 @@ RICHMAT_MH_VARIANTS_BY_APP: Final[dict[str, dict[str, str]]] = {
 for _app in ("wsilver2", "americanstar", "tx"):
     RICHMAT_MH_VARIANTS_BY_APP[_app].update({
         f"model_{model}_mattress": f"{model.upper()} with normal mattress (explicit opt-in)"
-        for model in _row061_models.MODEL_IDS[_app]
+        for model in _ruf_richmat_models.MODEL_IDS[_app]
     })
 # Explicit app bed types whose name rule reads the stored raw Bluetooth name.
 NAME_RULE_VARIANTS_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {

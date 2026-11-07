@@ -8,7 +8,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
 
 from .richmat_mh_services import _execute
-from .row061_protocol import AlarmRequest
+from .ruf_richmat_protocol import AlarmRequest
 from .services import SIDE_FIELD
 
 SERVICE = "richmat_app_alarm"
@@ -49,12 +49,12 @@ async def handle_alarm(call: ServiceCall) -> None:
     )
     await _execute(
         call,
-        "supports_row061_alarms",
+        "supports_ruf_richmat_alarms",
         "Richmat app alarms",
-        lambda ctrl: ctrl.row061_alarm(request),
-        lambda ctrl: ctrl.validate_row061_alarm(request),
+        lambda ctrl: ctrl.ruf_richmat_alarm(request),
+        lambda ctrl: ctrl.validate_ruf_richmat_alarm(request),
     )
 
 
-def async_register_row061_services(hass: HomeAssistant) -> None:
+def async_register_ruf_richmat_services(hass: HomeAssistant) -> None:
     hass.services.async_register("adjustable_bed", SERVICE, handle_alarm, schema=SCHEMA)

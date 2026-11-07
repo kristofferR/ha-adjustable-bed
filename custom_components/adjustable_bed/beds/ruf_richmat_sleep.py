@@ -9,7 +9,7 @@ from collections.abc import Callable
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from ..row061_protocol import crc8, sleep_frame
+from ..ruf_richmat_protocol import crc8, sleep_frame
 from .base import BedController, ControllerSelectSpec, ControllerStateSensorSpec
 
 if TYPE_CHECKING:
@@ -33,12 +33,12 @@ async def _select(controller: BedController, setting: str, option: str) -> None:
 
     if isinstance(controller, SideBoundController):
         controller = controller._controller
-    if not isinstance(controller, Row061SleepController):
+    if not isinstance(controller, RufRichmatSleepController):
         raise ValueError("This action requires the separate Richmat sleep receiver")
     await controller.set_sleep_option(setting, option)
 
 
-class Row061SleepController(BedController):
+class RufRichmatSleepController(BedController):
     def __init__(self, coordinator: AdjustableBedCoordinator, *, app: str) -> None:
         super().__init__(coordinator)
         if app not in APPS:
@@ -94,9 +94,9 @@ class Row061SleepController(BedController):
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
         return tuple(
             ControllerSelectSpec(
-                f"row061_sleep_{setting}",
-                f"row061_sleep_{setting}",
-                f"row061_sleep_{setting}",
+                f"ruf_richmat_sleep_{setting}",
+                f"ruf_richmat_sleep_{setting}",
+                f"ruf_richmat_sleep_{setting}",
                 ("single", "double") if setting == "mode" else ("off", "on"),
                 lambda ctrl, option, s=setting: _select(ctrl, s, option),
             )
@@ -113,17 +113,17 @@ class Row061SleepController(BedController):
                 ("occupancy", None, "mdi:bed"),
                 ("movement", None, "mdi:motion-sensor"),
             ):
-                key = f"row061_sleep_{side}_{kind}"
+                key = f"ruf_richmat_sleep_{side}_{kind}"
                 rows.append(
                     ControllerStateSensorSpec(key, key, key, icon, native_unit_of_measurement=unit)
                 )
         return tuple(rows) + (
             ControllerStateSensorSpec(
-                "row061_sleep_attributes",
-                "row061_sleep_attributes",
-                "row061_sleep_firmware",
+                "ruf_richmat_sleep_attributes",
+                "ruf_richmat_sleep_attributes",
+                "ruf_richmat_sleep_firmware",
                 "mdi:information-outline",
-                attribute_keys=("row061_sleep_attributes",),
+                attribute_keys=("ruf_richmat_sleep_attributes",),
             ),
         )
 
@@ -240,13 +240,13 @@ class Row061SleepController(BedController):
                 }
                 self.forward_controller_state_updates(
                     {
-                        "row061_sleep_attributes": self._attributes,
-                        "row061_sleep_firmware": obj.get("CV"),
-                        "row061_sleep_mode": "double"
+                        "ruf_richmat_sleep_attributes": self._attributes,
+                        "ruf_richmat_sleep_firmware": obj.get("CV"),
+                        "ruf_richmat_sleep_mode": "double"
                         if obj.get("SDModeSet", -1) == 2
                         else "single",
-                        "row061_sleep_left_intervention": "on" if obj.get("LI", -1) == 1 else "off",
-                        "row061_sleep_right_intervention": "on"
+                        "ruf_richmat_sleep_left_intervention": "on" if obj.get("LI", -1) == 1 else "off",
+                        "ruf_richmat_sleep_right_intervention": "on"
                         if obj.get("RI", -1) == 1
                         else "off",
                     }
@@ -266,7 +266,7 @@ class Row061SleepController(BedController):
                         value = row.get(raw, 0)
                         if type(value) is not int or not -(2**31) <= value < 2**31:
                             continue
-                        values[f"row061_sleep_{side}_{name}"] = (
+                        values[f"ruf_richmat_sleep_{side}_{name}"] = (
                             value if name.endswith("rate") else value == 1
                         )
                 self.forward_controller_state_updates(values)
@@ -279,7 +279,7 @@ class Row061SleepController(BedController):
                     if op == 3
                     else ("on" if result == 1 else "off")
                 )
-                self.forward_controller_state_update(f"row061_sleep_{name}", option)
+                self.forward_controller_state_update(f"ruf_richmat_sleep_{name}", option)
         # Wi-Fi/provisioning and firmware administration responses have no product action.
 
     async def set_sleep_option(self, setting: str, option: str) -> None:
@@ -290,7 +290,7 @@ class Row061SleepController(BedController):
                 raise ValueError("Choose single or double mode")
             if (
                 self._attributes.get("SDMode", -1) == 1
-                and self._coordinator.controller_state.get("row061_sleep_mode") != "double"
+                and self._coordinator.controller_state.get("ruf_richmat_sleep_mode") != "double"
             ):
                 raise ValueError("This receiver declares a fixed single-user mode")
             op, value = 3, 1 if option == "single" else 2

@@ -6,8 +6,8 @@ import asyncio
 import re
 from typing import TYPE_CHECKING
 
-from ..row061_profiles import Field, fields, profiles
-from ..row061_protocol import AlarmRequest
+from ..ruf_richmat_profiles import Field, fields, profiles
+from ..ruf_richmat_protocol import AlarmRequest
 from .base import (
     ControllerNumberSpec,
     ControllerSelectSpec,
@@ -184,7 +184,7 @@ def waist_init(frame: str) -> dict[str, int]:
     return values
 
 
-class Row061Controller(RichmatMhController):
+class RufRichmatController(RichmatMhController):
     """One physical receiver, explicit app/model, and response-gated extra controls."""
 
     _app_groups = dict.fromkeys(("ruf", "wsilver2", "americanstar", "bailey2", "tx"), "revive")
@@ -250,6 +250,8 @@ class Row061Controller(RichmatMhController):
                 "foot": "feet",
                 "back_foot_both": "head_feet",
                 "head_foot_both": "head_feet",
+                # Bailey's catalog labels the motor 6 group (codes 115/116) "115".
+                "115": "motor6",
             }.get(key, key)
             # Every catalog motor group has a named cover; covers carry no placeholder.
             translation = {
@@ -266,8 +268,7 @@ class Row061Controller(RichmatMhController):
                 "pillow_lumbar_both_tilt": "tilt",
                 "tilt": "tilt",
                 "all_motor": "all_motors",
-                "lift": "row061_lift",
-                "115": "row061_115",
+                "lift": "ruf_richmat_lift",
             }[key]
             axes.append(Axis(key, translation, pair["up"], pair["down"]))
         return tuple(axes)
@@ -519,7 +520,7 @@ class Row061Controller(RichmatMhController):
                     raw[3] - 256 if raw[3] > 127 else raw[3]
                 )
             self.forward_controller_state_updates(
-                {"row061_music_status": "reported", "row061_music_values": values}
+                {"ruf_richmat_music_status": "reported", "ruf_richmat_music_values": values}
             )
             return
         if event.kind == "extended":
@@ -575,8 +576,8 @@ class Row061Controller(RichmatMhController):
     def _publish_calendar_alarms(self) -> None:
         self.forward_controller_state_updates(
             {
-                "row061_calendar_alarms": dict(self._calendar_alarms),
-                "row061_calendar_alarm_count": len(self._calendar_alarms),
+                "ruf_richmat_calendar_alarms": dict(self._calendar_alarms),
+                "ruf_richmat_calendar_alarm_count": len(self._calendar_alarms),
             }
         )
 
@@ -642,20 +643,20 @@ class Row061Controller(RichmatMhController):
             return
         self._normal_values[raw[1], raw[2]] = raw[3]
         if raw[2] == 0x0B:
-            key = f"row061_mattress_{'left' if raw[1] == 1 else 'right'}_alarm"
+            key = f"ruf_richmat_mattress_{'left' if raw[1] == 1 else 'right'}_alarm"
             self.forward_controller_state_update(
                 key, f"{raw[5]:02d}:{raw[6]:02d}" if len(raw) == 8 and raw[3] else "off"
             )
         self._publish_normal()
 
     def _publish_normal(self) -> None:
-        from ..row061_protocol import NORMAL_SETTINGS
+        from ..ruf_richmat_protocol import NORMAL_SETTINGS
 
         values: dict[str, object] = {}
         for side, side_no in (("left", 1), ("right", 2)):
             for setting, (code, options) in NORMAL_SETTINGS.items():
                 raw = self._normal_values.get((side_no, code))
-                values[f"row061_mattress_{side}_{setting}"] = next(
+                values[f"ruf_richmat_mattress_{side}_{setting}"] = next(
                     (name for name, value in options.items() if value == raw), None
                 )
         self.forward_controller_state_updates(values)
@@ -666,38 +667,38 @@ class Row061Controller(RichmatMhController):
         if self._app != "ruf":
             specs.append(
                 ControllerStateSensorSpec(
-                    "row061_music_status",
-                    "row061_music_status",
-                    "row061_music_status",
+                    "ruf_richmat_music_status",
+                    "ruf_richmat_music_status",
+                    "ruf_richmat_music_status",
                     "mdi:music",
-                    attribute_keys=("row061_music_values",),
+                    attribute_keys=("ruf_richmat_music_values",),
                 )
             )
         if self._calendar_page():
             specs.append(
                 ControllerStateSensorSpec(
-                    "row061_calendar_alarms",
-                    "row061_calendar_alarms",
-                    "row061_calendar_alarm_count",
+                    "ruf_richmat_calendar_alarms",
+                    "ruf_richmat_calendar_alarms",
+                    "ruf_richmat_calendar_alarm_count",
                     "mdi:alarm",
-                    attribute_keys=("row061_calendar_alarms",),
+                    attribute_keys=("ruf_richmat_calendar_alarms",),
                 )
             )
         if self._normal_ready:
             for side in ("left", "right"):
-                key = f"row061_mattress_{side}_alarm"
+                key = f"ruf_richmat_mattress_{side}_alarm"
                 specs.append(ControllerStateSensorSpec(key, key, key, "mdi:alarm"))
         return tuple(specs)
 
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        from ..row061_protocol import NORMAL_SETTINGS
+        from ..ruf_richmat_protocol import NORMAL_SETTINGS
 
         specs = list(super().controller_select_specs)
         if self._normal_ready:
             for side in ("left", "right"):
                 for setting, (_code, options) in NORMAL_SETTINGS.items():
-                    key = f"row061_mattress_{side}_{setting}"
+                    key = f"ruf_richmat_mattress_{side}_{setting}"
                     specs.append(
                         ControllerSelectSpec(
                             key,
@@ -718,8 +719,8 @@ class Row061Controller(RichmatMhController):
             return specs
         return specs + tuple(
             MotorControlSpec(
-                key=f"row061_mattress_{side}_pillow",
-                translation_key=f"row061_mattress_{side}_pillow",
+                key=f"ruf_richmat_mattress_{side}_pillow",
+                translation_key=f"ruf_richmat_mattress_{side}_pillow",
                 open_fn=lambda ctrl, s=side: _invoke(ctrl, "normal_pillow", s, 1),
                 close_fn=lambda ctrl, s=side: _invoke(ctrl, "normal_pillow", s, 2),
                 stop_fn=lambda ctrl, s=side: _invoke(ctrl, "normal_pillow_stop", s),
@@ -729,7 +730,7 @@ class Row061Controller(RichmatMhController):
         )
 
     async def normal_setting(self, side: str, setting: str, option: str) -> None:
-        from ..row061_protocol import NORMAL_SETTINGS
+        from ..ruf_richmat_protocol import NORMAL_SETTINGS
 
         spec = NORMAL_SETTINGS.get(setting)
         if (
@@ -767,7 +768,7 @@ class Row061Controller(RichmatMhController):
             await self.normal_pillow_stop(side)
 
     @property
-    def supports_row061_alarms(self) -> bool:
+    def supports_ruf_richmat_alarms(self) -> bool:
         return self._normal_ready or self._calendar_page()
 
     def _calendar_page(self) -> bool:
@@ -778,7 +779,7 @@ class Row061Controller(RichmatMhController):
             and _feature(self._app, self.model.model_id, "alarmList")
         )
 
-    def validate_row061_alarm(self, request: AlarmRequest) -> None:
+    def validate_ruf_richmat_alarm(self, request: AlarmRequest) -> None:
         request.validate()
         if request.family == "calendar" and not request.delete and self.model:
             if request.mode not in _ints(_feature(self._app, self.model.model_id, "alarmList")):
@@ -790,12 +791,12 @@ class Row061Controller(RichmatMhController):
         if request.family == "calendar" and not self._calendar_page():
             raise ValueError("This model has not reported its calendar alarm capability")
 
-    async def row061_alarm(self, request: AlarmRequest) -> None:
+    async def ruf_richmat_alarm(self, request: AlarmRequest) -> None:
         from homeassistant.util import dt as dt_util
 
-        from ..row061_protocol import alarm_frame, calendar_clock
+        from ..ruf_richmat_protocol import alarm_frame, calendar_clock
 
-        self.validate_row061_alarm(request)
+        self.validate_ruf_richmat_alarm(request)
         now = dt_util.now()
         if request.family == "calendar":
             await self.write_command(query_frame("6e2008050100009c"))

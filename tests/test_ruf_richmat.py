@@ -14,19 +14,19 @@ import pytest
 
 from custom_components.adjustable_bed.beds.richmat_mh import resolve_model
 from custom_components.adjustable_bed.beds.richmat_mh_protocol import GATT_MAPS, Event, finalize
-from custom_components.adjustable_bed.beds.row061 import (
+from custom_components.adjustable_bed.beds.ruf_richmat import (
     AppClassifier,
-    Row061Controller,
+    RufRichmatController,
     load_app_model,
     waist_init,
 )
-from custom_components.adjustable_bed.beds.row061_sleep import Row061SleepController
+from custom_components.adjustable_bed.beds.ruf_richmat_sleep import RufRichmatSleepController
 from custom_components.adjustable_bed.const import SUPPORTED_BED_TYPES
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.detection import BED_TYPE_DISPLAY_NAMES
-from custom_components.adjustable_bed.row061_models import MODEL_IDS
-from custom_components.adjustable_bed.row061_profiles import APPS, profiles
-from custom_components.adjustable_bed.row061_protocol import (
+from custom_components.adjustable_bed.ruf_richmat_models import MODEL_IDS
+from custom_components.adjustable_bed.ruf_richmat_profiles import APPS, profiles
+from custom_components.adjustable_bed.ruf_richmat_protocol import (
     AlarmRequest,
     alarm_frame,
     calendar_clock,
@@ -49,7 +49,7 @@ def coordinator():
 
 
 def make(app="bailey2", model="2i", version="0000"):
-    c = Row061Controller(coordinator(), app=app, protocol_variant=f"model_{model}")
+    c = RufRichmatController(coordinator(), app=app, protocol_variant=f"model_{model}")
     c._version, c._call_page = version, version != "0000"
     c._write_char = SimpleNamespace(uuid=GATT_MAPS[0][1], properties=["write"], handle=1)
     return c
@@ -91,7 +91,7 @@ def test_all_selected_apps_are_findable_and_models_resolve():
 def test_catalog_bindings_match_all_committed_app_vectors():
     rows = json.loads(
         gzip.decompress(
-            (Path(__file__).parent / "fixtures/row061_control_vectors.json.gz").read_bytes()
+            (Path(__file__).parent / "fixtures/ruf_richmat_control_vectors.json.gz").read_bytes()
         )
     )
     for app, model, route, code, wire in rows:
@@ -312,8 +312,8 @@ async def test_calendar_refresh_removes_deleted_slots_and_keeps_reported_records
     for record in records:
         c._apply(Event("extended", record.hex()))
     state = c._coordinator.controller_state
-    assert state["row061_calendar_alarm_count"] == 2
-    previous = state["row061_calendar_alarms"]
+    assert state["ruf_richmat_calendar_alarm_count"] == 2
+    previous = state["ruf_richmat_calendar_alarms"]
     original = c.write_command
     query_count = 0
 
@@ -326,18 +326,18 @@ async def test_calendar_refresh_removes_deleted_slots_and_keeps_reported_records
                 c._apply(Event("extended", records[1].hex()))
 
     c.write_command = AsyncMock(side_effect=write)
-    await c.row061_alarm(AlarmRequest("calendar", False, delete=True, slot=1))
+    await c.ruf_richmat_alarm(AlarmRequest("calendar", False, delete=True, slot=1))
     assert query_count == 2
     assert frames(c)[-2:] == ["6e2008050201019f", "6e2008050100009c"]
-    assert state["row061_calendar_alarm_count"] == int(remaining)
-    assert state["row061_calendar_alarms"] == ({2: previous[2]} if remaining else {})
+    assert state["ruf_richmat_calendar_alarm_count"] == int(remaining)
+    assert state["ruf_richmat_calendar_alarms"] == ({2: previous[2]} if remaining else {})
     assert len(previous) == 2
 
 
 def test_sleep_frames_and_reply_semantics():
     assert sleep_frame(1).hex() == "fa025e01"
     assert sleep_frame(0x14, bytes.fromhex("010301")).hex() == "fa059614010301"
-    c = Row061SleepController(coordinator(), app="wsilver2")
+    c = RufRichmatSleepController(coordinator(), app="wsilver2")
     for op, result, key, expected in [
         (1, 1, "left_intervention", "on"),
         (1, 0, "left_intervention", "off"),
@@ -346,11 +346,11 @@ def test_sleep_frames_and_reply_semantics():
         (3, 1, "mode", "single"),
     ]:
         c._notify(None, bytearray(sleep_frame(0xA5, bytes([0x14, op, result]))))
-        assert c._coordinator.controller_state[f"row061_sleep_{key}"] == expected
+        assert c._coordinator.controller_state[f"ruf_richmat_sleep_{key}"] == expected
 
 
 async def test_sleep_attributes_ack_before_parse_and_mode_guards(delays):
-    c = Row061SleepController(coordinator(), app="wsilver2")
+    c = RufRichmatSleepController(coordinator(), app="wsilver2")
     c._queue_reply = MagicMock()
     c._apply_frame(sleep_frame(0x12, b"{bad"))
     assert c._queue_reply.call_args.args[0] == sleep_frame(0xA5, b"\x12")
@@ -367,16 +367,16 @@ async def test_sleep_attributes_ack_before_parse_and_mode_guards(delays):
 
 
 def test_sleep_json_has_exact_raw_rate_and_boolean_meaning():
-    c = Row061SleepController(coordinator(), app="tx")
+    c = RufRichmatSleepController(coordinator(), app="tx")
     c._apply_frame(
         sleep_frame(0x11, b'{"Left":{"HD":63,"BD":12,"IsOnBed":1,"IsMove":2},"Right":null}')
     )
     state = c._coordinator.controller_state
-    assert state["row061_sleep_left_heart_rate"] == 63
-    assert state["row061_sleep_left_breathing_rate"] == 12
-    assert state["row061_sleep_left_occupancy"] is True
-    assert state["row061_sleep_left_movement"] is False
-    assert "row061_sleep_right_heart_rate" not in state
+    assert state["ruf_richmat_sleep_left_heart_rate"] == 63
+    assert state["ruf_richmat_sleep_left_breathing_rate"] == 12
+    assert state["ruf_richmat_sleep_left_occupancy"] is True
+    assert state["ruf_richmat_sleep_left_movement"] is False
+    assert "ruf_richmat_sleep_right_heart_rate" not in state
 
 
 @pytest.mark.parametrize("bed,app", APPS.items())
@@ -391,14 +391,14 @@ async def test_factory_selects_real_app_controller(bed, app):
     result = await create_controller(
         c, bed, protocol_variant=f"model_{MODEL_IDS[app][0]}", client=None
     )
-    assert isinstance(result, Row061Controller) and result.app == app
+    assert isinstance(result, RufRichmatController) and result.app == app
 
 
 def test_restored_normal_mattress_matches_all_accepted_vectors():
     from custom_components.adjustable_bed.beds.richmat_mh_protocol import mattress_frame
 
     data = json.loads(
-        (Path(__file__).parent / "fixtures/row061_normal_mattress_vectors.json").read_text()
+        (Path(__file__).parent / "fixtures/ruf_richmat_normal_mattress_vectors.json").read_text()
     )
     for row in data:
         p = row["inputs"]
@@ -458,23 +458,23 @@ def test_calendar_capability_and_position_gates_are_model_specific():
         alarm_list = profiles(app)[model]["fields"]["alarmList"]
         assert isinstance(alarm_list, list)
         code = int(str(alarm_list[0]), 16)
-        c.validate_row061_alarm(AlarmRequest("calendar", True, mode=code))
+        c.validate_ruf_richmat_alarm(AlarmRequest("calendar", True, mode=code))
         with pytest.raises(ValueError):
-            c.validate_row061_alarm(AlarmRequest("calendar", True, mode=0))
+            c.validate_ruf_richmat_alarm(AlarmRequest("calendar", True, mode=0))
     c = make("ruf", "bqrm")
-    assert not c.supports_row061_alarms
+    assert not c.supports_ruf_richmat_alarms
 
 
 async def test_alarm_service_schema_and_validation(hass, monkeypatch):
     from homeassistant.core import ServiceCall
 
-    from custom_components.adjustable_bed import row061_services as service
+    from custom_components.adjustable_bed import ruf_richmat_services as service
 
     c = make("wsilver2", "bfrm_mattress")
     c._normal_ready = True
 
     async def execute(call, capability, label, command, validate):
-        assert capability == "supports_row061_alarms"
+        assert capability == "supports_ruf_richmat_alarms"
         validate(c)
         await command(c)
 
@@ -519,7 +519,7 @@ def test_late_waist_capability_is_published_without_reusing_other_apps_snapshot(
             "richmat_mh": {"model": "bfrm", "app": "tx", "version": "0001", "dev": {"led": True}}
         }
     }
-    c = Row061Controller(other, app="wsilver2", protocol_variant="model_bfrm")
+    c = RufRichmatController(other, app="wsilver2", protocol_variant="model_bfrm")
     assert c.route == "L" and c._light_page() is None
 
 
@@ -541,23 +541,23 @@ def test_normal_mattress_variant_preserves_verified_ver2_bed_controls(model):
 
 
 def test_selector_validation_does_not_load_catalog_files(monkeypatch):
-    from custom_components.adjustable_bed import row061_profiles
+    from custom_components.adjustable_bed import ruf_richmat_profiles
 
     def blocked(_app):
         pytest.fail("A synchronous setup selector must not read/decompress a catalog")
 
-    monkeypatch.setattr(row061_profiles, "profiles", blocked)
+    monkeypatch.setattr(ruf_richmat_profiles, "profiles", blocked)
     assert resolve_model("americanstar", "model_2i_mattress", None) == ("2i_mattress", None)
     assert resolve_model("wsilver2", "auto", "6BRM1234") == ("6brm", None)
     assert resolve_model("bailey2", "model_2i_mattress", None)[1] == "unknown_model"
 
 
 async def test_factory_preloads_only_the_selected_catalog_in_executor(monkeypatch):
-    from custom_components.adjustable_bed import row061_profiles
+    from custom_components.adjustable_bed import ruf_richmat_profiles
     from tests.test_controller_contract import _FactoryCoordinator
 
     c = _FactoryCoordinator()
-    original = row061_profiles.profiles
+    original = ruf_richmat_profiles.profiles
     order = []
 
     def recorded(app):
@@ -568,8 +568,8 @@ async def test_factory_preloads_only_the_selected_catalog_in_executor(monkeypatc
         order.append(("executor", args[0]))
         return fn(*args)
 
-    monkeypatch.setattr(row061_profiles, "profiles", recorded)
+    monkeypatch.setattr(ruf_richmat_profiles, "profiles", recorded)
     c.hass.async_add_executor_job = executor
     result = await create_controller(c, "richmat_americanstar", "model_2i_mattress", None)
-    assert isinstance(result, Row061Controller)
+    assert isinstance(result, RufRichmatController)
     assert order[0:2] == [("executor", "americanstar"), ("read", "americanstar")]

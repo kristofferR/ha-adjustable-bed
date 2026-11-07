@@ -88,7 +88,7 @@ from .const import (
     ZSERIES_VARIANT_Z230,
     ZSERIES_VARIANT_Z280,
 )
-from .row061_profiles import DISPLAY_NAMES as ROW061_DISPLAY_NAMES
+from .ruf_richmat_profiles import DISPLAY_NAMES as RUF_RICHMAT_DISPLAY_NAMES
 
 
 class ActuatorVariant(TypedDict):
@@ -597,7 +597,7 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
             *({"type": bed_type, "label": label,
                "description": "Exact app/model controls and reported capabilities",
                "hint": "Choose the app supplied with your bed."}
-              for bed_type, label in ROW061_DISPLAY_NAMES.items()),
+              for bed_type, label in RUF_RICHMAT_DISPLAY_NAMES.items()),
             {"type": "richmat_sleep_receiver", "label": "W.Silver / AMERICANSTAR / Bailey / TX sleep receiver",
              "description": "Separate HJ_Bed receiver", "hint": "Choose its app in the next step."},
             {
