@@ -746,16 +746,6 @@ class SleepysEliteAppController(BedController):
         return None
 
     @property
-    def supports_position_feedback(self) -> bool:
-        # The app reports three axes, but the accepted parser evidence does not
-        # map them to this integration's named motor positions.
-        return False
-
-    @property
-    def reports_percentage_position(self) -> bool:
-        return False
-
-    @property
     def supports_preset_flat(self) -> bool:
         return False
 

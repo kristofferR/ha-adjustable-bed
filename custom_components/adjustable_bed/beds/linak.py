@@ -405,7 +405,7 @@ class LinakController(BedController):
     @property
     def supports_position_feedback(self) -> bool:
         """Return whether an advanced Bed Control mask selected reference outputs."""
-        return bool(self._capabilities.position_axes)
+        return super().supports_position_feedback and bool(self._capabilities.position_axes)
 
     @property
     def requires_notification_channel(self) -> bool:

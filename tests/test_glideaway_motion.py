@@ -21,6 +21,7 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import services
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
+from custom_components.adjustable_bed.bed_traits import bed_type_has_position_feedback
 from custom_components.adjustable_bed.beds import glideaway_motion as gm
 from custom_components.adjustable_bed.const import (
     BED_TYPE_GLIDEAWAY_MOTION,
@@ -34,7 +35,6 @@ from custom_components.adjustable_bed.const import (
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
     GLIDEAWAY_MOTION_MODELS,
-    bed_type_has_position_feedback,
     requires_pairing,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller

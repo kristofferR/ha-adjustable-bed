@@ -342,11 +342,7 @@ class ReveriePairlinkController(BedController):
 
     @property
     def supports_position_feedback(self) -> bool:
-        return self._has_supported_model
-
-    @property
-    def reports_percentage_position(self) -> bool:
-        return True
+        return super().supports_position_feedback and self._has_supported_model
 
     @property
     def requires_notification_channel(self) -> bool:

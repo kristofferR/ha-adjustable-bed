@@ -58,6 +58,13 @@ from .adapter import (
 )
 from .address_lock import async_get_connect_lock
 from .app_profiles import hidden_generic_fields, is_per_side_variant, per_side_profile
+from .bed_traits import (
+    bed_traits,
+    bed_type_has_position_feedback,
+    disconnect_after_command_default_enabled,
+    passive_position_reconciliation_default_enabled,
+    supports_passive_position_reconciliation,
+)
 from .beds.remacro_protocol import add_remacro_model, app_for_variant
 from .bluetooth_bond import (
     BondRemovalResult,
@@ -169,8 +176,6 @@ from .const import (
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
-    BEDS_WITH_PERCENTAGE_POSITIONS,
-    BEDS_WITH_POSITION_FEEDBACK,
     CB24_BED_SELECTION_A,
     CB24_BED_SELECTION_B,
     CB24_BED_SELECTION_DEFAULT,
@@ -351,17 +356,13 @@ from .const import (
     ZSERIES_VARIANT_Z230,
     ZSERIES_VARIANT_Z280,
     DetectionResult,
-    bed_type_has_position_feedback,
-    disconnect_after_command_default_enabled,
     get_motor_pulse_defaults,
     get_richmat_features,
     get_richmat_motor_count,
     grants_one_connection_per_pairing_window,
-    passive_position_reconciliation_default_enabled,
     requires_pairing,
     requires_pairing_after_service_discovery,
     resolve_explicit_bed_type,
-    supports_passive_position_reconciliation,
 )
 from .detection import (
     APP_VARIANT_CHOICES,
@@ -8670,10 +8671,8 @@ class AdjustableBedOptionsFlow(
             data.pop(CONF_MALOUF_MEMORY_SLOTS, None)
         if not supports_passive_position_reconciliation(bed_type):
             data.pop(CONF_PASSIVE_POSITION_RECONCILIATION, None)
-        if (
-            bed_type in BEDS_WITH_PERCENTAGE_POSITIONS
-            or bed_type not in BEDS_WITH_POSITION_FEEDBACK
-        ):
+        traits = bed_traits(bed_type)
+        if traits.percentage_positions or not traits.position_feedback:
             data.pop(CONF_BACK_MAX_ANGLE, None)
             data.pop(CONF_LEGS_MAX_ANGLE, None)
 
@@ -9448,7 +9447,7 @@ class AdjustableBedOptionsFlow(
         # Add angle limit fields for beds that use angle-based positions
         # (not percentage-based beds like Keeson/Ergomotion/Serta/Jensen)
         # Only show for beds that actually support position feedback
-        if bed_type and bed_type not in BEDS_WITH_PERCENTAGE_POSITIONS and has_position_feedback:
+        if bed_type and not bed_traits(bed_type).percentage_positions and has_position_feedback:
             schema_dict[
                 vol.Optional(
                     CONF_BACK_MAX_ANGLE,

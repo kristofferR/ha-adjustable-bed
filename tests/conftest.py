@@ -72,11 +72,14 @@ def make_controller_mock(**overrides: object) -> MagicMock:
 
     Pass keyword overrides for the capabilities a given test actually cares about.
     """
+    from custom_components.adjustable_bed.bed_traits import BedTraits
     from custom_components.adjustable_bed.beds.base import BedController
     from custom_components.adjustable_bed.position_seek import PositionSeekPolicy
 
     controller = MagicMock(
-        prepare_for_position_read=AsyncMock(), prepare_for_movement=AsyncMock()
+        prepare_for_position_read=AsyncMock(),
+        prepare_for_movement=AsyncMock(),
+        static_traits=BedTraits(),
     )
     for name, member in vars(BedController).items():
         if not isinstance(member, property) or member.fget is None:

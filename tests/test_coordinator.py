@@ -2095,9 +2095,9 @@ class TestRuntimeBedTypeCorrection:
     ):
         """A stale CB35 entry repaired to BOX25 should regain position feedback (#413).
 
-        BOX25 reports percentage positions (BEDS_WITH_POSITION_FEEDBACK) without
-        being in BEDS_WITH_ANGLE_SENSING, so the correction must key on the same
-        set the config flow uses for the disable_angle_sensing default.
+        BOX25 reports percentage positions (the position_feedback trait) without
+        angle sensors, so the correction must key on the same trait the config
+        flow uses for the disable_angle_sensing default.
         """
         coordinator = self._make_coordinator(
             hass,

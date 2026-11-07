@@ -250,11 +250,6 @@ class KeesonController(BedController):
         return False
 
     @property
-    def reports_percentage_position(self) -> bool:
-        """Return True - Keeson/Ergomotion report 0-100 percentage, not angle degrees."""
-        return True
-
-    @property
     def motor_translation_keys(self) -> dict[str, str] | None:
         """Keeson's head motor moves the back, tilt the head and feet the legs."""
         if not self.profile.keeson_motor_names:

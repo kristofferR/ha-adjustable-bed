@@ -29,6 +29,11 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 
 from .app_state_store import app_state_slot, app_state_store
+from .bed_traits import (
+    bed_traits,
+    disconnect_after_command_default_enabled,
+    passive_position_reconciliation_default_enabled,
+)
 from .ble_auth import is_ble_authentication_error
 from .bluetooth_transport import (
     ConnectionPath,
@@ -99,7 +104,6 @@ from .const import (
     BED_TYPE_VMATBASIC,
     BEDJET_POWERLAYER_FOOT_MAX_ANGLE,
     BEDJET_POWERLAYER_HEAD_MAX_ANGLE,
-    BEDS_WITH_POSITION_FEEDBACK,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
@@ -146,7 +150,6 @@ from .const import (
     DEFAULT_BACK_MAX_ANGLE,
     DEFAULT_CONNECTION_PROFILE,
     DEFAULT_DISABLE_ANGLE_SENSING,
-    DEFAULT_DISCONNECT_AFTER_COMMAND,
     DEFAULT_HAS_MASSAGE,
     DEFAULT_IDLE_DISCONNECT_SECONDS,
     DEFAULT_LEGS_MAX_ANGLE,
@@ -173,7 +176,6 @@ from .const import (
     get_motor_pulse_defaults,
     get_richmat_features,
     get_richmat_motor_count,
-    passive_position_reconciliation_default_enabled,
     resolve_explicit_bed_type,
     resolve_richmat_remote_code,
 )
@@ -409,7 +411,8 @@ class AdjustableBedCoordinator(
 
         # Disconnect behavior configuration
         self._disconnect_after_command: bool = entry.data.get(
-            CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND
+            CONF_DISCONNECT_AFTER_COMMAND,
+            disconnect_after_command_default_enabled(self._bed_type, self._protocol_variant),
         )
         self._idle_disconnect_seconds: int = entry.data.get(
             CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
@@ -873,14 +876,14 @@ class AdjustableBedCoordinator(
             entry_data.pop(CONF_RICHMAT_REMOTE, None)
         angle_sensing_defaulted = CONF_DISABLE_ANGLE_SENSING not in self.entry.data or (
             self.entry.data.get(CONF_DISABLE_ANGLE_SENSING) is True
-            and previous_bed_type not in BEDS_WITH_POSITION_FEEDBACK
+            and not bed_traits(previous_bed_type).position_feedback
         )
-        # Config flow defaults disable_angle_sensing from BEDS_WITH_POSITION_FEEDBACK,
-        # so the correction must use the same set: a repaired entry (e.g. CB35 ->
+        # Config flow defaults disable_angle_sensing from the position_feedback trait,
+        # so the correction must use the same trait: a repaired entry (e.g. CB35 ->
         # BOX25, #419) should get position feedback re-enabled even when the
         # corrected type reports percentages rather than angles.
         if (
-            corrected_bed_type in BEDS_WITH_POSITION_FEEDBACK
+            bed_traits(corrected_bed_type).position_feedback
             and angle_sensing_defaulted
             and self._disable_angle_sensing
             and not (
@@ -899,7 +902,7 @@ class AdjustableBedCoordinator(
             )
         elif (
             bed_type_changed
-            and corrected_bed_type not in BEDS_WITH_POSITION_FEEDBACK
+            and not bed_traits(corrected_bed_type).position_feedback
             and not self._disable_angle_sensing
         ):
             self._disable_angle_sensing = True

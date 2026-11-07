@@ -235,14 +235,6 @@ class ReverieNightstandController(BedController):
         return self.model.lumbar
 
     @property
-    def supports_position_feedback(self) -> bool:
-        return self.model.positions
-
-    @property
-    def reports_percentage_position(self) -> bool:
-        return self.model.positions
-
-    @property
     def supports_direct_position_control(self) -> bool:
         return self.model.positions
 

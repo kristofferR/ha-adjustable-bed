@@ -131,10 +131,6 @@ class GmmotorSleepController(BedController):
         return True
 
     @property
-    def requires_persistent_connection(self) -> bool:
-        return True
-
-    @property
     def supports_gmmotor_controls(self) -> bool:
         return True
 

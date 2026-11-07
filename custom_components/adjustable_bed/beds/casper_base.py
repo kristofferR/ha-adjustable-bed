@@ -156,7 +156,7 @@ class CasperBaseController(BedController):
 
     @property
     def requires_persistent_connection(self) -> bool:
-        return self._snore_poll is not None
+        return super().requires_persistent_connection or self._snore_poll is not None
 
     def controller_button_available(self, key: str) -> bool:
         return not key.startswith("casper_music_page_") or "music_available" in self.events

@@ -46,6 +46,7 @@ from ..alarm_table import (
 from ..alarm_table import (
     WeeklyAlarmRecord as WeeklyAlarmRecord,
 )
+from ..bed_traits import BedTraits
 from ..command_scheduler import current_command_context
 from ..const import (
     POSITION_CHECK_INTERVAL,
@@ -398,6 +399,8 @@ class BedController(ABC):
             coordinator: The AdjustableBedCoordinator managing the BLE connection
         """
         self._coordinator = coordinator
+        # The controller factory stamps the bed type's record here; see bed_traits.
+        self.static_traits = BedTraits()
         self._notify_callback: Callable[[str, float], None] | None = None
         self._raw_notify_callback: Callable[[str, bytes], None] | None = None
         self._ble_lock = asyncio.Lock()
@@ -558,14 +561,14 @@ class BedController(ABC):
     def requires_persistent_connection(self) -> bool:
         """Return True if the BLE link must be held open for the entry's lifetime.
 
-        Controllers that must or should conservatively retain the link (e.g.
-        Leggett & Platt Gen2 / LP Comfort Connect pending bonded-reconnect hardware
-        confirmation) override this to return True so the coordinator never
-        idle-disconnects them. Because this is a property of the resolved controller,
-        it is authoritative even when the bed type/variant resolves to different
-        protocols at connect time.
+        Defaults to the bed type's ``persistent_connection`` trait (e.g. Leggett &
+        Platt Gen2 / LP Comfort Connect pending bonded-reconnect hardware
+        confirmation), so the coordinator never idle-disconnects them. Controllers
+        override this only to refine it at runtime. Because this is a property of
+        the resolved controller, it is authoritative even when the bed
+        type/variant resolves to different protocols at connect time.
         """
-        return False
+        return self.static_traits.persistent_connection
 
     @property
     def requires_disconnected_transport(self) -> bool:
@@ -1537,13 +1540,17 @@ class BedController(ABC):
 
     @property
     def supports_position_feedback(self) -> bool:
-        """Return True if bed reports position feedback."""
-        return False
+        """Return True if bed reports position feedback.
+
+        Defaults to the bed type's ``position_feedback`` trait. Controllers
+        override this only to narrow it at runtime, for example after discovery.
+        """
+        return self.static_traits.position_feedback
 
     @property
     def reports_percentage_position(self) -> bool:
         """Return whether reported motor positions use a 0-100 percentage scale."""
-        return False
+        return self.static_traits.percentage_positions
 
     @property
     def requires_notification_channel(self) -> bool:
@@ -2355,7 +2362,7 @@ class BedController(ABC):
         from the axis its firmware reports.
 
         Only consulted for beds that report position feedback -- see
-        ``bed_type_has_position_feedback()``. Deliberately not derived from
+        ``BedTraits.position_feedback``. Deliberately not derived from
         ``motor_control_specs``: that describes every axis the remote can drive,
         which is a broader set than the axes the bed reports a position for.
         """

@@ -169,10 +169,6 @@ class VMatBasicController(BedController):
         return 0
 
     @property
-    def supports_position_feedback(self) -> bool:
-        return False
-
-    @property
     def supports_device_rename(self) -> bool:
         return True
 

@@ -180,10 +180,6 @@ class SertaMPRemoteController(AppController):
         self._local_release_stop: tuple[object, int, asyncio.Event] | None = None
 
     @property
-    def supports_position_feedback(self) -> bool:
-        return True
-
-    @property
     def supports_direct_position_control(self) -> bool:
         return True
 

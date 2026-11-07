@@ -40,7 +40,12 @@ from ..const import (
 )
 from ..profiles import keeson as keeson_profiles
 from ..profiles.keeson import app_profile
-from .base import BedController
+from .base import (
+    POSITION_UNIT_DEGREES,
+    BedController,
+    PositionNumberSpec,
+    build_position_number_spec,
+)
 from .cluster033 import AppController
 
 if TYPE_CHECKING:
@@ -64,6 +69,9 @@ FOOT_PULSE_TABLE: list[int] = [
     3578, 3819, 4039, 4261, 4544, 4895, 5170, 5461, 5723, 6020, 6334, 6631, 6922,
     7243, 7546, 7810, 8174, 8546, 8718,
 ]  # 33 values for 0-32 degrees
+
+_HEAD_MAX_ANGLE: float = len(HEAD_PULSE_TABLE) - 1
+_FOOT_MAX_ANGLE: float = len(FOOT_PULSE_TABLE) - 1
 
 
 def pulse_to_angle(pulse: int, table: list[int]) -> int:
@@ -216,9 +224,21 @@ class SBIController(BedController):
         return True
 
     @property
-    def supports_position_feedback(self) -> bool:
-        """Return True - SBI beds support position feedback via pulse notifications."""
-        return True
+    def motor_max_angles(self) -> dict[str, float]:
+        """Return the travel the pulse tables can report."""
+        return {"back": _HEAD_MAX_ANGLE, "legs": _FOOT_MAX_ANGLE}
+
+    @property
+    def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
+        """Return the head and foot angles the notifications report, as back and legs."""
+        return (
+            build_position_number_spec(
+                "back", max_value=_HEAD_MAX_ANGLE, unit=POSITION_UNIT_DEGREES
+            ),
+            build_position_number_spec(
+                "legs", max_value=_FOOT_MAX_ANGLE, unit=POSITION_UNIT_DEGREES
+            ),
+        )
 
     @property
     def head_angle(self) -> int:

@@ -456,16 +456,6 @@ class SleepNumberController(BedController):
         return _SLEEP_NUMBER_BED_PRESENCE_QUERY_SIDES
 
     @property
-    def supports_position_feedback(self) -> bool:
-        """Sleep Number positions can be queried on demand."""
-        return True
-
-    @property
-    def reports_percentage_position(self) -> bool:
-        """Return True because foundation positions use percentages."""
-        return True
-
-    @property
     def supports_direct_position_control(self) -> bool:
         """Sleep Number supports 0-100 target positions per actuator."""
         return True

@@ -144,10 +144,6 @@ class FsmRelaxController(BedController):
         return False
 
     @property
-    def supports_position_feedback(self) -> bool:
-        return False
-
-    @property
     def controller_entity_discovery_complete(self) -> bool:
         return self._known_capabilities is not None
 
