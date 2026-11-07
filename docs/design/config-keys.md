@@ -136,10 +136,10 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `pairlink_home_id` | User | Configure, for Reverie Pairlink | `beds/reverie_pairlink_runtime.py` |
 | `pairlink_password_text` | User | Configure, for Reverie Pairlink | `beds/reverie_pairlink_runtime.py` |
 | `pairlink_password_hex` | User | Configure, for Reverie Pairlink | `beds/reverie_pairlink_runtime.py` |
-| `kaidi_room_id` | Profile | A question of `isleep`; `kaidi_metadata.py` reads it from a Kaidi bed's advertisement | `beds/kaidi.py`, `beds/floyd.py`, `isleep_profile.py` |
-| `kaidi_sofa_acu_no` | Profile | A question of `isleep`; `kaidi_metadata.py` reads it from a Kaidi bed's advertisement | `beds/kaidi.py`, `controller_factory.py`, `kaidi_variants.py` |
+| `kaidi_room_id` | Profile | A question of `isleep`; `kaidi_metadata.py` reads it from a Kaidi bed's advertisement | `beds/kaidi.py`, `beds/floyd.py`, `profiles/kaidi.py` |
+| `kaidi_sofa_acu_no` | Profile | A question of `isleep`; `kaidi_metadata.py` reads it from a Kaidi bed's advertisement | `beds/kaidi.py`, `controller_factory.py`, `profiles/kaidi.py` |
 | `kaidi_target_vaddr` | Internal | `kaidi_metadata.py` from the advertisement | `beds/kaidi.py` |
-| `kaidi_product_id` | Internal | `kaidi_metadata.py` from the advertisement | `beds/kaidi.py`, `controller_factory.py`, `kaidi_variants.py` |
+| `kaidi_product_id` | Internal | `kaidi_metadata.py` from the advertisement | `beds/kaidi.py`, `controller_factory.py`, `profiles/kaidi.py` |
 | `kaidi_adv_type` | Internal | `kaidi_metadata.py` from the advertisement | Setup log, diagnostics |
 | `kaidi_resolved_variant` | Internal | `kaidi_metadata.py` from the advertisement | `pairing.py`, `config_flow.py` |
 | `kaidi_variant_source` | Internal | `kaidi_metadata.py` from the advertisement | Setup log, diagnostics |

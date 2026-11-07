@@ -919,7 +919,7 @@ def _goodvibe_seed(
 
 
 def _isleep_products(_data: Mapping[str, Any]) -> Mapping[Any, str]:
-    from .isleep_profile import ISLEEP_PRODUCTS
+    from .profiles.kaidi import ISLEEP_PRODUCTS
 
     return {product: str(product) for product in ISLEEP_PRODUCTS}
 
@@ -930,7 +930,7 @@ def _isleep_seed(
     """The advertised product, room and actuator descriptor, never over a chosen one."""
     from homeassistant.components import bluetooth
 
-    from .isleep_profile import add_isleep_metadata
+    from .profiles.kaidi import add_isleep_metadata
 
     info = discovered or bluetooth.async_last_service_info(
         hass, data[CONF_ADDRESS], connectable=False
@@ -939,7 +939,7 @@ def _isleep_seed(
 
 
 def _isleep_errors(data: Mapping[str, Any]) -> dict[str, str]:
-    from .isleep_profile import validate_isleep_profile
+    from .profiles.kaidi import validate_isleep_profile
 
     try:
         profile = validate_isleep_profile(data)
@@ -953,7 +953,7 @@ def _isleep_errors(data: Mapping[str, Any]) -> dict[str, str]:
 
 def _isleep_layout(data: Mapping[str, Any]) -> Mapping[str, Any]:
     """The product's rendered axes set the motor count."""
-    from .isleep_profile import validate_isleep_profile
+    from .profiles.kaidi import validate_isleep_profile
 
     return {
         CONF_MOTOR_COUNT: len(validate_isleep_profile(data).axes),
