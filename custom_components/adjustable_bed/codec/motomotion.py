@@ -1,6 +1,8 @@
-"""MotoMotion wire codec, from the accepted MotoMotion 3.1.9 report (row113).
+"""HHC ``$#`` wire codec: the MotoMotion, MotoSleep and Power Bob apps.
 
-The app writes five frame forms:
+The forms come from the accepted MotoMotion 3.1.9 report (row113); MotoSleep
+5.1.5 and Power Bob 2.0.3 send the ASCII, binary and letter forms. The apps
+write six frame forms:
 
 - ASCII command: ``$#``, then the command, the parameter and the XOR of their
   decimal digits, each as five decimal digits, then ``R\\r``.
@@ -10,12 +12,14 @@ The app writes five frame forms:
 - Position: ``AIOK``, then head, lumbar, back, base and tilt as saturating
   big-endian 16-bit words, then ``R\\r``.
 - Binding: eight raw random bytes from 0 to 254, on the binding role.
+- Letter: ``$`` and one command letter, or wrapped as ``$#$`` letter ``R\\r``.
 
-Plus two fixed frames: ``$z`` (no terminator) before the timer setting, and the
+Plus two fixed frames: the letter ``$z`` before the timer setting, and the
 unpair command ``$#`` A(500, 12345).
 
 Which commands a panel sends, its name flags and its timing belong to the
-profile (``profiles/motomotion.py``) and the controller, never to this module.
+profiles (``profiles/motomotion.py``, ``profiles/motosleep.py``) and the
+controllers, never to this module.
 """
 
 from __future__ import annotations
@@ -79,5 +83,12 @@ def binding_code(draws: Iterable[int]) -> bytes:
     return code
 
 
-TIMER_PREFIX: Final = b"$z"
+def letter_command(letter: str, *, wrapped: bool = False) -> bytes:
+    if len(letter) != 1 or not letter.isascii():
+        raise ValueError("An HHC letter command is one ASCII character")
+    frame = b"$" + letter.encode("ascii")
+    return b"$#" + frame + b"R\r" if wrapped else frame
+
+
+TIMER_PREFIX: Final = letter_command("z")
 UNPAIR: Final = ascii_command(500, 12345)

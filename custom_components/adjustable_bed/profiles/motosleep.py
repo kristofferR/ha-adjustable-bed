@@ -1,9 +1,10 @@
-"""Model routing recovered from the MotoSleep and Power Bob Android apps.
+"""The MotoSleep and Power Bob apps as profiles over ``codec/motomotion.py``.
 
-The two HHC apps share UUIDs but do not share one universal controller.  The
-advertised local name selects both the wire protocol and the controls rendered
-by the OEM app.  Keep that routing here instead of inferring capabilities from
-another HHC model.
+Each app is one profile key: ``power_bob`` (Power Bob 2.0.3, exact 14-character
+HHC names) and ``motosleep`` (MotoSleep 5.1.5, longer HHC names and binary MOTO
+names). ``legacy`` keeps manual entries without a usable name on two axes. The
+advertised local name selects the frame form, panel and controls, as each app
+routes it; never infer capabilities from another HHC model.
 """
 
 from __future__ import annotations
@@ -13,14 +14,18 @@ from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from enum import StrEnum
 from types import MappingProxyType
+from typing import ClassVar, Final, Literal
+
+from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 
 Command = str | int
 MotorPair = tuple[Command, Command]
 StopAction = Command | tuple[int, int]
+ProfileKey = Literal["power_bob", "motosleep", "legacy"]
 
 
 class MotoSleepTransport(StrEnum):
-    """Command transports used by the two OEM applications."""
+    """Frame forms: raw letters, letters raw or wrapped by name, binary words."""
 
     POWER_BOB_ASCII = "power_bob_ascii"
     HHC_ASCII = "hhc_ascii"
@@ -29,8 +34,12 @@ class MotoSleepTransport(StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class MotoSleepProfile:
-    """Resolved app controller profile for one advertised-name branch."""
+    """One app's controls for one advertised-name branch (``profile_id``)."""
 
+    # No hold: movement repeats the configured pulses.
+    execution: ClassVar[ExecutionCapabilities] = NO_EXECUTION_CAPABILITIES
+
+    key: ProfileKey
     profile_id: str
     transport: MotoSleepTransport
     motors: Mapping[str, MotorPair]
@@ -44,7 +53,7 @@ class MotoSleepProfile:
     write_with_response: bool = True
     raw_hhc: bool = False
     swing: Command | None = None
-    synchro: tuple[str, str] | None = None
+    synchro: tuple[int, int] | None = None
     auxiliary_action: Command | None = None
 
 
@@ -53,6 +62,7 @@ def _frozen(mapping: Mapping[str, Command | MotorPair] | None = None) -> Mapping
 
 
 def _profile(
+    app: ProfileKey,
     profile_id: str,
     transport: MotoSleepTransport,
     *,
@@ -92,6 +102,7 @@ def _profile(
         if command in available
     }
     return MotoSleepProfile(
+        key=app,
         profile_id=profile_id,
         transport=transport,
         motors=_frozen(motors),
@@ -148,6 +159,7 @@ def _power_bob_profile(profile_id: str) -> MotoSleepProfile:
 
     explicit_stop = profile_id in {"four", "wr1140", "one", "two", "three", "nine", "six_zg"}
     profile = _profile(
+        "power_bob",
         f"power_bob_{profile_id}",
         MotoSleepTransport.POWER_BOB_ASCII,
         motors=motors,
@@ -169,6 +181,20 @@ def _power_bob_profile(profile_id: str) -> MotoSleepProfile:
             rgb_light=False,
         )
     return profile
+
+
+POWER_BOB_PANELS: Final[Mapping[str, MotoSleepProfile]] = MappingProxyType(
+    {panel: _power_bob_profile(panel) for panel in _POWER_BOB_COMMANDS}
+)
+# The APK has no default root route for an unmatched selector.
+POWER_BOB_UNKNOWN: Final = MotoSleepProfile(
+    key="power_bob",
+    profile_id="power_bob_unknown",
+    transport=MotoSleepTransport.POWER_BOB_ASCII,
+    motors=_frozen(),
+    presets=_frozen(),
+    write_with_response=False,
+)
 
 
 def _resolve_power_bob(name: str) -> MotoSleepProfile:
@@ -195,15 +221,7 @@ def _resolve_power_bob(name: str) -> MotoSleepProfile:
             "9": "nine",
             "D": "six_zg",
         }.get(c8)
-    if profile_id is None:
-        return MotoSleepProfile(
-            profile_id="power_bob_unknown",
-            transport=MotoSleepTransport.POWER_BOB_ASCII,
-            motors=_frozen(),
-            presets=_frozen(),
-            write_with_response=False,
-        )
-    return _power_bob_profile(profile_id)
+    return POWER_BOB_PANELS[profile_id] if profile_id else POWER_BOB_UNKNOWN
 
 
 _HHC_COMMANDS = {
@@ -304,6 +322,7 @@ def _resolve_hhc(name: str) -> MotoSleepProfile:
 
     rgb = profile_id in {"zero", "five_new", "six_new", "eight_new", "wr1140"}
     profile = _profile(
+        "motosleep",
         f"motosleep_hhc_{profile_id}",
         MotoSleepTransport.HHC_ASCII,
         motors=motors,
@@ -315,94 +334,87 @@ def _resolve_hhc(name: str) -> MotoSleepProfile:
     if profile_id in {"f", "g", "h", "wr1140", "five_new", "six_new", "eight_new"}:
         # MainPanel sends 00012 when the current bind state is false and 00015
         # when it is true.  Store desired-state opcodes as (enable, disable).
-        profile = replace(profile, synchro=("00012", "00015"))
+        profile = replace(profile, synchro=(12, 15))
     return profile
 
 
 _MOTO_RE = re.compile(r"^MOTO(B|S)(\d{2})(\w)([0-9])([BCD])([A-Za-f])(\w)(\w)(\w)")
 
-
-def _unknown_moto_profile() -> MotoSleepProfile:
-    """Return a binary transport with no speculative bed controls."""
-    return MotoSleepProfile(
-        profile_id="motosleep_moto_unknown",
-        transport=MotoSleepTransport.MOTO_BINARY,
-        motors=_frozen(),
-        presets=_frozen(),
-    )
-
-
-def _resolve_moto(name: str) -> MotoSleepProfile:
-    name = name.upper()
-    match = _MOTO_RE.match(name)
-    if match is None or len(name) != 28:
-        return _unknown_moto_profile()
-
-    page = name[7]
-    motors_by_page: dict[str, dict[str, MotorPair]] = {
-        # Commands and labels are taken from each page's BarButton instances.
-        "0": {
+# Name index 7 -> page, and its motors from the page's BarButton instances.
+_MOTO_MOTORS: dict[str, tuple[str, dict[str, MotorPair]]] = {
+    "0": (
+        "wrs23ms",
+        {
             "back": (0x0002, 0x0001),
             "legs": (0x0200, 0x0100),
             "head": (0x0020, 0x0010),
             "lumbar": (0x0080, 0x0040),
             "feet": (0x0008, 0x0004),
         },
-        "1": {
-            "back": (0x0020, 0x0010),
-            "legs": (0x0200, 0x0100),
-            "head": (0x0002, 0x0001),
-        },
-        "2": {
+    ),
+    "1": (
+        "wrs14dmm",
+        {"back": (0x0020, 0x0010), "legs": (0x0200, 0x0100), "head": (0x0002, 0x0001)},
+    ),
+    "2": (
+        "wrs18ms",
+        {
             "back": (0x0002, 0x0001),
             "legs": (0x0200, 0x0100),
             "lumbar": (0x0080, 0x0040),
             "feet": (0x0008, 0x0004),
         },
-        "3": {"back": (0x0002, 0x0001), "legs": (0x0200, 0x0100), "feet": (0x0008, 0x0004)},
-        "4": {
+    ),
+    "3": (
+        "wrs14ms",
+        {"back": (0x0002, 0x0001), "legs": (0x0200, 0x0100), "feet": (0x0008, 0x0004)},
+    ),
+    "4": (
+        "wrs20ms",
+        {
             "back": (0x0002, 0x0001),
             "legs": (0x0200, 0x0100),
             "head": (0x0020, 0x0010),
             "lumbar": (0x0080, 0x0040),
             "feet": (0x0008, 0x0004),
         },
-        "5": {"back": (0x0002, 0x0001), "legs": (0x0200, 0x0100), "feet": (0x0008, 0x0004)},
-        "6": {
+    ),
+    "5": (
+        "wrs16ms",
+        {"back": (0x0002, 0x0001), "legs": (0x0200, 0x0100), "feet": (0x0008, 0x0004)},
+    ),
+    "6": (
+        "wrc30mms",
+        {
             "neck": (0x0020, 0x0010),
             "back": (0x0002, 0x0001),
             "lumbar": (0x0080, 0x0040),
             "legs": (0x0008, 0x0004),
         },
-        "7": {"back": (0x0002, 0x0001), "legs": (0x0008, 0x0004), "lumbar": (0x0080, 0x0040)},
-        "8": {
+    ),
+    "7": (
+        "wrs27ms",
+        {"back": (0x0002, 0x0001), "legs": (0x0008, 0x0004), "lumbar": (0x0080, 0x0040)},
+    ),
+    "8": (
+        "wrs20ms_swing",
+        {
             "back": (0x0002, 0x0001),
             "legs": (0x0200, 0x0100),
             "head": (0x0020, 0x0010),
             "lumbar": (0x0080, 0x0040),
             "feet": (0x0008, 0x0004),
         },
-        "9": {
-            "back": (0x000A, 0x0005),
-            "lumbar": (0x0200, 0x0100),
-            "legs": (0x00A0, 0x0050),
-        },
-    }
-    profile_names = {
-        "0": "wrs23ms",
-        "1": "wrs14dmm",
-        "2": "wrs18ms",
-        "3": "wrs14ms",
-        "4": "wrs20ms",
-        "5": "wrs16ms",
-        "6": "wrc30mms",
-        "7": "wrs27ms",
-        "8": "wrs20ms_swing",
-        "9": "wr219",
-    }
-    if page not in motors_by_page or page not in profile_names:
-        return _unknown_moto_profile()
+    ),
+    "9": (
+        "wr219",
+        {"back": (0x000A, 0x0005), "lumbar": (0x0200, 0x0100), "legs": (0x00A0, 0x0050)},
+    ),
+}
 
+
+def _moto_page(page: str) -> MotoSleepProfile:
+    name, motors = _MOTO_MOTORS[page]
     presets: dict[str, Command]
     swing: Command | None = None
     if page == "9":
@@ -413,21 +425,50 @@ def _resolve_moto(name: str) -> MotoSleepProfile:
         if page == "8":
             swing = 0x8014
 
-    memory_recall = () if page == "9" else (0x800C, 0x800D)
-    memory_save = () if page == "9" else (0x811D, 0x811E)
     return MotoSleepProfile(
-        profile_id=f"motosleep_moto_{profile_names[page]}",
+        key="motosleep",
+        profile_id=f"motosleep_moto_{name}",
         transport=MotoSleepTransport.MOTO_BINARY,
-        motors=_frozen(motors_by_page[page]),
+        motors=_frozen(motors),
         presets=_frozen(presets),
-        memory_recall=memory_recall,
-        memory_save=memory_save,
+        memory_recall=() if page == "9" else (0x800C, 0x800D),
+        memory_save=() if page == "9" else (0x811D, 0x811E),
         # The app's remaining model flags select runtime massage/audio tables.
         # Do not infer bed capabilities or friendly labels without those tables.
         stop=((0x9088, 1), 6, 100) if page == "9" else ((0x0000, 0), 5, 100),
         write_with_response=True,
         swing=swing,
     )
+
+
+MOTO_PAGES: Final[Mapping[str, MotoSleepProfile]] = MappingProxyType(
+    {page: _moto_page(page) for page in _MOTO_MOTORS}
+)
+# A binary transport with no speculative bed controls.
+MOTO_UNKNOWN: Final = MotoSleepProfile(
+    key="motosleep",
+    profile_id="motosleep_moto_unknown",
+    transport=MotoSleepTransport.MOTO_BINARY,
+    motors=_frozen(),
+    presets=_frozen(),
+)
+# Manual configurations created before model routing had no reliable local
+# name. Keep their prior two-axis behavior, but do not expose speculative
+# auxiliary, massage, light, memory, or sync entities.
+LEGACY: Final = _profile(
+    "legacy",
+    "motosleep_unknown",
+    MotoSleepTransport.HHC_ASCII,
+    motors={"back": ("K", "L"), "legs": ("M", "N")},
+    commands="KLMNO",
+    explicit_stop=True,
+)
+
+
+def _resolve_moto(name: str) -> MotoSleepProfile:
+    if _MOTO_RE.match(name) is None or len(name) != 28:
+        return MOTO_UNKNOWN
+    return MOTO_PAGES.get(name[7], MOTO_UNKNOWN)
 
 
 def resolve_motosleep_profile(device_name: str | None) -> MotoSleepProfile:
@@ -440,17 +481,4 @@ def resolve_motosleep_profile(device_name: str | None) -> MotoSleepProfile:
         return _resolve_power_bob(upper_name)
     if "HHC" in upper_name and len(name) >= 14:
         return _resolve_hhc(upper_name)
-
-    # Manual configurations created before model routing had no reliable local
-    # name.  Keep their prior two-axis behavior, but do not expose speculative
-    # auxiliary, massage, light, memory, or sync entities.
-    return replace(
-        _profile(
-            "motosleep_unknown",
-            MotoSleepTransport.HHC_ASCII,
-            motors={"back": ("K", "L"), "legs": ("M", "N")},
-            commands="KLMNO",
-            explicit_stop=True,
-        ),
-        rgb_light=False,
-    )
+    return LEGACY

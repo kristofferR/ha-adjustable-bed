@@ -26,7 +26,6 @@ STANDALONE: dict[str, str] = {
     "linak": "own wire format",
     "logicdata": "own wire format",
     "logicdata_air_pump": "own wire format",
-    "motosleep": "own wire format",
     "octo": "own wire format",
     "okin_ore": "one fixed command table over codec/okin_ore.py, which the BOX1220 routes of"
     " sleepys_elite_app and starcode_abm5_4 also send; no app profile",
