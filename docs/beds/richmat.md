@@ -2373,7 +2373,8 @@ and MJRN.
 ##### Sleep controls and reports
 
 Sleep JSON uses insertion-ordered `id`, `cmd`, `val` and UTF-8 encoding. It is
-not a Richmat frame:
+not a Richmat frame but the sleep-sensor envelope of
+[`codec/sleep_envelope.py`](../../custom_components/adjustable_bed/codec/sleep_envelope.py):
 
 ```text
 00 seq 01 00 ((n+7)&ff) 00 00 11 03 43 55 44 lenLo lenHi JSON

@@ -9,17 +9,17 @@ from __future__ import annotations
 
 STANDALONE: dict[str, str] = {
     "casper_remote": "remote without bed commands",
-    "casper_sleep_mm": "sleep sensor without bed commands",
-    "casper_sleep_sxb": "sleep sensor without bed commands",
+    "casper_sleep_mm": "sleep sensor without bed commands; frames use codec/sleep_envelope.py",
+    "casper_sleep_sxb": "sleep sensor without bed commands; frames use codec/sleep_envelope.py",
     "furnimove": "frames use codec/keeson.py; the per-handset FurniMove key catalog"
     " and its combined-key frames stay controller code",
     "gmmotor": "frames use codec/richmat.py; the GM Control product catalog, its P1"
     " service selection and its menu session stay controller code",
-    "gmmotor_sleep_mm": "sleep sensor without bed commands",
-    "gmmotor_sleep_sxb": "sleep sensor without bed commands",
+    "gmmotor_sleep_mm": "sleep sensor without bed commands; frames use codec/sleep_envelope.py",
+    "gmmotor_sleep_sxb": "sleep sensor without bed commands; frames use codec/sleep_envelope.py",
     "hush_remote": "remote without bed commands",
-    "hush_sleep_mm": "sleep sensor without bed commands",
-    "hush_sleep_sxb": "sleep sensor without bed commands",
+    "hush_sleep_mm": "sleep sensor without bed commands; frames use codec/sleep_envelope.py",
+    "hush_sleep_sxb": "sleep sensor without bed commands; frames use codec/sleep_envelope.py",
     "jensen": "own wire format",
     "leggett_gen2": "own wire format",
     "linak": "own wire format",

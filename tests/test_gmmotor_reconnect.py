@@ -12,13 +12,13 @@ from pytest_homeassistant.common import MockConfigEntry
 from custom_components.adjustable_bed.beds.gmmotor import GmmotorController
 from custom_components.adjustable_bed.beds.gmmotor_sleep import GmmotorSleepController
 from custom_components.adjustable_bed.button import ControllerActionButton
+from custom_components.adjustable_bed.codec.sleep_envelope import frame
 from custom_components.adjustable_bed.const import DOMAIN, disconnect_after_command_default_enabled
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.gmmotor_notifications import Event
 from custom_components.adjustable_bed.gmmotor_requests import Request
 from custom_components.adjustable_bed.gmmotor_services import async_register_gmmotor_services
 from custom_components.adjustable_bed.gmmotor_sessions import sleep_intent
-from custom_components.adjustable_bed.gmmotor_sleep_protocol import frame
 from custom_components.adjustable_bed.gmmotor_transport import E0FF, SLEEP_NOTIFY, SLEEP_WRITE
 
 
@@ -157,9 +157,7 @@ async def test_gated_service_waits_for_replacement_connection_reply(
     if fields["operation"] in ("alarm", "alarm_at", "repeat_alarm"):
         fields = {**fields, "mode": first.profile.alarm_choices[0][0]}
     task = asyncio.create_task(
-        hass.services.async_call(
-            DOMAIN, "gmmotor", {"device_id": "bed", **fields}, blocking=True
-        )
+        hass.services.async_call(DOMAIN, "gmmotor", {"device_id": "bed", **fields}, blocking=True)
     )
     await asyncio.wait_for(queried.wait(), 1)
     assert c.controller is not first

@@ -45,6 +45,12 @@ profile drives it, so it has no family registration; its vectors are in
 several codecs (StarCode M1X12 and M5X5, Sleepy's Elite) build every frame a
 codec covers through that codec.
 
+`codec/sleep_envelope.py` builds the 14-byte sleep-sensor JSON envelope that the
+Casper Base, Hush Base and GM Control sleep sensors and Good Vibe Sleep's sleep
+routes send, and sizes the responses their receivers reassemble. Each app keeps
+its own JSON, request numbering and limits. No app profile drives it, so it has
+no family registration; its vectors are in `tests/test_sleep_envelope_vectors.py`.
+
 ## Registering a family
 
 A family registers itself in files it owns, so parallel family PRs do not touch
