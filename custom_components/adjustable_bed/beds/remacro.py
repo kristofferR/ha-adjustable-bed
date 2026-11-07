@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 from bleak.exc import BleakError
 
 from ..app_session import app_session
+from ..card import CARD_LIGHT_LEVEL, CARD_LIGHTING, CardPlacement, CardSection
 from ..const import CONF_REMACRO_MODEL, REMACRO_READ_CHAR_UUID, REMACRO_WRITE_CHAR_UUID
 from ..controller_state import StateKey, StateUpdate
 from ..execution import ExecutionCapabilities
@@ -347,6 +348,7 @@ class RemacroController(BedController):
                 options=("left", "right"),
                 select_fn=_select_side,
                 local_select_fn=self.select_control_side,
+                card=CardPlacement(CardSection.MOTORS),
             ),
         )
 
@@ -363,6 +365,7 @@ class RemacroController(BedController):
                 native_max_value=255,
                 native_step=1,
                 set_fn=_set_led_brightness,
+                card=CARD_LIGHT_LEVEL,
             ),
         )
 
@@ -377,6 +380,7 @@ class RemacroController(BedController):
                 press_fn=_remacro(lambda ctrl: ctrl.save_led_brightness()),
                 icon="mdi:content-save",
                 translation_key="remacro_led_brightness_save",
+                card=CARD_LIGHTING,
             ),
         )
 

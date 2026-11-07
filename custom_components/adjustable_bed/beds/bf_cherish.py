@@ -17,6 +17,7 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ..app_session import app_session
+from ..card import CARD_MASSAGE, CardRole, motor_card
 from ..codec import keeson as codec
 from ..controller_state import StateKey
 from ..profiles import keeson as keeson_profiles
@@ -626,6 +627,7 @@ class BfCherishController(BedController):
                 3,
                 1,
                 set_value,
+                card=CARD_MASSAGE,
             )
 
         return (spec("intensity"), spec("wave"))
@@ -639,10 +641,11 @@ class BfCherishController(BedController):
                     label,
                     _action("move", control),
                     translation_key="bf_cherish_" + control,
+                    card=motor_card("back_legs", role),
                 )
-                for control, label in (
-                    ("both_up", "Back and legs up"),
-                    ("both_down", "Back and legs down"),
+                for control, label, role in (
+                    ("both_up", "Back and legs up", CardRole.UP),
+                    ("both_down", "Back and legs down", CardRole.DOWN),
                 )
             )
         return (

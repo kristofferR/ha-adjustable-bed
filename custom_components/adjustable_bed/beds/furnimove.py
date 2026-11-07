@@ -14,6 +14,7 @@ import unicodedata
 from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING
 
+from ..card import CARD_HIDDEN, CARD_LIGHTING
 from ..codec import keeson as codec
 from ..const import CONF_FURNIMOVE_REMOTE
 from ..controller_state import StateKey
@@ -445,7 +446,11 @@ class FurniMoveController(BedController):
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
         return tuple(
             ControllerStateBinarySensorSpec(
-                key, "under_bed_lights" if key == "furnimove_ubl" else key, _state_key(key), icon
+                key,
+                "under_bed_lights" if key == "furnimove_ubl" else key,
+                _state_key(key),
+                icon,
+                card=CARD_LIGHTING if key == "furnimove_ubl" else CARD_HIDDEN,
             )
             for key, icon in (
                 ("furnimove_ubl", "mdi:led-strip-variant"),

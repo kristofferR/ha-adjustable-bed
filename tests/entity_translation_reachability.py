@@ -259,7 +259,9 @@ def required_keys(
         "number": _description_keys((*NUMBER_DESCRIPTIONS, *MASSAGE_NUMBER_DESCRIPTIONS)),
         "switch": _description_keys(SWITCH_DESCRIPTIONS),
         "sensor": _description_keys((*SENSOR_DESCRIPTIONS, *MASSAGE_SENSOR_DESCRIPTIONS)),
-        "binary_sensor": _description_keys(BINARY_SENSOR_DESCRIPTIONS),
+        # A bed that reports presence per side gets a sensor for each side.
+        "binary_sensor": _description_keys(BINARY_SENSOR_DESCRIPTIONS)
+        | {f"bed_presence_{side}" for side in sides},
     }
     for platform, keys in descriptions.items():
         required.setdefault(platform, set()).update(keys)

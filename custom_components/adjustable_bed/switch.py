@@ -14,6 +14,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .card import CARD_LIGHTING, CARD_UTILITY, CardPlacement, CardSection
 from .const import (
     BED_TYPE_REMACRO,
     BED_TYPE_SVANE,
@@ -56,6 +57,7 @@ class AdjustableBedSwitchEntityDescription(SwitchEntityDescription):
     has_discrete_control: bool = False
     # Optional controller-state key for readback/assumed-state publication.
     state_key: StateKey[bool | None] | None = None
+    card: CardPlacement = CARD_UTILITY
 
 
 SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
@@ -72,6 +74,7 @@ SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
     AdjustableBedSwitchEntityDescription(
         key="under_bed_lights",
         translation_key="under_bed_lights",
+        card=CARD_LIGHTING,
         icon="mdi:lightbulb",
         turn_on_fn=lambda ctrl: ctrl.lights_on(),
         turn_off_fn=lambda ctrl: ctrl.lights_off(),
@@ -91,6 +94,7 @@ SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
     AdjustableBedSwitchEntityDescription(
         key="synchro_mode",
         translation_key="synchro_mode",
+        card=CardPlacement(CardSection.MOTORS),
         icon="mdi:link-variant",
         turn_on_fn=lambda ctrl: ctrl.set_synchro(True),
         turn_off_fn=lambda ctrl: ctrl.set_synchro(False),
@@ -269,7 +273,7 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
         description: AdjustableBedSwitchEntityDescription,
     ) -> None:
         """Initialize the switch."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, description.card)
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)

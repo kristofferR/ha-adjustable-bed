@@ -17,6 +17,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ..card import CARD_MASSAGE_TIMER
 from ..codec import keeson as codec
 from ..const import GLIDEAWAY_MOTION_MODELS
 from ..controller_state import StateKey
@@ -567,6 +568,7 @@ class GlideawayMotionController(BedController):
             "mdi:timer-outline",
             "min",
             attribute_keys=(STATE_TIMER_RAW,),
+            card=CARD_MASSAGE_TIMER,
         )
         return (alarm, timer) if self.supports_massage else (alarm,)
 

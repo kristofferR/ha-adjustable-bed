@@ -3,6 +3,7 @@ import type { TemplateResult } from "lit";
 import type { HomeAssistant, MotorEntity } from "./types";
 import { bedEntitiesForDevice } from "./discovery";
 import projections from "./fixtures/reverie041-holds.json";
+import { placed } from "./test-placements";
 
 // Lit supplies its node HTMLElement shim. Only event targets are faked here;
 // templates, registered closures, card lifecycle and service dispatch are real.
@@ -70,11 +71,11 @@ const deferred = () => {
 };
 const flush = async () => { for (let i = 0; i < 8; i++) await Promise.resolve(); };
 function fixture() {
-  const hass: HomeAssistant = { entities: {}, states: {}, devices: {}, themes: {},
+  const hass: HomeAssistant = placed({ entities: {}, states: {}, devices: {}, themes: {},
     locale: { language: "en" }, language: "en", callService: async (domain, service, data) => {
       calls.push({ domain, service, data });
       return new Promise<void>(() => {});
-    } };
+    } });
   for (const [device, key] of [["pair", "back_up"], ["left", "back_up"], ["right", "back_up"]]) {
     const entity_id = "button." + device + "_" + key;
     hass.entities[entity_id] = { entity_id, device_id: device, platform: "adjustable_bed", translation_key: key };

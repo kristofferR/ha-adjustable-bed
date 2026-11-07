@@ -20,6 +20,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .bed_traits import bed_traits
+from .card import CARD_HIDDEN, motor_card
 from .const import (
     BED_TYPE_LINAK,
     CONF_BED_TYPE,
@@ -346,7 +347,7 @@ class AdjustableBedAngleSensor(AdjustableBedEntity, SensorEntity):
         description: AdjustableBedSensorEntityDescription,
     ) -> None:
         """Initialize the sensor."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, motor_card(description.position_key))
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
@@ -393,7 +394,7 @@ class AdjustableBedMassageSensor(AdjustableBedEntity, SensorEntity):
         description: AdjustableBedMassageSensorEntityDescription,
     ) -> None:
         """Initialize the massage sensor."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_HIDDEN)
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
@@ -461,7 +462,7 @@ class AdjustableBedControllerStateSensor(AdjustableBedEntity, SensorEntity):
         spec: ControllerStateSensorSpec,
     ) -> None:
         """Initialize a controller-state sensor."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, spec.card)
         self._spec = spec
         self._attr_unique_id = coordinator.entity_unique_id(spec.key)
         self._attr_translation_key = spec.translation_key

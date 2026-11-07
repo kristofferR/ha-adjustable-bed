@@ -14,6 +14,14 @@ from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
+from ..card import (
+    CARD_LIGHT_LEVEL,
+    CARD_LIGHT_MOOD,
+    CARD_UTILITY,
+    CardPlacement,
+    CardRole,
+    CardSection,
+)
 from ..codec import okin_5a
 from ..const import CONF_BLE_DEVICE_NAME, CONF_STARCODE_M5X5_PROFILE
 from ..controller_state import StateUpdate
@@ -402,7 +410,13 @@ class StarcodeM5X5Controller(BedController):
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         return tuple(
             ControllerButtonSpec(
-                f"starcode_{key}", label, _action(key), translation_key=f"starcode_{key}"
+                f"starcode_{key}",
+                label,
+                _action(key),
+                translation_key=f"starcode_{key}",
+                card=CardPlacement(CardSection.LIGHTING, CardRole.CYCLE)
+                if key == "light_cycle"
+                else CARD_UTILITY,
             )
             for key, label in (
                 ("save_tv", "Save Ascent"),
@@ -430,6 +444,7 @@ class StarcodeM5X5Controller(BedController):
                 6,
                 1,
                 brightness,
+                card=CARD_LIGHT_LEVEL,
             ),
         )
 
@@ -446,6 +461,7 @@ class StarcodeM5X5Controller(BedController):
                 LIGHT_COLOR_OPTION,
                 tuple(str(i) for i in range(8)),
                 color,
+                card=CARD_LIGHT_MOOD,
             ),
         )
 

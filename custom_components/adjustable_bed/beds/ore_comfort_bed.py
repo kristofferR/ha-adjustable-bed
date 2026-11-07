@@ -29,6 +29,7 @@ from typing import TYPE_CHECKING, Any, Final, cast
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.exceptions import HomeAssistantError
 
+from ..card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_UTILITY
 from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
@@ -445,6 +446,7 @@ class OreComfortBedController(BedController):
                 native_max_value=MASSAGE_LEVEL_MAX,
                 native_step=1,
                 set_fn=_level_setter(zone),
+                card=CARD_MASSAGE,
             )
             for zone in ("head", "foot", "wave")
         )
@@ -460,6 +462,7 @@ class OreComfortBedController(BedController):
                 select_fn=lambda ctrl, option: cast(
                     OreComfortBedController, ctrl
                 ).set_massage_timer_option(option),
+                card=CARD_MASSAGE_TIMER,
             ),
         )
 
@@ -474,6 +477,7 @@ class OreComfortBedController(BedController):
                 lambda ctrl: press(cast(OreComfortBedController, ctrl)),
                 icon,
                 translation_key=key,
+                card=CARD_MASSAGE if key == "ore_comfort_massage_start" else CARD_UTILITY,
             )
 
         return (

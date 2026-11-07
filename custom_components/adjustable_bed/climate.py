@@ -18,6 +18,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .card import CARD_CLIMATE
 from .const import DOMAIN
 from .controller_state import AnyStateKey, ControllerState, StateKey, sided
 from .entity import AdjustableBedEntity
@@ -271,7 +272,7 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
         description: AdjustableBedClimateEntityDescription,
     ) -> None:
         """Initialize the climate entity."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_CLIMATE)
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)

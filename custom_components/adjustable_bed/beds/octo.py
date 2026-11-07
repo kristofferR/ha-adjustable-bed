@@ -27,6 +27,7 @@ from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
+from ..card import CARD_HIDDEN, memory_card
 from ..const import (
     CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     CONF_OCTO_PIN,
@@ -1489,6 +1490,7 @@ class OctoController(BedController, OctoPacketCodec):
                         press_fn=lambda ctrl, slot=slot: ctrl.preset_memory(slot),
                         translation_key=f"preset_memory_{slot}",
                         hold=hold,
+                        card=memory_card(slot),
                     )
                 )
                 if self.is_memory_slot_programmable(slot):
@@ -1499,6 +1501,7 @@ class OctoController(BedController, OctoPacketCodec):
                             icon="mdi:content-save",
                             press_fn=lambda ctrl, slot=slot: ctrl.program_memory(slot),
                             translation_key=f"program_memory_{slot}",
+                            card=memory_card(slot, save=True),
                         )
                     )
         if self.supports_remote_teach:
@@ -1754,6 +1757,7 @@ class OctoController(BedController, OctoPacketCodec):
                 select_fn=lambda ctrl, value: cast(OctoController, ctrl).set_light_sensitivity(
                     int(value)
                 ),
+                card=CARD_HIDDEN,
             ),
         )
 
@@ -1774,6 +1778,7 @@ class OctoController(BedController, OctoPacketCodec):
                     int(value)
                 ),
                 native_unit_of_measurement="min",
+                card=CARD_HIDDEN,
             ),
         )
 

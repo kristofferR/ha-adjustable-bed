@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Final, cast
 from homeassistant.util import dt as dt_util
 
 from ..alarm_table import AlarmTableSchedule, AlarmTableScheduleSpec
+from ..card import CARD_MASSAGE_TIMER
 from ..codec import keeson as codec
 from ..controller_state import StateKey
 from ..profiles.keeson import AppAction, AppProfile
@@ -211,7 +212,11 @@ class AppController(BedController):
             return ()
         return (
             ControllerStateSensorSpec(
-                "app_timer_status", "app_timer_status", APP_TIMER_STATUS, "mdi:timer-outline"
+                "app_timer_status",
+                "app_timer_status",
+                APP_TIMER_STATUS,
+                "mdi:timer-outline",
+                card=CARD_MASSAGE_TIMER,
             ),
         )
 

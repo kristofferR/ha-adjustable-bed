@@ -22,6 +22,15 @@ from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 from homeassistant.util import dt as dt_util
 
+from ..card import (
+    CARD_MASSAGE,
+    CARD_PRESETS,
+    CARD_UTILITY,
+    CardPlacement,
+    CardRole,
+    CardSection,
+    motor_card,
+)
 from ..const import CONF_BLE_DEVICE_NAME, RICHMAT_MH_APPS, RUF_RICHMAT_APPS, VARIANT_AUTO
 from ..controller_state import StateKey, StateUpdate
 from ..detection import is_mac_like_name
@@ -187,6 +196,11 @@ WAIST_ALARM_INTENSITY_KEYS: Final = {
 def _waist_setting_key(side: str, field: str) -> StateKey[str | None]:
     return StateKey[str | None](f"richmat_mh_waist_{side}_{field}")
 
+
+# Tap kinds the card shows outside its utility section.
+_TAP_CARDS: Final = {"richmat_mh_preset": CARD_PRESETS, "richmat_mh_massage": CARD_MASSAGE}
+# Angle targets sit with the cover of the motor each angle number names.
+_ANGLE_MOTORS: Final = {"back": "back", "foot": "feet", "pillow": "pillow"}
 
 _SENSOR_KEYS: Final = frozenset(
     {DETECTION_KEY, ALARM_STATUS_KEY, MEMORY_ARRIVAL_KEY, *WAIST_ALARM_KEYS.values()}
@@ -828,6 +842,7 @@ class RichmatMhController(BedController):
                     icon="mdi:content-save" if tap.translation_key == "richmat_mh_save" else "mdi:gesture-tap",
                     translation_key=tap.translation_key,
                     translation_placeholders={"action": tap.name},
+                    card=_TAP_CARDS.get(tap.translation_key, CARD_UTILITY),
                 )
             )
         if self._smart_set_lock():
@@ -889,6 +904,7 @@ class RichmatMhController(BedController):
                     state_key=WAIST_MODE_KEY,
                     options=WAIST_MODES,
                     select_fn=lambda ctrl, option: _invoke(ctrl, "set_waist_mode", option),
+                    card=CARD_MASSAGE,
                 )
             )
             for side in WAIST_SIDES:
@@ -903,6 +919,7 @@ class RichmatMhController(BedController):
                             select_fn=lambda ctrl, option, s=side, f=field: _invoke(
                                 ctrl, "set_waist_setting", s, f, option
                             ),
+                            card=CARD_MASSAGE,
                         )
                     )
         return tuple(specs)
@@ -918,6 +935,7 @@ class RichmatMhController(BedController):
                     LIGHT_TIMER_MINUTES_KEY, LIGHT_TIMER_MINUTES_KEY, LIGHT_TIMER_MINUTES_KEY,
                     0, 15, 1, lambda ctrl, v: _invoke(ctrl, "write_light_timer", int(v) * 60, int(v)),
                     native_unit_of_measurement="min",
+                    card=CardPlacement(CardSection.LIGHTING, CardRole.TIMER_MINUTES),
                 )
             )
         elif page is not None:
@@ -926,6 +944,7 @@ class RichmatMhController(BedController):
                     LIGHT_TIMER_KEY, LIGHT_TIMER_KEY, LIGHT_TIMER_KEY,
                     0, 300, 1, lambda ctrl, v: _invoke(ctrl, "write_light_timer", int(v), int(v)),
                     native_unit_of_measurement="s",
+                    card=CardPlacement(CardSection.LIGHTING, CardRole.TIMER),
                 )
             )
         for bits, name, low, high, _offset in self._angles():
@@ -935,6 +954,7 @@ class RichmatMhController(BedController):
                     key, key, key, low, high, 1,
                     lambda ctrl, v, b=bits: _invoke(ctrl, "set_angle", b, int(v)),
                     native_unit_of_measurement="°",
+                    card=motor_card(_ANGLE_MOTORS[name.lower()]),
                 )
             )
         for zone, _name, low, high in self._intensities():
@@ -943,6 +963,7 @@ class RichmatMhController(BedController):
                 ControllerNumberSpec(
                     key, key, key, low, high, 1,
                     lambda ctrl, v, z=zone: _invoke(ctrl, "write_massage_intensity", z, int(v)),
+                    card=CARD_MASSAGE,
                 )
             )
         return tuple(specs)

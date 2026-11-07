@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
+from ..card import CARD_UTILITY
 from ..const import CONF_GMMOTOR_SIDE, CONF_PRODUCT_TYPE
 from ..controller_state import StateKey
 from ..gmmotor_catalog_types import Phase
@@ -233,6 +234,7 @@ class GmmotorController(BedController):
                     SLEEP_NAME,
                     INVALID_NOTIFICATIONS,
                 ),
+                card=CARD_UTILITY,
             ),
         )
 

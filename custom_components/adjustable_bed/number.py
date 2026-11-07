@@ -22,6 +22,14 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .bed_traits import bed_traits, bed_type_has_position_feedback
 from .beds.base import ControllerNumberSpec, PositionNumberSpec
+from .card import (
+    CARD_CLIMATE,
+    CARD_FIRMNESS,
+    CARD_LIGHT_LEVEL,
+    CARD_MASSAGE,
+    CardPlacement,
+    motor_card,
+)
 from .const import (
     BED_TYPE_SLEEPSTAR,
     CONF_BED_TYPE,
@@ -31,7 +39,7 @@ from .const import (
     SIDE_BOTH,
 )
 from .controller_state import ControllerState, StateKey, sided
-from .entity import AdjustableBedEntity, RenamesInPlace
+from .entity import AdjustableBedEntity, PlacedInCard, RenamesInPlace
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime, controller_side_scope, own_sides
 from .octo_runtime import octo_controller
@@ -65,6 +73,8 @@ class AdjustableBedNumberEntityDescription(NumberEntityDescription):
     move_down_fn: Callable[[BedController], Coroutine[Any, Any, None]]
     move_stop_fn: Callable[[BedController], Coroutine[Any, Any, None]]
     max_angle: float
+    # The motor (its cover's translation key) the slider sits with in the card.
+    motor: str
     min_motors: int = 2
 
 
@@ -87,6 +97,7 @@ NUMBER_DESCRIPTIONS: tuple[AdjustableBedNumberEntityDescription, ...] = (
         native_unit_of_measurement="°",
         mode=NumberMode.SLIDER,
         position_key="back",
+        motor="back",
         move_up_fn=lambda ctrl: ctrl.move_back_up(),
         move_down_fn=lambda ctrl: ctrl.move_back_down(),
         move_stop_fn=lambda ctrl: ctrl.move_back_stop(),
@@ -103,6 +114,7 @@ NUMBER_DESCRIPTIONS: tuple[AdjustableBedNumberEntityDescription, ...] = (
         native_unit_of_measurement="°",
         mode=NumberMode.SLIDER,
         position_key="legs",
+        motor="legs",
         move_up_fn=lambda ctrl: ctrl.move_legs_up(),
         move_down_fn=lambda ctrl: ctrl.move_legs_down(),
         move_stop_fn=lambda ctrl: ctrl.move_legs_stop(),
@@ -119,6 +131,7 @@ NUMBER_DESCRIPTIONS: tuple[AdjustableBedNumberEntityDescription, ...] = (
         native_unit_of_measurement="°",
         mode=NumberMode.SLIDER,
         position_key="head",
+        motor="head",
         move_up_fn=lambda ctrl: ctrl.move_head_up(),
         move_down_fn=lambda ctrl: ctrl.move_head_down(),
         move_stop_fn=lambda ctrl: ctrl.move_head_stop(),
@@ -135,6 +148,7 @@ NUMBER_DESCRIPTIONS: tuple[AdjustableBedNumberEntityDescription, ...] = (
         native_unit_of_measurement="°",
         mode=NumberMode.SLIDER,
         position_key="feet",
+        motor="feet",
         move_up_fn=lambda ctrl: ctrl.move_feet_up(),
         move_down_fn=lambda ctrl: ctrl.move_feet_down(),
         move_stop_fn=lambda ctrl: ctrl.move_feet_stop(),
@@ -226,6 +240,7 @@ class AdjustableBedLevelNumberEntityDescription(NumberEntityDescription):
 
     state_key: StateKey[int | None]
     set_fn: Callable[[BedController, int], Coroutine[Any, Any, None]]
+    card: CardPlacement
 
 
 LIGHT_LEVEL_DESCRIPTION = AdjustableBedLevelNumberEntityDescription(
@@ -238,6 +253,7 @@ LIGHT_LEVEL_DESCRIPTION = AdjustableBedLevelNumberEntityDescription(
     mode=NumberMode.SLIDER,
     state_key=LIGHT_LEVEL,
     set_fn=lambda ctrl, level: ctrl.set_light_level(level),
+    card=CARD_LIGHT_LEVEL,
 )
 
 FAN_LEVEL_DESCRIPTION = AdjustableBedLevelNumberEntityDescription(
@@ -250,6 +266,7 @@ FAN_LEVEL_DESCRIPTION = AdjustableBedLevelNumberEntityDescription(
     mode=NumberMode.SLIDER,
     state_key=FAN_LEVEL,
     set_fn=lambda ctrl, level: ctrl.set_fan_level(level),
+    card=CARD_CLIMATE,
 )
 
 SLEEP_NUMBER_SETTING_DESCRIPTION = NumberEntityDescription(
@@ -311,6 +328,7 @@ def _build_position_description(
         move_down_fn=spec.close_fn,
         move_stop_fn=spec.stop_fn,
         max_angle=spec.native_max_value,
+        motor=spec.motor,
         min_motors=1,
     )
 
@@ -598,7 +616,7 @@ class AdjustableBedControllerNumber(AdjustableBedEntity, NumberEntity):
     """A declared product value, unknown until the controller publishes state."""
 
     def __init__(self, coordinator: EntityRuntime, spec: ControllerNumberSpec) -> None:
-        super().__init__(coordinator)
+        super().__init__(coordinator, spec.card)
         self._spec = spec
         self.entity_description = NumberEntityDescription(
             key=f"controller_number_{spec.key}",
@@ -831,7 +849,7 @@ class AdjustableBedPositionNumber(AdjustableBedEntity, NumberEntity):
         description: AdjustableBedNumberEntityDescription,
     ) -> None:
         """Initialize the number entity."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, motor_card(description.motor))
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
@@ -888,7 +906,7 @@ class AdjustableBedPositionNumber(AdjustableBedEntity, NumberEntity):
         )
 
 
-class PairedBedCombinedPositionNumber(RenamesInPlace, NumberEntity):
+class PairedBedCombinedPositionNumber(RenamesInPlace, PlacedInCard, NumberEntity):
     """A 'both sides' position slider on the paired parent device.
 
     Reports the mean of the sides' positions, so the slider sits between them
@@ -910,6 +928,7 @@ class PairedBedCombinedPositionNumber(RenamesInPlace, NumberEntity):
         self._attr_unique_id = coordinator.entity_unique_id(f"{description.key}_both")
         self._attr_device_info = coordinator.device_info
         self._attr_translation_key = description.translation_key or description.key
+        self._card = motor_card(description.motor)
         if isinstance(coordinator, SingleAddressPairedCoordinator):
             self._attr_extra_state_attributes = {"bed_side": SIDE_BOTH}
         self._unregister_callbacks: list[Callable[[], None]] = []
@@ -984,7 +1003,7 @@ class AdjustableBedMassageNumber(AdjustableBedEntity, NumberEntity):
         description: AdjustableBedMassageNumberEntityDescription,
     ) -> None:
         """Initialize the massage number entity."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_MASSAGE)
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
@@ -1077,7 +1096,7 @@ class AdjustableBedLevelNumber(AdjustableBedEntity, NumberEntity):
         description: AdjustableBedLevelNumberEntityDescription,
     ) -> None:
         """Initialize the level number entity."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, description.card)
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
@@ -1181,7 +1200,7 @@ class AdjustableBedSleepNumberSettingNumber(AdjustableBedEntity, NumberEntity):
         description: NumberEntityDescription,
     ) -> None:
         """Initialize the Sleep Number setting entity."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_FIRMNESS)
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
@@ -1250,7 +1269,7 @@ class AdjustableBedSideStateNumber(AdjustableBedEntity, NumberEntity):
         description: AdjustableBedSideStateNumberEntityDescription,
     ) -> None:
         """Initialize the side-specific number entity."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_FIRMNESS)
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)

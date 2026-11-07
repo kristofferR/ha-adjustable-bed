@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, cast
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
+from ..card import CARD_MASSAGE, CARD_PRESETS, CardPlacement
 from ..codec import keeson as codec
 from ..const import (
     COMFORT_ENHANCEMENTS_VARIANTS,
@@ -504,14 +505,17 @@ class ComfortEnhancementsController(BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        def button(key: str, name: str, fn: MotorCommandCallable) -> ControllerButtonSpec:
-            return ControllerButtonSpec(key, name, fn, translation_key=key)
+        def button(
+            key: str, name: str, fn: MotorCommandCallable, card: CardPlacement = CARD_MASSAGE
+        ) -> ControllerButtonSpec:
+            return ControllerButtonSpec(key, name, fn, translation_key=key, card=card)
 
         specs = [
             button(
                 "comfort_enhancements_quiet_sleep",
                 "Quiet sleep",
                 lambda c: cast(ComfortEnhancementsController, c)._preset(4),
+                CARD_PRESETS,
             )
         ]
         if self.supports_massage:

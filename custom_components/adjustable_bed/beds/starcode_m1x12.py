@@ -17,6 +17,15 @@ from typing import TYPE_CHECKING, Final
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ..card import (
+    CARD_LIGHT_LEVEL,
+    CARD_LIGHTING,
+    CARD_MASSAGE,
+    CARD_UTILITY,
+    CardPlacement,
+    CardRole,
+    motor_card,
+)
 from ..codec import okin_5a
 from ..const import CONF_BLE_DEVICE_NAME, CONF_STARCODE_M1X12_PROFILE
 from ..controller_state import StateUpdate
@@ -173,6 +182,17 @@ def _action(name: str) -> Callable[[BedController], Coroutine[object, object, No
         await controller.app_action(name)
 
     return run
+
+
+def _state_card(key: str) -> CardPlacement:
+    """Place a reported value in the card by its key."""
+    if key.startswith("part_") and key.endswith("_position"):
+        return motor_card(f"starcode_m1x12_{key.removesuffix('_position')}", CardRole.POSITION)
+    if key.startswith("light_"):
+        return CARD_LIGHTING
+    if key.startswith(("massage_", "sonic_", "kneading_")):
+        return CARD_MASSAGE
+    return CARD_UTILITY
 
 
 class StarcodeM1X12Controller(BedController):
@@ -417,6 +437,7 @@ class StarcodeM1X12Controller(BedController):
                     start_delay_ms=100,
                     release_delay_ms=0,
                 ),
+                card=CARD_MASSAGE,
             )
             for key, name in held
         )
@@ -438,6 +459,7 @@ class StarcodeM1X12Controller(BedController):
                 native_max_value=6,
                 native_step=1,
                 set_fn=brightness,
+                card=CARD_LIGHT_LEVEL,
             ),
         )
 
@@ -487,6 +509,7 @@ class StarcodeM1X12Controller(BedController):
                 attribute_keys=(field_key("light_rgb"), field_key("light_rgb_mode"))
                 if key == "light_color_index"
                 else ((field_key(key + "_details"),) if key.startswith("alarm_") else ()),
+                card=_state_card(key),
             )
             for key in keys
         )
@@ -509,6 +532,7 @@ class StarcodeM1X12Controller(BedController):
                 translation_key=f"starcode_m1x12_{key}",
                 state_key=spec_key(key),
                 icon="mdi:information-outline",
+                card=_state_card(key),
             )
             for key in keys
         )
@@ -1246,6 +1270,7 @@ class StarElevateM1X12Controller(StarElevateController):
                 "starcode_m1x12_elevate_firmware",
                 FIRMWARE_VERSION,
                 "mdi:information-outline",
+                card=CARD_UTILITY,
             ),
         )
 

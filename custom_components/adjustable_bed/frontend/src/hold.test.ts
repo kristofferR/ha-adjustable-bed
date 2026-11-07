@@ -24,6 +24,7 @@ import {
 import { bedEntitiesForDevice } from "./discovery";
 import type { HomeAssistant, MotorEntity } from "./types";
 import { pointerTrace } from "./fixtures/motomotion-hold-driver";
+import { placed } from "./test-placements";
 
 interface Recorder {
   actions: HoldActions;
@@ -187,7 +188,7 @@ for (const releaseAt of [50, 99, 150, 250]) {
 test("button hold metadata uses the bounded side-scoped service", async () => {
   const calls: unknown[] = [];
   const entityId = "button.left_head_up";
-  const hass = {
+  const hass = placed({
     entities: { [entityId]: { device_id: "left-device" } },
     states: {
       [entityId]: {
@@ -200,7 +201,7 @@ test("button hold metadata uses the bounded side-scoped service", async () => {
       },
     },
     callService: async (...args: unknown[]) => { calls.push(args); },
-  } as HomeAssistant;
+  } as HomeAssistant);
 
   const motor = heldButtonMotor(hass, entityId);
   expect(motor?.heldControl).toEqual({
@@ -221,7 +222,7 @@ for (const scheme of ["single-address", "two-address", "standalone"] as const) {
   test(`HJBed ${scheme} holds resolve and retain their own release button`, () => {
     const side = scheme === "standalone" ? undefined : "right";
     const entityId = "button.memory";
-    const hass = {
+    const hass = placed({
       entities: {
         [entityId]: { entity_id: entityId, device_id: "child", translation_key: "hjbed_action" },
         "button.peer_release": { entity_id: "button.peer_release", device_id: "peer", translation_key: "hjbed_release" },
@@ -232,7 +233,7 @@ for (const scheme of ["single-address", "two-address", "standalone"] as const) {
         held_control: "hjbed_memory_position1", hold_start_delay_ms: 0,
         hold_release_delay_ms: 0, hold_release_button_key: "hjbed_release",
       } } },
-    } as unknown as HomeAssistant;
+    } as unknown as HomeAssistant);
     const motor = heldButtonMotor(hass, entityId);
     expect(motor?.releaseButton).toBe("button.release");
     const events: string[] = [];
@@ -248,10 +249,10 @@ for (const scheme of ["single-address", "two-address", "standalone"] as const) {
 test("eligible Both holds use the parent timed action and retain combined Stop", async () => {
   const calls: unknown[] = [];
   let finish!: () => void;
-  const hass = { callService: (...args: unknown[]) => {
+  const hass = placed({ callService: (...args: unknown[]) => {
     calls.push(args);
     return new Promise<void>((resolve) => { finish = resolve; });
-  } } as HomeAssistant;
+  } } as HomeAssistant);
   const motor: MotorEntity = { key: "back", up: "button.pair_back_up",
     timedMove: { deviceId: "pair", side: "both", motor: "back" } };
   const rec = recorder();
@@ -269,7 +270,7 @@ test("eligible Both holds use the parent timed action and retain combined Stop",
 
 test("ordinary covers, buttons and unsupported directions keep their finite actions", async () => {
   const calls: unknown[] = [];
-  const hass = { callService: async (...args: unknown[]) => { calls.push(args); } } as HomeAssistant;
+  const hass = placed({ callService: async (...args: unknown[]) => { calls.push(args); } } as HomeAssistant);
   await movementPulse(hass, coverMotor, "down");
   await movementPulse(hass, buttonMotor, "up");
   expect(movementPulse(hass, { key: "back_legs" }, "down")).toBeUndefined();
@@ -281,7 +282,7 @@ test("ordinary covers, buttons and unsupported directions keep their finite acti
 
 test("assistive click uses the controller bounded hold route", async () => {
   const calls: unknown[] = [];
-  const hass = { callService: async (...args: unknown[]) => { calls.push(args); } } as HomeAssistant;
+  const hass = placed({ callService: async (...args: unknown[]) => { calls.push(args); } } as HomeAssistant);
   activateWithoutPointer(hass, {
     key: "back",
     cover: "cover.back",
@@ -884,14 +885,14 @@ test("opaque MX action uses one bounded service and retains the native child STO
   const { heldButtonMotor, movementHold } = await import("./hold");
   const calls: Array<{ domain: string; service: string; data: Record<string, unknown> }> = [];
   let finish: (() => void) | undefined;
-  const hass = {
+  const hass = placed({
     entities: { "button.mx_memory1": { entity_id: "button.mx_memory1", device_id: "right-child" } },
     states: { "button.mx_memory1": { attributes: { held_control: "mx_memory1", hold_start_delay_ms: 0, hold_release_delay_ms: 0, bed_side: "right" } } },
     callService: async (domain: string, service: string, data: Record<string, unknown>) => {
       calls.push({ domain, service, data });
       if (service === "hold_control") await new Promise<void>((resolve) => { finish = resolve; });
     },
-  } as unknown as HomeAssistant;
+  } as unknown as HomeAssistant);
   const motor = heldButtonMotor(hass, "button.mx_memory1")!;
   expect(motor.heldControl).toEqual({ control: "mx_memory1", startDelayMs: 0, releaseDelayMs: 0 });
   const rec = recorder();
@@ -948,10 +949,10 @@ test("unsupported combined direction retains finite fallback", async () => {
 
 test("flat button hold metadata requires its owning device and rejects nested metadata", async () => {
   const { heldButtonMotor } = await import("./hold");
-  const hass = {
+  const hass = placed({
     entities: { "button.action": { device_id: "bed" } },
     states: { "button.action": { attributes: { held_control: { control: "head_up" }, hold_start_delay_ms: 0, hold_release_delay_ms: 0 } } },
-  } as unknown as HomeAssistant;
+  } as unknown as HomeAssistant);
   expect(heldButtonMotor(hass, "button.action")).toBeUndefined();
   hass.states["button.action"].attributes = { held_control: "head_up", hold_start_delay_ms: 0, hold_release_delay_ms: 0 };
   expect(heldButtonMotor(hass, "button.action")?.deviceId).toBe("bed");
@@ -1221,7 +1222,7 @@ for (const topology of ["missing-parent", "missing-graph"] as const) {
 }
 
 test("the combined Stop key names Both when state attributes are missing", () => {
-  const hass = {
+  const hass = placed({
     entities: {
       "button.stop_both": {
         entity_id: "button.stop_both",
@@ -1232,7 +1233,7 @@ test("the combined Stop key names Both when state attributes are missing", () =>
     },
     states: {},
     devices: { bed: { id: "bed" } },
-  } as unknown as HomeAssistant;
+  } as unknown as HomeAssistant);
   expect(holdTargetForEntity(hass, "button.stop_both")).toEqual({
     deviceId: "bed",
     side: "both",
@@ -1522,10 +1523,10 @@ test("abandon reports the entities it stopped", () => {
 
 test("held cover metadata uses the bounded service with the cover's side", async () => {
   const calls: unknown[] = [];
-  const hass = {
+  const hass = placed({
     states: { "cover.left_back": { attributes: { bed_side: "left" } } },
     callService: async (...args: unknown[]) => { calls.push(args); },
-  } as unknown as HomeAssistant;
+  } as unknown as HomeAssistant);
   const motor: MotorEntity = {
     key: "back",
     cover: "cover.left_back",
@@ -1543,7 +1544,7 @@ test("held cover metadata uses the bounded service with the cover's side", async
 
 test("combined ELEVATE without common hold metadata uses the finite parent button", async () => {
   const calls: unknown[][] = [];
-  const hass = {
+  const hass = placed({
     entities: {
       "button.elevate_actuator_1_up": {
         entity_id: "button.elevate_actuator_1_up",
@@ -1561,7 +1562,7 @@ test("combined ELEVATE without common hold metadata uses the finite parent butto
     states: {},
     devices: {},
     callService: async (...args: unknown[]) => { calls.push(args); },
-  } as HomeAssistant;
+  } as HomeAssistant);
   const motor = bedEntitiesForDevice(hass, "pair").motors[0];
 
   expect(motor.heldControls).toBeUndefined();
@@ -1573,7 +1574,7 @@ test("combined ELEVATE without common hold metadata uses the finite parent butto
 
 test("M1X12 cover hold starts one bounded shared service window", async () => {
   const calls: unknown[] = [];
-  const hass = {
+  const hass = placed({
     entities: { "cover.part_1": { entity_id: "cover.part_1", device_id: "m1x12" } },
     states: {
       "cover.part_1": {
@@ -1588,7 +1589,7 @@ test("M1X12 cover hold starts one bounded shared service window", async () => {
       },
     },
     callService: async (...args: unknown[]) => { calls.push(args); },
-  } as HomeAssistant;
+  } as HomeAssistant);
   const motor: MotorEntity = {
     key: "part_1",
     cover: "cover.part_1",
@@ -1637,7 +1638,7 @@ test("M1X12 hold release cancels the one service window and sends cover STOP", a
 test("held M1X12 massage button uses one bounded service and its paired-side STOP", async () => {
   const calls: unknown[] = [];
   let finish!: () => void;
-  const hass = {
+  const hass = placed({
     entities: {
       "button.massage_wave_up": { entity_id: "button.massage_wave_up", device_id: "left-device" },
     },
@@ -1656,7 +1657,7 @@ test("held M1X12 massage button uses one bounded service and its paired-side STO
       calls.push(args);
       return new Promise<void>((resolve) => { finish = resolve; });
     },
-  } as HomeAssistant;
+  } as HomeAssistant);
   const motor = heldButtonMotor(hass, "button.massage_wave_up");
   expect(motor).toEqual({
     key: "button.massage_wave_up",
@@ -1701,7 +1702,7 @@ test("paired M1X12 and ELEVATE motor holds use the shared service and parent STO
     },
   ]) {
     const calls: unknown[] = [];
-    const hass = {
+    const hass = placed({
       entities: {
         [item.entityId]: {
           entity_id: item.entityId,
@@ -1725,7 +1726,7 @@ test("paired M1X12 and ELEVATE motor holds use the shared service and parent STO
       },
       devices: {},
       callService: async (...args: unknown[]) => { calls.push(args); },
-    } as HomeAssistant;
+    } as HomeAssistant);
     const motor = bedEntitiesForDevice(hass, "pair").motors[0];
     const stopped: Array<string | undefined> = [];
     const hold = new MotorHold({
@@ -1778,13 +1779,13 @@ test("abandoning an HJBed held action retains its protocol release route", () =>
 
 test("AdjustaMattress backend owns start and release delays for card holds", () => {
   const calls: unknown[] = [];
-  const hass = {
+  const hass = placed({
     entities: { "button.massage": { device_id: "bed" } },
     states: { "button.massage": { attributes: {
       held_control: "headStrengthAdd", hold_start_delay_ms: 0, hold_release_delay_ms: 0,
     } } },
     callService: (...args: unknown[]) => { calls.push(args); return new Promise<void>(() => {}); },
-  } as HomeAssistant;
+  } as HomeAssistant);
   const motor = heldButtonMotor(hass, "button.massage")!;
   const timers = new FakeTimers();
   const stops: string[] = [];

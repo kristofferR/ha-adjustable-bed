@@ -14,6 +14,7 @@ import unicodedata
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Final, cast
 
+from ..card import CARD_FIRMNESS
 from ..controller_state import StateKey
 from .base import (
     BedController,
@@ -192,6 +193,7 @@ class LogicdataAirPumpController(BedController):
                 translation_key="logicdata_air_pump_pressure",
                 state_key=PRESSURE_STATE,
                 icon="mdi:gauge",
+                card=CARD_FIRMNESS,
             ),
         )
 

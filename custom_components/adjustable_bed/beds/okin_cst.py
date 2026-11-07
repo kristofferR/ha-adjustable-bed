@@ -27,6 +27,7 @@ from typing import TYPE_CHECKING, Final
 
 from bleak.exc import BleakError
 
+from ..card import CARD_UTILITY
 from ..codec import okin_nframe as codec
 from ..const import (
     CONF_BLE_BOND_ESTABLISHED,
@@ -220,6 +221,7 @@ class OkinCstController(BedController):
                 translation_key="memory_save_response_observed",
                 state_key=MEMORY_SAVE_RESPONSE_OBSERVED,
                 icon="mdi:content-save-check-outline",
+                card=CARD_UTILITY,
             ),
         )
 

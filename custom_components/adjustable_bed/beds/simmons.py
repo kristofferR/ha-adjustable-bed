@@ -20,6 +20,7 @@ from bleak.exc import BleakError
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.util import dt as dt_util
 
+from ..card import CARD_PRESETS
 from ..const import (
     CONF_BLE_DEVICE_NAME,
     DOMAIN,
@@ -319,8 +320,13 @@ class SimmonsController(BedController):
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         inclined = (
             tuple(
+                # Inclined-bed controls replace three presets.
                 ControllerButtonSpec(
-                    f"simmons_{key}", label, _action(key), translation_key=f"simmons_{key}"
+                    f"simmons_{key}",
+                    label,
+                    _action(key),
+                    translation_key=f"simmons_{key}",
+                    card=CARD_PRESETS,
                 )
                 for key, label in _INCLINED_LABELS.items()
             )

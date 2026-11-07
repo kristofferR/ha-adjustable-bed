@@ -11,6 +11,16 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final, cast
 
 from ..app_session import app_session
+from ..card import (
+    CARD_LIGHT_LEVEL,
+    CARD_LIGHT_MOOD,
+    CARD_LIGHT_TOGGLE,
+    CARD_MASSAGE,
+    CARD_UTILITY,
+    CardPlacement,
+    CardRole,
+    CardSection,
+)
 from ..codec import vibradorm as codec
 from ..const import CONF_VMATBASIC_FLOOR_LEVEL, CONF_VMATBASIC_FLOOR_MINUTES, CONF_VMATBASIC_PROFILE
 from ..controller_state import StateKey
@@ -652,12 +662,14 @@ class VMatBasicController(BedController):
             key: str,
             name: str,
             callback: Callable[[VMatBasicController], Coroutine[Any, Any, None]],
+            card: CardPlacement = CARD_UTILITY,
         ) -> ControllerButtonSpec:
             return ControllerButtonSpec(
                 _PREFIX + key,
                 name,
                 lambda ctrl: callback(cast(VMatBasicController, ctrl)),
                 translation_key=_PREFIX + key,
+                card=card,
             )
 
         specs = [
@@ -671,7 +683,12 @@ class VMatBasicController(BedController):
         ]
         if self.profile.key == "cbi":
             specs.append(
-                button("floor_toggle", "Floor light toggle", lambda ctrl: ctrl.floor_toggle())
+                button(
+                    "floor_toggle",
+                    "Floor light toggle",
+                    lambda ctrl: ctrl.floor_toggle(),
+                    CARD_LIGHT_TOGGLE,
+                )
             )
         elif self.profile.key == "xtbox":
             specs += [
@@ -679,12 +696,19 @@ class VMatBasicController(BedController):
                     "floor_hold",
                     "Floor light held action",
                     lambda ctrl: ctrl.hold_control("floor_hold", 1000),
+                    CARD_LIGHT_TOGGLE,
                 ),
-                button("mood_toggle", "Mood light toggle", lambda ctrl: ctrl.mood_toggle()),
+                button(
+                    "mood_toggle",
+                    "Mood light toggle",
+                    lambda ctrl: ctrl.mood_toggle(),
+                    CardPlacement(CardSection.LIGHTING, CardRole.MOOD_TOGGLE),
+                ),
                 button(
                     "mood_nightlight",
                     "Mood nightlight command",
                     lambda ctrl: ctrl.mood_nightlight(),
+                    CARD_LIGHT_MOOD,
                 ),
             ]
             for action in vmat_profiles.MASSAGE_ACTIONS:
@@ -693,6 +717,7 @@ class VMatBasicController(BedController):
                         "massage_" + action,
                         "Massage " + action.replace("_", " "),
                         lambda ctrl, action=action: ctrl.massage_action(action),
+                        CARD_MASSAGE,
                     )
                 )
         return tuple(specs)
@@ -708,6 +733,7 @@ class VMatBasicController(BedController):
                 MOOD_PALETTE,
                 vmat_profiles.PALETTE_OPTIONS,
                 lambda ctrl, value: ctrl.set_mood_palette(value),
+                card=CARD_LIGHT_MOOD,
             ),
             ControllerSelectSpec(
                 _PREFIX + "mood_effect",
@@ -715,6 +741,7 @@ class VMatBasicController(BedController):
                 MOOD_EFFECT,
                 ("e1", "e2", "e3"),
                 lambda ctrl, value: ctrl.set_mood_effect(value),
+                card=CARD_LIGHT_MOOD,
             ),
         )
 
@@ -730,6 +757,7 @@ class VMatBasicController(BedController):
                     *self.profile.floor_levels,
                     1,
                     lambda ctrl, value: cast(VMatBasicController, ctrl).set_floor_level(value),
+                    card=CARD_LIGHT_LEVEL,
                 ),
                 ControllerNumberSpec(
                     _PREFIX + "floor_minutes",
@@ -739,6 +767,7 @@ class VMatBasicController(BedController):
                     1,
                     lambda ctrl, value: cast(VMatBasicController, ctrl).set_floor_minutes(value),
                     "min",
+                    card=CardPlacement(CardSection.LIGHTING, CardRole.TIMER_MINUTES),
                 ),
             ]
         if self.profile.key == "xtbox":
@@ -752,6 +781,7 @@ class VMatBasicController(BedController):
                     1,
                     lambda ctrl, value: cast(VMatBasicController, ctrl).set_mood_brightness(value),
                     "%",
+                    card=CARD_LIGHT_MOOD,
                 ),
                 ControllerNumberSpec(
                     _PREFIX + "mood_speed",
@@ -761,6 +791,7 @@ class VMatBasicController(BedController):
                     255,
                     1,
                     lambda ctrl, value: ctrl.set_mood_speed(value),
+                    card=CARD_LIGHT_MOOD,
                 ),
             ]
         return tuple(specs)

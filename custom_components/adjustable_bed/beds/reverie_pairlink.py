@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Any, Final
 from bleak.exc import BleakError
 from homeassistant.helpers.storage import Store
 
+from ..card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_UTILITY
 from ..const import CONF_SIDE
 from ..controller_state import StateKey, StateUpdate
 from ..state_keys import (
@@ -506,12 +507,14 @@ class ReveriePairlinkController(BedController):
                 translation_key="reverie_pairlink_massage_timer",
                 state_key=MASSAGE_TIMER,
                 icon="mdi:timer-outline",
+                card=CARD_MASSAGE,
             ),
             ControllerStateSensorSpec(
                 key="reverie_pairlink_massage_mode",
                 translation_key="reverie_pairlink_massage_mode",
                 state_key=MASSAGE_MODE,
                 icon="mdi:waveform",
+                card=CARD_MASSAGE,
             ),
         )
 
@@ -527,6 +530,7 @@ class ReveriePairlinkController(BedController):
                 translation_key="reverie_pairlink_low_battery",
                 state_key=LOW_BATTERY,
                 icon="mdi:battery-low",
+                card=CARD_UTILITY,
             ),
         )
 
@@ -552,6 +556,7 @@ class ReveriePairlinkController(BedController):
                 state_key=MASSAGE_MODE_OPTION,
                 options=("0", "1", "2", "3", "4"),
                 select_fn=select_mode,
+                card=CARD_MASSAGE,
             ),
             ControllerSelectSpec(
                 key="reverie_pairlink_massage_rhythm",
@@ -559,6 +564,7 @@ class ReveriePairlinkController(BedController):
                 state_key=MASSAGE_RHYTHM_OPTION,
                 options=("off", "on"),
                 select_fn=select_rhythm,
+                card=CARD_MASSAGE,
             ),
         )
 
@@ -575,6 +581,7 @@ class ReveriePairlinkController(BedController):
                 native_max_value=255,
                 native_step=1,
                 set_fn=lambda _controller, value: self.set_massage_timer_byte(int(value)),
+                card=CARD_MASSAGE_TIMER,
             ),
         )
 

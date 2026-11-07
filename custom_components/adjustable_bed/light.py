@@ -26,6 +26,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
+from .card import CARD_LIGHTING
 from .const import DOMAIN
 from .controller_state import ControllerState
 from .entity import AdjustableBedEntity
@@ -220,7 +221,7 @@ class AdjustableBedAssumedLight(AdjustableBedEntity, RestoreEntity, LightEntity)
 
     def __init__(self, coordinator: EntityRuntime) -> None:
         """Start with an off estimate without sending a command to the bed."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_LIGHTING)
         description = self.entity_description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
@@ -280,7 +281,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         description: LightEntityDescription,
     ) -> None:
         """Initialize the light."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_LIGHTING)
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
@@ -741,7 +742,7 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         description: LightEntityDescription,
     ) -> None:
         """Initialize the on/off light."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_LIGHTING)
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)

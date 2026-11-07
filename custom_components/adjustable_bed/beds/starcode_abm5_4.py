@@ -11,6 +11,7 @@ from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
+from ..card import CARD_LIGHT_LEVEL, CARD_LIGHTING, CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_UTILITY
 from ..command_scheduler import copy_context_without_command
 from ..const import (
     CONF_BLE_DEVICE_NAME,
@@ -416,6 +417,11 @@ class StarcodeAbm5_4Controller(BedController):
                 scheduler_resource="lighting"
                 if action in ("light_plus", "light_minus", "light_on", "light_off")
                 else None,
+                card=CARD_LIGHTING
+                if action in ("light_plus", "light_minus", "light_on", "light_off")
+                else CARD_MASSAGE
+                if action == "massage_release"
+                else CARD_UTILITY,
             )
             for action in actions
         )
@@ -431,6 +437,7 @@ class StarcodeAbm5_4Controller(BedController):
                 MASSAGE_TIMER,
                 ("10", "20", "30"),
                 _timer,
+                card=CARD_MASSAGE_TIMER,
             ),
         )
 
@@ -447,6 +454,7 @@ class StarcodeAbm5_4Controller(BedController):
                 6,
                 1,
                 _brightness,
+                card=CARD_LIGHT_LEVEL,
             ),
         )
 

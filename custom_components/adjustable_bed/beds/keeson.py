@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Any, Final, cast
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
+from ..card import CARD_LIGHTING
 from ..codec import keeson as codec
 from ..const import (
     BED_MOTOR_PULSE_DEFAULTS,
@@ -587,6 +588,7 @@ class KeesonController(BedController):
                 translation_key="adjustable_lite_light",
                 state_key=STATE_ADJUSTABLE_LITE_LIGHT,
                 icon="mdi:lightbulb",
+                card=CARD_LIGHTING,
             ),
         )
 

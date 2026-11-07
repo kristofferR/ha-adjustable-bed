@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
+from ..card import CARD_UTILITY
 from ..controller_state import StateKey, StateUpdate
 from ..gmmotor_notifications import Value
 from ..gmmotor_protocol import MalformedNotification
@@ -180,6 +181,7 @@ class GmmotorSleepController(BedController):
                     _live_key("right"),
                     INVALID,
                 ),
+                card=CARD_UTILITY,
             ),
         )
 

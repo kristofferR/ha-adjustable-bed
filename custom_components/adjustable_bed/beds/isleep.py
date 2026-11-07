@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
+from ..card import CARD_HIDDEN, CARD_MASSAGE
 from ..codec import kaidi as codec
 from ..const import SIDE_LEFT, SIDE_RIGHT
 from ..controller_state import StateUpdate, sided
@@ -130,6 +131,7 @@ class IsleepController(BedController):
                     lambda c, i=i: cast(IsleepController, c).set_pattern(i),
                     translation_key="isleep_pattern",
                     translation_placeholders={"pattern": str(i)},
+                    card=CARD_MASSAGE,
                 )
                 for i in range(4)
             ),
@@ -138,6 +140,7 @@ class IsleepController(BedController):
                 "Enroll unprovisioned bed in selected room",
                 lambda c: cast(IsleepController, c).enroll_room(),
                 translation_key="isleep_enroll",
+                card=CARD_HIDDEN,
             ),
         )
 

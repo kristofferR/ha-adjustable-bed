@@ -29,6 +29,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 from homeassistant.exceptions import HomeAssistantError
 
+from ..card import CARD_MASSAGE, CARD_UTILITY
 from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_SERVICE_UUID,
@@ -217,6 +218,7 @@ class CoolBaseController(BedController):
                 icon,
                 translation_key=f"coolbase_{action}",
                 cancel_movement=cancel_movement,
+                card=CARD_MASSAGE if "massage" in action else CARD_UTILITY,
             )
             for action, icon, value, cancel_movement in actions
         )

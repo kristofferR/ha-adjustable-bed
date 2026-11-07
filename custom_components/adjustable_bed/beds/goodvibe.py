@@ -16,6 +16,7 @@ from homeassistant.util import dt as dt_util
 
 from .. import goodvibe_protocol as p
 from ..app_session import app_session
+from ..card import CARD_HIDDEN, CARD_UTILITY, CardPlacement, CardSection
 from ..codec import richmat as codec
 from ..command_scheduler import CommandContext, current_command_context
 from ..controller_state import StateKey
@@ -742,6 +743,7 @@ class GoodVibeController(BedController):
                 _release,
                 translation_key="goodvibe_release",
                 release_only=True,
+                card=CARD_HIDDEN,
             )
         )
         return tuple(buttons)
@@ -959,6 +961,7 @@ class GoodVibeController(BedController):
                     tuple(map(str, self.product.sides)),
                     set_side,
                     local_select_fn=self._select_side,
+                    card=CardPlacement(CardSection.MOTORS),
                 )
             )
         if self.product.light:
@@ -1044,6 +1047,7 @@ class GoodVibeController(BedController):
                     MONITORING,
                     MEMORY,
                 ),
+                card=CARD_UTILITY,
             )
         ]
         if self.product is None:
@@ -1052,7 +1056,7 @@ class GoodVibeController(BedController):
                     key = f"goodvibe_{side}_{name}"
                     specs.append(
                         ControllerStateSensorSpec(
-                            key, key.lower(), _live_key(side, name), "mdi:bed"
+                            key, key.lower(), _live_key(side, name), "mdi:bed", card=CARD_UTILITY
                         )
                     )
         return tuple(specs)

@@ -404,10 +404,15 @@ The integration ships a native Lovelace card, `custom:adjustable-bed-card`,
 under `custom_components/adjustable_bed/frontend/`.
 
 - **Source**: `frontend/src/*.ts` (Lit + TypeScript). Key modules:
-  - `discovery.ts` — given a `device_id`, buckets the device's entities by
-    `translation_key` into UI sections. This is what makes the card generic
-    across all bed types; **when you add a new entity, give it a stable
-    `translation_key`** and, if it belongs in the card, add it to a bucket here.
+  - `discovery.ts` — given a `device_id`, buckets the device's entities into
+    UI sections by the placement each publishes (`card_section`, plus
+    `card_role`, `card_motor` and `card_slot` where needed). This is what makes
+    the card generic across all bed types. The placement is declared in Python
+    (`card.py`): each spec type has a default (controller buttons, selects and
+    numbers go to utility, controller state stays hidden), so **when you add an
+    entity that belongs elsewhere in the card, set `card=` on its spec or
+    description**; never add key lists to the card. Then regenerate the card's
+    test fixture with `uv run --no-sync python -m tests.card_placements`.
   - `adjustable-bed-card.ts` — the card element (renders only sections that have
     entities; all colour comes from HA theme CSS variables).
   - `editor.ts` — visual editor (`ha-form` + device picker + section toggles).

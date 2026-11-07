@@ -21,6 +21,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .bed_traits import bed_traits
 from .beds.base import ControllerMotorHoldSpec
+from .card import motor_card
 from .const import (
     DOMAIN,
 )
@@ -344,9 +345,10 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
         description: AdjustableBedCoverEntityDescription,
     ) -> None:
         """Initialize the cover."""
-        super().__init__(coordinator)
+        translation_key = description.translation_key or description.key
+        super().__init__(coordinator, motor_card(translation_key))
         self.entity_description = description
-        self._attr_translation_key = description.translation_key or description.key
+        self._attr_translation_key = translation_key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._is_moving = False
         self._move_direction: str | None = None

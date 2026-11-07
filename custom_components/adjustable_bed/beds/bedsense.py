@@ -13,6 +13,14 @@ from typing import TYPE_CHECKING
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
+from ..card import (
+    CARD_HIDDEN,
+    CARD_LIGHT_STATE,
+    CARD_LIGHTING,
+    CARD_MASSAGE,
+    CARD_MASSAGE_TIMER,
+    CARD_UTILITY,
+)
 from ..codec import ff_frame as codec
 from ..const import CONF_BLE_DEVICE_NAME
 from ..controller_state import StateKey
@@ -62,6 +70,15 @@ class BedSenseSession:
 def _state_key(name: str) -> StateKey[object]:
     """BedSense publishes its mixed-type session state under these names."""
     return StateKey[object](name)
+
+
+_SENSOR_CARDS = {
+    "massage_timer": CARD_MASSAGE_TIMER,
+    "light_duration": CARD_LIGHT_STATE,
+    **dict.fromkeys(
+        ("head_bar", "wave_bar", "head_steps", "foot_steps", "wave_steps"), CARD_MASSAGE
+    ),
+}
 
 
 class BedSenseController(BedController):
@@ -187,6 +204,9 @@ class BedSenseController(BedController):
                     scheduler_resource="*",
                     translation_key=f"bedsense_{category}",
                     translation_placeholders={"action": ACTIONS[key].label},
+                    card={"massage": CARD_MASSAGE, "light": CARD_LIGHTING}.get(
+                        category, CARD_UTILITY
+                    ),
                 )
             )
         specs.append(
@@ -223,6 +243,7 @@ class BedSenseController(BedController):
                 _state_key(f"bedsense_{key}"),
                 "mdi:information-outline",
                 attribute_keys=(_state_key("bedsense_state_source"),),
+                card=_SENSOR_CARDS.get(key, CARD_HIDDEN),
             )
             for key in (
                 "head_bar",

@@ -56,6 +56,7 @@ from ..alarm_table import (
     WeeklyAlarmRecord as WeeklyAlarmRecord,
 )
 from ..bed_traits import BedTraits
+from ..card import CARD_HIDDEN, CARD_UTILITY, CardPlacement
 from ..command_scheduler import current_command_context
 from ..controller_state import (
     AnyStateKey,
@@ -90,6 +91,7 @@ class ControllerButtonSpec:
     release_only: bool = field(default=False, kw_only=True)
     # Fills a translated name template, e.g. ``{action}``, with an app label.
     translation_placeholders: Mapping[str, str] | None = field(default=None, kw_only=True)
+    card: CardPlacement = field(default=CARD_UTILITY, kw_only=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,6 +105,7 @@ class ControllerSelectSpec:
     select_fn: Callable[[BedController, str], Awaitable[None]]
     # An app-local choice that sends no frame: applied without connecting.
     local_select_fn: Callable[[str], None] | None = field(default=None, kw_only=True)
+    card: CardPlacement = field(default=CARD_UTILITY, kw_only=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -117,6 +120,7 @@ class ControllerNumberSpec:
     native_step: float
     set_fn: Callable[[BedController, float], Awaitable[None]]
     native_unit_of_measurement: str | None = None
+    card: CardPlacement = field(default=CARD_UTILITY, kw_only=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -125,6 +129,7 @@ class ProductButtonSpec(ControllerButtonSpec):
 
     icon: str = "mdi:gesture-tap-button"
     entity_registry_enabled_default: bool = False
+    card: CardPlacement = field(default=CARD_HIDDEN, kw_only=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -229,6 +234,8 @@ class PositionNumberSpec:
     open_fn: MotorCommandCallable
     close_fn: MotorCommandCallable
     stop_fn: MotorCommandCallable
+    # The motor (its cover's translation key) the slider sits with in the card.
+    motor: str = field(kw_only=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -243,6 +250,8 @@ class ControllerStateSensorSpec:
     attribute_keys: tuple[AnyStateKey, ...] = ()
     entity_registry_enabled_default: bool = True
     suggested_display_precision: int | None = None
+    # Controller state is diagnostic; the card shows only what a spec places.
+    card: CardPlacement = field(default=CARD_HIDDEN, kw_only=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -255,6 +264,7 @@ class ControllerStateBinarySensorSpec:
     icon: str
     attribute_keys: tuple[AnyStateKey, ...] = ()
     entity_registry_enabled_default: bool = True
+    card: CardPlacement = field(default=CARD_HIDDEN, kw_only=True)
 
 
 # Movement commands for the four standard position axes, so controllers can
@@ -332,6 +342,7 @@ def build_position_number_spec(
         open_fn=open_fn,
         close_fn=close_fn,
         stop_fn=stop_fn,
+        motor=axis,
     )
 
 

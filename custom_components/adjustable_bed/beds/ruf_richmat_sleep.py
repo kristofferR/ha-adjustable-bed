@@ -9,6 +9,7 @@ from collections.abc import Callable
 from datetime import datetime
 from typing import TYPE_CHECKING, Final
 
+from ..card import CARD_UTILITY
 from ..controller_state import StateKey, StateUpdate
 from ..ruf_richmat_protocol import crc8, sleep_frame
 from .base import BedController, ControllerSelectSpec, ControllerStateSensorSpec
@@ -123,7 +124,12 @@ class RufRichmatSleepController(BedController):
                 key = f"ruf_richmat_sleep_{side}_{kind}"
                 rows.append(
                     ControllerStateSensorSpec(
-                        key, key, _vital_key(side, kind), icon, native_unit_of_measurement=unit
+                        key,
+                        key,
+                        _vital_key(side, kind),
+                        icon,
+                        native_unit_of_measurement=unit,
+                        card=CARD_UTILITY,
                     )
                 )
         return tuple(rows) + (
@@ -133,6 +139,7 @@ class RufRichmatSleepController(BedController):
                 FIRMWARE,
                 "mdi:information-outline",
                 attribute_keys=(ATTRIBUTES,),
+                card=CARD_UTILITY,
             ),
         )
 

@@ -423,6 +423,7 @@ class SleepStarController(BedController):
                 open_fn=spec.open_fn,
                 close_fn=spec.close_fn,
                 stop_fn=spec.stop_fn,
+                motor=spec.translation_key,
             )
             for spec in self.motor_control_specs
             if spec.position_key is not None

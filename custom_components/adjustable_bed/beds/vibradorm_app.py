@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, TypedDict
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
+from ..card import CARD_LIGHT_MOOD, CARD_MASSAGE, CARD_UTILITY, CardPlacement, CardRole, CardSection
 from ..codec import vibradorm as codec
 from ..const import (
     CONF_HAS_MASSAGE,
@@ -376,6 +377,14 @@ async def _timer_number(controller: BedController, value: float) -> None:
     raise TypeError("Requires a Vibradorm app profile")
 
 
+_BUTTON_CARDS: Final = {
+    "floor_timer_toggle": CardPlacement(CardSection.LIGHTING, CardRole.TIMER_TOGGLE),
+    "mood_toggle": CardPlacement(CardSection.LIGHTING, CardRole.MOOD_TOGGLE),
+    "massage_automatic": CARD_MASSAGE,
+    "massage_individual": CARD_MASSAGE,
+}
+
+
 class VibradormAppController(BedController):
     def __init__(
         self,
@@ -660,6 +669,7 @@ class VibradormAppController(BedController):
                 name,
                 _button(action),
                 translation_key=f"vibradorm_app_{action}",
+                card=_BUTTON_CARDS.get(action, CARD_UTILITY),
             )
             for action, name in actions
         )
@@ -675,6 +685,7 @@ class VibradormAppController(BedController):
                     MOOD_PALETTE_OPTION,
                     tuple(self.mood_palette),
                     lambda c, v: c.set_mood_palette(v),
+                    card=CARD_LIGHT_MOOD,
                 ),
                 ControllerSelectSpec(
                     "vibradorm_app_mood_effect",
@@ -682,6 +693,7 @@ class VibradormAppController(BedController):
                     MOOD_EFFECT_OPTION,
                     MOOD_EFFECTS,
                     lambda c, v: c.set_mood_effect(v),
+                    card=CARD_LIGHT_MOOD,
                 ),
             ]
         if self.profile.massage:
@@ -692,6 +704,7 @@ class VibradormAppController(BedController):
                     MASSAGE_WAVE,
                     MASSAGE_WAVES,
                     lambda c, v: c.set_massage_wave(v),
+                    card=CARD_MASSAGE,
                 )
             ]
         return tuple(specs)
@@ -710,6 +723,7 @@ class VibradormAppController(BedController):
                     1,
                     _timer_number,
                     "min",
+                    card=CardPlacement(CardSection.LIGHTING, CardRole.PENDING_TIMER_MINUTES),
                 )
             ]
         if self.profile.rgb:
@@ -722,6 +736,7 @@ class VibradormAppController(BedController):
                     8,
                     1,
                     lambda c, v: c.set_mood_speed(v),
+                    card=CARD_LIGHT_MOOD,
                 )
             ]
         if self.profile.massage:
@@ -734,6 +749,7 @@ class VibradormAppController(BedController):
                     5,
                     1,
                     lambda c, v: c.set_massage_speed(v),
+                    card=CARD_MASSAGE,
                 )
             ]
         return tuple(specs)

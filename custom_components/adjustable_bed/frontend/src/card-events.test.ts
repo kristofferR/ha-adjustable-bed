@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import type { TemplateResult } from "lit";
 import { bedEntitiesForDevice } from "./discovery";
 import type { BedEntities, HomeAssistant, MemorySlot } from "./types";
+import { placed } from "./test-placements";
 
 const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
 const customElements = {
@@ -185,7 +186,7 @@ function nativePairCardFixture(
 } {
   let finishHold = (): void => undefined;
   const card = new AdjustableBedCard();
-  const hass: HomeAssistant = {
+  const hass: HomeAssistant = placed({
     states: {},
     entities: {},
     devices: {
@@ -203,7 +204,7 @@ function nativePairCardFixture(
       }
       return Promise.resolve();
     },
-  };
+  });
   card.hass = hass;
 
   const add = (
@@ -266,7 +267,7 @@ function singleAddressOctoCardFixture(calls: RecordedServiceCall[]): {
 } {
   let finishHold = (): void => undefined;
   const card = new AdjustableBedCard();
-  const hass: HomeAssistant = {
+  const hass: HomeAssistant = placed({
     states: {},
     entities: {},
     devices: { bed: { id: "bed" } },
@@ -280,7 +281,7 @@ function singleAddressOctoCardFixture(calls: RecordedServiceCall[]): {
       }
       return Promise.resolve();
     },
-  };
+  });
   card.hass = hass;
   const add = (
     entityId: string,
@@ -340,7 +341,7 @@ for (const scenario of [
       goto: "button.preset_memory_1",
       save: "button.program_memory_1",
     };
-    const hass: HomeAssistant = {
+    const hass: HomeAssistant = placed({
       states: {
         [slot.goto]: {
           entity_id: slot.goto,
@@ -372,7 +373,7 @@ for (const scenario of [
         // The bounded hold service stays in flight while the tile is held.
         return service === "hold_control" ? new Promise<void>(() => undefined) : Promise.resolve();
       },
-    };
+    });
     const { card, tile } = memoryTile(bedForMemory(slot, scenario.stop), hass);
 
     try {
@@ -424,7 +425,7 @@ for (const shape of ["native", "single-address", "legacy-via-device"] as const) 
     const calls: Array<{ domain: string; service: string; data?: Record<string, unknown> }> = [];
     let finishHold!: () => void;
     const card = new AdjustableBedCard();
-    const hass: HomeAssistant = {
+    const hass: HomeAssistant = placed({
       states: {},
       entities: {},
       devices: {},
@@ -438,7 +439,7 @@ for (const shape of ["native", "single-address", "legacy-via-device"] as const) 
         }
         return Promise.resolve();
       },
-    };
+    });
     card.hass = hass;
 
     const parentId = "paired-bed";
@@ -970,7 +971,7 @@ test("a side STOP prevents the registered finite Both action from repeating", as
   const calls: Array<{ domain: string; service: string; data?: Record<string, unknown> }> = [];
   let finishMove!: () => void;
   const card = new AdjustableBedCard();
-  const hass: HomeAssistant = {
+  const hass: HomeAssistant = placed({
     states: {},
     entities: {},
     devices: {
@@ -988,7 +989,7 @@ test("a side STOP prevents the registered finite Both action from repeating", as
       }
       return Promise.resolve();
     },
-  };
+  });
   card.hass = hass;
 
   const add = (

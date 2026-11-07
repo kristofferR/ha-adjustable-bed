@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Final
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
+from ..card import CARD_UTILITY
 from ..command_scheduler import current_command_context
 from ..const import (
     CONF_MOTOR_PULSE_COUNT,
@@ -247,6 +248,7 @@ class RichmatClassicController(BedController):
         return (ControllerStateSensorSpec(
             "richmat_classic_status", "richmat_classic_status", STATUS, "mdi:bed",
             attribute_keys=(APP, LAYOUT, STATE, PREFERENCES, REJECTION),
+            card=CARD_UTILITY,
         ),)
 
     def _notification(self, session: Transport, _sender: BleakGATTCharacteristic, data: bytearray) -> None:

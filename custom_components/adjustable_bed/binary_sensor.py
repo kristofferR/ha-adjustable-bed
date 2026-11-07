@@ -21,6 +21,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .card import CARD_HIDDEN, CardPlacement, CardSection
 from .const import DOMAIN
 from .controller_state import ControllerState, StateKey, sided
 from .entity import AdjustableBedEntity
@@ -200,7 +201,7 @@ class AdjustableBedConnectionSensor(AdjustableBedEntity, BinarySensorEntity):
         description: AdjustableBedBinarySensorEntityDescription,
     ) -> None:
         """Initialize the binary sensor."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CardPlacement(CardSection.CONNECTION))
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
@@ -285,7 +286,7 @@ class AdjustableBedControllerStateBinarySensor(AdjustableBedEntity, BinarySensor
         spec: ControllerStateBinarySensorSpec,
     ) -> None:
         """Initialize a controller-state binary sensor."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, spec.card)
         self._spec = spec
         self._attr_unique_id = coordinator.entity_unique_id(spec.key)
         self._attr_translation_key = spec.translation_key
@@ -340,7 +341,7 @@ class AdjustableBedPresenceSensor(AdjustableBedEntity, BinarySensorEntity):
         description: AdjustableBedBinarySensorEntityDescription,
     ) -> None:
         """Initialize the presence sensor."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_HIDDEN)
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)

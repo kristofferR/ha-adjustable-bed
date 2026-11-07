@@ -33,6 +33,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ..app_session import app_session
+from ..card import CARD_MASSAGE, CARD_PRESETS
 from ..command_scheduler import current_command_context
 from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
@@ -764,6 +765,7 @@ class OkinAppKeesonController(KeesonController):
                 translation_key=f"{ACTION_NAMESPACE}home",
                 press_fn=_press("preset_home"),
                 icon="mdi:home",
+                card=CARD_PRESETS,
             ),
         )
 
@@ -1016,6 +1018,7 @@ class OkinAppKeesonController(KeesonController):
                 native_max_value=high,
                 native_step=1,
                 set_fn=set_level,
+                card=CARD_MASSAGE,
             )
 
         return (

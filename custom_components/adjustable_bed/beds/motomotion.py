@@ -11,6 +11,7 @@ from math import isfinite
 from time import monotonic
 from typing import TYPE_CHECKING
 
+from ..card import CARD_UTILITY
 from ..codec import motomotion as codec
 from ..codec.motomotion import Position, ascii_command, binary_command, music_command
 from ..const import CONF_BLE_DEVICE_NAME
@@ -1149,6 +1150,7 @@ class MotoMotionController(BedController):
                         "massage",
                     )
                 ),
+                card=CARD_UTILITY,
             ),
         )
 
@@ -1163,6 +1165,7 @@ class MotoMotionController(BedController):
                 f"motomotion_{kind}_{side}",
                 _field_key(f"{kind}_{side}"),
                 "mdi:seat",
+                card=CARD_UTILITY,
             )
             for side in sides
             for kind in ("heat", "massage")

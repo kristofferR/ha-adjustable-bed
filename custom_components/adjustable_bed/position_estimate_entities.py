@@ -21,9 +21,10 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .card import CARD_HIDDEN, CARD_SAVED_POSITIONS, CardRole, motor_card
 from .const import CONF_BACK_MAX_ANGLE, CONF_LEGS_MAX_ANGLE, DOMAIN
 from .coordinator import AdjustableBedCoordinator
-from .entity import AdjustableBedEntity, RenamesInPlace
+from .entity import AdjustableBedEntity, PlacedInCard, RenamesInPlace
 from .entity_runtime import EntityRuntime
 from .paired_coordinator import PairedBedCoordinator, entity_runtimes
 from .position_estimate import (
@@ -70,7 +71,7 @@ def _estimated_beds(
     return manager, beds
 
 
-class _ListensToEstimates(RenamesInPlace):
+class _ListensToEstimates(RenamesInPlace, PlacedInCard):
     """Write state whenever the entry's estimates or saved positions change."""
 
     _attr_should_poll = False
@@ -101,7 +102,7 @@ class EstimatedPositionNumber(_ListensToEstimates, AdjustableBedEntity, NumberEn
         bed: BedEstimate,
         motor: str,
     ) -> None:
-        super().__init__(runtime)
+        super().__init__(runtime, motor_card(motor, CardRole.ESTIMATE))
         self._manager = manager
         self._bed = bed
         self._motor = motor
@@ -168,7 +169,7 @@ class SetReferenceButton(_ListensToEstimates, AdjustableBedEntity, ButtonEntity)
         bed: BedEstimate,
         motor: str,
     ) -> None:
-        super().__init__(runtime)
+        super().__init__(runtime, motor_card(motor, CardRole.REFERENCE))
         self._manager = manager
         self._bed = bed
         self._motor = motor
@@ -192,7 +193,7 @@ class RemoteUsedButton(AdjustableBedEntity, ButtonEntity):
     _attr_icon = "mdi:remote"
 
     def __init__(self, runtime: EntityRuntime, bed: BedEstimate) -> None:
-        super().__init__(runtime)
+        super().__init__(runtime, CARD_SAVED_POSITIONS)
         self._bed = bed
         key = "estimate_remote_used"
         self._attr_unique_id = runtime.entity_unique_id(key)
@@ -215,6 +216,7 @@ class SavedPositionsSensor(_ListensToEstimates, SensorEntity):
     _attr_has_entity_name = True
     _attr_translation_key = "saved_positions"
     _attr_icon = "mdi:bookmark-multiple-outline"
+    _card = CARD_SAVED_POSITIONS
 
     def __init__(
         self,
@@ -251,6 +253,8 @@ class SavedPositionButton(_ListensToEstimates, ButtonEntity):
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:bookmark-outline"
+    # The card lists saved positions from the saved positions sensor.
+    _card = CARD_HIDDEN
 
     def __init__(
         self,

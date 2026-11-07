@@ -16,6 +16,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .beds.base import ControllerSelectSpec
+from .card import CARD_CLIMATE, CARD_LIGHTING, CARD_MASSAGE_TIMER, CardPlacement
 from .const import (
     DOMAIN,
 )
@@ -48,6 +49,7 @@ class AdjustableBedControllerStateSelectDescription(SelectEntityDescription):
     options_fn: Callable[[BedController], list[str]]
     state_key: StateKey[str | None]
     select_fn: Callable[[BedController, str], Coroutine[Any, Any, None]]
+    card: CardPlacement
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -73,6 +75,7 @@ LIGHT_TIMER_DESCRIPTION = AdjustableBedControllerStateSelectDescription(
     options_fn=lambda c: c.light_timer_options,
     state_key=LIGHT_TIMER_OPTION,
     select_fn=lambda c, option: c.set_light_timer(option),
+    card=CARD_LIGHTING,
 )
 
 THERMAL_TIMER_DESCRIPTION = AdjustableBedControllerStateSelectDescription(
@@ -83,6 +86,7 @@ THERMAL_TIMER_DESCRIPTION = AdjustableBedControllerStateSelectDescription(
     options_fn=lambda c: c.thermal_timer_options,
     state_key=THERMAL_TIMER_OPTION,
     select_fn=lambda c, option: c.set_thermal_timer(option),
+    card=CARD_CLIMATE,
 )
 
 FOOTWARMING_TIMER_DESCRIPTION = AdjustableBedControllerStateSelectDescription(
@@ -93,6 +97,7 @@ FOOTWARMING_TIMER_DESCRIPTION = AdjustableBedControllerStateSelectDescription(
     options_fn=lambda c: c.footwarming_timer_options,
     state_key=FOOTWARMING_TIMER_OPTION,
     select_fn=lambda c, option: c.set_footwarming_timer(option),
+    card=CARD_CLIMATE,
 )
 
 THERMAL_TIMER_LEFT_DESCRIPTION = AdjustableBedSideStateSelectDescription(
@@ -363,7 +368,7 @@ class AdjustableBedControllerSelect(AdjustableBedEntity, SelectEntity):
     """A declared product option, unknown until the controller publishes state."""
 
     def __init__(self, coordinator: EntityRuntime, spec: ControllerSelectSpec) -> None:
-        super().__init__(coordinator)
+        super().__init__(coordinator, spec.card)
         self._spec = spec
         self.entity_description = SelectEntityDescription(
             key=f"controller_select_{spec.key}", translation_key=spec.translation_key
@@ -449,7 +454,7 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
         timer_options: list[int],
     ) -> None:
         """Initialize the massage timer select entity."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_MASSAGE_TIMER)
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
@@ -552,7 +557,7 @@ class AdjustableBedControllerStateSelect(AdjustableBedEntity, SelectEntity):
         timer_options: list[str],
     ) -> None:
         """Initialize the controller-state-backed select entity."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, description.card)
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
@@ -624,7 +629,7 @@ class AdjustableBedSideStateSelect(AdjustableBedEntity, SelectEntity):
         options: list[str],
     ) -> None:
         """Initialize the side-specific select entity."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_CLIMATE)
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)

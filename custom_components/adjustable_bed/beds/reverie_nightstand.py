@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Any, Final
 
 from bleak.exc import BleakError
 
+from ..card import CARD_MASSAGE, motor_card
 from ..const import (
     REVERIE_BACK_MAX_ANGLE,
     REVERIE_NIGHTSTAND_FOOT_POSITION_UUID,
@@ -363,18 +364,21 @@ class ReverieNightstandController(BedController):
                 translation_key="reverie_head_massage_intensity",
                 state_key=MASSAGE_HEAD_INTENSITY,
                 icon="mdi:vibrate",
+                card=CARD_MASSAGE,
             ),
             ControllerStateSensorSpec(
                 key="reverie_foot_massage_intensity",
                 translation_key="reverie_foot_massage_intensity",
                 state_key=MASSAGE_FOOT_INTENSITY,
                 icon="mdi:vibrate",
+                card=CARD_MASSAGE,
             ),
             ControllerStateSensorSpec(
                 key="reverie_massage_wave",
                 translation_key="reverie_massage_wave",
                 state_key=MASSAGE_WAVE,
                 icon="mdi:vibrate",
+                card=CARD_MASSAGE,
             ),
         )
 
@@ -428,6 +432,7 @@ class ReverieNightstandController(BedController):
                     set_fn=lambda ctrl, value: ctrl.set_massage_intensity(
                         "wave", int(value)
                     ),
+                    card=CARD_MASSAGE,
                 )
             )
             if self.model.tandem:
@@ -443,6 +448,7 @@ class ReverieNightstandController(BedController):
                             set_fn=lambda ctrl, value: ctrl.set_massage_intensity(
                                 "stk_head_wave", int(value)
                             ),
+                            card=CARD_MASSAGE,
                         ),
                         ControllerNumberSpec(
                             key="reverie_stk_global_massage",
@@ -454,6 +460,7 @@ class ReverieNightstandController(BedController):
                             set_fn=lambda ctrl, value: ctrl.set_massage_intensity(
                                 "stk_global", int(value)
                             ),
+                            card=CARD_MASSAGE,
                         ),
                     )
                 )
@@ -469,6 +476,7 @@ class ReverieNightstandController(BedController):
                     set_fn=lambda ctrl, value: ctrl.set_motor_position(
                         "lumbar", int(value)
                     ),
+                    card=motor_card("lumbar"),
                 )
             )
         return tuple(specs)

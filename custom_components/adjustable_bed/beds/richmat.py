@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING, cast
 from bleak import BleakClient
 from bleak.exc import BleakError
 
+from ..card import CARD_MASSAGE, CARD_UTILITY
 from ..codec import richmat as codec
 from ..const import (
     CONF_RICHMAT_REMOTE,
@@ -479,6 +480,7 @@ class RichmatController(RichmatProfileController):
                 icon="mdi:content-save" if kind == "richmat_mh_save" else "mdi:timer-outline",
                 translation_key=kind,
                 translation_placeholders={"action": label},
+                card=CARD_MASSAGE if kind == "richmat_mh_massage" else CARD_UTILITY,
             )
             for command, (label, kind) in GGRM_ACTIONS.items()
             if kind != "richmat_mh_massage" or self._coordinator.has_massage

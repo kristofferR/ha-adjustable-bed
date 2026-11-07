@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any, Final, cast
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ..card import CARD_LIGHTING, CARD_MASSAGE
 from ..codec import jiecang as codec
 from ..const import (
     BED_TYPE_LOGICDATA_APP,
@@ -291,6 +292,7 @@ class LogicdataAppController(BedController):
                 icon="mdi:refresh",
                 translation_key="logicdata_app_query_massage",
                 cancel_movement=False,
+                card=CARD_MASSAGE,
             ),
         )
 
@@ -304,6 +306,7 @@ class LogicdataAppController(BedController):
                 translation_key="under_bed_lights",
                 state_key=UNDER_BED_LIGHTS_ON,
                 icon="mdi:lightbulb",
+                card=CARD_LIGHTING,
             ),
         )
 

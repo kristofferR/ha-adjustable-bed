@@ -15,6 +15,15 @@ from typing import TYPE_CHECKING, Final, cast
 
 from bleak.exc import BleakError
 
+from ..card import (
+    CARD_LIGHT_LEVEL,
+    CARD_LIGHTING,
+    CARD_MASSAGE,
+    CARD_PRESETS,
+    CARD_UTILITY,
+    CardPlacement,
+    memory_card,
+)
 from ..codec import okin_5a, okin_nframe
 from ..command_scheduler import CommandContext, current_command_context
 from ..const import (
@@ -134,6 +143,21 @@ _APP_STATE_FIELDS_BY_SELECTOR = {
     ),
 }
 _ALL_APP_STATE_FIELDS = frozenset().union(*_APP_STATE_FIELDS_BY_SELECTOR.values())
+
+
+def _button_card(key: str) -> CardPlacement:
+    """Place an app button in the card by its key."""
+    name = key.removeprefix("sleepys_app_")
+    if name.startswith("preset_"):
+        return CARD_PRESETS
+    if name.startswith("memory_"):
+        return memory_card(int(name.removeprefix("memory_")))
+    if name.startswith(("light_", "voice_brightness_")) or name == "rgb_action":
+        return CARD_LIGHTING
+    if name.startswith("massage_"):
+        return CARD_MASSAGE
+    return CARD_UTILITY
+
 _REPEATABLE_BUTTONS = {
     "sleepys_app_program": "program",
     "sleepys_app_reset_memory": "resetMemory",
@@ -964,6 +988,7 @@ class SleepysEliteAppController(BedController):
                     set_fn=lambda ctrl, value: cast(
                         SleepysEliteAppController, ctrl
                     ).set_light_slider_value(int(value)),
+                    card=CARD_LIGHT_LEVEL,
                 )
             )
             specs.append(
@@ -977,6 +1002,7 @@ class SleepysEliteAppController(BedController):
                     set_fn=lambda ctrl, value: cast(
                         SleepysEliteAppController, ctrl
                     ).set_light_color_code(int(value)),
+                    card=CARD_LIGHTING,
                 )
             )
         return tuple(specs)
@@ -995,6 +1021,7 @@ class SleepysEliteAppController(BedController):
                 select_fn=lambda ctrl, value: cast(
                     SleepysEliteAppController, ctrl
                 ).set_massage_timer_code(int(value)),
+                card=CARD_MASSAGE,
             ),
         )
 
@@ -1135,6 +1162,7 @@ class SleepysEliteAppController(BedController):
                     press_fn=lambda ctrl, key=key, builder=builder: cast(
                         SleepysEliteAppController, ctrl
                     )._press_app_action(key, builder),
+                    card=_button_card(key),
                     hold=(
                         ControllerHoldSpec(
                             control=builder,
@@ -1159,6 +1187,7 @@ class SleepysEliteAppController(BedController):
                         press_fn=lambda ctrl, delta=delta: cast(
                             SleepysEliteAppController, ctrl
                         ).adjust_light_level(delta),
+                        card=CARD_LIGHTING,
                     )
                 )
             for axis in range(3):
@@ -1197,6 +1226,7 @@ class SleepysEliteAppController(BedController):
                 translation_key=f"sleepys_app_{field}",
                 state_key=_field_key(field),
                 icon="mdi:code-braces",
+                card=CARD_UTILITY,
             )
             for field in sorted(_APP_STATE_FIELDS_BY_SELECTOR.get(self.selector, ()))
         ]
@@ -1209,6 +1239,7 @@ class SleepysEliteAppController(BedController):
                     icon="mdi:bed-outline",
                     native_unit_of_measurement="%",
                     suggested_display_precision=0,
+                    card=CARD_UTILITY,
                 )
                 for axis in range(3)
             )

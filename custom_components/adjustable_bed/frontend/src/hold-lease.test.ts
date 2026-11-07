@@ -18,6 +18,7 @@ import {
   TAP_MOVE_MAX_MS,
 } from "./hold";
 import type { EntityRegistryDisplayEntry, HomeAssistant, MotorEntity } from "./types";
+import { placed } from "./test-placements";
 
 class FakeTimers implements HoldTimers {
   now = 0;
@@ -279,10 +280,10 @@ test("a held control waits its start delay, leases, and delays its release", () 
 
 test("leased calls carry the lease on the existing actions", async () => {
   const calls: unknown[] = [];
-  const hass = {
+  const hass = placed({
     states: { "button.head_up": { attributes: { bed_side: "left" } } },
     callService: async (...args: unknown[]) => { calls.push(args); },
-  } as unknown as HomeAssistant;
+  } as unknown as HomeAssistant);
   const lease = { owner: "card-x", generation: 3 };
   await movementLease(hass, leasedCover, "up", lease);
   await movementLease(hass, {
@@ -320,7 +321,7 @@ function hassWith(
   entries: EntityRegistryDisplayEntry[],
   attributes: Record<string, Record<string, unknown>>,
 ): HomeAssistant {
-  return {
+  return placed({
     entities: Object.fromEntries(entries.map((item) => [item.entity_id, item])),
     states: Object.fromEntries(Object.entries(attributes).map(([id, attrs]) => [id, {
       entity_id: id, state: "unknown", last_changed: "", last_updated: "", attributes: attrs,
@@ -330,7 +331,7 @@ function hassWith(
     language: "en",
     themes: {},
     callService: async () => undefined,
-  };
+  });
 }
 
 test("discovery reads the advertised hold from covers and combined motors", () => {

@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Final, cast
 
 from homeassistant.util import dt as dt_util
 
+from ..card import CARD_HIDDEN
 from ..codec import richmat as codec
 from ..controller_state import StateKey
 from ..hjbed_catalog import ACTIONS, MUSIC_ACTIONS, PRODUCTS, Action
@@ -601,7 +602,11 @@ class HJBedController(BedController):
 
         buttons.append(
             ControllerButtonSpec(
-                "hjbed_release", "Release held action", released, translation_key="hjbed_release"
+                "hjbed_release",
+                "Release held action",
+                released,
+                translation_key="hjbed_release",
+                card=CARD_HIDDEN,
             )
         )
         return tuple(buttons)

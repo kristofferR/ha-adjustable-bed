@@ -6,6 +6,7 @@ import asyncio
 import re
 from typing import TYPE_CHECKING, Final
 
+from ..card import CARD_MASSAGE, CARD_UTILITY, CardPlacement, CardRole, CardSection
 from ..codec import richmat as codec
 from ..controller_state import StateKey, StateUpdate
 from ..ruf_richmat_profiles import Field, fields, profiles
@@ -421,6 +422,7 @@ class RufRichmatController(RichmatMhController):
                 1,
                 lambda ctrl, v: _invoke(ctrl, "write_light_timer", int(v) * 60, int(v)),
                 native_unit_of_measurement="min",
+                card=CardPlacement(CardSection.LIGHTING, CardRole.TIMER_MINUTES),
             ),
         )
 
@@ -689,6 +691,7 @@ class RufRichmatController(RichmatMhController):
                     MUSIC_STATUS,
                     "mdi:music",
                     attribute_keys=(MUSIC_VALUES,),
+                    card=CARD_UTILITY,
                 )
             )
         if self._calendar_page():
@@ -699,12 +702,15 @@ class RufRichmatController(RichmatMhController):
                     CALENDAR_ALARM_COUNT,
                     "mdi:alarm",
                     attribute_keys=(CALENDAR_ALARMS,),
+                    card=CARD_UTILITY,
                 )
             )
         if self._normal_ready:
             for side in ("left", "right"):
                 key = _mattress_alarm_key(side)
-                specs.append(ControllerStateSensorSpec(key, key, key, "mdi:alarm"))
+                specs.append(
+                    ControllerStateSensorSpec(key, key, key, "mdi:alarm", card=CARD_UTILITY)
+                )
         return tuple(specs)
 
     @property
@@ -725,6 +731,8 @@ class RufRichmatController(RichmatMhController):
                             lambda ctrl, option, s=side, f=setting: _invoke(
                                 ctrl, "normal_setting", s, f, option
                             ),
+                            # Each side's settings drive one mattress pad.
+                            card=CARD_MASSAGE,
                         )
                     )
         return tuple(specs)
