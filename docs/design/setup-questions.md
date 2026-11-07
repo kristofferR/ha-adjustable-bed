@@ -117,6 +117,18 @@ say ([#745](https://github.com/kristofferR/ha-adjustable-bed/issues/745)):
 `tests/test_app_profiles.py` checks that every declared question belongs to its
 side and that the table repeats none of them.
 
+## Settings a bed type owns
+
+`profile_settings` in `app_profiles.py` names every setting a bed type's
+profiles own: each question its declarations ask under any variant or app,
+each per-side setting of its side profiles, and the few it saves outside them
+(`_STORED_BY_BED_TYPE`, such as repair markers and app metadata). The settings
+every route reads, such as the motor count, are no bed type's. When setup or
+Configure changes the bed type, the settings another bed type owns leave, so a
+setting of the old app cannot linger on the new one. Only the settings a route,
+not a bed type, decides keep their own rule: the L&P app layout, passive
+position reconciliation and the angle limits.
+
 ## The new-bed journey
 
 A new bed is set up in one order (#676 direction A):

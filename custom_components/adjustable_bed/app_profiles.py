@@ -9,6 +9,8 @@
   alone instead. Every question a route's declarations ask is one of them;
   the table below adds what the declarations cannot say (see "Per-side
   settings" in docs/design/setup-questions.md).
+- ``profile_settings``: every setting a bed type's profiles own. Changing the
+  bed type drops the settings other bed types own (``foreign_settings``).
 
 A profile is keyed by bed type, or by bed type and protocol variant when the
 variant selects the app. A variant entry replaces the bed type's entry.
@@ -48,6 +50,8 @@ from .const import (
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
+    BED_TYPE_OCTO,
+    BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CST,
     BED_TYPE_REMACRO,
     BED_TYPE_REVERIE,
@@ -67,6 +71,7 @@ from .const import (
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
     CONF_BLE_DEVICE_NAME,
+    CONF_CB24_BED_SELECTION,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_FSM_RELAX_MEMORY_NAMES,
     CONF_HAS_LIGHT,
@@ -78,6 +83,10 @@ from .const import (
     CONF_KAIDI_TARGET_VADDR,
     CONF_LEGGETT_APP_PROFILE,
     CONF_MOTOR_COUNT,
+    CONF_MOTOR_PULSE_COUNT,
+    CONF_MOTOR_PULSE_DELAY_MS,
+    CONF_OCTO_MOTOR_COUNT_OVERRIDE,
+    CONF_OCTO_PIN,
     CONF_PAIRLINK_HOME_ID,
     CONF_PAIRLINK_HOST_SOURCE,
     CONF_PAIRLINK_PASSWORD_HEX,
@@ -89,6 +98,7 @@ from .const import (
     CONF_STARCODE_LIFT_ENTRIES,
     CONF_STARCODE_M1X12_PROFILE,
     CONF_STARCODE_M5X5_PROFILE,
+    CONF_VIBRADORM_APP_METADATA,
     CONF_VIBRADORM_APP_PROFILE,
     KAIDI_VARIANT_FLOYD,
     KEESON_VARIANT_AMERICANSTAR,
@@ -298,6 +308,62 @@ def _declared_questions(bed_type: str, variant: str | None) -> frozenset[str]:
         if (profile := setup_profile(bed_type, variant, app)) is not None
         for question in profile.questions
     )
+
+
+# Settings a bed type saves that no declared question asks and no side profile
+# lists: repair markers, app metadata and its own settings outside a profile.
+_STORED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
+    BED_TYPE_OCTO: frozenset({CONF_OCTO_PIN, CONF_OCTO_MOTOR_COUNT_OVERRIDE}),
+    BED_TYPE_OKIN_CB24: frozenset({CONF_CB24_BED_SELECTION}),
+    BED_TYPE_OKIN_CST: frozenset({"okimat_model_on_cst", "okin_cst_kept"}),
+    BED_TYPE_STAR_ELEVATE: frozenset({CONF_STARCODE_LIFT_ENTRIES}),
+    BED_TYPE_VIBRADORM_APP: frozenset({CONF_VIBRADORM_APP_METADATA}),
+}
+# Settings every route reads, which no profile owns.
+_SHARED_SETTINGS: Final = frozenset(
+    {
+        CONF_MOTOR_COUNT,
+        CONF_HAS_MASSAGE,
+        CONF_DISABLE_ANGLE_SENSING,
+        CONF_MOTOR_PULSE_COUNT,
+        CONF_MOTOR_PULSE_DELAY_MS,
+        CONF_PROTOCOL_VARIANT,
+        CONF_BLE_DEVICE_NAME,
+    }
+)
+
+
+@cache
+def profile_settings(bed_type: str) -> frozenset[str]:
+    """Return the settings a bed type's profiles own, under every variant and app.
+
+    That is every question its declarations ask, every per-side setting of its
+    side profiles and what it stores outside them.
+    """
+    from .profile_id import profile_route
+    from .setup_questions import SETUP_PROFILES
+    from .validators import get_variants_for_bed_type
+
+    owned = set(_STORED_BY_BED_TYPE.get(bed_type, ()))
+    for variant in (None, *(get_variants_for_bed_type(bed_type) or ())):
+        if (side := per_side_profile(bed_type, variant)) is not None:
+            owned |= side.keys
+    for key, profile in SETUP_PROFILES.items():
+        if profile_route(key).bed_type == bed_type:
+            owned.update(question.key for question in profile.questions)
+    return frozenset(owned) - _SHARED_SETTINGS
+
+
+@cache
+def _every_profile_setting() -> frozenset[str]:
+    from .const import SUPPORTED_BED_TYPES
+
+    return frozenset().union(*map(profile_settings, SUPPORTED_BED_TYPES))
+
+
+def foreign_settings(bed_type: str) -> frozenset[str]:
+    """Return the settings other bed types own that this bed type does not."""
+    return _every_profile_setting() - profile_settings(bed_type)
 
 
 def is_per_side_variant(bed_type: str | None, variant: str | None) -> bool:

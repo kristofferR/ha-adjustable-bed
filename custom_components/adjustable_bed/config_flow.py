@@ -57,7 +57,12 @@ from .adapter import (
     read_ble_device_info,
 )
 from .address_lock import async_get_connect_lock
-from .app_profiles import hidden_generic_fields, is_per_side_variant, per_side_profile
+from .app_profiles import (
+    foreign_settings,
+    hidden_generic_fields,
+    is_per_side_variant,
+    per_side_profile,
+)
 from .beds.remacro_protocol import add_remacro_model, app_for_variant
 from .bluetooth_bond import (
     BondRemovalResult,
@@ -174,7 +179,6 @@ from .const import (
     CB24_BED_SELECTION_A,
     CB24_BED_SELECTION_B,
     CB24_BED_SELECTION_DEFAULT,
-    CHAIR_AND_BED_APP_BED_TYPES,
     CLUSTER033_BED_TYPES,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
@@ -192,18 +196,12 @@ from .const import (
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
-    CONF_JENSEN_PIN,
-    CONF_JIECANG_APP_LAYOUT,
     CONF_JIECANG_APP_PROFILE,
-    CONF_JIECANG_APP_TRANSPORT,
     CONF_KAIDI_RESOLVED_VARIANT,
     CONF_LEGGETT_APP_PROFILE,
     CONF_LEGS_MAX_ANGLE,
     CONF_LIMOSS_REMOTE_THEME,
-    CONF_LOGICDATA_APP_FAMILY,
-    CONF_LOGICDATA_APP_LAYOUT,
     CONF_LOGICDATA_APP_PROFILE,
-    CONF_LOGICDATA_APP_TRANSPORT,
     CONF_LP_LEGACY_MODE,
     CONF_LP_LEGACY_MODEL,
     CONF_LP_LEGACY_READ_UUID,
@@ -212,8 +210,6 @@ from .const import (
     CONF_MALOUF_APP_PRIMARY,
     CONF_MALOUF_APP_PROFILE,
     CONF_MALOUF_APP_TRANSPORT,
-    CONF_MALOUF_LAYOUT,
-    CONF_MALOUF_MEMORY_SLOTS,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
@@ -298,7 +294,6 @@ from .const import (
     LEGGETT_VARIANT_OKIN,
     MALOUF_APP_MODELS,
     MALOUF_APP_PROFILES,
-    MOTION_BED_CONFIG_KEYS,
     NAME_RULE_VARIANTS_BY_BED_TYPE,
     OCTO_VARIANT_STAR2,
     OKIN_BEDDING_APP_BED_TYPES,
@@ -329,11 +324,8 @@ from .const import (
     SIDE_RIGHT,
     SLEEP_NUMBER_MCR_SERVICE_UUID,
     SLEEP_NUMBER_SERVICE_UUID,
-    SLEEPTRACKER_CONFIG_KEYS,
     SOLACE_VARIANT_WOOSA,
-    STARCODE_APP_CONFIG_KEYS,
     STARCODE_APP_CONNECTION_TIMEOUT_SECONDS,
-    STARCODE_GROUP_BED_TYPES,
     SVANE_VARIANT_JENSEN_LINON,
     SVANE_VARIANT_JMC,
     SVANE_VARIANTS,
@@ -8544,112 +8536,21 @@ class AdjustableBedOptionsFlow(
 
     @staticmethod
     def _remove_irrelevant_bed_settings(data: dict[str, Any], bed_type: str) -> None:
-        """Drop settings that belong only to the previously selected protocol."""
-        pairlink_keys = (
-            CONF_PAIRLINK_ROLE,
-            CONF_PAIRLINK_HOST_SOURCE,
-            CONF_PAIRLINK_HOME_ID,
-            CONF_PAIRLINK_PASSWORD_TEXT,
-            CONF_PAIRLINK_PASSWORD_HEX,
-        )
-        if bed_type != BED_TYPE_REVERIE_PAIRLINK:
-            for key in pairlink_keys:
-                data.pop(key, None)
-        else:
+        """Drop settings that belong only to the previously selected protocol.
+
+        Every setting another bed type's profiles own goes (``app_profiles``);
+        the rest follow the route's capabilities.
+        """
+        for key in foreign_settings(bed_type):
+            data.pop(key, None)
+        if bed_type == BED_TYPE_REVERIE_PAIRLINK:
             for key in (CONF_PAIRLINK_HOST_SOURCE, CONF_PAIRLINK_HOME_ID, CONF_PAIRLINK_PASSWORD_HEX):
                 if data.get(key) in (None, ""):
                     data.pop(key, None)
         if not get_variants_for_bed_type(bed_type):
             data.pop(CONF_PROTOCOL_VARIANT, None)
-        if bed_type != BED_TYPE_OCTO:
-            data.pop(CONF_OCTO_MOTOR_COUNT_OVERRIDE, None)
-        if bed_type != BED_TYPE_OCTO:
-            data.pop(CONF_OCTO_PIN, None)
-        if bed_type != BED_TYPE_JENSEN:
-            data.pop(CONF_JENSEN_PIN, None)
-        if bed_type != BED_TYPE_RICHMAT:
-            data.pop(CONF_RICHMAT_REMOTE, None)
-            data.pop(CONF_RMCONTROL_PRODUCT, None)
-            data.pop(CONF_RMCONTROL_SIDE, None)
         if not _is_leggett_app_type(bed_type, data.get(CONF_PROTOCOL_VARIANT)):
             data.pop(CONF_LEGGETT_APP_PROFILE, None)
-        if bed_type != BED_TYPE_FURNIMOVE:
-            data.pop(CONF_FURNIMOVE_REMOTE, None)
-        if bed_type != BED_TYPE_OKIN_CST:
-            from .furnimove_repair import CONF_OKIMAT_MODEL_ON_CST, CONF_OKIN_CST_KEPT
-
-            data.pop(CONF_OKIMAT_MODEL_ON_CST, None)
-            data.pop(CONF_OKIN_CST_KEPT, None)
-        if bed_type != BED_TYPE_LOGICDATA_APP:
-            for key in (
-                CONF_LOGICDATA_APP_PROFILE,
-                CONF_LOGICDATA_APP_FAMILY,
-                CONF_LOGICDATA_APP_LAYOUT,
-                CONF_LOGICDATA_APP_TRANSPORT,
-            ):
-                data.pop(key, None)
-        if bed_type != BED_TYPE_JIECANG_APP:
-            for key in (
-                CONF_JIECANG_APP_PROFILE,
-                CONF_JIECANG_APP_LAYOUT,
-                CONF_JIECANG_APP_TRANSPORT,
-            ):
-                data.pop(key, None)
-        if bed_type != BED_TYPE_STARCODE_ABM5_4:
-            for key in STARCODE_APP_CONFIG_KEYS:
-                data.pop(key, None)
-        if bed_type != BED_TYPE_SLEEPTRACKER:
-            for key in SLEEPTRACKER_CONFIG_KEYS - {CONF_PRODUCT_TYPE}:
-                data.pop(key, None)
-        if bed_type != BED_TYPE_MOTION_BED:
-            for key in MOTION_BED_CONFIG_KEYS:
-                data.pop(key, None)
-        if bed_type != BED_TYPE_LIMOSS_REMOTE:
-            data.pop(CONF_LIMOSS_REMOTE_THEME, None)
-            # Per-MAC local memories remain durable when changing protocol.
-        if bed_type not in HAS_LIGHT_DEFAULTS and bed_type != "ergomotion_4":
-            data.pop(CONF_HAS_LIGHT, None)
-        if bed_type not in CHAIR_AND_BED_APP_BED_TYPES:
-            for key in CONF_REVERSE_MOTORS:
-                data.pop(key, None)
-            profile = per_side_profile(bed_type, data.get(CONF_PROTOCOL_VARIANT))
-            if bed_type != BED_TYPE_SLEEPTRACKER and not (
-                profile is not None and CONF_PRODUCT_TYPE in profile.keys
-            ):
-                data.pop(CONF_PRODUCT_TYPE, None)
-
-        if bed_type != BED_TYPE_STARCODE_M5X5:
-            data.pop(CONF_STARCODE_M5X5_PROFILE, None)
-        if bed_type != BED_TYPE_STARCODE_M1X12:
-            data.pop(CONF_STARCODE_M1X12_PROFILE, None)
-        if bed_type not in STARCODE_GROUP_BED_TYPES:
-            data.pop(CONF_STARCODE_LIFT_ENTRIES, None)
-        if bed_type != BED_TYPE_VIBRADORM_APP:
-            for key in VIBRADORM_APP_CONFIG_KEYS:
-                data.pop(key, None)
-            data.pop(CONF_VIBRADORM_APP_METADATA, None)
-        if bed_type != BED_TYPE_VMATBASIC:
-            for key in VMATBASIC_CONFIG_KEYS:
-                data.pop(key, None)
-        if bed_type != BED_TYPE_MALOUF_APP:
-            for key in (
-                CONF_MALOUF_APP_PROFILE,
-                CONF_MALOUF_APP_MODEL,
-                CONF_MALOUF_APP_TRANSPORT,
-                CONF_MALOUF_APP_PRIMARY,
-            ):
-                data.pop(key, None)
-        if bed_type != BED_TYPE_LEGGETT_LP_LEGACY:
-            for key in (
-                CONF_LP_LEGACY_MODEL,
-                CONF_LP_LEGACY_MODE,
-                CONF_LP_LEGACY_WRITE_UUID,
-                CONF_LP_LEGACY_READ_UUID,
-            ):
-                data.pop(key, None)
-        if bed_type not in MALOUF_BED_TYPES:
-            data.pop(CONF_MALOUF_LAYOUT, None)
-            data.pop(CONF_MALOUF_MEMORY_SLOTS, None)
         if not supports_passive_position_reconciliation(bed_type):
             data.pop(CONF_PASSIVE_POSITION_RECONCILIATION, None)
         if (
