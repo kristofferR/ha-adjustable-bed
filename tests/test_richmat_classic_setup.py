@@ -63,10 +63,12 @@ def test_runtime_catalog_matches_every_frozen_member_layout_contract():
     with gzip.open(path, "rt") as source:
         expected = json.load(source)
     assert len(expected["models"]) == 3569
-    for row in expected["models"]:
-        catalog = load("richmat_classic_data", row["app"]).entries()
+    catalogs = {app: load("richmat_classic_data", app).entries() for app in APP_NAMES}
+    for catalog in catalogs.values():
         assert catalog["fields"].json() == expected["fields"]
-        model = catalog["models"].entries()[row["layout"]].json()
+    models = {app: catalog["models"].entries() for app, catalog in catalogs.items()}
+    for row in expected["models"]:
+        model = models[row["app"]][row["layout"]].json()
         encoded = json.dumps(model, separators=(",", ":"), sort_keys=True).encode()
         assert hashlib.sha256(encoded).hexdigest() == row["sha256"], row
 
