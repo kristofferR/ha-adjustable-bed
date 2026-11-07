@@ -643,7 +643,7 @@ class TestLinakController:
 
         assert result.outcome is SeekOutcome.ENDPOINT_REACHED
         assert result.final_angle == pytest.approx(1.1)
-        assert issue_step.await_args_list == [call(False, 1.1), call(False, 1.1)]
+        assert issue_step.await_args_list == [call(False), call(False)]
         stop.assert_awaited_once_with()
 
     async def test_movement_to_lower_endpoint_has_one_endpoint_retry(
@@ -663,10 +663,10 @@ class TestLinakController:
 
         assert result.outcome is SeekOutcome.ENDPOINT_REACHED
         assert issue_step.await_args_list == [
-            call(False, 40.0),
-            call(False, 10.0),
-            call(False, 1.1),
-            call(False, 1.1),
+            call(False),
+            call(False),
+            call(False),
+            call(False),
         ]
 
     async def test_lower_endpoint_rebound_requires_fresh_stall_confirmations(
@@ -686,11 +686,11 @@ class TestLinakController:
 
         assert result.outcome is SeekOutcome.ENDPOINT_REACHED
         assert issue_step.await_args_list == [
-            call(False, 1.1),
-            call(False, 1.1),
-            call(False, 0.8),
-            call(False, 1.1),
-            call(False, 1.1),
+            call(False),
+            call(False),
+            call(False),
+            call(False),
+            call(False),
         ]
 
     async def test_lower_endpoint_policy_retries_mid_range_stall(
@@ -710,9 +710,9 @@ class TestLinakController:
 
         assert result.outcome is SeekOutcome.REACHED_TARGET
         assert issue_step.await_args_list == [
-            call(False, 40.0),
-            call(False, 15.0),
-            call(False, 15.0),
+            call(False),
+            call(False),
+            call(False),
         ]
 
     async def test_group_continues_after_lower_endpoint_completion(

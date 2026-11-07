@@ -276,7 +276,7 @@ class PositionSeekRunner:
         policy: PositionSeekPolicy,
         cancel_event: asyncio.Event,
         read_position: Callable[[], Awaitable[float | None]],
-        issue_step: Callable[[bool, float], Awaitable[None]],
+        issue_step: Callable[[bool], Awaitable[None]],
         stop: Callable[[], Awaitable[None]],
         previous_motion: SeekMotion | None = None,
     ) -> None:
@@ -363,7 +363,7 @@ class PositionSeekRunner:
                     position_key,
                 )
                 return result(SeekOutcome.CANCELLED, initial_angle, None)
-            await self._issue_step(moving_up, abs(target_angle - initial_angle))
+            await self._issue_step(moving_up)
 
             # Tracking variables
             stall_count = 0
@@ -474,7 +474,7 @@ class PositionSeekRunner:
                         _LOGGER.debug("New stop request during overshoot - aborting reversal")
                         return result(SeekOutcome.CANCELLED, current_angle, moving_up)
                     moving_up = not moving_up
-                    await self._issue_step(moving_up, abs(target_angle - current_angle))
+                    await self._issue_step(moving_up)
 
                 remaining_distance = abs(target_angle - current_angle)
                 movement = abs(current_angle - last_angle)
@@ -489,7 +489,7 @@ class PositionSeekRunner:
                         current_angle,
                         remaining_distance,
                     )
-                    await self._issue_step(moving_up, remaining_distance)
+                    await self._issue_step(moving_up)
                     stall_count = 0
                     last_angle = current_angle
                     continue
@@ -522,7 +522,7 @@ class PositionSeekRunner:
                             position_key,
                             current_angle,
                         )
-                        await self._issue_step(moving_up, abs(target_angle - current_angle))
+                        await self._issue_step(moving_up)
                         stall_count = 0  # Reset stall count after re-issue
                 else:
                     stall_count = 0

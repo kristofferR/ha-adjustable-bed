@@ -98,7 +98,7 @@ class TestSeekProgress:
         assert result.outcome is SeekOutcome.REACHED_TARGET
         assert result.final_angle == 19.0
         assert result.final_direction is True
-        issue_step.assert_awaited_once_with(True, 20.0)
+        issue_step.assert_awaited_once_with(True)
         # Default controllers do not auto-stop, so cleanup sends one STOP.
         stop.assert_awaited_once_with()
 
@@ -134,7 +134,7 @@ class TestSeekProgress:
             result = await runner.async_run(0.0)
 
         assert result.outcome is SeekOutcome.CROSSED_TARGET
-        issue_step.assert_awaited_once_with(True, 20.0)
+        issue_step.assert_awaited_once_with(True)
         stop.assert_not_awaited()
 
 
@@ -149,8 +149,8 @@ class TestSeekOvershoot:
             result = await runner.async_run(0.0)
 
         assert result.outcome is SeekOutcome.REACHED_TARGET
-        assert issue_step.await_args_list[0].args == (True, 20.0)
-        assert issue_step.await_args_list[1].args == (False, 7.0)
+        assert issue_step.await_args_list[0].args == (True,)
+        assert issue_step.await_args_list[1].args == (False,)
         assert result.final_direction is False
         # One STOP before the reversal, one on cleanup.
         assert stop.await_count == 2
@@ -164,7 +164,7 @@ class TestSeekOvershoot:
             result = await runner.async_run(0.0)
 
         assert result.outcome is SeekOutcome.REACHED_TARGET
-        assert issue_step.await_args_list[1].args == (False, 7.0)
+        assert issue_step.await_args_list[1].args == (False,)
         stop.assert_not_awaited()
 
     async def test_stop_request_during_reversal_aborts_new_direction(self) -> None:
@@ -184,7 +184,7 @@ class TestSeekOvershoot:
 
         assert result.outcome is SeekOutcome.CANCELLED
         # Only the initial step went out; the reversal was aborted.
-        issue_step.assert_awaited_once_with(True, 20.0)
+        issue_step.assert_awaited_once_with(True)
 
 
 class TestSeekStall:
@@ -204,7 +204,7 @@ class TestSeekStall:
         assert result.outcome is SeekOutcome.REACHED_TARGET
         # Initial burst plus one reissue after three stagnant reads.
         assert issue_step.await_count == 2
-        assert issue_step.await_args_list[1].args == (True, 9.5)
+        assert issue_step.await_args_list[1].args == (True,)
 
     async def test_endpoint_policy_completes_persistent_stall(self) -> None:
         class EndpointPolicy(PositionSeekPolicy):
@@ -220,7 +220,7 @@ class TestSeekStall:
         assert result.outcome is SeekOutcome.ENDPOINT_REACHED
         assert result.final_angle == 1.0
         # The endpoint path performs bounded writes: only the initial burst.
-        issue_step.assert_awaited_once_with(False, 40.0)
+        issue_step.assert_awaited_once_with(False)
 
     async def test_endpoint_policy_still_retries_mid_range_stall(self) -> None:
         class EndpointPolicy(PositionSeekPolicy):
@@ -309,7 +309,7 @@ class TestSeekTermination:
             result = await runner.async_run(0.0)
 
         assert result.outcome is SeekOutcome.CANCELLED
-        issue_step.assert_awaited_once_with(True, 20.0)
+        issue_step.assert_awaited_once_with(True)
         stop.assert_awaited_once_with()
 
     async def test_lost_feedback_ends_seek(self) -> None:

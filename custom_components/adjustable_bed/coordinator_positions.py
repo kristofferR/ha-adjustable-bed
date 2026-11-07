@@ -795,10 +795,9 @@ class CoordinatorPositionsMixin:
 
                 feedback_after = time.monotonic()
 
-                async def issue_seek_step(direction_up: bool, remaining_distance: float) -> None:
+                async def issue_seek_step(direction_up: bool) -> None:
                     """Execute one seek movement step through the protocol policy."""
                     nonlocal feedback_after
-                    del remaining_distance
                     feedback_after = time.monotonic()
                     move_fn = move_up_fn if direction_up else move_down_fn
                     await policy.async_issue_step(
