@@ -22,6 +22,7 @@ from .base import (
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
+    require_controller,
 )
 
 if TYPE_CHECKING:
@@ -705,14 +706,14 @@ class VMatBasicController(BedController):
                 _PREFIX + "mood_palette",
                 _PREFIX + "mood_palette",
                 vmat_profiles.PALETTE_OPTIONS,
-                lambda ctrl, value: ctrl.set_mood_palette(value),
+                lambda ctrl, value: require_controller(ctrl, VMatBasicController).set_mood_palette(value),
             ),
             ControllerSelectSpec(
                 _PREFIX + "mood_effect",
                 _PREFIX + "mood_effect",
                 _PREFIX + "mood_effect",
                 ("e1", "e2", "e3"),
-                lambda ctrl, value: ctrl.set_mood_effect(value),
+                lambda ctrl, value: require_controller(ctrl, VMatBasicController).set_mood_effect(value),
             ),
         )
 
@@ -758,7 +759,7 @@ class VMatBasicController(BedController):
                     0,
                     255,
                     1,
-                    lambda ctrl, value: ctrl.set_mood_speed(value),
+                    lambda ctrl, value: require_controller(ctrl, VMatBasicController).set_mood_speed(value),
                 ),
             ]
         return tuple(specs)

@@ -57,6 +57,7 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
     PositionNumberSpec,
+    require_controller,
 )
 
 if TYPE_CHECKING:
@@ -644,14 +645,14 @@ class VibradormAppController(BedController):
                     "vibradorm_app_mood_palette",
                     "vibradorm_app_mood_palette",
                     tuple(self.mood_palette),
-                    lambda c, v: c.set_mood_palette(v),
+                    lambda c, v: require_controller(c, VibradormAppController).set_mood_palette(v),
                 ),
                 ControllerSelectSpec(
                     "vibradorm_app_mood_effect",
                     "vibradorm_app_mood_effect",
                     "vibradorm_app_mood_effect",
                     MOOD_EFFECTS,
-                    lambda c, v: c.set_mood_effect(v),
+                    lambda c, v: require_controller(c, VibradormAppController).set_mood_effect(v),
                 ),
             ]
         if self.profile.massage:
@@ -661,7 +662,7 @@ class VibradormAppController(BedController):
                     "vibradorm_app_massage_wave",
                     "vibradorm_app_massage_wave",
                     MASSAGE_WAVES,
-                    lambda c, v: c.set_massage_wave(v),
+                    lambda c, v: require_controller(c, VibradormAppController).set_massage_wave(v),
                 )
             ]
         return tuple(specs)
@@ -691,7 +692,7 @@ class VibradormAppController(BedController):
                     0,
                     8,
                     1,
-                    lambda c, v: c.set_mood_speed(v),
+                    lambda c, v: require_controller(c, VibradormAppController).set_mood_speed(v),
                 )
             ]
         if self.profile.massage:
@@ -703,7 +704,7 @@ class VibradormAppController(BedController):
                     1,
                     5,
                     1,
-                    lambda c, v: c.set_massage_speed(v),
+                    lambda c, v: require_controller(c, VibradormAppController).set_massage_speed(v),
                 )
             ]
         return tuple(specs)

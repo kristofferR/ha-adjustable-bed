@@ -2037,33 +2037,31 @@ async def handle_configure_alarm_schedule(call: ServiceCall) -> None:
         dispatch=call.data["dispatch"],
         reference_time=dt_util.now(),
     )
+    from .beds.cluster033 import AppController
+
     targets = _call_targets(call)
     # A table call cannot connect merely to discover whether it is valid:
     # initialization can write clock/zero/query frames. These static profiles
     # are offline-mintable, and all other controllers lack this contract.
     for coordinator, side in targets:
         for target in _command_targets(coordinator, side):
-            controller = target.capability_controller
+            controller = controller_as(target.capability_controller, AppController)
             if controller is None or controller.alarm_table_schedule_spec is None:
                 raise ServiceValidationError(f"Device '{target.name}' has no available alarm-table contract")
 
-    def check(target: BedChild, controller: BedController) -> None:
+    def validate(controller: AppController) -> None:
         spec = controller.alarm_table_schedule_spec
         if spec is None:
-            raise ServiceValidationError(f"Device '{target.name}' has no alarm-table contract")
+            raise ServiceValidationError("This bed has no alarm-table contract")
         spec.validate(schedule)
 
-    preflighted = await _preflight_each(targets, check)
-
-    async def configure(controller: BedController) -> None:
-        await controller.configure_alarm_table_schedule(schedule)
-
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(coordinator, side, configure, cancel_running=False, resource="configuration")
-    except BaseException:
-        await _release_preflighted(preflighted)
-        raise
+    await _preflight_and_execute(
+        targets,
+        AppController,
+        "alarm tables",
+        lambda controller: controller.configure_alarm_table_schedule(schedule),
+        validate=validate,
+    )
 
 
 async def handle_sync_clock(call: ServiceCall) -> None:

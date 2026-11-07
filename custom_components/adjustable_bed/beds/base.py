@@ -35,10 +35,6 @@ if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 from ..alarm_table import (
-    AlarmTableSchedule,
-    AlarmTableScheduleSpec,
-)
-from ..alarm_table import (
     OneTimeAlarmRecord as OneTimeAlarmRecord,
 )
 from ..alarm_table import (
@@ -1631,26 +1627,6 @@ class BedController(ABC):
     def restore_persisted_app_state(self, state: Mapping[str, Any]) -> None:  # noqa: B027
         """Apply stored app-local state; raise ValueError or TypeError if invalid."""
 
-    async def set_mood_palette(self, option: str) -> None:
-        """Select a controller-declared mood palette entry."""
-        raise NotImplementedError("Mood palette selection is not supported")
-
-    async def set_mood_effect(self, option: str) -> None:
-        """Select a controller-declared mood effect."""
-        raise NotImplementedError("Mood effect selection is not supported")
-
-    async def set_mood_speed(self, value: float) -> None:
-        """Set the controller-declared mood speed scale."""
-        raise NotImplementedError("Mood speed control is not supported")
-
-    async def set_massage_wave(self, option: str) -> None:
-        """Select a controller-declared massage wave."""
-        raise NotImplementedError("Massage wave selection is not supported")
-
-    async def set_massage_speed(self, value: float) -> None:
-        """Set the controller-declared massage speed scale."""
-        raise NotImplementedError("Massage speed control is not supported")
-
     @property
     def requests_connection_recovery(self) -> bool:
         """Whether a user-started background session needs recovery after link loss."""
@@ -1758,15 +1734,6 @@ class BedController(ABC):
     def supports_clock_alarm(self) -> bool:
         """Return whether a weekly clock alarm can be configured."""
         return False
-
-    @property
-    def alarm_table_schedule_spec(self) -> AlarmTableScheduleSpec | None:
-        """Return the exact whole-table contract, when this profile has one."""
-        return None
-
-    async def configure_alarm_table_schedule(self, schedule: AlarmTableSchedule) -> None:
-        """Write validated weekly/one-time tables through the command queue."""
-        raise NotImplementedError("Alarm tables are unavailable on this profile")
 
     @property
     def supports_clock_sync(self) -> bool:
