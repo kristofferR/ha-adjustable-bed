@@ -269,6 +269,18 @@ async def test_legacy_motor_modes_expose_selection_writes_and_reported_state(app
     assert c.motor_mode_options == ()
 
 
+@pytest.mark.parametrize("app", ["ruf", "bailey2", "americanstar"])
+@pytest.mark.parametrize("alarm", ["6e09010078", "6e09010179"])
+def test_version_two_alarm_reply_does_not_hide_extended_replies(app, alarm):
+    """The 0002 init leaves the receive type NONE; its alarm reply must still be consumed."""
+    c = AppClassifier(app)
+    assert c.feed(bytes.fromhex("6e900002ff")) == [Event("version", "0002")]
+    assert c.feed(bytes.fromhex(alarm)) == [Event("init", alarm)]
+    assert c.buffer == ""
+    extended = "6e20080b020000a3"
+    assert c.feed(bytes.fromhex(extended)) == [Event("extended", extended)]
+
+
 def test_classifier_fragmented_extended_and_version_two():
     p = AppClassifier("bailey2")
     assert p.feed(bytes.fromhex("6e900002ff")) == [Event("version", "0002")]
