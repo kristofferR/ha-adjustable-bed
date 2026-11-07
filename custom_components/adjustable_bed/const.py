@@ -1667,6 +1667,13 @@ RONDURE_VARIANTS: Final = {
     RONDURE_VARIANT_SIDE_B: "Side B only",
 }
 
+# SBI head and foot travel: the last degree of each pulse lookup table.
+SBI_HEAD_MAX_ANGLE: Final = 60.0
+SBI_FOOT_MAX_ANGLE: Final = 32.0
+# Serta MP Remote travel limits.
+SERTA_MP_REMOTE_BACK_MAX_ANGLE: Final = 60.0
+SERTA_MP_REMOTE_LEGS_MAX_ANGLE: Final = 45.0
+
 # SBI/Q-Plus side selection variants
 SBI_VARIANT_BOTH: Final = "both"  # Control both sides (8-byte, 0xE5 header)
 SBI_VARIANT_SIDE_A: Final = "side_a"  # Control side A only (9-byte, 0xE6 header)

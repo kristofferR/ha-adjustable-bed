@@ -59,7 +59,6 @@ from .command_scheduler import (
 from .const import (
     ADAPTER_AUTO,
     BED_MOTOR_PULSE_DEFAULTS,
-    BED_TYPE_BEDJET_POWERLAYER,
     BED_TYPE_BEDTECH,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_DEWERTOKIN,
@@ -102,8 +101,6 @@ from .const import (
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
-    BEDJET_POWERLAYER_FOOT_MAX_ANGLE,
-    BEDJET_POWERLAYER_HEAD_MAX_ANGLE,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
@@ -160,7 +157,6 @@ from .const import (
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
     PAIR_MODE_SINGLE_ADDRESS,
     POSITION_MODE_ACCURACY,
-    REVERIE_BACK_MAX_ANGLE,
     RICHMAT_MH_BED_TYPES,
     RICHMAT_REMOTE_AUTO,
     SOLACE_VARIANT_WOOSA,
@@ -1000,21 +996,16 @@ class AdjustableBedCoordinator(
         Returns:
             Maximum angle in degrees for the specified motor.
         """
-        # Deliberately keyed on bed type rather than the controller's
-        # motor_max_angles: this limit must hold while disconnected, so that
-        # set_position validation still rejects a target the frame cannot reach
-        # when the controller is momentarily absent.
-        if position_key in ("back", "head"):
-            if self._bed_type in (BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND):
-                return REVERIE_BACK_MAX_ANGLE
-            if self._bed_type == BED_TYPE_BEDJET_POWERLAYER:
-                return BEDJET_POWERLAYER_HEAD_MAX_ANGLE
-            return self.back_max_angle
+        # From the bed traits rather than the controller's motor_max_angles:
+        # this limit must hold while disconnected, so that set_position
+        # validation still rejects a target the frame cannot reach when the
+        # controller is momentarily absent.
+        fixed = bed_traits(self._bed_type, self._protocol_variant).max_angles.get(position_key)
+        if fixed is not None:
+            return fixed
         if position_key in ("legs", "feet"):
-            if self._bed_type == BED_TYPE_BEDJET_POWERLAYER:
-                return BEDJET_POWERLAYER_FOOT_MAX_ANGLE
             return self.legs_max_angle
-        # Unknown motor, return back max as default
+        # Back, head and unknown motors use the back limit.
         return self.back_max_angle
 
     @property

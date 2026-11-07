@@ -32,6 +32,8 @@ from ..const import (
     CONF_PRODUCT_TYPE,
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
+    SBI_FOOT_MAX_ANGLE,
+    SBI_HEAD_MAX_ANGLE,
     SBI_VARIANT_BOTH,
     SBI_VARIANT_SIDE_A,
     SBI_VARIANT_SIDE_B,
@@ -71,9 +73,6 @@ FOOT_PULSE_TABLE: list[int] = [
     3578, 3819, 4039, 4261, 4544, 4895, 5170, 5461, 5723, 6020, 6334, 6631, 6922,
     7243, 7546, 7810, 8174, 8546, 8718,
 ]  # 33 values for 0-32 degrees
-
-_HEAD_MAX_ANGLE: float = len(HEAD_PULSE_TABLE) - 1
-_FOOT_MAX_ANGLE: float = len(FOOT_PULSE_TABLE) - 1
 
 
 def pulse_to_angle(pulse: int, table: list[int]) -> int:
@@ -226,19 +225,14 @@ class SBIController(BedController):
         return True
 
     @property
-    def motor_max_angles(self) -> dict[str, float]:
-        """Return the travel the pulse tables can report."""
-        return {"back": _HEAD_MAX_ANGLE, "legs": _FOOT_MAX_ANGLE}
-
-    @property
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
         """Return the head and foot angles the notifications report, as back and legs."""
         return (
             build_position_number_spec(
-                "back", max_value=_HEAD_MAX_ANGLE, unit=POSITION_UNIT_DEGREES
+                "back", max_value=SBI_HEAD_MAX_ANGLE, unit=POSITION_UNIT_DEGREES
             ),
             build_position_number_spec(
-                "legs", max_value=_FOOT_MAX_ANGLE, unit=POSITION_UNIT_DEGREES
+                "legs", max_value=SBI_FOOT_MAX_ANGLE, unit=POSITION_UNIT_DEGREES
             ),
         )
 

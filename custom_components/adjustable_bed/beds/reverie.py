@@ -170,11 +170,6 @@ class ReverieController(BedController, ReverieComfortActions):
         """Return the UUID of the control characteristic."""
         return REVERIE_CHAR_UUID
 
-    @property
-    def motor_max_angles(self) -> dict[str, float]:
-        """Reverie frames stop the head/back axis short of the standard 68 degrees."""
-        return {"back": REVERIE_BACK_MAX_ANGLE, "head": REVERIE_BACK_MAX_ANGLE}
-
     # Capability properties
     @property
     def supports_preset_zero_g(self) -> bool:

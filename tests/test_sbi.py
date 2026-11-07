@@ -29,6 +29,8 @@ from custom_components.adjustable_bed.const import (
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
     KEESON_BASE_WRITE_CHAR_UUID,
+    SBI_FOOT_MAX_ANGLE,
+    SBI_HEAD_MAX_ANGLE,
     SBI_VARIANT_BOTH,
     SBI_VARIANT_SIDE_A,
     SBI_VARIANT_SIDE_B,
@@ -162,11 +164,11 @@ class TestPulseToAngle:
 
     def test_head_pulse_table_length(self):
         """Head pulse table should have 61 entries (0-60 degrees)."""
-        assert len(HEAD_PULSE_TABLE) == 61
+        assert len(HEAD_PULSE_TABLE) == 61 == SBI_HEAD_MAX_ANGLE + 1
 
     def test_foot_pulse_table_length(self):
         """Foot pulse table should have 33 entries (0-32 degrees)."""
-        assert len(FOOT_PULSE_TABLE) == 33
+        assert len(FOOT_PULSE_TABLE) == 33 == SBI_FOOT_MAX_ANGLE + 1
 
     def test_head_pulse_zero_gives_zero_degrees(self):
         """Pulse value 0 should give 0 degrees."""
@@ -500,6 +502,9 @@ class TestSBIPositionFeedback:
                 registry.async_get_entity_id("number", DOMAIN, f"AA:BB:CC:DD:EE:FF_{key}_position")
                 is None
             )
+        # Validation and slider limits agree, connected or not.
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        assert (coordinator.get_max_angle("back"), coordinator.get_max_angle("legs")) == (60, 32)
 
     @pytest.mark.parametrize(
         ("motor", "position", "message"),

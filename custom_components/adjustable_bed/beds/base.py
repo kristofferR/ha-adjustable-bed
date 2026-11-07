@@ -2046,10 +2046,10 @@ class BedController(ABC):
         """Return per-axis travel limits that differ from the standard defaults.
 
         The standard limits are 68 degrees for back/head and 45 for legs/feet.
-        Frames whose hardware travels a different range map axis key -> degrees
-        here rather than restating the whole motor layout.
+        Frames whose hardware travels a different range declare axis key ->
+        degrees in their bed traits, which also hold while disconnected.
         """
-        return {}
+        return dict(self.static_traits.max_angles)
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:

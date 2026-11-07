@@ -12,14 +12,17 @@ from custom_components.adjustable_bed.bed_traits import (
     disconnect_after_command_default_enabled,
 )
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_BEDJET_POWERLAYER,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_GOODVIBE,
     BED_TYPE_JENSEN,
     BED_TYPE_KEESON,
     BED_TYPE_LINAK,
     BED_TYPE_OKIN_RF_ECO_BT,
+    BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_SBI,
+    BED_TYPE_SERTA_MP_REMOTE,
     BED_TYPE_STARCODE_ABM5_4,
     CONF_BED_TYPE,
     DOMAIN,
@@ -133,3 +136,30 @@ async def test_starcode_app_connect_timeout_overrides_the_profile(hass: HomeAssi
 
     assert coordinator._connection_timeout == STARCODE_APP_CONNECTION_TIMEOUT_SECONDS
     assert bed_traits(BED_TYPE_LINAK).connection_timeout is None
+
+
+@pytest.mark.parametrize(
+    ("bed_type", "expected"),
+    [
+        (BED_TYPE_SBI, {"back": 60.0, "head": 68.0, "legs": 32.0, "feet": 45.0}),
+        (BED_TYPE_SERTA_MP_REMOTE, {"back": 60.0, "head": 68.0, "legs": 45.0, "feet": 45.0}),
+        (BED_TYPE_REVERIE, {"back": 60.0, "head": 60.0, "legs": 45.0, "feet": 45.0}),
+        (BED_TYPE_BEDJET_POWERLAYER, {"back": 73.0, "head": 73.0, "legs": 47.0, "feet": 47.0}),
+        (BED_TYPE_LINAK, {"back": 68.0, "head": 68.0, "legs": 45.0, "feet": 45.0}),
+    ],
+)
+async def test_max_angles_come_from_the_bed_before_connecting(
+    hass: HomeAssistant, bed_type: str, expected: dict[str, float]
+) -> None:
+    """Set-position validation uses the frame's travel, and the configured default otherwise."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_NAME: "Bed", CONF_BED_TYPE: bed_type},
+        unique_id="AA:BB:CC:DD:EE:FF",
+    )
+    entry.add_to_hass(hass)
+
+    coordinator = AdjustableBedCoordinator(hass, entry)
+
+    assert coordinator.controller is None
+    assert {axis: coordinator.get_max_angle(axis) for axis in expected} == expected

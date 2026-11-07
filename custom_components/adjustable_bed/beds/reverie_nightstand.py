@@ -21,7 +21,6 @@ from typing import TYPE_CHECKING, Any, Final
 from bleak.exc import BleakError
 
 from ..const import (
-    REVERIE_BACK_MAX_ANGLE,
     REVERIE_NIGHTSTAND_FOOT_POSITION_UUID,
     REVERIE_NIGHTSTAND_FOOT_WAVE_UUID,
     REVERIE_NIGHTSTAND_HEAD_POSITION_UUID,
@@ -181,11 +180,6 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         returns the linear head UUID as the primary one.
         """
         return REVERIE_NIGHTSTAND_LINEAR_HEAD_UUID
-
-    @property
-    def motor_max_angles(self) -> dict[str, float]:
-        """Reverie frames stop the head/back axis short of the standard 68 degrees."""
-        return {"back": REVERIE_BACK_MAX_ANGLE, "head": REVERIE_BACK_MAX_ANGLE}
 
     # Capability properties
     @property

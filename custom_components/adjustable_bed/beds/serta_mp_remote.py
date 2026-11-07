@@ -14,7 +14,11 @@ from typing import TYPE_CHECKING, Final
 
 from ..codec import keeson as codec
 from ..command_scheduler import CommandKind, CommandOutcome, current_command_context
-from ..const import CONF_PRODUCT_TYPE
+from ..const import (
+    CONF_PRODUCT_TYPE,
+    SERTA_MP_REMOTE_BACK_MAX_ANGLE,
+    SERTA_MP_REMOTE_LEGS_MAX_ANGLE,
+)
 from ..controller_state import StateKey
 from ..profiles.keeson import app_profile
 from .base import (
@@ -205,13 +209,13 @@ class SertaMPRemoteController(AppController):
     @property
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
         return (
-            build_position_number_spec("back", max_value=60, unit="°"),
-            build_position_number_spec("legs", max_value=45, unit="°"),
+            build_position_number_spec(
+                "back", max_value=SERTA_MP_REMOTE_BACK_MAX_ANGLE, unit="°"
+            ),
+            build_position_number_spec(
+                "legs", max_value=SERTA_MP_REMOTE_LEGS_MAX_ANGLE, unit="°"
+            ),
         )
-
-    @property
-    def motor_max_angles(self) -> dict[str, float]:
-        return {"back": 60.0, "legs": 45.0}
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:

@@ -114,16 +114,6 @@ class BedJetPowerLayerController(BedController):
         return False
 
     @property
-    def motor_max_angles(self) -> dict[str, float]:
-        """Return the PowerLayer's measured travel limits."""
-        return {
-            "back": self.profile.head_max_angle,
-            "head": self.profile.head_max_angle,
-            "legs": self.profile.foot_max_angle,
-            "feet": self.profile.foot_max_angle,
-        }
-
-    @property
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
         """Return head and foot sliders scaled to the frame's own travel."""
         return (

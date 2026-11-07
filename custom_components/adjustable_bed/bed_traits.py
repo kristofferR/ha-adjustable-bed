@@ -9,7 +9,8 @@ controller may still refine a trait at runtime, for example after discovery.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from collections.abc import Mapping
+from dataclasses import dataclass, field, replace
 from typing import Final
 
 from .const import (
@@ -94,12 +95,19 @@ from .const import (
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
+    BEDJET_POWERLAYER_FOOT_MAX_ANGLE,
+    BEDJET_POWERLAYER_HEAD_MAX_ANGLE,
     DEFAULT_DISCONNECT_AFTER_COMMAND,
     KEESON_LAYOUT_APP_BED_TYPES,
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_SINO,
     ORE_COMFORT_BED_VARIANTS,
+    REVERIE_BACK_MAX_ANGLE,
     RICHMAT_MH_BED_TYPES,
+    SBI_FOOT_MAX_ANGLE,
+    SBI_HEAD_MAX_ANGLE,
+    SERTA_MP_REMOTE_BACK_MAX_ANGLE,
+    SERTA_MP_REMOTE_LEGS_MAX_ANGLE,
     STARCODE_APP_CONNECTION_TIMEOUT_SECONDS,
     VARIANT_AUTO,
     resolve_explicit_bed_type,
@@ -127,6 +135,9 @@ class BedTraits:
     passive_position_reconciliation: bool = False
     # Overrides the connection profile's connect timeout, in seconds.
     connection_timeout: float | None = None
+    # Travel limits in degrees, per axis, for frames whose hardware travels a
+    # fixed range. They replace the configurable back and legs maximums.
+    max_angles: Mapping[str, float] = field(default_factory=dict)
 
     @property
     def disconnect_after_command(self) -> bool:
@@ -150,6 +161,8 @@ _PERCENT_FEEDBACK_SCOPED: Final = BedTraits(
 _ANGLE_FEEDBACK_SCOPED: Final = BedTraits(
     position_feedback=True, angle_sensors=True, connection_scoped_state=True
 )
+# Reverie frames stop the head/back axis short of the standard 68 degrees.
+_REVERIE_MAX_ANGLES: Final = {"back": REVERIE_BACK_MAX_ANGLE, "head": REVERIE_BACK_MAX_ANGLE}
 
 # Bed types absent here have no static traits (BedTraits()). The base record of
 # a bed type with variants describes its automatic route; bed_traits() refines it.
@@ -159,7 +172,16 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     **dict.fromkeys(KEESON_LAYOUT_APP_BED_TYPES - {BED_TYPE_SERTA_MP_REMOTE}, _NO_ANGLES),
     BED_TYPE_ADJUSTABLE_LUMBAR: _NO_ANGLES,
     BED_TYPE_ADJUSTAMATTRESS: _NO_ANGLES,
-    BED_TYPE_BEDJET_POWERLAYER: BedTraits(position_feedback=True),
+    # Measured against the BedJet LCD remote's own degree readout.
+    BED_TYPE_BEDJET_POWERLAYER: BedTraits(
+        position_feedback=True,
+        max_angles={
+            "back": BEDJET_POWERLAYER_HEAD_MAX_ANGLE,
+            "head": BEDJET_POWERLAYER_HEAD_MAX_ANGLE,
+            "legs": BEDJET_POWERLAYER_FOOT_MAX_ANGLE,
+            "feet": BEDJET_POWERLAYER_FOOT_MAX_ANGLE,
+        },
+    ),
     BED_TYPE_BEDSENSE: _NO_ANGLES,
     BED_TYPE_BF: _NO_ANGLES,
     BED_TYPE_CASPER_BASE: _NO_ANGLES,
@@ -229,22 +251,32 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     # The stair receiver times out on idle reconnects (#344).
     BED_TYPE_OKIN_RF_ECO_BT: _NO_ANGLES_PERSISTENT,
     BED_TYPE_OKIN_UUID: _ANGLE_FEEDBACK_SCOPED,
-    BED_TYPE_REVERIE: _ANGLE_FEEDBACK_SCOPED,
+    BED_TYPE_REVERIE: replace(_ANGLE_FEEDBACK_SCOPED, max_angles=_REVERIE_MAX_ANGLES),
     BED_TYPE_REVERIE_NIGHTSTAND: BedTraits(
         position_feedback=True,
         percentage_positions=True,
         angle_sensors=True,
         connection_scoped_state=True,
+        max_angles=_REVERIE_MAX_ANGLES,
     ),
     BED_TYPE_REVERIE_PAIRLINK: BedTraits(
         position_feedback=True, percentage_positions=True, angle_sensors=True
     ),
     "richmat_sleep_receiver": _NO_ANGLES_PERSISTENT,
     # Head and foot angles come from the app's pulse lookup tables (#239).
-    BED_TYPE_SBI: BedTraits(position_feedback=True),
+    BED_TYPE_SBI: BedTraits(
+        position_feedback=True,
+        max_angles={"back": SBI_HEAD_MAX_ANGLE, "legs": SBI_FOOT_MAX_ANGLE},
+    ),
     BED_TYPE_SERENITY: _NO_ANGLES,
     BED_TYPE_SERTA: BedTraits(percentage_positions=True),
-    BED_TYPE_SERTA_MP_REMOTE: BedTraits(position_feedback=True),
+    BED_TYPE_SERTA_MP_REMOTE: BedTraits(
+        position_feedback=True,
+        max_angles={
+            "back": SERTA_MP_REMOTE_BACK_MAX_ANGLE,
+            "legs": SERTA_MP_REMOTE_LEGS_MAX_ANGLE,
+        },
+    ),
     BED_TYPE_SIMMONS: _NO_ANGLES,
     BED_TYPE_SLEEP_NUMBER: _PERCENT_FEEDBACK_SCOPED,
     # MCR exposes positions only for actuators foundation discovery proves.

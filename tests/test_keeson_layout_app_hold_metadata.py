@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from custom_components.adjustable_bed.bed_traits import bed_traits
 from custom_components.adjustable_bed.beds.base import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -17,6 +18,7 @@ from custom_components.adjustable_bed.button import (
     ControllerActionButton,
     _combined_motor_buttons_for,
 )
+from custom_components.adjustable_bed.const import BED_TYPE_SERTA_MP_REMOTE
 from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
 from custom_components.adjustable_bed.profiles.keeson import APP_LAYOUTS, app_profile
 
@@ -80,6 +82,7 @@ def test_source_owned_specs_project_flat_metadata_and_keep_side(app, layout):
 
 def test_serta_local_angle_hold_metadata_is_distinct_from_remote_motor_keys():
     ctrl = SertaMPRemoteController(coordinator())
+    ctrl.static_traits = bed_traits(BED_TYPE_SERTA_MP_REMOTE)
     for axis in ("head", "foot"):
         for direction in ("up", "down"):
             key = f"{axis}_target_{direction}"

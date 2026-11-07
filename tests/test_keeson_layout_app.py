@@ -17,6 +17,7 @@ from custom_components.adjustable_bed.alarm_table import (
     OneTimeAlarmRecord,
     WeeklyAlarmRecord,
 )
+from custom_components.adjustable_bed.bed_traits import bed_traits
 from custom_components.adjustable_bed.beds.keeson_layout_app import (
     FFE4,
     FFE9,
@@ -32,6 +33,7 @@ from custom_components.adjustable_bed.beds.serta_mp_remote import (
     pulse_angle,
 )
 from custom_components.adjustable_bed.codec import keeson as codec
+from custom_components.adjustable_bed.const import BED_TYPE_SERTA_MP_REMOTE
 from custom_components.adjustable_bed.profiles.keeson import (
     APP_LAYOUTS,
     app_profile,
@@ -626,6 +628,8 @@ async def test_serta_four_local_memory_defaults_and_configuration_are_not_physic
 ):
     coord = coordinator()
     ctrl = SertaMPRemoteController(coord)
+    # The factory stamps the bed type's traits, which carry its travel limits.
+    ctrl.static_traits = bed_traits(BED_TYPE_SERTA_MP_REMOTE)
     ctrl._wait = AsyncMock(return_value=False)
     await ctrl.start_notify()
     try:
