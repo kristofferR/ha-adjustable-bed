@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 from homeassistant.util import dt as dt_util
 
+from .. import richmat_mh_catalog as catalog
 from ..const import CONF_BLE_DEVICE_NAME, RICHMAT_MH_APPS, RUF_RICHMAT_APPS, VARIANT_AUTO
 from ..controller_state import StateKey, StateUpdate
 from ..detection import is_mac_like_name
@@ -236,19 +237,12 @@ class Model:
     features: Features
 
 
-def _catalog() -> Any:
-    from .. import richmat_mh_catalog
-
-    return richmat_mh_catalog
-
-
 def load_model(app: str, model_id: str) -> Model | None:
     """Return a catalog model, or None when the app has no such live model."""
     if app in ("ruf", "wsilver2", "americanstar", "bailey2", "tx"):
         from .ruf_richmat import load_app_model
 
         return load_app_model(app, model_id)
-    catalog = _catalog()
     row = catalog.MODELS.get(app, {}).get(model_id)
     if row is None:
         return None
