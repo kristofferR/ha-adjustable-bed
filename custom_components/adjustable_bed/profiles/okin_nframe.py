@@ -8,8 +8,9 @@ apps. ``LEGGETT_PROFILES`` are Prodigy 2L 1.2, Prodigy 2 2.2.0, Prodigy CE 1.2.0
 and U Series 2.1, chosen by the ``leggett_okin`` entry's app profile.
 
 40-bit: ``OKIN_DOT`` (DOT handset tables), ``OKIN_CB24``, ``SIMMONS_PROFILES``
-(chosen by the Bluetooth name), ``DOUBLESLEEP``, ``SLEEPYS_BOX25_LEGACY`` and
-``STARCODE_ABM5_4_PROFILES`` (one per command selector).
+(chosen by the Bluetooth name), ``DOUBLESLEEP``, ``SLEEPYS_BOX25_LEGACY``,
+``STARCODE_ABM5_4_PROFILES`` (one per command selector) and ``ESHINE_PROFILES``
+(the eShine app's product selectors).
 
 App profiles come from their accepted APK Protocol Audit report; Okimat,
 DewertOkin, RF ECO BT, CB24, DOT, Sleepy's legacy CB25 and AdjustableM5X4 keep
@@ -30,6 +31,7 @@ from ..const import (
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DOUBLESLEEP,
+    BED_TYPE_ESHINE_OKIN,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_OKIMAT,
@@ -739,6 +741,69 @@ STARCODE_ABM5_4_PROFILES: Final[Mapping[str, OkinNFrameProfile]] = MappingProxyT
         ),
         "BOX15": _abm("starcode_abm5_4_box15", "BOX15", _ABM_SHARED, {}),
         "BOX1220": _abm("starcode_abm5_4_box1220", "BOX1220", _ABM_SHARED | _ABM_MASSAGE, {}),
+    }
+)
+
+# eShine (com.okin.eshine 1.1.8, row122): one key table in the app's order; each
+# product selector exposes part of it.
+ESHINE_KEYS: Final = MappingProxyType(
+    {
+        "massage_wave": 0x10000000,
+        "stop": 0x00000000,
+        "tv": 0x00004000,
+        "anti_snore": 0x00008000,
+        "zero_g": 0x00001000,
+        "feet_down": 0x00000008,
+        "feet_up": 0x00000004,
+        "head_down": 0x00000002,
+        "head_up": 0x00000001,
+        "pillow_down": 0x00000020,
+        "pillow_up": 0x00000010,
+        "light": 0x00020000,
+        "flat": 0x08000000,
+        "reading": 0x00002000,
+        "massage_foot_strength": 0x00000400,
+        "massage_head_strength": 0x00000800,
+        "massage_timer": 0x00000200,
+        "massage_off": 0x02000000,
+        "massage_on": 0x00000100,
+        "flat_zero_g": 0x08001000,
+    }
+)
+ESHINE_REFRESH_MS: Final = 300
+"""Held keys write at once, then every 300 ms; one STOP follows 200 ms after release."""
+
+
+def _eshine(key: str, name: str, *, massage: bool, pillow: bool) -> OkinNFrameProfile:
+    return OkinNFrameProfile(
+        key=key,
+        name=name,
+        bed_types=(BED_TYPE_ESHINE_OKIN,),
+        width=5,
+        write="no_response",
+        envelope="plain",
+        axes=("head", "feet", "pillow") if pillow else ("head", "feet"),
+        keys=MappingProxyType(
+            {
+                action: word
+                for action, word in ESHINE_KEYS.items()
+                if (massage or not action.startswith(("massage_", "light")))
+                and (pillow or not action.startswith("pillow_"))
+            }
+        ),
+        # Presets and the light are held keys too; massage keys are one write.
+        hold=Hold(repeat_ms=ESHINE_REFRESH_MS, releases=1, release_after_ms=200),
+        execution=STREAM_HOLD,
+    )
+
+
+ESHINE_PROFILES: Final[Mapping[str, OkinNFrameProfile]] = MappingProxyType(
+    {
+        "eshine_e2000": _eshine("eshine_e2000", "eShine E2000", massage=False, pillow=False),
+        "eshine_e30003100": _eshine(
+            "eshine_e30003100", "eShine E3000 / E3100", massage=True, pillow=False
+        ),
+        "eshine_e5000": _eshine("eshine_e5000", "eShine E5000", massage=True, pillow=True),
     }
 )
 

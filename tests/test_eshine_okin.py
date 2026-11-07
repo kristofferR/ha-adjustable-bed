@@ -387,7 +387,7 @@ async def test_factory_and_manual_selection(hass, profile):
     controller = await create_controller(
         coordinator, BED_TYPE_ESHINE_OKIN, protocol_variant=profile, client=None
     )
-    assert isinstance(controller, EshineOkinController) and controller.profile == profile
+    assert isinstance(controller, EshineOkinController) and controller.profile.key == profile
     assert is_valid_variant_for_bed_type(BED_TYPE_ESHINE_OKIN, profile)
     assert not is_valid_variant_for_bed_type(BED_TYPE_ESHINE_OKIN, "auto")
     from tests.form_helpers import finish_new_bed, start_new_bed

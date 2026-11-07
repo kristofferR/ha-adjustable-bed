@@ -106,6 +106,11 @@ _OKIN_KEY_LABELS = {
     "save_memory_2": "Save memory 2",
     "save_memory_3": "Save memory 3",
     "save_memory_4": "Save memory 4",
+    "reading": "Reading",
+    "massage_head_strength": "Head massage strength step",
+    "massage_foot_strength": "Foot massage strength step",
+    "massage_timer": "Massage timer step",
+    "flat_zero_g": "Flat + Zero-G chord",
 }
 _OKIN_GROUPS = {
     "Okimat": (okin_profiles.OKIMAT,),
@@ -121,6 +126,7 @@ _OKIN_GROUPS = {
     "AdjustableM5X4": tuple(
         {id(p): p for p in okin_profiles.STARCODE_ABM5_4_PROFILES.values()}.values()
     ),
+    "eShine": tuple(okin_profiles.ESHINE_PROFILES.values()),
     "Okin CST": tuple(okin_profiles.CST_PROFILES.values()),
     "OKIN Bedding apps": tuple(okin_profiles.BEDDING_PROFILES.values()),
     "Okin 64-Bit": tuple(okin_profiles.OKIN_64BIT_PROFILES.values()),
@@ -253,8 +259,10 @@ def render_okin_nframe_profiles() -> str:
         "AdjustableM5X4 presets and recalls are held keys on its refresh; it streams "
         f"Flat for {okin_profiles.STARCODE_ABM5_4_FLAT_HOLD_MS} ms and saves or resets for "
         f"{okin_profiles.STARCODE_ABM5_4_SAVE_HOLD_MS} ms. SleepEase P1 presets are held "
-        "keys on its refresh too. The OKIN Bedding apps hold every action to its own "
-        f"deadline, saves for {okin_profiles.BEDDING_SAVE_HOLD_MS} ms; see their profiles.",
+        "keys on its refresh too, as are eShine presets, its Flat + Zero-G chord and its "
+        "light; its massage keys are one write. The OKIN Bedding apps hold every action "
+        f"to its own deadline, saves for {okin_profiles.BEDDING_SAVE_HOLD_MS} ms; see their "
+        "profiles.",
     )
 
 
@@ -273,7 +281,11 @@ def render_okin_nframe_transports() -> str:
         ("Settings notify", okin_codec.SETTINGS_NOTIFY_UUID, "Leggett Okin Prodigy profiles"),
         ("Service", NORDIC_UART_SERVICE_UUID, "40-bit profiles"),
         ("Write", NORDIC_UART_WRITE_CHAR_UUID, "40-bit profiles"),
-        ("Notify", NORDIC_UART_READ_CHAR_UUID, "SIMMONS, SleepEase, Sleepy's, AdjustableM5X4"),
+        (
+            "Notify",
+            NORDIC_UART_READ_CHAR_UUID,
+            "SIMMONS, SleepEase, Sleepy's, AdjustableM5X4, eShine",
+        ),
     )
     return _block(
         _table(
@@ -379,6 +391,9 @@ def render_okin_nframe_keys() -> str:
         "Keyed by the app's action names. BOX15 and BOX1220 move with their own "
         "frames, so their profiles hold only the shared keys; BOX25_STAR sends "
         "StarCode only.",
+        "#### eShine keys",
+        _okin_key_table(_OKIN_GROUPS["eShine"], envelope=False),
+        "The app's one key table; each product selector exposes the rows listed for it.",
         "#### Okin CST keys",
         _okin_key_table(_OKIN_GROUPS["Okin CST"], envelope=False),
         "The word column shows the primary and secondary fields. Each product lists "

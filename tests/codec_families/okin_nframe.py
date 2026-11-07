@@ -22,8 +22,9 @@ def _variant(key: str, bed_type: str) -> str | None:
         const.BED_TYPE_OKIN_CST: key,
         const.BED_TYPE_ZSERIES: key.removeprefix("zseries_"),
         const.BED_TYPE_OKIN_64BIT: key.removeprefix("okin_64bit_"),
-        # Adjustable bed (Lumbar) profile keys are its protocol variants.
+        # Adjustable bed (Lumbar) and eShine profile keys are their protocol variants.
         const.BED_TYPE_ADJUSTABLE_LUMBAR: key,
+        const.BED_TYPE_ESHINE_OKIN: key,
     }.get(bed_type)
 
 
@@ -38,6 +39,7 @@ FAMILY = CodecFamily(
             "customatic_zseries",
             "dewertokin",
             "doublesleep",
+            "eshine_okin",
             "leggett_okin",
             "leggett_platt",
             "okimat",

@@ -12,9 +12,10 @@ until that family's codec exists (#759). Which carrier, header, byte order and
 words an app uses belongs to its profile (``profiles/keeson.py``).
 
 The checked setup frames (``E5 FE 17`` pulse targets, ``E7 80`` clock,
-``E1 80`` alarm dismissal, ``E2 80`` alarm query, ``EF 02`` rename) end with the
-same checksum, as do the ``E2``/``EA``/``EB FE 16`` clock and alarm frames whose
-fields the BF, Cherish and Comfort Enhancements controllers fill in.
+``E1 80`` alarm dismissal, ``E2 80`` alarm query, ``ED 80`` alarm record,
+``EF 02`` rename) end with the same checksum, as do the ``E2``/``EA``/``EB FE 16``
+clock and alarm frames whose fields the BF, Cherish, Comfort Enhancements and
+AdjustaMattress P2 controllers fill in.
 
 Ergomotion 4.0 (com.sfd.hump 3.7) adds its ``07 D0`` custom massage frames and
 its ``09 0A`` and ``0A 02`` RGB frames, which carry no checksum.

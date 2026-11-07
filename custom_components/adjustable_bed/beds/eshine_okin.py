@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING
 
 from homeassistant.util import dt as dt_util
 
-from ..const import ESHINE_OKIN_PROFILES
 from ..execution import ExecutionCapabilities
+from ..profiles.okin_nframe import ESHINE_PROFILES, ESHINE_REFRESH_MS
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -26,8 +26,6 @@ from .eshine_okin_protocol import (
     COMMANDS,
     HELD,
     NOTIFY_UUID,
-    REFRESH_MS,
-    RELEASE_MS,
     SERVICE_UUID,
     WRITE_UUID,
     StateValue,
@@ -68,17 +66,17 @@ class EshineOkinController(BedController):
 
     def __init__(self, coordinator: AdjustableBedCoordinator, *, profile: str) -> None:
         super().__init__(coordinator)
-        if profile not in ESHINE_OKIN_PROFILES:
+        if profile not in ESHINE_PROFILES:
             raise ValueError("Choose E2000, E3000/E3100 or E5000 from the eShine app")
-        self.profile = profile
+        self.profile = ESHINE_PROFILES[profile]
         self._session: Session | None = None
         self._notifying = False
         self._observed: dict[str, dict[str, StateValue]] = {}
 
     @property
     def execution(self) -> ExecutionCapabilities:
-        """Held keys refresh every 300 ms until release, then STOP after 200 ms (#483)."""
-        return ExecutionCapabilities(hold="stream")
+        """Held keys refresh until release, then STOP after the profile's delay (#483)."""
+        return self.profile.execution
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -94,7 +92,7 @@ class EshineOkinController(BedController):
 
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
-        return {"app": "com.okin.eshine", "profile": self.profile, "hardware_verified": False}
+        return {"app": "com.okin.eshine", "profile": self.profile.key, "hardware_verified": False}
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
@@ -108,16 +106,15 @@ class EshineOkinController(BedController):
                 scheduler_resource="*",
                 hold=ControllerMotorHoldSpec(f"{axis}_up", f"{axis}_down"),
             )
-            for axis in ("head", "feet", "pillow")
-            if axis != "pillow" or self.has_pillow_support
+            for axis in self.profile.axes
         )
 
     def motor_pulse_settings(self) -> tuple[int, int]:
-        return self._coordinator.motor_pulse_count, REFRESH_MS
+        return self._coordinator.motor_pulse_count, ESHINE_REFRESH_MS
 
     @property
     def has_pillow_support(self) -> bool:
-        return self.profile == "eshine_e5000"
+        return "pillow" in self.profile.axes
 
     @property
     def supports_preset_zero_g(self) -> bool:
@@ -145,7 +142,7 @@ class EshineOkinController(BedController):
 
     @property
     def supports_massage(self) -> bool:
-        return self.profile != "eshine_e2000"
+        return "massage_on" in self.profile.keys
 
     @property
     def auto_enable_massage(self) -> bool:
@@ -326,7 +323,7 @@ class EshineOkinController(BedController):
         self,
         command: bytes,
         repeat_count: int = 1,
-        repeat_delay_ms: int = REFRESH_MS,
+        repeat_delay_ms: int = ESHINE_REFRESH_MS,
         cancel_event: asyncio.Event | None = None,
     ) -> None:
         session = self._live()
@@ -412,7 +409,7 @@ class EshineOkinController(BedController):
 
     async def _release_frame(self, session: Session) -> None:
         # Preserve the app's release delay, capturing STOP and the current session.
-        await self._pause(RELEASE_MS / 1000, asyncio.Event())
+        await self._pause(self.profile.hold.release_after_ms / 1000, asyncio.Event())
         self._live(session)
         await self.write_command(COMMANDS["stop"], cancel_event=asyncio.Event())
 
@@ -471,8 +468,10 @@ class EshineOkinController(BedController):
                     try:
                         await self.write_command(
                             COMMANDS[control],
-                            repeat_count=self.timed_move_repeat_count(duration_ms, REFRESH_MS),
-                            repeat_delay_ms=REFRESH_MS,
+                            repeat_count=self.timed_move_repeat_count(
+                                duration_ms, ESHINE_REFRESH_MS
+                            ),
+                            repeat_delay_ms=ESHINE_REFRESH_MS,
                         )
                     except TimeoutError:
                         write_timeout = True
