@@ -43,12 +43,20 @@ STANDALONE: dict[str, str] = {
     "reverie_pairlink": "own wire format behind a Pairlink session",
     "sleep_number": "own wire format",
     "sleep_number_mcr": "own wire format",
-    "sleepstar": "own wire format",
+    "sleepstar": "a CB37 sleep-monitor session that carries codec/okin_5a.py StarCode frames"
+    " in its AA 00 00 09 02 envelope; the envelope, sleep-monitor and MODBUS environment"
+    " frames have no codec",
     "sleeptracker": "own wire format",
     "sleepys_box24": "own wire format",
-    "sleepys_elite_app": "own wire format",
-    "starcode_m1x12": "own wire format",
-    "starcode_m5x5": "own wire format",
+    "sleepys_elite_app": "a frozen per-selector route table whose payloads codec/okin_nframe.py,"
+    " codec/okin_5a.py and codec/keeson.py build, except BOX1220's Okin ORE A5 5A frames,"
+    " which no codec builds",
+    "starcode_m1x12": "each connection picks codec/okin_5a.py StarCode or codec/okin_nframe.py"
+    " legacy frames from the Device Information manufacturer; the app's key catalog, sender"
+    " session and notification parsers stay controller code",
+    "starcode_m5x5": "each connection picks codec/okin_5a.py StarCode or codec/okin_nframe.py"
+    " legacy frames from the Device Information manufacturer; the app's key catalog, sender"
+    " session and notification parsers stay controller code",
     "suta": "own wire format",
     "svane": "own wire format",
     "timotion_ahf": "own wire format",

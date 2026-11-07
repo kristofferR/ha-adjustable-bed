@@ -13,7 +13,6 @@ from custom_components.adjustable_bed.beds.starcode_m1x12_protocol import (
     StateValue,
     clock_packet,
     extended_packet,
-    keep_open_packet,
     long_packet,
     manufacturer_dialect,
     normal_packet,
@@ -23,6 +22,7 @@ from custom_components.adjustable_bed.beds.starcode_m1x12_protocol import (
     query_packet,
     time_packet,
 )
+from custom_components.adjustable_bed.codec import okin_5a
 
 
 class VectorInputs(TypedDict, total=False):
@@ -98,7 +98,7 @@ def _build_vector(vector: Vector) -> bytes:
     if vector_id == "V-ELEVATE":
         return normal_packet(_key(item["key"]), "star")
     if vector["protocol"] == "P2":
-        return keep_open_packet()
+        return okin_5a.WAKE
     return normal_packet(_key(item["key"]), _dialect(item["encoding"]))
 
 

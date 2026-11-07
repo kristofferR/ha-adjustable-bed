@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, cast
 
 from bleak.exc import BleakError
 
+from ..codec import okin_5a, okin_nframe
 from ..command_scheduler import CommandContext, current_command_context
 from ..const import (
     SLEEPYS_ELITE_NATIVE_ACTION_MS,
@@ -798,6 +799,7 @@ class SleepysEliteAppController(BedController):
         if not math.isfinite(value) or not value.is_integer():
             raise ValueError("Sleepy's value controls accept whole numbers only")
         code = int(value)
+        codec = okin_5a if self.selector == _STAR_CODE_SELECTOR else okin_nframe
         if control.startswith("position_axis_"):
             axis_text = control.removeprefix("position_axis_")
             if (
@@ -806,54 +808,33 @@ class SleepysEliteAppController(BedController):
                 or not 0 <= code <= 200
             ):
                 raise ValueError(f"Unsupported Sleepy's value control: {control!r}")
-            axis = int(axis_text)
-            if self.selector == _STAR_CODE_SELECTOR:
-                logical = (90, 240, 3, axis, code, 0, 165)
-            else:
-                logical = (3, 240, axis, code, 0)
+            payload = codec.position_target(int(axis_text), code)
             builder = "changePosition"
         elif control == "light_level":
             if not self.supports_lights or not 0 <= code <= 6:
                 raise ValueError("Sleepy's light level must be between 0 and 6")
-            logical = (
-                (90, 224, 4, 0, code, 0, 0, 165)
-                if self.selector == _STAR_CODE_SELECTOR
-                else (4, 224, 0, code, 0, 0)
-            )
+            payload = codec.extended(0x00, code)
             builder = "changeLightBrightness"
         elif control == "light_color_code":
             if not self.supports_lights or not 1 <= code <= 7:
                 raise ValueError("Sleepy's current color control accepts codes 1 to 7")
-            logical = (
-                (90, 224, 4, 1, code, 0, 0, 165)
-                if self.selector == _STAR_CODE_SELECTOR
-                else (4, 224, 1, code, 0, 0)
-            )
+            payload = codec.extended(0x01, code)
             builder = "changeLightColorLevel"
         elif control == "massage_timer_code":
             if not self.supports_massage or code not in (1, 2, 3):
                 raise ValueError("Sleepy's massage timer code must be 1, 2, or 3")
-            logical = (
-                (90, 224, 4, 7, code, 0, 0, 165)
-                if self.selector == _STAR_CODE_SELECTOR
-                else (4, 224, 7, code, 0, 0)
-            )
+            payload = codec.extended(0x07, code)
             builder = "changeMassageTime"
         elif control == "massage_intensity_all":
             if not self.supports_massage or not 0 <= code <= 7:
                 raise ValueError("Sleepy's combined massage intensity must be 0 to 7")
             intensity = 0 if code == 0 else code + 1
-            logical = (
-                (90, 224, 4, 6, intensity, intensity, 0, 165)
-                if self.selector == _STAR_CODE_SELECTOR
-                else (4, 224, 6, intensity, intensity, 0)
-            )
+            payload = codec.extended(0x06, intensity, intensity)
             builder = "changeMassageIntensity"
         else:
             raise ValueError(f"Unsupported Sleepy's value control: {control!r}")
 
-        route = self._route(builder)
-        return replace(route, logical_values=logical, payload=bytes(logical))
+        return replace(self._route(builder), logical_values=tuple(payload), payload=payload)
 
     @property
     def has_lumbar_support(self) -> bool:

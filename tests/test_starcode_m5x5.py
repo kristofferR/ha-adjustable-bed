@@ -135,9 +135,7 @@ async def test_all_command_vectors(hass: HomeAssistant, case: dict[str, object])
 
 
 def controller_stop(controller: StarcodeM5X5Controller) -> bytes:
-    return bytes.fromhex(
-        "5a010310300fa5" if controller.dialect == "star" else "05020000000000"
-    )
+    return bytes.fromhex("5a010310300fa5" if controller.dialect == "star" else "05020000000000")
 
 
 @pytest.mark.parametrize(
@@ -458,13 +456,12 @@ EXISTING_LEAVES = json.loads(
 
 @pytest.mark.parametrize("case", EXISTING_LEAVES, ids=lambda case: case["id"])
 def test_all_frozen_existing_leaf_proofs(case: dict[str, object]) -> None:
-    from custom_components.adjustable_bed.beds import sleepys_box25
     from custom_components.adjustable_bed.beds.star_elevate import _elevate_command
     from custom_components.adjustable_bed.beds.starcode_m5x5_protocol import (
         extended_packet,
         normal_packet,
     )
-    from custom_components.adjustable_bed.codec import okin_nframe
+    from custom_components.adjustable_bed.codec import okin_5a, okin_nframe
 
     raw_arguments = case["arguments"]
     assert isinstance(raw_arguments, list)
@@ -484,13 +481,13 @@ def test_all_frozen_existing_leaf_proofs(case: dict[str, object]) -> None:
         assert len(arguments) == 2
         actual = okin_nframe.extended(arguments[0], arguments[1])
         replacement = extended_packet(arguments[0], arguments[1], "legacy")
-    elif name == "_star_command":
+    elif name == "_star_command":  # now the Okin 5A codec's key frame
         assert len(arguments) == 2
-        actual = sleepys_box25._star_command(arguments[0], arguments[1])
+        actual = okin_5a.command(arguments[0], arguments[1])
         replacement = normal_packet(0x03100000 | (arguments[1] << 8) | arguments[0], "star")
     elif name == "_star_extended":
         assert len(arguments) == 2
-        actual = sleepys_box25._star_extended(arguments[0], arguments[1])
+        actual = okin_5a.extended(arguments[0], arguments[1])
         replacement = extended_packet(arguments[0], arguments[1], "star")
     else:
         assert name == "_elevate_command"

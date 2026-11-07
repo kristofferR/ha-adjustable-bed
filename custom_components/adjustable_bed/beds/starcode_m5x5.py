@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
+from ..codec import okin_5a
 from ..execution import ExecutionCapabilities
 from .base import (
     POSITION_UNIT_PERCENT,
@@ -31,6 +32,7 @@ from .starcode_m5x5_protocol import (
     StateValue,
     clock_packet,
     extended_packet,
+    long_normal_packet,
     manufacturer_dialect,
     normal_packet,
     parse_notification,
@@ -619,7 +621,7 @@ class StarcodeM5X5Controller(BedController):
                 {"firmware": self._firmware, "firmware_read_ok": self._firmware_read_ok}
             )
             if self.dialect == "star":
-                await self.write_command(bytes.fromhex("5a0b00a5"))
+                await self.write_command(okin_5a.WAKE)
                 require_owned_session()
             if self.profile in ("f23", "kneading"):
                 await self.write_command(clock_packet(dt_util.now()))
@@ -797,11 +799,7 @@ class StarcodeM5X5Controller(BedController):
             if dialect == "star"
             else (0x40 if enabled else 0x80)
         )
-        packet = (
-            normal_packet(key, dialect)
-            if dialect == "star"
-            else bytes.fromhex("080200000000") + key.to_bytes(4, "big")
-        )
+        packet = normal_packet(key, dialect) if dialect == "star" else long_normal_packet(key)
         await self._rgb(packet, 1 if self.profile in ("f23", "kneading") else 2)
 
     async def lights_cycle(self) -> None:

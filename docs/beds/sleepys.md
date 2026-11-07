@@ -63,6 +63,10 @@ Other Sleepy's profiles keep their existing generic `2A29`/`2A24` behavior.
 | `BOX3633` | `62741525` in `62741523` | `62741625` in `62741523` | Only the proven safe common app surface; the conditional navigation-race position slider is excluded |
 | `BOX25`, `BOX25_STAR` | Nordic UART `6E400002` | Nordic UART `6E400003` | App light, massage, timer-code, and voice actions |
 
+Each selector's frames come from the [Okin N-frame](okin-nframe.md#wire-codec),
+[Okin 5A](okin-5a.md#starcode-frames) or [Keeson](keeson.md#controller-profiles)
+codec, except BOX1220's `A5 5A` frames, which no codec builds.
+
 Held movement and held app actions accept a
 [renewable hold](../SERVICES.md#renewable-holds): the app's 100 ms refresh
 continues until the lease runs out, then the selector STOP follows.
@@ -300,7 +304,9 @@ runtime split using a case-insensitive `contains("star")` test. Fixed F23 and
 kneading product identifiers (`STAR254203/4205/4255/4256/4257`,
 `STAR255401/5402/5403`) are StarCode-only.
 
-`BOX25_STAR` uses StarCode for every motor, preset, light, and massage action:
+`BOX25_STAR` uses StarCode, built by the
+[Okin 5A codec](okin-5a.md#starcode-frames), for every motor, preset, light, and
+massage action:
 
 ```text
 5A 01 03 10 [category] [command] A5
