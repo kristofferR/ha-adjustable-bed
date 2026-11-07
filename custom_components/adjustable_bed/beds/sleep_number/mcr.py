@@ -677,11 +677,14 @@ class SleepNumberMcrController(BedController, SleepNumberActions):
             self._publish(
                 {"pump_adjusting": frame.payload[0] != 0, "pump_dual_chamber": frame.side == 1}
             )
-            self._sleep_numbers["left"] = frame.payload[1]
-            self._sleep_numbers["right"] = frame.payload[2]
+            # Payload is [adjusting, right, left], matching the chamber and
+            # favorites replies (SleepIQ GetPumpStatusCall; hardware, #939).
+            right, left = frame.payload[1], frame.payload[2]
+            self._sleep_numbers["right"] = right
+            self._sleep_numbers["left"] = left
             self.forward_controller_state_updates(
-                sided(SLEEP_NUMBER, "left")(frame.payload[1]),
-                sided(SLEEP_NUMBER, "right")(frame.payload[2]),
+                sided(SLEEP_NUMBER, "right")(right),
+                sided(SLEEP_NUMBER, "left")(left),
             )
             return
 
