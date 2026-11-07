@@ -9,7 +9,7 @@ it.
 | --- | --- | --- |
 | Codec | `codec/<family>.py` | GATT transport roles, framing, checksums, command and response encoding, STOP and release frames |
 | Profile | `profiles/<family>.py` | Typed data for one app or legacy route: layouts, payload shapes, timing, memory slots, setup schedules, name rules |
-| Controller | `beds/<family>*.py` | Glue that drives the codec from a profile, plus app behavior data cannot express |
+| Controller | `beds/<family>/` package, or `beds/<family>.py` when the family is one module | Glue that drives the codec from a profile, plus app behavior data cannot express |
 
 Imports point one way: controllers use profiles and codecs, profiles use the
 codec, and the codec imports neither.
