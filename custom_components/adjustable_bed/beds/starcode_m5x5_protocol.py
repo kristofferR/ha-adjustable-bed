@@ -11,16 +11,23 @@ from typing import Final
 
 from ..codec import okin_5a
 from .starcode_dialect import is_star
+from .starcode_feedback import (
+    PALETTE,
+    AlarmOffsets,
+    StateValue,
+    advanced_alarm,
+    basic_alarm,
+    closest_color,
+    eq,
+    kneading,
+    motor,
+)
 
-type StateValue = str | int | float | bool | None | list[StateValue] | dict[str, StateValue]
-
-_PALETTE: Final = (0xFFFFFF, 0xFF0000, 0xFFA500, 0xFFFF00, 0x00FF00, 0x0000FF, 0x800080)
-_WAKE: Final = ("none", "zg", "lounge", "tv", "antisnore", "m1", "m2", "light", "massage", "flat")
-_PRESET: Final = ("flat", "zg", "lounge", "tv", "antisnore", "m1", "m2")
-_LIGHT: Final = ("off", "onOrWhite", "red", "orange", "yellow", "green", "blue", "purple")
-_SONIC: Final = ("none", "normal1", "normal2", "normal3", "sonic1", "sonic2", "sonic3")
-_MASSAGE: Final = ("off", "intensity1", "intensity2", "intensity3")
-_DURATION: Final = ("duration10Min", "duration10Min", "duration20Min", "duration30Min")
+_MOTOR_NAMES: Final = ("back", "legs", "lumbar", "motor_part4", "motor_part5", "motor_part6")
+_ALARM_SLOTS: Final[tuple[AlarmOffsets, ...]] = (
+    (3, 4, 5, 6, 7, 8, 9, 11, 12, 13),
+    (14, 15, 16, 17, 18, 19, 20, 21, 22, 24),
+)
 
 
 def clock_packet(local_time: datetime) -> bytes:
@@ -38,42 +45,11 @@ def clock_packet(local_time: datetime) -> bytes:
     )
 
 
-def _enum(raw: int, values: tuple[str, ...], fallback: str = "none") -> str:
-    return values[raw] if raw < len(values) else fallback
-
-
-def _closest_color(rgb: int) -> int:
-    # Squared Euclidean distance has the same ordering as the source's sqrt.
-    return min(
-        range(len(_PALETTE)),
-        key=lambda i: sum(
-            (((rgb >> shift) & 0xFF) - ((_PALETTE[i] >> shift) & 0xFF)) ** 2 for shift in (16, 8, 0)
-        ),
-    )
-
-
-def _motor(data: bytes) -> dict[str, StateValue]:
-    return {
-        **{
-            key: min(data[offset], 100)
-            for key, offset in (
-                ("back", 4),
-                ("legs", 6),
-                ("lumbar", 8),
-                ("motor_part4", 10),
-                ("motor_part5", 5),
-                ("motor_part6", 7),
-            )
-        },
-        "motor_stopped": data[17] == 0,
-    }
-
-
 def _normal_and_sonic(data: bytes) -> dict[str, StateValue]:
     head, foot = data[7] & 0xF, data[7] >> 4
     color = data[14] & 0xF
     direct = color > 7
-    rgb = int.from_bytes(data[16:19], "big") if direct else _PALETTE[max(color - 1, 0)]
+    rgb = int.from_bytes(data[16:19], "big") if direct else PALETTE[max(color - 1, 0)]
     sonic_head, sonic_foot = data[11] & 0xF, data[11] >> 4
     sonic_any = sonic_head > 0 or sonic_foot > 0
     return {
@@ -87,7 +63,7 @@ def _normal_and_sonic(data: bytes) -> dict[str, StateValue]:
         "light_on": color > 0,
         # Report direct RGB in the wire numbering the palette select uses
         # (0 = off, 1 = white): palette position p is wire index p + 1.
-        "light_color_index": _closest_color(rgb) + 1 if direct else color,
+        "light_color_index": closest_color(rgb) + 1 if direct else color,
         "light_rgb": rgb,
         "light_rgb_mode": int(direct),
         "sonic_head_level": sonic_head,
@@ -100,65 +76,6 @@ def _normal_and_sonic(data: bytes) -> dict[str, StateValue]:
         "sonic_mode": int((data[8] & 0xF) > 0),
         "sonic_massage_type": data[6] >> 4,
     }
-
-
-def _main_alarm(data: bytes, star: bool) -> dict[str, StateValue]:
-    updates: dict[str, StateValue] = {}
-    for index, start in enumerate((4, 11) if star else (4,)):
-        details: dict[str, StateValue] = {
-            "index": index,
-            "repeat_raw": data[start],
-            "wake": _enum(data[start + 1], _WAKE),
-            "hour": data[start + 2],
-            "minute": data[start + 3],
-            "isOn": data[start + 5] > 0,
-        }
-        updates[f"alarm_{index}"] = details["isOn"]
-        updates[f"alarm_{index}_details"] = details
-    return updates
-
-
-def _advanced_alarm(data: bytes) -> dict[str, StateValue]:
-    updates: dict[str, StateValue] = {}
-    for index, offsets in enumerate(
-        ((3, 4, 5, 6, 7, 8, 9, 11, 12, 13), (14, 15, 16, 17, 18, 19, 20, 21, 22, 24))
-    ):
-        repeat, preset, light, sonic, music, massage, duration, hour, minute, on = (
-            data[i] for i in offsets
-        )
-        music_value: StateValue = (
-            "random" if music == 0 else "none" if music == 99 else {"music": music}
-        )
-        details: dict[str, StateValue] = {
-            "index": index,
-            "repeat_raw": repeat,
-            "preset": _enum(preset, _PRESET),
-            "light": _enum(light, _LIGHT),
-            "sonic": _enum(sonic, _SONIC),
-            "music": music_value,
-            "massage": _enum(massage, _MASSAGE),
-            "duration": _enum(duration, _DURATION, "duration10Min"),
-            "hour": hour,
-            "minute": minute,
-            "isOn": on > 0,
-        }
-        updates[f"alarm_{index}"] = details["isOn"]
-        updates[f"alarm_{index}_details"] = details
-    return updates
-
-
-def _eq(data: bytes) -> dict[str, StateValue]:
-    updates: dict[str, StateValue] = {
-        "usb_on": (data[11] & 2) == 2,
-        "eq_low_frequency": (data[19] & 0xF) * (1 if data[18] & 1 else -1),
-        "eq_high_frequency": (data[19] >> 4) * (1 if data[18] & 0x80 else -1),
-        "eq_volume": data[20],
-        "eq_preset": {1: "Pop", 2: "Classical", 3: "Jazz"}.get(data[21], "None"),
-    }
-    for index in range(8):
-        magnitude = (data[14 + index // 2] >> (4 * (index % 2))) & 0xF
-        updates[f"eq_band_{index}"] = magnitude * (1 if data[13] & (1 << index) else -1)
-    return updates
 
 
 def parse_notification(
@@ -181,21 +98,16 @@ def parse_notification(
         return {}
     match data[1]:
         case 0x0D if len(data) >= 18:
-            return _motor(data)
+            return motor(data, _MOTOR_NAMES)
         case 0x0B if len(data) >= 20:
             return _normal_and_sonic(data)
         case 0x0C if profile == "cb25" and len(data) >= 17:
-            return _main_alarm(data, star)
+            return basic_alarm(data, (4, 11) if star else (4,))
         case 0x0C if profile in ("f23", "kneading") and len(data) >= 25:
-            return _advanced_alarm(data)
+            return advanced_alarm(data, _ALARM_SLOTS)
         case 0x0E if profile in ("f23", "kneading") and len(data) >= 22:
-            return _eq(data)
+            return eq(data)
         case 0x0F if profile == "kneading" and len(data) >= 8:
-            return {
-                "kneading_on": data[4] == 1,
-                "kneading_demo": data[3] == 1,
-                "kneading_mode": min(data[5], 2),
-                "kneading_time_raw": int.from_bytes(data[6:8], "big"),
-            }
+            return kneading(data)
         case _:
             return {}

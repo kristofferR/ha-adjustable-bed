@@ -47,9 +47,9 @@ from .starcode_dialect import (
     position_packet,
     query_packet,
 )
+from .starcode_feedback import StateValue
 from .starcode_m1x12_protocol import (
     PROFILES,
-    StateValue,
     clock_packet,
     parse_notification,
 )

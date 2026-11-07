@@ -17,8 +17,8 @@ from custom_components.adjustable_bed.beds.starcode_dialect import (
     position_packet,
     query_packet,
 )
+from custom_components.adjustable_bed.beds.starcode_feedback import StateValue
 from custom_components.adjustable_bed.beds.starcode_m1x12_protocol import (
-    StateValue,
     clock_packet,
     parse_notification,
     profile_from_name,

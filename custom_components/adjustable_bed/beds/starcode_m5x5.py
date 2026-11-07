@@ -39,8 +39,8 @@ from .starcode_dialect import (
     normal_packet,
     query_packet,
 )
+from .starcode_feedback import StateValue
 from .starcode_m5x5_protocol import (
-    StateValue,
     clock_packet,
     parse_notification,
 )
