@@ -25,6 +25,7 @@ from custom_components.adjustable_bed.beds.svane import (
     SvaneController,
     uuid,
 )
+from custom_components.adjustable_bed.codec import jmc
 from custom_components.adjustable_bed.svane_state import SvaneSession, get_svane_session
 
 
@@ -122,7 +123,7 @@ def test_java_int32_light_vectors(level, expected):
     ],
 )
 def test_closed_jmc_motion_vectors(head, feet, expected):
-    assert SvaneCommands.motion(head, feet).hex() == expected
+    assert jmc.motion(head, feet).hex() == expected
 
 
 @pytest.mark.parametrize("value", [True, 1.2, "90", None, 2**31, -(2**31) - 1])
@@ -139,7 +140,7 @@ async def test_literal_held_actions_and_release(profile, control):
     calls = written(controller)
     head, feet = MOTIONS[control]
     if profile == "jmc":
-        assert calls[0] == (OLD, OLD_CHAR, SvaneCommands.motion(head, feet).hex())
+        assert calls[0] == (OLD, OLD_CHAR, jmc.motion(head, feet).hex())
         assert calls[-1] == (OLD, OLD_CHAR, "100000000000")
         assert all(s == OLD and c == OLD_CHAR for s, c, _ in calls)
     else:
@@ -167,7 +168,7 @@ async def test_source_schedule_after_work(profile, control, minfirst, minnext):
     start = asyncio.get_running_loop().time()
 
     async def write(role, data, **kwargs):
-        if data not in (b"\x00\x00", SvaneCommands.motion(None, None)):
+        if data not in (b"\x00\x00", jmc.motion(None, None)):
             times.append(asyncio.get_running_loop().time() - start)
 
     controller.client.write_gatt_char.side_effect = write

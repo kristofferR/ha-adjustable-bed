@@ -1,8 +1,8 @@
 """Jensen JMC400 bed controller.
 
 Protocol from the clean-room APK Protocol Audits of ``air.no.jensen.adjustablesleep``
-2.0.29 (98) and 2.0.37 (106). See docs/beds/jensen.md for the frame table and the
-evidence behind each behavior.
+2.0.29 (98) and 2.0.37 (106). Every frame is built by ``codec/jmc.py`` from the
+``JENSEN`` profile; see docs/beds/jmc.md for the frame tables and the evidence.
 
 The app treats the four position bytes of a ``0x10`` report as opaque and only
 echoes them back in go-to frames. Their byte order and physical scale come from
@@ -23,8 +23,10 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 from homeassistant.helpers.storage import Store
 
-from ..const import DOMAIN, JENSEN_CHAR_UUID, JENSEN_SERVICE_UUID
+from ..codec import jmc
+from ..const import DOMAIN
 from ..execution import ExecutionCapabilities
+from ..profiles.jmc import JENSEN, JmcProfile
 from .base import (
     POSITION_UNIT_PERCENT,
     BedController,
@@ -67,9 +69,6 @@ _MEMORY_STORE_VERSION = 1
 
 _LEVEL_MAX = 10
 
-_BACK_FLAGS = {True: 0x01, False: 0x02}
-_LEGS_FLAGS = {True: 0x10, False: 0x20}
-
 
 def _decode_config_field(value: int) -> int:
     """Decode a config byte the way the app does.
@@ -78,72 +77,6 @@ def _decode_config_field(value: int) -> int:
     result, so a report byte of 16 becomes 0x16.
     """
     return int(str(value), 16)
-
-
-class JensenCommands:
-    """Jensen command frames.
-
-    Frames have no checksum. Every frame's first byte is its opcode:
-    0x0A config, 0x10 motion/preset/position, 0x12 massage, 0x13 light,
-    0x14 fan, 0x1E PIN.
-    """
-
-    CONFIG_READ_ALL = bytes([0x0A, 0x00, 0x00, 0x00, 0x00])
-
-    MOTOR_STOP = bytes([0x10, 0x00, 0x00, 0x00, 0x00, 0x00])
-    MOTOR_HEAD_UP = bytes([0x10, 0x01, 0x00, 0x00, 0x00, 0x00])
-    MOTOR_HEAD_DOWN = bytes([0x10, 0x02, 0x00, 0x00, 0x00, 0x00])
-    MOTOR_FOOT_UP = bytes([0x10, 0x10, 0x00, 0x00, 0x00, 0x00])
-    MOTOR_FOOT_DOWN = bytes([0x10, 0x20, 0x00, 0x00, 0x00, 0x00])
-
-    PRESET_FLAT = bytes([0x10, 0x81, 0x00, 0x00, 0x00, 0x00])
-    PRESET_MEMORY_SAVE = bytes([0x10, 0x40, 0x00, 0x00, 0x00, 0x00])
-    PRESET_MEMORY_RECALL = bytes([0x10, 0x80, 0x00, 0x00, 0x00, 0x00])
-
-    # Not sent by the app. The bed answers it with a 0x10 position report
-    # (issue #631), and it doubles as the 0x10 warm-up some beds need after
-    # reconnect before they accept flat (issue #217).
-    READ_POSITION = bytes([0x10, 0xFF, 0x00, 0x00, 0x00, 0x00])
-
-    MASSAGE_OFF = bytes([0x12, 0x00, 0x00, 0x00, 0x00, 0x00])
-    # A fixed frame in 2.0.37, unlike the level frame's layout.
-    LIGHT_OFF = bytes([0x13, 0x02, 0x00, 0x00, 0x00, 0x32])
-    FAN_OFF = bytes([0x14, 0x00, 0x00, 0x00, 0x00, 0x50])
-
-    @staticmethod
-    def pin_unlock(digits: str) -> bytes:
-        """Build the 5-byte PIN frame from four decimal digits."""
-        return bytes([0x1E, *(int(digit) for digit in digits)])
-
-    @staticmethod
-    def motion(back_up: bool | None, legs_up: bool | None) -> bytes:
-        """Build a held-motion frame; either section may be idle (None)."""
-        flags = 0
-        if back_up is not None:
-            flags |= _BACK_FLAGS[back_up]
-        if legs_up is not None:
-            flags |= _LEGS_FLAGS[legs_up]
-        return bytes([0x10, flags, 0x00, 0x00, 0x00, 0x00])
-
-    @staticmethod
-    def goto_position(head_raw: int, foot_raw: int) -> bytes:
-        """Build a go-to frame in the byte order of the bed's position reports."""
-        return bytes([0x10, 0x04, *head_raw.to_bytes(2, "little"), *foot_raw.to_bytes(2, "little")])
-
-    @staticmethod
-    def massage(head: int, foot: int, wave: int) -> bytes:
-        """Build a massage frame; each level is 0-10 and 0 turns that part off."""
-        return bytes([0x12, head, foot, wave, 0x00, 0x00])
-
-    @staticmethod
-    def light(level: int) -> bytes:
-        """Build a light frame; the app drives every light kind through output 2."""
-        return bytes([0x13, 0x02, level, 0x00, 0x00, 0x00])
-
-    @staticmethod
-    def fan(level: int) -> bytes:
-        """Build a fan frame for level 0-10."""
-        return bytes([0x14, level, 0x00, 0x00, 0x00, 0x50])
 
 
 class JensenFeatureFlags(IntFlag):
@@ -191,6 +124,7 @@ class JensenController(BedController):
         its entities.
         """
         super().__init__(coordinator)
+        self.profile: JmcProfile = JENSEN
         self._notify_callback: Callable[[str, float], None] | None = None
         self._features: JensenFeatureFlags = JensenFeatureFlags.NONE
         self._box_type: int | None = None
@@ -239,7 +173,7 @@ class JensenController(BedController):
     @property
     def control_characteristic_uuid(self) -> str:
         """Return the UUID of the control characteristic."""
-        return JENSEN_CHAR_UUID
+        return jmc.CHAR_UUID
 
     @property
     def requires_notification_channel(self) -> bool:
@@ -252,7 +186,7 @@ class JensenController(BedController):
         if not sanitized:
             _LOGGER.warning("Invalid Jensen PIN configured, using default '%s'", self.DEFAULT_PIN)
             sanitized = self.DEFAULT_PIN
-        return JensenCommands.pin_unlock(sanitized.ljust(4, "0")[:4])
+        return jmc.pin(sanitized.ljust(4, "0")[:4])
 
     async def send_pin(self) -> None:
         """Send the PIN frame that authorizes Jensen commands."""
@@ -262,7 +196,7 @@ class JensenController(BedController):
 
         try:
             await self._write_gatt_with_retry(
-                JENSEN_CHAR_UUID,
+                jmc.CHAR_UUID,
                 self._build_pin_unlock_command(),
                 response=self._write_with_response,
             )
@@ -447,8 +381,8 @@ class JensenController(BedController):
 
         try:
             await self._write_gatt_with_retry(
-                JENSEN_CHAR_UUID,
-                JensenCommands.CONFIG_READ_ALL,
+                jmc.CHAR_UUID,
+                jmc.CONFIG_REQUEST,
                 response=self._write_with_response,
             )
 
@@ -502,7 +436,7 @@ class JensenController(BedController):
         )
 
         await self._write_gatt_with_retry(
-            JENSEN_CHAR_UUID,
+            jmc.CHAR_UUID,
             command,
             repeat_count=repeat_count,
             repeat_delay_ms=repeat_delay_ms,
@@ -515,20 +449,19 @@ class JensenController(BedController):
 
         Position report: [0x10, motion state, head u16 LE, foot u16 LE].
         """
-        self.forward_raw_notification(JENSEN_CHAR_UUID, bytes(data))
+        self.forward_raw_notification(jmc.CHAR_UUID, bytes(data))
 
         if not data:
             return
         opcode = data[0]
 
-        if opcode == 0x10 and len(data) >= 6:
-            head_raw = int.from_bytes(data[2:4], "little")
-            foot_raw = int.from_bytes(data[4:6], "little")
+        if (report := jmc.position_report(data)) is not None:
+            head_raw, foot_raw = jmc.head_foot(report.position)
             self._raw_positions = (head_raw, foot_raw)
-            self._motion_state = data[1]
+            self._motion_state = report.state
             _LOGGER.debug(
                 "Jensen position report: state=0x%02X head_raw=%d foot_raw=%d",
-                data[1],
+                report.state,
                 head_raw,
                 foot_raw,
             )
@@ -545,13 +478,13 @@ class JensenController(BedController):
                     "legs", _raw_to_percentage(foot_raw, FOOT_POS_FLAT, FOOT_POS_MAX)
                 )
 
-        elif opcode == 0x0A:
+        elif opcode == jmc.CONFIG:
             _LOGGER.debug("Jensen config notification: %s", data.hex())
             if self._config_received is not None:
                 self._config_data = bytes(data)
                 self._config_received.set()
 
-        elif opcode == 0x1E and len(data) >= 2:
+        elif opcode == jmc.PIN and len(data) >= 2:
             # The app reads byte 1 as hex text; only 1 means unlocked.
             if _decode_config_field(data[1]) != 1:
                 _LOGGER.warning(
@@ -573,10 +506,10 @@ class JensenController(BedController):
 
         if self.client.services:
             for service in self.client.services:
-                if str(service.uuid).lower() != JENSEN_SERVICE_UUID.lower():
+                if str(service.uuid).lower() != jmc.SERVICE_UUID.lower():
                     continue
                 for char in service.characteristics:
-                    if str(char.uuid).lower() != JENSEN_CHAR_UUID.lower():
+                    if str(char.uuid).lower() != jmc.CHAR_UUID.lower():
                         continue
                     props = {prop.lower() for prop in char.properties}
                     # The app writes without response; use a response only
@@ -593,7 +526,7 @@ class JensenController(BedController):
 
         try:
             async with self._ble_lock:
-                await self.client.start_notify(JENSEN_CHAR_UUID, self._handle_notification)
+                await self.client.start_notify(jmc.CHAR_UUID, self._handle_notification)
             _LOGGER.info("Started position notifications for Jensen bed")
 
             await self.send_pin()
@@ -617,7 +550,7 @@ class JensenController(BedController):
 
         try:
             async with self._ble_lock:
-                await self.client.stop_notify(JENSEN_CHAR_UUID)
+                await self.client.stop_notify(jmc.CHAR_UUID)
             _LOGGER.debug("Stopped Jensen position notifications")
         except BleakError:
             pass
@@ -630,8 +563,8 @@ class JensenController(BedController):
 
         try:
             await self._write_gatt_with_retry(
-                JENSEN_CHAR_UUID,
-                JensenCommands.READ_POSITION,
+                jmc.CHAR_UUID,
+                jmc.command(jmc.POSITION_QUERY),
                 cancel_event=asyncio.Event(),
                 response=self._write_with_response,
             )
@@ -761,7 +694,7 @@ class JensenController(BedController):
             raise
 
     async def _send_stop(self) -> None:
-        await self.write_command(JensenCommands.MOTOR_STOP, cancel_event=asyncio.Event())
+        await self.write_command(jmc.command(jmc.STOP), cancel_event=asyncio.Event())
 
     def motor_pulse_settings(self) -> tuple[int, int]:
         """A renewable hold refreshes at the app's 300 ms; finite pulses keep the entry's."""
@@ -789,11 +722,11 @@ class JensenController(BedController):
     # Motor control methods
     async def move_head_up(self) -> None:
         """Move head up."""
-        await self._move_with_stop(JensenCommands.MOTOR_HEAD_UP)
+        await self._move_with_stop(jmc.motion(True, None))
 
     async def move_head_down(self) -> None:
         """Move head down."""
-        await self._move_with_stop(JensenCommands.MOTOR_HEAD_DOWN)
+        await self._move_with_stop(jmc.motion(False, None))
 
     async def move_head_stop(self) -> None:
         """Stop head motor."""
@@ -813,11 +746,11 @@ class JensenController(BedController):
 
     async def move_legs_up(self) -> None:
         """Move legs/feet up."""
-        await self._move_with_stop(JensenCommands.MOTOR_FOOT_UP)
+        await self._move_with_stop(jmc.motion(None, True))
 
     async def move_legs_down(self) -> None:
         """Move legs/feet down."""
-        await self._move_with_stop(JensenCommands.MOTOR_FOOT_DOWN)
+        await self._move_with_stop(jmc.motion(None, False))
 
     async def move_legs_stop(self) -> None:
         """Stop legs motor."""
@@ -852,7 +785,7 @@ class JensenController(BedController):
         if set(directions) != set(self.simultaneous_movement_axes):
             raise ValueError("Jensen beds combine only the back and legs sections")
         await self._move_with_stop(
-            JensenCommands.motion(directions["back"], directions["legs"]),
+            jmc.motion(directions["back"], directions["legs"]),
             duration_ms,
         )
 
@@ -861,7 +794,7 @@ class JensenController(BedController):
         """Go to flat and follow the move to completion."""
         # A short burst keeps flat reliable on beds that drop the first frame.
         await self._run_monitored(
-            JensenCommands.PRESET_FLAT,
+            jmc.command(jmc.FLAT),
             repeat_count=max(2, self._coordinator.motor_pulse_count),
         )
 
@@ -870,19 +803,19 @@ class JensenController(BedController):
         if self.uses_device_memory:
             if memory_num != 1:
                 raise ValueError("This Jensen bed has one memory slot")
-            await self._run_monitored(JensenCommands.PRESET_MEMORY_RECALL)
+            await self._run_monitored(jmc.command(jmc.MEMORY_RECALL))
             return
         positions = self._memory_slots.get(memory_num)
         if positions is None:
             raise ValueError(f"Jensen memory slot {memory_num} has not been saved yet")
-        await self._run_monitored(JensenCommands.goto_position(*positions))
+        await self._run_monitored(jmc.goto(jmc.position(*positions)))
 
     async def program_memory(self, memory_num: int) -> None:
         """Save the current position to a device slot or an app-stored slot."""
         if self.uses_device_memory:
             if memory_num != 1:
                 raise ValueError("This Jensen bed has one memory slot")
-            await self.write_command(JensenCommands.PRESET_MEMORY_SAVE)
+            await self.write_command(jmc.command(jmc.MEMORY_SAVE))
             return
         if not 1 <= memory_num <= _APP_MEMORY_SLOT_COUNT:
             raise ValueError(f"Jensen memory slots are 1-{_APP_MEMORY_SLOT_COUNT}")
@@ -902,7 +835,8 @@ class JensenController(BedController):
         if not self.supports_lights:
             raise NotImplementedError("This Jensen bed does not have lights")
         level = max(0, min(_LEVEL_MAX, level))
-        await self.write_command(JensenCommands.light(level) if level else JensenCommands.LIGHT_OFF)
+        tail = self.profile.light_on if level else self.profile.light_off
+        await self.write_command(jmc.light(level, tail))
         self._light_level = level
         if level:
             self._last_light_level = level
@@ -929,25 +863,23 @@ class JensenController(BedController):
     # Fan
     async def set_fan_level(self, level: int) -> None:
         """Set the fan level (0 turns it off)."""
-        if not self.has_fan:
+        if not self.has_fan or self.profile.fan is None:
             raise NotImplementedError("This Jensen bed does not have a fan")
         level = max(0, min(_LEVEL_MAX, level))
-        await self.write_command(JensenCommands.fan(level) if level else JensenCommands.FAN_OFF)
+        await self.write_command(jmc.fan(level, self.profile.fan))
         self._fan_level = level
         self.forward_controller_state_updates({"fan_level": level})
 
     # Massage
     async def _send_massage(self, **levels: int) -> None:
         updated = {**self._massage_levels, **levels}
-        await self.write_command(
-            JensenCommands.massage(updated["head"], updated["foot"], updated["wave"])
-        )
+        await self.write_command(jmc.massage(updated["head"], updated["foot"], updated["wave"]))
         self._massage_levels = updated
         self.forward_controller_state_updates(self.get_massage_state())
 
     async def massage_off(self) -> None:
         """Turn off all massage."""
-        await self.write_command(JensenCommands.MASSAGE_OFF)
+        await self.write_command(jmc.massage(0, 0, 0))
         self._massage_levels = {"head": 0, "foot": 0, "wave": 0}
         self.forward_controller_state_updates(self.get_massage_state())
 
@@ -1012,4 +944,4 @@ class JensenController(BedController):
             head_raw = _percentage_to_raw(position, HEAD_POS_FLAT, HEAD_POS_MAX)
         else:
             foot_raw = _percentage_to_raw(position, FOOT_POS_FLAT, FOOT_POS_MAX)
-        await self._run_monitored(JensenCommands.goto_position(head_raw, foot_raw))
+        await self._run_monitored(jmc.goto(jmc.position(head_raw, foot_raw)))

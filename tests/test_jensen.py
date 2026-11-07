@@ -1,8 +1,7 @@
 """Tests for the Jensen JMC400 controller.
 
-Frame vectors come from the frozen clean-room audit of
-air.no.jensen.adjustablesleep 2.0.29; position reports and calibration come
-from the JMC400 support bundle and capture in issue #631.
+Frame vectors live in ``tests/jmc_vectors.py``; position reports and calibration
+come from the JMC400 support bundle and capture in issue #631.
 """
 
 from __future__ import annotations
@@ -21,10 +20,10 @@ from custom_components.adjustable_bed.beds.jensen import (
     FOOT_POS_MAX,
     HEAD_POS_FLAT,
     HEAD_POS_MAX,
-    JensenCommands,
     JensenController,
     JensenFeatureFlags,
 )
+from custom_components.adjustable_bed.codec import jmc
 from custom_components.adjustable_bed.const import (
     BED_TYPE_JENSEN,
     CONF_BED_TYPE,
@@ -41,6 +40,9 @@ from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinato
 from .conftest import make_controller_mock
 
 JENSEN_MODULE = "custom_components.adjustable_bed.beds.jensen"
+READ_POSITION = jmc.command(jmc.POSITION_QUERY)
+STOP = jmc.command(jmc.STOP)
+FLAT = jmc.command(jmc.FLAT)
 
 
 def report(state: int, head: int, foot: int) -> bytearray:
@@ -69,7 +71,7 @@ def reply_to_reads(controller: JensenController, *positions: tuple[int, int]) ->
     replies = list(positions)
 
     async def write(_uuid: str, frame: bytes, **_kwargs: object) -> None:
-        if frame == JensenCommands.READ_POSITION:
+        if frame == READ_POSITION:
             head, foot = replies.pop(0) if len(replies) > 1 else replies[0]
             asyncio.get_running_loop().call_soon(
                 controller._handle_notification, MagicMock(), report(0xFF, head, foot)
@@ -130,51 +132,6 @@ def written(controller: JensenController) -> list[bytes]:
     mock = controller._write_gatt_with_retry
     assert isinstance(mock, AsyncMock)
     return [write_call.args[1] for write_call in mock.await_args_list]
-
-
-class TestJensenFrames:
-    """Frame builders against artifact and capture vectors."""
-
-    @pytest.mark.parametrize(
-        ("frame", "expected"),
-        [
-            (JensenCommands.pin_unlock("3060"), "1e03000600"),
-            (JensenCommands.CONFIG_READ_ALL, "0a00000000"),
-            (JensenCommands.MOTOR_STOP, "100000000000"),
-            (JensenCommands.motion(True, None), "100100000000"),
-            (JensenCommands.motion(False, None), "100200000000"),
-            (JensenCommands.motion(None, True), "101000000000"),
-            (JensenCommands.motion(None, False), "102000000000"),
-            (JensenCommands.motion(True, True), "101100000000"),
-            (JensenCommands.motion(True, False), "102100000000"),
-            (JensenCommands.motion(False, True), "101200000000"),
-            (JensenCommands.motion(False, False), "102200000000"),
-            (JensenCommands.PRESET_FLAT, "108100000000"),
-            (JensenCommands.PRESET_MEMORY_SAVE, "104000000000"),
-            (JensenCommands.PRESET_MEMORY_RECALL, "108000000000"),
-            # The #631 capture's Memory 1 recall: head 30771, foot 30000.
-            (JensenCommands.goto_position(30771, 30000), "100433783075"),
-            # The #631 capture's massage sweep: head 6, wave 6.
-            (JensenCommands.massage(6, 0, 6), "120600060000"),
-            (JensenCommands.MASSAGE_OFF, "120000000000"),
-            (JensenCommands.light(4), "130204000000"),
-            # 2.0.37 vector TV078.
-            (JensenCommands.LIGHT_OFF, "130200000032"),
-            (JensenCommands.fan(4), "140400000050"),
-            (JensenCommands.FAN_OFF, "140000000050"),
-        ],
-    )
-    def test_frame_bytes(self, frame: bytes, expected: str) -> None:
-        """Each builder emits the documented frame."""
-        assert frame.hex() == expected
-
-    def test_named_motion_frames_match_builder(self) -> None:
-        """The named single-section frames are the builder's frames."""
-        assert JensenCommands.motion(True, None) == JensenCommands.MOTOR_HEAD_UP
-        assert JensenCommands.motion(False, None) == JensenCommands.MOTOR_HEAD_DOWN
-        assert JensenCommands.motion(None, True) == JensenCommands.MOTOR_FOOT_UP
-        assert JensenCommands.motion(None, False) == JensenCommands.MOTOR_FOOT_DOWN
-        assert JensenCommands.motion(None, None) == JensenCommands.MOTOR_STOP
 
 
 class TestJensenController:
@@ -263,7 +220,7 @@ class TestJensenWriteMode:
         await controller.start_notify(None)
 
         pin_write = controller._write_gatt_with_retry.await_args_list[0]
-        assert pin_write.args == (JENSEN_CHAR_UUID, JensenCommands.pin_unlock("3060"))
+        assert pin_write.args == (JENSEN_CHAR_UUID, jmc.pin("3060"))
         assert pin_write.kwargs["response"] is expected_response
 
 
@@ -285,8 +242,8 @@ class TestJensenNotificationStartup:
         await coordinator.controller.start_notify(None)
 
         calls = mock_bleak_client.write_gatt_char.call_args_list
-        assert calls[0].args == (JENSEN_CHAR_UUID, JensenCommands.pin_unlock("3060"))
-        assert calls[1].args == (JENSEN_CHAR_UUID, JensenCommands.READ_POSITION)
+        assert calls[0].args == (JENSEN_CHAR_UUID, jmc.pin("3060"))
+        assert calls[1].args == (JENSEN_CHAR_UUID, READ_POSITION)
         assert calls[0].kwargs == {"response": False}
 
     async def test_start_notify_waits_for_read_position_response(
@@ -307,7 +264,7 @@ class TestJensenNotificationStartup:
         assert not notify_task.done()
         assert mock_bleak_client.write_gatt_char.call_args_list[-1].args == (
             JENSEN_CHAR_UUID,
-            JensenCommands.READ_POSITION,
+            READ_POSITION,
         )
 
         coordinator.controller._handle_notification(MagicMock(), report(0xFF, 30000, 30000))
@@ -389,7 +346,7 @@ class TestJensenCoordinatorAuthRefresh:
         coordinator._controller.write_command = AsyncMock()
 
         await coordinator.async_write_command(
-            JensenCommands.PRESET_FLAT,
+            FLAT,
             cancel_running=False,
         )
 
@@ -719,7 +676,7 @@ class TestJensenPositionParsing:
         read_task = asyncio.create_task(controller.read_positions())
         await asyncio.sleep(0)
 
-        assert written(controller) == [JensenCommands.READ_POSITION]
+        assert written(controller) == [READ_POSITION]
         assert not read_task.done()
 
         controller._handle_notification(MagicMock(), report(0xFF, 30000, 30000))
@@ -785,10 +742,10 @@ class TestJensenHeldMovement:
     @pytest.mark.parametrize(
         ("method", "frame"),
         [
-            ("move_head_up", JensenCommands.MOTOR_HEAD_UP),
-            ("move_back_down", JensenCommands.MOTOR_HEAD_DOWN),
-            ("move_legs_up", JensenCommands.MOTOR_FOOT_UP),
-            ("move_feet_down", JensenCommands.MOTOR_FOOT_DOWN),
+            ("move_head_up", jmc.motion(True, None)),
+            ("move_back_down", jmc.motion(False, None)),
+            ("move_legs_up", jmc.motion(None, True)),
+            ("move_feet_down", jmc.motion(None, False)),
         ],
     )
     async def test_held_move_ends_with_stop(self, method: str, frame: bytes):
@@ -798,7 +755,7 @@ class TestJensenHeldMovement:
 
         await getattr(controller, method)()
 
-        assert written(controller) == [frame, JensenCommands.MOTOR_STOP]
+        assert written(controller) == [frame, STOP]
         motion_write = controller._write_gatt_with_retry.await_args_list[0]
         assert motion_write.kwargs["repeat_count"] == 4
         assert motion_write.kwargs["repeat_delay_ms"] == 300
@@ -811,7 +768,7 @@ class TestJensenHeldMovement:
         with pytest.raises(BleakError):
             await controller.move_head_up()
 
-        assert written(controller)[-1] == JensenCommands.MOTOR_STOP
+        assert written(controller)[-1] == STOP
 
     @pytest.mark.parametrize(
         ("first", "second", "frame"),
@@ -859,7 +816,7 @@ class TestJensenMovementMonitoring:
         controller._raw_positions = (30600, 29500)
 
         task = await self._run(controller, controller.preset_flat())
-        assert written(controller)[0] == JensenCommands.PRESET_FLAT
+        assert written(controller)[0] == FLAT
         assert not task.done()
 
         # The first report may just restate the start; it does not end the move.
@@ -880,9 +837,9 @@ class TestJensenMovementMonitoring:
         await task
 
         # The settled move ends with two agreeing measured reads.
-        assert written(controller)[-2:] == [JensenCommands.READ_POSITION] * 2
+        assert written(controller)[-2:] == [READ_POSITION] * 2
 
-        assert JensenCommands.MOTOR_STOP not in written(controller)
+        assert STOP not in written(controller)
         legs = [c.args[1] for c in callback.call_args_list if c.args[0] == "legs"]
         assert legs[0] > legs[-1] == 0.0
 
@@ -897,7 +854,7 @@ class TestJensenMovementMonitoring:
         controller._handle_notification(MagicMock(), report(0x00, 30100, 30000))
         await asyncio.sleep(0.2)
 
-        assert written(controller)[-1] == JensenCommands.READ_POSITION
+        assert written(controller)[-1] == READ_POSITION
         assert not task.done()
         reply_to_reads(controller, (30100, 30000))
         controller._handle_notification(MagicMock(), report(0xFF, 30100, 30000))
@@ -919,10 +876,10 @@ class TestJensenMovementMonitoring:
             await asyncio.sleep(0.01)
         await task
 
-        reads = [f for f in written(controller) if f == JensenCommands.READ_POSITION]
+        reads = [f for f in written(controller) if f == READ_POSITION]
         assert len(reads) == 4
         assert callback.call_args_list[-2:] == [call("back", 0.0), call("legs", 0.0)]
-        assert JensenCommands.MOTOR_STOP not in written(controller)
+        assert STOP not in written(controller)
 
     async def test_long_sweep_is_read_until_it_settles(self):
         """Issue #631: a full head sweep takes about 20 s of changing reads."""
@@ -935,10 +892,10 @@ class TestJensenMovementMonitoring:
 
         await controller.set_motor_position("back", 80)
 
-        reads = [f for f in written(controller) if f == JensenCommands.READ_POSITION]
+        reads = [f for f in written(controller) if f == READ_POSITION]
         assert len(reads) == len(climb) + 2
         assert callback.call_args_list[-2][0] == ("back", pytest.approx(80.0, abs=0.1))
-        assert JensenCommands.MOTOR_STOP not in written(controller)
+        assert STOP not in written(controller)
 
     async def test_settle_reads_share_the_movement_bound(
         self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
@@ -951,10 +908,10 @@ class TestJensenMovementMonitoring:
 
         await controller.preset_flat()
 
-        reads = [f for f in written(controller) if f == JensenCommands.READ_POSITION]
+        reads = [f for f in written(controller) if f == READ_POSITION]
         assert 2 <= len(reads) < 199
         assert "still reported movement" in caplog.text
-        assert written(controller)[-1] == JensenCommands.MOTOR_STOP
+        assert written(controller)[-1] == STOP
 
     async def test_cancel_during_settle_reads_sends_stop(self):
         """Stop while settling still ends the move with STOP."""
@@ -969,7 +926,7 @@ class TestJensenMovementMonitoring:
 
         with pytest.raises(asyncio.CancelledError):
             await task
-        assert written(controller)[-1] == JensenCommands.MOTOR_STOP
+        assert written(controller)[-1] == STOP
 
     async def test_no_movement_reported_ends_after_start_window(self):
         """A bed already at the target sends nothing; the command still finishes."""
@@ -978,7 +935,7 @@ class TestJensenMovementMonitoring:
 
         await controller.preset_flat()
 
-        assert written(controller)[0] == JensenCommands.PRESET_FLAT
+        assert written(controller)[0] == FLAT
 
     async def test_cancel_sends_stop_and_propagates(self):
         """A stop or replacement request ends the move with STOP."""
@@ -992,7 +949,7 @@ class TestJensenMovementMonitoring:
 
         with pytest.raises(asyncio.CancelledError):
             await task
-        assert written(controller)[-1] == JensenCommands.MOTOR_STOP
+        assert written(controller)[-1] == STOP
 
     async def test_task_cancellation_sends_stop(self):
         """Task cancellation (reload, shutdown) still releases the motors."""
@@ -1003,7 +960,7 @@ class TestJensenMovementMonitoring:
 
         with pytest.raises(asyncio.CancelledError):
             await task
-        assert written(controller)[-1] == JensenCommands.MOTOR_STOP
+        assert written(controller)[-1] == STOP
 
     async def test_cancellation_survives_a_disconnected_stop(self):
         """A STOP that cannot reach the bed does not replace the cancellation."""
@@ -1016,7 +973,7 @@ class TestJensenMovementMonitoring:
 
         with pytest.raises(asyncio.CancelledError):
             await task
-        assert written(controller)[-1] == JensenCommands.MOTOR_STOP
+        assert written(controller)[-1] == STOP
 
     async def test_bounded_timeout_releases_command(
         self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
@@ -1039,7 +996,7 @@ class TestJensenMovementMonitoring:
             mover.cancel()
 
         assert "still reported movement" in caplog.text
-        assert written(controller)[-1] == JensenCommands.MOTOR_STOP
+        assert written(controller)[-1] == STOP
 
     async def test_disabled_angle_sensing_skips_monitoring(self):
         """With feedback disabled the frame is sent and the command returns."""
@@ -1048,7 +1005,7 @@ class TestJensenMovementMonitoring:
 
         await controller.preset_flat()
 
-        assert set(written(controller)) == {JensenCommands.PRESET_FLAT}
+        assert set(written(controller)) == {FLAT}
 
 
 class TestJensenDirectPosition:
@@ -1063,7 +1020,7 @@ class TestJensenDirectPosition:
 
         await controller.set_motor_position("back", 50)
 
-        assert written(controller) == [JensenCommands.goto_position(30402, 29700)]
+        assert written(controller) == [jmc.goto(jmc.position(30402, 29700))]
 
     @pytest.mark.usefixtures("_fast_movement_monitor")
     async def test_legs_target_uses_falling_scale(self):
@@ -1074,7 +1031,7 @@ class TestJensenDirectPosition:
 
         await controller.set_motor_position("legs", 100)
 
-        assert written(controller) == [JensenCommands.goto_position(30300, FOOT_POS_MAX)]
+        assert written(controller) == [jmc.goto(jmc.position(30300, FOOT_POS_MAX))]
 
     async def test_unknown_position_is_read_first(self):
         """Without a report, the current position is queried before moving."""
@@ -1084,11 +1041,11 @@ class TestJensenDirectPosition:
 
         task = asyncio.create_task(controller.set_motor_position("legs", 0))
         await asyncio.sleep(0)
-        assert written(controller) == [JensenCommands.READ_POSITION]
+        assert written(controller) == [READ_POSITION]
         controller._handle_notification(MagicMock(), report(0xFF, 30500, 29600))
         await task
 
-        assert written(controller)[-1] == JensenCommands.goto_position(30500, FOOT_POS_FLAT)
+        assert written(controller)[-1] == jmc.goto(jmc.position(30500, FOOT_POS_FLAT))
 
     async def test_unknown_motor_is_rejected(self):
         """Only back/head and legs/feet exist."""
@@ -1111,8 +1068,8 @@ class TestJensenMemory:
         await controller.preset_memory(1)
 
         assert written(controller) == [
-            JensenCommands.PRESET_MEMORY_SAVE,
-            JensenCommands.PRESET_MEMORY_RECALL,
+            jmc.command(jmc.MEMORY_SAVE),
+            jmc.command(jmc.MEMORY_RECALL),
         ]
         with pytest.raises(ValueError, match="one memory slot"):
             await controller.preset_memory(2)
@@ -1126,7 +1083,7 @@ class TestJensenMemory:
 
         task = asyncio.create_task(controller.program_memory(3))
         await asyncio.sleep(0)
-        assert written(controller) == [JensenCommands.READ_POSITION]
+        assert written(controller) == [READ_POSITION]
         controller._handle_notification(MagicMock(), report(0xFF, 30771, 30000))
         await task
 
@@ -1395,7 +1352,7 @@ class TestJensenEntities:
         await hass.async_block_till_done()
 
         frames = [c.args[1] for c in mock_bleak_client.write_gatt_char.call_args_list]
-        assert JensenCommands.fan(5) in frames
+        assert bytes.fromhex("140500000050") in frames
         state = hass.states.get(fan)
         assert state is not None and float(state.state) == 5
 
