@@ -194,8 +194,8 @@ class PairAdmission:
 def linked_readiness_required(targets: Collection[PairTarget]) -> bool:
     """Return whether a linked group needs every physical receiver live first."""
     return any(
-        child.capability_controller is not None
-        and getattr(child.capability_controller, "requires_linked_live_readiness", False) is True
+        (controller := child.capability_controller) is not None
+        and controller.requires_linked_live_readiness
         for _, child in targets
     )
 
@@ -203,9 +203,9 @@ def linked_readiness_required(targets: Collection[PairTarget]) -> bool:
 def ready_disconnected_transport(child: BedChild) -> bool:
     """Recognize an explicitly selected, already-ready non-Bleak role."""
     controller = child.controller or child.capability_controller
-    return bool(
+    return (
         controller is not None
-        and getattr(controller, "requires_disconnected_transport", False)
+        and controller.requires_disconnected_transport
         and controller.disconnected_transport_ready
     )
 
@@ -213,20 +213,13 @@ def ready_disconnected_transport(child: BedChild) -> bool:
 def selects_disconnected_transport(child: BedChild) -> bool:
     """Return whether a side is served by a local transport rather than Bleak."""
     controller = child.controller or child.capability_controller
-    return bool(
-        controller is not None and getattr(controller, "requires_disconnected_transport", False)
-    )
+    return controller is not None and controller.requires_disconnected_transport
 
 
 def manual_disconnect_would_strand(child: BedChild) -> bool:
     """Return whether sequential switching is unsafe for this child."""
-    controller = getattr(child, "controller", None) or getattr(
-        child, "capability_controller", None
-    )
-    return bool(
-        controller is not None
-        and getattr(controller, "manual_disconnect_strands_connection", False)
-    )
+    controller = child.controller or child.capability_controller
+    return controller is not None and controller.manual_disconnect_strands_connection
 
 
 @contextlib.contextmanager
@@ -310,21 +303,14 @@ async def stop_motor_targets(
 
 
 def connection_attempts(child: BedChild) -> tuple[Mapping[str, object], ...]:
-    """Return a child's structured connection attempts when it exposes them."""
-    attempts = getattr(child, "connection_attempt_details", ())
-    if not isinstance(attempts, (list, tuple)):
-        return ()
-    return tuple(attempt for attempt in attempts if isinstance(attempt, Mapping))
+    """Return a child's structured connection attempts."""
+    return tuple(child.connection_attempt_details)
 
 
 def connection_attempt_cursor(child: BedChild) -> ConnectionAttemptCursor:
     """Return a stable cursor into a child's bounded attempt history."""
-    count = getattr(child, "connection_attempt_count", None)
     attempts = connection_attempts(child)
-    return (
-        count if isinstance(count, int) else None,
-        attempts[-1] if attempts else None,
-    )
+    return (child.connection_attempt_count, attempts[-1] if attempts else None)
 
 
 def connection_attempts_since(
@@ -337,9 +323,8 @@ def connection_attempts_since(
         for index in range(len(attempts) - 1, -1, -1):
             if attempts[index] is previous_tail:
                 return attempts[index + 1 :]
-    current_count = getattr(child, "connection_attempt_count", None)
-    if previous_count is not None and isinstance(current_count, int):
-        added = max(0, current_count - previous_count)
+    if previous_count is not None:
+        added = max(0, child.connection_attempt_count - previous_count)
         if added == 0:
             return ()
         return attempts[-added:]
@@ -397,8 +382,7 @@ def shared_connection_slot_pressure(
         for live_side, live_child in items:
             if live_side == failed_side or not live_child.is_connected:
                 continue
-            live_source = getattr(live_child, "connection_source", None)
-            if live_source in exhausted_sources:
+            if live_child.connection_source in exhausted_sources:
                 return True
     return False
 
@@ -592,23 +576,6 @@ class _SideLaneTopology(PairTopology):
         del action
         admission = self._admission
         expected = {side: expected_stop_epoch} if expected_stop_epoch is not None else None
-        prepare = getattr(child, "async_prepare_command_operation", None)
-        prepare_owner = getattr(child, "_single_inner", child)
-        if not callable(prepare) or not callable(
-            getattr(prepare_owner, "async_prepare_command_operation", None)
-        ):
-            # Compatibility for coordinator doubles. Separate side locks still
-            # allow left and right to overlap while serializing one fake child.
-            async with self.side_locks[side]:
-                if not self._is_active():
-                    raise ConnectionModeChanged
-                if admission.was_cancelled(
-                    side, resources, entry_cancel
-                ) or not admission.stop_epochs_match([(side, child)], expected):
-                    return
-                await op(child)
-            return
-
         handle: CommandHandle | None = None
         async with self.side_locks[side]:
             if not self._is_active():
@@ -740,20 +707,6 @@ class ConcurrentTwoLinkTopology(_SideLaneTopology):
             targets, resources, entry_cancel, expected_stop_epochs
         ):
             return
-        if not all(
-            callable(getattr(child, "async_prepare_command_operation", None))
-            for _, child in targets
-        ):
-            # Compatibility for third-party/test coordinator doubles. Production
-            # children always expose the scheduler reservation API.
-            async with self.locked_target_sides(targets):
-                if admission.admission_was_cancelled(
-                    targets, resources, entry_cancel, expected_stop_epochs
-                ):
-                    return
-                await self._run_linked_unscheduled(action, targets, op)
-            return
-
         group_id = uuid4().hex
         child_by_side = dict(targets)
         prepared: dict[str, tuple[BedChild, CommandHandle]] = {}
@@ -992,47 +945,6 @@ class ConcurrentTwoLinkTopology(_SideLaneTopology):
             raise PairedSideError("linked readiness", errors)
         if not self._is_active() or not all(child.is_connected for child in physical.values()):
             raise ConnectionError("Both linked receivers must remain concurrently connected")
-
-    async def _run_linked_unscheduled(
-        self,
-        action: str,
-        targets: list[PairTarget],
-        op: ChildOperation,
-    ) -> None:
-        """Run the b3 concurrent contract for coordinator test doubles."""
-        tasks: dict[str, asyncio.Task[None]] = {
-            side: asyncio.ensure_future(op(child)) for side, child in targets
-        }
-        try:
-            # Return as soon as the FIRST side fails (or all complete), so the
-            # stop-the-other cleanup fires immediately instead of waiting for the
-            # healthy side to finish its full send window.
-            await asyncio.wait(tasks.values(), return_when=asyncio.FIRST_EXCEPTION)
-
-            errors: dict[str, BaseException] = {}
-            for side, task in tasks.items():
-                if task.done() and not task.cancelled():
-                    exc = task.exception()
-                    if exc is not None:
-                        errors[side] = exc
-
-            if errors:
-                # STOP every side now (this also makes each child's in-flight
-                # command exit early). Surface any cleanup-STOP failure too, so a
-                # caller knows the "healthy" side may still be moving.
-                stop_errors = await self._pair._stop_children(targets)
-                raise PairedSideError(action, merge_stop_errors(errors, stop_errors))
-        except asyncio.CancelledError:
-            await self._pair._stop_children(targets)
-            raise
-        finally:
-            # Never let a child task outlive this call (e.g. if the parent
-            # coroutine is cancelled mid-wait): cancel any still-running task and
-            # settle them all so none keep writing outside the parent lock.
-            for task in tasks.values():
-                if not task.done():
-                    task.cancel()
-            await asyncio.gather(*tasks.values(), return_exceptions=True)
 
     async def stop_children(self, targets: list[PairTarget]) -> dict[str, BaseException]:
         return await stop_targets(targets)
