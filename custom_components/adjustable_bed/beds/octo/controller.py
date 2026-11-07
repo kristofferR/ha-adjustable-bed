@@ -797,14 +797,11 @@ class OctoController(BedController, OctoPacketCodec):
         )
         duration = records.get(OCTO_FEATURE_LIGHT_DURATION)
         if duration and duration.characteristic[:1] == b"\x01":
-            if len(duration.value) != 2:
-                self._light_duration_invalid = True
+            # One byte of minutes, as the app reads and writes it.
+            if len(duration.value) == 1 and duration.value[0] <= 60:
+                self._light_duration_minutes = duration.value[0]
             else:
-                value = int.from_bytes(duration.value, "big")
-                if 0 <= value <= 60:
-                    self._light_duration_minutes = value
-                else:
-                    self._light_duration_invalid = True
+                self._light_duration_invalid = True
         automatic = records.get(OCTO_FEATURE_LIGHT_AUTO)
         self._automatic_light_active = bool(
             automatic
@@ -1310,9 +1307,9 @@ class OctoController(BedController, OctoPacketCodec):
         modes = set()
         rgb = self._capability_records.get(OCTO_FEATURE_LIGHT_RGB)
         rgbwi = self._capability_records.get(OCTO_FEATURE_LIGHT_RGBWI)
-        if self._has_rgb and rgb is not None and rgb.readonly == 0:
+        if self._has_rgb and rgb is not None:
             modes.add("rgb")
-        if self._has_rgbwi and rgbwi is not None and rgbwi.readonly == 0:
+        if self._has_rgbwi and rgbwi is not None:
             modes.add("rgbw")
         if modes:
             return frozenset(modes)
@@ -1340,10 +1337,7 @@ class OctoController(BedController, OctoPacketCodec):
         """Return whether the advertised record or legacy fallback supports on/off."""
         record = self._capability_records.get(OCTO_FEATURE_LIGHT)
         return bool(
-            record is not None
-            and record.characteristic[:1] == b"\x01"
-            and record.readonly == 0
-            and len(record.value) == 1
+            record is not None and record.characteristic[:1] == b"\x01" and len(record.value) == 1
         ) or (self._legacy_assumed_lights and self.supports_lights)
 
     @property
@@ -1395,43 +1389,24 @@ class OctoController(BedController, OctoPacketCodec):
     @property
     def supports_automatic_light(self) -> bool:
         record = self._capability_records.get(OCTO_FEATURE_LIGHT_AUTO)
-        return bool(
-            record
-            and record.readonly == 0
-            and record.characteristic[:1] == b"\x01"
-            and len(record.value) == 1
-        )
+        return bool(record and record.characteristic[:1] == b"\x01" and len(record.value) == 1)
 
     @property
     def supports_remote_control_lock(self) -> bool:
         record = self._capability_records.get(OCTO_FEATURE_REMOTE_CONTROL_LOCK)
-        return bool(
-            record
-            and record.readonly == 0
-            and record.characteristic[:1] == b"\x01"
-            and len(record.value) == 1
-        )
+        return bool(record and record.characteristic[:1] == b"\x01" and len(record.value) == 1)
 
     @property
     def supports_light_duration(self) -> bool:
-        record = self._capability_records.get(OCTO_FEATURE_LIGHT_DURATION)
-        return self._light_duration_minutes is not None and bool(record and record.readonly == 0)
+        return self._light_duration_minutes is not None
 
     @property
     def supports_light_sensitivity(self) -> bool:
-        record = self._capability_records.get(OCTO_FEATURE_LIGHT_SENSITIVITY)
-        return self._light_sensitivity is not None and bool(record and record.readonly == 0)
+        return self._light_sensitivity is not None
 
     @property
     def supports_remote_teach(self) -> bool:
-        record = self._capability_records.get(OCTO_FEATURE_REMOTE_TEACH)
-        return bool(
-            record
-            and record.readonly == 1
-            and record.characteristic[:1] == b"\x01"
-            and record.value_type == 1
-            and record.value == b"\x01"
-        )
+        return self._capability_active(OCTO_FEATURE_REMOTE_TEACH)
 
     def _capability_active(self, feature_id: int) -> bool:
         record = self._capability_records.get(feature_id)
@@ -1446,8 +1421,6 @@ class OctoController(BedController, OctoPacketCodec):
         record = self._capability_records.get(feature_id)
         if record is None or record.characteristic[:1] != b"\x01":
             raise ValueError(f"OCTO capability {feature_id:06x} is not active")
-        if record.readonly != 0:
-            raise PermissionError(f"OCTO capability {feature_id:06x} is read-only")
         if len(value) != len(record.value):
             raise ValueError(
                 f"OCTO capability {feature_id:06x} requires {len(record.value)} value bytes"
@@ -1812,7 +1785,7 @@ class OctoController(BedController, OctoPacketCodec):
         Returns True only if CAP_SYNCHRO (0x000101) was detected during discovery.
         """
         record = self._capability_records.get(OCTO_FEATURE_SYNCHRO)
-        return bool(self._has_synchro and record is not None and record.readonly == 0)
+        return bool(self._has_synchro and record is not None)
 
     @property
     def is_synchro_active(self) -> bool | None:
@@ -1847,7 +1820,7 @@ class OctoController(BedController, OctoPacketCodec):
             raise ValueError("OCTO light duration must be between 0 and 60 minutes")
         if not self.supports_light_duration:
             raise ValueError("OCTO light duration is not available")
-        await self._write_capability_value(OCTO_FEATURE_LIGHT_DURATION, minutes.to_bytes(2, "big"))
+        await self._write_capability_value(OCTO_FEATURE_LIGHT_DURATION, bytes((minutes,)))
         self._light_duration_minutes = minutes
 
     async def set_light_sensitivity(self, value: int) -> None:
@@ -1863,8 +1836,7 @@ class OctoController(BedController, OctoPacketCodec):
         """Run the app's direct BLE remote-teach action."""
         if not self.supports_remote_teach:
             raise ValueError("OCTO remote teach is not available")
-        # RCTEACH is advertised read-only, but the accepted app sends this
-        # one exact action payload. Keep the exception local to this action.
+        # The app sends this one fixed record regardless of the advertised value.
         await self._write_octo_command(
             [0x20, OCTO_SYSTEM_SET_CAPS], [0x00, 0x00, 0x10, 0x01, 0x01, 0x01, 0x01, 0x01]
         )
@@ -2432,7 +2404,7 @@ class OctoController(BedController, OctoPacketCodec):
 
     # Light control
     # Data format: [cap_id (3 bytes), readonly (1 byte), char_len (1 byte), char (n bytes), value_type (1 byte), value (n bytes)]
-    # Cap ID 0x000102 = LIGHT feature, ReadOnly=0x00 for write operations, value 0x01=on, 0x00=off
+    # Cap ID 0x000102 = LIGHT feature, value 0x01=on, 0x00=off
     async def lights_on(self) -> None:
         """Turn on under-bed lights using advertised or legacy field behavior."""
         if self._legacy_assumed_lights:
