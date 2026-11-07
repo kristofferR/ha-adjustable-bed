@@ -154,6 +154,8 @@ export class AdjustableBedCard extends LitElement {
   private _detailsCard?: AdjustableBedCard;
 
   private _watched: string[] = [];
+  // Registered entities whose state, and so card placement, has not arrived.
+  private _awaitingState: string[] = [];
   // Retain STOP targets across tab changes, including presets that outlive their
   // service response. A later Stop must still reach movement this card started.
   private readonly _compactStopTargets = new Map<string, symbol>();
@@ -289,7 +291,7 @@ export class AdjustableBedCard extends LitElement {
     // HA installs a new name formatter after a rename, a hass update later than
     // the registry change itself.
     if (old.formatEntityName !== this.hass.formatEntityName) return true;
-    for (const id of this._watched) {
+    for (const id of [...this._watched, ...this._awaitingState]) {
       if (old.states[id] !== this.hass.states[id]) return true;
     }
     return false;
@@ -298,6 +300,10 @@ export class AdjustableBedCard extends LitElement {
   protected override render() {
     if (!this.hass || !this._config) return nothing;
     if (!this._config.device_id) return this._notice("card.no_device");
+    const states = this.hass.states;
+    this._awaitingState = Object.values(this.hass.entities)
+      .filter((entry) => entry.platform === PLATFORM && !states[entry.entity_id])
+      .map((entry) => entry.entity_id);
 
     // A paired "Dual Bed": render the combined "both sides" controls (on the
     // parent device) plus a per-side section for each child device. The config
