@@ -18,7 +18,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.jensen import JensenCommands
+from custom_components.adjustable_bed.codec import jmc
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
     BEDTECH_SERVICE_UUID,
@@ -465,9 +465,8 @@ def mock_bleak_client() -> MagicMock:
             callback(SLEEP_NUMBER_MCR_TX_CHAR_UUID, bytearray(response_frame))
             return
 
-        if (
-            str(char_uuid).lower() == JENSEN_CHAR_UUID.lower()
-            and data == JensenCommands.READ_POSITION
+        if str(char_uuid).lower() == JENSEN_CHAR_UUID.lower() and data == jmc.command(
+            jmc.POSITION_QUERY
         ):
             callback = notify_callbacks.get(char_uuid)
             if callback is not None:

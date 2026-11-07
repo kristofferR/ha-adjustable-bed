@@ -35,13 +35,17 @@ Each codec has one guide, with a section per profile:
 |-------------|--------------|
 | [Jiecang](beds/jiecang.md) | Jiecang, Comfort Motion, the Dream apps and the LOGICDATA apps |
 | [Keeson](beds/keeson.md) | Keeson, Ergomotion, Serta, the Keeson-based apps and Ergomotion 4.0 |
-| [Okin N-frame](beds/okin-nframe.md) | Okimat, DewertOkin, Okin CB24/CST/DOT, Leggett & Platt Okin, Customatic, Jordan's, SIMMONS, SleepEase, AdjustableM5X4, Okin 64-Bit and Adjustable bed (Lumbar) |
+| [Okin N-frame](beds/okin-nframe.md) | Okimat, DewertOkin, Okin CB24/CST/DOT, Leggett & Platt Okin, Customatic, Jordan's, SIMMONS, SleepEase, AdjustableM5X4, Okin 64-Bit, Adjustable bed (Lumbar) and eShine |
 | [Okin 5A](beds/okin-5a.md) | Nectar, Mattress Firm 900, Okin CB35 and DewertOkin ELEVATE |
 | [Malouf](beds/malouf.md) | Malouf and the Malouf Base / Lucid Base apps |
-| [Richmat](beds/richmat.md) | Richmat, RMControl, BedTech, L&P MlRM, the Richmat MH apps and HJBed |
+| [Richmat](beds/richmat.md) | Richmat, RMControl, BedTech, L&P MlRM, the L&P legacy app, the Richmat MH apps, HJBed, Eshine and Good Vibe Sleep |
 | [Limoss](beds/limoss.md) | Limoss, Limoss Remote and FSM Relax |
 | [FFFF frame](beds/ff_frame.md) | Solace, Woosa Sleep, BedSense and Motion Bed |
 | [HHC `$#` frames](beds/motomotion.md) | MotoMotion, MotoSleep and Power Bob |
+| [JMC400](beds/jmc.md) | Jensen JMC400 and the Svane Remote app's JMC400 route |
+| [Kaidi](beds/kaidi.md) | Rize Seat, Floyd Home and ISleep |
+| [Casper Base](beds/casper-base.md), [Hush Base](beds/hush-base.md) | Casper Base and Hush Base |
+| [BedJet PowerLayer](beds/bedjet-powerlayer.md) | BedJet PowerLayer |
 
 Beds with their own wire format have their own guide in [`beds/`](beds/). Every
 guide follows the [bed guide format](BED_GUIDE_FORMAT.md) and records its

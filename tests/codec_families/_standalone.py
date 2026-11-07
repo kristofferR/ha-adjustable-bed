@@ -20,7 +20,6 @@ STANDALONE: dict[str, str] = {
     "hush_remote": "remote without bed commands",
     "hush_sleep_mm": "sleep sensor without bed commands; frames use codec/sleep_envelope.py",
     "hush_sleep_sxb": "sleep sensor without bed commands; frames use codec/sleep_envelope.py",
-    "jensen": "own wire format",
     "leggett_gen2": "own wire format",
     "linak": "own wire format",
     "logicdata": "own wire format",
@@ -49,7 +48,9 @@ STANDALONE: dict[str, str] = {
     " legacy frames from the Device Information manufacturer; the app's key catalog, sender"
     " session and notification parsers stay controller code",
     "suta": "own wire format",
-    "svane": "own wire format",
+    "svane": "the default Svane Remote route writes LinonPI multi-service frames and the"
+    " jensen_linon route the Jensen app's one-byte frames; the JMC400 route and the lamp"
+    " frames are built by codec/jmc.py from the SVANE_REMOTE profile",
     "timotion_ahf": "own wire format",
     "vibradorm": "own wire format",
     "vibradorm_app": "own wire format",

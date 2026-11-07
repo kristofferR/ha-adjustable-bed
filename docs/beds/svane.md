@@ -51,6 +51,9 @@ used the package `com.produktide.svane.svaneremote`.
 **Notify Characteristic:** `1234/1111` (old role, subscribed on both profiles)
 **Format:** P1 2-byte writes to direction-specific characteristics; P2 6-byte frames on `1111`
 
+P2 frames, and the lamp frames of both profiles, are [JMC400](jmc.md#svane-remote)
+frames.
+
 All short UUIDs expand to `0000xxxx-0000-1000-8000-00805f9b34fb`.
 
 P1 uses a **multi-service architecture**: each motor has its own BLE service with

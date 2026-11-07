@@ -34,6 +34,7 @@ docstring names its routes and their evidence.
 | BedJet PowerLayer `01` keys (from `main`) | `codec/bedjet_powerlayer.py` | `profiles/bedjet_powerlayer.py` | [BedJet PowerLayer](../beds/bedjet-powerlayer.md) | `tests/bedjet_powerlayer_vectors.py` |
 | Casper 6E: Casper Base and Hush Base | `codec/casper.py` | `profiles/casper.py`, `profiles/hush.py` | [Casper Base](../beds/casper-base.md), [Hush Base](../beds/hush-base.md) | `tests/casper_base_vectors.py`, `tests/hush_vectors.py` |
 | Kaidi mesh: Rize Seat, Floyd Home and ISleep | `codec/kaidi.py` | `profiles/kaidi.py` | [Kaidi](../beds/kaidi.md) | `tests/kaidi_vectors.py` |
+| JMC400: Jensen Adjustable Sleep and Svane Remote | `codec/jmc.py` | `profiles/jmc.py` | [JMC400](../beds/jmc.md) | `tests/jmc_vectors.py` |
 
 Which bed types each family backs is in its registration module (see
 [Registering a family](#registering-a-family)).
@@ -50,6 +51,10 @@ Casper Base, Hush Base and GM Control sleep sensors and Good Vibe Sleep's sleep
 routes send, and sizes the responses their receivers reassemble. Each app keeps
 its own JSON, request numbering and limits. No app profile drives it, so it has
 no family registration; its vectors are in `tests/test_sleep_envelope_vectors.py`.
+
+The standalone `svane` bed type builds its JMC400 route and both of its routes'
+lamp frames through `codec/jmc.py`, from the Svane Remote profile; its default
+route writes LinonPI frames, so its controller is not a profile over the codec.
 
 ## Registering a family
 
