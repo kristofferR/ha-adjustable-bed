@@ -82,7 +82,11 @@ def _census(profile: MotoSleepProfile) -> set[str]:
         *profile.memory_recall,
         *profile.memory_save,
         *profile.massage.values(),
-        *(a for a in (profile.light_toggle, profile.swing, profile.auxiliary_action) if a),
+        *(
+            a
+            for a in (profile.light_toggle, profile.swing, profile.auxiliary_action)
+            if a is not None
+        ),
         *stop,
     }
     if profile.transport is Transport.MOTO_BINARY:
