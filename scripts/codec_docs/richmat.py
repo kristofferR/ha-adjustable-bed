@@ -429,12 +429,11 @@ def render_richmat_functions() -> str:
 
 
 def render_richmat_mh_setup() -> str:
-    def row(name: str, literal: str) -> tuple[str, str, str]:
-        sent = mh_frames.query_frame(literal)
+    def row(name: str, frame: bytes) -> tuple[str, str, str]:
         return (
             name,
-            _hex(sent) if literal in mh_frames.INIT_VER0 else "none",
-            _hex(sent) if literal in mh_frames.INIT_VER1 else "none",
+            _hex(frame) if frame in mh_frames.INIT_VER0 else "none",
+            _hex(frame) if frame in mh_frames.INIT_VER1 else "none",
         )
 
     names = {
@@ -451,21 +450,21 @@ def render_richmat_mh_setup() -> str:
         mh_frames.TX_QUERY_MASSAGE: "Massage query",
         mh_frames.TX_QUERY_UBL_LOCK: "Button-light lock query",
         **{
-            literal: f"Motor {index} angle"
-            for index, literal in enumerate(mh_frames.TX_MOTOR_ANGLES, 1)
+            frame: f"Motor {index} angle"
+            for index, frame in enumerate(mh_frames.TX_MOTOR_ANGLES, 1)
         },
     }
     steps = list(dict.fromkeys((*mh_frames.INIT_VER0, *mh_frames.INIT_VER1)))
-    version = _hex(mh_frames.query_frame(mh_frames.TX_VERSION))
+    version = _hex(mh_frames.TX_VERSION)
     return _block(
         _table(
             ("Step", "VER0", "VER1"),
             [
                 ("Version query", version, version),
-                *(row(names[literal], literal) for literal in steps),
+                *(row(names[frame], frame) for frame in steps),
             ],
         ),
-        f"The app's mattress literal ends in checksum `{mh_frames.TX_MATTRESS[-2:].upper()}`; the sender recomputes "
+        f"The app's mattress literal ends in checksum `{mh_frames.RX_MATTRESS[-2:].upper()}`; the sender recomputes "
         "its checksum, so the bed receives the frame above.",
     )
 
@@ -484,12 +483,12 @@ def render_richmat_mh_fixed() -> str:
                     "Smart set lock toggle, once",
                     _hex(mh_frames.control_frame(mh_frames.SMART_SET_LOCK_CODE)),
                 ),
-                ("Start detection", _hex(mh_frames.query_frame(mh_frames.TX_START_DETECTION))),
-                ("Stop detection", _hex(mh_frames.query_frame(mh_frames.TX_STOP_DETECTION))),
+                ("Start detection", _hex(mh_frames.TX_START_DETECTION)),
+                ("Stop detection", _hex(mh_frames.TX_STOP_DETECTION)),
                 (
                     "Cancel alarm (single-slot models)",
                     " then ".join(
-                        _hex(mh_frames.query_frame(x)) for x in mh_frames.TX_ALARM_CANCEL
+                        _hex(x) for x in mh_frames.TX_ALARM_CANCEL
                     ),
                 ),
             ),

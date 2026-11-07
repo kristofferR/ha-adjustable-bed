@@ -106,10 +106,10 @@ def sleeps(monkeypatch: pytest.MonkeyPatch) -> list[float]:
         (protocol.stop_frame(), "6e01006edd"),
         (protocol.stop_frame(1), "6e01016ede"),
         (protocol.stop_frame(2), "6e01026edf"),
-        (protocol.query_frame(protocol.TX_MATTRESS), "5e1a000179"),
-        (protocol.query_frame(protocol.TX_VERSION), "6e9a000008"),
-        (protocol.query_frame(protocol.TX_START_DETECTION), "6e88c210c8"),
-        (protocol.query_frame(protocol.TX_STOP_DETECTION), "6e88c220d8"),
+        (protocol.TX_MATTRESS, "5e1a000179"),
+        (protocol.TX_VERSION, "6e9a000008"),
+        (protocol.TX_START_DETECTION, "6e88c210c8"),
+        (protocol.TX_STOP_DETECTION, "6e88c220d8"),
         (protocol.rgb_frame(128, 1, 255), "6e0cff80f96e0d01ff7b"),
         (protocol.light_timer_frame(300), "6e0b012ca6"),  # LedFrag 300 s
         (protocol.light_timer_frame(15 * 60), "6e0b038400"),  # Blvd Home BtnLedFrag 15 min
@@ -152,7 +152,7 @@ def test_alarm_frames_match_artifact_vectors(minutes, action, expected) -> None:
 
 
 def test_alarm_cancel_delete_and_clock_frames() -> None:
-    assert tuple(protocol.query_frame(t).hex() for t in protocol.TX_ALARM_CANCEL) == (
+    assert tuple(t.hex() for t in protocol.TX_ALARM_CANCEL) == (
         "6e05000073", "6e06000074"
     )
     assert tuple(f.hex() for f in protocol.alarm_delete_frames(2)) == ("6e05000275", "6e06000074")
@@ -330,7 +330,7 @@ async def test_session_queries_version_then_ver1_list_and_persists_snapshot(slee
     await controller._init_task
     sent = frames(controller)
     assert sent[0] == "6e9a000008"
-    queries = [protocol.query_frame(t).hex() for t in protocol.INIT_VER1]
+    queries = [t.hex() for t in protocol.INIT_VER1]
     # The alarm reply mounts AlarmCallFrag, which sends the clock before the next query.
     assert sent[1:3] == queries[:2]
     assert sent[3][:4] == "6e13" and sent[4][:4] == "6e14"
@@ -351,7 +351,7 @@ async def test_session_without_version_reply_uses_the_ver0_list(sleeps) -> None:
     await controller.start_notify()
     assert controller._init_task is not None
     await controller._init_task
-    assert frames(controller)[1:] == [protocol.query_frame(t).hex() for t in protocol.INIT_VER0]
+    assert frames(controller)[1:] == [t.hex() for t in protocol.INIT_VER0]
     assert controller.route == "L"
 
 
@@ -443,6 +443,16 @@ async def test_legacy_init_replies_open_pages_and_snore_prefix_is_ver0_only() ->
     assert session.dev == {"alarm": True, "led": True, "snore": True}
     assert session.detection is True
     assert controller._dev == {} and controller._detection is False  # published on completion
+
+
+async def test_mattress_init_reply_marks_the_mattress_page() -> None:
+    """A 28-byte ``5E 1A`` init reply opens the mattress page, as the app's literal does."""
+    controller = make("revive", "CFRM0001")
+    controller._classifier.rx_type = "INIT"
+    session = controller._pending = SessionFlags()
+    body = bytes.fromhex("5e1a0001") + bytes(23)
+    controller._handle_notification(None, bytearray(body + bytes((sum(body) & 0xFF,))))
+    assert session.dev == {"mattress": True}
 
 
 # ------------------------------------------------------------------- features
@@ -785,7 +795,7 @@ async def test_stored_pages_stay_published_while_the_session_runs() -> None:
     controller = make(snapshot=vers1("7irm", alarm=True, led=True))
     await controller.async_discover_capabilities()
     hold = asyncio.Event()
-    queries = {protocol.query_frame(t).hex() for t in (protocol.TX_VERSION, *protocol.INIT_VER1)}
+    queries = {t.hex() for t in (protocol.TX_VERSION, *protocol.INIT_VER1)}
 
     async def write(char, data, response):
         if bytes(data).hex() in queries:
@@ -837,7 +847,7 @@ async def test_failed_session_keeps_the_stored_snapshot(sleeps) -> None:
     await controller.async_discover_capabilities()
 
     async def write(char, data, response):
-        if bytes(data).hex() == protocol.query_frame(protocol.TX_ALARM).hex():
+        if bytes(data).hex() == protocol.TX_ALARM.hex():
             raise ConnectionError("lost")
 
     controller.client.write_gatt_char.side_effect = write

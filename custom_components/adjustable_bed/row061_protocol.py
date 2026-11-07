@@ -6,7 +6,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal
 
-from .beds.richmat_mh_protocol import finalize, mattress_frame
+from .beds.richmat_mh_protocol import mattress_frame
+from .codec import richmat as codec
 
 NORMAL_SETTINGS = {
     "pressure": (1, {"low": 1, "medium": 2, "high": 3}),
@@ -74,25 +75,10 @@ def alarm_frame(request: AlarmRequest, now: datetime) -> bytes:
             now.minute,
         )
     if request.delete:
-        return finalize([0x6E, 0x20, 8, 5, 2, 1, request.slot, 0])
+        return codec.record_20_len(5, 2, 1, bytes((request.slot,)))
     week = int(request.enabled) | sum(1 << (7 - day) for day in request.weekdays)
-    return finalize(
-        [
-            0x6E,
-            0x20,
-            13,
-            5,
-            1,
-            1,
-            request.slot,
-            request.bed,
-            request.hour,
-            request.minute,
-            request.mode,
-            week,
-            0,
-        ]
-    )
+    record = bytes((request.slot, request.bed, request.hour, request.minute, request.mode, week))
+    return codec.record_20_len(5, 1, 1, record)
 
 
 def calendar_clock(now: datetime) -> tuple[bytes, bytes]:
@@ -103,23 +89,12 @@ def calendar_clock(now: datetime) -> tuple[bytes, bytes]:
     hours = int(offset.total_seconds() / 3600) if offset is not None else 0
     epoch = int(now.timestamp()).to_bytes(4, "big")
     return (
-        finalize(bytes([0x6E, 0x20, 12, 8, 2, 1]) + epoch + bytes([hours & 255, 0])),
-        finalize(
-            [
-                0x6E,
-                0x20,
-                13,
-                8,
-                3,
-                1,
-                now.year - 1970,
-                now.month,
-                now.day,
-                now.hour,
-                now.minute,
-                now.second,
-                0,
-            ]
+        codec.record_20_len(8, 2, 1, epoch + bytes((hours & 255,))),
+        codec.record_20_len(
+            8,
+            3,
+            1,
+            bytes((now.year - 1970, now.month, now.day, now.hour, now.minute, now.second)),
         ),
     )
 

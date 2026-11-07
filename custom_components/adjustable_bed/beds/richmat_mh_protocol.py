@@ -37,23 +37,31 @@ INIT_DELAY_S: Final = 0.3
 INIT_TASK_SLEEP_S: Final = 0.3
 STOP_DELAY_S: Final = 0.12  # STOP 120 ms after a release or a ONCE send.
 
-TX_VERSION: Final = "6e9a000008"
-TX_EXIT_ONE_MIN: Final = "6e02010071"
-TX_ALARM: Final = "6e08010178"
-TX_LED: Final = "6e0a000179"
-TX_AROMA: Final = "6e1a000088"
-TX_MATTRESS: Final = "5e1a000190"  # Literal; the sender recomputes the sum to 79.
-TX_WAIST_MATTRESS: Final = "5e1b00017a"
-TX_SNORE: Final = "6e2100008f"
-TX_SPEECH: Final = "6e22000090"
-TX_DETECTION: Final = "6e9ac000c8"
-TX_MOTOR_MODE: Final = "6e9a100018"
-TX_MOTOR_ANGLES: Final = ("6e9a300139", "6e9a30023a", "6e9a30033b", "6e9a30043c")
-TX_QUERY_MASSAGE: Final = "6e9aa000a8"
-TX_QUERY_UBL_LOCK: Final = "6e9ab000b8"
-TX_ALARM_CANCEL: Final = ("6e05000073", "6e06000074")
-TX_START_DETECTION: Final = "6e88c21000"
-TX_STOP_DETECTION: Final = "6e88c22000"
+# Queries the app writes, built by the codec. The app stores them as hex text and
+# re-sums each before sending, so the frames below are what reaches the bed.
+TX_VERSION: Final = codec.function(0, action="deviceFunctionItemQueryVersion")
+TX_EXIT_ONE_MIN: Final = codec.function(0, action="deviceFunctionItemExitLimit")
+TX_ALARM: Final = codec.function(1, action="deviceFunctionItemCheckClock")
+TX_LED: Final = codec.function(1, action="deviceFunctionItemCheckLight")
+TX_AROMA: Final = codec.function(0, action="deviceFunctionItemCheckAroma")
+TX_MATTRESS: Final = codec.function(1, action="deviceFunctionItemCheckMattress")
+TX_WAIST_MATTRESS: Final = codec.frame(codec.MATTRESS, 0x1B, 0x00, 0x01)
+TX_SNORE: Final = codec.function(0, action="deviceFunctionItemCheckSnore")
+TX_SPEECH: Final = codec.function(0, action="deviceFunctionItemCheckSpeech")
+TX_DETECTION: Final = codec.function(0, action="deviceFunctionItemCheckDetection")
+TX_MOTOR_MODE: Final = codec.function(0, action="deviceFunctionVersionOneBedCurrentMode")
+TX_MOTOR_ANGLES: Final = tuple(
+    codec.function(motor, action=f"deviceFunctionVersionOneMotor{motor}CurrentAngle")
+    for motor in (1, 2, 3, 4)
+)
+TX_QUERY_MASSAGE: Final = codec.function(0, action="deviceFunctionVersionOneCurrentMassageMode")
+TX_QUERY_UBL_LOCK: Final = codec.function(0, action="deviceFunctionVersionOneCurrentBedLightStatus")
+TX_ALARM_CANCEL: Final = codec.countdown(0, 0)
+TX_START_DETECTION: Final = codec.function(0x10, action="deviceFunctionItemSendStartDetection")
+TX_STOP_DETECTION: Final = codec.frame(codec.BED, 0x88, 0xC2, 0x20)
+# The app also matches replies against two of its query texts, stale sum included.
+RX_MATTRESS: Final = "5e1a000190"
+RX_SPEECH: Final = "6e22000090"
 
 INIT_VER0: Final = (TX_EXIT_ONE_MIN, TX_ALARM, TX_LED, TX_AROMA, TX_MATTRESS, TX_WAIST_MATTRESS,
                     TX_SNORE, TX_SPEECH, TX_DETECTION)
@@ -157,11 +165,6 @@ def control_frame(code: int, mode: int = 0) -> bytes:
 def stop_frame(mode: int = 0) -> bytes:
     """``TX_END`` with the mode sampled when it is sent."""
     return control_frame(STOP_CODE, mode)
-
-
-def query_frame(hex_text: str) -> bytes:
-    """``sendHexData``: decode the literal, then recompute its sum (no mode)."""
-    return finalize(bytes.fromhex(hex_text))
 
 
 def angle_frame(motor_bits: int, angle: int) -> bytes:
@@ -455,7 +458,7 @@ class Classifier:
                 self.buffer = ""
             elif len(buf) == 56:
                 if chk_sum(buf) and buf[6:8] == "01":
-                    self.events.append(Event("init", TX_MATTRESS))
+                    self.events.append(Event("init", RX_MATTRESS))
                     self.events.append(Event("mattress_init", buf))
                 self.buffer = ""
         elif sub in ("01", "02"):
