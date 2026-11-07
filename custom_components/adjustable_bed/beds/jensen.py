@@ -419,31 +419,6 @@ class JensenController(BedController):
             self._config_received = None
             self._config_data = None
 
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        """Write a command to the bed."""
-        _LOGGER.debug(
-            "Writing command to Jensen bed: %s (repeat: %d, delay: %dms, response=%s)",
-            command.hex(),
-            repeat_count,
-            repeat_delay_ms,
-            self._write_with_response,
-        )
-
-        await self._write_gatt_with_retry(
-            jmc.CHAR_UUID,
-            command,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            cancel_event=cancel_event,
-            response=self._write_with_response,
-        )
-
     def _handle_notification(self, _sender: BleakGATTCharacteristic, data: bytearray) -> None:
         """Handle a report from the bed.
 

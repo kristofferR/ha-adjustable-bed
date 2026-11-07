@@ -116,6 +116,9 @@ def remacro_session(
 class RemacroController(BedController):
     """One Remacro bed as shown by one app's model-specific control screen."""
 
+    # Every app writes WRITE_TYPE_NO_RESPONSE.
+    _write_with_response = False
+
     def __init__(
         self,
         coordinator: AdjustableBedCoordinator,
@@ -387,23 +390,6 @@ class RemacroController(BedController):
         if self._app == APP_JEROMES:
             return self._serial.tap(code, parameter)
         return self._serial.hold(code, parameter)
-
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        # Every app writes WRITE_TYPE_NO_RESPONSE.
-        await self._write_gatt_with_retry(
-            REMACRO_WRITE_CHAR_UUID,
-            command,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            cancel_event=cancel_event,
-            response=False,
-        )
 
     async def _sleep(self, seconds: float) -> None:
         if seconds > 0:
