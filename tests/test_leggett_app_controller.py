@@ -295,13 +295,13 @@ async def test_connect_refreshes_light_after_subscribing_and_again_after_disconn
 
     controller.write_command.side_effect = reply_to_idle
     await controller.start_notify()
-    assert controller.get_light_state() == {"is_on": True}
+    assert controller._light_is_on is True
     await controller.start_notify()
     assert controller.write_command.await_count == 1
     await controller.stop_notify()
     await controller.start_notify()
     assert controller.write_command.await_count == 2
-    assert controller.get_light_state() == {"is_on": True}
+    assert controller._light_is_on is True
 
 
 @pytest.mark.parametrize("reason", ["other_profile", "cancelled", "subscribe_failed"])
@@ -653,5 +653,5 @@ async def test_notifications_during_or_after_shutdown_cannot_restore_state(error
     else:
         await controller.stop_notify()
     report_cu170(controller, 0x20000)
-    assert controller.get_light_state() == {"is_on": None}
+    assert controller._light_is_on is None
     assert controller.protocol_diagnostics["notification_led_mask"] is None

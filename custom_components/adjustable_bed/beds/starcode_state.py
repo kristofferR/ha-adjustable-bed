@@ -27,7 +27,6 @@ def spec_key(name: str) -> AnyStateKey:
     typed: dict[str, AnyStateKey] = {
         FIRMWARE_VERSION: FIRMWARE_VERSION,
         LIGHT_BRIGHTNESS: LIGHT_BRIGHTNESS,
-        UNDER_BED_LIGHTS_ON: UNDER_BED_LIGHTS_ON,
     }
     return typed.get(name, field_key(name))
 
@@ -43,7 +42,9 @@ def state_updates(values: Mapping[str, object]) -> list[StateUpdate]:
             updates.append(LIGHT_BRIGHTNESS(level))
         elif name == LIGHT_COLOR_OPTION:
             updates.append(LIGHT_COLOR_OPTION(value if isinstance(value, str) else None))
-        elif name == UNDER_BED_LIGHTS_ON:
+        elif name == "light_on":
+            # The parser's field feeds its binary sensor, the shared key the light.
+            updates.append(field_key(name)(value))
             updates.append(UNDER_BED_LIGHTS_ON(value if isinstance(value, bool) else None))
         else:
             updates.append(field_key(name)(value))

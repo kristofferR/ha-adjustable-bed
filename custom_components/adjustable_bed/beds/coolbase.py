@@ -23,7 +23,7 @@ import asyncio
 import contextlib
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Final, cast
+from typing import TYPE_CHECKING, Final, cast
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
@@ -37,6 +37,7 @@ from ..const import (
 )
 from ..controller_state import StateKey
 from ..profiles import keeson as keeson_profiles
+from ..state_keys import UNDER_BED_LIGHTS_ON
 from .base import BedController, ControllerButtonSpec, ControllerStateSensorSpec
 from .builder import BuildContext
 
@@ -58,7 +59,6 @@ _LIGHT_STATE_WAIT = 1.0
 STATE_LEFT_FAN: Final = StateKey[int | None]("coolbase_left_fan_level")
 STATE_RIGHT_FAN: Final = StateKey[int | None]("coolbase_right_fan_level")
 STATE_MASSAGE_MODE: Final = StateKey[int | None]("coolbase_massage_mode")
-STATE_LIGHT: Final = StateKey[bool | None]("coolbase_light_on")
 
 
 class CoolBaseCommands:
@@ -277,7 +277,10 @@ class CoolBaseController(BedController):
         self._status_received.clear()
         if not self._dewert_okin_profile:
             self.forward_controller_state_updates(
-                STATE_LEFT_FAN(None), STATE_RIGHT_FAN(None), STATE_MASSAGE_MODE(None), STATE_LIGHT(None)
+                STATE_LEFT_FAN(None),
+                STATE_RIGHT_FAN(None),
+                STATE_MASSAGE_MODE(None),
+                UNDER_BED_LIGHTS_ON(None),
             )
 
     def _build_command(self, cmd0: int = 0, cmd1: int = 0, cmd2: int = 0, cmd3: int = 0) -> bytes:
@@ -411,7 +414,7 @@ class CoolBaseController(BedController):
                 STATE_LEFT_FAN(self._left_fan_level),
                 STATE_RIGHT_FAN(self._right_fan_level),
                 STATE_MASSAGE_MODE(self._massage_level),
-                STATE_LIGHT(self._light_on),
+                UNDER_BED_LIGHTS_ON(self._light_on),
             )
 
         _LOGGER.debug(
@@ -604,10 +607,6 @@ class CoolBaseController(BedController):
     async def lights_toggle(self) -> None:
         """Toggle lights."""
         await self.tap(CoolBaseCommands.TOGGLE_LIGHT)
-
-    def get_light_state(self) -> dict[str, Any]:
-        """Return the light flag from the latest status reply."""
-        return {"is_on": self._light_on}
 
     # Massage methods
     async def massage_toggle(self) -> None:

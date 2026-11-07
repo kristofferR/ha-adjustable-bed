@@ -417,9 +417,6 @@ class MotoSleepController(BedController):
         if any(rgb_color):
             self._light_rgb = rgb_color
 
-    def get_light_state(self) -> dict[str, object]:
-        return {"rgb_color": self._light_rgb}
-
     async def _massage(self, key: str) -> None:
         action = self.profile.massage.get(key)
         if action is None:

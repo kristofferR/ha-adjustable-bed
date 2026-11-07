@@ -713,7 +713,7 @@ class TestSleepNumberController:
             "BAMG",
             '[{"bamkey":"LBPG","args":"left"},{"bamkey":"LBPG","args":"right"}]',
         )
-        assert coordinator.controller.get_light_state()["light_timer_option"] == "15 min"
+        assert coordinator.controller._coordinator.controller_state["light_timer_option"] == "15 min"
         assert coordinator.controller._coordinator.controller_state["bed_presence"] == "in"
         assert coordinator.controller._coordinator.controller_state["bed_presence_left"] == "in"
         assert coordinator.controller._coordinator.controller_state["bed_presence_right"] == "out"
@@ -836,12 +836,8 @@ class TestSleepNumberController:
         level, timer = await coordinator.controller._read_underbed_light_settings()
 
         assert (level, timer) == ("medium", 45)
-        assert coordinator.controller.get_light_state() == {
-            "is_on": True,
-            "light_level": 2,
-            "light_timer_minutes": 45,
-            "light_timer_option": "45 min",
-        }
+        assert coordinator.controller._coordinator.controller_state["light_level"] == 2
+        assert coordinator.controller._coordinator.controller_state["light_timer_minutes"] == 45
         assert coordinator.controller._coordinator.controller_state["under_bed_lights_on"] is True
         assert (
             coordinator.controller._coordinator.controller_state["light_timer_option"] == "45 min"
@@ -890,8 +886,8 @@ class TestSleepNumberController:
             "medium",
             "30",
         )
-        assert coordinator.controller.get_light_state()["light_level"] == 2
-        assert coordinator.controller.get_light_state()["light_timer_option"] == "30 min"
+        state = coordinator.controller._coordinator.controller_state
+        assert (state["light_level"], state["light_timer_option"]) == (2, "30 min")
 
     async def test_set_light_timer_preserves_current_level(
         self,
@@ -914,5 +910,5 @@ class TestSleepNumberController:
             "high",
             "120",
         )
-        assert coordinator.controller.get_light_state()["light_timer_minutes"] == 120
+        assert coordinator.controller._coordinator.controller_state["light_timer_minutes"] == 120
         assert coordinator.controller.light_auto_off_seconds == 7200

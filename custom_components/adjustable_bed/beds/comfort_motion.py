@@ -287,9 +287,6 @@ class ComfortMotionController(JiecangProfileController):
         if self._light != desired:
             await self.lights_toggle()
 
-    def get_light_state(self) -> dict[str, object]:
-        return {"is_on": self._light} if self._light is not None else {}
-
     # Rename
 
     @property

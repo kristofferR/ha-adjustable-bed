@@ -520,18 +520,6 @@ class JiecangAppController(JiecangProfileController):
     def light_timer_options(self) -> list[str]:
         return [str(seconds) for seconds in LIGHT_TIMEOUTS]
 
-    def get_light_state(self) -> dict[str, object]:
-        result: dict[str, object] = {}
-        if self._light_on is not None:
-            result["is_on"] = self._light_on
-        if self._rgb is not None:
-            result.update(
-                light_level=self._rgb.brightness,
-                light_timer_option=str(self._rgb.seconds),
-                rgb_color=(self._rgb.red, self._rgb.green, self._rgb.blue),
-            )
-        return result
-
     async def _known_rgb(self) -> codec.RGBState:
         if self._rgb is None:
             await self.write_command(

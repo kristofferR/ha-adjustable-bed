@@ -1140,9 +1140,10 @@ class StarcodeM1X12Controller(BedController):
         light_on = self._state.get("light_on")
         return (UNDER_BED_LIGHTS_ON(light_on if isinstance(light_on, bool) else None),)
 
-    def get_light_state(self) -> dict[str, object]:
-        """Return the latest parsed light telemetry for the HA light entity."""
-        return {"is_on": self._state.get("light_on")}
+    def on_disconnect(self) -> None:
+        """Forget the light report of the dropped link."""
+        if "light_on" in self._state:
+            self.forward_controller_state_update(UNDER_BED_LIGHTS_ON, None)
 
 
 class StarElevateM1X12Controller(StarElevateController):

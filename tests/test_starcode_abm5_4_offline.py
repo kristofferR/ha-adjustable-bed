@@ -75,7 +75,6 @@ async def test_actual_offline_factory_only_mints_invariant_selector_catalog(
     assert controller.ui_selector == ui
     assert bool(controller.controller_select_specs) == (command in POSITIVE)
     assert bool(controller.controller_number_specs) == (command in POSITIVE)
-    assert controller.get_light_state()["is_on"] is None
     assert not controller._massage_on and not controller._ui_state_observed
     if command in POSITIVE:
         with pytest.raises(ValueError, match="observed"):

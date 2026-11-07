@@ -778,7 +778,7 @@ class VibradormAppController(BedController):
             "metadata": dict(self._metadata_values) or None,
             "sync_observed": self._sync_observed,
             "state_source": "local_intent",
-            "floor_intent": self.get_light_state(),
+            "floor_intent": self._floor_light_intent(),
             "pending_timer": {"enabled": self._timer_enabled, "minutes": self._timer_minutes},
             "mood_intent": dict(self._mood_intent),
             "massage_intent": asdict(self._massage) if self.profile.massage else None,
@@ -1180,7 +1180,7 @@ class VibradormAppController(BedController):
             FLOOR_TIMER_MINUTES(self._timer_minutes),
         )
 
-    def get_light_state(self) -> dict[str, Any]:
+    def _floor_light_intent(self) -> dict[str, object]:
         return {
             "is_on": bool(self._floor_level),
             "light_level": self._floor_level,

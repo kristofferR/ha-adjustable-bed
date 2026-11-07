@@ -138,7 +138,7 @@ async def test_floor_delivery_full_shipped_range(remote, level, raw, toggle):
     assert call.args[0].uuid == (LIGHT if remote == "01" else CBI)
     assert call.kwargs["response"] is (remote == "01")
     assert c._toggle == toggle  # construction and P1 execution flips cancel
-    assert c.get_light_state()["light_level"] == level
+    assert c._floor_light_intent()["light_level"] == level
 
 
 @pytest.mark.asyncio

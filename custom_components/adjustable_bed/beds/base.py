@@ -2767,17 +2767,6 @@ class BedController(ABC):
         """Return False while the legacy wave massage zone cannot be driven."""
         return True
 
-    def get_light_state(self) -> dict[str, Any]:
-        """Return current light state for state feedback.
-
-        Supported keys vary by controller. Common keys:
-        - is_on: bool
-        - light_level: int
-        - light_timer_option: str
-        - light_timer_minutes: int
-        """
-        return {}
-
     async def read_light_state(self) -> tuple[StateUpdate, ...]:
         """Query current light state from the bed when supported.
 

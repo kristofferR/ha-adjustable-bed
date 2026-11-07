@@ -784,7 +784,7 @@ async def test_actual_factory_first_selection_and_reconstruction_use_shared_floo
     coordinator.client.write_gatt_char = AsyncMock()
     first = await create_controller(coordinator, BED_TYPE_VIBRADORM_APP, None, coordinator.client)
     assert isinstance(first, VibradormAppController)
-    assert first.get_light_state()["state_source"] == "local_intent"
+    assert first._floor_light_intent()["state_source"] == "local_intent"
     await first.lights_toggle()
     assert coordinator.client.write_gatt_char.await_args.args[1].hex() == "80110000"
     assert state.floor.level == 0 and state.floor.default_level == 6
@@ -819,7 +819,7 @@ async def test_failed_ble_toggle_keeps_remembered_intent_through_guarded_prefere
     assert coordinator.entry.data[CONF_VIBRADORM_FLOOR_DEFAULT] == 4
     assert coordinator.consume_internal_entry_update(coordinator.entry)
     assert (state.floor.level, state.floor.default_level) == (0, 4)
-    assert controller.get_light_state()["state_source"] == "local_intent"
+    assert controller._floor_light_intent()["state_source"] == "local_intent"
 
 
 async def test_paired_preference_write_and_ownership_migration_preserve_only_target_intent(

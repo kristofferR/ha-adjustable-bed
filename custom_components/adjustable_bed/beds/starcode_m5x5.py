@@ -475,8 +475,10 @@ class StarcodeM5X5Controller(BedController):
             for key in keys
         )
 
-    def get_light_state(self) -> dict[str, object]:
-        return {"is_on": self._state.get("light_on")}
+    def on_disconnect(self) -> None:
+        """Forget the light report of the dropped link."""
+        if "light_on" in self._state:
+            self.forward_controller_state_update(UNDER_BED_LIGHTS_ON, None)
 
     async def read_light_state(self) -> tuple[StateUpdate, ...]:
         await self.query_status()
@@ -532,8 +534,6 @@ class StarcodeM5X5Controller(BedController):
             updates = parse_notification(
                 data, profile=self.profile, dialect=self.dialect, previous=self._state
             )
-            if "light_on" in updates:
-                updates["under_bed_lights_on"] = updates["light_on"]
             if isinstance(updates.get("light_color_index"), int):
                 updates["light_color_option"] = str(updates["light_color_index"])
             self._state.update(updates)
