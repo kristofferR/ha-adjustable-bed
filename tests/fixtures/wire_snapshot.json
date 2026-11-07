@@ -73,7 +73,9 @@
 "button:adjustable_lumbar_wave_2": {"status":"ok","writes":[[0,"6e400002",false,"08020000000000100000",1,0],[7,"6e400002",false,"08020000000000000000",2,300]]},
 "button:adjustable_lumbar_wave_3": {"status":"ok","writes":[[0,"6e400002",false,"08020000000000200000",1,0],[7,"6e400002",false,"08020000000000000000",2,300]]},
 "button:adjustable_lumbar_massage_on": {"status":"ok","writes":[[0,"6e400002",false,"08020000000000000000",1,0],[7,"6e400002",false,"08020000010000000000",2,100]]},
-"button:adjustable_lumbar_check_massage": {"status":"ok","writes":[[0,"6e400002",false,"0204",1,0]]}
+"button:adjustable_lumbar_check_massage": {"status":"ok","writes":[[0,"6e400002",false,"0204",1,0]]},
+"preset_incline": {"status":"ok","writes":[[0,"6e400002",false,"08020000400000000000",1,0],[7,"6e400002",false,"08020000000000000000",2,300]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"08020000200000000000",1,0],[7,"6e400002",false,"08020000000000000000",2,300]]}
 }},
 "adjustable_lumbar:adjustable_lumbar_okin": {
 "info": {"bed_type": "adjustable_lumbar", "controller": "AdjustableLumbarController", "module": "adjustable_lumbar", "pulse": [10, 100]},
@@ -146,7 +148,9 @@
 "button:adjustable_lumbar_wave_2": {"status":"ok","writes":[[0,"62741525",true,"08020000000000100000",1,0],[7,"62741525",true,"08020000000000000000",2,300]]},
 "button:adjustable_lumbar_wave_3": {"status":"ok","writes":[[0,"62741525",true,"08020000000000200000",1,0],[7,"62741525",true,"08020000000000000000",2,300]]},
 "button:adjustable_lumbar_massage_on": {"status":"ok","writes":[[0,"62741525",true,"08020000000000000000",1,0],[7,"62741525",true,"08020000010000000000",2,100]]},
-"button:adjustable_lumbar_check_massage": {"status":"ok","writes":[[0,"62741525",true,"0204",1,0]]}
+"button:adjustable_lumbar_check_massage": {"status":"ok","writes":[[0,"62741525",true,"0204",1,0]]},
+"preset_incline": {"status":"ok","writes":[[0,"62741525",true,"08020000400000000000",1,0],[7,"62741525",true,"08020000000000000000",2,300]]},
+"preset_lounge": {"status":"ok","writes":[[0,"62741525",true,"08020000200000000000",1,0],[7,"62741525",true,"08020000000000000000",2,300]]}
 }},
 "adjustable_lumbar:adjustable_lumbar_star": {
 "info": {"bed_type": "adjustable_lumbar", "controller": "AdjustableLumbarController", "module": "adjustable_lumbar", "pulse": [10, 100]},
@@ -219,7 +223,9 @@
 "button:adjustable_lumbar_wave_2": {"status":"ok","writes":[[0,"6e400002",false,"08020000000000100000",1,0],[7,"6e400002",false,"08020000000000000000",2,300]]},
 "button:adjustable_lumbar_wave_3": {"status":"ok","writes":[[0,"6e400002",false,"08020000000000200000",1,0],[7,"6e400002",false,"08020000000000000000",2,300]]},
 "button:adjustable_lumbar_massage_on": {"status":"ok","writes":[[0,"6e400002",false,"08020000000000000000",1,0],[7,"6e400002",false,"08020000010000000000",2,100]]},
-"button:adjustable_lumbar_check_massage": {"status":"ok","writes":[[0,"6e400002",false,"0204",1,0]]}
+"button:adjustable_lumbar_check_massage": {"status":"ok","writes":[[0,"6e400002",false,"0204",1,0]]},
+"preset_incline": {"status":"ok","writes":[[0,"6e400002",false,"08020000400000000000",1,0],[7,"6e400002",false,"08020000000000000000",2,300]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"08020000200000000000",1,0],[7,"6e400002",false,"08020000000000000000",2,300]]}
 }},
 "adjustamattress": {
 "info": {"bed_type": "adjustamattress", "controller": "AdjustaMattressController", "module": "adjustamattress", "pulse": [5, 200]},
@@ -291,7 +297,8 @@
 "number:adjustamattress_alarm_draft_hour=0": {"status":"no_writes"},
 "number:adjustamattress_alarm_draft_hour=23": {"status":"no_writes"},
 "number:adjustamattress_alarm_draft_minute=0": {"status":"no_writes"},
-"number:adjustamattress_alarm_draft_minute=59": {"status":"no_writes"}
+"number:adjustamattress_alarm_draft_minute=59": {"status":"no_writes"},
+"preset_lounge": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe160020000000e5",5,200],[1200,"0000ffe9",true,"e6fe16000000000005",1,0]]}
 }},
 "adjustamattress:P1_L0": {
 "info": {"bed_type": "adjustamattress", "controller": "AdjustaMattressController", "module": "adjustamattress", "pulse": [5, 200]},
@@ -372,7 +379,8 @@
 "number:adjustamattress_alarm_draft_hour=0": {"status":"no_writes"},
 "number:adjustamattress_alarm_draft_hour=23": {"status":"no_writes"},
 "number:adjustamattress_alarm_draft_minute=0": {"status":"no_writes"},
-"number:adjustamattress_alarm_draft_minute=59": {"status":"no_writes"}
+"number:adjustamattress_alarm_draft_minute=59": {"status":"no_writes"},
+"preset_lounge": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe160020000000e5",5,200],[1200,"0000ffe9",true,"e6fe16000000000005",1,0]]}
 }},
 "adjustamattress:P1_L1": {
 "info": {"bed_type": "adjustamattress", "controller": "AdjustaMattressController", "module": "adjustamattress", "pulse": [5, 200]},
@@ -444,7 +452,8 @@
 "number:adjustamattress_alarm_draft_hour=0": {"status":"no_writes"},
 "number:adjustamattress_alarm_draft_hour=23": {"status":"no_writes"},
 "number:adjustamattress_alarm_draft_minute=0": {"status":"no_writes"},
-"number:adjustamattress_alarm_draft_minute=59": {"status":"no_writes"}
+"number:adjustamattress_alarm_draft_minute=59": {"status":"no_writes"},
+"preset_lounge": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe160020000000e5",5,200],[1200,"0000ffe9",true,"e6fe16000000000005",1,0]]}
 }},
 "adjustamattress:P1_L2": {
 "info": {"bed_type": "adjustamattress", "controller": "AdjustaMattressController", "module": "adjustamattress", "pulse": [5, 200]},
@@ -514,7 +523,8 @@
 "number:adjustamattress_alarm_draft_hour=0": {"status":"no_writes"},
 "number:adjustamattress_alarm_draft_hour=23": {"status":"no_writes"},
 "number:adjustamattress_alarm_draft_minute=0": {"status":"no_writes"},
-"number:adjustamattress_alarm_draft_minute=59": {"status":"no_writes"}
+"number:adjustamattress_alarm_draft_minute=59": {"status":"no_writes"},
+"preset_lounge": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe160020000000e5",5,200],[1200,"0000ffe9",true,"e6fe16000000000005",1,0]]}
 }},
 "adjustamattress:P4_L6": {
 "info": {"bed_type": "adjustamattress", "controller": "AdjustaMattressController", "module": "adjustamattress", "pulse": [5, 200]},
@@ -588,7 +598,8 @@
 "number:adjustamattress_alarm_draft_hour=0": {"status":"no_writes"},
 "number:adjustamattress_alarm_draft_hour=23": {"status":"no_writes"},
 "number:adjustamattress_alarm_draft_minute=0": {"status":"no_writes"},
-"number:adjustamattress_alarm_draft_minute=59": {"status":"no_writes"}
+"number:adjustamattress_alarm_draft_minute=59": {"status":"no_writes"},
+"preset_lounge": {"error":"ValueError","status":"error","writes":[]}
 }},
 "bailey_bed_control": {
 "info": {"bed_type": "bailey_bed_control", "connect_error": "ValueError", "controller": "RufRichmatController", "module": "ruf_richmat", "pulse": [10, 100]},
@@ -678,7 +689,8 @@
 "button:richmat_mh_5e": {"status":"ok","writes":[[0,"6e400002",false,"6e01005ecd",1,0],[107,"6e400002",false,"6e01006edd",1,0]]},
 "button:richmat_mh_5f": {"status":"ok","writes":[[0,"6e400002",false,"6e01005fce",1,0],[107,"6e400002",false,"6e01006edd",1,0]]},
 "button:richmat_mh_63": {"status":"ok","writes":[[0,"6e400002",false,"6e010063d2",1,0],[107,"6e400002",false,"6e01006edd",1,0]]},
-"button:richmat_mh_61": {"status":"ok","writes":[[0,"6e400002",false,"6e010061d0",1,0],[107,"6e400002",false,"6e01006edd",1,0]]}
+"button:richmat_mh_61": {"status":"ok","writes":[[0,"6e400002",false,"6e010061d0",1,0],[107,"6e400002",false,"6e01006edd",1,0]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"6e010059c8",1,0],[107,"6e400002",false,"6e01006edd",1,0]]}
 }},
 "bedjet_powerlayer": {
 "info": {"bed_type": "bedjet_powerlayer", "controller": "BedJetPowerLayerController", "module": "bedjet_powerlayer", "pulse": [10, 100]},
@@ -1635,7 +1647,8 @@
 "stop:legs_open": {"status":"ok","writes":[[0,"d44bc439",true,"6e01002695",3,107],[321,"d44bc439",true,"6e01005ecd",2,7]]},
 "stop:legs_close": {"status":"ok","writes":[[0,"d44bc439",true,"6e01002796",3,107],[321,"d44bc439",true,"6e01005ecd",2,7]]},
 "stop:pillow_open": {"status":"ok","writes":[[0,"d44bc439",true,"6e01002998",3,107],[321,"d44bc439",true,"6e01005ecd",2,7]]},
-"stop:pillow_close": {"status":"ok","writes":[[0,"d44bc439",true,"6e01002a99",3,107],[321,"d44bc439",true,"6e01005ecd",2,7]]}
+"stop:pillow_close": {"status":"ok","writes":[[0,"d44bc439",true,"6e01002a99",3,107],[321,"d44bc439",true,"6e01005ecd",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"d44bc439",true,"6e010065d4",1,0]]}
 }},
 "bf": {
 "info": {"bed_type": "bf", "controller": "BfCherishController", "module": "bf_cherish", "pulse": [10, 100]},
@@ -2431,7 +2444,8 @@
 "button:coolbase_head_massage": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe1600080000fe",1,0],[207,"0000ffe9",false,"e5fe160000000006",3,207]]},
 "button:coolbase_foot_massage": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe160004000002",1,0],[207,"0000ffe9",false,"e5fe160000000006",3,207]]},
 "button:coolbase_massage_mode": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe160000000402",1,0],[207,"0000ffe9",false,"e5fe160000000006",3,207]]},
-"button:coolbase_star": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe160000010005",1,0],[207,"0000ffe9",false,"e5fe160000000006",3,207]]}
+"button:coolbase_star": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe160000010005",1,0],[207,"0000ffe9",false,"e5fe160000000006",3,207]]},
+"preset_lounge": {"status":"no_writes"}
 }},
 "coolbase:props_write": {
 "info": {"bed_type": "coolbase", "controller": "CoolBaseController", "module": "coolbase", "pulse": [10, 100]},
@@ -2485,7 +2499,8 @@
 "button:coolbase_head_massage": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1600080000fe",1,0],[207,"0000ffe9",true,"e5fe160000000006",3,207]]},
 "button:coolbase_foot_massage": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160004000002",1,0],[207,"0000ffe9",true,"e5fe160000000006",3,207]]},
 "button:coolbase_massage_mode": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160000000402",1,0],[207,"0000ffe9",true,"e5fe160000000006",3,207]]},
-"button:coolbase_star": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160000010005",1,0],[207,"0000ffe9",true,"e5fe160000000006",3,207]]}
+"button:coolbase_star": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160000010005",1,0],[207,"0000ffe9",true,"e5fe160000000006",3,207]]},
+"preset_lounge": {"status":"no_writes"}
 }},
 "coolbase:props_wwr": {
 "info": {"bed_type": "coolbase", "controller": "CoolBaseController", "module": "coolbase", "pulse": [10, 100]},
@@ -2539,7 +2554,8 @@
 "button:coolbase_head_massage": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe1600080000fe",1,0],[207,"0000ffe9",false,"e5fe160000000006",3,207]]},
 "button:coolbase_foot_massage": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe160004000002",1,0],[207,"0000ffe9",false,"e5fe160000000006",3,207]]},
 "button:coolbase_massage_mode": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe160000000402",1,0],[207,"0000ffe9",false,"e5fe160000000006",3,207]]},
-"button:coolbase_star": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe160000010005",1,0],[207,"0000ffe9",false,"e5fe160000000006",3,207]]}
+"button:coolbase_star": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe160000010005",1,0],[207,"0000ffe9",false,"e5fe160000000006",3,207]]},
+"preset_lounge": {"status":"no_writes"}
 }},
 "customatic_clarity": {
 "info": {"bed_type": "customatic_clarity", "controller": "CustomaticController", "module": "customatic", "pulse": [8, 120]},
@@ -3019,7 +3035,9 @@
 "button:zseries_save_tv": {"status":"ok","writes":[[0,"62741525",true,"0c02080040000000000000000000",51,100],[5100,"62741525",true,"0c02000000000000000000000000",2,100]]},
 "button:zseries_light_toggle": {"status":"ok","writes":[[0,"62741525",true,"0c02000200000000000000000000",11,100],[1100,"62741525",true,"0c02000000000000000000000000",2,100]]},
 "button:zseries_massage_timer_cycle": {"status":"ok","writes":[[0,"62741525",true,"0c02000002000000000000000000",11,100],[1100,"62741525",true,"0c02000000000000000000000000",2,100]]},
-"button:zseries_massage_intensity_cycle": {"status":"ok","writes":[[0,"62741525",true,"0c0200000c000000000000000000",11,100],[1100,"62741525",true,"0c02000000000000000000000000",2,100]]}
+"button:zseries_massage_intensity_cycle": {"status":"ok","writes":[[0,"62741525",true,"0c0200000c000000000000000000",11,100],[1100,"62741525",true,"0c02000000000000000000000000",2,100]]},
+"preset_incline": {"status":"ok","writes":[[0,"62741525",true,"0c02000040000000000000000000",11,100],[1100,"62741525",true,"0c02000000000000000000000000",2,100]]},
+"preset_lounge": {"error":"ValueError","status":"error","writes":[]}
 }},
 "dewertokin": {
 "info": {"bed_type": "dewertokin", "controller": "OkinHandleController", "module": "okin_handle", "pulse": [10, 100]},
@@ -3155,6 +3173,7 @@
 "button:doublesleep_66": {"status":"ok","writes":[[0,"6e400002",false,"01b102",1,0]]},
 "select:doublesleep_child_lock=off": {"status":"no_writes"},
 "select:doublesleep_child_lock=on": {"status":"no_writes"},
+"preset_lounge": {"error":"ValueError","status":"error","writes":[]},
 "background": {"status":"background","writes":[[90915,"6e400002",false,"01b301",1,0]]}
 }},
 "doublesleep:p1": {
@@ -3248,6 +3267,7 @@
 "button:doublesleep_66": {"status":"ok","writes":[[0,"6e400002",false,"01b102",1,0]]},
 "select:doublesleep_child_lock=off": {"status":"no_writes"},
 "select:doublesleep_child_lock=on": {"status":"no_writes"},
+"preset_lounge": {"error":"ValueError","status":"error","writes":[]},
 "background": {"status":"background","writes":[[90915,"6e400002",false,"01b301",1,0]]}
 }},
 "doublesleep:p2": {
@@ -3349,6 +3369,7 @@
 "button:doublesleep_90": {"status":"ok","writes":[[0,"6e400002",false,"aa0000060c020000",1,0],[207,"6e400002",false,"2a0000068100",1,0]]},
 "select:doublesleep_child_lock=off": {"status":"no_writes"},
 "select:doublesleep_child_lock=on": {"status":"no_writes"},
+"preset_lounge": {"error":"ValueError","status":"error","writes":[[0,"6e400002",false,"aa000001010400000000",1,0]]},
 "background": {"status":"background","writes":[[67330,"6e400002",false,"01b301",1,0]]}
 }},
 "doublesleep:p3": {
@@ -3385,7 +3406,8 @@
 "button:doublesleep_73": {"status":"ok","writes":[[0,"6e400002",true,"021c0100270000110359445920007b226964223a32372c22636d64223a22735f696e6974222c2276616c223a307d",1,0]]},
 "button:doublesleep_77": {"status":"ok","writes":[[0,"6e400002",true,"001e0100380000110359445931007b226964223a32392c22636d64223a22715f7265616c74696d65222c2276616c223a7b2274696d65223a36353533357d7d",1,0]]},
 "select:doublesleep_child_lock=off": {"status":"no_writes"},
-"select:doublesleep_child_lock=on": {"status":"no_writes"}
+"select:doublesleep_child_lock=on": {"status":"no_writes"},
+"preset_lounge": {"error":"ValueError","status":"error","writes":[]}
 }},
 "ergo_slim": {
 "info": {"bed_type": "ergo_slim", "controller": "ErgoSlimController", "module": "ergo_slim", "pulse": [10, 100]},
@@ -3496,7 +3518,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160100000005",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
 "stop:head_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160200000004",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160400000002",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1608000000fe",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1608000000fe",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1600200000e6",1,0]]}
 }},
 "ergomotion_4": {
 "info": {"bed_type": "ergomotion_4", "controller": "Ergomotion4Controller", "module": "ergomotion4", "pulse": [10, 100]},
@@ -7266,7 +7289,8 @@
 "stop:back_open": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01010000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01030000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011c0000",1,0]]},
 "stop:back_close": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01020000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01030000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011c0000",1,0]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01040000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01060000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011c0000",1,0]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01050000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01060000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011c0000",1,0]]}
+"stop:legs_close": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01050000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01060000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011c0000",1,0]]},
+"preset_lounge": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01a10000",1,0]]}
 }},
 "kaidi:floyd": {
 "info": {"bed_type": "kaidi", "controller": "FloydController", "module": "floyd", "pulse": [10, 100]},
@@ -7361,7 +7385,8 @@
 "stop:back_open": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01010000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01030000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011c0000",1,0]]},
 "stop:back_close": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01020000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01030000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011c0000",1,0]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01040000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01060000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011c0000",1,0]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01050000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01060000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011c0000",1,0]]}
+"stop:legs_close": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01050000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01060000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011c0000",1,0]]},
+"preset_lounge": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01a10000",1,0]]}
 }},
 "kaidi:props_wwr": {
 "info": {"bed_type": "kaidi", "controller": "KaidiController", "module": "kaidi", "pulse": [10, 100]},
@@ -7410,7 +7435,8 @@
 "stop:back_open": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",false,"030403020120ffffffff01010000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",false,"030403020120ffffffff01030000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",false,"030403020120ffffffff011c0000",1,0]]},
 "stop:back_close": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",false,"030403020120ffffffff01020000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",false,"030403020120ffffffff01030000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",false,"030403020120ffffffff011c0000",1,0]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",false,"030403020120ffffffff01040000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",false,"030403020120ffffffff01060000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",false,"030403020120ffffffff011c0000",1,0]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",false,"030403020120ffffffff01050000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",false,"030403020120ffffffff01060000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",false,"030403020120ffffffff011c0000",1,0]]}
+"stop:legs_close": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",false,"030403020120ffffffff01050000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",false,"030403020120ffffffff01060000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",false,"030403020120ffffffff011c0000",1,0]]},
+"preset_lounge": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",false,"030403020120ffffffff01a10000",1,0]]}
 }},
 "kaidi:seat_1": {
 "info": {"bed_type": "kaidi", "controller": "KaidiController", "module": "kaidi", "pulse": [10, 100]},
@@ -7459,7 +7485,8 @@
 "stop:back_open": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01010000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01030000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011c0000",1,0]]},
 "stop:back_close": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01020000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01030000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011c0000",1,0]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01040000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01060000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011c0000",1,0]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01050000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01060000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011c0000",1,0]]}
+"stop:legs_close": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01050000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01060000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011c0000",1,0]]},
+"preset_lounge": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01a10000",1,0]]}
 }},
 "kaidi:seat_1_2": {
 "info": {"bed_type": "kaidi", "controller": "KaidiController", "module": "kaidi", "pulse": [10, 100]},
@@ -7508,7 +7535,8 @@
 "stop:back_open": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01010000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01030000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff010c0000",1,0],[335,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011c0000",1,0],[342,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011d0000",1,0]]},
 "stop:back_close": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01020000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01030000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff010c0000",1,0],[335,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011c0000",1,0],[342,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011d0000",1,0]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01040000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01060000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff010f0000",1,0],[335,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011c0000",1,0],[342,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011d0000",1,0]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01050000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01060000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff010f0000",1,0],[335,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011c0000",1,0],[342,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011d0000",1,0]]}
+"stop:legs_close": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01050000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01060000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff010f0000",1,0],[335,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011c0000",1,0],[342,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011d0000",1,0]]},
+"preset_lounge": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01a10000",1,0],[7,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01a20000",1,0]]}
 }},
 "kaidi:seat_2": {
 "info": {"bed_type": "kaidi", "controller": "KaidiController", "module": "kaidi", "pulse": [10, 100]},
@@ -7557,7 +7585,8 @@
 "stop:back_open": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff010a0000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff010c0000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011d0000",1,0]]},
 "stop:back_close": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff010b0000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff010c0000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011d0000",1,0]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff010d0000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff010f0000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011d0000",1,0]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff010e0000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff010f0000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011d0000",1,0]]}
+"stop:legs_close": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff010e0000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff010f0000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011d0000",1,0]]},
+"preset_lounge": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01a20000",1,0]]}
 }},
 "kaidi:seat_3": {
 "info": {"bed_type": "kaidi", "controller": "KaidiController", "module": "kaidi", "pulse": [10, 100]},
@@ -7604,7 +7633,8 @@
 "stop:legs_open": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01160000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01180000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01150000",1,0],[335,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01180000",1,0],[342,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011b0000",1,0]]},
 "stop:legs_close": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01170000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01180000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01150000",1,0],[335,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01180000",1,0],[342,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011b0000",1,0]]},
 "stop:lumbar_open": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01190000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011b0000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01150000",1,0],[335,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01180000",1,0],[342,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011b0000",1,0]]},
-"stop:lumbar_close": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011a0000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011b0000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01150000",1,0],[335,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01180000",1,0],[342,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011b0000",1,0]]}
+"stop:lumbar_close": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011a0000",3,107],[321,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011b0000",1,0],[328,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01150000",1,0],[335,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01180000",1,0],[342,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff011b0000",1,0]]},
+"preset_lounge": {"status":"ok","writes":[[0,"9e5d1e47-5c13-43a0-8635-82adffc1386f",true,"030403020120ffffffff01a30000",1,0]]}
 }},
 "keeson": {
 "info": {"bed_type": "keeson", "controller": "KeesonController", "module": "keeson", "pulse": [10, 100]},
@@ -7665,7 +7695,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303031222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[7,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303031222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[114,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303031222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[121,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303031222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[228,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303031222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[235,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303031222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[342,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303030222c226374726d223a302c226b6d223a312c226b65796b74223a307d7d",2,7]]},
 "stop:head_close": {"status":"ok","writes":[[0,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303032222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[7,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303032222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[114,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303032222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[121,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303032222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[228,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303032222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[235,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303032222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[342,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303030222c226374726d223a302c226b6d223a312c226b65796b74223a307d7d",2,7]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303034222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[7,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303034222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[114,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303034222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[121,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303034222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[228,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303034222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[235,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303034222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[342,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303030222c226374726d223a302c226b6d223a312c226b65796b74223a307d7d",2,7]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303038222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[7,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303038222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[114,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303038222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[121,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303038222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[228,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303038222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[235,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303038222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[342,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303030222c226374726d223a302c226b6d223a312c226b65796b74223a307d7d",2,7]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303038222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[7,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303038222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[114,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303038222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[121,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303038222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[228,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303038222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[235,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303038222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[342,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303030222c226374726d223a302c226b6d223a312c226b65796b74223a307d7d",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303032303030222c226374726d223a312c226b6d223a312c226b65796b74223a307d7d",1,0]]}
 }},
 "keeson:adjustable_lite": {
 "info": {"bed_type": "keeson", "controller": "KeesonController", "module": "keeson", "pulse": [10, 100]},
@@ -7724,7 +7755,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"6e400002",false,"040200000001",1,0]]},
 "stop:head_close": {"status":"ok","writes":[[0,"6e400002",false,"040200000002",1,0]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"6e400002",false,"040200000004",1,0]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"6e400002",false,"040200000008",1,0]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"6e400002",false,"040200000008",1,0]]},
+"preset_lounge": {"status":"no_writes"}
 }},
 "keeson:adjustable_lite:props_write": {
 "info": {"bed_type": "keeson", "controller": "KeesonController", "module": "keeson", "pulse": [10, 100]},
@@ -7783,7 +7815,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"6e400002",true,"040200000001",1,0]]},
 "stop:head_close": {"status":"ok","writes":[[0,"6e400002",true,"040200000002",1,0]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"6e400002",true,"040200000004",1,0]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"6e400002",true,"040200000008",1,0]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"6e400002",true,"040200000008",1,0]]},
+"preset_lounge": {"status":"no_writes"}
 }},
 "keeson:adjustable_lite:props_wwr": {
 "info": {"bed_type": "keeson", "controller": "KeesonController", "module": "keeson", "pulse": [10, 100]},
@@ -7842,7 +7875,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"6e400002",false,"040200000001",1,0]]},
 "stop:head_close": {"status":"ok","writes":[[0,"6e400002",false,"040200000002",1,0]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"6e400002",false,"040200000004",1,0]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"6e400002",false,"040200000008",1,0]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"6e400002",false,"040200000008",1,0]]},
+"preset_lounge": {"status":"no_writes"}
 }},
 "keeson:americanstar": {
 "info": {"bed_type": "keeson", "controller": "OreComfortBedController", "module": "ore_comfort_bed", "pulse": [10, 100]},
@@ -8124,7 +8158,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160100000005",1,0],[407,"0000ffe9",true,"e5fe160000000006",2,7]]},
 "stop:head_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160200000004",1,0],[407,"0000ffe9",true,"e5fe160000000006",2,7]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160400000002",1,0],[407,"0000ffe9",true,"e5fe160000000006",2,7]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1608000000fe",1,0],[407,"0000ffe9",true,"e5fe160000000006",2,7]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1608000000fe",1,0],[407,"0000ffe9",true,"e5fe160000000006",2,7]]},
+"preset_lounge": {"status":"no_writes"}
 }},
 "keeson:base:props_write": {
 "info": {"bed_type": "keeson", "controller": "KeesonController", "module": "keeson", "pulse": [10, 100]},
@@ -8190,7 +8225,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160100000005",1,0],[407,"0000ffe9",true,"e5fe160000000006",2,7]]},
 "stop:head_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160200000004",1,0],[407,"0000ffe9",true,"e5fe160000000006",2,7]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160400000002",1,0],[407,"0000ffe9",true,"e5fe160000000006",2,7]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1608000000fe",1,0],[407,"0000ffe9",true,"e5fe160000000006",2,7]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1608000000fe",1,0],[407,"0000ffe9",true,"e5fe160000000006",2,7]]},
+"preset_lounge": {"status":"no_writes"}
 }},
 "keeson:base:props_wwr": {
 "info": {"bed_type": "keeson", "controller": "KeesonController", "module": "keeson", "pulse": [10, 100]},
@@ -8256,7 +8292,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe160100000005",1,0],[407,"0000ffe9",false,"e5fe160000000006",2,7]]},
 "stop:head_close": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe160200000004",1,0],[407,"0000ffe9",false,"e5fe160000000006",2,7]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe160400000002",1,0],[407,"0000ffe9",false,"e5fe160000000006",2,7]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe1608000000fe",1,0],[407,"0000ffe9",false,"e5fe160000000006",2,7]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe1608000000fe",1,0],[407,"0000ffe9",false,"e5fe160000000006",2,7]]},
+"preset_lounge": {"status":"no_writes"}
 }},
 "keeson:bedsense_bases": {
 "info": {"bed_type": "keeson", "controller": "OreComfortBedController", "module": "ore_comfort_bed", "pulse": [10, 100]},
@@ -8425,7 +8462,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160100000005",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
 "stop:head_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160200000004",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160400000002",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1608000000fe",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1608000000fe",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1600200000e6",1,0]]}
 }},
 "keeson:heal_every_night": {
 "info": {"bed_type": "keeson", "controller": "OkinAppKeesonController", "gaps": ["massage_foot_down", "massage_foot_up", "massage_head_down", "massage_head_up", "massage_wave_next", "massage_wave_previous"], "module": "keeson_okin_apps", "pulse": [10, 100]},
@@ -8747,7 +8785,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303031222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[7,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303031222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[114,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303031222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[121,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303031222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[228,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303031222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[235,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303031222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[342,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303030222c226374726d223a302c226b6d223a312c226b65796b74223a307d7d",2,7]]},
 "stop:head_close": {"status":"ok","writes":[[0,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303032222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[7,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303032222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[114,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303032222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[121,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303032222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[228,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303032222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[235,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303032222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[342,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303030222c226374726d223a302c226b6d223a312c226b65796b74223a307d7d",2,7]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303034222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[7,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303034222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[114,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303034222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[121,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303034222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[228,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303034222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[235,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303034222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[342,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303030222c226374726d223a302c226b6d223a312c226b65796b74223a307d7d",2,7]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303038222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[7,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303038222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[114,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303038222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[121,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303038222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[228,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303038222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[235,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303038222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[342,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303030222c226374726d223a302c226b6d223a312c226b65796b74223a307d7d",2,7]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303038222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[7,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303038222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[114,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303038222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[121,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303038222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[228,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303038222c226374726d223a312c226b6d223a332c226b65796b74223a317d7d",1,0],[235,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303038222c226374726d223a302c226b6d223a332c226b65796b74223a317d7d",1,0],[342,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303030303030222c226374726d223a302c226b6d223a312c226b65796b74223a307d7d",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"0000b002",true,"7b22636f6465223a322c2264766964223a22436f6e7472616374205465737420426564222c22636d64223a7b226b6579223a223030303032303030222c226374726d223a312c226b6d223a312c226b65796b74223a307d7d",1,0]]}
 }},
 "keeson:ksbt": {
 "info": {"bed_type": "keeson", "controller": "KeesonController", "module": "keeson", "pulse": [10, 100]},
@@ -8806,7 +8845,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"6e400002",true,"040200000001",3,107],[621,"6e400002",true,"00b0",3,307]]},
 "stop:head_close": {"status":"ok","writes":[[0,"6e400002",true,"040200000002",3,107],[621,"6e400002",true,"00b0",3,307]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"6e400002",true,"040200000004",3,107],[621,"6e400002",true,"00b0",3,307]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"6e400002",true,"040200000008",3,107],[621,"6e400002",true,"00b0",3,307]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"6e400002",true,"040200000008",3,107],[621,"6e400002",true,"00b0",3,307]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",true,"040200002000",1,0]]}
 }},
 "keeson:ksbt04c": {
 "info": {"bed_type": "keeson", "controller": "KeesonController", "module": "keeson", "pulse": [10, 100]},
@@ -8862,7 +8902,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"6e400002",true,"040200000001f8",1,0],[307,"6e400002",true,"040200000000f9",2,7]]},
 "stop:head_close": {"status":"ok","writes":[[0,"6e400002",true,"040200000002f7",1,0],[307,"6e400002",true,"040200000000f9",2,7]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"6e400002",true,"040200000004f5",1,0],[307,"6e400002",true,"040200000000f9",2,7]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"6e400002",true,"040200000008f1",1,0],[307,"6e400002",true,"040200000000f9",2,7]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"6e400002",true,"040200000008f1",1,0],[307,"6e400002",true,"040200000000f9",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",true,"040200002000d9",1,0]]}
 }},
 "keeson:ksbt:props_write": {
 "info": {"bed_type": "keeson", "controller": "KeesonController", "module": "keeson", "pulse": [10, 100]},
@@ -8921,7 +8962,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"6e400002",true,"040200000001",3,107],[621,"6e400002",true,"00b0",3,307]]},
 "stop:head_close": {"status":"ok","writes":[[0,"6e400002",true,"040200000002",3,107],[621,"6e400002",true,"00b0",3,307]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"6e400002",true,"040200000004",3,107],[621,"6e400002",true,"00b0",3,307]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"6e400002",true,"040200000008",3,107],[621,"6e400002",true,"00b0",3,307]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"6e400002",true,"040200000008",3,107],[621,"6e400002",true,"00b0",3,307]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",true,"040200002000",1,0]]}
 }},
 "keeson:ksbt:props_wwr": {
 "info": {"bed_type": "keeson", "controller": "KeesonController", "module": "keeson", "pulse": [10, 100]},
@@ -8980,7 +9022,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"6e400002",false,"040200000001",3,107],[621,"6e400002",false,"00b0",3,307]]},
 "stop:head_close": {"status":"ok","writes":[[0,"6e400002",false,"040200000002",3,107],[621,"6e400002",false,"00b0",3,307]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"6e400002",false,"040200000004",3,107],[621,"6e400002",false,"00b0",3,307]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"6e400002",false,"040200000008",3,107],[621,"6e400002",false,"00b0",3,307]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"6e400002",false,"040200000008",3,107],[621,"6e400002",false,"00b0",3,307]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"040200002000",1,0]]}
 }},
 "keeson:ksbt_cr": {
 "info": {"bed_type": "keeson", "controller": "KeesonController", "module": "keeson", "pulse": [10, 100]},
@@ -9037,7 +9080,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"6e400002",true,"05020000000100",1,0],[307,"6e400002",true,"05020000000000",2,7]]},
 "stop:head_close": {"status":"ok","writes":[[0,"6e400002",true,"05020000000200",1,0],[307,"6e400002",true,"05020000000000",2,7]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"6e400002",true,"05020000000400",1,0],[307,"6e400002",true,"05020000000000",2,7]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"6e400002",true,"05020000000800",1,0],[307,"6e400002",true,"05020000000000",2,7]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"6e400002",true,"05020000000800",1,0],[307,"6e400002",true,"05020000000000",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",true,"05020000200000",1,0]]}
 }},
 "keeson:maxcoil_una": {
 "info": {"bed_type": "keeson", "controller": "OreComfortBedController", "module": "ore_comfort_bed", "pulse": [10, 100]},
@@ -9152,7 +9196,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe160100000004",3,107],[321,"0000ffe9",true,"e6fe160000000005",2,7]]},
 "stop:head_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe160200000003",3,107],[321,"0000ffe9",true,"e6fe160000000005",2,7]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe160400000001",3,107],[321,"0000ffe9",true,"e6fe160000000005",2,7]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe1608000000fd",3,107],[321,"0000ffe9",true,"e6fe160000000005",2,7]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe1608000000fd",3,107],[321,"0000ffe9",true,"e6fe160000000005",2,7]]},
+"preset_lounge": {"status":"no_writes"}
 }},
 "keeson:okin_seating": {
 "info": {"bed_type": "keeson", "controller": "OkinAppKeesonController", "module": "keeson_okin_apps", "pulse": [10, 100]},
@@ -9251,7 +9296,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"6e400002",true,"04020000000100",3,107],[321,"6e400002",true,"04020000000000",2,7]]},
 "stop:head_close": {"status":"ok","writes":[[0,"6e400002",true,"04020000000200",3,107],[321,"6e400002",true,"04020000000000",2,7]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"6e400002",true,"04020000000400",3,107],[321,"6e400002",true,"04020000000000",2,7]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"6e400002",true,"04020000000800",3,107],[321,"6e400002",true,"04020000000000",2,7]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"6e400002",true,"04020000000800",3,107],[321,"6e400002",true,"04020000000000",2,7]]},
+"preset_lounge": {"status":"no_writes"}
 }},
 "keeson:restonic_a": {
 "info": {"bed_type": "keeson", "controller": "KeesonController", "module": "keeson", "pulse": [10, 100]},
@@ -9308,7 +9354,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe160100000005",3,107],[321,"0000ffe9",false,"e5fe160000000006",2,7]]},
 "stop:head_close": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe160200000004",3,107],[321,"0000ffe9",false,"e5fe160000000006",2,7]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe160400000002",3,107],[321,"0000ffe9",false,"e5fe160000000006",2,7]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe1608000000fe",3,107],[321,"0000ffe9",false,"e5fe160000000006",2,7]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe1608000000fe",3,107],[321,"0000ffe9",false,"e5fe160000000006",2,7]]},
+"preset_lounge": {"status":"no_writes"}
 }},
 "keeson:restonic_a:props_write": {
 "info": {"bed_type": "keeson", "controller": "KeesonController", "module": "keeson", "pulse": [10, 100]},
@@ -9365,7 +9412,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160100000005",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
 "stop:head_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160200000004",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160400000002",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1608000000fe",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1608000000fe",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
+"preset_lounge": {"status":"no_writes"}
 }},
 "keeson:restonic_a:props_wwr": {
 "info": {"bed_type": "keeson", "controller": "KeesonController", "module": "keeson", "pulse": [10, 100]},
@@ -9422,7 +9470,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe160100000005",3,107],[321,"0000ffe9",false,"e5fe160000000006",2,7]]},
 "stop:head_close": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe160200000004",3,107],[321,"0000ffe9",false,"e5fe160000000006",2,7]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe160400000002",3,107],[321,"0000ffe9",false,"e5fe160000000006",2,7]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe1608000000fe",3,107],[321,"0000ffe9",false,"e5fe160000000006",2,7]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe1608000000fe",3,107],[321,"0000ffe9",false,"e5fe160000000006",2,7]]},
+"preset_lounge": {"status":"no_writes"}
 }},
 "keeson:restonic_b": {
 "info": {"bed_type": "keeson", "controller": "KeesonController", "module": "keeson", "pulse": [10, 100]},
@@ -9492,7 +9541,8 @@
 "stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe1608000000fe",3,107],[321,"0000ffe9",false,"e5fe160000000006",2,7]]},
 "stop:back_legs_open": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe160500000001",3,107],[321,"0000ffe9",false,"e5fe160000000006",2,7]]},
 "stop:back_legs_close": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe160a000000fc",3,107],[321,"0000ffe9",false,"e5fe160000000006",2,7]]},
-"button:restonic_zzz": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe160080000086",1,0],[107,"0000ffe9",false,"e5fe160000000006",1,0]]}
+"button:restonic_zzz": {"status":"ok","writes":[[0,"0000ffe9",false,"e5fe160080000086",1,0],[107,"0000ffe9",false,"e5fe160000000006",1,0]]},
+"preset_lounge": {"status":"no_writes"}
 }},
 "keeson:serta": {
 "info": {"bed_type": "keeson", "controller": "KeesonController", "module": "keeson", "pulse": [10, 100]},
@@ -9553,7 +9603,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160100000005",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
 "stop:head_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160200000004",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160400000002",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1608000000fe",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1608000000fe",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
+"preset_lounge": {"status":"no_writes"}
 }},
 "keeson:simon_li": {
 "info": {"bed_type": "keeson", "controller": "OkinAppKeesonController", "module": "keeson_okin_apps", "pulse": [10, 100]},
@@ -9780,7 +9831,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160000000105",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
 "stop:head_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160000000204",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160000000402",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1600000008fe",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1600000008fe",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
+"preset_lounge": {"status":"no_writes"}
 }},
 "keeson:sleep_harmony": {
 "info": {"bed_type": "keeson", "controller": "KeesonController", "module": "keeson", "pulse": [10, 100]},
@@ -9837,7 +9889,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"6e400002",true,"040200000001f8",1,0],[507,"6e400002",true,"040200000000f9",2,7]]},
 "stop:head_close": {"status":"ok","writes":[[0,"6e400002",true,"040200000002f7",1,0],[507,"6e400002",true,"040200000000f9",2,7]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"6e400002",true,"040200000004f5",1,0],[507,"6e400002",true,"040200000000f9",2,7]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"6e400002",true,"040200000008f1",1,0],[507,"6e400002",true,"040200000000f9",2,7]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"6e400002",true,"040200000008f1",1,0],[507,"6e400002",true,"040200000000f9",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",true,"040200002000d9",1,0],[207,"6e400002",true,"040200000000f9",1,0]]}
 }},
 "leggett_gen2": {
 "info": {"bed_type": "leggett_gen2", "controller": "LeggettGen2Controller", "module": "leggett_gen2", "pulse": [10, 100]},
@@ -10188,7 +10241,8 @@
 "massage_mode_step": {"status":"ok","writes":[[0,"d44bc439",true,"6e010038a7",1,0]]},
 "massage_timer_10": {"status":"ok","writes":[[0,"d44bc439",true,"6e01005fce",1,0]]},
 "massage_timer_20": {"status":"ok","writes":[[0,"d44bc439",true,"6e010063d2",1,0]]},
-"massage_timer_30": {"status":"ok","writes":[[0,"d44bc439",true,"6e010061d0",1,0]]}
+"massage_timer_30": {"status":"ok","writes":[[0,"d44bc439",true,"6e010061d0",1,0]]},
+"preset_lounge": {"status":"ok","writes":[[0,"d44bc439",true,"6e010059c8",100,307],[30400,"d44bc439",true,"6e01006edd",1,0]]}
 }},
 "leggett_platt:okin": {
 "info": {"bed_type": "leggett_platt", "controller": "LeggettOkinController", "gaps": ["set_control_mode_press_and_hold"], "module": "leggett_okin", "pulse": [10, 100]},
@@ -10313,7 +10367,8 @@
 "massage_mode_step": {"status":"ok","writes":[[0,"d44bc439",true,"6e010038a7",1,0]]},
 "massage_timer_10": {"status":"ok","writes":[[0,"d44bc439",true,"6e01005fce",1,0]]},
 "massage_timer_20": {"status":"ok","writes":[[0,"d44bc439",true,"6e010063d2",1,0]]},
-"massage_timer_30": {"status":"ok","writes":[[0,"d44bc439",true,"6e010061d0",1,0]]}
+"massage_timer_30": {"status":"ok","writes":[[0,"d44bc439",true,"6e010061d0",1,0]]},
+"preset_lounge": {"status":"ok","writes":[[0,"d44bc439",true,"6e010059c8",100,307],[30400,"d44bc439",true,"6e01006edd",1,0]]}
 }},
 "limoss": {
 "info": {"bed_type": "limoss", "controller": "LimossController", "module": "limoss", "pulse": [12, 80]},
@@ -11284,7 +11339,8 @@
 "stop:back_open": {"status":"ok","writes":[[0,"6e400002",true,"0502000000010000",3,150],[600,"6e400002",true,"0502000000000000",2,7]]},
 "stop:back_close": {"status":"ok","writes":[[0,"6e400002",true,"0502000000020000",3,150],[600,"6e400002",true,"0502000000000000",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"6e400002",true,"0502000000040000",3,150],[600,"6e400002",true,"0502000000000000",2,7]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"6e400002",true,"0502000000080000",3,150],[600,"6e400002",true,"0502000000000000",2,7]]}
+"stop:legs_close": {"status":"ok","writes":[[0,"6e400002",true,"0502000000080000",3,150],[600,"6e400002",true,"0502000000000000",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",true,"0502000020000000",1,0],[7,"6e400002",true,"0502000000000000",1,0]]}
 }},
 "malouf_legacy_okin": {
 "info": {"bed_type": "malouf_legacy_okin", "controller": "MaloufLegacyOkinController", "module": "malouf", "pulse": [7, 150]},
@@ -11338,7 +11394,8 @@
 "stop:back_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe16010000000004",2,157],[314,"0000ffe9",true,"e6fe16000000000005",2,7]]},
 "stop:back_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe16020000000003",2,157],[314,"0000ffe9",true,"e6fe16000000000005",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe16040000000001",2,157],[314,"0000ffe9",true,"e6fe16000000000005",2,7]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe160800000000fd",2,157],[314,"0000ffe9",true,"e6fe16000000000005",2,7]]}
+"stop:legs_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe160800000000fd",2,157],[314,"0000ffe9",true,"e6fe16000000000005",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe160020000000e5",3,7]]}
 }},
 "malouf_new_okin": {
 "info": {"bed_type": "malouf_new_okin", "controller": "MaloufNewOkinController", "module": "malouf", "pulse": [10, 100]},
@@ -11392,7 +11449,8 @@
 "stop:back_open": {"status":"ok","writes":[[0,"6e400002",true,"0502000000010000",3,107],[321,"6e400002",true,"0502000000000000",2,7]]},
 "stop:back_close": {"status":"ok","writes":[[0,"6e400002",true,"0502000000020000",3,107],[321,"6e400002",true,"0502000000000000",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"6e400002",true,"0502000000040000",3,107],[321,"6e400002",true,"0502000000000000",2,7]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"6e400002",true,"0502000000080000",3,107],[321,"6e400002",true,"0502000000000000",2,7]]}
+"stop:legs_close": {"status":"ok","writes":[[0,"6e400002",true,"0502000000080000",3,107],[321,"6e400002",true,"0502000000000000",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",true,"0502000020000000",1,0],[7,"6e400002",true,"0502000000000000",1,0]]}
 }},
 "mattressfirm": {
 "info": {"bed_type": "mattressfirm", "controller": "OkinNordicController", "module": "okin_nordic", "pulse": [10, 100]},
@@ -11442,7 +11500,9 @@
 "stop:legs_open": {"status":"ok","writes":[[0,"6e400002",true,"5a0103103002a5",3,107],[321,"6e400002",true,"5a010310300fa5",2,7]]},
 "stop:legs_close": {"status":"ok","writes":[[0,"6e400002",true,"5a0103103003a5",3,107],[321,"6e400002",true,"5a010310300fa5",2,7]]},
 "stop:lumbar_open": {"status":"ok","writes":[[0,"6e400002",true,"5a0103103006a5",3,107],[321,"6e400002",true,"5a010310300fa5",2,7]]},
-"stop:lumbar_close": {"status":"ok","writes":[[0,"6e400002",true,"5a0103103007a5",3,107],[321,"6e400002",true,"5a010310300fa5",2,7]]}
+"stop:lumbar_close": {"status":"ok","writes":[[0,"6e400002",true,"5a0103103007a5",3,107],[321,"6e400002",true,"5a010310300fa5",2,7]]},
+"preset_incline": {"status":"ok","writes":[[0,"6e400002",true,"5a0103103018a5",100,307],[30400,"6e400002",true,"5a010310300fa5",1,0]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",true,"5a0103103017a5",100,307],[30400,"6e400002",true,"5a010310300fa5",1,0]]}
 }},
 "motion_bed": {
 "info": {"bed_type": "motion_bed", "controller": "MotionBedController", "gaps": ["button:motion_bed_audio_preview_1", "button:motion_bed_audio_preview_2", "button:motion_bed_audio_preview_3", "button:motion_bed_audio_preview_4", "button:motion_bed_audio_preview_5", "button:motion_bed_audio_stop"], "module": "motion_bed", "pulse": [10, 100]},
@@ -11808,7 +11868,8 @@
 "stop:legs_open": {"status":"ok","writes":[[0,"62741525",false,"5a0103103002a5",3,107],[321,"62741525",false,"5a010310300fa5",2,7]]},
 "stop:legs_close": {"status":"ok","writes":[[0,"62741525",false,"5a0103103003a5",3,107],[321,"62741525",false,"5a010310300fa5",2,7]]},
 "stop:lumbar_open": {"status":"ok","writes":[[0,"62741525",false,"5a0103103004a5",3,107],[321,"62741525",false,"5a010310300fa5",2,7]]},
-"stop:lumbar_close": {"status":"ok","writes":[[0,"62741525",false,"5a0103103007a5",3,107],[321,"62741525",false,"5a010310300fa5",2,7]]}
+"stop:lumbar_close": {"status":"ok","writes":[[0,"62741525",false,"5a0103103007a5",3,107],[321,"62741525",false,"5a010310300fa5",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"62741525",false,"5a0103103011a5",100,307],[30400,"62741525",false,"5a010310300fa5",1,0]]}
 }},
 "octo": {
 "info": {"bed_type": "octo", "controller": "OctoController", "gaps": ["lights_toggle"], "module": "octo", "pulse": [3, 350]},
@@ -12062,7 +12123,8 @@
 "stop:legs_open": {"status":"ok","writes":[[0,"6e400002",false,"08020000000400000000",3,107],[321,"6e400002",false,"08020000000000000000",2,7]]},
 "stop:legs_close": {"status":"ok","writes":[[0,"6e400002",false,"08020000000800000000",3,107],[321,"6e400002",false,"08020000000000000000",2,7]]},
 "stop:lumbar_open": {"status":"ok","writes":[[0,"6e400002",false,"08020000001000000000",3,107],[321,"6e400002",false,"08020000000000000000",2,7]]},
-"stop:lumbar_close": {"status":"ok","writes":[[0,"6e400002",false,"08020000002000000000",3,107],[321,"6e400002",false,"08020000000000000000",2,7]]}
+"stop:lumbar_close": {"status":"ok","writes":[[0,"6e400002",false,"08020000002000000000",3,107],[321,"6e400002",false,"08020000000000000000",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"08020000200000000000",1,0]]}
 }},
 "okin_64bit:custom": {
 "info": {"bed_type": "okin_64bit", "controller": "Okin64BitController", "module": "okin_64bit", "pulse": [10, 100]},
@@ -12113,7 +12175,8 @@
 "stop:legs_open": {"status":"ok","writes":[[0,"62741525",true,"08020000000400000000",3,107],[321,"62741525",true,"08020000000000000000",2,7]]},
 "stop:legs_close": {"status":"ok","writes":[[0,"62741525",true,"08020000000800000000",3,107],[321,"62741525",true,"08020000000000000000",2,7]]},
 "stop:lumbar_open": {"status":"ok","writes":[[0,"62741525",true,"08020000001000000000",3,107],[321,"62741525",true,"08020000000000000000",2,7]]},
-"stop:lumbar_close": {"status":"ok","writes":[[0,"62741525",true,"08020000002000000000",3,107],[321,"62741525",true,"08020000000000000000",2,7]]}
+"stop:lumbar_close": {"status":"ok","writes":[[0,"62741525",true,"08020000002000000000",3,107],[321,"62741525",true,"08020000000000000000",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"62741525",true,"08020000200000000000",1,0]]}
 }},
 "okin_64bit:nordic": {
 "info": {"bed_type": "okin_64bit", "controller": "Okin64BitController", "module": "okin_64bit", "pulse": [10, 100]},
@@ -12164,7 +12227,8 @@
 "stop:legs_open": {"status":"ok","writes":[[0,"6e400002",false,"08020000000400000000",3,107],[321,"6e400002",false,"08020000000000000000",2,7]]},
 "stop:legs_close": {"status":"ok","writes":[[0,"6e400002",false,"08020000000800000000",3,107],[321,"6e400002",false,"08020000000000000000",2,7]]},
 "stop:lumbar_open": {"status":"ok","writes":[[0,"6e400002",false,"08020000001000000000",3,107],[321,"6e400002",false,"08020000000000000000",2,7]]},
-"stop:lumbar_close": {"status":"ok","writes":[[0,"6e400002",false,"08020000002000000000",3,107],[321,"6e400002",false,"08020000000000000000",2,7]]}
+"stop:lumbar_close": {"status":"ok","writes":[[0,"6e400002",false,"08020000002000000000",3,107],[321,"6e400002",false,"08020000000000000000",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"08020000200000000000",1,0]]}
 }},
 "okin_7byte": {
 "info": {"bed_type": "okin_7byte", "controller": "Okin7ByteController", "module": "okin_7byte", "pulse": [10, 100]},
@@ -12214,7 +12278,8 @@
 "stop:legs_open": {"status":"ok","writes":[[0,"62741525",false,"5a0103103002a5",3,107],[321,"62741525",false,"5a010310300fa5",2,7]]},
 "stop:legs_close": {"status":"ok","writes":[[0,"62741525",false,"5a0103103003a5",3,107],[321,"62741525",false,"5a010310300fa5",2,7]]},
 "stop:lumbar_open": {"status":"ok","writes":[[0,"62741525",false,"5a0103103004a5",3,107],[321,"62741525",false,"5a010310300fa5",2,7]]},
-"stop:lumbar_close": {"status":"ok","writes":[[0,"62741525",false,"5a0103103007a5",3,107],[321,"62741525",false,"5a010310300fa5",2,7]]}
+"stop:lumbar_close": {"status":"ok","writes":[[0,"62741525",false,"5a0103103007a5",3,107],[321,"62741525",false,"5a010310300fa5",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"62741525",false,"5a0103103011a5",100,307],[30400,"62741525",false,"5a010310300fa5",1,0]]}
 }},
 "okin_cb24": {
 "info": {"bed_type": "okin_cb24", "controller": "OkinCB24Controller", "module": "okin_cb24", "pulse": [3, 300]},
@@ -12266,7 +12331,8 @@
 "stop:back_open": {"status":"ok","writes":[[0,"6e400002",false,"05020000000100",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
 "stop:back_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000000200",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"6e400002",false,"05020000000400",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000000800",1,0],[307,"6e400002",false,"05020000000000",2,7]]}
+"stop:legs_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000000800",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"05020000200000",1,0]]}
 }},
 "okin_cb24:cb1221": {
 "info": {"bed_type": "okin_cb24", "controller": "OkinCB24Controller", "module": "okin_cb24", "pulse": [3, 300]},
@@ -12318,7 +12384,8 @@
 "stop:back_open": {"status":"ok","writes":[[0,"6e400002",false,"05020000000100",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
 "stop:back_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000000200",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"6e400002",false,"05020000000400",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000000800",1,0],[307,"6e400002",false,"05020000000000",2,7]]}
+"stop:legs_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000000800",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"05020000200000",1,0]]}
 }},
 "okin_cb24:cb24": {
 "info": {"bed_type": "okin_cb24", "controller": "OkinCB24Controller", "module": "okin_cb24", "pulse": [3, 300]},
@@ -12370,7 +12437,8 @@
 "stop:back_open": {"status":"ok","writes":[[0,"6e400002",false,"05020000000100",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
 "stop:back_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000000200",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"6e400002",false,"05020000000400",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000000800",1,0],[307,"6e400002",false,"05020000000000",2,7]]}
+"stop:legs_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000000800",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"05020000200000",1,0]]}
 }},
 "okin_cb24:cb24_ab": {
 "info": {"bed_type": "okin_cb24", "controller": "OkinCB24Controller", "module": "okin_cb24", "pulse": [3, 300]},
@@ -12422,7 +12490,8 @@
 "stop:back_open": {"status":"ok","writes":[[0,"6e400002",false,"05020000000100",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
 "stop:back_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000000200",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"6e400002",false,"05020000000400",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000000800",1,0],[307,"6e400002",false,"05020000000000",2,7]]}
+"stop:legs_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000000800",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"05020000200000",1,0]]}
 }},
 "okin_cb24:cb27": {
 "info": {"bed_type": "okin_cb24", "controller": "OkinCB24Controller", "module": "okin_cb24", "pulse": [3, 300]},
@@ -12474,7 +12543,8 @@
 "stop:back_open": {"status":"ok","writes":[[0,"6e400002",false,"05020000000100",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
 "stop:back_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000000200",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"6e400002",false,"05020000000400",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000000800",1,0],[307,"6e400002",false,"05020000000000",2,7]]}
+"stop:legs_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000000800",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"05020000200000",1,0]]}
 }},
 "okin_cb24:cb27new": {
 "info": {"bed_type": "okin_cb24", "controller": "OkinCB24Controller", "module": "okin_cb24", "pulse": [3, 300]},
@@ -12526,7 +12596,8 @@
 "stop:back_open": {"status":"ok","writes":[[0,"6e400002",false,"2a000001010401000000",1,0],[307,"6e400002",false,"aa0000010200",2,7]]},
 "stop:back_close": {"status":"ok","writes":[[0,"6e400002",false,"2a000001010402000000",1,0],[307,"6e400002",false,"aa0000010200",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"6e400002",false,"2a000001010404000000",1,0],[307,"6e400002",false,"aa0000010200",2,7]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"6e400002",false,"2a000001010408000000",1,0],[307,"6e400002",false,"aa0000010200",2,7]]}
+"stop:legs_close": {"status":"ok","writes":[[0,"6e400002",false,"2a000001010408000000",1,0],[307,"6e400002",false,"aa0000010200",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"2a000001030102",1,0]]}
 }},
 "okin_cb24:cb_new": {
 "info": {"bed_type": "okin_cb24", "controller": "OkinCB24Controller", "module": "okin_cb24", "pulse": [3, 300]},
@@ -12578,7 +12649,8 @@
 "stop:back_open": {"status":"ok","writes":[[0,"6e400002",false,"2a000001010401000000",1,0],[307,"6e400002",false,"aa0000010200",2,7]]},
 "stop:back_close": {"status":"ok","writes":[[0,"6e400002",false,"2a000001010402000000",1,0],[307,"6e400002",false,"aa0000010200",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"6e400002",false,"2a000001010404000000",1,0],[307,"6e400002",false,"aa0000010200",2,7]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"6e400002",false,"2a000001010408000000",1,0],[307,"6e400002",false,"aa0000010200",2,7]]}
+"stop:legs_close": {"status":"ok","writes":[[0,"6e400002",false,"2a000001010408000000",1,0],[307,"6e400002",false,"aa0000010200",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"2a000001030102",1,0]]}
 }},
 "okin_cb24:cb_old": {
 "info": {"bed_type": "okin_cb24", "controller": "OkinCB24Controller", "module": "okin_cb24", "pulse": [3, 300]},
@@ -12630,7 +12702,8 @@
 "stop:back_open": {"status":"ok","writes":[[0,"6e400002",false,"05020000000100",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
 "stop:back_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000000200",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"6e400002",false,"05020000000400",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000000800",1,0],[307,"6e400002",false,"05020000000000",2,7]]}
+"stop:legs_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000000800",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"05020000200000",1,0]]}
 }},
 "okin_cb24:dacheng": {
 "info": {"bed_type": "okin_cb24", "controller": "OkinCB24Controller", "module": "okin_cb24", "pulse": [3, 300]},
@@ -12682,7 +12755,8 @@
 "stop:back_open": {"status":"ok","writes":[[0,"6e400002",false,"05020000000100",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
 "stop:back_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000000200",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"6e400002",false,"05020000000400",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000000800",1,0],[307,"6e400002",false,"05020000000000",2,7]]}
+"stop:legs_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000000800",1,0],[307,"6e400002",false,"05020000000000",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"05020000200000",1,0]]}
 }},
 "okin_cb35": {
 "info": {"bed_type": "okin_cb35", "controller": "OkinCB35Controller", "module": "okin_cb35", "pulse": [3, 300]},
@@ -12754,7 +12828,9 @@
 "stop:neck_open": {"status":"ok","writes":[[0,"6e400002",false,"5a010310300aa5",1,0],[307,"6e400002",false,"5a010310300fa5",3,307],[928,"6e400002",false,"5a010310300fa5",3,307]]},
 "stop:neck_close": {"status":"ok","writes":[[0,"6e400002",false,"5a010310300ba5",1,0],[307,"6e400002",false,"5a010310300fa5",3,307],[928,"6e400002",false,"5a010310300fa5",3,307]]},
 "stop:tilt_open": {"status":"ok","writes":[[0,"6e400002",false,"5a0103103008a5",1,0],[307,"6e400002",false,"5a010310300fa5",3,307],[928,"6e400002",false,"5a010310300fa5",3,307]]},
-"stop:tilt_close": {"status":"ok","writes":[[0,"6e400002",false,"5a0103103009a5",1,0],[307,"6e400002",false,"5a010310300fa5",3,307],[928,"6e400002",false,"5a010310300fa5",3,307]]}
+"stop:tilt_close": {"status":"ok","writes":[[0,"6e400002",false,"5a0103103009a5",1,0],[307,"6e400002",false,"5a010310300fa5",3,307],[928,"6e400002",false,"5a010310300fa5",3,307]]},
+"preset_incline": {"status":"ok","writes":[[0,"6e400002",false,"5a0103103018a5",2,307],[314,"6e400002",false,"5a010310300fa5",3,307]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"5a0103103017a5",2,307],[314,"6e400002",false,"5a010310300fa5",3,307]]}
 }},
 "okin_cst": {
 "info": {"bed_type": "okin_cst", "controller": "OkinCstController", "module": "okin_cst", "pulse": [10, 100]},
@@ -12807,7 +12883,9 @@
 "stop:feet_open": {"status":"ok","writes":[[0,"62741525",true,"0c02000000040000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
 "stop:feet_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000080000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
 "stop:lumbar_open": {"status":"ok","writes":[[0,"62741525",true,"0c02000000100000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
-"stop:lumbar_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000200000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]}
+"stop:lumbar_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000200000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
+"preset_incline": {"status":"ok","writes":[[0,"62741525",true,"0c02000040000000000000000000",6,107],[642,"62741525",true,"0c02000000000000000000000000",2,107]]},
+"preset_lounge": {"status":"ok","writes":[[0,"62741525",true,"0c02000020000000000000000000",6,107],[642,"62741525",true,"0c02000000000000000000000000",2,107]]}
 }},
 "okin_cst:cst_aviada": {
 "info": {"bed_type": "okin_cst", "controller": "OkinCstController", "module": "okin_cst", "pulse": [10, 100]},
@@ -12860,7 +12938,9 @@
 "stop:feet_open": {"status":"ok","writes":[[0,"62741525",true,"0c02000000040000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
 "stop:feet_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000080000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
 "stop:lumbar_open": {"status":"ok","writes":[[0,"62741525",true,"0c02000000100000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
-"stop:lumbar_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000200000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]}
+"stop:lumbar_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000200000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
+"preset_incline": {"status":"ok","writes":[[0,"62741525",true,"0c02000040000000000000000000",6,107],[642,"62741525",true,"0c02000000000000000000000000",2,107]]},
+"preset_lounge": {"status":"ok","writes":[[0,"62741525",true,"0c02000020000000000000000000",6,107],[642,"62741525",true,"0c02000000000000000000000000",2,107]]}
 }},
 "okin_cst:cst_bob": {
 "info": {"bed_type": "okin_cst", "controller": "OkinCstController", "module": "okin_cst", "pulse": [10, 100]},
@@ -12911,7 +12991,9 @@
 "stop:head_open": {"status":"ok","writes":[[0,"62741525",true,"0c02000000010000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
 "stop:head_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000020000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"62741525",true,"0c02000000040000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000080000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000080000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
+"preset_incline": {"status":"ok","writes":[[0,"62741525",true,"0c02000040000000000000000000",6,107],[642,"62741525",true,"0c02000000000000000000000000",2,107]]},
+"preset_lounge": {"status":"ok","writes":[[0,"62741525",true,"0c02000020000000000000000000",6,107],[642,"62741525",true,"0c02000000000000000000000000",2,107]]}
 }},
 "okin_cst:cst_carefree": {
 "info": {"bed_type": "okin_cst", "controller": "OkinCstController", "module": "okin_cst", "pulse": [10, 100]},
@@ -12954,7 +13036,9 @@
 "stop:head_open": {"status":"ok","writes":[[0,"62741525",true,"0c02000000010000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
 "stop:head_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000020000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"62741525",true,"0c02000000040000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000080000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000080000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
+"preset_incline": {"status":"ok","writes":[[0,"62741525",true,"0c02000040000000000000000000",6,107],[642,"62741525",true,"0c02000000000000000000000000",2,107]]},
+"preset_lounge": {"status":"ok","writes":[[0,"62741525",true,"0c02000020000000000000000000",6,107],[642,"62741525",true,"0c02000000000000000000000000",2,107]]}
 }},
 "okin_cst:cst_clarity": {
 "info": {"bed_type": "okin_cst", "controller": "OkinCstController", "module": "okin_cst", "pulse": [10, 100]},
@@ -13002,7 +13086,9 @@
 "stop:head_open": {"status":"ok","writes":[[0,"62741525",true,"0c02000000010000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
 "stop:head_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000020000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"62741525",true,"0c02000000040000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000080000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000080000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
+"preset_incline": {"status":"ok","writes":[[0,"62741525",true,"0c02000040000000000000000000",6,107],[642,"62741525",true,"0c02000000000000000000000000",2,107]]},
+"preset_lounge": {"status":"ok","writes":[[0,"62741525",true,"0c02000020000000000000000000",6,107],[642,"62741525",true,"0c02000000000000000000000000",2,107]]}
 }},
 "okin_cst:cst_contempo": {
 "info": {"bed_type": "okin_cst", "controller": "OkinCstController", "module": "okin_cst", "pulse": [10, 100]},
@@ -13055,7 +13141,9 @@
 "stop:feet_open": {"status":"ok","writes":[[0,"62741525",true,"0c02000000040000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
 "stop:feet_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000080000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
 "stop:lumbar_open": {"status":"ok","writes":[[0,"62741525",true,"0c02000000100000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
-"stop:lumbar_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000200000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]}
+"stop:lumbar_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000200000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
+"preset_incline": {"status":"ok","writes":[[0,"62741525",true,"0c02000040000000000000000000",6,107],[642,"62741525",true,"0c02000000000000000000000000",2,107]]},
+"preset_lounge": {"status":"ok","writes":[[0,"62741525",true,"0c02000020000000000000000000",6,107],[642,"62741525",true,"0c02000000000000000000000000",2,107]]}
 }},
 "okin_cst:cst_mf900": {
 "info": {"bed_type": "okin_cst", "controller": "OkinCstController", "module": "okin_cst", "pulse": [10, 100]},
@@ -13108,7 +13196,9 @@
 "stop:feet_open": {"status":"ok","writes":[[0,"62741525",true,"0c02000000040000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
 "stop:feet_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000080000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
 "stop:lumbar_open": {"status":"ok","writes":[[0,"62741525",true,"0c02000000100000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
-"stop:lumbar_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000200000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]}
+"stop:lumbar_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000200000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
+"preset_incline": {"status":"ok","writes":[[0,"62741525",true,"0c02000040000000000000000000",6,107],[642,"62741525",true,"0c02000000000000000000000000",2,107]]},
+"preset_lounge": {"status":"ok","writes":[[0,"62741525",true,"0c02000020000000000000000000",6,107],[642,"62741525",true,"0c02000000000000000000000000",2,107]]}
 }},
 "okin_cst:cst_nectar_move": {
 "info": {"bed_type": "okin_cst", "controller": "OkinCstController", "module": "okin_cst", "pulse": [10, 100]},
@@ -13154,7 +13244,9 @@
 "stop:head_open": {"status":"ok","writes":[[0,"62741525",true,"0c02000000010000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",2,107]]},
 "stop:head_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000020000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",2,107]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"62741525",true,"0c02000000040000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",2,107]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000080000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",2,107]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000080000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",2,107]]},
+"preset_incline": {"status":"ok","writes":[[0,"62741525",true,"0c02000040000000000000000000",1,0],[107,"62741525",true,"0c02000000000000000000000000",2,107]]},
+"preset_lounge": {"status":"ok","writes":[[0,"62741525",true,"0c02000020000000000000000000",1,0],[107,"62741525",true,"0c02000000000000000000000000",2,107]]}
 }},
 "okin_cst:cst_resident": {
 "info": {"bed_type": "okin_cst", "controller": "OkinCstController", "module": "okin_cst", "pulse": [10, 100]},
@@ -13210,7 +13302,9 @@
 "stop:head_open": {"status":"ok","writes":[[0,"62741525",true,"0c02000000010000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
 "stop:head_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000020000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"62741525",true,"0c02000000040000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000080000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000080000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
+"preset_incline": {"status":"ok","writes":[[0,"62741525",true,"0c02000040000000000000000000",6,107],[642,"62741525",true,"0c02000000000000000000000000",2,107]]},
+"preset_lounge": {"status":"ok","writes":[[0,"62741525",true,"0c02000020000000000000000000",6,107],[642,"62741525",true,"0c02000000000000000000000000",2,107]]}
 }},
 "okin_cst:cst_sanctuary": {
 "info": {"bed_type": "okin_cst", "controller": "OkinCstController", "module": "okin_cst", "pulse": [10, 100]},
@@ -13261,7 +13355,9 @@
 "stop:head_open": {"status":"ok","writes":[[0,"62741525",true,"0c02000000010000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
 "stop:head_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000020000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"62741525",true,"0c02000000040000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000080000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000080000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
+"preset_incline": {"status":"ok","writes":[[0,"62741525",true,"0c02000040000000000000000000",6,107],[642,"62741525",true,"0c02000000000000000000000000",2,107]]},
+"preset_lounge": {"status":"ok","writes":[[0,"62741525",true,"0c02000020000000000000000000",6,107],[642,"62741525",true,"0c02000000000000000000000000",2,107]]}
 }},
 "okin_cst:cst_support": {
 "info": {"bed_type": "okin_cst", "controller": "OkinCstController", "module": "okin_cst", "pulse": [10, 100]},
@@ -13318,7 +13414,9 @@
 "stop:feet_open": {"status":"ok","writes":[[0,"62741525",true,"0c02000000040000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
 "stop:feet_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000080000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
 "stop:lumbar_open": {"status":"ok","writes":[[0,"62741525",true,"0c02000000100000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
-"stop:lumbar_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000200000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]}
+"stop:lumbar_close": {"status":"ok","writes":[[0,"62741525",true,"0c02000000200000000000000000",3,107],[421,"62741525",true,"0c02000000000000000000000000",4,107]]},
+"preset_incline": {"status":"ok","writes":[[0,"62741525",true,"0c02000040000000000000000000",6,107],[642,"62741525",true,"0c02000000000000000000000000",2,107]]},
+"preset_lounge": {"status":"ok","writes":[[0,"62741525",true,"0c02000020000000000000000000",6,107],[642,"62741525",true,"0c02000000000000000000000000",2,107]]}
 }},
 "okin_dot": {
 "info": {"bed_type": "okin_dot", "controller": "OkinDotController", "module": "okin_dot", "pulse": [10, 100]},
@@ -13756,7 +13854,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe160100000004",2,157],[314,"0000ffe9",true,"e6fe160000000005",2,7]]},
 "stop:head_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe160200000003",2,157],[314,"0000ffe9",true,"e6fe160000000005",2,7]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe160400000001",2,157],[314,"0000ffe9",true,"e6fe160000000005",2,7]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe1608000000fd",2,157],[314,"0000ffe9",true,"e6fe160000000005",2,7]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe1608000000fd",2,157],[314,"0000ffe9",true,"e6fe160000000005",2,7]]},
+"preset_lounge": {"status":"no_writes"}
 }},
 "okin_handle": {
 "info": {"bed_type": "okin_handle", "controller": "OkinHandleController", "module": "okin_handle", "pulse": [10, 100]},
@@ -13849,7 +13948,9 @@
 "stop:legs_open": {"status":"ok","writes":[[0,"6e400002",true,"5a0103103002a5",3,107],[321,"6e400002",true,"5a010310300fa5",2,7]]},
 "stop:legs_close": {"status":"ok","writes":[[0,"6e400002",true,"5a0103103003a5",3,107],[321,"6e400002",true,"5a010310300fa5",2,7]]},
 "stop:lumbar_open": {"status":"ok","writes":[[0,"6e400002",true,"5a0103103006a5",3,107],[321,"6e400002",true,"5a010310300fa5",2,7]]},
-"stop:lumbar_close": {"status":"ok","writes":[[0,"6e400002",true,"5a0103103007a5",3,107],[321,"6e400002",true,"5a010310300fa5",2,7]]}
+"stop:lumbar_close": {"status":"ok","writes":[[0,"6e400002",true,"5a0103103007a5",3,107],[321,"6e400002",true,"5a010310300fa5",2,7]]},
+"preset_incline": {"status":"ok","writes":[[0,"6e400002",true,"5a0103103018a5",100,307],[30400,"6e400002",true,"5a010310300fa5",1,0]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",true,"5a0103103017a5",100,307],[30400,"6e400002",true,"5a010310300fa5",1,0]]}
 }},
 "okin_ore": {
 "info": {"bed_type": "okin_ore", "controller": "OkinOreController", "module": "okin_ore", "pulse": [1, 300]},
@@ -13907,7 +14008,8 @@
 "stop:legs_open": {"status":"ok","writes":[[0,"00001001",true,"a55adc00002003",1,0],[7,"00001001",true,"a55adf00002000",2,293]]},
 "stop:legs_close": {"status":"ok","writes":[[0,"00001001",true,"a55adb00002004",1,0],[7,"00001001",true,"a55adf00002000",2,293]]},
 "stop:lumbar_open": {"status":"ok","writes":[[0,"00001001",true,"a55ad800002007",1,0],[7,"00001001",true,"a55adf00002000",2,293]]},
-"stop:lumbar_close": {"status":"ok","writes":[[0,"00001001",true,"a55ad700002008",1,0],[7,"00001001",true,"a55adf00002000",2,293]]}
+"stop:lumbar_close": {"status":"ok","writes":[[0,"00001001",true,"a55ad700002008",1,0],[7,"00001001",true,"a55adf00002000",2,293]]},
+"preset_lounge": {"status":"ok","writes":[[0,"00001001",true,"a55a7e00002061",1,0],[7,"00001001",true,"a55adf00002000",1,0]]}
 }},
 "okin_rf_eco_bt": {
 "info": {"bed_type": "okin_rf_eco_bt", "controller": "OkinRfEcoBtController", "module": "okin_rf_eco_bt", "pulse": [10, 100]},
@@ -14571,7 +14673,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"d44bc439",true,"6e01002493",2,157],[314,"d44bc439",true,"6e01005ecd",2,7]]},
 "stop:head_close": {"status":"ok","writes":[[0,"d44bc439",true,"6e01002594",2,157],[314,"d44bc439",true,"6e01005ecd",2,7]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"d44bc439",true,"6e01002695",2,157],[314,"d44bc439",true,"6e01005ecd",2,7]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"d44bc439",true,"6e01002796",2,157],[314,"d44bc439",true,"6e01005ecd",2,7]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"d44bc439",true,"6e01002796",2,157],[314,"d44bc439",true,"6e01005ecd",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"d44bc439",true,"6e010059c8",1,0]]}
 }},
 "richmat:nordic": {
 "info": {"bed_type": "richmat", "controller": "RichmatController", "module": "richmat", "pulse": [7, 150]},
@@ -14632,7 +14735,8 @@
 "stop:pillow_open": {"status":"ok","writes":[[0,"6e400002",true,"3f",2,157],[314,"6e400002",true,"6e",2,7]]},
 "stop:pillow_close": {"status":"ok","writes":[[0,"6e400002",true,"40",2,157],[314,"6e400002",true,"6e",2,7]]},
 "stop:lumbar_open": {"status":"ok","writes":[[0,"6e400002",true,"41",2,157],[314,"6e400002",true,"6e",2,7]]},
-"stop:lumbar_close": {"status":"ok","writes":[[0,"6e400002",true,"42",2,157],[314,"6e400002",true,"6e",2,7]]}
+"stop:lumbar_close": {"status":"ok","writes":[[0,"6e400002",true,"42",2,157],[314,"6e400002",true,"6e",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",true,"59",1,0]]}
 }},
 "richmat:prefix55": {
 "info": {"bed_type": "richmat", "controller": "RichmatController", "module": "richmat", "pulse": [7, 150]},
@@ -14693,7 +14797,8 @@
 "stop:pillow_open": {"status":"ok","writes":[[0,"d44bc439",true,"5501003f95",2,157],[314,"d44bc439",true,"5501006ec4",2,7]]},
 "stop:pillow_close": {"status":"ok","writes":[[0,"d44bc439",true,"5501004096",2,157],[314,"d44bc439",true,"5501006ec4",2,7]]},
 "stop:lumbar_open": {"status":"ok","writes":[[0,"d44bc439",true,"5501004197",2,157],[314,"d44bc439",true,"5501006ec4",2,7]]},
-"stop:lumbar_close": {"status":"ok","writes":[[0,"d44bc439",true,"5501004298",2,157],[314,"d44bc439",true,"5501006ec4",2,7]]}
+"stop:lumbar_close": {"status":"ok","writes":[[0,"d44bc439",true,"5501004298",2,157],[314,"d44bc439",true,"5501006ec4",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"d44bc439",true,"55010059af",1,0]]}
 }},
 "richmat:prefixaa": {
 "info": {"bed_type": "richmat", "controller": "RichmatController", "module": "richmat", "pulse": [7, 150]},
@@ -14754,7 +14859,8 @@
 "stop:pillow_open": {"status":"ok","writes":[[0,"d44bc439",true,"aa01003fea",2,157],[314,"d44bc439",true,"aa01006e19",2,7]]},
 "stop:pillow_close": {"status":"ok","writes":[[0,"d44bc439",true,"aa010040eb",2,157],[314,"d44bc439",true,"aa01006e19",2,7]]},
 "stop:lumbar_open": {"status":"ok","writes":[[0,"d44bc439",true,"aa010041ec",2,157],[314,"d44bc439",true,"aa01006e19",2,7]]},
-"stop:lumbar_close": {"status":"ok","writes":[[0,"d44bc439",true,"aa010042ed",2,157],[314,"d44bc439",true,"aa01006e19",2,7]]}
+"stop:lumbar_close": {"status":"ok","writes":[[0,"d44bc439",true,"aa010042ed",2,157],[314,"d44bc439",true,"aa01006e19",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"d44bc439",true,"aa01005904",1,0]]}
 }},
 "richmat:props_write": {
 "info": {"bed_type": "richmat", "controller": "RichmatController", "module": "richmat", "pulse": [7, 150]},
@@ -14835,7 +14941,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"d44bc439",true,"6e01002493",2,157],[314,"d44bc439",true,"6e01005ecd",2,7]]},
 "stop:head_close": {"status":"ok","writes":[[0,"d44bc439",true,"6e01002594",2,157],[314,"d44bc439",true,"6e01005ecd",2,7]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"d44bc439",true,"6e01002695",2,157],[314,"d44bc439",true,"6e01005ecd",2,7]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"d44bc439",true,"6e01002796",2,157],[314,"d44bc439",true,"6e01005ecd",2,7]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"d44bc439",true,"6e01002796",2,157],[314,"d44bc439",true,"6e01005ecd",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"d44bc439",true,"6e010059c8",1,0]]}
 }},
 "richmat:props_wwr": {
 "info": {"bed_type": "richmat", "controller": "RichmatController", "module": "richmat", "pulse": [7, 150]},
@@ -14916,7 +15023,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"d44bc439",true,"6e01002493",2,157],[314,"d44bc439",true,"6e01005ecd",2,7]]},
 "stop:head_close": {"status":"ok","writes":[[0,"d44bc439",true,"6e01002594",2,157],[314,"d44bc439",true,"6e01005ecd",2,7]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"d44bc439",true,"6e01002695",2,157],[314,"d44bc439",true,"6e01005ecd",2,7]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"d44bc439",true,"6e01002796",2,157],[314,"d44bc439",true,"6e01005ecd",2,7]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"d44bc439",true,"6e01002796",2,157],[314,"d44bc439",true,"6e01005ecd",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"d44bc439",true,"6e010059c8",1,0]]}
 }},
 "richmat:wilinke": {
 "info": {"bed_type": "richmat", "controller": "RichmatController", "module": "richmat", "pulse": [7, 150]},
@@ -14977,7 +15085,8 @@
 "stop:pillow_open": {"status":"ok","writes":[[0,"d44bc439",true,"6e01003fae",2,157],[314,"d44bc439",true,"6e01006edd",2,7]]},
 "stop:pillow_close": {"status":"ok","writes":[[0,"d44bc439",true,"6e010040af",2,157],[314,"d44bc439",true,"6e01006edd",2,7]]},
 "stop:lumbar_open": {"status":"ok","writes":[[0,"d44bc439",true,"6e010041b0",2,157],[314,"d44bc439",true,"6e01006edd",2,7]]},
-"stop:lumbar_close": {"status":"ok","writes":[[0,"d44bc439",true,"6e010042b1",2,157],[314,"d44bc439",true,"6e01006edd",2,7]]}
+"stop:lumbar_close": {"status":"ok","writes":[[0,"d44bc439",true,"6e010042b1",2,157],[314,"d44bc439",true,"6e01006edd",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"d44bc439",true,"6e010059c8",1,0]]}
 }},
 "richmat_americanstar": {
 "info": {"bed_type": "richmat_americanstar", "connect_error": "ValueError", "controller": "RufRichmatController", "module": "ruf_richmat", "pulse": [10, 100]},
@@ -15105,7 +15214,8 @@
 "button:richmat_mh_64": {"status":"ok","writes":[[0,"6e400002",false,"6e010064d3",1,0],[127,"6e400002",false,"6e01006edd",1,0]]},
 "button:richmat_mh_66": {"status":"ok","writes":[[0,"6e400002",false,"6e010066d5",1,0],[127,"6e400002",false,"6e01006edd",1,0]]},
 "button:richmat_mh_65": {"status":"ok","writes":[[0,"6e400002",false,"6e010065d4",1,0],[127,"6e400002",false,"6e01006edd",1,0]]},
-"button:richmat_mh_69": {"status":"ok","writes":[[0,"6e400002",false,"6e010069d8",1,0],[127,"6e400002",false,"6e01006edd",1,0]]}
+"button:richmat_mh_69": {"status":"ok","writes":[[0,"6e400002",false,"6e010069d8",1,0],[127,"6e400002",false,"6e01006edd",1,0]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"6e010059c8",1,0],[127,"6e400002",false,"6e01006edd",1,0]]}
 }},
 "richmat_best_mattress:model_vsrm": {
 "info": {"bed_type": "richmat_best_mattress", "controller": "RichmatMhController", "module": "richmat_mh", "pulse": [10, 100]},
@@ -15210,7 +15320,8 @@
 "button:richmat_mh_64": {"status":"ok","writes":[[0,"6e400002",false,"6e010064d3",1,0],[127,"6e400002",false,"6e01006edd",1,0]]},
 "button:richmat_mh_66": {"status":"ok","writes":[[0,"6e400002",false,"6e010066d5",1,0],[127,"6e400002",false,"6e01006edd",1,0]]},
 "button:richmat_mh_65": {"status":"ok","writes":[[0,"6e400002",false,"6e010065d4",1,0],[127,"6e400002",false,"6e01006edd",1,0]]},
-"button:richmat_mh_69": {"status":"ok","writes":[[0,"6e400002",false,"6e010069d8",1,0],[127,"6e400002",false,"6e01006edd",1,0]]}
+"button:richmat_mh_69": {"status":"ok","writes":[[0,"6e400002",false,"6e010069d8",1,0],[127,"6e400002",false,"6e01006edd",1,0]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"6e010059c8",1,0],[127,"6e400002",false,"6e01006edd",1,0]]}
 }},
 "richmat_blvd_home:model_eorm": {
 "info": {"bed_type": "richmat_blvd_home", "controller": "RichmatMhController", "module": "richmat_mh", "pulse": [10, 100]},
@@ -16464,7 +16575,8 @@
 "stop:lumbar_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1640000000c6",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
 "stop:lumbar_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe168000000086",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
 "stop:tilt_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1610000000f6",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
-"stop:tilt_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1620000000e6",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]}
+"stop:tilt_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1620000000e6",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
+"preset_lounge": {"status":"no_writes"}
 }},
 "sbi:both": {
 "info": {"bed_type": "sbi", "controller": "SBIController", "module": "sbi", "pulse": [10, 100]},
@@ -16525,7 +16637,8 @@
 "stop:lumbar_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1640000000c6",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
 "stop:lumbar_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe168000000086",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
 "stop:tilt_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1610000000f6",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
-"stop:tilt_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1620000000e6",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]}
+"stop:tilt_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1620000000e6",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
+"preset_lounge": {"status":"no_writes"}
 }},
 "sbi:side_a": {
 "info": {"bed_type": "sbi", "controller": "SBIController", "module": "sbi", "pulse": [10, 100]},
@@ -16586,7 +16699,8 @@
 "stop:lumbar_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe164000000001c4",3,107],[321,"0000ffe9",true,"e6fe16000000000104",2,7]]},
 "stop:lumbar_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe16800000000184",3,107],[321,"0000ffe9",true,"e6fe16000000000104",2,7]]},
 "stop:tilt_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe161000000001f4",3,107],[321,"0000ffe9",true,"e6fe16000000000104",2,7]]},
-"stop:tilt_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe162000000001e4",3,107],[321,"0000ffe9",true,"e6fe16000000000104",2,7]]}
+"stop:tilt_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe162000000001e4",3,107],[321,"0000ffe9",true,"e6fe16000000000104",2,7]]},
+"preset_lounge": {"status":"no_writes"}
 }},
 "sbi:side_b": {
 "info": {"bed_type": "sbi", "controller": "SBIController", "module": "sbi", "pulse": [10, 100]},
@@ -16647,7 +16761,8 @@
 "stop:lumbar_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe164000000002c3",3,107],[321,"0000ffe9",true,"e6fe16000000000203",2,7]]},
 "stop:lumbar_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe16800000000283",3,107],[321,"0000ffe9",true,"e6fe16000000000203",2,7]]},
 "stop:tilt_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe161000000002f3",3,107],[321,"0000ffe9",true,"e6fe16000000000203",2,7]]},
-"stop:tilt_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe162000000002e3",3,107],[321,"0000ffe9",true,"e6fe16000000000203",2,7]]}
+"stop:tilt_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe162000000002e3",3,107],[321,"0000ffe9",true,"e6fe16000000000203",2,7]]},
+"preset_lounge": {"status":"no_writes"}
 }},
 "scott_living": {
 "info": {"bed_type": "scott_living", "controller": "ScottLivingController", "module": "scott_living", "pulse": [10, 100]},
@@ -16718,7 +16833,8 @@
 "stop:lumbar_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe164000000001c4",3,107],[321,"0000ffe9",true,"e6fe16000000000104",2,7]]},
 "stop:lumbar_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe16800000000184",3,107],[321,"0000ffe9",true,"e6fe16000000000104",2,7]]},
 "stop:tilt_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe161000000001f4",3,107],[321,"0000ffe9",true,"e6fe16000000000104",2,7]]},
-"stop:tilt_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe162000000001e4",3,107],[321,"0000ffe9",true,"e6fe16000000000104",2,7]]}
+"stop:tilt_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e6fe162000000001e4",3,107],[321,"0000ffe9",true,"e6fe16000000000104",2,7]]},
+"preset_lounge": {"status":"no_writes"}
 }},
 "serenity": {
 "info": {"bed_type": "serenity", "controller": "SerenityController", "module": "serenity", "pulse": [10, 100]},
@@ -16813,7 +16929,9 @@
 "button:serenity_massage_timer_cycle": {"status":"ok","writes":[[0,"62741525",true,"0c02000002000000000000000000",6,100],[600,"62741525",true,"0c02000000000000000000000000",2,100]]},
 "button:serenity_wave_1": {"status":"ok","writes":[[0,"62741525",true,"0c02000000000008000000000000",6,100],[600,"62741525",true,"0c02000000000000000000000000",2,100]]},
 "button:serenity_wave_2": {"status":"ok","writes":[[0,"62741525",true,"0c02000000000010000000000000",6,100],[600,"62741525",true,"0c02000000000000000000000000",2,100]]},
-"button:serenity_wave_3": {"status":"ok","writes":[[0,"62741525",true,"0c02000000000020000000000000",6,100],[600,"62741525",true,"0c02000000000000000000000000",2,100]]}
+"button:serenity_wave_3": {"status":"ok","writes":[[0,"62741525",true,"0c02000000000020000000000000",6,100],[600,"62741525",true,"0c02000000000000000000000000",2,100]]},
+"preset_incline": {"status":"ok","writes":[[0,"62741525",true,"0c02000040000000000000000000",6,100],[600,"62741525",true,"0c02000000000000000000000000",2,100]]},
+"preset_lounge": {"status":"ok","writes":[[0,"62741525",true,"0c02000020000000000000000000",6,100],[600,"62741525",true,"0c02000000000000000000000000",2,100]]}
 }},
 "serenity:props_write": {
 "info": {"bed_type": "serenity", "controller": "SerenityController", "module": "serenity", "pulse": [10, 100]},
@@ -16908,7 +17026,9 @@
 "button:serenity_massage_timer_cycle": {"status":"ok","writes":[[0,"62741525",true,"0c02000002000000000000000000",6,100],[600,"62741525",true,"0c02000000000000000000000000",2,100]]},
 "button:serenity_wave_1": {"status":"ok","writes":[[0,"62741525",true,"0c02000000000008000000000000",6,100],[600,"62741525",true,"0c02000000000000000000000000",2,100]]},
 "button:serenity_wave_2": {"status":"ok","writes":[[0,"62741525",true,"0c02000000000010000000000000",6,100],[600,"62741525",true,"0c02000000000000000000000000",2,100]]},
-"button:serenity_wave_3": {"status":"ok","writes":[[0,"62741525",true,"0c02000000000020000000000000",6,100],[600,"62741525",true,"0c02000000000000000000000000",2,100]]}
+"button:serenity_wave_3": {"status":"ok","writes":[[0,"62741525",true,"0c02000000000020000000000000",6,100],[600,"62741525",true,"0c02000000000000000000000000",2,100]]},
+"preset_incline": {"status":"ok","writes":[[0,"62741525",true,"0c02000040000000000000000000",6,100],[600,"62741525",true,"0c02000000000000000000000000",2,100]]},
+"preset_lounge": {"status":"ok","writes":[[0,"62741525",true,"0c02000020000000000000000000",6,100],[600,"62741525",true,"0c02000000000000000000000000",2,100]]}
 }},
 "serenity:props_wwr": {
 "info": {"bed_type": "serenity", "controller": "SerenityController", "module": "serenity", "pulse": [10, 100]},
@@ -17003,7 +17123,9 @@
 "button:serenity_massage_timer_cycle": {"status":"ok","writes":[[0,"62741525",false,"0c02000002000000000000000000",6,100],[600,"62741525",false,"0c02000000000000000000000000",2,100]]},
 "button:serenity_wave_1": {"status":"ok","writes":[[0,"62741525",false,"0c02000000000008000000000000",6,100],[600,"62741525",false,"0c02000000000000000000000000",2,100]]},
 "button:serenity_wave_2": {"status":"ok","writes":[[0,"62741525",false,"0c02000000000010000000000000",6,100],[600,"62741525",false,"0c02000000000000000000000000",2,100]]},
-"button:serenity_wave_3": {"status":"ok","writes":[[0,"62741525",false,"0c02000000000020000000000000",6,100],[600,"62741525",false,"0c02000000000000000000000000",2,100]]}
+"button:serenity_wave_3": {"status":"ok","writes":[[0,"62741525",false,"0c02000000000020000000000000",6,100],[600,"62741525",false,"0c02000000000000000000000000",2,100]]},
+"preset_incline": {"status":"ok","writes":[[0,"62741525",false,"0c02000040000000000000000000",6,100],[600,"62741525",false,"0c02000000000000000000000000",2,100]]},
+"preset_lounge": {"status":"ok","writes":[[0,"62741525",false,"0c02000020000000000000000000",6,100],[600,"62741525",false,"0c02000000000000000000000000",2,100]]}
 }},
 "serta": {
 "info": {"bed_type": "serta", "controller": "KeesonController", "module": "keeson", "pulse": [10, 100]},
@@ -17064,7 +17186,8 @@
 "stop:head_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160100000005",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
 "stop:head_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160200000004",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
 "stop:feet_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe160400000002",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
-"stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1608000000fe",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]}
+"stop:feet_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1608000000fe",3,107],[321,"0000ffe9",true,"e5fe160000000006",2,7]]},
+"preset_lounge": {"status":"no_writes"}
 }},
 "serta_mp_remote": {
 "info": {"bed_type": "serta_mp_remote", "controller": "SertaMPRemoteController", "module": "serta_mp_remote", "pulse": [10, 100]},
@@ -17488,7 +17611,11 @@
 "stop:back_open": {"status":"timeout","writes":[[0,"421e00f3",false,"66557a496f4e2000000041435453206c6566742068656164203130302dd04318",1,0],[300,"421e00f3",false,"66557a496f4e130000004143484120428f7baf",2,7135]]},
 "stop:back_close": {"status":"timeout","writes":[[0,"421e00f3",false,"66557a496f4e1e00000041435453206c656674206865616420309654c9b2",1,0],[300,"421e00f3",false,"66557a496f4e130000004143484120428f7baf",2,7135]]},
 "stop:legs_open": {"status":"timeout","writes":[[0,"421e00f3",false,"66557a496f4e2000000041435453206c65667420666f6f7420313030a36b53f3",1,0],[300,"421e00f3",false,"66557a496f4e130000004143484120428f7baf",2,7135]]},
-"stop:legs_close": {"status":"timeout","writes":[[0,"421e00f3",false,"66557a496f4e1e00000041435453206c65667420666f6f74203004f98a3e",1,0],[300,"421e00f3",false,"66557a496f4e130000004143484120428f7baf",2,7135]]}
+"stop:legs_close": {"status":"timeout","writes":[[0,"421e00f3",false,"66557a496f4e1e00000041435453206c65667420666f6f74203004f98a3e",1,0],[300,"421e00f3",false,"66557a496f4e130000004143484120428f7baf",2,7135]]},
+"turn_footwarming_off": {"status":"timeout","writes":[[0,"421e00f3",false,"66557a496f4e1f00000046575453206c656674206f6666203132305759ecaa",1,0]]},
+"turn_footwarming_on": {"status":"timeout","writes":[[0,"421e00f3",false,"66557a496f4e1f00000046575453206c656674206c6f772031323030ac8be1",1,0]]},
+"turn_thermal_off": {"status":"no_writes"},
+"turn_thermal_on": {"error":"ValueError","status":"error","writes":[]}
 }},
 "sleep_number_mcr": {
 "info": {"bed_type": "sleep_number_mcr", "connect_error": "timeout", "controller": "SleepNumberMcrController", "gaps": ["massage_toggle", "massage_foot_down", "massage_foot_toggle", "massage_foot_up", "massage_head_down", "massage_head_toggle", "massage_head_up", "massage_intensity_up", "massage_mode_step"], "module": "sleep_number_mcr", "pulse": [10, 100]},
@@ -17626,6 +17753,7 @@
 "stop:sleepstar_part4_close": {"status":"ok","writes":[[0,"6e400002",false,"aa00000902075a0103103009a5",3,107],[321,"6e400002",false,"aa00000902075a010310300fa5",2,7]]},
 "stop:sleepstar_part5_open": {"status":"ok","writes":[[0,"6e400002",false,"aa00000902075a010310300aa5",3,107],[321,"6e400002",false,"aa00000902075a010310300fa5",2,7]]},
 "stop:sleepstar_part5_close": {"status":"ok","writes":[[0,"6e400002",false,"aa00000902075a010310300ba5",3,107],[321,"6e400002",false,"aa00000902075a010310300fa5",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"aa00000902075a0103103017a5",3,107],[321,"6e400002",false,"aa00000902075a010310300fa5",1,0]]},
 "background": {"status":"background","writes":[[12615,"6e400002",false,"2a000005810901ffff00002225124b",1,0]]}
 }},
 "sleeptracker": {
@@ -17837,7 +17965,8 @@
 "stop:lumbar_open": {"status":"ok","writes":[[0,"6e400002",false,"05020000001000",3,107],[321,"6e400002",false,"05020000000000",2,7]]},
 "stop:lumbar_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000002000",3,107],[321,"6e400002",false,"05020000000000",2,7]]},
 "stop:tilt_open": {"status":"ok","writes":[[0,"6e400002",false,"05020000004000",3,107],[321,"6e400002",false,"05020000000000",2,7]]},
-"stop:tilt_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000008000",3,107],[321,"6e400002",false,"05020000000000",2,7]]}
+"stop:tilt_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000008000",3,107],[321,"6e400002",false,"05020000000000",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"05020000200000",3,107],[321,"6e400002",false,"05020000000000",1,0]]}
 }},
 "sleepys_box25:box25_legacy": {
 "info": {"bed_type": "sleepys_box25", "controller": "SleepysBox25LegacyController", "module": "sleepys_box25", "pulse": [10, 100]},
@@ -17926,7 +18055,8 @@
 "stop:lumbar_open": {"status":"ok","writes":[[0,"6e400002",false,"05020000001000",3,107],[321,"6e400002",false,"05020000000000",2,7]]},
 "stop:lumbar_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000002000",3,107],[321,"6e400002",false,"05020000000000",2,7]]},
 "stop:tilt_open": {"status":"ok","writes":[[0,"6e400002",false,"05020000004000",3,107],[321,"6e400002",false,"05020000000000",2,7]]},
-"stop:tilt_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000008000",3,107],[321,"6e400002",false,"05020000000000",2,7]]}
+"stop:tilt_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000008000",3,107],[321,"6e400002",false,"05020000000000",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"05020000200000",3,107],[321,"6e400002",false,"05020000000000",1,0]]}
 }},
 "sleepys_box25:box25_star": {
 "info": {"bed_type": "sleepys_box25", "controller": "SleepysBox25Controller", "module": "sleepys_box25", "pulse": [10, 100]},
@@ -18016,7 +18146,8 @@
 "stop:lumbar_open": {"status":"ok","writes":[[0,"6e400002",false,"5a0103103006a5",3,107],[321,"6e400002",false,"5a010310300fa5",2,7]]},
 "stop:lumbar_close": {"status":"ok","writes":[[0,"6e400002",false,"5a0103103007a5",3,107],[321,"6e400002",false,"5a010310300fa5",2,7]]},
 "stop:tilt_open": {"status":"ok","writes":[[0,"6e400002",false,"5a010310300aa5",3,107],[321,"6e400002",false,"5a010310300fa5",2,7]]},
-"stop:tilt_close": {"status":"ok","writes":[[0,"6e400002",false,"5a010310300ba5",3,107],[321,"6e400002",false,"5a010310300fa5",2,7]]}
+"stop:tilt_close": {"status":"ok","writes":[[0,"6e400002",false,"5a010310300ba5",3,107],[321,"6e400002",false,"5a010310300fa5",2,7]]},
+"preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"5a0103103017a5",3,107],[321,"6e400002",false,"5a010310300fa5",1,0]]}
 }},
 "sleepys_elite_app": {
 "info": {"bed_type": "sleepys_elite_app", "controller": "SleepysEliteAppController", "gaps": ["massage_toggle", "massage_off"], "module": "sleepys_app", "pulse": [10, 100]},
@@ -18424,6 +18555,7 @@
 "button:starcode_abm5_4_save_lounge": {"status":"ok","writes":[[0,"62741525",true,"05028000200000",61,100]]},
 "button:starcode_abm5_4_save_zero_g": {"status":"ok","writes":[[0,"62741525",true,"05028000100000",61,100]]},
 "button:starcode_abm5_4_reset": {"status":"ok","writes":[[0,"62741525",true,"05028800000000",61,100]]},
+"preset_lounge": {"status":"ok","writes":[[0,"62741525",true,"05020000200000",11,100]]},
 "background": {"status":"background","writes":[[500,"62741525",true,"00b0",1,0]]}
 }},
 "starcode_m1x12": {
@@ -18530,7 +18662,8 @@
 "button:starcode_m1x12_hold_massage_both_up": {"status":"ok","writes":[[93,"6e400002",false,"5a0100000c00a5",1,0],[193,"6e400002",false,"05020000000000",1,0]]},
 "button:starcode_m1x12_hold_massage_both_down": {"status":"ok","writes":[[93,"6e400002",false,"5a0101800000a5",1,0],[193,"6e400002",false,"05020000000000",1,0]]},
 "number:starcode_m1x12_brightness=1": {"status":"ok","writes":[[93,"6e400002",false,"04e000010000",1,0],[193,"6e400002",false,"05020000000000",1,0]]},
-"number:starcode_m1x12_brightness=6": {"status":"ok","writes":[[93,"6e400002",false,"04e000060000",1,0],[193,"6e400002",false,"05020000000000",1,0]]}
+"number:starcode_m1x12_brightness=6": {"status":"ok","writes":[[93,"6e400002",false,"04e000060000",1,0],[193,"6e400002",false,"05020000000000",1,0]]},
+"preset_lounge": {"status":"ok","writes":[[93,"6e400002",false,"05020000200000",3,100],[393,"6e400002",false,"05020000000000",1,0]]}
 }},
 "starcode_m5x5": {
 "info": {"bed_type": "starcode_m5x5", "controller": "StarcodeM5X5Controller", "module": "starcode_m5x5", "pulse": [10, 100]},
@@ -18610,7 +18743,8 @@
 "select:starcode_color=6": {"status":"ok","writes":[[93,"6e400002",false,"04e001060000",1,0],[193,"6e400002",false,"05020000000000",1,0]]},
 "select:starcode_color=7": {"status":"ok","writes":[[93,"6e400002",false,"04e001070000",1,0],[193,"6e400002",false,"05020000000000",1,0]]},
 "number:starcode_brightness=1": {"status":"ok","writes":[[93,"6e400002",false,"04e000010000",1,0],[193,"6e400002",false,"05020000000000",1,0]]},
-"number:starcode_brightness=6": {"status":"ok","writes":[[93,"6e400002",false,"04e000060000",1,0],[193,"6e400002",false,"05020000000000",1,0]]}
+"number:starcode_brightness=6": {"status":"ok","writes":[[93,"6e400002",false,"04e000060000",1,0],[193,"6e400002",false,"05020000000000",1,0]]},
+"preset_lounge": {"status":"ok","writes":[[93,"6e400002",false,"05020000200000",3,100],[393,"6e400002",false,"05020000000000",1,0]]}
 }},
 "suta": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta", "pulse": [7, 150]},
@@ -19297,7 +19431,9 @@
 "button:tranquil_massage_timer_cycle": {"status":"ok","writes":[[0,"62741525",true,"0c02000002000000000000000000",6,100],[600,"62741525",true,"0c02000000000000000000000000",2,100]]},
 "button:tranquil_wave_1": {"status":"ok","writes":[[0,"62741525",true,"0c02000000000008000000000000",6,100],[600,"62741525",true,"0c02000000000000000000000000",2,100]]},
 "button:tranquil_wave_2": {"status":"ok","writes":[[0,"62741525",true,"0c02000000000010000000000000",6,100],[600,"62741525",true,"0c02000000000000000000000000",2,100]]},
-"button:tranquil_wave_3": {"status":"ok","writes":[[0,"62741525",true,"0c02000000000020000000000000",6,100],[600,"62741525",true,"0c02000000000000000000000000",2,100]]}
+"button:tranquil_wave_3": {"status":"ok","writes":[[0,"62741525",true,"0c02000000000020000000000000",6,100],[600,"62741525",true,"0c02000000000000000000000000",2,100]]},
+"preset_incline": {"error":"ValueError","status":"error","writes":[]},
+"preset_lounge": {"status":"ok","writes":[[0,"62741525",true,"0c02000020000000000000000000",6,100],[600,"62741525",true,"0c02000000000000000000000000",2,100]]}
 }},
 "vibradorm": {
 "info": {"bed_type": "vibradorm", "controller": "VibradormController", "module": "vibradorm", "pulse": [10, 100]},
