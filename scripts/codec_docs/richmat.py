@@ -8,12 +8,14 @@ from datetime import datetime, timedelta, timezone
 from custom_components.adjustable_bed import cluster018_protocol as classic_frames
 from custom_components.adjustable_bed import const as _const
 from custom_components.adjustable_bed import goodvibe_protocol as goodvibe_frames
-from custom_components.adjustable_bed import hjbed_catalog
+from custom_components.adjustable_bed import hjbed_catalog, hush_catalog
 from custom_components.adjustable_bed import hjbed_protocol as hjbed_frames
 from custom_components.adjustable_bed import rmcontrol_protocol as rmcontrol_frames
+from custom_components.adjustable_bed.beds import casper_base as casper_bed
 from custom_components.adjustable_bed.beds import eshine as eshine_bed
 from custom_components.adjustable_bed.beds import goodvibe as goodvibe_bed
 from custom_components.adjustable_bed.beds import hjbed as hjbed_bed
+from custom_components.adjustable_bed.beds import hush_base as hush_bed
 from custom_components.adjustable_bed.beds import leggett_lp_legacy as lp_legacy_bed
 from custom_components.adjustable_bed.beds import richmat_mh_protocol as mh_frames
 from custom_components.adjustable_bed.beds import rmcontrol as rmcontrol_bed
@@ -32,6 +34,11 @@ from custom_components.adjustable_bed.profiles import richmat as richmat_profile
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
 GUIDE = "docs/beds/richmat.md"
+# The Casper Base and Hush Base apps: their profile class and controller module.
+_LIBRARY_APPS = {
+    "Casper Base": (casper_profiles.PROFILES, _const.BED_TYPE_CASPER_BASE),
+    "Hush Base": (hush_profiles.PROFILES, _const.BED_TYPE_HUSH_BASE),
+}
 
 _RICHMAT_NAMES = {
     "richmat_wilinke": "Richmat WiLinke",
@@ -214,16 +221,30 @@ def render_richmat_profiles() -> str:
     catalog = _table(
         ("Profile", "Bed type", "Transport order", "Commands", "Hold until release"),
         (
-            (
-                _RICHMAT_NAMES[key],
-                ", ".join(f"`{bed_type}`" for bed_type in types[key]),
-                ", ".join(transport.upper() for transport in profile.transports)
-                or "configured characteristics",
-                _catalog_kind(key),
-                _lease(profile),
-            )
-            for key, profile in _richmat_profiles().items()
-            if profile not in _FIXED_ROUTES
+            *(
+                (
+                    _RICHMAT_NAMES[key],
+                    ", ".join(f"`{bed_type}`" for bed_type in types[key]),
+                    ", ".join(transport.upper() for transport in profile.transports)
+                    or "configured characteristics",
+                    _catalog_kind(key),
+                    _lease(profile),
+                )
+                for key, profile in _richmat_profiles().items()
+                if profile not in _FIXED_ROUTES
+            ),
+            *(
+                (
+                    app,
+                    f"`{bed_type}`",
+                    ", ".join(key.upper() for key in casper_profiles.TRANSPORTS),
+                    "per-product catalog",
+                    "no"
+                    if all(profile.execution.hold != "stream" for profile in profiles.values())
+                    else "renewable lease",
+                )
+                for app, (profiles, bed_type) in _LIBRARY_APPS.items()
+            ),
         ),
     )
     return _block(
@@ -245,6 +266,9 @@ def render_richmat_transports() -> str:
     for key, profile in profiles.items():
         for transport in profile.transports:
             users.setdefault(transport, []).append(_RICHMAT_NAMES[key])
+    for app in _LIBRARY_APPS:
+        for transport in casper_profiles.TRANSPORTS:
+            users.setdefault(transport, []).append(app)
     return _block(
         _table(
             ("Key", "Service", "Write", "Notify", "Commands", "Profiles"),
@@ -399,8 +423,8 @@ def render_richmat_functions() -> str:
                 for action, prefix in richmat_codec.FUNCTION_PREFIXES.items()
             ),
         ),
-        "Every other catalog action uses `6E 01 side`. HJBed sends only the first four, "
-        "Good Vibe Sleep the first three.",
+        "Every other catalog action uses `6E 01 side`. HJBed, Casper Base and Hush Base "
+        "send only the first four, Good Vibe Sleep the first three.",
     )
 
 
@@ -674,6 +698,25 @@ def render_richmat_catalog_timing() -> str:
                     "One-shot press",
                     f"one write, then one {_ms(lp_legacy_bed.TICK_S)} tick",
                 ),
+                *(
+                    row
+                    for app, bed in (("Casper Base", casper_bed), ("Hush Base", hush_bed))
+                    for row in (
+                        (app, "Every write", f"waits one {_ms(bed.TICK_S)} tick first"),
+                        (
+                            app,
+                            "Movement",
+                            f"entry pulse count, one code per {_ms(bed.TICK_S)} tick, then STOP",
+                        ),
+                        (
+                            app,
+                            "Soundtrack switch",
+                            f"dropped within {bed.SOUNDTRACK_GUARD_S} s of the last; "
+                            f"{_ms(bed.SOUNDTRACK_DELAY_S)} after its Bluetooth switch",
+                        ),
+                        (app, "External snore detector", f"sampled every {bed.SNORE_POLL_S} s"),
+                    )
+                ),
             ),
         )
     )
@@ -909,6 +952,115 @@ def render_goodvibe_startup() -> str:
     )
 
 
+def _code(code: int | None) -> str:
+    return "none" if code is None else f"`{code:02X}`"
+
+
+def render_casper_startup() -> str:
+    def name(action: str) -> str:
+        return re.sub(
+            r"(?<!^)(?=[A-Z])", " ", action.removeprefix("deviceFunctionItem")
+        ).capitalize()
+
+    return _block(
+        _table(
+            ("Step", "Framed", "N1"),
+            (
+                *(
+                    (
+                        name(action),
+                        _hex(richmat_codec.function(code, action=action)),
+                        _hex(richmat_codec.function(code, action=action, single=True)),
+                    )
+                    for action, code in casper_profiles.QUERIES
+                ),
+                (
+                    "Time sync, on products with repeating alarms",
+                    "calendar record `08 03 01`, length after `20`",
+                    "same",
+                ),
+            ),
+        )
+    )
+
+
+def render_casper_music() -> str:
+    def code(actions: tuple[casper_profiles.Action, ...], name: str) -> str:
+        # The page sends the first catalog entry of that name.
+        return _code(next(short for entry, short, _ in actions if entry == name))
+
+    names = dict.fromkeys(
+        name for name, _, _ in casper_profiles.ACTIONS if name.startswith("Music")
+    )
+    return _block(
+        _table(
+            ("App action", "Casper Base", "Hush Base"),
+            (
+                (
+                    f"`{name}`",
+                    code(casper_profiles.ACTIONS, name),
+                    code(hush_profiles.ACTIONS, name),
+                )
+                for name in names
+            ),
+        )
+    )
+
+
+def render_casper_base_commands() -> str:
+    products = [profile for profile in casper_profiles.PROFILES.values() if profile.current]
+    rows: dict[str, list[str]] = {}
+    for column, profile in enumerate(products):
+        for index in (i for group in profile.row[1:6] for i in group):
+            name, short, long = casper_profiles.ACTIONS[index]
+            save = "" if long is None else f", save {_hex(richmat_codec.command(long))}"
+            cells = rows.setdefault(f"`{name}`", ["n/a"] * len(products))
+            cells[column] = _hex(richmat_codec.command(short)) + save
+    stop = _hex(richmat_codec.command(richmat_codec.STOP))
+    return _block(
+        _table(
+            ("App action", *(profile.label for profile in products)),
+            [*((name, *cells) for name, cells in rows.items()), ("STOP", *[stop] * len(products))],
+        )
+    )
+
+
+def render_casper_base_stored() -> str:
+    def used(current: bool) -> set[int]:
+        return {
+            index
+            for profile in casper_profiles.PROFILES.values()
+            if profile.current is current
+            for group in profile.row[1:6]
+            for index in group
+        }
+
+    return _block(
+        _table(
+            ("App action", "Code", "Program code"),
+            (
+                (f"`{name}`", _code(short), _code(long))
+                for name, short, long in (
+                    casper_profiles.ACTIONS[index] for index in sorted(used(False) - used(True))
+                )
+            ),
+        )
+    )
+
+
+def render_hush_base_commands() -> str:
+    return _block(
+        _table(
+            ("App action", "Code", "Program code"),
+            (
+                (f"`{name}`", _code(short), _code(long))
+                for name, short, long in hush_catalog.ACTIONS
+                if name != "PhoneLight"
+            ),
+        )
+    )
+
+
 def render_lp_legacy_tokens() -> str:
     controls = [
         control
@@ -980,4 +1132,9 @@ BLOCKS: list[Block] = [
     (GUIDE, "goodvibe-startup", render_goodvibe_startup),
     (GUIDE, "lp-legacy-tokens", render_lp_legacy_tokens),
     (GUIDE, "lp-legacy-notifications", render_lp_legacy_notifications),
+    (GUIDE, "casper-startup", render_casper_startup),
+    (GUIDE, "casper-music", render_casper_music),
+    (GUIDE, "casper-base-commands", render_casper_base_commands),
+    (GUIDE, "casper-base-stored", render_casper_base_stored),
+    (GUIDE, "hush-base-commands", render_hush_base_commands),
 ]

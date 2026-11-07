@@ -752,7 +752,7 @@ See the [protocol guide](beds/richmat.md#classic-richmat-apps) for the frames.
 
 ### Hush Base
 
-Use `adjustable_bed.hush_base` for Hush bed and independent sleep-module configuration. The [Hush guide](beds/hush-base.md#configuration-actions) lists the finite operations, profile gates, packet formats and sensor partition domains.
+Use `adjustable_bed.hush_base` for Hush bed and independent sleep-module configuration. The [Hush guide](beds/hush-base.md#configuration-actions) lists the finite operations, profile gates and sensor partition domains; the [Richmat guide](beds/richmat.md#hush-base) has the packet formats.
 
 ### Richmat app mattress and calendar alarms
 
