@@ -56,7 +56,7 @@ from tests.test_controller_contract import _FactoryCoordinator, _make_connected_
 ADDRESS = "11:22:33:44:55:66"
 # Steps that pick the route, by the field that picks it.
 _ROUTE_STEPS = {
-    **{family.step: family.field for family in APP_FAMILIES},
+    **{family.step: "choice" for family in APP_FAMILIES},
     "keeson_app": "choice",
 }
 
