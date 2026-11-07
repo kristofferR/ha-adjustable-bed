@@ -13,7 +13,7 @@ from homeassistant.helpers import config_validation as cv
 
 from .const import BED_TYPE_OCTO, CONF_OCTO_PIN, DOMAIN
 from .octo_runtime import octo_controller
-from .paired_coordinator import BedChild, SingleAddressSideCoordinator
+from .paired_coordinator import BedChild
 from .services import (
     SIDE_FIELD,
     BedTarget,
@@ -98,10 +98,6 @@ async def handle_octo_enroll_pin(call: ServiceCall) -> None:
     except (PermissionError, ValueError) as err:
         raise ServiceValidationError(str(err)) from err
 
-    physical_coordinator = (
-        target._single_inner if isinstance(target, SingleAddressSideCoordinator) else target
-    )
-    physical_coordinator._octo_pin = pin
     entry = target.entry
     data = {**entry.data, CONF_OCTO_PIN: pin}
     if isinstance(entry, ConfigEntry):

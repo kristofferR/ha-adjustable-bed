@@ -14,7 +14,8 @@ Three fixable issues share this flow, one per physical bed or paired side:
 
 from __future__ import annotations
 
-from typing import Any
+import logging
+from typing import TYPE_CHECKING, Any
 
 import voluptuous as vol
 from homeassistant.components.repairs import RepairsFlow, RepairsFlowResult
@@ -53,6 +54,11 @@ from .furnimove_profiles import (
 )
 from .pairing import effective_child_data, get_child, is_paired, with_updated_child
 from .unsupported import delete_pairing_required_issue
+
+if TYPE_CHECKING:
+    from .coordinator import AdjustableBedCoordinator
+
+_LOGGER = logging.getLogger(__name__)
 
 ISSUE_PREFIX = "furnimove_layout_"
 CONF_FURNIMOVE_ROUTE_KEPT = "furnimove_route_kept"
@@ -318,3 +324,27 @@ class FurniMoveLayoutRepairFlow(RepairsFlow):
         # Loaded entries reload through the normal update listener; offline
         # entries retry setup with this same identity and the corrected data.
         return self.async_create_entry(title="", data={})
+
+
+async def async_load_offline_furnimove_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    coordinator: AdjustableBedCoordinator,
+    reason: str,
+) -> bool:
+    """Expose the selected catalog layout when the first link fails; return whether it can load."""
+    del hass, reason
+    # A failed cleanup must not turn a half-initialized live session into a
+    # successfully loaded entry. This path requires a client-free controller.
+    if coordinator.client is not None or coordinator.controller is not None:
+        return False
+    await coordinator.async_prime_offline_controller()
+    if coordinator.capability_controller is None:
+        return False
+    _LOGGER.warning(
+        "Loading FurniMove entry %s without an initial BLE connection. Controls use "
+        "the selected handset layout and retry the connection when used; receiver "
+        "compatibility remains unverified.",
+        entry.title,
+    )
+    return True

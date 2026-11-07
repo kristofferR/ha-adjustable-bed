@@ -240,10 +240,6 @@ class ReverieController(BedController):
         return ("back_up", "back_down", "legs_up", "legs_down")
 
     @property
-    def supports_position_feedback(self) -> bool:
-        return self.model.positions
-
-    @property
     def requires_notification_channel(self) -> bool:
         return self.model.positions
 

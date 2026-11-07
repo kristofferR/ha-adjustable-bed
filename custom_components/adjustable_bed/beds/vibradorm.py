@@ -36,6 +36,7 @@ from .base import BedController
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
+    from .lifecycle import ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -434,10 +435,22 @@ class VibradormController(BedController):
         """Return True - Vibradorm beds support programming memory positions."""
         return True
 
+    async def async_on_connect(self, session: ControllerSession) -> None:
+        """Keep angle sensing off on the write-only route, then subscribe."""
+        if not session.angle_sensing_disabled and not self.supports_position_feedback:
+            session.disable_angle_sensing()
+            _LOGGER.info(
+                "Disabling angle sensing for %s: BLE model %s uses the OEM app's "
+                "write-only VMAT control path without position feedback",
+                session.address,
+                session.model,
+            )
+        await session.async_start_notify()
+
     @property
     def supports_position_feedback(self) -> bool:
         """Return True for VMAT variants where the OEM app uses position feedback."""
-        return not self._uses_app_strict_command_path
+        return super().supports_position_feedback and not self._uses_app_strict_command_path
 
     @property
     def allow_position_polling_during_commands(self) -> bool:

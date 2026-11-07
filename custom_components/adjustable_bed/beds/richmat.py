@@ -445,6 +445,10 @@ class RichmatController(RichmatProfileController):
         return RICHMAT_LIGHT_PROTOCOL_LEGACY_RGB
 
     @property
+    def protocol_diagnostics(self) -> dict[str, object]:
+        return {"richmat_is_wilinke": self._is_wilinke}
+
+    @property
     def features(self) -> RichmatFeatures:
         """Return the feature flags for this controller."""
         return self._features

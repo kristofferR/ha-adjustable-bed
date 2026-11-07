@@ -13,6 +13,7 @@ from homeassistant.const import CONF_NAME
 
 from .adapter import discover_services
 from .app_session import app_session
+from .bed_traits import bed_traits
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
@@ -23,7 +24,6 @@ from .const import (
     BED_TYPE_BF,
     BED_TYPE_CASPER_BASE,
     BED_TYPE_CHERISH,
-    BED_TYPE_CLUSTER018,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
@@ -90,6 +90,7 @@ from .const import (
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
+    BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
     BED_TYPE_SCOTT_LIVING,
@@ -118,7 +119,6 @@ from .const import (
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
     CB1322_MANUFACTURER_MARKERS,
-    CLUSTER033_BED_TYPES,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
     CONF_FSM_RELAX_MEMORY_NAMES,
@@ -182,6 +182,7 @@ from .const import (
     KEESON_BETTERLIVING_SERVICE_UUIDS,
     KEESON_FALLBACK_GATT_PAIRS,
     KEESON_JSON_SERVICE_UUID,
+    KEESON_LAYOUT_APP_BED_TYPES,
     KEESON_SINO_NAME_PATTERNS,
     # Variants and UUIDs
     KEESON_VARIANT_ADJUSTABLE_LITE,
@@ -202,6 +203,7 @@ from .const import (
     KEESON_VARIANT_SINO,
     KEESON_VARIANT_SLEEP_HARMONY,
     LEGGETT_APP_DEFAULT_PROFILE,
+    LEGGETT_VARIANT_GEN2,
     LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
     LINAK_VARIANT_PERFORMANCE,
@@ -232,6 +234,7 @@ from .const import (
     RICHMAT_VARIANT_PREFIXAA,
     RICHMAT_VARIANT_WILINKE,
     RICHMAT_WILINKE_SERVICE_UUIDS,
+    RUF_RICHMAT_APPS,
     SBI_VARIANT_BOTH,
     SLEEP_NUMBER_VARIANT_LEFT,
     SLEEP_NUMBER_VARIANT_RIGHT,
@@ -562,7 +565,7 @@ async def create_controller(
     rmcontrol_side: str = "left",
     advertisement_name: str | None = None,
 ) -> BedController:
-    """Create the appropriate bed controller.
+    """Create the appropriate bed controller, carrying its bed type's static traits.
 
     This factory function handles controller instantiation with lazy imports
     to avoid loading all controller modules until needed.
@@ -593,6 +596,76 @@ async def create_controller(
         ValueError: If bed_type is unknown
         ConnectionError: If auto-detection is needed but client is not connected
     """
+    if bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant in (None, "", VARIANT_AUTO):
+        # Resolve the automatic route first, so the controller carries the traits
+        # of the protocol it actually speaks.
+        protocol_variant = await _detect_leggett_platt_variant(client)
+    controller = await _build_controller(
+        coordinator,
+        bed_type,
+        protocol_variant,
+        client,
+        device_name=device_name,
+        octo_pin=octo_pin,
+        richmat_remote=richmat_remote,
+        jensen_pin=jensen_pin,
+        cb24_bed_selection=cb24_bed_selection,
+        ble_manufacturer=ble_manufacturer,
+        ble_model=ble_model,
+        manufacturer_data=manufacturer_data,
+        capability_snapshot=capability_snapshot,
+        rmcontrol_product=rmcontrol_product,
+        rmcontrol_side=rmcontrol_side,
+        advertisement_name=advertisement_name,
+    )
+    controller.static_traits = bed_traits(bed_type, protocol_variant)
+    return controller
+
+
+async def _detect_leggett_platt_variant(client: BleakClient | None) -> str:
+    """Pick MlRM when the WiLinke service is present, otherwise Gen2."""
+    if client is None:
+        raise ConnectionError("Cannot auto-detect Leggett & Platt variant: no BLE client provided")
+
+    # Ensure services are discovered
+    if not client.services:
+        _LOGGER.debug("Services not populated, attempting discovery...")
+        address = getattr(client, "address", "unknown")
+        discovered = await discover_services(client, address)
+        if not discovered or not client.services:
+            raise ConnectionError(
+                "Cannot auto-detect Leggett & Platt variant: "
+                "failed to discover BLE services. "
+                "Please manually select a protocol variant in settings."
+            )
+
+    wilinke_uuids_lower = [uuid.lower() for uuid in RICHMAT_WILINKE_SERVICE_UUIDS]
+    if any(service.uuid.lower() in wilinke_uuids_lower for service in client.services):
+        _LOGGER.debug("Auto-detected MlRM Leggett & Platt variant (WiLinke UUID found)")
+        return LEGGETT_VARIANT_MLRM
+    _LOGGER.debug("Auto-detected Gen2 Leggett & Platt variant (no WiLinke UUID found)")
+    return LEGGETT_VARIANT_GEN2
+
+
+async def _build_controller(
+    coordinator: AdjustableBedCoordinator,
+    bed_type: str,
+    protocol_variant: str | None,
+    client: BleakClient | None,
+    device_name: str | None = None,
+    octo_pin: str = "",
+    richmat_remote: str = "auto",
+    jensen_pin: str = "",
+    cb24_bed_selection: int = 0x00,
+    ble_manufacturer: str | None = None,
+    ble_model: str | None = None,
+    manufacturer_data: dict[int, bytes] | None = None,
+    capability_snapshot: Mapping[str, Any] | None = None,
+    rmcontrol_product: str = "",
+    rmcontrol_side: str = "left",
+    advertisement_name: str | None = None,
+) -> BedController:
+    """Instantiate the controller for a bed type; see create_controller."""
     if bed_type == BED_TYPE_COMFORT_ENHANCEMENTS:
         await coordinator.hass.async_add_import_executor_job(
             import_module, ".beds.comfort_enhancements", __package__
@@ -731,10 +804,10 @@ async def create_controller(
         return ReverieController(coordinator, model=protocol_variant)
 
     if bed_type == "richmat_sleep_receiver":
-        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.row061_sleep", __package__)
-        from .beds.row061_sleep import Row061SleepController
+        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.ruf_richmat_sleep", __package__)
+        from .beds.ruf_richmat_sleep import RufRichmatSleepController
 
-        return Row061SleepController(coordinator, app=protocol_variant or "")
+        return RufRichmatSleepController(coordinator, app=protocol_variant or "")
 
     if bed_type in RICHMAT_MH_APPS:
         # The app's name rule picks the model unless the variant fixes it;
@@ -743,18 +816,17 @@ async def create_controller(
             import_module, ".beds.richmat_mh", __package__
         )
         from .beds.richmat_mh import RichmatMhController
-        from .row061_profiles import APPS as row061_apps
 
         controller_class = RichmatMhController
-        if bed_type in row061_apps:
+        if bed_type in RUF_RICHMAT_APPS:
             await coordinator.hass.async_add_import_executor_job(
-                import_module, ".beds.row061", __package__
+                import_module, ".beds.ruf_richmat", __package__
             )
-            from .beds.row061 import Row061Controller
-            from .row061_profiles import profiles
+            from .beds.ruf_richmat import RufRichmatController
+            from .ruf_richmat_profiles import profiles
 
-            await coordinator.hass.async_add_executor_job(profiles, row061_apps[bed_type])
-            controller_class = Row061Controller
+            await coordinator.hass.async_add_executor_job(profiles, RUF_RICHMAT_APPS[bed_type])
+            controller_class = RufRichmatController
         return controller_class(
             coordinator,
             app=RICHMAT_MH_APPS[bed_type],
@@ -804,13 +876,13 @@ async def create_controller(
         from .beds.eshine_okin import EshineOkinController
         return EshineOkinController(coordinator, profile=protocol_variant or "")
 
-    if bed_type == BED_TYPE_CLUSTER018:
+    if bed_type == BED_TYPE_RICHMAT_CLASSIC_APPS:
         # The app's catalog is a gzip file: load it off the event loop first.
-        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.cluster018", __package__)
-        from .beds.cluster018 import Cluster018Controller
-        from .cluster018_profiles import load_catalog
+        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.richmat_classic", __package__)
+        from .beds.richmat_classic import RichmatClassicController
+        from .richmat_classic_profiles import load_catalog
         await coordinator.hass.async_add_executor_job(load_catalog, protocol_variant)
-        return Cluster018Controller(coordinator, app=protocol_variant, device_name=device_name)
+        return RichmatClassicController(coordinator, app=protocol_variant, device_name=device_name)
 
     if bed_type == BED_TYPE_MOTOMOTION:
         await coordinator.hass.async_add_import_executor_job(import_module, ".beds.motomotion", __package__)
@@ -1668,14 +1740,14 @@ async def create_controller(
         return MotoSleepController(coordinator, device_name=device_name)
 
     if bed_type == BED_TYPE_LEGGETT_PLATT:
-        # Use configured variant or auto-detect
+        # create_controller has already resolved the automatic route
         if protocol_variant == LEGGETT_VARIANT_MLRM:
             await coordinator.hass.async_add_import_executor_job(
                 import_module, ".beds.leggett_wilinke", __package__
             )
             from .beds.leggett_wilinke import LeggettWilinkeController
 
-            _LOGGER.debug("Using MlRM Leggett & Platt variant (configured)")
+            _LOGGER.debug("Using MlRM Leggett & Platt variant")
             return LeggettWilinkeController(coordinator)
         elif protocol_variant == LEGGETT_VARIANT_OKIN:
             await coordinator.hass.async_add_import_executor_job(
@@ -1689,53 +1761,14 @@ async def create_controller(
                 coordinator,
                 app_profile=entry_data.get(CONF_LEGGETT_APP_PROFILE, LEGGETT_APP_DEFAULT_PROFILE),
             )
-        elif protocol_variant in (None, "", "auto"):
-            # Auto-detect: check if WiLinke service UUID is available (indicates MlRM)
-            if client is None:
-                raise ConnectionError(
-                    "Cannot auto-detect Leggett & Platt variant: no BLE client provided"
-                )
-
-            # Ensure services are discovered
-            if not client.services:
-                _LOGGER.debug("Services not populated, attempting discovery...")
-                address = getattr(client, "address", "unknown")
-                discovered = await discover_services(client, address)
-                if not discovered or not client.services:
-                    raise ConnectionError(
-                        "Cannot auto-detect Leggett & Platt variant: "
-                        "failed to discover BLE services. "
-                        "Please manually select a protocol variant in settings."
-                    )
-
-            # Check for WiLinke service UUID (indicates MlRM variant)
-            wilinke_uuids_lower = [uuid.lower() for uuid in RICHMAT_WILINKE_SERVICE_UUIDS]
-            for service in client.services:
-                if service.uuid.lower() in wilinke_uuids_lower:
-                    await coordinator.hass.async_add_import_executor_job(
-                        import_module, ".beds.leggett_wilinke", __package__
-                    )
-                    from .beds.leggett_wilinke import LeggettWilinkeController
-
-                    _LOGGER.debug("Using MlRM Leggett & Platt variant (auto-detected)")
-                    return LeggettWilinkeController(coordinator)
-
-            # Default to gen2 variant (most common L&P variant)
-            await coordinator.hass.async_add_import_executor_job(
-                import_module, ".beds.leggett_gen2", __package__
-            )
-            from .beds.leggett_gen2 import LeggettGen2Controller
-
-            _LOGGER.debug("Using Gen2 Leggett & Platt variant (no WiLinke UUID found)")
-            return LeggettGen2Controller(coordinator, manufacturer_data=manufacturer_data)
         else:
-            # Explicit gen2 variant
+            # Gen2, explicit or auto-detected by create_controller
             await coordinator.hass.async_add_import_executor_job(
                 import_module, ".beds.leggett_gen2", __package__
             )
             from .beds.leggett_gen2 import LeggettGen2Controller
 
-            _LOGGER.debug("Using Gen2 Leggett & Platt variant (configured)")
+            _LOGGER.debug("Using Gen2 Leggett & Platt variant")
             return LeggettGen2Controller(coordinator, manufacturer_data=manufacturer_data)
 
     if bed_type == BED_TYPE_DEWERTOKIN:
@@ -1937,7 +1970,7 @@ async def create_controller(
         )
         return CoolBaseController(coordinator, dewert_okin_profile=dewert_okin_profile)
 
-    if bed_type in CLUSTER033_BED_TYPES:
+    if bed_type in KEESON_LAYOUT_APP_BED_TYPES:
         module_name, class_name = {
             'tempur_curve': ('tempur_curve', 'TempurCurveController'),
             'qplus_app': ('sbi', 'QPlusAppController'),

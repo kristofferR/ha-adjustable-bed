@@ -24,7 +24,7 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
-from .cluster033 import AppController
+from .keeson_layout_app import AppController
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -178,10 +178,6 @@ class SertaMPRemoteController(AppController):
         self._memory_active = False
         self._setters: list[asyncio.TimerHandle] = []
         self._local_release_stop: tuple[object, int, asyncio.Event] | None = None
-
-    @property
-    def supports_position_feedback(self) -> bool:
-        return True
 
     @property
     def supports_direct_position_control(self) -> bool:

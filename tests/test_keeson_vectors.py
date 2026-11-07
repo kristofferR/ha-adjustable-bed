@@ -23,7 +23,7 @@ from custom_components.adjustable_bed.beds import (
     scott_living,
     sleepys,
 )
-from custom_components.adjustable_bed.beds.cluster033 import AppController
+from custom_components.adjustable_bed.beds.keeson_layout_app import AppController
 from custom_components.adjustable_bed.codec import keeson as codec
 from custom_components.adjustable_bed.const import BED_TYPE_KEESON, KEESON_VARIANTS, VARIANT_AUTO
 from custom_components.adjustable_bed.controller_factory import create_controller
@@ -290,8 +290,8 @@ def _app_census(profile: KeesonProfile) -> set[bytes]:
     return {profiles.encode(profile, word) for word in words}
 
 
-def _cluster033_census(app: str) -> set[bytes]:
-    """Fixed frames the cluster033 controller sends for every layout and Q-Plus side."""
+def _keeson_layout_app_census(app: str) -> set[bytes]:
+    """Fixed frames the Keeson layout app controller sends for every layout and Q-Plus side."""
     frames: set[bytes] = set()
     for layout in profiles.APP_LAYOUTS[app]:
         profile = profiles.app_profile(app, layout)
@@ -353,9 +353,9 @@ def test_profile_sends_only_frozen_frames(key: str) -> None:
 
 
 @pytest.mark.parametrize("app", sorted(profiles.APP_LAYOUTS))
-def test_cluster033_app_sends_only_frozen_frames(app: str) -> None:
+def test_keeson_layout_app_sends_only_frozen_frames(app: str) -> None:
     frozen = {bytes.fromhex(literal) for literal in FROZEN_FRAMES[app]}
-    assert {frame.hex() for frame in _cluster033_census(app) - frozen} == set()
+    assert {frame.hex() for frame in _keeson_layout_app_census(app) - frozen} == set()
 
 
 def test_k1_frame_layout() -> None:
@@ -374,7 +374,7 @@ def test_k1_frame_layout() -> None:
         # Glideaway Motion's cleared table and AdjustaMattress P1's default record.
         ("", "ed80030000000000000000000000008f"),
         ("00000013", "ed80030000001300000000000000007c"),
-        # A cluster033 weekly table record.
+        # A Keeson layout app weekly table record.
         ("061e0413", "ed8003061e04130000000000000000" + "54"),
     ],
 )

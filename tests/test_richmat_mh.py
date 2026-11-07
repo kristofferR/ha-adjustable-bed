@@ -22,6 +22,8 @@ from custom_components.adjustable_bed.beds.richmat_mh import (
 )
 from custom_components.adjustable_bed.const import (
     RICHMAT_MH_APPS,
+)
+from custom_components.adjustable_bed.richmat_mh_models import (
     RICHMAT_MH_MODEL_CHOICES,
     RICHMAT_MH_VARIANTS_BY_APP,
 )

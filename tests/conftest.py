@@ -10,6 +10,7 @@ import os
 import struct
 import warnings
 from collections.abc import AsyncGenerator, Callable, Generator
+from types import MethodType
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import psutil
@@ -71,11 +72,14 @@ def make_controller_mock(**overrides: object) -> MagicMock:
 
     Pass keyword overrides for the capabilities a given test actually cares about.
     """
+    from custom_components.adjustable_bed.bed_traits import BedTraits
     from custom_components.adjustable_bed.beds.base import BedController
     from custom_components.adjustable_bed.position_seek import PositionSeekPolicy
 
     controller = MagicMock(
-        prepare_for_position_read=AsyncMock(), prepare_for_movement=AsyncMock()
+        prepare_for_position_read=AsyncMock(),
+        prepare_for_movement=AsyncMock(),
+        static_traits=BedTraits(),
     )
     for name, member in vars(BedController).items():
         if not isinstance(member, property) or member.fget is None:
@@ -84,13 +88,24 @@ def make_controller_mock(**overrides: object) -> MagicMock:
             default = member.fget(controller)
         except Exception:  # noqa: BLE001 - property needs real state; leave it a Mock
             continue
-        # The default seek policy delegates to the mock's seeded tuning
-        # attributes lazily, so per-test overrides still flow through it.
+        # The default seek policy is seeded as one instance, so a test can tune
+        # it in place or replace it.
         if isinstance(
             default,
             bool | int | float | str | tuple | list | dict | None | PositionSeekPolicy,
         ):
             setattr(controller, name, default)
+    # Connection lifecycle hooks keep the base behavior (start notifications).
+    for name in (
+        "async_discover_capabilities",
+        "async_on_connect",
+        "async_after_connect",
+        "async_read_device_info",
+        "async_refresh_auth",
+        "async_resume_session",
+        "stop_keepalive",
+    ):
+        setattr(controller, name, MethodType(getattr(BedController, name), controller))
     for name, value in overrides.items():
         setattr(controller, name, value)
     return controller

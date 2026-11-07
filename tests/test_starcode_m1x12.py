@@ -20,6 +20,13 @@ from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.star_elevate import StarElevateCommands
+from custom_components.adjustable_bed.beds.starcode_dialect import (
+    extended_packet,
+    long_packet,
+    normal_packet,
+    position_packet,
+    query_packet,
+)
 from custom_components.adjustable_bed.beds.starcode_m1x12 import (
     DEVICE_INFORMATION,
     FIRMWARE,
@@ -32,11 +39,6 @@ from custom_components.adjustable_bed.beds.starcode_m1x12 import (
 )
 from custom_components.adjustable_bed.beds.starcode_m1x12_protocol import (
     clock_packet,
-    extended_packet,
-    long_packet,
-    normal_packet,
-    position_packet,
-    query_packet,
 )
 from custom_components.adjustable_bed.binary_sensor import _binary_sensor_entities_for
 from custom_components.adjustable_bed.button import _button_entities_for

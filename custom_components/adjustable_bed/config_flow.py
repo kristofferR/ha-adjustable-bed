@@ -98,6 +98,13 @@ from .app_profiles import (
     is_per_side_variant,
     per_side_profile,
 )
+from .bed_traits import (
+    bed_traits,
+    bed_type_has_position_feedback,
+    disconnect_after_command_default_enabled,
+    passive_position_reconciliation_default_enabled,
+    supports_passive_position_reconciliation,
+)
 from .beds.remacro_protocol import add_remacro_model, app_for_variant
 from .bluetooth_bond import (
     BondRemovalResult,
@@ -134,12 +141,10 @@ from .bond_verification import (
     bond_owner_from_entry,
     build_bond_context,
 )
-from .cluster018_profiles import APP_NAMES as CLUSTER018_APP_NAMES
 from .const import (
     ADAPTER_AUTO,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_BEDSENSE,
-    BED_TYPE_CLUSTER018,
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
@@ -174,6 +179,7 @@ from .const import (
     BED_TYPE_REMACRO,
     BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
+    BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEPTRACKER,
@@ -185,9 +191,6 @@ from .const import (
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
-    BEDS_WITH_PERCENTAGE_POSITIONS,
-    BEDS_WITH_POSITION_FEEDBACK,
-    CLUSTER033_BED_TYPES,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ATTEMPTED_SOURCE,
@@ -257,6 +260,7 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
     IDLE_DISCONNECT_KEEP_CONNECTED,
+    KEESON_LAYOUT_APP_BED_TYPES,
     LEGGETT_APP_DEFAULT_PROFILE,
     LEGGETT_APP_MOTOR_COUNTS,
     LEGGETT_APP_PROFILES,
@@ -297,17 +301,13 @@ from .const import (
     VMATBASIC_PROFILES,
     ZSERIES_PULSE_COUNT_RANGE,
     DetectionResult,
-    bed_type_has_position_feedback,
-    disconnect_after_command_default_enabled,
     get_motor_pulse_defaults,
     get_richmat_features,
     get_richmat_motor_count,
     grants_one_connection_per_pairing_window,
-    passive_position_reconciliation_default_enabled,
     requires_pairing,
     requires_pairing_after_service_discovery,
     resolve_explicit_bed_type,
-    supports_passive_position_reconciliation,
 )
 from .detection import (
     APP_VARIANT_CHOICES,
@@ -357,6 +357,7 @@ from .profile_migration import (
     reconfigure_family,
 )
 from .remacro_discovery import remacro_entry_problem, remacro_manufacturer_data
+from .richmat_classic_profiles import APP_NAMES as RICHMAT_CLASSIC_APP_NAMES
 from .setup_operation import (
     BluetoothOperationMixin,
     ConnectionLifetimePolicy,
@@ -402,7 +403,7 @@ CONFIGURED_RETRY_PREFIX = "configured_retry::"
 _AUTO_DETECT_MIN_CONFIDENCE = 0.7
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
-    {BED_TYPE_CLUSTER018, BED_TYPE_MOTOMOTION, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
+    {BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
      BED_TYPE_GMMOTOR, "gmmotor_sleep_mm", "gmmotor_sleep_sxb"}
 )
 
@@ -816,8 +817,8 @@ def _bed_type_selector(
         }
         # The classic Richmat apps are app rows, each with the app's own label.
         unguided_apps = {
-            bed_type_choice(BED_TYPE_CLUSTER018, app): APP_VARIANT_CHOICES[BED_TYPE_CLUSTER018, app]
-            for app in CLUSTER018_APP_NAMES
+            bed_type_choice(BED_TYPE_RICHMAT_CLASSIC_APPS, app): APP_VARIANT_CHOICES[BED_TYPE_RICHMAT_CLASSIC_APPS, app]
+            for app in RICHMAT_CLASSIC_APP_NAMES
         }
         options = sorted(
             [
@@ -1217,8 +1218,8 @@ def _checked_family(migrating: AppFamily, staged: Mapping[str, Any]) -> AppFamil
 _DECLARED_QUESTION_ROUTES: Final = frozenset(
     {
         # The app is its variant, chosen from the bed-type list.
-        BED_TYPE_CLUSTER018,
-        *CLUSTER033_BED_TYPES,
+        BED_TYPE_RICHMAT_CLASSIC_APPS,
+        *KEESON_LAYOUT_APP_BED_TYPES,
         "ergomotion_4",
         # One row each asks the app's exact product.
         *PRODUCT_QUESTION_BED_TYPES,
@@ -6901,10 +6902,8 @@ class AdjustableBedOptionsFlow(
             data.pop(CONF_LEGGETT_APP_PROFILE, None)
         if not supports_passive_position_reconciliation(bed_type):
             data.pop(CONF_PASSIVE_POSITION_RECONCILIATION, None)
-        if (
-            bed_type in BEDS_WITH_PERCENTAGE_POSITIONS
-            or bed_type not in BEDS_WITH_POSITION_FEEDBACK
-        ):
+        traits = bed_traits(bed_type)
+        if traits.percentage_positions or not traits.position_feedback:
             data.pop(CONF_BACK_MAX_ANGLE, None)
             data.pop(CONF_LEGS_MAX_ANGLE, None)
 
@@ -7502,7 +7501,7 @@ class AdjustableBedOptionsFlow(
         )
 
         # Angle limits apply to beds that report angles, not percentages.
-        if bed_type not in BEDS_WITH_PERCENTAGE_POSITIONS and has_position_feedback:
+        if not bed_traits(bed_type).percentage_positions and has_position_feedback:
             schema_dict.update(fields(*_ANGLE_LIMITS))
 
         if user_input is not None:

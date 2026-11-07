@@ -28,15 +28,17 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
+from .starcode_dialect import (
+    extended_packet,
+    long_packet,
+    manufacturer_dialect,
+    normal_packet,
+    query_packet,
+)
 from .starcode_m5x5_protocol import (
     StateValue,
     clock_packet,
-    extended_packet,
-    long_normal_packet,
-    manufacturer_dialect,
-    normal_packet,
     parse_notification,
-    query_packet,
 )
 
 if TYPE_CHECKING:
@@ -191,14 +193,6 @@ class StarcodeM5X5Controller(BedController):
 
     @property
     def has_lumbar_support(self) -> bool:
-        return True
-
-    @property
-    def supports_position_feedback(self) -> bool:
-        return True
-
-    @property
-    def reports_percentage_position(self) -> bool:
         return True
 
     @property
@@ -799,7 +793,7 @@ class StarcodeM5X5Controller(BedController):
             if dialect == "star"
             else (0x40 if enabled else 0x80)
         )
-        packet = normal_packet(key, dialect) if dialect == "star" else long_normal_packet(key)
+        packet = normal_packet(key, dialect) if dialect == "star" else long_packet(key)
         await self._rgb(packet, 1 if self.profile in ("f23", "kneading") else 2)
 
     async def lights_cycle(self) -> None:

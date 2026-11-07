@@ -20,6 +20,10 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.app_families import APP_FAMILIES, GUIDED_FAMILIES
+from custom_components.adjustable_bed.bed_traits import (
+    bed_type_has_position_feedback,
+    disconnect_after_command_default_enabled,
+)
 from custom_components.adjustable_bed.config_flow import (
     _APP_SETUP_STEPS,
     _SETUP_ROUTE_EXCLUSIONS,
@@ -28,7 +32,6 @@ from custom_components.adjustable_bed.config_flow import (
     _motor_count_options,
 )
 from custom_components.adjustable_bed.const import (
-    disconnect_after_command_default_enabled,
     resolve_explicit_bed_type,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
@@ -222,7 +225,7 @@ async def _missing(data: dict[str, Any], reached: set[str]) -> set[str]:
     owned = set(profile.owns) if profile else set()
     choices = {
         const.CONF_MOTOR_COUNT: len(_motor_count_options(bed_type, variant)) > 1,
-        const.CONF_DISABLE_ANGLE_SENSING: const.bed_type_has_position_feedback(bed_type, variant),
+        const.CONF_DISABLE_ANGLE_SENSING: bed_type_has_position_feedback(bed_type, variant),
     }
     missing = {key for key, matters in choices.items() if matters} - owned - reached
     if const.CONF_HAS_MASSAGE not in owned | reached and await _massage_is_a_choice(data):
@@ -466,7 +469,7 @@ async def test_the_final_settings_save_each_beds_angle_sensing(hass, row, disabl
     bed_type, variant = resolve_bed_type_choice(row)
     routes = (variant or const.VARIANT_AUTO, *(get_variants_for_bed_type(bed_type) or {}))
     # Shown exactly where a route of the row reports positions.
-    assert shown == any(const.bed_type_has_position_feedback(bed_type, r) for r in routes)
+    assert shown == any(bed_type_has_position_feedback(bed_type, r) for r in routes)
     answers = _answers(form, 0)
     if shown and disable:
         answers[const.CONF_DISABLE_ANGLE_SENSING] = True
@@ -477,7 +480,7 @@ async def test_the_final_settings_save_each_beds_angle_sensing(hass, row, disabl
                 _answers(result, attempt)
             )
     saved = finished.value.data
-    reports = const.bed_type_has_position_feedback(
+    reports = bed_type_has_position_feedback(
         saved[const.CONF_BED_TYPE], saved.get(const.CONF_PROTOCOL_VARIANT)
     )
     expected = True if disable and shown else not reports
@@ -500,7 +503,6 @@ _QUIET_BED_TYPES = (
     const.BED_TYPE_OKIN_RF_ECO_BT,
     const.BED_TYPE_REVERIE,
     const.BED_TYPE_REVERIE_NIGHTSTAND,
-    const.BED_TYPE_SBI,
     const.BED_TYPE_SCOTT_LIVING,
     const.BED_TYPE_SERTA,
     const.BED_TYPE_SLEEPTRACKER,
@@ -520,7 +522,7 @@ def _quiet_routes() -> list[tuple[str, str]]:
         (bed_type, variant)
         for bed_type in _QUIET_BED_TYPES
         for variant in _routes_of(bed_type)
-        if not const.bed_type_has_position_feedback(bed_type, variant)
+        if not bed_type_has_position_feedback(bed_type, variant)
         and variant not in _SETUP_ROUTE_EXCLUSIONS.get(bed_type, ())
     ]
 
@@ -533,7 +535,7 @@ async def test_the_quiet_bed_types_are_those_whose_controller_reads_positions(ha
     for bed_type in const.SUPPORTED_BED_TYPES:
         controller = await _create_controller_for_bed_type(bed_type)
         if type(controller).read_positions is not BedController.read_positions and any(
-            not const.bed_type_has_position_feedback(bed_type, v) for v in _routes_of(bed_type)
+            not bed_type_has_position_feedback(bed_type, v) for v in _routes_of(bed_type)
         ):
             found.add(bed_type)
     assert found == set(_QUIET_BED_TYPES)

@@ -8,6 +8,7 @@ import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.bed_traits import bed_type_has_position_feedback
 from custom_components.adjustable_bed.beds.jensen_linon import JensenLinonController
 from custom_components.adjustable_bed.beds.svane import HEAD, POSITION, SvaneController
 from custom_components.adjustable_bed.button import _button_entities_for
@@ -29,7 +30,6 @@ from custom_components.adjustable_bed.const import (
     SVANE_VARIANT_JMC,
     SVANE_VARIANT_MULTI,
     VARIANT_AUTO,
-    bed_type_has_position_feedback,
     get_motor_pulse_defaults,
     requires_pairing,
 )

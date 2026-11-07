@@ -250,11 +250,6 @@ class KeesonController(BedController):
         return False
 
     @property
-    def reports_percentage_position(self) -> bool:
-        """Return True - Keeson/Ergomotion report 0-100 percentage, not angle degrees."""
-        return True
-
-    @property
     def motor_translation_keys(self) -> dict[str, str] | None:
         """Keeson's head motor moves the back, tilt the head and feet the legs."""
         if not self.profile.keeson_motor_names:
@@ -513,8 +508,11 @@ class KeesonController(BedController):
     def protocol_diagnostics(self) -> dict[str, Any]:
         """Record which Adjustable Lite remote the device name selected."""
         if not self.profile.status_poll_ms:
-            return {}
-        return {"adjustable_lite_remote": "KSBT03C" if self.profile.status_timer else "KSBT01C"}
+            return {"variant": self._variant}
+        return {
+            "variant": self._variant,
+            "adjustable_lite_remote": "KSBT03C" if self.profile.status_timer else "KSBT01C",
+        }
 
     @property
     def requires_notification_channel(self) -> bool:

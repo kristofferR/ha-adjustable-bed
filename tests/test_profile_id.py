@@ -19,7 +19,6 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import _async_sync_profile_ids, async_migrate_entry
 from custom_components.adjustable_bed.const import (
-    BED_TYPE_CLUSTER018,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_LEGGETT_PLATT,
@@ -28,10 +27,10 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_OCTO,
+    BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_SBI,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
-    CONF_CLUSTER018_THIRD_SERVICE,
     CONF_JIECANG_APP_PROFILE,
     CONF_LEGGETT_APP_PROFILE,
     CONF_LOGICDATA_APP_PROFILE,
@@ -46,6 +45,7 @@ from custom_components.adjustable_bed.const import (
     CONF_PROFILE_MIGRATION,
     CONF_PROFILE_REVIEW_PENDING,
     CONF_PROTOCOL_VARIANT,
+    CONF_RICHMAT_CLASSIC_THIRD_SERVICE,
     CONF_SIDE,
     CONF_VIBRADORM_APP_PROFILE,
     DOMAIN,
@@ -163,7 +163,7 @@ def test_every_former_route_resolves_to_its_own_round_tripping_id() -> None:
         # A classic Richmat app is its variant; its layout is a setting, not the route.
         (
             {
-                CONF_BED_TYPE: BED_TYPE_CLUSTER018,
+                CONF_BED_TYPE: BED_TYPE_RICHMAT_CLASSIC_APPS,
                 CONF_PROTOCOL_VARIANT: "superior",
                 CONF_PRODUCT_TYPE: "YGRM",
             },
@@ -223,10 +223,10 @@ async def test_classic_richmat_entries_from_4x_keep_their_app_settings(
     """A 4.x classic app entry gains its app's id; layout and fallback stay as saved."""
     stored = {
         CONF_ADDRESS: ADDRESS,
-        CONF_BED_TYPE: BED_TYPE_CLUSTER018,
+        CONF_BED_TYPE: BED_TYPE_RICHMAT_CLASSIC_APPS,
         CONF_PROTOCOL_VARIANT: "fortywinks",
         CONF_PRODUCT_TYPE: "CORN",
-        CONF_CLUSTER018_THIRD_SERVICE: True,
+        CONF_RICHMAT_CLASSIC_THIRD_SERVICE: True,
     }
     entry = MockConfigEntry(domain=DOMAIN, data=dict(stored), version=4, minor_version=3)
     entry.add_to_hass(hass)

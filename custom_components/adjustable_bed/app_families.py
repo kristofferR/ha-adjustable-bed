@@ -19,10 +19,8 @@ from typing import TYPE_CHECKING, Any, Final
 
 from homeassistant.const import CONF_ADDRESS
 
-from .cluster018_profiles import APP_NAMES as CLUSTER018_APP_NAMES
 from .const import (
     BED_TYPE_BEDSENSE,
-    BED_TYPE_CLUSTER018,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
     BED_TYPE_CUSTOMATIC_CLARITY,
@@ -61,6 +59,7 @@ from .const import (
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
+    BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_SERENITY,
     BED_TYPE_SERTA,
     BED_TYPE_SERTA_MP_REMOTE,
@@ -167,6 +166,7 @@ from .const import (
     grants_one_connection_per_pairing_window,
     requires_pairing,
 )
+from .richmat_classic_profiles import APP_NAMES as RICHMAT_CLASSIC_APP_NAMES
 from .setup_questions import Question, SetupProfile
 
 if TYPE_CHECKING:
@@ -1420,8 +1420,8 @@ RICHMAT_FAMILY: Final = AppFamily(
         **{app: Answer(bed_type, data=_NO_RMCONTROL) for bed_type, app in RICHMAT_MH_APPS.items()},
         # The classic apps keep their own declared questions.
         **{
-            app: Answer(BED_TYPE_CLUSTER018, app, data=_NO_RMCONTROL)
-            for app in CLUSTER018_APP_NAMES
+            app: Answer(BED_TYPE_RICHMAT_CLASSIC_APPS, app, data=_NO_RMCONTROL)
+            for app in RICHMAT_CLASSIC_APP_NAMES
         },
         "remote": Answer(BED_TYPE_RICHMAT, data={CONF_RMCONTROL_PRODUCT: ""}),
     },

@@ -9,7 +9,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from custom_components.adjustable_bed import doublesleep_protocol as p
+from custom_components.adjustable_bed.bed_traits import bed_traits
 from custom_components.adjustable_bed.beds.doublesleep import DoubleSleepController, Session
+from custom_components.adjustable_bed.const import BED_TYPE_DOUBLESLEEP
 from custom_components.adjustable_bed.doublesleep_services import Request
 from custom_components.adjustable_bed.doublesleep_state import Report
 from tests.test_doublesleep_protocol import NOW, json_notification
@@ -73,7 +75,8 @@ async def test_setup_and_stale_notification_callback(driver):
     bed = Bed(driver=driver, model=11135 if driver == "p3" else 3)
     await bed.connect()
     assert len(bed.receivers) == 1
-    assert bed.bed.requires_notification_channel and bed.bed.requires_persistent_connection
+    assert bed.bed.requires_notification_channel
+    assert bed_traits(BED_TYPE_DOUBLESLEEP, driver).persistent_connection
     previous = bed.receivers[0]
     await bed.bed.stop_notify()
     previous(bed.rx, bytearray.fromhex("2a00000881020102"))

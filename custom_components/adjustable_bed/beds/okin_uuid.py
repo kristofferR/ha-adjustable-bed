@@ -264,6 +264,10 @@ class OkinUuidController(OkinNFrameController):
     _route_profile: ClassVar[OkinNFrameProfile] = OKIMAT
 
     @property
+    def protocol_diagnostics(self) -> dict[str, object]:
+        return {"variant": self._variant}
+
+    @property
     def profile(self) -> OkinNFrameProfile:
         """This route's profile."""
         return self._route_profile

@@ -10,6 +10,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.bed_traits import disconnect_after_command_default_enabled
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
@@ -31,7 +32,6 @@ from custom_components.adjustable_bed.const import (
     OKIN_CST_VARIANT_MF900,
     OKIN_CST_VARIANT_NECTAR_MOVE,
     VARIANT_AUTO,
-    disconnect_after_command_default_enabled,
 )
 from tests.form_helpers import finish_new_bed, start_new_bed
 

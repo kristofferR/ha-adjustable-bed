@@ -9,6 +9,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.bed_traits import bed_traits
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
@@ -16,7 +17,6 @@ from custom_components.adjustable_bed.config_flow import (
 from custom_components.adjustable_bed.const import (
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
-    BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISCONNECT_AFTER_COMMAND,
@@ -183,7 +183,7 @@ async def test_factory_passes_explicit_settings_without_affecting_legacy(hass):
         has_light=False,
     )
     assert BED_TYPE_JIECANG_APP not in OFFLINE_CAPABILITY_SAFE_BED_TYPES
-    assert BED_TYPE_JIECANG_APP in BEDS_WITHOUT_ANGLE_FEEDBACK
+    assert bed_traits(BED_TYPE_JIECANG_APP).no_angle_feedback
 
 
 async def test_paired_options_preserve_each_sides_app_profile(hass):

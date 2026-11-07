@@ -199,6 +199,10 @@ class KaidiController(BedController):
     # ------------------------------------------------------------------
 
     @property
+    def protocol_diagnostics(self) -> dict[str, object]:
+        return {"variant": self._variant, "variant_source": self._variant_source}
+
+    @property
     def control_characteristic_uuid(self) -> str:
         """Return the UUID of the control characteristic."""
         return codec.WRITE_CHAR_UUID

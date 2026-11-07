@@ -23,7 +23,6 @@ from custom_components.adjustable_bed.config_flow import (
     _per_side_refusal,
 )
 from custom_components.adjustable_bed.const import (
-    BED_TYPE_CLUSTER018,
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_KEESON,
@@ -33,13 +32,13 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
+    BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M1X12,
     BED_TYPE_SVANE,
     BED_TYPE_ZSERIES,
     CONF_BED_TYPE,
-    CONF_CLUSTER018_THIRD_SERVICE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_FSM_RELAX_MEMORY_NAMES,
     CONF_GMMOTOR_SIDE,
@@ -53,6 +52,7 @@ from custom_components.adjustable_bed.const import (
     CONF_PAIRLINK_ROLE,
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
+    CONF_RICHMAT_CLASSIC_THIRD_SERVICE,
     CONF_STARCODE_LIFT_ENTRIES,
     CONF_STARCODE_M1X12_PROFILE,
     DOMAIN,
@@ -339,11 +339,11 @@ def test_a_bed_type_change_leaves_no_other_profiles_settings(bed_type: str) -> N
     [
         ("gmmotor", {CONF_GMMOTOR_SIDE: "both"}),
         (
-            BED_TYPE_CLUSTER018,
+            BED_TYPE_RICHMAT_CLASSIC_APPS,
             {
                 CONF_PROTOCOL_VARIANT: "avocadoecobase",
                 CONF_PRODUCT_TYPE: "6BRM",
-                CONF_CLUSTER018_THIRD_SERVICE: True,
+                CONF_RICHMAT_CLASSIC_THIRD_SERVICE: True,
             },
         ),
         (BED_TYPE_FSM_RELAX, {CONF_FSM_RELAX_MEMORY_NAMES: ["Read"] * 8}),

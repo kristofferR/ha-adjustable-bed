@@ -23,11 +23,6 @@ class OkinRfEcoBtController(OkinUuidController):
     _route_profile = RF_ECO_BT
 
     @property
-    def requires_persistent_connection(self) -> bool:
-        """Keep the stair receiver connected to avoid idle reconnect timeouts (#344)."""
-        return True
-
-    @property
     def supports_preset_flat(self) -> bool:
         """Return False - this profile has no bed preset entities."""
         return False

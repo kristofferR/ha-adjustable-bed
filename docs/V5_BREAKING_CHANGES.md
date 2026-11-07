@@ -64,6 +64,7 @@ format.
 | App keys (`jiecang_app_profile`, `leggett_app_profile`, `logicdata_app_profile`, `malouf_app_profile`, `vibradorm_app_profile`) | Unchanged |
 | `pair_schema_version`, and a per-entry copy of `disable_discovery` | **Dropped** by the 5.2 step, from data, options, each paired side and the original settings a side restores on unpair. Nothing reads them: the discovery toggle is saved integration-wide |
 | `has_massage` | **Turned off** by the 5.3 step on the three layouts that have no massage: a FurniMove handset without massage rows, Comfort Enhancements MC3, and a Sleepy's Elite app control box other than BOX25. The step reads the same profile data a new setup uses, for a standalone entry, each paired side and the original settings a side restores on unpair. Every other layout keeps its saved value. These layouts now keep Massage per side of a pair, so a paired entry with one of them moves an old shared Massage option into the sides it reached; each side keeps the value it ran with. This removes their massage buttons; see [Removed Massage Buttons](#removed-massage-buttons) |
+| `cluster018_third_service` | **Renamed** by the 5.4 step to `richmat_classic_third_service`, in data, options, each paired side and the original settings a side restores on unpair. The classic Richmat apps' entity unique IDs and stored app preferences move to the same name; see [Removed or Renamed Options, Bed Types and Entities](#removed-or-renamed-options-bed-types-and-entities) |
 | `octo_motor_count_override` | **Added** by the 5.5 step to an Octo setup that has none: the saved motor count when it is 1, 3 or 4, which was the explicit layout before the selector existed, otherwise `auto`. For a standalone entry, each paired side and the original settings a side restores on unpair |
 | Every other saved field and option | Unchanged |
 | Paired side descriptors (`pair_children`) | Unchanged, except that each side gains its own `profile_id`, loses the dropped keys above and has Massage turned off on the layouts above |
@@ -97,8 +98,15 @@ The migration record appears in two places:
 
 **One removal: the massage buttons of three layouts without massage** (see
 below). No bed type, option, action or action field is removed or renamed in
-v5, no other entity or unique ID is removed or renamed, and no saved config key
-a setting reads is removed. Schema 5.2 drops two stored keys nothing reads (see
+v5, no other entity is removed, and no saved config key a setting reads is
+removed. The classic Richmat apps (Avocado Eco Base, CoasterSleep, Forty Winks,
+Milemont and Superior) shipped in 4.4 with an internal audit name in their
+unique IDs, translation keys, status sensor attributes and the
+`cluster018_third_service` key. The 5.4 step renames them to
+`richmat_classic_...`: entity IDs, names and history stay, and the
+`hold_control` action still accepts the old `cluster018_<node>` control names.
+Templates that read the status sensor's attributes need the new names, such as
+`richmat_classic_layout` for `cluster018_layout`. Schema 5.2 drops two stored keys nothing reads (see
 [the migration](#config-entry-migration-schema-55)). The comparison covered
 `const.py`, `config_flow.py`, `strings.json`, `translations/en.json`,
 `services.yaml` and every entity platform between `main` and `v5`. Byte-identical aliases such as
