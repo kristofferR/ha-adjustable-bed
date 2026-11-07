@@ -1,9 +1,15 @@
-"""Frozen MotoMotion frames, the vectors the codec must reproduce.
+"""Frozen HHC ``$#`` frames, the vectors the codec must reproduce.
 
-Each entry is a test vector of the accepted MotoMotion 3.1.9 report
+``REPORT_VECTORS`` are the test vectors of the accepted MotoMotion 3.1.9 report
 (``com.HHC.MotoMotion``, row113; ``analysis.json`` SHA-256
 ``b56fe6ab9dd878f3fc4c4937bf490653aa2308feb316c0a8305212201a7d0b5f``), split
-into its frames. The ledger is ``tests/fixtures/motomotion_ledger.json``.
+into their frames. The ledger is ``tests/fixtures/motomotion_ledger.json``.
+
+``MOTOSLEEP_FRAMES`` are the MotoSleep 5.1.5 and Power Bob 2.0.3 profiles'
+frames. Their reports were not retained, so these are every fixed frame the
+pre-v5 controller could send: the wire snapshot's ``legacy`` route,
+``test_motosleep.py``'s vectors and each panel's commands, with the RGB light
+at its default white and off.
 """
 
 from __future__ import annotations
@@ -83,4 +89,84 @@ REPORT_VECTORS: dict[str, tuple[str, ...]] = {
 
 FROZEN_FRAMES: dict[str, frozenset[str]] = {
     "motomotion": frozenset(frame for frames in REPORT_VECTORS.values() for frame in frames),
+}
+
+
+def _hex(*frames: bytes) -> frozenset[str]:
+    return frozenset(frame.hex() for frame in frames)
+
+
+# The letter commands both apps send, raw.
+_RAW_LETTERS = (
+    *(b"$A", b"$B", b"$C", b"$D", b"$E", b"$F", b"$G", b"$H", b"$I", b"$J", b"$K", b"$L"),
+    *(b"$M", b"$N", b"$O", b"$P", b"$Q", b"$R", b"$S", b"$T", b"$U", b"$V", b"$Z", b"$a"),
+    *(b"$b", b"$p", b"$q"),
+)
+
+MOTOSLEEP_FRAMES: dict[str, frozenset[str]] = {
+    "power_bob": _hex(
+        *_RAW_LETTERS,
+        # RGB white and off, selector before level.
+        b"$#003150012000004R\r",
+        b"$#003160012000007R\r",
+        b"$#003170012000006R\r",
+        b"$#003150000000007R\r",
+        b"$#003160000000004R\r",
+        b"$#003170000000005R\r",
+    ),
+    "motosleep": _hex(
+        *_RAW_LETTERS,
+        b"$W",
+        # Wrapped letters (name index 22 is M).
+        *(b"$#$AR\r", b"$#$BR\r", b"$#$CR\r", b"$#$DR\r", b"$#$ER\r", b"$#$FR\r"),
+        *(b"$#$GR\r", b"$#$HR\r", b"$#$IR\r", b"$#$JR\r", b"$#$KR\r", b"$#$LR\r"),
+        *(b"$#$MR\r", b"$#$NR\r", b"$#$OR\r", b"$#$PR\r", b"$#$QR\r", b"$#$RR\r"),
+        *(b"$#$SR\r", b"$#$TR\r", b"$#$UR\r", b"$#$VR\r", b"$#$WR\r", b"$#$ZR\r"),
+        *(b"$#$aR\r", b"$#$bR\r", b"$#$pR\r", b"$#$qR\r"),
+        # RGB white and off, level before selector.
+        b"$#001200031500004R\r",
+        b"$#001200031600007R\r",
+        b"$#001200031700006R\r",
+        b"$#000000031500007R\r",
+        b"$#000000031600004R\r",
+        b"$#000000031700005R\r",
+        # MainPanel sync enable and disable.
+        b"$#000120000000003R\r",
+        b"$#000150000000004R\r",
+        # MOTO binary: motors, presets, memory, swing and the two releases.
+        *map(
+            bytes.fromhex,
+            (
+                "24230000000000410d",
+                "24230001000001410d",
+                "24230002000002410d",
+                "24230004000004410d",
+                "24230005000005410d",
+                "24230008000008410d",
+                "2423000a00000a410d",
+                "24230010000010410d",
+                "24230020000020410d",
+                "24230040000040410d",
+                "24230050000050410d",
+                "24230080000080410d",
+                "242300a00000a0410d",
+                "24230100000001410d",
+                "24230200000002410d",
+                "24235555000000410d",
+                "24238009000089410d",
+                "2423800a00008a410d",
+                "2423800b00008b410d",
+                "2423800c00008c410d",
+                "2423800d00008d410d",
+                "2423800e00008e410d",
+                "24238014000094410d",
+                "2423811d00009c410d",
+                "2423811e00009f410d",
+                "24239088000119410d",
+                "24239089000019410d",
+            ),
+        ),
+    ),
+    # Manual entries without a usable name: back, legs, Flat and STOP, wrapped.
+    "legacy": _hex(b"$#$KR\r", b"$#$LR\r", b"$#$MR\r", b"$#$NR\r", b"$#$OR\r", b"$#$bR\r"),
 }

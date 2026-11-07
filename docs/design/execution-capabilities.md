@@ -691,14 +691,14 @@ Report workspaces are machine-local under
 | minghua | `com.okin.minghua.R` | 1.0.1 | COMPLETE | `com.okin.minghua.R-1.0.1-2026-10-02-queue-903926b6-20261002-060-002/report/` |
 | motionflex | `com.sealy.motionflex` | 1.0.3 | COMPLETE | `com.sealy.motionflex-1.0.3-20260830/report/` |
 | motomotion | `com.HHC.MotoMotion` | 3.1.9 | COMPLETE | `com.HHC.MotoMotion-3.1.9-2026-11-03-bulk101-188-002/work/report-repair-sol-003/` |
-| motosleep | `com.HHC.MotoSleep` | 5.1.5 | COMPLETE | Not retained; accepted in #447, `analysis.json` hash in the [MotoSleep guide](../beds/motosleep.md#analysis-provenance) |
+| motosleep | `com.HHC.MotoSleep` | 5.1.5 | COMPLETE | Not retained; accepted in #447, `analysis.json` hash in the [MotoSleep guide](../beds/motomotion.md#analysis-provenance) |
 | nectar | `com.okin.bedding.nectarmotion` | 1.0.1 | COMPLETE | `com.okin.bedding.nectarmotion-1.0.1-2026-10-26-39bdcafa-003/report/` |
 | octo | `de.octoactuators.octosmartcontrolapp` | 1.03.02 | COMPLETE | `de.octoactuators.octosmartcontrolapp-1.03.02-2026-10-26-39bdcafa-repair-001/report/` |
 | omazz | `com.sfd.Omazz` | 1.0.5 | COMPLETE | `com.sfd.Omazz-1.0.5-2026-10-26-39bdcafa-repair-001/report/` |
 | p2 | `com.leggett.prodigy2` | 2.2.0 | COMPLETE | `com.leggett.prodigy2-2.2.0-20260827/report/` |
 | p2l | `com.leggett.prodigy2L` | 1.2 | COMPLETE | `com.leggett.prodigy2L-1.2-20260827/report/` |
 | p4 | `com.leggett.prodigy4` | 1.2.0 | COMPLETE | `com.leggett.prodigy4-1.2.0-20260827/report/final/` |
-| powerbob | `com.HHC.PowerBob` | 2.0.3 | COMPLETE | Not retained; accepted in #447, `analysis.json` hash in the [MotoSleep guide](../beds/motosleep.md#analysis-provenance) |
+| powerbob | `com.HHC.PowerBob` | 2.0.3 | COMPLETE | Not retained; accepted in #447, `analysis.json` hash in the [MotoSleep guide](../beds/motomotion.md#analysis-provenance) |
 | remedy | `com.okin.bedding.customaticremedy` | 1.0.1 | COMPLETE | `com.okin.bedding.customaticremedy-1.0.1-2026-08-30/report/` |
 | resident | `com.okin.bedding.rizeResident` | 1.0.1 | COMPLETE | `com.okin.bedding.rizeResident-1.0.1-2026-08-30/report/` |
 | restonic | `com.keeson.restonicBT` | 1.2.0 | COMPLETE | `com.keeson.restonicBT-1.2.0-2026-10-02-queue-903926b6-20261002-058-002/report/` |
@@ -745,7 +745,7 @@ its APK Protocol Audit report, named here by its file stem:
 | jensen-disp | audit ledger `jensen-disposition` |
 | leggett-disp | audit ledger `leggett-app-disposition` |
 | linak-guide | [linak.md](../beds/linak.md) |
-| motosleep-guide | [motosleep.md](../beds/motosleep.md#command-timing) |
+| motosleep-guide | [motomotion.md](../beds/motomotion.md#stop-and-release-behavior) |
 | row023 | audit ledger `row023-malouf-lucid` |
 | row028 | audit ledger `row028-customatic` |
 | row041 | audit ledger `row041-reverie` |

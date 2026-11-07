@@ -30,7 +30,7 @@ docstring names its routes and their evidence.
 | S1 FFFF frame | `codec/ff_frame.py` | `profiles/ff_frame.py` | [FFFF frame](../beds/ff_frame.md) | `tests/ff_frame_vectors.py` |
 | L1 Limoss DD | `codec/limoss.py` | `profiles/limoss.py` | [Limoss](../beds/limoss.md) | `tests/limoss_vectors.py` |
 | Malouf (O2 Okin-like Malouf frames) | `codec/malouf.py` | `profiles/malouf.py` | [Malouf](../beds/malouf.md) | `tests/malouf_vectors.py` |
-| MotoMotion `$#` frames (from `main`) | `codec/motomotion.py` | `profiles/motomotion.py` | [MotoMotion](../beds/motomotion.md) | `tests/motomotion_vectors.py` |
+| HHC `$#` frames: MotoMotion (from `main`), MotoSleep and Power Bob | `codec/motomotion.py` | `profiles/motomotion.py`, `profiles/motosleep.py` | [HHC `$#` frames](../beds/motomotion.md) | `tests/motomotion_vectors.py` |
 | BedJet PowerLayer `01` keys (from `main`) | `codec/bedjet_powerlayer.py` | `profiles/bedjet_powerlayer.py` | [BedJet PowerLayer](../beds/bedjet-powerlayer.md) | `tests/bedjet_powerlayer_vectors.py` |
 | Casper 6E: Casper Base and Hush Base | `codec/casper.py` | `profiles/casper.py`, `profiles/hush.py` | [Casper Base](../beds/casper-base.md), [Hush Base](../beds/hush-base.md) | `tests/casper_base_vectors.py`, `tests/hush_vectors.py` |
 | Kaidi mesh: Rize Seat, Floyd Home and ISleep | `codec/kaidi.py` | `profiles/kaidi.py` | [Kaidi](../beds/kaidi.md) | `tests/kaidi_vectors.py` |
