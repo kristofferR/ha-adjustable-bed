@@ -8,6 +8,7 @@ from typing import Literal, cast
 
 from .casper_base_protocol import Request, SensorKind
 from .casper_sleep_schema import SCHEMAS
+from .codec import sleep_envelope
 
 type Json = None | bool | int | float | str | list[Json] | dict[str, Json]
 type Display = None | bool | str
@@ -18,29 +19,13 @@ NOTIFY = "00000003-3c17-d293-8e48-14fe2e4da212"
 
 
 def envelope(payload: dict[str, Json], sequence: int) -> bytes:
+    """Frame a JSON message in the sleep-sensor envelope (``codec/sleep_envelope.py``)."""
     body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode()
-    size = format(len(body), "x").rjust(4, "0")
-    return (
-        bytes(
-            (
-                0,
-                sequence & 255,
-                1,
-                0,
-                (len(body) + 7) & 255,
-                0,
-                0,
-                17,
-                3,
-                67,
-                85,
-                68,
-                int(size[2:4], 16),
-                int(size[:2], 16),
-            )
-        )
-        + body
-    )
+    packet = sleep_envelope.frame(body, sequence)
+    if len(body) > 0xFFFF:  # Casper's hex-string length keeps its four leading digits.
+        length = int(format(len(body), "x")[:4], 16).to_bytes(2, "little")
+        packet = packet[: sleep_envelope.LENGTH_OFFSET] + length + body
+    return packet
 
 
 def wire_command(kind: SensorKind, action: str) -> str:
@@ -107,9 +92,9 @@ class Receive:
             return None
         if self.action == "q_report_allow":
             if self.kind == "sxb":
-                if len(chunk) < 14:
+                if len(chunk) < sleep_envelope.HEADER_SIZE:
                     raise ValueError("Truncated SXB report fragment")
-                chunk = chunk[14:]
+                chunk = chunk[sleep_envelope.HEADER_SIZE :]
             self.pending.extend(chunk)
             if len(self.pending) < self.report_size:
                 return None
@@ -124,13 +109,13 @@ class Receive:
                 raise ValueError("Invalid or oversized sensor report")
             return cast(Json, json.loads(decoded.decode("latin1")))
         if not self.pending:
-            if len(chunk) < 13:
+            if (size := sleep_envelope.response_size(chunk)) is None:
                 raise ValueError("Truncated sensor envelope")
-            self.expected = chunk[12] + 14
+            self.expected = size
         self.pending.extend(chunk)
         if len(self.pending) < self.expected:
             return None
-        payload = bytes(self.pending[14:])
+        payload = bytes(self.pending[sleep_envelope.HEADER_SIZE :])
         self.pending.clear()
         return cast(Json, json.loads(payload.decode("latin1")))
 

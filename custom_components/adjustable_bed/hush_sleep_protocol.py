@@ -8,6 +8,7 @@ import zlib
 
 from .casper_base_protocol import Request, SensorKind
 from .casper_sleep_protocol import Json, Receive, command, envelope, mapping
+from .codec import sleep_envelope
 from .hush_sleep_schema import SCHEMAS
 
 
@@ -113,9 +114,9 @@ class HushReceive(Receive):
             self.pending.clear()
             return None
         if self.kind == "sxb":
-            if len(chunk) < 14:
+            if len(chunk) < sleep_envelope.HEADER_SIZE:
                 raise ValueError("Truncated SXB report fragment")
-            chunk = chunk[14:]
+            chunk = chunk[sleep_envelope.HEADER_SIZE :]
         self.pending.extend(chunk)
         if len(self.pending) < self.report_size:
             return None

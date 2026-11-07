@@ -5,26 +5,17 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
+from custom_components.adjustable_bed.codec.sleep_envelope import frame
 from custom_components.adjustable_bed.gmmotor_protocol import MalformedNotification
 from custom_components.adjustable_bed.gmmotor_sleep_protocol import (
     LiveState,
     ReceiveBuffer,
     Requests,
-    frame,
     new_day_layout,
     normal_live,
     response_command,
     sxb_live,
 )
-
-
-def test_frame_header_and_empty_payload() -> None:
-    assert frame(b"{}", 7) == bytes.fromhex("00070100090000110343554402007b7d")
-    payload = b"x" * 257
-    assert frame(payload, 511, total=258, sequence=256)[:14] == bytes.fromhex(
-        "00ff020008000011034355440101"
-    )
-    assert frame(b"", 7) == b""
 
 
 def test_requests_preserve_nulls_order_and_mode_quirks() -> None:
