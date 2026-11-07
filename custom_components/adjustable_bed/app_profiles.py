@@ -214,6 +214,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_ADJUSTABLE_LUMBAR: SideProfile("Adjustable bed (Lumbar)", variant_owned=True),
     BED_TYPE_SIMMONS: SideProfile("SIMMONS", variant_owned=True),
     **dict.fromkeys(RICHMAT_MH_BED_TYPES, SideProfile("Richmat app model", variant_owned=True)),
+    "richmat_sleep_receiver": SideProfile("Richmat sleep receiver app", variant_owned=True),
     BED_TYPE_REMACRO: SideProfile("Remacro app", variant_owned=True),
     # The model sets the motors and massage; the model and angle sensing are asked.
     BED_TYPE_REVERIE: SideProfile("Reverie Protocol 108", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE})),

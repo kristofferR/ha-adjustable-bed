@@ -185,6 +185,12 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "RichmatProfile:richmat_mh_harmony": {"hold": ("harmony", "row055")},
     "RichmatProfile:richmat_mh_idealbed": {"hold": ("ideal", "row055")},
     "RichmatProfile:richmat_mh_revive": {"hold": ("revive", "row055")},
+    # Row061 apps reuse the MH library's KEEP stream and app-specific release.
+    "RichmatProfile:richmat_mh_americanstar": {"hold": ("rmamericanstar", "row061")},
+    "RichmatProfile:richmat_mh_bailey2": {"hold": ("bailey", "row061")},
+    "RichmatProfile:richmat_mh_ruf": {"hold": ("ruf", "row061")},
+    "RichmatProfile:richmat_mh_tx": {"hold": ("tx", "row061")},
+    "RichmatProfile:richmat_mh_wsilver2": {"hold": ("wsilver", "row061")},
     "RichmatProfile:richmat_nordic": {"hold": ("rmc2",)},
     "RichmatProfile:richmat_prefix55": {"hold": ("rmc2",)},
     "RichmatProfile:richmat_prefixaa": {"hold": ("rmc2",)},
@@ -363,7 +369,10 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     ),
     "profiles/richmat.py:<module>.RICHMAT_MH": tuple(
         f"RichmatProfile:richmat_mh_{app}"
-        for app in ("best_mattress", "blvd_home", "harmony", "idealbed", "revive")
+        for app in (
+            *("best_mattress", "blvd_home", "harmony", "idealbed", "revive"),
+            *("americanstar", "bailey2", "ruf", "tx", "wsilver2"),
+        )
     ),
 }
 

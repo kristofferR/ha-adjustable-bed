@@ -209,12 +209,24 @@ LEGGETT_WILINKE: Final = RichmatProfile(
     recall=Recall(repeats=100, repeat_ms=300, release=True),
 )
 
-# The five apps share one BLE library and its transport order.
+# The five MH apps and the five row061 app profiles (RUF, W.Silver,
+# AMERICANSTAR, Bailey, TX) share one BLE library and its transport order.
 RICHMAT_MH: Final[dict[str, RichmatProfile]] = {
     app: RichmatProfile(
         key=f"richmat_mh_{app}", execution=STREAM_HOLD, transports=("n1", "w1", "w2", "w3", "w4")
     )
-    for app in ("revive", "best_mattress", "blvd_home", "harmony", "idealbed")
+    for app in (
+        "revive",
+        "best_mattress",
+        "blvd_home",
+        "harmony",
+        "idealbed",
+        "ruf",
+        "wsilver2",
+        "americanstar",
+        "bailey2",
+        "tx",
+    )
 }
 HJBED: Final = RichmatProfile(
     key="hjbed", execution=STREAM_HOLD, transports=("w1", "n1", "w5", "w4", "w3", "w2")

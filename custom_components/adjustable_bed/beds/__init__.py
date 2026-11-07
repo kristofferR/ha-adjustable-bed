@@ -83,6 +83,8 @@ if TYPE_CHECKING:
     from .richmat import RichmatController as RichmatController
     from .richmat_mh import RichmatMhController as RichmatMhController
     from .rondure import RondureController as RondureController
+    from .row061 import Row061Controller as Row061Controller
+    from .row061_sleep import Row061SleepController as Row061SleepController
     from .row_control import RowControlController as RowControlController
     from .sbi import QPlusAppController as QPlusAppController
     from .sbi import SBIController as SBIController
@@ -150,6 +152,8 @@ _EXPORT_MODULES = {
     "AdjustaMattressController": "adjustamattress",
     "AdjustableLumbarController": "adjustable_lumbar",
     "BedJetPowerLayerController": "bedjet_powerlayer",
+    "Row061Controller": "row061",
+    "Row061SleepController": "row061_sleep",
     "RichmatMhController": "richmat_mh",
     "CustomaticController": "customatic",
     "CoolBaseController": "coolbase",

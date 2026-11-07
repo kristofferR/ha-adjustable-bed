@@ -1,0 +1,686 @@
+[
+  {
+    "inputs": {
+      "side": 1,
+      "property": 1,
+      "value": 1
+    },
+    "expected_bytes": "5e01010161"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 1,
+      "value": 2
+    },
+    "expected_bytes": "5e01010262"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 1,
+      "value": 3
+    },
+    "expected_bytes": "5e01010363"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 2,
+      "value": 0
+    },
+    "expected_bytes": "5e01020061"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 2,
+      "value": 1
+    },
+    "expected_bytes": "5e01020162"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 2,
+      "value": 2
+    },
+    "expected_bytes": "5e01020263"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 2,
+      "value": 3
+    },
+    "expected_bytes": "5e01020364"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 3,
+      "value": 1
+    },
+    "expected_bytes": "5e01030163"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 3,
+      "value": 2
+    },
+    "expected_bytes": "5e01030264"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 3,
+      "value": 3
+    },
+    "expected_bytes": "5e01030365"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 3,
+      "value": 4
+    },
+    "expected_bytes": "5e01030466"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 4,
+      "value": 0
+    },
+    "expected_bytes": "5e01040063"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 4,
+      "value": 1
+    },
+    "expected_bytes": "5e01040164"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 4,
+      "value": 2
+    },
+    "expected_bytes": "5e01040265"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 4,
+      "value": 3
+    },
+    "expected_bytes": "5e01040366"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 5,
+      "value": 0
+    },
+    "expected_bytes": "5e01050064"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 5,
+      "value": 1
+    },
+    "expected_bytes": "5e01050165"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 5,
+      "value": 2
+    },
+    "expected_bytes": "5e01050266"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 5,
+      "value": 3
+    },
+    "expected_bytes": "5e01050367"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 5,
+      "value": 4
+    },
+    "expected_bytes": "5e01050468"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 6,
+      "value": 0
+    },
+    "expected_bytes": "5e01060065"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 6,
+      "value": 1
+    },
+    "expected_bytes": "5e01060166"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 6,
+      "value": 2
+    },
+    "expected_bytes": "5e01060267"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 7,
+      "value": 1
+    },
+    "expected_bytes": "5e01070167"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 7,
+      "value": 2
+    },
+    "expected_bytes": "5e01070268"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 7,
+      "value": 3
+    },
+    "expected_bytes": "5e01070369"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 9,
+      "value": 1
+    },
+    "expected_bytes": "5e01090169"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 9,
+      "value": 2
+    },
+    "expected_bytes": "5e0109026a"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 9,
+      "value": 3
+    },
+    "expected_bytes": "5e0109036b"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 1,
+      "value": 1
+    },
+    "expected_bytes": "5e02010162"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 1,
+      "value": 2
+    },
+    "expected_bytes": "5e02010263"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 1,
+      "value": 3
+    },
+    "expected_bytes": "5e02010364"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 2,
+      "value": 0
+    },
+    "expected_bytes": "5e02020062"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 2,
+      "value": 1
+    },
+    "expected_bytes": "5e02020163"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 2,
+      "value": 2
+    },
+    "expected_bytes": "5e02020264"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 2,
+      "value": 3
+    },
+    "expected_bytes": "5e02020365"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 3,
+      "value": 1
+    },
+    "expected_bytes": "5e02030164"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 3,
+      "value": 2
+    },
+    "expected_bytes": "5e02030265"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 3,
+      "value": 3
+    },
+    "expected_bytes": "5e02030366"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 3,
+      "value": 4
+    },
+    "expected_bytes": "5e02030467"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 4,
+      "value": 0
+    },
+    "expected_bytes": "5e02040064"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 4,
+      "value": 1
+    },
+    "expected_bytes": "5e02040165"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 4,
+      "value": 2
+    },
+    "expected_bytes": "5e02040266"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 4,
+      "value": 3
+    },
+    "expected_bytes": "5e02040367"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 5,
+      "value": 0
+    },
+    "expected_bytes": "5e02050065"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 5,
+      "value": 1
+    },
+    "expected_bytes": "5e02050166"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 5,
+      "value": 2
+    },
+    "expected_bytes": "5e02050267"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 5,
+      "value": 3
+    },
+    "expected_bytes": "5e02050368"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 5,
+      "value": 4
+    },
+    "expected_bytes": "5e02050469"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 6,
+      "value": 0
+    },
+    "expected_bytes": "5e02060066"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 6,
+      "value": 1
+    },
+    "expected_bytes": "5e02060167"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 6,
+      "value": 2
+    },
+    "expected_bytes": "5e02060268"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 7,
+      "value": 1
+    },
+    "expected_bytes": "5e02070168"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 7,
+      "value": 2
+    },
+    "expected_bytes": "5e02070269"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 7,
+      "value": 3
+    },
+    "expected_bytes": "5e0207036a"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 9,
+      "value": 1
+    },
+    "expected_bytes": "5e0209016a"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 9,
+      "value": 2
+    },
+    "expected_bytes": "5e0209026b"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 9,
+      "value": 3
+    },
+    "expected_bytes": "5e0209036c"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "repeat": 1,
+      "level": 1,
+      "target": [
+        7,
+        30
+      ],
+      "now": [
+        6,
+        45
+      ],
+      "property": 11
+    },
+    "expected_bytes": "5e010b0101071e062dc4"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "repeat": 1,
+      "level": 2,
+      "target": [
+        7,
+        30
+      ],
+      "now": [
+        6,
+        45
+      ],
+      "property": 11
+    },
+    "expected_bytes": "5e010b0102071e062dc5"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "repeat": 1,
+      "level": 3,
+      "target": [
+        7,
+        30
+      ],
+      "now": [
+        6,
+        45
+      ],
+      "property": 11
+    },
+    "expected_bytes": "5e010b0103071e062dc6"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "repeat": 2,
+      "level": 1,
+      "target": [
+        7,
+        30
+      ],
+      "now": [
+        6,
+        45
+      ],
+      "property": 11
+    },
+    "expected_bytes": "5e010b0201071e062dc5"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "repeat": 2,
+      "level": 2,
+      "target": [
+        7,
+        30
+      ],
+      "now": [
+        6,
+        45
+      ],
+      "property": 11
+    },
+    "expected_bytes": "5e010b0202071e062dc6"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "repeat": 2,
+      "level": 3,
+      "target": [
+        7,
+        30
+      ],
+      "now": [
+        6,
+        45
+      ],
+      "property": 11
+    },
+    "expected_bytes": "5e010b0203071e062dc7"
+  },
+  {
+    "inputs": {
+      "side": 1,
+      "property": 11,
+      "cancel": 16
+    },
+    "expected_bytes": "5e010b107a"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "repeat": 1,
+      "level": 1,
+      "target": [
+        7,
+        30
+      ],
+      "now": [
+        6,
+        45
+      ],
+      "property": 11
+    },
+    "expected_bytes": "5e020b0101071e062dc5"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "repeat": 1,
+      "level": 2,
+      "target": [
+        7,
+        30
+      ],
+      "now": [
+        6,
+        45
+      ],
+      "property": 11
+    },
+    "expected_bytes": "5e020b0102071e062dc6"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "repeat": 1,
+      "level": 3,
+      "target": [
+        7,
+        30
+      ],
+      "now": [
+        6,
+        45
+      ],
+      "property": 11
+    },
+    "expected_bytes": "5e020b0103071e062dc7"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "repeat": 2,
+      "level": 1,
+      "target": [
+        7,
+        30
+      ],
+      "now": [
+        6,
+        45
+      ],
+      "property": 11
+    },
+    "expected_bytes": "5e020b0201071e062dc6"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "repeat": 2,
+      "level": 2,
+      "target": [
+        7,
+        30
+      ],
+      "now": [
+        6,
+        45
+      ],
+      "property": 11
+    },
+    "expected_bytes": "5e020b0202071e062dc7"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "repeat": 2,
+      "level": 3,
+      "target": [
+        7,
+        30
+      ],
+      "now": [
+        6,
+        45
+      ],
+      "property": 11
+    },
+    "expected_bytes": "5e020b0203071e062dc8"
+  },
+  {
+    "inputs": {
+      "side": 2,
+      "property": 11,
+      "cancel": 16
+    },
+    "expected_bytes": "5e020b107b"
+  }
+]

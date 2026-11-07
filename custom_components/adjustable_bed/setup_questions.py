@@ -246,6 +246,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_ZSERIES: _FIXED_LAYOUT,
     BED_TYPE_SIMMONS: _FIXED_LAYOUT,
     **dict.fromkeys(RICHMAT_MH_BED_TYPES, _FIXED_LAYOUT),
+    "richmat_sleep_receiver": _FIXED_LAYOUT,
     BED_TYPE_LOGICDATA_AIR_PUMP: _FIXED_LAYOUT,
     # AHF has no massage. Motor count still sizes the legacy covers.
     BED_TYPE_TIMOTION_AHF: frozenset({CONF_HAS_MASSAGE}),
