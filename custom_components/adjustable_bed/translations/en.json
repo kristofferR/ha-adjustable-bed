@@ -3568,6 +3568,12 @@
       },
       "row061_mattress_right_pillow": {
         "name": "Right mattress pillow"
+      },
+      "row061_lift": {
+        "name": "Lift"
+      },
+      "row061_115": {
+        "name": "115"
       }
     },
     "sensor": {

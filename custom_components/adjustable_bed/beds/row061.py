@@ -244,13 +244,24 @@ class Row061Controller(RichmatMhController):
                 "back_foot_both": "head_feet",
                 "head_foot_both": "head_feet",
             }.get(key, key)
+            # Every catalog motor group has a named cover; covers carry no placeholder.
             translation = {
                 "head": "back",
                 "feet": "feet",
                 "pillow": "pillow",
                 "lumbar": "lumbar",
+                "lumbar1": "lumbar",
+                "lumbar2": "richmat_mh_lumbar_2",
                 "head_feet": "head_feet",
-            }.get(key, "richmat_mh_action")
+                "motor5": "richmat_mh_motor_5",
+                "motor6": "richmat_mh_motor_6",
+                "pillow_lumbar_both": "richmat_mh_pillow_lumbar",
+                "pillow_lumbar_both_tilt": "tilt",
+                "tilt": "tilt",
+                "all_motor": "all_motors",
+                "lift": "row061_lift",
+                "115": "row061_115",
+            }[key]
             axes.append(Axis(key, translation, pair["up"], pair["down"]))
         return tuple(axes)
 
