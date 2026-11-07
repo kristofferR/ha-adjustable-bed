@@ -337,7 +337,8 @@ Builders in
 | Notify | any notify characteristic | `00000003-3c17-d293-8e48-14fe2e4da212` |
 | Write mode | without response | with response |
 
-- Sensor frames carry compact JSON in the accepted 14-byte envelope:
+- Sensor frames carry compact JSON in the sleep-sensor envelope built by
+  [`codec/sleep_envelope.py`](../../custom_components/adjustable_bed/codec/sleep_envelope.py):
   `00 seq 01 00 (len+7) 00 00 11 03 43 55 44 len_low len_high` followed by
   `{"id":seq,"cmd":…,"val":…}`.
 - Report payloads use gzip.

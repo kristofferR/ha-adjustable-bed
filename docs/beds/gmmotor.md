@@ -195,6 +195,8 @@ characteristic, and candidate roles can carry across accepted services.
 
 The 14-byte header is `00 ID TOTAL SEQUENCE (PAYLOAD_LEN+7) 00 00 11 03 43 55 44
 LEN_LOW LEN_HIGH`, with native byte masking, followed by compact UTF-8 JSON.
+[`codec/sleep_envelope.py`](../../custom_components/adjustable_bed/codec/sleep_envelope.py)
+builds it, as it does for the Casper Base, Hush Base and Good Vibe Sleep sensors.
 There is no packet checksum. IDs run 1–254. Each queued frame waits 100 ms and
 is written in sequential `MTU - 3` chunks without a delay between chunks.
 
