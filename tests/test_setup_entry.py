@@ -345,7 +345,7 @@ async def test_another_app_restarts_the_journey_for_the_same_bed(
     flow = hass.config_entries.flow._progress[result["flow_id"]]
     assert flow._manual_data[const.CONF_BED_TYPE] == const.BED_TYPE_LINAK
     # The Okin question's own state is gone, so nothing of it is kept.
-    assert flow._okin_incoming is None
+    assert "okin_family" not in flow._family_incoming
     hass.config_entries.flow.async_abort(result["flow_id"])
 
 
@@ -368,7 +368,7 @@ async def test_a_route_the_receiver_settles_is_confirmed_before_its_questions(
 async def test_the_final_settings_come_after_the_apps_questions(hass, enable_custom_integrations):
     """A6: Restonic BT asks its remote style, then only the bed's own settings remain."""
     result = await _app_then_address(hass, "keeson:restonic_a")
-    assert result["step_id"] == "keeson_restonic"
+    assert result["step_id"] == "profile_questions"
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {const.CONF_PROTOCOL_VARIANT: const.KEESON_VARIANT_RESTONIC_B}
     )
@@ -405,15 +405,15 @@ async def test_the_final_settings_come_after_the_apps_questions(hass, enable_cus
 
 
 async def test_the_vibradorm_question_offers_another_app(hass, mock_bluetooth_service_info):
-    """Vibradorm's question answers on its own field, and still searches every app."""
+    """Vibradorm's question answers on the shared field, and still searches every app."""
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context = hass, {}
     flow._discovery_info = mock_bluetooth_service_info
     flow._disambiguated_bed_type = const.BED_TYPE_VIBRADORM
     result = await flow.async_step_bluetooth_confirm()
     assert result["step_id"] == "vibradorm"
-    assert list(select_options(result, "app"))[-1] == "another"
-    result = await flow.async_step_vibradorm({"app": "another"})
+    assert list(select_options(result, "choice"))[-1] == "another"
+    result = await flow.async_step_vibradorm({"choice": "another"})
     assert result["step_id"] == "select_app"
 
 

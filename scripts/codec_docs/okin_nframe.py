@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from custom_components.adjustable_bed.beds.okin_uuid import (
+from custom_components.adjustable_bed.beds.okin_uuid.controller import (
     OKIN_UUID_REMOTES,
     OkinUuidComplexCommand,
 )
-from custom_components.adjustable_bed.beds.okin_uuid_remotes import (
+from custom_components.adjustable_bed.beds.okin_uuid.remotes import (
     OKIN_UUID_VARIANT_LABELS,
 )
 from custom_components.adjustable_bed.codec import keeson as keeson_codec

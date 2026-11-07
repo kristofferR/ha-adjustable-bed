@@ -14,6 +14,7 @@ import {
   type SavedPosition,
 } from "./estimates";
 import type { HomeAssistant } from "./types";
+import { placed } from "./test-placements";
 
 const text = (key: string, params?: Record<string, string>): string =>
   `${key}${params?.percent !== undefined ? `:${params.percent}` : ""}`;
@@ -22,7 +23,7 @@ function hass(states: Record<string, { state: string; attributes?: Record<string
   const entity = (id: string, key: string, device = "bed") => ({
     entity_id: id, platform: "adjustable_bed", device_id: device, translation_key: key,
   });
-  return {
+  return placed({
     entities: {
       "number.back_est": entity("number.back_est", "back_position_estimated"),
       "number.legs_est": entity("number.legs_est", "legs_position_estimated"),
@@ -36,7 +37,7 @@ function hass(states: Record<string, { state: string; attributes?: Record<string
     ),
     devices: {}, themes: {}, language: "en", locale: { language: "en" },
     callService: async () => undefined,
-  } as unknown as HomeAssistant;
+  } as unknown as HomeAssistant);
 }
 
 test("discovery attaches estimates and references to their motors", () => {

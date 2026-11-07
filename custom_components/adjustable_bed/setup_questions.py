@@ -15,13 +15,24 @@ from __future__ import annotations
 import math
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field, replace
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Final, Literal
 from uuid import UUID
 
 import voluptuous as vol
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.helpers.field_visibility import ConditionOperator, FieldCondition
 
+from .bed_traits import bed_type_has_position_feedback
+from .beds.ergomotion4.profiles import PRODUCT_CHOICES as ERGOMOTION4_PRODUCTS
+from .beds.gmmotor.discovery import resolve_selection, selector_from_name
+from .beds.gmmotor.profiles import load_profile as load_gmmotor_profile
+from .beds.gmmotor.profiles import profile_choices as gmmotor_profile_choices
+from .beds.goodvibe.catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
+from .beds.hjbed.catalog import PROFILE_CHOICES as HJBED_PROFILES
+from .beds.leggett.lp_legacy_profiles import LP_LEGACY_PROFILE_CODES
+from .beds.sleeptracker.protocol import FOUNDATIONS as SLEEPTRACKER_FOUNDATIONS
+from .beds.sleeptracker.protocol import MODELS as SLEEPTRACKER_MODELS
+from .beds.starcode.m1x12_protocol import profile_from_name as m1x12_profile_from_name
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
@@ -29,7 +40,6 @@ from .const import (
     BED_TYPE_BF,
     BED_TYPE_CASPER_BASE,
     BED_TYPE_CHERISH,
-    BED_TYPE_CLUSTER018,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ESHINE,
@@ -57,12 +67,14 @@ from .const import (
     BED_TYPE_MOTOMOTION,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
+    BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
@@ -83,11 +95,14 @@ from .const import (
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
-    CLUSTER033_BED_TYPES,
+    CB24_BED_SELECTION_A,
+    CB24_BED_SELECTION_B,
+    CB24_BED_SELECTION_DEFAULT,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
-    CONF_CLUSTER018_THIRD_SERVICE,
+    CONF_CB24_BED_SELECTION,
     CONF_DISABLE_ANGLE_SENSING,
+    CONF_FSM_RELAX_MEMORY_NAMES,
     CONF_FURNIMOVE_REMOTE,
     CONF_GMMOTOR_SIDE,
     CONF_HAS_LIGHT,
@@ -120,10 +135,13 @@ from .const import (
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_MOTOR_PULSE_USER_SET,
+    CONF_OCTO_MOTOR_COUNT_OVERRIDE,
+    CONF_OCTO_PIN,
     CONF_PAIR_MODE,
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
     CONF_REVERSE_MOTORS,
+    CONF_RICHMAT_CLASSIC_THIRD_SERVICE,
     CONF_RICHMAT_REMOTE,
     CONF_RMCONTROL_PRODUCT,
     CONF_RMCONTROL_SIDE,
@@ -133,6 +151,12 @@ from .const import (
     CONF_SLEEPTRACKER_SNAPSHOT_SIDE,
     CONF_SLEEPTRACKER_UNIT,
     CONF_SLEEPYS_ELITE_SELECTOR,
+    CONF_STARCODE_COMMAND_SELECTOR,
+    CONF_STARCODE_LIFT_ENTRIES,
+    CONF_STARCODE_M1X12_PROFILE,
+    CONF_STARCODE_M5X5_PROFILE,
+    CONF_STARCODE_TRANSPORT_SELECTOR,
+    CONF_STARCODE_UI_SELECTOR,
     CONF_VIBRADORM_APP_METADATA,
     CONF_VIBRADORM_APP_PROFILE,
     CONF_VIBRADORM_CONTROL_TYPE,
@@ -145,12 +169,12 @@ from .const import (
     CONF_VMATBASIC_FLOOR_LEVEL,
     CONF_VMATBASIC_FLOOR_MINUTES,
     CONF_VMATBASIC_PROFILE,
-    GOODVIBE_PROFILES,
+    DEFAULT_OCTO_PIN,
     HAS_LIGHT_DEFAULTS,
-    HJBED_PROFILES,
     JIECANG_APP_LAYOUTS,
     JIECANG_APP_TRANSPORTS,
     KAIDI_VARIANT_FLOYD,
+    KEESON_LAYOUT_APP_BED_TYPES,
     KEESON_VARIANT_AMERICANSTAR,
     KEESON_VARIANT_AVANTI_BASES,
     KEESON_VARIANT_BEDSENSE_BASES,
@@ -183,11 +207,16 @@ from .const import (
     STAR_ELEVATE_VARIANT_M1X12,
     SVANE_VARIANT_JENSEN_LINON,
     VARIANT_AUTO,
+    VIBRADORM_APP_PROFILES,
     VIBRADORM_RESTORED_CONTROLS,
     VIBRADORM_WERKMEISTER_CONTROLS,
     VMATBASIC_PROFILES,
-    bed_type_has_position_feedback,
 )
+from .import_executor import async_import_modules
+from .profiles import jiecang as jiecang_profiles
+from .profiles import limoss as limoss_profiles
+from .profiles import logicdata as logicdata_profiles
+from .profiles import malouf as malouf_profiles
 
 if TYPE_CHECKING:
     from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
@@ -219,7 +248,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "gmmotor_sleep_sxb": GENERIC_FIELDS,
     BED_TYPE_BF: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_CHERISH: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
-    **dict.fromkeys(CLUSTER033_BED_TYPES, _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT}),
+    **dict.fromkeys(KEESON_LAYOUT_APP_BED_TYPES, _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT}),
     # OCTO motor layout comes from its advertised capability record, with an
     # OCTO-specific explicit override in the profile's own setup/options UI.
     BED_TYPE_OCTO: frozenset({CONF_MOTOR_COUNT}),
@@ -317,6 +346,20 @@ Choices = Mapping[Any, str] | Callable[[Mapping[str, Any]], Mapping[Any, str]]
 
 
 @dataclass(frozen=True, slots=True)
+class FlowContext:
+    """What a question or check may read beyond the staged setup."""
+
+    hass: HomeAssistant
+    # The entry Configure edits; None during setup.
+    entry_id: str | None = None
+    # Setup checks the connection before it saves, through a connectable scanner.
+    verifiable: bool = False
+
+
+ContextChoices = Callable[[FlowContext, Mapping[str, Any]], Mapping[Any, str]]
+
+
+@dataclass(frozen=True, slots=True)
 class Question:
     """One setup question; its answer is stored under ``key``.
 
@@ -330,6 +373,9 @@ class Question:
     staged answer is the default, for a value the profile set itself rather than
     the user. ``validator`` replaces the one the choices imply, for a range or a
     format. A ``searchable`` question's choices are a picker searched by label.
+    A ``multiple`` question takes a list: several of its choices, or several
+    lines of text. ``context_choices`` reads its choices from Home Assistant,
+    such as other config entries, in place of ``choices``.
     """
 
     key: str
@@ -342,6 +388,8 @@ class Question:
     validator: Any = None
     # A long list of choices is a picker the user can search by label.
     searchable: bool = False
+    multiple: bool = False
+    context_choices: ContextChoices | None = None
 
     def asked(self, data: Mapping[str, Any]) -> bool:
         """Return True when the condition holds for these answers."""
@@ -356,16 +404,25 @@ class Question:
         conditions = self.when if isinstance(self.when, list) else [self.when]
         return frozenset(condition["field"] for condition in conditions)
 
-    def options(self, data: Mapping[str, Any]) -> Mapping[Any, str] | None:
+    def options(
+        self, data: Mapping[str, Any], context: FlowContext | None = None
+    ) -> Mapping[Any, str] | None:
+        if self.context_choices is not None:
+            if context is None:
+                raise ValueError(f"{self.key} reads its choices from Home Assistant")
+            return self.context_choices(context, data)
         if self.choices is None or isinstance(self.choices, Mapping):
             return self.choices
         return self.choices(data)
 
-    def default_for(self, data: Mapping[str, Any]) -> Any:
+    def default_for(self, data: Mapping[str, Any], context: FlowContext | None = None) -> Any:
         """Return the staged answer when it is still valid, else the declared default."""
         from homeassistant.helpers.field_visibility import is_field_visible
 
-        options = self.options(data)
+        if self.multiple:
+            staged = data.get(self.key)
+            return staged if isinstance(staged, list) else list(self.default)
+        options = self.options(data, context)
         staged = data.get(self.key)
         if (
             staged is not None
@@ -395,6 +452,10 @@ class SetupProfile:
     for a profile whose answers need cleaning or clear other settings. ``seed``
     fills setup's defaults from the bed's advertisement (the discovery that
     started setup, if any) before the first form; Configure never runs it.
+    ``check`` returns errors that read Home Assistant, such as other config
+    entries or the live link, once ``validate`` has none. ``imports`` names the
+    modules the callbacks read that load only on demand (controllers and large
+    tables); :func:`async_import_profile` imports them off the event loop.
     """
 
     owns: Mapping[str, Any] = field(default_factory=dict)
@@ -409,6 +470,15 @@ class SetupProfile:
         ]
         | None
     ) = None
+    check: Callable[[FlowContext, Mapping[str, Any]], dict[str, str]] | None = None
+    imports: tuple[str, ...] = ()
+
+    def errors(self, data: Mapping[str, Any], context: FlowContext) -> dict[str, str]:
+        """Return the staged setup's errors by field, its own checks first."""
+        errors = self.validate(data) if self.validate else {}
+        if not errors and self.check is not None:
+            errors = self.check(context, data)
+        return errors
 
     def staged(self, previous: Mapping[str, Any], answers: Mapping[str, Any]) -> dict[str, Any]:
         """Return the staged setup with the answers applied."""
@@ -430,10 +500,8 @@ class SetupProfile:
         return frozenset(self.owns) | asked
 
 
-def _jiecang_profile(data: Mapping[str, Any]):  # noqa: ANN202 - a profiles.jiecang AppProfile
-    from .profiles.jiecang import APP_PROFILES
-
-    return APP_PROFILES.get(data.get(CONF_JIECANG_APP_PROFILE, ""))
+def _jiecang_profile(data: Mapping[str, Any]) -> jiecang_profiles.JiecangProfile | None:
+    return jiecang_profiles.APP_PROFILES.get(data.get(CONF_JIECANG_APP_PROFILE, ""))
 
 
 def _jiecang_layouts(data: Mapping[str, Any]) -> Mapping[str, str]:
@@ -450,12 +518,14 @@ def _jiecang_transports(data: Mapping[str, Any]) -> Mapping[str, str]:
 
 def _jiecang_errors(data: Mapping[str, Any]) -> dict[str, str]:
     """Require the app's own layout and transport; nothing is inferred from hardware."""
-    from .profiles.jiecang import COMFORT_MOTION
-
     profile = _jiecang_profile(data)
     if profile is None:
         return {CONF_JIECANG_APP_PROFILE: "jiecang_app_required"}
-    error = "comfort_motion_selection" if profile is COMFORT_MOTION else "jiecang_app_required"
+    error = (
+        "comfort_motion_selection"
+        if profile is jiecang_profiles.COMFORT_MOTION
+        else "jiecang_app_required"
+    )
     errors = {}
     if data.get(CONF_JIECANG_APP_LAYOUT) not in profile.layouts:
         errors[CONF_JIECANG_APP_LAYOUT] = error
@@ -470,10 +540,8 @@ def _jiecang_title(data: Mapping[str, Any]) -> str:
     return JIECANG_APP_PROFILES.get(data.get(CONF_JIECANG_APP_PROFILE, ""), "Jiecang app")
 
 
-def _logicdata_profile(data: Mapping[str, Any]):  # noqa: ANN202 - a profiles.logicdata LogicdataProfile
-    from .profiles.logicdata import APP_PROFILES
-
-    return APP_PROFILES.get(data.get(CONF_LOGICDATA_APP_PROFILE, ""))
+def _logicdata_profile(data: Mapping[str, Any]) -> logicdata_profiles.LogicdataProfile | None:
+    return logicdata_profiles.APP_PROFILES.get(data.get(CONF_LOGICDATA_APP_PROFILE, ""))
 
 
 def _logicdata_layouts(data: Mapping[str, Any]) -> Mapping[str, str]:
@@ -631,7 +699,7 @@ def _angle_sensing(bed_type: str, variant: str = VARIANT_AUTO) -> tuple[Question
 
 
 def _furnimove_handsets(data: Mapping[str, Any]) -> Mapping[Any, str]:
-    from .furnimove_profiles import furnimove_handset_choices
+    from .beds.furnimove.profiles import furnimove_handset_choices
 
     return furnimove_handset_choices(data.get(CONF_FURNIMOVE_REMOTE))
 
@@ -644,7 +712,7 @@ def _furnimove_errors(data: Mapping[str, Any]) -> dict[str, str]:
 
 def _furnimove_table(data: Mapping[str, Any]) -> Mapping[str, Any]:
     """The handset's table sets the motors and massage."""
-    from .furnimove_profiles import get_furnimove_profile
+    from .beds.furnimove.profiles import get_furnimove_profile
 
     profile = get_furnimove_profile(data[CONF_FURNIMOVE_REMOTE])
     return {
@@ -658,8 +726,6 @@ _LP_LEGACY_MODES: Final[Mapping[Any, str]] = {"legacy": "Legacy", "framed": "Fra
 
 
 def _lp_legacy_codes(_data: Mapping[str, Any]) -> Mapping[Any, str]:
-    from .lp_legacy_profiles import LP_LEGACY_PROFILE_CODES
-
     return {code: code for code in LP_LEGACY_PROFILE_CODES}
 
 
@@ -764,6 +830,30 @@ def _vibradorm_profile(data: Mapping[str, Any]) -> Mapping[str, Any]:
     }
 
 
+def _vibradorm_title(data: Mapping[str, Any]) -> str:
+    """The app or V-MAT Basic product, and the remote or controls chosen for it."""
+    if data.get(CONF_BED_TYPE) == BED_TYPE_VMATBASIC:
+        product = VMATBASIC_PROFILES.get(data.get(CONF_VMATBASIC_PROFILE, ""))
+        return f"V-MAT Basic: {product}" if product else "V-MAT Basic"
+    app = data.get(CONF_VIBRADORM_APP_PROFILE, "")
+    control = str(data.get(CONF_VIBRADORM_CONTROL_TYPE))
+    if app == "vmat":
+        from .profiles.vibradorm import VMAT_REMOTES
+
+        remote = data.get(CONF_VIBRADORM_VMAT_REMOTE)
+        detail = (
+            f"Remote {remote} ({VMAT_REMOTES[remote].asset})" if remote in VMAT_REMOTES else None
+        )
+    elif app == "werkmeister":
+        detail = VIBRADORM_WERKMEISTER_CONTROLS.get(control)
+    elif data.get(CONF_VIBRADORM_RESTORED):
+        detail = VIBRADORM_RESTORED_CONTROLS.get(control)
+    else:
+        detail = "Standard controls"
+    name = VIBRADORM_APP_PROFILES.get(app, "Vibradorm app")
+    return f"{name}: {detail}" if detail else name
+
+
 def _vmat_remotes(_data: Mapping[str, Any]) -> Mapping[Any, str]:
     from .profiles.vibradorm import VMAT_REMOTES
 
@@ -815,7 +905,7 @@ _CLASSIC_EXCLUDED: Final = frozenset({"TEST", "RMCS", "ZRS6"})
 
 def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
     """The chosen app's own layout codes, aliases and ZRS6 layout picks."""
-    from .cluster018_models import LAYOUT_PICKER_CHOICES, MANUAL_ALIASES, MODEL_CHOICES
+    from .beds.richmat_classic.models import LAYOUT_PICKER_CHOICES, MANUAL_ALIASES, MODEL_CHOICES
 
     app = str(data.get(CONF_PROTOCOL_VARIANT, ""))
     codes = {
@@ -828,7 +918,7 @@ def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
 
 def _classic_normalize(previous: Mapping[str, Any], answers: Mapping[str, Any]) -> dict[str, Any]:
     """Resolve an alias or a ZRS6 pick to the layout the app opens."""
-    from .cluster018_models import LAYOUT_PICKER_CHOICES, MANUAL_ALIASES
+    from .beds.richmat_classic.models import LAYOUT_PICKER_CHOICES, MANUAL_ALIASES
 
     data = {**previous, **answers}
     if CONF_PRODUCT_TYPE in answers:
@@ -841,17 +931,17 @@ def _classic_normalize(previous: Mapping[str, Any], answers: Mapping[str, Any]) 
 
 def _classic_errors(data: Mapping[str, Any]) -> dict[str, str]:
     """Require a layout the chosen app ships; a shared service never selects one."""
-    from .cluster018_models import MODEL_CHOICES
+    from .beds.richmat_classic.models import MODEL_CHOICES
 
     layout = data.get(CONF_PRODUCT_TYPE)
     shipped = MODEL_CHOICES.get(str(data.get(CONF_PROTOCOL_VARIANT, "")), ())
     if layout in _CLASSIC_EXCLUDED or layout not in shipped:
-        return {CONF_PRODUCT_TYPE: "cluster018_layout"}
+        return {CONF_PRODUCT_TYPE: "richmat_classic_layout"}
     return {}
 
 
 def _classic_title(data: Mapping[str, Any]) -> str:
-    from .cluster018_profiles import APP_NAMES
+    from .beds.richmat_classic.profiles import APP_NAMES
 
     return APP_NAMES.get(str(data.get(CONF_PROTOCOL_VARIANT, "")), "Classic Richmat app")
 
@@ -872,16 +962,20 @@ def _sleepys_app_features(data: Mapping[str, Any]) -> Mapping[str, Any]:
     }
 
 
-def _gmmotor_products(_data: Mapping[str, Any]) -> Mapping[Any, str]:
-    from .gmmotor_profiles import profile_choices
+def _sleepys_title(data: Mapping[str, Any]) -> str:
+    """Every control box selector runs the same bed type, so name the selector."""
+    from .profile_review import route_label
 
-    return profile_choices()
+    selector = data.get(CONF_SLEEPYS_ELITE_SELECTOR)
+    return f"{route_label(data)}: {selector}" if selector else route_label(data)
+
+
+def _gmmotor_products(_data: Mapping[str, Any]) -> Mapping[Any, str]:
+    return gmmotor_profile_choices()
 
 
 def _gmmotor_product_default(data: Mapping[str, Any]) -> str:
     """The product the raw Bluetooth name selects, or the app's empty fallback."""
-    from .gmmotor_discovery import resolve_selection, selector_from_name
-
     product = data.get(CONF_PRODUCT_TYPE)
     if product is None:
         try:
@@ -896,10 +990,8 @@ _GMMOTOR_SIDES: Final[Mapping[Any, str]] = {"left": "Left", "right": "Right", "b
 
 def _gmmotor_errors(data: Mapping[str, Any]) -> dict[str, str]:
     """Require a catalog product, and an app side the product exposes."""
-    from .gmmotor_profiles import load_profile
-
     try:
-        profile = load_profile(data.get(CONF_PRODUCT_TYPE, ""))
+        profile = load_gmmotor_profile(data.get(CONF_PRODUCT_TYPE, ""))
     except ValueError:
         return {CONF_PRODUCT_TYPE: "gmmotor_product"}
     if {"left": 0, "right": 1, "both": 2}.get(data.get(CONF_GMMOTOR_SIDE, "left")) not in profile.sides:
@@ -911,7 +1003,7 @@ def _goodvibe_seed(
     hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None
 ) -> dict[str, Any]:
     """The product the app's own name rule suggests, never over a chosen one."""
-    from .goodvibe_discovery import suggested_profile
+    from .beds.goodvibe.discovery import suggested_profile
 
     if data.get(CONF_PROTOCOL_VARIANT) in GOODVIBE_PROFILES or discovered is None:
         return dict(data)
@@ -963,7 +1055,7 @@ def _isleep_layout(data: Mapping[str, Any]) -> Mapping[str, Any]:
 
 
 def _doublesleep_models(_data: Mapping[str, Any]) -> Mapping[Any, str]:
-    from .doublesleep_protocol import MODELS
+    from .beds.doublesleep.protocol import MODELS
 
     return {str(key): label for key, label in MODELS.items()}
 
@@ -974,7 +1066,7 @@ def _doublesleep_seed(
     """The app model the platform name and advertisement select, unless one is chosen."""
     if discovered is None:
         return dict(data)
-    from .doublesleep_protocol import select_model
+    from .beds.doublesleep.protocol import select_model
 
     model = select_model(discovered.device.name or "", discovered.manufacturer_data)
     return {CONF_PRODUCT_TYPE: str(model), **data}
@@ -998,15 +1090,11 @@ def _doublesleep_errors(data: Mapping[str, Any]) -> dict[str, str]:
 
 
 def _sleeptracker_models(_data: Mapping[str, Any]) -> Mapping[Any, str]:
-    from .sleeptracker_protocol import MODELS
-
-    return {key: model.label for key, model in MODELS.items()}
+    return {key: model.label for key, model in SLEEPTRACKER_MODELS.items()}
 
 
 def _sleeptracker_foundations(_data: Mapping[str, Any]) -> Mapping[Any, str]:
-    from .sleeptracker_protocol import FOUNDATIONS
-
-    return {foundation: foundation for foundation in FOUNDATIONS}
+    return {foundation: foundation for foundation in SLEEPTRACKER_FOUNDATIONS}
 
 
 # A signed 32-bit value, as the apps store their mesh and processor identities.
@@ -1015,9 +1103,7 @@ _INT32: Final = vol.All(int, _INT32_RANGE)
 
 
 def _sleeptracker_errors(data: Mapping[str, Any]) -> dict[str, str]:
-    from .sleeptracker_protocol import FOUNDATIONS, MODELS
-
-    if data.get(CONF_PRODUCT_TYPE) not in MODELS:
+    if data.get(CONF_PRODUCT_TYPE) not in SLEEPTRACKER_MODELS:
         return {CONF_PRODUCT_TYPE: "sleeptracker_profile"}
     if type(
         snapshot := data.get(CONF_SLEEPTRACKER_SNAPSHOT_SIDE, 0)
@@ -1032,7 +1118,7 @@ def _sleeptracker_errors(data: Mapping[str, Any]) -> dict[str, str]:
         return {CONF_SLEEPTRACKER_UNIT: "sleeptracker_profile"}
     if data.get(CONF_SLEEPTRACKER_RESTRICTED, False) and unit != 0:
         return {CONF_SLEEPTRACKER_UNIT: "sleeptracker_restricted_unit"}
-    if data.get(CONF_SLEEPTRACKER_FOUNDATION, "Unspecified") not in FOUNDATIONS:
+    if data.get(CONF_SLEEPTRACKER_FOUNDATION, "Unspecified") not in SLEEPTRACKER_FOUNDATIONS:
         return {CONF_SLEEPTRACKER_FOUNDATION: "sleeptracker_profile"}
     if not isinstance(data.get(CONF_SLEEPTRACKER_RESTRICTED, False), bool):
         return {CONF_SLEEPTRACKER_RESTRICTED: "sleeptracker_profile"}
@@ -1041,10 +1127,8 @@ def _sleeptracker_errors(data: Mapping[str, Any]) -> dict[str, str]:
 
 def _sleeptracker_layout(data: Mapping[str, Any]) -> Mapping[str, Any]:
     """A layout with lumbar adds the third motor."""
-    from .sleeptracker_protocol import MODELS
-
     return {
-        CONF_MOTOR_COUNT: 3 if MODELS[data[CONF_PRODUCT_TYPE]].lumbar else 2,
+        CONF_MOTOR_COUNT: 3 if SLEEPTRACKER_MODELS[data[CONF_PRODUCT_TYPE]].lumbar else 2,
         CONF_MOTOR_PULSE_USER_SET: False,
     }
 
@@ -1074,13 +1158,13 @@ def _motion_bed_choices(layouts: tuple[str, ...]) -> Mapping[Any, str]:
 
 
 def _motion_bed_presets(_data: Mapping[str, Any]) -> Mapping[Any, str]:
-    from .motion_bed_models import PRESET_VARIANTS
+    from .beds.motion_bed.models import PRESET_VARIANTS
 
     return _motion_bed_choices(tuple(PRESET_VARIANTS))
 
 
 def _motion_bed_movements(_data: Mapping[str, Any]) -> Mapping[Any, str]:
-    from .motion_bed_models import MOVEMENT_LAYOUTS
+    from .beds.motion_bed.models import MOVEMENT_LAYOUTS
 
     return _motion_bed_choices(tuple(MOVEMENT_LAYOUTS))
 
@@ -1097,7 +1181,7 @@ def _motion_bed_normalize(
 
 
 def _motion_bed_errors(data: Mapping[str, Any]) -> dict[str, str]:
-    from .motion_bed_models import select_motion_bed
+    from .beds.motion_bed.models import select_motion_bed
 
     try:
         select_motion_bed(
@@ -1120,9 +1204,7 @@ _NO_PULSE_CHOICE: Final[Mapping[str, Any]] = {CONF_MOTOR_PULSE_USER_SET: False}
 
 def _malouf_models(data: Mapping[str, Any]) -> Mapping[Any, str]:
     """The chosen app's model picker, plus a stored model the picker no longer lists."""
-    from .profiles.malouf import APP_PROFILES
-
-    app = APP_PROFILES.get(data.get(CONF_MALOUF_APP_PROFILE, ""))
+    app = malouf_profiles.APP_PROFILES.get(data.get(CONF_MALOUF_APP_PROFILE, ""))
     models = {model: MALOUF_APP_MODELS[model] for model in (app.models if app else ())}
     stored = data.get(CONF_MALOUF_APP_MODEL)
     if app is not None and stored in MALOUF_APP_MODELS:
@@ -1151,23 +1233,28 @@ def _malouf_app_errors(data: Mapping[str, Any]) -> dict[str, str]:
 
 def _every_malouf_model(_data: Mapping[str, Any]) -> Mapping[Any, str]:
     """Every app's model picker, for a form that asks the app at the same time."""
-    from .profiles.malouf import APP_PROFILES
-
     return {
-        model: MALOUF_APP_MODELS[model] for app in APP_PROFILES.values() for model in app.models
+        model: MALOUF_APP_MODELS[model]
+        for app in malouf_profiles.APP_PROFILES.values()
+        for model in app.models
     }
 
 
 def _malouf_switch_in_errors(data: Mapping[str, Any]) -> dict[str, str]:
     """Check the app and model chosen together, since one form asked both."""
-    from .profiles.malouf import APP_PROFILES
-
-    app = APP_PROFILES.get(data.get(CONF_MALOUF_APP_PROFILE, ""))
+    app = malouf_profiles.APP_PROFILES.get(data.get(CONF_MALOUF_APP_PROFILE, ""))
     if app is None:
         return {CONF_MALOUF_APP_PROFILE: "malouf_app_required"}
     if data.get(CONF_MALOUF_APP_MODEL) not in app.models:
         return {CONF_MALOUF_APP_MODEL: "malouf_app_required"}
     return {}
+
+
+def _malouf_title(data: Mapping[str, Any]) -> str:
+    """The app, and the model chosen in it: both apps run one bed type."""
+    app = MALOUF_APP_PROFILES.get(data.get(CONF_MALOUF_APP_PROFILE, ""), "")
+    model = MALOUF_APP_MODELS.get(data.get(CONF_MALOUF_APP_MODEL, ""))
+    return f"{app}: {model}" if model else app
 
 
 _MALOUF_APP_OWNS: Final[Mapping[str, Any]] = {
@@ -1183,7 +1270,7 @@ _MALOUF_RECEIVER_QUESTIONS: Final = (
 
 
 def _reverie_models(_data: Mapping[str, Any]) -> Mapping[Any, str]:
-    from .beds.reverie_profiles import REVERIE_MODEL_CHOICES
+    from .beds.reverie.profiles import REVERIE_MODEL_CHOICES
 
     return REVERIE_MODEL_CHOICES
 
@@ -1194,7 +1281,7 @@ def _reverie_angle_sensing() -> Question:
     The model is asked on the same form, so the question follows that answer,
     and a staged answer is the default only for a model that reads positions.
     """
-    from .beds.reverie_profiles import REVERIE_MODEL_CHOICES, resolve_reverie_model
+    from .beds.reverie.profiles import REVERIE_MODEL_CHOICES, resolve_reverie_model
 
     reports: FieldCondition = {
         "field": CONF_PROTOCOL_VARIANT,
@@ -1206,7 +1293,7 @@ def _reverie_angle_sensing() -> Question:
 
 def _reverie_quiet_model(data: Mapping[str, Any]) -> Mapping[str, Any]:
     """A model whose app reads no positions never reads them."""
-    from .beds.reverie_profiles import resolve_reverie_model
+    from .beds.reverie.profiles import resolve_reverie_model
 
     if resolve_reverie_model(data.get(CONF_PROTOCOL_VARIANT)).positions:
         return {}
@@ -1228,7 +1315,7 @@ _NO_RMCONTROL: Final[FieldCondition] = {
 
 
 def _rmcontrol_products(_data: Mapping[str, Any]) -> Mapping[Any, str]:
-    from .richmat_profiles import RICHMAT_PRODUCT_CODES
+    from .beds.rmcontrol.profiles import RICHMAT_PRODUCT_CODES
 
     return {
         "": "None: Richmat remote controls",
@@ -1269,7 +1356,7 @@ def _richmat_errors(data: Mapping[str, Any]) -> dict[str, str]:
 
 def _richmat_mh_errors(data: Mapping[str, Any]) -> dict[str, str]:
     """Report a model the app's name rule cannot resolve from the raw name."""
-    from .beds.richmat_mh import resolve_model
+    from .beds.richmat_mh.controller import resolve_model
     from .detection import is_mac_like_name
 
     app = RICHMAT_MH_APPS.get(str(data.get(CONF_BED_TYPE)))
@@ -1282,9 +1369,7 @@ def _richmat_mh_errors(data: Mapping[str, Any]) -> dict[str, str]:
 
 
 def _limoss_remote_themes(_data: Mapping[str, Any]) -> Mapping[Any, str]:
-    from .profiles.limoss import REMOTE_THEMES
-
-    return {theme: theme for theme in REMOTE_THEMES}
+    return {theme: theme for theme in limoss_profiles.REMOTE_THEMES}
 
 
 def _limoss_remote_errors(data: Mapping[str, Any]) -> dict[str, str]:
@@ -1295,13 +1380,333 @@ def _limoss_remote_errors(data: Mapping[str, Any]) -> dict[str, str]:
 
 def _hush_products(_data: Mapping[str, Any]) -> Mapping[Any, str]:
     """The app's own twelve products first, then the profiles it restores."""
-    from .const import HUSH_BASE_VARIANTS
-    from .profiles.hush import PROFILES
+    from .profiles.hush import HUSH_BASE_VARIANTS, PROFILES
 
     return {
         key: HUSH_BASE_VARIANTS[key]
         for key in sorted(PROFILES, key=lambda key: (not PROFILES[key].current, PROFILES[key].index))
     }
+
+
+_OCTO_MOTOR_OVERRIDES: Final[Mapping[Any, str]] = {
+    "auto": "Use advertised motor count",
+    "1": "1 motor",
+    "2": "2 motors",
+    "3": "3 motors",
+    "4": "4 motors",
+}
+
+
+def _octo_normalize(previous: Mapping[str, Any], answers: Mapping[str, Any]) -> dict[str, Any]:
+    from .validators import normalize_octo_pin
+
+    data = {**previous, **answers}
+    if CONF_OCTO_PIN in answers:
+        data[CONF_OCTO_PIN] = normalize_octo_pin(answers[CONF_OCTO_PIN])
+    return data
+
+
+def _octo_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .validators import is_valid_octo_pin
+
+    if not is_valid_octo_pin(data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN)):
+        return {CONF_OCTO_PIN: "invalid_pin"}
+    return {}
+
+
+# The native CB24 A/B selector; Both uses the broadcast selector.
+_CB24_SIDES: Final[Mapping[Any, str]] = {
+    CB24_BED_SELECTION_DEFAULT: "Both sides",
+    CB24_BED_SELECTION_A: "Side A / Left",
+    CB24_BED_SELECTION_B: "Side B / Right",
+}
+
+
+def _discovered_name_seed(
+    _hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None
+) -> dict[str, Any]:
+    """The advertised name, unless one is saved; the editable title is no identity."""
+    if discovered is None or not discovered.name:
+        return dict(data)
+    return {CONF_BLE_DEVICE_NAME: discovered.name, **data}
+
+
+def _starcode_selectors(_data: Mapping[str, Any]) -> Mapping[Any, str]:
+    from .beds.starcode.abm5_4_profiles import SELECTORS
+
+    return {selector: selector for selector in SELECTORS}
+
+
+_STARCODE_TRANSPORTS: Final[Mapping[Any, str]] = {
+    "auto": "From original Bluetooth device name",
+    "BOX1220": "BLE / 1000 service",
+    "BOX3633": "62741523 service",
+    "BOX25": "Star / Nordic UART",
+    "BOX25_STAR": "Exact star manufacturer / Nordic UART",
+}
+
+
+def _starcode_app_normalize(
+    previous: Mapping[str, Any], answers: Mapping[str, Any]
+) -> dict[str, Any]:
+    """The app's UI selector follows a changed command selector; Auto reads the name."""
+    from .beds.starcode.abm5_4_profiles import SELECTORS
+    from .config_flow import _starcode_initial_transport
+
+    data = {**previous, **answers}
+    command = data.get(CONF_STARCODE_COMMAND_SELECTOR, "none")
+    if command != previous.get(CONF_STARCODE_COMMAND_SELECTOR) or previous.get(
+        CONF_STARCODE_UI_SELECTOR, "none"
+    ) not in SELECTORS:
+        data[CONF_STARCODE_UI_SELECTOR] = command
+    if data.get(CONF_STARCODE_TRANSPORT_SELECTOR) == "auto":
+        del data[CONF_STARCODE_TRANSPORT_SELECTOR]
+        if (transport := _starcode_initial_transport(data, None)) is not None:
+            data[CONF_STARCODE_TRANSPORT_SELECTOR] = transport
+    return data
+
+
+def _starcode_app_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .beds.starcode.abm5_4_profiles import SELECTORS, TRANSPORTS
+
+    errors: dict[str, str] = {}
+    if data.get(CONF_STARCODE_COMMAND_SELECTOR, "none") not in SELECTORS:
+        errors[CONF_STARCODE_COMMAND_SELECTOR] = "starcode_app_invalid"
+    if (data.get(CONF_STARCODE_TRANSPORT_SELECTOR) or "auto") not in (*TRANSPORTS, "auto"):
+        errors[CONF_STARCODE_TRANSPORT_SELECTOR] = "starcode_app_invalid"
+    if CONF_STARCODE_UI_SELECTOR in data and data[CONF_STARCODE_UI_SELECTOR] not in SELECTORS:
+        errors[CONF_STARCODE_COMMAND_SELECTOR] = "starcode_app_invalid"
+    return errors
+
+
+def _starcode_app_check(context: FlowContext, data: Mapping[str, Any]) -> dict[str, str]:
+    """Require a transport the bed offers.
+
+    Setup's connection check reads it from the bed's own name, so only setup
+    without a scanner needs it now. Configure checks a changed transport on the
+    live link, without connecting.
+    """
+    from .config_flow import _starcode_initial_transport, starcode_live_transport_valid
+
+    transport = data.get(CONF_STARCODE_TRANSPORT_SELECTOR)
+    invalid = {CONF_STARCODE_TRANSPORT_SELECTOR: "starcode_app_invalid"}
+    if context.entry_id is None:
+        return invalid if transport is None and not context.verifiable else {}
+    saved = context.hass.config_entries.async_get_entry(context.entry_id)
+    saved_transport = _starcode_initial_transport(saved.data, None) if saved else None
+    if transport == saved_transport:
+        return {}
+    if transport is None or (
+        starcode_live_transport_valid(context.hass, context.entry_id, transport) is False
+    ):
+        return invalid
+    return {}
+
+
+# The bedding class the exact Bluetooth name prefix selects.
+_STARCODE_CLASSES: Final[Mapping[Any, str]] = {"cb25": "CB25", "f23": "F23", "kneading": "Kneading"}
+
+
+def _lift_choices(context: FlowContext, data: Mapping[str, Any]) -> Mapping[Any, str]:
+    from .beds.starcode.accessory_group import lift_choices
+
+    return lift_choices(context.hass, context.entry_id, main_data=data)
+
+
+def _lift_check(context: FlowContext, data: Mapping[str, Any]) -> dict[str, str]:
+    from .beds.starcode.accessory_group import validate_lift_entries
+
+    try:
+        validate_lift_entries(
+            context.hass,
+            data,
+            data.get(CONF_STARCODE_LIFT_ENTRIES, []),
+            main_entry_id=context.entry_id,
+        )
+    except ValueError as err:
+        if data.get(CONF_BED_TYPE) != BED_TYPE_STARCODE_M1X12:
+            return {CONF_STARCODE_LIFT_ENTRIES: "starcode_invalid_lifts"}
+        return {
+            CONF_STARCODE_LIFT_ENTRIES: "starcode_m1x12_elevate_reconfigure"
+            if "M1X12 ELEVATE" in str(err)
+            else "starcode_invalid_m1x12_lifts"
+        }
+    return {}
+
+
+_LIFTS: Final = Question(
+    CONF_STARCODE_LIFT_ENTRIES, default=[], multiple=True, context_choices=_lift_choices
+)
+# The lift helpers import the StarCode controllers; AdjustableM5X5's name rule is one.
+_LIFT_IMPORTS: Final = ("beds.starcode.accessory_group",)
+# The exact Bluetooth name the app reads; a friendly title is no identity.
+_EXACT_NAME: Final = Question(
+    CONF_BLE_DEVICE_NAME, default=lambda data: data.get(CONF_NAME, REQUIRED), text=True
+)
+
+
+def _m5x5_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .beds.starcode.m5x5 import profile_from_name
+
+    name = data.get(CONF_BLE_DEVICE_NAME)
+    if isinstance(name, str) and name.startswith("ELEVATE"):
+        return {CONF_STARCODE_M5X5_PROFILE: "starcode_elevate_bed_type"}
+    if not isinstance(name, str) or profile_from_name(name) != data.get(CONF_STARCODE_M5X5_PROFILE):
+        return {CONF_STARCODE_M5X5_PROFILE: "starcode_profile_mismatch"}
+    return {}
+
+
+def _m1x12_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    name = data.get(CONF_BLE_DEVICE_NAME)
+    if not isinstance(name, str) or m1x12_profile_from_name(name) != data.get(
+        CONF_STARCODE_M1X12_PROFILE
+    ):
+        return {CONF_STARCODE_M1X12_PROFILE: "starcode_m1x12_profile_mismatch"}
+    return {}
+
+
+def _fsm_relax_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .beds.fsm_relax.controller import FsmRelaxSetup
+    from .beds.fsm_relax.state import validate_names
+
+    try:
+        r = tuple(data.get(key, False) for key in CONF_REVERSE_MOTORS)
+        FsmRelaxSetup(
+            data.get(CONF_PRODUCT_TYPE, "chair"),
+            data.get(CONF_HAS_LIGHT, False),
+            data.get(CONF_HAS_MASSAGE, False),
+            (r[0], r[1], r[2], r[3]),
+        )
+        validate_names(data.get(CONF_FSM_RELAX_MEMORY_NAMES, [""] * 8))
+    except ValueError:
+        return {"base": "fsm_relax_invalid"}
+    return {}
+
+
+def _app_layouts(bed_type: str) -> Callable[[Mapping[str, Any]], Mapping[Any, str]]:
+    """The layouts the app shows, or Ergomotion 4.0's catalog products."""
+
+    def choices(_data: Mapping[str, Any]) -> Mapping[Any, str]:
+        if bed_type == "ergomotion_4":
+            return ERGOMOTION4_PRODUCTS
+        from .profiles.keeson import APP_LAYOUTS
+
+        return {layout: layout for layout in APP_LAYOUTS[bed_type]}
+
+    return choices
+
+
+def _app_layout_default(bed_type: str) -> Callable[[Mapping[str, Any]], str]:
+    def default(_data: Mapping[str, Any]) -> str:
+        if bed_type == "ergomotion_4":
+            return "H"
+        from .profiles.keeson import DEFAULT_LAYOUTS
+
+        return DEFAULT_LAYOUTS[bed_type]
+
+    return default
+
+
+def _app_layout_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    """Require one of the app's own layouts; an Other product needs its exact keys."""
+    bed_type = data[CONF_BED_TYPE]
+    if data.get(CONF_PRODUCT_TYPE) not in _app_layouts(bed_type)(data):
+        return {"base": "keeson_app_layout"}
+    if bed_type == "ergomotion_4" and data[CONF_PRODUCT_TYPE] == "custom":
+        from .beds.ergomotion4.controller import (
+            CONF_MASSAGE_KEYS,
+            CONF_MODEL_KEYS,
+            CONF_PRODUCT_NAME,
+            CONF_RGB,
+            custom_product,
+        )
+
+        try:
+            custom_product(
+                data.get(CONF_PRODUCT_NAME, "Custom"),
+                tuple(data.get(CONF_MODEL_KEYS, ())),
+                tuple(data.get(CONF_MASSAGE_KEYS, ())),
+                data.get(CONF_HAS_LIGHT, False),
+                data.get(CONF_RGB, False),
+            )
+        except ValueError:
+            return {"base": "keeson_app_layout"}
+    return {}
+
+
+def _app_layout_title(data: Mapping[str, Any]) -> str:
+    from .profiles.keeson import APP_NAMES
+
+    return APP_NAMES.get(data[CONF_BED_TYPE], "Ergomotion 4.0")
+
+
+def _ergomotion4_keys(kind: Literal["model", "massage"]) -> Choices:
+    """The catalog's model or massage feature keys, for an Other product."""
+
+    def choices(_data: Mapping[str, Any]) -> Mapping[Any, str]:
+        from .beds.ergomotion4.controller import MASSAGE_KEYS, MODEL_KEYS
+
+        return {key: key for key in (MODEL_KEYS if kind == "model" else MASSAGE_KEYS)}
+
+    return choices
+
+
+# The Serta MP Remote app's four local memories, a head and a foot angle each.
+CONF_SERTA_MP_MEMORIES: Final = tuple(
+    f"serta_mp_memory_{slot}_{axis}" for slot in range(1, 5) for axis in ("head", "foot")
+)
+
+
+def _app_layout_profile(bed_type: str) -> SetupProfile:
+    """An app's exact layout; its labelled controls own their entities."""
+    questions: tuple[Question, ...] = (
+        Question(CONF_PRODUCT_TYPE, _app_layouts(bed_type), _app_layout_default(bed_type)),
+    )
+    if bed_type == "ergomotion_4":
+        # Other catalog product's fields stay visible so switching the product
+        # takes one submission; they apply only to it.
+        questions += (
+            Question("ergomotion4_model_keys", _ergomotion4_keys("model"), [], multiple=True),
+            Question("ergomotion4_massage_keys", _ergomotion4_keys("massage"), [], multiple=True),
+            Question("ergomotion4_product_name", default="Custom", text=True),
+            Question(CONF_HAS_LIGHT, default=False),
+            Question("ergomotion4_rgb", default=False),
+        )
+    if bed_type == "qplus_app":
+        questions += (
+            Question(CONF_PROTOCOL_VARIANT, {side: side for side in ("both", "side_a", "side_b")}, "both"),
+        )
+    if bed_type == "serta_mp_remote":
+        questions += tuple(
+            Question(
+                f"serta_mp_memory_{slot}_{axis}",
+                default=15 if axis == "head" else 0 if slot == 4 else 35,
+                validator=vol.All(int, vol.Range(min=0, max=maximum)),
+            )
+            for slot in range(1, 5)
+            for axis, maximum in (("head", 60), ("foot", 45))
+        )
+    owns: dict[str, Any] = {
+        CONF_MOTOR_COUNT: 2,
+        CONF_HAS_MASSAGE: False,
+        # Serta MP Remote reads its positions for its local memories.
+        CONF_DISABLE_ANGLE_SENSING: bed_type != "serta_mp_remote",
+        CONF_MOTOR_PULSE_DELAY_MS: SET_BY_PROFILE,
+    }
+    if bed_type != "qplus_app":
+        owns[CONF_PROTOCOL_VARIANT] = SET_BY_PROFILE
+    return SetupProfile(
+        owns=owns,
+        questions=questions,
+        validate=_app_layout_errors,
+        derive=lambda _data: _NO_PULSE_CHOICE,
+        title=_app_layout_title,
+        imports=(
+            ("profiles.keeson", "beds.ergomotion4.controller")
+            if bed_type == "ergomotion_4"
+            else ("profiles.keeson",)
+        ),
+    )
 
 
 def _asking(key: str, **declared: Any) -> SetupProfile:
@@ -1380,6 +1785,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         normalize=_vibradorm_normalize,
         validate=_vibradorm_errors,
         derive=_vibradorm_profile,
+        title=_vibradorm_title,
     ),
     f"{BED_TYPE_VIBRADORM_APP}@vmat": _asking(
         BED_TYPE_VIBRADORM_APP,
@@ -1387,6 +1793,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         normalize=_vibradorm_normalize,
         validate=_vibradorm_errors,
         derive=_vibradorm_profile,
+        title=_vibradorm_title,
     ),
     # Caresse Diamant asks the retained settings only for a restored setup.
     f"{BED_TYPE_VIBRADORM_APP}@caresse": _asking(
@@ -1422,6 +1829,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         normalize=_vibradorm_normalize,
         validate=_vibradorm_errors,
         derive=_vibradorm_profile,
+        title=_vibradorm_title,
     ),
     # The CBI and XT-Box products also ask the floor light level and timer.
     BED_TYPE_VMATBASIC: _asking(
@@ -1443,10 +1851,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         ),
         normalize=_vmatbasic_normalize,
         validate=_vmatbasic_errors,
+        title=_vibradorm_title,
     ),
     # The app is the variant, chosen from the bed-type list. Its layout owns
     # every control and the app its own refresh; none reports positions.
-    BED_TYPE_CLUSTER018: SetupProfile(
+    BED_TYPE_RICHMAT_CLASSIC_APPS: SetupProfile(
         owns={
             CONF_MOTOR_COUNT: 2,
             CONF_HAS_MASSAGE: False,
@@ -1455,7 +1864,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         },
         questions=(
             Question(CONF_PRODUCT_TYPE, _classic_layouts),
-            Question(CONF_CLUSTER018_THIRD_SERVICE, default=False, advanced=True),
+            Question(CONF_RICHMAT_CLASSIC_THIRD_SERVICE, default=False, advanced=True),
         ),
         normalize=_classic_normalize,
         validate=_classic_errors,
@@ -1490,7 +1899,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         f"{BED_TYPE_MALOUF_APP}@{app}": _asking(
             BED_TYPE_MALOUF_APP,
             owns=_MALOUF_APP_OWNS,
-            title=lambda data: MALOUF_APP_PROFILES.get(data.get(CONF_MALOUF_APP_PROFILE, ""), ""),
+            title=_malouf_title,
             questions=(
                 Question(CONF_MALOUF_APP_MODEL, _malouf_models),
                 *_MALOUF_RECEIVER_QUESTIONS,
@@ -1511,6 +1920,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             *_MALOUF_RECEIVER_QUESTIONS,
         ),
         validate=_malouf_switch_in_errors,
+        title=_malouf_title,
     ),
     # A receiver route's controls come from the physical remote, which neither
     # the protocol nor a retail name identifies.
@@ -1539,6 +1949,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         BED_TYPE_SLEEPYS_ELITE_APP,
         questions=(Question(CONF_SLEEPYS_ELITE_SELECTOR, _SLEEPYS_SELECTORS, "none"),),
         derive=_sleepys_app_features,
+        title=_sleepys_title,
     ),
     # The BOX15 and BOX24 receivers size their motor controls from the count.
     **{
@@ -1592,6 +2003,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             Question(CONF_PROTOCOL_VARIANT, _routes(BED_TYPE_RICHMAT), "auto", advanced=True),
         ),
         validate=_richmat_errors,
+        imports=("beds.rmcontrol.profiles",),
     ),
     # Each Richmat MH app's model sets its controls. Auto applies the app's name
     # rule to the raw Bluetooth name setup stores.
@@ -1600,6 +2012,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             bed_type,
             questions=(Question(CONF_PROTOCOL_VARIANT, _routes(bed_type), "auto"),),
             validate=_richmat_mh_errors,
+            imports=("beds.richmat_mh.controller",),
         )
         for bed_type in RICHMAT_MH_BED_TYPES
     },
@@ -1637,6 +2050,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         ),
         validate=_limoss_remote_errors,
         derive=lambda _data: {CONF_MOTOR_PULSE_USER_SET: False},
+        imports=("beds.limoss.remote",),
     ),
     # The app's layout is its route, asked on the app's one row.
     BED_TYPE_COMFORT_ENHANCEMENTS: _asking(
@@ -1780,6 +2194,103 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         derive=lambda _data: _NO_PULSE_CHOICE,
         seed=_motion_bed_seed,
     ),
+    # AdjustableM5X4's saved command selector and transport. A shared UART is
+    # no app identity.
+    BED_TYPE_STARCODE_ABM5_4: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 2,
+            CONF_HAS_MASSAGE: True,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_DELAY_MS: SET_BY_PROFILE,
+        },
+        questions=(
+            Question(CONF_STARCODE_COMMAND_SELECTOR, _starcode_selectors, "none"),
+            Question(CONF_STARCODE_TRANSPORT_SELECTOR, _STARCODE_TRANSPORTS, "auto"),
+        ),
+        normalize=_starcode_app_normalize,
+        validate=_starcode_app_errors,
+        check=_starcode_app_check,
+        seed=_discovered_name_seed,
+        title=lambda _data: "AdjustableM5X4",
+    ),
+    # The bedding class the exact Bluetooth name selects, and the lifts it
+    # drives; a lift is another config entry.
+    BED_TYPE_STARCODE_M5X5: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 2,
+            CONF_HAS_MASSAGE: True,
+            CONF_DISABLE_ANGLE_SENSING: False,
+            CONF_MOTOR_PULSE_DELAY_MS: SET_BY_PROFILE,
+            CONF_PROTOCOL_VARIANT: SET_BY_PROFILE,
+        },
+        questions=(_EXACT_NAME, Question(CONF_STARCODE_M5X5_PROFILE, _STARCODE_CLASSES), _LIFTS),
+        validate=_m5x5_errors,
+        check=_lift_check,
+        title=lambda _data: "AdjustableM5X5",
+        imports=_LIFT_IMPORTS,
+    ),
+    BED_TYPE_STARCODE_M1X12: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: SET_BY_PROFILE,
+            CONF_HAS_MASSAGE: True,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_DELAY_MS: 100,
+            CONF_PROTOCOL_VARIANT: SET_BY_PROFILE,
+        },
+        questions=(_EXACT_NAME, Question(CONF_STARCODE_M1X12_PROFILE, _STARCODE_CLASSES), _LIFTS),
+        validate=_m1x12_errors,
+        check=_lift_check,
+        derive=lambda _data: _NO_PULSE_CHOICE,
+        title=lambda _data: "Adjustable Comfort M1X12",
+        imports=_LIFT_IMPORTS,
+    ),
+    # An ELEVATE may itself be the main of AdjustableM5X5 lifts.
+    **{
+        key: _asking(key, questions=(_LIFTS,), check=_lift_check, imports=_LIFT_IMPORTS)
+        for key in (BED_TYPE_STAR_ELEVATE, f"{BED_TYPE_STAR_ELEVATE}:{STAR_ELEVATE_VARIANT_M1X12}")
+    },
+    # The app's bed or chair, its optional controls, reversals and the eight
+    # memory names. Shared advertisements do not identify the app.
+    BED_TYPE_FSM_RELAX: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: SET_BY_PROFILE,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_DELAY_MS: SET_BY_PROFILE,
+            CONF_PROTOCOL_VARIANT: SET_BY_PROFILE,
+        },
+        questions=(
+            Question(CONF_PRODUCT_TYPE, PRODUCT_TYPES, "chair"),
+            Question(CONF_HAS_LIGHT, default=HAS_LIGHT_DEFAULTS[BED_TYPE_FSM_RELAX]),
+            Question(CONF_HAS_MASSAGE, default=False),
+            *(Question(key, default=False) for key in CONF_REVERSE_MOTORS),
+            Question(CONF_FSM_RELAX_MEMORY_NAMES, default=[""] * 8, text=True, multiple=True),
+        ),
+        validate=_fsm_relax_errors,
+        title=lambda _data: "FSM Relax",
+        imports=("beds.fsm_relax.controller",),
+    ),
+    # Each app's exact layout, chosen from its own list.
+    **{
+        bed_type: _app_layout_profile(bed_type)
+        for bed_type in sorted(KEESON_LAYOUT_APP_BED_TYPES | {"ergomotion_4"})
+    },
+    # Standard OCTO Smart Control's PIN, and an explicit motor layout over the
+    # advertised one. A route without an app step asks these in its final settings.
+    BED_TYPE_OCTO: _asking(
+        BED_TYPE_OCTO,
+        questions=(
+            Question(CONF_OCTO_PIN, default=DEFAULT_OCTO_PIN, text=True),
+            Question(CONF_OCTO_MOTOR_COUNT_OVERRIDE, _OCTO_MOTOR_OVERRIDES, "auto"),
+        ),
+        normalize=_octo_normalize,
+        validate=_octo_errors,
+    ),
+    BED_TYPE_OKIN_CB24: _asking(
+        BED_TYPE_OKIN_CB24,
+        questions=(
+            Question(CONF_CB24_BED_SELECTION, _CB24_SIDES, CB24_BED_SELECTION_DEFAULT),
+        ),
+    ),
     # The exact Bluetooth name selects MotoMotion's panel and its independent
     # feature flags; the app's own controls replace massage and angle sensing.
     BED_TYPE_MOTOMOTION: _asking(
@@ -1831,6 +2342,12 @@ def setup_profile_for(data: Mapping[str, Any]) -> SetupProfile | None:
     key = app_profile_key(bed_type, variant)
     app = data.get(key) if key is not None else None
     return setup_profile(bed_type, variant, app if isinstance(app, str) else None)
+
+
+async def async_import_profile(hass: HomeAssistant, profile: SetupProfile | None) -> None:
+    """Import the modules ``profile``'s callbacks read, off the event loop."""
+    if profile is not None and profile.imports:
+        await async_import_modules(hass, *profile.imports)
 
 
 def profile_massage(data: Mapping[str, Any]) -> bool | None:

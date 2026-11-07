@@ -19,8 +19,8 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.base import ControllerHoldSpec
-from custom_components.adjustable_bed.beds.octo import (
+from custom_components.adjustable_bed.beds.entity_specs import ControllerHoldSpec
+from custom_components.adjustable_bed.beds.octo.controller import (
     OCTO_FEATURE_MEMCOUNT,
     OCTO_MOTOR_HEAD,
     OCTO_PROTOCOL_HOLD_INTERVAL_MS,
@@ -28,7 +28,7 @@ from custom_components.adjustable_bed.beds.octo import (
     OctoCapabilityRecord,
     OctoController,
 )
-from custom_components.adjustable_bed.button import ControllerActionButton, _button_entities_for
+from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OCTO,
     CONF_BED_TYPE,
@@ -566,7 +566,7 @@ async def test_octo_enroll_pin_requires_matching_four_ascii_digits(
     controller._write_octo_command = write
 
     with patch(
-        "custom_components.adjustable_bed.octo_services._call_targets",
+        "custom_components.adjustable_bed.beds.octo.services._call_targets",
         return_value=[(coordinator, SIDE_BOTH)],
     ):
         with pytest.raises(ServiceValidationError, match="do not match"):
@@ -606,7 +606,7 @@ async def test_octo_enroll_pin_sends_and_persists_one_physical_receiver(
     controller._write_octo_command = write
 
     with patch(
-        "custom_components.adjustable_bed.octo_services._call_targets",
+        "custom_components.adjustable_bed.beds.octo.services._call_targets",
         return_value=[(coordinator, SIDE_BOTH)],
     ):
         await hass.services.async_call(
@@ -624,7 +624,6 @@ async def test_octo_enroll_pin_sends_and_persists_one_physical_receiver(
     assert write.await_args.args == ([0x20, 0x41], [0, 3, 6, 9])
     assert isinstance(write.await_args.kwargs["cancel_event"], asyncio.Event)
     assert entry.data[CONF_OCTO_PIN] == "0369"
-    assert coordinator._octo_pin == "0369"
     assert controller._pin == "0369"
     command_kwargs = coordinator.async_execute_controller_command.await_args.kwargs
     assert command_kwargs["cancel_running"] is False
@@ -646,7 +645,7 @@ async def test_octo_enroll_pin_from_single_address_side_updates_physical_owner(
     controller._write_octo_command = write
 
     with patch(
-        "custom_components.adjustable_bed.octo_services._call_targets",
+        "custom_components.adjustable_bed.beds.octo.services._call_targets",
         return_value=[(paired, SIDE_LEFT)],
     ):
         await hass.services.async_call(
@@ -662,7 +661,7 @@ async def test_octo_enroll_pin_from_single_address_side_updates_physical_owner(
 
     write.assert_awaited_once()
     assert entry.data[CONF_OCTO_PIN] == "0420"
-    assert inner._octo_pin == "0420"
+    assert inner.entry.data[CONF_OCTO_PIN] == "0420"
     assert controller._pin == "0420"
 
 
@@ -677,7 +676,7 @@ async def test_octo_enroll_pin_is_not_persisted_when_scheduler_skips_callback(
 
     with (
         patch(
-            "custom_components.adjustable_bed.octo_services._call_targets",
+            "custom_components.adjustable_bed.beds.octo.services._call_targets",
             return_value=[(coordinator, SIDE_BOTH)],
         ),
         pytest.raises(ServiceValidationError, match="cancelled before the PIN was sent"),
@@ -695,7 +694,6 @@ async def test_octo_enroll_pin_is_not_persisted_when_scheduler_skips_callback(
 
     controller._write_octo_command.assert_not_awaited()
     assert entry.data[CONF_OCTO_PIN] == ""
-    assert coordinator._octo_pin == ""
     assert controller._pin == ""
 
 
@@ -738,23 +736,31 @@ async def test_octo_memory_action_specs_publish_card_metadata_for_standalone_and
     left = paired.children[SIDE_LEFT]
     side_button = ControllerActionButton(left, recall_spec)
     assert side_button.unique_id.endswith("_preset_memory_9_left")
-    assert side_button.translation_key == "preset_memory_9_left"
+    assert side_button.translation_key == "preset_memory_9"
     assert {
         key: side_button.extra_state_attributes[key] for key in standalone.extra_state_attributes
     } == standalone.extra_state_attributes
     assert side_button.extra_state_attributes["bed_side"] == SIDE_LEFT
 
 
-async def test_complete_memory_loss_retires_only_the_selected_octo_side_ids(
+async def test_complete_memory_loss_retires_both_sides_dynamic_ids(
     hass: HomeAssistant,
 ) -> None:
-    """Every dynamic slot above eight retires while its paired peer stays owned."""
+    """Every dynamic slot above eight retires on each side of a shared controller."""
+    from homeassistant.const import Platform
     from homeassistant.helpers import entity_registry as er
+
+    from custom_components.adjustable_bed.const import CONF_PAIR_MODE, PAIR_MODE_SINGLE_ADDRESS
+    from tests.test_entity_sweep import async_setup_platforms_and_sweep
 
     entry, inner, controller = await _target(hass)
     hass.config_entries.async_update_entry(
         entry,
-        data={**entry.data, CONF_PAIR_ID: "paired-octo"},
+        data={
+            **entry.data,
+            CONF_PAIR_ID: "paired-octo",
+            CONF_PAIR_MODE: PAIR_MODE_SINGLE_ADDRESS,
+        },
     )
     paired = SingleAddressPairedCoordinator(hass, entry, inner)
     left = paired.children[SIDE_LEFT]
@@ -775,13 +781,11 @@ async def test_complete_memory_loss_retires_only_the_selected_octo_side_ids(
         OCTO_FEATURE_MEMCOUNT: OctoCapabilityRecord(OCTO_FEATURE_MEMCOUNT, 0, b"\x01", 1, b"\x00")
     }
     controller._handle_feature_response([0xFF, 0xFF, 0xFF, 0, 0, 0])
-    _button_entities_for(hass, left)
+    await async_setup_platforms_and_sweep(hass, entry, paired, (Platform.BUTTON,))
 
     for key in ("preset_memory_9", "program_memory_9"):
-        assert registry.async_get_entity_id("button", DOMAIN, left.entity_unique_id(key)) is None
-        assert (
-            registry.async_get_entity_id("button", DOMAIN, right.entity_unique_id(key)) is not None
-        )
+        for runtime in (left, right):
+            assert registry.async_get_entity_id("button", DOMAIN, runtime.entity_unique_id(key)) is None
 
     slot_one = next(
         spec for spec in controller.controller_button_specs if spec.key == "preset_memory_1"
@@ -793,7 +797,7 @@ def test_combined_motor_button_keeps_controller_hold_metadata() -> None:
     """Paired motor buttons expose the same bounded hold contract as each side."""
     from unittest.mock import MagicMock
 
-    from custom_components.adjustable_bed.beds.base import (
+    from custom_components.adjustable_bed.beds.entity_specs import (
         ControllerMotorHoldSpec,
         MotorControlSpec,
     )
@@ -819,8 +823,8 @@ def test_combined_motor_button_keeps_controller_hold_metadata() -> None:
         held_control_options=("back_up", "back_down"),
     )
     coordinator.children = {
-        SIDE_LEFT: SimpleNamespace(bed_type=BED_TYPE_OCTO, capability_controller=controller),
-        SIDE_RIGHT: SimpleNamespace(bed_type=BED_TYPE_OCTO, capability_controller=controller),
+        SIDE_LEFT: SimpleNamespace(controller_side=None, bed_type=BED_TYPE_OCTO, capability_controller=controller),
+        SIDE_RIGHT: SimpleNamespace(controller_side=None, bed_type=BED_TYPE_OCTO, capability_controller=controller),
     }
 
     button = PairedBedCombinedMotorButton(coordinator, spec, "up")
@@ -843,7 +847,7 @@ async def test_octo_enroll_pin_rejects_multiple_selected_receivers(
 
     with (
         patch(
-            "custom_components.adjustable_bed.octo_services._call_targets",
+            "custom_components.adjustable_bed.beds.octo.services._call_targets",
             return_value=[(coordinator, SIDE_BOTH), (coordinator, SIDE_BOTH)],
         ),
         pytest.raises(ServiceValidationError, match="exactly one"),
@@ -1049,7 +1053,7 @@ async def test_octo_reset_requires_true_confirmation_and_routes_once(
     controller.reset_defaults = AsyncMock()
 
     with patch(
-        "custom_components.adjustable_bed.octo_services._call_targets",
+        "custom_components.adjustable_bed.beds.octo.services._call_targets",
         return_value=[(coordinator, SIDE_BOTH)],
     ):
         with pytest.raises(vol.Invalid):
@@ -1074,3 +1078,44 @@ async def test_octo_reset_requires_true_confirmation_and_routes_once(
         )
 
     controller.reset_defaults.assert_awaited_once_with()
+
+
+async def test_octo_lookup_hands_back_a_link_it_opened_for_the_wrong_controller(
+    hass: HomeAssistant,
+) -> None:
+    """A connect that yields no Standard OCTO controller still restores the idle timer."""
+    await async_register_services(hass)
+    other = SimpleNamespace(requires_disconnected_transport=False)
+    coordinator = MagicMock(spec=AdjustableBedCoordinator)
+    coordinator.name = "Star2"
+    coordinator.bed_type = BED_TYPE_OCTO
+    coordinator.capability_controller = None
+    coordinator.controller = None
+    coordinator.is_connected = False
+    coordinator.pairlink_peripheral = False
+
+    async def connect(*, reset_timer: bool) -> bool:
+        coordinator.controller = other
+        coordinator.is_connected = True
+        return True
+
+    coordinator.async_ensure_connected = AsyncMock(side_effect=connect)
+
+    with (
+        patch(
+            "custom_components.adjustable_bed.beds.octo.services._call_targets",
+            return_value=[(coordinator, SIDE_BOTH)],
+        ),
+        pytest.raises(ServiceValidationError, match="selected OCTO variant"),
+    ):
+        await hass.services.async_call(
+            DOMAIN,
+            "octo_enroll_pin",
+            {"device_id": "octo-device", CONF_OCTO_PIN: "1234", "octo_pin_confirmation": "1234"},
+            blocking=True,
+        )
+
+    assert [call.kwargs for call in coordinator.async_ensure_connected.await_args_list] == [
+        {"reset_timer": False},
+        {"reset_timer": True},
+    ]

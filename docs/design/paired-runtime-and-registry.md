@@ -44,12 +44,22 @@ union instead of pretending every view is a physical coordinator. Support captur
 uses explicit diagnostic access on the logical view so both physical and logical
 position polling remain paused throughout capture.
 
+Side devices carry the side in their name, so no entity adds it to its translation
+key. A two-address side keeps its own bed's name. A single-address side is named
+`<bed> Left` or `<bed> Right` through the `device` translations, and Home Assistant
+keeps a name the user set. Combined controls on the parent reuse the side's key;
+the parent device's name keeps them apart. Only keys a bed states for a side it
+controls natively, such as Sleep Number's per-side climate, end in `_left`,
+`_right` or `_both`. The card reads an entity's side from its `bed_side` or `side`
+attribute, never from its key.
+
 `ChildEntryView` explicitly forwards identity and lifecycle methods to the real
 parent `ConfigEntry`. Runtime persistence still updates only the matching child
 descriptor; background tasks and unload callbacks belong to the real entry.
 Coordinators accept the two supported entry forms directly, without a cast.
-The existing side-bound controller adapter remains a distinct controller type;
-this change does not redesign the protocol controller interface.
+A single-address side shares the physical controller itself. The runtime binds
+its side with `BedController.side_scope()` around commands, queries and state
+reads, and `own_sides()` limits per-side capability lists to that side.
 
 ## Registry transactions
 
@@ -86,6 +96,17 @@ APIs, not crash-atomic database transactions.
 Single-address unpair retains its in-place config restoration and paired-only
 entity cleanup. Failures restoring its configuration or reloading it are reported
 without hiding the original failure.
+
+## Stale entity rows
+
+Entity builders only build. Every platform records the unique IDs it creates in
+`entity_sweep.py`, and once all forwarded platforms have set up, rows of the entry
+that nothing created are removed. Disabled entities are created too, so they stay.
+The sweep does nothing while any configured side is missing from the runtime, has
+no capability controller, or has not finished entity discovery, so an offline or
+retained side never loses the other side's rows. A controller lists entities that
+appear only once the bed reports them in `retained_entity_keys`. A dynamic builder
+that rebuilds after discovery replaces its own record and triggers the sweep again.
 
 ## Validation
 

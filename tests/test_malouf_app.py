@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed.beds.malouf_app import MaloufAppController
+from custom_components.adjustable_bed.beds.malouf.app import MaloufAppController
 from custom_components.adjustable_bed.codec.malouf import (
     TRANSPORTS,
     alarm,
@@ -16,6 +16,8 @@ from custom_components.adjustable_bed.codec.malouf import (
     parse_notification,
 )
 from custom_components.adjustable_bed.profiles.malouf import APP_PROFILES, MALOUF_APP_MODELS
+from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
+from tests.state_helpers import published
 
 
 def gatt_services(*transports: str) -> list[MagicMock]:
@@ -158,7 +160,7 @@ async def test_real_motion_lifecycle_acknowledged_hold_and_release(
 ) -> None:
     ctrl = make_controller(transport)
     with patch(
-        "custom_components.adjustable_bed.beds.malouf_app.asyncio.sleep", new_callable=AsyncMock
+        "custom_components.adjustable_bed.beds.malouf.app.asyncio.sleep", new_callable=AsyncMock
     ) as sleep:
         await ctrl.move_back_up()
     assert written(ctrl) == [bytes.fromhex(motion), bytes.fromhex(motion), bytes.fromhex(stop)]
@@ -181,7 +183,7 @@ async def test_motion_cancellation_still_sends_uncancelled_stop(cancel_task: boo
 
     ctrl.client.write_gatt_char.side_effect = cancel_on_motion
     with patch(
-        "custom_components.adjustable_bed.beds.malouf_app.asyncio.sleep", new_callable=AsyncMock
+        "custom_components.adjustable_bed.beds.malouf.app.asyncio.sleep", new_callable=AsyncMock
     ):
         if cancel_task:
             with pytest.raises(asyncio.CancelledError):
@@ -233,9 +235,9 @@ def test_only_six_secondary_actions_embed_physical_role(action: str, expected: s
 async def test_paired_logical_side_does_not_change_configured_role() -> None:
     ctrl = make_controller("richmat_framed", primary=False)
     with patch(
-        "custom_components.adjustable_bed.beds.malouf_app.asyncio.sleep", new_callable=AsyncMock
-    ):
-        await ctrl.bind_side("left").move_back_up()
+        "custom_components.adjustable_bed.beds.malouf.app.asyncio.sleep", new_callable=AsyncMock
+    ), ctrl.side_scope("left"):
+        await ctrl.move_back_up()
     assert written(ctrl)[0].hex() == "6e01012494"
     assert written(ctrl)[-1].hex() == "6e01006edd"
 
@@ -255,7 +257,7 @@ async def test_memory_save_exact_hold_count_initial_delay_and_no_stop(
 ) -> None:
     ctrl = make_controller(transport)
     with patch(
-        "custom_components.adjustable_bed.beds.malouf_app.asyncio.sleep", new_callable=AsyncMock
+        "custom_components.adjustable_bed.beds.malouf.app.asyncio.sleep", new_callable=AsyncMock
     ) as sleep:
         await ctrl.program_memory(slot)
     assert written(ctrl) == [bytes.fromhex(frame)] * count
@@ -273,7 +275,7 @@ async def test_memory1_normal_name_has_no_save_bit_and_cancellation_has_no_inven
 
     ctrl.client.write_gatt_char.side_effect = cancel_after_one
     with patch(
-        "custom_components.adjustable_bed.beds.malouf_app.asyncio.sleep", new_callable=AsyncMock
+        "custom_components.adjustable_bed.beds.malouf.app.asyncio.sleep", new_callable=AsyncMock
     ):
         await ctrl.program_memory(1)
     assert written(ctrl) == [bytes.fromhex("0502000100000000")]
@@ -341,14 +343,13 @@ def test_model_axes_memory_and_legacy_entity_retirement(
     assert ctrl.memory_slot_count == slots
     assert ctrl.supports_memory_presets == (slots > 0)
     assert ctrl.supports_memory_programming == (slots > 0)
-    assert "bed_height" in ctrl.stale_motor_entity_keys
     assert ctrl.has_bed_height_support is False
 
 
 async def test_altitude_distinct_literal_actions_and_no_invented_height() -> None:
     ctrl = make_controller("richmat_single", "Altitude")
     with patch(
-        "custom_components.adjustable_bed.beds.malouf_app.asyncio.sleep", new_callable=AsyncMock
+        "custom_components.adjustable_bed.beds.malouf.app.asyncio.sleep", new_callable=AsyncMock
     ):
         await ctrl.move_tilt_head_up()
         await ctrl.move_full_tilt_up()
@@ -358,7 +359,7 @@ async def test_altitude_distinct_literal_actions_and_no_invented_height() -> Non
 async def test_dual_moves_only_proven_same_direction_axes() -> None:
     ctrl = make_controller("richmat_single")
     with patch(
-        "custom_components.adjustable_bed.beds.malouf_app.asyncio.sleep", new_callable=AsyncMock
+        "custom_components.adjustable_bed.beds.malouf.app.asyncio.sleep", new_callable=AsyncMock
     ):
         await ctrl.move_simultaneously("back", True, "legs", True)
     assert written(ctrl) == [b"\x29", b"\x29", b"\x6e"]
@@ -446,7 +447,7 @@ async def test_explicit_transport_breaks_service_order_tie_without_hybrid() -> N
 async def test_alarm_sync_then_weekly_program_and_exact_clear() -> None:
     ctrl = make_controller("okin_new", "Premium", "lucid")
     with patch(
-        "custom_components.adjustable_bed.beds.malouf_app.dt_util.now",
+        "custom_components.adjustable_bed.beds.malouf.app.dt_util.now",
         return_value=datetime(2026, 7, 14, 7, 30, 45),
     ):
         await ctrl.configure_clock_alarm(
@@ -471,7 +472,7 @@ async def test_alarm_one_shot_today_or_tomorrow_without_repeat_bit(
 ) -> None:
     ctrl = make_controller("okin_legacy", "L600")
     with patch(
-        "custom_components.adjustable_bed.beds.malouf_app.dt_util.now",
+        "custom_components.adjustable_bed.beds.malouf.app.dt_util.now",
         return_value=datetime(2026, 7, 14, 7, 30, 45),
     ):
         await ctrl.configure_clock_alarm(
@@ -513,11 +514,11 @@ async def test_notification_subscription_raw_forward_state_dedup_and_no_clock_on
     ctrl._notification_handler(sender, payload)
     ctrl._notification_handler(sender, payload)
     assert raw.call_count == 2
-    ctrl._coordinator.handle_controller_state_updates.assert_called_once_with(
-        {"massage_remaining_minutes": 20, "underbed_light_on": True}
-    )
-    assert ctrl.get_light_state() == {"is_on": True}
-    assert ctrl.get_massage_state() == {"remaining_minutes": 20}
+    assert ctrl._coordinator.handle_controller_state_updates.call_count == 1
+    assert published(*ctrl._coordinator.handle_controller_state_updates.call_args.args) == {
+        "massage_remaining_minutes": 20,
+        "under_bed_lights_on": True,
+    }
     assert ctrl.controller_state_sensor_specs[0].state_key == "massage_remaining_minutes"
     await ctrl.stop_notify()
     ctrl.client.stop_notify.assert_awaited_once_with(sender.uuid)
@@ -528,11 +529,9 @@ async def test_custom_notifications_do_not_claim_light_feedback() -> None:
     await ctrl.start_notify()
     sender = MagicMock(uuid=TRANSPORTS["okin_custom"].notify_characteristic)
     ctrl._notification_handler(sender, bytearray.fromhex("0000000000000000000002"))
-    ctrl._coordinator.handle_controller_state_updates.assert_called_once_with(
-        {"massage_remaining_minutes": 20}
-    )
+    assert ctrl._coordinator.handle_controller_state_updates.call_count == 1
+    assert published(*ctrl._coordinator.handle_controller_state_updates.call_args.args) == {"massage_remaining_minutes": 20}
     assert not ctrl.supports_light_state_feedback
-    assert ctrl.get_light_state() == {}
 
 
 @pytest.mark.parametrize(
@@ -570,14 +569,15 @@ async def test_callback_specs_invoke_current_controller_after_reconnect() -> Non
     current = make_controller("richmat_single", "Altitude")
     spec = next(spec for spec in old.motor_control_specs if spec.key == "malouf_tilt_head")
     with patch(
-        "custom_components.adjustable_bed.beds.malouf_app.asyncio.sleep", new_callable=AsyncMock
-    ):
-        await spec.open_fn(current.bind_side("right"))
+        "custom_components.adjustable_bed.beds.malouf.app.asyncio.sleep", new_callable=AsyncMock
+    ), current.side_scope("right"):
+        await spec.open_fn(current)
     assert written(old) == []
     assert written(current) == [b"\x41", b"\x41", b"\x6e"]
     old_read = make_controller("okin_new", "Premium", "lucid")
     current_read = make_controller("okin_new", "Premium", "lucid")
-    await old_read.controller_button_specs[0].press_fn(current_read.bind_side("left"))
+    with current_read.side_scope("left"):
+        await old_read.controller_button_specs[0].press_fn(current_read)
     assert written(old_read) == []
     assert written(current_read)[0].hex() == "0502000020000000"
 
@@ -772,7 +772,7 @@ async def test_all_reachable_richmat_action_vectors(
     ctrl = make_controller("richmat_single", model)
     ctrl._coordinator.motor_pulse_count = 1
     with patch(
-        "custom_components.adjustable_bed.beds.malouf_app.asyncio.sleep", new_callable=AsyncMock
+        "custom_components.adjustable_bed.beds.malouf.app.asyncio.sleep", new_callable=AsyncMock
     ):
         await getattr(ctrl, method)(*args)
     assert written(ctrl)[0].hex() == expected
@@ -813,7 +813,7 @@ async def test_all_reachable_okin_action_vectors(
     ctrl = make_controller("okin_custom", model, "lucid")
     ctrl._coordinator.motor_pulse_count = 1
     with patch(
-        "custom_components.adjustable_bed.beds.malouf_app.asyncio.sleep", new_callable=AsyncMock
+        "custom_components.adjustable_bed.beds.malouf.app.asyncio.sleep", new_callable=AsyncMock
     ):
         await getattr(ctrl, method)(*args)
     assert written(ctrl)[0][2:6].hex() == expected
@@ -837,7 +837,7 @@ async def test_okin_memory_save_values_on_every_variant(
     ctrl = make_controller(transport, "S750")
     ctrl._coordinator.observed_ble_device_name = name
     with patch(
-        "custom_components.adjustable_bed.beds.malouf_app.asyncio.sleep", new_callable=AsyncMock
+        "custom_components.adjustable_bed.beds.malouf.app.asyncio.sleep", new_callable=AsyncMock
     ):
         await ctrl.program_memory(slot)
     data = written(ctrl)
@@ -861,7 +861,7 @@ async def test_okin_memory_save_values_on_every_variant(
 async def test_six_reachable_alarm_types(preset: str, type_value: int) -> None:
     ctrl = make_controller("okin_new", "S750")
     with patch(
-        "custom_components.adjustable_bed.beds.malouf_app.dt_util.now",
+        "custom_components.adjustable_bed.beds.malouf.app.dt_util.now",
         return_value=datetime(2026, 7, 14, 7, 30, 45),
     ):
         await ctrl.configure_clock_alarm(
@@ -882,10 +882,13 @@ def test_legacy_light_boolean_matches_artifact_ui_nonzero_selection(
     data = bytearray(10)
     data[7] = light_byte
     ctrl._notification_handler(sender, data)
-    assert ctrl.get_light_state() == {"is_on": is_on}
+    published_state = published(*ctrl._coordinator.handle_controller_state_updates.call_args.args)
+    assert published_state[UNDER_BED_LIGHTS_ON] is is_on
     assert ctrl.protocol_diagnostics["underbed_light_status"] == raw
     assert (
-        ctrl._coordinator.handle_controller_state_updates.call_args.args[0]["underbed_light_on"]
+        published(*ctrl._coordinator.handle_controller_state_updates.call_args.args)[
+            "under_bed_lights_on"
+        ]
         is is_on
     )
 
@@ -918,7 +921,7 @@ async def test_timed_combined_motion_preserves_controller_timeout_and_still_rele
     ctrl.client.write_gatt_char.side_effect = timeout_on_motion
     with (
         patch(
-            "custom_components.adjustable_bed.beds.malouf_app.asyncio.sleep", new_callable=AsyncMock
+            "custom_components.adjustable_bed.beds.malouf.app.asyncio.sleep", new_callable=AsyncMock
         ),
         pytest.raises(TimeoutError, match="Peripheral write timed out"),
     ):
@@ -984,9 +987,9 @@ async def test_lucid_oz_long_hold_editor_slot2_save_vectors(
     spec = ctrl.controller_button_specs[0]
     assert (spec.key, spec.name) == ("malouf_oz_save_memory_2", "Save Memory 2")
     with patch(
-        "custom_components.adjustable_bed.beds.malouf_app.asyncio.sleep", new_callable=AsyncMock
-    ) as sleep:
-        await spec.press_fn(ctrl.bind_side("left"))
+        "custom_components.adjustable_bed.beds.malouf.app.asyncio.sleep", new_callable=AsyncMock
+    ) as sleep, ctrl.side_scope("left"):
+        await spec.press_fn(ctrl)
     assert written(ctrl) == [bytes.fromhex(expected)] * count
     if initial_delay is not None:
         assert sleep.call_args_list[0].args == (initial_delay,)
@@ -1023,6 +1026,7 @@ async def test_oz_memory_editor_is_restricted_to_exact_lucid_models(app: str, mo
 async def test_oz_memory_editor_callback_uses_current_controller() -> None:
     old = make_controller("richmat_framed", "GoodLifeBase", "lucid", primary=False)
     current = make_controller("richmat_framed", "GoodLifeBase", "lucid", primary=False)
-    await old.controller_button_specs[0].press_fn(current.bind_side("right"))
+    with current.side_scope("right"):
+        await old.controller_button_specs[0].press_fn(current)
     assert written(old) == []
     assert written(current) == [bytes.fromhex("6e01002c9b")]

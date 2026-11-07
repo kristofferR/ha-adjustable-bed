@@ -31,7 +31,7 @@ from custom_components.adjustable_bed.beds.innova import (
     innova_rename_frame,
     parse_innova_status,
 )
-from custom_components.adjustable_bed.beds.keeson import KeesonController
+from custom_components.adjustable_bed.beds.keeson.controller import KeesonController
 from custom_components.adjustable_bed.beds.ore_comfort_bed import OreComfortBedController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_KEESON,
@@ -51,10 +51,10 @@ from custom_components.adjustable_bed.const import (
     KEESON_VARIANT_BEDSENSE_BASES,
     KEESON_VARIANT_INNOVA,
     KEESON_VARIANT_RESTONIC_B,
-    OFFLINE_CAPABILITY_SAFE_VARIANTS,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.pairing import OFFLINE_CAPABILITY_SAFE_VARIANTS
 from custom_components.adjustable_bed.profiles.keeson import INNOVA, encode
 
 Action = Callable[[Any], Awaitable[None]]
@@ -177,7 +177,7 @@ def no_sleep(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
     sleep = AsyncMock()
     monkeypatch.setattr("custom_components.adjustable_bed.beds.base.asyncio.sleep", sleep)
     wait = AsyncMock()
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.keeson._wait_unless_cancelled", wait)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.keeson.controller._wait_unless_cancelled", wait)
     sleep.release_wait = wait
     return sleep
 
@@ -303,7 +303,7 @@ async def test_cancelling_mid_release_still_writes_the_zero_key(
         waiting.set()
         await asyncio.Event().wait()
 
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.keeson._wait_unless_cancelled", wait)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.keeson.controller._wait_unless_cancelled", wait)
     task = asyncio.create_task(controller.move_feet_up())
     await waiting.wait()
     task.cancel()
@@ -484,21 +484,21 @@ def _status(length: int, flags: int, timer: int) -> bytes:
 @pytest.mark.parametrize("length", [16, 19])
 def test_parser_branches(length):
     # Report fixtures V-NOTIFY-16 / V-NOTIFY-19: lamp bit set, timer enum 1.
-    assert parse_innova_status(_status(length, 0x40, 0x01)) == {
-        STATE_LIGHT: True,
-        STATE_MASSAGE_TIMER: 10,
-    }
-    assert parse_innova_status(_status(length, 0x00, 0xFF)) == {
-        STATE_LIGHT: False,
-        STATE_MASSAGE_TIMER: 0,
-    }
-    assert parse_innova_status(_status(length, 0x00, 0x03))[STATE_MASSAGE_TIMER] == 30
-    assert parse_innova_status(_status(length, 0x40, 0x07)) == {STATE_LIGHT: True}
+    assert parse_innova_status(_status(length, 0x40, 0x01)) == [
+        STATE_LIGHT(True),
+        STATE_MASSAGE_TIMER(10),
+    ]
+    assert parse_innova_status(_status(length, 0x00, 0xFF)) == [
+        STATE_LIGHT(False),
+        STATE_MASSAGE_TIMER(0),
+    ]
+    assert STATE_MASSAGE_TIMER(30) in parse_innova_status(_status(length, 0x00, 0x03))
+    assert parse_innova_status(_status(length, 0x40, 0x07)) == [STATE_LIGHT(True)]
     assert parse_innova_status(_status(length, 0x60, 0x01)) is None
-    assert parse_innova_status(_status(length, 0x9F, 0x02)) == {
-        STATE_LIGHT: False,
-        STATE_MASSAGE_TIMER: 20,
-    }
+    assert parse_innova_status(_status(length, 0x9F, 0x02)) == [
+        STATE_LIGHT(False),
+        STATE_MASSAGE_TIMER(20),
+    ]
 
 
 @pytest.mark.parametrize("length", [0, 9, 15, 17, 18, 20])
@@ -855,7 +855,7 @@ async def test_offline_safe_variants_build_without_a_client(coordinator, variant
         client=None,
         device_name="ORE bed",
     )
-    from custom_components.adjustable_bed.beds.keeson_okin_apps import OkinAppKeesonController
+    from custom_components.adjustable_bed.beds.keeson.okin_apps import OkinAppKeesonController
 
     assert isinstance(
         controller, (InnovaController, OreComfortBedController, OkinAppKeesonController)

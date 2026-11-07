@@ -9,7 +9,15 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds.kaidi import KaidiController
+from custom_components.adjustable_bed.beds.kaidi.controller import KaidiController
+from custom_components.adjustable_bed.beds.kaidi.protocol import (
+    KAIDI_ADV_TYPE_BROADCAST,
+    KAIDI_ADV_TYPE_SINGLE,
+    extract_best_kaidi_advertisement,
+    extract_kaidi_advertisement,
+    kaidi_advertisement_to_dict,
+    parse_kaidi_manufacturer_payload,
+)
 from custom_components.adjustable_bed.codec import kaidi as codec
 from custom_components.adjustable_bed.const import (
     CONF_KAIDI_ROOM_ID,
@@ -22,19 +30,13 @@ from custom_components.adjustable_bed.const import (
     SIDE_RIGHT,
     VARIANT_AUTO,
 )
-from custom_components.adjustable_bed.kaidi_protocol import (
-    KAIDI_ADV_TYPE_BROADCAST,
-    KAIDI_ADV_TYPE_SINGLE,
-    extract_best_kaidi_advertisement,
-    extract_kaidi_advertisement,
-    kaidi_advertisement_to_dict,
-    parse_kaidi_manufacturer_payload,
-)
+from custom_components.adjustable_bed.controller_state import ControllerState
 from custom_components.adjustable_bed.profiles.kaidi import (
     SEAT_1,
     SEAT_PROFILES,
     resolve_kaidi_variant,
 )
+from custom_components.adjustable_bed.state_keys import MASSAGE_TIMER_MINUTES
 
 BROADCAST_MANUFACTURER_DATA = {
     0xFFFF: bytes.fromhex("c0ff0278563412ffeeddccbbaa0000810100a004030201")
@@ -66,7 +68,11 @@ class _KaidiCoordinator(SimpleNamespace):
             entry=SimpleNamespace(data={}),
             has_massage=has_massage,
             record_command_trace=MagicMock(),
+            controller_state=ControllerState(),
         )
+
+    def handle_controller_state_update(self, key: str, value: object) -> None:
+        self.controller_state[key] = value
 
 
 async def _prepare_controller(
@@ -549,8 +555,9 @@ async def test_massage_timer_commands_update_local_state(
     calls = mock_bleak_client.write_gatt_char.await_args_list
     assert len(calls) == 1
     assert calls[0].args[1] == controller._build_control_packet(0x54)
-    assert controller.get_massage_state()["timer_mode"] == "30"
-    assert controller.get_massage_state()["mode"] is None
+    assert controller._coordinator.controller_state[MASSAGE_TIMER_MINUTES] == 30
+    await controller.massage_off()
+    assert controller._coordinator.controller_state[MASSAGE_TIMER_MINUTES] == 0
 
 
 @pytest.mark.asyncio
@@ -725,7 +732,8 @@ async def test_seat_1_2_side_binding_targets_one_lane(
     """A Phase 3 logical side must not write to the other Kaidi lane."""
     controller = await _prepare_controller(mock_bleak_client, variant=KAIDI_VARIANT_SEAT_1_2)
 
-    await controller.bind_side(side).move_head_up()
+    with controller.side_scope(side):
+        await controller.move_head_up()
 
     calls = mock_bleak_client.write_gatt_char.await_args_list
     assert [call.args[1] for call in calls] == [
@@ -741,7 +749,8 @@ async def test_seat_1_2_both_binding_preserves_dual_write(
     """The logical both view should retain Kaidi's serialized two-lane write."""
     controller = await _prepare_controller(mock_bleak_client, variant=KAIDI_VARIANT_SEAT_1_2)
 
-    await controller.bind_side(SIDE_BOTH).preset_flat()
+    with controller.side_scope(SIDE_BOTH):
+        await controller.preset_flat()
 
     calls = mock_bleak_client.write_gatt_char.await_args_list
     assert [call.args[1] for call in calls] == [

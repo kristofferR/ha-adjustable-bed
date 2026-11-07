@@ -12,6 +12,10 @@ from homeassistant.core import HomeAssistant
 from homeassistant.loader import async_get_integration
 
 from .adapter import find_service_info_by_address
+from .beds.kaidi.protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
+from .beds.vibradorm.app_discovery import manufacturer_discovery_diagnostics
+from .beds.vibradorm.vmat_discovery import vmat_manufacturer_diagnostics
+from .beds.vmatbasic.discovery import manufacturer_diagnostics as vmatbasic_manufacturer_diagnostics
 from .bluetooth_diagnostics import connection_reachability
 from .const import (
     BED_TYPE_VIBRADORM_APP,
@@ -39,14 +43,10 @@ from .coordinator import AdjustableBedCoordinator
 from .diagnostics_utils import get_gatt_summary
 from .discovery_log import async_get_discovery_log
 from .discovery_settings import async_is_discovery_disabled
-from .kaidi_protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
 from .paired_coordinator import PairedBedCoordinator
 from .pairing import get_child
 from .profile_decisions import async_profile_decision_history
 from .redaction import redact_data
-from .vibradorm_app_discovery import manufacturer_discovery_diagnostics
-from .vibradorm_vmat_discovery import vmat_manufacturer_diagnostics
-from .vmatbasic_discovery import manufacturer_diagnostics as vmatbasic_manufacturer_diagnostics
 
 
 def _normalize_ble_address(value: Any) -> str | None:
@@ -178,31 +178,6 @@ async def async_get_config_entry_diagnostics(
                 "characteristic_uuid": controller.control_characteristic_uuid,
             }
         )
-
-        # Add variant info for controllers that have it
-        is_wilinke = getattr(controller, "_is_wilinke", None)
-        if is_wilinke is not None:
-            controller_info["richmat_is_wilinke"] = is_wilinke
-        variant = getattr(controller, "_variant", None)
-        if variant is not None:
-            controller_info["variant"] = variant
-        variant_source = getattr(controller, "_variant_source", None)
-        if variant_source is not None:
-            controller_info["variant_source"] = variant_source
-        char_uuid = getattr(controller, "_char_uuid", None)
-        if char_uuid is not None:
-            controller_info["char_uuid"] = char_uuid
-
-        # Add Octo-specific discovered features
-        discovered_motor_count = getattr(controller, "discovered_motor_count", None)
-        if discovered_motor_count is not None:
-            controller_info["discovered_motor_count"] = discovered_motor_count
-        supports_synchro = getattr(controller, "supports_synchro", None)
-        if supports_synchro is not None:
-            controller_info["supports_synchro"] = supports_synchro
-        is_synchro_active = getattr(controller, "is_synchro_active", None)
-        if is_synchro_active is not None:
-            controller_info["synchro_active"] = is_synchro_active
 
         # Whatever the connect-time protocol handshake resolved to (capabilities,
         # authentication state, ...). Empty for controllers with no handshake.

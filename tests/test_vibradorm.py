@@ -12,7 +12,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.vibradorm import VibradormController
+from custom_components.adjustable_bed.beds.vibradorm.controller import VibradormController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_VIBRADORM,
     CONF_BED_TYPE,

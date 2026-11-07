@@ -4,9 +4,8 @@
 timeout, progress tracking, cleanup, and a typed terminal outcome.
 `PositionSeekPolicy` owns protocol-specific movement decisions and is supplied
 by the controller (see `BedController.position_seek_policy`). The default
-policy delegates every tuning value to the controller's existing seek
-properties and reproduces the coordinator's historical serialized seek
-behavior exactly. GATT writes and STOP/release semantics remain
+policy reproduces the coordinator's historical serialized seek behavior
+exactly. GATT writes and STOP/release semantics remain
 controller-owned; a policy may only change wire behavior when the protocol
 evidence supports it.
 """
@@ -23,7 +22,15 @@ from typing import TYPE_CHECKING, Final
 
 from homeassistant.exceptions import HomeAssistantError
 
-from .const import POSITION_FEEDBACK_TIMEOUT, POSITION_OVERSHOOT_TOLERANCE, POSITION_SEEK_TIMEOUT
+from .const import (
+    POSITION_CHECK_INTERVAL,
+    POSITION_FEEDBACK_TIMEOUT,
+    POSITION_OVERSHOOT_TOLERANCE,
+    POSITION_SEEK_TIMEOUT,
+    POSITION_STALL_COUNT,
+    POSITION_STALL_THRESHOLD,
+    POSITION_TOLERANCE,
+)
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -118,80 +125,60 @@ class PositionFeedbackError(HomeAssistantError):
 class PositionSeekPolicy:
     """Protocol movement policy for feedback-driven seeking.
 
-    Tuning values delegate to the controller's existing seek properties, so
-    per-controller overrides keep working unchanged. Controller families with
-    protocol evidence for smarter behavior (coast compensation, endpoint
-    completion, reversal transitions) override the hooks below.
+    The class attributes hold the generic tuning. Controller families with
+    protocol evidence for other tuning or smarter behavior (coast compensation,
+    endpoint completion, reversal transitions, held-command steps) subclass this
+    and return the subclass from ``BedController.position_seek_policy``.
+    """
+
+    tolerance: float = POSITION_TOLERANCE
+    """Acceptable error band for target completion.
+
+    Broad by default because some beds report coarse or noisy feedback.
+    """
+    check_interval: float = POSITION_CHECK_INTERVAL
+    """Interval between feedback polls."""
+    stall_count: int = POSITION_STALL_COUNT
+    """How many stagnant reads confirm a stall before motion is reissued."""
+    stall_threshold: float = POSITION_STALL_THRESHOLD
+    """Minimum delta that still counts as movement."""
+    chains_steps_while_moving: bool = False
+    """Reissue bursts while feedback still shows movement, before a stall.
+
+    For motors that auto-stop shortly after writes cease, so long seeks avoid
+    visible stop/start behavior.
+    """
+    chain_min_remaining_distance: float = POSITION_TOLERANCE
+    """Minimum remaining error that still allows chaining."""
+    reverses_on_overshoot: bool = True
+    """Correct overshoot by reversing.
+
+    Pulse-driven protocols that complete a whole burst before fresh feedback
+    arrives disable this, so the seek stops on the first target crossing
+    instead of hunting.
+    """
+    overshoot_tolerance: float = POSITION_OVERSHOOT_TOLERANCE
+    """How far past the target still avoids a reversal."""
+    timeout: float = POSITION_SEEK_TIMEOUT
+    """Maximum wall time for one seek."""
+    prefers_cached_position_feedback: bool = False
+    """Use fresh notifications instead of active GATT reads.
+
+    Conservative by default for controllers whose notifications are missing or
+    incomplete. Protocol policies may opt in when their position characteristic
+    is proven to notify throughout movement.
+    """
+    cached_position_feedback_max_age: float = POSITION_FEEDBACK_TIMEOUT
+    """Bound notification age by the same budget as an active read.
+
+    The default still attempts an active read, but notification-only
+    controllers must also be able to use reports received just before it.
+    The coordinator consumes fallback reports once per movement decision.
+    This is an integration freshness bound, not a device reporting cadence.
     """
 
     def __init__(self, controller: BedController) -> None:
         self._controller = controller
-
-    @property
-    def tolerance(self) -> float:
-        """Return the acceptable error band for target completion."""
-        return self._controller.position_seek_tolerance
-
-    @property
-    def check_interval(self) -> float:
-        """Return the interval between feedback polls."""
-        return self._controller.position_seek_check_interval
-
-    @property
-    def prefers_cached_position_feedback(self) -> bool:
-        """Return True when fresh notifications should replace active GATT reads.
-
-        The default remains conservative for controllers whose notifications
-        are missing or incomplete. Protocol policies may opt in when their
-        position characteristic is proven to notify throughout movement.
-        """
-        return False
-
-    @property
-    def cached_position_feedback_max_age(self) -> float:
-        """Bound notification age by the same budget as an active read.
-
-        The default still attempts an active read, but notification-only
-        controllers must also be able to use reports received just before it.
-        The coordinator consumes fallback reports once per movement decision.
-        This is an integration freshness bound, not a device reporting cadence.
-        """
-        return POSITION_FEEDBACK_TIMEOUT
-
-    @property
-    def stall_count(self) -> int:
-        """Return how many stagnant reads confirm a stall."""
-        return self._controller.position_seek_stall_count
-
-    @property
-    def stall_threshold(self) -> float:
-        """Return the minimum delta that still counts as movement."""
-        return self._controller.position_seek_stall_threshold
-
-    @property
-    def chains_steps_while_moving(self) -> bool:
-        """Return True to reissue bursts before movement fully stalls."""
-        return self._controller.chains_position_seek_steps_while_moving
-
-    @property
-    def chain_min_remaining_distance(self) -> float:
-        """Return the minimum remaining error that still allows chaining."""
-        return self._controller.position_seek_chain_min_remaining_distance
-
-    @property
-    def reverses_on_overshoot(self) -> bool:
-        """Return True if overshoot should be corrected by reversing."""
-        return self._controller.reverses_position_seek_on_overshoot
-
-    @property
-    def overshoot_tolerance(self) -> float:
-        """Return how far past the target still avoids a reversal."""
-        return POSITION_OVERSHOOT_TOLERANCE
-
-    @property
-    def timeout(self) -> float:
-        """Return the maximum wall time for one seek."""
-        return POSITION_SEEK_TIMEOUT
 
     @property
     def sends_explicit_stop(self) -> bool:
@@ -253,6 +240,20 @@ class PositionSeekPolicy:
         """
         del transition, stop
 
+    async def async_issue_step(
+        self,
+        position_key: str,
+        moving_up: bool,
+        default_step: Callable[[], Awaitable[None]],
+    ) -> None:
+        """Issue one movement step toward the target.
+
+        ``default_step`` runs the axis's normal move helper. Pulse-driven
+        protocols may issue shorter or held-refresh steps instead.
+        """
+        del position_key, moving_up
+        await default_step()
+
     async def async_prepare_reversal(
         self,
         stop: Callable[[], Awaitable[None]],
@@ -275,7 +276,7 @@ class PositionSeekRunner:
         policy: PositionSeekPolicy,
         cancel_event: asyncio.Event,
         read_position: Callable[[], Awaitable[float | None]],
-        issue_step: Callable[[bool, float], Awaitable[None]],
+        issue_step: Callable[[bool], Awaitable[None]],
         stop: Callable[[], Awaitable[None]],
         previous_motion: SeekMotion | None = None,
     ) -> None:
@@ -362,7 +363,7 @@ class PositionSeekRunner:
                     position_key,
                 )
                 return result(SeekOutcome.CANCELLED, initial_angle, None)
-            await self._issue_step(moving_up, abs(target_angle - initial_angle))
+            await self._issue_step(moving_up)
 
             # Tracking variables
             stall_count = 0
@@ -473,7 +474,7 @@ class PositionSeekRunner:
                         _LOGGER.debug("New stop request during overshoot - aborting reversal")
                         return result(SeekOutcome.CANCELLED, current_angle, moving_up)
                     moving_up = not moving_up
-                    await self._issue_step(moving_up, abs(target_angle - current_angle))
+                    await self._issue_step(moving_up)
 
                 remaining_distance = abs(target_angle - current_angle)
                 movement = abs(current_angle - last_angle)
@@ -488,7 +489,7 @@ class PositionSeekRunner:
                         current_angle,
                         remaining_distance,
                     )
-                    await self._issue_step(moving_up, remaining_distance)
+                    await self._issue_step(moving_up)
                     stall_count = 0
                     last_angle = current_angle
                     continue
@@ -521,7 +522,7 @@ class PositionSeekRunner:
                             position_key,
                             current_angle,
                         )
-                        await self._issue_step(moving_up, abs(target_angle - current_angle))
+                        await self._issue_step(moving_up)
                         stall_count = 0  # Reset stall count after re-issue
                 else:
                     stall_count = 0

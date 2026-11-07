@@ -181,6 +181,15 @@ show_connection: true
 
 ## Development
 
+Every entity tells the card where it belongs: its `card_section` attribute
+names the section (or `hidden`), and `card_role`, `card_motor` and
+`card_slot` pick its control there where the entity's domain does not. The
+integration declares these in `card.py` and on each entity's spec or
+description, so the card needs no list of entity keys. They are capability
+attributes, so the card still finds an entity while it is unavailable.
+After adding or moving an entity, regenerate the frontend tests' placement
+fixture with `uv run --no-sync python -m tests.card_placements`.
+
 Run `bun run check`, `bun test` and `bun run test:browser` from
 `custom_components/adjustable_bed/frontend`. The browser checks use synthetic
 Home Assistant state and recorded service calls, and require Chromium (or

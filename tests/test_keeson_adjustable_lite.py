@@ -16,7 +16,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.keeson import (
+from custom_components.adjustable_bed.beds.keeson.controller import (
     STATE_ADJUSTABLE_LITE_LIGHT,
     STATE_ADJUSTABLE_LITE_MASSAGE_TIMER,
     STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW,
@@ -217,12 +217,12 @@ def test_parser_branch_vectors(length, raw, light_byte, light, indicator):
         assert ksbt01c is None
         assert ksbt03c is None
         return
-    assert ksbt01c == {STATE_ADJUSTABLE_LITE_LIGHT: light}
-    assert ksbt03c == {
-        STATE_ADJUSTABLE_LITE_LIGHT: light,
-        STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW: raw,
-        STATE_ADJUSTABLE_LITE_MASSAGE_TIMER: indicator,
-    }
+    assert ksbt01c == [STATE_ADJUSTABLE_LITE_LIGHT(light)]
+    assert ksbt03c == [
+        STATE_ADJUSTABLE_LITE_LIGHT(light),
+        STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW(raw),
+        STATE_ADJUSTABLE_LITE_MASSAGE_TIMER(indicator),
+    ]
 
 
 async def test_notifications_publish_state_and_session_end_clears_it(
@@ -278,7 +278,8 @@ async def test_remote_capabilities(coordinator):
         controller = _lite(coordinator, name)
         assert [spec.key for spec in controller.motor_control_specs] == ["head", "feet"]
         assert controller.protocol_diagnostics == {
-            "adjustable_lite_remote": "KSBT03C" if ksbt03c else "KSBT01C"
+            "variant": "adjustable_lite",
+            "adjustable_lite_remote": "KSBT03C" if ksbt03c else "KSBT01C",
         }
         assert controller.memory_slot_count == 3
         assert not controller.supports_memory_programming
@@ -318,12 +319,6 @@ async def test_other_keeson_profiles_drop_adjustable_lite_state_entities(coordin
     controller = KeesonController(coordinator, variant=KEESON_VARIANT_KSBT, device_name=KSBT03C)
     assert controller.controller_state_binary_sensor_specs == ()
     assert controller.controller_state_sensor_specs == ()
-    assert controller.stale_controller_state_binary_sensor_entity_keys == {
-        STATE_ADJUSTABLE_LITE_LIGHT
-    }
-    assert controller.stale_controller_state_sensor_entity_keys == {
-        STATE_ADJUSTABLE_LITE_MASSAGE_TIMER
-    }
     assert controller.diagnostic_poll_interval is None
     assert not controller.requires_notification_channel
 

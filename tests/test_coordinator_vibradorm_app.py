@@ -17,11 +17,16 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import _build_paired_children
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
-from custom_components.adjustable_bed.beds.vibradorm_app import (
+from custom_components.adjustable_bed.beds.vibradorm.app import (
     INFO_FIELDS,
     VibradormAppController,
     VibradormAppMetadata,
     async_prepare_vibradorm_app_pairing,
+)
+from custom_components.adjustable_bed.beds.vibradorm.app_state import (
+    clear_vibradorm_app_session_intent,
+    get_vibradorm_app_session_intent,
+    mark_vibradorm_app_selection,
 )
 from custom_components.adjustable_bed.bluetooth_transport import ConnectionPath, TransportClass
 from custom_components.adjustable_bed.bond_verification import (
@@ -57,11 +62,7 @@ from custom_components.adjustable_bed.controller_factory import create_controlle
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.pairing import get_child
-from custom_components.adjustable_bed.vibradorm_app_state import (
-    clear_vibradorm_app_session_intent,
-    get_vibradorm_app_session_intent,
-    mark_vibradorm_app_selection,
-)
+from custom_components.adjustable_bed.profiles.vibradorm import vibradorm_app_metadata_key
 from tests.coordinator_patches import patch_coordinator_global
 from tests.hold_lease_wire import virtual_clock
 
@@ -73,7 +74,7 @@ _METADATA = VibradormAppMetadata("model", "firmware", "software", "article")
 _MODULE = "custom_components.adjustable_bed.coordinator"
 _CONNECTION = "custom_components.adjustable_bed.coordinator_connection"
 _BONDS = "custom_components.adjustable_bed.coordinator_bonds"
-_HELPER = "custom_components.adjustable_bed.beds.vibradorm_app.async_prepare_vibradorm_app_pairing"
+_HELPER = "custom_components.adjustable_bed.beds.vibradorm.app.async_prepare_vibradorm_app_pairing"
 
 
 def _evidence(path: ConnectionPath, positive: bool = False) -> BondEvidence:
@@ -783,7 +784,7 @@ async def test_actual_factory_first_selection_and_reconstruction_use_shared_floo
     coordinator.client.write_gatt_char = AsyncMock()
     first = await create_controller(coordinator, BED_TYPE_VIBRADORM_APP, None, coordinator.client)
     assert isinstance(first, VibradormAppController)
-    assert first.get_light_state()["state_source"] == "local_intent"
+    assert first._floor_light_intent()["state_source"] == "local_intent"
     await first.lights_toggle()
     assert coordinator.client.write_gatt_char.await_args.args[1].hex() == "80110000"
     assert state.floor.level == 0 and state.floor.default_level == 6
@@ -818,7 +819,7 @@ async def test_failed_ble_toggle_keeps_remembered_intent_through_guarded_prefere
     assert coordinator.entry.data[CONF_VIBRADORM_FLOOR_DEFAULT] == 4
     assert coordinator.consume_internal_entry_update(coordinator.entry)
     assert (state.floor.level, state.floor.default_level) == (0, 4)
-    assert controller.get_light_state()["state_source"] == "local_intent"
+    assert controller._floor_light_intent()["state_source"] == "local_intent"
 
 
 async def test_paired_preference_write_and_ownership_migration_preserve_only_target_intent(
@@ -903,9 +904,9 @@ async def test_real_information_partial_progress_survives_terminal_failure_in_on
         CONF_BLE_BOND_CONTEXT: historical_context, CONF_VIBRADORM_APP_METADATA: old_metadata,
     })
     coordinator._ble_bond_established = True
-    coordinator.handle_controller_state_updates({
-        f"vibradorm_app_{field}": value for field, value in old_metadata.items()
-    })
+    coordinator.handle_controller_state_updates(*(
+        vibradorm_app_metadata_key(field)(value) for field, value in old_metadata.items()
+    ))
     client = coordinator.client
     characters = {
         uuid: MagicMock(uuid=uuid, handle=index + 1, properties=properties)

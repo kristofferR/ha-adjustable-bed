@@ -11,7 +11,7 @@ from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.beds.starcode_abm5_4_profiles import SELECTORS, TRANSPORTS
+from custom_components.adjustable_bed.beds.starcode.abm5_4_profiles import SELECTORS, TRANSPORTS
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.services import async_register_services
@@ -235,6 +235,7 @@ async def test_registered_preset_routes_use_actual_physical_children_and_native_
             )
             self.controller._coordinator.address = self.address
             self.controller._owner_address = self.address
+            self.controller_side = None
             self.capability_controller = self.controller
 
         async def async_execute_controller_command(
@@ -244,6 +245,7 @@ async def test_registered_preset_routes_use_actual_physical_children_and_native_
             skip_disconnect=False,
             resource=None,
             resources=None,
+            expected_stop_epoch=None,
         ):
             await command_fn(self.controller)
 

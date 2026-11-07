@@ -3,16 +3,19 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING, Any, Self
 
 from homeassistant.core import callback
 from homeassistant.helpers.entity import Entity
 
+from .card import CARD_ATTRIBUTES, CardPlacement
 from .const import TIMED_MOVE_MOTOR_OPTIONS
+from .entity_runtime import controller_side_scope
 from .execution import ExecutionCapabilities
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
     from .entity_runtime import EntityRuntime
 
 # A renewable hold (#483) the card may lease: the declared hold mode, and the
@@ -22,7 +25,7 @@ ATTR_HOLD_LEASE_MOTOR = "hold_lease_motor"
 
 
 def hold_lease_attributes(
-    controllers: Iterable[BedController | SideBoundController | None],
+    controllers: Iterable[BedController | None],
     motor: str | None = None,
     *,
     control: str | None = None,
@@ -44,6 +47,23 @@ def hold_lease_attributes(
     if motor in TIMED_MOVE_MOTOR_OPTIONS:
         attributes[ATTR_HOLD_LEASE_MOTOR] = motor
     return attributes
+
+
+class PlacedInCard(Entity):
+    """Publish where the entity sits in the Lovelace card.
+
+    The placement is a capability attribute, so the card still finds an
+    unavailable entity, whose other attributes Home Assistant drops.
+    """
+
+    # The placement never changes, so history need not repeat it.
+    _unrecorded_attributes = CARD_ATTRIBUTES
+    _card: CardPlacement
+
+    @property
+    def capability_attributes(self) -> dict[str, Any]:
+        """Add the card placement to the platform's capabilities."""
+        return (super().capability_attributes or {}) | self._card.attributes
 
 
 class RenamesInPlace(Entity):
@@ -70,24 +90,28 @@ class RenamesInPlace(Entity):
         cls.async_entity_id_changed = async_entity_id_changed
 
 
-class AdjustableBedEntity(RenamesInPlace):
+class AdjustableBedEntity(RenamesInPlace, PlacedInCard):
     """Base class for Adjustable Bed entities."""
 
     _attr_has_entity_name = True
 
-    def __init__(self, coordinator: EntityRuntime) -> None:
-        """Initialize the entity."""
+    def __init__(self, coordinator: EntityRuntime, card: CardPlacement) -> None:
+        """Initialize the entity and its place in the card."""
         self._coordinator = coordinator
+        self._card = card
         self._attr_device_info = coordinator.device_info
         side = coordinator.entity_side
         if side is not None:
             self._attr_extra_state_attributes = {"bed_side": side}
 
-    def _set_sided_translation_key(self, key: str | None, fallback: str) -> None:
-        """Apply a logical-side suffix only for single-address paired views."""
-        self._attr_translation_key = self._coordinator.entity_translation_key(
-            key or fallback
-        )
+    def _side_scope(self) -> AbstractContextManager[None]:
+        """Bind this entity's side to a shared controller around a direct read."""
+        return controller_side_scope(self._coordinator)
+
+    def _async_write_ha_state(self) -> None:
+        """Read state with a shared controller bound to this entity's side."""
+        with self._side_scope():
+            super()._async_write_ha_state()
 
     @property
     def available(self) -> bool:

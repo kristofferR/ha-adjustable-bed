@@ -9,8 +9,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed import sleeptracker_protocol as p
-from custom_components.adjustable_bed.beds.sleeptracker import SleeptrackerController
+from custom_components.adjustable_bed.beds.sleeptracker import protocol as p
+from custom_components.adjustable_bed.beds.sleeptracker.controller import SleeptrackerController
+from tests.state_helpers import state_writer
 
 
 class Processor:
@@ -65,7 +66,7 @@ class Processor:
             cancel_command=asyncio.Event(),
             hass=SimpleNamespace(async_create_task=create_task, async_add_executor_job=executor),
             record_command_trace=MagicMock(),
-            handle_controller_state_updates=lambda updates: self.states.update(updates),
+            handle_controller_state_updates=state_writer(self.states),
         )
         self.bed = SleeptrackerController(
             self.coordinator,
@@ -272,7 +273,7 @@ async def test_early_transport_timeout_reaches_caller_after_axis_release(axis, s
     else:
         target.block_movement = True
     with (
-        patch("custom_components.adjustable_bed.beds.sleeptracker.REPLY_TIMEOUT", 0.001),
+        patch("custom_components.adjustable_bed.beds.sleeptracker.controller.REPLY_TIMEOUT", 0.001),
         pytest.raises(TimeoutError),
     ):
         await target.bed._move(axis, "up")
@@ -828,7 +829,7 @@ async def test_identification_final_off_validates_reply_before_session_reuse(mod
         raise TimeoutError
 
     target.client.write_gatt_char.side_effect = write
-    with patch("custom_components.adjustable_bed.beds.sleeptracker.asyncio.wait_for", immediate):
+    with patch("custom_components.adjustable_bed.beds.sleeptracker.controller.asyncio.wait_for", immediate):
         if invalid:
             with pytest.raises(ValueError):
                 await target.bed.async_execute_sleeptracker_request(p.Request("identify", mode=mode))
@@ -878,7 +879,6 @@ def test_metadata_preserves_optional_sensor_count_rule_and_firmware_ui_gates() -
     assert metadata["layout_id"] == 21
     assert metadata["app_firmware_threshold"] == 113
     assert metadata["app_firmware_below_threshold"] is True
-    assert target.bed.supports_sleeptracker_controls
 
 
 async def test_late_read_cannot_restore_disconnected_state() -> None:
@@ -906,7 +906,7 @@ async def test_reply_timeout_releases_and_closes_ambiguous_session() -> None:
     await target.bed.start_notify()
     target.block_movement = True
     with (
-        patch("custom_components.adjustable_bed.beds.sleeptracker.REPLY_TIMEOUT", 0.005),
+        patch("custom_components.adjustable_bed.beds.sleeptracker.controller.REPLY_TIMEOUT", 0.005),
         pytest.raises(TimeoutError),
     ):
         await target.bed.write_command(p.movement("head", "up", 2, "session-secret"))

@@ -14,7 +14,9 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from ..profiles.okin_nframe import DEWERTOKIN
+from ..profiles.okin_nframe import DEWERTOKIN, OkinNFrameProfile
+from .base import BedController, ProfileExecution
+from .builder import BuildContext
 from .okin_nframe import OkinNFrameController
 
 if TYPE_CHECKING:
@@ -23,7 +25,7 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
-class OkinHandleController(OkinNFrameController):
+class OkinHandleController(ProfileExecution[OkinNFrameProfile], OkinNFrameController):
     """Head and feet motors, presets, two memories, massage and a light toggle."""
 
     profile = DEWERTOKIN
@@ -160,3 +162,17 @@ class OkinHandleController(OkinNFrameController):
 
     async def massage_foot_toggle(self) -> None:
         await self.write_command(self._key("massage_foot"))
+
+
+async def build_controller(ctx: BuildContext) -> BedController:
+    """Build the Okin handle controller, or the RF-Gateway's when the link is one."""
+    await ctx.preload("dewertokin_rf_gateway")
+    from .dewertokin_rf_gateway import DewertOkinRfGatewayController, is_rf_gateway
+
+    if is_rf_gateway(ctx):
+        _LOGGER.info(
+            "Auto-detected DewertOkin RF-Gateway command endpoint for %s",
+            ctx.coordinator.address,
+        )
+        return DewertOkinRfGatewayController(ctx.coordinator)
+    return OkinHandleController(ctx.coordinator)

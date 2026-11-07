@@ -7,18 +7,13 @@ from bleak.exc import BleakError
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.motion_bed import MotionBedController
-from custom_components.adjustable_bed.beds.solace import SolaceController
+from custom_components.adjustable_bed.beds.motion_bed.controller import MotionBedController
+from custom_components.adjustable_bed.beds.motion_bed.models import select_motion_bed
+from custom_components.adjustable_bed.beds.motion_bed.protocol import SOURCE_COMMANDS
+from custom_components.adjustable_bed.beds.solace.controller import SolaceController
 from custom_components.adjustable_bed.const import DOMAIN
-from custom_components.adjustable_bed.cover import (
-    _async_remove_stale_cover_entities,
-    _cover_entities_for,
-)
-from custom_components.adjustable_bed.motion_bed_models import select_motion_bed
-from custom_components.adjustable_bed.motion_bed_protocol import SOURCE_COMMANDS
-from custom_components.adjustable_bed.paired_coordinator import SingleAddressPairedCoordinator
+from tests.test_entity_sweep import async_setup_platforms_and_sweep
 from tests.test_motion_bed_lifecycle import real_coordinator
-from tests.test_paired_setup import _paired_entry
 
 
 @pytest.mark.parametrize("replacement", ["W2", "different_protocol"])
@@ -38,31 +33,16 @@ async def test_motion_layout_covers_retire_without_losing_active_customization(h
     other_entry.add_to_hass(hass)
     unrelated = registry.async_get_or_create("cover", DOMAIN, "other_" + old.unique_id, config_entry=other_entry)
     other_platform = registry.async_get_or_create("cover", "unrelated", old.unique_id, config_entry=coord.entry)
-    other_domain = registry.async_get_or_create("button", DOMAIN, old.unique_id, config_entry=coord.entry)
-    entities = _cover_entities_for(hass, coord)
+    entities = await async_setup_platforms_and_sweep(hass, coord.entry, coord)
     assert old.unique_id not in {entity.unique_id for entity in entities}
     assert registry.async_get(old.entity_id) is None
     assert registry.async_get(active.entity_id) == active
-    for row in (unrelated, other_platform, other_domain):
+    for row in (unrelated, other_platform):
         assert registry.async_get(row.entity_id) == row
     assert coord.client.write_gatt_char.await_count == 0
     coord._cancel_disconnect_timer()
 
 
-
-async def test_motion_cover_cleanup_keeps_other_single_address_side(hass):
-    coord = await real_coordinator(hass, "QMS-IQ")
-    pair = SingleAddressPairedCoordinator(hass, _paired_entry(hass), coord)
-    left, right = pair._children["left"], pair._children["right"]
-    registry = er.async_get(hass)
-    key = "motion_bed_hip"  # W1-only axis
-    old_left = registry.async_get_or_create("cover", DOMAIN, left.entity_unique_id(key), config_entry=coord.entry)
-    old_right = registry.async_get_or_create("cover", DOMAIN, right.entity_unique_id(key), config_entry=coord.entry)
-    coord._controller = MotionBedController(coord, selection=select_motion_bed("QMS-IQ", movement_override="W2"))
-    _async_remove_stale_cover_entities(hass, left, coord.controller)
-    assert registry.async_get(old_left.entity_id) is None
-    assert registry.async_get(old_right.entity_id) == old_right
-    coord._cancel_disconnect_timer()
 
 @pytest.mark.parametrize("failure", ["ble", "connection", "timeout", "preemption"])
 async def test_thermal_poll_retries_only_at_existing_cadence_after_query_interruption(hass, monkeypatch, failure):
@@ -87,7 +67,7 @@ async def test_thermal_poll_retries_only_at_existing_cadence_after_query_interru
         else:
             await real_sleep(0)
 
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", sleep)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.sleep", sleep)
     if failure == "preemption":
         await coord._command_lock.acquire()
     else:
@@ -137,7 +117,7 @@ async def test_thermal_poll_terminal_owner_loss_does_not_retry(hass, monkeypatch
     async def sleep(delay):
         delays.append(delay)
         await real_sleep(0)
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", sleep)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.sleep", sleep)
     await coord._command_lock.acquire()
     poll = asyncio.create_task(controller._thermal_poll())
     for _ in range(20):

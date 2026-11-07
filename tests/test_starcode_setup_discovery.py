@@ -11,7 +11,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.beds.starcode_abm5_4 import StarcodeAbm5_4Controller
+from custom_components.adjustable_bed.beds.starcode.abm5_4 import StarcodeAbm5_4Controller
 from custom_components.adjustable_bed.bluetooth_transport import TransportClass
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.controller_factory import create_controller
@@ -119,7 +119,7 @@ async def test_real_app_setup_over_nonbonding_proxy_verifies_then_creates_entry(
             result["flow_id"], user_input={const.CONF_BED_TYPE: const.BED_TYPE_STARCODE_ABM5_4}
         )
     result = await _answer_starcode_family(hass, result)
-    assert result["step_id"] == "starcode_app"
+    assert result["step_id"] == "profile_questions"
     client = _app_probe_client("BOX3633")
     client.pair = AsyncMock(side_effect=BleakError("PAIRING_NOT_SUPPORTED"))
 
@@ -257,7 +257,7 @@ async def test_unrelated_unique_receiver_still_reaches_normal_confirm(
 async def test_runtime_selected_app_connects_without_bond_support(
     hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client
 ) -> None:
-    from custom_components.adjustable_bed.beds.starcode_abm5_4_profiles import TRANSPORTS
+    from custom_components.adjustable_bed.beds.starcode.abm5_4_profiles import TRANSPORTS
 
     role = TRANSPORTS["BOX3633"]
     mock_bleak_client.services = [
@@ -438,7 +438,7 @@ async def test_selected_app_transport_mismatch_cannot_create_entry(
         result["flow_id"], user_input={CONF_ADDRESS: mock_bluetooth_service_info.address}
     )
     result = await _answer_starcode_family(hass, result)
-    assert result["step_id"] == "starcode_app"
+    assert result["step_id"] == "profile_questions"
     client = _fake_connected_client()
     # A live writable receiver is insufficient when the selected app roles are absent.
     client.write_gatt_char = AsyncMock()
@@ -476,7 +476,7 @@ async def test_selected_app_transport_mismatch_cannot_create_entry(
         result = await hass.config_entries.flow.async_configure(result["flow_id"], user_input={})
         assert result["type"] == FlowResultType.FORM
         result = await _answer_starcode_family(hass, result)
-        assert result["step_id"] == "starcode_app"
+        assert result["step_id"] == "profile_questions"
         assert result["errors"] == {const.CONF_STARCODE_TRANSPORT_SELECTOR: "starcode_app_invalid"}
     client.disconnect.assert_awaited_once()
     client.write_gatt_char.assert_not_awaited()
@@ -652,7 +652,7 @@ async def test_app_unavailable_probe_still_allows_informational_finish(
         result["flow_id"], user_input={CONF_ADDRESS: mock_bluetooth_service_info.address}
     )
     result = await _answer_starcode_family(hass, result)
-    assert result["step_id"] == "starcode_app"
+    assert result["step_id"] == "profile_questions"
     with (
         patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=True),
         _patch_gate("nonbonding-proxy", -60, TransportClass.PROXY),
@@ -743,7 +743,7 @@ async def test_manual_auto_entry_factory_preserves_native_transport_identity(
         result["flow_id"], user_input={CONF_ADDRESS: mock_bluetooth_service_info.address}
     )
     result = await _answer_starcode_family(hass, result)
-    assert result["step_id"] == "starcode_app"
+    assert result["step_id"] == "profile_questions"
     gate = _patch_gate("nonbonding-proxy", -60, TransportClass.PROXY)
     gate._result[1].name = original
     client = _app_probe_client("BOX1220")
@@ -782,7 +782,7 @@ async def test_manual_auto_entry_factory_preserves_native_transport_identity(
         result = await hass.config_entries.flow.async_configure(result["flow_id"], user_input={})
         if original is None:
             result = await _answer_starcode_family(hass, result)
-            assert result["step_id"] == "starcode_app"
+            assert result["step_id"] == "profile_questions"
             assert result["errors"] == {
                 const.CONF_STARCODE_TRANSPORT_SELECTOR: "starcode_app_invalid"
             }

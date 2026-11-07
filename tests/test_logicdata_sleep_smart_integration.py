@@ -12,7 +12,10 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.logicdata_app import LogicdataAppController
+from custom_components.adjustable_bed.beds.logicdata.app import LogicdataAppController
+from custom_components.adjustable_bed.beds.logicdata.app_services import (
+    SERVICE_LOGICDATA_HOLD_PRESET,
+)
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LOGICDATA_AIR_PUMP,
@@ -31,7 +34,6 @@ from custom_components.adjustable_bed.const import (
     SIDE_BOTH,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.logicdata_app_services import SERVICE_LOGICDATA_HOLD_PRESET
 from custom_components.adjustable_bed.services import (
     SERVICE_LOGICDATA_RENAME,
     async_register_services,
@@ -150,7 +152,8 @@ def _target(name, bed_type, **controller):
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     coordinator.name = name
     coordinator.bed_type = bed_type
-    coordinator.capability_controller = SimpleNamespace(**controller)
+    coordinator.controller_side = None
+    coordinator.capability_controller = MagicMock(spec=LogicdataAppController, **controller)
     return coordinator
 
 
@@ -160,7 +163,7 @@ async def services(hass: HomeAssistant):
     with (
         patch("custom_components.adjustable_bed.services._resolve_sided_targets") as resolve,
         patch(
-            "custom_components.adjustable_bed.logicdata_app_services._resolve_sided_targets",
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
             new=resolve,
         ),
     ):

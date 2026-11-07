@@ -11,14 +11,14 @@ from unittest.mock import Mock
 import pytest
 from homeassistant.helpers.storage import Store
 
-from custom_components.adjustable_bed.beds.reverie_pairlink_sdk_metadata import (
+from custom_components.adjustable_bed.beds.reverie.pairlink_sdk_metadata import (
     SdkFingerprintRecord,
 )
-from custom_components.adjustable_bed.beds.reverie_pairlink_sdk_models import (
+from custom_components.adjustable_bed.beds.reverie.pairlink_sdk_models import (
     PairlinkSdkDevice,
     PairlinkSdkSensorCadence,
 )
-from custom_components.adjustable_bed.beds.reverie_pairlink_sdk_storage import (
+from custom_components.adjustable_bed.beds.reverie.pairlink_sdk_storage import (
     decode_fingerprint,
 )
 from tests.test_reverie_pairlink import _controller, _notify
@@ -508,7 +508,7 @@ async def _local_canonical(hass, monkeypatch):
 async def test_local_writevalue_composition_reaches_real_ha_store_and_peer_queries(
     hass, monkeypatch, enable_custom_integrations
 ) -> None:
-    from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import (
+    from custom_components.adjustable_bed.beds.reverie.pairlink_protocol import (
         decrypt_user_frame,
         state_query_payloads,
     )
@@ -638,11 +638,11 @@ async def test_mesh_info_reinitialization_keeps_loaded_record_home_and_source_he
     controller, client, runtime, tasks = await _canonical_ready()
     metadata = controller._sdk_metadata
     bean = _bean(controller)
-    from custom_components.adjustable_bed.beds.reverie_pairlink_runtime import (
+    from custom_components.adjustable_bed.beds.reverie.pairlink_runtime import (
         PairlinkCredentials,
         PairlinkHomeIdOrigin,
     )
-    from custom_components.adjustable_bed.beds.reverie_pairlink_sdk_storage import (
+    from custom_components.adjustable_bed.beds.reverie.pairlink_sdk_storage import (
         encode_fingerprint,
     )
 
@@ -713,7 +713,7 @@ async def test_coordinator_shutdown_disconnects_central_even_when_exit_persisten
 ) -> None:
     from pytest_homeassistant.common import MockConfigEntry
 
-    from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import (
+    from custom_components.adjustable_bed.beds.reverie.pairlink_protocol import (
         PAIRLINK_NOTIFY_UUID,
         PAIRLINK_SERVICE_UUID,
         PAIRLINK_WRITE_UUID,
@@ -772,7 +772,7 @@ async def test_coordinator_shutdown_disconnects_central_even_when_exit_persisten
 async def test_controller_replacement_reuses_the_entry_metadata_lane_without_catalog_reset() -> (
     None
 ):
-    from custom_components.adjustable_bed.beds.reverie_pairlink import ReveriePairlinkController
+    from custom_components.adjustable_bed.beds.reverie.pairlink import ReveriePairlinkController
 
     first, client, runtime, tasks = await _canonical_ready()
     await _notify(client, tasks, _message(1, data=_composition()))
@@ -796,7 +796,7 @@ async def test_controller_replacement_reuses_the_entry_metadata_lane_without_cat
 async def test_actual_tlv_stream_calls_every_supplied_model_branch_without_enabling_excluded_workers(
     monkeypatch,
 ) -> None:
-    from custom_components.adjustable_bed.beds import reverie_pairlink_sdk as sdk
+    from custom_components.adjustable_bed.beds.reverie import pairlink_sdk as sdk
 
     controller, client, runtime, tasks = await _ready()
     vectors = [
@@ -863,7 +863,7 @@ async def test_actual_tlv_stream_calls_every_supplied_model_branch_without_enabl
 
 
 async def test_fingerprint_list_restore_binds_models_even_with_null_callback(monkeypatch) -> None:
-    from custom_components.adjustable_bed.beds import reverie_pairlink as pairlink
+    from custom_components.adjustable_bed.beds.reverie import pairlink
     from tests.test_reverie_pairlink_sdk_consumers import _CalendarClock
 
     controller, client, runtime, tasks = await _canonical_ready()

@@ -16,12 +16,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.jensen_linon import (
+from custom_components.adjustable_bed.beds.jensen.linon import (
     HOLD_INTERVAL_MS,
     JensenLinonCommands,
     JensenLinonController,
 )
-from custom_components.adjustable_bed.beds.svane import SvaneController
+from custom_components.adjustable_bed.beds.svane.controller import SvaneController
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
@@ -51,6 +51,7 @@ from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinato
 from custom_components.adjustable_bed.detection import is_jensen_linon_name
 from custom_components.adjustable_bed.pairing import build_pair_entry_data, effective_child_data
 from tests.form_helpers import finish_new_bed
+from tests.state_helpers import published
 
 HEAD = SVANE_HEAD_SERVICE_UUID
 FOOT = SVANE_FEET_SERVICE_UUID
@@ -80,7 +81,7 @@ def written(controller: JensenLinonController) -> list[tuple[str, str, str]]:
 def _no_sleep(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
     """Skip the 800 ms hold interval (this patches ``asyncio.sleep`` itself)."""
     sleep = AsyncMock()
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.jensen_linon.asyncio.sleep", sleep)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.jensen.linon.asyncio.sleep", sleep)
     return sleep
 
 
@@ -229,10 +230,7 @@ class TestJensenLinonLights:
 
         target = (SVANE_LIGHT_SERVICE_UUID, SVANE_LIGHT_ON_OFF_UUID)
         assert written(controller) == [(*target, "010000"), (*target, "000000"), (*target, "010000")]
-        assert controller.get_light_state() == {"is_on": True}
-        controller._coordinator.handle_controller_state_updates.assert_called_with(
-            {"under_bed_lights_on": True}
-        )
+        assert published(*controller._coordinator.handle_controller_state_updates.call_args.args) == {"under_bed_lights_on": True}
 
     def test_light_frame_builder(self) -> None:
         assert JensenLinonCommands.light(True).hex() == "010000"

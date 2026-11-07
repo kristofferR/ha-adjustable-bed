@@ -30,6 +30,11 @@ from probatio import to_field_list
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.address_lock import async_get_connect_lock
+from custom_components.adjustable_bed.bed_traits import bed_traits
+from custom_components.adjustable_bed.beds.kaidi.protocol import (
+    KAIDI_ADV_TYPE_BROADCAST,
+    KaidiAdvertisement,
+)
 from custom_components.adjustable_bed.bluetooth_bond import (
     BluezReadStatus,
     BondRemovalResult,
@@ -96,8 +101,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SUTA,
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_VIBRADORM,
-    BEDS_WITH_POSITION_FEEDBACK,
-    BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ATTEMPTED_SOURCE,
@@ -164,10 +167,6 @@ from custom_components.adjustable_bed.detection import (
 from custom_components.adjustable_bed.discovery_settings import (
     async_is_discovery_disabled,
     async_set_discovery_disabled,
-)
-from custom_components.adjustable_bed.kaidi_protocol import (
-    KAIDI_ADV_TYPE_BROADCAST,
-    KaidiAdvertisement,
 )
 from custom_components.adjustable_bed.pairing import get_child
 from custom_components.adjustable_bed.setup_operation import (
@@ -478,8 +477,8 @@ class TestPairingInstructions:
         assert _is_valid_motor_count(BED_TYPE_OKIN_CST, "auto", 3)
         assert not _is_valid_motor_count(BED_TYPE_OKIN_CST, "auto", 2)
         assert not _is_valid_motor_count(BED_TYPE_OKIN_CST, "auto", 4)
-        assert BED_TYPE_OKIN_CST not in BEDS_WITH_POSITION_FEEDBACK
-        assert BED_TYPE_OKIN_CST in BEDS_WITHOUT_ANGLE_FEEDBACK
+        assert not bed_traits(BED_TYPE_OKIN_CST).position_feedback
+        assert bed_traits(BED_TYPE_OKIN_CST).no_angle_feedback
 
     async def test_okin_cst_product_profiles_constrain_motor_count(self) -> None:
         """CST profile selection must not expose absent lumbar controls."""
@@ -1103,7 +1102,7 @@ class TestStaleProxyGattCache:
         mock = AsyncMock(side_effect=attempt)
         with (
             patch(
-                "custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs",
+                "custom_components.adjustable_bed.config_flow.capture_proxy_logs",
                 return_value=contextlib.AsyncExitStack(),
             ),
             patch.object(flow, "_attempt_pairing_with_capture", new=mock),
@@ -1133,7 +1132,7 @@ class TestStaleProxyRerouteRetry:
         attempt = AsyncMock(side_effect=[failed, BondRouteMismatchError("proxy-b"), verified])
         with (
             patch(
-                "custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs",
+                "custom_components.adjustable_bed.config_flow.capture_proxy_logs",
                 return_value=contextlib.AsyncExitStack(),
             ),
             patch.object(flow, "_attempt_pairing_with_capture", new=attempt),
@@ -1620,7 +1619,7 @@ class TestBluetoothDiscoveryFlow:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """The real Octo setup path keeps RTV's historical count as Auto fallback."""
-        from custom_components.adjustable_bed.beds.octo import OctoController
+        from custom_components.adjustable_bed.beds.octo.controller import OctoController
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
         mock_bluetooth_service_info_octo_rc2.name = "RTV Lift"
@@ -1755,6 +1754,9 @@ class TestBluetoothDiscoveryFlow:
 
     def test_disconnect_after_command_default_per_bed_type(self):
         """Beds that must hold the link open keep the option off; others get it on."""
+        from custom_components.adjustable_bed.bed_traits import (
+            disconnect_after_command_default_enabled,
+        )
         from custom_components.adjustable_bed.const import (
             BED_TYPE_COMFORT_MOTION,
             BED_TYPE_JENSEN,
@@ -1783,7 +1785,6 @@ class TestBluetoothDiscoveryFlow:
             KEESON_VARIANT_SINO,
             LEGGETT_VARIANT_MLRM,
             VARIANT_AUTO,
-            disconnect_after_command_default_enabled,
         )
 
         assert disconnect_after_command_default_enabled(BED_TYPE_LINAK, VARIANT_AUTO) is True
@@ -3356,7 +3357,7 @@ class TestOptionsFlow:
         assert rebuilt["type"] == FlowResultType.FORM
         markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
         assert markers[CONF_PROTOCOL_VARIANT].default() == requested_variant
-        assert markers[CONF_MOTOR_COUNT].default() == str(expected_count)
+        assert markers[CONF_MOTOR_COUNT].default() == expected_count
 
     async def test_richmat_options_can_replace_detected_qrrm_with_lp_profile(
         self,
@@ -3523,7 +3524,7 @@ class TestOptionsFlow:
         initial = await _open_options_form(hass, entry.entry_id)
         markers = {marker.schema: marker for marker in initial["data_schema"].schema}
 
-        assert markers[CONF_MOTOR_COUNT].default() == "4"
+        assert markers[CONF_MOTOR_COUNT].default() == 4
         assert CONF_DISABLE_ANGLE_SENSING not in markers
         assert CONF_POSITION_MODE not in markers
         assert CONF_BACK_MAX_ANGLE not in markers
@@ -3661,7 +3662,7 @@ class TestOptionsFlow:
         )
 
         rebuilt_markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
-        assert rebuilt_markers[CONF_MOTOR_COUNT].default() == "2"
+        assert rebuilt_markers[CONF_MOTOR_COUNT].default() == 2
         assert rebuilt_markers[CONF_DISABLE_ANGLE_SENSING].default() is False
         assert rebuilt_markers[CONF_PROTOCOL_VARIANT].default() == VARIANT_AUTO
         assert CONF_OCTO_PIN not in rebuilt_markers
@@ -3951,7 +3952,7 @@ class TestOptionsFlow:
             step_id="settings",
         )
         markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
-        assert markers[CONF_MOTOR_COUNT].default() == str(expected_count)
+        assert markers[CONF_MOTOR_COUNT].default() == expected_count
         saved = await flow._async_options_form(
             {
                 CONF_BED_TYPE: bed_type,
@@ -7290,8 +7291,8 @@ async def test_octo_discovery_checks_pin_before_saving_and_can_retry(
     enable_custom_integrations,
 ) -> None:
     """The real flow manager cannot turn a rejected PIN into a saved entry."""
+    from custom_components.adjustable_bed.beds.octo.auth import OctoPinStatus
     from custom_components.adjustable_bed.config_flow import CapabilityReport
-    from custom_components.adjustable_bed.octo_auth import OctoPinStatus
 
     with patch.object(
         AdjustableBedConfigFlow,
@@ -7346,7 +7347,7 @@ async def test_octo_probe_authenticates_on_owned_connection_and_disconnects(
     cancel: bool,
 ) -> None:
     """PIN verification uses the chosen setup connection and releases it on cancellation."""
-    from custom_components.adjustable_bed.octo_auth import OctoPinStatus
+    from custom_components.adjustable_bed.beds.octo.auth import OctoPinStatus
 
     flow = AdjustableBedConfigFlow()
     flow.hass = hass

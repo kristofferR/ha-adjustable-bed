@@ -11,7 +11,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.leggett_okin import LeggettOkinController
+from custom_components.adjustable_bed.beds.leggett.okin import LeggettOkinController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LINAK,
@@ -30,6 +30,7 @@ from custom_components.adjustable_bed.const import (
     OKIN_SMART_REMOTE_CSS_NOTIFY_CHAR_UUID,
     OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID,
 )
+from custom_components.adjustable_bed.controller_state import StateKey
 
 ADDRESS = "AA:BB:CC:DD:EE:FF"
 
@@ -307,7 +308,7 @@ async def test_cu170_light_uses_live_state_and_removes_redundant_toggle_button(
     # A known-state toggle must fail rather than retain stale telemetry.
     with (
         patch.object(controller, "_tap_keycode", new=AsyncMock()) as toggle,
-        patch("custom_components.adjustable_bed.beds.leggett_okin.LIGHT_STATE_TIMEOUT_S", 0),
+        patch("custom_components.adjustable_bed.beds.leggett.okin.LIGHT_STATE_TIMEOUT_S", 0),
         pytest.raises(HomeAssistantError, match="did not confirm"),
     ):
         await hass.services.async_call("light", "toggle", {"entity_id": light_id}, blocking=True)
@@ -332,5 +333,5 @@ async def test_cu170_light_uses_live_state_and_removes_redundant_toggle_button(
     # A new connection must not revive the old coordinator telemetry cache.
     coordinator._controller = LeggettOkinController(coordinator)
     coordinator._notify_connection_state_change(True)
-    coordinator.handle_controller_state_updates({"unrelated": 1})
+    coordinator.handle_controller_state_updates(StateKey[int]("unrelated")(1))
     assert hass.states.get(light_id).state == "unknown"

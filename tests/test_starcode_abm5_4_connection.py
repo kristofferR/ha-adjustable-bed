@@ -10,7 +10,7 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.address_lock import ReentrantAddressLock
-from custom_components.adjustable_bed.beds.starcode_abm5_4_profiles import (
+from custom_components.adjustable_bed.beds.starcode.abm5_4_profiles import (
     TRANSPORTS,
     initial_fields,
 )
@@ -179,7 +179,7 @@ async def test_real_reconnect_retains_only_same_address_observed_app_state(
         ),
         patch("custom_components.adjustable_bed.coordinator.asyncio.sleep", AsyncMock()),
         patch(
-            "custom_components.adjustable_bed.beds.starcode_abm5_4.StarcodeAbm5_4Controller._spawn"
+            "custom_components.adjustable_bed.beds.starcode.abm5_4.StarcodeAbm5_4Controller._spawn"
         ) as spawn,
     ):
         assert await coordinator.async_connect()

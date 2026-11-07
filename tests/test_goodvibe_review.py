@@ -10,13 +10,13 @@ from zoneinfo import ZoneInfo
 import pytest
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.adjustable_bed import goodvibe_services as configuration
 from custom_components.adjustable_bed import services
+from custom_components.adjustable_bed.beds.goodvibe import services as configuration
+from custom_components.adjustable_bed.beds.goodvibe.catalog import ACTIONS, PRODUCTS
+from custom_components.adjustable_bed.beds.goodvibe.protocol import action_frame
 from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.command_scheduler import CommandOutcome
 from custom_components.adjustable_bed.const import DOMAIN
-from custom_components.adjustable_bed.goodvibe_catalog import ACTIONS, PRODUCTS
-from custom_components.adjustable_bed.goodvibe_protocol import action_frame
 from tests.test_goodvibe_ha import runtime
 
 
@@ -117,8 +117,8 @@ async def test_repeat_allocation_full_later_target_prevents_every_write(hass):
     b._client.write_gatt_char = AsyncMock()
     configuration.async_register_goodvibe_services(hass)
     with (
-        patch.object(
-            configuration, "_resolve_sided_targets", return_value=([(a, "both"), (b, "both")], [])
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets", return_value=([(a, "both"), (b, "both")], [])
         ),
         patch.object(a, "async_ensure_connected", AsyncMock(return_value=True)),
         patch.object(b, "async_ensure_connected", AsyncMock(return_value=True)),
@@ -241,8 +241,8 @@ async def test_repeat_execution_keeps_each_targets_preflighted_slot(hass):
     b._client.write_gatt_char = AsyncMock()
     configuration.async_register_goodvibe_services(hass)
     with (
-        patch.object(
-            configuration, "_resolve_sided_targets", return_value=([(a, "both"), (b, "both")], [])
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets", return_value=([(a, "both"), (b, "both")], [])
         ),
         patch.object(a, "async_ensure_connected", AsyncMock(return_value=True)),
         patch.object(b, "async_ensure_connected", AsyncMock(return_value=True)),

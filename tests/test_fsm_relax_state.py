@@ -8,15 +8,15 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import async_remove_entry, const
 from custom_components.adjustable_bed.app_state_store import app_state_store
-from custom_components.adjustable_bed.beds.fsm_relax import FsmRelaxController
-from custom_components.adjustable_bed.controller_factory import create_controller
-from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.fsm_relax_state import (
+from custom_components.adjustable_bed.beds.fsm_relax.controller import FsmRelaxController
+from custom_components.adjustable_bed.beds.fsm_relax.state import (
     FsmRelaxSession,
     validate_capability_body,
     validate_names,
     validate_positions,
 )
+from custom_components.adjustable_bed.controller_factory import create_controller
+from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from tests.app_state_helpers import restart_app_state, stored_app_state
 
 ADDRESS = "AA:BB:CC:DD:EE:FF"

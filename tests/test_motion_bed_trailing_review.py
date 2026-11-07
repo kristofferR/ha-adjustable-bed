@@ -5,7 +5,14 @@ from unittest.mock import AsyncMock
 import pytest
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.motion_bed import MotionBedController
+from custom_components.adjustable_bed.beds.motion_bed.controller import MotionBedController
+from custom_components.adjustable_bed.beds.motion_bed.protocol import SOURCE_COMMANDS
+from custom_components.adjustable_bed.beds.motion_bed.state import (
+    MotionBedContext,
+    MotionBedRoute,
+    MotionBedState,
+    parse_motion_bed_notification,
+)
 from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
 from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTION_BED,
@@ -13,13 +20,6 @@ from custom_components.adjustable_bed.const import (
     CONF_BLE_DEVICE_NAME,
     CONF_IDLE_DISCONNECT_SECONDS,
     DOMAIN,
-)
-from custom_components.adjustable_bed.motion_bed_protocol import SOURCE_COMMANDS
-from custom_components.adjustable_bed.motion_bed_state import (
-    MotionBedContext,
-    MotionBedRoute,
-    MotionBedState,
-    parse_motion_bed_notification,
 )
 from tests.test_motion_bed_lifecycle import real_coordinator
 from tests.test_paired_setup import _paired_entry_data
@@ -51,7 +51,7 @@ async def test_thermal_poll_owns_quick_handoff_and_queued_idle_cleanup(hass, mon
         coord._on_disconnect(client)
 
     client.disconnect = AsyncMock(side_effect=disconnect)
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", sleep)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.sleep", sleep)
     monkeypatch.setattr(controller, "_startup", lambda: MotionBedController._startup(controller))
     coord._reset_disconnect_timer()
     prearmed = coord._disconnect_timer

@@ -5,29 +5,30 @@ from __future__ import annotations
 import re
 from datetime import datetime, timedelta, timezone
 
-from custom_components.adjustable_bed import cluster018_protocol as classic_frames
 from custom_components.adjustable_bed import const as _const
-from custom_components.adjustable_bed import goodvibe_protocol as goodvibe_frames
-from custom_components.adjustable_bed import hjbed_catalog, hush_catalog
-from custom_components.adjustable_bed import hjbed_protocol as hjbed_frames
-from custom_components.adjustable_bed import rmcontrol_protocol as rmcontrol_frames
-from custom_components.adjustable_bed.beds import casper_base as casper_bed
-from custom_components.adjustable_bed.beds import eshine as eshine_bed
-from custom_components.adjustable_bed.beds import goodvibe as goodvibe_bed
-from custom_components.adjustable_bed.beds import hjbed as hjbed_bed
-from custom_components.adjustable_bed.beds import hush_base as hush_bed
-from custom_components.adjustable_bed.beds import leggett_lp_legacy as lp_legacy_bed
-from custom_components.adjustable_bed.beds import richmat_mh_protocol as mh_frames
-from custom_components.adjustable_bed.beds import rmcontrol as rmcontrol_bed
-from custom_components.adjustable_bed.beds.hjbed import action_label as hjbed_label
-from custom_components.adjustable_bed.cluster018_profiles import APP_NAMES as CLASSIC_APPS
-from custom_components.adjustable_bed.codec import richmat as richmat_codec
-from custom_components.adjustable_bed.goodvibe_catalog import ACTION_EXPANSIONS
-from custom_components.adjustable_bed.goodvibe_catalog import ACTIONS as GOODVIBE_ACTIONS
-from custom_components.adjustable_bed.lp_legacy_profiles import (
+from custom_components.adjustable_bed.beds.casper_base import controller as casper_bed
+from custom_components.adjustable_bed.beds.eshine import controller as eshine_bed
+from custom_components.adjustable_bed.beds.goodvibe import controller as goodvibe_bed
+from custom_components.adjustable_bed.beds.goodvibe import protocol as goodvibe_frames
+from custom_components.adjustable_bed.beds.goodvibe.catalog import ACTION_EXPANSIONS
+from custom_components.adjustable_bed.beds.goodvibe.catalog import ACTIONS as GOODVIBE_ACTIONS
+from custom_components.adjustable_bed.beds.hjbed import catalog as hjbed_catalog
+from custom_components.adjustable_bed.beds.hjbed import controller as hjbed_bed
+from custom_components.adjustable_bed.beds.hjbed import protocol as hjbed_frames
+from custom_components.adjustable_bed.beds.hjbed.controller import action_label as hjbed_label
+from custom_components.adjustable_bed.beds.hush_base import catalog as hush_catalog
+from custom_components.adjustable_bed.beds.hush_base import controller as hush_bed
+from custom_components.adjustable_bed.beds.leggett import lp_legacy as lp_legacy_bed
+from custom_components.adjustable_bed.beds.leggett.lp_legacy_profiles import (
     LP_LEGACY_PROFILE_CODES,
     get_lp_legacy_profile,
 )
+from custom_components.adjustable_bed.beds.richmat_classic import protocol as classic_frames
+from custom_components.adjustable_bed.beds.richmat_classic.profiles import APP_NAMES as CLASSIC_APPS
+from custom_components.adjustable_bed.beds.richmat_mh import protocol as mh_frames
+from custom_components.adjustable_bed.beds.rmcontrol import controller as rmcontrol_bed
+from custom_components.adjustable_bed.beds.rmcontrol import protocol as rmcontrol_frames
+from custom_components.adjustable_bed.codec import richmat as richmat_codec
 from custom_components.adjustable_bed.profiles import casper as casper_profiles
 from custom_components.adjustable_bed.profiles import hush as hush_profiles
 from custom_components.adjustable_bed.profiles import richmat as richmat_profiles
@@ -142,7 +143,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
             for profile in richmat_profiles.RICHMAT_MH.values()
         },
         **{
-            profile.key: (_const.BED_TYPE_CLUSTER018,)
+            profile.key: (_const.BED_TYPE_RICHMAT_CLASSIC_APPS,)
             for profile in richmat_profiles.RICHMAT_CLASSIC.values()
         },
         "goodvibe": (_const.BED_TYPE_GOODVIBE,),

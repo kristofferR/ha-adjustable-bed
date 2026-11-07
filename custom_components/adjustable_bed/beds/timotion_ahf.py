@@ -24,12 +24,10 @@ from ..const import (
     TIMOTION_AHF_SERVICE_UUID,
     TIMOTION_AHF_WRITE_CHAR_UUID,
 )
+from ..controller_state import StateKey
 from ..execution import ExecutionCapabilities
-from .base import (
-    BedController,
-    ControllerButtonSpec,
-    ControllerStateSensorSpec,
-)
+from .base import BedController
+from .entity_specs import ControllerButtonSpec, ControllerStateSensorSpec
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -41,6 +39,12 @@ _LOGGER = logging.getLogger(__name__)
 STATUS_READINESS_TIMEOUT_SECONDS: Final = 8.0
 _INITIAL_CONTROL_DELAY_SECONDS: Final = 0.1
 _CONTROL_REPEAT_DELAY_SECONDS: Final = 0.1
+
+
+STATUS: Final = StateKey[str]("timotion_ahf_status")
+STATUS_ERROR: Final = StateKey[str | None]("timotion_ahf_status_error")
+LOCK_MASK: Final = StateKey[int | None]("timotion_ahf_lock_mask")
+LAMP_DISPLAY_CODE: Final = StateKey[int | None]("timotion_ahf_lamp_display_code")
 
 
 class TiMOTIONAhfCommands:
@@ -205,20 +209,20 @@ class TiMOTIONAhfController(BedController):
             ControllerStateSensorSpec(
                 key="timotion_ahf_status",
                 translation_key="timotion_ahf_status",
-                state_key="timotion_ahf_status",
+                state_key=STATUS,
                 icon="mdi:bluetooth",
-                attribute_keys=("timotion_ahf_status_error",),
+                attribute_keys=(STATUS_ERROR,),
             ),
             ControllerStateSensorSpec(
                 key="timotion_ahf_lock_mask",
                 translation_key="timotion_ahf_lock_mask",
-                state_key="timotion_ahf_lock_mask",
+                state_key=LOCK_MASK,
                 icon="mdi:lock-outline",
             ),
             ControllerStateSensorSpec(
                 key="timotion_ahf_lamp_display_code",
                 translation_key="timotion_ahf_lamp_display_code",
-                state_key="timotion_ahf_lamp_display_code",
+                state_key=LAMP_DISPLAY_CODE,
                 icon="mdi:lightbulb-outline",
             ),
         )
@@ -443,12 +447,10 @@ class TiMOTIONAhfController(BedController):
         self._notify_error = None
         self._status_event.set()
         self.forward_controller_state_updates(
-            {
-                "timotion_ahf_status": self._status_state,
-                "timotion_ahf_status_error": None,
-                "timotion_ahf_lock_mask": self._feature_mask,
-                "timotion_ahf_lamp_display_code": self._lamp_display_code,
-            }
+            STATUS(self._status_state),
+            STATUS_ERROR(None),
+            LOCK_MASK(self._feature_mask),
+            LAMP_DISPLAY_CODE(self._lamp_display_code),
         )
         _LOGGER.debug(
             "TiMOTION AHF status: lock_mask=0x%02X lamp_display_code=%d",
@@ -590,12 +592,10 @@ class TiMOTIONAhfController(BedController):
         self._feature_mask = None
         self._lamp_display_code = None
         self.forward_controller_state_updates(
-            {
-                "timotion_ahf_status": self._status_state,
-                "timotion_ahf_status_error": None,
-                "timotion_ahf_lock_mask": None,
-                "timotion_ahf_lamp_display_code": None,
-            }
+            STATUS(self._status_state),
+            STATUS_ERROR(None),
+            LOCK_MASK(None),
+            LAMP_DISPLAY_CODE(None),
         )
 
     def _set_status_timeout(self, message: str) -> None:
@@ -603,12 +603,7 @@ class TiMOTIONAhfController(BedController):
         self._status_ready = False
         self._status_state = "timed_out"
         self._status_error = message
-        self.forward_controller_state_updates(
-            {
-                "timotion_ahf_status": self._status_state,
-                "timotion_ahf_status_error": message,
-            }
-        )
+        self.forward_controller_state_updates(STATUS(self._status_state), STATUS_ERROR(message))
         _LOGGER.warning("%s", message)
 
     def _queue_preempting_stop(self) -> None:
@@ -636,12 +631,10 @@ class TiMOTIONAhfController(BedController):
         self._write_mode_initialized = False
         self._write_mode_error = None
         self.forward_controller_state_updates(
-            {
-                "timotion_ahf_status": self._status_state,
-                "timotion_ahf_status_error": None,
-                "timotion_ahf_lock_mask": None,
-                "timotion_ahf_lamp_display_code": None,
-            }
+            STATUS(self._status_state),
+            STATUS_ERROR(None),
+            LOCK_MASK(None),
+            LAMP_DISPLAY_CODE(None),
         )
 
     async def run_action(self, key: str) -> None:

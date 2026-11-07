@@ -8,7 +8,9 @@ import pytest
 from homeassistant.const import CONF_ADDRESS
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.motion_bed import STOP, MotionBedController
+from custom_components.adjustable_bed.beds.motion_bed.controller import STOP, MotionBedController
+from custom_components.adjustable_bed.beds.motion_bed.models import select_motion_bed
+from custom_components.adjustable_bed.beds.motion_bed.state import MotionBedFollowup
 from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTION_BED,
     CONF_BED_TYPE,
@@ -16,8 +18,6 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.motion_bed_models import select_motion_bed
-from custom_components.adjustable_bed.motion_bed_state import MotionBedFollowup
 from tests.test_motion_bed_controller import characteristic, client_for, rig_for
 
 
@@ -102,7 +102,7 @@ async def test_every_owned_query_has_admission_gate_and_rejects_replacement_call
     await replacement.controller.async_discover_capabilities()
     async def sleep(delay):
         pass
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", sleep)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.sleep", sleep)
     calls = []
     async def query(callback, **kwargs):
         assert callable(kwargs["run_if"]) and kwargs["run_if"]()

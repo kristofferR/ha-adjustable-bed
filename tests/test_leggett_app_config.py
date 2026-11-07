@@ -105,7 +105,7 @@ async def test_factory_routes_profile_and_legacy_default(hass, bed_type, variant
     for data, expected in [({}, "prodigy4"), ({CONF_LEGGETT_APP_PROFILE: "useries"}, "useries")]:
         coordinator = SimpleNamespace(hass=hass, entry=SimpleNamespace(data=data))
         with patch(
-            "custom_components.adjustable_bed.beds.leggett_okin.LeggettOkinController"
+            "custom_components.adjustable_bed.beds.leggett.okin.LeggettOkinController"
         ) as controller:
             await create_controller(coordinator, bed_type, variant, None)
         controller.assert_called_once_with(coordinator, app_profile=expected)

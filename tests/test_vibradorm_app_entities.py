@@ -4,7 +4,6 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.const import (
@@ -31,6 +30,7 @@ from custom_components.adjustable_bed.select import _select_entities_for
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
 from custom_components.adjustable_bed.switch import _switch_entities_for
 from tests.conftest import make_controller_mock
+from tests.state_helpers import published
 from tests.test_malouf_app_entities import configure_entity_runtime
 from tests.test_paired_coordinator import RecordingChild
 from tests.test_vibradorm_app import make_controller, written
@@ -40,53 +40,23 @@ from tests.test_vibradorm_app import make_controller, written
     ("control", "app"),
     [(None, "werkmeister"), (2, "caresse"), (3, "caresse"), (5, "werkmeister"), (7, "werkmeister")],
 )
-async def test_profile_switch_reconciles_metadata_and_sync_for_only_its_side(hass, control, app):
+async def test_profile_switch_builds_only_its_metadata_and_sync(hass, control, app):
     controller = (
         make_controller(control, app=app)
         if control is not None
         else make_controller_mock(
             controller_state_sensor_specs=(),
-            stale_controller_state_sensor_entity_keys=frozenset(),
             position_number_specs=(),
         )
     )
     runtime = configure_entity_runtime(
         hass, controller, BED_TYPE_VIBRADORM_APP if control else BED_TYPE_DIAGNOSTIC
     )
-    registry = er.async_get(hass)
-    keys = {
-        "vibradorm_app_model",
-        "vibradorm_app_firmware",
-        "vibradorm_app_software",
-        "vibradorm_app_main_firmware_article",
-        "vibradorm_app_sync_observed",
-    }
-    old = {
-        key: registry.async_get_or_create(
-            "sensor", DOMAIN, f"bed_{key}_left", config_entry=runtime.entry
-        )
-        for key in keys
-    }
-    other_side = registry.async_get_or_create(
-        "sensor", DOMAIN, "bed_vibradorm_app_sync_observed_right", config_entry=runtime.entry
-    )
-    unrelated = registry.async_get_or_create(
-        "sensor", DOMAIN, "bed_unrelated_left", config_entry=runtime.entry
-    )
-    other_platform = registry.async_get_or_create(
-        "sensor",
-        "another_integration",
-        "bed_vibradorm_app_sync_observed_left",
-        config_entry=runtime.entry,
-    )
     entities = _sensor_entities_for(hass, runtime)
     active = {spec.key for spec in controller.controller_state_sensor_specs}
     assert ("vibradorm_app_main_firmware_article" in active) is (control in (5, 7))
+    # The entry's stale sweep retires the profile's former telemetry.
     assert {entity._spec.key for entity in entities if hasattr(entity, "_spec")} == active
-    for key, row in old.items():
-        assert (registry.async_get(row.entity_id) is not None) == (key in active)
-    for row in (other_side, unrelated, other_platform):
-        assert registry.async_get(row.entity_id) is not None
 
 
 async def floor_runtime(hass, app="caresse", control=2, *, floor=True, extension=False, rgb=False):
@@ -116,21 +86,21 @@ async def floor_runtime(hass, app="caresse", control=2, *, floor=True, extension
     runtime.disable_angle_sensing = True
     runtime.controller_state = {}
     runtime.entity_unique_id.side_effect = lambda key: f"{runtime.entry.entry_id}_{key}"
-    runtime.entity_translation_key.side_effect = lambda key: key
     callbacks = []
 
     def register(callback):
         callbacks.append(callback)
         return lambda: callbacks.remove(callback)
 
-    def publish(updates):
-        runtime.controller_state.update(updates)
+    def publish(*updates):
+        values = published(*updates)
+        runtime.controller_state.update(values)
         for callback in tuple(callbacks):
-            callback(updates)
+            callback(values)
 
     runtime.register_controller_state_callback.side_effect = register
     runtime.handle_controller_state_updates.side_effect = publish
-    runtime.handle_controller_state_update.side_effect = lambda key, value: publish({key: value})
+    runtime.handle_controller_state_update.side_effect = lambda key, value: publish(key(value))
     lock = asyncio.Lock()
 
     async def execute(command, **kwargs):
@@ -256,25 +226,10 @@ async def test_actual_floor_gate_is_independent_of_restored_mood_rgb(hass, floor
 
 
 @pytest.mark.parametrize("control", [2, 7])
-async def test_floor_capability_loss_removes_only_its_number_registry_entry(hass, control):
+async def test_floor_capability_loss_drops_its_number(hass, control):
     runtime, _ = await floor_runtime(hass, control=control, floor=False)
-    registry = er.async_get(hass)
-    unique_id = runtime.entity_unique_id("light_level")
-    stale = registry.async_get_or_create("number", DOMAIN, unique_id, config_entry=runtime.entry)
-    other_side = registry.async_get_or_create(
-        "number", DOMAIN, unique_id + "_right", config_entry=runtime.entry
-    )
-    other_platform = registry.async_get_or_create(
-        "number", "another_integration", unique_id, config_entry=runtime.entry
-    )
-    unrelated = registry.async_get_or_create(
-        "number", DOMAIN, runtime.entity_unique_id("unrelated"), config_entry=runtime.entry
-    )
     numbers = _number_entities_for(hass, runtime)
     assert not any(entity.entity_description.key == "light_level" for entity in numbers)
-    assert registry.async_get(stale.entity_id) is None
-    for kept in (other_side, other_platform, unrelated):
-        assert registry.async_get(kept.entity_id) is not None
 
 
 async def test_failed_public_floor_off_retains_last_publication_and_source_intent(hass):
@@ -311,7 +266,6 @@ async def test_actual_paired_floor_entities_use_each_physical_profile_and_callba
             self.has_massage = False
             self.disable_angle_sensing = True
             self.entity_unique_id = runtime.entity_unique_id
-            self.entity_translation_key = runtime.entity_translation_key
             self.register_controller_state_callback = runtime.register_controller_state_callback
 
         async def async_execute_controller_command(
@@ -321,6 +275,7 @@ async def test_actual_paired_floor_entities_use_each_physical_profile_and_callba
             skip_disconnect=False,
             resource=None,
             resources=None,
+            expected_stop_epoch=None,
         ):
             await command_fn(self.controller)
 
@@ -374,7 +329,7 @@ async def test_zero_minute_pending_toggle_preserves_source_state_and_effective_t
     assert controller._timer_enabled and controller._timer_minutes == 0
     assert controller.protocol_diagnostics["pending_timer"] == {"enabled": True, "minutes": 0}
     assert timer.current_option == "Off"
-    assert controller.get_light_state()["light_timer_option"] == "Off"
+    assert controller._floor_light_intent()["light_timer_option"] == "Off"
     assert runtime.controller_state["vibradorm_app_floor_timer_enabled"] is False
     assert written(controller) == []
     await controller.set_light_level(6)

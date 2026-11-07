@@ -9,10 +9,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed import richmat_mh_catalog as catalog
-from custom_components.adjustable_bed.beds import richmat_mh_protocol as protocol
-from custom_components.adjustable_bed.beds.richmat_mh import (
-    ALARM_OPTIONS,
+from custom_components.adjustable_bed.beds.richmat_mh import catalog, protocol
+from custom_components.adjustable_bed.beds.richmat_mh.controller import (
     APP_GROUPS,
     RichmatMhController,
     SessionFlags,
@@ -20,11 +18,15 @@ from custom_components.adjustable_bed.beds.richmat_mh import (
     resolve_model,
     selectable_models,
 )
-from custom_components.adjustable_bed.const import (
-    RICHMAT_MH_APPS,
+from custom_components.adjustable_bed.beds.richmat_mh.models import (
     RICHMAT_MH_MODEL_CHOICES,
     RICHMAT_MH_VARIANTS_BY_APP,
 )
+from custom_components.adjustable_bed.beds.richmat_mh.protocol import ALARM_OPTIONS
+from custom_components.adjustable_bed.const import (
+    RICHMAT_MH_APPS,
+)
+from tests.state_helpers import state_writer
 
 NUS, W1, W2, W3, W4 = protocol.GATT_MAPS
 
@@ -57,7 +59,7 @@ def make(
     coordinator.handle_controller_state_update.side_effect = lambda key, value: (
         coordinator.controller_state.update({key: value})
     )
-    coordinator.handle_controller_state_updates.side_effect = coordinator.controller_state.update
+    coordinator.handle_controller_state_updates.side_effect = state_writer(coordinator.controller_state)
     data = {"capabilities": {"richmat_mh": snapshot}} if snapshot else {}
     coordinator.entry = SimpleNamespace(data=data)
     coordinator.client = MagicMock(is_connected=True, services=services or _default_services())
@@ -690,7 +692,6 @@ async def test_blvd_hnrm_factory_reset_uses_the_common_widget_frame(sleeps) -> N
 def test_legacy_route_has_no_ver1_entities_and_stale_keys_cover_them() -> None:
     controller = make(snapshot=vers0("7irm"))
     assert not controller.controller_number_specs and not controller.controller_select_specs
-    assert controller.stale_controller_state_sensor_entity_keys >= {"richmat_mh_memory_arrival"}
 
 
 def test_alarm_options_are_stable_service_values() -> None:

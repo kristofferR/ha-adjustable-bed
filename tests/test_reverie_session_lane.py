@@ -9,9 +9,9 @@ import pytest
 from homeassistant.const import CONF_ADDRESS
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.reverie import ReverieController
-from custom_components.adjustable_bed.beds.reverie_comfort import ReverieComfortRequest
-from custom_components.adjustable_bed.beds.reverie_nightstand import ReverieNightstandController
+from custom_components.adjustable_bed.beds.reverie.comfort import ReverieComfortRequest
+from custom_components.adjustable_bed.beds.reverie.controller import ReverieController
+from custom_components.adjustable_bed.beds.reverie.nightstand import ReverieNightstandController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_REVERIE,
     CONF_BED_TYPE,
@@ -190,7 +190,7 @@ async def test_paired_local_setup_keeps_both_backends_without_a_peer(
         bluetooth_transport,
         pairing,
     )
-    from custom_components.adjustable_bed.beds import reverie_pairlink_transport as transport
+    from custom_components.adjustable_bed.beds.reverie import pairlink_transport as transport
     from tests.test_reverie_pairlink_production import (
         _adapter_objects,
         _entry,
@@ -365,7 +365,7 @@ async def test_stk_routine_preserves_distinct_source_read_axes(
 
 
 async def test_a8_a9_actual_join_timer_rearm_and_stale_unload():
-    from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import (
+    from custom_components.adjustable_bed.beds.reverie.pairlink_protocol import (
         decrypt_user_frame,
         status_sync_payloads,
     )
@@ -439,7 +439,7 @@ async def test_p2_current_notification_write_failure_or_replacement_keeps_owners
 async def test_held_release_uses_current_auth_for_the_same_physical_peer(
     hass, monkeypatch, enable_custom_integrations, transition,
 ):
-    from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import (
+    from custom_components.adjustable_bed.beds.reverie.pairlink_protocol import (
         dashboard_payload,
         decrypt_user_frame,
     )

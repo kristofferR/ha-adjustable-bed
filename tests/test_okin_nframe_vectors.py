@@ -9,8 +9,8 @@ from pathlib import Path
 
 import pytest
 
-from custom_components.adjustable_bed.beds import eshine_okin_protocol as eshine
-from custom_components.adjustable_bed.beds.okin_uuid import (
+from custom_components.adjustable_bed.beds.eshine_okin import protocol as eshine
+from custom_components.adjustable_bed.beds.okin_uuid.controller import (
     OKIN_UUID_REMOTES,
     OkinUuidComplexCommand,
 )

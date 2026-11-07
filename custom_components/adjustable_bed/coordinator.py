@@ -16,7 +16,7 @@ from collections.abc import (
     Mapping,
 )
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Self, TypeVar, cast
 from uuid import uuid4
 from weakref import WeakKeyDictionary
 
@@ -29,6 +29,16 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 
 from .app_state_store import app_state_slot, app_state_store
+from .bed_traits import (
+    bed_traits,
+    disconnect_after_command_default_enabled,
+    passive_position_reconciliation_default_enabled,
+)
+from .beds.vibradorm.app_state import (
+    ControlType,
+    VibradormAppSessionIntent,
+    get_vibradorm_app_session_intent,
+)
 from .ble_auth import is_ble_authentication_error
 from .bluetooth_transport import (
     ConnectionPath,
@@ -54,7 +64,6 @@ from .command_scheduler import (
 from .const import (
     ADAPTER_AUTO,
     BED_MOTOR_PULSE_DEFAULTS,
-    BED_TYPE_BEDJET_POWERLAYER,
     BED_TYPE_BEDTECH,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_DEWERTOKIN,
@@ -97,33 +106,25 @@ from .const import (
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
-    BEDJET_POWERLAYER_FOOT_MAX_ANGLE,
-    BEDJET_POWERLAYER_HEAD_MAX_ANGLE,
-    BEDS_WITH_POSITION_FEEDBACK,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
     CONF_BLE_BOND_MARKER_UNRELIABLE,
     CONF_BLE_DEVICE_NAME,
-    CONF_CB24_BED_SELECTION,
     CONF_CONNECTION_PROFILE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
-    CONF_JENSEN_PIN,
     CONF_KAIDI_ROOM_ID,
     CONF_KAIDI_TARGET_VADDR,
     CONF_LEGS_MAX_ANGLE,
     CONF_LIMOSS_REMOTE_STATE,
-    CONF_MALOUF_LAYOUT,
-    CONF_MALOUF_MEMORY_SLOTS,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_MOTOR_PULSE_USER_SET,
-    CONF_OCTO_PIN,
     CONF_PAIR_MODE,
     CONF_PASSIVE_POSITION_RECONCILIATION,
     CONF_POSITION_MODE,
@@ -131,8 +132,6 @@ from .const import (
     CONF_PROFILE_ID,
     CONF_REMACRO_LED_LEVEL,
     CONF_RICHMAT_REMOTE,
-    CONF_RMCONTROL_PRODUCT,
-    CONF_RMCONTROL_SIDE,
     CONF_SIDE,
     CONF_VIBRADORM_APP_METADATA,
     CONF_VIBRADORM_APP_PROFILE,
@@ -148,54 +147,44 @@ from .const import (
     DEFAULT_BACK_MAX_ANGLE,
     DEFAULT_CONNECTION_PROFILE,
     DEFAULT_DISABLE_ANGLE_SENSING,
-    DEFAULT_DISCONNECT_AFTER_COMMAND,
     DEFAULT_HAS_MASSAGE,
     DEFAULT_IDLE_DISCONNECT_SECONDS,
     DEFAULT_LEGS_MAX_ANGLE,
     DEFAULT_MOTOR_COUNT,
-    DEFAULT_OCTO_PIN,
     DEFAULT_POSITION_MODE,
     DEFAULT_PROTOCOL_VARIANT,
-    DEVICE_INFO_CHARS,
-    DEVICE_INFO_READ_TIMEOUT,
-    DEVICE_INFO_SERVICE_UUID,
     DOMAIN,
     LEGGETT_OKIN_SUPERSEDED_PULSE_DEFAULTS,
     LEGGETT_VARIANT_OKIN,
     LINAK_VARIANT_PERFORMANCE,
-    MALOUF_LAYOUT_AUTO,
-    MALOUF_MEMORY_SLOTS_AUTO,
     NAME_RULE_VARIANTS_BY_BED_TYPE,
     OCTO_VARIANT_STAR2,
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
-    OFFLINE_CAPABILITY_SAFE_VARIANTS,
     PAIR_MODE_SINGLE_ADDRESS,
+    PAIRLINK_ROLE_PERIPHERAL,
     POSITION_MODE_ACCURACY,
-    REVERIE_BACK_MAX_ANGLE,
     RICHMAT_MH_BED_TYPES,
     RICHMAT_REMOTE_AUTO,
     SOLACE_VARIANT_WOOSA,
-    STARCODE_APP_CONNECTION_TIMEOUT_SECONDS,
     STARCODE_GROUP_BED_TYPES,
     get_motor_pulse_defaults,
-    get_richmat_features,
     get_richmat_motor_count,
-    passive_position_reconciliation_default_enabled,
     resolve_explicit_bed_type,
     resolve_richmat_remote_code,
 )
 from .controller_factory import create_controller
+from .controller_state import AnyStateKey, ControllerState, StateKey, StateUpdate
 from .coordinator_bonds import CoordinatorBondsMixin
 from .coordinator_connection import CoordinatorConnectionMixin
 from .coordinator_positions import CoordinatorPositionsMixin
 from .detection import (
     OKIN_SHARED_UUID_GATT_REFINABLE_TYPES,
     is_mac_like_name,
-    is_okimat_bed_model,
 )
 from .execution import HOLD_CEILING_MS
-from .furnimove_repair import CONF_OKIMAT_MODEL_ON_CST, async_refresh_furnimove_layout_issues
+from .import_executor import async_import_modules
 from .pairing import (
+    OFFLINE_CAPABILITY_SAFE_VARIANTS,
     filter_child_options,
     is_paired,
     octo_snapshot_from_descriptor,
@@ -204,16 +193,18 @@ from .position_seek import (
     SeekMotion,
 )
 from .profile_id import entry_profile_id, profile_route, resolve_profile_id
-from .vibradorm_app_state import (
-    ControlType,
-    VibradormAppSessionIntent,
-    get_vibradorm_app_session_intent,
+from .state_keys import (
+    LIGHT_LEVEL,
+    LIGHT_TIMER_MINUTES,
+    LIGHT_TIMER_OPTION,
+    LINAK_MODEL_VARIANT,
+    UNDER_BED_LIGHTS_ON,
 )
 
 if TYPE_CHECKING:
     from .beds.base import BedController
-    from .beds.reverie_pairlink_runtime import PairlinkRuntime
-    from .beds.starcode_abm5_4_profiles import RetainedAppState
+    from .beds.reverie.pairlink_runtime import PairlinkRuntime
+    from .beds.starcode.abm5_4_profiles import RetainedAppState
 
 T = TypeVar("T")
 _LOGGER = logging.getLogger(__name__)
@@ -327,6 +318,24 @@ class AdjustableBedCoordinator(
 ):
     """Coordinator for managing bed connection and state."""
 
+    @staticmethod
+    async def async_import_tables(hass: HomeAssistant, data: Mapping[str, Any]) -> None:
+        """Import the tables the constructor reads for ``data``, off the event loop.
+
+        The Richmat remote feature table is too large to import on the loop
+        (issue #368).
+        """
+        if profile_route(entry_profile_id(data)).bed_type == BED_TYPE_RICHMAT:
+            await async_import_modules(hass, "beds.richmat.features")
+
+    @classmethod
+    async def async_create(
+        cls, hass: HomeAssistant, entry: ConfigEntry | ChildEntryView
+    ) -> Self:
+        """Build the coordinator once its tables are imported."""
+        await cls.async_import_tables(hass, entry.data)
+        return cls(hass, entry)
+
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry | ChildEntryView) -> None:
         """Initialize the coordinator."""
         self.hass = hass
@@ -348,18 +357,17 @@ class AdjustableBedCoordinator(
         self._observed_ble_device_name: str | None = None
         self._furnimove_bond_task: asyncio.Task[None] | None = None
         self._furnimove_bond_request: dict[str, object] = {"status": "not_requested"}
-        self._malouf_layout: str = entry.data.get(CONF_MALOUF_LAYOUT, MALOUF_LAYOUT_AUTO)
-        self._malouf_memory_slots: int = int(
-            entry.data.get(CONF_MALOUF_MEMORY_SLOTS, MALOUF_MEMORY_SLOTS_AUTO)
-        )
-        self._richmat_remote: str = entry.data.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO)
         if self._bed_type == BED_TYPE_RICHMAT:
-            self._richmat_remote = resolve_richmat_remote_code(
-                self._richmat_remote,
+            from .beds.richmat.features import get_richmat_features
+
+            # Entities need the motor count before the first connection, so it
+            # comes from the stored remote code, as the Richmat builder resolves it.
+            richmat_remote = resolve_richmat_remote_code(
+                entry.data.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO),
                 entry_title=entry.title,
                 configured_name=self._name,
             )
-            self._motor_count = get_richmat_motor_count(get_richmat_features(self._richmat_remote))
+            self._motor_count = get_richmat_motor_count(get_richmat_features(richmat_remote))
         else:
             self._motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
         self._has_massage: bool = entry.data.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE)
@@ -400,9 +408,8 @@ class AdjustableBedCoordinator(
         self._retry_base_delay: float = profile_settings.retry_base_delay
         self._retry_jitter: float = profile_settings.retry_jitter
         self._connection_timeout: float = (
-            STARCODE_APP_CONNECTION_TIMEOUT_SECONDS
-            if self._bed_type == BED_TYPE_STARCODE_ABM5_4
-            else profile_settings.connection_timeout
+            bed_traits(self._bed_type, self._protocol_variant).connection_timeout
+            or profile_settings.connection_timeout
         )
         if entry.data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat":
             self._connection_timeout = 10.0
@@ -420,20 +427,12 @@ class AdjustableBedCoordinator(
 
         # Disconnect behavior configuration
         self._disconnect_after_command: bool = entry.data.get(
-            CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND
+            CONF_DISCONNECT_AFTER_COMMAND,
+            disconnect_after_command_default_enabled(self._bed_type, self._protocol_variant),
         )
         self._idle_disconnect_seconds: int = entry.data.get(
             CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
         )
-
-        # Octo-specific configuration
-        self._octo_pin: str = entry.data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN)
-
-        # Jensen-specific configuration
-        self._jensen_pin: str = entry.data.get(CONF_JENSEN_PIN, "")
-
-        # CB24-specific configuration (SmartBed by Okin split beds)
-        self._cb24_bed_selection: int = entry.data.get(CONF_CB24_BED_SELECTION, 0x00)
 
         self._client: BleakClient | None = None
         self._vmat_unready_client: BleakClient | None = None
@@ -478,14 +477,14 @@ class AdjustableBedCoordinator(
         self._position_callbacks: set[Callable[[dict[str, float]], None]] = set()
         # CB35 autonomous presets can outlive the connection-scoped controller.
         self.okin_cb35_preset_started_at: float | None = None
-        self._controller_state: dict[str, Any] = {}
+        self._controller_state = ControllerState()
         self.starcode_app_retained_state: RetainedAppState | None = None
         self.furnimove_widget_state: tuple[bool, bytes | None, bytes | None] = (False, None, None)
         # App-local state (BedController.persisted_app_state), slotted per restored controller.
         self._app_state_store = app_state_store(hass, self._address)
         self._app_state_slots: WeakKeyDictionary[BedController, str] = WeakKeyDictionary()
         self._app_state_restoring = False
-        self._controller_state_callbacks: set[Callable[[dict[str, Any]], None]] = set()
+        self._controller_state_callbacks: set[Callable[[ControllerState], None]] = set()
         self._controller_state_refresh_task: asyncio.Task[None] | None = None
         self._controller_state_refresh_retry_timer: asyncio.TimerHandle | None = None
         self._controller_state_refresh_retry_count = 0
@@ -670,23 +669,6 @@ class AdjustableBedCoordinator(
                 keys={CONF_BLE_DEVICE_NAME},
             )
 
-    def _record_okimat_model_on_cst(self, ble_model: str | None) -> None:
-        """Offer the route repair when an OKIMAT drive is configured as Okin CST (#555)."""
-        if (
-            self._bed_type != BED_TYPE_OKIN_CST
-            or not is_okimat_bed_model(ble_model)
-            or self.entry.data.get(CONF_OKIMAT_MODEL_ON_CST) == ble_model
-        ):
-            return
-        # Internal write: keep this link instead of reloading the entry.
-        self._begin_internal_entry_update(
-            bool(self.entry.data.get(CONF_BLE_BOND_ESTABLISHED, False))
-        )
-        # Full data: a paired side's persist callback drops bond keys it is not sent.
-        self._async_persist_config({**self.entry.data, CONF_OKIMAT_MODEL_ON_CST: ble_model})
-        if (entry := self.hass.config_entries.async_get_entry(self.entry.entry_id)) is not None:
-            async_refresh_furnimove_layout_issues(self.hass, entry)
-
     def _schedule_pending_capability_reload(self) -> None:
         """Reload capability-gated entities once this BLE link is released."""
         if (
@@ -759,8 +741,7 @@ class AdjustableBedCoordinator(
             owns_loaded_child = callable(child_for_side) and child_for_side(side) is self
         if loaded is not self and not owns_loaded_child:
             return
-        from .beds.starcode_abm5_4 import StarcodeAbm5_4Controller
-        from .beds.starcode_abm5_4_profiles import RetainedAppState
+        from .beds.starcode.abm5_4_profiles import RetainedAppState
 
         retained_states = {
             (child.entry.entry_id, child.address): child.starcode_app_retained_state
@@ -772,6 +753,11 @@ class AdjustableBedCoordinator(
         self._pending_capability_reload = False
         if not await self.hass.config_entries.async_reload(self.entry.entry_id):
             return
+        if not retained_states:
+            return
+        await async_import_modules(self.hass, "beds.starcode.abm5_4")
+        from .beds.starcode.abm5_4 import StarcodeAbm5_4Controller
+
         reloaded = self.hass.data.get(DOMAIN, {}).get(self.entry.entry_id)
         for child in self._starcode_reload_coordinators(reloaded):
             retained = retained_states.get((child.entry.entry_id, child.address))
@@ -893,14 +879,14 @@ class AdjustableBedCoordinator(
             entry_data.pop(CONF_RICHMAT_REMOTE, None)
         angle_sensing_defaulted = CONF_DISABLE_ANGLE_SENSING not in self.entry.data or (
             self.entry.data.get(CONF_DISABLE_ANGLE_SENSING) is True
-            and previous_bed_type not in BEDS_WITH_POSITION_FEEDBACK
+            and not bed_traits(previous_bed_type).position_feedback
         )
-        # Config flow defaults disable_angle_sensing from BEDS_WITH_POSITION_FEEDBACK,
-        # so the correction must use the same set: a repaired entry (e.g. CB35 ->
+        # Config flow defaults disable_angle_sensing from the position_feedback trait,
+        # so the correction must use the same trait: a repaired entry (e.g. CB35 ->
         # BOX25, #419) should get position feedback re-enabled even when the
         # corrected type reports percentages rather than angles.
         if (
-            corrected_bed_type in BEDS_WITH_POSITION_FEEDBACK
+            bed_traits(corrected_bed_type).position_feedback
             and angle_sensing_defaulted
             and self._disable_angle_sensing
             and not (
@@ -919,7 +905,7 @@ class AdjustableBedCoordinator(
             )
         elif (
             bed_type_changed
-            and corrected_bed_type not in BEDS_WITH_POSITION_FEEDBACK
+            and not bed_traits(corrected_bed_type).position_feedback
             and not self._disable_angle_sensing
         ):
             self._disable_angle_sensing = True
@@ -952,13 +938,20 @@ class AdjustableBedCoordinator(
         """Return the identity of this physical command scheduler."""
         return id(self._command_scheduler)
 
+    @property
+    def stop_epoch(self) -> int:
+        """Return the scheduler's STOP epoch, which every STOP on this bed advances."""
+        return self._command_scheduler.stop_epoch
+
+    @property
+    def pairlink_peripheral(self) -> bool:
+        """Return whether a local Pairlink runtime serves this bed as a peripheral."""
+        runtime = self._pairlink_runtime
+        return runtime is not None and runtime.role == PAIRLINK_ROLE_PERIPHERAL
+
     def entity_unique_id(self, key: str) -> str:
         """Return the stable unique id for one standalone entity key."""
         return f"{self._address}_{key}"
-
-    def entity_translation_key(self, key: str) -> str:
-        """Return the translation key for one standalone entity."""
-        return key
 
     @property
     def name(self) -> str:
@@ -974,16 +967,6 @@ class AdjustableBedCoordinator(
     def observed_ble_device_name(self) -> str | None:
         """Return the most recently observed BLE advertising name, if any."""
         return self._observed_ble_device_name
-
-    @property
-    def malouf_layout(self) -> str:
-        """Return the configured Malouf actuator layout."""
-        return self._malouf_layout
-
-    @property
-    def malouf_memory_slots(self) -> int:
-        """Return the configured Malouf memory-slot override (0 means auto)."""
-        return self._malouf_memory_slots
 
     @property
     def bed_type(self) -> str:
@@ -1049,21 +1032,16 @@ class AdjustableBedCoordinator(
         Returns:
             Maximum angle in degrees for the specified motor.
         """
-        # Deliberately keyed on bed type rather than the controller's
-        # motor_max_angles: this limit must hold while disconnected, so that
-        # set_position validation still rejects a target the frame cannot reach
-        # when the controller is momentarily absent.
-        if position_key in ("back", "head"):
-            if self._bed_type in (BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND):
-                return REVERIE_BACK_MAX_ANGLE
-            if self._bed_type == BED_TYPE_BEDJET_POWERLAYER:
-                return BEDJET_POWERLAYER_HEAD_MAX_ANGLE
-            return self.back_max_angle
+        # From the bed traits rather than the controller's motor_max_angles:
+        # this limit must hold while disconnected, so that set_position
+        # validation still rejects a target the frame cannot reach when the
+        # controller is momentarily absent.
+        fixed = bed_traits(self._bed_type, self._protocol_variant).max_angles.get(position_key)
+        if fixed is not None:
+            return fixed
         if position_key in ("legs", "feet"):
-            if self._bed_type == BED_TYPE_BEDJET_POWERLAYER:
-                return BEDJET_POWERLAYER_FOOT_MAX_ANGLE
             return self.legs_max_angle
-        # Unknown motor, return back max as default
+        # Back, head and unknown motors use the back limit.
         return self.back_max_angle
 
     @property
@@ -1094,6 +1072,11 @@ class AdjustableBedCoordinator(
     def controller(self) -> BedController | None:
         """Return the bed controller."""
         return self._controller
+
+    @property
+    def controller_side(self) -> None:
+        """A physical bed's controller is never shared between logical sides."""
+        return None
 
     @property
     def capability_controller(self) -> BedController | None:
@@ -1206,13 +1189,6 @@ class AdjustableBedCoordinator(
                 protocol_variant=self._protocol_variant,
                 client=None,
                 device_name=self._name,
-                octo_pin=self._octo_pin,
-                richmat_remote=self._richmat_remote,
-                rmcontrol_product=self.entry.data.get(CONF_RMCONTROL_PRODUCT, ""),
-                rmcontrol_side=self.entry.data.get(CONF_RMCONTROL_SIDE, "left"),
-                jensen_pin=self._jensen_pin,
-                cb24_bed_selection=self._cb24_bed_selection,
-                capability_snapshot=octo_snapshot or linak_snapshot or jensen_snapshot,
             )
             if not preview:
                 await self._async_restore_app_state(self._offline_controller)
@@ -1255,7 +1231,7 @@ class AdjustableBedCoordinator(
             self._offline_controller = self._controller
 
     @property
-    def controller_state(self) -> dict[str, Any]:
+    def controller_state(self) -> ControllerState:
         """Return non-position controller state."""
         return self._controller_state
 
@@ -1386,61 +1362,41 @@ class AdjustableBedCoordinator(
         client = self._vmat_unready_client
         return client is not None and client.is_connected
 
-    def _backfill_octo_snapshot(self) -> None:
-        """Persist this paired Octo side's freshly-discovered capabilities into its
-        child descriptor, so the OFFLINE side and reloads mint correct entities and
-        a firmware capability change is reflected. No-op for a single bed (not a
-        ``ChildEntryView``) or when nothing was discovered / it is unchanged.
+    def _persist_capability_snapshot(self) -> None:
+        """Persist the live controller's capability snapshot under this bed type.
+
+        No-op when the controller declares no snapshot policy, nothing was
+        discovered, or the stored snapshot is unchanged.
         """
-        if not isinstance(self.entry, ChildEntryView):
+        controller = self._controller
+        policy = controller.capability_snapshot_policy if controller is not None else None
+        if controller is None or policy is None:
             return
-        snapshot_fn = getattr(self._controller, "capability_snapshot", None)
-        snapshot = snapshot_fn() if callable(snapshot_fn) else None
+        if policy.paired_side_only and not isinstance(self.entry, ChildEntryView):
+            return
+        snapshot = controller.capability_snapshot()
         if not snapshot:
             return
         capabilities = dict(self.entry.data.get("capabilities") or {})
-        if capabilities.get("octo") == snapshot:
-            return  # unchanged — avoid a redundant persist
-        capabilities["octo"] = snapshot
+        if capabilities.get(self._bed_type) == snapshot:
+            return
+        capabilities[self._bed_type] = snapshot
+        if policy.deferred_reload:
+            self._begin_internal_entry_update(self._ble_bond_established)
+            if self._pending_internal_bond_marker is not None:
+                self._pending_capability_reload = True
         self._async_persist_config({**self.entry.data, "capabilities": capabilities})
-        # The offline controller minted from the pairing-time snapshot is now
-        # stale. Refresh it immediately so a later sequential release gates
-        # per-side entities off the freshly discovered capabilities before the
-        # next reload.
-        self._offline_controller = self._controller
+        if not policy.deferred_reload:
+            # The offline controller minted from the stored snapshot is now
+            # stale; gate entities off the fresh capabilities until reload.
+            self._offline_controller = controller
 
-    def _backfill_linak_snapshot(self) -> None:
-        """Persist a successful Linak model/capability resolution."""
-        snapshot_fn = getattr(self._controller, "capability_snapshot", None)
-        snapshot = snapshot_fn() if callable(snapshot_fn) else None
-        if not isinstance(snapshot, Mapping) or snapshot.get("discovery_complete") is not True:
-            return
-        capabilities = dict(self.entry.data.get("capabilities") or {})
-        if capabilities.get("linak") == snapshot:
-            return
-        capabilities["linak"] = snapshot
-        self._async_persist_config({**self.entry.data, "capabilities": capabilities})
-        self._offline_controller = self._controller
-
-    def _backfill_jensen_snapshot(self) -> None:
-        """Persist the Jensen config report when it changed.
-
-        Entities built from a missing or older report (a config timeout at
-        setup) are rebuilt by a reload deferred until the link is released, so
-        the command that opened this connection still runs.
-        """
-        snapshot_fn = getattr(self._controller, "capability_snapshot", None)
-        snapshot = snapshot_fn() if callable(snapshot_fn) else None
-        if not snapshot:
-            return
-        capabilities = dict(self.entry.data.get("capabilities") or {})
-        if capabilities.get("jensen") == snapshot:
-            return
-        capabilities["jensen"] = snapshot
-        self._begin_internal_entry_update(self._ble_bond_established)
-        if self._pending_internal_bond_marker is not None:
-            self._pending_capability_reload = True
-        self._async_persist_config({**self.entry.data, "capabilities": capabilities})
+    def _persist_capability_snapshot_after_operation(self) -> None:
+        """Reconcile a snapshot the operation may have resolved, once nothing is queued."""
+        controller = self._controller
+        policy = controller.capability_snapshot_policy if controller is not None else None
+        if policy is not None and policy.after_operations and not self._command_scheduler.has_pending:
+            self._persist_capability_snapshot()
 
     def _begin_internal_entry_update(self, bond_established: bool) -> None:
         """Mark the next entry update as an internal bond-marker write.
@@ -1496,7 +1452,7 @@ class AdjustableBedCoordinator(
 
     def remember_limoss_remote_capabilities(self, capabilities: Mapping[str, int]) -> None:
         """Persist the reported capability record, which decides the entity layout."""
-        from .limoss_remote_state import validate_limoss_remote_state
+        from .beds.limoss.remote_state import validate_limoss_remote_state
 
         if self._bed_type != BED_TYPE_LIMOSS_REMOTE:
             raise ValueError("Invalid Limoss Remote local data")
@@ -1520,7 +1476,7 @@ class AdjustableBedCoordinator(
             return
         self._begin_internal_entry_update(self._ble_bond_established)
         self._offline_controller = self._controller or self._offline_controller
-        from .beds.limoss_remote import LimossRemoteController
+        from .beds.limoss.remote import LimossRemoteController
 
         if isinstance(self._offline_controller, LimossRemoteController):
             self._offline_controller.underbed_light = light
@@ -1664,8 +1620,8 @@ class AdjustableBedCoordinator(
         if self._bed_type != BED_TYPE_LINAK:
             return None
 
-        raw_variant = self._controller_state.get("linak_model_variant")
-        if not isinstance(raw_variant, str) or raw_variant == "unknown":
+        raw_variant = self._controller_state.get(LINAK_MODEL_VARIANT)
+        if raw_variant is None or raw_variant == "unknown":
             return None
 
         labels = {
@@ -1794,68 +1750,6 @@ class AdjustableBedCoordinator(
                     self._address,
                 )
 
-    async def _async_read_sleepys_app_device_info(
-        self,
-        client: BleakClient,
-        session_generation: int,
-    ) -> None:
-        """Read the app's exact optional Device Information fields after notify setup."""
-
-        def session_is_current() -> bool:
-            return (
-                self._client is client
-                and client.is_connected
-                and self._position_connection_generation == session_generation
-            )
-
-        if not session_is_current():
-            return
-
-        if not any(
-            service.uuid.lower() == DEVICE_INFO_SERVICE_UUID for service in (client.services or ())
-        ):
-            _LOGGER.debug("Sleepy's Device Information service is absent on %s", self._address)
-            return
-
-        values: dict[str, str | None] = {
-            "manufacturer_name": None,
-            "software_revision": None,
-        }
-        for field in ("manufacturer_name", "software_revision"):
-            if not session_is_current():
-                return
-            try:
-                raw_value = await asyncio.wait_for(
-                    client.read_gatt_char(DEVICE_INFO_CHARS[field]),
-                    DEVICE_INFO_READ_TIMEOUT,
-                )
-            except Exception as err:
-                _LOGGER.debug(
-                    "Could not read Sleepy's Device Information %s from %s: %s",
-                    field,
-                    self._address,
-                    err,
-                )
-                continue
-
-            if not session_is_current():
-                return
-            try:
-                values[field] = raw_value.decode("utf-8").rstrip("\x00")
-            except UnicodeDecodeError as err:
-                _LOGGER.debug(
-                    "Could not decode Sleepy's Device Information %s from %s: %s",
-                    field,
-                    self._address,
-                    err,
-                )
-
-        if session_is_current():
-            self._store_ble_device_info(
-                values["manufacturer_name"],
-                values["software_revision"],
-            )
-
     def record_command_trace(
         self,
         *,
@@ -1932,10 +1826,7 @@ class AdjustableBedCoordinator(
         if self._controller is None:
             return
 
-        # Jensen can require a fresh PIN unlock command even on reused BLE connections.
-        if self._bed_type == BED_TYPE_JENSEN and hasattr(self._controller, "send_pin"):
-            _LOGGER.debug("Refreshing Jensen PIN unlock before command on %s", self._address)
-            await cast(Any, self._controller).send_pin()
+        await self._controller.async_refresh_auth()
 
     async def async_write_command(
         self,
@@ -2069,7 +1960,7 @@ class AdjustableBedCoordinator(
         _LOGGER.info("Stop requested - cancelling current command")
 
         if self._bed_type in STARCODE_GROUP_BED_TYPES:
-            from .starcode_accessory_group import cancel_group_operations
+            from .beds.starcode.accessory_group import cancel_group_operations
 
             # Fence public STOP before the wire wait; retained cleanup has its
             # own scope and must not invalidate the replacing individual move.
@@ -2197,7 +2088,7 @@ class AdjustableBedCoordinator(
             )
         await self._async_refresh_controller_auth()
         if self._bed_type == BED_TYPE_OCTO:
-            from .octo_runtime import octo_controller
+            from .beds.octo.runtime import octo_controller
 
             octo = octo_controller(controller)
             if octo is not None:
@@ -2218,12 +2109,9 @@ class AdjustableBedCoordinator(
         if disconnected_transport:
             return
 
-        if self._bed_type == BED_TYPE_LINAK and not self._command_scheduler.has_pending:
-            # A cold Linak link can defer its actuator mask and timer channel
-            # until the first command. Persist the now-resolved snapshot after
-            # that command so the entry reload reconciles its capability-gated
-            # entities without interrupting a queued operation.
-            self._backfill_linak_snapshot()
+        # Persist a snapshot the command resolved (a cold Linak link defers its
+        # actuator mask) without interrupting a queued operation.
+        self._persist_capability_snapshot_after_operation()
 
         if self._client is None or not self._client.is_connected:
             return
@@ -2624,7 +2512,7 @@ class AdjustableBedCoordinator(
         if stream_member and self.stop_stream_member(resource):
             return
         if self._bed_type in STARCODE_GROUP_BED_TYPES:
-            from .starcode_accessory_group import cancel_group_operations
+            from .beds.starcode.accessory_group import cancel_group_operations
 
             cancel_group_operations(self.hass, self.entry.entry_id)
         # Keep preemptible non-scheduler work responsive, as every STOP does.
@@ -2794,7 +2682,7 @@ class AdjustableBedCoordinator(
             return
 
         if self._bed_type in STARCODE_GROUP_BED_TYPES:
-            from .starcode_accessory_group import prepare_individual_command
+            from .beds.starcode.accessory_group import prepare_individual_command
 
             settled_group = await prepare_individual_command(self, controller_command)
             if settled_group and expected_stop_epoch is not None:
@@ -3179,7 +3067,7 @@ class AdjustableBedCoordinator(
             self._controller.set_raw_notify_callback(callback)
 
     def register_controller_state_callback(
-        self, callback_fn: Callable[[dict[str, Any]], None]
+        self, callback_fn: Callable[[ControllerState], None]
     ) -> Callable[[], None]:
         """Register a callback for non-position controller state updates."""
         self._controller_state_callbacks.add(callback_fn)
@@ -3222,19 +3110,19 @@ class AdjustableBedCoordinator(
 
         return not required_keys.issubset(self._controller_state)
 
-    def _readable_light_state_required_keys(self) -> set[str]:
+    def _readable_light_state_required_keys(self) -> set[AnyStateKey]:
         """Return the readable light-state keys expected for the current controller."""
         controller = self._controller
         if controller is None or not controller.supports_under_bed_lights:
             return set()
 
-        required_keys: set[str] = set()
+        required_keys: set[AnyStateKey] = set()
         if controller.supports_discrete_light_control:
-            required_keys.add("under_bed_lights_on")
+            required_keys.add(UNDER_BED_LIGHTS_ON)
         if controller.supports_light_level_control:
-            required_keys.add("light_level")
+            required_keys.add(LIGHT_LEVEL)
         if controller.supports_light_timer:
-            required_keys.update({"light_timer_minutes", "light_timer_option"})
+            required_keys.update({LIGHT_TIMER_MINUTES, LIGHT_TIMER_OPTION})
         return required_keys
 
     @callback
@@ -3265,16 +3153,17 @@ class AdjustableBedCoordinator(
         self._schedule_controller_state_refresh(retry_delay=_READABLE_LIGHT_STATE_RETRY_DELAY)
 
     @callback
-    def _merge_controller_light_state(self, state: dict[str, Any]) -> None:
+    def _merge_controller_light_state(self, state: tuple[StateUpdate, ...]) -> None:
         """Merge readable light-state values into coordinator state."""
-        if "is_on" in state and "under_bed_lights_on" not in state:
-            state = {**state, "under_bed_lights_on": state["is_on"]}
-
-        updates = {
-            key: value for key, value in state.items() if self._controller_state.get(key) != value
-        }
-        if updates:
-            self.handle_controller_state_updates(updates)
+        # The last update of a key wins, as it does when published.
+        latest = {update.key: update for update in state}
+        self.handle_controller_state_updates(
+            *(
+                update
+                for update in latest.values()
+                if self._controller_state.get(update.key) != update.value
+            )
+        )
         if not self._should_refresh_readable_light_state(force=False):
             self._cancel_controller_state_refresh_retry()
 
@@ -3284,7 +3173,7 @@ class AdjustableBedCoordinator(
         if controller is None:
             return
 
-        state: dict[str, Any] | None = None
+        state: tuple[StateUpdate, ...] | None = None
         cancelled_error: asyncio.CancelledError | None = None
         should_retry = False
         try:
@@ -3334,7 +3223,7 @@ class AdjustableBedCoordinator(
         should_retry = False
         try:
 
-            async def _read_light_state(controller: BedController) -> dict[str, Any]:
+            async def _read_light_state(controller: BedController) -> tuple[StateUpdate, ...]:
                 return await controller.read_light_state()
 
             async with asyncio.timeout(_READABLE_LIGHT_STATE_TIMEOUT):
@@ -3425,9 +3314,9 @@ class AdjustableBedCoordinator(
         )
 
     @callback
-    def handle_controller_state_update(self, key: str, value: Any) -> None:
+    def handle_controller_state_update[T](self, key: StateKey[T], value: T) -> None:
         """Store a single controller state value and notify listeners."""
-        self.handle_controller_state_updates({key: value})
+        self.handle_controller_state_updates(key(value))
 
     async def async_set_furnimove_massage_duration(self, minutes: int) -> None:
         """Serialize an app preference without reserving a Bluetooth connection."""
@@ -3487,12 +3376,12 @@ class AdjustableBedCoordinator(
         await self._app_state_store.async_write(slot, state)
 
     @callback
-    def handle_controller_state_updates(self, updates: dict[str, Any]) -> None:
-        """Store controller state values and notify listeners."""
+    def handle_controller_state_updates(self, *updates: StateUpdate) -> None:
+        """Store ``KEY(value)`` updates and notify listeners."""
         if not updates:
             return
 
-        self._controller_state.update(updates)
+        self._controller_state.update((update.key, update.value) for update in updates)
         self.save_app_state()
         for callback_fn in list(self._controller_state_callbacks):
             try:

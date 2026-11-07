@@ -8,6 +8,10 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 
+from custom_components.adjustable_bed.beds.starcode.accessory_group import (
+    _GROUP_DISPATCH,
+    run_group,
+)
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
@@ -19,7 +23,6 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.pairing_candidates import active_pairing_candidates
-from custom_components.adjustable_bed.starcode_accessory_group import _GROUP_DISPATCH, run_group
 from tests.test_starcode_accessory_group import group, target
 
 

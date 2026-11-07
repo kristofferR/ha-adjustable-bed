@@ -12,11 +12,11 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.leggett_gen2 import (
+from custom_components.adjustable_bed.beds.leggett.gen2 import (
     LeggettGen2Commands,
     LeggettGen2Controller,
 )
-from custom_components.adjustable_bed.beds.leggett_okin import (
+from custom_components.adjustable_bed.beds.leggett.okin import (
     LeggettOkinController,
 )
 from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS, _should_add_button
@@ -34,6 +34,7 @@ from custom_components.adjustable_bed.const import (
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
+    LEGGETT_GEN2_SERVICE_UUID,
     LEGGETT_GEN2_WRITE_CHAR_UUID,
     LEGGETT_OKIN_CHAR_UUID,
     LEGGETT_OKIN_NOTIFY_CHAR_UUID,
@@ -45,11 +46,13 @@ from custom_components.adjustable_bed.const import (
     LEGGETT_VARIANT_OKIN,
     OKIN_SMART_REMOTE_CSS_NOTIFY_CHAR_UUID,
     OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID,
+    RICHMAT_WILINKE_SERVICE_UUIDS,
     VARIANT_AUTO,
     connection_gated_by_bond,
     requires_pairing,
     requires_pairing_after_service_discovery,
 )
+from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.profiles.okin_nframe import LEGGETT_PROFILES
 
@@ -275,9 +278,6 @@ class TestLeggettOkinController:
             "pillow",
             "feet",
         ]
-        assert controller.stale_motor_entity_keys == frozenset(
-            {"back", "legs", "tilt", "pillow", "lumbar"}
-        )
 
     async def test_motor_streams_then_sends_four_release_frames(self):
         """Held keycodes stream at the configured cadence, then release with four zeros.
@@ -666,8 +666,8 @@ class TestLeggettGen2Connection:
         [
             (BED_TYPE_LEGGETT_GEN2, VARIANT_AUTO, True),
             (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_GEN2, True),
-            # Before a controller is resolved, only auto/gen2 leggett_platt is
-            # assumed persistent; okin and mlrm reconnect normally.
+            # Before a controller is resolved, auto/gen2 leggett_platt assume
+            # Gen2's persistent link; okin and mlrm reconnect normally.
             (BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO, True),
             (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_MLRM, False),
             (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN, False),
@@ -682,22 +682,28 @@ class TestLeggettGen2Connection:
         assert coordinator._persistent_connection_resolved is None
         assert coordinator._uses_persistent_connection() is expected
 
-    async def test_resolved_controller_is_authoritative(self, hass: HomeAssistant):
+    @pytest.mark.parametrize(
+        ("service_uuid", "controller_name", "persistent"),
+        [
+            (RICHMAT_WILINKE_SERVICE_UUIDS[0], "LeggettWilinkeController", False),
+            (LEGGETT_GEN2_SERVICE_UUID, "LeggettGen2Controller", True),
+        ],
+    )
+    async def test_resolved_controller_is_authoritative(
+        self, hass: HomeAssistant, service_uuid: str, controller_name: str, persistent: bool
+    ):
         """Once resolved, the controller decides — a leggett_platt+auto that
         resolved to WiLinke/MlRM is NOT persistent; one that resolved to Gen2 is
         (issue #385 review, both directions)."""
-        from custom_components.adjustable_bed.beds.leggett_gen2 import LeggettGen2Controller
-        from custom_components.adjustable_bed.beds.leggett_wilinke import (
-            LeggettWilinkeController,
+        coordinator = self._coordinator(hass, BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO)
+        client = SimpleNamespace(services=[SimpleNamespace(uuid=service_uuid)])
+
+        coordinator._controller = await create_controller(
+            coordinator, BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO, client
         )
 
-        coordinator = self._coordinator(hass, BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO)
-
-        coordinator._controller = LeggettWilinkeController(coordinator)
-        assert coordinator._uses_persistent_connection() is False
-
-        coordinator._controller = LeggettGen2Controller(coordinator)
-        assert coordinator._uses_persistent_connection() is True
+        assert type(coordinator._controller).__name__ == controller_name
+        assert coordinator._uses_persistent_connection() is persistent
 
     async def test_persistence_cached_across_disconnect(self, hass: HomeAssistant):
         """_on_disconnect clears the controller before the reconnect decision, so
@@ -885,25 +891,8 @@ class TestLeggettGen2Capabilities:
             hass, mock_leggett_gen2_config_entry, 5
         ).manual_disconnect_strands_connection is True
 
-    async def test_stale_motor_keys_for_absent_actuators(
-        self, hass: HomeAssistant, mock_leggett_gen2_config_entry
-    ):
-        # Product 10011: head only -> legs/pillow/lumbar removable, plus the
-        # duplicate head/feet keys Gen2 never exposes.
-        c = self._controller(hass, mock_leggett_gen2_config_entry, 10011)
-        assert c.stale_motor_entity_keys == frozenset(
-            {"legs", "pillow", "lumbar", "head", "feet"}
-        )
         # Full profile (5): only the duplicate head/feet keys are stale.
-        assert self._controller(
-            hass, mock_leggett_gen2_config_entry, 5
-        ).stale_motor_entity_keys == frozenset({"head", "feet"})
         # No-actuator profile (10014): everything is stale.
-        assert self._controller(
-            hass, mock_leggett_gen2_config_entry, 10014
-        ).stale_motor_entity_keys == frozenset(
-            {"back", "legs", "pillow", "lumbar", "head", "feet"}
-        )
 
     async def test_set_light_color_updates_cache(
         self,
@@ -1000,7 +989,7 @@ class TestLeggettMovement:
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
         await coordinator.async_connect()
 
-        with patch("custom_components.adjustable_bed.beds.leggett_gen2.asyncio.sleep"):
+        with patch("custom_components.adjustable_bed.beds.leggett.gen2.asyncio.sleep"):
             await coordinator.controller.move_head_up()
 
         # _move_with_stop sends the head-up command then the per-actuator stop
@@ -1061,7 +1050,7 @@ class TestLeggettPresets:
         await coordinator.async_connect()
         mock_bleak_client.write_gatt_char.reset_mock()  # ignore the GET STATE on connect
 
-        with patch("custom_components.adjustable_bed.beds.leggett_gen2.asyncio.sleep"):
+        with patch("custom_components.adjustable_bed.beds.leggett.gen2.asyncio.sleep"):
             await coordinator.controller.preset_flat()
 
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
@@ -1079,7 +1068,7 @@ class TestLeggettPresets:
         await coordinator.async_connect()
         mock_bleak_client.write_gatt_char.reset_mock()  # ignore the GET STATE on connect
 
-        with patch("custom_components.adjustable_bed.beds.leggett_gen2.asyncio.sleep"):
+        with patch("custom_components.adjustable_bed.beds.leggett.gen2.asyncio.sleep"):
             await coordinator.controller.preset_anti_snore()
 
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
@@ -1108,7 +1097,7 @@ class TestLeggettPresets:
         await coordinator.async_connect()
         mock_bleak_client.write_gatt_char.reset_mock()  # ignore the GET STATE on connect
 
-        with patch("custom_components.adjustable_bed.beds.leggett_gen2.asyncio.sleep"):
+        with patch("custom_components.adjustable_bed.beds.leggett.gen2.asyncio.sleep"):
             await coordinator.controller.preset_memory(memory_num)
 
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]

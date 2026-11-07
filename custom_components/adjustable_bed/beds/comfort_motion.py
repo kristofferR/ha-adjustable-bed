@@ -11,16 +11,18 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Final, Literal
 
 from ..codec import jiecang as codec
+from ..controller_state import StateKey
 from ..profiles.jiecang import (
     COMFORT_MOTION,
     light_toggle_command,
     memory_command,
     preset_command,
 )
-from .jiecang import JiecangProfileController
+from ..state_keys import UNDER_BED_LIGHTS_ON, massage_intensity
+from .jiecang.controller import JiecangProfileController
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -32,6 +34,11 @@ MassageKey = Literal["head", "foot"]
 # The app's head and foot massage drive the back and legs zones.
 _MASSAGE_ZONES: dict[MassageKey, codec.MassageZone] = {"head": "back", "foot": "legs"}
 _WAKE_PRESETS = ("zero_g", "flat", "anti_snore", "memory_1", "memory_2")
+_LAYOUT: Final = StateKey[int | None]("comfort_motion_layout")
+
+
+def _wire_key(zone: str) -> StateKey[int]:
+    return StateKey[int](f"comfort_motion_{zone}_wire")
 
 
 class ComfortMotionController(JiecangProfileController):
@@ -60,11 +67,11 @@ class ComfortMotionController(JiecangProfileController):
         self._started = False
         self._transport = ""
         state = coordinator.controller_state
-        self._reported_layout = state.get("comfort_motion_layout")
+        self._reported_layout = state.get(_LAYOUT)
         self._levels: dict[MassageKey, int] = {
-            zone: state.get(f"comfort_motion_{zone}_wire", 0) for zone in _MASSAGE_ZONES
+            zone: state.get(_wire_key(zone), 0) for zone in _MASSAGE_ZONES
         }
-        self._light = state.get("under_bed_lights_on")
+        self._light = state.get(UNDER_BED_LIGHTS_ON)
 
     def _select_transport(self) -> None:
         if self.client is None or self.client.services is None:
@@ -173,14 +180,16 @@ class ComfortMotionController(JiecangProfileController):
         else:
             return
         # Layout replies do not reset selected axes, zone state or intensities.
-        updates: dict[str, object] = {"comfort_motion_layout": self._reported_layout}
-        updates.update(
-            {f"comfort_motion_{zone}_wire": value for zone, value in self._levels.items()}
-        )
+        levels = self.profile.massage_levels
+        updates = [_LAYOUT(self._reported_layout)]
+        updates += [_wire_key(zone)(value) for zone, value in self._levels.items()]
         if self._light is not None:
-            updates["under_bed_lights_on"] = self._light
-        updates.update(self.get_massage_state())
-        self.forward_controller_state_updates(updates)
+            updates.append(UNDER_BED_LIGHTS_ON(self._light))
+        updates += [
+            massage_intensity(zone)(levels.index(value) if value in levels else None)
+            for zone, value in self._levels.items()
+        ]
+        self.forward_controller_state_updates(*updates)
 
     async def move_lumbar_up(self) -> None:
         await self._move_axis("lumbar", True)
@@ -192,6 +201,10 @@ class ComfortMotionController(JiecangProfileController):
         await self.stop_all()
 
     # Massage
+
+    @property
+    def has_dynamic_buttons(self) -> bool:
+        return True
 
     @property
     def supports_massage(self) -> bool:
@@ -208,13 +221,6 @@ class ComfortMotionController(JiecangProfileController):
     @property
     def massage_intensity_zones(self) -> list[str]:
         return list(_MASSAGE_ZONES)
-
-    def get_massage_state(self) -> dict[str, object]:
-        levels = self.profile.massage_levels
-        return {
-            f"{zone}_intensity": levels.index(value) if value in levels else None
-            for zone, value in self._levels.items()
-        }
 
     async def set_massage_intensity(self, zone: str, level: int) -> None:
         if zone not in _MASSAGE_ZONES or level not in range(len(self.profile.massage_levels)):
@@ -280,9 +286,6 @@ class ComfortMotionController(JiecangProfileController):
             raise ValueError("Read light state before using a desired-state light action")
         if self._light != desired:
             await self.lights_toggle()
-
-    def get_light_state(self) -> dict[str, object]:
-        return {"is_on": self._light} if self._light is not None else {}
 
     # Rename
 

@@ -18,11 +18,11 @@ from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import async_setup_entry, async_unload_entry
-from custom_components.adjustable_bed.beds import reverie_pairlink_transport as transport
-from custom_components.adjustable_bed.beds.reverie_pairlink_profile import (
+from custom_components.adjustable_bed.beds.reverie import pairlink_transport as transport
+from custom_components.adjustable_bed.beds.reverie.pairlink_profile import (
     build_pairlink_peripheral_profile,
 )
-from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import (
+from custom_components.adjustable_bed.beds.reverie.pairlink_protocol import (
     PAIRLINK_BROADCAST_ADDRESS,
     PAIRLINK_LOW_POWER_NOTIFY_UUID,
     PAIRLINK_LOW_POWER_WRITE_UUID,
@@ -36,9 +36,13 @@ from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import (
     fragment_central_frame,
     status_sync_payloads,
 )
-from custom_components.adjustable_bed.beds.reverie_pairlink_runtime import (
+from custom_components.adjustable_bed.beds.reverie.pairlink_runtime import (
     PairlinkRuntime,
     PairlinkSendSnapshot,
+)
+from custom_components.adjustable_bed.beds.reverie.services import (
+    SERVICE_REVERIE_PAIRLINK_ALARM_COMFORT,
+    SERVICE_REVERIE_SET_COMFORT,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_REVERIE_PAIRLINK,
@@ -50,10 +54,6 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
     PAIRLINK_ROLE_CENTRAL,
     PAIRLINK_ROLE_PERIPHERAL,
-)
-from custom_components.adjustable_bed.reverie_services import (
-    SERVICE_REVERIE_PAIRLINK_ALARM_COMFORT,
-    SERVICE_REVERIE_SET_COMFORT,
 )
 from tests.test_reverie_pairlink_transport import (
     _PEER_ADDRESS,
@@ -384,7 +384,7 @@ async def test_offline_factory_builds_entry_runtime_without_transport_start(
     role: str,
     requires_local_transport: bool,
 ) -> None:
-    from custom_components.adjustable_bed.beds.reverie_pairlink import ReveriePairlinkController
+    from custom_components.adjustable_bed.beds.reverie.pairlink import ReveriePairlinkController
     from custom_components.adjustable_bed.controller_factory import create_controller
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
@@ -867,7 +867,7 @@ async def test_local_welcome_backup_exit_timer_and_primary_disconnect_cleanup(
     backup_identity = runtime.peer_sessions[backup_address].identity
     assert backup_identity is not None
 
-    from custom_components.adjustable_bed.beds.reverie_pairlink_runtime import (
+    from custom_components.adjustable_bed.beds.reverie.pairlink_runtime import (
         PairlinkPeerLifecycleEvent,
         PairlinkPeerLifecycleKind,
     )
@@ -892,7 +892,7 @@ async def test_local_welcome_backup_exit_timer_and_primary_disconnect_cleanup(
 
     timers[0].fire()
     await hass.async_block_till_done()
-    from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import (
+    from custom_components.adjustable_bed.beds.reverie.pairlink_protocol import (
         PAIRLINK_EXIT_COMMAND,
     )
 
@@ -1297,7 +1297,7 @@ async def test_registered_local_provisioning_keeps_p256_state_per_physical_peer(
     from cryptography.hazmat.primitives.asymmetric import ec
     from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
-    from custom_components.adjustable_bed.beds.reverie_pairlink_runtime import (
+    from custom_components.adjustable_bed.beds.reverie.pairlink_runtime import (
         _derive_provision_confirmation,
         _derive_provision_data,
     )
@@ -1432,7 +1432,7 @@ async def test_local_native_subtype04_uses_only_current_initialized_transcript(
 ) -> None:
     pytest.importorskip("cryptography")
     del enable_custom_integrations
-    from custom_components.adjustable_bed.beds.reverie_pairlink_runtime import (
+    from custom_components.adjustable_bed.beds.reverie.pairlink_runtime import (
         _derive_provision_confirmation,
     )
 
@@ -1484,7 +1484,9 @@ async def test_local_provisioning_fails_closed_when_native_init_cannot_create_ke
     enable_custom_integrations: None,
 ) -> None:
     del enable_custom_integrations
-    from custom_components.adjustable_bed.beds import reverie_pairlink_runtime
+    from custom_components.adjustable_bed.beds.reverie import (
+        pairlink_runtime as reverie_pairlink_runtime,
+    )
 
     bus = FakeBlueZBus()
     entry = _entry()
@@ -1665,7 +1667,7 @@ async def test_central_entry_factory_routes_real_notify_callback_and_action(
     from homeassistant.components import bluetooth
 
     from custom_components.adjustable_bed import bluetooth_transport
-    from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import (
+    from custom_components.adjustable_bed.beds.reverie.pairlink_protocol import (
         PAIRLINK_NOTIFY_UUID,
         PAIRLINK_SERVICE_UUID,
         PAIRLINK_WRITE_UUID,
@@ -2224,9 +2226,9 @@ async def test_local_profile_reservation_covers_adapter_aliases_before_bus_open(
     second_entry = _entry(address="00:10:20:30:40:51", host_source=alias_source)
     from homeassistant.components import bluetooth
 
-    from custom_components.adjustable_bed import (
-        _async_setup_pairlink_local_entry,
-        bluetooth_transport,
+    from custom_components.adjustable_bed import bluetooth_transport
+    from custom_components.adjustable_bed.beds.reverie.pairlink_local_setup import (
+        async_setup_pairlink_local_entry,
     )
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
@@ -2243,7 +2245,9 @@ async def test_local_profile_reservation_covers_adapter_aliases_before_bus_open(
     monkeypatch.setattr(transport, "_new_dbus_fast_bus", lambda: second_bus)
     second_coordinator = AdjustableBedCoordinator(hass, second_entry)
     with pytest.raises(ConfigEntryNotReady, match="already owns a Pairlink local profile"):
-        await _async_setup_pairlink_local_entry(hass, second_entry, second_coordinator)
+        await async_setup_pairlink_local_entry(
+            hass, second_entry, second_coordinator, AsyncMock()
+        )
 
     assert second_bus.events == []
     assert hass.data[DOMAIN]["_pairlink_local_profile_leases"] == {"hci3": first_entry.entry_id}
@@ -2261,13 +2265,15 @@ async def test_paired_local_children_start_distinct_selected_backends(
     del enable_custom_integrations
     from homeassistant.components import bluetooth
 
-    from custom_components.adjustable_bed import (
-        _async_start_paired_pairlink_local_child,
-        _preflight_paired_pairlink_local_roles,
+    from custom_components.adjustable_bed.beds.reverie import (
+        pairlink_profile as reverie_pairlink_profile,
     )
-    from custom_components.adjustable_bed.beds import (
-        reverie_pairlink_profile,
-        reverie_pairlink_runtime,
+    from custom_components.adjustable_bed.beds.reverie import (
+        pairlink_runtime as reverie_pairlink_runtime,
+    )
+    from custom_components.adjustable_bed.beds.reverie.pairlink_local_setup import (
+        async_preflight_paired_pairlink_local_roles,
+        async_start_paired_pairlink_local_child,
     )
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
@@ -2302,7 +2308,7 @@ async def test_paired_local_children_start_distinct_selected_backends(
         entry_id="pairlink-pair-test",
         async_on_unload=unload_callbacks.append,
     )
-    selected_inventory, roles, transfers = _preflight_paired_pairlink_local_roles(
+    selected_inventory, roles, transfers = await async_preflight_paired_pairlink_local_roles(
         hass,
         parent,
         {"left": first_child, "right": second_child},
@@ -2352,7 +2358,7 @@ async def test_paired_local_children_start_distinct_selected_backends(
         FakePeripheralBackend,
     )
     for side, child, source, _adapter, _owner in roles:
-        await _async_start_paired_pairlink_local_child(
+        await async_start_paired_pairlink_local_child(
             hass,
             child,
             host_adapter_source=source,

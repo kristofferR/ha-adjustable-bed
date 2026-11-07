@@ -4,7 +4,7 @@ from dataclasses import astuple
 
 import pytest
 
-from custom_components.adjustable_bed.vibradorm_vmat_discovery import (
+from custom_components.adjustable_bed.beds.vibradorm.vmat_discovery import (
     VmatOnboardingReports,
     extract_vmat_raw_ad,
     parse_vmat_manufacturer,

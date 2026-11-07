@@ -13,9 +13,15 @@ import logging
 from typing import TYPE_CHECKING
 
 from ..codec import okin_nframe as codec
+from ..const import (
+    DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
+    DEWERTOKIN_RF_GATEWAY_MODEL,
+    DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
+)
+from .builder import BuildContext
 from .okin_handle import OkinHandleController
 from .okin_nframe import OkinNFrameController
-from .okin_uuid import OkinUuidController
+from .okin_uuid.controller import OkinUuidController
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -60,3 +66,12 @@ class DewertOkinUuidRfGatewayController(_DewertOkinRfGatewayFrame, OkinUuidContr
         _LOGGER.debug(
             "DewertOkinUuidRfGatewayController initialized with variant %s", self._variant
         )
+
+
+def is_rf_gateway(ctx: BuildContext) -> bool:
+    """Return True when a DewertOkin/Okin entry is the RF-Gateway command variant."""
+    if ctx.ble_model is not None and ctx.ble_model.strip().lower() == DEWERTOKIN_RF_GATEWAY_MODEL.lower():
+        return True
+    return ctx.has_characteristic(
+        DEWERTOKIN_RF_GATEWAY_SERVICE_UUID, DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID
+    )

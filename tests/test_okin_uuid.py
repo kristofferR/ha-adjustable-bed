@@ -10,7 +10,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.okin_uuid import (
+from custom_components.adjustable_bed.beds.okin_uuid.controller import (
     OKIN_UUID_REMOTES,
     OkinUuidComplexCommand,
     OkinUuidController,
@@ -930,19 +930,6 @@ class TestOkinUuidMotorLayout:
 
         assert coordinator.controller.supports_lights is True
 
-    async def test_stale_keys_cover_absent_axes(
-        self,
-        hass: HomeAssistant,
-        mock_coordinator_connected,
-    ):
-        """All motor keys are stale candidates; active axes are skipped by cleanup."""
-        coordinator = self._controller(hass, "90658")
-        await coordinator.async_connect()
-
-        stale = coordinator.controller.stale_motor_entity_keys
-        assert {"stair", "back", "legs", "head", "feet"} <= stale
-
-
 class TestOkinUuidFurniMoveCatalog:
     """Handsets in the pinned FurniMove catalog have exactly one keycode source."""
 
@@ -951,11 +938,11 @@ class TestOkinUuidFurniMoveCatalog:
     V4_0_2_KEYCODE_DIGEST = "9b8ddfb7583fc1d66847977fb4c20928dd2f77edb81552fb4ee6d515fdccad70"
 
     def test_catalog_handsets_have_no_generated_row(self) -> None:
-        from custom_components.adjustable_bed.beds.okin_uuid_remotes import (
-            OKIN_UUID_REMOTE_DATA,
-        )
-        from custom_components.adjustable_bed.furnimove_profiles import (
+        from custom_components.adjustable_bed.beds.furnimove.profiles import (
             FURNIMOVE_PRODUCTION_IDS,
+        )
+        from custom_components.adjustable_bed.beds.okin_uuid.remotes import (
+            OKIN_UUID_REMOTE_DATA,
         )
 
         assert FURNIMOVE_PRODUCTION_IDS.isdisjoint(OKIN_UUID_REMOTE_DATA)
@@ -990,3 +977,15 @@ class TestOkinUuidFurniMoveCatalog:
         dot = OKIN_UUID_REMOTES["93558"]
         assert dot.dot is True
         assert (dot.flat, dot.anti_snore, dot.zero_gravity) == (0x08000000, 0x4000, 0x1000)
+
+
+def test_remote_table_records_its_generator_input() -> None:
+    """The generated table names the master.json it was built from."""
+    import hashlib
+    from pathlib import Path
+
+    from custom_components.adjustable_bed.beds.okin_uuid import remotes as okin_uuid_remotes
+
+    master = Path(__file__).parents[1] / "tools/okin_remotes/master.json"
+    digest = hashlib.sha256(master.read_bytes()).hexdigest()
+    assert f"tools/okin_remotes/master.json {digest}" in (okin_uuid_remotes.__doc__ or "")

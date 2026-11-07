@@ -2,9 +2,9 @@
 
 from unittest.mock import AsyncMock, MagicMock
 
-from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.beds.limoss.remote_state import LimossRemoteMemory
 from custom_components.adjustable_bed.button import (
     AdjustableBedButton,
     ControllerActionButton,
@@ -12,13 +12,13 @@ from custom_components.adjustable_bed.button import (
 )
 from custom_components.adjustable_bed.const import BED_TYPE_LIMOSS_REMOTE, DOMAIN
 from custom_components.adjustable_bed.cover import _cover_entities_for
-from custom_components.adjustable_bed.limoss_remote_state import LimossRemoteMemory
 from tests.test_limoss_remote import make_controller
 
 
 def runtime(controller, side=None):
     coordinator = MagicMock()
     coordinator.bed_type = BED_TYPE_LIMOSS_REMOTE
+    coordinator.controller_side = None
     coordinator.capability_controller = controller
     coordinator.controller = controller
     coordinator.has_massage = False
@@ -27,7 +27,6 @@ def runtime(controller, side=None):
     coordinator.entity_unique_id.side_effect = lambda key: (
         f"target_{key}" + (f"_{side}" if side else "")
     )
-    coordinator.entity_translation_key.side_effect = lambda key: key + (f"_{side}" if side else "")
     return coordinator
 
 
@@ -97,21 +96,13 @@ async def test_motor_cover_and_app_button_use_current_literal_action(hass):
     assert action.translation_key == "remote_action"
 
 
-async def test_removed_app_actions_are_pruned_only_for_same_physical_side(hass):
+async def test_removed_app_actions_are_not_built(hass):
     entry = MockConfigEntry(domain=DOMAIN, data={})
     entry.add_to_hass(hass)
-    registry = er.async_get(hass)
-    stale = registry.async_get_or_create(
-        "button", DOMAIN, "target_limoss_remote_light_left", config_entry=entry
-    )
-    opposite = registry.async_get_or_create(
-        "button", DOMAIN, "target_limoss_remote_light_right", config_entry=entry
-    )
     coordinator = runtime(make_controller(light=False), "left")
     coordinator.entry = entry
-    _button_entities_for(hass, coordinator)
-    assert registry.async_get(stale.entity_id) is None
-    assert registry.async_get(opposite.entity_id) is not None
+    buttons = {entity.unique_id for entity in _button_entities_for(hass, coordinator)}
+    assert "target_limoss_remote_light_left" not in buttons
 
 
 def test_other_controller_empty_memory_name_keeps_existing_translated_fallback():
@@ -122,6 +113,8 @@ def test_other_controller_empty_memory_name_keeps_existing_translated_fallback()
 
     coordinator = runtime(make_controller())
     coordinator.bed_type = "octo"
-    coordinator.controller = MagicMock(memory_slot_names=("",))
+    coordinator.controller = MagicMock(
+        memory_slot_names=("",), memory_slot_names_allow_blank=False
+    )
     description = next(row for row in BUTTON_DESCRIPTIONS if row.key == "preset_memory_1")
     assert _discovered_memory_slot_name(coordinator, description) is None

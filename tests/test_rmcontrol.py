@@ -8,11 +8,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed.beds.rmcontrol import (
+from custom_components.adjustable_bed.beds.rmcontrol.controller import (
     RmcontrolController,
     detect_rmcontrol_transport,
 )
-from custom_components.adjustable_bed.rmcontrol_protocol import Notification
+from custom_components.adjustable_bed.beds.rmcontrol.protocol import Notification
+from tests.state_helpers import published, state_writer
 
 
 def controller(
@@ -210,9 +211,7 @@ async def test_notify_exact_role_probes_buffer_and_state_forwarding() -> None:
     assert not ctrl.supports_rmcontrol_alarm
     callback(None, bytearray.fromhex("0078"))
     assert not ctrl.supports_rmcontrol_alarm  # This exact product has no alarmList.
-    ctrl._coordinator.handle_controller_state_updates.assert_called_with(
-        {"rmcontrol_capability_alarm": True}
-    )
+    assert published(*ctrl._coordinator.handle_controller_state_updates.call_args.args) == {"rmcontrol_capability_alarm": True}
     await ctrl.stop_notify()
     client.stop_notify.assert_awaited_once_with(notify_uuid)
 
@@ -326,7 +325,7 @@ def test_reported_state_precedes_entity_discovery_callback_and_retains_alarm_rec
     ctrl = controller()
     assert ctrl.controller_state_sensor_specs == ()
     snapshots = []
-    ctrl._coordinator.handle_controller_state_updates.side_effect = lambda _: snapshots.append(
+    ctrl._coordinator.handle_controller_state_updates.side_effect = lambda *_: snapshots.append(
         {spec.key for spec in ctrl.controller_state_sensor_specs}
     )
     ctrl._accept_notification(Notification("light_timer", {"seconds": 120}))
@@ -362,7 +361,7 @@ async def test_reconnect_clears_previously_forwarded_telemetry() -> None:
     client.services.get_characteristic.return_value.properties = ["notify"]
     ctrl.write_command = AsyncMock()
     await ctrl.start_notify()
-    cleared = ctrl._coordinator.handle_controller_state_updates.call_args.args[0]
+    cleared = published(*ctrl._coordinator.handle_controller_state_updates.call_args.args)
     assert cleared["under_bed_lights_rgb"] is None
     assert cleared["under_bed_lights_on"] is None
     assert cleared["rmcontrol_light_timer_seconds"] is None
@@ -377,7 +376,7 @@ async def test_alarm_query_invalidates_previous_observations_without_claiming_de
     ctrl._accept_notification(Notification("repeat_alarm", {"alarm_id": 1, "hour": 7}))
     await ctrl.rmcontrol_query_alarms()
     assert ctrl.protocol_diagnostics["last_received_alarm_records"] == {}
-    assert ctrl._coordinator.handle_controller_state_updates.call_args.args[0] == {
+    assert published(*ctrl._coordinator.handle_controller_state_updates.call_args.args) == {
         "rmcontrol_repeat_alarm_alarm_id": None,
         "rmcontrol_repeat_alarm_hour": None,
     }
@@ -395,10 +394,11 @@ async def test_alarm_delete_invalidates_only_the_displayed_slot(deleted_id: int)
     assert set(ctrl.protocol_diagnostics["last_received_alarm_records"]) == {3 - deleted_id}
     if deleted_id == 2:
         assert "rmcontrol_repeat_alarm_alarm_id" not in ctrl._reported_state
-        ctrl._coordinator.handle_controller_state_updates.assert_called_once_with({
+        assert ctrl._coordinator.handle_controller_state_updates.call_count == 1
+        assert published(*ctrl._coordinator.handle_controller_state_updates.call_args.args) == {
             "rmcontrol_repeat_alarm_alarm_id": None,
             "rmcontrol_repeat_alarm_hour": None,
-        })
+        }
     else:
         assert ctrl._reported_state["rmcontrol_repeat_alarm_alarm_id"] == 2
         ctrl._coordinator.handle_controller_state_updates.assert_not_called()
@@ -440,7 +440,7 @@ async def test_alarm_time_sync_startup_does_not_require_repeat_or_reply() -> Non
     client.services.get_characteristic.return_value.properties = ["notify"]
     ctrl.write_command = AsyncMock()
     with patch(
-        "custom_components.adjustable_bed.beds.rmcontrol.dt_util.now",
+        "custom_components.adjustable_bed.beds.rmcontrol.controller.dt_util.now",
         return_value=datetime(1970, 1, 1, tzinfo=UTC),
     ):
         await ctrl.start_notify()
@@ -507,7 +507,7 @@ async def test_parn_enforces_exact_source_eight_color_palette() -> None:
 def test_timer_report_updates_select_and_diagnostic(seconds: int, option: str | None) -> None:
     ctrl = controller()
     ctrl._accept_notification(Notification("light_timer", {"seconds": seconds}))
-    updates = ctrl._coordinator.handle_controller_state_updates.call_args.args[0]
+    updates = published(*ctrl._coordinator.handle_controller_state_updates.call_args.args)
     assert updates["light_timer_option"] == option
     assert updates["rmcontrol_light_timer_seconds"] == seconds
 
@@ -518,7 +518,7 @@ async def test_reconnect_waits_for_delayed_menu_capabilities() -> None:
     client.start_notify = AsyncMock()
     client.services.get_characteristic.return_value.properties = ["notify"]
     ctrl.write_command = AsyncMock()
-    with patch("custom_components.adjustable_bed.beds.rmcontrol._CAPABILITY_TIMEOUT", 1):
+    with patch("custom_components.adjustable_bed.beds.rmcontrol.controller._CAPABILITY_TIMEOUT", 1):
         setup = asyncio.create_task(ctrl.start_notify())
         await asyncio.sleep(0)
         assert not setup.done()
@@ -537,16 +537,19 @@ async def test_reconnect_waits_for_delayed_menu_capabilities() -> None:
     await ctrl.rmcontrol_anti_snore_switch(True)
 
 
-async def test_missing_capability_reply_times_out_and_late_reply_still_enables() -> None:
+async def test_unanswered_light_probe_completes_discovery_and_late_reply_still_enables() -> None:
+    """A bed without a light never answers; discovery ends so the entity sweep can run."""
     ctrl = controller("6ERM", nordic=True)
     client = ctrl._coordinator.client
     client.start_notify = AsyncMock()
     client.services.get_characteristic.return_value.properties = ["notify"]
     ctrl.write_command = AsyncMock()
-    with patch("custom_components.adjustable_bed.beds.rmcontrol._CAPABILITY_TIMEOUT", 0):
+    with patch("custom_components.adjustable_bed.beds.rmcontrol.controller._CAPABILITY_TIMEOUT", 0):
         await ctrl.start_notify()
     assert not ctrl.supports_light_color_control
-    assert not ctrl.controller_entity_discovery_complete
+    assert ctrl.controller_entity_discovery_complete
+    # The sweep keeps the light rows a late reply would bring back.
+    assert {("select", "light_timer"), ("light", "under_bed_lights")} <= ctrl.retained_entity_keys
     assert ctrl._notify_uuid is not None
     ctrl._accept_notification(Notification("capability", {"light": True}))
     assert ctrl.supports_light_color_control
@@ -575,7 +578,7 @@ async def test_replacement_controller_clears_coordinator_session_state() -> None
     ctrl = controller(nordic=True)
     state = {"unrelated": 42}
     ctrl._coordinator.controller_state = state
-    ctrl._coordinator.handle_controller_state_updates.side_effect = state.update
+    ctrl._coordinator.handle_controller_state_updates.side_effect = state_writer(state)
     ctrl._accept_notification(Notification("music", {"playing": True}))
     ctrl._accept_notification(Notification("lock", {"locked": True}))
     ctrl._accept_notification(Notification("massage", {"head_strength": 3}))

@@ -640,10 +640,10 @@ def _bed_for_coordinator(coordinator: object) -> BedEstimate | None:
 
 def _bed_for_controller(controller: object) -> BedEstimate | None:
     """Resolve the physical bed a controller command runs on."""
-    from .beds.base import SideBoundController
+    from .beds.base import BedController
 
     # Single-address pairs share one address for two sides and are not eligible.
-    if isinstance(controller, SideBoundController):
+    if isinstance(controller, BedController) and controller.command_side is not None:
         return None
     return _bed_for_coordinator(getattr(controller, "_coordinator", None))
 

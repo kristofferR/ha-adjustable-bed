@@ -16,6 +16,7 @@ from custom_components.adjustable_bed.const import (
     CONF_FURNIMOVE_REMOTE,
     DOMAIN,
 )
+from custom_components.adjustable_bed.controller_state import StateKey
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from tests.app_state_helpers import restart_app_state, stored_app_state
 
@@ -143,7 +144,7 @@ async def test_cancelling_bond_cleanup_propagates_to_its_caller(hass):
 
 
 async def test_local_massage_state_survives_reconnect_and_home_assistant_restart(hass):
-    from custom_components.adjustable_bed.beds.furnimove import FurniMoveController
+    from custom_components.adjustable_bed.beds.furnimove.controller import FurniMoveController
     from tests.test_furnimove import WRITE, char, written
 
     ctrl = coordinator(hass)
@@ -174,14 +175,14 @@ async def test_local_massage_state_survives_reconnect_and_home_assistant_restart
     restarted._controller._pause = AsyncMock(return_value=True)
     await restarted._controller.massage_toggle()
     stop = restarted._controller.profile.first("MassagerStop")
-    from custom_components.adjustable_bed.beds.furnimove import build_furnimove_command
+    from custom_components.adjustable_bed.beds.furnimove.controller import build_furnimove_command
 
     assert written(restarted._controller) == [build_furnimove_command(stop.keycode).hex()] * 2
     assert await stored_app_state(restarted, "12234") == {"duration_minutes": 20}
 
 
 async def test_invalid_local_preferences_do_not_block_connection_startup(hass):
-    from custom_components.adjustable_bed.beds.furnimove import FurniMoveController
+    from custom_components.adjustable_bed.beds.furnimove.controller import FurniMoveController
 
     ctrl = coordinator(hass)
     ctrl._app_state_store._store.async_load = AsyncMock(
@@ -195,7 +196,7 @@ async def test_invalid_local_preferences_do_not_block_connection_startup(hass):
 
 @pytest.mark.parametrize("cancelled", [False, True])
 async def test_widget_dispatch_history_survives_ble_handoff(hass, cancelled):
-    from custom_components.adjustable_bed.beds.furnimove import FurniMoveController
+    from custom_components.adjustable_bed.beds.furnimove.controller import FurniMoveController
     from tests.test_furnimove import WRITE, char, written
 
     ctrl = coordinator(hass, "82417")
@@ -224,18 +225,18 @@ async def test_widget_dispatch_history_survives_ble_handoff(hass, cancelled):
 
 
 async def test_feedback_does_not_rearm_local_preference_save(hass):
-    from custom_components.adjustable_bed.beds.furnimove import FurniMoveController
+    from custom_components.adjustable_bed.beds.furnimove.controller import FurniMoveController
 
     ctrl = coordinator(hass)
     ctrl._controller = FurniMoveController(ctrl, handset_id="12234")
     await ctrl._async_restore_app_state(ctrl._controller)
     store = ctrl._app_state_store
     store._schedule_save = MagicMock(wraps=store._schedule_save)
-    ctrl.handle_controller_state_update("furnimove_sync", True)
+    ctrl.handle_controller_state_update(StateKey[bool]("furnimove_sync"), True)
     store._schedule_save.assert_not_called()
     await ctrl._controller.set_massage_timer(20)
     store._schedule_save.assert_called_once()
-    ctrl.handle_controller_state_update("furnimove_sync", False)
+    ctrl.handle_controller_state_update(StateKey[bool]("furnimove_sync"), False)
     store._schedule_save.assert_called_once()
 
 

@@ -5,9 +5,8 @@ from datetime import UTC, datetime, timedelta, timezone
 
 import pytest
 
-from custom_components.adjustable_bed.codec import richmat as codec
-from custom_components.adjustable_bed.gmmotor_notifications import Event, common, desk21, extra
-from custom_components.adjustable_bed.gmmotor_protocol import (
+from custom_components.adjustable_bed.beds.gmmotor.notifications import Event, common, desk21, extra
+from custom_components.adjustable_bed.beds.gmmotor.protocol import (
     FrameBuffer,
     MalformedNotification,
     Material,
@@ -26,6 +25,7 @@ from custom_components.adjustable_bed.gmmotor_protocol import (
     snore_enabled,
     stop_packet,
 )
+from custom_components.adjustable_bed.codec import richmat as codec
 
 
 def test_material_overrides_do_not_cross_wire_modes() -> None:

@@ -36,12 +36,12 @@ def _goodvibe() -> frozenset[str]:
 
 
 
-# Row061 (PR #928): RUF, W.Silver, AMERICANSTAR, Bailey and TX run the MH
-# library over their own accepted model catalogs (row061_data). Each app freezes
+# RUF and Richmat apps (PR #928): RUF, W.Silver, AMERICANSTAR, Bailey and TX run the MH
+# library over their own accepted model catalogs (beds/ruf_richmat/data). Each app freezes
 # every fixed frame the merged pre-v5 controller sends: the session queries plus
 # each catalog control. The accepted control vectors in
-# tests/fixtures/row061_control_vectors.json.gz are a subset of each set.
-_ROW061_SHARED: frozenset[str] = frozenset(
+# tests/fixtures/ruf_richmat_control_vectors.json.gz are a subset of each set.
+_RUF_RICHMAT_SHARED: frozenset[str] = frozenset(
     {
         "5e1a000179",
         "5e1b00017a",
@@ -77,8 +77,8 @@ _ROW061_SHARED: frozenset[str] = frozenset(
         "6e9ac000c8",
     }
 )
-_ROW061: dict[str, frozenset[str]] = {
-    "ruf": _ROW061_SHARED
+_RUF_RICHMAT: dict[str, frozenset[str]] = {
+    "ruf": _RUF_RICHMAT_SHARED
     | frozenset(
         {
             "6e15010185",
@@ -88,7 +88,7 @@ _ROW061: dict[str, frozenset[str]] = {
             "6e20080b020000a3",
         }
     ),
-    "wsilver2": _ROW061_SHARED
+    "wsilver2": _RUF_RICHMAT_SHARED
     | frozenset(
         {
             "6e01002190",
@@ -197,7 +197,7 @@ _ROW061: dict[str, frozenset[str]] = {
             "6e2008050100009c",
         }
     ),
-    "americanstar": _ROW061_SHARED
+    "americanstar": _RUF_RICHMAT_SHARED
     | frozenset(
         {
             "6e01002190",
@@ -311,7 +311,7 @@ _ROW061: dict[str, frozenset[str]] = {
             "6e20080b020000a3",
         }
     ),
-    "bailey2": _ROW061_SHARED
+    "bailey2": _RUF_RICHMAT_SHARED
     | frozenset(
         {
             "6e01002190",
@@ -400,7 +400,7 @@ _ROW061: dict[str, frozenset[str]] = {
             "6e20080b020000a3",
         }
     ),
-    "tx": _ROW061_SHARED
+    "tx": _RUF_RICHMAT_SHARED
     | frozenset(
         {
             "6e01002190",
@@ -1043,7 +1043,7 @@ _RICHMAT_MH: frozenset[str] = frozenset(
 # every app freezes the union of the five accepted reports' sent single-frame
 # literals: avocadoecobase 1.0.4, coastersleep 1.0.10, fortywinks 1.0.1,
 # milemont 1.0.4 and superior 1.0.9, with the slider vectors exported from the
-# same evidence (tests/fixtures/cluster018/slider_vectors.json). A literal of two
+# same evidence (tests/fixtures/richmat_classic/slider_vectors.json). A literal of two
 # back-to-back frames is split into its frames.
 _RICHMAT_CLASSIC: frozenset[str] = frozenset(
     {
@@ -1498,7 +1498,7 @@ _RICHMAT_CLASSIC: frozenset[str] = frozenset(
 
 # L&P Adjustable Base 2.2.1 legacy app (row019): every Legacy and Framed packet
 # the accepted catalog stored for its 122 layouts, frozen from
-# ``lp_legacy_profiles.json`` before the catalog kept only the app's tokens.
+# the catalog (then ``lp_legacy_profiles.json``) before it kept only the app's tokens.
 _LP_LEGACY: frozenset[str] = frozenset(
     {
         "21",
@@ -2093,7 +2093,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
     "richmat_mh_blvd_home": _RICHMAT_MH,
     "richmat_mh_harmony": _RICHMAT_MH,
     "richmat_mh_idealbed": _RICHMAT_MH,
-    **{f"richmat_mh_{app}": frames for app, frames in _ROW061.items()},
+    **{f"richmat_mh_{app}": frames for app, frames in _RUF_RICHMAT.items()},
     "richmat_classic_avocadoecobase": _RICHMAT_CLASSIC,
     "richmat_classic_coastersleep": _RICHMAT_CLASSIC,
     "richmat_classic_fortywinks": _RICHMAT_CLASSIC,

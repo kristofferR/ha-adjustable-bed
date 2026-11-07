@@ -8,7 +8,7 @@ from dataclasses import FrozenInstanceError, astuple
 
 import pytest
 
-from custom_components.adjustable_bed.richmat_profiles import (
+from custom_components.adjustable_bed.beds.rmcontrol.profiles import (
     RICHMAT_PRODUCT_CODES,
     get_product_profile,
 )

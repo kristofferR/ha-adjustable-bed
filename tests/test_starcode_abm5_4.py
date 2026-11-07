@@ -8,8 +8,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from bleak.exc import BleakError
 
-from custom_components.adjustable_bed.beds.starcode_abm5_4 import StarcodeAbm5_4Controller
-from custom_components.adjustable_bed.beds.starcode_abm5_4_profiles import (
+from custom_components.adjustable_bed.beds.starcode.abm5_4 import StarcodeAbm5_4Controller
+from custom_components.adjustable_bed.beds.starcode.abm5_4_profiles import (
     FIELDS,
     FIRMWARE_UUID,
     MANUFACTURER_UUID,
@@ -22,7 +22,9 @@ from custom_components.adjustable_bed.beds.starcode_abm5_4_profiles import (
     parse_fields,
     scan_matches,
 )
+from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
 from tests.starcode_abm5_4_vectors import BUILDER_VECTORS, PARSER_VECTORS
+from tests.state_helpers import published
 
 
 def make_controller(command="BOX25", ui=None, device="BOX25"):
@@ -152,7 +154,7 @@ async def test_actual_stream_release_and_delayed_massage_sequence():
     with (
         patch.object(loop, "time", lambda: now),
         patch.object(c, "_wait", wait),
-        patch("custom_components.adjustable_bed.beds.starcode_abm5_4.asyncio.sleep", sleep),
+        patch("custom_components.adjustable_bed.beds.starcode.abm5_4.asyncio.sleep", sleep),
     ):
         await c.hold_control("head_up", 250)
     assert writes == [
@@ -167,7 +169,7 @@ async def test_actual_stream_release_and_delayed_massage_sequence():
     with (
         patch.object(loop, "time", lambda: now),
         patch.object(c, "_wait", wait),
-        patch("custom_components.adjustable_bed.beds.starcode_abm5_4.asyncio.sleep", sleep),
+        patch("custom_components.adjustable_bed.beds.starcode.abm5_4.asyncio.sleep", sleep),
     ):
         await c.massage_head_up()
     assert writes == [(0.0, "05020000080000"), (0.1, "05020000000000"), (0.3, "00b0")]
@@ -344,7 +346,7 @@ async def test_optional_read_retry_and_stale_result_cannot_update_new_session():
     c = make_controller()
     c.client.read_gatt_char.side_effect = [OSError("read"), b"Star"]
     sleep = AsyncMock()
-    with patch("custom_components.adjustable_bed.beds.starcode_abm5_4.asyncio.sleep", sleep):
+    with patch("custom_components.adjustable_bed.beds.starcode.abm5_4.asyncio.sleep", sleep):
         await c._classify()
     sleep.assert_awaited_once_with(0.2)
     assert c.command_selector == c.transport_selector == "BOX25"
@@ -378,7 +380,7 @@ async def test_connection_actual_roles_subscription_wake_retry_and_delays(device
     if subscribe:
         c.client.start_notify.side_effect = [OSError("notify"), None]
     sleep = AsyncMock()
-    with patch("custom_components.adjustable_bed.beds.starcode_abm5_4.asyncio.sleep", sleep):
+    with patch("custom_components.adjustable_bed.beds.starcode.abm5_4.asyncio.sleep", sleep):
         await c.start_notify()
         assert c._ready
         assert [operation.__name__ for operation in pending] == (
@@ -414,9 +416,9 @@ async def test_changed_U_callback_consumes_exact_fields_and_suppresses_duplicate
     role = c.client.services[0].characteristics[1]
     c._notification(c.client, 0, role, frame)
     assert c._massage_on and c._light_on and c._level == 2
-    assert c.get_light_state()["is_on"] is True
     assert len(pending) == 1
-    values = c._coordinator.handle_controller_state_updates.call_args.args[0]
+    values = published(*c._coordinator.handle_controller_state_updates.call_args.args)
+    assert values[UNDER_BED_LIGHTS_ON] is True
     assert values["starcode_abm5_4_massage_timer"] == "10"
     assert values["starcode_abm5_4_head_intensity"] == 0
     c._notification(c.client, 0, role, frame)
@@ -520,7 +522,7 @@ async def test_same_owner_reconstruction_preserves_gate_time_but_not_parser_base
     assert replacement._raw_fields == initial_fields()
     assert not replacement._parser_state_observed
     replacement._publish()
-    state = c._coordinator.handle_controller_state_updates.call_args.args[0]
+    state = published(*c._coordinator.handle_controller_state_updates.call_args.args)
     assert state["starcode_abm5_4_light_on"] is True
     assert state["starcode_abm5_4_raw_53"] is None
     for key, value in {
@@ -567,7 +569,7 @@ async def test_same_owner_reconstruction_preserves_gate_time_but_not_parser_base
     ],
 )
 async def test_action_timing_and_release(selector, control):
-    from custom_components.adjustable_bed.beds.starcode_abm5_4 import _MOVEMENT, _PRESETS, _SAVES
+    from custom_components.adjustable_bed.beds.starcode.abm5_4 import _MOVEMENT, _PRESETS, _SAVES
 
     c = make_controller(selector)
     now = 0.0
@@ -693,7 +695,7 @@ async def test_failed_massage_release_still_issues_delayed_query_without_retry()
     with (
         patch.object(loop, "time", lambda: now),
         patch.object(c, "_wait", wait),
-        patch("custom_components.adjustable_bed.beds.starcode_abm5_4.asyncio.sleep", sleep),
+        patch("custom_components.adjustable_bed.beds.starcode.abm5_4.asyncio.sleep", sleep),
     ):
         await c._stream("headStrengthAdd", 0, release="massage")
     assert attempts == [
@@ -795,7 +797,7 @@ async def test_every_public_live_parameter_uses_own_address_observed_writer(sele
     assert c._massage_on and c._light_on
     await c.adopt_transport_profile()
     with patch(
-        "custom_components.adjustable_bed.beds.starcode_abm5_4.asyncio.sleep", new=AsyncMock()
+        "custom_components.adjustable_bed.beds.starcode.abm5_4.asyncio.sleep", new=AsyncMock()
     ):
         if kind == "timer":
             await c.set_app_timer(str(value * 10))

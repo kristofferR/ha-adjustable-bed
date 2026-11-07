@@ -9,10 +9,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from bleak.exc import BleakError
 
-from custom_components.adjustable_bed.beds.logicdata_app import LogicdataAppController
+from custom_components.adjustable_bed.beds.logicdata.app import LogicdataAppController
 from custom_components.adjustable_bed.codec import jiecang as codec
 from custom_components.adjustable_bed.profiles import logicdata as profiles
 from custom_components.adjustable_bed.profiles.logicdata import SLEEP_SMART
+from tests.state_helpers import published
 
 T1, T2, T3 = (profiles.TRANSPORTS[key] for key in ("t1", "t2", "t3"))
 
@@ -415,13 +416,13 @@ async def test_t2_alone_has_no_name_role(coordinator):
 async def test_notifications_publish_state_and_answer_clock_requests(coordinator):
     controller = bed(coordinator, layout="split_series")
     updates = []
-    controller.forward_controller_state_updates = updates.append
+    controller.forward_controller_state_updates = lambda *values: updates.append(published(*values))
     sender = MagicMock(uuid=T3.notify_uuid)
     controller._notification_handler(sender, bytearray.fromhex("f2f206050300040040"))
     controller._notification_handler(sender, bytearray.fromhex("f2f20d0103"))
     controller._notification_handler(sender, bytearray.fromhex("f2f20d0109"))
     assert updates == [
-        {"under_bed_lights_on": True, "head_intensity": 2, "right_intensity": 3},
+        {"under_bed_lights_on": True, "massage_head_intensity": 2, "massage_right_intensity": 3},
         {"logicdata_app_massage_mode": "wave"},
         {"logicdata_app_massage_mode": None},
     ]
@@ -435,7 +436,7 @@ async def test_notifications_publish_state_and_answer_clock_requests(coordinator
     }
     send = coordinator.async_execute_controller_command.await_args.args[0]
     with patch(
-        "custom_components.adjustable_bed.beds.logicdata_app.dt_util.now",
+        "custom_components.adjustable_bed.beds.logicdata.app.dt_util.now",
         return_value=datetime(2026, 10, 1, 12, 34, 56),
     ):
         await send(controller)
@@ -461,13 +462,7 @@ def test_capabilities_follow_the_profile(coordinator):
     assert [spec.key for spec in controller.controller_state_sensor_specs] == [
         "logicdata_app_massage_mode"
     ]
-    assert controller.stale_controller_state_sensor_entity_keys == {
-        "logicdata_app_alarm",
-        "logicdata_app_family_match",
-    }
     quiet = bed(coordinator, has_massage=False)
     assert quiet.controller_state_sensor_specs == ()
-    assert "logicdata_app_massage_mode" in quiet.stale_controller_state_sensor_entity_keys
     phone = bed(coordinator, profile="phone", command_family="p2", layout="middle")
     assert phone.held_preset_options == ("flat", "memory_1", "memory_2")
-    assert "logicdata_app_massage_mode" in phone.stale_controller_state_sensor_entity_keys

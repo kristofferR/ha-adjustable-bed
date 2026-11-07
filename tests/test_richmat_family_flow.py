@@ -200,7 +200,7 @@ async def test_an_mh_app_asks_the_model_from_the_raw_name(hass):
         ("tx", "richmat_tx", "model_3i"),
     ],
 )
-async def test_a_row061_app_asks_its_model(hass, app, bed_type, model):
+async def test_a_ruf_richmat_app_asks_its_model(hass, app, bed_type, model):
     flow = setup_flow(hass, "QRRM0001")
     result, _finish = await answer(flow, app)
     assert flow._manual_data[const.CONF_BED_TYPE] == bed_type
@@ -217,7 +217,7 @@ async def test_a_classic_app_asks_its_layout(hass):
         flow._manual_data[const.CONF_BED_TYPE],
         flow._manual_data[const.CONF_PROTOCOL_VARIANT],
     ) == (
-        const.BED_TYPE_CLUSTER018,
+        const.BED_TYPE_RICHMAT_CLASSIC_APPS,
         "fortywinks",
     )
     assert result["step_id"] == "profile_questions"
@@ -361,7 +361,7 @@ async def test_an_mh_app_from_the_app_question_reaches_its_model_question(
 
 
 async def test_configure_switches_a_remote_entry_to_a_classic_app(hass):
-    from custom_components.adjustable_bed.cluster018_models import MODEL_CHOICES
+    from custom_components.adjustable_bed.beds.richmat_classic.models import MODEL_CHOICES
 
     entry = entry_for(hass, **{const.CONF_RMCONTROL_PRODUCT: ""})
     flow = AdjustableBedOptionsFlow(entry)
@@ -381,7 +381,7 @@ async def test_configure_switches_a_remote_entry_to_a_classic_app(hass):
         result = await flow.async_step_settings({const.CONF_PRODUCT_TYPE: layout})
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert (entry.data[const.CONF_BED_TYPE], entry.data[const.CONF_PROTOCOL_VARIANT]) == (
-        const.BED_TYPE_CLUSTER018,
+        const.BED_TYPE_RICHMAT_CLASSIC_APPS,
         "fortywinks",
     )
     assert entry.data[const.CONF_PRODUCT_TYPE] == layout

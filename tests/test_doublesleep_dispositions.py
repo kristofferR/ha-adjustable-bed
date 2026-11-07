@@ -9,8 +9,8 @@ from pathlib import Path
 
 import pytest
 
-from custom_components.adjustable_bed import doublesleep_protocol as p
-from custom_components.adjustable_bed.doublesleep_state import daily_report
+from custom_components.adjustable_bed.beds.doublesleep import protocol as p
+from custom_components.adjustable_bed.beds.doublesleep.state import daily_report
 
 ROOT = Path(__file__).resolve().parents[1]
 LEDGER = json.loads((ROOT / "tests/fixtures/doublesleep_ledger.json").read_text())

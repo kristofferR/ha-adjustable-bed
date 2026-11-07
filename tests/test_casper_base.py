@@ -11,15 +11,21 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
-from custom_components.adjustable_bed.beds.casper_base import CasperBaseController
-from custom_components.adjustable_bed.beds.casper_sleep import CasperSleepController
-from custom_components.adjustable_bed.casper_base_catalog import ACTIONS, PRODUCTS
-from custom_components.adjustable_bed.casper_base_protocol import Event, Request
-from custom_components.adjustable_bed.casper_sleep_protocol import NOTIFY, SERVICES, WRITE, envelope
+from custom_components.adjustable_bed.beds.casper_base.catalog import ACTIONS, PRODUCTS
+from custom_components.adjustable_bed.beds.casper_base.controller import CasperBaseController
+from custom_components.adjustable_bed.beds.casper_base.protocol import Event, Request
+from custom_components.adjustable_bed.beds.casper_sleep.controller import CasperSleepController
+from custom_components.adjustable_bed.beds.casper_sleep.protocol import (
+    NOTIFY,
+    SERVICES,
+    WRITE,
+    envelope,
+)
 from custom_components.adjustable_bed.codec.richmat import TRANSPORTS
 from custom_components.adjustable_bed.detection import BED_TYPE_DISPLAY_NAMES
 from custom_components.adjustable_bed.profiles.casper import TRANSPORTS as PROFILE_TRANSPORTS
 from custom_components.adjustable_bed.validators import get_variants_for_bed_type
+from tests.state_helpers import state_writer
 
 
 def char(uuid, *properties):
@@ -33,7 +39,7 @@ def make(model="casperpro", *, transport=1, kind=None):
     c.motor_pulse_count = 3
     c.controller_state = {}
     c.handle_controller_state_update.side_effect = lambda k, v: c.controller_state.update({k: v})
-    c.handle_controller_state_updates.side_effect = c.controller_state.update
+    c.handle_controller_state_updates.side_effect = state_writer(c.controller_state)
     c.client = MagicMock(is_connected=True, mtu_size=23)
     c.client.write_gatt_char = AsyncMock()
     c.client.start_notify = AsyncMock()
@@ -138,7 +144,8 @@ async def test_side_binding_and_music_default_left():
     ctrl, c = make("hushl400sh")
     await ctrl.start_notify()
     c.client.write_gatt_char.reset_mock()
-    await ctrl.bind_side("right").async_perform_casper_base_action("MotorReset")
+    with ctrl.side_scope("right"):
+        await ctrl.async_perform_casper_base_action("MotorReset")
     assert frames(c) == ["6e010131a1"]
     ctrl, c = make("nisconup355b")
     await ctrl.start_notify()
@@ -354,7 +361,7 @@ async def test_sensor_live_replacement_and_local_stop(hass, monkeypatch):
 
 
 async def test_remote_finder_sends_no_bed_setup_or_locator_command():
-    from custom_components.adjustable_bed.beds.casper_sleep import CasperRemoteController
+    from custom_components.adjustable_bed.beds.casper_sleep.controller import CasperRemoteController
 
     _, c = make()
     c.client.services = []
@@ -394,11 +401,11 @@ async def test_side_bound_button_and_cover_callbacks_keep_their_side():
     ctrl, c = make("hushl400sh")
     await ctrl.start_notify()
     c.client.write_gatt_char.reset_mock()
-    right = ctrl.bind_side("right")
-    spec = next(s for s in right.controller_button_specs if s.key == "casper_motorreset")
-    await spec.press_fn(right)
-    assert frames(c) == ["6e010131a1"]
-    c.client.write_gatt_char.reset_mock()
-    back = next(s for s in right.motor_control_specs if s.key == "back")
-    await back.open_fn(right)
+    with ctrl.side_scope("right"):
+        spec = next(s for s in ctrl.controller_button_specs if s.key == "casper_motorreset")
+        await spec.press_fn(ctrl)
+        assert frames(c) == ["6e010131a1"]
+        c.client.write_gatt_char.reset_mock()
+        back = next(s for s in ctrl.motor_control_specs if s.key == "back")
+        await back.open_fn(ctrl)
     assert frames(c) == ["6e01012494"] * 3 + ["6e01016ede"]

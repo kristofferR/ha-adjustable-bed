@@ -10,13 +10,20 @@ import asyncio
 import bisect
 from collections.abc import Sequence
 from dataclasses import replace
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from ..codec import keeson as codec
 from ..command_scheduler import CommandKind, CommandOutcome, current_command_context
+from ..const import (
+    CONF_PRODUCT_TYPE,
+    SERTA_MP_REMOTE_BACK_MAX_ANGLE,
+    SERTA_MP_REMOTE_LEGS_MAX_ANGLE,
+)
+from ..controller_state import StateKey
 from ..profiles.keeson import app_profile
-from .base import (
-    BedController,
+from .base import BedController
+from .builder import BuildContext
+from .entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerStateSensorSpec,
@@ -24,7 +31,7 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
-from .cluster033 import AppController
+from .keeson.layout_app import AppController
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -153,6 +160,14 @@ def pulse_angle(pulse: int, table: tuple[int, ...], threshold: int) -> int:
     return index
 
 
+MEMORY_REQUEST: Final = StateKey[str]("app_memory_request")
+MEMORY_HEAD_TARGET: Final = StateKey[int]("app_memory_head_target")
+MEMORY_FOOT_TARGET: Final = StateKey[int]("app_memory_foot_target")
+MEMORY_PROGRESS_VISIBLE: Final = StateKey[bool]("app_memory_progress_visible")
+HEAD_FLAG: Final = StateKey[bool]("app_head_flag")
+FOOT_FLAG: Final = StateKey[bool]("app_foot_flag")
+
+
 class SertaMPRemoteController(AppController):
     """Exact MP Remote keys, pulse targets and session-scoped UI request state."""
 
@@ -180,10 +195,6 @@ class SertaMPRemoteController(AppController):
         self._local_release_stop: tuple[object, int, asyncio.Event] | None = None
 
     @property
-    def supports_position_feedback(self) -> bool:
-        return True
-
-    @property
     def supports_direct_position_control(self) -> bool:
         return True
 
@@ -198,13 +209,13 @@ class SertaMPRemoteController(AppController):
     @property
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
         return (
-            build_position_number_spec("back", max_value=60, unit="°"),
-            build_position_number_spec("legs", max_value=45, unit="°"),
+            build_position_number_spec(
+                "back", max_value=SERTA_MP_REMOTE_BACK_MAX_ANGLE, unit="°"
+            ),
+            build_position_number_spec(
+                "legs", max_value=SERTA_MP_REMOTE_LEGS_MAX_ANGLE, unit="°"
+            ),
         )
-
-    @property
-    def motor_max_angles(self) -> dict[str, float]:
-        return {"back": 60.0, "legs": 45.0}
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
@@ -322,14 +333,14 @@ class SertaMPRemoteController(AppController):
             ControllerStateSensorSpec(
                 "app_memory_request",
                 "app_memory_request",
-                "app_memory_request",
+                MEMORY_REQUEST,
                 "mdi:progress-check",
                 attribute_keys=(
-                    "app_memory_head_target",
-                    "app_memory_foot_target",
-                    "app_memory_progress_visible",
-                    "app_head_flag",
-                    "app_foot_flag",
+                    MEMORY_HEAD_TARGET,
+                    MEMORY_FOOT_TARGET,
+                    MEMORY_PROGRESS_VISIBLE,
+                    HEAD_FLAG,
+                    FOOT_FLAG,
                 ),
             ),
         )
@@ -362,11 +373,9 @@ class SertaMPRemoteController(AppController):
                 latest = self._memory_target
                 assert latest is not None
                 self.forward_controller_state_updates(
-                    {
-                        "app_memory_request": "active",
-                        "app_memory_head_target": latest[0],
-                        "app_memory_foot_target": latest[1],
-                    }
+                    MEMORY_REQUEST("active"),
+                    MEMORY_HEAD_TARGET(latest[0]),
+                    MEMORY_FOOT_TARGET(latest[1]),
                 )
             self._setters.remove(handle)
 
@@ -390,19 +399,30 @@ class SertaMPRemoteController(AppController):
         if self._notify_callback is not None:
             self._notify_callback("back", float(head))
             self._notify_callback("legs", float(foot))
-        updates: dict[str, object] = {
-            "app_head_flag": bool(data[13] & 1),
-            "app_foot_flag": bool(data[13] & 2),
-        }
+        updates = [HEAD_FLAG(bool(data[13] & 1)), FOOT_FLAG(bool(data[13] & 2))]
         if self._memory_active:
             complete = self._angles == self._memory_target or not data[13] & 3
             if complete:
                 self._memory_active = False
-            updates.update(
-                {
-                    "app_memory_request": "inactive" if complete else "active",
-                    "app_memory_progress_visible": not complete,
-                }
-            )
-        self.forward_controller_state_updates(updates)
+            updates += [
+                MEMORY_REQUEST("inactive" if complete else "active"),
+                MEMORY_PROGRESS_VISIBLE(not complete),
+            ]
+        self.forward_controller_state_updates(*updates)
         super()._parse_notification(data)
+
+
+async def build_controller(ctx: BuildContext) -> SertaMPRemoteController:
+    """Build the controller for the stored layout and memory targets."""
+    data = ctx.data
+    return SertaMPRemoteController(
+        ctx.coordinator,
+        layout=data.get(CONF_PRODUCT_TYPE),
+        memories=tuple(
+            (
+                data.get(f"serta_mp_memory_{slot}_head", 15),
+                data.get(f"serta_mp_memory_{slot}_foot", 0 if slot == 4 else 35),
+            )
+            for slot in range(1, 5)
+        ),
+    )

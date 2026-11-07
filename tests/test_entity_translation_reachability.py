@@ -9,13 +9,13 @@ from tests.entity_translation_reachability import (
     entity_strings,
     factory_controllers,
     missing_translations,
-    unreachable_side_variants,
+    unreachable_side_keys,
 )
 
 
-async def test_every_side_variant_is_reachable() -> None:
+async def test_no_side_suffixed_copy_is_left() -> None:
     controllers = await factory_controllers()
-    assert unreachable_side_variants(entity_strings(), controllers) == {}
+    assert unreachable_side_keys(entity_strings(), controllers) == {}
 
 
 async def test_every_key_an_entity_can_be_given_is_translated() -> None:
@@ -23,24 +23,32 @@ async def test_every_key_an_entity_can_be_given_is_translated() -> None:
     assert missing_translations(entity_strings(), await factory_controllers()) == {}
 
 
-async def test_controller_state_sensors_and_unpaired_platforms_carry_no_side_variant() -> None:
-    """The removed classes: sided controller-state sensors and non-combined ``_both``."""
-    strings = {
-        "sensor": {"motion_bed_brightness": {}, "motion_bed_brightness_left": {}, "back_angle_left": {}},
-        "binary_sensor": {"motion_bed_fault_right": {}, "ble_connection_left": {}},
-        "cover": {"back_both": {}, "back_left": {}},
-        "button": {"preset_flat_both": {}, "connect_both": {}},
-        "number": {"back_position_both": {}, "massage_head_intensity_both": {}},
+async def test_only_natively_sided_keys_keep_a_side_suffix() -> None:
+    """Paired sides name their device, so side and combined copies are dead."""
+    strings: dict[str, dict[str, object]] = {
+        "cover": {"back": {}, "back_left": {}, "head": {}, "head_left": {}, "legs": {}, "legs_both": {}},
+        "button": {"stop": {}, "stop_both": {}, "preset_flat": {}, "preset_flat_right": {}},
+        "climate": {"sleep_number_thermal_climate": {}, "sleep_number_thermal_climate_left": {}},
+        "sensor": {"motomotion_heat_left": {}},
     }
-    assert unreachable_side_variants(strings, await factory_controllers()) == {
-        "sensor": {"motion_bed_brightness_left"},
-        "binary_sensor": {"motion_bed_fault_right"},
-        "cover": {"back_both"},
-        "button": {"connect_both"},
-        "number": {"massage_head_intensity_both"},
+    # back_left is a Sleep Number MCR motor, head_left and stop_both are code
+    # literals, the side climate is built per side and motomotion_heat_left has
+    # no base to copy.
+    assert unreachable_side_keys(strings, await factory_controllers()) == {
+        "cover": {"legs_both"},
+        "button": {"preset_flat_right"},
     }
 
 
 def test_translation_files_share_entity_strings() -> None:
     first, *rest = (json.loads(path.read_text())["entity"] for path in TRANSLATION_FILES)
     assert all(entity == first for entity in rest)
+
+
+def test_translation_files_name_single_address_side_devices() -> None:
+    for path in TRANSLATION_FILES:
+        devices = json.loads(path.read_text())["device"]
+        assert devices == {
+            "left_side": {"name": "{name} Left"},
+            "right_side": {"name": "{name} Right"},
+        }

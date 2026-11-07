@@ -11,7 +11,8 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.setup import async_setup_component
 
 from custom_components import adjustable_bed
-from custom_components.adjustable_bed.beds import reverie_pairlink_transport as transport
+from custom_components.adjustable_bed.beds.reverie import pairlink_local_setup
+from custom_components.adjustable_bed.beds.reverie import pairlink_transport as transport
 from custom_components.adjustable_bed.const import DOMAIN
 from tests.test_reverie_pairlink_lease_transfer import SOURCES, TrackedBus, fixture_pair
 from tests.test_reverie_pairlink_production import (
@@ -126,8 +127,8 @@ async def test_restoration_error_still_removes_pair_and_retires_replacement_back
         hass.config_entries, "async_remove", AsyncMock(side_effect=RuntimeError("Removal refused"))
     )
     monkeypatch.setattr(
-        adjustable_bed,
-        "_async_restore_pairlink_local_sources",
+        pairlink_local_setup,
+        "async_restore_pairlink_local_sources",
         AsyncMock(side_effect=RuntimeError("Original backend restoration failed")),
     )
     try:

@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds.base import MotorControlSpec
+from custom_components.adjustable_bed.beds.entity_specs import MotorControlSpec
 from custom_components.adjustable_bed.button import PairedBedCombinedMotorButton
 from custom_components.adjustable_bed.const import SIDE_LEFT, SIDE_RIGHT
 from custom_components.adjustable_bed.cover import (
@@ -48,11 +48,10 @@ def _spec(key: str = "back") -> MotorControlSpec:
 
 
 def test_cover_advertises_its_controller_hold_and_timed_motor():
-    runtime = SimpleNamespace(
+    runtime = SimpleNamespace(controller_side=None,
         capability_controller=STREAM,
         entity_side=SIDE_LEFT,
         device_info={},
-        entity_translation_key=lambda key: key,
         entity_unique_id=lambda key: key,
     )
     cover = AdjustableBedCover(runtime, _build_cover_description(_spec()))
@@ -79,7 +78,7 @@ def test_combined_motor_offers_a_hold_only_when_both_sides_agree(mode, right, ex
     spec = _spec()
     coordinator = MagicMock(pair_id="pair", device_info={}, connection_mode=mode)
     coordinator.children = {
-        side: SimpleNamespace(
+        side: SimpleNamespace(controller_side=None,
             capability_controller=SimpleNamespace(
                 execution=controller.execution, motor_control_specs=[spec]
             ),

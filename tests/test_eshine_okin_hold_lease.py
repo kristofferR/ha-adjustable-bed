@@ -11,7 +11,7 @@ from typing import Any
 
 import pytest
 
-from custom_components.adjustable_bed.beds.eshine_okin_protocol import COMMANDS, HELD
+from custom_components.adjustable_bed.beds.eshine_okin.protocol import COMMANDS, HELD
 from custom_components.adjustable_bed.const import BED_TYPE_ESHINE_OKIN
 from custom_components.adjustable_bed.execution import HOLD_CEILING_MS
 from tests.hold_lease_wire import intervals, leased_hold

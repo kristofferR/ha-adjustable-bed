@@ -50,7 +50,7 @@ async def test_all_setup_routes_collect_explicit_profile_without_bond(
     }
     result = await start_new_bed(flow, route, const.BED_TYPE_VMATBASIC)
     assert result["step_id"] == "vibradorm"
-    result = await flow.async_step_vibradorm({"app": "vmatbasic"})
+    result = await flow.async_step_vibradorm({"choice": "vmatbasic"})
     assert result["step_id"] == "profile_questions"
     with patch.object(
         flow,
@@ -107,7 +107,7 @@ async def test_a_product_change_keeps_only_the_new_products_answers(hass, option
         flow = AdjustableBedConfigFlow()
         flow.context, flow.hass = {"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}, hass
         await flow.async_step_reconfigure()
-        await flow.async_step_vibradorm({"app": "vmatbasic"})
+        await flow.async_step_vibradorm({"choice": "vmatbasic"})
     else:
         flow = AdjustableBedConfigFlow()
         flow.context, flow.hass, flow._manual_data = {}, hass, data

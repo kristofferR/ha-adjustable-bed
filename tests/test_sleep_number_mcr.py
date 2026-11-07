@@ -11,8 +11,8 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.sleep_number_mcr import SleepNumberMcrController
-from custom_components.adjustable_bed.beds.sleep_number_mcr_protocol import decode_foundation
+from custom_components.adjustable_bed.beds.sleep_number.mcr import SleepNumberMcrController
+from custom_components.adjustable_bed.beds.sleep_number.mcr_protocol import decode_foundation
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEP_NUMBER_MCR,
     CONF_BED_TYPE,
@@ -68,7 +68,7 @@ def sleep_number_mcr_coordinator(hass: HomeAssistant, mock_coordinator_connected
 @pytest.fixture
 def controller():
     """A protocol unit fixture with explicit feature discovery state."""
-    from custom_components.adjustable_bed.beds.sleep_number_mcr_protocol import FoundationFeatures
+    from custom_components.adjustable_bed.beds.sleep_number.mcr_protocol import FoundationFeatures
 
     coordinator = MagicMock()
     coordinator.entry.data = {"sleep_number_mcr_client_id": 0x0102030405060708}
@@ -77,7 +77,7 @@ def controller():
     coordinator.motor_pulse_delay_ms = 1
     coordinator.client.mtu_size = 23
     coordinator.client.services.get_characteristic.return_value.properties = ["write"]
-    result = SleepNumberMcrController(coordinator)
+    result = SleepNumberMcrController(coordinator, client_identifier=0x0102030405060708)
     result._initialized = True
     result._foundation_features = FoundationFeatures(2, True, True, True, True, "360", "FF3")
     result._nodes = {1, 0x31, 0x41, 0x51}
@@ -201,9 +201,9 @@ async def test_invalid_commands_write_nothing(controller, command, parameters):
 
 
 async def test_bound_side_cannot_be_overridden(controller):
-    with pytest.raises(ValueError, match="override"):
-        await controller.bind_side("left").async_execute_sleep_number_command(
-            "position", {"side": "right", "axis": "head", "position": 20}
+    with pytest.raises(ValueError, match="override"), controller.side_scope("left"):
+        await controller.async_execute_sleep_number_command(
+        "position", {"side": "right", "axis": "head", "position": 20}
         )
 
 
@@ -212,8 +212,8 @@ async def test_movement_cancel_always_releases(controller):
     controller._read_foundation = AsyncMock(return_value=decode_foundation(foundation_reply()))
     controller._mcr_request = AsyncMock(side_effect=asyncio.CancelledError)
     controller._stop_side = AsyncMock()
-    with pytest.raises(asyncio.CancelledError):
-        await controller.bind_side("left").move_back_up()
+    with pytest.raises(asyncio.CancelledError), controller.side_scope("left"):
+        await controller.move_back_up()
     controller._stop_side.assert_awaited_once_with("left")
 
 
@@ -274,7 +274,8 @@ async def test_held_motion_keeps_selected_side_moving(
         foundation_reply(positions=positions),
     ]
     controller._coordinator.disable_angle_sensing = True
-    await controller.bind_side(side)._move_axis(axis, 100)
+    with controller.side_scope(side):
+        await controller._move_axis(axis, 100)
     calls = controller._mcr_request.await_args_list
     status_calls = [call for call in calls if call.args[:2] == (0x42, 0x12)]
     assert [call.args[2] for call in status_calls] == [0, selector, selector, 0]
@@ -376,8 +377,8 @@ async def test_running_fault_releases_and_publishes_positions(controller, motion
         foundation_reply(),
         foundation_reply(flags=(0, 16, 0, 0), positions=(0, 10, 0, 0)),
     ]
-    with pytest.raises(ValueError, match="current is over"):
-        await controller.bind_side("left").move_back_up()
+    with pytest.raises(ValueError, match="current is over"), controller.side_scope("left"):
+        await controller.move_back_up()
     assert controller._mcr_request.await_args_list[-2].kwargs["payload"] == b"MFHL110"
     assert controller._state["foundation_head_left"] == 10
 
@@ -476,8 +477,8 @@ async def test_hold_checks_fault_in_final_read_after_duration_expires(controller
         await asyncio.Event().wait()
 
     controller._foundation_delay = blocked
-    with pytest.raises(ValueError, match="current is over"):
-        await controller.bind_side("left").move_back_up()
+    with pytest.raises(ValueError, match="current is over"), controller.side_scope("left"):
+        await controller.move_back_up()
     assert controller._state["foundation_head_left_current"] == "over"
     assert controller._mcr_request.await_args_list[-2].kwargs["payload"] == b"MFHL110"
 
@@ -499,7 +500,8 @@ async def test_motion_cancellation_releases_and_refreshes(controller, motion, op
     controller._foundation_delay = cancel
     with pytest.raises(asyncio.CancelledError):
         if operation == "hold":
-            await controller.bind_side("left").move_back_up()
+            with controller.side_scope("left"):
+                await controller.move_back_up()
         elif operation == "target":
             await controller._set_position("left", "head", 50)
         else:
@@ -512,7 +514,7 @@ async def test_motion_cancellation_releases_and_refreshes(controller, motion, op
 
 async def test_position_timeout_stops_and_does_not_claim_success(controller, motion, monkeypatch):
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.sleep_number_mcr._FOUNDATION_TIMEOUT_SECONDS", 0.01
+        "custom_components.adjustable_bed.beds.sleep_number.mcr._FOUNDATION_TIMEOUT_SECONDS", 0.01
     )
 
     async def blocked(_seconds):
@@ -532,7 +534,8 @@ async def test_held_duration_expires_without_hanging_on_status(controller, motio
         await asyncio.Event().wait()
 
     controller._foundation_delay = blocked
-    await controller.bind_side("left").move_back_up()
+    with controller.side_scope("left"):
+        await controller.move_back_up()
     calls = controller._mcr_request.await_args_list
     assert calls[-3].kwargs["payload"] == b"MFHL110"
     assert calls[-1].args == (0x42, 0x28)
@@ -540,7 +543,7 @@ async def test_held_duration_expires_without_hanging_on_status(controller, motio
 
 async def test_stalled_held_target_still_releases(controller, motion, monkeypatch):
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.sleep_number_mcr._FOUNDATION_TIMEOUT_SECONDS",
+        "custom_components.adjustable_bed.beds.sleep_number.mcr._FOUNDATION_TIMEOUT_SECONDS",
         0.01,
     )
     normal = controller._mcr_request.side_effect
@@ -551,8 +554,8 @@ async def test_stalled_held_target_still_releases(controller, motion, monkeypatc
         return await normal(node, opcode, *args, **kwargs)
 
     controller._mcr_request.side_effect = request
-    with pytest.raises(TimeoutError):
-        await controller.bind_side("left").move_back_up()
+    with pytest.raises(TimeoutError), controller.side_scope("left"):
+        await controller.move_back_up()
     assert controller._mcr_request.await_args_list[-2].kwargs["payload"] == b"MFHL110"
 
 
@@ -573,7 +576,8 @@ async def test_hold_keeps_refreshing_while_opposite_actuator_moves(controller, m
         foundation_reply(flags=(0, 0, 1, 0)),
         foundation_reply(),
     ]
-    await controller.bind_side("left").move_back_up()
+    with controller.side_scope("left"):
+        await controller.move_back_up()
     calls = controller._mcr_request.await_args_list
     assert [call.args[2] for call in calls if call.args[:2] == (0x42, 0x12)] == [0, 3, 3, 0]
 
@@ -586,7 +590,7 @@ async def test_foundation_delay_observes_cancel_signal(controller):
 
 async def test_stop_timeout_still_releases_other_side(controller, motion, monkeypatch):
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.sleep_number_mcr._FOUNDATION_CLEANUP_TIMEOUT_SECONDS",
+        "custom_components.adjustable_bed.beds.sleep_number.mcr._FOUNDATION_CLEANUP_TIMEOUT_SECONDS",
         0.01,
     )
 
@@ -603,7 +607,7 @@ async def test_stop_timeout_still_releases_other_side(controller, motion, monkey
 
 async def test_final_read_timeout_does_not_claim_success(controller, motion, monkeypatch):
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.sleep_number_mcr._FOUNDATION_CLEANUP_TIMEOUT_SECONDS",
+        "custom_components.adjustable_bed.beds.sleep_number.mcr._FOUNDATION_CLEANUP_TIMEOUT_SECONDS",
         0.01,
     )
 
@@ -641,7 +645,8 @@ async def test_split_foundation_ignores_opposite_obstruction_events(controller, 
 
 
 async def test_hold_stops_before_reading_post_motion_obstruction_status(controller, motion):
-    await controller.bind_side("left").move_back_up()
+    with controller.side_scope("left"):
+        await controller.move_back_up()
     calls = controller._mcr_request.await_args_list
     assert calls[-3].kwargs["payload"] == b"MFHL110"
     assert calls[-2].args == (0x42, 0x12, 0)
@@ -700,7 +705,7 @@ async def test_long_read_rejects_bad_data(controller, case):
 
 
 def test_capability_and_state_vectors(controller):
-    from custom_components.adjustable_bed.beds.sleep_number_mcr_protocol import (
+    from custom_components.adjustable_bed.beds.sleep_number.mcr_protocol import (
         decode_foundation,
         decode_massage,
         decode_pinch,
@@ -723,7 +728,7 @@ def test_capability_and_state_vectors(controller):
 
 
 def test_smartpump_classification_vectors():
-    from custom_components.adjustable_bed.beds.sleep_number_mcr_protocol import classify_smartpump
+    from custom_components.adjustable_bed.beds.sleep_number.mcr_protocol import classify_smartpump
 
     assert classify_smartpump(bytes.fromhex("000002"), "64:00:00:00:00:00")["model"] == "360"
     assert (
@@ -866,7 +871,7 @@ async def test_failed_stop_still_releases_other_side(controller):
 
 
 async def test_response_timeout_retries_exactly_three_times(controller):
-    from custom_components.adjustable_bed.beds.sleep_number_mcr import _ResponseTimeout
+    from custom_components.adjustable_bed.beds.sleep_number.mcr import _ResponseTimeout
 
     controller._async_send_frame_once = AsyncMock(
         side_effect=[_ResponseTimeout(), _ResponseTimeout(), _ResponseTimeout(), []]
@@ -1027,12 +1032,10 @@ async def test_position_services_use_explicit_side_percentages(hass, controller,
     assert [(call.kwargs["position_key"], call.kwargs["target_angle"]) for call in calls] == [
         (request["motor"], request["position"]) for request in requests
     ]
-    bound = MagicMock()
-    bound.move_back_up = AsyncMock()
-    controller.bind_side = MagicMock(return_value=bound)
+    sides: list[str | None] = []
+    controller.move_back_up = AsyncMock(side_effect=lambda: sides.append(controller.command_side))
     await calls[0].kwargs["move_up_fn"](controller)
-    controller.bind_side.assert_called_once_with("left")
-    bound.move_back_up.assert_awaited_once()
+    assert sides == ["left"]
 
 
 
@@ -1066,7 +1069,7 @@ async def test_optional_mcr_hydration_isolates_only_payload_failures(controller,
     controller._async_read_underbed_light_state = AsyncMock()
     controller._read_massage = AsyncMock(side_effect=failure)
     controller._read_warming = AsyncMock(side_effect=ValueError("payload"))
-    with patch("custom_components.adjustable_bed.beds.sleep_number_mcr.decode_system",
+    with patch("custom_components.adjustable_bed.beds.sleep_number.mcr.decode_system",
                return_value=(controller._foundation_features, {})):
         if isinstance(failure, TimeoutError):
             with pytest.raises(TimeoutError):
@@ -1083,27 +1086,17 @@ def test_unrelated_manufacturer_block_does_not_erase_model(controller, reverse):
     blocks = [(1, b"\x12\x06\x00\x00\x00"), (2, b"unrelated")]
     if reverse:
         blocks.reverse()
-    actual = SleepNumberMcrController(controller._coordinator, manufacturer_data=dict(blocks))
+    actual = SleepNumberMcrController(
+        controller._coordinator, client_identifier=1, manufacturer_data=dict(blocks)
+    )
     assert actual._pump_model == "360"
 
 
-async def test_changed_foundation_removes_only_stale_position_numbers(hass, sleep_number_mcr_coordinator):
+async def test_changed_foundation_offers_only_its_position_numbers(hass, sleep_number_mcr_coordinator):
     from dataclasses import replace
-
-    from homeassistant.helpers import entity_registry as er
-
-    from custom_components.adjustable_bed.number import _number_entities_for
 
     coordinator = await sleep_number_mcr_coordinator(address="AA:BB:CC:DD:EE:51", name="MCR", entry_id="mcr_cleanup")
     controller = coordinator.controller
-    registry = er.async_get(hass)
-    keys = ("back_position_left", "back_position_right", "legs_position_left", "legs_position_right", "sleep_number_left")
-    entries = {key: registry.async_get_or_create(
-        "number", DOMAIN, coordinator.entity_unique_id(key), config_entry=coordinator.entry
-    ) for key in keys}
     controller._foundation_features = replace(controller._foundation_features, configuration=0, foot=False)
-    _number_entities_for(hass, coordinator)
-    for key in ("back_position_left", "legs_position_left", "legs_position_right"):
-        assert registry.async_get(entries[key].entity_id) is None
-    for key in ("back_position_right", "sleep_number_left"):
-        assert registry.async_get(entries[key].entity_id) is not None
+    # The entry's stale sweep retires the sliders this foundation no longer offers.
+    assert {spec.key for spec in controller.position_number_specs} == {"back_position_right"}

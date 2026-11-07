@@ -12,7 +12,9 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.solace import (
+from custom_components.adjustable_bed.beds.base import controller_as
+from custom_components.adjustable_bed.beds.family_actions import YogaPresetActions
+from custom_components.adjustable_bed.beds.solace.controller import (
     SolaceCommands,
     SolaceController,
     SolaceProfile,
@@ -35,6 +37,7 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.number import _number_entities_for
 from custom_components.adjustable_bed.profiles.ff_frame import SOLACE_PROFILES
+from tests.state_helpers import published
 
 
 @pytest.fixture
@@ -282,9 +285,9 @@ class TestSolaceProfiles:
         coordinator.async_execute_controller_query = AsyncMock(side_effect=execute_query)
         now = datetime(2023, 12, 31, 23, 59, 58)
         with (
-            patch("custom_components.adjustable_bed.beds.solace.dt_util.now", return_value=now),
+            patch("custom_components.adjustable_bed.beds.solace.controller.dt_util.now", return_value=now),
             patch(
-                "custom_components.adjustable_bed.beds.solace.asyncio.sleep",
+                "custom_components.adjustable_bed.beds.solace.controller.asyncio.sleep",
                 new_callable=AsyncMock,
             ),
         ):
@@ -312,7 +315,7 @@ class TestSolaceProfiles:
 
         coordinator.async_execute_controller_query = AsyncMock(side_effect=execute_query)
         with patch(
-            "custom_components.adjustable_bed.beds.solace.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.solace.controller.asyncio.sleep",
             new_callable=AsyncMock,
         ):
             await controller._async_query_preset_states("q1")
@@ -353,8 +356,8 @@ class TestSolaceProfiles:
             sound="music_5",
         )
 
-        coordinator.handle_controller_state_updates.assert_called_once_with(
-            {
+        assert coordinator.handle_controller_state_updates.call_count == 1
+        assert published(*coordinator.handle_controller_state_updates.call_args.args) == {
                 "solace_alarm_enabled": True,
                 "solace_alarm_time": "06:45",
                 "solace_alarm_weekdays": "1,3,7",
@@ -362,7 +365,6 @@ class TestSolaceProfiles:
                 "solace_alarm_massage": True,
                 "solace_alarm_sound": "music_5",
             }
-        )
 
     async def test_motionflex_light_writes_publish_selected_level(self) -> None:
         coordinator = MagicMock()
@@ -383,9 +385,8 @@ class TestSolaceProfiles:
         controller = SolaceController(coordinator)
 
         controller._parse_notification(bytes.fromhex("FF FF FF FF 01 00 15 0B AF 00 00"))
-        coordinator.handle_controller_state_updates.assert_called_once_with(
-            {"solace_audio_volume": 15}
-        )
+        assert coordinator.handle_controller_state_updates.call_count == 1
+        assert published(*coordinator.handle_controller_state_updates.call_args.args) == {"solace_audio_volume": 15}
 
         coordinator.handle_controller_state_updates.reset_mock()
         controller._parse_notification(bytes.fromhex("FF FF FF FF 05 00 01 FE 00 00 00"))
@@ -395,8 +396,8 @@ class TestSolaceProfiles:
         controller._parse_notification(
             bytes.fromhex("FF FF FF FF 01 00 04 13 0F 06 45 00 8A 01 02 01 15")
         )
-        coordinator.handle_controller_state_updates.assert_called_once_with(
-            {
+        assert coordinator.handle_controller_state_updates.call_count == 1
+        assert published(*coordinator.handle_controller_state_updates.call_args.args) == {
                 "solace_alarm_enabled": True,
                 "solace_alarm_time": "06:45",
                 "solace_alarm_weekdays": "1,3,7",
@@ -404,7 +405,6 @@ class TestSolaceProfiles:
                 "solace_alarm_massage": True,
                 "solace_alarm_sound": "music_5",
             }
-        )
 
     async def test_audio_query_reply_updates_sensor_entity(
         self,
@@ -550,7 +550,7 @@ class TestSolaceProfiles:
 
         coordinator.async_execute_controller_query = AsyncMock(side_effect=execute_query)
         sleep = AsyncMock()
-        with patch("custom_components.adjustable_bed.beds.solace.asyncio.sleep", sleep):
+        with patch("custom_components.adjustable_bed.beds.solace.controller.asyncio.sleep", sleep):
             await controller._async_query_preset_states("q1")
 
         assert [call.args[0] for call in controller.write_command.await_args_list] == list(
@@ -563,15 +563,14 @@ class TestSolaceProfiles:
             0.5,
             0.5,
         ]
-        coordinator.handle_controller_state_updates.assert_called_once_with(
-            {
+        assert coordinator.handle_controller_state_updates.call_count == 1
+        assert published(*coordinator.handle_controller_state_updates.call_args.args) == {
                 "solace_tv_selected": False,
                 "solace_zero_g_selected": False,
                 "solace_memory_1_selected": False,
                 "solace_memory_2_selected": False,
                 "solace_anti_snore_selected": False,
             }
-        )
 
     def test_notification_parser_tracks_preset_selection(self) -> None:
         coordinator = MagicMock()
@@ -579,15 +578,13 @@ class TestSolaceProfiles:
         controller = SolaceController(coordinator)
 
         controller._parse_notification(bytes.fromhex("00 FF FF FF FF 03 06 00 09 00"))
-        coordinator.handle_controller_state_updates.assert_called_once_with(
-            {"solace_zero_g_selected": True}
-        )
+        assert coordinator.handle_controller_state_updates.call_count == 1
+        assert published(*coordinator.handle_controller_state_updates.call_args.args) == {"solace_zero_g_selected": True}
 
         coordinator.handle_controller_state_updates.reset_mock()
         controller._parse_notification(SolaceCommands.PROGRAM_MEMORY_1)
-        coordinator.handle_controller_state_updates.assert_called_once_with(
-            {"solace_memory_1_selected": True}
-        )
+        assert coordinator.handle_controller_state_updates.call_count == 1
+        assert published(*coordinator.handle_controller_state_updates.call_args.args) == {"solace_memory_1_selected": True}
 
     async def test_named_presets_use_selected_branch_after_status_reply(self) -> None:
         coordinator = MagicMock()
@@ -718,9 +715,7 @@ class TestSolacePresets:
         coordinator = AdjustableBedCoordinator(hass, mock_solace_config_entry)
         await coordinator.async_connect()
 
-        assert coordinator.controller.supports_preset_yoga is False
-        with pytest.raises(NotImplementedError):
-            await coordinator.controller.preset_yoga()
+        assert controller_as(coordinator.controller, YogaPresetActions) is None
         mock_bleak_client.write_gatt_char.assert_not_called()
 
     @pytest.mark.parametrize(

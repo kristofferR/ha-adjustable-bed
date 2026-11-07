@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed.beds.jiecang_app import JiecangAppController
+from custom_components.adjustable_bed.beds.jiecang.app import JiecangAppController
 from custom_components.adjustable_bed.codec import jiecang as codec
 from custom_components.adjustable_bed.codec.jiecang import TRANSPORTS
 from custom_components.adjustable_bed.profiles.jiecang import (
@@ -20,6 +20,7 @@ from custom_components.adjustable_bed.profiles.jiecang import (
     motion_command,
     wake_schedule,
 )
+from tests.state_helpers import massage_levels, published, state_writer
 
 DREAM_APPS = ("dreamask", "dreamotion", "dreamhd")
 
@@ -75,7 +76,8 @@ def make_controller(monkeypatch):
             cancel_command=asyncio.Event(),
             motor_pulse_count=3,
             has_massage=True,
-            handle_controller_state_updates=MagicMock(),
+            controller_state=(state := {}),
+            handle_controller_state_updates=MagicMock(side_effect=state_writer(state)),
             async_execute_controller_command=AsyncMock(),
             hass=SimpleNamespace(async_create_task=asyncio.create_task),
             record_command_trace=MagicMock(),
@@ -159,7 +161,10 @@ async def test_bilateral_massage_zones_and_alarm_stop_remain_distinct(make_contr
         bytes.fromhex("f1f111020000137e"),
         bytes.fromhex("f1f11101081a7e"),
     ]
-    assert controller.get_massage_state() == {"head_intensity": 0, "right_intensity": 0}
+    assert massage_levels(controller._coordinator.controller_state, "head", "right") == {
+        "head": 0,
+        "right": 0,
+    }
 
 
 async def test_alarm_and_split_wake_use_shared_back_right_intensity(make_controller):
@@ -208,7 +213,7 @@ async def test_absolute_schedule_accounts_for_ble_latency(make_controller):
     controller._pause = pause
     controller.write_command = write
     with patch(
-        "custom_components.adjustable_bed.beds.jiecang_app.asyncio.get_running_loop",
+        "custom_components.adjustable_bed.beds.jiecang.app.asyncio.get_running_loop",
         return_value=SimpleNamespace(time=lambda: now[0]),
     ):
         await controller._schedule(((0, b"a"), (30, b"b"), (60, b"c")))
@@ -360,7 +365,7 @@ async def test_light_toggle_and_partial_changes_preserve_reported_fields(make_co
 async def test_missing_light_state_does_not_invent_settings(make_controller):
     controller, _, client = make_controller()
     with patch(
-        "custom_components.adjustable_bed.beds.jiecang_app.asyncio.wait_for",
+        "custom_components.adjustable_bed.beds.jiecang.app.asyncio.wait_for",
         side_effect=TimeoutError,
     ):
         # Avoid creating an unawaited Event.wait coroutine in the deliberately failing mock.
@@ -401,7 +406,7 @@ async def test_auto_light_is_state_guarded_and_idempotent(make_controller):
     assert not packets(client)
     await controller.set_automatic_light(False)
     assert packets(client) == [codec.AUTOMATIC_LIGHT_TOGGLE]
-    assert coordinator.handle_controller_state_updates.call_args.args[0]["automatic_light"] is False
+    assert published(*coordinator.handle_controller_state_updates.call_args.args)["automatic_light"] is False
 
 
 async def test_clock_reply_uses_coordinator_serialization(make_controller):

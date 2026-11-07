@@ -12,13 +12,19 @@ from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
-    _starcode_app_errors,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.pairing import supports_single_address_pairing
+from custom_components.adjustable_bed.setup_questions import SETUP_PROFILES
 from tests.form_helpers import NEW_BED_ROUTES, finish_new_bed, start_new_bed
 
 ADDRESS = "11:22:33:44:55:66"
+
+
+def _validate(data):
+    validate = SETUP_PROFILES[const.BED_TYPE_STARCODE_ABM5_4].validate
+    assert validate is not None
+    return validate(data)
 
 
 def app_data(**extra):
@@ -49,7 +55,7 @@ async def test_every_setup_route_collects_explicit_C_D_without_requesting_bond(
     # The StarCode apps' row asks which app first.
     assert result["step_id"] == "starcode_family"
     result = await flow.async_step_starcode_family({"choice": "m5x4"})
-    assert result["step_id"] == "starcode_app"
+    assert result["step_id"] == "profile_questions"
     fields = {marker.schema for marker in result["data_schema"].schema}
     assert fields == {const.CONF_STARCODE_COMMAND_SELECTOR, const.CONF_STARCODE_TRANSPORT_SELECTOR}
     with (
@@ -57,7 +63,7 @@ async def test_every_setup_route_collects_explicit_C_D_without_requesting_bond(
         patch.object(flow, "async_step_bluetooth_pairing", new=AsyncMock()) as bluetooth_pairing,
         patch.object(flow, "async_step_manual_pairing", new=AsyncMock()) as manual_pairing,
     ):
-        result = await flow.async_step_starcode_app(
+        result = await flow.async_step_profile_questions(
             {
                 const.CONF_STARCODE_COMMAND_SELECTOR: "BOX15",
                 const.CONF_STARCODE_TRANSPORT_SELECTOR: "auto",
@@ -68,7 +74,7 @@ async def test_every_setup_route_collects_explicit_C_D_without_requesting_bond(
             assert result["errors"] == {
                 const.CONF_STARCODE_TRANSPORT_SELECTOR: "starcode_app_invalid"
             }
-            result = await flow.async_step_starcode_app(
+            result = await flow.async_step_profile_questions(
                 {
                     const.CONF_STARCODE_COMMAND_SELECTOR: "BOX15",
                     const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX3633",
@@ -113,7 +119,7 @@ async def test_factory_uses_original_bluetooth_name_not_friendly_label(hass, nam
     ],
 )
 def test_config_rejects_invalid_axes_and_unreachable_transport(extra, error):
-    assert _starcode_app_errors(app_data(**extra)) == {error: "starcode_app_invalid"}
+    assert _validate(app_data(**extra)) == {error: "starcode_app_invalid"}
 
 
 async def test_options_auto_transport_roundtrip_preserves_original_name_default(hass):
@@ -133,7 +139,7 @@ async def test_options_auto_transport_roundtrip_preserves_original_name_default(
         ).default()
         == "auto"
     )
-    assert not _starcode_app_errors(entry.data)
+    assert not _validate(entry.data)
 
 
 @pytest.mark.parametrize(

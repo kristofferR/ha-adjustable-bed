@@ -10,25 +10,26 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds.motion_bed import (
+from custom_components.adjustable_bed.beds.motion_bed.actions import (
+    MOTION_BED_ACTIONS,
+    MotionBedAction,
+)
+from custom_components.adjustable_bed.beds.motion_bed.controller import (
     MotionBedController,
     button_actions_for,
     motion_bed_button_key,
     motion_bed_cover_key,
 )
-from custom_components.adjustable_bed.motion_bed_actions import MOTION_BED_ACTIONS, MotionBedAction
-from custom_components.adjustable_bed.motion_bed_models import (
+from custom_components.adjustable_bed.beds.motion_bed.models import (
     MOVEMENT_LAYOUTS,
     PRESET_VARIANTS,
     select_motion_bed,
 )
-from custom_components.adjustable_bed.motion_bed_protocol import SOURCE_COMMANDS
+from custom_components.adjustable_bed.beds.motion_bed.protocol import SOURCE_COMMANDS
 
 ENTITY_STRINGS = json.loads(
     (Path(__file__).parents[1] / "custom_components/adjustable_bed/strings.json").read_text()
 )["entity"]
-# Covers get a side suffix on single-address paired views; no cover is "both".
-SIDE_VIEWS = ("", "_left", "_right")
 HOME_MOVEMENTS = tuple(layout for layout in MOVEMENT_LAYOUTS if layout != "modular")
 HOME_PRESETS = tuple(preset for preset in PRESET_VARIANTS if preset != "modular")
 
@@ -73,8 +74,7 @@ def test_movement_covers_share_one_key_per_label_and_side(movement: str) -> None
     for key, members in pairs.items():
         # Only byte-identical pads (W8's split and coupled LEG) share an entity.
         assert len({(frames(up), frames(down)) for up, down in members}) == 1
-        for side in SIDE_VIEWS:
-            assert key + side in ENTITY_STRINGS["cover"]
+        assert key in ENTITY_STRINGS["cover"]
         label = members[0][0].name.removesuffix(" up")
         if not key.startswith(("motion_bed_left_", "motion_bed_right_")):
             assert ENTITY_STRINGS["cover"][key]["name"] == label
@@ -100,7 +100,7 @@ def test_cover_translations_are_exactly_the_reachable_keys() -> None:
         for spec in controller(movement_override=movement).motor_control_specs
     }
     declared = {key for key in ENTITY_STRINGS["cover"] if key.startswith("motion_bed_")}
-    assert declared == {key + side for key in used for side in SIDE_VIEWS}
+    assert declared == used
 
 
 def _profiles() -> list[MotionBedController]:

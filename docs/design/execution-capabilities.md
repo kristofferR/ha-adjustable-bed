@@ -389,8 +389,8 @@ mode a press runs, so the scope is recomputed from them on every read:
 - **Head/foot** (GVRM tag 63): the foot side reaches the null legacy-long
   getter and sends nothing, so those controls leave the scope.
 
-The scope comes from the accepted caller transition (`cluster018_caller`), and
-`tests/test_cluster018_hold_lease.py` checks it against every accepted DOWN and
+The scope comes from the accepted caller transition (`beds/richmat_classic/caller.py`), and
+`tests/test_richmat_classic_hold_lease.py` checks it against every accepted DOWN and
 UP caller vector. Some controls send only on one wire (GVRM ships a few with
 only the legacy operand, which only RAW sends), so offline the last session's
 wire decides; before any session either wire may, and the press checks the
@@ -590,7 +590,7 @@ or `motosleep`'s complete reports are available again.
 | 5 | #483 one PR per further family: Jiecang, Keeson, Richmat, Limoss, Okin 5A, FF frame, then standalone controllers | each family's codec, profile, controller and vector files | 2 |
 | 6 | #516 merged-stream strategy behind `execution.concurrent` | `command_scheduler.py`, `coordinator.py` | 2 |
 | 7 | #516 Leggett Okin and Customatic composition | Okin N-frame files | 3, 6 |
-| 8 | #516 Svane | `beds/svane.py`, `svane_state.py`, Svane tests | 6 |
+| 8 | #516 Svane | `beds/svane/controller.py`, `beds/svane/state.py`, Svane tests | 6 |
 | 9 | #591 closed as deferred, citing this document | none | none |
 
 PRs 3, 4 and each PR in 5 own disjoint files and run in parallel after 2. PRs 2

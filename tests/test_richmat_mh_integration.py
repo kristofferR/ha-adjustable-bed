@@ -7,7 +7,8 @@ from unittest.mock import MagicMock
 import pytest
 
 from custom_components.adjustable_bed.actuator_groups import actuator_group_for
-from custom_components.adjustable_bed.beds import richmat_mh_protocol as protocol
+from custom_components.adjustable_bed.bed_traits import bed_traits
+from custom_components.adjustable_bed.beds.richmat_mh import protocol
 from custom_components.adjustable_bed.binary_sensor import _binary_sensor_entities_for
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.config_flow import (
@@ -16,7 +17,6 @@ from custom_components.adjustable_bed.config_flow import (
     _richmat_mh_variant_error,
 )
 from custom_components.adjustable_bed.const import (
-    BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_BLE_DEVICE_NAME,
     RICHMAT_MH_APPS,
     RICHMAT_MH_BED_TYPES,
@@ -43,7 +43,7 @@ from tests.test_richmat_mh import make, vers0, vers1
 
 @pytest.mark.parametrize("bed_type", sorted(RICHMAT_MH_BED_TYPES))
 def test_profile_registration(bed_type: str) -> None:
-    assert bed_type in SUPPORTED_BED_TYPES and bed_type in BEDS_WITHOUT_ANGLE_FEEDBACK
+    assert bed_type in SUPPORTED_BED_TYPES and bed_traits(bed_type).no_angle_feedback
     assert get_motor_pulse_defaults(bed_type) == (10, 100)
     assert not requires_pairing(bed_type)  # the app has no pairing, PIN or encryption
     assert _motor_count_options(bed_type) == [2]
@@ -160,7 +160,7 @@ def test_every_entity_translation_and_select_state_exists() -> None:
     import json
     from pathlib import Path
 
-    from custom_components.adjustable_bed import richmat_mh_catalog as catalog
+    from custom_components.adjustable_bed.beds.richmat_mh import catalog
 
     root = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
     strings = json.loads((root / "strings.json").read_text())["entity"]

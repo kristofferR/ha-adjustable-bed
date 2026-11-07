@@ -10,28 +10,37 @@ from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .beds.octo.runtime import octo_controller
+from .card import CARD_LIGHTING, CARD_UTILITY, CardPlacement, CardSection
 from .const import (
-    BED_TYPE_LINAK,
     BED_TYPE_REMACRO,
-    BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SVANE,
-    BED_TYPE_VIBRADORM_APP,
     DOMAIN,
     OKIN_BEDDING_APP_BED_TYPES,
 )
+from .controller_state import ControllerState, StateKey
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
-from .octo_runtime import octo_controller
+from .entity_sweep import PlatformEntities, records_entities
 from .paired_coordinator import entity_runtimes
+from .state_keys import (
+    AUTOMATIC_LIGHT,
+    LIGHT_LEVEL,
+    LINAK_AUTOMATIC_DRIVE,
+    OCTO_LIGHT_DURATION,
+    REMOTE_CONTROL_LOCK,
+    SYNCHRO_MODE,
+    UNDER_BED_LIGHTS_ON,
+)
 
 if TYPE_CHECKING:
     from .beds.base import BedController
-    from .beds.octo import OctoController
+    from .beds.octo.controller import OctoController
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,15 +51,14 @@ class AdjustableBedSwitchEntityDescription(SwitchEntityDescription):
 
     turn_on_fn: Callable[[BedController], Coroutine[Any, Any, None]]
     turn_off_fn: Callable[[BedController], Coroutine[Any, Any, None]]
-    # Capability property name to check on controller (e.g., "supports_lights")
-    required_capability: str | None = None
-    # Only create entity for these bed types (None = all bed types)
-    required_bed_types: tuple[str, ...] | None = None
+    # Controller capability gating the entity, e.g. ``lambda c: c.supports_lights``.
+    is_supported: Callable[[BedController], bool] | None = None
     # True if the switch has separate on/off commands (enables state tracking)
     # When False, the switch is treated as toggle-only (no state tracking)
     has_discrete_control: bool = False
     # Optional controller-state key for readback/assumed-state publication.
-    state_key: str | None = None
+    state_key: StateKey[bool | None] | None = None
+    card: CardPlacement = CARD_UTILITY
 
 
 SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
@@ -60,17 +68,18 @@ SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
         icon="mdi:lightbulb-auto",
         turn_on_fn=lambda ctrl: ctrl.set_automatic_light(True),
         turn_off_fn=lambda ctrl: ctrl.set_automatic_light(False),
-        required_capability="supports_automatic_light",
+        is_supported=lambda c: c.supports_automatic_light,
         has_discrete_control=True,
-        state_key="automatic_light",
+        state_key=AUTOMATIC_LIGHT,
     ),
     AdjustableBedSwitchEntityDescription(
         key="under_bed_lights",
         translation_key="under_bed_lights",
+        card=CARD_LIGHTING,
         icon="mdi:lightbulb",
         turn_on_fn=lambda ctrl: ctrl.lights_on(),
         turn_off_fn=lambda ctrl: ctrl.lights_off(),
-        required_capability="supports_discrete_light_control",
+        is_supported=lambda c: c.supports_discrete_light_control,
     ),
     AdjustableBedSwitchEntityDescription(
         key="linak_automatic_drive",
@@ -78,21 +87,22 @@ SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
         icon="mdi:car-shift-pattern",
         turn_on_fn=lambda ctrl: ctrl.set_automatic_drive(True),
         turn_off_fn=lambda ctrl: ctrl.set_automatic_drive(False),
-        required_capability="supports_automatic_drive",
+        is_supported=lambda c: c.supports_automatic_drive,
         entity_registry_enabled_default=False,
         has_discrete_control=True,
-        state_key="linak_automatic_drive",
+        state_key=LINAK_AUTOMATIC_DRIVE,
     ),
     AdjustableBedSwitchEntityDescription(
         key="synchro_mode",
         translation_key="synchro_mode",
+        card=CardPlacement(CardSection.MOTORS),
         icon="mdi:link-variant",
         turn_on_fn=lambda ctrl: ctrl.set_synchro(True),
         turn_off_fn=lambda ctrl: ctrl.set_synchro(False),
-        required_capability="supports_synchro",
+        is_supported=lambda c: c.supports_synchro,
         entity_registry_enabled_default=False,
         has_discrete_control=True,
-        state_key="synchro_mode",
+        state_key=SYNCHRO_MODE,
     ),
     AdjustableBedSwitchEntityDescription(
         key="remote_control_lock",
@@ -100,23 +110,23 @@ SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
         icon="mdi:remote-lock",
         turn_on_fn=lambda ctrl: ctrl.set_remote_control_lock(True),
         turn_off_fn=lambda ctrl: ctrl.set_remote_control_lock(False),
-        required_capability="supports_remote_control_lock",
+        is_supported=lambda c: c.supports_remote_control_lock,
         has_discrete_control=True,
-        state_key="remote_control_lock",
+        state_key=REMOTE_CONTROL_LOCK,
     ),
 )
 
 
+@records_entities(Platform.SWITCH)
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed switch entities."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
     for runtime in entity_runtimes(coordinator):
         async_setup_dynamic_entities(
-            hass,
             entry,
             runtime,
             async_add_entities,
@@ -173,17 +183,14 @@ def _switch_entities_for(
                 DOMAIN,
                 coordinator.entity_unique_id(description.key),
             )
-            if existing is not None and not octo.supports_lights:
-                registry.async_remove(existing)
-                existing = None
             if (
-                existing is not None
+                (existing is not None and octo.supports_lights)
                 or octo.legacy_light_fallback
                 or (octo.supports_discrete_light_control and not octo.supports_light_color_control)
             ):
                 entities.append(AdjustableBedSwitch(coordinator, description))
             # OCTO keeps this legacy switch identity. Color surfaces use the
-            # light platform without deleting a user's existing switch row.
+            # light platform without retiring a user's existing switch row.
             continue
         if (
             description.key == "under_bed_lights"
@@ -193,40 +200,17 @@ def _switch_entities_for(
                 or controller.supports_light_state_feedback
                 or controller.supported_color_modes == frozenset(("onoff",))
                 or (
-                    coordinator.bed_type in (BED_TYPE_LINAK, BED_TYPE_SLEEP_NUMBER_MCR)
+                    controller.exposes_discrete_light_as_light
                     and controller.supports_discrete_light_control
                 )
             )
         ):
-            entity_id = registry.async_get_entity_id(
-                "switch",
-                DOMAIN,
-                coordinator.entity_unique_id(description.key),
-            )
-            if entity_id is not None:
-                registry.async_remove(entity_id)
             continue
-        # Skip switches restricted to specific bed types
-        if description.required_bed_types is not None:
-            if coordinator.bed_type not in description.required_bed_types:
-                continue
         # Skip switches that require capabilities the controller doesn't have
-        if description.required_capability is not None:
+        if description.is_supported is not None:
             if controller is None:
                 continue
-            # Default to False: only create entity if controller explicitly supports it
-            if not getattr(controller, description.required_capability, False):
-                # Older releases may have created this switch before the
-                # capability was dropped (e.g. BedTech discrete lights, #410);
-                # remove the stale registry entry so a dead control doesn't
-                # linger in the UI and card.
-                entity_id = registry.async_get_entity_id(
-                    "switch",
-                    DOMAIN,
-                    coordinator.entity_unique_id(description.key),
-                )
-                if entity_id is not None:
-                    registry.async_remove(entity_id)
+            if not description.is_supported(controller):
                 continue
         entities.append(AdjustableBedSwitch(coordinator, description))
 
@@ -269,14 +253,16 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
         description: AdjustableBedSwitchEntityDescription,
     ) -> None:
         """Initialize the switch."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, description.card)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
-        self._app_floor_intent = (
-            description.key == "under_bed_lights" and coordinator.bed_type == BED_TYPE_VIBRADORM_APP
-        )
         controller = coordinator.capability_controller
+        self._app_floor_intent = (
+            description.key == "under_bed_lights"
+            and controller is not None
+            and controller.light_switch_follows_level_intent
+        )
         if description.state_key is None:
             self._attr_is_on = False
             if description.key == "under_bed_lights" and (
@@ -289,7 +275,7 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
                 self._attr_assumed_state = True
             elif self._app_floor_intent:
                 # The selected app publishes intended level, never physical readback.
-                level = coordinator.controller_state.get("light_level")
+                level = coordinator.controller_state.get(LIGHT_LEVEL)
                 self._attr_is_on = level > 0 if type(level) is int and level >= 0 else None
                 self._attr_assumed_state = True
         else:
@@ -332,22 +318,24 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
         )
 
     @callback
-    def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
+    def _handle_controller_state_update(self, state: ControllerState) -> None:
         """Update the switch when the controller publishes light state."""
-        if self.entity_description.key == "under_bed_lights" and "octo_light_duration" in state:
+        if self.entity_description.key == "under_bed_lights" and OCTO_LIGHT_DURATION in state:
             octo = self._current_octo_timer_controller()
             if octo is not None:
                 self._schedule_octo_auto_off_timer(octo)
-        state_key = (
-            "light_level"
-            if self._app_floor_intent
-            else self.entity_description.state_key or "under_bed_lights_on"
-        )
-        if state_key not in state:
-            return
-        if self._app_floor_intent and (type(state[state_key]) is not int or state[state_key] < 0):
-            return
-        self._attr_is_on = bool(state[state_key])
+        if self._app_floor_intent:
+            if LIGHT_LEVEL not in state:
+                return
+            level = state[LIGHT_LEVEL]
+            if type(level) is not int or level < 0:
+                return
+            self._attr_is_on = bool(level)
+        else:
+            state_key = self.entity_description.state_key or UNDER_BED_LIGHTS_ON
+            if state_key not in state:
+                return
+            self._attr_is_on = bool(state[state_key])
         if self.entity_description.key != "under_bed_lights":
             self.async_write_ha_state()
             return

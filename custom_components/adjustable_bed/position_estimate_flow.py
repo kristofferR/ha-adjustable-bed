@@ -37,7 +37,7 @@ from .position_estimate import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ CONF_MEASURE = "measure"
 _STOP_TIMEOUT_S = 10.0
 
 
-def eligible_motors(controller: BedController | SideBoundController | None) -> list[str]:
+def eligible_motors(controller: BedController | None) -> list[str]:
     """Motors a controller declares for estimates, in the standard order."""
     if controller is None:
         return []
@@ -55,7 +55,7 @@ def eligible_motors(controller: BedController | SideBoundController | None) -> l
     return [motor for motor in ESTIMATE_MOTORS if groups.get(motor) == (motor,)]
 
 
-def not_offered_motors(controller: BedController | SideBoundController | None) -> list[str]:
+def not_offered_motors(controller: BedController | None) -> list[str]:
     """Single motor controls without a proven estimate, for the explanation."""
     if controller is None:
         return []

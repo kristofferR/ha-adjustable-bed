@@ -73,7 +73,7 @@ async def test_later_deferred_target_respects_stop_before_dispatch(
 
     monkeypatch.setattr("custom_components.adjustable_bed.services._resolve_sided_targets", resolve)
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.reverie_services._resolve_sided_targets", resolve
+        "custom_components.adjustable_bed.beds.reverie.services._resolve_sided_targets", resolve
     )
     await async_register_services(hass)
     data = {}

@@ -18,12 +18,13 @@ import logging
 import time
 from collections.abc import Callable
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ..codec import okin_5a as star
+from ..codec.ff_frame import with_crc
 from ..const import (
     NORDIC_UART_READ_CHAR_UUID,
     NORDIC_UART_WRITE_CHAR_UUID,
@@ -31,10 +32,19 @@ from ..const import (
     SLEEPSTAR_MANUFACTURER_ID,
     SLEEPSTAR_SINGLE_SUBTYPE,
 )
-from .base import (
+from ..controller_state import StateKey
+from ..state_keys import (
+    LIGHT_LEVEL,
+    MASSAGE_ACTIVE,
+    MASSAGE_TIMER_MINUTES,
+    UNDER_BED_LIGHTS_ON,
+    massage_intensity,
+)
+from .base import BedController
+from .builder import BuildContext
+from .entity_specs import (
     POSITION_AXIS_ICONS,
     POSITION_UNIT_PERCENT,
-    BedController,
     MotorControlSpec,
     PositionNumberSpec,
 )
@@ -167,30 +177,31 @@ def build_daily_report_query(*, side: int, year: int, month: int, day: int) -> b
     return bytes([0x2A, 0, 0, 7, 0x84 if side == 0 else 0x85, 3, year - 2000, month, day])
 
 
-def crc16_modbus(data: bytes) -> int:
-    """Return the CRC-16/MODBUS used only by the inner environment protocol."""
-    crc = 0xFFFF
-    for value in data:
-        crc ^= value
-        for _ in range(8):
-            crc = ((crc >> 1) ^ 0xA001) if crc & 1 else crc >> 1
-    return crc & 0xFFFF
-
-
-def _with_modbus_crc(data: bytes) -> bytes:
-    """Append a low-byte-first MODBUS CRC to an environment payload."""
-    crc = crc16_modbus(data)
-    return data + bytes([crc & 0xFF, crc >> 8])
-
-
 def build_environment_address_query() -> bytes:
     """Build the broadcast query for the environment-sensor MODBUS address."""
-    return wrap_environment(_with_modbus_crc(bytes.fromhex("000200000001")))
+    return wrap_environment(with_crc(bytes.fromhex("000200000001")))
 
 
 def build_environment_register_query(address: int) -> bytes:
     """Build the seven-register environment query for a discovered address."""
-    return wrap_environment(_with_modbus_crc(bytes([address & 0xFF, 3, 0, 2, 0, 7])))
+    return wrap_environment(with_crc(bytes([address & 0xFF, 3, 0, 2, 0, 7])))
+
+
+VARIANT: Final = StateKey[str]("sleepstar_variant")
+CONFIG_LOADED: Final = StateKey[bool]("sleepstar_config_loaded")
+CONFIG_BITMAP: Final = StateKey[int]("sleepstar_config_bitmap")
+CONFIG_PAGES: Final = StateKey[list[int]]("sleepstar_config_pages")
+MOTOR_MASK: Final = StateKey[int]("sleepstar_motor_mask")
+MOTOR_TYPE_MASK: Final = StateKey[int]("sleepstar_motor_type_mask")
+SOFT_START_MASK: Final = StateKey[int]("sleepstar_soft_start_mask")
+PERIPHERAL_INFO: Final = StateKey[list[int]]("sleepstar_peripheral_info")
+PART6_POSITION: Final = StateKey[int]("sleepstar_part6_position")
+POSITIONS: Final = StateKey[dict[str, int]]("sleepstar_positions")
+
+
+def _response_key(family: str) -> StateKey[str]:
+    """The last raw response of one protocol family, as hex."""
+    return StateKey[str](f"sleepstar_{family}_response")
 
 
 def resolve_sleepstar_variant(manufacturer_data: dict[int, bytes] | None) -> str:
@@ -273,8 +284,11 @@ class SleepStarController(BedController):
         self._last_notification: bytes | None = None
         self._last_notification_time = 0.0
         self._massage_mode = -1
-        self._massage_intensities = {"head": 0, "foot": 0, "all": 0}
-        self._massage_timer_minutes = 0
+        # Sonic levels and timer are tracked from this session's commands.
+        self.forward_controller_state_updates(
+            *(massage_intensity(zone)(0) for zone in ("head", "foot", "all")),
+            MASSAGE_TIMER_MINUTES(0),
+        )
         self._light_level = 0
 
     @property
@@ -285,16 +299,6 @@ class SleepStarController(BedController):
     @property
     def requires_notification_channel(self) -> bool:
         """Return True because CB37 startup and state require RX notifications."""
-        return True
-
-    @property
-    def supports_position_feedback(self) -> bool:
-        """Return True for the app-proven six-part position report."""
-        return True
-
-    @property
-    def reports_percentage_position(self) -> bool:
-        """Return True because SLEEPSTAR positions use percentages."""
         return True
 
     @property
@@ -421,6 +425,7 @@ class SleepStarController(BedController):
                 open_fn=spec.open_fn,
                 close_fn=spec.close_fn,
                 stop_fn=spec.stop_fn,
+                motor=spec.translation_key,
             )
             for spec in self.motor_control_specs
             if spec.position_key is not None
@@ -477,11 +482,6 @@ class SleepStarController(BedController):
             ),
         )
 
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Return obsolete generic entity aliases to remove."""
-        return frozenset({"back", "legs"})
-
     def _track_task(self, coroutine: Any, *, name: str) -> asyncio.Task[Any]:
         """Create and retain a session-owned background task."""
         task = asyncio.create_task(coroutine, name=name)
@@ -536,7 +536,7 @@ class SleepStarController(BedController):
                 await asyncio.sleep(_SENDER_CADENCE_SECONDS)
 
         self._session_initialized = True
-        self.forward_controller_state_update("sleepstar_variant", self.sleep_monitor_variant)
+        self.forward_controller_state_update(VARIANT, self.sleep_monitor_variant)
         self._config_retry_task = self._track_task(
             self._retry_config_once(), name="sleepstar_config_retry"
         )
@@ -605,7 +605,7 @@ class SleepStarController(BedController):
             self._config_pages.clear()
             self._received_config_pages.clear()
             self._config_loaded = False
-            self.forward_controller_state_update("sleepstar_config_loaded", False)
+            self.forward_controller_state_update(CONFIG_LOADED, False)
         await self._write_frame(build_cb37_config_query(1), cancel_event=asyncio.Event())
 
     async def refresh_protocol_state(self) -> None:
@@ -675,23 +675,23 @@ class SleepStarController(BedController):
             return
 
         if len(raw) >= 9 and raw[0] == 0x2A and raw[6] == 9 and raw[8] in (3, 0x81):
-            self.forward_controller_state_update("sleepstar_environment_response", raw.hex())
+            self.forward_controller_state_update(_response_key("environment"), raw.hex())
             return
 
         if len(raw) >= 5 and raw[0] in (0x2A, 0xEA):
             command = raw[4]
-            key = (
-                "sleepstar_daily_report_response"
+            family = (
+                "daily_report"
                 if command in (0x84, 0x85)
-                else "sleepstar_monthly_report_response"
+                else "monthly_report"
                 if command in (0x86, 0x87)
-                else "sleepstar_config_response"
+                else "config"
                 if command == 0x81
-                else "sleepstar_ota_response"
+                else "ota"
                 if command in (1, 3)
-                else "sleepstar_protocol_response"
+                else "protocol"
             )
-            self.forward_controller_state_update(key, raw.hex())
+            self.forward_controller_state_update(_response_key(family), raw.hex())
 
     def _handle_config_response(self, raw: bytes) -> None:
         """Cache a configuration page and schedule advertised missing pages."""
@@ -701,23 +701,21 @@ class SleepStarController(BedController):
         self._config_pages[page] = raw
         self._received_config_pages.add(page)
 
-        updates: dict[str, Any] = {
-            "sleepstar_config_bitmap": bitmap,
-            "sleepstar_config_pages": sorted(self._received_config_pages),
-        }
+        updates = [
+            CONFIG_BITMAP(bitmap),
+            CONFIG_PAGES(sorted(self._received_config_pages)),
+        ]
         if page in (0, 1):
             self._motor_mask = raw[8]
             self._motor_type_mask = raw[9]
             self._soft_start_mask = raw[10]
             self._peripheral_info = (raw[11], raw[12])
-            updates.update(
-                {
-                    "sleepstar_motor_mask": self._motor_mask,
-                    "sleepstar_motor_type_mask": self._motor_type_mask,
-                    "sleepstar_soft_start_mask": self._soft_start_mask,
-                    "sleepstar_peripheral_info": list(self._peripheral_info),
-                }
-            )
+            updates += [
+                MOTOR_MASK(self._motor_mask),
+                MOTOR_TYPE_MASK(self._motor_type_mask),
+                SOFT_START_MASK(self._soft_start_mask),
+                PERIPHERAL_INFO(list(self._peripheral_info)),
+            ]
 
             missing_pages = [
                 bit + 1
@@ -734,8 +732,8 @@ class SleepStarController(BedController):
 
         expected_pages = bitmap.bit_count()
         self._config_loaded = len(self._received_config_pages) >= expected_pages
-        updates["sleepstar_config_loaded"] = self._config_loaded
-        self.forward_controller_state_updates(updates)
+        updates.append(CONFIG_LOADED(self._config_loaded))
+        self.forward_controller_state_updates(*updates)
 
     async def _query_missing_config_pages(self, pages: list[int]) -> None:
         """Request each still-missing configuration page at sender cadence."""
@@ -754,13 +752,9 @@ class SleepStarController(BedController):
         if len(data) < 3 or data[0] != 0xA5:
             return
 
-        state_key = {
-            0x0B: "sleepstar_sonic_response",
-            0x0C: "sleepstar_alarm_response",
-            0x0E: "sleepstar_eq_response",
-        }.get(data[2])
-        if state_key is not None:
-            self.forward_controller_state_update(state_key, data.hex())
+        family = {0x0B: "sonic", 0x0C: "alarm", 0x0E: "eq"}.get(data[2])
+        if family is not None:
+            self.forward_controller_state_update(_response_key(family), data.hex())
             return
 
         if len(data) < 11 or data[2] != 0x0D:
@@ -778,10 +772,8 @@ class SleepStarController(BedController):
             for key, value in values.items():
                 self._notify_callback(key, value)
         self.forward_controller_state_updates(
-            {
-                "sleepstar_part6_position": min(100, data[7]),
-                "sleepstar_positions": {key: int(value) for key, value in values.items()},
-            }
+            PART6_POSITION(min(100, data[7])),
+            POSITIONS({key: int(value) for key, value in values.items()}),
         )
 
     async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
@@ -985,13 +977,13 @@ class SleepStarController(BedController):
     async def lights_on(self) -> None:
         """Turn the RGB light on with the dedicated command."""
         await self.write_command(SleepStarCommands.LIGHT_ON)
-        self.forward_controller_state_update("under_bed_lights_on", True)
+        self.forward_controller_state_update(UNDER_BED_LIGHTS_ON, True)
 
     async def lights_off(self) -> None:
         """Turn the RGB light off and clear cached brightness."""
         await self.write_command(SleepStarCommands.LIGHT_OFF)
         self._light_level = 0
-        self.forward_controller_state_updates({"under_bed_lights_on": False, "light_level": 0})
+        self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(False), LIGHT_LEVEL(0))
 
     async def lights_toggle(self) -> None:
         """Toggle the RGB light with the app's dedicated key."""
@@ -1014,9 +1006,7 @@ class SleepStarController(BedController):
             return
         await self._send_twice_then_stop(wrap_control_box(star.extended(0x00, normalized)))
         self._light_level = normalized
-        self.forward_controller_state_updates(
-            {"under_bed_lights_on": True, "light_level": normalized}
-        )
+        self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(True), LIGHT_LEVEL(normalized))
 
     async def set_light_color_index(self, index: int) -> None:
         """Set one of the app's eight palette indices (0..7)."""
@@ -1045,11 +1035,7 @@ class SleepStarController(BedController):
         else:
             raise ValueError(f"Unsupported SLEEPSTAR sonic zone: {zone}")
         await self._send_twice_then_stop(wrap_control_box(command))
-        self._massage_intensities[zone] = normalized
-        updates = {f"massage_{zone}_intensity": normalized}
-        if zone == "all":
-            updates["massage_intensity"] = normalized
-        self.forward_controller_state_updates(updates)
+        self.forward_controller_state_updates(massage_intensity(zone)(normalized))
 
     async def set_massage_timer(self, minutes: int) -> None:
         """Set the sonic timer to off, 10, 20, or 30 minutes."""
@@ -1061,22 +1047,9 @@ class SleepStarController(BedController):
             except ValueError as err:
                 raise ValueError("SLEEPSTAR sonic timer must be 0, 10, 20, or 30 minutes") from err
         await self._send_twice_then_stop(wrap_control_box(star.extended(0x0B, encoded)))
-        self._massage_timer_minutes = int(minutes)
         self.forward_controller_state_updates(
-            {
-                "massage_timer": int(minutes),
-                "massage_active": int(minutes) > 0,
-            }
+            MASSAGE_TIMER_MINUTES(int(minutes)), MASSAGE_ACTIVE(int(minutes) > 0)
         )
-
-    def get_massage_state(self) -> dict[str, object]:
-        """Return cached sonic intensity, timer, and active state."""
-        return {
-            **{f"{zone}_intensity": value for zone, value in self._massage_intensities.items()},
-            "intensity": self._massage_intensities["all"],
-            "timer_mode": str(self._massage_timer_minutes),
-            "active": self._massage_timer_minutes > 0,
-        }
 
     async def query_sleep_config(self) -> None:
         """Query sleep-monitor configuration state."""
@@ -1187,3 +1160,9 @@ class SleepStarController(BedController):
         if not 1 <= value <= 10:
             raise ValueError("SLEEPSTAR EQ profile value must be in range 1..10")
         await self.write_command(wrap_control_box(star.extended(13, value)))
+
+
+async def build_controller(ctx: BuildContext) -> SleepStarController:
+    """Build the controller with the advertised data."""
+    _LOGGER.debug("Using SleepSpa S9000AI SLEEPSTAR controller")
+    return SleepStarController(ctx.coordinator, manufacturer_data=ctx.manufacturer_data)

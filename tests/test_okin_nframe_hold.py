@@ -23,8 +23,8 @@ from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.base import BedController
-from custom_components.adjustable_bed.beds.customatic import CustomaticController
-from custom_components.adjustable_bed.beds.leggett_okin import LeggettOkinController
+from custom_components.adjustable_bed.beds.customatic.controller import CustomaticController
+from custom_components.adjustable_bed.beds.leggett.okin import LeggettOkinController
 from custom_components.adjustable_bed.codec import okin_nframe as codec
 from custom_components.adjustable_bed.command_scheduler import CommandKind, CommandOutcome
 from custom_components.adjustable_bed.const import (

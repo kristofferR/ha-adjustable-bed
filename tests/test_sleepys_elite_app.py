@@ -17,8 +17,8 @@ from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant
 
 from custom_components.adjustable_bed.app_profiles import per_side_profile
-from custom_components.adjustable_bed.beds.sleepys_app import SleepysEliteAppController
-from custom_components.adjustable_bed.beds.sleepys_app_routes import (
+from custom_components.adjustable_bed.beds.sleepys.app import SleepysEliteAppController
+from custom_components.adjustable_bed.beds.sleepys.app_routes import (
     CANONICAL_ROUTE_SHA256,
     ROUTES,
 )
@@ -34,6 +34,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.detection import BED_TYPE_DISPLAY_NAMES
+from tests.state_helpers import published
 
 FIXTURES = Path(__file__).parent / "fixtures"
 _ROUTE_FIXTURE = FIXTURES / "sleepys_elite_routes_v2.tsv"
@@ -104,7 +105,10 @@ def _controller(selector: str, *, connected: bool = False) -> SleepysEliteAppCon
         record_command_trace=MagicMock(),
         handle_controller_state_updates=MagicMock(),
     )
-    return SleepysEliteAppController(coordinator, selector)
+    controller = SleepysEliteAppController(coordinator, selector)
+    # Only notifications matter here, not the massage level published at construction.
+    coordinator.handle_controller_state_updates.reset_mock()
+    return controller
 
 
 def _gatt_client(
@@ -256,6 +260,7 @@ async def test_app_selector_belongs_to_each_physical_side_and_factory_does_not_i
             address="AA:BB:CC:DD:EE:FF",
             client=None,
             cancel_command=asyncio.Event(),
+            handle_controller_state_updates=MagicMock(),
         )
         controller = await create_controller(
             coordinator,
@@ -716,7 +721,7 @@ def test_non_timer_layouts_keep_field_0b_out_of_the_timer_select(
 
     controller._handle_notification(characteristic, bytearray(frame))
 
-    updates = controller._coordinator.handle_controller_state_updates.call_args.args[0]
+    updates = published(*controller._coordinator.handle_controller_state_updates.call_args.args)
     assert "sleepys_app_field_0x0b" in updates
     assert "sleepys_app_massage_timer_code" not in updates
 
@@ -731,7 +736,7 @@ def test_unknown_timer_code_does_not_enter_the_declared_select_domain() -> None:
 
     controller._handle_notification(characteristic, raw)
 
-    updates = controller._coordinator.handle_controller_state_updates.call_args.args[0]
+    updates = published(*controller._coordinator.handle_controller_state_updates.call_args.args)
     assert updates["sleepys_app_field_0x0b"] == 0
     assert "sleepys_app_massage_timer_code" not in updates
 

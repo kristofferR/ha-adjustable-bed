@@ -16,22 +16,22 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntityDescription,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import EntityCategory
+from homeassistant.const import EntityCategory, Platform
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .card import CARD_HIDDEN, CardPlacement, CardSection
 from .const import DOMAIN
+from .controller_state import ControllerState, StateKey, sided
 from .entity import AdjustableBedEntity
-from .entity_discovery import (
-    async_remove_retired_rmcontrol_telemetry,
-    async_setup_dynamic_entities,
-)
-from .entity_runtime import EntityRuntime
+from .entity_discovery import async_setup_dynamic_entities
+from .entity_runtime import EntityRuntime, named_for_side, own_sides
+from .entity_sweep import PlatformEntities, records_entities
 from .paired_coordinator import entity_runtimes
+from .state_keys import BED_PRESENCE, BED_PRESENCE_SIDE
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, ControllerStateBinarySensorSpec
+    from .beds.base import BedController
+    from .beds.entity_specs import ControllerStateBinarySensorSpec
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ _LOGGER = logging.getLogger(__name__)
 class AdjustableBedBinarySensorEntityDescription(BinarySensorEntityDescription):
     """Describes an Adjustable Bed binary sensor entity."""
 
-    state_key: str | None = None
+    state_key: StateKey[str] | None = None
     side: str | None = None
 
 
@@ -56,23 +56,34 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[AdjustableBedBinarySensorEntityDescription, ..
         translation_key="bed_presence",
         device_class=BinarySensorDeviceClass.OCCUPANCY,
         entity_registry_enabled_default=False,
-        state_key="bed_presence",
+        state_key=BED_PRESENCE,
     ),
 )
 
 
+def _build_side_presence_description(side: str) -> AdjustableBedBinarySensorEntityDescription:
+    """Build one natively sided bed presence description."""
+    return AdjustableBedBinarySensorEntityDescription(
+        key=f"bed_presence_{side}",
+        translation_key=f"bed_presence_{side}",
+        device_class=BinarySensorDeviceClass.OCCUPANCY,
+        entity_registry_enabled_default=False,
+        state_key=sided(BED_PRESENCE, side),
+        side=side,
+    )
+
+
+@records_entities(Platform.BINARY_SENSOR)
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed binary sensor entities."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
     for runtime in entity_runtimes(coordinator):
-        async_remove_retired_rmcontrol_telemetry(hass, entry, runtime, "binary_sensor")
         async_setup_dynamic_entities(
-            hass, entry, runtime, async_add_entities,
-            partial(_binary_sensor_entities_for, hass, runtime),
+            entry, runtime, async_add_entities, partial(_binary_sensor_entities_for, hass, runtime)
         )
 
 
@@ -89,102 +100,26 @@ def _binary_sensor_entities_for(
             if controller is None or not controller.supports_bed_presence:
                 continue
 
-            bed_presence_sides = controller.bed_presence_sides
-            if bed_presence_sides:
-                _async_remove_stale_presence_entity(hass, coordinator)
-            else:
+            bed_presence_sides = own_sides(coordinator, controller.bed_presence_sides)
+            if not bed_presence_sides:
                 entities.append(AdjustableBedPresenceSensor(coordinator, description))
-            for side in bed_presence_sides:
-                entities.append(
-                    AdjustableBedPresenceSensor(
-                        coordinator,
-                        AdjustableBedBinarySensorEntityDescription(
-                            key=f"bed_presence_{side}",
-                            translation_key=f"bed_presence_{side}",
-                            device_class=BinarySensorDeviceClass.OCCUPANCY,
-                            entity_registry_enabled_default=False,
-                            state_key=f"bed_presence_{side}",
-                            side=side,
-                        ),
-                    )
+            entities.extend(
+                AdjustableBedPresenceSensor(
+                    coordinator,
+                    named_for_side(coordinator, _build_side_presence_description(side), side),
                 )
+                for side in bed_presence_sides
+            )
             continue
         entities.append(AdjustableBedConnectionSensor(coordinator, description))
 
     if controller is not None:
-        specs = controller.controller_state_binary_sensor_specs
-        active_keys = {spec.key for spec in specs}
-        stale_keys = controller.stale_controller_state_binary_sensor_entity_keys | (
-            {
-                "leggett_alarm_indicator",
-                "leggett_sleep_timer_indicator",
-                "under_bed_lights",
-                "furnimove_ubl",
-                "furnimove_sync",
-                "furnimove_child_lock",
-                "furnimove_massage_running",
-                "vmatbasic_ed",
-                "adjustable_lite_light",
-                "innova_light",
-                "memory_save_response_observed",
-            }
-            - active_keys
-        )
-        _async_remove_stale_controller_state_binary_sensor_entities(
-            hass,
-            coordinator,
-            keys=frozenset(stale_keys),
-        )
         entities.extend(
             AdjustableBedControllerStateBinarySensor(coordinator, spec)
-            for spec in specs
+            for spec in controller.controller_state_binary_sensor_specs
         )
-
-    if controller is not None:
-        # Retire this runtime's app telemetry after a protocol/profile change.
-        for namespace in ("motion_bed_", "sleeptracker_", "bedsense_"):
-            prefix, suffix = coordinator.entity_unique_id(namespace).split(namespace, 1)
-            prefix += namespace
-            desired = {coordinator.entity_unique_id(spec.key) for spec in controller.controller_state_binary_sensor_specs}
-            registry = er.async_get(hass)
-            for row in list(er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)):
-                if (row.domain == "binary_sensor" and row.platform == DOMAIN
-                        and row.unique_id.startswith(prefix) and row.unique_id.endswith(suffix)
-                        and row.unique_id not in desired):
-                    registry.async_remove(row.entity_id)
 
     return entities
-
-
-def _async_remove_stale_presence_entity(
-    hass: HomeAssistant,
-    coordinator: EntityRuntime,
-) -> None:
-    """Remove the legacy single-side presence entity when split sensors exist."""
-    registry = er.async_get(hass)
-    entity_id = registry.async_get_entity_id(
-        "binary_sensor",
-        DOMAIN,
-        coordinator.entity_unique_id("bed_presence"),
-    )
-    if entity_id is not None:
-        registry.async_remove(entity_id)
-
-
-def _async_remove_stale_controller_state_binary_sensor_entities(
-    hass: HomeAssistant,
-    coordinator: EntityRuntime,
-    *,
-    keys: frozenset[str],
-) -> None:
-    """Remove controller diagnostics omitted by the current capability snapshot."""
-    registry = er.async_get(hass)
-    for key in keys:
-        entity_id = registry.async_get_entity_id(
-            "binary_sensor", DOMAIN, coordinator.entity_unique_id(key)
-        )
-        if entity_id is not None:
-            registry.async_remove(entity_id)
 
 
 class AdjustableBedConnectionSensor(AdjustableBedEntity, BinarySensorEntity):
@@ -198,9 +133,9 @@ class AdjustableBedConnectionSensor(AdjustableBedEntity, BinarySensorEntity):
         description: AdjustableBedBinarySensorEntityDescription,
     ) -> None:
         """Initialize the binary sensor."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CardPlacement(CardSection.CONNECTION))
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._unregister_callback: Callable[[], None] | None = None
 
@@ -283,7 +218,7 @@ class AdjustableBedControllerStateBinarySensor(AdjustableBedEntity, BinarySensor
         spec: ControllerStateBinarySensorSpec,
     ) -> None:
         """Initialize a controller-state binary sensor."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, spec.card)
         self._spec = spec
         self._attr_unique_id = coordinator.entity_unique_id(spec.key)
         self._attr_translation_key = spec.translation_key
@@ -306,7 +241,7 @@ class AdjustableBedControllerStateBinarySensor(AdjustableBedEntity, BinarySensor
         await super().async_will_remove_from_hass()
 
     @callback
-    def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
+    def _handle_controller_state_update(self, state: ControllerState) -> None:
         """Refresh when this sensor or one of its attributes changed."""
         watched = {self._spec.state_key, *self._spec.attribute_keys}
         if watched.intersection(state):
@@ -338,10 +273,11 @@ class AdjustableBedPresenceSensor(AdjustableBedEntity, BinarySensorEntity):
         description: AdjustableBedBinarySensorEntityDescription,
     ) -> None:
         """Initialize the presence sensor."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_HIDDEN)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
+        self._presence_key = description.state_key or BED_PRESENCE
         self._unregister_callback: Callable[[], None] | None = None
 
     async def async_added_to_hass(self) -> None:
@@ -358,17 +294,15 @@ class AdjustableBedPresenceSensor(AdjustableBedEntity, BinarySensorEntity):
         await super().async_will_remove_from_hass()
 
     @callback
-    def _handle_controller_state_change(self, state: dict[str, Any]) -> None:
+    def _handle_controller_state_change(self, state: ControllerState) -> None:
         """Write state when the controller publishes a presence update."""
-        state_key = self.entity_description.state_key or self.entity_description.key
-        if state_key in state:
+        if self._presence_key in state:
             self.async_write_ha_state()
 
     @property
     def is_on(self) -> bool | None:
         """Return True when the configured side is occupied."""
-        state_key = self.entity_description.state_key or self.entity_description.key
-        presence = self._coordinator.controller_state.get(state_key)
+        presence = self._coordinator.controller_state.get(self._presence_key)
         if presence == "in":
             return True
         if presence == "out":
@@ -380,12 +314,11 @@ class AdjustableBedPresenceSensor(AdjustableBedEntity, BinarySensorEntity):
         """Return additional presence metadata."""
         attrs: dict[str, Any] = {}
         side = self.entity_description.side or self._coordinator.controller_state.get(
-            "bed_presence_side"
+            BED_PRESENCE_SIDE
         )
         if side is not None:
             attrs["side"] = side
-        state_key = self.entity_description.state_key or self.entity_description.key
-        presence = self._coordinator.controller_state.get(state_key)
+        presence = self._coordinator.controller_state.get(self._presence_key)
         if presence is not None:
             attrs["presence_state"] = presence
         return attrs

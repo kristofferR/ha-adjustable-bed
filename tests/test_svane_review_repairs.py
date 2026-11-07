@@ -9,7 +9,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.svane import FEET, HEAD, OLD, OLD_CHAR, UP
+from custom_components.adjustable_bed.beds.svane.controller import FEET, HEAD, OLD, OLD_CHAR, UP
 from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SVANE,
@@ -74,7 +74,7 @@ async def test_registered_save_does_not_overwrite_slot_with_stale_read(hass, pro
 
         controller.client.read_gatt_char = AsyncMock(side_effect=read)
     with (
-        patch_with_family("svane_services", "custom_components.adjustable_bed.services._resolve_sided_targets",
+        patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._resolve_sided_targets",
               return_value=([(coordinator, SIDE_BOTH)], [])),
         pytest.raises(ValueError, match="valid|fresh|raw|position"),
     ):
@@ -117,7 +117,7 @@ async def test_registered_minimum_hold_rejects_asymmetric_or_empty_delivery(hass
     await async_register_services(hass)
     coordinator, controller = target(profile)
     with (
-        patch_with_family("svane_services", "custom_components.adjustable_bed.services._resolve_sided_targets",
+        patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._resolve_sided_targets",
               return_value=([(coordinator, SIDE_BOTH)], [])),
         pytest.raises(ServiceValidationError, match="100|0.1"),
     ):
@@ -233,7 +233,7 @@ async def test_cancelled_save_preserves_old_slots_and_completed_diagnostics(hass
 
     controller.client.read_gatt_char = AsyncMock(side_effect=read)
     with (
-        patch_with_family("svane_services", "custom_components.adjustable_bed.services._resolve_sided_targets",
+        patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._resolve_sided_targets",
               return_value=([(coordinator, SIDE_BOTH)], [])),
         pytest.raises(asyncio.CancelledError),
     ):
@@ -252,7 +252,7 @@ async def test_save_uses_completed_fresh_reads_even_when_notify_subscription_fai
     await async_register_services(hass)
     coordinator, controller = target(profile)
     controller.client.start_notify.side_effect = BleakError("notification unavailable")
-    with patch_with_family("svane_services", "custom_components.adjustable_bed.services._resolve_sided_targets",
+    with patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._resolve_sided_targets",
                return_value=([(coordinator, SIDE_BOTH)], [])):
         await hass.services.async_call(DOMAIN, "save_preset",
             {"device_id": "bed", "preset": 1}, blocking=True)
@@ -275,7 +275,7 @@ async def test_first_feet_frame_after_source_delay_for_accepted_hold(hass, monke
     clock = [0.0]
     local_asyncio = SimpleNamespace(**vars(asyncio))
     local_asyncio.get_running_loop = lambda: SimpleNamespace(time=lambda: clock[0])
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.svane.asyncio", local_asyncio)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.svane.controller.asyncio", local_asyncio)
 
     async def advance(seconds):
         clock[0] += seconds
@@ -288,7 +288,7 @@ async def test_first_feet_frame_after_source_delay_for_accepted_hold(hass, monke
         observed.append((clock[0], role, bytes(payload)))
 
     controller.client.write_gatt_char.side_effect = write
-    with patch_with_family("svane_services", "custom_components.adjustable_bed.services._resolve_sided_targets",
+    with patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._resolve_sided_targets",
                return_value=([(coordinator, SIDE_BOTH)], [])):
         await hass.services.async_call(DOMAIN, "hold_control",
             {"device_id": "bed", "control": control, "duration": 0.101}, blocking=True)
@@ -302,9 +302,9 @@ async def test_first_feet_frame_after_source_delay_for_accepted_hold(hass, monke
 
 @pytest.mark.parametrize("representative", [SVANE_VARIANT_MULTI, SVANE_VARIANT_JMC])
 async def test_shared_common_option_and_rendered_profile_keep_mixed_routes(hass, representative):
+    from custom_components.adjustable_bed.beds.svane.state import get_svane_session
     from custom_components.adjustable_bed.const import CONF_IDLE_DISCONNECT_SECONDS
     from custom_components.adjustable_bed.pairing import get_child
-    from custom_components.adjustable_bed.svane_state import get_svane_session
 
     opposite = SVANE_VARIANT_JMC if representative == SVANE_VARIANT_MULTI else SVANE_VARIANT_MULTI
     first = {CONF_ADDRESS: "AA:BB:CC:DD:EE:01", CONF_BED_TYPE: BED_TYPE_SVANE,

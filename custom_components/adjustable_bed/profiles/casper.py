@@ -3,12 +3,12 @@
 The app (``com.richmat.casperbase``, row101) offers two products of its own,
 PRO and MAX. It also restores products a phone saved under its shared catalog;
 those are explicit choices, never inferred from an advertisement. Each row of
-``casper_base_catalog.py``, generated from the accepted catalog, names the
+``beds/casper_base/catalog.py``, generated from the accepted catalog, names the
 product, its control groups as indices into the action list and its page flags.
 
 The app's Richmat library, which Hush Base 1.0.5 (row126) also ships, sets the
 transports, connect queries and fixed opcodes below. This module stays free of
-codec imports: ``const.py`` reads it before the codec can load.
+codec imports, so setup and pairing can read its products without the codec.
 """
 
 from __future__ import annotations
@@ -16,8 +16,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final
 
-from ..casper_base_catalog import ACTIONS as _ACTIONS
-from ..casper_base_catalog import PRODUCTS as _PRODUCTS
+from ..beds.casper_base.catalog import ACTIONS as _ACTIONS
+from ..beds.casper_base.catalog import PRODUCTS as _PRODUCTS
 from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 
 if TYPE_CHECKING:
@@ -83,3 +83,11 @@ class CasperProfile:
 PROFILES: Final[dict[str, CasperProfile]] = {
     key: CasperProfile(key, row) for key, row in _PRODUCTS.items()
 }
+# Setup choices, and the products with the side flag.
+CASPER_BASE_VARIANTS: Final = {
+    key: profile.label + ("" if profile.current else " (stored profile)")
+    for key, profile in PROFILES.items()
+}
+CASPER_BASE_SIDE_VARIANTS: Final = frozenset(
+    key for key, profile in PROFILES.items() if profile.row[11]
+)

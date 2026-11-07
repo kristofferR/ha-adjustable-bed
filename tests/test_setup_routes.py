@@ -10,6 +10,11 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields
+from custom_components.adjustable_bed.beds.kaidi.protocol import (
+    KAIDI_ADV_TYPE_BROADCAST,
+    KaidiAdvertisement,
+)
+from custom_components.adjustable_bed.beds.richmat_mh.models import RICHMAT_MH_VARIANTS_BY_APP
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
@@ -24,10 +29,6 @@ from custom_components.adjustable_bed.detection import (
     bed_type_label,
     get_bed_type_options,
     resolve_bed_type_choice,
-)
-from custom_components.adjustable_bed.kaidi_protocol import (
-    KAIDI_ADV_TYPE_BROADCAST,
-    KaidiAdvertisement,
 )
 from tests.form_helpers import answer_app, complete, form_fields, select_options, suggested
 
@@ -453,7 +454,7 @@ async def test_an_app_model_is_asked_when_its_name_rule_cannot_run(
     )
     assert result["errors"] == {const.CONF_PROTOCOL_VARIANT: "richmat_mh_no_name"}
     model = next(
-        route for route in const.RICHMAT_MH_VARIANTS_BY_APP["harmony"] if route != "auto"
+        route for route in RICHMAT_MH_VARIANTS_BY_APP["harmony"] if route != "auto"
     )
     with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
         result = await hass.config_entries.flow.async_configure(

@@ -20,11 +20,11 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import _async_ensure_paired_device_registry
 from custom_components.adjustable_bed.beds.base import BedController
-from custom_components.adjustable_bed.beds.motion_bed import MotionBedController
+from custom_components.adjustable_bed.beds.motion_bed.controller import MotionBedController
+from custom_components.adjustable_bed.beds.motion_bed.models import select_motion_bed
+from custom_components.adjustable_bed.beds.motion_bed.services import build_motion_bed_request
 from custom_components.adjustable_bed.const import BED_TYPE_MOTION_BED, DOMAIN, SIDE_BOTH
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.motion_bed_models import select_motion_bed
-from custom_components.adjustable_bed.motion_bed_services import build_motion_bed_request
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.paired_devices import async_register_children
 from custom_components.adjustable_bed.services import async_register_services

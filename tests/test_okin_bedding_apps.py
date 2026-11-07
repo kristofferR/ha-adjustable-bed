@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed.beds.serenity import (
+from custom_components.adjustable_bed.beds.serenity.controller import (
     TranquilController,
     ZSeriesController,
     alarm_frame,
@@ -401,7 +401,7 @@ async def test_set_alarm_writes_clock_alarm_then_two_app_queries() -> None:
     controller._alarm_available = True
     now = datetime(2026, 10, 1, 13, 47, 59)
     with (
-        patch("custom_components.adjustable_bed.beds.serenity.dt_util.now", return_value=now),
+        patch("custom_components.adjustable_bed.beds.serenity.controller.dt_util.now", return_value=now),
         patch("asyncio.sleep", new=AsyncMock()) as sleep,
     ):
         await controller.configure_clock_alarm(enabled=True, hour=7, minute=45, preset="memory_1")

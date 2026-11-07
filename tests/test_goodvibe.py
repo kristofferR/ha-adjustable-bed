@@ -11,13 +11,18 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from custom_components.adjustable_bed.beds import goodvibe as bed
+from custom_components.adjustable_bed.beds.goodvibe import controller as bed
+from custom_components.adjustable_bed.beds.goodvibe.catalog import (
+    ACTIONS,
+    PRODUCTS,
+    PROFILE_CHOICES,
+)
+from custom_components.adjustable_bed.beds.goodvibe.protocol import action_frame, clock
+from custom_components.adjustable_bed.beds.goodvibe.services import Request
+from custom_components.adjustable_bed.beds.goodvibe.sleep import sleep_packet
 from custom_components.adjustable_bed.codec import richmat as codec
-from custom_components.adjustable_bed.goodvibe_catalog import ACTIONS, PRODUCTS, PROFILE_CHOICES
-from custom_components.adjustable_bed.goodvibe_protocol import action_frame, clock
-from custom_components.adjustable_bed.goodvibe_services import Request
-from custom_components.adjustable_bed.goodvibe_sleep import sleep_packet
 from custom_components.adjustable_bed.profiles.richmat import GOODVIBE
+from tests.state_helpers import state_writer
 
 
 @pytest.fixture
@@ -32,7 +37,7 @@ def coordinator(hass):
     c.client.start_notify = AsyncMock()
     c.client.stop_notify = AsyncMock()
     c.controller_state = {}
-    c.handle_controller_state_updates.side_effect = c.controller_state.update
+    c.handle_controller_state_updates.side_effect = state_writer(c.controller_state)
     return c
 
 
@@ -53,10 +58,10 @@ async def test_all_profile_factory_and_setup_contracts(hass, coordinator):
         hidden_generic_fields,
         per_side_profile,
     )
+    from custom_components.adjustable_bed.bed_traits import disconnect_after_command_default_enabled
     from custom_components.adjustable_bed.const import (
         BED_TYPE_GOODVIBE,
         CONF_MOTOR_COUNT,
-        disconnect_after_command_default_enabled,
     )
     from custom_components.adjustable_bed.controller_factory import create_controller
     from custom_components.adjustable_bed.detection import (
@@ -235,7 +240,6 @@ async def test_buttons_expose_only_exact_product_actions(coordinator):
     }
     assert not obj.supports_motor_control
     assert obj.memory_slot_count == 0
-    assert obj.supports_goodvibe
     with pytest.raises(ValueError):
         await obj.press("not-this-product", 1000)
 
@@ -418,7 +422,7 @@ async def test_light_menu_ranges_are_exact_profile_choices(coordinator, model):
 
 
 async def test_alias_choices_resolve_exact_accepted_endpoints(coordinator):
-    from custom_components.adjustable_bed.goodvibe_catalog import ALIAS_TARGETS
+    from custom_components.adjustable_bed.beds.goodvibe.catalog import ALIAS_TARGETS
 
     assert len(ALIAS_TARGETS) == 27
     for alias, target in ALIAS_TARGETS.items():
@@ -579,8 +583,6 @@ async def test_light_preference_defaults_survive_controller_replacement(
 
 
 async def test_bound_side_is_scoped_and_release_keeps_original_side(coordinator, monkeypatch):
-    from custom_components.adjustable_bed.beds.base import SideBoundController
-
     key = next(
         k
         for k, v in PRODUCTS.items()
@@ -596,7 +598,8 @@ async def test_bound_side_is_scoped_and_release_keeps_original_side(coordinator,
     )
     monkeypatch.setattr(obj, "_delay", AsyncMock(return_value=True))
     spec = next(s for s in obj.controller_button_specs if s.key == "goodvibe_" + detail)
-    await spec.press_fn(SideBoundController(obj, "right"))
+    with obj.side_scope("right"):
+        await spec.press_fn(obj)
     assert writes(coordinator) == [
         action_frame(ACTIONS[detail], 1, False),
         bytes.fromhex("6e01016ede"),

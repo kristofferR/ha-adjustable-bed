@@ -21,11 +21,19 @@ from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.base import BedController
-from custom_components.adjustable_bed.beds.fsm_relax import FsmRelaxController, FsmRelaxSetup
-from custom_components.adjustable_bed.beds.limoss_remote import LimossRemoteController
-from custom_components.adjustable_bed.beds.limoss_remote_protocol import (
+from custom_components.adjustable_bed.beds.fsm_relax.controller import (
+    FsmRelaxController,
+    FsmRelaxSetup,
+)
+from custom_components.adjustable_bed.beds.fsm_relax.state import FsmRelaxSession
+from custom_components.adjustable_bed.beds.limoss.remote import LimossRemoteController
+from custom_components.adjustable_bed.beds.limoss.remote_protocol import (
     LimossRemoteCapabilities,
     LimossRemoteSequence,
+)
+from custom_components.adjustable_bed.beds.limoss.remote_state import (
+    LimossRemoteMemoryStore,
+    LimossRemoteSession,
 )
 from custom_components.adjustable_bed.codec import limoss as codec
 from custom_components.adjustable_bed.command_scheduler import CommandKind, CommandOutcome
@@ -41,11 +49,6 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.execution import NO_EXECUTION_CAPABILITIES
-from custom_components.adjustable_bed.fsm_relax_state import FsmRelaxSession
-from custom_components.adjustable_bed.limoss_remote_state import (
-    LimossRemoteMemoryStore,
-    LimossRemoteSession,
-)
 from custom_components.adjustable_bed.profiles.limoss import (
     FSM_RELAX,
     LEGACY,
@@ -166,7 +169,7 @@ async def bed(hass: HomeAssistant, request: pytest.FixtureRequest) -> AsyncItera
         )
         stack.enter_context(
             patch(
-                "custom_components.adjustable_bed.limoss_remote_services._resolve_sided_targets",
+                "custom_components.adjustable_bed.services._resolve_sided_targets",
                 new=resolve,
             )
         )
@@ -280,7 +283,10 @@ async def test_an_undeclared_profile_refuses_a_lease_before_writing(bed: Bed) ->
 
 async def test_a_renewed_hold_is_one_tracked_movement(bed: Bed, clock: Any) -> None:
     """Renewals extend the running command, so position estimates see one move."""
-    from custom_components.adjustable_bed import limoss_remote_services, services
+    from custom_components.adjustable_bed import services
+    from custom_components.adjustable_bed.beds.limoss import (
+        remote_services as limoss_remote_services,
+    )
 
     runs: list[str] = []
     track = services.track_held_control

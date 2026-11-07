@@ -8,22 +8,23 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds import motomotion as bed
+from custom_components.adjustable_bed.beds.motomotion import controller as bed
+from custom_components.adjustable_bed.beds.motomotion.protocol import (
+    decimal,
+    light_cycle,
+    posture,
+    rgb_total,
+)
+from custom_components.adjustable_bed.beds.motomotion.requests import Request
+from custom_components.adjustable_bed.beds.motomotion.state import State
 from custom_components.adjustable_bed.codec.motomotion import (
     Position,
     ascii_command,
     binary_command,
     music_command,
 )
-from custom_components.adjustable_bed.motomotion_protocol import (
-    decimal,
-    light_cycle,
-    posture,
-    rgb_total,
-)
-from custom_components.adjustable_bed.motomotion_requests import Request
-from custom_components.adjustable_bed.motomotion_state import State
 from custom_components.adjustable_bed.profiles.motomotion import Profile, eligible
+from tests.state_helpers import state_writer
 
 
 @pytest.fixture
@@ -37,7 +38,7 @@ def coordinator():
     c.client.start_notify = AsyncMock()
     c.client.stop_notify = AsyncMock()
     c.controller_state = {}
-    c.handle_controller_state_updates.side_effect = c.controller_state.update
+    c.handle_controller_state_updates.side_effect = state_writer(c.controller_state)
     return c
 
 
@@ -281,10 +282,11 @@ async def test_side_scoped_callable_and_invalid_other_child(coordinator, instant
     c = controller(coordinator, "SOFA000001SC00H")
     c._state.rgb = ("0", "0", "0")
     spec = next(s for s in c.controller_button_specs if s.key == "motomotion_light_toggle")
-    await spec.press_fn(c.bind_side("right"))
+    with c.side_scope("right"):
+        await spec.press_fn(c)
     assert written(coordinator) == [ascii_command(k, 10120) for k in (315, 316, 317)]
-    with pytest.raises(ValueError):
-        await c.bind_side("left").select("side", "right")
+    with pytest.raises(ValueError), c.side_scope("left"):
+        await c.select("side", "right")
 
 
 def test_restore_side_defaults_for_existing_state(coordinator):
@@ -555,19 +557,23 @@ async def test_held_movement_cadence_and_fresh_cleanup(coordinator, monkeypatch)
 
 
 async def test_right_child_level_consumes_right_delivered_state(coordinator, instant):
-    from custom_components.adjustable_bed.motomotion_state import Comfort
+    from custom_components.adjustable_bed.beds.motomotion.state import Comfort
 
     c = controller(coordinator, "SOFA000001S000M")
     c._local_lr = (Comfort(heat=0), Comfort(heat=2))
-    await c.bind_side("right").async_execute_motomotion_action("motomotion_heat_up")
+    with c.side_scope("right"):
+        await c.async_execute_motomotion_action("motomotion_heat_up")
     assert written(coordinator) == [ascii_command(334, 10000)]
     c._publish()
     assert coordinator.controller_state["motomotion_heat_left"] == 0
     assert coordinator.controller_state["motomotion_heat_right"] == 2
-    assert {s.key for s in c.bind_side("right").controller_state_sensor_specs} == {
-        "motomotion_status",
-        "motomotion_heat_right",
-        "motomotion_massage_right",
+    with c.side_scope("right"):
+        specs = c.controller_state_sensor_specs
+    # The "Bed Right" side device already names the side.
+    assert {(s.key, s.translation_key) for s in specs} == {
+        ("motomotion_status", "motomotion_status"),
+        ("motomotion_heat_right", "motomotion_heat"),
+        ("motomotion_massage_right", "motomotion_massage"),
     }
 
 

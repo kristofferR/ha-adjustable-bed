@@ -21,7 +21,7 @@ from ..const import (
     KEESON_BASE_WRITE_CHAR_UUID,
 )
 from ..profiles import keeson as keeson_profiles
-from .base import BedController
+from .base import BedController, ProfileExecution
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -66,7 +66,7 @@ class ScottLivingCommands:
     PRESET_FLAT = 134217728  # 0x8000000 -> cmd3=0x08
 
 
-class ScottLivingController(BedController):
+class ScottLivingController(ProfileExecution[keeson_profiles.KeesonProfile], BedController):
     """Controller for Scott Living beds (9-byte Keeson variant)."""
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
@@ -142,28 +142,6 @@ class ScottLivingController(BedController):
     def _build_command(self, key: int) -> bytes:
         """Build a nine-byte E6 frame through the Keeson codec (side byte ``01``)."""
         return keeson_profiles.encode(self.profile, key & 0xFFFFFFFF)
-
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        """Write a command to the bed."""
-        _LOGGER.debug(
-            "Writing command to Scott Living bed: %s (repeat: %d, delay: %dms)",
-            command.hex(),
-            repeat_count,
-            repeat_delay_ms,
-        )
-        await self._write_gatt_with_retry(
-            self._char_uuid,
-            command,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            cancel_event=cancel_event,
-        )
 
     async def start_notify(
         self, callback: Callable[[str, float], None] | None = None

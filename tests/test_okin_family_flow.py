@@ -16,6 +16,7 @@ from custom_components.adjustable_bed.config_flow import (
     AdjustableBedOptionsFlow,
 )
 from custom_components.adjustable_bed.const import (
+    CONF_STAIRCASE_LAYOUT_CONFIRMED,
     NORDIC_UART_SERVICE_UUID,
     NORDIC_UART_WRITE_CHAR_UUID,
     OKIMAT_SERVICE_UUID,
@@ -23,7 +24,6 @@ from custom_components.adjustable_bed.const import (
     OKIN_DOT_FURNIMOVE_VARIANTS,
 )
 from custom_components.adjustable_bed.controller_factory import require_okin_route_endpoint
-from custom_components.adjustable_bed.furnimove_repair import CONF_STAIRCASE_LAYOUT_CONFIRMED
 from custom_components.adjustable_bed.profile_id import resolve_profile_id
 from tests.test_jiecang_app_controller import _Services
 from tests.test_vibradorm_family_flow import bluetooth_patches

@@ -39,6 +39,8 @@ from ..const import (
     CB24_BED_SELECTION_A,
     CB24_BED_SELECTION_B,
     CB24_BED_SELECTION_DEFAULT,
+    CONF_CB24_BED_SELECTION,
+    MANUFACTURER_ID_OKIN,
     NORDIC_UART_WRITE_CHAR_UUID,
     OKIN_CB24_VARIANT_CB24,
     OKIN_CB24_VARIANT_CB24_AB,
@@ -52,8 +54,9 @@ from ..const import (
     SIDE_LEFT,
     SIDE_RIGHT,
 )
-from ..profiles.okin_nframe import OKIN_CB24
-from .base import BedController
+from ..profiles.okin_nframe import OKIN_CB24, OkinNFrameProfile
+from .base import BedController, ProfileExecution
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -128,13 +131,16 @@ def build_cbnew_light_command(is_on: bool) -> bytes:
     return bytes.fromhex("aa0000040105") + bytes([0x00, int(is_on), 0, 0, 0, 0])
 
 
-class OkinCB24Controller(BedController):
+class OkinCB24Controller(ProfileExecution[OkinNFrameProfile], BedController):
     """Controller for beds using Okin CB24 protocol over Nordic UART.
 
     Protocol discovered from SmartBed by Okin app analysis.
     Uses both legacy CB24 packets and CBNew packets, depending on profile variant.
     Supports dual-bed configurations via bed selection byte.
     """
+
+    # The CB24 protocol writes without response.
+    _write_with_response = False
 
     profile = OKIN_CB24
 
@@ -178,23 +184,6 @@ class OkinCB24Controller(BedController):
     @property
     def control_characteristic_uuid(self) -> str:
         return NORDIC_UART_WRITE_CHAR_UUID
-
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        """Write a command using write-without-response as required by CB24 protocol."""
-        await self._write_gatt_with_retry(
-            self.control_characteristic_uuid,
-            command,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            cancel_event=cancel_event,
-            response=False,
-        )
 
     # Capability properties
     @property
@@ -535,3 +524,79 @@ class OkinCB24Controller(BedController):
             build_cb24_massage_intensity(3, level, self._bed_selection_for_side())
         )
         self._massage_foot_level = level
+
+
+_EXPLICIT_PROFILE_VARIANTS = frozenset(
+    {
+        OKIN_CB24_VARIANT_OLD,
+        OKIN_CB24_VARIANT_NEW,
+        OKIN_CB24_VARIANT_CB24,
+        OKIN_CB24_VARIANT_CB27,
+        OKIN_CB24_VARIANT_CB24_AB,
+        OKIN_CB24_VARIANT_CB1221,
+        OKIN_CB24_VARIANT_DACHENG,
+        OKIN_CB24_VARIANT_CB27NEW,
+    }
+)
+
+
+def _infer_variant_from_okin_payload(payload: bytes) -> str | None:
+    """Infer the CB24 sub-variant from OKIN manufacturer payload bytes.
+
+    The SmartBed APK profile matcher keys off scanRecord marker bytes:
+    - "DOT" + type/subtype bytes for dacheng/cb1221/cb24
+    - "AB" for cb24_ab
+    - "OK" for cb27
+
+    Home Assistant exposes manufacturer payload bytes (without Company ID).
+    The APK places markers at the start of the payload, so every check is
+    anchored to avoid short patterns ("OK" is 2 bytes) matching random data.
+    """
+    if payload.startswith(b"DOT") and len(payload) >= 5:
+        marker_type = payload[3]
+        marker_subtype = payload[4]
+        if marker_type == 0x01:
+            return OKIN_CB24_VARIANT_DACHENG
+        if marker_subtype == 0x01:
+            return OKIN_CB24_VARIANT_CB1221
+        return OKIN_CB24_VARIANT_CB24
+    if payload.startswith(b"AB"):
+        return OKIN_CB24_VARIANT_CB24_AB
+    if payload.startswith(b"OK"):
+        return OKIN_CB24_VARIANT_CB27
+    return None
+
+
+def _auto_detect_profile_variant(
+    device_name: str | None, manufacturer_data: dict[int, bytes] | None
+) -> str:
+    """Auto-detect the SmartBed/CB24 profile variant from advertisement signals."""
+    if manufacturer_data and MANUFACTURER_ID_OKIN in manufacturer_data:
+        inferred = _infer_variant_from_okin_payload(manufacturer_data[MANUFACTURER_ID_OKIN])
+        if inferred:
+            _LOGGER.debug("CB24 profile auto-detected from manufacturer payload: %s", inferred)
+            return inferred
+
+    # OEM app behavior:
+    # - CB27NewDeviceProfile (NEW protocol): startswith("smartbed") and len == 18
+    # - all other CB24-family devices: legacy packets (default to CB24 profile)
+    if device_name:
+        if device_name.lower().startswith("smartbed") and len(device_name) == 18:
+            _LOGGER.debug("CB24 profile auto-detected: cb27new (name len=18)")
+            return OKIN_CB24_VARIANT_CB27NEW
+        _LOGGER.debug("CB24 profile auto-detected: cb24 (name len=%d)", len(device_name))
+    return OKIN_CB24_VARIANT_CB24
+
+
+async def build_controller(ctx: BuildContext) -> OkinCB24Controller:
+    """Build the controller for the configured or advertised profile variant."""
+    if ctx.variant in _EXPLICIT_PROFILE_VARIANTS:
+        profile_variant = ctx.variant
+        _LOGGER.debug("CB24 profile override: %s", profile_variant)
+    else:
+        profile_variant = _auto_detect_profile_variant(ctx.device_name, ctx.manufacturer_data)
+    return OkinCB24Controller(
+        ctx.coordinator,
+        bed_selection=ctx.data.get(CONF_CB24_BED_SELECTION, 0x00),
+        protocol_variant=profile_variant,
+    )

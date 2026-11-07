@@ -11,7 +11,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from bleak.exc import BleakError
 
-from custom_components.adjustable_bed.beds.base import SideBoundController
 from custom_components.adjustable_bed.beds.isleep import IsleepController
 from custom_components.adjustable_bed.codec import kaidi as codec
 from custom_components.adjustable_bed.const import (
@@ -22,12 +21,15 @@ from custom_components.adjustable_bed.const import (
     KAIDI_NOTIFY_CHAR_UUID,
     KAIDI_WRITE_CHAR_UUID,
 )
+from custom_components.adjustable_bed.controller_state import sided
 from custom_components.adjustable_bed.profiles.kaidi import (
     ISLEEP_PRODUCTS,
     add_isleep_metadata,
     isleep_advertisement,
     validate_isleep_profile,
 )
+from custom_components.adjustable_bed.state_keys import massage_intensity
+from tests.state_helpers import state_writer
 
 ROWS = json.loads((Path(__file__).parent / "fixtures/isleep_row064_commands.json").read_text())
 OWN = 0x90ABCDEF
@@ -58,7 +60,8 @@ def make_controller(product=129, *, split=False, ready=True):
             }
         ),
         record_command_trace=MagicMock(),
-        handle_controller_state_updates=MagicMock(),
+        controller_state=(state := {}),
+        handle_controller_state_updates=MagicMock(side_effect=state_writer(state)),
         save_app_state=MagicMock(),
         async_write_app_state=AsyncMock(),
         async_disconnect=AsyncMock(),
@@ -85,39 +88,39 @@ async def test_all_108_ui_rows_each_product_and_lane(row):
     for product in row["products"]:
         c, co, client = make_controller(product, split=row["lane"] != 0 or product in (130, 143))
         c._parameter = 50
-        bound = SideBoundController(c, ("left", "right", "both")[row["lane"]])
-        action = row["action"]
-        if action.endswith(("_up", "_down", "_stop")):
-            axis, direction = action.rsplit("_", 1)
-            if axis == "all":
-                if direction == "stop":
-                    await bound._stop("all")
+        with c.side_scope(("left", "right", "both")[row["lane"]]):
+            action = row["action"]
+            if action.endswith(("_up", "_down", "_stop")):
+                axis, direction = action.rsplit("_", 1)
+                if axis == "all":
+                    if direction == "stop":
+                        await c._stop("all")
+                    else:
+                        await c._move("all", direction == "up")
                 else:
-                    await bound._move("all", direction == "up")
+                    await getattr(c, f"move_{axis}_{direction}")()
+            elif action.startswith("save_"):
+                await c.program_memory(int(action[-1]))
+            elif action.startswith("memory_"):
+                await c.preset_memory(int(action[-1]))
+            elif action in ("flat", "zero_g", "anti_snore"):
+                await getattr(c, "preset_" + action)()
+            elif action.startswith("light_"):
+                await getattr(c, "lights_" + action[6:])()
+            elif action == "massage_on":
+                await c.massage_toggle()
+            elif action == "massage_off":
+                await c.massage_off()
+            elif action.endswith("_strength"):
+                await c.set_massage_intensity(action.split("_")[0], 50)
+            elif action.startswith("pattern_"):
+                await c.set_pattern(0 if action == "pattern_cancel" else int(action[-1]))
+            elif action.startswith("timer_"):
+                await c.set_massage_timer(
+                    0 if action == "timer_cancel" else c.massage_timer_options[int(action[-1]) - 1]
+                )
             else:
-                await getattr(bound, f"move_{axis}_{direction}")()
-        elif action.startswith("save_"):
-            await bound.program_memory(int(action[-1]))
-        elif action.startswith("memory_"):
-            await bound.preset_memory(int(action[-1]))
-        elif action in ("flat", "zero_g", "anti_snore"):
-            await getattr(bound, "preset_" + action)()
-        elif action.startswith("light_"):
-            await getattr(bound, "lights_" + action[6:])()
-        elif action == "massage_on":
-            await bound.massage_toggle()
-        elif action == "massage_off":
-            await bound.massage_off()
-        elif action.endswith("_strength"):
-            await bound.set_massage_intensity(action.split("_")[0], 50)
-        elif action.startswith("pattern_"):
-            await bound.set_pattern(0 if action == "pattern_cancel" else int(action[-1]))
-        elif action.startswith("timer_"):
-            await bound.set_massage_timer(
-                0 if action == "timer_cancel" else c.massage_timer_options[int(action[-1]) - 1]
-            )
-        else:
-            pytest.fail(action)
+                pytest.fail(action)
         expected = bytes.fromhex("037856341220efcdab9001") + bytes([row["opcode"], 50, 0])
         assert packets(client)[0] == expected
         assert client.write_gatt_char.call_args_list[0].kwargs["response"] is True
@@ -186,7 +189,8 @@ async def test_cancelled_hold_releases_same_lane_and_original_target():
             wrote.set()
 
     client.write_gatt_char.side_effect = write
-    task = asyncio.create_task(SideBoundController(c, "right").move_back_up())
+    with c.side_scope("right"):
+        task = asyncio.create_task(c.move_back_up())
     await wrote.wait()
     c._target = 0x01020304
     co.cancel_command.set()
@@ -584,17 +588,25 @@ async def test_enrollment_failure_and_timeout_never_save_success():
 
 async def test_saved_intent_survives_reconnect_without_restoring_live_addresses():
     c, _, _ = make_controller(130, split=True)
-    await SideBoundController(c, "both").massage_toggle()
-    await SideBoundController(c, "both").set_massage_intensity("head", 50)
+    with c.side_scope("both"):
+        await c.massage_toggle()
+    with c.side_scope("both"):
+        await c.set_massage_intensity("head", 50)
     state = c.persisted_app_state
-    await SideBoundController(c, "right").set_massage_intensity("head", 60)
+    with c.side_scope("right"):
+        await c.set_massage_intensity("head", 60)
     assert state["strengths"][1]["head"] == 50  # store snapshots cannot alias mutable state
-    new, _, _ = make_controller(130, split=True, ready=False)
+    new, co, _ = make_controller(130, split=True, ready=False)
     new.restore_persisted_app_state(state)
     assert new._own is None and new._target is None and not new._ready
     assert new._parameter == 50
-    assert SideBoundController(new, "left").get_massage_state()["head_active"]
-    assert SideBoundController(new, "right").get_massage_state()["head_intensity"] == 50
+    assert new._massage == [True, True, True]
+    head = massage_intensity("head")
+    assert [co.controller_state[sided(head, side)] for side in ("left", "right", "both")] == [
+        50,
+        50,
+        50,
+    ]
     new.restore_persisted_app_state({})
     assert new._parameter == 0 and not new._massage[0]
 

@@ -23,18 +23,23 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from bleak.exc import BleakError
 
+from ..card import CARD_UTILITY
 from ..codec import okin_nframe as codec
 from ..const import (
+    CONF_BLE_BOND_ESTABLISHED,
     OKIMAT_NOTIFY_CHAR_UUID,
     OKIMAT_WRITE_CHAR_UUID,
     OKIN_CST_VARIANT_MF900,
     OKIN_CST_VARIANT_NECTAR_MOVE,
+    OKIN_CST_VARIANTS,
     VARIANT_AUTO,
 )
+from ..controller_state import StateKey
+from ..detection import is_okimat_bed_model
 from ..profiles.okin_nframe import (
     CST_PROFILES,
     CstFields,
@@ -44,7 +49,10 @@ from ..profiles.okin_nframe import (
     OkinNFrameProfile,
     Tap,
 )
-from .base import BedController, ControllerStateBinarySensorSpec, MotorControlSpec
+from .base import BedController, ProfileExecution
+from .builder import BuildContext
+from .entity_specs import ControllerStateBinarySensorSpec, MotorControlSpec
+from .furnimove.repair import CONF_OKIMAT_MODEL_ON_CST, async_refresh_furnimove_layout_issues
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -58,7 +66,10 @@ def _product(profile: OkinNFrameProfile) -> CstProduct:
     return profile.product
 
 
-class OkinCstController(BedController):
+MEMORY_SAVE_RESPONSE_OBSERVED: Final = StateKey[bool]("memory_save_response_observed")
+
+
+class OkinCstController(ProfileExecution[OkinNFrameProfile], BedController):
     """Controller for OKIN CSTProtocol beds (Rize MF900, etc.).
 
     Uses 14-byte packets with separate motor and control fields.
@@ -80,7 +91,7 @@ class OkinCstController(BedController):
         self._profile = _product(self._nframe_profile)
         self._memory_save_response_callback: Callable[[], None] | None = None
         if self._profile.memory_save_response_feedback:
-            self.forward_controller_state_update("memory_save_response_observed", False)
+            self.forward_controller_state_update(MEMORY_SAVE_RESPONSE_OBSERVED, False)
 
         _LOGGER.debug("OkinCstController initialized with profile %s", self._profile.key)
 
@@ -209,8 +220,9 @@ class OkinCstController(BedController):
             ControllerStateBinarySensorSpec(
                 key="memory_save_response_observed",
                 translation_key="memory_save_response_observed",
-                state_key="memory_save_response_observed",
+                state_key=MEMORY_SAVE_RESPONSE_OBSERVED,
                 icon="mdi:content-save-check-outline",
+                card=CARD_UTILITY,
             ),
         )
 
@@ -248,14 +260,6 @@ class OkinCstController(BedController):
             ),
         )
         return tuple(spec for spec in specs if spec.key in self._profile.motors)
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Remove aliases and axes absent from the selected product profile."""
-        stale = {"back", "legs", "tilt"}
-        if "lumbar" not in self._profile.motors:
-            stale.add("lumbar")
-        return frozenset(stale)
 
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
@@ -315,13 +319,13 @@ class OkinCstController(BedController):
 
     def _mark_memory_save_response_observed(self) -> None:
         """Publish an observed app response without claiming physical storage."""
-        self.forward_controller_state_update("memory_save_response_observed", True)
+        self.forward_controller_state_update(MEMORY_SAVE_RESPONSE_OBSERVED, True)
 
     def _reset_memory_save_feedback(self) -> None:
         """Clear response tracking at a new save or connection boundary."""
         self._pending_memory_save_code = None
         if self._profile.memory_save_response_feedback:
-            self.forward_controller_state_update("memory_save_response_observed", False)
+            self.forward_controller_state_update(MEMORY_SAVE_RESPONSE_OBSERVED, False)
 
     def on_disconnect(self) -> None:
         """Clear session-local notification and command state when the BLE link drops."""
@@ -711,3 +715,29 @@ class OkinCstController(BedController):
             ) % len(commands)
         command = commands[self._massage_wave_index]
         await self._send_button_press(control_value=command)
+
+
+def _record_okimat_model(ctx: BuildContext) -> None:
+    """Offer the route repair when an OKIMAT drive is configured as Okin CST (#555)."""
+    coordinator = ctx.coordinator
+    data = ctx.data
+    if not is_okimat_bed_model(ctx.ble_model) or data.get(CONF_OKIMAT_MODEL_ON_CST) == ctx.ble_model:
+        return
+    # Internal write: keep this link instead of reloading the entry.
+    coordinator._begin_internal_entry_update(bool(data.get(CONF_BLE_BOND_ESTABLISHED, False)))
+    # Full data: a paired side's persist callback drops bond keys it is not sent.
+    coordinator._async_persist_config({**data, CONF_OKIMAT_MODEL_ON_CST: ctx.ble_model})
+    hass = coordinator.hass
+    if (entry := hass.config_entries.async_get_entry(coordinator.entry.entry_id)) is not None:
+        async_refresh_furnimove_layout_issues(hass, entry)
+
+
+async def build_controller(ctx: BuildContext) -> OkinCstController:
+    """Build the controller for the selected profile; a live OKIMAT drive offers its repair."""
+    if ctx.client is not None:
+        _record_okimat_model(ctx)
+    variant = ctx.variant or VARIANT_AUTO
+    if variant not in OKIN_CST_VARIANTS:
+        _LOGGER.warning("Unknown Okin CST profile %s, using auto", variant)
+        variant = VARIANT_AUTO
+    return OkinCstController(ctx.coordinator, variant=variant)

@@ -16,8 +16,9 @@ from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.core import callback
 
+from .bed_traits import bed_type_has_position_feedback
 from .command_scheduler import CommandKind, current_command_context
-from .const import BED_TYPE_LINAK, POSITION_FEEDBACK_TIMEOUT, bed_type_has_position_feedback
+from .const import POSITION_FEEDBACK_TIMEOUT
 from .position_seek import (
     PositionFeedbackError,
     PositionSeekPolicy,
@@ -30,7 +31,7 @@ from .position_seek import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
     from .coordinator import AdjustableBedCoordinator
 
 # Log under the coordinator's own logger, as before the split.
@@ -438,7 +439,7 @@ class CoordinatorPositionsMixin:
         await controller.read_positions(self._motor_count)
 
     async def _async_read_positions(
-        self: AdjustableBedCoordinator, controller: BedController | SideBoundController | None = None
+        self: AdjustableBedCoordinator, controller: BedController | None = None
     ) -> None:
         """Actively read current positions from the bed.
 
@@ -792,24 +793,16 @@ class CoordinatorPositionsMixin:
                         f"Cannot seek {position_key}: no position data available"
                     )
 
-                use_custom_seek_steps = controller.uses_custom_position_seek_steps
                 feedback_after = time.monotonic()
 
-                async def issue_seek_step(direction_up: bool, remaining_distance: float) -> None:
-                    """Execute one seek movement step using controller-specific tuning."""
+                async def issue_seek_step(direction_up: bool) -> None:
+                    """Execute one seek movement step through the protocol policy."""
                     nonlocal feedback_after
                     feedback_after = time.monotonic()
-                    if use_custom_seek_steps:
-                        await controller.seek_position_step(
-                            position_key,
-                            direction_up,
-                            remaining_distance,
-                        )
-                        return
-                    if direction_up:
-                        await move_up_fn(controller)
-                    else:
-                        await move_down_fn(controller)
+                    move_fn = move_up_fn if direction_up else move_down_fn
+                    await policy.async_issue_step(
+                        position_key, direction_up, lambda: move_fn(controller)
+                    )
 
                 async def read_position() -> float | None:
                     nonlocal feedback_after
@@ -849,11 +842,9 @@ class CoordinatorPositionsMixin:
                     )
 
             finally:
-                if self._bed_type == BED_TYPE_LINAK and not self._command_scheduler.has_pending:
-                    # Seeks own their lock lifecycle instead of going through
-                    # _async_finish_controller_operation(), so reconcile a
-                    # deferred Linak snapshot here as well.
-                    self._backfill_linak_snapshot()
+                # Seeks own their lock lifecycle instead of going through
+                # _async_finish_controller_operation(), so reconcile here too.
+                self._persist_capability_snapshot_after_operation()
                 if self._client is not None and self._client.is_connected:
                     if (
                         self._disconnect_after_operation_enabled()

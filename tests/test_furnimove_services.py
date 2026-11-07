@@ -35,7 +35,7 @@ async def invoke(hass, targets, service, data):
     with (
         patch("custom_components.adjustable_bed.services._resolve_sided_targets",
               return_value=([(value, SIDE_BOTH) for value in targets], [])) as resolve,
-        patch("custom_components.adjustable_bed.furnimove_services._resolve_sided_targets",
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets",
               new=resolve),
     ):
         await hass.services.async_call(DOMAIN, service, {"device_id": "bed", **data}, blocking=True)
@@ -115,7 +115,7 @@ async def test_advisory_duration_accepts_ui_selection_without_wire_or_preemption
 
 
 async def test_advisory_duration_updates_disconnected_receiver_and_survives_reconnect(hass):
-    from custom_components.adjustable_bed.beds.furnimove import FurniMoveController
+    from custom_components.adjustable_bed.beds.furnimove.controller import FurniMoveController
     from custom_components.adjustable_bed.const import CONF_FURNIMOVE_REMOTE
     from tests.test_furnimove_connection import coordinator as make_coordinator
 

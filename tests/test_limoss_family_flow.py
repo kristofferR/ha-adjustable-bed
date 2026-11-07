@@ -95,7 +95,7 @@ async def test_the_row_asks_the_app_and_keeps_the_generic_controls_one_answer_aw
     result = await setup_flow(hass, const.BED_TYPE_LIMOSS).async_step_limoss_family(
         {"choice": "fsm_relax"}
     )
-    assert result["step_id"] == "fsm_relax"
+    assert result["step_id"] == "profile_questions"
 
 
 async def test_generic_entry_changes_to_remote_after_checking_its_characteristic(

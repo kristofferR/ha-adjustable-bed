@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Final, Literal
 
 from bleak.exc import BleakError
 
+from ..card import CARD_MASSAGE, CARD_UTILITY
 from ..codec import okin_5a, okin_nframe
 from ..const import (
     ADJUSTABLE_LUMBAR_VARIANT_OKIN,
@@ -32,13 +33,9 @@ from ..profiles.okin_nframe import (
     ADJUSTABLE_LUMBAR_SAVE_HOLD_MS,
     OkinNFrameProfile,
 )
-from .base import (
-    BedController,
-    ControllerButtonSpec,
-    MotorCommandCallable,
-    MotorControlSpec,
-    SideBoundController,
-)
+from .base import BedController, ProfileExecution
+from .builder import BuildContext
+from .entity_specs import ControllerButtonSpec, MotorCommandCallable, MotorControlSpec
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -176,10 +173,8 @@ def _protocol_name(live: str | None, stored: object) -> str | None:
 
 
 def _action(name: str) -> MotorCommandCallable:
-    async def invoke(controller: BedController | SideBoundController) -> None:
-        target = (
-            controller._controller if isinstance(controller, SideBoundController) else controller
-        )
+    async def invoke(controller: BedController) -> None:
+        target = controller
         if not isinstance(target, AdjustableLumbarController):
             raise TypeError("This action requires the Adjustable bed (Lumbar) app profile")
         await target.execute_app_action(name)
@@ -187,7 +182,7 @@ def _action(name: str) -> MotorCommandCallable:
     return invoke
 
 
-class AdjustableLumbarController(BedController):
+class AdjustableLumbarController(ProfileExecution[OkinNFrameProfile | None], BedController):
     """Faithful Adjustable bed (Lumbar) app controls for all three tables."""
 
     def __init__(
@@ -315,6 +310,7 @@ class AdjustableLumbarController(BedController):
                 _action(key),
                 translation_key=f"adjustable_lumbar_{key}",
                 icon="mdi:content-save" if key.startswith("save_") else "mdi:gesture-tap",
+                card=CARD_MASSAGE if key in _WAVE_LABELS or key == "massage_on" else CARD_UTILITY,
             )
             for key, label in labels.items()
         )
@@ -613,3 +609,10 @@ class AdjustableLumbarController(BedController):
             await self.check_massage()
         else:
             raise ValueError(f"Unknown Adjustable bed (Lumbar) action '{action}'")
+
+
+async def build_controller(ctx: BuildContext) -> AdjustableLumbarController:
+    """Build the controller; the app's name rule picks the table unless the variant fixes it."""
+    return AdjustableLumbarController(
+        ctx.coordinator, protocol_variant=ctx.variant, device_name=ctx.live_device_name
+    )

@@ -11,7 +11,8 @@ from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import _async_update_listener, _build_paired_children, const
-from custom_components.adjustable_bed.beds.limoss_remote import LimossRemoteController
+from custom_components.adjustable_bed.beds.limoss.remote import LimossRemoteController
+from custom_components.adjustable_bed.beds.limoss.remote_state import get_limoss_remote_session
 from custom_components.adjustable_bed.button import (
     AdjustableBedButton,
     ControllerActionButton,
@@ -20,7 +21,6 @@ from custom_components.adjustable_bed.button import (
 from custom_components.adjustable_bed.codec import limoss as codec
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.cover import _cover_entities_for
-from custom_components.adjustable_bed.limoss_remote_state import get_limoss_remote_session
 from custom_components.adjustable_bed.paired_coordinator import (
     PairedBedCoordinator,
     PairedSideError,
@@ -107,7 +107,7 @@ async def public_call(hass, target, service, data, side=None):
             return_value=([(target, side or const.SIDE_BOTH)], []),
         ) as resolve,
         patch(
-            "custom_components.adjustable_bed.limoss_remote_services._resolve_sided_targets",
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
             new=resolve,
         ),
     ):

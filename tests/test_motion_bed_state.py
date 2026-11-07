@@ -3,7 +3,7 @@
 
 import pytest
 
-from custom_components.adjustable_bed.motion_bed_state import (
+from custom_components.adjustable_bed.beds.motion_bed.state import (
     MotionBedContext,
     MotionBedFollowup,
     MotionBedRoute,

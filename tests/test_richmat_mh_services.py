@@ -13,21 +13,23 @@ import yaml
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.adjustable_bed.const import BED_TYPE_RICHMAT_REVIVE, DOMAIN, SIDE_BOTH
-from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.richmat_mh_services import (
+from custom_components.adjustable_bed.beds.richmat_mh.controller import RichmatMhController
+from custom_components.adjustable_bed.beds.richmat_mh.services import (
     SERVICE_RICHMAT_MH_ALARM,
     SERVICE_RICHMAT_MH_AROMA,
     SERVICE_RICHMAT_MH_LIGHT_COLOR,
     SERVICE_RICHMAT_MH_WAIST_ALARM,
 )
+from custom_components.adjustable_bed.const import BED_TYPE_RICHMAT_REVIVE, DOMAIN, SIDE_BOTH
+from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.services import async_register_services
 
 ROOT = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
 
 
 def _target(name: str = "Bed") -> tuple[MagicMock, SimpleNamespace]:
-    controller = SimpleNamespace(
+    controller = MagicMock(
+        spec=RichmatMhController,
         supports_richmat_mh_alarm=True,
         supports_richmat_mh_aroma=True,
         supports_richmat_mh_waist_alarm=True,
@@ -41,6 +43,7 @@ def _target(name: str = "Bed") -> tuple[MagicMock, SimpleNamespace]:
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     coordinator.name = name
     coordinator.bed_type = BED_TYPE_RICHMAT_REVIVE
+    coordinator.controller_side = None
     coordinator.capability_controller = controller
 
     async def execute(command, **kwargs):
@@ -55,7 +58,7 @@ async def targets(hass: HomeAssistant):
     await async_register_services(hass)
     first, second = _target("First"), _target("Second")
     with patch(
-        "custom_components.adjustable_bed.richmat_mh_services._resolve_sided_targets",
+        "custom_components.adjustable_bed.services._resolve_sided_targets",
         return_value=([(first[0], SIDE_BOTH), (second[0], SIDE_BOTH)], []),
     ):
         yield first, second
@@ -64,7 +67,7 @@ async def targets(hass: HomeAssistant):
 async def test_alarm_sends_the_countdown_from_local_time(hass, targets) -> None:
     (coordinator, controller), _ = targets
     now = datetime(2026, 10, 2, 22, 30)
-    with patch("custom_components.adjustable_bed.richmat_mh_services.dt_util.now", return_value=now):
+    with patch("custom_components.adjustable_bed.beds.richmat_mh.services.dt_util.now", return_value=now):
         await hass.services.async_call(DOMAIN, SERVICE_RICHMAT_MH_ALARM, {
             "device_id": "bed", "enabled": True, "time": "06:45:00",
             "position": "tv", "massage": ["head_massage"],
@@ -126,11 +129,11 @@ async def test_aroma_triplet_and_capability_gate(hass, targets) -> None:
 async def test_cancellation_releases_the_preflighted_links(hass, targets) -> None:
     with (
         patch(
-            "custom_components.adjustable_bed.richmat_mh_services._execute_sided",
+            "custom_components.adjustable_bed.services._execute_sided",
             side_effect=asyncio.CancelledError,
         ),
         patch(
-            "custom_components.adjustable_bed.richmat_mh_services._release_preflighted"
+            "custom_components.adjustable_bed.services._release_preflighted"
         ) as release,
         pytest.raises(asyncio.CancelledError),
     ):
@@ -160,7 +163,7 @@ def test_service_descriptions_and_translations_cover_the_schema() -> None:
 async def test_waist_alarm_sends_the_current_local_time(hass, targets) -> None:
     (_, controller), _ = targets
     now = datetime(2026, 10, 2, 23, 59)
-    with patch("custom_components.adjustable_bed.richmat_mh_services.dt_util.now", return_value=now):
+    with patch("custom_components.adjustable_bed.beds.richmat_mh.services.dt_util.now", return_value=now):
         await hass.services.async_call(DOMAIN, SERVICE_RICHMAT_MH_WAIST_ALARM, {
             "device_id": "bed", "enabled": True, "waist_side": "both", "time": "06:45:00",
             "intensity": 2,
@@ -175,10 +178,11 @@ async def test_waist_alarm_sends_the_current_local_time(hass, targets) -> None:
 async def test_each_target_reads_the_clock_after_preflight(hass, targets, service) -> None:
     """A reconnect in preflight or an earlier target can cross a minute boundary."""
     (first, first_ctrl), (_, second_ctrl) = targets
-    from custom_components.adjustable_bed import richmat_mh_services
+    from custom_components.adjustable_bed import services
+    from custom_components.adjustable_bed.beds.richmat_mh import services as richmat_mh_services
 
     clock = [datetime(2026, 10, 2, 6, 40)]
-    real_preflight = richmat_mh_services._preflight_capability
+    real_preflight = services._preflight_capability
 
     async def slow_preflight(*args, **kwargs):
         clock[0] = datetime(2026, 10, 2, 6, 41)  # the preflight reconnect took a while
@@ -192,7 +196,7 @@ async def test_each_target_reads_the_clock_after_preflight(hass, targets, servic
     data = {"device_id": ["a", "b"], "enabled": True, "time": "06:45:00"}
     data |= {"position": "tv"} if service == SERVICE_RICHMAT_MH_ALARM else {"waist_side": "both"}
     with (
-        patch.object(richmat_mh_services, "_preflight_capability", slow_preflight),
+        patch("custom_components.adjustable_bed.services._preflight_capability", slow_preflight),
         patch.object(richmat_mh_services.dt_util, "now", side_effect=lambda: clock[0]),
     ):
         await hass.services.async_call(DOMAIN, service, data, blocking=True)

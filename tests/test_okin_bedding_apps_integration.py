@@ -11,9 +11,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.exceptions import ServiceValidationError
-from homeassistant.helpers import entity_registry as er
 
 from custom_components.adjustable_bed.actuator_groups import actuator_group_for
+from custom_components.adjustable_bed.app_families import FAMILY_STEP_ROUTES
+from custom_components.adjustable_bed.bed_traits import bed_type_has_position_feedback
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.config_flow import (
     _motor_count_options,
@@ -25,14 +26,12 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_ZSERIES,
     DOMAIN,
     SIDE_BOTH,
-    bed_type_has_position_feedback,
     get_motor_pulse_defaults,
     requires_pairing,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.detection import (
-    FAMILY_STEP_ROUTES,
     HIDDEN_APP_CHOICES,
     bed_type_choice,
     detect_bed_type,
@@ -119,16 +118,12 @@ async def test_setup_hides_fixed_layout_and_refresh_delay(hass, bed_type):
     ("factory", "bed_type", "prefix"),
     [(tranquil, BED_TYPE_TRANQUIL, "tranquil"), (lambda: zseries("z280"), BED_TYPE_ZSERIES, "zseries")],
 )
-async def test_profile_change_retires_previous_app_buttons_and_sensors(hass, factory, bed_type, prefix):
+async def test_profile_change_builds_only_the_current_app_namespace(hass, factory, bed_type, prefix):
     runtime = configure_entity_runtime(hass, factory(), bed_type)
-    registry = er.async_get(hass)
-    stale = [
-        registry.async_get_or_create("button", DOMAIN, "bed_serenity_save_tv_left", config_entry=runtime.entry),
-        registry.async_get_or_create("sensor", DOMAIN, "bed_serenity_status_code_left", config_entry=runtime.entry),
-    ]
     buttons = {entity.unique_id for entity in _button_entities_for(hass, runtime)}
     sensors = {entity.unique_id for entity in _sensor_entities_for(hass, runtime)}
-    assert all(registry.async_get(row.entity_id) is None for row in stale)
+    assert "bed_serenity_save_tv_left" not in buttons
+    assert "bed_serenity_status_code_left" not in sensors
     assert f"bed_{prefix}_save_zero_g_left" in buttons
     assert f"bed_{prefix}_status_code_left" in sensors
     # Moving away from the app profile removes its namespace again.
@@ -137,18 +132,15 @@ async def test_profile_change_retires_previous_app_buttons_and_sensors(hass, fac
         make_controller_mock(
             controller_button_specs=(),
             controller_state_sensor_specs=(),
-            stale_controller_state_sensor_entity_keys=frozenset(),
             position_number_specs=(),
         ),
         BED_TYPE_DIAGNOSTIC,
     )
-    kept = [
-        registry.async_get_or_create("button", DOMAIN, f"bed_{prefix}_save_zero_g_left", config_entry=retired.entry),
-        registry.async_get_or_create("sensor", DOMAIN, f"bed_{prefix}_status_code_left", config_entry=retired.entry),
-    ]
-    _button_entities_for(hass, retired)
-    _sensor_entities_for(hass, retired)
-    assert all(registry.async_get(row.entity_id) is None for row in kept)
+    remaining = {
+        entity.unique_id
+        for entity in (*_button_entities_for(hass, retired), *_sensor_entities_for(hass, retired))
+    }
+    assert not {unique_id for unique_id in remaining if f"_{prefix}_" in unique_id}
 
 
 @pytest.mark.parametrize(("factory", "has_switch"), [(tranquil, True), (lambda: zseries("z230"), False)])
@@ -219,14 +211,14 @@ async def test_hold_services_preflight_profile_and_literal_action(
     [
         (BED_TYPE_ZSERIES, True, None),
         (BED_TYPE_ZSERIES, False, "does not support"),
-        (BED_TYPE_TRANQUIL, True, "not a Customatic Z-Series"),
+        (BED_TYPE_TRANQUIL, True, "does not support"),
     ],
 )
 async def test_alarm_service_requires_zseries_and_manufacturer_enabled_page(
     hass, bed_type, available, error
 ):
     await async_register_services(hass)
-    controller = zseries("z280")
+    controller = zseries("z280") if bed_type == BED_TYPE_ZSERIES else tranquil()
     controller._alarm_available = available
     coordinator = _target(bed_type, controller)
     with (
@@ -235,12 +227,12 @@ async def test_alarm_service_requires_zseries_and_manufacturer_enabled_page(
             return_value=([(coordinator, SIDE_BOTH)], []),
         ) as resolve,
         patch(
-            "custom_components.adjustable_bed.serenity_services._resolve_sided_targets",
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
             new=resolve,
         ),
         patch("asyncio.sleep", new=AsyncMock()),
         patch(
-            "custom_components.adjustable_bed.beds.serenity.dt_util.now",
+            "custom_components.adjustable_bed.beds.serenity.controller.dt_util.now",
             return_value=datetime(2026, 10, 1, 13, 47, 59),
         ),
     ):
@@ -401,12 +393,12 @@ async def test_enabling_alarm_requires_time_and_clearing_does_not(hass):
     coordinator = _target(BED_TYPE_ZSERIES, controller)
     with (
         patch(
-            "custom_components.adjustable_bed.serenity_services._resolve_sided_targets",
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(coordinator, SIDE_BOTH)], []),
         ),
         patch("asyncio.sleep", new=AsyncMock()),
         patch(
-            "custom_components.adjustable_bed.beds.serenity.dt_util.now",
+            "custom_components.adjustable_bed.beds.serenity.controller.dt_util.now",
             return_value=datetime(2026, 10, 1, 13, 47, 59),
         ),
     ):
@@ -443,12 +435,12 @@ async def _set_alarm(hass, controller):
     target = _target(BED_TYPE_ZSERIES, controller)
     with (
         patch(
-            "custom_components.adjustable_bed.serenity_services._resolve_sided_targets",
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(target, SIDE_BOTH)], []),
         ),
         patch("asyncio.sleep", new=AsyncMock()),
         patch(
-            "custom_components.adjustable_bed.beds.serenity.dt_util.now",
+            "custom_components.adjustable_bed.beds.serenity.controller.dt_util.now",
             return_value=datetime(2026, 10, 1, 13, 47, 59),
         ),
     ):
@@ -548,7 +540,7 @@ async def _call(hass, resolved, service="zseries_set_alarm"):
         data |= {"enabled": True, "time": "07:45:00", "wake_mode": "massage"}
     with (
         patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=(resolved, [])) as resolve,
-        patch("custom_components.adjustable_bed.serenity_services._resolve_sided_targets", new=resolve),
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets", new=resolve),
         patch("asyncio.sleep", new=AsyncMock()),
     ):
         await hass.services.async_call(DOMAIN, service, data, blocking=True)
@@ -608,6 +600,9 @@ class _OneSlotChild:
     """A side on a one-slot Bluetooth path: a second simultaneous link fails."""
 
     slot: list[_OneSlotChild] = []
+    controller_side = None
+    stop_epoch = 0
+    pairlink_peripheral = False
 
     def __init__(self, name: str, store: dict) -> None:
         self.name = name
@@ -685,7 +680,7 @@ async def test_capability_probe_releases_each_link_on_a_one_slot_path(hass, pair
             else [coordinator],
         ) as command_targets,
         patch(
-            "custom_components.adjustable_bed.serenity_services._command_targets",
+            "custom_components.adjustable_bed.beds.serenity.services._command_targets",
             new=command_targets,
         ),
     ):

@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Collection, Coroutine, Mapping
+from collections.abc import Callable, Collection, Coroutine, Iterator, Sequence
+from contextlib import ExitStack, contextmanager
+from dataclasses import replace
 from datetime import datetime
 from typing import TYPE_CHECKING, Protocol
 
 from homeassistant.helpers.device_registry import ChildDeviceInfo, DeviceInfo
+from homeassistant.helpers.entity import EntityDescription
 
-from .beds.base import BedController, SideBoundController
+from .beds.base import BedController
+from .controller_state import ControllerState
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
@@ -33,8 +37,6 @@ class EntityRuntime(Protocol):
 
     def entity_unique_id(self, key: str) -> str: ...
 
-    def entity_translation_key(self, key: str) -> str: ...
-
     @property
     def name(self) -> str: ...
 
@@ -48,16 +50,21 @@ class EntityRuntime(Protocol):
     def disable_angle_sensing(self) -> bool: ...
 
     @property
-    def controller(self) -> BedController | SideBoundController | None: ...
+    def controller(self) -> BedController | None: ...
 
     @property
-    def capability_controller(self) -> BedController | SideBoundController | None: ...
+    def capability_controller(self) -> BedController | None: ...
+
+    @property
+    def controller_side(self) -> str | None:
+        """Side bound to calls on a controller shared by both logical sides."""
+        ...
 
     @property
     def position_data(self) -> dict[str, float]: ...
 
     @property
-    def controller_state(self) -> Mapping[str, object]: ...
+    def controller_state(self) -> ControllerState: ...
 
     @property
     def is_connected(self) -> bool: ...
@@ -103,7 +110,7 @@ class EntityRuntime(Protocol):
     ) -> Callable[[], None]: ...
 
     def register_controller_state_callback(
-        self, callback_fn: Callable[[dict[str, object]], None]
+        self, callback_fn: Callable[[ControllerState], None]
     ) -> Callable[[], None]: ...
 
     def register_connection_state_callback(
@@ -138,6 +145,42 @@ class EntityRuntime(Protocol):
         ...
 
 
+@contextmanager
+def controller_side_scope(runtime: EntityRuntime) -> Iterator[None]:
+    """Bind the runtime's logical side to its live and capability controllers."""
+    side = runtime.controller_side
+    with ExitStack() as stack:
+        if side is not None:
+            live, capability = runtime.controller, runtime.capability_controller
+            for controller in (live, None if capability is live else capability):
+                if controller is not None:
+                    stack.enter_context(controller.side_scope(side))
+        yield
+
+
+def own_sides(runtime: EntityRuntime, sides: Sequence[str]) -> tuple[str, ...]:
+    """Restrict a per-side capability list to the runtime's bound side, if any.
+
+    A logical child sharing one controller mints only its own side's entities.
+    """
+    side = runtime.controller_side
+    if side is None:
+        return tuple(sides)
+    return (side,) if side in sides else ()
+
+
+def named_for_side[D: EntityDescription](runtime: EntityRuntime, description: D, side: str) -> D:
+    """Name a natively sided ``description`` for the runtime's device.
+
+    A single-address side device's name already carries its side, so its own
+    side's entity takes the side-neutral base translation. The key, and with it
+    the unique ID, keeps the side.
+    """
+    if runtime.controller_side != side:
+        return description
+    return replace(description, translation_key=description.key.removesuffix(f"_{side}"))
+
+
 class EntityRuntimeView(ABC):
     """Explicit read/query forwarding; subclasses own movement routing."""
 
@@ -161,9 +204,6 @@ class EntityRuntimeView(ABC):
     def entity_unique_id(self, key: str) -> str:
         return self._entity_source.entity_unique_id(key)
 
-    def entity_translation_key(self, key: str) -> str:
-        return self._entity_source.entity_translation_key(key)
-
     @property
     def name(self) -> str:
         return self._entity_source.name
@@ -181,19 +221,23 @@ class EntityRuntimeView(ABC):
         return self._entity_source.disable_angle_sensing
 
     @property
-    def controller(self) -> BedController | SideBoundController | None:
+    def controller(self) -> BedController | None:
         return self._entity_source.controller
 
     @property
-    def capability_controller(self) -> BedController | SideBoundController | None:
+    def capability_controller(self) -> BedController | None:
         return self._entity_source.capability_controller
+
+    @property
+    def controller_side(self) -> str | None:
+        return self._entity_source.controller_side
 
     @property
     def position_data(self) -> dict[str, float]:
         return self._entity_source.position_data
 
     @property
-    def controller_state(self) -> Mapping[str, object]:
+    def controller_state(self) -> ControllerState:
         return self._entity_source.controller_state
 
     @property
@@ -256,7 +300,7 @@ class EntityRuntimeView(ABC):
         return self._entity_source.register_position_callback(callback_fn)
 
     def register_controller_state_callback(
-        self, callback_fn: Callable[[dict[str, object]], None]
+        self, callback_fn: Callable[[ControllerState], None]
     ) -> Callable[[], None]:
         return self._entity_source.register_controller_state_callback(callback_fn)
 

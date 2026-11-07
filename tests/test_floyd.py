@@ -7,8 +7,9 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.adjustable_bed.beds.floyd import FloydController
+from custom_components.adjustable_bed.beds.kaidi.floyd import FloydController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_KAIDI,
     CONF_KAIDI_PRODUCT_ID,
@@ -28,6 +29,7 @@ def floyd(mock_bleak_client: MagicMock) -> FloydController:
         motor_pulse_delay_ms=1, has_massage=True,
         entry=SimpleNamespace(data={CONF_KAIDI_ROOM_ID: 0x12345678, CONF_KAIDI_PRODUCT_ID: 139}),
         record_command_trace=MagicMock(), handle_controller_state_update=MagicMock(),
+        controller_state={},
     )
     controller = FloydController(coordinator)
     controller._session_ready = True
@@ -221,8 +223,8 @@ def test_malformed_notifications_are_ignored(floyd: FloydController, packet: str
 
 async def test_queue_spacing(floyd: FloydController) -> None:
     floyd._next_write_at = 100.04
-    with patch("custom_components.adjustable_bed.beds.floyd.time.monotonic", return_value=100), patch(
-        "custom_components.adjustable_bed.beds.floyd.asyncio.sleep", new_callable=AsyncMock,
+    with patch("custom_components.adjustable_bed.beds.kaidi.floyd.time.monotonic", return_value=100), patch(
+        "custom_components.adjustable_bed.beds.kaidi.floyd.asyncio.sleep", new_callable=AsyncMock,
     ) as sleep:
         await FloydController._send(floyd, b"\x00")
     assert sleep.call_args.args[0] == pytest.approx(0.04)
@@ -265,7 +267,7 @@ async def test_release_uses_started_target_after_topology_change(floyd: FloydCon
     ("c0ff0900000000000000000000008b0100", False),
 ])
 def test_floyd_exact_admission_vectors(payload: str, expected: bool) -> None:
-    from custom_components.adjustable_bed.kaidi_protocol import (
+    from custom_components.adjustable_bed.beds.kaidi.protocol import (
         is_floyd_advertisement,
         parse_kaidi_manufacturer_payload,
     )
@@ -292,6 +294,7 @@ def service_target(controller: FloydController):
     target = MagicMock(spec=AdjustableBedCoordinator)
     target.name = "Floyd"
     target.bed_type = BED_TYPE_KAIDI
+    target.controller_side = None
     target.capability_controller = controller
 
     async def execute(command, **kwargs):
@@ -310,7 +313,8 @@ async def test_service_validates_all_targets_before_overwrite(hass, floyd: Floyd
     await async_register_services(hass)
     first = service_target(floyd)
     second = service_target(floyd)
-    second.capability_controller = SimpleNamespace(supports_floyd_actions=False)
+    second.controller_side = None
+    second.capability_controller = SimpleNamespace(supports_floyd_actions=False, requires_disconnected_transport=False)
     with patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=(
         [(first, "both"), (second, "both")], [],
     )), pytest.raises(ServiceValidationError, match="Floyd Home"):
@@ -432,7 +436,7 @@ async def test_room_assignment_failure_disconnects_without_persisting(hass, floy
     floyd.floyd_action = AsyncMock(side_effect=ValueError("assignment rejected"))
     with patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=(
         [(target, "both")], [],
-    )), pytest.raises(ValueError, match="assignment rejected"):
+    )), pytest.raises(ServiceValidationError, match="assignment rejected"):
         await hass.services.async_call(DOMAIN, "floyd_action", {
             "device_id": "one", "action": "assign_room", "confirm": True, "room_id": 23,
         }, blocking=True)
@@ -447,7 +451,7 @@ def test_retained_parameter_survives_controller_renewal(floyd: FloydController) 
 
 
 def test_extended_advertisement_and_short_boundary() -> None:
-    from custom_components.adjustable_bed.kaidi_protocol import (
+    from custom_components.adjustable_bed.beds.kaidi.protocol import (
         is_floyd_advertisement,
         parse_kaidi_manufacturer_payload,
     )

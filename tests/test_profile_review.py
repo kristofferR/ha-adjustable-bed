@@ -130,13 +130,13 @@ async def test_migration_marks_only_routes_that_gained_app_profiles(
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 3)
+    assert (entry.version, entry.minor_version) == (5, 5)
     assert entry.data.get(CONF_PROFILE_REVIEW_PENDING) == mark
 
 
 async def test_entries_created_now_are_never_marked(hass: HomeAssistant) -> None:
     """Entries created at 4.3 or later are never marked."""
-    assert (AdjustableBedConfigFlow.VERSION, AdjustableBedConfigFlow.MINOR_VERSION) == (5, 3)
+    assert (AdjustableBedConfigFlow.VERSION, AdjustableBedConfigFlow.MINOR_VERSION) == (5, 5)
     entry = MockConfigEntry(
         domain=DOMAIN,
         data={CONF_ADDRESS: ADDRESS, CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: "auto"},
@@ -159,7 +159,7 @@ async def test_offline_entry_gets_the_review_before_connecting(hass: HomeAssista
     with (
         patch("custom_components.adjustable_bed.async_register_services", AsyncMock()),
         patch(
-            "custom_components.adjustable_bed.AdjustableBedCoordinator",
+            "custom_components.adjustable_bed.AdjustableBedCoordinator.async_create",
             side_effect=RuntimeError("offline"),
         ),
         pytest.raises(RuntimeError, match="offline"),
@@ -469,9 +469,9 @@ async def test_paired_bed_explains_splitting_instead_of_switching(
 def test_every_offered_app_is_a_selectable_profile() -> None:
     selectable = {option["value"] for option in get_bed_type_options()}
     offered = {choice for route in _ROUTE_APPS for choice in route.choices}
+    from custom_components.adjustable_bed.app_families import FAMILY_STEP_ROUTES
     from custom_components.adjustable_bed.const import BED_TYPE_VIBRADORM
     from custom_components.adjustable_bed.detection import (
-        FAMILY_STEP_ROUTES,
         HIDDEN_APP_CHOICES,
     )
 

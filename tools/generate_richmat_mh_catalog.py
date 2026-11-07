@@ -6,7 +6,7 @@ Usage::
 
 Reads the five frozen package inventories owned by the accepted cluster-020
 reconciliation and the accepted Idealbed report's CmdKey/entity tables, then
-writes the compact ``custom_components/adjustable_bed/richmat_mh_catalog.py``.
+writes the compact ``custom_components/adjustable_bed/beds/richmat_mh/catalog.py``.
 ``--check`` verifies that the committed module matches the inputs. Every input
 is pinned to the hash its accepted report or reconciliation records, so a
 superseded extraction cannot be used.
@@ -102,7 +102,7 @@ REPORT_SHA256 = {
 }
 # Intensity sliders by their entity opcode (MSG_HEAD/FOOT_INTENSITY_INC).
 INTENSITY_ZONES = {"4C": "head", "4E": "foot"}
-TARGET = ROOT / "custom_components/adjustable_bed/richmat_mh_catalog.py"
+TARGET = ROOT / "custom_components/adjustable_bed/beds/richmat_mh/catalog.py"
 INVENTORY_SHA256 = {
     "representative": "4aa852c4cb31545748d5bbf8425327599f78c4e66f3d494f66966ef8ef7314e9",
     "sibling-1": "193e0c8515a42773926224e4ca3e80031a4dbe809983e001c62dd2029a82f2d5",
@@ -840,6 +840,10 @@ def render(apps: dict[str, Any]) -> str:
         "cluster-020 inventories; do not edit by hand. Each model maps to an ordered",
         "control layout (app route, kind, page area, app group, app label, opcode,",
         "KEEP repeat interval or 0 for ONCE) and its constructor feature record.",
+        "",
+        "Input SHA-256 (the generator refuses any other input):",
+        *(f"    {app} inventory: {INVENTORY_SHA256[key]}" for app, key in PACKAGES.items()),
+        *(f"    Idealbed {name}: {digest}" for name, digest in REPORT_SHA256.items()),
         '"""',
         "",
         "from __future__ import annotations",

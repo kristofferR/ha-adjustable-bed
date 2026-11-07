@@ -10,7 +10,7 @@ from typing import NotRequired, TypedDict, cast
 
 import pytest
 
-from custom_components.adjustable_bed import motion_bed_protocol as protocol
+from custom_components.adjustable_bed.beds.motion_bed import protocol
 from custom_components.adjustable_bed.codec import ff_frame
 
 

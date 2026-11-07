@@ -18,8 +18,8 @@ from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
-from custom_components.adjustable_bed.beds import keeson
-from custom_components.adjustable_bed.beds.keeson import (
+from custom_components.adjustable_bed.beds.keeson import controller as keeson
+from custom_components.adjustable_bed.beds.keeson.controller import (
     RESTONIC_A_CONTROLS,
     RESTONIC_B_CONTROLS,
     RESTONIC_ZZZ_BUTTON_KEY,
@@ -354,7 +354,6 @@ async def test_remote_capabilities(coordinator):
         assert [spec.key for spec in controller.motor_control_specs] == (
             ["head", "feet", "back_legs"] if remote_b else ["head", "feet"]
         )
-        assert "back_legs" in controller.stale_motor_entity_keys
         assert controller.held_control_options == tuple(
             RESTONIC_B_CONTROLS if remote_b else RESTONIC_A_CONTROLS
         )

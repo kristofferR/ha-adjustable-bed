@@ -10,7 +10,7 @@ it to its key in ``docs/design/execution-capabilities.md``.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Final, Literal
+from typing import Final, Literal, Protocol
 
 HoldMode = Literal["stream", "latched"]
 HOLD_MODES: Final[frozenset[str]] = frozenset({"stream", "latched"})
@@ -99,3 +99,10 @@ HOLD_CEILING_MS: Final = 30_000
 """The longest one renewable hold streams, however often its lease is renewed."""
 LATCHED_HOLD_CEILING_MS: Final = 10_000
 """Ceiling of a latched hold, whose bed keeps moving until STOP arrives."""
+
+
+class ExecutionProfile(Protocol):
+    """A family profile that declares its app's execution."""
+
+    @property
+    def execution(self) -> ExecutionCapabilities: ...

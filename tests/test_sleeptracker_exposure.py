@@ -11,12 +11,12 @@ import pytest
 import voluptuous as vol
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
-from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
-from custom_components.adjustable_bed.beds.sleeptracker import SleeptrackerController
+from custom_components.adjustable_bed.bed_traits import bed_traits
+from custom_components.adjustable_bed.beds.sleeptracker.controller import SleeptrackerController
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
@@ -34,6 +34,7 @@ from custom_components.adjustable_bed.redaction import (
 )
 from custom_components.adjustable_bed.services import async_register_services
 from tests.form_helpers import NEW_BED_ROUTES, finish_new_bed, start_new_bed
+from tests.state_helpers import state_writer
 
 
 @pytest.mark.parametrize("route", NEW_BED_ROUTES)
@@ -62,7 +63,7 @@ async def test_every_setup_route_collects_processor_profile(
     assert data["has_massage"] is True and data["disable_angle_sensing"] is True
     assert data["motor_count"] == 3
     assert data["sleeptracker_foundation"] == "Unspecified"
-    assert const.BED_TYPE_SLEEPTRACKER in const.BEDS_WITHOUT_ANGLE_FEEDBACK
+    assert bed_traits(const.BED_TYPE_SLEEPTRACKER).no_angle_feedback
     assert "Sleeptracker" in BED_TYPE_DISPLAY_NAMES[const.BED_TYPE_SLEEPTRACKER]
 
 
@@ -83,7 +84,7 @@ def test_profile_owns_selectors_and_options_keep_product():
 
 
 def test_unique_processor_service_wins_without_reclassifying_uart(mock_bluetooth_service_info):
-    from custom_components.adjustable_bed import sleeptracker_protocol as p
+    from custom_components.adjustable_bed.beds.sleeptracker import protocol as p
 
     info = mock_bluetooth_service_info
     info.name = "KSSF05C"
@@ -137,27 +138,17 @@ async def test_safety_light_uses_app_button_without_an_inferred_assumed_light(
     runtime.entity_side = None
     runtime.has_massage = True
     runtime.entity_unique_id.side_effect = lambda key: "processor_" + key
-    runtime.entity_translation_key.side_effect = lambda key: key
     controller._restricted = restricted
     controller._control = AsyncMock()
-    registry = er.async_get(hass)
-    assumed = registry.async_get_or_create(
-        "light", const.DOMAIN, "processor_under_bed_lights_assumed", config_entry=runtime.entry
-    )
-    generic = registry.async_get_or_create(
-        "button", const.DOMAIN, "processor_toggle_light", config_entry=runtime.entry
-    )
     buttons = {entity.translation_key: entity for entity in _button_entities_for(hass, runtime)}
     assert "sleeptracker_light_toggle" in buttons
     assert "toggle_light" not in buttons
     assert _light_entities_for(hass, runtime) == []
-    assert registry.async_get(assumed.entity_id) is None
-    assert registry.async_get(generic.entity_id) is None
     await buttons["sleeptracker_light_toggle"].async_press()
     controller._control.assert_awaited_once()
 
 
-async def test_profile_change_retires_sleeptracker_buttons_for_only_the_affected_side(hass):
+async def test_profile_change_builds_only_the_current_sleeptracker_buttons(hass):
     from custom_components.adjustable_bed.button import _button_entities_for
 
     runtime, old = target(hass, "activebreeze_large")
@@ -165,39 +156,24 @@ async def test_profile_change_retires_sleeptracker_buttons_for_only_the_affected
     runtime.entity_side = "left"
     runtime.has_massage = True
     runtime.entity_unique_id.side_effect = lambda key: f"processor_{key}_left"
-    runtime.entity_translation_key.side_effect = lambda key: key
     old._restricted = True
-    registry = er.async_get(hass)
-    previous = {
-        spec.key: registry.async_get_or_create(
-            "button", const.DOMAIN, runtime.entity_unique_id(spec.key), config_entry=runtime.entry
-        )
-        for spec in old.controller_button_specs
-    }
-    other = registry.async_get_or_create(
-        "button", const.DOMAIN, "processor_sleeptracker_light_off_right", config_entry=runtime.entry
-    )
-    unrelated = registry.async_get_or_create(
-        "button", const.DOMAIN, "processor_other_action_left", config_entry=runtime.entry
-    )
+    previous = {spec.key for spec in old.controller_button_specs}
     current = SleeptrackerController(runtime, model="ergo", restricted=False)
     current._processor_type = 5
     runtime.controller = runtime.capability_controller = current
     remaining = {spec.key for spec in current.controller_button_specs}
-    retired = previous.keys() - remaining
+    retired = previous - remaining
     assert retired >= {
         "sleeptracker_identify_local", "sleeptracker_light_off", "sleeptracker_save_zero_g",
         "sleeptracker_massage_28hz", "sleeptracker_massage_40hz",
     }
-    _button_entities_for(hass, runtime)
-    for key, entity in previous.items():
-        assert (registry.async_get(entity.entity_id) is not None) is (key in remaining)
-    assert registry.async_get(other.entity_id) is not None
-    assert registry.async_get(unrelated.entity_id) is not None
+    built = {entity.unique_id for entity in _button_entities_for(hass, runtime)}
+    for key in previous:
+        assert (runtime.entity_unique_id(key) in built) is (key in remaining)
 
 
 @pytest.mark.parametrize("model", ["ergo_smart", "ergo_prosmart"])
-async def test_profile_change_retires_sleeptracker_state_for_only_the_affected_side(hass, model):
+async def test_profile_change_builds_only_the_current_sleeptracker_state(hass, model):
     from custom_components.adjustable_bed.binary_sensor import _binary_sensor_entities_for
     from custom_components.adjustable_bed.sensor import _sensor_entities_for
 
@@ -205,29 +181,14 @@ async def test_profile_change_retires_sleeptracker_state_for_only_the_affected_s
     runtime.device_info = {}
     runtime.entity_side = "left"
     runtime.entity_unique_id.side_effect = lambda key: f"processor_{key}_left"
-    runtime.entity_translation_key.side_effect = lambda key: key
-    registry = er.async_get(hass)
     previous = {
-        (domain, spec.key): registry.async_get_or_create(
-            domain, const.DOMAIN, runtime.entity_unique_id(spec.key), config_entry=runtime.entry
-        )
+        (domain, spec.key)
         for domain, specs in (
             ("sensor", old.controller_state_sensor_specs),
             ("binary_sensor", old.controller_state_binary_sensor_specs),
         )
         for spec in specs
     }
-    others = [
-        registry.async_get_or_create(
-            domain, const.DOMAIN, unique_id, config_entry=runtime.entry
-        )
-        for domain, unique_id in (
-            ("sensor", "processor_sleeptracker_left_commanded_timer_seconds_right"),
-            ("binary_sensor", "processor_sleeptracker_wind_down_running_right"),
-            ("sensor", "processor_other_state_left"),
-            ("binary_sensor", "processor_other_state_left"),
-        )
-    ]
     current = SleeptrackerController(runtime, model=model)
     runtime.controller = runtime.capability_controller = current
     remaining = {
@@ -238,11 +199,11 @@ async def test_profile_change_retires_sleeptracker_state_for_only_the_affected_s
         )
         for spec in specs
     }
-    _sensor_entities_for(hass, runtime)
-    _binary_sensor_entities_for(hass, runtime)
-    for key, entity in previous.items():
-        assert (registry.async_get(entity.entity_id) is not None) is (key in remaining)
-    assert all(registry.async_get(entity.entity_id) is not None for entity in others)
+    built = {
+        ("sensor", entity.unique_id) for entity in _sensor_entities_for(hass, runtime)
+    } | {("binary_sensor", entity.unique_id) for entity in _binary_sensor_entities_for(hass, runtime)}
+    for domain, key in previous:
+        assert ((domain, runtime.entity_unique_id(key)) in built) is ((domain, key) in remaining)
 
 
 async def test_wave_entities_keep_shared_settings_across_reconnect_and_restart(hass):
@@ -463,7 +424,7 @@ def test_secrets_redacted_in_captures_and_structured_diagnostics():
 
 def test_every_generated_entity_has_english_translation():
     strings = json.loads(Path("custom_components/adjustable_bed/strings.json").read_text())
-    from custom_components.adjustable_bed.sleeptracker_protocol import MODELS
+    from custom_components.adjustable_bed.beds.sleeptracker.protocol import MODELS
 
     for model in MODELS:
         controller = SleeptrackerController(MagicMock(), model=model, restricted=True)
@@ -522,8 +483,7 @@ async def test_platform_entities_route_actions_and_show_only_published_state(has
     runtime.disable_angle_sensing = True
     runtime.controller_state = {}
     runtime.entity_unique_id.side_effect = lambda key: "processor_" + key
-    runtime.entity_translation_key.side_effect = lambda key: key
-    runtime.handle_controller_state_updates.side_effect = runtime.controller_state.update
+    runtime.handle_controller_state_updates.side_effect = state_writer(runtime.controller_state)
     selects = {e.translation_key: e for e in _select_entities_for(hass, runtime)}
     numbers = {e.translation_key: e for e in _number_entities_for(hass, runtime)}
     assert set(selects) >= {

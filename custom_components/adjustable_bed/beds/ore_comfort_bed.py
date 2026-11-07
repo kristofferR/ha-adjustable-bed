@@ -29,6 +29,7 @@ from typing import TYPE_CHECKING, Any, Final, cast
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.exceptions import HomeAssistantError
 
+from ..card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_UTILITY
 from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
@@ -38,10 +39,11 @@ from ..const import (
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_MAXCOIL_UNA,
 )
+from ..controller_state import StateKey
 from ..profiles import keeson as profiles
 from ..profiles.keeson import KeesonProfile
-from .base import (
-    BedController,
+from .base import BedController, ProfileExecution
+from .entity_specs import (
     ControllerButtonSpec,
     ControllerNumberSpec,
     ControllerSelectSpec,
@@ -100,8 +102,10 @@ MASSAGE_LEVEL_MAX: Final = 3
 MASSAGE_DEFAULT_LEVEL: Final = 1
 MASSAGE_TIMER: Final = {"10": 0x10000030, "20": 0x10000031, "30": 0x10000032}
 
-STATE_LEVEL: Final = {zone: f"ore_comfort_massage_{zone}_level" for zone in MASSAGE_BASE}
-STATE_TIMER: Final = "ore_comfort_massage_timer"
+STATE_LEVEL: Final = {
+    zone: StateKey[int | None](f"ore_comfort_massage_{zone}_level") for zone in MASSAGE_BASE
+}
+STATE_TIMER: Final = StateKey[str | None]("ore_comfort_massage_timer")
 
 # (cover key, translation key, up word, down word) for each app screen.
 _Axis = tuple[str, str, int, int]
@@ -120,7 +124,7 @@ LAYOUTS: Final[dict[int, tuple[_Axis, ...]]] = {
 _LAYOUT_NAMES: Final = {2: "bedding2 (2M)", 3: "bedding3 (3M)", 4: "bedding4 (4M)"}
 
 
-class OreComfortBedController(BedController):
+class OreComfortBedController(ProfileExecution[KeesonProfile], BedController):
     """Controller for the artifact-verified ORE comfort-bed app profiles."""
 
     def __init__(self, coordinator: AdjustableBedCoordinator, *, app: str) -> None:
@@ -258,11 +262,6 @@ class OreComfortBedController(BedController):
         )
 
     @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        # Covers from the other screens and from the generic Keeson profiles.
-        return frozenset({"back", "feet", "both", "head", "waist", "lumbar", "tilt", "legs"})
-
-    @property
     def has_lumbar_support(self) -> bool:
         return "lumbar" in self._axes
 
@@ -396,7 +395,7 @@ class OreComfortBedController(BedController):
             raise ValueError(f"Invalid massage level {zone}={level}")
         # Like the app's preference, the level is kept even if the write fails.
         self._levels[zone] = level
-        self.forward_controller_state_updates({STATE_LEVEL[zone]: level})
+        self.forward_controller_state_updates(STATE_LEVEL[zone](level))
         await self._send_single(MASSAGE_BASE[zone] + level)
 
     async def massage_start(self) -> None:
@@ -408,14 +407,14 @@ class OreComfortBedController(BedController):
         """Stop: head then foot level zero; the timer indicator resets locally."""
         await self._send_single(MASSAGE_BASE["head"])
         await self._send_single(MASSAGE_BASE["foot"])
-        self.forward_controller_state_updates({STATE_TIMER: None})
+        self.forward_controller_state_updates(STATE_TIMER(None))
 
     async def set_massage_timer_option(self, option: str) -> None:
         """One of the 10/20/30 minute words the timer button cycles through."""
         if option not in MASSAGE_TIMER:
             raise ValueError(f"Invalid massage timer {option}")
         await self._send_single(MASSAGE_TIMER[option])
-        self.forward_controller_state_updates({STATE_TIMER: option})
+        self.forward_controller_state_updates(STATE_TIMER(option))
 
     @property
     def persisted_app_state(self) -> Mapping[str, Any] | None:
@@ -429,7 +428,7 @@ class OreComfortBedController(BedController):
         if any(type(v) is not int or not 0 <= v <= MASSAGE_LEVEL_MAX for v in levels.values()):
             raise ValueError("Invalid massage level preference")
         self._levels = levels
-        self.forward_controller_state_updates({STATE_LEVEL[z]: v for z, v in levels.items()})
+        self.forward_controller_state_updates(*(STATE_LEVEL[z](v) for z, v in levels.items()))
 
     @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
@@ -442,6 +441,7 @@ class OreComfortBedController(BedController):
                 native_max_value=MASSAGE_LEVEL_MAX,
                 native_step=1,
                 set_fn=_level_setter(zone),
+                card=CARD_MASSAGE,
             )
             for zone in ("head", "foot", "wave")
         )
@@ -450,13 +450,14 @@ class OreComfortBedController(BedController):
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
         return (
             ControllerSelectSpec(
-                key=STATE_TIMER,
-                translation_key=STATE_TIMER,
+                key="ore_comfort_massage_timer",
+                translation_key="ore_comfort_massage_timer",
                 state_key=STATE_TIMER,
                 options=tuple(MASSAGE_TIMER),
                 select_fn=lambda ctrl, option: cast(
                     OreComfortBedController, ctrl
                 ).set_massage_timer_option(option),
+                card=CARD_MASSAGE_TIMER,
             ),
         )
 
@@ -471,6 +472,7 @@ class OreComfortBedController(BedController):
                 lambda ctrl: press(cast(OreComfortBedController, ctrl)),
                 icon,
                 translation_key=key,
+                card=CARD_MASSAGE if key == "ore_comfort_massage_start" else CARD_UTILITY,
             )
 
         return (

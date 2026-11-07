@@ -6,8 +6,8 @@ import logging
 from collections.abc import Callable
 
 from ..profiles.okin_nframe import RF_ECO_BT, RF_ECO_BT_REFRESH_MS
-from .base import MotorControlSpec
-from .okin_uuid import OkinUuidController
+from .entity_specs import MotorControlSpec
+from .okin_uuid.controller import OkinUuidController
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,11 +21,6 @@ class OkinRfEcoBtController(OkinUuidController):
     """
 
     _route_profile = RF_ECO_BT
-
-    @property
-    def requires_persistent_connection(self) -> bool:
-        """Keep the stair receiver connected to avoid idle reconnect timeouts (#344)."""
-        return True
 
     @property
     def supports_preset_flat(self) -> bool:
@@ -93,24 +88,6 @@ class OkinRfEcoBtController(OkinUuidController):
                 close_fn=lambda ctrl: ctrl.move_back_down(),
                 stop_fn=lambda ctrl: ctrl.move_back_stop(),
             ),
-        )
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Remove bed motor covers if an existing entry is switched to this profile."""
-        return frozenset(
-            {
-                "back",
-                "legs",
-                "head",
-                "feet",
-                "lumbar",
-                "pillow",
-                "neck",
-                "tilt",
-                "hip",
-                "bed_height",
-            }
         )
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:

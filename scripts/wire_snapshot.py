@@ -184,6 +184,39 @@ NOT_ACTIONS = frozenset(
         "stop_notify",
         "read_bed_presence_cached",
         "async_validate_linked_readiness",
+        "async_refresh_auth",
+        "async_resume_session",
+        "stop_keepalive",
+    }
+)
+
+# Actions declared on BedController after this plan was frozen. They run last,
+# after every other command, so the rows before them keep their virtual timing.
+LATE_ACTIONS = frozenset(
+    {
+        "auxiliary_action",
+        "preset_incline",
+        "preset_lounge",
+        "preset_swing",
+        "turn_footwarming_off",
+        "turn_footwarming_on",
+        "turn_thermal_off",
+        "turn_thermal_on",
+    }
+)
+
+# No-argument actions that moved from BedController to their family's controller
+# after this plan was frozen. They keep their place in the name-ordered plan.
+FAMILY_ACTIONS = frozenset(
+    {
+        "cancel_alarm_timer",
+        "cancel_sleep_timer",
+        "preset_yoga",
+        "rmcontrol_query_alarms",
+        "rmcontrol_query_anti_snore",
+        "solace_music_off",
+        "solace_music_toggle",
+        "solace_query_audio_volume",
     }
 )
 
@@ -263,11 +296,11 @@ def _base_actions() -> list[str]:
     names = []
     for name, fn in inspect.getmembers(BedController, inspect.iscoroutinefunction):
         params = list(inspect.signature(fn).parameters.values())[1:]
-        if name.startswith("_") or name in NOT_ACTIONS:
+        if name.startswith("_") or name in NOT_ACTIONS | LATE_ACTIONS:
             continue
         if all(p.default is not inspect.Parameter.empty for p in params):
             names.append(name)
-    return names
+    return sorted({*names, *FAMILY_ACTIONS})
 
 
 def plan_commands(controller: Any) -> list[Command]:
@@ -364,6 +397,9 @@ def plan_commands(controller: Any) -> list[Command]:
                     True,
                 )
             )
+    for name in sorted(LATE_ACTIONS):
+        if _overrides(controller, name):
+            plan.append(Command(name, _method(name), _flag(controller, ACTION_FLAGS.get(name))))
     return plan
 
 
@@ -372,10 +408,12 @@ def _argument_commands(controller: Any) -> list[Command]:
     c = controller
     out: list[Command] = []
 
-    def add(flag: str | None, method: str, name: str, *args: Any, **kwargs: Any) -> None:
+    def add(
+        flag: str | bool | None, method: str, name: str, *args: Any, **kwargs: Any
+    ) -> None:
         if not _overrides(c, method):
             return
-        declared = _flag(c, flag) if flag else False
+        declared = flag if isinstance(flag, bool) else _flag(c, flag) if flag else False
         out.append(Command(name, _method(method, *args, **kwargs), declared))
 
     if _flag(c, "supports_light_level_control"):
@@ -485,7 +523,8 @@ def _argument_commands(controller: Any) -> list[Command]:
     )
     add("supports_solace_audio", "solace_select_music", "solace_music_1", 1)
     add("supports_solace_audio", "solace_set_audio_volume", "solace_volume_5", 5)
-    add("supports_confirmed_calibration", "calibrate", "calibrate", confirmed=True)
+    # Only the FSM Relax family implements confirmed calibration.
+    add(True, "calibrate", "calibrate", confirmed=True)
     add("supports_device_rename", "rename_device", "rename_device", "Bed")
     add(None, "set_furnimove_massage_program", "furnimove_massage_program_1", 1)
     return out
@@ -1048,6 +1087,7 @@ class Coordinator:
     remember_limoss_remote_capabilities = remember_limoss_remote_features = _ignore
     remember_fsm_relax_capabilities = remember_vibradorm_app_metadata = _ignore
     remember_vibradorm_app_floor_default = remember_remacro_led_level = _ignore
+    _ble_bond_established = False
     remember_vmatbasic_settings = _begin_internal_entry_update = _ignore
     _async_persist_config = _schedule_pending_capability_reload = _ignore
 
@@ -1142,11 +1182,11 @@ def default_scenario(bed_type: str) -> Scenario:
         const.BED_TYPE_RICHMAT: const.RICHMAT_VARIANT_WILINKE,
         const.BED_TYPE_HJBED: "hj_bedbjrn",
         const.BED_TYPE_DOUBLESLEEP: "p1",
-        const.BED_TYPE_CLUSTER018: "avocadoecobase",
+        const.BED_TYPE_RICHMAT_CLASSIC_APPS: "avocadoecobase",
     }.get(bed_type)
     kwargs: dict[str, Any] = {}
     replies: dict[str, str] = {}
-    if bed_type in const.CLUSTER033_BED_TYPES:
+    if bed_type in const.KEESON_LAYOUT_APP_BED_TYPES:
         from custom_components.adjustable_bed.profiles.keeson import DEFAULT_LAYOUTS
 
         data[const.CONF_PRODUCT_TYPE] = DEFAULT_LAYOUTS[bed_type]
@@ -1159,14 +1199,17 @@ def default_scenario(bed_type: str) -> Scenario:
         }
     if bed_type == const.BED_TYPE_SLEEPTRACKER:
         data[const.CONF_PRODUCT_TYPE] = "unknown"
-    if bed_type == const.BED_TYPE_CLUSTER018:
+    if bed_type == const.BED_TYPE_RICHMAT_CLASSIC_APPS:
         data[const.CONF_PRODUCT_TYPE] = "GORM"  # three app modes
     if bed_type == const.BED_TYPE_SLEEPYS_ELITE_APP:
         data[const.CONF_SLEEPYS_ELITE_SELECTOR] = "BOX24"
     if bed_type == const.BED_TYPE_RICHMAT:
-        kwargs = {"device_name": "Casper QRRM Bed", "richmat_remote": "qrrm"}
+        data[const.CONF_RICHMAT_REMOTE] = "qrrm"
+        kwargs = {"device_name": "Casper QRRM Bed"}
     if bed_type == const.BED_TYPE_LEGGETT_LP_LEGACY:
-        from custom_components.adjustable_bed.lp_legacy_profiles import LP_LEGACY_PROFILE_CODES
+        from custom_components.adjustable_bed.beds.leggett.lp_legacy_profiles import (
+            LP_LEGACY_PROFILE_CODES,
+        )
 
         data.update(
             {
@@ -1243,8 +1286,11 @@ VARIANT_ROUTES: dict[str, str] = {
     "kaidi": "KAIDI_VARIANTS",
     "adjustamattress": "ADJUSTAMATTRESS_VARIANTS",
 }
+ROUTE_ENTRY_DATA: dict[str, dict[str, Any]] = {
+    "richmat": {"richmat_remote": "auto"},
+}
 ROUTE_KWARGS: dict[str, dict[str, Any]] = {
-    "richmat": {"richmat_remote": "auto", "device_name": "Richmat"},
+    "richmat": {"device_name": "Richmat"},
     # Floyd Home is advertised as product 139.
     "kaidi:floyd": {"manufacturer_data": {0xFFFF: bytes.fromhex(KAIDI_BROADCAST % "8b")}},
 }
@@ -1274,13 +1320,14 @@ def route_scenarios() -> list[Scenario]:
                     base,
                     id=f"{bed_type}:{variant}",
                     protocol_variant=variant,
+                    entry_data={**base.entry_data, **ROUTE_ENTRY_DATA.get(bed_type, {})},
                     factory_kwargs=ROUTE_KWARGS.get(f"{bed_type}:{variant}")
                     or ROUTE_KWARGS.get(bed_type, base.factory_kwargs),
                     replies={**base.replies, **ROUTE_REPLIES.get(f"{bed_type}:{variant}", {})},
                 )
             )
     # Richmat app family: the picker model selects the byte table within one controller.
-    from custom_components.adjustable_bed.beds.richmat_mh import (
+    from custom_components.adjustable_bed.beds.richmat_mh.controller import (
         MODEL_VARIANT_PREFIX,
         selectable_models,
     )
@@ -1364,13 +1411,13 @@ def route_scenarios() -> list[Scenario]:
             )
     # Classic Richmat apps: each app's own catalog, a desk, memory-arm and Hold
     # layouts, and the bare-byte Nordic UART route.
-    if const.BED_TYPE_CLUSTER018 in const.SUPPORTED_BED_TYPES:
+    if const.BED_TYPE_RICHMAT_CLASSIC_APPS in const.SUPPORTED_BED_TYPES:
         for app, layout, layout_id in CLASSIC_ROUTES:
             scenarios.append(
                 Scenario(
-                    id=f"{const.BED_TYPE_CLUSTER018}:{app}:{layout}"
-                    + ("" if layout_id == const.BED_TYPE_CLUSTER018 else ":nordic"),
-                    bed_type=const.BED_TYPE_CLUSTER018,
+                    id=f"{const.BED_TYPE_RICHMAT_CLASSIC_APPS}:{app}:{layout}"
+                    + ("" if layout_id == const.BED_TYPE_RICHMAT_CLASSIC_APPS else ":nordic"),
+                    bed_type=const.BED_TYPE_RICHMAT_CLASSIC_APPS,
                     protocol_variant=app,
                     entry_data={const.CONF_PRODUCT_TYPE: layout},
                     layout_id=layout_id,
@@ -1557,7 +1604,7 @@ def deterministic_process_state() -> Iterator[None]:
     import secrets
     from unittest.mock import patch
 
-    from custom_components.adjustable_bed.beds.limoss_remote_protocol import APP_SEQUENCE
+    from custom_components.adjustable_bed.beds.limoss.remote_protocol import APP_SEQUENCE
 
     rng = random.Random(0)
     random.seed(0)
@@ -1729,7 +1776,7 @@ async def _capture(
     info: dict[str, Any] = {
         "bed_type": scenario.bed_type,
         "controller": type(controller).__name__,
-        "module": type(controller).__module__.rsplit(".", 1)[-1],
+        "module": type(controller).__module__.removeprefix("custom_components.adjustable_bed.beds."),
         "pulse": [
             controller._coordinator.motor_pulse_count,
             controller._coordinator.motor_pulse_delay_ms,

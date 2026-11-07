@@ -7,13 +7,13 @@ from collections.abc import Iterable, Mapping
 from typing import Any, cast
 
 from custom_components.adjustable_bed import controller_factory
-from custom_components.adjustable_bed.beds import cluster033 as cluster033_module
-from custom_components.adjustable_bed.beds import glideaway_motion as glideaway_module
 from custom_components.adjustable_bed.beds import innova as innova_module
-from custom_components.adjustable_bed.beds import keeson_okin_apps as okin_apps_module
 from custom_components.adjustable_bed.beds import ore_comfort_bed as ore_module
 from custom_components.adjustable_bed.beds import scott_living as scott_living_module
 from custom_components.adjustable_bed.beds import serta_mp_remote as serta_mp_module
+from custom_components.adjustable_bed.beds.glideaway_motion import controller as glideaway_module
+from custom_components.adjustable_bed.beds.keeson import layout_app as keeson_layout_app_module
+from custom_components.adjustable_bed.beds.keeson import okin_apps as okin_apps_module
 from custom_components.adjustable_bed.beds.ore_comfort_bed import ORE_COMFORT_BED_APPS
 from custom_components.adjustable_bed.codec import keeson as keeson_codec
 from custom_components.adjustable_bed.profiles import keeson as keeson_profiles
@@ -129,7 +129,7 @@ def keeson_aliases() -> dict[str, tuple[str, ...]]:
     """Alias bed types per profile, from the factory registry."""
     aliases: dict[str, tuple[str, ...]] = {}
     for bed_type, spec in controller_factory._SIMPLE_CONTROLLERS.items():
-        if (spec.module, spec.class_name) == ("keeson", "KeesonController"):
+        if (spec.module, spec.class_name) == ("keeson.controller", "KeesonController"):
             variant = spec.kwargs["variant"]
             aliases[variant] = (*aliases.get(variant, ()), bed_type)
     return aliases
@@ -745,20 +745,20 @@ def render_keeson_scott_living() -> str:
     return _block(_table(("Command", "Word", "Frame"), rows))
 
 
-# Keeson cluster033 apps
+# Keeson layout apps
 
 _C033_ROLES = {
-    cluster033_module.FFE9: "FFE9",
-    cluster033_module.FFE4: "FFE4",
-    cluster033_module.NUS_TX: "NUS TX",
-    cluster033_module.NUS_RX: "NUS RX",
+    keeson_layout_app_module.FFE9: "FFE9",
+    keeson_layout_app_module.FFE4: "FFE4",
+    keeson_layout_app_module.NUS_TX: "NUS TX",
+    keeson_layout_app_module.NUS_RX: "NUS RX",
 }
 
 
 def _c033_controller(
     profile: keeson_profiles.AppProfile, side: str = "both"
-) -> cluster033_module.AppController:
-    return cluster033_module.AppController(cast(Any, None), profile, side=side)
+) -> keeson_layout_app_module.AppController:
+    return keeson_layout_app_module.AppController(cast(Any, None), profile, side=side)
 
 
 _C033_HEADINGS = {"ergomotion_app": "Ergomotion app"}

@@ -10,10 +10,11 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.richmat import (
+from custom_components.adjustable_bed.beds.richmat.controller import (
     RICHMAT_LEGACY_RGB_LIGHT_TIMER_OPTIONS,
     RichmatController,
 )
+from custom_components.adjustable_bed.beds.richmat.features import get_richmat_features
 from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS, _should_add_button
 from custom_components.adjustable_bed.const import (
     BED_TYPE_RICHMAT,
@@ -29,7 +30,6 @@ from custom_components.adjustable_bed.const import (
     RICHMAT_REMOTE_GGRM,
     RICHMAT_REMOTE_LP_QRRM,
     RICHMAT_VARIANT_NORDIC,
-    get_richmat_features,
     get_richmat_motor_count,
     resolve_richmat_remote_code,
 )
@@ -222,7 +222,7 @@ class TestRichmatFeatureDetection:
 
     def test_v1rm_no_pillow_no_lumbar(self):
         """Test V1RM remote has no pillow or lumbar support."""
-        from custom_components.adjustable_bed.beds.richmat import RichmatController
+        from custom_components.adjustable_bed.beds.richmat.controller import RichmatController
 
         # Create controller with V1RM remote code
         coordinator = MagicMock()
@@ -235,7 +235,7 @@ class TestRichmatFeatureDetection:
 
     def test_190_0055_pillow_no_lumbar(self):
         """Test 190-0055 remote has pillow but no lumbar support."""
-        from custom_components.adjustable_bed.beds.richmat import RichmatController
+        from custom_components.adjustable_bed.beds.richmat.controller import RichmatController
 
         coordinator = MagicMock()
         controller = RichmatController(coordinator, is_wilinke=False, remote_code="190-0055")
@@ -245,7 +245,7 @@ class TestRichmatFeatureDetection:
 
     def test_virm_full_features(self):
         """Test VIRM remote has full feature support."""
-        from custom_components.adjustable_bed.beds.richmat import RichmatController
+        from custom_components.adjustable_bed.beds.richmat.controller import RichmatController
 
         coordinator = MagicMock()
         controller = RichmatController(coordinator, is_wilinke=False, remote_code="VIRM")
@@ -365,13 +365,6 @@ class TestRichmatFeatureDetection:
             "pillow",
             "lumbar",
         ]
-        assert controller.stale_motor_entity_keys == {
-            "back",
-            "legs",
-            "pillow",
-            "lumbar",
-            "head_feet",
-        }
 
     def test_head_only_remote_omits_combined_head_feet_control(self):
         """The combined step needs both axes, so a head-only remote must not get it."""
@@ -780,7 +773,7 @@ class TestRichmatMassage:
         controller = RichmatController(MagicMock(has_massage=True), is_wilinke=True, remote_code="GGRM")
         controller.write_command = AsyncMock()
         sleep = AsyncMock()
-        monkeypatch.setattr("custom_components.adjustable_bed.beds.richmat.asyncio.sleep", sleep)
+        monkeypatch.setattr("custom_components.adjustable_bed.beds.richmat.controller.asyncio.sleep", sleep)
         spec = next(s for s in controller.controller_button_specs if s.key == f"richmat_mh_{command:02x}")
 
         await spec.press_fn(controller)
@@ -815,7 +808,7 @@ class TestRichmatMassage:
             side_effect=[asyncio.CancelledError(), None] if cancel_during == "write" else None
         )
         sleep = AsyncMock(side_effect=asyncio.CancelledError() if cancel_during == "release_delay" else None)
-        monkeypatch.setattr("custom_components.adjustable_bed.beds.richmat.asyncio.sleep", sleep)
+        monkeypatch.setattr("custom_components.adjustable_bed.beds.richmat.controller.asyncio.sleep", sleep)
 
         with pytest.raises(asyncio.CancelledError):
             await controller.tap_ggrm_action(0x66)

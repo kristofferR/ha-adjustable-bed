@@ -14,7 +14,7 @@ from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import position_estimate as pe
-from custom_components.adjustable_bed.beds.octo import OctoController
+from custom_components.adjustable_bed.beds.octo.controller import OctoController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OCTO,
     CONF_BED_TYPE,

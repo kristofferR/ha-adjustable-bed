@@ -49,7 +49,7 @@
 
 - Stored profiles define their own motors, presets, memory slots, massage,
   light, RGB, music, alarm, fan/heating and sensor-menu sets in
-  [`casper_base_catalog.py`](../../custom_components/adjustable_bed/casper_base_catalog.py);
+  [`beds/casper_base/catalog.py`](../../custom_components/adjustable_bed/beds/casper_base/catalog.py);
   each product is a profile in
   [`profiles/casper.py`](../../custom_components/adjustable_bed/profiles/casper.py)
   over the [Richmat codec](richmat.md#casper-base).
@@ -174,7 +174,7 @@ Add sensors as separate entries: **Casper Base sleep sensor (RM- / MM)** or
 ### Sensor protocol
 
 Builders in
-[`casper_sleep_protocol.py`](../../custom_components/adjustable_bed/casper_sleep_protocol.py).
+[`beds/casper_sleep/protocol.py`](../../custom_components/adjustable_bed/beds/casper_sleep/protocol.py).
 
 | Item | MM | SXB |
 |---|---|---|

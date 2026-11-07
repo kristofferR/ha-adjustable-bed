@@ -5,10 +5,10 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed.beds.motion_bed import STOP
+from custom_components.adjustable_bed.beds.motion_bed.controller import STOP
+from custom_components.adjustable_bed.beds.motion_bed.protocol import SOURCE_COMMANDS
 from custom_components.adjustable_bed.const import BED_TYPE_MOTION_BED, DOMAIN, SIDE_BOTH
 from custom_components.adjustable_bed.controller_factory import create_controller
-from custom_components.adjustable_bed.motion_bed_protocol import SOURCE_COMMANDS
 from custom_components.adjustable_bed.services import async_register_services
 from tests.test_motion_bed_controller import characteristic, client_for
 from tests.test_motion_bed_lifecycle import real_coordinator
@@ -100,18 +100,23 @@ async def test_registered_hub_stop_preserves_air_choice_across_factory(hass, sta
 async def test_telemetry_retirement_preserves_active_customization_and_other_runtime(
     hass, platform, replacement
 ):
+    from homeassistant.const import Platform
     from homeassistant.helpers import entity_registry as er
     from pytest_homeassistant.common import MockConfigEntry
 
-    from custom_components.adjustable_bed.beds.solace import SolaceController
-    from custom_components.adjustable_bed.binary_sensor import _binary_sensor_entities_for
+    from custom_components.adjustable_bed.beds.solace.controller import SolaceController
+    from custom_components.adjustable_bed.const import CONF_PAIR_MODE, PAIR_MODE_SINGLE_ADDRESS
     from custom_components.adjustable_bed.paired_coordinator import SingleAddressPairedCoordinator
-    from custom_components.adjustable_bed.sensor import _sensor_entities_for
+    from tests.test_entity_sweep import async_setup_platforms_and_sweep
     from tests.test_paired_setup import _paired_entry
 
     coord = await real_coordinator(hass, "TL-Q")
     ctrl = coord.controller
-    pair = SingleAddressPairedCoordinator(hass, _paired_entry(hass), coord)
+    entry = _paired_entry(hass)
+    hass.config_entries.async_update_entry(
+        entry, data={**entry.data, **coord.entry.data, CONF_PAIR_MODE: PAIR_MODE_SINGLE_ADDRESS}
+    )
+    pair = SingleAddressPairedCoordinator(hass, entry, coord)
     left, right = pair._children["left"], pair._children["right"]
     registry = er.async_get(hass)
     spec = (
@@ -121,16 +126,16 @@ async def test_telemetry_retirement_preserves_active_customization_and_other_run
     )
     key = spec.key
     active = registry.async_get_or_create(
-        platform, DOMAIN, left.entity_unique_id(key), config_entry=coord.entry
+        platform, DOMAIN, left.entity_unique_id(key), config_entry=entry
     )
     active = registry.async_update_entity(
         active.entity_id, name="My telemetry", disabled_by=er.RegistryEntryDisabler.USER
     )
     opposite = registry.async_get_or_create(
-        platform, DOMAIN, right.entity_unique_id(key), config_entry=coord.entry
+        platform, DOMAIN, right.entity_unique_id(key), config_entry=entry
     )
     retired = registry.async_get_or_create(
-        platform, DOMAIN, left.entity_unique_id("motion_bed_retired_test"), config_entry=coord.entry
+        platform, DOMAIN, left.entity_unique_id("motion_bed_retired_test"), config_entry=entry
     )
     other_entry = MockConfigEntry(domain=DOMAIN, data={})
     other_entry.add_to_hass(hass)
@@ -138,24 +143,25 @@ async def test_telemetry_retirement_preserves_active_customization_and_other_run
         platform, DOMAIN, "other_" + active.unique_id, config_entry=other_entry
     )
     other_platform = registry.async_get_or_create(
-        platform, "unrelated", active.unique_id, config_entry=coord.entry
+        platform, "unrelated", active.unique_id, config_entry=entry
     )
     other_domain = registry.async_get_or_create(
-        "switch", DOMAIN, active.unique_id, config_entry=coord.entry
+        "switch", DOMAIN, active.unique_id, config_entry=entry
     )
     if replacement == "different_protocol":
         coord._controller = SolaceController(coord)
-    build = _sensor_entities_for if platform == "sensor" else _binary_sensor_entities_for
     try:
-        entities = build(hass, left)
+        entities = await async_setup_platforms_and_sweep(hass, entry, pair, (Platform(platform),))
         assert registry.async_get(retired.entity_id) is None
         if replacement == "same_motion":
             assert active.unique_id in {entity.unique_id for entity in entities}
             assert registry.async_get(active.entity_id) == active
+            assert registry.async_get(opposite.entity_id) == opposite
             assert ctrl._state.motor_module_present is None
         else:
             assert registry.async_get(active.entity_id) is None
-        for row in (opposite, unrelated, other_platform, other_domain):
+            assert registry.async_get(opposite.entity_id) is None
+        for row in (unrelated, other_platform, other_domain):
             assert registry.async_get(row.entity_id) == row
         coord.client.write_gatt_char.assert_not_awaited()
     finally:
@@ -168,8 +174,8 @@ async def test_telemetry_retirement_preserves_active_customization_and_other_run
 async def test_hub_stop_rejects_unvalidated_route_without_any_fallback_write(hass, change):
     from dataclasses import replace
 
-    from custom_components.adjustable_bed.beds.motion_bed import MotionBedController
-    from custom_components.adjustable_bed.motion_bed_models import select_motion_bed
+    from custom_components.adjustable_bed.beds.motion_bed.controller import MotionBedController
+    from custom_components.adjustable_bed.beds.motion_bed.models import select_motion_bed
 
     coord = await real_coordinator(hass, "TL-Q")
     old = coord.controller
@@ -205,7 +211,7 @@ async def test_hub_stop_rejects_unvalidated_route_without_any_fallback_write(has
 async def test_registered_thermal_stop_keeps_same_physical_choice_after_reconnect(
     hass, fresh_inventory
 ):
-    from custom_components.adjustable_bed.motion_bed_protocol import build_thermal_gear
+    from custom_components.adjustable_bed.beds.motion_bed.protocol import build_thermal_gear
 
     coord = await real_coordinator(hass, "TL-Q")
     old = coord.controller

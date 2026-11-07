@@ -7,9 +7,10 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds.vmatbasic import VMatBasicController
+from custom_components.adjustable_bed.beds.vmatbasic.controller import VMatBasicController
 from custom_components.adjustable_bed.codec import vibradorm as codec
 from custom_components.adjustable_bed.profiles import vmatbasic as vmat_profiles
+from tests.state_helpers import state_writer
 
 
 def make_controller(profile="basic", **kwargs):
@@ -17,7 +18,7 @@ def make_controller(profile="basic", **kwargs):
     coordinator.address = "AA:BB:CC:DD:EE:FF"
     coordinator.cancel_command = asyncio.Event()
     coordinator.controller_state = {}
-    coordinator.handle_controller_state_updates.side_effect = coordinator.controller_state.update
+    coordinator.handle_controller_state_updates.side_effect = state_writer(coordinator.controller_state)
     coordinator.handle_controller_state_update.side_effect = lambda key, value: (
         coordinator.controller_state.update({key: value})
     )

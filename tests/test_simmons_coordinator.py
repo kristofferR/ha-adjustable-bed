@@ -93,8 +93,8 @@ async def test_quick_handoff_session_syncs_clock_before_the_first_alarm_write(
 
     simmons_client.write_gatt_char.side_effect = write_and_reply
     with (
-        patch("custom_components.adjustable_bed.beds.simmons.PAGE_QUERY_OFFSETS_S", (0, 0, 0)),
-        patch("custom_components.adjustable_bed.beds.simmons.QUERY_GAP_S", 0),
+        patch("custom_components.adjustable_bed.beds.simmons.controller.PAGE_QUERY_OFFSETS_S", (0, 0, 0)),
+        patch("custom_components.adjustable_bed.beds.simmons.controller.QUERY_GAP_S", 0),
     ):
         assert await coordinator.async_connect()
         session = _frames(simmons_client)

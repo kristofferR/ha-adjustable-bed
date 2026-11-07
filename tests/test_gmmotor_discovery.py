@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from custom_components.adjustable_bed.gmmotor_discovery import (
+from custom_components.adjustable_bed.beds.gmmotor.discovery import (
     resolve_selection,
     scan_name_matches,
     selector_from_name,

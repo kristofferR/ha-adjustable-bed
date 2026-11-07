@@ -13,19 +13,28 @@ from typing import TYPE_CHECKING
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
+from ..card import (
+    CARD_HIDDEN,
+    CARD_LIGHT_STATE,
+    CARD_LIGHTING,
+    CARD_MASSAGE,
+    CARD_MASSAGE_TIMER,
+    CARD_UTILITY,
+)
 from ..codec import ff_frame as codec
 from ..const import CONF_BLE_DEVICE_NAME
+from ..controller_state import StateKey
 from ..detection import is_mac_like_name
 from ..profiles.ff_frame import BEDSENSE, BedSenseProfile, bedsense_layout
-from .base import (
-    BedController,
+from .base import BedController, ProfileExecution
+from .builder import BuildContext
+from .entity_specs import (
     ControllerButtonSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
     PositionNumberSpec,
-    SideBoundController,
 )
 
 if TYPE_CHECKING:
@@ -39,10 +48,8 @@ __all__ = ["CHARACTERISTIC", "BedSenseController", "BedSenseSession", "bedsense_
 
 
 def _action(key: str) -> MotorCommandCallable:
-    async def run(controller: BedController | SideBoundController) -> None:
-        target = (
-            controller._controller if isinstance(controller, SideBoundController) else controller
-        )
+    async def run(controller: BedController) -> None:
+        target = controller
         if not isinstance(target, BedSenseController):
             raise TypeError("BedSense action requires its controller")
         await target.execute_action(key)
@@ -60,7 +67,21 @@ class BedSenseSession:
     counts: dict[str, int] = field(default_factory=lambda: {"head": 0, "foot": 0, "wave": 0})
 
 
-class BedSenseController(BedController):
+def _state_key(name: str) -> StateKey[object]:
+    """BedSense publishes its mixed-type session state under these names."""
+    return StateKey[object](name)
+
+
+_SENSOR_CARDS = {
+    "massage_timer": CARD_MASSAGE_TIMER,
+    "light_duration": CARD_LIGHT_STATE,
+    **dict.fromkeys(
+        ("head_bar", "wave_bar", "head_steps", "foot_steps", "wave_steps"), CARD_MASSAGE
+    ),
+}
+
+
+class BedSenseController(ProfileExecution[BedSenseProfile], BedController):
     """One GATT target, with explicit app-labelled controls for nine layouts."""
 
     profile: BedSenseProfile = BEDSENSE
@@ -183,6 +204,9 @@ class BedSenseController(BedController):
                     scheduler_resource="*",
                     translation_key=f"bedsense_{category}",
                     translation_placeholders={"action": ACTIONS[key].label},
+                    card={"massage": CARD_MASSAGE, "light": CARD_LIGHTING}.get(
+                        category, CARD_UTILITY
+                    ),
                 )
             )
         specs.append(
@@ -203,9 +227,9 @@ class BedSenseController(BedController):
             ControllerStateBinarySensorSpec(
                 f"bedsense_m{i}_saved",
                 f"bedsense_m{i}_saved",
-                f"bedsense_m{i}_saved",
+                _state_key(f"bedsense_m{i}_saved"),
                 "mdi:content-save",
-                attribute_keys=("bedsense_state_source",),
+                attribute_keys=(_state_key("bedsense_state_source"),),
             )
             for i in range(1, 6)
         )
@@ -216,9 +240,10 @@ class BedSenseController(BedController):
             ControllerStateSensorSpec(
                 f"bedsense_{key}",
                 f"bedsense_{key}",
-                f"bedsense_{key}",
+                _state_key(f"bedsense_{key}"),
                 "mdi:information-outline",
-                attribute_keys=("bedsense_state_source",),
+                attribute_keys=(_state_key("bedsense_state_source"),),
+                card=_SENSOR_CARDS.get(key, CARD_HIDDEN),
             )
             for key in (
                 "head_bar",
@@ -231,10 +256,6 @@ class BedSenseController(BedController):
                 "wave_steps",
             )
         )
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset(axis for axes in LAYOUTS.values() for axis in axes)
 
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
@@ -268,7 +289,9 @@ class BedSenseController(BedController):
     def _publish(self, source: str) -> None:
         self._state.update({f"bedsense_m{i}_saved": saved for i, saved in self._saved.items()})
         self._state["bedsense_state_source"] = source
-        self.forward_controller_state_updates(dict(self._state))
+        self.forward_controller_state_updates(
+            *(_state_key(name)(value) for name, value in self._state.items())
+        )
 
     def _roles(self) -> list[BleakGATTCharacteristic]:
         if self.client is None or not self.client.is_connected:
@@ -536,3 +559,15 @@ class BedSenseController(BedController):
     move_head_stop = stop_all
     move_legs_stop = stop_all
     move_feet_stop = stop_all
+
+
+async def build_controller(ctx: BuildContext) -> BedSenseController:
+    """Build the controller with the connection-independent app session."""
+    from ..app_session import app_session
+
+    return BedSenseController(
+        ctx.coordinator,
+        variant=ctx.variant or "auto",
+        device_name=ctx.live_device_name,
+        session=app_session(ctx.coordinator.hass, ctx.coordinator.address, "bedsense", BedSenseSession),
+    )

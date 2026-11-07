@@ -9,7 +9,7 @@ import pytest
 
 from tests.test_starcode_abm5_4 import make_controller
 
-MODULE = "custom_components.adjustable_bed.beds.starcode_abm5_4"
+MODULE = "custom_components.adjustable_bed.beds.starcode.abm5_4"
 
 
 @pytest.mark.parametrize("transport", ["BOX1220", "BOX25", "BOX25_STAR"])

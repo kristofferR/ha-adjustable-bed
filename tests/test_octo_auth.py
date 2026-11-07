@@ -14,7 +14,8 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 
-from custom_components.adjustable_bed import octo_auth as octo_auth_module
+from custom_components.adjustable_bed.beds.octo import auth as octo_auth_module
+from custom_components.adjustable_bed.beds.octo.auth import OctoPinStatus, async_verify_octo_pin
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     CapabilityReport,
@@ -30,7 +31,6 @@ from custom_components.adjustable_bed.const import (
     OCTO_VARIANT_STAR2,
     VARIANT_AUTO,
 )
-from custom_components.adjustable_bed.octo_auth import OctoPinStatus, async_verify_octo_pin
 from custom_components.adjustable_bed.setup_operation import (
     OperationOutcome,
     OperationResult,
@@ -434,7 +434,7 @@ async def test_invalid_device_info_stops_setup_before_capabilities_or_pin(client
 )
 async def test_incomplete_or_invalid_replies_never_confirm_pin(client, caps, reply, early):
     respond(client, capabilities=caps, reply=reply, before_pin=early)
-    with patch("custom_components.adjustable_bed.octo_auth.PIN_VERIFICATION_TIMEOUT", 0.01):
+    with patch("custom_components.adjustable_bed.beds.octo.auth.PIN_VERIFICATION_TIMEOUT", 0.01):
         assert (
             await async_verify_octo_pin(client, "1234", VARIANT_AUTO) is OctoPinStatus.INCONCLUSIVE
         )

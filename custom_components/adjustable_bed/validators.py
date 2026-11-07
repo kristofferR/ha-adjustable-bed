@@ -8,8 +8,11 @@ from typing import Any
 
 from homeassistant.core import HomeAssistant
 
-from .beds.reverie_profiles import REVERIE_MODEL_CHOICES
-from .cluster018_profiles import APP_NAMES as CLUSTER018_APPS
+from .beds.goodvibe.catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
+from .beds.hjbed.catalog import PROFILE_CHOICES as HJBED_PROFILES
+from .beds.reverie.profiles import REVERIE_MODEL_CHOICES
+from .beds.richmat_classic.profiles import APP_NAMES as RICHMAT_CLASSIC_APPS
+from .beds.richmat_mh.models import RICHMAT_MH_VARIANTS_BY_APP
 from .const import (
     ADAPTER_AUTO,
     ADJUSTABLE_LUMBAR_VARIANTS,
@@ -18,7 +21,6 @@ from .const import (
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_BEDSENSE,
     BED_TYPE_CASPER_BASE,
-    BED_TYPE_CLUSTER018,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ESHINE_OKIN,
@@ -42,6 +44,7 @@ from .const import (
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
+    BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
     BED_TYPE_SIMMONS,
@@ -52,14 +55,10 @@ from .const import (
     BED_TYPE_SVANE,
     BED_TYPE_ZSERIES,
     BEDSENSE_VARIANTS,
-    CASPER_BASE_VARIANTS,
     COMFORT_ENHANCEMENTS_VARIANTS,
     DOUBLESLEEP_VARIANTS,
     ESHINE_OKIN_PROFILES,
     GLIDEAWAY_MOTION_MODELS,
-    GOODVIBE_PROFILES,
-    HJBED_PROFILES,
-    HUSH_BASE_VARIANTS,
     KAIDI_VARIANTS,
     KEESON_VARIANTS,
     LEGGETT_VARIANTS,
@@ -73,7 +72,6 @@ from .const import (
     PAIRLINK_MODEL_CHOICES,
     REMACRO_VARIANTS,
     RICHMAT_MH_APPS,
-    RICHMAT_MH_VARIANTS_BY_APP,
     RICHMAT_VARIANTS,
     RONDURE_VARIANTS,
     SBI_VARIANTS,
@@ -87,6 +85,8 @@ from .const import (
     VARIANT_REQUIRED_BED_TYPES,
     ZSERIES_VARIANTS,
 )
+from .profiles.casper import CASPER_BASE_VARIANTS
+from .profiles.hush import HUSH_BASE_VARIANTS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -117,7 +117,7 @@ def is_valid_octo_pin(pin: str) -> bool:
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_GOODVIBE: GOODVIBE_PROFILES,
-    BED_TYPE_CLUSTER018: CLUSTER018_APPS,
+    BED_TYPE_RICHMAT_CLASSIC_APPS: RICHMAT_CLASSIC_APPS,
     BED_TYPE_HJBED: HJBED_PROFILES,
     BED_TYPE_ESHINE_OKIN: ESHINE_OKIN_PROFILES,
     BED_TYPE_DOUBLESLEEP: DOUBLESLEEP_VARIANTS,

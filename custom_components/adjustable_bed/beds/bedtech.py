@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 
 from ..const import BEDTECH_WRITE_CHAR_UUID
 from ..profiles.richmat import BEDTECH
-from .richmat import RichmatProfileController
+from .richmat.controller import RichmatProfileController
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator

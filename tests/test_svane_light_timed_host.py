@@ -9,7 +9,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.simmons import SimmonsController
+from custom_components.adjustable_bed.beds.simmons.controller import SimmonsController
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SIMMONS,

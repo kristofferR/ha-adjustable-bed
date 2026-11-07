@@ -223,7 +223,7 @@ async def test_factory_forwards_explicit_profile(hass):
         CONF_MALOUF_APP_PROFILE: "lucid", CONF_MALOUF_APP_MODEL: "Premium",
         CONF_MALOUF_APP_TRANSPORT: "okin_new", CONF_MALOUF_APP_PRIMARY: False,
     }))
-    with patch("custom_components.adjustable_bed.beds.malouf_app.MaloufAppController") as controller:
+    with patch("custom_components.adjustable_bed.beds.malouf.app.MaloufAppController") as controller:
         await create_controller(coordinator, BED_TYPE_MALOUF_APP, None, None)
     controller.assert_called_once_with(coordinator, app_profile="lucid", model="Premium",
                                        transport="okin_new", primary=False)

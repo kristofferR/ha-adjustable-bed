@@ -1,5 +1,6 @@
 """Sleep Number service routing and all-side validation."""
 
+import contextlib
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -8,18 +9,21 @@ import voluptuous as vol
 from homeassistant.core import ServiceCall, SupportsResponse
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.adjustable_bed import sleep_number_services as services
+from custom_components.adjustable_bed.beds.sleep_number import services
+from custom_components.adjustable_bed.beds.sleep_number.commands import SleepNumberActions
 
 
 def controller(side=None):
-    result = SimpleNamespace(
+    result = MagicMock(
+        spec=SleepNumberActions,
         sleep_number_command_names=("query",),
         validate_sleep_number_command=MagicMock(),
         async_execute_sleep_number_command=AsyncMock(return_value={"level": 42}),
         command_side=side,
+        requires_disconnected_transport=False,
         _coordinator=SimpleNamespace(address="AA:BB"),
     )
-    result.bind_side = MagicMock(return_value=result)
+    result.side_scope = MagicMock(return_value=contextlib.nullcontext())
     return result
 
 
@@ -159,7 +163,7 @@ def test_json_response_rejects_non_serializable_values(value):
 
 @pytest.mark.parametrize("selected_side", ["right", "both"])
 async def test_two_address_pair_rejects_cross_side_parameters_before_writes(hass, selected_side):
-    from custom_components.adjustable_bed.beds.sleep_number import SleepNumberController
+    from custom_components.adjustable_bed.beds.sleep_number.controller import SleepNumberController
     from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 
     children = {side: MagicMock(address=address, name=side) for side, address in (
@@ -183,7 +187,7 @@ async def test_two_address_pair_rejects_cross_side_parameters_before_writes(hass
 
 
 async def test_two_address_execution_revalidates_the_physical_side(hass):
-    from custom_components.adjustable_bed.beds.sleep_number import SleepNumberController
+    from custom_components.adjustable_bed.beds.sleep_number.controller import SleepNumberController
     from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 
     child = MagicMock(address="AA:02", name="right")

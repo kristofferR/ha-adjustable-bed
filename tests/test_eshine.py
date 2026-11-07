@@ -8,18 +8,23 @@ from __future__ import annotations
 
 import asyncio
 from types import SimpleNamespace
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from bleak.exc import BleakError
 
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
-from custom_components.adjustable_bed.beds.eshine import CODES, STATE_GROUPS, EshineController
-from custom_components.adjustable_bed.beds.eshine_protocol import NotificationStream
+from custom_components.adjustable_bed.bed_traits import bed_traits
+from custom_components.adjustable_bed.beds.eshine.controller import (
+    CODES,
+    STATE_GROUPS,
+    EshineController,
+)
+from custom_components.adjustable_bed.beds.eshine.protocol import NotificationStream
 from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.const import (
     BED_TYPE_ESHINE,
-    BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
@@ -27,6 +32,7 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.detection import get_bed_type_options
 from custom_components.adjustable_bed.profiles.richmat import ESHINE
 from custom_components.adjustable_bed.sensor import AdjustableBedControllerStateSensor
+from tests.state_helpers import state_writer
 
 # Service, write and declared notify, in the app's order; N1 takes bare codes.
 GATT_MAPS = [
@@ -51,7 +57,7 @@ def make(*services):
     coordinator.motor_pulse_count = 3
     coordinator.motor_pulse_delay_ms = 999  # Ignored: fixed artifact interval.
     coordinator.controller_state = {}
-    coordinator.handle_controller_state_updates.side_effect = coordinator.controller_state.update
+    coordinator.handle_controller_state_updates.side_effect = state_writer(coordinator.controller_state)
     coordinator.client = MagicMock(is_connected=True, services=list(services) or [service()])
     coordinator.client.write_gatt_char = AsyncMock()
     coordinator.client.start_notify = AsyncMock()
@@ -204,7 +210,7 @@ async def test_profile_exposes_exact_controls_and_no_invented_queries():
     assert not ctrl.supports_memory_presets and ctrl.memory_slot_count == 0
     assert not ctrl.supports_single_address_pairing and not ctrl.supports_direct_position_control
     assert not ctrl.supports_position_feedback
-    assert BED_TYPE_ESHINE in BEDS_WITHOUT_ANGLE_FEEDBACK
+    assert bed_traits(BED_TYPE_ESHINE).no_angle_feedback
     assert len(ctrl.controller_button_specs) == 7
     assert {row["value"]: row["label"] for row in get_bed_type_options()}[
         BED_TYPE_ESHINE
@@ -425,7 +431,7 @@ async def test_parsed_state_exposed_as_diagnostics_without_position_mapping():
         for chunk in chunks:
             ctrl._handle_notification(ctrl._notify_char, bytearray.fromhex(chunk))
     raw.assert_called()
-    state = ctrl._coordinator.controller_state
+    state = cast(dict[str, Any], ctrl._coordinator.controller_state)
     assert state["eshine_motors_data"]["motor_1"] == {"no": 1, "status": 2, "angle": 45}
     assert state["eshine_motors_data"]["motor_type_1"]["monitorHeight"] == 45.6
     assert state["eshine_alarm_data"]["alarm_report"] == [7, 8, 9, 10, 11, 12]

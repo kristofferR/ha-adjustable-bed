@@ -18,6 +18,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.loader import async_get_integration
 
 from .adapter import find_service_info_by_address
+from .beds.kaidi.protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
 from .bluetooth_diagnostics import connection_reachability
 from .const import (
     CONF_BED_TYPE,
@@ -40,7 +41,6 @@ from .const import (
     requires_pairing,
 )
 from .diagnostics_utils import get_gatt_summary
-from .kaidi_protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
 from .profile_decisions import async_profile_decision_history
 from .redaction import redact_data, redact_pins_only
 from .support_logs import DATA_SUPPORT_LOGS
@@ -221,20 +221,6 @@ def _get_controller_info(coordinator: BedChild) -> dict[str, Any]:
                 "characteristic_uuid": controller.control_characteristic_uuid,
             }
         )
-
-        # Add variant info for controllers that have it
-        is_wilinke = getattr(controller, "_is_wilinke", None)
-        if is_wilinke is not None:
-            info["richmat_is_wilinke"] = is_wilinke
-        variant = getattr(controller, "_variant", None)
-        if variant is not None:
-            info["variant"] = variant
-        variant_source = getattr(controller, "_variant_source", None)
-        if variant_source is not None:
-            info["variant_source"] = variant_source
-        char_uuid = getattr(controller, "_char_uuid", None)
-        if char_uuid is not None:
-            info["char_uuid"] = char_uuid
 
         # Whatever the connect-time protocol handshake resolved to (capabilities,
         # authentication state, ...). Empty for controllers with no handshake.

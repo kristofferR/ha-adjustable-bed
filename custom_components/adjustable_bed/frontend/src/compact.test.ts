@@ -3,12 +3,13 @@ import { applyCompactPreset, cardNavigationPath, compactActions,
   compactActionOptions, compactStopEntities, compactTargets, fullCardDialogConfig } from "./compact";
 import { bedEntitiesForDevice } from "./discovery";
 import type { HomeAssistant } from "./types";
+import { placed } from "./test-placements";
 
 function fixture(): HomeAssistant {
-  const hass: HomeAssistant = {
+  const hass: HomeAssistant = placed({
     states: {}, entities: {}, devices: {}, themes: {},
     locale: { language: "en" }, language: "en", callService: async () => undefined,
-  };
+  });
   for (const [device, keys] of Object.entries({
     pair: ["preset_flat", "preset_memory_1", "program_memory_2", "stop_both"],
     left: ["preset_flat", "preset_memory_1", "preset_tv", "stop"],
@@ -105,7 +106,7 @@ test("native pair targets preserve device identity when names reorder and when s
   expect(targets.find((t) => t.key === "right")?.bed.stop).toBe("button.right_stop");
 });
 
-test("one-address pairs resolve scoped favourites by normalized key", () => {
+test("one-address pairs resolve scoped favourites by their shared key", () => {
   const hass = fixture();
   hass.devices = { pair: { id: "pair" } };
   hass.entities = {};
@@ -113,7 +114,7 @@ test("one-address pairs resolve scoped favourites by normalized key", () => {
     for (const key of ["preset_flat", "preset_memory_1", "stop"]) {
       const entity_id = `button.${key}_${side}`;
       hass.entities[entity_id] = { entity_id, platform: "adjustable_bed",
-        device_id: "pair", translation_key: `${key}_${side}` };
+        device_id: "pair", translation_key: key === "stop" && side === "both" ? "stop_both" : key };
       hass.states[entity_id] = { entity_id, state: "unknown", attributes: { bed_side: side },
         last_changed: "", last_updated: "" };
     }

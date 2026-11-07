@@ -14,7 +14,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
 from custom_components.adjustable_bed import position_estimate as pe
-from custom_components.adjustable_bed.beds.base import ControllerMotorHoldSpec
+from custom_components.adjustable_bed.beds.entity_specs import ControllerMotorHoldSpec
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.position_estimate import (
     EstimateReason,
@@ -127,7 +127,7 @@ async def test_swallowed_release_failure_is_not_travel(hass: HomeAssistant, cloc
     """A Richmat quiet release logs a failed STOP; the estimate must not trust it."""
     from unittest.mock import MagicMock
 
-    from custom_components.adjustable_bed.beds.richmat import RichmatController
+    from custom_components.adjustable_bed.beds.richmat.controller import RichmatController
 
     manager = await calibrated(hass)
     ctrl = controller(hass, LEFT)
@@ -406,9 +406,9 @@ async def test_lower_to_flat_runs_past_full_travel_and_keeps_unknown(
 
 def test_octo_and_richmat_declare_their_estimated_motors() -> None:
     from custom_components.adjustable_bed.beds.base import BedController
-    from custom_components.adjustable_bed.beds.octo import OctoController
-    from custom_components.adjustable_bed.beds.richmat import RichmatController
-    from custom_components.adjustable_bed.beds.rmcontrol import RmcontrolController
+    from custom_components.adjustable_bed.beds.octo.controller import OctoController
+    from custom_components.adjustable_bed.beds.richmat.controller import RichmatController
+    from custom_components.adjustable_bed.beds.rmcontrol.controller import RmcontrolController
 
     def groups(cls: type[BedController], keys: tuple[str, ...]) -> object:
         stub = SimpleNamespace(motor_control_specs=tuple(SimpleNamespace(key=k) for k in keys))

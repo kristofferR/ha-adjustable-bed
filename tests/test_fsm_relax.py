@@ -10,9 +10,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from bleak.exc import BleakError
 
-from custom_components.adjustable_bed.beds.fsm_relax import FsmRelaxController, FsmRelaxSetup
+from custom_components.adjustable_bed.beds.fsm_relax.controller import (
+    FsmRelaxController,
+    FsmRelaxSetup,
+)
+from custom_components.adjustable_bed.beds.fsm_relax.state import FsmRelaxSession
 from custom_components.adjustable_bed.codec import limoss as codec
-from custom_components.adjustable_bed.fsm_relax_state import FsmRelaxSession
 
 
 async def test_actual_coordinator_drop_immediately_invalidates_owned_session(hass):

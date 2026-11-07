@@ -38,7 +38,7 @@ RENAME_UUID = "0000ff06-0000-1000-8000-00805f9b34fb"
 @pytest.fixture
 def app_ble(mock_bleak_client, monkeypatch):
     """Model the frozen T1 roles and an initial app-visible status notification."""
-    from custom_components.adjustable_bed.beds.logicdata_app import LogicdataAppController
+    from custom_components.adjustable_bed.beds.logicdata.app import LogicdataAppController
 
     characteristics = {
         uuid: SimpleNamespace(

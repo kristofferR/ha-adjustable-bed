@@ -401,7 +401,7 @@ by big-endian 16-bit counts, or the short `3f flags` form:
   current parser reads them big-endian.
 
 This describes the current implementation in
-[`VibradormController`](../../custom_components/adjustable_bed/beds/vibradorm.py),
+[`VibradormController`](../../custom_components/adjustable_bed/beds/vibradorm/controller.py),
 covered by `TestVibradormPositionFeedback` in
 [`test_vibradorm.py`](../../tests/test_vibradorm.py). It does not establish a
 calibrated physical angle, initialization-state handling or equivalent position
@@ -1295,7 +1295,7 @@ they do not change the frozen audit ledger.
 | Automatic generic layout from control-version metadata | EXCLUDED: shared metadata does not select the app's remote or establish physical actuator identity. All fourteen shipped VMAT selections are explicitly available. | `VMAT_REMOTES`; `test_remote_contract_and_no_guessed_capabilities`, `test_remote_flags_cannot_be_spoofed` |
 
 Code references above are in
-[`vibradorm_app.py`](../../custom_components/adjustable_bed/beds/vibradorm_app.py)
+[`vibradorm_app.py`](../../custom_components/adjustable_bed/beds/vibradorm/app.py)
 and [`profiles/vibradorm.py`](../../custom_components/adjustable_bed/profiles/vibradorm.py).
 Test references are in
 [`test_vibradorm_vmat.py`](../../tests/test_vibradorm_vmat.py); the

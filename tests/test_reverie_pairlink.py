@@ -10,9 +10,9 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from custom_components.adjustable_bed.beds.reverie_comfort import ReverieComfortRequest
-from custom_components.adjustable_bed.beds.reverie_pairlink import ReveriePairlinkController
-from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import (
+from custom_components.adjustable_bed.beds.reverie.comfort import ReverieComfortRequest
+from custom_components.adjustable_bed.beds.reverie.pairlink import ReveriePairlinkController
+from custom_components.adjustable_bed.beds.reverie.pairlink_protocol import (
     PAIRLINK_WRITE_UUID,
     a7_payload,
     build_user_frame,
@@ -22,13 +22,14 @@ from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import (
     state_query_payloads,
     status_sync_payloads,
 )
-from custom_components.adjustable_bed.beds.reverie_pairlink_runtime import (
+from custom_components.adjustable_bed.beds.reverie.pairlink_runtime import (
     PairlinkCredentials,
     PairlinkHomeIdOrigin,
     PairlinkRole,
     PairlinkRuntime,
     PairlinkRuntimeNotReadyError,
 )
+from tests.state_helpers import published
 
 _ADDRESS = "AA:BB:CC:DD:EE:FF"
 _HOME_ID = 5566
@@ -375,13 +376,15 @@ async def test_registered_channel20_updates_state_without_sdk_fallthrough() -> N
 
     # The source envelope carries sender VA4, then 02/A7 and selector/value.
     packet = b"\x03\xFF\xFF\xFF\xFF\x20" + bytes.fromhex("11223344") + bytes.fromhex("02A70137")
+    controller._coordinator.handle_controller_state_updates.reset_mock()
     await _notify(client, tasks, packet)
 
     assert controller._state["back_position"] == 55
     assert forwarded == [(0x20, bytes.fromhex("1122334402A70137"), True)]
-    assert controller._coordinator.handle_controller_state_update.call_args_list == [
-        (("back_position", 55),)
-    ]
+    assert [
+        published(*call.args)
+        for call in controller._coordinator.handle_controller_state_updates.call_args_list
+    ] == [{"back_position": 55}]
 
 
 async def test_raw_registered_selector_accepts_six_through_nine_bytes_before_sdk() -> None:
@@ -698,7 +701,7 @@ async def test_pairlink_held_axis_has_one_press_and_same_axis_release(
     await _join_central(controller, client, runtime, tasks)
     controller.async_send_payload = AsyncMock()
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.reverie_pairlink.asyncio.sleep",
+        "custom_components.adjustable_bed.beds.reverie.pairlink.asyncio.sleep",
         AsyncMock(),
     )
 

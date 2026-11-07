@@ -9,16 +9,16 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds.hush_base import HushBaseController
-from custom_components.adjustable_bed.beds.hush_sleep import (
+from custom_components.adjustable_bed.beds.casper_base.protocol import Request
+from custom_components.adjustable_bed.beds.hush_base.catalog import ACTIONS, INDICES, PRODUCTS
+from custom_components.adjustable_bed.beds.hush_base.controller import HushBaseController
+from custom_components.adjustable_bed.beds.hush_sleep.controller import (
     HushRemoteController,
     HushSleepController,
 )
-from custom_components.adjustable_bed.casper_base_protocol import Request
 from custom_components.adjustable_bed.codec.richmat import function
-from custom_components.adjustable_bed.const import HUSH_BASE_VARIANTS
-from custom_components.adjustable_bed.hush_catalog import ACTIONS, INDICES, PRODUCTS
 from custom_components.adjustable_bed.pairing import supports_single_address_pairing
+from custom_components.adjustable_bed.profiles.hush import HUSH_BASE_VARIANTS
 from custom_components.adjustable_bed.validators import get_variants_for_bed_type
 from tests.test_casper_base import frames, make
 

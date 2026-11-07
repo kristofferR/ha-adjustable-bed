@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from bleak.exc import BleakError
 
-from custom_components.adjustable_bed.beds.base import MotorControlSpec
+from custom_components.adjustable_bed.beds.entity_specs import MotorControlSpec
 from custom_components.adjustable_bed.services import _timed_move_plan
 
 

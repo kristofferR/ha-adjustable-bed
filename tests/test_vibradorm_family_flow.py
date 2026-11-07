@@ -131,7 +131,7 @@ def bluetooth_patches(stack, client):
     )
     stack.enter_context(
         patch(
-            "custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs",
+            "custom_components.adjustable_bed.config_flow.capture_proxy_logs",
             return_value=AsyncExitStack(),
         )
     )
@@ -146,7 +146,7 @@ async def select_app(hass, entry, app):
         const.DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
     )
     assert result["step_id"] == "vibradorm"
-    result = await manager.async_configure(result["flow_id"], {"app": app})
+    result = await manager.async_configure(result["flow_id"], {"choice": app})
     seed = (
         {const.CONF_VIBRADORM_VMAT_REMOTE: "07"}
         if app == "vmat"
@@ -184,7 +184,7 @@ async def test_family_selection_retains_metadata_only_for_unchanged_app(
     flow.hass = hass
     flow.context = {"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
     await flow.async_step_reconfigure()
-    result = await flow.async_step_vibradorm({"app": app})
+    result = await flow.async_step_vibradorm({"choice": app})
     assert result["step_id"] == "profile_questions"
     assert flow._manual_data is not None
     if app == original_app:
@@ -414,7 +414,7 @@ async def test_cancelling_progress_closes_candidate_and_keeps_working_configurat
         result = await manager.async_init(
             const.DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
         )
-        result = await manager.async_configure(result["flow_id"], {"app": "caresse"})
+        result = await manager.async_configure(result["flow_id"], {"choice": "caresse"})
         result = await manager.async_configure(result["flow_id"], result["data_schema"]({}))
         result = await manager.async_configure(result["flow_id"], {"action": "pair_now"})
         await started.wait()
@@ -470,7 +470,7 @@ async def test_same_app_seeds_retained_remote_and_settings(hass, enable_custom_i
     result = await manager.async_init(
         const.DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
     )
-    result = await manager.async_configure(result["flow_id"], {"app": app})
+    result = await manager.async_configure(result["flow_id"], {"choice": app})
     values = result["data_schema"]({})
     assert all(values[key] == value for key, value in expected.items())
     assert entry.data == data
@@ -504,7 +504,7 @@ async def test_repairs_handoff_leaves_review_pending_until_explicit_keep(
     result = await hass.config_entries.flow.async_init(
         const.DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
     )
-    result = await hass.config_entries.flow.async_configure(result["flow_id"], {"app": "legacy"})
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {"choice": "legacy"})
     assert result["reason"] == "migration_kept"
     assert const.CONF_PROFILE_REVIEW_PENDING not in entry.data
     assert (
@@ -606,7 +606,7 @@ async def test_fresh_legacy_choice_keeps_existing_pairing_route(
     result = await start_new_bed(flow, route, const.BED_TYPE_VIBRADORM)
     assert result["step_id"] == "vibradorm"
     # The legacy setup asks its motors, massage and angle sensing, then pairs.
-    result = await flow.async_step_vibradorm({"app": "legacy"})
+    result = await flow.async_step_vibradorm({"choice": "legacy"})
     assert result["step_id"] == "profile_questions"
     with patch.object(flow, "async_step_" + pairing, new=AsyncMock()) as pair:
         await finish_new_bed(flow, await flow.async_step_profile_questions(
@@ -715,10 +715,10 @@ async def test_an_app_entry_moves_back_to_the_legacy_setup_through_reconfigure(
         result = await manager.async_init(
             const.DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
         )
-        options = [o["value"] for o in result["data_schema"].schema["app"].config["options"]]
+        options = [o["value"] for o in result["data_schema"].schema["choice"].config["options"]]
         # The legacy setup is a route here; Keep is its own answer.
         assert {"legacy", "keep"} <= set(options)
-        result = await manager.async_configure(result["flow_id"], {"app": "legacy"})
+        result = await manager.async_configure(result["flow_id"], {"choice": "legacy"})
         assert result["step_id"] == "profile_questions"
         result = await manager.async_configure(
             result["flow_id"],

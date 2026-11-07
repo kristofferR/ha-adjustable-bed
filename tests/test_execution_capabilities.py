@@ -24,13 +24,15 @@ from pathlib import Path
 import pytest
 
 from custom_components.adjustable_bed.beds.base import BedController
+from custom_components.adjustable_bed.beds.ergomotion4.profiles import (
+    PRODUCTS as ERGOMOTION_4_PRODUCTS,
+)
 from custom_components.adjustable_bed.const import (
     ESHINE_OKIN_PROFILES,
     SUPPORTED_BED_TYPES,
     VARIANT_AUTO,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
-from custom_components.adjustable_bed.ergomotion4_profiles import PRODUCTS as ERGOMOTION_4_PRODUCTS
 from custom_components.adjustable_bed.execution import (
     NO_EXECUTION_CAPABILITIES,
     ExecutionCapabilities,
@@ -82,7 +84,7 @@ KEESON_STREAM: dict[str, tuple[str, ...]] = {
     "adjustamattress": ("row067",),
     "adjustamattress_p2": ("row067",),
 }
-# Keeson cluster033 app layouts, and Ergomotion 4.0 per catalog product style.
+# Keeson layout app layouts, and Ergomotion 4.0 per catalog product style.
 KEESON_APP_STREAM: dict[str, tuple[str, ...]] = {
     "tempur_curve": ("tempur",),
     "qplus_app": ("costco",),
@@ -98,7 +100,7 @@ ERGOMOTION_4_STYLES = frozenset(product.style for product in ERGOMOTION_4_PRODUC
 # Declaration -> declared field -> evidence keys from the design document.
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     # Rows sort by identity, so parallel declarations merge cleanly.
-    # Keeson cluster033 apps and Ergomotion 4.0 (#483) stream a held key.
+    # Keeson layout apps and Ergomotion 4.0 (#483) stream a held key.
     **{
         f"AppProfile:{app}@{layout}": {"hold": KEESON_APP_STREAM[app]}
         for app, layouts in keeson_profiles.APP_LAYOUTS.items()
@@ -194,7 +196,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "RichmatProfile:richmat_mh_harmony": {"hold": ("harmony", "row055")},
     "RichmatProfile:richmat_mh_idealbed": {"hold": ("ideal", "row055")},
     "RichmatProfile:richmat_mh_revive": {"hold": ("revive", "row055")},
-    # Row061 apps reuse the MH library's KEEP stream and app-specific release.
+    # The RUF and Richmat apps reuse the MH library's KEEP stream and app-specific release.
     "RichmatProfile:richmat_mh_americanstar": {"hold": ("rmamericanstar", "row061")},
     "RichmatProfile:richmat_mh_bailey2": {"hold": ("bailey", "row061")},
     "RichmatProfile:richmat_mh_ruf": {"hold": ("ruf", "row061")},
@@ -276,51 +278,51 @@ _SIMMONS = ("OkinNFrameProfile:simmons_okin", "OkinNFrameProfile:simmons_smartbe
 # enumeration cannot reach every variant, layout or product, so every place
 # that can declare a capability must be listed and reviewed here.
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
-    "beds/cluster018.py:<module>.Cluster018Controller": ("richmat_classic_apps",),
-    "beds/cluster018.py:<module>.Cluster018Controller.execution": ("richmat_classic_apps",),
-    "beds/eshine_okin.py:<module>.EshineOkinController": _ESHINE,
-    "beds/furnimove.py:<module>.FurniMoveController": ("furnimove",),
-    "beds/furnimove.py:<module>.FurniMoveController.execution": ("furnimove",),
-    "beds/goodvibe.py:<module>.GoodVibeController": ("goodvibe",),
-    "beds/goodvibe.py:<module>.GoodVibeController.execution": ("goodvibe",),
+    "beds/richmat_classic/controller.py:<module>.RichmatClassicController": ("richmat_classic_apps",),
+    "beds/richmat_classic/controller.py:<module>.RichmatClassicController.execution": ("richmat_classic_apps",),
+    "beds/eshine_okin/controller.py:<module>.EshineOkinController": _ESHINE,
+    "beds/furnimove/controller.py:<module>.FurniMoveController": ("furnimove",),
+    "beds/furnimove/controller.py:<module>.FurniMoveController.execution": ("furnimove",),
+    "beds/goodvibe/controller.py:<module>.GoodVibeController": ("goodvibe",),
+    "beds/goodvibe/controller.py:<module>.GoodVibeController.execution": ("goodvibe",),
     "beds/isleep.py:<module>.IsleepController": ("isleep",),
     "beds/isleep.py:<module>.IsleepController.execution": ("isleep",),
-    "beds/jensen.py:<module>.JensenController": ("jensen",),
-    "beds/jensen.py:<module>.JensenController.execution": ("jensen",),
-    "beds/kaidi.py:<module>.KaidiController": ("kaidi",),
-    "beds/kaidi.py:<module>.KaidiController.execution": ("kaidi",),
-    "beds/leggett_gen2.py:<module>.LeggettGen2Controller": ("leggett_gen2",),
-    "beds/leggett_gen2.py:<module>.LeggettGen2Controller.execution": ("leggett_gen2",),
-    "beds/jensen_linon.py:<module>.JensenLinonController": ("svane",),
-    "beds/jensen_linon.py:<module>.JensenLinonController.execution": ("svane",),
-    "beds/linak.py:<module>.LinakController": ("linak",),
-    "beds/linak.py:<module>.LinakController.execution": ("linak",),
-    "beds/octo.py:<module>.OctoController": ("octo",),
-    "beds/octo.py:<module>.OctoController.execution": ("octo",),
-    "beds/remacro.py:<module>.RemacroController": ("remacro",),
-    "beds/remacro.py:<module>.RemacroController.execution": ("remacro",),
-    "beds/reverie.py:<module>.ReverieController": ("reverie",),
-    "beds/reverie.py:<module>.ReverieController.execution": ("reverie",),
+    "beds/jensen/controller.py:<module>.JensenController": ("jensen",),
+    "beds/jensen/controller.py:<module>.JensenController.execution": ("jensen",),
+    "beds/kaidi/controller.py:<module>.KaidiController": ("kaidi",),
+    "beds/kaidi/controller.py:<module>.KaidiController.execution": ("kaidi",),
+    "beds/leggett/gen2.py:<module>.LeggettGen2Controller": ("leggett_gen2",),
+    "beds/leggett/gen2.py:<module>.LeggettGen2Controller.execution": ("leggett_gen2",),
+    "beds/jensen/linon.py:<module>.JensenLinonController": ("svane",),
+    "beds/jensen/linon.py:<module>.JensenLinonController.execution": ("svane",),
+    "beds/linak/controller.py:<module>.LinakController": ("linak",),
+    "beds/linak/controller.py:<module>.LinakController.execution": ("linak",),
+    "beds/octo/controller.py:<module>.OctoController": ("octo",),
+    "beds/octo/controller.py:<module>.OctoController.execution": ("octo",),
+    "beds/remacro/controller.py:<module>.RemacroController": ("remacro",),
+    "beds/remacro/controller.py:<module>.RemacroController.execution": ("remacro",),
+    "beds/reverie/controller.py:<module>.ReverieController": ("reverie",),
+    "beds/reverie/controller.py:<module>.ReverieController.execution": ("reverie",),
     # RMControl narrows its framing's declaration to sustain-press products.
-    "beds/rmcontrol.py:<module>.RmcontrolController": (
+    "beds/rmcontrol/controller.py:<module>.RmcontrolController": (
         "RichmatProfile:richmat_nordic",
         "RichmatProfile:richmat_wilinke",
     ),
-    "beds/sleepys_app.py:<module>.SleepysEliteAppController": ("sleepys_elite_app",),
-    "beds/sleepys_app.py:<module>.SleepysEliteAppController.execution": ("sleepys_elite_app",),
-    "beds/sleepys_box25.py:<module>.SleepysBox25Controller": ("sleepys_box25",),
-    "beds/starcode_m1x12.py:<module>.StarcodeM1X12Controller": ("starcode_m1x12",),
-    "beds/starcode_m1x12.py:<module>.StarcodeM1X12Controller.execution": ("starcode_m1x12",),
-    "beds/starcode_m5x5.py:<module>.StarcodeM5X5Controller": ("starcode_m5x5",),
-    "beds/starcode_m5x5.py:<module>.StarcodeM5X5Controller.execution": ("starcode_m5x5",),
-    "beds/svane.py:<module>.SVANE_EXECUTION": ("svane",),
-    "beds/svane.py:<module>.SvaneController": ("svane",),
+    "beds/sleepys/app.py:<module>.SleepysEliteAppController": ("sleepys_elite_app",),
+    "beds/sleepys/app.py:<module>.SleepysEliteAppController.execution": ("sleepys_elite_app",),
+    "beds/sleepys/box25.py:<module>.SleepysBox25Controller": ("sleepys_box25",),
+    "beds/starcode/m1x12.py:<module>.StarcodeM1X12Controller": ("starcode_m1x12",),
+    "beds/starcode/m1x12.py:<module>.StarcodeM1X12Controller.execution": ("starcode_m1x12",),
+    "beds/starcode/m5x5.py:<module>.StarcodeM5X5Controller": ("starcode_m5x5",),
+    "beds/starcode/m5x5.py:<module>.StarcodeM5X5Controller.execution": ("starcode_m5x5",),
+    "beds/svane/controller.py:<module>.SVANE_EXECUTION": ("svane",),
+    "beds/svane/controller.py:<module>.SvaneController": ("svane",),
     "beds/timotion_ahf.py:<module>.TiMOTIONAhfController": ("timotion_ahf",),
     "beds/timotion_ahf.py:<module>.TiMOTIONAhfController.execution": ("timotion_ahf",),
-    "beds/vibradorm_app.py:<module>.VibradormAppController": ("vibradorm_app",),
-    "beds/vibradorm_app.py:<module>.VibradormAppController.execution": ("vibradorm_app",),
-    "beds/vmatbasic.py:<module>.VMatBasicController": ("vmatbasic",),
-    "beds/vmatbasic.py:<module>.VMatBasicController.execution": ("vmatbasic",),
+    "beds/vibradorm/app.py:<module>.VibradormAppController": ("vibradorm_app",),
+    "beds/vibradorm/app.py:<module>.VibradormAppController.execution": ("vibradorm_app",),
+    "beds/vmatbasic/controller.py:<module>.VMatBasicController": ("vmatbasic",),
+    "beds/vmatbasic/controller.py:<module>.VMatBasicController.execution": ("vmatbasic",),
     "profiles/ff_frame.py:<module>.BEDSENSE": ("BedSenseProfile:bedsense",),
     "profiles/ff_frame.py:<module>.SOLACE_PROFILES": (
         "SolaceProfile:common",

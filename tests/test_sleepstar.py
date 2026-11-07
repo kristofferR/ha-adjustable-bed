@@ -23,9 +23,9 @@ from custom_components.adjustable_bed.beds.sleepstar import (
     build_sleep_query_config,
     build_sleep_zone_config,
     build_wrapped_star_time,
-    crc16_modbus,
     resolve_sleepstar_variant,
     wrap_control_box,
+    wrap_environment,
 )
 from custom_components.adjustable_bed.codec import okin_5a as star
 from custom_components.adjustable_bed.const import (
@@ -33,6 +33,7 @@ from custom_components.adjustable_bed.const import (
     NORDIC_UART_READ_CHAR_UUID,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
+from tests.state_helpers import published
 
 
 @pytest.fixture
@@ -54,7 +55,10 @@ def sleepstar_controller() -> tuple[SleepStarController, MagicMock, MagicMock]:
     coordinator.handle_controller_state_update = MagicMock()
     coordinator.handle_controller_state_updates = MagicMock()
     coordinator.record_command_trace = MagicMock()
-    return SleepStarController(coordinator), coordinator, client
+    controller = SleepStarController(coordinator)
+    # Tests assert on what the bed reports, not the sonic levels published at construction.
+    coordinator.handle_controller_state_updates.reset_mock()
+    return controller, coordinator, client
 
 
 @pytest.mark.parametrize(
@@ -101,9 +105,31 @@ def test_time_calibration_frames() -> None:
     assert build_wrapped_star_time(local).hex().upper() == "AA000009020B5A14071A07100D2D1E04A5"
 
 
+def _reference_crc16_modbus(data: bytes) -> int:
+    """The controller's former private CRC-16/MODBUS, kept as a differential oracle."""
+    crc = 0xFFFF
+    for value in data:
+        crc ^= value
+        for _ in range(8):
+            crc = ((crc >> 1) ^ 0xA001) if crc & 1 else crc >> 1
+    return crc & 0xFFFF
+
+
+def _reference_environment_frame(payload: bytes) -> bytes:
+    crc = _reference_crc16_modbus(payload)
+    return wrap_environment(payload + bytes([crc & 0xFF, crc >> 8]))
+
+
 def test_environment_crc_is_inner_modbus_only() -> None:
-    """The environment route uses low-byte-first MODBUS CRC inside the wrapper."""
-    assert crc16_modbus(bytes.fromhex("000200000001")) == 0x1BB8
+    """The shared FFFF codec CRC matches the former inner MODBUS CRC on every reachable input."""
+    assert _reference_crc16_modbus(bytes.fromhex("000200000001")) == 0x1BB8
+    assert build_environment_address_query() == _reference_environment_frame(
+        bytes.fromhex("000200000001")
+    )
+    for address in range(256):
+        assert build_environment_register_query(address) == _reference_environment_frame(
+            bytes([address & 0xFF, 3, 0, 2, 0, 7])
+        )
 
 
 @pytest.mark.parametrize(
@@ -281,9 +307,10 @@ async def test_sonic_intensity_and_timer_use_two_writes_then_stop(
     assert write.await_args_list[1].args == (SleepStarCommands.STOP,)
     assert write.await_args_list[2].args[0] == wrap_control_box(star.extended(0x0B, 2))
     assert write.await_args_list[3].args == (SleepStarCommands.STOP,)
-    assert controller.get_massage_state()["intensity"] == 6
-    intensity_updates = _coordinator.handle_controller_state_updates.call_args_list[0].args[0]
-    assert intensity_updates["massage_intensity"] == 6
+    intensity_updates = published(*_coordinator.handle_controller_state_updates.call_args_list[0].args)
+    assert intensity_updates == {"massage_all_intensity": 6}
+    timer_updates = published(*_coordinator.handle_controller_state_updates.call_args_list[1].args)
+    assert timer_updates == {"massage_timer": 20, "massage_active": True}
 
 
 async def test_repeated_command_holds_sender_lock_against_background_query(
@@ -343,7 +370,7 @@ async def test_direct_and_wrapped_motor_notifications_are_parsed(
     }
     assert controller._positions == expected
     assert callback.call_count == 10
-    updates = coordinator.handle_controller_state_updates.call_args.args[0]
+    updates = published(*coordinator.handle_controller_state_updates.call_args.args)
     assert updates == {
         "sleepstar_part6_position": 40,
         "sleepstar_positions": {key: int(value) for key, value in expected.items()},
@@ -371,7 +398,7 @@ async def test_config_bitmap_requests_only_missing_pages(
         build_cb37_config_query(2),
         build_cb37_config_query(4),
     ]
-    updates = coordinator.handle_controller_state_updates.call_args.args[0]
+    updates = published(*coordinator.handle_controller_state_updates.call_args.args)
     assert updates["sleepstar_motor_mask"] == 0x1F
     assert updates["sleepstar_config_loaded"] is False
     await controller.stop_keepalive()

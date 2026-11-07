@@ -17,7 +17,7 @@ from custom_components.adjustable_bed.alarm_table import (
     OneTimeAlarmRecord,
     WeeklyAlarmRecord,
 )
-from custom_components.adjustable_bed.beds.ergomotion4 import (
+from custom_components.adjustable_bed.beds.ergomotion4.controller import (
     CONF_MASSAGE_KEYS,
     CONF_MODEL_KEYS,
     CONF_PRODUCT_NAME,
@@ -30,10 +30,11 @@ from custom_components.adjustable_bed.beds.ergomotion4 import (
     p2_frame,
     parse_status,
 )
-from custom_components.adjustable_bed.beds.keeson import KeesonController
+from custom_components.adjustable_bed.beds.ergomotion4.profiles import ACTIONS, PRODUCTS
+from custom_components.adjustable_bed.beds.keeson.controller import KeesonController
 from custom_components.adjustable_bed.codec import keeson as codec
-from custom_components.adjustable_bed.ergomotion4_profiles import ACTIONS, PRODUCTS
 from custom_components.adjustable_bed.pairing import supports_single_address_pairing
+from tests.state_helpers import published, state_writer
 
 FIXTURES = Path(__file__).parent / "fixtures/ergomotion4"
 VECTORS = json.loads((FIXTURES / "test-vectors.json").read_text())
@@ -45,7 +46,7 @@ CATALOG = json.loads((FIXTURES / "catalog.json").read_text())
 def hold_clock(monkeypatch):
     clock = SimpleNamespace(milliseconds=0.0)
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.ergomotion4.monotonic",
+        "custom_components.adjustable_bed.beds.ergomotion4.controller.monotonic",
         lambda: clock.milliseconds / 1000,
     )
     return clock
@@ -63,7 +64,7 @@ def coordinator(product="H", **data):
     result.motor_pulse_count = 1
     result.observed_ble_device_name = "KSBT03CP123"
     result.controller_state = {}
-    result.handle_controller_state_updates.side_effect = result.controller_state.update
+    result.handle_controller_state_updates.side_effect = state_writer(result.controller_state)
     rx = MagicMock(uuid="0000ffe4-0000-1000-8000-00805f9b34fb", properties=["notify"])
     tx = MagicMock(uuid="0000ffe9-0000-1000-8000-00805f9b34fb", properties=["write"])
     service = MagicMock(characteristics=[rx, tx])
@@ -142,8 +143,8 @@ async def test_artifact_command_sequences(case, hold_clock):
     ctrl._wait.side_effect = wait
     side = {"Both": "both", "Left": "left", "Right": "right"}[case["side"]]
     action = ACTIONS[case["command"]]
-    bound = ctrl.bind_side(side)
-    await bound._run_action(action.key)
+    with ctrl.side_scope(side):
+        await ctrl._run_action(action.key)
     expected = case["press"] + ([["wait", 100]] + case["release"] if case["held"] else [])
     assert trace == expected
     assert ctrl.command_side is None
@@ -237,7 +238,8 @@ async def test_side_state_is_not_published_as_both_sides():
     assert coord.controller_state["right_app_timer_status"] == 3
     assert coord.controller_state["left_app_timer_status"] is None
     assert coord.controller_state["app_timer_status"] is None
-    specs = ctrl.bind_side("right").controller_state_sensor_specs
+    with ctrl.side_scope("right"):
+        specs = ctrl.controller_state_sensor_specs
     assert specs[0].state_key == "right_app_timer_status"
 
 
@@ -256,8 +258,8 @@ async def test_product_session_init_and_pairing_contract(product):
         else [b"\x00\xb0"] * 3
     )
     if not p1:
-        with pytest.raises(ValueError, match="side selector"):
-            ctrl.bind_side("left")._frame(1)
+        with pytest.raises(ValueError, match="side selector"), ctrl.side_scope("left"):
+            ctrl._frame(1)
 
 
 @pytest.mark.parametrize("variant", ["base", "ergomotion"])
@@ -272,7 +274,8 @@ async def test_legacy_p1_side_routing_and_cancelled_release(variant):
         ("right", "e6fe16010000000103"),
         ("both", "e5fe160100000005"),
     ):
-        assert ctrl.bind_side(side)._build_command(1).hex() == expected
+        with ctrl.side_scope(side):
+            assert ctrl._build_command(1).hex() == expected
     assert ctrl.supports_single_address_pairing
     assert supports_single_address_pairing("keeson", variant)
     assert ctrl._build_command(1).hex() == "e5fe160100000005"
@@ -288,7 +291,8 @@ async def test_cancelled_hold_releases_original_side_on_fresh_event():
         return True
 
     ctrl._wait.side_effect = cancel
-    await ctrl.bind_side("left").hold_control("c054", 1000)
+    with ctrl.side_scope("left"):
+        await ctrl.hold_control("c054", 1000)
     assert packets(coord) == [
         bytes.fromhex("e6fe16010000000202"),
         bytes.fromhex("e6fe16000000000203"),
@@ -302,7 +306,8 @@ async def test_cancelled_hold_releases_original_side_on_fresh_event():
         return True
 
     ctrl._wait.side_effect = disconnect
-    await ctrl.bind_side("right").hold_control("c054", 1000)
+    with ctrl.side_scope("right"):
+        await ctrl.hold_control("c054", 1000)
     assert packets(coord) == [bytes.fromhex("e6fe16010000000103")]
 
 
@@ -323,11 +328,11 @@ async def test_hold_deadline_includes_transport_time(hold_clock, ordinary_press,
 
     coord.client.write_gatt_char.side_effect = write
     ctrl._wait.side_effect = wait
-    bound = ctrl.bind_side("left")
-    if ordinary_press:
-        await bound._run_action("c054")
-    else:
-        await bound.hold_control("c054", 1000)
+    with ctrl.side_scope("left"):
+        if ordinary_press:
+            await ctrl._run_action("c054")
+        else:
+            await ctrl.hold_control("c054", 1000)
 
     assert all(at < 1000 for at, _ in writes[:-1])
     assert {payload for _, payload in writes[:-1]} == {"e6fe16010000000202"}
@@ -339,8 +344,8 @@ async def test_hold_deadline_includes_transport_time(hold_clock, ordinary_press,
 async def test_failed_pulse_still_attempts_release():
     ctrl, coord = await ready()
     coord.client.write_gatt_char.side_effect = [RuntimeError("failed"), None]
-    with pytest.raises(RuntimeError, match="failed"):
-        await ctrl.bind_side("right")._run_action("c059")
+    with pytest.raises(RuntimeError, match="failed"), ctrl.side_scope("right"):
+        await ctrl._run_action("c059")
     assert packets(coord)[-1].hex() == "e6fe16000000000104"
 
 
@@ -368,7 +373,7 @@ async def test_rename_clock_and_alarm_vectors():
         with pytest.raises(ValueError):
             ctrl.validate_device_rename(name)
     now = datetime(2026, 11, 3, 21, 7, 40, tzinfo=ZoneInfo("Europe/Oslo"))
-    with patch("custom_components.adjustable_bed.beds.cluster033.dt_util.now", return_value=now):
+    with patch("custom_components.adjustable_bed.beds.keeson.layout_app.dt_util.now", return_value=now):
         await ctrl.sync_clock()
     assert packets(coord)[-1].hex() == next(
         v["expected_bytes"] for v in VECTORS if v["id"] == "clock"
@@ -469,23 +474,19 @@ async def test_catalog_action_bytes(vector):
 
 async def test_configuration_and_actual_entity_exposure(hass):
     from custom_components.adjustable_bed.button import _button_entities_for
-    from custom_components.adjustable_bed.config_flow import (
-        _add_cluster033_schema_fields,
-        _normalize_cluster033_data,
-    )
     from custom_components.adjustable_bed.detection import get_bed_type_options
+    from custom_components.adjustable_bed.setup_questions import SETUP_PROFILES
 
     data = {"bed_type": "ergomotion_4", "product_type": "M30"}
-    schema = {}
-    _add_cluster033_schema_fields(schema, data)
-    _normalize_cluster033_data(data)
-    assert data["disable_angle_sensing"] is True
-    assert data["has_massage"] is False
+    profile = SETUP_PROFILES["ergomotion_4"]
+    assert profile.validate is not None and profile.validate(data) == {}
+    settled = profile.settled(data)
+    assert settled["disable_angle_sensing"] is True
+    assert settled["has_massage"] is False
     assert any(choice["value"] == "ergomotion_4" for choice in get_bed_type_options())
     ctrl, coord = await ready("M30")
     coord.controller = coord.capability_controller = ctrl
     coord.entity_unique_id.side_effect = lambda key: key
-    coord.entity_translation_key.side_effect = lambda key: key
     entities = [entity for entity in _button_entities_for(hass, coord) if hasattr(entity, "_spec")]
     assert {entity._spec.key for entity in entities} == {a.key for a in ctrl._actions()} | {
         "dismiss_alarm"
@@ -691,11 +692,11 @@ def _rgb_entity(ctrl, coord):
     coord.controller = coord.capability_controller = ctrl
     coord.entity_side = None
     coord.entity_unique_id.side_effect = lambda key: key
-    coord.entity_translation_key.side_effect = lambda key: key
     entity = AdjustableBedLight(coord, LIGHT_DESCRIPTION)
     entity.async_write_ha_state = MagicMock()
 
-    def update(values):
+    def update(*updates):
+        values = published(*updates)
         coord.controller_state.update(values)
         entity._handle_light_state(values)
 
@@ -762,7 +763,7 @@ async def test_rgb_power_confirmation_timeout_never_sends_unguarded_color():
     _reported_light(ctrl, False)
     with (
         patch(
-            "custom_components.adjustable_bed.beds.ergomotion4.LIGHT_POWER_CONFIRM_TIMEOUT_SECONDS",
+            "custom_components.adjustable_bed.beds.ergomotion4.controller.LIGHT_POWER_CONFIRM_TIMEOUT_SECONDS",
             0,
         ),
         pytest.raises(TimeoutError),

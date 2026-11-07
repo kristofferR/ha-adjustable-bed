@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.core import HomeAssistant
 
-from custom_components.adjustable_bed.beds.keeson import KeesonController
+from custom_components.adjustable_bed.beds.keeson.controller import KeesonController
 from custom_components.adjustable_bed.command_scheduler import CommandOutcome
 from custom_components.adjustable_bed.const import (
     BED_TYPE_KEESON,
@@ -29,11 +29,11 @@ def coordinator(hass: HomeAssistant, mock_config_entry) -> AdjustableBedCoordina
     coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
     coordinator._client = MagicMock(is_connected=True)
     coordinator._position_connection_generation = 1
-    coordinator._controller = make_controller_mock(
-        supports_direct_position_control=False,
-        auto_stops_on_idle=False,
-        position_seek_check_interval=0,
+    controller = make_controller_mock(
+        supports_direct_position_control=False, auto_stops_on_idle=False
     )
+    controller.position_seek_policy.check_interval = 0
+    coordinator._controller = controller
     return coordinator
 
 
@@ -273,13 +273,8 @@ async def test_new_notification_survives_failed_active_read(coordinator):
 
 
 class NotificationPolicy(PositionSeekPolicy):
-    @property
-    def prefers_cached_position_feedback(self) -> bool:
-        return True
-
-    @property
-    def cached_position_feedback_max_age(self) -> float:
-        return 1.0
+    prefers_cached_position_feedback = True
+    cached_position_feedback_max_age = 1.0
 
 
 async def test_notification_that_ages_out_during_read_is_rejected(coordinator):

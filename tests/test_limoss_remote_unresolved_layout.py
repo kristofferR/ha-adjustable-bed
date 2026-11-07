@@ -3,7 +3,7 @@
 import pytest
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.beds.limoss_remote import LimossRemoteController
+from custom_components.adjustable_bed.beds.limoss.remote import LimossRemoteController
 from custom_components.adjustable_bed.button import AdjustableBedButton, _button_entities_for
 from custom_components.adjustable_bed.cover import _cover_entities_for
 from tests.test_coordinator_limoss_remote import actual_coordinator

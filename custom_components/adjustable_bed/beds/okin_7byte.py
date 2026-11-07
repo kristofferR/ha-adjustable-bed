@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING, Final
 from bleak.exc import BleakError
 
 from ..profiles.okin_5a import OKIN_7BYTE, Action, Okin5AProfile
-from .base import BedController
+from .base import BedController, ProfileExecution
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -29,7 +29,7 @@ _LOGGER = logging.getLogger(__name__)
 _MEMORY: Final[dict[int, Action]] = {1: "memory_1", 2: "memory_2"}
 
 
-class Okin7ByteController(BedController):
+class Okin7ByteController(ProfileExecution[Okin5AProfile], BedController):
     """Controller for beds using the Okin 5A key frame."""
 
     def __init__(

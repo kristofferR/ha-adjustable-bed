@@ -8,326 +8,62 @@ command encoding and position reading.
 from __future__ import annotations
 
 import asyncio
-import inspect
 import logging
-from abc import ABC, abstractmethod
-from collections.abc import Awaitable, Callable, Collection, Coroutine, Mapping, Sequence
+from abc import abstractmethod
+from collections.abc import (
+    Callable,
+    Iterator,
+    Mapping,
+    Sequence,
+)
+from contextlib import contextmanager
 from contextvars import ContextVar
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Final, Literal
+from typing import TYPE_CHECKING, Any, Final
 
 from bleak import BleakClient
-from bleak.exc import BleakError
 
 if TYPE_CHECKING:
-    from datetime import datetime
-
-    from bleak.backends.characteristic import BleakGATTCharacteristic
-
-    from ..casper_base_protocol import Request as CasperBaseRequest
-    from ..cluster018_requests import Request as Cluster018Request
     from ..command_scheduler import StreamMember
     from ..coordinator import AdjustableBedCoordinator
-    from ..gmmotor_requests import Request as GmmotorRequest
-    from ..goodvibe_services import Request as GoodVibeRequest
-    from ..hjbed_requests import Request as HJBedRequest
-    from ..motion_bed_requests import MotionBedWrite
-    from ..motomotion_requests import Request as MotoMotionRequest
-    from ..row061_protocol import AlarmRequest
-    from ..sleeptracker_protocol import Request as SleeptrackerRequest
 
-from ..alarm_table import (
-    AlarmTableSchedule,
-    AlarmTableScheduleSpec,
-)
 from ..alarm_table import (
     OneTimeAlarmRecord as OneTimeAlarmRecord,
 )
 from ..alarm_table import (
     WeeklyAlarmRecord as WeeklyAlarmRecord,
 )
+from ..bed_traits import BedTraits
 from ..command_scheduler import current_command_context
-from ..const import (
-    POSITION_CHECK_INTERVAL,
-    POSITION_STALL_COUNT,
-    POSITION_STALL_THRESHOLD,
-    POSITION_TOLERANCE,
+from ..controller_state import (
+    StateKey,
+    StateUpdate,
 )
-from ..diagnostic_payloads import format_payload
-from ..execution import HOLD_CEILING_MS, NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
+from ..execution import (
+    HOLD_CEILING_MS,
+    NO_EXECUTION_CAPABILITIES,
+    ExecutionCapabilities,
+    ExecutionProfile,
+)
 from ..position_seek import PositionSeekPolicy
+from .entity_specs import (
+    POSITION_UNIT_DEGREES,
+    ControllerButtonSpec,
+    ControllerHoldSpec,
+    ControllerNumberSpec,
+    ControllerSelectSpec,
+    ControllerStateBinarySensorSpec,
+    ControllerStateSensorSpec,
+    MotorCommandCallable,
+    MotorControlSpec,
+    PositionNumberSpec,
+    build_position_number_spec,
+)
+from .gatt_write import GattWriter
+from .lifecycle import CapabilitySnapshotPolicy, ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 
 CONTROLLER_GESTURE_RELEASE: ContextVar[bool] = ContextVar("controller_gesture_release", default=False)
-
-MotorCommandCallable = Callable[["BedController"], Coroutine[Any, Any, None]]
-
-
-class SideBoundController:
-    """View of one controller with a per-call logical bed side.
-
-    Single-address paired beds share one controller and one BLE command lock.
-    This proxy binds ``left``/``right``/``both`` for the duration of each method
-    call instead of mutating the controller's configured legacy variant.
-    """
-
-    def __init__(self, controller: BedController, side: str) -> None:
-        self._controller = controller
-        self._side = side
-
-    def __getattr__(self, name: str) -> Any:
-        token = self._controller._command_side.set(self._side)
-        try:
-            value = getattr(self._controller, name)
-        finally:
-            self._controller._command_side.reset(token)
-
-        # Side-list capability properties on Sleep Number already expose both
-        # sides for standalone entries. A bound logical child must only mint its
-        # own side's entities.
-        if name.endswith("_sides") and isinstance(value, (list, tuple)):
-            return (self._side,) if self._side in value else ()
-        if not callable(value):
-            return value
-
-        if inspect.iscoroutinefunction(value):
-
-            async def async_bound(*args: Any, **kwargs: Any) -> Any:
-                call_token = self._controller._command_side.set(self._side)
-                try:
-                    return await value(*args, **kwargs)
-                finally:
-                    self._controller._command_side.reset(call_token)
-
-            return async_bound
-
-        def bound(*args: Any, **kwargs: Any) -> Any:
-            call_token = self._controller._command_side.set(self._side)
-            try:
-                return value(*args, **kwargs)
-            finally:
-                self._controller._command_side.reset(call_token)
-
-        return bound
-
-
-@dataclass(frozen=True, slots=True)
-class ControllerButtonSpec:
-    """An app-labelled action whose physical semantics need no inferred axis."""
-
-    key: str
-    name: str
-    press_fn: MotorCommandCallable
-    icon: str = "mdi:gesture-tap"
-    translation_key: str | None = None
-    cancel_movement: bool = field(default=True, kw_only=True)
-    scheduler_resource: str | None = field(default=None, kw_only=True)
-    hold: ControllerHoldSpec | None = field(default=None, kw_only=True)
-    # Cancel held admission; only the held task owns its protocol release frame.
-    release_only: bool = field(default=False, kw_only=True)
-    # Fills a translated name template, e.g. ``{action}``, with an app label.
-    translation_placeholders: Mapping[str, str] | None = field(default=None, kw_only=True)
-
-
-@dataclass(frozen=True, slots=True)
-class ControllerSelectSpec:
-    """An immutable controller-declared option control backed by published state."""
-
-    key: str
-    translation_key: str
-    state_key: str
-    options: tuple[str, ...]
-    select_fn: Callable[[BedController, str], Awaitable[None]]
-    # An app-local choice that sends no frame: applied without connecting.
-    local_select_fn: Callable[[str], None] | None = field(default=None, kw_only=True)
-
-
-@dataclass(frozen=True, slots=True)
-class ControllerNumberSpec:
-    """An immutable controller-declared numeric control backed by published state."""
-
-    key: str
-    translation_key: str
-    state_key: str
-    native_min_value: float
-    native_max_value: float
-    native_step: float
-    set_fn: Callable[[BedController, float], Awaitable[None]]
-    native_unit_of_measurement: str | None = None
-
-
-@dataclass(frozen=True, slots=True)
-class ProductButtonSpec(ControllerButtonSpec):
-    """An optional product action with its own entity namespace."""
-
-    icon: str = "mdi:gesture-tap-button"
-    entity_registry_enabled_default: bool = False
-
-
-@dataclass(frozen=True, slots=True)
-class ControllerActionSpec:
-    """One ordered app action, including duplicate or arbitrary labels."""
-
-    row_index: int
-    name: str
-    category: str
-    duration_ms: int = 0
-    frequency_ms: int = 0
-
-
-@dataclass(frozen=True, slots=True)
-class ControllerHoldSpec:
-    """Timing around a controller-owned held action."""
-
-    control: str
-    start_delay_ms: int = 0
-    release_delay_ms: int = 0
-    release_button_key: str | None = None
-
-    def __post_init__(self) -> None:
-        _validate_hold_metadata(self.control, self.start_delay_ms, self.release_delay_ms)
-
-
-@dataclass(frozen=True, slots=True)
-class ControllerMotorHoldSpec:
-    """Direction-specific controls for a bounded motor hold."""
-
-    up_control: str
-    down_control: str
-    start_delay_ms: int = 0
-    release_delay_ms: int = 0
-    release_button_key: str | None = None
-    stop_scope: Literal["motor", "side"] = field(default="motor", kw_only=True)
-
-    def __post_init__(self) -> None:
-        _validate_hold_metadata(self.up_control, self.start_delay_ms, self.release_delay_ms)
-        _validate_hold_metadata(self.down_control, self.start_delay_ms, self.release_delay_ms)
-
-
-def _validate_hold_metadata(control: str, start_delay_ms: int, release_delay_ms: int) -> None:
-    if not isinstance(control, str) or not control:
-        raise ValueError("Held control names must be non-empty strings")
-    for name, delay in (
-        ("start_delay_ms", start_delay_ms),
-        ("release_delay_ms", release_delay_ms),
-    ):
-        if isinstance(delay, bool) or not isinstance(delay, int) or delay < 0:
-            raise ValueError(f"{name} must be a non-negative integer")
-
-
-@dataclass(frozen=True, slots=True)
-class MotorControlSpec:
-    """Describes a motor control surface exposed by a controller."""
-
-    key: str
-    translation_key: str
-    open_fn: MotorCommandCallable
-    close_fn: MotorCommandCallable
-    stop_fn: MotorCommandCallable
-    position_key: str | None = None
-    max_angle: float = 68
-    scheduler_resource: str | None = None
-    hold: ControllerMotorHoldSpec | None = field(default=None, kw_only=True)
-
-
-# Units a position slider can be scaled in.
-POSITION_UNIT_PERCENT: Final = "%"
-POSITION_UNIT_DEGREES: Final = "°"
-
-
-@dataclass(frozen=True, slots=True)
-class PositionNumberSpec:
-    """Describes a position slider the controller exposes.
-
-    Distinct from MotorControlSpec, which is about *movement* (and drives the
-    cover entities): this describes a numeric position the bed can be told to
-    seek. Values are fully resolved by the controller -- ``native_max_value``
-    already accounts for the user's angle calibration where that applies -- so
-    the number platform renders these without knowing any bed types.
-
-    ``key`` names the entity while ``position_key`` names the axis to read from
-    ``coordinator.position_data``; they differ on beds whose remote labels a
-    motor differently from the axis its firmware reports (e.g. Keeson exposes
-    "head" but reports it as "back").
-    """
-
-    key: str
-    translation_key: str
-    position_key: str
-    icon: str
-    native_max_value: float
-    native_unit_of_measurement: str
-    open_fn: MotorCommandCallable
-    close_fn: MotorCommandCallable
-    stop_fn: MotorCommandCallable
-
-
-@dataclass(frozen=True, slots=True)
-class ControllerStateSensorSpec:
-    """Describe a diagnostic sensor backed by coordinator controller state."""
-
-    key: str
-    translation_key: str
-    state_key: str
-    icon: str
-    native_unit_of_measurement: str | None = None
-    attribute_keys: tuple[str, ...] = ()
-    entity_registry_enabled_default: bool = True
-    suggested_display_precision: int | None = None
-
-
-@dataclass(frozen=True, slots=True)
-class ControllerStateBinarySensorSpec:
-    """Describe a binary diagnostic backed by coordinator controller state."""
-
-    key: str
-    translation_key: str
-    state_key: str
-    icon: str
-    attribute_keys: tuple[str, ...] = ()
-    entity_registry_enabled_default: bool = True
-
-
-# Movement commands for the four standard position axes, so controllers can
-# build sliders without restating the lambdas.
-POSITION_AXIS_COMMANDS: Final[
-    dict[str, tuple[MotorCommandCallable, MotorCommandCallable, MotorCommandCallable]]
-] = {
-    "back": (
-        lambda ctrl: ctrl.move_back_up(),
-        lambda ctrl: ctrl.move_back_down(),
-        lambda ctrl: ctrl.move_back_stop(),
-    ),
-    "legs": (
-        lambda ctrl: ctrl.move_legs_up(),
-        lambda ctrl: ctrl.move_legs_down(),
-        lambda ctrl: ctrl.move_legs_stop(),
-    ),
-    "head": (
-        lambda ctrl: ctrl.move_head_up(),
-        lambda ctrl: ctrl.move_head_down(),
-        lambda ctrl: ctrl.move_head_stop(),
-    ),
-    "feet": (
-        lambda ctrl: ctrl.move_feet_up(),
-        lambda ctrl: ctrl.move_feet_down(),
-        lambda ctrl: ctrl.move_feet_stop(),
-    ),
-    "lumbar": (
-        lambda ctrl: ctrl.move_lumbar_up(),
-        lambda ctrl: ctrl.move_lumbar_down(),
-        lambda ctrl: ctrl.move_lumbar_stop(),
-    ),
-}
-
-POSITION_AXIS_ICONS: Final[dict[str, str]] = {
-    "back": "mdi:human-handsup",
-    "legs": "mdi:human-handsdown",
-    "head": "mdi:head",
-    "feet": "mdi:foot-print",
-    "lumbar": "mdi:human-handsup",
-}
 
 # The standard motor layout: axis -> motor_count needed before it is exposed.
 _STANDARD_POSITION_AXES: Final[tuple[tuple[str, int], ...]] = (
@@ -338,36 +74,7 @@ _STANDARD_POSITION_AXES: Final[tuple[tuple[str, int], ...]] = (
 )
 
 
-def build_position_number_spec(
-    axis: str,
-    *,
-    max_value: float,
-    unit: str,
-    position_key: str | None = None,
-    key: str | None = None,
-    icon: str | None = None,
-) -> PositionNumberSpec:
-    """Build a slider for ``axis`` using that axis's standard commands and icon.
-
-    ``position_key`` defaults to ``axis``; override it when the firmware reports
-    the axis under a different name. ``key`` defaults to ``f"{axis}_position"``.
-    """
-    open_fn, close_fn, stop_fn = POSITION_AXIS_COMMANDS[axis]
-    entity_key = key or f"{axis}_position"
-    return PositionNumberSpec(
-        key=entity_key,
-        translation_key=entity_key,
-        position_key=position_key or axis,
-        icon=icon or POSITION_AXIS_ICONS.get(axis, "mdi:bed-outline"),
-        native_max_value=max_value,
-        native_unit_of_measurement=unit,
-        open_fn=open_fn,
-        close_fn=close_fn,
-        stop_fn=stop_fn,
-    )
-
-
-class BedController(ABC):
+class BedController(GattWriter):
     """Abstract base class for bed controllers.
 
     Subclasses must implement:
@@ -397,6 +104,8 @@ class BedController(ABC):
             coordinator: The AdjustableBedCoordinator managing the BLE connection
         """
         self._coordinator = coordinator
+        # The controller factory stamps the bed type's record here; see bed_traits.
+        self.static_traits = BedTraits()
         self._notify_callback: Callable[[str, float], None] | None = None
         self._raw_notify_callback: Callable[[str, bytes], None] | None = None
         self._ble_lock = asyncio.Lock()
@@ -409,9 +118,22 @@ class BedController(ABC):
         """Return the logical side bound to the current command task."""
         return self._command_side.get()
 
-    def bind_side(self, side: str) -> SideBoundController:
-        """Return a controller view that binds all calls to ``side``."""
-        return SideBoundController(self, side)
+    @contextmanager
+    def side_scope(self, side: str | None) -> Iterator[None]:
+        """Bind ``side`` to calls on this controller inside the block.
+
+        Single-address paired beds share one controller and one BLE command
+        lock. Each logical side scopes its calls instead of mutating the
+        configured legacy variant. ``None`` leaves the current binding alone.
+        """
+        if side is None:
+            yield
+            return
+        token = self._command_side.set(side)
+        try:
+            yield
+        finally:
+            self._command_side.reset(token)
 
     @property
     def ble_lock(self) -> asyncio.Lock:
@@ -457,13 +179,13 @@ class BedController(ABC):
             except Exception:
                 _LOGGER.debug("Error in raw notification callback", exc_info=True)
 
-    def forward_controller_state_update(self, key: str, value: Any) -> None:
+    def forward_controller_state_update[T](self, key: StateKey[T], value: T) -> None:
         """Forward non-position controller state to the coordinator."""
         self._coordinator.handle_controller_state_update(key, value)
 
-    def forward_controller_state_updates(self, updates: dict[str, Any]) -> None:
-        """Forward multiple non-position controller state values at once."""
-        self._coordinator.handle_controller_state_updates(updates)
+    def forward_controller_state_updates(self, *updates: StateUpdate) -> None:
+        """Forward several ``KEY(value)`` updates at once."""
+        self._coordinator.handle_controller_state_updates(*updates)
 
     @property
     def client(self) -> BleakClient | None:
@@ -479,13 +201,10 @@ class BedController(ABC):
     def execution(self) -> ExecutionCapabilities:
         """Return the held and concurrent execution this controller may use.
 
-        Family controllers carry their app's declaration on ``self.profile``;
-        standalone controllers override this property. Anything else keeps
-        the empty default: finite pulses, serialized motors.
+        Family controllers take their app profile's declaration through
+        ``ProfileExecution``; standalone controllers override this property.
+        Anything else keeps the empty default: finite pulses, serialized motors.
         """
-        execution = getattr(getattr(self, "profile", None), "execution", None)
-        if isinstance(execution, ExecutionCapabilities):
-            return execution
         return NO_EXECUTION_CAPABILITIES
 
     # Merged stream (#516). A controller that declares ``execution.concurrent``
@@ -557,14 +276,14 @@ class BedController(ABC):
     def requires_persistent_connection(self) -> bool:
         """Return True if the BLE link must be held open for the entry's lifetime.
 
-        Controllers that must or should conservatively retain the link (e.g.
-        Leggett & Platt Gen2 / LP Comfort Connect pending bonded-reconnect hardware
-        confirmation) override this to return True so the coordinator never
-        idle-disconnects them. Because this is a property of the resolved controller,
-        it is authoritative even when the bed type/variant resolves to different
-        protocols at connect time.
+        Defaults to the bed type's ``persistent_connection`` trait (e.g. Leggett &
+        Platt Gen2 / LP Comfort Connect pending bonded-reconnect hardware
+        confirmation), so the coordinator never idle-disconnects them. Controllers
+        override this only to refine it at runtime. Because this is a property of
+        the resolved controller, it is authoritative even when the bed
+        type/variant resolves to different protocols at connect time.
         """
-        return False
+        return self.static_traits.persistent_connection
 
     @property
     def requires_disconnected_transport(self) -> bool:
@@ -605,80 +324,12 @@ class BedController(ABC):
         return False
 
     @property
-    def reverses_position_seek_on_overshoot(self) -> bool:
-        """Return True if position seeking should reverse after overshooting.
-
-        The coordinator's generic seek loop assumes movement commands can be
-        trimmed or corrected mid-flight. Pulse-driven controllers like Linak
-        complete a whole movement burst before fresh feedback is available, so
-        reversing on overshoot causes hunting. Those controllers should
-        override this to return False and let the seek stop on the first target
-        crossing instead.
-        """
-        return True
-
-    @property
-    def uses_custom_position_seek_steps(self) -> bool:
-        """Return True if seeking should use controller-specific move steps.
-
-        Most controllers can reuse their normal move-up/move-down helpers during
-        incremental seeking. Pulse-driven controllers may need shorter seek
-        steps than their manual-control button presses to avoid overshoot.
-        """
-        return False
-
-    @property
-    def position_seek_tolerance(self) -> float:
-        """Return the acceptable error band for feedback-driven seeking.
-
-        The generic coordinator tolerance is intentionally broad because some
-        beds report coarse or noisy position feedback. Controllers with cleaner
-        feedback and smaller target steps can override this to finish closer to
-        the requested position.
-        """
-        return POSITION_TOLERANCE
-
-    @property
-    def position_seek_stall_count(self) -> int:
-        """Return how many stagnant reads are required before reissuing motion."""
-        return POSITION_STALL_COUNT
-
-    @property
-    def position_seek_check_interval(self) -> float:
-        """Return the interval between feedback polls during position seeking."""
-        return POSITION_CHECK_INTERVAL
-
-    @property
-    def position_seek_stall_threshold(self) -> float:
-        """Return the minimum delta that still counts as active movement."""
-        return POSITION_STALL_THRESHOLD
-
-    @property
-    def chains_position_seek_steps_while_moving(self) -> bool:
-        """Return True to reissue seek bursts before movement fully stalls.
-
-        The default seek loop waits for a stagnant feedback read before it
-        sends another movement burst. Controllers whose motors auto-stop
-        shortly after writes cease can override this to chain the next burst
-        while feedback still shows active movement, reducing visible stop/start
-        behavior during long seeks.
-        """
-        return False
-
-    @property
-    def position_seek_chain_min_remaining_distance(self) -> float:
-        """Return the minimum remaining error that still allows burst chaining."""
-        return POSITION_TOLERANCE
-
-    @property
     def position_seek_policy(self) -> PositionSeekPolicy:
         """Return the protocol movement policy for feedback-driven seeking.
 
-        The default policy delegates to the tuning properties above, so
-        existing per-controller overrides keep working unchanged. Controller
-        families with protocol evidence for smarter seek behavior (coast
-        compensation, endpoint completion, reversal transitions) override this
-        to return a policy subclass.
+        Controller families with protocol evidence for other seek tuning or
+        behavior (coast compensation, endpoint completion, held-command steps)
+        override this to return a policy subclass.
         """
         return PositionSeekPolicy(self)
 
@@ -767,191 +418,6 @@ class BedController(ABC):
 
         This is the BLE characteristic that accepts motor/preset commands.
         """
-
-    def _format_command_trace_payload(self, command: bytes) -> dict[str, Any] | None:
-        """Return a safe diagnostic representation of a command."""
-        return format_payload(command)
-
-    def _record_command_trace(
-        self,
-        char_uuid: str,
-        command: bytes,
-        *,
-        response: bool,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 0,
-        command_origin: str | None = None,
-        characteristic: BleakGATTCharacteristic | None = None,
-    ) -> None:
-        """Record a write for support bundles.
-
-        ``_write_gatt_with_retry`` calls this itself. A controller with its own
-        write loop calls it once per run of identical writes; the origin then
-        defaults to the function that called that write method.
-        """
-        payload = self._format_command_trace_payload(command)
-        if payload is None:
-            return
-        if command_origin is None:
-            frame = inspect.currentframe()
-            caller = frame.f_back.f_back if frame and frame.f_back else None
-            command_origin = caller.f_code.co_name if caller else None
-        handle: int | None = getattr(characteristic, "handle", None)
-        client = self.client
-        if characteristic is None and client is not None and client.services:
-            for service in client.services:
-                for discovered in service.characteristics:
-                    if discovered.uuid == char_uuid:
-                        handle = getattr(discovered, "handle", None)
-                        break
-                if handle is not None:
-                    break
-        self._coordinator.record_command_trace(
-            payload=payload,
-            characteristic_uuid=char_uuid,
-            characteristic_handle=handle,
-            response=response,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            command_origin=command_origin,
-            controller_class=type(self).__name__,
-        )
-
-    async def _write_gatt_with_retry(
-        self,
-        char_uuid: str,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-        response: bool = True,
-        log_errors: bool = True,
-        wall_clock_pacing: bool = False,
-        on_write: Callable[[], None] | None = None,
-        characteristic: BleakGATTCharacteristic | None = None,
-        expected_client: BleakClient | None = None,
-    ) -> None:
-        """Write a command to a GATT characteristic with retry support.
-
-        This is a helper method that handles the common pattern of:
-        - Checking connection state
-        - Writing to a characteristic with optional response
-        - Repeating the command with delays
-        - Checking for cancellation between writes
-
-        Args:
-            char_uuid: The characteristic UUID to write to
-            command: The command bytes to send
-            repeat_count: Number of times to repeat the command (default: 1)
-            repeat_delay_ms: Delay between repeats in milliseconds (default: 100)
-            cancel_event: Optional event that signals cancellation. If set,
-                         the command loop will exit early.
-            response: Whether to wait for a write response from the device.
-                     True = write-with-response (more reliable, slower) [default]
-                     False = write-without-response (faster, less reliable)
-            log_errors: Whether to log BleakError failures at ERROR level.
-                     Set to False for callers that recover from expected errors
-                     (e.g. Linak's post-connect auth-window probes).
-            wall_clock_pacing: Measure the repeat interval from the start of each
-                     write, so BLE round-trip time is absorbed into the interval
-                     instead of added to it.
-            on_write: Called synchronously after each successful GATT write,
-                     before any repeat delay or cancellation can interrupt it.
-            characteristic: Exact discovered destination when duplicate UUIDs
-                     require a particular characteristic instance.
-            expected_client: Optional connection identity checked after acquiring
-                     the BLE lock, so queued writes cannot migrate on reconnect.
-
-        Raises:
-            ConnectionError: If not connected to the bed
-            BleakError: If the GATT write fails
-        """
-        client = self.client
-        if client is None or not client.is_connected:
-            _LOGGER.error("Cannot write command: BLE client not connected")
-            raise ConnectionError("Not connected to bed")
-
-        effective_cancel = cancel_event or self._coordinator.cancel_command
-        payload = self._format_command_trace_payload(command)
-        logged_command = str(payload.get("hex", "**REDACTED**")) if payload else "**REDACTED**"
-
-        _LOGGER.debug(
-            "GATT write to %s (%s): %s (response=%s, repeat=%d, delay=%dms, wall_clock_pacing=%s)",
-            self._coordinator.address,
-            char_uuid,
-            logged_command,
-            response,
-            repeat_count,
-            repeat_delay_ms,
-            wall_clock_pacing,
-        )
-
-        caller_frame = inspect.currentframe()
-        command_origin = None
-        if caller_frame is not None and caller_frame.f_back is not None:
-            command_origin = caller_frame.f_back.f_code.co_name
-
-        self._record_command_trace(
-            char_uuid,
-            command,
-            response=response,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            command_origin=command_origin,
-            characteristic=characteristic,
-        )
-
-        for i in range(repeat_count):
-            if effective_cancel is not None and effective_cancel.is_set():
-                _LOGGER.debug("Command cancelled after %d/%d writes", i, repeat_count)
-                return
-
-            write_started: float | None = None
-            try:
-                # Acquire BLE lock for each individual write to prevent conflicts
-                # with concurrent position reads during movement
-                async with self._ble_lock:
-                    # A read may have held this lane while STOP invalidated the
-                    # movement. Do not send a stale write or acknowledge a no-op.
-                    if effective_cancel is not None and effective_cancel.is_set():
-                        return
-                    client = self.client
-                    if expected_client is not None and client is not expected_client:
-                        raise ConnectionError("Command belongs to a previous BLE connection")
-                    if client is None or not client.is_connected:
-                        _LOGGER.error("Cannot write command: BLE client disconnected during write")
-                        raise ConnectionError("Not connected to bed")
-                    if wall_clock_pacing:
-                        write_started = asyncio.get_running_loop().time()
-                    await client.write_gatt_char(
-                        characteristic if characteristic is not None else char_uuid,
-                        command,
-                        response=response,
-                    )
-                    if on_write is not None:
-                        on_write()
-            except BleakError:
-                if log_errors:
-                    _LOGGER.exception(
-                        "Failed to write command %s to %s",
-                        logged_command,
-                        char_uuid,
-                    )
-                else:
-                    _LOGGER.debug(
-                        "Suppressed write failure for %s to %s",
-                        logged_command,
-                        char_uuid,
-                        exc_info=True,
-                    )
-                raise
-
-            if i < repeat_count - 1:
-                delay_seconds = repeat_delay_ms / 1000
-                if write_started is not None:
-                    delay_seconds -= asyncio.get_running_loop().time() - write_started
-                if delay_seconds > 0:
-                    await asyncio.sleep(delay_seconds)
 
     async def write_command(
         self,
@@ -1105,33 +571,6 @@ class BedController(ABC):
         some motors support notifications and others don't.
         """
 
-    async def seek_position_step(
-        self,
-        position_key: str,
-        moving_up: bool,
-        remaining_distance: float | None = None,
-    ) -> None:
-        """Execute one incremental move step during feedback-based seeking.
-
-        Controllers with `uses_custom_position_seek_steps` should override this
-        to emit shorter or otherwise specialized seek pulses. The default
-        implementation falls back to the normal movement helpers.
-        """
-        del remaining_distance  # Default implementations do not use distance-based tuning.
-        if position_key == "back":
-            await (self.move_back_up() if moving_up else self.move_back_down())
-            return
-        if position_key == "legs":
-            await (self.move_legs_up() if moving_up else self.move_legs_down())
-            return
-        if position_key == "head":
-            await (self.move_head_up() if moving_up else self.move_head_down())
-            return
-        if position_key == "feet":
-            await (self.move_feet_up() if moving_up else self.move_feet_down())
-            return
-        raise ValueError(f"Unsupported position key for seek step: {position_key}")
-
     async def prepare_for_position_read(self) -> None:  # noqa: B027 - optional hook, not abstract
         """Do controller-specific setup before an initial or passive position read."""
 
@@ -1262,15 +701,6 @@ class BedController(ABC):
             memory_num: Memory slot number (1-4, availability varies by bed)
         """
 
-    @property
-    def supports_confirmed_calibration(self) -> bool:
-        """Whether an explicitly confirmed calibration action is available."""
-        return False
-
-    async def calibrate(self, *, confirmed: bool) -> None:
-        """Calibrate only with explicit confirmation where supported."""
-        raise NotImplementedError("Confirmed calibration is unavailable")
-
     async def recall_memory(self, slot: int, *, hold_ms: int) -> None:
         """Recall a local memory with an explicit caller-owned hold policy."""
         raise NotImplementedError("Held local memories are unavailable")
@@ -1346,29 +776,9 @@ class BedController(ABC):
         return False
 
     @property
-    def supports_preset_yoga(self) -> bool:
-        """Return True if bed supports yoga preset."""
-        return False
-
-    @property
     def supports_relaxing_bedtime(self) -> bool:
         """Return True if the bed exposes a relaxing-bedtime preset."""
         return False
-
-    @property
-    def supports_solace_audio(self) -> bool:
-        """Return True if the bed exposes the Solace music/audio surface."""
-        return False
-
-    @property
-    def supports_solace_alarm(self) -> bool:
-        """Return True if the bed exposes the Solace alarm surface."""
-        return False
-
-    @property
-    def solace_alarm_sound_options(self) -> tuple[str, ...]:
-        """Sounds accepted by this app profile's alarm action."""
-        return ("none", "alarm", "music_1", "music_2", "music_3", "music_4", "music_5")
 
     @property
     def supports_memory_presets(self) -> bool:
@@ -1536,13 +946,17 @@ class BedController(ABC):
 
     @property
     def supports_position_feedback(self) -> bool:
-        """Return True if bed reports position feedback."""
-        return False
+        """Return True if bed reports position feedback.
+
+        Defaults to the bed type's ``position_feedback`` trait. Controllers
+        override this only to narrow it at runtime, for example after discovery.
+        """
+        return self.static_traits.position_feedback
 
     @property
     def reports_percentage_position(self) -> bool:
         """Return whether reported motor positions use a 0-100 percentage scale."""
-        return False
+        return self.static_traits.percentage_positions
 
     @property
     def requires_notification_channel(self) -> bool:
@@ -1568,24 +982,52 @@ class BedController(ABC):
         return {}
 
     @property
-    def supports_cluster018(self) -> bool:
-        return False
-
-    def validate_cluster018_request(self, request: Cluster018Request) -> None:
-        raise NotImplementedError("This controller does not support these app settings")
-
-    async def async_execute_cluster018_request(self, request: Cluster018Request) -> None:
-        raise NotImplementedError("This controller does not support these app settings")
-
-    @property
     def has_dynamic_controller_entities(self) -> bool:
         """Whether notifications can reveal additional entities after setup."""
+        return False
+
+    @property
+    def has_dynamic_buttons(self) -> bool:
+        """Whether notifications can reveal additional buttons after setup."""
+        return False
+
+    @property
+    def reports_massage_state(self) -> bool:
+        """Whether notifications report the state read by massage sensors."""
+        return False
+
+    @property
+    def memory_slot_names_allow_blank(self) -> bool:
+        """Whether a blank bed-reported memory name replaces the translated one."""
+        return False
+
+    @property
+    def exposes_discrete_light_as_light(self) -> bool:
+        """Whether discrete light on/off is a light entity rather than a switch."""
+        return False
+
+    @property
+    def light_state_starts_off(self) -> bool:
+        """Whether an on/off light assumes off until the bed reports otherwise."""
+        return False
+
+    @property
+    def light_switch_follows_level_intent(self) -> bool:
+        """Whether the light switch shows the app's intended level, not readback."""
         return False
 
     @property
     def controller_entity_discovery_complete(self) -> bool:
         """Whether setup has finished discovering controller-gated entities."""
         return True
+
+    @property
+    def retained_entity_keys(self) -> frozenset[tuple[str, str]]:
+        """(platform, key) of entities that appear only once the bed reports them.
+
+        The stale-entity sweep keeps their registry rows while they are not built.
+        """
+        return frozenset()
 
     def controller_button_available(self, key: str) -> bool:
         """Whether a named action remains valid for current discovered capabilities."""
@@ -1635,36 +1077,6 @@ class BedController(ABC):
     def restore_persisted_app_state(self, state: Mapping[str, Any]) -> None:  # noqa: B027
         """Apply stored app-local state; raise ValueError or TypeError if invalid."""
 
-    async def set_mood_palette(self, option: str) -> None:
-        """Select a controller-declared mood palette entry."""
-        raise NotImplementedError("Mood palette selection is not supported")
-
-    async def set_mood_effect(self, option: str) -> None:
-        """Select a controller-declared mood effect."""
-        raise NotImplementedError("Mood effect selection is not supported")
-
-    async def set_mood_speed(self, value: float) -> None:
-        """Set the controller-declared mood speed scale."""
-        raise NotImplementedError("Mood speed control is not supported")
-
-    async def set_massage_wave(self, option: str) -> None:
-        """Select a controller-declared massage wave."""
-        raise NotImplementedError("Massage wave selection is not supported")
-
-    async def set_massage_speed(self, value: float) -> None:
-        """Set the controller-declared massage speed scale."""
-        raise NotImplementedError("Massage speed control is not supported")
-
-    @property
-    def supports_goodvibe(self) -> bool:
-        return False
-
-    def validate_goodvibe_request(self, request: GoodVibeRequest) -> None:
-        raise NotImplementedError("Good Vibe Sleep configuration is unavailable")
-
-    async def async_execute_goodvibe_request(self, request: GoodVibeRequest) -> None:
-        raise NotImplementedError("Good Vibe Sleep configuration is unavailable")
-
     @property
     def requests_connection_recovery(self) -> bool:
         """Whether a user-started background session needs recovery after link loss."""
@@ -1676,245 +1088,10 @@ class BedController(ABC):
     def on_gesture_release(self) -> None:  # noqa: B027
         """Mark the current admitted gesture as released before STOP invalidates it."""
 
-    async def async_execute_motomotion_action(self, key: str) -> None:
-        raise NotImplementedError("MotoMotion actions are unavailable")
-
-    async def async_set_motomotion_number(self, key: str, value: float) -> None:
-        raise NotImplementedError("MotoMotion settings are unavailable")
-
-    async def async_select_motomotion(self, key: str, value: str) -> None:
-        raise NotImplementedError("MotoMotion selections are unavailable")
-
-    @property
-    def supports_motomotion_users(self) -> bool:
-        return False
-
-    def validate_motomotion_request(self, request: MotoMotionRequest) -> None:
-        raise NotImplementedError("MotoMotion users are unavailable")
-
-    async def async_execute_motomotion_request(self, request: MotoMotionRequest) -> None:
-        raise NotImplementedError("MotoMotion users are unavailable")
-
-    @property
-    def supports_hjbed(self) -> bool:
-        """Whether this is an explicit HJBed app product."""
-        return False
-
-    async def async_execute_hjbed_action(self, detail: str, *, save: bool = False) -> None:
-        """Execute a catalogued HJBed detail through the normal command lock."""
-        raise NotImplementedError("HJBed controls are unavailable")
-
-    def validate_hjbed_request(self, request: HJBedRequest) -> None:
-        """Validate every HJBed target before executing configuration writes."""
-        raise NotImplementedError("HJBed configuration is unavailable")
-
-    async def async_execute_hjbed_request(self, request: HJBedRequest) -> None:
-        """Execute a preflighted HJBed request under the command lock."""
-        raise NotImplementedError("HJBed configuration is unavailable")
-
-    @property
-    def supports_rmcontrol_alarm(self) -> bool:
-        """Whether the selected RMControl product supports alarm configuration."""
-        return False
-
-    @property
-    def supports_rmcontrol_single_alarm(self) -> bool:
-        """Whether this product exposes the countdown alarm operation."""
-        return False
-
-    @property
-    def supports_rmcontrol_repeat_alarm(self) -> bool:
-        """Whether this product exposes repeating alarm records."""
-        return False
-
-    @property
-    def supports_rmcontrol_alarm_time_sync(self) -> bool:
-        """Whether the selected product requests alarm clock synchronization."""
-        return False
-
-    @property
-    def supports_rmcontrol_anti_snore(self) -> bool:
-        """Whether the selected RMControl product supports snore intervention."""
-        return False
-
-    def validate_rmcontrol_alarm_action(self, action: str) -> None:
-        """Validate a product-specific alarm action without writing to the bed."""
-        raise NotImplementedError("RMControl alarm actions are not supported")
-
-    async def rmcontrol_single_alarm(self, minutes: int, action: str | None) -> None:
-        raise NotImplementedError("RMControl single alarms are not supported")
-
-    async def rmcontrol_repeat_alarm(
-        self, alarm_id: int, hour: int, minute: int, weekdays: tuple[int, ...], action: str
-    ) -> None:
-        raise NotImplementedError("RMControl repeating alarms are not supported")
-
-    async def rmcontrol_delete_alarm(self, alarm_id: int) -> None:
-        raise NotImplementedError("RMControl repeating alarms are not supported")
-
-    async def rmcontrol_query_alarms(self) -> None:
-        raise NotImplementedError("RMControl alarms are not supported")
-
-    async def rmcontrol_sync_alarm_time(self, now: datetime) -> None:
-        raise NotImplementedError("RMControl alarm time synchronization is not supported")
-
-    async def rmcontrol_anti_snore_switch(self, enabled: bool) -> None:
-        raise NotImplementedError("RMControl snore intervention is not supported")
-
-    async def rmcontrol_anti_snore_config(self, mode: Literal["count", "time"], value: int) -> None:
-        raise NotImplementedError("RMControl snore intervention is not supported")
-
-    async def rmcontrol_query_anti_snore(self) -> None:
-        raise NotImplementedError("RMControl snore intervention is not supported")
-
-    @property
-    def supports_row061_alarms(self) -> bool:
-        """Whether the explicitly selected app/model has a mattress or calendar alarm."""
-        return False
-
-    def validate_row061_alarm(self, request: AlarmRequest) -> None:
-        raise NotImplementedError("This bed has no supported app alarm")
-
-    async def row061_alarm(self, request: AlarmRequest) -> None:
-        raise NotImplementedError("This bed has no supported app alarm")
-
-    @property
-    def supports_richmat_mh_alarm(self) -> bool:
-        """Whether a Richmat MH app profile currently shows its alarm page."""
-        return False
-
-    def validate_richmat_mh_alarm(
-        self,
-        *,
-        enabled: bool,
-        position: str | None,
-        massage: Sequence[str],
-        slot: int | None,
-    ) -> None:
-        """Validate a Richmat MH alarm request without writing to the bed."""
-        raise NotImplementedError("Richmat MH alarms are not supported")
-
-    async def richmat_mh_alarm(
-        self,
-        *,
-        enabled: bool,
-        minutes: int,
-        position: str | None,
-        massage: Sequence[str],
-        slot: int | None,
-    ) -> None:
-        """Program or cancel a Richmat MH countdown alarm."""
-        raise NotImplementedError("Richmat MH alarms are not supported")
-
-    @property
-    def supports_richmat_mh_waist_alarm(self) -> bool:
-        """Whether a Richmat MH app profile currently shows its waist mattress page."""
-        return False
-
-    async def richmat_mh_waist_alarm(
-        self,
-        *,
-        enabled: bool,
-        waist_side: str,
-        hour: int,
-        minute: int,
-        now_hour: int,
-        now_minute: int,
-        repeat: str,
-        intensity: int,
-    ) -> None:
-        """Save or cancel one side's Richmat MH waist mattress alarm."""
-        raise NotImplementedError("Richmat MH waist mattress alarms are not supported")
-
-    @property
-    def supports_richmat_mh_light_color(self) -> bool:
-        """Whether a Richmat MH app profile shows an LED or button-light colour page."""
-        return False
-
-    @property
-    def supports_richmat_mh_aroma(self) -> bool:
-        """Whether a Richmat MH app profile currently shows its aroma page."""
-        return False
-
-    async def richmat_mh_aroma(
-        self, mode2_startup_minutes: int, mode3_startup_minutes: int, mode3_pause_hours: int
-    ) -> None:
-        """Write the Richmat MH aroma timing triplet."""
-        raise NotImplementedError("Richmat MH aroma timing is not supported")
-
-    @property
-    def supports_floyd_actions(self) -> bool:
-        """Whether the Floyd Home room and preset actions are available."""
-        return False
-
-    def validate_floyd_action(
-        self, action: str, internal_side: str, confirm: bool, room_id: int | None,
-    ) -> None:
-        """Validate a Floyd Home action before any target writes."""
-        raise NotImplementedError("Floyd Home actions are unavailable")
-
-    async def floyd_action(
-        self, action: str, internal_side: str, confirm: bool, room_id: int | None,
-    ) -> None:
-        """Execute an explicit Floyd Home BLE room or preset action."""
-        raise NotImplementedError("Floyd Home actions are unavailable")
-
-    @property
-    def supports_doublesleep_controls(self) -> bool:
-        """Whether the controller accepts validated OKIN SleepEase actions."""
-        return False
-
-    @property
-    def supports_sleeptracker_controls(self) -> bool:
-        """Whether typed local Sleeptracker processor actions are available."""
-        return False
-
-    @property
-    def supports_hush_base_controls(self) -> bool:
-        return False
-
-    @property
-    def supports_casper_base_controls(self) -> bool:
-        """Whether the explicit Casper Base app's named actions are available."""
-        return False
-
-    def validate_casper_base_request(self, request: CasperBaseRequest) -> None:
-        raise NotImplementedError("Casper Base controls are unavailable")
-
-    async def async_perform_casper_base_action(
-        self, action: str, *, save: bool = False, music_page: bool = False
-    ) -> None:
-        """Run one product action through the same typed side-bound controller view."""
-        raise NotImplementedError("Casper Base actions are unavailable")
-
-    async def async_execute_casper_base_request(self, request: CasperBaseRequest) -> None:
-        raise NotImplementedError("Casper Base controls are unavailable")
-
-    def validate_sleeptracker_request(self, request: SleeptrackerRequest) -> None:
-        """Preflight every target before sending local processor controls."""
-        raise NotImplementedError("Sleeptracker controls are unavailable")
-
-    async def async_execute_sleeptracker_request(self, request: SleeptrackerRequest) -> None:
-        """Execute one validated, finite Sleeptracker action."""
-        raise NotImplementedError("Sleeptracker controls are unavailable")
-
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         """Return controller-state diagnostic sensors exposed by this protocol."""
         return ()
-
-    @property
-    def supports_gmmotor_controls(self) -> bool:
-        """Whether the exact GM Control app profile admits specialized actions."""
-        return False
-
-    def validate_gmmotor_request(self, request: GmmotorRequest) -> None:
-        """Validate a model/session request before any selected target writes."""
-        raise NotImplementedError("GM Control actions are unavailable")
-
-    async def async_execute_gmmotor_request(self, request: GmmotorRequest) -> None:
-        """Execute one admitted GM Control direct BLE action."""
-        raise NotImplementedError("GM Control actions are unavailable")
 
     @property
     def controller_state_binary_sensor_specs(
@@ -1922,16 +1099,6 @@ class BedController(ABC):
     ) -> tuple[ControllerStateBinarySensorSpec, ...]:
         """Return controller-state binary diagnostics exposed by this protocol."""
         return ()
-
-    @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        """Return controller-state sensor entity keys omitted by this snapshot."""
-        return frozenset()
-
-    @property
-    def stale_controller_state_binary_sensor_entity_keys(self) -> frozenset[str]:
-        """Return controller-state binary sensor keys omitted by this snapshot."""
-        return frozenset()
 
     @property
     def supports_wake_control(self) -> bool:
@@ -1978,31 +1145,6 @@ class BedController(ABC):
         return False
 
     @property
-    def supports_alarm(self) -> bool:
-        """Return True if the controller exposes the BLE timer/alarm service."""
-        return False
-
-    @property
-    def supports_sleep_timer(self) -> bool:
-        """Return True if a delayed preset can be programmed and cancelled."""
-        return False
-
-    @property
-    def sleep_timer_memory_options(self) -> tuple[int, ...]:
-        """Return selectable sleep actions, with zero representing flat."""
-        return ()
-
-    @property
-    def sleep_timer_duration_options(self) -> tuple[int, ...]:
-        """Return discrete minute choices, or empty for a continuous minute range."""
-        return ()
-
-    @property
-    def supports_alarm_timer(self) -> bool:
-        """Return True if an alarm delay can be programmed and cancelled."""
-        return False
-
-    @property
     def held_control_options(self) -> tuple[str, ...]:
         """Return controls with a protocol-defined held-command lifecycle."""
         return ()
@@ -2019,14 +1161,6 @@ class BedController(ABC):
         """
         return None
 
-    def validate_svane_hold_control(self, control: str, duration_ms: int) -> None:
-        """Validate exact live Svane roles before any target starts motion."""
-        raise ValueError("This profile does not support Svane held actions")
-
-    def request_svane_axis_release(self, axis: str) -> None:
-        """Signal an active Svane writer without doing BLE I/O."""
-        raise ValueError("This profile does not support Svane axis release")
-
     @property
     def requires_linked_live_readiness(self) -> bool:
         """Require both physical GATT sessions ready before a linked command starts."""
@@ -2040,15 +1174,6 @@ class BedController(ABC):
     def supports_clock_alarm(self) -> bool:
         """Return whether a weekly clock alarm can be configured."""
         return False
-
-    @property
-    def alarm_table_schedule_spec(self) -> AlarmTableScheduleSpec | None:
-        """Return the exact whole-table contract, when this profile has one."""
-        return None
-
-    async def configure_alarm_table_schedule(self, schedule: AlarmTableSchedule) -> None:
-        """Write validated weekly/one-time tables through the command queue."""
-        raise NotImplementedError("Alarm tables are unavailable on this profile")
 
     @property
     def supports_clock_sync(self) -> bool:
@@ -2210,6 +1335,16 @@ class BedController(ABC):
         return False
 
     @property
+    def supports_synchro(self) -> bool:
+        """Return True if the bed can link the movement of both bed halves."""
+        return False
+
+    @property
+    def supports_auxiliary_action(self) -> bool:
+        """Return True if the bed exposes a profile-defined auxiliary action."""
+        return False
+
+    @property
     def supports_control_mode_press_and_hold(self) -> bool:
         """Return whether selecting hold mode is safe on this controller."""
         return self.supports_control_mode_configuration
@@ -2318,6 +1453,99 @@ class BedController(ABC):
         """
         return ()
 
+    async def set_sleep_number_setting(self, value: int) -> None:
+        """Set the single air chamber's firmness."""
+        raise NotImplementedError("Sleep Number setting not supported on this bed")
+
+    async def set_sleep_number_setting_for_side(self, side: str, value: int) -> None:
+        """Set one side's air chamber firmness."""
+        raise NotImplementedError("Sleep Number setting not supported on this bed")
+
+    async def set_foundation_preset_for_side(self, side: str, preset: str) -> None:
+        """Recall a named foundation preset on one side."""
+        raise NotImplementedError("Foundation presets not supported on this bed")
+
+    @property
+    def supports_thermal_climate(self) -> bool:
+        """Return True if the bed exposes heating/cooling climate control."""
+        return False
+
+    @property
+    def thermal_timer_options(self) -> list[str]:
+        """Return the selectable thermal climate timer options."""
+        return []
+
+    @property
+    def footwarming_timer_options(self) -> list[str]:
+        """Return the selectable foot-warming timer options."""
+        return []
+
+    async def turn_thermal_on(self) -> None:
+        """Turn the thermal climate on."""
+        raise NotImplementedError("Thermal climate not supported on this bed")
+
+    async def turn_thermal_off(self) -> None:
+        """Turn the thermal climate off."""
+        raise NotImplementedError("Thermal climate not supported on this bed")
+
+    async def turn_thermal_on_for_side(self, side: str) -> None:
+        """Turn one side's thermal climate on."""
+        raise NotImplementedError("Thermal climate not supported on this bed")
+
+    async def turn_thermal_off_for_side(self, side: str) -> None:
+        """Turn one side's thermal climate off."""
+        raise NotImplementedError("Thermal climate not supported on this bed")
+
+    async def set_thermal_preset(self, preset: str, hvac_mode: str | None = None) -> None:
+        """Set the thermal climate preset."""
+        raise NotImplementedError("Thermal climate not supported on this bed")
+
+    async def set_thermal_preset_for_side(
+        self, side: str, preset: str, hvac_mode: str | None = None
+    ) -> None:
+        """Set one side's thermal climate preset."""
+        raise NotImplementedError("Thermal climate not supported on this bed")
+
+    async def set_thermal_timer(self, timer_option: str) -> None:
+        """Set the thermal climate timer."""
+        raise NotImplementedError("Thermal climate not supported on this bed")
+
+    async def set_thermal_timer_for_side(self, side: str, timer_option: str) -> None:
+        """Set one side's thermal climate timer."""
+        raise NotImplementedError("Thermal climate not supported on this bed")
+
+    async def turn_footwarming_on(self) -> None:
+        """Turn the foot warmer on."""
+        raise NotImplementedError("Foot warming not supported on this bed")
+
+    async def turn_footwarming_off(self) -> None:
+        """Turn the foot warmer off."""
+        raise NotImplementedError("Foot warming not supported on this bed")
+
+    async def turn_footwarming_on_for_side(self, side: str) -> None:
+        """Turn one side's foot warmer on."""
+        raise NotImplementedError("Foot warming not supported on this bed")
+
+    async def turn_footwarming_off_for_side(self, side: str) -> None:
+        """Turn one side's foot warmer off."""
+        raise NotImplementedError("Foot warming not supported on this bed")
+
+    async def set_footwarming_preset(self, preset: str) -> None:
+        """Set the foot warmer preset."""
+        raise NotImplementedError("Foot warming not supported on this bed")
+
+    async def set_footwarming_preset_for_side(self, side: str, preset: str) -> None:
+        """Set one side's foot warmer preset."""
+        raise NotImplementedError("Foot warming not supported on this bed")
+
+    async def set_footwarming_timer(self, timer_option: str) -> None:
+        """Set the foot warmer timer."""
+        raise NotImplementedError("Foot warming not supported on this bed")
+
+    async def set_footwarming_timer_for_side(self, side: str, timer_option: str) -> None:
+        """Set one side's foot warmer timer."""
+        raise NotImplementedError("Foot warming not supported on this bed")
+
     @property
     def sleep_number_setting_min(self) -> int:
         """Return the minimum firmness value."""
@@ -2354,7 +1582,7 @@ class BedController(ABC):
         from the axis its firmware reports.
 
         Only consulted for beds that report position feedback -- see
-        ``bed_type_has_position_feedback()``. Deliberately not derived from
+        ``BedTraits.position_feedback``. Deliberately not derived from
         ``motor_control_specs``: that describes every axis the remote can drive,
         which is a broader set than the axes the bed reports a position for.
         """
@@ -2374,10 +1602,10 @@ class BedController(ABC):
         """Return per-axis travel limits that differ from the standard defaults.
 
         The standard limits are 68 degrees for back/head and 45 for legs/feet.
-        Frames whose hardware travels a different range map axis key -> degrees
-        here rather than restating the whole motor layout.
+        Frames whose hardware travels a different range declare axis key ->
+        degrees in their bed traits, which also hold while disconnected.
         """
-        return {}
+        return dict(self.static_traits.max_angles)
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
@@ -2508,11 +1736,6 @@ class BedController(ABC):
         map makes the bed's estimates unknown. The default declares no motors.
         """
         return {}
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Return motor entity keys that should be removed when this controller loads."""
-        return frozenset()
 
     # Lumbar motor control (optional - only some beds have this)
 
@@ -2693,6 +1916,22 @@ class BedController(ABC):
         """Move bed to a Reading position when the selected app exposes it."""
         raise NotImplementedError("Reading preset not supported on this bed")
 
+    async def preset_lounge(self) -> None:
+        """Move bed to the lounge position."""
+        raise NotImplementedError("Lounge preset not supported on this bed")
+
+    async def preset_swing(self) -> None:
+        """Start the physical swing/rocking mode."""
+        raise NotImplementedError("Swing mode not supported on this bed")
+
+    async def preset_incline(self) -> None:
+        """Move bed to the incline position."""
+        raise NotImplementedError("Incline preset not supported on this bed")
+
+    async def auxiliary_action(self) -> None:
+        """Run the profile-defined auxiliary action."""
+        raise NotImplementedError("Auxiliary action not supported on this bed")
+
     async def preset_tv(self) -> None:
         """Move bed to TV/lounge position.
 
@@ -2709,118 +1948,9 @@ class BedController(ABC):
         """
         raise NotImplementedError("Both up preset not supported on this bed")
 
-    async def preset_yoga(self) -> None:
-        """Move bed to yoga position.
-
-        Raises:
-            NotImplementedError: If the bed doesn't support this preset
-        """
-        raise NotImplementedError("Yoga preset not supported on this bed")
-
     async def preset_relaxing_bedtime(self) -> None:
         """Move the bed to its relaxing-bedtime preset."""
         raise NotImplementedError("Relaxing-bedtime preset not supported on this bed")
-
-    async def solace_music_toggle(self) -> None:
-        """Toggle the Solace music feature."""
-        raise NotImplementedError("Solace audio not supported on this bed")
-
-    async def solace_music_off(self) -> None:
-        """Stop the Solace music feature."""
-        raise NotImplementedError("Solace audio not supported on this bed")
-
-    async def solace_select_music(self, track: int, *, preview: bool = False) -> None:
-        """Select or preview a Solace music track."""
-        raise NotImplementedError("Solace audio not supported on this bed")
-
-    async def solace_set_audio_volume(self, level: int) -> None:
-        """Set the Solace audio volume."""
-        raise NotImplementedError("Solace audio not supported on this bed")
-
-    async def solace_query_audio_volume(self) -> None:
-        """Request the Solace audio volume."""
-        raise NotImplementedError("Solace audio not supported on this bed")
-
-    async def program_solace_alarm(
-        self,
-        *,
-        enabled: bool,
-        hour: int,
-        minute: int,
-        weekdays: Collection[int],
-        mode: str,
-        massage: bool,
-        sound: str,
-    ) -> None:
-        """Program a Solace alarm."""
-        raise NotImplementedError("Solace alarm programming not supported on this bed")
-
-    def validate_motion_bed_write(self, request: MotionBedWrite) -> None:
-        raise NotImplementedError("Motion Bed configuration unavailable")
-
-    async def async_execute_motion_bed_write(self, request: MotionBedWrite) -> None:
-        raise NotImplementedError("Motion Bed configuration unavailable")
-
-    @property
-    def supports_motion_bed_actions(self) -> bool:
-        """Whether the explicit Motion Bed app action surface is available."""
-        return False
-
-    async def set_motion_bed_surface(self, surface: str) -> None:
-        raise NotImplementedError("Motion Bed hub module selection unavailable")
-
-    def validate_motion_bed_action(
-        self, key: str, *, branch: str = "app", duration: float = 1, confirmed: bool = False
-    ) -> None:
-        raise NotImplementedError("Motion Bed actions unavailable")
-
-    async def async_execute_motion_bed_action(
-        self, key: str, *, branch: str = "app", duration: float = 1, confirmed: bool = False
-    ) -> None:
-        raise NotImplementedError("Motion Bed actions unavailable")
-
-    async def async_execute_motion_bed_internal_query(self, key: str) -> None:
-        raise NotImplementedError("Motion Bed callback queries unavailable")
-
-    @property
-    def furnimove_action_specs(self) -> tuple[ControllerActionSpec, ...]:
-        """Return reachable rows from the selected FurniMove table."""
-        return ()
-
-    def validate_furnimove_action(
-        self, row_index: int, *, duration_ms: int | None = None, consumer: str = "app"
-    ) -> tuple[str, str]:
-        """Validate an app row and return its action name and category."""
-        raise NotImplementedError("FurniMove actions not supported on this bed")
-
-    async def async_execute_furnimove_action(
-        self, row_index: int, *, duration_ms: int | None = None, consumer: str = "app"
-    ) -> None:
-        """Execute one validated app row through its traced consumer."""
-        raise NotImplementedError("FurniMove actions not supported on this bed")
-
-    def validate_furnimove_massage_program(self, program: int) -> None:
-        """Validate program availability before any target begins writing."""
-        raise NotImplementedError("FurniMove massage programs not supported on this bed")
-
-    async def set_furnimove_massage_program(self, program: int) -> None:
-        """Select one of the app's four massage programs."""
-        raise NotImplementedError("FurniMove massage programs not supported on this bed")
-
-    def validate_furnimove_rename(self, name: str) -> None:
-        """Validate a device name without writing it."""
-        raise NotImplementedError("FurniMove rename not supported on this bed")
-
-    def validate_furnimove_simultaneous(
-        self,
-        first_axis: str,
-        first_up: bool,
-        second_axis: str,
-        second_up: bool,
-        duration_ms: int | None = None,
-    ) -> None:
-        """Validate two selected FurniMove motor directions before writing."""
-        raise NotImplementedError("FurniMove movement not supported on this bed")
 
     async def sync_positions(self) -> None:
         """Run the controller's synchronization action."""
@@ -2912,32 +2042,6 @@ class BedController(ABC):
         """Hold a preset using the protocol's refresh and release lifecycle."""
         raise NotImplementedError("Held preset not supported on this bed")
 
-    async def program_alarm(
-        self,
-        seconds: int,
-        actions: Sequence[Any],
-        recurrence_count: int,
-        recurrence_minutes: int,
-    ) -> None:
-        """Program a protocol-supported wake alarm."""
-        raise NotImplementedError("Alarm programming not supported on this bed")
-
-    async def set_sleep_timer(self, minutes: int, memory_num: int = 1) -> None:
-        """Schedule a delayed preset using a supported sleep action."""
-        raise NotImplementedError("Sleep timer not supported on this bed")
-
-    async def cancel_sleep_timer(self) -> None:
-        """Cancel the stored sleep timer."""
-        raise NotImplementedError("Sleep timer not supported on this bed")
-
-    async def set_alarm_timer(self, minutes: int) -> None:
-        """Schedule an alarm after the given number of minutes."""
-        raise NotImplementedError("Alarm timer not supported on this bed")
-
-    async def cancel_alarm_timer(self) -> None:
-        """Cancel the stored alarm timer."""
-        raise NotImplementedError("Alarm timer not supported on this bed")
-
     async def hold_control(self, control: str, duration_ms: int) -> None:
         """Hold a supported control for a bounded duration, then release it."""
         raise NotImplementedError("Held controls not supported on this bed")
@@ -2952,46 +2056,6 @@ class BedController(ABC):
     ) -> None:
         """Move two protocol-defined sections with one command."""
         raise NotImplementedError("Simultaneous movement not supported on this bed")
-
-    async def sound_toggle(self) -> None:
-        """Toggle the sound therapy feature.
-
-        Raises:
-            NotImplementedError: If the bed doesn't support sound therapy
-        """
-        raise NotImplementedError("Sound therapy not supported on this bed")
-
-    async def light_and_sound_toggle(self) -> None:
-        """Toggle the combined light and sound therapy feature.
-
-        Raises:
-            NotImplementedError: If the bed doesn't support therapy modes
-        """
-        raise NotImplementedError("Therapy modes not supported on this bed")
-
-    async def therapy_mode_one(self) -> None:
-        """Activate therapy mode 1.
-
-        Raises:
-            NotImplementedError: If the bed doesn't support therapy modes
-        """
-        raise NotImplementedError("Therapy modes not supported on this bed")
-
-    async def therapy_mode_two(self) -> None:
-        """Activate therapy mode 2.
-
-        Raises:
-            NotImplementedError: If the bed doesn't support therapy modes
-        """
-        raise NotImplementedError("Therapy modes not supported on this bed")
-
-    async def therapy_mode_three(self) -> None:
-        """Activate therapy mode 3.
-
-        Raises:
-            NotImplementedError: If the bed doesn't support therapy modes
-        """
-        raise NotImplementedError("Therapy modes not supported on this bed")
 
     async def set_synchro(self, enabled: bool) -> None:
         """Enable or disable synchronized movement of both bed halves.
@@ -3222,37 +2286,16 @@ class BedController(ABC):
         """
         raise NotImplementedError("Massage timer selection not supported on this bed")
 
-    def get_massage_state(self) -> dict[str, Any]:
-        """Return current massage state for state feedback.
+    @property
+    def legacy_massage_wave_available(self) -> bool:
+        """Return False while the legacy wave massage zone cannot be driven."""
+        return True
 
-        Returns a dict with current state info (keys vary by bed):
-        - head_intensity: int (0-10 or 0-6)
-        - foot_intensity: int
-        - wave_intensity: int
-        - timer_mode: str | None ("10", "20", "30")
-        - head_active: bool
-        - foot_active: bool
-
-        Override in subclasses with state tracking/feedback.
-        """
-        return {}
-
-    def get_light_state(self) -> dict[str, Any]:
-        """Return current light state for state feedback.
-
-        Supported keys vary by controller. Common keys:
-        - is_on: bool
-        - light_level: int
-        - light_timer_option: str
-        - light_timer_minutes: int
-        """
-        return {}
-
-    async def read_light_state(self) -> dict[str, Any]:
+    async def read_light_state(self) -> tuple[StateUpdate, ...]:
         """Query current light state from the bed when supported.
 
-        Controllers with readable light state should override this and update any
-        internal caches before returning the latest state dictionary.
+        Controllers with readable light state override this, update any internal
+        caches, and return the light-state updates for the coordinator to publish.
         """
         raise NotImplementedError(
             f"{self.__class__.__name__} does not support readable light state"
@@ -3323,6 +2366,21 @@ class BedController(ABC):
     # Light timer control (optional - for beds with auto-off timer)
 
     @property
+    def current_light_rgb_color(self) -> tuple[int, int, int] | None:
+        """Return the reported RGB light color, when the bed reports one."""
+        return None
+
+    @property
+    def current_light_rgbw_color(self) -> tuple[int, int, int, int] | None:
+        """Return the reported RGBW light color, when the bed reports one."""
+        return None
+
+    @property
+    def light_intensity(self) -> int | None:
+        """Return the reported light intensity, when the bed reports one."""
+        return None
+
+    @property
     def supports_light_timer(self) -> bool:
         """Return True if bed supports setting light auto-off timer."""
         return False
@@ -3369,23 +2427,6 @@ class BedController(ABC):
             NotImplementedError: If the bed doesn't support light timer
         """
         raise NotImplementedError("Light timer not supported on this bed")
-
-    @property
-    def sleep_number_command_names(self) -> tuple[str, ...]:
-        """Return the supported semantic Sleep Number configuration actions."""
-        return ()
-
-    def validate_sleep_number_command(self, command: str, parameters: Mapping[str, object]) -> None:
-        """Validate a complete action without changing the bed."""
-        raise ValueError("Sleep Number configuration actions are not supported on this bed")
-
-    async def async_execute_sleep_number_command(
-        self, command: str, parameters: Mapping[str, object]
-    ) -> dict[str, object]:
-        """Execute an allowlisted action and return its structured result."""
-        raise NotImplementedError(
-            "Sleep Number configuration actions are not supported on this bed"
-        )
 
     async def read_bed_presence(self) -> bool | None:
         """Read bed occupancy state for the configured side.
@@ -3491,3 +2532,80 @@ class BedController(ABC):
             NotImplementedError: If the bed doesn't support circulation massage
         """
         raise NotImplementedError("Circulation massage not supported on this bed")
+
+    # --- Connection lifecycle ---------------------------------------------
+    # The coordinator calls these, in this order, on every connection once the
+    # controller exists and ``async_discover_capabilities()`` has run.
+
+    async def async_on_connect(self, session: ControllerSession) -> None:
+        """Run protocol startup; the default starts notifications.
+
+        Overrides own their startup order, so they call
+        ``session.async_start_notify()`` where their protocol needs it.
+        """
+        await session.async_start_notify()
+
+    async def async_after_connect(self, session: ControllerSession) -> None:  # noqa: B027
+        """Hydrate connect-time state after background schedules are refreshed."""
+
+    async def async_read_device_info(self, session: ControllerSession) -> bool:
+        """Read Device Information the protocol's app reads itself.
+
+        Only called for bed types that defer Device Information until after
+        startup. Return False to use the coordinator's generic read.
+        """
+        return False
+
+    async def async_refresh_auth(self) -> None:  # noqa: B027
+        """Re-authenticate a reused link before a command."""
+
+    async def async_resume_session(self) -> None:  # noqa: B027
+        """Re-arm authentication and keepalive on a link that stayed connected."""
+
+    async def stop_keepalive(self) -> None:  # noqa: B027
+        """Stop session-owned keepalive work before the link is released."""
+
+    @property
+    def reads_light_state_on_connect(self) -> bool:
+        """Whether ``async_on_connect`` already reads readable light state."""
+        return False
+
+    @property
+    def capability_snapshot_policy(self) -> CapabilitySnapshotPolicy | None:
+        """How ``capability_snapshot()`` persists; None keeps it session-only."""
+        return None
+
+
+class ProfileExecution[P: ExecutionProfile | None]:
+    """Mixin for a family controller whose execution is its app profile's.
+
+    List it before ``BedController`` so its ``execution`` wins.
+    """
+
+    profile: P
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """Return the app profile's declaration, or the empty default without one."""
+        profile = self.profile
+        return NO_EXECUTION_CAPABILITIES if profile is None else profile.execution
+
+
+def controller_as[T](controller: BedController | None, interface: type[T]) -> T | None:
+    """Return ``controller`` as a family interface it implements, else None.
+
+    Vendor features live on their family's class, not on ``BedController``,
+    so callers look the family up instead of probing for its members.
+    """
+    return controller if isinstance(controller, interface) else None
+
+
+def require_controller[T](controller: BedController, interface: type[T]) -> T:
+    """Return ``controller`` as ``interface`` for a family's own entity callbacks.
+
+    Any other controller lacks the feature, as the base class's stubs did.
+    """
+    family = controller_as(controller, interface)
+    if family is None:
+        raise NotImplementedError(f"{interface.__name__} features are unavailable")
+    return family

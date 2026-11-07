@@ -16,7 +16,10 @@ from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import position_estimate as pe
-from custom_components.adjustable_bed.beds.base import ControllerMotorHoldSpec, MotorControlSpec
+from custom_components.adjustable_bed.beds.entity_specs import (
+    ControllerMotorHoldSpec,
+    MotorControlSpec,
+)
 from custom_components.adjustable_bed.command_scheduler import CommandKind, CommandOutcome
 from custom_components.adjustable_bed.const import (
     BED_TYPE_DEWERTOKIN,

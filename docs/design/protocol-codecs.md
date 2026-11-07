@@ -9,7 +9,7 @@ it.
 | --- | --- | --- |
 | Codec | `codec/<family>.py` | GATT transport roles, framing, checksums, command and response encoding, STOP and release frames |
 | Profile | `profiles/<family>.py` | Typed data for one app or legacy route: layouts, payload shapes, timing, memory slots, setup schedules, name rules |
-| Controller | `beds/<family>*.py` | Glue that drives the codec from a profile, plus app behavior data cannot express |
+| Controller | `beds/<family>/` package, or `beds/<family>.py` when the family is one module | Glue that drives the codec from a profile, plus app behavior data cannot express |
 
 Imports point one way: controllers use profiles and codecs, profiles use the
 codec, and the codec imports neither.
@@ -137,6 +137,39 @@ memory slots and massage levels are generated from these definitions into the
 
 Timing values come from each profile's own evidence and are never shared.
 
+## App catalogs
+
+A catalog is an app's own product, model or control table that a profile or
+controller reads, such as `beds/hjbed/catalog.py` or `beds/richmat_mh/catalog.py`. Every
+catalog follows one convention.
+
+- **Typed Python literal by default.** One row per line, typed through a
+  dataclass, `NamedTuple` or `type` alias, and wrapped in `# fmt: off` /
+  `# fmt: on` so a formatter cannot spread a row over many lines.
+- **A header that states provenance.** A generated catalog names its generator
+  in `tools/` and the SHA-256 of each input; the generator writes that header
+  and refuses other inputs where it pins them. A catalog without a checked-in
+  generator says so and says where it came from, for example an accepted APK
+  Protocol Audit report that stays outside the repository. It is then edited by
+  hand.
+- **Gzipped JSON only for large per-app data picked at runtime.** When one of
+  several apps is chosen in setup and a Python literal of every app would run to
+  megabytes, each app gets its own `<dir>/<app>.json.gz`. Today that is
+  `beds/ruf_richmat/data/` and `beds/richmat_classic/data/`. They load through
+  `catalog_json.load()` on an executor, and the owning module builds typed
+  records from the returned `Node`: every value is checked against its declared
+  type and a malformed row raises `CatalogError` naming its path.
+- **No catalog import from `const.py`.** Values derived from a catalog, such as
+  setup choices, live next to their users (`profiles/hush.py`,
+  `beds/richmat_mh/models.py`, `pairing.py`), so importing `const` loads no catalog.
+
+To review changes to `*.json.gz`, `.gitattributes` assigns the `gzip` diff
+driver. Enable it once per clone:
+
+```sh
+git config diff.gzip.textconv "gzip -dc"
+```
+
 ## Documentation
 
 Docs follow the same split. A codec guide ([Jiecang](../beds/jiecang.md)) holds
@@ -158,7 +191,7 @@ and `docs/`.
 
 ## Controller glue
 
-`JiecangProfileController` (`beds/jiecang.py`) implements, from profile data
+`JiecangProfileController` (`beds/jiecang/controller.py`) implements, from profile data
 alone: the write loop and its pacing, held movement and cancellation-safe
 release, explicit STOP, presets, memory recall and memory programming, and
 layout-driven motor specs. The cleanup schedule always runs with a fresh

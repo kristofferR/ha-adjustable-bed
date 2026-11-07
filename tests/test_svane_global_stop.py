@@ -8,7 +8,7 @@ from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.svane import HEAD, OLD, OLD_CHAR, POSITION
+from custom_components.adjustable_bed.beds.svane.controller import HEAD, OLD, OLD_CHAR, POSITION
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SVANE,
     CONF_BED_TYPE,

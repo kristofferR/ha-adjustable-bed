@@ -8,10 +8,10 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.storage import Store
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.reverie import ReverieController
-from custom_components.adjustable_bed.beds.reverie_comfort import ReverieComfortRequest
-from custom_components.adjustable_bed.beds.reverie_nightstand import ReverieNightstandController
-from custom_components.adjustable_bed.beds.reverie_pairlink import ReveriePairlinkController
+from custom_components.adjustable_bed.beds.reverie.comfort import ReverieComfortRequest
+from custom_components.adjustable_bed.beds.reverie.controller import ReverieController
+from custom_components.adjustable_bed.beds.reverie.nightstand import ReverieNightstandController
+from custom_components.adjustable_bed.beds.reverie.pairlink import ReveriePairlinkController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_PAIRLINK,
@@ -129,7 +129,7 @@ async def test_pairlink_feedback_populates_selects_and_preserves_numeric_mode(ha
     assert mode_select.current_option == str(mode)
     assert rhythm_select.current_option == ("on" if rhythm else "off")
     assert type(coordinator.controller_state["reverie_massage_mode"]) is int
-    assert controller.get_massage_state()["mode"] == mode
+    assert controller._state["reverie_massage_mode"] == mode
     assert coordinator.controller_state["reverie_massage_rhythm"] is rhythm
     set_mode = AsyncMock()
     monkeypatch.setattr(controller, "set_massage_mode", set_mode)

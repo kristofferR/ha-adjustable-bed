@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from custom_components.adjustable_bed.beds import limoss_remote
+from custom_components.adjustable_bed.beds.limoss import remote as limoss_remote
 from tests.test_limoss_remote import inner_packets, make_controller
 
 

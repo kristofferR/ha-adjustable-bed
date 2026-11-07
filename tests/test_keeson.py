@@ -5,14 +5,14 @@ from __future__ import annotations
 import asyncio
 import json
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, call
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.keeson import (
+from custom_components.adjustable_bed.beds.keeson.controller import (
     KeesonCommands,
     KeesonController,
     SinoCommands,
@@ -1305,7 +1305,7 @@ class TestPurpleSmartBaseProtocol:
         controller.write_command = AsyncMock(side_effect=[RuntimeError("write failed"), None])
         sleep = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             sleep,
         )
 
@@ -1336,7 +1336,7 @@ class TestPurpleSmartBaseProtocol:
         controller.write_command = AsyncMock()
         sleep = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             sleep,
         )
 
@@ -1392,7 +1392,7 @@ class TestSleepHarmonyProtocol:
         controller.write_command = AsyncMock()
         sleep = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             sleep,
         )
 
@@ -1426,7 +1426,7 @@ class TestSleepHarmonyProtocol:
         controller.write_command = AsyncMock()
         sleep = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             sleep,
         )
 
@@ -1460,7 +1460,7 @@ class TestSleepHarmonyProtocol:
         controller.write_command = AsyncMock()
         sleep = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             sleep,
         )
 
@@ -1492,7 +1492,7 @@ class TestSleepHarmonyProtocol:
         controller.write_command = AsyncMock()
         sleep = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             sleep,
         )
 
@@ -1508,7 +1508,7 @@ class TestKsbt03cMotorLayout:
 
     def test_is_ksbt03c_name(self):
         """Test KSBT03C name detection."""
-        from custom_components.adjustable_bed.beds.keeson import is_ksbt03c_name
+        from custom_components.adjustable_bed.beds.keeson.controller import is_ksbt03c_name
 
         assert is_ksbt03c_name("KSBT03C300039050")
         assert is_ksbt03c_name("ksbt03c123")
@@ -1805,7 +1805,7 @@ class TestKsbt03cMotorLayout:
         controller = KeesonController(coordinator, variant="ksbt", device_name="KSBT03C300039050")
         controller.write_command = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             AsyncMock(),
         )
 
@@ -1851,7 +1851,7 @@ class TestKsbt03cMotorLayout:
         controller.write_command = AsyncMock()
         sleep = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             sleep,
         )
 
@@ -1964,7 +1964,7 @@ class TestKsbt03cMotorLayout:
         controller.write_command = AsyncMock()
         sleep = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             sleep,
         )
 
@@ -1972,21 +1972,6 @@ class TestKsbt03cMotorLayout:
 
         controller.write_command.assert_not_awaited()
         sleep.assert_not_awaited()
-
-    async def test_stale_motor_entity_keys(
-        self,
-        hass: HomeAssistant,
-        mock_keeson_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Test stale keys cover the optional motors and the Restonic BT combined cover."""
-        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.stale_motor_entity_keys == frozenset(
-            {"tilt", "lumbar", "back_legs"}
-        )
-
 
 class TestKeesonMassageOffGating:
     """Test massage-off capability gating (issue #408)."""
@@ -2112,3 +2097,38 @@ class TestKsbtMemoryPresets:
 
         assert "Memory 4 not supported" in caplog.text
         mock_bleak_client.write_gatt_char.assert_not_called()
+
+
+def test_ergomotion_status_feeds_the_massage_sensors(
+    hass: HomeAssistant, mock_keeson_config_entry
+) -> None:
+    """Ergomotion status levels and timer reach the sensors; repeats publish nothing."""
+    from custom_components.adjustable_bed.sensor import (
+        MASSAGE_SENSOR_DESCRIPTIONS,
+        AdjustableBedMassageSensor,
+    )
+
+    coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+    controller = KeesonController(coordinator, variant="ergomotion")
+    head, foot, timer = (
+        AdjustableBedMassageSensor(coordinator, description)
+        for description in MASSAGE_SENSOR_DESCRIPTIONS
+    )
+    assert (head.native_value, foot.native_value, timer.native_value) == (None, None, None)
+    coordinator._controller = controller
+    # Connected before the first report: levels read zero, the timer unknown.
+    assert (head.native_value, foot.native_value, timer.native_value) == (0, 0, None)
+    status = bytearray(16)
+    status[0], status[5], status[6], status[14] = 0xED, 3, 5, 2
+    with patch.object(coordinator, "save_app_state"):
+        controller._parse_notification(bytes(status))
+        with patch.object(coordinator, "handle_controller_state_updates") as publish:
+            controller._parse_notification(bytes(status))
+        publish.assert_not_called()
+        assert (head.native_value, foot.native_value, timer.native_value) == (3, 5, "20")
+        status[14] = 0
+        controller._parse_notification(bytes(status))
+        assert timer.native_value is None
+    # Between connections the last report stays visible.
+    coordinator._controller = None
+    assert (head.native_value, foot.native_value) == (3, 5)

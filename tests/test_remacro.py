@@ -18,8 +18,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds import remacro_protocol as protocol
-from custom_components.adjustable_bed.beds.remacro import RemacroController
+from custom_components.adjustable_bed.beds.remacro import protocol
+from custom_components.adjustable_bed.beds.remacro.controller import RemacroController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_REMACRO,
     BEDS_REQUIRING_PAIRING,
@@ -36,6 +36,7 @@ from custom_components.adjustable_bed.const import (
     REMACRO_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
+from tests.state_helpers import state_writer
 
 SLUMBER = protocol.APP_SLUMBERLAND
 BRICK = protocol.APP_THE_BRICK
@@ -284,7 +285,7 @@ def make_controller(
     coordinator.cancel_command = asyncio.Event()
     coordinator.motor_pulse_count, coordinator.motor_pulse_delay_ms = pulse
     coordinator.controller_state = {}
-    coordinator.handle_controller_state_updates.side_effect = coordinator.controller_state.update
+    coordinator.handle_controller_state_updates.side_effect = state_writer(coordinator.controller_state)
     coordinator.handle_controller_state_update.side_effect = lambda key, value: (
         coordinator.controller_state.update({key: value})
     )
@@ -847,7 +848,7 @@ def watchers():
     callbacks: dict = {}
 
     def register(_hass, seen, matcher, _mode):
-        if seen.__module__ != "custom_components.adjustable_bed.remacro_discovery":
+        if seen.__module__ != "custom_components.adjustable_bed.beds.remacro.discovery":
             return lambda: None
         callbacks[matcher["address"]] = seen
 
@@ -1084,7 +1085,7 @@ async def test_options_reject_an_app_that_does_not_list_the_model(hass: HomeAssi
 
 
 async def test_paired_sides_cache_their_own_model(hass: HomeAssistant) -> None:
-    from custom_components.adjustable_bed import _maybe_cache_paired_remacro_models
+    from custom_components.adjustable_bed.beds.remacro.discovery import cache_paired_remacro_models
     from custom_components.adjustable_bed.const import CONF_PAIR_CHILDREN
 
     left, right = "AA:BB:CC:DD:EE:66", "AA:BB:CC:DD:EE:67"
@@ -1101,7 +1102,7 @@ async def test_paired_sides_cache_their_own_model(hass: HomeAssistant) -> None:
     entry.add_to_hass(hass)
     adverts = {left: MagicMock(manufacturer_data={50: b""}), right: None}
     with patch(_HISTORY, side_effect=lambda _hass, address, connectable: adverts[address]):
-        _maybe_cache_paired_remacro_models(hass, entry)
+        cache_paired_remacro_models(hass, entry)
     children = entry.data[CONF_PAIR_CHILDREN]
     assert children[0][CONF_REMACRO_MODEL] == 50
     assert CONF_REMACRO_MODEL not in children[1]
@@ -1349,7 +1350,7 @@ async def test_removing_an_entry_clears_its_remacro_issues(
 ) -> None:
     from homeassistant.helpers import issue_registry as ir
 
-    from custom_components.adjustable_bed.remacro_discovery import update_remacro_model_issue
+    from custom_components.adjustable_bed.beds.remacro.discovery import update_remacro_model_issue
 
     pair, _children = _remacro_pair(hass, 50, 50)
     standalone = _remacro_entry(hass, "AA:BB:CC:DD:EE:73")
@@ -1388,9 +1389,9 @@ async def test_removing_a_failed_combine_hands_the_remacro_issue_back(
     """A combine that never absorbed its beds must not take their warnings along."""
     from homeassistant.helpers import issue_registry as ir
 
-    from custom_components.adjustable_bed import (
-        _async_prepare_remacro_entry,
-        _maybe_cache_paired_remacro_models,
+    from custom_components.adjustable_bed.beds.remacro.discovery import (
+        async_prepare_remacro_entry,
+        cache_paired_remacro_models,
     )
 
     left, right = "AA:BB:CC:DD:EE:71", "AA:BB:CC:DD:EE:72"
@@ -1398,9 +1399,9 @@ async def test_removing_a_failed_combine_hands_the_remacro_issue_back(
     pair, _children = _remacro_pair(hass, None, None)
     issues = ir.async_get(hass)
     with patch(_HISTORY, return_value=MagicMock(manufacturer_data={13: b""})):
-        _async_prepare_remacro_entry(hass, single)
+        await async_prepare_remacro_entry(hass, single)
         # The combine raises the warnings at setup, before it absorbs the beds.
-        _maybe_cache_paired_remacro_models(hass, pair)
+        cache_paired_remacro_models(hass, pair)
         issue = issues.async_get_issue(DOMAIN, f"remacro_model_{left}")
         assert issue is not None and issue.config_entry_id == pair.entry_id
         await hass.config_entries.async_remove(pair.entry_id)
@@ -1504,12 +1505,12 @@ async def test_pair_without_a_recognized_side_still_loads(
 async def test_leaving_remacro_clears_its_model_issues(hass: HomeAssistant) -> None:
     from homeassistant.helpers import issue_registry as ir
 
-    from custom_components.adjustable_bed import (
-        _async_prepare_remacro_entry,
-        _maybe_cache_paired_remacro_models,
+    from custom_components.adjustable_bed.beds.remacro.discovery import (
+        async_prepare_remacro_entry,
+        cache_paired_remacro_models,
+        update_remacro_model_issue,
     )
     from custom_components.adjustable_bed.const import CONF_PAIR_CHILDREN, CONF_PAIR_ID
-    from custom_components.adjustable_bed.remacro_discovery import update_remacro_model_issue
 
     placeholders = {"company_id": "13", "app": "Slumberland"}
     standalone = _remacro_entry(hass, "AA:BB:CC:DD:EE:80", **{CONF_BED_TYPE: "linak"})
@@ -1526,8 +1527,8 @@ async def test_leaving_remacro_clears_its_model_issues(hass: HomeAssistant) -> N
         update_remacro_model_issue(
             hass, address, "Bed", "unmapped", placeholders, entry_id=owner.entry_id
         )
-    _async_prepare_remacro_entry(hass, standalone)
-    _maybe_cache_paired_remacro_models(hass, pair)
+    await async_prepare_remacro_entry(hass, standalone)
+    cache_paired_remacro_models(hass, pair)
     issues = ir.async_get(hass)
     assert issues.async_get_issue(DOMAIN, "remacro_model_AA:BB:CC:DD:EE:80") is None
     assert issues.async_get_issue(DOMAIN, "remacro_model_AA:BB:CC:DD:EE:81") is None

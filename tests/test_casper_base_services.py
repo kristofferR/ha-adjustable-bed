@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -11,9 +10,9 @@ import voluptuous as vol
 from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.casper_base import CasperBaseController
-from custom_components.adjustable_bed.casper_base_protocol import Event, Request
-from custom_components.adjustable_bed.casper_base_services import (
+from custom_components.adjustable_bed.beds.casper_base.controller import CasperBaseController
+from custom_components.adjustable_bed.beds.casper_base.protocol import Event, Request
+from custom_components.adjustable_bed.beds.casper_base.services import (
     async_register_casper_base_services,
 )
 from custom_components.adjustable_bed.const import DOMAIN
@@ -21,13 +20,15 @@ from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinato
 
 
 def target():
-    ctrl = SimpleNamespace(
+    ctrl = MagicMock(
+        spec=CasperBaseController,
         supports_casper_base_controls=True,
         validate_casper_base_request=MagicMock(),
         async_execute_casper_base_request=AsyncMock(),
     )
     c = MagicMock(spec=AdjustableBedCoordinator)
     c.controller = c.capability_controller = ctrl
+    c.controller_side = None
 
     async def execute(command, **kw):
         await command(ctrl)

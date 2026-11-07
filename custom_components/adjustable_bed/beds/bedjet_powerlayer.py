@@ -35,12 +35,8 @@ from bleak.exc import BleakError
 
 from ..codec import bedjet_powerlayer as codec
 from ..profiles.bedjet_powerlayer import POWERLAYER, PowerLayerProfile, raw_count_to_angle
-from .base import (
-    POSITION_UNIT_DEGREES,
-    BedController,
-    PositionNumberSpec,
-    build_position_number_spec,
-)
+from .base import BedController, ProfileExecution
+from .entity_specs import POSITION_UNIT_DEGREES, PositionNumberSpec, build_position_number_spec
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -48,7 +44,7 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
-class BedJetPowerLayerController(BedController):
+class BedJetPowerLayerController(ProfileExecution[PowerLayerProfile], BedController):
     """Controller for the BedJet PowerLayer adjustable frame."""
 
     _write_with_response = False
@@ -84,10 +80,6 @@ class BedJetPowerLayerController(BedController):
         return False
 
     @property
-    def supports_position_feedback(self) -> bool:
-        return True
-
-    @property
     def supports_preset_zero_g(self) -> bool:
         return True
 
@@ -116,16 +108,6 @@ class BedJetPowerLayerController(BedController):
         observed BLE equivalent, so programming stays a remote-only action.
         """
         return False
-
-    @property
-    def motor_max_angles(self) -> dict[str, float]:
-        """Return the PowerLayer's measured travel limits."""
-        return {
-            "back": self.profile.head_max_angle,
-            "head": self.profile.head_max_angle,
-            "legs": self.profile.foot_max_angle,
-            "feet": self.profile.foot_max_angle,
-        }
 
     @property
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:

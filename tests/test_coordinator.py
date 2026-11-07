@@ -68,6 +68,13 @@ from custom_components.adjustable_bed.const import (
     SLEEP_NUMBER_AUTH_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.state_keys import (
+    LIGHT_LEVEL,
+    LIGHT_TIMER_MINUTES,
+    LIGHT_TIMER_OPTION,
+    LINAK_MODEL_VARIANT,
+    UNDER_BED_LIGHTS_ON,
+)
 from tests.coordinator_patches import patch_coordinator_global
 
 from .conftest import TEST_ADDRESS, TEST_NAME, make_controller_mock
@@ -115,7 +122,7 @@ class TestCoordinatorInit:
     ) -> None:
         """Expose the discovered Linak variant as the device's model ID."""
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
-        coordinator.handle_controller_state_update("linak_model_variant", "advanced")
+        coordinator.handle_controller_state_update(LINAK_MODEL_VARIANT, "advanced")
 
         assert coordinator.device_info["model_id"] == "Advanced"
 
@@ -150,7 +157,7 @@ class TestCoordinatorControllerStateCallbacks:
         coordinator.register_controller_state_callback(callback1)
         coordinator.register_controller_state_callback(callback2)
 
-        coordinator.handle_controller_state_updates({"under_bed_lights_on": True, "light_level": 2})
+        coordinator.handle_controller_state_updates(UNDER_BED_LIGHTS_ON(True), LIGHT_LEVEL(2))
 
         assert coordinator.controller_state["under_bed_lights_on"] is True
         callback1.assert_called_once_with({"under_bed_lights_on": True, "light_level": 2})
@@ -222,13 +229,14 @@ class TestCoordinatorControllerStateCallbacks:
         controller.supports_light_level_control = True
         controller.supports_light_timer = True
         controller.read_light_state = AsyncMock(
-            return_value={
-                "is_on": True,
-                "light_level": 3,
-                "light_timer_minutes": 15,
-                "light_timer_option": "15 min",
-            }
+            return_value=(
+                UNDER_BED_LIGHTS_ON(True),
+                LIGHT_LEVEL(3),
+                LIGHT_TIMER_MINUTES(15),
+                LIGHT_TIMER_OPTION("15 min"),
+            )
         )
+        controller.async_refresh_auth = AsyncMock()
         coordinator._controller = controller
         coordinator._controller_state.clear()
 
@@ -238,7 +246,6 @@ class TestCoordinatorControllerStateCallbacks:
 
         controller.read_light_state.assert_awaited_once()
         assert coordinator.controller_state["under_bed_lights_on"] is True
-        assert coordinator.controller_state["is_on"] is True
         assert coordinator.controller_state["light_level"] == 3
         callback.assert_called_once_with(coordinator.controller_state)
 
@@ -271,7 +278,7 @@ class TestCoordinatorControllerStateCallbacks:
         coordinator._controller = make_controller_mock(
             supports_under_bed_lights=True, supports_discrete_light_control=True,
         )
-        coordinator._controller.read_light_state = AsyncMock(return_value={"is_on": True})
+        coordinator._controller.read_light_state = AsyncMock(return_value=(UNDER_BED_LIGHTS_ON(True),))
         async with coordinator._command_lock:
             coordinator.register_controller_state_callback(MagicMock())
             task = coordinator._controller_state_refresh_task
@@ -281,7 +288,7 @@ class TestCoordinatorControllerStateCallbacks:
         with patch.object(coordinator, "async_ensure_connected", new=AsyncMock()) as connect:
             await task
         connect.assert_not_awaited()
-        assert "is_on" not in coordinator.controller_state
+        assert "under_bed_lights_on" not in coordinator.controller_state
 
     async def test_register_controller_state_callback_retries_after_transient_failure(
         self,
@@ -302,12 +309,12 @@ class TestCoordinatorControllerStateCallbacks:
         coordinator._controller_state.clear()
 
         callback = MagicMock()
-        light_state = {
-            "is_on": True,
-            "light_level": 2,
-            "light_timer_minutes": 30,
-            "light_timer_option": "30 min",
-        }
+        light_state = (
+            UNDER_BED_LIGHTS_ON(True),
+            LIGHT_LEVEL(2),
+            LIGHT_TIMER_MINUTES(30),
+            LIGHT_TIMER_OPTION("30 min"),
+        )
 
         with (
             patch(
@@ -354,7 +361,7 @@ class TestCoordinatorControllerStateCallbacks:
             coordinator,
             "async_execute_controller_query",
             new_callable=AsyncMock,
-            return_value={"light_level": 2},
+            return_value=(LIGHT_LEVEL(2),),
         ) as mock_query:
             coordinator.register_controller_state_callback(callback)
             await hass.async_block_till_done()
@@ -435,12 +442,12 @@ class TestCoordinatorControllerStateCallbacks:
         callback = MagicMock()
         coordinator._controller_state_callbacks.add(callback)
 
-        light_state = {
-            "is_on": True,
-            "light_level": 1,
-            "light_timer_minutes": 15,
-            "light_timer_option": "15 min",
-        }
+        light_state = (
+            UNDER_BED_LIGHTS_ON(True),
+            LIGHT_LEVEL(1),
+            LIGHT_TIMER_MINUTES(15),
+            LIGHT_TIMER_OPTION("15 min"),
+        )
 
         with (
             patch(
@@ -864,7 +871,7 @@ class TestSleepNumberMcrCoordinatorLifecycle:
             raise TimeoutError
 
         with patch(
-            "custom_components.adjustable_bed.beds.sleep_number_mcr."
+            "custom_components.adjustable_bed.beds.sleep_number.mcr."
             "SleepNumberMcrController.query_config",
             new=_disconnect_during_query,
         ):
@@ -911,7 +918,7 @@ class TestSleepNumberMcrCoordinatorLifecycle:
             coordinator._on_disconnect(mock_bleak_client)
 
         with patch(
-            "custom_components.adjustable_bed.beds.sleep_number_mcr."
+            "custom_components.adjustable_bed.beds.sleep_number.mcr."
             "SleepNumberMcrController.query_config",
             new=_disconnect_during_query_without_exception,
         ):
@@ -2094,9 +2101,9 @@ class TestRuntimeBedTypeCorrection:
     ):
         """A stale CB35 entry repaired to BOX25 should regain position feedback (#413).
 
-        BOX25 reports percentage positions (BEDS_WITH_POSITION_FEEDBACK) without
-        being in BEDS_WITH_ANGLE_SENSING, so the correction must key on the same
-        set the config flow uses for the disable_angle_sensing default.
+        BOX25 reports percentage positions (the position_feedback trait) without
+        angle sensors, so the correction must key on the same trait the config
+        flow uses for the disable_angle_sensing default.
         """
         coordinator = self._make_coordinator(
             hass,
@@ -3962,3 +3969,16 @@ class TestStopAfterCancel:
 
         # Verify that commands were sent (movement + stop)
         assert len(commands_sent) > 0
+
+
+async def test_light_state_merge_keeps_the_last_update_of_a_key(
+    hass: HomeAssistant, mock_config_entry
+) -> None:
+    """A read that reports a key twice publishes its final value."""
+    coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+    coordinator.handle_controller_state_updates(UNDER_BED_LIGHTS_ON(True))
+    coordinator._merge_controller_light_state(
+        (UNDER_BED_LIGHTS_ON(False), LIGHT_LEVEL(4), UNDER_BED_LIGHTS_ON(True))
+    )
+    assert coordinator.controller_state[UNDER_BED_LIGHTS_ON] is True
+    assert coordinator.controller_state[LIGHT_LEVEL] == 4

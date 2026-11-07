@@ -10,7 +10,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.sleep_number import (
+from custom_components.adjustable_bed.beds.sleep_number.controller import (
     BamkeyNotSupportedError,
     SleepNumberCommands,
     SleepNumberController,
@@ -32,6 +32,7 @@ from custom_components.adjustable_bed.const import (
     requires_pairing,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from tests.state_helpers import published
 
 
 def _build_sleep_number_blob(payload: str) -> bytes:
@@ -150,7 +151,8 @@ class TestSleepNumberController:
         controller = coordinator.controller
         controller._send_bamkey_command = AsyncMock()
 
-        await controller.bind_side(SLEEP_NUMBER_VARIANT_RIGHT).set_motor_position("back", 57)
+        with controller.side_scope(SLEEP_NUMBER_VARIANT_RIGHT):
+            await controller.set_motor_position("back", 57)
 
         controller._send_bamkey_command.assert_awaited_once_with(
             SleepNumberCommands.SET_ACTUATOR_TARGET_POSITION,
@@ -711,7 +713,7 @@ class TestSleepNumberController:
             "BAMG",
             '[{"bamkey":"LBPG","args":"left"},{"bamkey":"LBPG","args":"right"}]',
         )
-        assert coordinator.controller.get_light_state()["light_timer_option"] == "15 min"
+        assert coordinator.controller._coordinator.controller_state["light_timer_option"] == "15 min"
         assert coordinator.controller._coordinator.controller_state["bed_presence"] == "in"
         assert coordinator.controller._coordinator.controller_state["bed_presence_left"] == "in"
         assert coordinator.controller._coordinator.controller_state["bed_presence_right"] == "out"
@@ -834,12 +836,8 @@ class TestSleepNumberController:
         level, timer = await coordinator.controller._read_underbed_light_settings()
 
         assert (level, timer) == ("medium", 45)
-        assert coordinator.controller.get_light_state() == {
-            "is_on": True,
-            "light_level": 2,
-            "light_timer_minutes": 45,
-            "light_timer_option": "45 min",
-        }
+        assert coordinator.controller._coordinator.controller_state["light_level"] == 2
+        assert coordinator.controller._coordinator.controller_state["light_timer_minutes"] == 45
         assert coordinator.controller._coordinator.controller_state["under_bed_lights_on"] is True
         assert (
             coordinator.controller._coordinator.controller_state["light_timer_option"] == "45 min"
@@ -859,8 +857,8 @@ class TestSleepNumberController:
 
         state = await coordinator.controller.read_light_state()
 
-        assert state == {
-            "is_on": True,
+        assert published(*state) == {
+            "under_bed_lights_on": True,
             "light_level": 3,
             "light_timer_minutes": 15,
             "light_timer_option": "15 min",
@@ -888,8 +886,8 @@ class TestSleepNumberController:
             "medium",
             "30",
         )
-        assert coordinator.controller.get_light_state()["light_level"] == 2
-        assert coordinator.controller.get_light_state()["light_timer_option"] == "30 min"
+        state = coordinator.controller._coordinator.controller_state
+        assert (state["light_level"], state["light_timer_option"]) == (2, "30 min")
 
     async def test_set_light_timer_preserves_current_level(
         self,
@@ -912,5 +910,5 @@ class TestSleepNumberController:
             "high",
             "120",
         )
-        assert coordinator.controller.get_light_state()["light_timer_minutes"] == 120
+        assert coordinator.controller._coordinator.controller_state["light_timer_minutes"] == 120
         assert coordinator.controller.light_auto_off_seconds == 7200

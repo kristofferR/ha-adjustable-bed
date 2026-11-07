@@ -26,6 +26,7 @@ from .adapter import (
     select_adapter,
 )
 from .address_lock import async_get_connect_lock
+from .beds.kaidi.protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
 from .const import (
     ADAPTER_AUTO,
     BED_TYPE_OKIMAT,
@@ -53,7 +54,6 @@ from .diagnostic_payloads import (
     payload_ascii_preview,
     summarize_repeated_payloads,
 )
-from .kaidi_protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
 from .redaction import SLEEPTRACKER_SECRET_CHARACTERISTICS
 
 if TYPE_CHECKING:

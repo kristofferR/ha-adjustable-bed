@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
+from importlib import import_module
 from typing import Any
 from unittest.mock import patch
 
@@ -17,7 +18,9 @@ def patch_with_family(family: str, target: str, *args: Any, **kwargs: Any) -> It
     """
     module, name = target.rsplit(".", 1)
     assert module == "custom_components.adjustable_bed.services", target
-    with patch(target, *args, **kwargs) as mock, patch(
-        f"custom_components.adjustable_bed.{family}.{name}", mock
-    ):
+    family_module = f"custom_components.adjustable_bed.{family}"
+    with ExitStack() as stack:
+        mock = stack.enter_context(patch(target, *args, **kwargs))
+        if hasattr(import_module(family_module), name):
+            stack.enter_context(patch(f"{family_module}.{name}", mock))
         yield mock

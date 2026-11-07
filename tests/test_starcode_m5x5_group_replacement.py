@@ -62,7 +62,7 @@ async def test_registered_replacement_waits_for_prior_cleanup(
     old = None
     try:
         with patch(
-            "custom_components.adjustable_bed.starcode_accessory_group.asyncio.sleep", delay
+            "custom_components.adjustable_bed.beds.starcode.accessory_group.asyncio.sleep", delay
         ):
             old = asyncio.create_task(invoke("flat"))
             async with asyncio.timeout(3):
@@ -153,7 +153,7 @@ async def test_waiting_replacements_preserve_cleanup_and_shared_member_ownership
     yield_to_loop = asyncio.sleep
     try:
         with patch(
-            "custom_components.adjustable_bed.starcode_accessory_group.asyncio.sleep", delay
+            "custom_components.adjustable_bed.beds.starcode.accessory_group.asyncio.sleep", delay
         ):
             async with asyncio.timeout(3):
                 old = asyncio.create_task(invoke(main, "flat"))

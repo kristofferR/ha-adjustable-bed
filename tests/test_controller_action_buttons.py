@@ -8,8 +8,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry, MockEntityPlatform
 
-from custom_components.adjustable_bed.beds.base import (
-    BedController,
+from custom_components.adjustable_bed.beds.base import BedController
+from custom_components.adjustable_bed.beds.entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ProductButtonSpec,
@@ -28,6 +28,7 @@ from custom_components.adjustable_bed.const import (
     CONF_LP_LEGACY_WRITE_UUID,
     DOMAIN,
 )
+from tests.state_helpers import published
 
 from .conftest import make_controller_mock
 
@@ -99,9 +100,9 @@ async def test_controller_action_availability_refreshes_and_unsubscribes(hass):
     client = SimpleNamespace(is_connected=True)
     controller_runtime.client = client
 
-    def publish(state):
+    def publish(*updates):
         for callback_fn in tuple(callbacks):
-            callback_fn(state)
+            callback_fn(published(*updates))
 
     controller_runtime.handle_controller_state_updates.side_effect = publish
     controller = TiMOTIONAhfController(controller_runtime)
@@ -151,36 +152,6 @@ async def test_controller_action_availability_refreshes_and_unsubscribes(hass):
     assert button.async_write_ha_state.call_count == 2
 
 
-async def test_deselected_woosa_actions_are_removed_for_only_that_side(
-    hass: HomeAssistant,
-) -> None:
-    entry = MockConfigEntry(domain=DOMAIN, data={})
-    entry.add_to_hass(hass)
-    registry = er.async_get(hass)
-    stale = registry.async_get_or_create(
-        "button", DOMAIN, "bed_woosa_love_left", config_entry=entry
-    )
-    other_side = registry.async_get_or_create(
-        "button", DOMAIN, "bed_woosa_love_right", config_entry=entry
-    )
-    other_action = registry.async_get_or_create(
-        "button", DOMAIN, "bed_other_action_left", config_entry=entry
-    )
-    coordinator = MagicMock()
-    coordinator.entry = entry
-    coordinator.capability_controller = make_controller_mock(controller_button_specs=())
-    coordinator.has_massage = False
-    coordinator.device_info = {}
-    coordinator.entity_side = "left"
-    coordinator.entity_unique_id.side_effect = lambda key: f"bed_{key}_left"
-
-    _button_entities_for(hass, coordinator)
-
-    assert registry.async_get(stale.entity_id) is None
-    assert registry.async_get(other_side.entity_id) is not None
-    assert registry.async_get(other_action.entity_id) is not None
-
-
 async def test_legacy_profile_exposes_app_actions_without_guessed_covers(
     hass: HomeAssistant, mock_coordinator_connected, enable_custom_integrations
 ) -> None:
@@ -199,7 +170,6 @@ async def test_legacy_profile_exposes_app_actions_without_guessed_covers(
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    from homeassistant.helpers import entity_registry as er
 
     entries = er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
     actions = [entity for entity in entries if entity.translation_key == "remote_action"]
@@ -220,7 +190,6 @@ async def test_custom_translation_key_and_live_side_bound_controller_dispatch(ha
     coordinator.device_info = {}
     coordinator.entity_side = "left"
     coordinator.entity_unique_id.side_effect = lambda key: f"bed_{key}_left"
-    coordinator.entity_translation_key.side_effect = lambda key: f"{key}_left"
 
     async def stop(controller: BedController) -> None:
         await controller.stop_all()
@@ -237,11 +206,12 @@ async def test_custom_translation_key_and_live_side_bound_controller_dispatch(ha
 
     async def dispatch(command, *, cancel_running):
         assert cancel_running is True
-        await command(current.bind_side("left"))
+        with current.side_scope("left"):
+            await command(current)
 
     coordinator.async_execute_controller_command = AsyncMock(side_effect=dispatch)
     assert button.unique_id == "bed_vibradorm_app_sync_left"
-    assert button.translation_key == "vibradorm_app_sync_left"
+    assert button.translation_key == "vibradorm_app_sync"
     await button.async_press()
     assert written(current) == ["00ff"]
     assert written(previous) == []
@@ -253,7 +223,6 @@ async def test_held_action_publishes_the_card_hold_contract_with_side(hass):
     coordinator.device_info = {}
     coordinator.entity_side = "right"
     coordinator.entity_unique_id.side_effect = lambda key: f"bed_{key}_right"
-    coordinator.entity_translation_key.side_effect = lambda key: f"{key}_right"
     button = ControllerActionButton(
         coordinator,
         ControllerButtonSpec(
@@ -276,57 +245,6 @@ async def test_held_action_publishes_the_card_hold_contract_with_side(hass):
     }
 
 
-async def test_app_action_namespace_cleanup_preserves_current_other_side_and_unrelated(hass):
-    for retain in (True, False):
-        entry = MockConfigEntry(domain=DOMAIN, data={})
-        entry.add_to_hass(hass)
-        registry = er.async_get(hass)
-        identity = f"bed_{entry.entry_id}_"
-        active = registry.async_get_or_create(
-            "button", DOMAIN, f"{identity}vibradorm_app_mood_toggle_left", config_entry=entry
-        )
-        stale = registry.async_get_or_create(
-            "button", DOMAIN, f"{identity}vibradorm_app_floor_timer_toggle_left", config_entry=entry
-        )
-        other = registry.async_get_or_create(
-            "button", DOMAIN, f"{identity}vibradorm_app_mood_toggle_right", config_entry=entry
-        )
-        unrelated = registry.async_get_or_create(
-            "button", DOMAIN, f"{identity}other_action_left", config_entry=entry
-        )
-        different_platform = registry.async_get_or_create(
-            "button", "other", f"{identity}vibradorm_app_mood_toggle_left", config_entry=entry
-        )
-        coordinator = MagicMock()
-        coordinator.entry = entry
-        coordinator.device_info = {}
-        coordinator.entity_side = "left"
-        coordinator.has_massage = False
-        coordinator.entity_unique_id.side_effect = lambda key, prefix=identity: (
-            f"{prefix}{key}_left"
-        )
-        coordinator.entity_translation_key.side_effect = lambda key: key
-        specs = (
-            (
-                ControllerButtonSpec(
-                    "vibradorm_app_mood_toggle",
-                    "Mood",
-                    AsyncMock(),
-                    translation_key="vibradorm_app_mood_toggle",
-                ),
-            )
-            if retain
-            else ()
-        )
-        coordinator.capability_controller = make_controller_mock(controller_button_specs=specs)
-        _button_entities_for(hass, coordinator)
-        assert (registry.async_get(active.entity_id) is not None) is retain
-        assert registry.async_get(stale.entity_id) is None
-        assert registry.async_get(other.entity_id) is not None
-        assert registry.async_get(unrelated.entity_id) is not None
-        assert registry.async_get(different_platform.entity_id) is not None
-
-
 async def test_translated_action_names_come_from_the_translation(
     hass: HomeAssistant, enable_custom_integrations
 ):
@@ -335,7 +253,6 @@ async def test_translated_action_names_come_from_the_translation(
     coordinator.device_info = {}
     coordinator.entity_side = None
     coordinator.entity_unique_id.side_effect = lambda key: f"bed_{key}"
-    coordinator.entity_translation_key.side_effect = lambda key: key
     coordinator.register_controller_state_callback.return_value = lambda: None
     press = AsyncMock()
     buttons = [

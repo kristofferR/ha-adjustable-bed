@@ -9,6 +9,7 @@ import pytest
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
+from custom_components.adjustable_bed.beds.doublesleep.services import build_request
 from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS, AdjustableBedButton
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
@@ -20,7 +21,6 @@ from custom_components.adjustable_bed.detection import (
     BED_TYPE_DISPLAY_NAMES,
     detect_bed_type_detailed,
 )
-from custom_components.adjustable_bed.doublesleep_services import build_request
 from tests.form_helpers import NEW_BED_ROUTES, finish_new_bed, start_new_bed
 from tests.test_doublesleep_controller import Bed
 
@@ -147,7 +147,6 @@ def test_standard_button_exposes_p1_hold_without_changing_other_buttons():
         capability_controller=bed.bed,
         controller=bed.bed,
         entity_unique_id=lambda key: key,
-        entity_translation_key=lambda key: key,
         device_info={},
         entry=SimpleNamespace(entry_id="entry"),
         side=None,
@@ -167,7 +166,6 @@ def test_motor_covers_expose_the_shared_app_hold_owner(driver):
         capability_controller=None,
         device_info={},
         entity_side=None,
-        entity_translation_key=lambda key: key,
         entity_unique_id=lambda key: key,
     )
     specs = bed.bed.motor_control_specs

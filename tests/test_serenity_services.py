@@ -30,7 +30,10 @@ def target(profile=BED_TYPE_SERENITY, *, record_only=True):
     coordinator.name = "Serenity"
     coordinator.bed_type = profile
     coordinator.entry = SimpleNamespace(data={})
+    coordinator.controller_side = None
     coordinator.capability_controller = controller
+    coordinator.stop_epoch = 0
+    coordinator.pairlink_peripheral = False
 
     async def execute(command, **kwargs):
         await command(controller)
@@ -97,7 +100,8 @@ async def test_later_incompatible_target_rejects_before_any_write(hass):
     await async_register_services(hass)
     first, controller = target()
     second, _ = target("okin_cst")
-    second.capability_controller = SimpleNamespace(held_control_options=())
+    second.controller_side = None
+    second.capability_controller = SimpleNamespace(held_control_options=(), requires_disconnected_transport=False)
     with (
         patch(
             "custom_components.adjustable_bed.services._resolve_sided_targets",
@@ -127,6 +131,7 @@ async def test_real_pair_preserves_requested_side_and_literal_action(hass, side)
             self.bed_type = BED_TYPE_SERENITY
             self.entry = SimpleNamespace(data={})
             _, self.controller = target()
+            self.controller_side = None
             self.capability_controller = self.controller
 
         async def async_execute_controller_command(
@@ -136,6 +141,7 @@ async def test_real_pair_preserves_requested_side_and_literal_action(hass, side)
             skip_disconnect=False,
             resource=None,
             resources=None,
+            expected_stop_epoch=None,
         ):
             await command_fn(self.controller)
 

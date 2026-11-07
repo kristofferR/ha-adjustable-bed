@@ -3,6 +3,7 @@
 import pytest
 import voluptuous as vol
 
+from custom_components.adjustable_bed.beds.motion_bed.models import RAW_NAME_MARKERS
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
@@ -14,7 +15,6 @@ from custom_components.adjustable_bed.const import (
     SOLACE_SERVICE_UUID,
 )
 from custom_components.adjustable_bed.detection import detect_bed_type_detailed
-from custom_components.adjustable_bed.motion_bed_models import RAW_NAME_MARKERS
 from tests.form_helpers import suggested
 from tests.test_detection import _make_service_info
 

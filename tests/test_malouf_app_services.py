@@ -8,12 +8,12 @@ import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.adjustable_bed.beds.malouf_app import MaloufAppController
+from custom_components.adjustable_bed.beds.linak.services import SERVICE_LINAK_MOVE_SIMULTANEOUS
+from custom_components.adjustable_bed.beds.malouf.app import MaloufAppController
+from custom_components.adjustable_bed.beds.malouf.app_services import SERVICE_MALOUF_SET_ALARM
 from custom_components.adjustable_bed.codec.malouf import TRANSPORTS
 from custom_components.adjustable_bed.const import BED_TYPE_MALOUF_APP, DOMAIN, SIDE_BOTH
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.linak_services import SERVICE_LINAK_MOVE_SIMULTANEOUS
-from custom_components.adjustable_bed.malouf_app_services import SERVICE_MALOUF_SET_ALARM
 from custom_components.adjustable_bed.services import (
     SERVICE_MALOUF_SYNC_CLOCK,
     SERVICE_TIMED_MOVE,
@@ -24,7 +24,8 @@ from custom_components.adjustable_bed.services import (
 @pytest.fixture
 async def service_target(hass: HomeAssistant):
     await async_register_services(hass)
-    controller = SimpleNamespace(
+    controller = MagicMock(
+        spec=MaloufAppController,
         supports_clock_alarm=True, supports_clock_sync=True,
         clock_alarm_preset_options=("zero_g", "lounge", "tv", "anti_snore", "memory_1"),
         configure_clock_alarm=AsyncMock(), sync_clock=AsyncMock(),
@@ -32,6 +33,7 @@ async def service_target(hass: HomeAssistant):
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     coordinator.name = "App bed"
     coordinator.bed_type = BED_TYPE_MALOUF_APP
+    coordinator.controller_side = None
     coordinator.capability_controller = controller
 
     async def execute(command, **kwargs):
@@ -41,7 +43,7 @@ async def service_target(hass: HomeAssistant):
     with (
         patch("custom_components.adjustable_bed.services._resolve_sided_targets",
               return_value=([(coordinator, SIDE_BOTH)], [])) as resolve,
-        patch("custom_components.adjustable_bed.malouf_app_services._resolve_sided_targets",
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets",
               new=resolve),
     ):
         yield coordinator, controller, resolve
@@ -84,7 +86,8 @@ async def test_alarm_preset_is_validated_on_every_target_before_writing(hass, se
     second = MagicMock(spec=AdjustableBedCoordinator)
     second.name = "One-slot bed"
     second.bed_type = BED_TYPE_MALOUF_APP
-    second.capability_controller = SimpleNamespace(supports_clock_alarm=True,
+    second.controller_side = None
+    second.capability_controller = MagicMock(spec=MaloufAppController, supports_clock_alarm=True,
         clock_alarm_preset_options=("zero_g", "memory_1"))
     resolve.return_value = ([(coordinator, SIDE_BOTH), (second, SIDE_BOTH)], [])
     with pytest.raises(ServiceValidationError, match="unavailable"):
@@ -134,6 +137,7 @@ async def test_explicit_split_head_actions_route_main_dual_and_partner_foot(hass
         controller = MaloufAppController(coordinator, app_profile="lucid", model="S755",
                                         transport="richmat_framed")
         coordinator.controller = controller
+        coordinator.controller_side = None
         coordinator.capability_controller = controller
 
         async def execute(command, *, _controller=controller, **kwargs):
@@ -148,7 +152,7 @@ async def test_explicit_split_head_actions_route_main_dual_and_partner_foot(hass
     with (
         patch("custom_components.adjustable_bed.services._resolve_sided_targets",
               side_effect=resolve),
-        patch("custom_components.adjustable_bed.linak_services._resolve_sided_targets",
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets",
               side_effect=resolve),
     ):
         await asyncio.gather(

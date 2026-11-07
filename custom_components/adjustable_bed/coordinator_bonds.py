@@ -20,6 +20,7 @@ from bleak.exc import BleakError
 from homeassistant.components import bluetooth
 
 from .address_lock import async_get_connect_lock
+from .beds.vibradorm.app_state import ControlType
 from .ble_auth import is_ble_authentication_error as _is_ble_authentication_error
 from .ble_auth import is_ble_pairing_auth_failure
 from .bluetooth_transport import TransportClass, async_clear_proxy_gatt_cache
@@ -58,8 +59,10 @@ from .const import (
     requires_pairing_after_service_discovery,
     supports_runtime_authentication_recovery,
 )
+from .import_executor import async_import_modules
+from .profiles.vibradorm import vibradorm_app_metadata_key
+from .support_proxy_logs import capture_proxy_logs
 from .unsupported import create_pairing_required_issue, delete_pairing_required_issue
-from .vibradorm_app_state import ControlType
 
 if TYPE_CHECKING:
     from .coordinator import AdjustableBedCoordinator
@@ -573,7 +576,7 @@ class CoordinatorBondsMixin:
                 raise
             finally:
                 if self.entry.data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat" and pairing_details.get("vmat_setup_started"):
-                    from .vibradorm_vmat_setup import async_close_vmat_setup
+                    from .beds.vibradorm.vmat_setup import async_close_vmat_setup
 
                     self._intentional_disconnect = True
                     disconnected = not client.is_connected
@@ -711,7 +714,9 @@ class CoordinatorBondsMixin:
         metadata_progress: dict[str, str],
     ) -> bool:
         """Run first-bond information and native pairing in one absolute budget."""
-        from .beds.vibradorm_app import (
+        # vmat_setup imports the app module.
+        await async_import_modules(self.hass, "beds.vibradorm.vmat_setup")
+        from .beds.vibradorm.app import (
             VibradormAppMetadataProgress,
             async_prepare_vibradorm_app_pairing,
         )
@@ -721,9 +726,9 @@ class CoordinatorBondsMixin:
             # Entry persistence waits for the terminal bond/attempt observation.
             completed = {field: value for field, value in progress.items() if isinstance(value, str)}
             metadata_progress.update(completed)
-            self.handle_controller_state_updates({
-                f"vibradorm_app_{field}": value for field, value in completed.items()
-            })
+            self.handle_controller_state_updates(*(
+                vibradorm_app_metadata_key(field)(value) for field, value in completed.items()
+            ))
 
         onboarding_timeout = (
             VIBRADORM_VMAT_ONBOARDING_TIMEOUT_SECONDS
@@ -804,9 +809,10 @@ class CoordinatorBondsMixin:
             if isinstance(metadata.main_firmware_article, str):
                 completed_metadata["main_firmware_article"] = metadata.main_firmware_article
             stored_metadata = self._merged_vibradorm_app_metadata(completed_metadata)
-            self.handle_controller_state_updates({
-                f"vibradorm_app_{field}": value for field, value in stored_metadata.items()
-            })
+            self.handle_controller_state_updates(*(
+                vibradorm_app_metadata_key(field)(value)
+                for field, value in stored_metadata.items()
+            ))
             try:
                 pairing_details["requested"] = True
                 pairing_details["ordering"] = "connect_info_then_pair"
@@ -896,8 +902,6 @@ class CoordinatorBondsMixin:
 
             if self._client is not None and self._client.is_connected:
                 if self._bed_type == BED_TYPE_SLEEP_NUMBER:
-                    from .support_proxy_logs import capture_proxy_logs
-
                     async with capture_proxy_logs(
                         self.hass, self._address, self._preferred_adapter, retain=True
                     ):
@@ -990,7 +994,7 @@ class CoordinatorBondsMixin:
         probe_uuid = DEVICE_INFO_CHARS["model_number"]
         try:
             if self._bed_type == BED_TYPE_SLEEP_NUMBER:
-                from .sleep_number_auth import async_read_sleep_number_session
+                from .beds.sleep_number.auth import async_read_sleep_number_session
 
                 await async_read_sleep_number_session(client)
             else:

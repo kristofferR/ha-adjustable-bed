@@ -1,12 +1,19 @@
 """Legacy RF receivers get an offline, identity-preserving layout repair."""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.helpers import issue_registry as ir
 from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.beds.furnimove.repair import (
+    CONF_FURNIMOVE_ROUTE_KEPT,
+    CONF_OKIMAT_MODEL_ON_CST,
+    CONF_OKIN_CST_KEPT,
+    FurniMoveLayoutRepairFlow,
+    async_refresh_furnimove_layout_issues,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_FURNIMOVE,
     BED_TYPE_OKIMAT,
@@ -23,18 +30,11 @@ from custom_components.adjustable_bed.const import (
     CONF_PAIR_MODE,
     CONF_PROTOCOL_VARIANT,
     CONF_SIDE,
+    CONF_STAIRCASE_LAYOUT_CONFIRMED,
     DOMAIN,
     PAIR_MODE_SEPARATE_ADDRESS,
     SIDE_LEFT,
     SIDE_RIGHT,
-)
-from custom_components.adjustable_bed.furnimove_repair import (
-    CONF_FURNIMOVE_ROUTE_KEPT,
-    CONF_OKIMAT_MODEL_ON_CST,
-    CONF_OKIN_CST_KEPT,
-    CONF_STAIRCASE_LAYOUT_CONFIRMED,
-    FurniMoveLayoutRepairFlow,
-    async_refresh_furnimove_layout_issues,
 )
 from custom_components.adjustable_bed.pairing import effective_child_data
 from custom_components.adjustable_bed.repairs import async_create_fix_flow
@@ -54,7 +54,8 @@ async def test_offline_entry_gets_repair_before_any_connection(hass):
     from custom_components.adjustable_bed import async_setup_entry
 
     with patch("custom_components.adjustable_bed.async_register_services", AsyncMock()), patch(
-        "custom_components.adjustable_bed.AdjustableBedCoordinator", side_effect=RuntimeError("offline")
+        "custom_components.adjustable_bed.AdjustableBedCoordinator.async_create",
+        side_effect=RuntimeError("offline"),
     ), pytest.raises(RuntimeError, match="offline"):
         await async_setup_entry(hass, entry)
     issue_id = f"furnimove_layout_{entry.entry_id}_standalone"
@@ -184,7 +185,7 @@ async def test_one_motor_does_not_prove_that_a_legacy_entry_is_a_staircase(hass)
 
 async def test_handset_repair_accepts_the_exact_furnimove_app_82417(hass):
     """Repair must offer the captured layout shown in the user's FurniMove app."""
-    from custom_components.adjustable_bed.furnimove_profiles import FURNIMOVE_PROFILES
+    from custom_components.adjustable_bed.beds.furnimove.profiles import FURNIMOVE_PROFILES
     entry = _legacy(hass)
     flow = FurniMoveLayoutRepairFlow(entry.entry_id, None)
     flow.hass = hass
@@ -321,6 +322,8 @@ async def test_okimat_drive_on_cst_can_keep_cst_and_other_cst_entries_get_no_pro
 async def test_paired_okimat_side_on_cst_keeps_its_bond_and_gets_its_own_repair(hass):
     """Recording the #555 model on one side must not drop that side's bond markers."""
     from custom_components.adjustable_bed import _build_paired_children
+    from custom_components.adjustable_bed.beds.okin_cst import OkinCstController
+    from custom_components.adjustable_bed.controller_factory import create_controller
 
     entry = MockConfigEntry(domain=DOMAIN, title="Bed", version=4, data={
         CONF_PAIR_ID: "pair_555", CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
@@ -331,7 +334,11 @@ async def test_paired_okimat_side_on_cst_keeps_its_bond_and_gets_its_own_repair(
     })
     entry.add_to_hass(hass)
     children = _build_paired_children(hass, entry)
-    children[SIDE_LEFT]._record_okimat_model_on_cst("OKIMAT 4 IPS")
+    left_side = children[SIDE_LEFT]
+    offline = await create_controller(left_side, BED_TYPE_OKIN_CST, "auto", None, ble_model="OKIMAT 4 IPS")
+    assert type(offline) is OkinCstController
+    assert CONF_OKIMAT_MODEL_ON_CST not in effective_child_data(entry.data, SIDE_LEFT, entry.options)
+    await create_controller(left_side, BED_TYPE_OKIN_CST, "auto", MagicMock(), ble_model="OKIMAT 4 IPS")
     left = effective_child_data(entry.data, SIDE_LEFT, entry.options)
     assert left[CONF_OKIMAT_MODEL_ON_CST] == "OKIMAT 4 IPS"
     assert left[CONF_BLE_BOND_ESTABLISHED] is True

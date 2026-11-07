@@ -9,7 +9,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from custom_components.adjustable_bed.beds.jiecang_app import DreamHDLightControls
+from custom_components.adjustable_bed.beds.jiecang.app import DreamHDLightControls
 from custom_components.adjustable_bed.codec import jiecang as codec
 from custom_components.adjustable_bed.codec.jiecang import TRANSPORTS
 from custom_components.adjustable_bed.profiles.jiecang import (
@@ -23,6 +23,7 @@ from custom_components.adjustable_bed.profiles.jiecang import (
     preset_command,
     wake_schedule,
 )
+from tests.state_helpers import massage_levels
 from tests.test_jiecang_app_controller import make_controller as make_controller
 from tests.test_jiecang_app_controller import packets
 
@@ -152,16 +153,15 @@ async def test_hd_controller_commands_and_cancellation(make_controller):
 
 
 async def test_hd_split_feedback_alias_and_no_optimistic_intensity(make_controller):
-    controller, _, client = make_controller(profile=PROFILE, layout="standard_3_split_upper")
+    controller, coordinator, client = make_controller(
+        profile=PROFILE, layout="standard_3_split_upper"
+    )
     await controller.set_massage_intensity("right", 3)
     assert packets(client)[0].hex() == "f1f122020804307e"
-    assert controller.get_massage_state()["right_intensity"] == 0
+    state = coordinator.controller_state
+    assert massage_levels(state, "right") == {"right": 0}
     receive(controller, "f2f206050200030040507e")
-    assert controller.get_massage_state() == {
-        "head_intensity": 1,
-        "foot_intensity": 2,
-        "right_intensity": 2,
-    }
+    assert massage_levels(state, "head", "foot", "right") == {"head": 1, "foot": 2, "right": 2}
 
 
 async def test_hd_light_consumer_and_released_toggles(make_controller):
