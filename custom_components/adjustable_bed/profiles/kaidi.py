@@ -272,6 +272,7 @@ class KaidiProductFamily:
 # bedUI 4: back + foot + waist + all
 # bedUI 5-6: back + foot + waist + all + book + leisure presets
 # bedUI 7-8: back + foot + waist + all + leisure preset (+ neck for bedUI 8)
+# fmt: off
 KAIDI_PRODUCT_FAMILIES: Final[dict[int, KaidiProductFamily]] = {
     129: KaidiProductFamily(bed_ui=2),
     130: KaidiProductFamily(bed_ui=2),
@@ -280,57 +281,29 @@ KAIDI_PRODUCT_FAMILIES: Final[dict[int, KaidiProductFamily]] = {
     133: KaidiProductFamily(bed_ui=3, has_back=True, has_all=True),
     134: KaidiProductFamily(bed_ui=4, has_back=True, has_waist=True, has_all=True),
     135: KaidiProductFamily(
-        bed_ui=5,
-        has_back=True,
-        has_waist=True,
-        has_all=True,
-        has_lights=True,
-        has_massage=True,
-        has_book=True,
-        has_leisure=True,
+        bed_ui=5, has_back=True, has_waist=True, has_all=True,
+        has_lights=True, has_massage=True, has_book=True, has_leisure=True,
     ),
     136: KaidiProductFamily(
-        bed_ui=6,
-        has_back=True,
-        has_waist=True,
-        has_all=True,
-        has_lights=True,
-        has_massage=True,
-        has_book=True,
-        has_leisure=True,
+        bed_ui=6, has_back=True, has_waist=True, has_all=True,
+        has_lights=True, has_massage=True, has_book=True, has_leisure=True,
     ),
     137: KaidiProductFamily(
-        bed_ui=7,
-        has_back=True,
-        has_waist=True,
-        has_all=True,
-        has_lights=True,
-        has_massage=True,
-        has_leisure=True,
+        bed_ui=7, has_back=True, has_waist=True, has_all=True,
+        has_lights=True, has_massage=True, has_leisure=True,
     ),
     138: KaidiProductFamily(
-        bed_ui=8,
-        has_back=True,
-        has_waist=True,
-        has_neck=True,
-        has_all=True,
-        has_lights=True,
-        has_massage=True,
-        has_leisure=True,
+        bed_ui=8, has_back=True, has_waist=True, has_neck=True, has_all=True,
+        has_lights=True, has_massage=True, has_leisure=True,
     ),
     139: KaidiProductFamily(bed_ui=2),
     142: KaidiProductFamily(
-        bed_ui=5,
-        has_back=True,
-        has_waist=True,
-        has_all=True,
-        has_lights=True,
-        has_massage=True,
-        has_book=True,
-        has_leisure=True,
+        bed_ui=5, has_back=True, has_waist=True, has_all=True,
+        has_lights=True, has_massage=True, has_book=True, has_leisure=True,
     ),
     143: KaidiProductFamily(bed_ui=2),
 }
+# fmt: on
 # Default for beds without a known product ID.
 DEFAULT_PRODUCT_FAMILY: Final = KaidiProductFamily(bed_ui=2)
 
@@ -468,58 +441,30 @@ class FloydProfile(KaidiCommandProfile):
     """Control reply command whose value 1 reports battery mode."""
 
 
+# fmt: off
 FLOYD: Final = FloydProfile(
     key=KAIDI_VARIANT_FLOYD,
-    head_up=1,
-    head_down=2,
-    head_stop=3,
-    foot_up=4,
-    foot_down=5,
-    foot_stop=6,
-    stop_all=9,
-    preset_flat=0x1C,
-    preset_zero_g=0x62,
-    preset_anti_snore=0x65,
+    head_up=1, head_down=2, head_stop=3,
+    foot_up=4, foot_down=5, foot_stop=6,
+    stop_all=9, preset_flat=0x1C, preset_zero_g=0x62, preset_anti_snore=0x65,
     memory_save={1: 0x25, 2: 0x26, 3: 0x27},
     memory_recall={1: 0x29, 2: 0x2A, 3: 0x2B},
-    light_on=0x5C,
-    light_off=0x5D,
+    light_on=0x5C, light_off=0x5D,
     product=139,
     family=KaidiProductFamily(bed_ui=2, has_lights=True),
     holds={
-        "head_up": (1, 3),
-        "head_down": (2, 3),
-        "feet_up": (4, 6),
-        "feet_down": (5, 6),
-        "head_feet_up": (7, 9),
-        "head_feet_down": (8, 9),
+        "head_up": (1, 3), "head_down": (2, 3),
+        "feet_up": (4, 6), "feet_down": (5, 6),
+        "head_feet_up": (7, 9), "head_feet_down": (8, 9),
     },
     # E7 normal UI, E16 independently reachable exported Android receiver.
     presets={
-        "first": {
-            "zero_g": 0x62,
-            "flat": 0x1C,
-            "anti_snore": 0x65,
-            "memory_1": 0x29,
-            "memory_2": 0x2A,
-            "memory_3": 0x2B,
-        },
-        "both": {
-            "zero_g": 0x64,
-            "flat": 0x1E,
-            "anti_snore": 0x67,
-            "memory_1": 0x39,
-            "memory_2": 0x3A,
-            "memory_3": 0x3B,
-        },
-        "second": {
-            "zero_g": 0x63,
-            "flat": 0x1D,
-            "anti_snore": 0x66,
-            "memory_1": 0x31,
-            "memory_2": 0x32,
-            "memory_3": 0x33,
-        },
+        "first": {"zero_g": 0x62, "flat": 0x1C, "anti_snore": 0x65,
+                  "memory_1": 0x29, "memory_2": 0x2A, "memory_3": 0x2B},
+        "both": {"zero_g": 0x64, "flat": 0x1E, "anti_snore": 0x67,
+                 "memory_1": 0x39, "memory_2": 0x3A, "memory_3": 0x3B},
+        "second": {"zero_g": 0x63, "flat": 0x1D, "anti_snore": 0x66,
+                   "memory_1": 0x31, "memory_2": 0x32, "memory_3": 0x33},
     },
     confirm_add=0x45,
     save_preset=0xA7,
@@ -527,6 +472,7 @@ FLOYD: Final = FloydProfile(
     write_spacing_ms=50,
     battery_event=0xA6,
 )
+# fmt: on
 
 # ---------------------------------------------------------------------------
 # ISleep 1.6.3 (``isleep`` bed type)
