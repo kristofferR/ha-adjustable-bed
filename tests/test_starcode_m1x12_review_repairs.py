@@ -15,12 +15,14 @@ from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.star_elevate import StarElevateCommands
+from custom_components.adjustable_bed.beds.starcode_dialect import (
+    normal_packet,
+)
 from custom_components.adjustable_bed.beds.starcode_m1x12 import (
     StarcodeM1X12Controller,
     StarElevateM1X12Controller,
 )
 from custom_components.adjustable_bed.beds.starcode_m1x12_protocol import (
-    normal_packet,
     parse_notification,
 )
 from custom_components.adjustable_bed.button import _combined_motor_buttons_for

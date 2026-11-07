@@ -94,12 +94,6 @@ class AdjustableBedEntity(RenamesInPlace):
         with self._side_scope():
             super()._async_write_ha_state()
 
-    def _set_sided_translation_key(self, key: str | None, fallback: str) -> None:
-        """Apply a logical-side suffix only for single-address paired views."""
-        self._attr_translation_key = self._coordinator.entity_translation_key(
-            key or fallback
-        )
-
     @property
     def available(self) -> bool:
         """Return True if entity is available.

@@ -55,6 +55,7 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
+from .builder import BuildContext
 from .reverie_comfort import (
     ReverieComfortRequest,
     build_p1_composer_payload,
@@ -253,14 +254,6 @@ class ReverieNightstandController(BedController):
     def has_lumbar_support(self) -> bool:
         """Return True - Reverie Nightstand has lumbar motor control."""
         return self.model.lumbar
-
-    @property
-    def supports_position_feedback(self) -> bool:
-        return self.model.positions
-
-    @property
-    def reports_percentage_position(self) -> bool:
-        return self.model.positions
 
     @property
     def supports_direct_position_control(self) -> bool:
@@ -550,22 +543,6 @@ class ReverieNightstandController(BedController):
             except BleakError:
                 _LOGGER.exception("Failed to write to %s", char_uuid)
                 raise
-
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        """Write a command to the bed (writes to linear head characteristic)."""
-        await self._write_gatt_with_retry(
-            REVERIE_NIGHTSTAND_LINEAR_HEAD_UUID,
-            command,
-            repeat_count,
-            repeat_delay_ms,
-            cancel_event,
-        )
 
     async def start_notify(
         self, callback: Callable[[str, float], None] | None = None
@@ -1648,3 +1625,8 @@ class ReverieNightstandController(BedController):
             self.forward_controller_state_update(STK_GLOBAL_MASSAGE, level)
             return
         raise ValueError(f"Unsupported Reverie massage zone: {zone}")
+
+
+async def build_controller(ctx: BuildContext) -> ReverieNightstandController:
+    """Build the controller for the selected Reverie model."""
+    return ReverieNightstandController(ctx.coordinator, model=ctx.variant)

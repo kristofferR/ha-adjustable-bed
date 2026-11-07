@@ -389,8 +389,8 @@ mode a press runs, so the scope is recomputed from them on every read:
 - **Head/foot** (GVRM tag 63): the foot side reaches the null legacy-long
   getter and sends nothing, so those controls leave the scope.
 
-The scope comes from the accepted caller transition (`cluster018_caller`), and
-`tests/test_cluster018_hold_lease.py` checks it against every accepted DOWN and
+The scope comes from the accepted caller transition (`richmat_classic_caller`), and
+`tests/test_richmat_classic_hold_lease.py` checks it against every accepted DOWN and
 UP caller vector. Some controls send only on one wire (GVRM ships a few with
 only the legacy operand, which only RAW sends), so offline the last session's
 wire decides; before any session either wire may, and the press checks the

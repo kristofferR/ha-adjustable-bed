@@ -222,7 +222,7 @@ class AdjustableBedAssumedLight(AdjustableBedEntity, RestoreEntity, LightEntity)
         """Start with an off estimate without sending a command to the bed."""
         super().__init__(coordinator)
         description = self.entity_description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._attr_is_on = False
 
@@ -282,7 +282,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         """Initialize the light."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
 
         # Use the capability controller (live when connected, else the client-free
@@ -743,7 +743,7 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         """Initialize the on/off light."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._attr_is_on: bool | None = None
         controller = coordinator.capability_controller

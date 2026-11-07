@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-import ast
 import asyncio
 import inspect
 from importlib import import_module
-from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -14,7 +12,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from bleak.exc import BleakError
 
-from custom_components.adjustable_bed import const, controller_factory
+from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.bed_traits import bed_traits
 from custom_components.adjustable_bed.beds.base import (
     POSITION_UNIT_DEGREES,
     POSITION_UNIT_PERCENT,
@@ -46,11 +45,13 @@ from custom_components.adjustable_bed.const import (
     VARIANT_AUTO,
 )
 from custom_components.adjustable_bed.controller_factory import (
+    _BUILDERS,
     _SIMPLE_CONTROLLERS,
     _create_from_registry,
     create_controller,
 )
 from custom_components.adjustable_bed.controller_state import StateKey, StateUpdate
+from custom_components.adjustable_bed.validators import get_variants_for_bed_type
 
 SHARED_CAPABILITY_FLAGS: tuple[str, ...] = (
     "supports_memory_presets",
@@ -102,7 +103,10 @@ class _FactoryCoordinator(SimpleNamespace):
             ),
             client=None,
             controller_state={},
+            _pairlink_runtime=None,
             entry=SimpleNamespace(
+                title="Contract Test Bed",
+                options={},
                 data={
                     const.CONF_FURNIMOVE_REMOTE: "00000",
                     const.CONF_LOGICDATA_APP_PROFILE: "phone",
@@ -145,6 +149,17 @@ class _FactoryCoordinator(SimpleNamespace):
     async def async_execute_controller_command(self, *args: Any, **kwargs: Any) -> None:
         """Stub command executor used by keepalive-capable controllers."""
         return None
+
+    _ble_bond_established = False
+
+    def _begin_internal_entry_update(self, bond_established: bool) -> None:
+        """Accept the internal-update marker a builder sets before persisting."""
+        del bond_established
+
+    def _async_persist_config(self, data: dict[str, Any], *, keys: set[str]) -> None:
+        """Persist builder-written entry data onto the stub entry."""
+        del keys
+        self.entry.data = data
 
     def get_max_angle(self, position_key: str) -> float:
         """Return the integration's default calibration for a position axis."""
@@ -189,13 +204,15 @@ def _make_connected_client() -> SimpleNamespace:
     )
 
 
-async def _create_controller_for_bed_type(bed_type: str) -> BedController:
-    """Create a controller through the factory for the given bed type."""
+async def _create_controller_for_bed_type(
+    bed_type: str, variant: str | None = None
+) -> BedController:
+    """Create a controller through the factory for a bed type and optional variant."""
     coordinator = _FactoryCoordinator()
     client = _make_connected_client()
     if bed_type == const.BED_TYPE_ERGOMOTION_4:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "H"
-    if bed_type in const.CLUSTER033_BED_TYPES:
+    if bed_type in const.KEESON_LAYOUT_APP_BED_TYPES:
         from custom_components.adjustable_bed.profiles.keeson import DEFAULT_LAYOUTS
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = DEFAULT_LAYOUTS[bed_type]
     if bed_type == const.BED_TYPE_ISLEEP:
@@ -214,13 +231,13 @@ async def _create_controller_for_bed_type(bed_type: str) -> BedController:
         )
 
     if bed_type == BED_TYPE_RICHMAT:
+        coordinator.entry.data[const.CONF_RICHMAT_REMOTE] = "qrrm"
         return await create_controller(
             coordinator,
             bed_type,
-            RICHMAT_VARIANT_WILINKE,
+            variant or RICHMAT_VARIANT_WILINKE,
             client,
             device_name="Casper QRRM Bed",
-            richmat_remote="qrrm",
         )
 
     if bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
@@ -245,26 +262,27 @@ async def _create_controller_for_bed_type(bed_type: str) -> BedController:
     if bed_type == const.BED_TYPE_FSM_RELAX:
         coordinator.entry.options = {}
         coordinator.entry.entry_id = "contract-fsm-relax"
-        return await create_controller(coordinator, bed_type, None, client)
+        return await create_controller(coordinator, bed_type, variant, client)
     if bed_type == const.BED_TYPE_GOODVIBE:
-        return await create_controller(coordinator, bed_type, "selector-0001", client)
+        return await create_controller(coordinator, bed_type, variant or "selector-0001", client)
     if bed_type == const.BED_TYPE_ESHINE_OKIN:
-        return await create_controller(coordinator, bed_type, "eshine_e5000", client)
-    if bed_type == const.BED_TYPE_CLUSTER018:
-        coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "6BRM", const.CONF_PROTOCOL_VARIANT: "avocadoecobase"})
-        return await create_controller(coordinator, bed_type, "avocadoecobase", client)
+        return await create_controller(coordinator, bed_type, variant or "eshine_e5000", client)
+    if bed_type == const.BED_TYPE_RICHMAT_CLASSIC_APPS:
+        variant = variant or "avocadoecobase"
+        coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "6BRM", const.CONF_PROTOCOL_VARIANT: variant})
+        return await create_controller(coordinator, bed_type, variant, client)
 
     if bed_type == "richmat_sleep_receiver":
-        return await create_controller(coordinator, bed_type, "wsilver2", client)
+        return await create_controller(coordinator, bed_type, variant or "wsilver2", client)
     if bed_type == const.BED_TYPE_HJBED:
-        return await create_controller(coordinator, bed_type, "hj_bedbjrn", client)
+        return await create_controller(coordinator, bed_type, variant or "hj_bedbjrn", client)
     if bed_type == const.BED_TYPE_DOUBLESLEEP:
         coordinator.entry.options = {}
         coordinator.entry.data = {**coordinator.entry.data, const.CONF_PRODUCT_TYPE: "3"}
-        return await create_controller(coordinator, bed_type, "p1", client)
+        return await create_controller(coordinator, bed_type, variant or "p1", client)
     if bed_type == const.BED_TYPE_HUSH_BASE:
-        return await create_controller(coordinator, bed_type, "hushl400", client)
-    variant = _protocol_variant_for_bed_type(bed_type)
+        return await create_controller(coordinator, bed_type, variant or "hushl400", client)
+    variant = variant or _protocol_variant_for_bed_type(bed_type)
     return await create_controller(coordinator, bed_type, variant, client)
 
 
@@ -365,15 +383,46 @@ async def test_factory_resolves_every_supported_bed_type(bed_type: str) -> None:
     assert isinstance(controller, BedController)
 
 
+# Overrides that narrow position feedback once discovery or the advertised model
+# shows which axes report. They may only withhold what the record declares.
+_RUNTIME_NARROWED_FEEDBACK = frozenset(
+    {"LinakController", "ReveriePairlinkController", "SleepNumberMcrController"}
+)
+# Automatic routes the factory can only resolve from a live advertisement.
+_LIVE_ONLY_ROUTES = frozenset({(const.BED_TYPE_DOUBLESLEEP, VARIANT_AUTO)})
+
+
+def _contract_routes(bed_type: str) -> list[str | None]:
+    """Return every variant of a bed type, or None for its single route."""
+    variants = get_variants_for_bed_type(bed_type)
+    if not variants:
+        return [None]
+    return [v for v in variants if (bed_type, v) not in _LIVE_ONLY_ROUTES]
+
+
 @pytest.mark.parametrize("bed_type", SUPPORTED_BED_TYPES)
-async def test_percentage_position_contract_matches_bed_type_metadata(
-    bed_type: str,
-) -> None:
-    """Controller declarations must agree with offline-safe bed-type metadata."""
-    controller = await _create_controller_for_bed_type(bed_type)
-    assert controller.reports_percentage_position is (
-        bed_type in const.BEDS_WITH_PERCENTAGE_POSITIONS
-    ), f"{bed_type} reports_percentage_position disagrees with BEDS_WITH_PERCENTAGE_POSITIONS"
+async def test_controller_traits_match_bed_type_record(bed_type: str) -> None:
+    """Every route's controller starts from its bed type's static traits.
+
+    The record decides setup defaults and entities before any controller
+    exists, so a controller must not contradict it once built.
+    """
+    for variant in _contract_routes(bed_type):
+        controller = await _create_controller_for_bed_type(bed_type, variant)
+        traits = bed_traits(bed_type, variant or _protocol_variant_for_bed_type(bed_type))
+        route = f"{bed_type} ({variant}): {type(controller).__name__}"
+
+        assert controller.reports_percentage_position is traits.percentage_positions, route
+        assert controller.requires_persistent_connection is traits.persistent_connection, route
+        if type(controller).__name__ in _RUNTIME_NARROWED_FEEDBACK:
+            assert traits.position_feedback or not controller.supports_position_feedback, route
+        else:
+            assert controller.supports_position_feedback is traits.position_feedback, route
+        if traits.position_feedback:
+            assert _is_overridden(controller, "start_notify") or _is_overridden(
+                controller, "read_positions"
+            ), f"{route} declares position feedback but never reads positions"
+        assert not (traits.position_feedback and traits.no_angle_feedback), route
 
 
 @pytest.mark.parametrize("bed_type", SUPPORTED_BED_TYPES)
@@ -413,35 +462,19 @@ async def test_registry_entries_resolve_to_controller_classes(bed_type: str) -> 
     assert [call[0] for call in executor.calls] == [import_module]
 
 
-def test_registry_and_explicit_branches_are_disjoint() -> None:
-    """A bed type handled by an explicit branch must not also sit in the registry.
+@pytest.mark.parametrize("bed_type", sorted(_BUILDERS))
+async def test_builder_entries_resolve_to_builders(bed_type: str) -> None:
+    """Every _BUILDERS entry must name a real module and async builder function."""
+    spec = _BUILDERS[bed_type]
+    builder = getattr(import_module(f"custom_components.adjustable_bed.beds.{spec.module}"), spec.function)
 
-    create_controller() consults the registry only after every explicit branch, so
-    a duplicate would be silently unreachable rather than an error.
-    """
-    factory_source = Path(controller_factory.__file__).read_text()
-    create_fn = next(
-        node
-        for node in ast.walk(ast.parse(factory_source))
-        if isinstance(node, ast.AsyncFunctionDef) and node.name == "create_controller"
-    )
-    # Walk every If in the function, not just top-level ones: elif chains live in
-    # `orelse` and a dispatch branch could be nested inside another conditional.
-    explicit: set[str] = {
-        node.id
-        for branch in ast.walk(create_fn)
-        if isinstance(branch, ast.If)
-        for node in ast.walk(branch.test)
-        if isinstance(node, ast.Name) and node.id.startswith("BED_TYPE_")
-    }
-    registry = {
-        name
-        for name, value in vars(const).items()
-        if name.startswith("BED_TYPE_") and isinstance(value, str) and value in _SIMPLE_CONTROLLERS
-    }
-    assert not (explicit & registry), (
-        f"Bed types are both branched on and registered: {sorted(explicit & registry)}"
-    )
+    assert inspect.iscoroutinefunction(builder)
+    assert list(inspect.signature(builder).parameters) == ["ctx"]
+
+
+def test_class_and_builder_registries_are_disjoint() -> None:
+    """A bed type has exactly one way to be built; the builder would shadow the class."""
+    assert not set(_SIMPLE_CONTROLLERS) & set(_BUILDERS)
 
 
 async def test_factory_auto_detects_keeson_sino_variant_for_okin_ble_signature() -> None:

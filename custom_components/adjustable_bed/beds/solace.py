@@ -17,7 +17,7 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ..codec import ff_frame as codec
-from ..const import SOLACE_CHAR_UUID
+from ..const import SOLACE_CHAR_UUID, SOLACE_VARIANT_WOOSA
 from ..controller_state import StateKey, StateUpdate
 from ..profiles.ff_frame import (
     SolaceCommands,
@@ -32,6 +32,7 @@ from .base import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -885,3 +886,13 @@ class SolaceController(BedController):
             await self.write_command(cmd)
         else:
             _LOGGER.warning("Invalid massage timer: %d min (valid: 0, 10, 20, 30)", minutes)
+
+
+async def build_controller(ctx: BuildContext) -> BedController:
+    """Build the Solace controller, or Woosa's for its app profile."""
+    if ctx.variant == SOLACE_VARIANT_WOOSA:
+        await ctx.preload("woosa")
+        from .woosa import WoosaController
+
+        return WoosaController(ctx.coordinator)
+    return SolaceController(ctx.coordinator)

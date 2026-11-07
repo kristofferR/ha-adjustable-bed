@@ -217,6 +217,11 @@ A new app is normally a profile plus its vectors, not a new controller.
      `self.forward_controller_state_updates(KEY(value), ...)` and give specs the
      same key. `tests/test_controller_state_keys.py` fails when a read key has
      no writer.
+   - Put connect-time startup in the controller's lifecycle hooks
+     (`async_on_connect`, `async_after_connect`, `capability_snapshot_policy`
+     and the others at the end of `beds/base.py`), never in the coordinator.
+     Entry setup a family needs before or instead of the first connection is
+     registered in `entry_hooks.py`.
    - Held and concurrent execution (#483, #516) is the profile's `execution`
      field, or an `execution` override on a standalone controller. Each
      declaration needs an evidence row in `tests/test_execution_capabilities.py`
@@ -229,20 +234,28 @@ A new app is normally a profile plus its vectors, not a new controller.
        return BED_TYPE_NEWBED
    ```
 
-6. **Register the controller in `controller_factory.py`.** Most beds are one line
-   in the `_SIMPLE_CONTROLLERS` registry, which lazily imports the module so
-   integration startup does not pay for ~50 unused controllers:
+6. **Register the controller in `controller_factory.py`.** The factory imports
+   bed modules lazily, so integration startup does not pay for unused
+   controllers. A controller built from the coordinator plus fixed kwargs is one
+   line in `_SIMPLE_CONTROLLERS`:
 
    ```python
    BED_TYPE_NEWBED: _ControllerSpec("newbed", "NewbedController"),
    ```
 
-   Pass fixed constructor kwargs as a third argument when needed. Only add an
-   explicit branch in `create_controller()` when construction needs runtime
-   detection, variant resolution, or arguments derived from the advertisement.
-   A bed type must not be both registered and branched on: the registry is
-   consulted last, so the entry would be silently unreachable.
-   `tests/test_controller_contract.py` enforces this and resolves every entry.
+   When construction needs the variant, entry data, the advertisement or the
+   live GATT table, write an async builder in the bed module that takes a
+   `BuildContext` (`beds/builder.py`) and register it in `_BUILDERS`:
+
+   ```python
+   BED_TYPE_NEWBED: _BuilderSpec("newbed"),  # beds/newbed.py: build_controller(ctx)
+   ```
+
+   A builder reads its settings from `ctx.data`; never add a bed-specific
+   parameter to `create_controller()`. A builder that picks a class from another
+   module loads it with `await ctx.preload("module")` first.
+   `tests/test_controller_contract.py` resolves every entry and keeps the two
+   registries disjoint.
 
 7. **Add to `const.py`** `SUPPORTED_BED_TYPES` list
 
@@ -266,12 +279,15 @@ A new app is normally a profile plus its vectors, not a new controller.
    ```
 
    Pass `position_key=` when the firmware reports an axis under a different name.
-   Also add the bed type to `BEDS_WITH_POSITION_FEEDBACK` in `const.py`, and to
-   `BEDS_WITH_PERCENTAGE_POSITIONS` if it reports 0-100 percentages rather than
-   degrees. A bed that reports no position data at all belongs in neither, or in
-   `BEDS_WITHOUT_ANGLE_FEEDBACK` if angle sensing would otherwise create degree
-   sensors stuck at "unknown". Note that `position_number_specs` requires a live
-   controller, so these entities only appear once the bed has connected.
+   Also give the bed type `position_feedback=True` in its `bed_traits.py` record,
+   plus `percentage_positions=True` if it reports 0-100 percentages rather than
+   degrees. A bed that reports no position data at all needs neither, or
+   `no_angle_feedback=True` if angle sensing would otherwise create degree
+   sensors stuck at "unknown". The same record declares a persistent connection
+   and connection-scoped state. The factory stamps it on the controller, whose
+   properties override it only to refine it at runtime. Note that
+   `position_number_specs` requires a live controller, so these entities only
+   appear once the bed has connected.
 
 11. **Create documentation** using the [bed guide format](docs/BED_GUIDE_FORMAT.md).
     A profile over an existing codec adds a profile section, with the format's

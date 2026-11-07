@@ -9,17 +9,19 @@ from typing import TypedDict, cast
 
 import pytest
 
-from custom_components.adjustable_bed.beds.starcode_m1x12_protocol import (
-    StateValue,
-    clock_packet,
+from custom_components.adjustable_bed.beds.starcode_dialect import (
     extended_packet,
     long_packet,
     manufacturer_dialect,
     normal_packet,
-    parse_notification,
     position_packet,
-    profile_from_name,
     query_packet,
+)
+from custom_components.adjustable_bed.beds.starcode_m1x12_protocol import (
+    StateValue,
+    clock_packet,
+    parse_notification,
+    profile_from_name,
     time_packet,
 )
 from custom_components.adjustable_bed.codec import okin_5a

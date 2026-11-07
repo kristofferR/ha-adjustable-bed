@@ -23,7 +23,7 @@ from .base import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
-from .cluster033 import APP_TIMER_STATUS, AppController
+from .keeson_layout_app import APP_TIMER_STATUS, AppController
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic

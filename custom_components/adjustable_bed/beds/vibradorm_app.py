@@ -12,12 +12,23 @@ import math
 import sys
 from collections.abc import Callable, Coroutine, Mapping
 from dataclasses import asdict, dataclass, replace
-from typing import TYPE_CHECKING, Any, Final, TypedDict
+from typing import TYPE_CHECKING, Any, Final, Literal, TypedDict
 
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
 from ..codec import vibradorm as codec
+from ..const import (
+    CONF_HAS_MASSAGE,
+    CONF_VIBRADORM_APP_PROFILE,
+    CONF_VIBRADORM_CONTROL_TYPE,
+    CONF_VIBRADORM_FLOOR_DEFAULT,
+    CONF_VIBRADORM_FLOOR_LIGHT,
+    CONF_VIBRADORM_LIGHT_EXTENSION,
+    CONF_VIBRADORM_RESTORED,
+    CONF_VIBRADORM_RGB,
+    CONF_VIBRADORM_VMAT_REMOTE,
+)
 from ..controller_state import StateKey, StateUpdate
 from ..execution import ExecutionCapabilities
 from ..profiles.vibradorm import (
@@ -61,6 +72,7 @@ from .base import (
     MotorControlSpec,
     PositionNumberSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -516,10 +528,6 @@ class VibradormAppController(BedController):
             MotorControlSpec(axis, axis, *POSITION_AXIS_COMMANDS[axis], scheduler_resource="*")
             for axis in self.profile.groups
         )
-
-    @property
-    def supports_position_feedback(self) -> bool:
-        return False
 
     @property
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
@@ -1411,3 +1419,49 @@ def _integer(value: float, minimum: int, maximum: int, label: str) -> int:
     ):
         raise ValueError(f"{label} must be an integer from {minimum} to {maximum}")
     return int(value)
+
+
+async def build_controller(ctx: BuildContext) -> VibradormAppController:
+    """Build the controller for the stored app profile and session intent."""
+    from ..vibradorm_app_state import get_vibradorm_app_session_intent
+
+    coordinator = ctx.coordinator
+    data = ctx.data
+    stored_control = data[CONF_VIBRADORM_CONTROL_TYPE]
+    control_type: int | Literal["other"]
+    if stored_control == "other":
+        control_type = "other"
+    elif isinstance(stored_control, int) and not isinstance(stored_control, bool):
+        control_type = stored_control
+    elif isinstance(stored_control, str):
+        control_type = int(stored_control)
+    else:
+        raise ValueError("Invalid retained Vibradorm control type")
+    app_profile = data[CONF_VIBRADORM_APP_PROFILE]
+    vmat = app_profile == "vmat"
+    restored = data.get(CONF_VIBRADORM_RESTORED, False)
+    light_extension = data.get(CONF_VIBRADORM_LIGHT_EXTENSION)
+    missing_default = 6 if (not restored and not vmat) or light_extension else 8
+    intent = get_vibradorm_app_session_intent(
+        coordinator.hass,
+        coordinator.address,
+        app_profile=app_profile,
+        control_type=control_type,
+        remembered_floor_default=data.get(CONF_VIBRADORM_FLOOR_DEFAULT, missing_default),
+        remote=data.get(CONF_VIBRADORM_VMAT_REMOTE),
+    )
+    return VibradormAppController(
+        coordinator,
+        app_profile=app_profile,
+        control_type=control_type,
+        restored=restored,
+        floor_light=data.get(CONF_VIBRADORM_FLOOR_LIGHT),
+        rgb=data.get(CONF_VIBRADORM_RGB, False),
+        massage=data.get(CONF_HAS_MASSAGE, False),
+        light_extension=data.get(CONF_VIBRADORM_LIGHT_EXTENSION, False),
+        floor_intent=intent.floor,
+        timer_intent=intent.timer,
+        remote=data.get(CONF_VIBRADORM_VMAT_REMOTE),
+        massage_intent=intent.massage if vmat else None,
+        mood_intent=intent.mood if vmat else None,
+    )

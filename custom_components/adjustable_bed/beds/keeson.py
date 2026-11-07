@@ -25,8 +25,30 @@ from ..codec import keeson as codec
 from ..const import (
     BED_MOTOR_PULSE_DEFAULTS,
     BED_TYPE_KEESON,
+    CB1322_MANUFACTURER_MARKERS,
+    KEESON_BETTERLIVING_SERVICE_UUIDS,
+    KEESON_FALLBACK_GATT_PAIRS,
+    KEESON_JSON_SERVICE_UUID,
+    KEESON_SINO_NAME_PATTERNS,
+    KEESON_VARIANT_ADJUSTABLE_LITE,
     KEESON_VARIANT_ERGOMOTION,
+    KEESON_VARIANT_HEAL_EVERY_NIGHT,
+    KEESON_VARIANT_INNOVA,
+    KEESON_VARIANT_JSON,
+    KEESON_VARIANT_KSBT,
+    KEESON_VARIANT_KSBT04C,
+    KEESON_VARIANT_KSBT_CR,
+    KEESON_VARIANT_OKIN,
+    KEESON_VARIANT_OKIN_SEATING,
     KEESON_VARIANT_PURPLE,
+    KEESON_VARIANT_RESTONIC_A,
+    KEESON_VARIANT_RESTONIC_B,
+    KEESON_VARIANT_SERTA,
+    KEESON_VARIANT_SIMON_LI,
+    KEESON_VARIANT_SINO,
+    KEESON_VARIANT_SLEEP_HARMONY,
+    ORE_COMFORT_BED_VARIANTS,
+    VARIANT_AUTO,
 )
 from ..controller_state import StateKey, StateUpdate
 from ..profiles import keeson as profiles
@@ -58,6 +80,7 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -262,11 +285,6 @@ class KeesonController(BedController):
     def supports_stop_all(self) -> bool:
         """Return False - Keeson beds don't have a dedicated stop command."""
         return False
-
-    @property
-    def reports_percentage_position(self) -> bool:
-        """Return True - Keeson/Ergomotion report 0-100 percentage, not angle degrees."""
-        return True
 
     @property
     def motor_translation_keys(self) -> dict[str, str] | None:
@@ -527,8 +545,11 @@ class KeesonController(BedController):
     def protocol_diagnostics(self) -> dict[str, Any]:
         """Record which Adjustable Lite remote the device name selected."""
         if not self.profile.status_poll_ms:
-            return {}
-        return {"adjustable_lite_remote": "KSBT03C" if self.profile.status_timer else "KSBT01C"}
+            return {"variant": self._variant}
+        return {
+            "variant": self._variant,
+            "adjustable_lite_remote": "KSBT03C" if self.profile.status_timer else "KSBT01C",
+        }
 
     @property
     def requires_notification_channel(self) -> bool:
@@ -1229,3 +1250,125 @@ class KeesonController(BedController):
             "timer_mode": self._timer_mode,
             "led_on": self._led_on,
         }
+
+
+# Variants whose controller reads the BLE name.
+_NAMED_VARIANTS = frozenset(
+    {
+        KEESON_VARIANT_KSBT,
+        KEESON_VARIANT_KSBT_CR,
+        KEESON_VARIANT_KSBT04C,
+        KEESON_VARIANT_SLEEP_HARMONY,
+        KEESON_VARIANT_ADJUSTABLE_LITE,
+        KEESON_VARIANT_RESTONIC_A,
+        KEESON_VARIANT_RESTONIC_B,
+        KEESON_VARIANT_PURPLE,
+    }
+)
+# Variants whose controller takes no BLE name.
+_UNNAMED_VARIANTS = frozenset(
+    {KEESON_VARIANT_JSON, KEESON_VARIANT_ERGOMOTION, KEESON_VARIANT_SERTA}
+)
+
+
+async def build_controller(ctx: BuildContext) -> BedController:
+    """Build the controller for the configured, or GATT- and name-detected, variant."""
+    coordinator = ctx.coordinator
+    device_name = ctx.device_name
+    variant = ctx.variant
+    if variant in ORE_COMFORT_BED_VARIANTS:
+        # Explicit app profile with its own controller; Auto never selects it.
+        await ctx.preload("ore_comfort_bed")
+        from .ore_comfort_bed import OreComfortBedController
+
+        return OreComfortBedController(coordinator, app=variant)
+
+    betterliving_presets = False
+    cb1322_presets = False
+    # BetterLiving/OKIN-BLE beds use Sino (big-endian) and advertise fallback
+    # service UUIDs that overlap with Richmat WiLinke.
+    if variant in (None, "", VARIANT_AUTO):
+        service_uuids: set[str] = set()
+        if ctx.client is not None and ctx.client.services:
+            service_uuids = {service.uuid.lower() for service in ctx.client.services}
+        if KEESON_JSON_SERVICE_UUID.lower() in service_uuids:
+            _LOGGER.info(
+                "Auto-detected Keeson JSON/A00A variant for %s (name: %s)",
+                coordinator.address,
+                device_name or "unknown",
+            )
+            variant = KEESON_VARIANT_JSON
+        else:
+            fallback_service_uuids = {uuid.lower() for uuid, _ in KEESON_FALLBACK_GATT_PAIRS}
+            has_fallback_uuid = bool(service_uuids & fallback_service_uuids)
+            has_dual_fallback_services = service_uuids >= KEESON_BETTERLIVING_SERVICE_UUIDS
+            is_okin_ble_name = (device_name or "").lower().startswith(
+                tuple(KEESON_SINO_NAME_PATTERNS)
+            )
+            if has_dual_fallback_services or (is_okin_ble_name and has_fallback_uuid):
+                # The manufacturer name marks the CB1322 sub-variant (OKIN protocol).
+                manufacturer = (ctx.ble_manufacturer or "").lower()
+                if any(marker in manufacturer for marker in CB1322_MANUFACTURER_MARKERS):
+                    _LOGGER.info(
+                        "Auto-detected Keeson OKIN (CB1322) variant for %s "
+                        "(name: %s, manufacturer: %s)",
+                        coordinator.address,
+                        device_name or "unknown",
+                        ctx.ble_manufacturer,
+                    )
+                    variant = KEESON_VARIANT_OKIN
+                    cb1322_presets = True
+                else:
+                    _LOGGER.info(
+                        "Auto-detected Keeson Sino variant for %s (name: %s, services: %s)",
+                        coordinator.address,
+                        device_name or "unknown",
+                        sorted(service_uuids),
+                    )
+                    variant = KEESON_VARIANT_SINO
+                    betterliving_presets = True
+
+    if variant in (None, "", VARIANT_AUTO):
+        from ..detection import keeson_variant_from_device_name
+
+        variant = keeson_variant_from_device_name(device_name)
+        if variant == KEESON_VARIANT_KSBT_CR:
+            _LOGGER.info(
+                "Auto-detected KSBT03CR variant for %s (name: %s)", coordinator.address, device_name
+            )
+        elif variant == KEESON_VARIANT_KSBT04C:
+            _LOGGER.warning(
+                "Device %s advertises the ambiguous name %s; using the "
+                "legacy generic KSBT04C profile. Select Purple or Sleep "
+                "Harmony explicitly if that is the matching app family.",
+                coordinator.address,
+                device_name,
+            )
+
+    if variant in (KEESON_VARIANT_SIMON_LI, KEESON_VARIANT_HEAL_EVERY_NIGHT, KEESON_VARIANT_OKIN_SEATING):
+        _LOGGER.debug("Using explicit Okin app profile %s", variant)
+        await ctx.preload("keeson_okin_apps")
+        from .keeson_okin_apps import OkinAppKeesonController
+
+        return OkinAppKeesonController(coordinator, variant=variant)
+    if variant == KEESON_VARIANT_INNOVA:
+        # Explicit only: the INNOVA app scans without any name or service rule.
+        _LOGGER.debug("Using explicit INNOVA app profile")
+        await ctx.preload("innova")
+        from .innova import InnovaController
+
+        return InnovaController(coordinator)
+
+    _LOGGER.debug("Using Keeson variant %s", variant)
+    if variant in _NAMED_VARIANTS:
+        return KeesonController(coordinator, variant=variant, device_name=device_name)
+    if variant in _UNNAMED_VARIANTS:
+        return KeesonController(coordinator, variant=variant)
+    if variant == KEESON_VARIANT_OKIN:
+        return KeesonController(coordinator, variant=variant, cb1322_presets=cb1322_presets)
+    if variant == KEESON_VARIANT_SINO:
+        return KeesonController(
+            coordinator, variant=variant, betterliving_presets=betterliving_presets
+        )
+    # Auto or base variant
+    return KeesonController(coordinator, variant="base", device_name=device_name)

@@ -18,6 +18,7 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ..codec import okin_5a
+from ..const import CONF_BLE_DEVICE_NAME, CONF_STARCODE_M1X12_PROFILE
 from ..controller_state import StateUpdate
 from ..execution import ExecutionCapabilities
 from ..state_keys import UNDER_BED_LIGHTS_ON
@@ -32,22 +33,25 @@ from .base import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
+from .builder import BuildContext
 from .star_elevate import (
     NORDIC_UART_READ_CHAR_UUID,
     StarElevateCommands,
     StarElevateController,
 )
-from .starcode_m1x12_protocol import (
-    PROFILES,
-    StateValue,
-    clock_packet,
+from .starcode_dialect import (
     extended_packet,
     long_packet,
     manufacturer_dialect,
     normal_packet,
-    parse_notification,
     position_packet,
     query_packet,
+)
+from .starcode_m1x12_protocol import (
+    PROFILES,
+    StateValue,
+    clock_packet,
+    parse_notification,
 )
 from .starcode_state import (
     FIRMWARE_VERSION,
@@ -1441,3 +1445,12 @@ class StarElevateM1X12Controller(StarElevateController):
                     generation=generation,
                     cancel_event=asyncio.Event(),
                 )
+
+
+async def build_controller(ctx: BuildContext) -> StarcodeM1X12Controller:
+    """Build the controller for the stored profile and BLE name."""
+    return StarcodeM1X12Controller(
+        ctx.coordinator,
+        profile=ctx.data[CONF_STARCODE_M1X12_PROFILE],
+        device_name=ctx.data[CONF_BLE_DEVICE_NAME],
+    )

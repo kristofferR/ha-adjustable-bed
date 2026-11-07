@@ -51,10 +51,10 @@ from custom_components.adjustable_bed.const import (
     KEESON_VARIANT_BEDSENSE_BASES,
     KEESON_VARIANT_INNOVA,
     KEESON_VARIANT_RESTONIC_B,
-    OFFLINE_CAPABILITY_SAFE_VARIANTS,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.pairing import OFFLINE_CAPABILITY_SAFE_VARIANTS
 from custom_components.adjustable_bed.profiles.keeson import INNOVA, encode
 
 Action = Callable[[Any], Awaitable[None]]

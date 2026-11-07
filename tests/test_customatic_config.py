@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
+from custom_components.adjustable_bed.bed_traits import bed_type_has_position_feedback
 from custom_components.adjustable_bed.config_flow import (
     _default_motor_count,
     _is_valid_motor_count,
@@ -16,7 +17,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_ZSERIES,
-    bed_type_has_position_feedback,
     get_motor_pulse_defaults,
     requires_pairing,
 )

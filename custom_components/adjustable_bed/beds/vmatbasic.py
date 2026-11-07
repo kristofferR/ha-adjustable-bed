@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Final, cast
 
 from ..app_session import app_session
 from ..codec import vibradorm as codec
+from ..const import CONF_VMATBASIC_FLOOR_LEVEL, CONF_VMATBASIC_FLOOR_MINUTES, CONF_VMATBASIC_PROFILE
 from ..controller_state import StateKey
 from ..execution import ExecutionCapabilities
 from ..profiles import vmatbasic as vmat_profiles
@@ -24,6 +25,7 @@ from .base import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -191,10 +193,6 @@ class VMatBasicController(BedController):
     @property
     def memory_slot_count(self) -> int:
         return 0
-
-    @property
-    def supports_position_feedback(self) -> bool:
-        return False
 
     @property
     def supports_device_rename(self) -> bool:
@@ -804,3 +802,19 @@ class VMatBasicController(BedController):
                 _PREFIX + "ed", _PREFIX + "ed", _read_key("ed"), "mdi:information-outline"
             ),
         )
+
+
+async def build_controller(ctx: BuildContext) -> VMatBasicController:
+    """Build the controller for the stored profile and floor-light settings."""
+    coordinator = ctx.coordinator
+    data = ctx.data
+    return VMatBasicController(
+        coordinator,
+        profile=data[CONF_VMATBASIC_PROFILE],
+        floor_level=data.get(CONF_VMATBASIC_FLOOR_LEVEL),
+        floor_minutes=data.get(CONF_VMATBASIC_FLOOR_MINUTES, 0),
+        remember_settings=coordinator.remember_vmatbasic_settings,
+        session_intent=get_vmatbasic_session_intent(
+            coordinator.hass, coordinator.address, data[CONF_VMATBASIC_PROFILE]
+        ),
+    )

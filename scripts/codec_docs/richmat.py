@@ -5,11 +5,11 @@ from __future__ import annotations
 import re
 from datetime import datetime, timedelta, timezone
 
-from custom_components.adjustable_bed import cluster018_protocol as classic_frames
 from custom_components.adjustable_bed import const as _const
 from custom_components.adjustable_bed import goodvibe_protocol as goodvibe_frames
 from custom_components.adjustable_bed import hjbed_catalog, hush_catalog
 from custom_components.adjustable_bed import hjbed_protocol as hjbed_frames
+from custom_components.adjustable_bed import richmat_classic_protocol as classic_frames
 from custom_components.adjustable_bed import rmcontrol_protocol as rmcontrol_frames
 from custom_components.adjustable_bed.beds import casper_base as casper_bed
 from custom_components.adjustable_bed.beds import eshine as eshine_bed
@@ -20,7 +20,6 @@ from custom_components.adjustable_bed.beds import leggett_lp_legacy as lp_legacy
 from custom_components.adjustable_bed.beds import richmat_mh_protocol as mh_frames
 from custom_components.adjustable_bed.beds import rmcontrol as rmcontrol_bed
 from custom_components.adjustable_bed.beds.hjbed import action_label as hjbed_label
-from custom_components.adjustable_bed.cluster018_profiles import APP_NAMES as CLASSIC_APPS
 from custom_components.adjustable_bed.codec import richmat as richmat_codec
 from custom_components.adjustable_bed.goodvibe_catalog import ACTION_EXPANSIONS
 from custom_components.adjustable_bed.goodvibe_catalog import ACTIONS as GOODVIBE_ACTIONS
@@ -31,6 +30,7 @@ from custom_components.adjustable_bed.lp_legacy_profiles import (
 from custom_components.adjustable_bed.profiles import casper as casper_profiles
 from custom_components.adjustable_bed.profiles import hush as hush_profiles
 from custom_components.adjustable_bed.profiles import richmat as richmat_profiles
+from custom_components.adjustable_bed.richmat_classic_profiles import APP_NAMES as CLASSIC_APPS
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
 GUIDE = "docs/beds/richmat.md"
@@ -142,7 +142,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
             for profile in richmat_profiles.RICHMAT_MH.values()
         },
         **{
-            profile.key: (_const.BED_TYPE_CLUSTER018,)
+            profile.key: (_const.BED_TYPE_RICHMAT_CLASSIC_APPS,)
             for profile in richmat_profiles.RICHMAT_CLASSIC.values()
         },
         "goodvibe": (_const.BED_TYPE_GOODVIBE,),

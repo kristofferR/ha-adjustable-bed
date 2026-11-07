@@ -60,7 +60,6 @@ def test_profile_removed_only_when_changing_protocol() -> None:
 async def test_extra_product_button_uses_current_controller_and_lock() -> None:
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     coordinator.entity_unique_id.side_effect = lambda key: f"bed_{key}"
-    coordinator.entity_translation_key.side_effect = lambda key: key
     coordinator.async_execute_controller_command = AsyncMock()
     action = AsyncMock()
     button = AdjustableBedProductButton(
@@ -223,22 +222,22 @@ async def test_factory_uses_opt_in_product_and_preserves_legacy_without_it(hass)
         new_callable=AsyncMock,
         return_value=(False, "6e400002-b5a3-f393-e0a9-e50e24dcca9e", False),
     ):
-        selected = await create_controller(
-            coordinator, BED_TYPE_RICHMAT, "nordic", client,
-            rmcontrol_product="A3RM", rmcontrol_side="right",
-        )
+        coordinator.entry.data = {CONF_RMCONTROL_PRODUCT: "A3RM", CONF_RMCONTROL_SIDE: "right"}
+        selected = await create_controller(coordinator, BED_TYPE_RICHMAT, "nordic", client)
     assert isinstance(selected, RmcontrolController)
     assert selected.rmcontrol_product == "A3RM"
     assert selected.protocol_diagnostics["side"] == "right"
+    coordinator.entry.data = {}
     legacy = await create_controller(coordinator, BED_TYPE_RICHMAT, "nordic", client)
     assert type(legacy) is RichmatController
 
 
 async def test_factory_rejects_profile_with_unrelated_frame_variant(hass) -> None:
     with pytest.raises(ValueError, match="Nordic or WiLinke"):
-        await create_controller(
-            MagicMock(hass=hass), BED_TYPE_RICHMAT, "prefix55", MagicMock(), rmcontrol_product="A3RM"
-        )
+        coordinator = MagicMock(hass=hass)
+        coordinator.name = coordinator.entry.title = "Test bed"
+        coordinator.entry.data = {CONF_RMCONTROL_PRODUCT: "A3RM"}
+        await create_controller(coordinator, BED_TYPE_RICHMAT, "prefix55", MagicMock())
 
 
 @pytest.mark.parametrize("code", ["FWRM", "WFRM"])

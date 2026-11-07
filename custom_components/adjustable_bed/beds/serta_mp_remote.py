@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Final
 
 from ..codec import keeson as codec
 from ..command_scheduler import CommandKind, CommandOutcome, current_command_context
+from ..const import CONF_PRODUCT_TYPE
 from ..controller_state import StateKey
 from ..profiles.keeson import app_profile
 from .base import (
@@ -25,7 +26,8 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
-from .cluster033 import AppController
+from .builder import BuildContext
+from .keeson_layout_app import AppController
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -187,10 +189,6 @@ class SertaMPRemoteController(AppController):
         self._memory_active = False
         self._setters: list[asyncio.TimerHandle] = []
         self._local_release_stop: tuple[object, int, asyncio.Event] | None = None
-
-    @property
-    def supports_position_feedback(self) -> bool:
-        return True
 
     @property
     def supports_direct_position_control(self) -> bool:
@@ -408,3 +406,19 @@ class SertaMPRemoteController(AppController):
             ]
         self.forward_controller_state_updates(*updates)
         super()._parse_notification(data)
+
+
+async def build_controller(ctx: BuildContext) -> SertaMPRemoteController:
+    """Build the controller for the stored layout and memory targets."""
+    data = ctx.data
+    return SertaMPRemoteController(
+        ctx.coordinator,
+        layout=data.get(CONF_PRODUCT_TYPE),
+        memories=tuple(
+            (
+                data.get(f"serta_mp_memory_{slot}_head", 15),
+                data.get(f"serta_mp_memory_{slot}_foot", 0 if slot == 4 else 35),
+            )
+            for slot in range(1, 5)
+        ),
+    )

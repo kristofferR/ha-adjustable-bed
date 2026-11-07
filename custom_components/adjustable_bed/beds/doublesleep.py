@@ -13,6 +13,7 @@ from homeassistant.util import dt as dt_util
 
 from .. import doublesleep_protocol as p
 from ..app_session import app_session
+from ..const import CONF_BLE_DEVICE_NAME, CONF_PRODUCT_TYPE
 from ..controller_state import StateKey
 from ..doublesleep_state import Notifications, Report, report_records
 from ..profiles.okin_nframe import DOUBLESLEEP
@@ -28,6 +29,7 @@ from .base import (
     MotorControlSpec,
     PositionNumberSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -151,10 +153,6 @@ class DoubleSleepController(BedController):
     @property
     def requires_notification_channel(self) -> bool:
         return True
-
-    @property
-    def requires_persistent_connection(self) -> bool:
-        return True  # Realtime sensor reports and report continuation use the live RX stream.
 
     @property
     def supports_single_address_pairing(self) -> bool:
@@ -1216,3 +1214,27 @@ class DoubleSleepController(BedController):
             for side in ("left", "right")
             for flag in ("flag1", "flag2")
         )
+
+
+async def build_controller(ctx: BuildContext) -> DoubleSleepController:
+    """Build the controller for the driver the advertisement or variant selects."""
+    from ..doublesleep_protocol import real_mac, select_model, select_protocol
+
+    variant = ctx.variant
+    manufacturer_data = ctx.manufacturer_data
+    data = {**ctx.data, **ctx.coordinator.entry.options}
+    name = ctx.advertisement_name or data.get(CONF_BLE_DEVICE_NAME, ctx.device_name or "")
+    if variant not in ("p1", "p2", "p3") and manufacturer_data is None:
+        raise ConnectionError("SleepEase automatic driver selection requires a live advertisement")
+    protocol = select_protocol(name, manufacturer_data or {})
+    if variant in ("p1", "p2", "p3"):
+        protocol = variant
+    model = int(
+        data.get(CONF_PRODUCT_TYPE, select_model(ctx.device_name or name, manufacturer_data or {}))
+    )
+    return DoubleSleepController(
+        ctx.coordinator,
+        protocol=protocol,
+        model=model,
+        advertised_identity=real_mac(name, manufacturer_data or {}),
+    )

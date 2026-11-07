@@ -16,7 +16,6 @@ from custom_components.adjustable_bed.beds.star_elevate import (
     StarElevateController,
 )
 from custom_components.adjustable_bed.beds.starcode_m5x5 import StarcodeM5X5Controller
-from custom_components.adjustable_bed.config_flow import _starcode_m1x12_errors
 from custom_components.adjustable_bed.const import (
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_M1X12,
@@ -31,6 +30,7 @@ from custom_components.adjustable_bed.const import (
     STAR_ELEVATE_VARIANT_M1X12,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.setup_questions import SETUP_PROFILES, FlowContext
 from custom_components.adjustable_bed.starcode_accessory_group import (
     cancel_group_operations,
     interrupt_conflicting_group,
@@ -199,9 +199,8 @@ async def test_m1x12_group_requires_explicit_elevate_variant_and_limits_two(
     ):
         validate_lift_entries(hass, main.data, [legacy.entry_id])
     assert CONF_PROTOCOL_VARIANT not in legacy.data
-    assert _starcode_m1x12_errors(
-        hass,
-        {**main.data, CONF_STARCODE_LIFT_ENTRIES: [legacy.entry_id]},
+    assert SETUP_PROFILES[BED_TYPE_STARCODE_M1X12].errors(
+        {**main.data, CONF_STARCODE_LIFT_ENTRIES: [legacy.entry_id]}, FlowContext(hass)
     ) == {CONF_STARCODE_LIFT_ENTRIES: "starcode_m1x12_elevate_reconfigure"}
 
     lifts = []

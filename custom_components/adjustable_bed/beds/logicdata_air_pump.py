@@ -250,22 +250,6 @@ class LogicdataAirPumpController(BedController):
             raise ValueError(f"Unknown air pump action {key}")
         await self._click(COMMANDS[key])
 
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        await self._write_gatt_with_retry(
-            WRITE_UUID,
-            command,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            cancel_event=cancel_event,
-            response=True,
-        )
-
     async def stop_all(self) -> None:
         """Send the app's STOPN at once; a stop is never delayed by the tap throttle."""
         self._last_click = asyncio.get_running_loop().time()

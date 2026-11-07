@@ -19,9 +19,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .bed_traits import bed_traits
 from .beds.base import ControllerMotorHoldSpec
 from .const import (
-    BEDS_WITH_PERCENTAGE_POSITIONS,
     DOMAIN,
 )
 from .entity import AdjustableBedEntity, hold_lease_attributes
@@ -346,7 +346,7 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
         """Initialize the cover."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._is_moving = False
         self._move_direction: str | None = None
@@ -437,7 +437,7 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
 
         # Check if bed type reports percentage directly (e.g., Keeson/Ergomotion/Serta)
         # Use bed_type constant check instead of controller to handle disconnected state
-        if self._coordinator.bed_type in BEDS_WITH_PERCENTAGE_POSITIONS:
+        if bed_traits(self._coordinator.bed_type).percentage_positions:
             # Position is already 0-100 percentage
             return min(100, max(0, int(position)))
 

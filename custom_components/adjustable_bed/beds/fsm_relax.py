@@ -11,7 +11,15 @@ from bleak.exc import BleakError
 from homeassistant.config_entries import ConfigEntryState
 
 from ..codec import limoss as codec
-from ..const import LIMOSS_CHAR_UUID, LIMOSS_SERVICE_UUID
+from ..const import (
+    CONF_FSM_RELAX_MEMORY_NAMES,
+    CONF_HAS_LIGHT,
+    CONF_HAS_MASSAGE,
+    CONF_PRODUCT_TYPE,
+    CONF_REVERSE_MOTORS,
+    LIMOSS_CHAR_UUID,
+    LIMOSS_SERVICE_UUID,
+)
 from ..controller_state import StateKey
 from ..fsm_relax_state import (
     FsmRelaxSession,
@@ -27,6 +35,7 @@ from .base import (
     MotorControlSpec,
     PositionNumberSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -148,10 +157,6 @@ class FsmRelaxController(BedController):
 
     @property
     def supports_preset_flat(self) -> bool:
-        return False
-
-    @property
-    def supports_position_feedback(self) -> bool:
         return False
 
     @property
@@ -716,3 +721,25 @@ class FsmRelaxController(BedController):
 
     async def move_legs_stop(self) -> None:
         await self.stop_all()
+
+
+async def build_controller(ctx: BuildContext) -> FsmRelaxController:
+    """Build the controller from the stored setup, options taking precedence."""
+    from ..app_session import app_session
+    from ..fsm_relax_state import FsmRelaxSession, validate_names
+
+    coordinator = ctx.coordinator
+    data = {**ctx.data, **coordinator.entry.options}
+    reversals = tuple(data.get(key, False) for key in CONF_REVERSE_MOTORS)
+    setup = FsmRelaxSetup(
+        data.get(CONF_PRODUCT_TYPE, "chair"),
+        data.get(CONF_HAS_LIGHT, False),
+        data.get(CONF_HAS_MASSAGE, False),
+        (reversals[0], reversals[1], reversals[2], reversals[3]),
+    )
+    return FsmRelaxController(
+        coordinator,
+        setup=setup,
+        session=app_session(coordinator.hass, coordinator.address, ("fsm_relax",), FsmRelaxSession),
+        names=validate_names(data.get(CONF_FSM_RELAX_MEMORY_NAMES, [""] * 8)),
+    )

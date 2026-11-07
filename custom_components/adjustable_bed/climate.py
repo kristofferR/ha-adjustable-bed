@@ -273,7 +273,7 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
         """Initialize the climate entity."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._attr_supported_features = (
             ClimateEntityFeature.PRESET_MODE

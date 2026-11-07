@@ -28,7 +28,6 @@ def runtime(controller, side=None):
     coordinator.entity_unique_id.side_effect = lambda key: (
         f"target_{key}" + (f"_{side}" if side else "")
     )
-    coordinator.entity_translation_key.side_effect = lambda key: key + (f"_{side}" if side else "")
     return coordinator
 
 

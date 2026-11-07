@@ -62,6 +62,7 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
+from .builder import BuildContext
 from .sleep_number_commands import (
     COMMANDS,
     combine_temperature_programs,
@@ -71,6 +72,7 @@ from .sleep_number_commands import (
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
+    from .lifecycle import ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -513,16 +515,6 @@ class SleepNumberController(BedController):
         if self._system_config.get("chamber_type") == "single":
             return (SLEEP_NUMBER_VARIANT_RIGHT,)
         return _SLEEP_NUMBER_BED_PRESENCE_QUERY_SIDES
-
-    @property
-    def supports_position_feedback(self) -> bool:
-        """Sleep Number positions can be queried on demand."""
-        return True
-
-    @property
-    def reports_percentage_position(self) -> bool:
-        """Return True because foundation positions use percentages."""
-        return True
 
     @property
     def supports_direct_position_control(self) -> bool:
@@ -1052,6 +1044,16 @@ class SleepNumberController(BedController):
                 if cached is not None:
                     return self._presence_state_to_bool(cached)
             return await self.read_bed_presence()
+
+    async def async_on_connect(self, session: ControllerSession) -> None:
+        """Subscribe, then record the bond the Auth session check just proved."""
+        # Notification startup first validates the Auth session. Reuse that
+        # proof instead of reading Auth again after subscriptions exist.
+        await session.async_start_notify()
+        await session.async_record_verified_bond()
+
+    async def async_after_connect(self, session: ControllerSession) -> None:
+        await self.query_config()
 
     async def query_config(self) -> None:
         """Load Sleep Number feature state needed for entity creation.
@@ -2530,3 +2532,12 @@ class SleepNumberController(BedController):
         if normalized in option_map:
             return option_map[normalized]
         raise ValueError(f"Unsupported Sleep Number timer option: {timer_option}")
+
+
+async def build_controller(ctx: BuildContext) -> SleepNumberController:
+    """Build the controller for the selected side."""
+    side = ctx.variant or VARIANT_AUTO
+    if side not in {VARIANT_AUTO, SLEEP_NUMBER_VARIANT_LEFT, SLEEP_NUMBER_VARIANT_RIGHT}:
+        _LOGGER.debug("Unknown Sleep Number side variant %s, defaulting to auto", side)
+        side = VARIANT_AUTO
+    return SleepNumberController(ctx.coordinator, side=side)

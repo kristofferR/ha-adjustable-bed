@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 
+from custom_components.adjustable_bed.bed_traits import bed_type_has_position_feedback
 from custom_components.adjustable_bed.beds.reverie_profiles import (
     REVERIE_MODEL_CHOICES,
     REVERIE_MODEL_PROFILES,
@@ -13,7 +14,6 @@ from custom_components.adjustable_bed.beds.reverie_profiles import (
 from custom_components.adjustable_bed.const import (
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
-    bed_type_has_position_feedback,
 )
 from custom_components.adjustable_bed.validators import get_variants_for_bed_type
 
