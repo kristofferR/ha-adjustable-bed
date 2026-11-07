@@ -173,7 +173,10 @@ class PlatformEntities:
         """Add entities that stay for the rest of this setup."""
         entities = list(new_entities)
         self._ledger.extend(self, self._identities(entity.unique_id for entity in entities))
-        self._add(entities, update_before_add)
+        if update_before_add:
+            self._add(entities, update_before_add)
+        else:
+            self._add(entities)
 
     def publish(self, key: object, unique_ids: Iterable[str | None]) -> None:
         """Replace what one rebuilt builder provides, then schedule a sweep."""
