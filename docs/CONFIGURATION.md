@@ -630,7 +630,7 @@ that side, then combine them again.
 | Adjustable bed (Lumbar) | [Automatic or fixed command table](beds/okin-nframe.md#adjustable-bed-lumbar). |
 | StarCode apps | One question for the app, then its own settings. Configure lists each StarCode app, so an entry can move to another without being removed. [M5X4](beds/okin-nframe.md#adjustablem5x4): command and transport selectors. [M5X5](beds/starcode-m5x5.md): layout and up to three configured lift entries. [M1X12](beds/starcode-m1x12.md): layout and up to two ELEVATE accessories. |
 | Motion Bed | [Layout and retained settings](beds/ff_frame.md#motion-bed); preserve the original Bluetooth name. |
-| MotoMotion | [The exact Bluetooth name](beds/motomotion.md#detection--setup), which selects the panel and its feature flags; preserve its case. |
+| MotoMotion | [The exact Bluetooth name](beds/motomotion.md#motomotion), which selects the panel and its feature flags; preserve its case. |
 | Limoss | [One question](beds/limoss.md#home-assistant-setup) for the Limoss Remote or FSM Relax app, or the older controls. [Limoss Remote](beds/limoss.md#limoss-remote): bed/chair layout, light/massage and reversal settings. Change an existing bed's app with **Reconfigure**. |
 | FSM Relax | Answer the [Limoss question](beds/limoss.md#home-assistant-setup) with the FSM Relax app, then its [bed/chair layout, light/massage, reversal settings and memory names](beds/limoss.md#fsm-relax). |
 | GM Control | [Exact product/configuration and app side](beds/gmmotor.md#detection--setup); independent MM/SXB module entries. |

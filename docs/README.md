@@ -41,6 +41,7 @@ Each codec has one guide, with a section per profile:
 | [Richmat](beds/richmat.md) | Richmat, RMControl, BedTech, L&P MlRM, the Richmat MH apps and HJBed |
 | [Limoss](beds/limoss.md) | Limoss, Limoss Remote and FSM Relax |
 | [FFFF frame](beds/ff_frame.md) | Solace, Woosa Sleep, BedSense and Motion Bed |
+| [HHC `$#` frames](beds/motomotion.md) | MotoMotion, MotoSleep and Power Bob |
 
 Beds with their own wire format have their own guide in [`beds/`](beds/). Every
 guide follows the [bed guide format](BED_GUIDE_FORMAT.md) and records its
