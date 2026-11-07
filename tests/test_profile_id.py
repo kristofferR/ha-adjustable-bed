@@ -27,6 +27,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
+    BED_TYPE_OCTO,
     BED_TYPE_SBI,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
@@ -36,6 +37,7 @@ from custom_components.adjustable_bed.const import (
     CONF_LOGICDATA_APP_PROFILE,
     CONF_MALOUF_APP_PROFILE,
     CONF_MOTOR_COUNT,
+    CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     CONF_PAIR_CHILDREN,
     CONF_PAIR_ID,
     CONF_PAIR_MODE,
@@ -198,7 +200,11 @@ async def test_migration_stores_an_id_for_every_former_route(hass: HomeAssistant
         record = migrated.pop(CONF_PROFILE_MIGRATION)
         # Only a route that gained an app in v5 is asked about it once more.
         assert migrated.pop(CONF_PROFILE_REVIEW_PENDING, None) == v5_profile_review_mark(stored)
-        assert (entry.version, entry.minor_version) == (5, 3)
+        assert (entry.version, entry.minor_version) == (5, 5)
+        # Schema 5.5 stores an Octo setup's motor layout as its override.
+        octo = data.get(CONF_BED_TYPE) == BED_TYPE_OCTO
+        assert migrated.pop(CONF_OCTO_MOTOR_COUNT_OVERRIDE, None) == ("auto" if octo else None)
+        assert record.pop("octo_motor_count_override", None) == (["data"] if octo else None)
         assert migrated == stored
         assert dict(entry.options) == {"motor_pulse_count": 7}
         assert profile_id == resolve_profile_id(data)

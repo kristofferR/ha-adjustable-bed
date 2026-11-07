@@ -2702,9 +2702,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     # stores the profile id each entry runs (profile_id.py); setup derives it
     # for new entries. Minor version 2 drops the obsolete keys recorded in
     # docs/design/config-keys.md; minor version 3 turns Massage off on layouts
-    # whose profile has no massage.
+    # whose profile has no massage; minor version 5 stores each Octo setup's
+    # motor layout as its override.
     VERSION = 5
-    MINOR_VERSION = 3
+    MINOR_VERSION = 5
 
     @staticmethod
     def _mark_ble_bond_established(entry_data: dict[str, Any]) -> dict[str, Any]:
@@ -4849,27 +4850,22 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return False
         data = {**entry.data, **dict(entry.options)}
         override = data.get(CONF_OCTO_MOTOR_COUNT_OVERRIDE)
-        if override is not None and override != "auto":
+        if override not in (None, "auto"):
             return override == "1" or override == 1
-        if override == "auto":
-            snapshot = self._octo_capability_snapshot(entry)
-            discovered_count = snapshot.get("discovered_motor_count") if snapshot else None
-            if type(discovered_count) is int and 1 <= discovered_count <= 4:
-                return discovered_count == 1
-            records = snapshot.get("capability_records") if snapshot else None
-            motor_record = (
-                records.get("1", records.get("000001")) if isinstance(records, dict) else None
-            )
-            characteristic = (
-                motor_record.get("characteristic") if isinstance(motor_record, dict) else None
-            )
-            if isinstance(characteristic, list) and characteristic:
-                return characteristic[0] == 1
-            return False
-        # Existing entries used the generic count field before the OCTO Auto
-        # override existed. Preserve their stored one-motor layout.
-        motor_count = data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
-        return motor_count == 1
+        snapshot = self._octo_capability_snapshot(entry)
+        discovered_count = snapshot.get("discovered_motor_count") if snapshot else None
+        if type(discovered_count) is int and 1 <= discovered_count <= 4:
+            return discovered_count == 1
+        records = snapshot.get("capability_records") if snapshot else None
+        motor_record = (
+            records.get("1", records.get("000001")) if isinstance(records, dict) else None
+        )
+        characteristic = (
+            motor_record.get("characteristic") if isinstance(motor_record, dict) else None
+        )
+        if isinstance(characteristic, list) and characteristic:
+            return characteristic[0] == 1
+        return False
 
     async def _pair_layout_snapshot(self, entry: ConfigEntry) -> dict[str, Any] | None:
         """Capture the side's generic motor layout from its capability controller.
@@ -9256,22 +9252,10 @@ class AdjustableBedOptionsFlow(
         }
 
         if bed_type == BED_TYPE_OCTO:
-            octo_motor_override = current_data.get(CONF_OCTO_MOTOR_COUNT_OVERRIDE)
-            if octo_motor_override is None:
-                # Migrate a pre-selector count only when this entry was already
-                # OCTO. A count carried from another profile is not an explicit
-                # OCTO layout choice; new OCTO setups start in advertised Auto.
-                if self.config_entry.data.get(CONF_BED_TYPE) == BED_TYPE_OCTO:
-                    configured_count = current_data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
-                    octo_motor_override = (
-                        str(configured_count) if configured_count != DEFAULT_MOTOR_COUNT else "auto"
-                    )
-                else:
-                    octo_motor_override = "auto"
             schema_dict[
                 vol.Optional(
                     CONF_OCTO_MOTOR_COUNT_OVERRIDE,
-                    default=str(octo_motor_override),
+                    default=str(current_data.get(CONF_OCTO_MOTOR_COUNT_OVERRIDE, "auto")),
                 )
             ] = vol.In(
                 {

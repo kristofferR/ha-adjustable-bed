@@ -103,7 +103,7 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `malouf_layout` | User | Malouf receiver profile questions, Configure | `coordinator.py` |
 | `malouf_memory_slots` | User | Malouf receiver profile questions, Configure | `coordinator.py` |
 | `octo_pin` | User | Octo setup fields, `verify_octo_pin`, Configure, the Octo PIN action | `coordinator.py`, `octo_services.py` |
-| `octo_motor_count_override` | User | Configure, for Octo | `beds/octo.py` |
+| `octo_motor_count_override` | User | Octo setup fields, Configure; written by [schema 5.5](#octo-motor-layout-in-schema-55) where an Octo setup lacks it | `beds/octo.py`, `config_flow.py` |
 | `jensen_pin` | User | A question of `jensen`, Configure | `coordinator.py` |
 | `richmat_remote` | Profile | A question of `richmat` without an RMControl product; the Richmat question stages the code the Bluetooth name carries | `coordinator.py`, `profile_recommendations.py` |
 | `rmcontrol_product` | Profile | A question of `richmat`; the Richmat question's RMControl answer requires one | `coordinator.py`, `coordinator_connection.py` |
@@ -179,7 +179,7 @@ original data and options keep them under `origin_data` and `origin_options`.
 |---|---|---|---|
 | `profile_review_pending` | Internal | Schema 4.3 migration, `profile_review.py` | `profile_review.py` |
 | `profile_review_kept` | Internal | `profile_review.py` on Keep | `profile_review.py` |
-| `profile_migration` | Internal | Schema 5.1, 5.2 and 5.3 migrations | Diagnostics, support bundles |
+| `profile_migration` | Internal | Schema 5.1, 5.2, 5.3 and 5.5 migrations | Diagnostics, support bundles |
 
 ## Flow inputs
 
@@ -228,6 +228,18 @@ and every other side keeps its value. The record lists each corrected place
 under `massage_off`. The step deletes
 the massage buttons those runtimes had from the entity registry, and leaves
 every other layout and key alone.
+
+## Octo motor layout in schema 5.5
+
+Before Octo had its own motor layout selector (`octo_motor_count_override`),
+a stored `motor_count` other than 2 was the user's explicit layout and 2
+followed the advertised count. The controller, Configure and the pairing check
+each kept a fallback for entries without the selector. The 5.5 step
+(`migrate_v5_5_data` in `__init__.py`) writes the selector instead: the stored
+count when it is 1, 3 or 4, otherwise `auto`. It covers entry data, each paired
+side's effective settings and each side's `origin_data`, leaves a saved
+selector alone, and lists each place under `octo_motor_count_override` in the
+migration record. The fallbacks are gone.
 
 Schema 5 is one way: an entry at 5.2 or 5.3 cannot load on 4.x, and restoring a
 Home Assistant backup is the only way back.

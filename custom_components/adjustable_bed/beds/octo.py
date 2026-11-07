@@ -1213,31 +1213,20 @@ class OctoController(BedController, OctoPacketCodec):
         count and Auto cannot safely choose an actuator layout.
         """
         override = self._coordinator.entry.data.get(CONF_OCTO_MOTOR_COUNT_OVERRIDE)
-        if override == "auto":
-            if self._motor_count_invalid:
-                return None
-            return self._discovered_motor_count or self._rtv_fallback_motor_count()
         if isinstance(override, str) and override.isascii() and override.isdecimal():
             override = int(override)
         if type(override) is int and 1 <= override <= 4:
             return override
-        configured = self._coordinator.motor_count
         if self._motor_count_invalid:
-            if override is None and configured != 2 and 1 <= configured <= 4:
-                return configured
             return None
-        # Existing non-default values were explicit user selections before the
-        # OCTO-only Auto option existed. Preserve those choices across upgrades.
-        if override is None and configured != 2 and 1 <= configured <= 4:
-            return configured
-        return self._discovered_motor_count or self._rtv_fallback_motor_count(configured)
+        return self._discovered_motor_count or self._rtv_fallback_motor_count()
 
-    def _rtv_fallback_motor_count(self, default: int | None = None) -> int:
+    def _rtv_fallback_motor_count(self) -> int:
         """Use the historical RTV lift layout only when no motor count was advertised."""
         name = self._coordinator.ble_device_name
         if isinstance(name, str) and name.strip().lower().startswith("rtv"):
             return 1
-        return self._coordinator.motor_count if default is None else default
+        return self._coordinator.motor_count
 
     @property
     def supports_lights(self) -> bool:

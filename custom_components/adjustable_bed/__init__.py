@@ -55,6 +55,7 @@ from .const import (
     CONF_KAIDI_TARGET_VADDR,
     CONF_KAIDI_VARIANT_SOURCE,
     CONF_MOTOR_COUNT,
+    CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     CONF_OCTO_PIN,
     CONF_PAIR_CHILDREN,
     CONF_PAIR_ID,
@@ -66,6 +67,7 @@ from .const import (
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_REMOTE,
     CONF_SIDE,
+    DEFAULT_MOTOR_COUNT,
     DOMAIN,
     KEESON_VARIANT_SINO,
     OCTO_VARIANT_STAR2,
@@ -505,6 +507,64 @@ def migrate_v5_3_data(
     return new_data, new_options, turned_off
 
 
+def _octo_motor_override(view: Mapping[str, Any]) -> str | None:
+    """Return the override an Octo setup saved before the selector ran with, or None.
+
+    Before the selector existed, a stored count other than the default was the
+    user's explicit layout; the default count followed the advertised one.
+    """
+    if view.get(CONF_BED_TYPE) != BED_TYPE_OCTO or CONF_OCTO_MOTOR_COUNT_OVERRIDE in view:
+        return None
+    count = view.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
+    return str(count) if type(count) is int and count in (1, 3, 4) else "auto"
+
+
+def migrate_v5_5_data(
+    data: Mapping[str, Any],
+    options: Mapping[str, Any],
+    *,
+    from_version: int,
+    from_minor_version: int,
+) -> dict[str, Any]:
+    """Return entry data with every Octo setup's motor layout stored as its override.
+
+    A paired side is judged by the settings it runs with, and the original entry
+    it restores on unpair is written too. The migration record lists each place
+    under ``octo_motor_count_override``.
+    """
+    new_data = dict(data)
+    written: list[str] = []
+    if not is_paired(data):
+        if (override := _octo_motor_override(data)) is not None:
+            new_data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] = override
+            written.append("data")
+    elif isinstance(children := data.get(CONF_PAIR_CHILDREN), list):
+        updated: list[Any] = []
+        for child in children:
+            side = child.get(CONF_SIDE) if isinstance(child, Mapping) else None
+            if side not in PAIR_SIDES:
+                updated.append(child)
+                continue
+            child = dict(child)
+            if (override := _octo_motor_override(effective_child_data(data, side, options))):
+                child[CONF_OCTO_MOTOR_COUNT_OVERRIDE] = override
+                written.append(f"data.{side}")
+            origin = child.get(KEY_ORIGIN_DATA)
+            if isinstance(origin, Mapping) and (override := _octo_motor_override(origin)):
+                child[KEY_ORIGIN_DATA] = {**origin, CONF_OCTO_MOTOR_COUNT_OVERRIDE: override}
+                written.append(f"data.{side}.{KEY_ORIGIN_DATA}")
+            updated.append(child)
+        new_data[CONF_PAIR_CHILDREN] = updated
+    if written:
+        _with_migration_record(
+            new_data,
+            from_version=from_version,
+            from_minor_version=from_minor_version,
+            octo_motor_count_override=written,
+        )
+    return new_data
+
+
 def _massage_button_unique_ids(data: Mapping[str, Any], turned_off: list[str]) -> set[str]:
     """Return the unique ids of the massage buttons Massage on gave these runtimes."""
     from .button import BUTTON_DESCRIPTIONS
@@ -638,6 +698,17 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         hass.config_entries.async_update_entry(
             entry, data=data, options=options, minor_version=3
         )
+
+    if entry.version == 5 and entry.minor_version < 5:
+        # v5.4 -> v5.5: an Octo setup stores its motor layout as the override,
+        # so nothing reads the count saved before the selector existed.
+        data = migrate_v5_5_data(
+            entry.data,
+            entry.options,
+            from_version=original_version[0],
+            from_minor_version=original_version[1],
+        )
+        hass.config_entries.async_update_entry(entry, data=data, minor_version=5)
 
     _LOGGER.debug(
         "Migration complete for config entry %s (%s), now at version %s",
