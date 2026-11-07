@@ -40,6 +40,7 @@ from .base import (
     MotorControlSpec,
 )
 from .builder import BuildContext
+from .family_actions import YogaPresetActions
 from .richmat_mh_protocol import (
     ALARM_MASSAGE_CODES,
     ALARM_TASK_SLEEP_S,
@@ -392,7 +393,7 @@ class SessionFlags:
     waist: bool = False
 
 
-class RichmatMhController(BedController):
+class RichmatMhController(BedController, YogaPresetActions):
     """Faithful Richmat MH app controls for one selected model."""
 
     _app_groups: Mapping[str, AppGroup] = APP_GROUPS

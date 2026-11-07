@@ -33,6 +33,7 @@ from .base import (
     MotorControlSpec,
 )
 from .builder import BuildContext
+from .family_actions import SolaceAudioActions
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -108,7 +109,7 @@ def build_solace_alarm_command(
     )
 
 
-class SolaceController(BedController):
+class SolaceController(BedController, SolaceAudioActions):
     """Controller for Solace beds."""
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
@@ -361,11 +362,6 @@ class SolaceController(BedController):
     @property
     def supports_preset_tv(self) -> bool:
         return self.profile.presets
-
-    @property
-    def supports_preset_yoga(self) -> bool:
-        # Yoga belongs to a different app whose APK Protocol Audit analysis is pending.
-        return False
 
     @property
     def supports_relaxing_bedtime(self) -> bool:

@@ -51,6 +51,7 @@ from ..state_keys import (
 )
 from .base import BedController
 from .builder import BuildContext
+from .family_actions import YogaPresetActions
 from .jiecang import JiecangProfileController
 
 if TYPE_CHECKING:
@@ -107,7 +108,7 @@ class DreamHDLightControls:
             self.picker = self.human = self.container = 4
 
 
-class JiecangAppController(JiecangProfileController):
+class JiecangAppController(JiecangProfileController, YogaPresetActions):
     """Control the complete artifact-proven app profiles without guessing hardware."""
 
     def __init__(

@@ -44,6 +44,7 @@ from .base import (
     require_controller,
 )
 from .builder import BuildContext
+from .family_actions import MotionBedModuleActions
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -151,7 +152,7 @@ def _field_key(name: str) -> StateKey[ScalarState]:
     return StateKey[ScalarState]("motion_bed_" + name)
 
 
-class MotionBedController(BedController):
+class MotionBedController(BedController, MotionBedModuleActions):
     """Expose app controls without inferring motors or thermostat temperatures."""
 
     profile: MotionBedProfile = MOTION_BED
@@ -234,10 +235,6 @@ class MotionBedController(BedController):
     @property
     def memory_slot_count(self) -> int:
         return 0
-
-    @property
-    def supports_motion_bed_actions(self) -> bool:
-        return True
 
     @property
     def persisted_app_state_key(self) -> str:

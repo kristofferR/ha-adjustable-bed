@@ -1210,18 +1210,8 @@ class BedController(ABC):
         return False
 
     @property
-    def supports_preset_yoga(self) -> bool:
-        """Return True if bed supports yoga preset."""
-        return False
-
-    @property
     def supports_relaxing_bedtime(self) -> bool:
         """Return True if the bed exposes a relaxing-bedtime preset."""
-        return False
-
-    @property
-    def supports_solace_audio(self) -> bool:
-        """Return True if the bed exposes the Solace music/audio surface."""
         return False
 
     @property
@@ -2392,30 +2382,9 @@ class BedController(ABC):
         """
         raise NotImplementedError("Both up preset not supported on this bed")
 
-    async def preset_yoga(self) -> None:
-        """Move bed to yoga position.
-
-        Raises:
-            NotImplementedError: If the bed doesn't support this preset
-        """
-        raise NotImplementedError("Yoga preset not supported on this bed")
-
     async def preset_relaxing_bedtime(self) -> None:
         """Move the bed to its relaxing-bedtime preset."""
         raise NotImplementedError("Relaxing-bedtime preset not supported on this bed")
-
-    async def solace_music_toggle(self) -> None:
-        """Toggle the Solace music feature."""
-        raise NotImplementedError("Solace audio not supported on this bed")
-
-    async def solace_music_off(self) -> None:
-        """Stop the Solace music feature."""
-        raise NotImplementedError("Solace audio not supported on this bed")
-
-    @property
-    def supports_motion_bed_actions(self) -> bool:
-        """Whether the explicit Motion Bed app action surface is available."""
-        return False
 
     async def sync_positions(self) -> None:
         """Run the controller's synchronization action."""

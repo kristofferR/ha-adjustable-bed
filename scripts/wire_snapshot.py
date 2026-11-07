@@ -211,8 +211,11 @@ FAMILY_ACTIONS = frozenset(
     {
         "cancel_alarm_timer",
         "cancel_sleep_timer",
+        "preset_yoga",
         "rmcontrol_query_alarms",
         "rmcontrol_query_anti_snore",
+        "solace_music_off",
+        "solace_music_toggle",
         "solace_query_audio_volume",
     }
 )

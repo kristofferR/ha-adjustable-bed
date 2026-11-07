@@ -15,7 +15,13 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import UndefinedType
 
-from .beds.base import CONTROLLER_GESTURE_RELEASE, ProductButtonSpec
+from .beds.base import (
+    CONTROLLER_GESTURE_RELEASE,
+    ProductButtonSpec,
+    controller_as,
+    require_controller,
+)
+from .beds.family_actions import MotionBedModuleActions, SolaceAudioActions, YogaPresetActions
 from .const import (
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_MOTION_BED,
@@ -79,6 +85,11 @@ class AdjustableBedButtonEntityDescription(ButtonEntityDescription):
     memory_slot: int | None = None
     # Whether this is a memory programming button (requires supports_memory_programming)
     is_program_button: bool = False
+
+
+def _supports_solace_audio(controller: BedController) -> bool:
+    solace = controller_as(controller, SolaceAudioActions)
+    return solace is not None and solace.supports_solace_audio
 
 
 BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
@@ -231,9 +242,11 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         key="preset_yoga",
         translation_key="preset_yoga",
         icon="mdi:yoga",
-        press_fn=lambda ctrl: ctrl.preset_yoga(),
+        press_fn=lambda ctrl: require_controller(ctrl, YogaPresetActions).preset_yoga(),
         cancel_movement=True,
-        is_supported=lambda c: c.supports_preset_yoga,
+        is_supported=lambda c: (
+            (yoga := controller_as(c, YogaPresetActions)) is not None and yoga.supports_preset_yoga
+        ),
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_relaxing_bedtime",
@@ -247,15 +260,15 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         key="solace_music_toggle",
         translation_key="solace_music_toggle",
         icon="mdi:music",
-        press_fn=lambda ctrl: ctrl.solace_music_toggle(),
-        is_supported=lambda c: c.supports_solace_audio,
+        press_fn=lambda ctrl: require_controller(ctrl, SolaceAudioActions).solace_music_toggle(),
+        is_supported=_supports_solace_audio,
     ),
     AdjustableBedButtonEntityDescription(
         key="solace_music_off",
         translation_key="solace_music_off",
         icon="mdi:music-off",
-        press_fn=lambda ctrl: ctrl.solace_music_off(),
-        is_supported=lambda c: c.supports_solace_audio,
+        press_fn=lambda ctrl: require_controller(ctrl, SolaceAudioActions).solace_music_off(),
+        is_supported=_supports_solace_audio,
     ),
     AdjustableBedButtonEntityDescription(
         key="auxiliary_action",
@@ -807,7 +820,7 @@ def _async_follow_motion_bed_module_actions(
         additions: list[ButtonEntity] = []
         for runtime in entity_runtimes(coordinator):
             controller = runtime.capability_controller
-            if controller is None or not controller.supports_motion_bed_actions:
+            if controller is None or controller_as(controller, MotionBedModuleActions) is None:
                 continue
             for spec in controller.controller_button_specs:
                 identity = runtime.entity_unique_id(spec.key)

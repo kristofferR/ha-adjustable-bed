@@ -9,6 +9,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from .beds.base import BedController, controller_as
+from .beds.family_actions import YogaPresetActions
 from .const import DOMAIN
 from .paired_coordinator import BedChild
 from .services import (
@@ -47,7 +48,8 @@ async def handle_jiecang_set_alarm(call: ServiceCall) -> None:
         jiecang = controller_as(controller, JiecangProfileController)
         if jiecang is None or not jiecang.supports_clock_alarm:
             raise ServiceValidationError(f"Device '{target.name}' does not support {label}")
-        if call.data[ATTR_PRESET] == "yoga" and not jiecang.supports_preset_yoga:
+        yoga = controller_as(controller, YogaPresetActions)
+        if call.data[ATTR_PRESET] == "yoga" and (yoga is None or not yoga.supports_preset_yoga):
             raise ServiceValidationError(f"Device '{target.name}' does not support Yoga alarms")
 
     async def program(controller: JiecangProfileController) -> None:

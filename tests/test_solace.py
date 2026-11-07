@@ -12,6 +12,8 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.beds.base import controller_as
+from custom_components.adjustable_bed.beds.family_actions import YogaPresetActions
 from custom_components.adjustable_bed.beds.solace import (
     SolaceCommands,
     SolaceController,
@@ -713,9 +715,7 @@ class TestSolacePresets:
         coordinator = AdjustableBedCoordinator(hass, mock_solace_config_entry)
         await coordinator.async_connect()
 
-        assert coordinator.controller.supports_preset_yoga is False
-        with pytest.raises(NotImplementedError):
-            await coordinator.controller.preset_yoga()
+        assert controller_as(coordinator.controller, YogaPresetActions) is None
         mock_bleak_client.write_gatt_char.assert_not_called()
 
     @pytest.mark.parametrize(
