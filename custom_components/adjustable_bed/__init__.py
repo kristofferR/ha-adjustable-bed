@@ -1328,8 +1328,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
             if initial_connection_timed_out
             else "device was not reachable during initial setup",
         ):
-            if hooks.reload_offline_on_update:
-                entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+            entry.async_on_unload(entry.add_update_listener(_async_update_listener))
             await _async_finish_entry_setup(
                 hass, entry, coordinator, schedule_initial_position_read=False
             )

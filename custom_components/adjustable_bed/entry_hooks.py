@@ -66,8 +66,6 @@ class EntryHooks:
 
     # Prepares a load without the first connection; False keeps the setup retry.
     load_offline: LoadOffline | None = None
-    # Whether an entry loaded offline reloads when its options change.
-    reload_offline_on_update: bool = True
     # Replaces the central connection; False when the entry does not select it.
     setup_local: SetupLocal | None = None
 
@@ -83,9 +81,7 @@ ENTRY_PREPARE_STEPS: Final[tuple[PrepareEntry, ...]] = (
 )
 
 _ENTRY_HOOKS: Final[Mapping[str, EntryHooks]] = {
-    BED_TYPE_DIAGNOSTIC: EntryHooks(
-        load_offline=_async_load_offline_diagnostic_entry, reload_offline_on_update=False
-    ),
+    BED_TYPE_DIAGNOSTIC: EntryHooks(load_offline=_async_load_offline_diagnostic_entry),
     BED_TYPE_FURNIMOVE: EntryHooks(load_offline=async_load_offline_furnimove_entry),
     BED_TYPE_REVERIE_PAIRLINK: EntryHooks(setup_local=async_setup_pairlink_local_entry),
 }
