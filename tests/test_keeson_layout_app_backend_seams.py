@@ -7,7 +7,7 @@ import pytest
 from homeassistant.helpers import device_registry as dr
 from homeassistant.setup import async_setup_component
 
-from custom_components.adjustable_bed.beds.keeson_layout_app import AppController
+from custom_components.adjustable_bed.beds.keeson.layout_app import AppController
 from custom_components.adjustable_bed.beds.serta_mp_remote import (
     HEAD_TABLE,
     SertaMPRemoteController,

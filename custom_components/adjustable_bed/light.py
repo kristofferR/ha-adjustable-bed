@@ -24,13 +24,14 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.restore_state import RestoreEntity
 
+from .beds.octo.runtime import octo_controller
+from .card import CARD_LIGHTING
 from .const import DOMAIN
 from .controller_state import ControllerState
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
 from .entity_sweep import PlatformEntities, records_entities
-from .octo_runtime import octo_controller
 from .paired_coordinator import entity_runtimes
 from .state_keys import (
     LIGHT_INTENSITY,
@@ -43,7 +44,7 @@ from .state_keys import (
 
 if TYPE_CHECKING:
     from .beds.base import BedController
-    from .beds.octo import OctoController
+    from .beds.octo.controller import OctoController
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -176,7 +177,7 @@ class AdjustableBedAssumedLight(AdjustableBedEntity, RestoreEntity, LightEntity)
 
     def __init__(self, coordinator: EntityRuntime) -> None:
         """Start with an off estimate without sending a command to the bed."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_LIGHTING)
         description = self.entity_description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
@@ -236,7 +237,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         description: LightEntityDescription,
     ) -> None:
         """Initialize the light."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_LIGHTING)
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
@@ -697,7 +698,7 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         description: LightEntityDescription,
     ) -> None:
         """Initialize the on/off light."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_LIGHTING)
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
@@ -756,21 +757,20 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             self._attr_is_on = None
             self.async_write_ha_state()
         else:
-            self._handle_controller_state_update(ControllerState())
+            self._handle_controller_state_update(self._coordinator.controller_state)
 
     @callback
     def _handle_controller_state_update(self, state: ControllerState) -> None:
-        """Update state from controller light telemetry when available."""
-        if self._feedback_only:
-            controller = self._coordinator.controller
-            with self._side_scope():
-                value = (
-                    controller.get_light_state().get("is_on") if controller is not None else None
-                )
-        elif UNDER_BED_LIGHTS_ON in state:
-            value = state[UNDER_BED_LIGHTS_ON]
-        else:
+        """Update state from published light state.
+
+        Feedback controllers publish what the bed reported on the current link,
+        so the light is unknown while no controller is connected.
+        """
+        if UNDER_BED_LIGHTS_ON not in state:
             return
+        value = state[UNDER_BED_LIGHTS_ON]
+        if self._feedback_only and self._coordinator.controller is None:
+            value = None
         self._attr_is_on = None if value is None else bool(value)
         self.async_write_ha_state()
 

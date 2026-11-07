@@ -111,7 +111,7 @@ async def test_rmcontrol_sustain_press_refreshes_until_the_lease_ends(leased: bo
     import asyncio
     from unittest.mock import AsyncMock, MagicMock
 
-    from custom_components.adjustable_bed.beds.rmcontrol import RmcontrolController
+    from custom_components.adjustable_bed.beds.rmcontrol.controller import RmcontrolController
     from custom_components.adjustable_bed.command_scheduler import (
         _CURRENT_COMMAND_CONTEXT,
         CommandContext,
@@ -155,7 +155,7 @@ def test_rmcontrol_declares_a_hold_only_for_sustain_press_motors(
     import asyncio
     from unittest.mock import MagicMock
 
-    from custom_components.adjustable_bed.beds.rmcontrol import RmcontrolController
+    from custom_components.adjustable_bed.beds.rmcontrol.controller import RmcontrolController
 
     coordinator = MagicMock()
     coordinator.cancel_command = asyncio.Event()

@@ -12,8 +12,8 @@ from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.bed_traits import disconnect_after_command_default_enabled
-from custom_components.adjustable_bed.beds import logicdata_air_pump as pump
-from custom_components.adjustable_bed.beds.logicdata_air_pump import LogicdataAirPumpController
+from custom_components.adjustable_bed.beds.logicdata import air_pump as pump
+from custom_components.adjustable_bed.beds.logicdata.air_pump import LogicdataAirPumpController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LOGICDATA_AIR_PUMP,
     CONF_BED_TYPE,

@@ -3,9 +3,9 @@
 import json
 from pathlib import Path
 
-from custom_components.adjustable_bed.gmmotor_catalog import PROFILES
-from custom_components.adjustable_bed.gmmotor_profiles import load_profile
-from custom_components.adjustable_bed.gmmotor_protocol import Material
+from custom_components.adjustable_bed.beds.gmmotor.catalog import PROFILES
+from custom_components.adjustable_bed.beds.gmmotor.profiles import load_profile
+from custom_components.adjustable_bed.beds.gmmotor.protocol import Material
 
 VECTORS = json.loads((Path(__file__).parent / "fixtures/gmmotor_vectors.json").read_text())
 

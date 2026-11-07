@@ -1,0 +1,1 @@
+"""goodvibe bed family."""

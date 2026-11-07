@@ -21,8 +21,9 @@ from ..const import (
 )
 from ..controller_state import StateKey
 from ..profiles.keeson import app_profile
-from .base import (
-    BedController,
+from .base import BedController
+from .builder import BuildContext
+from .entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerStateSensorSpec,
@@ -30,8 +31,7 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
-from .builder import BuildContext
-from .keeson_layout_app import AppController
+from .keeson.layout_app import AppController
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator

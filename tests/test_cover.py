@@ -6,13 +6,13 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds.base import (
+from custom_components.adjustable_bed.beds.entity_specs import (
     ControllerMotorHoldSpec,
     MotorControlSpec,
 )
-from custom_components.adjustable_bed.beds.octo import OctoController
-from custom_components.adjustable_bed.beds.reverie_pairlink import ReveriePairlinkController
-from custom_components.adjustable_bed.beds.reverie_pairlink_runtime import (
+from custom_components.adjustable_bed.beds.octo.controller import OctoController
+from custom_components.adjustable_bed.beds.reverie.pairlink import ReveriePairlinkController
+from custom_components.adjustable_bed.beds.reverie.pairlink_runtime import (
     PairlinkCredentials,
     PairlinkHomeIdOrigin,
     PairlinkRole,
@@ -125,6 +125,7 @@ async def test_pairlink_controller_hold_metadata_reaches_sided_cover_attributes(
         entity_unique_id=lambda key: key,
         name="Pairlink left",
         async_execute_controller_command=AsyncMock(),
+        handle_controller_state_updates=MagicMock(),
     )
     controller = ReveriePairlinkController(coordinator, model="R510L", runtime=runtime)
     spec = next(item for item in controller.motor_control_specs if item.key == "back")

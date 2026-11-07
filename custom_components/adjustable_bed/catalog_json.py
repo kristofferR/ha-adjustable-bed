@@ -88,10 +88,13 @@ class Node:
         self.fail("a string, integer, boolean, null, list or object")
 
 
-def load(directory: str, name: str) -> Node:
-    """Read ``<directory>/<name>.json.gz`` next to this module.
+def load(directory: Path, name: str) -> Node:
+    """Read ``<directory>/<name>.json.gz``, a data directory inside this integration.
 
     This reads a file, so call it from an executor, never the event loop.
     """
-    path = Path(__file__).with_name(directory) / f"{name}.json.gz"
-    return Node(json.loads(gzip.decompress(path.read_bytes())), f"{directory}/{name}.json.gz")
+    path = directory / f"{name}.json.gz"
+    return Node(
+        json.loads(gzip.decompress(path.read_bytes())),
+        path.relative_to(Path(__file__).parent).as_posix(),
+    )

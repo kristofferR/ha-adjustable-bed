@@ -11,7 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.octo import OctoController
+from custom_components.adjustable_bed.beds.octo.controller import OctoController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OCTO,
     CONF_BED_TYPE,

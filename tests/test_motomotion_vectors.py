@@ -170,7 +170,7 @@ def test_binding_codes_stay_in_the_apps_range():
         codec.binding_code((0, 1, 2))
 
 
-@pytest.mark.parametrize("module", ["motomotion", "motosleep"])
+@pytest.mark.parametrize("module", ["motomotion/controller", "motosleep"])
 def test_the_controller_builds_no_frame_of_its_own(module: str):
     source = (
         Path(__file__).parents[1] / f"custom_components/adjustable_bed/beds/{module}.py"

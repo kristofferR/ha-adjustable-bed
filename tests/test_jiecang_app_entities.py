@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.jiecang_app import JiecangAppController
+from custom_components.adjustable_bed.beds.jiecang.app import JiecangAppController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
@@ -289,7 +289,6 @@ async def test_split_series_right_massage_slider_dispatches_and_reads_its_own_zo
     assert float(hass.states.get(right_id).state) == 2
     assert float(hass.states.get(head_id).state) == 0
     assert float(hass.states.get(foot_id).state) == 0
-    assert coordinator.controller.get_massage_state()["right_intensity"] == 2
 
 
 @pytest.mark.parametrize(

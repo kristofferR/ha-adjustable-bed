@@ -34,7 +34,8 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
 )
 from custom_components.adjustable_bed.profiles.jiecang import COMFORT_MOTION
-from tests.state_helpers import state_writer
+from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
+from tests.state_helpers import massage_levels, state_writer
 
 # Frozen Comfort Motion 2.2.1 literals.
 RELEASE = bytes.fromhex("f1f14e004e7e")
@@ -135,11 +136,11 @@ def packets(client):
 
 
 async def test_massage_vectors_are_not_optimistic(make_controller, zone, frames):
-    controller, _, client = make_controller()
+    controller, coordinator, client = make_controller()
     for level in range(4):
         await controller.set_massage_intensity(zone, level)
     assert packets(client) == frames
-    assert controller.get_massage_state()[f"{zone}_intensity"] == 0
+    assert massage_levels(coordinator.controller_state, zone) == {zone: None}
     with pytest.raises(ValueError):
         await controller.set_massage_intensity(zone, 4)
 
@@ -178,8 +179,11 @@ async def test_all_24_variants_and_temporal_retention(make_controller, transport
     for reply in (layout, layout, 1, 0, 255):
         controller._handle_notification(sender, bytearray([0, 0, 15, 0, reply, 0, 0]))
         assert [s.key for s in controller.motor_control_specs] == [s.key for s in specs]
-        assert controller.get_massage_state() == {"head_intensity": 2, "foot_intensity": 3}
-        assert controller.get_light_state() == {"is_on": True}
+        assert massage_levels(coordinator.controller_state, "head", "foot") == {
+            "head": 2,
+            "foot": 3,
+        }
+        assert coordinator.controller_state[UNDER_BED_LIGHTS_ON] is True
     assert controller.protocol_diagnostics["reported_layout"] == 0
     assert controller.supports_lights is light
     client.is_connected = False
@@ -189,12 +193,12 @@ async def test_all_24_variants_and_temporal_retention(make_controller, transport
     await controller.massage_head_down()
     assert packets(client) == ["f1f1120208021e7e"]
     reconnected = cm.ComfortMotionController(coordinator, layout=physical_layout)
-    assert reconnected.get_massage_state() == controller.get_massage_state()
+    assert reconnected._levels == controller._levels
 
 
 @pytest.mark.parametrize("wire", range(256))
 async def test_unsigned_massage_parser_and_steps(make_controller, wire):
-    controller, _, client = make_controller()
+    controller, coordinator, client = make_controller()
     sender = SimpleNamespace(uuid=astuple(TRANSPORTS["g1"])[2])
     controller._handle_notification(sender, bytearray([0, 0, 6, 0, wire, 0, wire, 0, 0]))
     await controller.massage_head_up()
@@ -206,17 +210,18 @@ async def test_unsigned_massage_parser_and_steps(make_controller, wire):
         expected.append(MASSAGE["foot"][WIRE_LEVELS.index(wire) - 1].hex())
     assert packets(client) == expected
     if wire not in WIRE_LEVELS:
-        assert controller.get_massage_state() == {"head_intensity": None, "foot_intensity": None}
+        state = coordinator.controller_state
+        assert massage_levels(state, "head", "foot") == {"head": None, "foot": None}
 
 
 async def test_short_unknown_and_light_only_preserve_massage(make_controller):
-    controller, _, _ = make_controller()
+    controller, coordinator, _ = make_controller()
     sender = SimpleNamespace(uuid="test")
     for value in (b"", b"\x00\x00\x06", bytes(12), bytes.fromhex("00000f0001")):
         controller._handle_notification(sender, bytearray(value))
     controller._handle_notification(sender, bytearray.fromhex("000005000000000040"))
-    assert controller.get_massage_state() == {"head_intensity": 0, "foot_intensity": 0}
-    assert controller.get_light_state() == {"is_on": True}
+    assert massage_levels(coordinator.controller_state, "head", "foot") == {"head": 0, "foot": 0}
+    assert coordinator.controller_state[UNDER_BED_LIGHTS_ON] is True
 
 
 @pytest.mark.parametrize("task_cancel", [False, True])
@@ -426,18 +431,18 @@ async def test_profile_setup_accepts_comfort_motion(hass, layout):
 
 
 async def test_light_feedback_and_unknown_state(make_controller):
-    controller, _, client = make_controller()
+    controller, coordinator, client = make_controller()
     with pytest.raises(ValueError, match="Read light state"):
         await controller.lights_on()
     await controller.lights_toggle()
-    assert controller.get_light_state() == {}
+    assert UNDER_BED_LIGHTS_ON not in coordinator.controller_state
     sender = SimpleNamespace(uuid="test")
     controller._handle_notification(sender, bytearray.fromhex("000005000000000040"))
     await controller.lights_on()
     assert len(packets(client)) == 1
     await controller.lights_off()
     assert packets(client) == ["f1f10f000f7e"] * 2
-    assert controller.get_light_state() == {"is_on": True}
+    assert coordinator.controller_state[UNDER_BED_LIGHTS_ON] is True
 
 
 async def test_setup_cancellation_cleans_without_cross_link_timers(make_controller):

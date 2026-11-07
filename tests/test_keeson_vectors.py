@@ -10,20 +10,20 @@ from typing import Any, cast
 
 import pytest
 
-from custom_components.adjustable_bed.beds import adjustamattress_protocol as adjustamattress
 from custom_components.adjustable_bed.beds import (
     coolbase,
-    glideaway_motion,
     innova,
-    keeson_okin_apps,
-    malouf,
     ore_comfort_bed,
     rondure,
     sbi,
     scott_living,
-    sleepys,
 )
-from custom_components.adjustable_bed.beds.keeson_layout_app import AppController
+from custom_components.adjustable_bed.beds.adjustamattress import protocol as adjustamattress
+from custom_components.adjustable_bed.beds.glideaway_motion import controller as glideaway_motion
+from custom_components.adjustable_bed.beds.keeson import okin_apps as keeson_okin_apps
+from custom_components.adjustable_bed.beds.keeson.layout_app import AppController
+from custom_components.adjustable_bed.beds.malouf import controller as malouf
+from custom_components.adjustable_bed.beds.sleepys import controller as sleepys
 from custom_components.adjustable_bed.codec import keeson as codec
 from custom_components.adjustable_bed.const import BED_TYPE_KEESON, KEESON_VARIANTS, VARIANT_AUTO
 from custom_components.adjustable_bed.controller_factory import create_controller

@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
-from importlib import import_module
 from typing import TYPE_CHECKING, Any
+
+from ..import_executor import async_import_modules
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -64,9 +65,7 @@ class BuildContext:
 
     async def preload(self, module: str) -> None:
         """Import a ``beds`` module in the import executor, off the event loop."""
-        await self.coordinator.hass.async_add_import_executor_job(
-            import_module, f".{module}", __package__
-        )
+        await async_import_modules(self.coordinator.hass, f"beds.{module}")
 
 
 type ControllerBuilder = Callable[[BuildContext], Awaitable[BedController]]

@@ -3,6 +3,7 @@ import { expect, test } from "bun:test";
 import type { TemplateResult } from "lit";
 import { bedEntitiesForDevice } from "./discovery";
 import type { HomeAssistant } from "./types";
+import { placed } from "./test-placements";
 
 await import("lit");
 const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
@@ -23,7 +24,7 @@ function fixture(backState: "tracking" | "unknown", tvLift = false) {
   const entity = (id: string, key: string) => ({
     entity_id: id, platform: "adjustable_bed", device_id: "bed", translation_key: key,
   });
-  const hass = {
+  const hass = placed({
     entities: {
       "cover.back": entity("cover.back", "back"),
       "cover.legs": entity("cover.legs", "legs"),
@@ -52,7 +53,7 @@ function fixture(backState: "tracking" | "unknown", tvLift = false) {
     callService: async (_domain: string, service: string, data: Record<string, unknown>) => {
       calls.push({ service, data });
     },
-  } as unknown as HomeAssistant;
+  } as unknown as HomeAssistant);
   if (tvLift) {
     hass.entities["cover.back"].translation_key = "tv_lift";
     hass.entities["number.back_est"].translation_key = "tv_lift_position_estimated";
@@ -218,13 +219,13 @@ test("compact readouts show estimate-only motors as the graphic labels them", ()
   });
   const estimate = (id: string, state: string, attributes: Record<string, unknown>) =>
     ({ entity_id: id, state, attributes });
-  const hass = {
+  const hass = placed({
     entities: Object.fromEntries(["back_up", "back_down", "legs_up", "legs_down"]
       .map((key) => [`button.bed_${key}`, entity(`button.bed_${key}`, key)])),
     states: {} as Record<string, unknown>,
     devices: {}, themes: {}, language: "en", locale: { language: "en" },
     callService: async () => undefined,
-  } as unknown as HomeAssistant;
+  } as unknown as HomeAssistant);
   for (const motor of ["back", "legs"])
     hass.entities[`number.bed_${motor}_est`] = entity(`number.bed_${motor}_est`, `${motor}_position_estimated`);
   const card = new AdjustableBedCard() as unknown as {

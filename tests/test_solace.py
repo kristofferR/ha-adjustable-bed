@@ -14,7 +14,7 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.base import controller_as
 from custom_components.adjustable_bed.beds.family_actions import YogaPresetActions
-from custom_components.adjustable_bed.beds.solace import (
+from custom_components.adjustable_bed.beds.solace.controller import (
     SolaceCommands,
     SolaceController,
     SolaceProfile,
@@ -285,9 +285,9 @@ class TestSolaceProfiles:
         coordinator.async_execute_controller_query = AsyncMock(side_effect=execute_query)
         now = datetime(2023, 12, 31, 23, 59, 58)
         with (
-            patch("custom_components.adjustable_bed.beds.solace.dt_util.now", return_value=now),
+            patch("custom_components.adjustable_bed.beds.solace.controller.dt_util.now", return_value=now),
             patch(
-                "custom_components.adjustable_bed.beds.solace.asyncio.sleep",
+                "custom_components.adjustable_bed.beds.solace.controller.asyncio.sleep",
                 new_callable=AsyncMock,
             ),
         ):
@@ -315,7 +315,7 @@ class TestSolaceProfiles:
 
         coordinator.async_execute_controller_query = AsyncMock(side_effect=execute_query)
         with patch(
-            "custom_components.adjustable_bed.beds.solace.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.solace.controller.asyncio.sleep",
             new_callable=AsyncMock,
         ):
             await controller._async_query_preset_states("q1")
@@ -550,7 +550,7 @@ class TestSolaceProfiles:
 
         coordinator.async_execute_controller_query = AsyncMock(side_effect=execute_query)
         sleep = AsyncMock()
-        with patch("custom_components.adjustable_bed.beds.solace.asyncio.sleep", sleep):
+        with patch("custom_components.adjustable_bed.beds.solace.controller.asyncio.sleep", sleep):
             await controller._async_query_preset_states("q1")
 
         assert [call.args[0] for call in controller.write_command.await_args_list] == list(

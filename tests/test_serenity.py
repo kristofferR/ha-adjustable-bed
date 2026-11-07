@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from bleak.exc import BleakError
 
-from custom_components.adjustable_bed.beds.serenity import SerenityController
+from custom_components.adjustable_bed.beds.serenity.controller import SerenityController
 
 
 def make_controller(properties=("write",)) -> SerenityController:

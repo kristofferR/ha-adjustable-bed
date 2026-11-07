@@ -7,17 +7,21 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.core import HomeAssistant
 
-from custom_components.adjustable_bed.beds.gmmotor_sleep import GmmotorSleepController
-from custom_components.adjustable_bed.codec.sleep_envelope import frame
-from custom_components.adjustable_bed.gmmotor_requests import Request
-from custom_components.adjustable_bed.gmmotor_sleep_state import (
+from custom_components.adjustable_bed.beds.gmmotor.requests import Request
+from custom_components.adjustable_bed.beds.gmmotor.sleep import GmmotorSleepController
+from custom_components.adjustable_bed.beds.gmmotor.sleep_state import (
     ClockUpdate,
     Followup,
     ReportSize,
     Stream,
     dispatch,
 )
-from custom_components.adjustable_bed.gmmotor_transport import SLEEP_NOTIFY, SLEEP_WRITE, Transport
+from custom_components.adjustable_bed.beds.gmmotor.transport import (
+    SLEEP_NOTIFY,
+    SLEEP_WRITE,
+    Transport,
+)
+from custom_components.adjustable_bed.codec.sleep_envelope import frame
 from tests.state_helpers import published
 
 
@@ -38,7 +42,7 @@ def controller(hass: HomeAssistant, *, sxb: bool = True) -> GmmotorSleepControll
 
 async def test_frame_is_chunked_at_mtu_without_per_chunk_delay(hass: HomeAssistant) -> None:
     ctrl = controller(hass, sxb=False)
-    with patch("custom_components.adjustable_bed.beds.gmmotor_sleep._QUEUE_TICK", 0):
+    with patch("custom_components.adjustable_bed.beds.gmmotor.sleep._QUEUE_TICK", 0):
         await ctrl._send("q_part")
     calls = ctrl.client.write_gatt_char.call_args_list
     chunks = [call.args[1] for call in calls]

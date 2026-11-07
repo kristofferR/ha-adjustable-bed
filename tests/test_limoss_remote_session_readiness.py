@@ -10,13 +10,13 @@ from homeassistant.exceptions import HomeAssistantError
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
-from custom_components.adjustable_bed.beds.limoss_remote import LimossRemoteController
-from custom_components.adjustable_bed.codec import limoss as codec
-from custom_components.adjustable_bed.controller_factory import create_controller
-from custom_components.adjustable_bed.limoss_remote_state import (
+from custom_components.adjustable_bed.beds.limoss.remote import LimossRemoteController
+from custom_components.adjustable_bed.beds.limoss.remote_state import (
     LimossRemoteMemory,
     get_limoss_remote_session,
 )
+from custom_components.adjustable_bed.codec import limoss as codec
+from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.services import async_register_services
 from tests.test_coordinator_limoss_remote import actual_coordinator
 from tests.test_limoss_remote import make_controller

@@ -8,7 +8,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.goodvibe import GoodVibeController, Link
+from custom_components.adjustable_bed.beds.goodvibe.controller import GoodVibeController, Link
+from custom_components.adjustable_bed.beds.goodvibe.protocol import action_frame
 from custom_components.adjustable_bed.const import (
     BED_TYPE_GOODVIBE,
     CONF_BED_TYPE,
@@ -17,7 +18,6 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.goodvibe_protocol import action_frame
 
 
 def runtime(hass, profile="sleep_hj", handoff=True, address="AA:BB:CC:DD:EE:16"):
@@ -144,8 +144,8 @@ async def test_background_writes_use_serialized_production_command_path(hass):
 
 async def test_release_entity_uses_stop_admission_without_an_extra_wire_stop(hass):
     from custom_components.adjustable_bed.beds.base import CONTROLLER_GESTURE_RELEASE
+    from custom_components.adjustable_bed.beds.goodvibe.catalog import ACTIONS
     from custom_components.adjustable_bed.button import ControllerActionButton
-    from custom_components.adjustable_bed.goodvibe_catalog import ACTIONS
 
     c = runtime(hass, profile="selector-0001")
     obj = c._controller
@@ -181,8 +181,8 @@ async def test_release_entity_uses_stop_admission_without_an_extra_wire_stop(has
 
 
 async def test_release_entity_invalidates_a_hold_still_in_connection_preflight(hass):
+    from custom_components.adjustable_bed.beds.goodvibe.catalog import ACTIONS
     from custom_components.adjustable_bed.button import ControllerActionButton
-    from custom_components.adjustable_bed.goodvibe_catalog import ACTIONS
 
     c = runtime(hass, profile="selector-0001")
     obj = c._controller
@@ -227,8 +227,8 @@ async def test_release_entity_invalidates_a_hold_still_in_connection_preflight(h
 
 async def test_public_hold_service_released_during_preflight_cannot_start_later(hass):
     from custom_components.adjustable_bed import services
+    from custom_components.adjustable_bed.beds.goodvibe.catalog import ACTIONS
     from custom_components.adjustable_bed.button import ControllerActionButton
-    from custom_components.adjustable_bed.goodvibe_catalog import ACTIONS
 
     c = runtime(hass, profile="selector-0001")
     obj = c._controller
@@ -276,8 +276,8 @@ async def test_public_configuration_preflights_every_target_before_any_write(has
     import pytest
     from homeassistant.exceptions import ServiceValidationError
 
-    from custom_components.adjustable_bed import goodvibe_services as service
-    from custom_components.adjustable_bed.goodvibe_catalog import PRODUCTS
+    from custom_components.adjustable_bed.beds.goodvibe import services as service
+    from custom_components.adjustable_bed.beds.goodvibe.catalog import PRODUCTS
 
     light = next(k for k, v in PRODUCTS.items() if v.light)
     dark = next(k for k, v in PRODUCTS.items() if not v.light)
@@ -305,9 +305,9 @@ async def test_public_configuration_preflights_every_target_before_any_write(has
 
 
 async def test_public_configuration_and_dynamic_entities_use_real_scheduler(hass):
-    from custom_components.adjustable_bed import goodvibe_services as service
-    from custom_components.adjustable_bed.goodvibe_catalog import PRODUCTS
-    from custom_components.adjustable_bed.goodvibe_protocol import (
+    from custom_components.adjustable_bed.beds.goodvibe import services as service
+    from custom_components.adjustable_bed.beds.goodvibe.catalog import PRODUCTS
+    from custom_components.adjustable_bed.beds.goodvibe.protocol import (
         SNORE_MENU_EXCLUDED_MODELS,
         light_duration,
         snore_config,
@@ -372,7 +372,7 @@ async def test_public_configuration_and_dynamic_entities_use_real_scheduler(hass
 
 
 async def test_monitoring_poll_write_failure_keeps_intent_and_retries(hass):
-    from custom_components.adjustable_bed.beds import goodvibe as bed
+    from custom_components.adjustable_bed.beds.goodvibe import controller as bed
 
     c = runtime(hass)
     obj = c._controller

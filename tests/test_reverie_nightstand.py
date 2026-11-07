@@ -11,10 +11,10 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.reverie_comfort import (
+from custom_components.adjustable_bed.beds.reverie.comfort import (
     ReverieComfortRequest,
 )
-from custom_components.adjustable_bed.beds.reverie_nightstand import (
+from custom_components.adjustable_bed.beds.reverie.nightstand import (
     ReverieNightstandCommands,
     ReverieNightstandController,
 )
@@ -347,7 +347,7 @@ class TestReverieNightstandMovement:
         await coordinator.async_connect()
         mock_client = coordinator._client
 
-        with patch("custom_components.adjustable_bed.beds.reverie_nightstand.asyncio.sleep"):
+        with patch("custom_components.adjustable_bed.beds.reverie.nightstand.asyncio.sleep"):
             await coordinator.controller.hold_control("back_up", 250)
 
         calls = mock_client.write_gatt_char.call_args_list

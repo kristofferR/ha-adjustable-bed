@@ -47,7 +47,7 @@ def test_own_sides_keeps_only_the_bound_side() -> None:
 
 def test_action_button_availability_reads_its_own_side() -> None:
     """Home Assistant reads availability outside state writes."""
-    from custom_components.adjustable_bed.beds.base import ControllerButtonSpec
+    from custom_components.adjustable_bed.beds.entity_specs import ControllerButtonSpec
     from custom_components.adjustable_bed.button import ControllerActionButton
 
     controller = _controller()

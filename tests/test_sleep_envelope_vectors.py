@@ -11,12 +11,12 @@ from __future__ import annotations
 
 import pytest
 
-from custom_components.adjustable_bed.casper_base_protocol import Request
-from custom_components.adjustable_bed.casper_sleep_protocol import command, envelope
+from custom_components.adjustable_bed.beds.casper_base.protocol import Request
+from custom_components.adjustable_bed.beds.casper_sleep.protocol import command, envelope
+from custom_components.adjustable_bed.beds.gmmotor.sleep_protocol import Requests
+from custom_components.adjustable_bed.beds.goodvibe.sleep import sleep_packet
+from custom_components.adjustable_bed.beds.hush_sleep.protocol import build
 from custom_components.adjustable_bed.codec import sleep_envelope
-from custom_components.adjustable_bed.gmmotor_sleep_protocol import Requests
-from custom_components.adjustable_bed.goodvibe_sleep import sleep_packet
-from custom_components.adjustable_bed.hush_sleep_protocol import build
 
 FRAMES: dict[str, frozenset[str]] = {
     "casper": frozenset(

@@ -165,7 +165,7 @@ async def test_factory_passes_explicit_settings_without_affecting_legacy(hass):
         )
     )
     with patch(
-        "custom_components.adjustable_bed.beds.logicdata_app.LogicdataAppController"
+        "custom_components.adjustable_bed.beds.logicdata.app.LogicdataAppController"
     ) as controller:
         await create_controller(coordinator, BED_TYPE_LOGICDATA_APP, None, None)
     controller.assert_called_once_with(

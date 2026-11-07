@@ -11,7 +11,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.star_elevate import (
+from custom_components.adjustable_bed.beds.starcode.star_elevate import (
     StarElevateCommands,
     StarElevateController,
 )
@@ -152,7 +152,7 @@ async def test_elevate_main_or_lift_interrupts_its_group_peers(
     assert isinstance(controller, StarElevateController)
     with (
         patch(
-            "custom_components.adjustable_bed.starcode_accessory_group.interrupt_conflicting_group",
+            "custom_components.adjustable_bed.beds.starcode.accessory_group.interrupt_conflicting_group",
             AsyncMock(),
         ) as interrupt,
         patch.object(controller, "write_command", AsyncMock()),

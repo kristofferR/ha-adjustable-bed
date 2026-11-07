@@ -55,7 +55,10 @@ def sleepstar_controller() -> tuple[SleepStarController, MagicMock, MagicMock]:
     coordinator.handle_controller_state_update = MagicMock()
     coordinator.handle_controller_state_updates = MagicMock()
     coordinator.record_command_trace = MagicMock()
-    return SleepStarController(coordinator), coordinator, client
+    controller = SleepStarController(coordinator)
+    # Tests assert on what the bed reports, not the sonic levels published at construction.
+    coordinator.handle_controller_state_updates.reset_mock()
+    return controller, coordinator, client
 
 
 @pytest.mark.parametrize(
@@ -304,9 +307,10 @@ async def test_sonic_intensity_and_timer_use_two_writes_then_stop(
     assert write.await_args_list[1].args == (SleepStarCommands.STOP,)
     assert write.await_args_list[2].args[0] == wrap_control_box(star.extended(0x0B, 2))
     assert write.await_args_list[3].args == (SleepStarCommands.STOP,)
-    assert controller.get_massage_state()["intensity"] == 6
     intensity_updates = published(*_coordinator.handle_controller_state_updates.call_args_list[0].args)
-    assert intensity_updates["massage_intensity"] == 6
+    assert intensity_updates == {"massage_all_intensity": 6}
+    timer_updates = published(*_coordinator.handle_controller_state_updates.call_args_list[1].args)
+    assert timer_updates == {"massage_timer": 20, "massage_active": True}
 
 
 async def test_repeated_command_holds_sender_lock_against_background_query(

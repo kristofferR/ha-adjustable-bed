@@ -5,15 +5,15 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed.beds.vibradorm_app import (
+from custom_components.adjustable_bed.beds.vibradorm.app import (
     async_prepare_vibradorm_app_pairing,
 )
-from custom_components.adjustable_bed.codec.vibradorm import CBI_CHAR_UUID as CBI
-from custom_components.adjustable_bed.profiles.vibradorm import VMAT_QUERY_STAGES as QUERY_STAGES
-from custom_components.adjustable_bed.vibradorm_vmat_setup import (
+from custom_components.adjustable_bed.beds.vibradorm.vmat_setup import (
     async_close_vmat_setup,
     parse_stage_response,
 )
+from custom_components.adjustable_bed.codec.vibradorm import CBI_CHAR_UUID as CBI
+from custom_components.adjustable_bed.profiles.vibradorm import VMAT_QUERY_STAGES as QUERY_STAGES
 from tests.test_vibradorm_vmat import VECTORS, frames, make_vmat
 
 
@@ -96,7 +96,7 @@ async def test_public_setup_classification_preserves_original_when_unsubscribe_f
     unknown = BondEvidence(BondVerificationStatus.INCONCLUSIVE, BondOwner.from_path(path), "native", "now")
     module = "custom_components.adjustable_bed.config_flow."
     with (
-        patch("custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs", return_value=AsyncExitStack()),
+        patch("custom_components.adjustable_bed.config_flow.capture_proxy_logs", return_value=AsyncExitStack()),
         patch("bleak_retry_connector.establish_connection", new=AsyncMock(return_value=c.client)),
         patch(module + "async_predict_path", return_value=PathPrediction(path, (path,))),
         patch(module + "client_source", return_value=source),
@@ -173,7 +173,7 @@ async def test_missing_responses_advance_without_claimed_ack():
     c = make_vmat("00")
     progress = []
     fast = tuple((field, packet, prefix, 0.01) for field, packet, prefix, _ in QUERY_STAGES)
-    with patch("custom_components.adjustable_bed.vibradorm_vmat_setup.VMAT_QUERY_STAGES", fast):
+    with patch("custom_components.adjustable_bed.beds.vibradorm.vmat_setup.VMAT_QUERY_STAGES", fast):
         await async_prepare_vibradorm_app_pairing(
             c.client, "vmat", 2, remote="00", deadline=asyncio.get_running_loop().time() + 10,
             metadata_progress=progress.append,

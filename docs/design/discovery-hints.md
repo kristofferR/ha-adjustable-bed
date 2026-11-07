@@ -21,7 +21,7 @@ and declares `HINTS`, built with the helpers in `_hints.py`:
 
 `bed_types` names the bed types a hint can lead to. Take hints from the app's
 scan filter or a catalog where one exists. The GM Control hints read
-`gmmotor_catalog.SCAN_KEYWORDS`, which `tools/generate_gmmotor_catalog.py`
+`SCAN_KEYWORDS` in `beds/gmmotor/catalog.py`, which `tools/generate_gmmotor_catalog.py`
 writes, so a regenerated catalog leaves no stale matcher.
 
 `_excluded.py` holds the name fragments of non-bed devices that share generic

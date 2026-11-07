@@ -16,13 +16,14 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant
 
+from .beds.furnimove.repair import async_load_offline_furnimove_entry
+from .beds.kaidi.metadata import async_cache_kaidi_entry_metadata
+from .beds.octo.runtime import async_refresh_octo_pin_issue
+from .beds.remacro.discovery import async_prepare_remacro_entry
+from .beds.reverie.pairlink_local_setup import async_setup_pairlink_local_entry
+from .beds.richmat.qrrm_reclassification import async_reclassify_bedtech_qrrm_entry
 from .const import BED_TYPE_DIAGNOSTIC, BED_TYPE_FURNIMOVE, BED_TYPE_REVERIE_PAIRLINK
-from .furnimove_repair import async_load_offline_furnimove_entry
-from .kaidi_metadata import async_cache_kaidi_entry_metadata
-from .octo_runtime import async_refresh_octo_pin_issue
-from .pairlink_local_setup import async_setup_pairlink_local_entry
-from .qrrm_reclassification import async_reclassify_bedtech_qrrm_entry
-from .remacro_discovery import async_prepare_remacro_entry
+from .import_executor import async_import_modules
 
 if TYPE_CHECKING:
     from .coordinator import AdjustableBedCoordinator
@@ -46,9 +47,9 @@ async def _async_load_offline_diagnostic_entry(
     reason: str,
 ) -> bool:
     """Load a diagnostic entry even when initial BLE connection fails."""
+    await async_import_modules(hass, "beds.diagnostic")
     from .beds.diagnostic import DiagnosticBedController
 
-    del hass
     _LOGGER.warning(
         "Loading diagnostic entry %s (%s) without an initial BLE connection so "
         "diagnostic actions remain available: %s",

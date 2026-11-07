@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock
 import pytest
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import decrypt_user_frame
+from custom_components.adjustable_bed.beds.reverie.pairlink_protocol import decrypt_user_frame
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
 from tests.test_reverie_pairlink import _controller, _join_central

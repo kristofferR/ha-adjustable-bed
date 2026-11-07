@@ -100,8 +100,8 @@ async def factory_controllers() -> list[BedController]:
     Layouts differ by variant and motor count, so one default controller per
     bed type misses the controls only some layouts have.
     """
-    from custom_components.adjustable_bed.beds.sleep_number_mcr import SleepNumberMcrController
-    from custom_components.adjustable_bed.beds.sleep_number_mcr_protocol import (
+    from custom_components.adjustable_bed.beds.sleep_number.mcr import SleepNumberMcrController
+    from custom_components.adjustable_bed.beds.sleep_number.mcr_protocol import (
         FoundationFeatures,
     )
     from custom_components.adjustable_bed.config_flow import _motor_count_options

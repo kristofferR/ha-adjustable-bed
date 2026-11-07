@@ -10,17 +10,17 @@ from bleak.exc import BleakError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.bed_traits import disconnect_after_command_default_enabled
-from custom_components.adjustable_bed.beds.gmmotor import GmmotorController
-from custom_components.adjustable_bed.beds.gmmotor_sleep import GmmotorSleepController
+from custom_components.adjustable_bed.beds.gmmotor.controller import GmmotorController
+from custom_components.adjustable_bed.beds.gmmotor.notifications import Event
+from custom_components.adjustable_bed.beds.gmmotor.requests import Request
+from custom_components.adjustable_bed.beds.gmmotor.services import async_register_gmmotor_services
+from custom_components.adjustable_bed.beds.gmmotor.sessions import sleep_intent
+from custom_components.adjustable_bed.beds.gmmotor.sleep import GmmotorSleepController
+from custom_components.adjustable_bed.beds.gmmotor.transport import E0FF, SLEEP_NOTIFY, SLEEP_WRITE
 from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.codec.sleep_envelope import frame
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.gmmotor_notifications import Event
-from custom_components.adjustable_bed.gmmotor_requests import Request
-from custom_components.adjustable_bed.gmmotor_services import async_register_gmmotor_services
-from custom_components.adjustable_bed.gmmotor_sessions import sleep_intent
-from custom_components.adjustable_bed.gmmotor_transport import E0FF, SLEEP_NOTIFY, SLEEP_WRITE
 
 
 @pytest.fixture
@@ -53,7 +53,7 @@ def gm_link(mock_coordinator_connected, mock_bleak_client, monkeypatch):
     mock_bleak_client.start_notify = AsyncMock()
     mock_bleak_client.stop_notify = AsyncMock()
     monkeypatch.setattr(GmmotorController, "_pause", AsyncMock(return_value=True))
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.gmmotor_sleep._QUEUE_TICK", 0)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.gmmotor.sleep._QUEUE_TICK", 0)
     return mock_bleak_client
 
 

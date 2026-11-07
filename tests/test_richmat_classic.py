@@ -10,10 +10,10 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds import richmat_classic as bed
-from custom_components.adjustable_bed.richmat_classic_profiles import APP_NAMES
-from custom_components.adjustable_bed.richmat_classic_requests import Request
-from custom_components.adjustable_bed.richmat_classic_transport import Transport
+from custom_components.adjustable_bed.beds.richmat_classic import controller as bed
+from custom_components.adjustable_bed.beds.richmat_classic.profiles import APP_NAMES
+from custom_components.adjustable_bed.beds.richmat_classic.requests import Request
+from custom_components.adjustable_bed.beds.richmat_classic.transport import Transport
 from tests.state_helpers import published
 
 
@@ -51,7 +51,7 @@ async def test_null_worker_boundaries_preserve_raw_drop_and_framed_failure(insta
     import json
     from pathlib import Path
 
-    from custom_components.adjustable_bed.richmat_classic_protocol import Worker
+    from custom_components.adjustable_bed.beds.richmat_classic.protocol import Worker
 
     cases = json.loads((Path(__file__).parent / "fixtures/richmat_classic/null_worker_cases.json").read_text())
     assert len(cases) == 90
@@ -75,7 +75,7 @@ def test_hold_selectors_preserve_source_callback_mutations():
     import json
     from pathlib import Path
 
-    from custom_components.adjustable_bed.richmat_classic_caller import effective_status
+    from custom_components.adjustable_bed.beds.richmat_classic.caller import effective_status
 
     cases = json.loads((Path(__file__).parent / "fixtures/richmat_classic/hold_callbacks.json").read_text())
     for case in cases:
@@ -98,7 +98,7 @@ def test_hold_selectors_preserve_source_callback_mutations():
 
 @pytest.mark.parametrize("app", ("fortywinks", "superior"))
 def test_zrs6_navigation_is_not_exposed_as_a_bed_command(app):
-    from custom_components.adjustable_bed.richmat_classic_caller import Retain, transition
+    from custom_components.adjustable_bed.beds.richmat_classic.caller import Retain, transition
 
     ctrl, _ = controller(app, "ZRS6")
     assert [s.key for s in ctrl.controller_button_specs] == ["richmat_classic_release"]
@@ -244,7 +244,7 @@ async def test_settings_queries_and_menu_gates(instant):
 
 async def test_proven_settings_rows_survive_a_reconnect_and_a_new_controller(instant, monkeypatch):
     """With a disconnect between calls, a query's proven rows still gate the next call."""
-    from custom_components.adjustable_bed.richmat_classic_protocol import rgb
+    from custom_components.adjustable_bed.beds.richmat_classic.protocol import rgb
 
     ctrl, _ = controller(layout="A0RN")
     for reply in ("6e0e00037f", "6e1a000189"):

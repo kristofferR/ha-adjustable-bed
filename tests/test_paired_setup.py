@@ -3324,7 +3324,7 @@ class TestSideServiceRouting:
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
         coordinator = hass.data[DOMAIN][entry.entry_id]
-        from custom_components.adjustable_bed.beds.linak_protocol import (
+        from custom_components.adjustable_bed.beds.linak.protocol import (
             LinakCapabilitySnapshot,
             LinakProfile,
         )
@@ -3396,7 +3396,7 @@ class TestSideServiceRouting:
         from types import SimpleNamespace
         from unittest.mock import MagicMock
 
-        from custom_components.adjustable_bed.beds.base import MotorControlSpec
+        from custom_components.adjustable_bed.beds.entity_specs import MotorControlSpec
         from custom_components.adjustable_bed.button import (
             PairedBedCombinedMotorButton,
             _combined_motor_buttons_for,
@@ -3475,7 +3475,7 @@ class TestSideServiceRouting:
         from types import SimpleNamespace
         from unittest.mock import MagicMock
 
-        from custom_components.adjustable_bed.beds.base import (
+        from custom_components.adjustable_bed.beds.entity_specs import (
             ControllerMotorHoldSpec,
             MotorControlSpec,
         )
@@ -3577,7 +3577,7 @@ class TestPairedReceiverSettings:
     ):
         from bleak.exc import BleakError
 
-        from custom_components.adjustable_bed.beds.octo import OctoStar2Controller
+        from custom_components.adjustable_bed.beds.octo.controller import OctoStar2Controller
         from custom_components.adjustable_bed.paired_coordinator import PairedSideError
 
         entry = _paired_entry(hass)
@@ -3629,7 +3629,7 @@ class TestPairedReceiverSettings:
     async def test_common_timed_window_keeps_each_receiver_cadence_and_cancellation(
         self, hass, mock_coordinator_connected, enable_custom_integrations, release_during_setup
     ):
-        from custom_components.adjustable_bed.beds.octo import OctoStar2Controller
+        from custom_components.adjustable_bed.beds.octo.controller import OctoStar2Controller
 
         entry = _paired_entry(hass)
         await hass.config_entries.async_setup(entry.entry_id)
@@ -3738,7 +3738,7 @@ class TestPairedReceiverSettings:
         from types import SimpleNamespace
         from unittest.mock import MagicMock
 
-        from custom_components.adjustable_bed.beds.base import (
+        from custom_components.adjustable_bed.beds.entity_specs import (
             ControllerMotorHoldSpec,
             MotorControlSpec,
         )
@@ -3780,7 +3780,7 @@ class TestPairedReceiverSettings:
         from types import SimpleNamespace
         from unittest.mock import MagicMock
 
-        from custom_components.adjustable_bed.beds.base import MotorControlSpec
+        from custom_components.adjustable_bed.beds.entity_specs import MotorControlSpec
         from custom_components.adjustable_bed.button import PairedBedCombinedMotorButton
 
         spec = MotorControlSpec(motor, motor, AsyncMock(), AsyncMock(), AsyncMock())
@@ -3930,7 +3930,7 @@ class TestCombinedPositionSliders:
     def test_builder_intersects_side_specs_and_needs_both_capability_sources(self):
         from unittest.mock import MagicMock
 
-        from custom_components.adjustable_bed.beds.base import build_position_number_spec
+        from custom_components.adjustable_bed.beds.entity_specs import build_position_number_spec
         from custom_components.adjustable_bed.number import (
             _combined_position_entities_for,
         )
@@ -3976,7 +3976,7 @@ class TestCombinedPositionSliders:
         from types import SimpleNamespace
         from unittest.mock import AsyncMock, MagicMock
 
-        from custom_components.adjustable_bed.beds.base import build_position_number_spec
+        from custom_components.adjustable_bed.beds.entity_specs import build_position_number_spec
         from custom_components.adjustable_bed.number import (
             PairedBedCombinedPositionNumber,
             _build_position_description,
@@ -4022,8 +4022,8 @@ class TestCombinedPositionSliders:
     ):
         from unittest.mock import PropertyMock
 
-        from custom_components.adjustable_bed.beds.base import build_position_number_spec
-        from custom_components.adjustable_bed.beds.linak import LinakController
+        from custom_components.adjustable_bed.beds.entity_specs import build_position_number_spec
+        from custom_components.adjustable_bed.beds.linak.controller import LinakController
 
         data = _paired_entry_data()
         for child in data[CONF_PAIR_CHILDREN]:
@@ -4084,7 +4084,7 @@ class TestOfflineSideEntities:
     reconnect needs no reload."""
 
     async def test_offline_side_builds_covers_from_capability_controller(self, hass: HomeAssistant):
-        from custom_components.adjustable_bed.beds.linak import LinakController
+        from custom_components.adjustable_bed.beds.linak.controller import LinakController
         from custom_components.adjustable_bed.cover import _cover_entities_for
 
         entry = _paired_entry(hass)
@@ -4390,7 +4390,9 @@ class TestOfflineSafeBedTypes:
         await left.async_prime_offline_controller()
         assert left.capability_controller is not None, bed_type
         if bed_type == BED_TYPE_MOTION_BED:
-            from custom_components.adjustable_bed.beds.motion_bed import MotionBedController
+            from custom_components.adjustable_bed.beds.motion_bed.controller import (
+                MotionBedController,
+            )
 
             right = children[SIDE_RIGHT]
             await right.async_prime_offline_controller()
@@ -4405,7 +4407,9 @@ class TestOfflineSafeBedTypes:
     async def test_eshine_offline_capabilities_require_an_explicit_side_profile(
         self, hass: HomeAssistant, profile: str | None
     ) -> None:
-        from custom_components.adjustable_bed.beds.eshine_okin import EshineOkinController
+        from custom_components.adjustable_bed.beds.eshine_okin.controller import (
+            EshineOkinController,
+        )
         from custom_components.adjustable_bed.pairing import OFFLINE_CAPABILITY_SAFE_VARIANTS
 
         assert BED_TYPE_ESHINE_OKIN not in OFFLINE_CAPABILITY_SAFE_BED_TYPES
@@ -4443,7 +4447,7 @@ class TestOfflineSafeBedTypes:
         from types import SimpleNamespace
         from unittest.mock import MagicMock
 
-        from custom_components.adjustable_bed.beds.logicdata_app import LogicdataAppController
+        from custom_components.adjustable_bed.beds.logicdata.app import LogicdataAppController
         from custom_components.adjustable_bed.profiles.logicdata import TRANSPORTS
         from custom_components.adjustable_bed.services import _validation_controller
 
@@ -4498,7 +4502,7 @@ class TestOfflineSafeBedTypes:
     async def test_lp_legacy_offline_side_keeps_configured_remote_buttons(
         self, hass: HomeAssistant
     ) -> None:
-        from custom_components.adjustable_bed.beds.leggett_lp_legacy import (
+        from custom_components.adjustable_bed.beds.leggett.lp_legacy import (
             LeggettLpLegacyController,
         )
         from custom_components.adjustable_bed.button import (
@@ -4697,7 +4701,7 @@ class TestOctoOfflineSnapshot:
         from homeassistant.components.switch import SwitchEntity
         from homeassistant.const import Platform
 
-        from custom_components.adjustable_bed.beds.octo import (
+        from custom_components.adjustable_bed.beds.octo.controller import (
             OCTO_FEATURE_LIGHT,
             OctoCapabilityRecord,
             OctoController,
@@ -4840,7 +4844,7 @@ class TestOctoOfflineSnapshot:
         has_held_metadata: bool,
     ) -> None:
         """Real paired Octo buttons keep sequential cards on finite timed moves."""
-        from custom_components.adjustable_bed.beds.octo import OCTO_FEATURE_MOTORCOUNT
+        from custom_components.adjustable_bed.beds.octo.controller import OCTO_FEATURE_MOTORCOUNT
         from custom_components.adjustable_bed.button import (
             PairedBedCombinedMotorButton,
             _combined_button_entities_for,
@@ -4896,7 +4900,7 @@ class TestOctoOfflineSnapshot:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """An existing Auto button switches to its finite card route after fallback."""
-        from custom_components.adjustable_bed.beds.octo import OCTO_FEATURE_MOTORCOUNT
+        from custom_components.adjustable_bed.beds.octo.controller import OCTO_FEATURE_MOTORCOUNT
         from custom_components.adjustable_bed.button import (
             PairedBedCombinedMotorButton,
             _combined_button_entities_for,
@@ -4969,7 +4973,7 @@ class TestOctoOfflineSnapshot:
         self, hass: HomeAssistant
     ) -> None:
         """Current per-side specs retain native Both held controls."""
-        from custom_components.adjustable_bed.beds.octo import (
+        from custom_components.adjustable_bed.beds.octo.controller import (
             OCTO_FEATURE_MOTORCOUNT,
             OctoController,
         )
@@ -5100,8 +5104,8 @@ class TestOctoLegacyMotorFallbackSetup:
         monkeypatch: pytest.MonkeyPatch,
         connection_mode: str,
     ) -> None:
-        from custom_components.adjustable_bed.beds import octo as octo_module
-        from custom_components.adjustable_bed.beds.octo import (
+        from custom_components.adjustable_bed.beds.octo import controller as octo_module
+        from custom_components.adjustable_bed.beds.octo.controller import (
             OCTO_MOTOR_HEAD,
             OctoController,
         )

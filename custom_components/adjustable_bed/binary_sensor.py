@@ -19,6 +19,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory, Platform
 from homeassistant.core import HomeAssistant, callback
 
+from .card import CARD_HIDDEN, CardPlacement, CardSection
 from .const import DOMAIN
 from .controller_state import ControllerState, StateKey, sided
 from .entity import AdjustableBedEntity
@@ -29,7 +30,8 @@ from .paired_coordinator import entity_runtimes
 from .state_keys import BED_PRESENCE, BED_PRESENCE_SIDE
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, ControllerStateBinarySensorSpec
+    from .beds.base import BedController
+    from .beds.entity_specs import ControllerStateBinarySensorSpec
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -131,7 +133,7 @@ class AdjustableBedConnectionSensor(AdjustableBedEntity, BinarySensorEntity):
         description: AdjustableBedBinarySensorEntityDescription,
     ) -> None:
         """Initialize the binary sensor."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CardPlacement(CardSection.CONNECTION))
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
@@ -216,7 +218,7 @@ class AdjustableBedControllerStateBinarySensor(AdjustableBedEntity, BinarySensor
         spec: ControllerStateBinarySensorSpec,
     ) -> None:
         """Initialize a controller-state binary sensor."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, spec.card)
         self._spec = spec
         self._attr_unique_id = coordinator.entity_unique_id(spec.key)
         self._attr_translation_key = spec.translation_key
@@ -271,7 +273,7 @@ class AdjustableBedPresenceSensor(AdjustableBedEntity, BinarySensorEntity):
         description: AdjustableBedBinarySensorEntityDescription,
     ) -> None:
         """Initialize the presence sensor."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_HIDDEN)
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)

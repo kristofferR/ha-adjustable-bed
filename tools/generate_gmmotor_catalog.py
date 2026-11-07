@@ -207,7 +207,7 @@ def generate(report: Path) -> None:
             '"""',
             "from typing import Final",
             "",
-            "from .gmmotor_catalog_types import ActionRow, MaterialRow, ProfileRow, RouteRow",
+            "from .catalog_types import ActionRow, MaterialRow, ProfileRow, RouteRow",
             "",
             "# fmt: off",
             "MATERIALS: Final[tuple[MaterialRow, ...]] = "
@@ -222,7 +222,7 @@ def generate(report: Path) -> None:
             "",
         ]
     )
-    path = ROOT / "custom_components/adjustable_bed/gmmotor_catalog.py"
+    path = ROOT / "custom_components/adjustable_bed/beds/gmmotor/catalog.py"
     path.write_text(text)
     # SCAN_KEYWORDS feeds the GM discovery hints; regenerate the manifest's
     # matchers from them so a dropped keyword leaves no stale matcher.

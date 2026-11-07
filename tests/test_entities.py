@@ -14,7 +14,7 @@ from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.base import BedController
-from custom_components.adjustable_bed.beds.leggett_gen2 import LeggettGen2Commands
+from custom_components.adjustable_bed.beds.leggett.gen2 import LeggettGen2Commands
 from custom_components.adjustable_bed.button import (
     BUTTON_DESCRIPTIONS,
     _button_translation_key,

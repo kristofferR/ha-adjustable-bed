@@ -131,7 +131,7 @@ def bluetooth_patches(stack, client):
     )
     stack.enter_context(
         patch(
-            "custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs",
+            "custom_components.adjustable_bed.config_flow.capture_proxy_logs",
             return_value=AsyncExitStack(),
         )
     )

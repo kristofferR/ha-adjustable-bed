@@ -5,14 +5,14 @@ from __future__ import annotations
 import pytest
 from homeassistant.const import CONF_ADDRESS
 
-from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import (
+from custom_components.adjustable_bed.beds.reverie.pairlink_protocol import (
     build_user_frame,
     decrypt_login_block,
     derive_event_key_from_seed,
     derive_event_key_index,
     encrypt_login_block,
 )
-from custom_components.adjustable_bed.beds.reverie_pairlink_runtime import (
+from custom_components.adjustable_bed.beds.reverie.pairlink_runtime import (
     PairlinkCredentials,
     PairlinkHomeIdOrigin,
     PairlinkMeshEvent,
@@ -26,7 +26,7 @@ from custom_components.adjustable_bed.beds.reverie_pairlink_runtime import (
     encode_pairlink_password,
     normalize_home_id,
 )
-from custom_components.adjustable_bed.beds.reverie_pairlink_transport import PairlinkPeerIdentity
+from custom_components.adjustable_bed.beds.reverie.pairlink_transport import PairlinkPeerIdentity
 from custom_components.adjustable_bed.const import CONF_PAIRLINK_HOME_ID
 
 _HOME = 5566
@@ -238,7 +238,7 @@ def test_event_seed_replacement_matches_native_cmac_history_and_zero_reset() -> 
     encrypted_channel11 = b"\x03\xFF\xFF\xFF\xFF\x11\x32" + second_seed
     # The encrypted receive route requires an admitted target key.
     runtime.process_transport_packet(_login_payload(), source_mac=_CENTRAL)
-    from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import encrypt_user_frame
+    from custom_components.adjustable_bed.beds.reverie.pairlink_protocol import encrypt_user_frame
 
     encrypted = encrypt_user_frame(
         encrypted_channel11,

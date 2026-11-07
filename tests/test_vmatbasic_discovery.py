@@ -4,9 +4,9 @@ from types import SimpleNamespace
 
 import pytest
 
+from custom_components.adjustable_bed.beds.vmatbasic.discovery import manufacturer_diagnostics
 from custom_components.adjustable_bed.const import BED_TYPE_VMATBASIC
 from custom_components.adjustable_bed.detection import detect_bed_type_detailed
-from custom_components.adjustable_bed.vmatbasic_discovery import manufacturer_diagnostics
 
 
 @pytest.mark.parametrize("company", [0, 0xFFFF, 0x03B0, 0x1234])

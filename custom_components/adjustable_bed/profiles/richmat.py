@@ -238,7 +238,7 @@ HJBED: Final = RichmatProfile(
 # Its controller declares holds per product, on the sustained-press controls.
 GOODVIBE: Final = RichmatProfile(key="goodvibe", transports=("w1", "n1", "w5", "w4", "w3", "w2"))
 # The five classic resource-driven apps (row066) share one builder and service
-# order; each keeps its own catalog in ``richmat_classic_data``. The first present
+# order; each keeps its own catalog in ``beds/richmat_classic/data``. The first present
 # service wins, and Nordic UART takes the bare resource bytes.
 CLASSIC_TRANSPORTS: Final[tuple[TransportKey, ...]] = ("w1", "w2", "n1", "w4")
 RICHMAT_CLASSIC: Final[dict[str, RichmatProfile]] = {
@@ -277,6 +277,6 @@ ESHINE: Final = RichmatProfile(
 )
 
 # L&P Adjustable Base 2.2.1 (row019): its per-layout tokens are
-# ``lp_legacy_catalog.py``. It writes to the characteristics the user
+# ``beds/leggett/lp_legacy_catalog.py``. It writes to the characteristics the user
 # configures, so it drives none of the codec's transports.
 LP_LEGACY: Final = RichmatProfile(key="leggett_lp_legacy", transports=())

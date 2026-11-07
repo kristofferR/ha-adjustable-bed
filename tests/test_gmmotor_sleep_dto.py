@@ -6,9 +6,9 @@ from datetime import date
 
 import pytest
 
-from custom_components.adjustable_bed.gmmotor_protocol import MalformedNotification
-from custom_components.adjustable_bed.gmmotor_sleep_dto import parse
-from custom_components.adjustable_bed.gmmotor_sleep_reports import decode_report
+from custom_components.adjustable_bed.beds.gmmotor.protocol import MalformedNotification
+from custom_components.adjustable_bed.beds.gmmotor.sleep_dto import parse
+from custom_components.adjustable_bed.beds.gmmotor.sleep_reports import decode_report
 
 
 def test_part_dto_uses_int_id_and_numeric_value() -> None:

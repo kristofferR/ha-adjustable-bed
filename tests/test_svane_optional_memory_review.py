@@ -9,7 +9,8 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.svane import POSITION, SvaneController, uuid
+from custom_components.adjustable_bed.beds.svane.controller import POSITION, SvaneController, uuid
+from custom_components.adjustable_bed.beds.svane.state import get_svane_session, svane_multi_slots
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SVANE,
     CONF_BED_TYPE,
@@ -25,7 +26,6 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.cover import _cover_entities_for
 from custom_components.adjustable_bed.services import async_register_services
-from custom_components.adjustable_bed.svane_state import get_svane_session, svane_multi_slots
 from tests.app_state_helpers import restart_app_state, stored_app_state
 from tests.test_svane import make_controller, written
 
@@ -151,7 +151,7 @@ async def test_public_cover_low_stored_pulses_retains_ordinary_duration(current,
     clock = [0.0]
     local = SimpleNamespace(**vars(asyncio))
     local.get_running_loop = lambda: SimpleNamespace(time=lambda: clock[0])
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.svane.asyncio", local)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.svane.controller.asyncio", local)
 
     async def advance(seconds):
         clock[0] += seconds

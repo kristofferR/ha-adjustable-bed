@@ -13,7 +13,9 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.cover import _cover_entities_for
 from custom_components.adjustable_bed.light import _light_entities_for
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
+from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
 from tests.conftest import make_controller_mock
+from tests.state_helpers import published
 from tests.test_customatic import make_controller, written
 from tests.test_malouf_app_entities import configure_entity_runtime
 
@@ -89,7 +91,10 @@ async def test_native_toggle_button_sends_one_frame_without_inventing_light_stat
                   if button.unique_id == "bed_toggle_light_left")
     await button.async_press()
     assert written(controller) == ["040200020000"]
-    assert controller.get_light_state() == {}
+    assert all(
+        UNDER_BED_LIGHTS_ON not in published(*call.args)
+        for call in controller._coordinator.handle_controller_state_updates.call_args_list
+    )
 
 
 async def test_cross_axis_cover_stop_preempts_shared_mask_with_production_scheduler(hass):

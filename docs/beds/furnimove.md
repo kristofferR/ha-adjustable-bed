@@ -284,7 +284,7 @@ repair on the next setup.
 ## Commands
 
 Keycodes are per handset and come from the pinned tables in
-`custom_components/adjustable_bed/furnimove_profiles.py`. The two app-shipped
+`custom_components/adjustable_bed/beds/furnimove/profiles.py`. The two app-shipped
 tables below show how keycodes become frames.
 
 ### Offline table `00000`

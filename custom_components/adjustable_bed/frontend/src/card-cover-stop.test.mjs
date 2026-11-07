@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { afterAll, test } from "bun:test";
 import { plugin } from "bun";
+import { placed } from "./test-placements";
 
 plugin({
   name: "card-cover-stop-test-lit",
@@ -101,7 +102,7 @@ function makeFixture(mode, { coverHoldMetadata = true } = {}) {
   const calls = [];
   const pending = [];
   const clock = new FakeClock();
-  const hass = {
+  const hass = placed({
     entities: {},
     states: {},
     devices: { [root]: { id: root } },
@@ -118,7 +119,7 @@ function makeFixture(mode, { coverHoldMetadata = true } = {}) {
       }
       return Promise.resolve();
     },
-  };
+  });
 
   if (separateAddresses) {
     hass.devices[left] = { id: left, parent_device_id: root };

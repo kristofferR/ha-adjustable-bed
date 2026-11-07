@@ -5,10 +5,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed.beds.gmmotor import GmmotorController
-from custom_components.adjustable_bed.gmmotor_notifications import Event
-from custom_components.adjustable_bed.gmmotor_requests import Request
-from custom_components.adjustable_bed.gmmotor_transport import E0FF, P1_SERVICES
+from custom_components.adjustable_bed.beds.gmmotor.controller import GmmotorController
+from custom_components.adjustable_bed.beds.gmmotor.notifications import Event
+from custom_components.adjustable_bed.beds.gmmotor.requests import Request
+from custom_components.adjustable_bed.beds.gmmotor.transport import E0FF, P1_SERVICES
 
 
 def controller(profile: str = "6BRM", side: str = "left") -> GmmotorController:
@@ -187,7 +187,7 @@ async def test_missing_capability_never_writes_and_wait_ends(monkeypatch, end) -
 
     monkeypatch.setattr(ctrl._capability_changed, "wait", observed_wait)
     if end == "timeout":
-        monkeypatch.setattr("custom_components.adjustable_bed.beds.gmmotor._CAPABILITY_TIMEOUT", 0)
+        monkeypatch.setattr("custom_components.adjustable_bed.beds.gmmotor.controller._CAPABILITY_TIMEOUT", 0)
         with pytest.raises(ValueError, match="live light_capability"):
             await ctrl.async_execute_gmmotor_request(Request("light_off"))
     else:

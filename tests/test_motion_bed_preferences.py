@@ -6,7 +6,8 @@ import pytest
 from homeassistant.const import CONF_ADDRESS
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.motion_bed import MotionBedController
+from custom_components.adjustable_bed.beds.motion_bed.controller import MotionBedController
+from custom_components.adjustable_bed.beds.motion_bed.models import select_motion_bed
 from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTION_BED,
     CONF_BED_TYPE,
@@ -15,7 +16,6 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.motion_bed_models import select_motion_bed
 from tests.app_state_helpers import restart_app_state, stored_app_state
 
 

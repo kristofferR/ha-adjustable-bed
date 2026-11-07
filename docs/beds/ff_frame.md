@@ -457,11 +457,11 @@ Woosa also sends init `FF FF FF FF 02 00 0E 0B 00 17 04` and alarm query
 Replies arrive as notifications in the same framing. No app checks their
 trailers. Each profile section names the replies it consumes:
 
-- **Solace routes** and **Woosa**: substring parsers in `beds/solace.py` and
+- **Solace routes** and **Woosa**: substring parsers in `beds/solace/controller.py` and
   `beds/woosa.py` (preset state `FF FF FF FF 03 06 00 <selector>`, program echoes,
   light, volume, alarm and Woosa massage replies).
 - **BedSense**: the ordered memory-indicator rules in `profiles/ff_frame.py`.
-- **Motion Bed**: the state parser in `motion_bed_state.py`.
+- **Motion Bed**: the state parser in `beds/motion_bed/state.py`.
 
 ### STOP and release behavior
 

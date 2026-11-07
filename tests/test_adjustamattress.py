@@ -12,7 +12,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed.beds.adjustamattress import (
+from custom_components.adjustable_bed.beds.adjustamattress.controller import (
     FFE_NOTIFY,
     FFE_NOTIFY_SERVICE,
     FFE_WRITE,
@@ -23,7 +23,7 @@ from custom_components.adjustable_bed.beds.adjustamattress import (
     NUS_WRITE,
     AdjustaMattressController,
 )
-from custom_components.adjustable_bed.beds.adjustamattress_protocol import (
+from custom_components.adjustable_bed.beds.adjustamattress.protocol import (
     BASE_ACTIONS,
     CYCLIC,
     DEDICATED,
@@ -727,7 +727,7 @@ async def test_sleep_status_timeout_cannot_reuse_earlier_reply_or_send_toggle():
     assert c._sleep_status.is_set()
     c.write_command = AsyncMock()
     with (
-        patch("custom_components.adjustable_bed.beds.adjustamattress.STATUS_TIMEOUT_S", 0),
+        patch("custom_components.adjustable_bed.beds.adjustamattress.controller.STATUS_TIMEOUT_S", 0),
         pytest.raises(ConnectionError, match="No fresh sleep status"),
     ):
         await c.execute_action("sleep")

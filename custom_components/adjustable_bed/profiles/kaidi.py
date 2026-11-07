@@ -16,6 +16,12 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field, fields, replace
 from typing import Any, ClassVar, Final
 
+from ..beds.kaidi.protocol import (
+    KaidiAdvertisement,
+    KaidiSeatBars,
+    decode_kaidi_sofa_acu_no,
+    parse_kaidi_manufacturer_payload,
+)
 from ..const import (
     CONF_KAIDI_PRODUCT_ID,
     CONF_KAIDI_ROOM_ID,
@@ -30,12 +36,6 @@ from ..const import (
     VARIANT_AUTO,
 )
 from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
-from ..kaidi_protocol import (
-    KaidiAdvertisement,
-    KaidiSeatBars,
-    decode_kaidi_sofa_acu_no,
-    parse_kaidi_manufacturer_payload,
-)
 
 # ---------------------------------------------------------------------------
 # Seat profiles (``kaidi`` bed type)

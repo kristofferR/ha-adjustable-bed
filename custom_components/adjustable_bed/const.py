@@ -544,7 +544,7 @@ BED_TYPE_RICHMAT_BEST_MATTRESS: Final = "richmat_best_mattress"  # com.richmat.b
 BED_TYPE_RICHMAT_BLVD_HOME: Final = "richmat_blvd_home"  # com.richmat.blvd_home
 BED_TYPE_RICHMAT_HARMONY: Final = "richmat_harmony"  # com.richmat.harmony
 BED_TYPE_RICHMAT_IDEALBED: Final = "richmat_idealbed"  # com.richmat.idealbed
-# The RUF and Richmat app profiles, each with its catalog in ``ruf_richmat_data``.
+# The RUF and Richmat app profiles, each with its catalog in ``beds/ruf_richmat/data``.
 RUF_RICHMAT_APPS: Final[dict[str, str]] = {
     "ruf_betten": "ruf",
     "wsilver_products": "wsilver2",
@@ -2391,44 +2391,6 @@ def resolve_richmat_remote_code(
     return normalized or RICHMAT_REMOTE_AUTO
 
 
-def get_richmat_features(remote_code: str) -> RichmatFeatures:
-    """Get features for a Richmat remote code.
-
-    Looks up features from both manually-defined overrides and the
-    comprehensive auto-generated mapping (492 product codes extracted
-    from Richmat apps).
-
-    Args:
-        remote_code: The remote code (e.g., "VIRM", "qrrm", "i7rm")
-                    Case-insensitive, will be normalized to lowercase.
-
-    Returns:
-        RichmatFeatures flags for the remote code, or all features
-        enabled if the code is not found (safe fallback).
-    """
-    # Import here to avoid circular dependency
-    from .richmat_features import RICHMAT_REMOTE_FEATURES_GENERATED
-
-    # Normalize to lowercase for lookup
-    code_lower = remote_code.lower() if remote_code else ""
-
-    # Special case: "auto" returns all features
-    if code_lower == "auto" or not code_lower:
-        return RICHMAT_REMOTE_FEATURES[RICHMAT_REMOTE_AUTO]
-
-    # First check manually-defined features (uppercase keys)
-    code_upper = remote_code.upper()
-    if code_upper in RICHMAT_REMOTE_FEATURES:
-        return RICHMAT_REMOTE_FEATURES[code_upper]
-
-    # Then check generated features (lowercase keys)
-    if code_lower in RICHMAT_REMOTE_FEATURES_GENERATED:
-        return RICHMAT_REMOTE_FEATURES_GENERATED[code_lower]
-
-    # Fallback: return all features enabled
-    return RICHMAT_REMOTE_FEATURES[RICHMAT_REMOTE_AUTO]
-
-
 def richmat_remote_has_combined_head_feet(remote_code: str) -> bool:
     """Return True when this remote is known to drive head and feet as one step.
 
@@ -2480,7 +2442,7 @@ RICHMAT_PROTOCOL_PREFIXAA: Final = "prefixaa"  # [0xAA, 1, 0, cmd, (cmd+0xAB)&0x
 # Okimat remote code variants (generated; keyed by the printed remote code).
 # Source of truth: DewertOkin FurniMove handset backend + bundled
 # handsetlist.csv capability flags. Drives OKIN_UUID_REMOTES in
-# beds/okin_uuid.py; regenerate via tools/okin_remotes/.
+# beds/okin_uuid/controller.py; regenerate via tools/okin_remotes/.
 OKIMAT_VARIANTS: Final = {
     VARIANT_AUTO: "Auto-detect (try 82417 first)",
     "62211": "62211 - RF (Head/Back/Legs, 4 Mem)",

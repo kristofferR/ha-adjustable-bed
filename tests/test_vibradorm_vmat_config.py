@@ -9,13 +9,15 @@ from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.beds.vibradorm.app_state import (
+    get_vibradorm_app_session_intent,
+)
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     _vibradorm_app_data,
     _vibradorm_app_errors,
 )
 from custom_components.adjustable_bed.profiles.vibradorm import VMAT_REMOTES
-from custom_components.adjustable_bed.vibradorm_app_state import get_vibradorm_app_session_intent
 from tests.test_vibradorm_vmat import make_vmat
 
 
@@ -96,7 +98,7 @@ async def test_public_progress_worker_retains_failed_setup_across_retry_removal_
     module = "custom_components.adjustable_bed.config_flow."
     lock = async_get_connect_lock(hass, address)
     with (
-        patch("custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs", return_value=AsyncExitStack()),
+        patch("custom_components.adjustable_bed.config_flow.capture_proxy_logs", return_value=AsyncExitStack()),
         patch("bleak_retry_connector.establish_connection", new=AsyncMock(return_value=c.client)) as establish,
         patch(module + "async_predict_path", return_value=PathPrediction(path, (path,))),
         patch(module + "client_source", return_value=source),
@@ -185,7 +187,7 @@ async def test_public_progress_worker_retains_failed_setup_across_retry_removal_
     recovered.client.write_gatt_char.side_effect = recovered_write
     recovered.client.disconnect.side_effect = close_recovered
     with (
-        patch("custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs", return_value=AsyncExitStack()),
+        patch("custom_components.adjustable_bed.config_flow.capture_proxy_logs", return_value=AsyncExitStack()),
         patch("bleak_retry_connector.establish_connection", new=AsyncMock(return_value=recovered.client)) as establish,
         patch(module + "async_predict_path", return_value=PathPrediction(path, (path,))),
         patch(module + "client_source", return_value=source),
@@ -243,7 +245,7 @@ async def test_vmat_pre_stage_failure_retains_native_owner(hass, mode, disconnec
     native = BondEvidence(BondVerificationStatus.NATIVE_OS_STATE, BondOwner.from_path(path), "native", "now", kind=BondEvidenceKind.NATIVE_OS_STATE)
     module = "custom_components.adjustable_bed.config_flow."
     with (
-        patch("custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs", return_value=AsyncExitStack()),
+        patch("custom_components.adjustable_bed.config_flow.capture_proxy_logs", return_value=AsyncExitStack()),
         patch("bleak_retry_connector.establish_connection", new=AsyncMock(return_value=c.client)),
         patch(module + "async_predict_path", return_value=PathPrediction(path, (path,))),
         patch(module + "client_source", return_value=source),
@@ -381,7 +383,7 @@ async def test_public_setup_accepts_native_closure_after_disconnect_rpc_error(ha
     native = BondEvidence(BondVerificationStatus.NATIVE_OS_STATE, BondOwner.from_path(path), "native", "now", kind=BondEvidenceKind.NATIVE_OS_STATE)
     module = "custom_components.adjustable_bed.config_flow."
     with (
-        patch("custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs", return_value=AsyncExitStack()),
+        patch("custom_components.adjustable_bed.config_flow.capture_proxy_logs", return_value=AsyncExitStack()),
         patch("bleak_retry_connector.establish_connection", new=AsyncMock(return_value=c.client)),
         patch(module + "async_predict_path", return_value=PathPrediction(path, (path,))),
         patch(module + "client_source", return_value=source),
@@ -473,7 +475,7 @@ async def test_public_prebonded_setup_validates_ordinary_profile_roles(hass, rem
     native = BondEvidence(BondVerificationStatus.NATIVE_OS_STATE, BondOwner.from_path(path), "native", "now", kind=BondEvidenceKind.NATIVE_OS_STATE)
     module = "custom_components.adjustable_bed.config_flow."
     with (
-        patch("custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs", return_value=AsyncExitStack()),
+        patch("custom_components.adjustable_bed.config_flow.capture_proxy_logs", return_value=AsyncExitStack()),
         patch("bleak_retry_connector.establish_connection", new=AsyncMock(return_value=c.client)),
         patch(module + "async_predict_path", return_value=PathPrediction(path, (path,))),
         patch(module + "client_source", return_value=source),
@@ -535,7 +537,7 @@ async def test_public_setup_transport_write_timeout_never_pairs(hass, mode):
     unknown = BondEvidence(BondVerificationStatus.INCONCLUSIVE, BondOwner.from_path(path), "native", "now")
     module = "custom_components.adjustable_bed.config_flow."
     with (
-        patch("custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs", return_value=AsyncExitStack()),
+        patch("custom_components.adjustable_bed.config_flow.capture_proxy_logs", return_value=AsyncExitStack()),
         patch("bleak_retry_connector.establish_connection", new=AsyncMock(return_value=c.client)),
         patch(module + "async_predict_path", return_value=PathPrediction(path, (path,))),
         patch(module + "client_source", return_value=source),
@@ -642,7 +644,9 @@ async def test_actual_entity_factories_follow_remote_gates(hass, remote):
 async def test_selected_vmat_entry_discards_previous_app_selection_intent(hass, restored):
     from homeassistant.data_entry_flow import FlowResultType
 
-    from custom_components.adjustable_bed.vibradorm_app_state import mark_vibradorm_app_selection
+    from custom_components.adjustable_bed.beds.vibradorm.app_state import (
+        mark_vibradorm_app_selection,
+    )
 
     address = "11:22:33:44:55:66"
     old = mark_vibradorm_app_selection(

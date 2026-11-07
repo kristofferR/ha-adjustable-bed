@@ -11,7 +11,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.beds.starcode_abm5_4_profiles import MANUFACTURER_UUID
+from custom_components.adjustable_bed.beds.starcode.abm5_4_profiles import MANUFACTURER_UUID
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from tests.test_starcode_abm5_4 import make_controller
 from tests.test_starcode_abm5_4_public_presets import literal_frame
@@ -146,7 +146,7 @@ async def test_cold_public_coordinator_classification_and_pending_query_do_not_d
                 "custom_components.adjustable_bed.coordinator_connection.establish_connection",
                 AsyncMock(return_value=client),
             ),
-            patch("custom_components.adjustable_bed.beds.starcode_abm5_4.asyncio.sleep", advance),
+            patch("custom_components.adjustable_bed.beds.starcode.abm5_4.asyncio.sleep", advance),
             patch.object(coordinator, "async_execute_controller_command", execute),
         ):
             task = asyncio.create_task(execute(user_action))
@@ -234,7 +234,7 @@ async def test_actual_HA_adoption_rebuilds_catalog_once_preserves_side_identity_
 ):
     from homeassistant.helpers import entity_registry as er
 
-    from custom_components.adjustable_bed.beds.starcode_abm5_4 import StarcodeAbm5_4Controller
+    from custom_components.adjustable_bed.beds.starcode.abm5_4 import StarcodeAbm5_4Controller
     from custom_components.adjustable_bed.controller_factory import create_controller
     from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 
@@ -442,8 +442,8 @@ async def test_internal_reload_handoff_preserves_delayed_factory_but_rejects_new
 ):
     from dataclasses import replace
 
-    from custom_components.adjustable_bed.beds.starcode_abm5_4 import StarcodeAbm5_4Controller
-    from custom_components.adjustable_bed.beds.starcode_abm5_4_profiles import RetainedAppState
+    from custom_components.adjustable_bed.beds.starcode.abm5_4 import StarcodeAbm5_4Controller
+    from custom_components.adjustable_bed.beds.starcode.abm5_4_profiles import RetainedAppState
     from custom_components.adjustable_bed.controller_factory import create_controller
 
     address = "AA:BB:CC:DD:EE:FF"
@@ -525,7 +525,7 @@ async def test_internal_reload_handoff_preserves_delayed_factory_but_rejects_new
 @pytest.mark.parametrize("ui", ["BOX25", "BOX1220"])
 @pytest.mark.parametrize("changed", [False, True])
 async def test_first_partial_callback_uses_fresh_model_and_exact_whole_Home_consumer(ui, changed):
-    from custom_components.adjustable_bed.beds.starcode_abm5_4_profiles import RetainedAppState
+    from custom_components.adjustable_bed.beds.starcode.abm5_4_profiles import RetainedAppState
 
     controller = make_controller("BOX25", ui=ui)
     retained = RetainedAppState(

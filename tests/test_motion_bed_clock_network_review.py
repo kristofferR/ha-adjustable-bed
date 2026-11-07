@@ -7,8 +7,8 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from custom_components.adjustable_bed.beds.motion_bed import MotionBedController
-from custom_components.adjustable_bed.motion_bed_protocol import (
+from custom_components.adjustable_bed.beds.motion_bed.controller import MotionBedController
+from custom_components.adjustable_bed.beds.motion_bed.protocol import (
     build_clock,
     build_thermal_clock,
 )
@@ -37,7 +37,7 @@ async def test_registered_startup_uses_configured_zone_with_utc_host(hass, monke
     controller._startup = MotionBedController._startup.__get__(controller)
     # The clock assertion runs actual builders/startup; its delays and later poll
     # are covered separately and cannot race this isolated startup check.
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", AsyncMock())
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.sleep", AsyncMock())
     controller._spawn = MagicMock()
     try:
         with monkeypatch.context() as host:

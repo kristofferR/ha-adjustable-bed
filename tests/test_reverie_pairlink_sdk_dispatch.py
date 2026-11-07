@@ -305,8 +305,8 @@ async def test_real_coordinator_exhausted_connect_failure_projects_library6(
     from bleak.exc import BleakError
     from pytest_homeassistant.common import MockConfigEntry
 
-    from custom_components.adjustable_bed.beds.reverie_pairlink import ReveriePairlinkController
-    from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import (
+    from custom_components.adjustable_bed.beds.reverie.pairlink import ReveriePairlinkController
+    from custom_components.adjustable_bed.beds.reverie.pairlink_protocol import (
         PAIRLINK_NOTIFY_UUID,
         PAIRLINK_SERVICE_UUID,
         PAIRLINK_WRITE_UUID,
@@ -432,7 +432,7 @@ async def test_group_unknown_address_type_keeps_constructor_address_without_tran
 async def test_nested_calendar_calls_actual_private_send_from_learned_device(
     monkeypatch, mode
 ) -> None:
-    from custom_components.adjustable_bed.beds import reverie_pairlink as pairlink
+    from custom_components.adjustable_bed.beds.reverie import pairlink
     from tests.test_reverie_pairlink_sdk_consumers import _CalendarClock, _decoded
 
     controller, client, runtime, tasks = await _ready()
@@ -453,7 +453,7 @@ async def test_nested_calendar_calls_actual_private_send_from_learned_device(
 
 
 async def test_nested_valid_prefix_effect_survives_later_failed_read(monkeypatch) -> None:
-    from custom_components.adjustable_bed.beds import reverie_pairlink as pairlink
+    from custom_components.adjustable_bed.beds.reverie import pairlink
     from tests.test_reverie_pairlink_sdk_consumers import _CalendarClock, _decoded
 
     controller, client, runtime, tasks = await _ready()
@@ -537,8 +537,8 @@ async def test_nonvendor_group_reaches_actual_callback_after_excluded_control_ga
     ],
 )
 def test_group_callback_record_follows_model_record_with_source_payload(opcode, data, kind) -> None:
-    from custom_components.adjustable_bed.beds.reverie_pairlink_sdk import PairlinkSdkMessage
-    from custom_components.adjustable_bed.beds.reverie_pairlink_sdk_dispatch import (
+    from custom_components.adjustable_bed.beds.reverie.pairlink_sdk import PairlinkSdkMessage
+    from custom_components.adjustable_bed.beds.reverie.pairlink_sdk_dispatch import (
         PairlinkSdkCallbackEvent,
         decode_sdk_dispatch,
     )

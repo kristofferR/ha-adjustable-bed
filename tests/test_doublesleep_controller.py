@@ -8,12 +8,15 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed import doublesleep_protocol as p
 from custom_components.adjustable_bed.bed_traits import bed_traits
-from custom_components.adjustable_bed.beds.doublesleep import DoubleSleepController, Session
+from custom_components.adjustable_bed.beds.doublesleep import protocol as p
+from custom_components.adjustable_bed.beds.doublesleep.controller import (
+    DoubleSleepController,
+    Session,
+)
+from custom_components.adjustable_bed.beds.doublesleep.services import Request
+from custom_components.adjustable_bed.beds.doublesleep.state import Report
 from custom_components.adjustable_bed.const import BED_TYPE_DOUBLESLEEP
-from custom_components.adjustable_bed.doublesleep_services import Request
-from custom_components.adjustable_bed.doublesleep_state import Report
 from tests.state_helpers import state_writer
 from tests.test_doublesleep_protocol import NOW, json_notification
 
@@ -62,7 +65,7 @@ class Bed:
 
     async def connect(self):
         with patch(
-            "custom_components.adjustable_bed.beds.doublesleep.asyncio.sleep", new=AsyncMock()
+            "custom_components.adjustable_bed.beds.doublesleep.controller.asyncio.sleep", new=AsyncMock()
         ):
             await self.bed.start_notify()
         self.client.write_gatt_char.reset_mock()
@@ -213,7 +216,7 @@ async def test_save_releases_and_massage_queries_follow_source_delay():
     assert bed.packets() == [bytes.fromhex("aa000001050125"), bytes.fromhex("aa000001010400000000")]
     bed.client.write_gatt_char.reset_mock()
     with patch(
-        "custom_components.adjustable_bed.beds.doublesleep.asyncio.sleep", new=AsyncMock()
+        "custom_components.adjustable_bed.beds.doublesleep.controller.asyncio.sleep", new=AsyncMock()
     ) as delay:
         await bed.bed.press(35)
     delay.assert_awaited_once_with(0.2)
@@ -232,7 +235,7 @@ async def test_cancellation_before_first_fragment_does_not_publish_privacy():
 async def test_alarm_and_anti_snore_workflows_are_distinct_and_capability_gated():
     bed = Bed()
     await bed.connect()
-    with patch("custom_components.adjustable_bed.beds.doublesleep.asyncio.sleep", new=AsyncMock()):
+    with patch("custom_components.adjustable_bed.beds.doublesleep.controller.asyncio.sleep", new=AsyncMock()):
         await bed.bed.request(Request("alarm", (6, 30, 130, 9, 1)))
     assert bed.packets()[0][:6] == bytes.fromhex("aa0000030108")
     assert bed.packets()[1] == bytes.fromhex("aa000003020801820901061e0001")
@@ -345,7 +348,7 @@ async def test_report_silence_closes_session_without_a_real_timeout_wait():
     await bed.connect()
     with (
         patch(
-            "custom_components.adjustable_bed.beds.doublesleep.asyncio.wait",
+            "custom_components.adjustable_bed.beds.doublesleep.controller.asyncio.wait",
             new=AsyncMock(return_value=(set(), set())),
         ),
         pytest.raises(TimeoutError, match="no progress"),
@@ -371,7 +374,7 @@ async def test_sensitivity_change_retains_unselected_reported_values(driver, mod
     await bed.connect()
     bed.bed.parser.state.update(use_side=2, left_sensitivity=3, right_sensitivity=9)
     with patch(
-        "custom_components.adjustable_bed.beds.doublesleep.asyncio.sleep", new=AsyncMock()
+        "custom_components.adjustable_bed.beds.doublesleep.controller.asyncio.sleep", new=AsyncMock()
     ) as delay:
         await bed.bed.request(Request("sensitivities", (-1, 1, -1)))
     delay.assert_awaited_once_with(0.2)

@@ -12,12 +12,12 @@ import pytest
 from bleak.exc import BleakError
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.adjustable_bed.beds.simmons import (
+from custom_components.adjustable_bed.beds.simmons.controller import (
     CUSTOM_MODE_WARNING,
     PEER_CONFLICT_ERROR,
     SimmonsController,
 )
-from custom_components.adjustable_bed.beds.simmons_protocol import (
+from custom_components.adjustable_bed.beds.simmons.protocol import (
     AlarmSlot,
     NotificationAssembler,
     clock_frame,
@@ -409,7 +409,7 @@ async def test_okin_program_preserves_the_peer_record_then_queries():
     now = datetime(2026, 10, 1, 6, 0)
     with (
         patch("asyncio.sleep", new=AsyncMock()) as sleep,
-        patch("custom_components.adjustable_bed.beds.simmons.dt_util.now", return_value=now),
+        patch("custom_components.adjustable_bed.beds.simmons.controller.dt_util.now", return_value=now),
     ):
         await controller.configure_simmons_alarm(
             slot=1,
@@ -543,7 +543,7 @@ async def test_alarm_state_must_be_reported_before_writing():
     await controller.async_discover_capabilities()
     controller._clock_synced = True
     with (
-        patch("custom_components.adjustable_bed.beds.simmons.ALARM_REPLY_TIMEOUT_S", 0),
+        patch("custom_components.adjustable_bed.beds.simmons.controller.ALARM_REPLY_TIMEOUT_S", 0),
         pytest.raises(ServiceValidationError, match="did not report"),
     ):
         await controller.configure_simmons_alarm(slot=1, enabled=False)
@@ -556,7 +556,7 @@ async def test_connection_setup_syncs_clock_then_runs_the_alarm_page_queries():
     now = datetime(2026, 10, 1, 7, 30, 45)
     with (
         patch("asyncio.sleep", new=AsyncMock()),
-        patch("custom_components.adjustable_bed.beds.simmons.dt_util.now", return_value=now),
+        patch("custom_components.adjustable_bed.beds.simmons.controller.dt_util.now", return_value=now),
     ):
         await controller.start_notify(None)
     assert written(controller) == ["07 04 7E 09 01 07 1E 2D 04"] + ["00 C0", "00 D0"] * 3
@@ -609,7 +609,7 @@ async def test_configuration_writes_are_not_skipped_by_a_movement_stop():
     with (
         patch("asyncio.sleep", new=AsyncMock()),
         patch(
-            "custom_components.adjustable_bed.beds.simmons.dt_util.now",
+            "custom_components.adjustable_bed.beds.simmons.controller.dt_util.now",
             return_value=datetime(2026, 10, 1, 7, 30, 45),
         ),
     ):
@@ -748,7 +748,7 @@ async def test_restored_records_without_a_fresh_reply_refuse_the_write():
     await controller.async_discover_capabilities()
     controller._clock_synced = True
     with (
-        patch("custom_components.adjustable_bed.beds.simmons.ALARM_REPLY_TIMEOUT_S", 0),
+        patch("custom_components.adjustable_bed.beds.simmons.controller.ALARM_REPLY_TIMEOUT_S", 0),
         pytest.raises(ServiceValidationError) as error,
     ):
         await controller.check_simmons_alarm(slot=1, enabled=False)
@@ -763,7 +763,7 @@ async def test_smartbed_needs_a_fresh_reply_for_each_slot():
     notify(controller, "A5 0C 0E 00 00 00 00 00 00 00")  # Only slot 1 reports.
     with (
         patch("asyncio.sleep", new=AsyncMock()),
-        patch("custom_components.adjustable_bed.beds.simmons.ALARM_REPLY_TIMEOUT_S", 0),
+        patch("custom_components.adjustable_bed.beds.simmons.controller.ALARM_REPLY_TIMEOUT_S", 0),
         pytest.raises(ServiceValidationError),
     ):
         await controller.configure_simmons_alarm(slot=1, enabled=False)
@@ -805,7 +805,7 @@ async def test_unconfirmed_write_is_requeried_before_the_next_alarm_call():
     _known(controller, AlarmSlot(6, 0, 0, 0, False), AlarmSlot(8, 45, 132, 28, False))
     with (
         patch("asyncio.sleep", new=AsyncMock()),
-        patch("custom_components.adjustable_bed.beds.simmons.ALARM_REPLY_TIMEOUT_S", 0),
+        patch("custom_components.adjustable_bed.beds.simmons.controller.ALARM_REPLY_TIMEOUT_S", 0),
     ):
         await controller.configure_simmons_alarm(
             slot=1, enabled=True, hour=7, minute=30, mode="flat"

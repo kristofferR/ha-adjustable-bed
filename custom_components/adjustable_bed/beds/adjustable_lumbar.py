@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Final, Literal
 
 from bleak.exc import BleakError
 
+from ..card import CARD_MASSAGE, CARD_UTILITY
 from ..codec import okin_5a, okin_nframe
 from ..const import (
     ADJUSTABLE_LUMBAR_VARIANT_OKIN,
@@ -32,13 +33,9 @@ from ..profiles.okin_nframe import (
     ADJUSTABLE_LUMBAR_SAVE_HOLD_MS,
     OkinNFrameProfile,
 )
-from .base import (
-    BedController,
-    ControllerButtonSpec,
-    MotorCommandCallable,
-    MotorControlSpec,
-)
+from .base import BedController
 from .builder import BuildContext
+from .entity_specs import ControllerButtonSpec, MotorCommandCallable, MotorControlSpec
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -313,6 +310,7 @@ class AdjustableLumbarController(BedController):
                 _action(key),
                 translation_key=f"adjustable_lumbar_{key}",
                 icon="mdi:content-save" if key.startswith("save_") else "mdi:gesture-tap",
+                card=CARD_MASSAGE if key in _WAVE_LABELS or key == "massage_on" else CARD_UTILITY,
             )
             for key, label in labels.items()
         )

@@ -10,8 +10,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed import const, fsm_relax_services, services
-from custom_components.adjustable_bed.beds.fsm_relax import FsmRelaxController
+from custom_components.adjustable_bed import const, services
+from custom_components.adjustable_bed.beds.fsm_relax import services as fsm_relax_services
+from custom_components.adjustable_bed.beds.fsm_relax.controller import FsmRelaxController
 from custom_components.adjustable_bed.button import (
     BUTTON_DESCRIPTIONS,
     ControllerActionButton,

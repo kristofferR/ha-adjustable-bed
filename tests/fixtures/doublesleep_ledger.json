@@ -9,10 +9,10 @@
   "groups": {
     "DISCOVERY": {
       "code": [
-        "custom_components/adjustable_bed/doublesleep_protocol.py:discover",
-        "custom_components/adjustable_bed/doublesleep_protocol.py:real_mac",
-        "custom_components/adjustable_bed/doublesleep_protocol.py:select_protocol",
-        "custom_components/adjustable_bed/doublesleep_protocol.py:select_model",
+        "custom_components/adjustable_bed/beds/doublesleep/protocol.py:discover",
+        "custom_components/adjustable_bed/beds/doublesleep/protocol.py:real_mac",
+        "custom_components/adjustable_bed/beds/doublesleep/protocol.py:select_protocol",
+        "custom_components/adjustable_bed/beds/doublesleep/protocol.py:select_model",
         "custom_components/adjustable_bed/detection.py:detect_bed_type_detailed",
         "custom_components/adjustable_bed/controller_factory.py:create_controller"
       ],
@@ -26,9 +26,9 @@
     },
     "VERSION": {
       "code": [
-        "custom_components/adjustable_bed/doublesleep_state.py:Notifications.feed",
-        "custom_components/adjustable_bed/doublesleep_state.py:Notifications._json",
-        "custom_components/adjustable_bed/beds/doublesleep.py:start_notify"
+        "custom_components/adjustable_bed/beds/doublesleep/state.py:Notifications.feed",
+        "custom_components/adjustable_bed/beds/doublesleep/state.py:Notifications._json",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:start_notify"
       ],
       "tests": [
         "tests/test_doublesleep_protocol.py:test_sensor_version_is_an_independent_notification_observer",
@@ -37,11 +37,11 @@
     },
     "SETUP": {
       "code": [
-        "custom_components/adjustable_bed/beds/doublesleep.py:async_discover_capabilities",
-        "custom_components/adjustable_bed/beds/doublesleep.py:start_notify",
-        "custom_components/adjustable_bed/beds/doublesleep.py:stop_notify",
-        "custom_components/adjustable_bed/beds/doublesleep.py:on_disconnect",
-        "custom_components/adjustable_bed/beds/doublesleep.py:_invalidate_connection"
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:async_discover_capabilities",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:start_notify",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:stop_notify",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:on_disconnect",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:_invalidate_connection"
       ],
       "tests": [
         "tests/test_doublesleep_controller.py:test_setup_and_stale_notification_callback",
@@ -51,10 +51,10 @@
     },
     "BINARY": {
       "code": [
-        "custom_components/adjustable_bed/doublesleep_protocol.py:binary_command",
-        "custom_components/adjustable_bed/doublesleep_protocol.py:P1_STATIC",
-        "custom_components/adjustable_bed/doublesleep_protocol.py:P2_STATIC",
-        "custom_components/adjustable_bed/beds/doublesleep.py:execute"
+        "custom_components/adjustable_bed/beds/doublesleep/protocol.py:binary_command",
+        "custom_components/adjustable_bed/beds/doublesleep/protocol.py:P1_STATIC",
+        "custom_components/adjustable_bed/beds/doublesleep/protocol.py:P2_STATIC",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:execute"
       ],
       "tests": [
         "tests/test_doublesleep_protocol.py:test_static_artifact_commands",
@@ -64,13 +64,13 @@
     },
     "MOTION": {
       "code": [
-        "custom_components/adjustable_bed/beds/doublesleep.py:_move",
-        "custom_components/adjustable_bed/beds/doublesleep.py:_preset",
-        "custom_components/adjustable_bed/beds/doublesleep.py:_save",
-        "custom_components/adjustable_bed/beds/doublesleep.py:hold_control",
-        "custom_components/adjustable_bed/beds/doublesleep.py:stop_all",
-        "custom_components/adjustable_bed/beds/doublesleep.py:motor_control_specs",
-        "custom_components/adjustable_bed/beds/doublesleep.py:standard_button_hold_spec"
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:_move",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:_preset",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:_save",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:hold_control",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:stop_all",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:motor_control_specs",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:standard_button_hold_spec"
       ],
       "tests": [
         "tests/test_doublesleep_controller.py:test_cancel_during_motor_write_still_sends_fresh_stop",
@@ -81,12 +81,12 @@
     },
     "CACHE": {
       "code": [
-        "custom_components/adjustable_bed/doublesleep_protocol.py:Cache",
-        "custom_components/adjustable_bed/doublesleep_protocol.py:UIState",
-        "custom_components/adjustable_bed/doublesleep_protocol.py:relative",
-        "custom_components/adjustable_bed/doublesleep_state.py:massage",
-        "custom_components/adjustable_bed/doublesleep_state.py:Notifications.feed",
-        "custom_components/adjustable_bed/beds/doublesleep.py:Session"
+        "custom_components/adjustable_bed/beds/doublesleep/protocol.py:Cache",
+        "custom_components/adjustable_bed/beds/doublesleep/protocol.py:UIState",
+        "custom_components/adjustable_bed/beds/doublesleep/protocol.py:relative",
+        "custom_components/adjustable_bed/beds/doublesleep/state.py:massage",
+        "custom_components/adjustable_bed/beds/doublesleep/state.py:Notifications.feed",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:Session"
       ],
       "tests": [
         "tests/test_doublesleep_protocol.py:test_relative_cold_and_notification_owned_caches",
@@ -98,10 +98,10 @@
     },
     "JSON": {
       "code": [
-        "custom_components/adjustable_bed/doublesleep_protocol.py:JsonWriter",
-        "custom_components/adjustable_bed/doublesleep_state.py:JsonReader",
-        "custom_components/adjustable_bed/doublesleep_state.py:Notifications._json",
-        "custom_components/adjustable_bed/beds/doublesleep.py:_send_packets"
+        "custom_components/adjustable_bed/beds/doublesleep/protocol.py:JsonWriter",
+        "custom_components/adjustable_bed/beds/doublesleep/state.py:JsonReader",
+        "custom_components/adjustable_bed/beds/doublesleep/state.py:Notifications._json",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:_send_packets"
       ],
       "tests": [
         "tests/test_doublesleep_protocol.py:test_p3_frames_fit_att_and_one_byte_body_size",
@@ -113,12 +113,12 @@
     },
     "SETTINGS": {
       "code": [
-        "custom_components/adjustable_bed/doublesleep_services.py:build_request",
-        "custom_components/adjustable_bed/beds/doublesleep.py:validate_request",
-        "custom_components/adjustable_bed/beds/doublesleep.py:request",
-        "custom_components/adjustable_bed/doublesleep_protocol.py:alarm_days",
-        "custom_components/adjustable_bed/doublesleep_state.py:alarm",
-        "custom_components/adjustable_bed/beds/doublesleep.py:press"
+        "custom_components/adjustable_bed/beds/doublesleep/services.py:build_request",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:validate_request",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:request",
+        "custom_components/adjustable_bed/beds/doublesleep/protocol.py:alarm_days",
+        "custom_components/adjustable_bed/beds/doublesleep/state.py:alarm",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:press"
       ],
       "tests": [
         "tests/test_doublesleep_protocol.py:test_dynamic_artifact_vectors",
@@ -130,10 +130,10 @@
     },
     "LIVE": {
       "code": [
-        "custom_components/adjustable_bed/doublesleep_state.py:live",
-        "custom_components/adjustable_bed/doublesleep_state.py:Notifications._live",
-        "custom_components/adjustable_bed/doublesleep_state.py:Notifications._json",
-        "custom_components/adjustable_bed/doublesleep_state.py:Notifications.feed"
+        "custom_components/adjustable_bed/beds/doublesleep/state.py:live",
+        "custom_components/adjustable_bed/beds/doublesleep/state.py:Notifications._live",
+        "custom_components/adjustable_bed/beds/doublesleep/state.py:Notifications._json",
+        "custom_components/adjustable_bed/beds/doublesleep/state.py:Notifications.feed"
       ],
       "tests": [
         "tests/test_doublesleep_protocol.py:test_p3_preserves_distinct_sides_and_privacy_histories",
@@ -142,13 +142,13 @@
     },
     "HISTORY": {
       "code": [
-        "custom_components/adjustable_bed/doublesleep_state.py:BinaryHistory",
-        "custom_components/adjustable_bed/doublesleep_state.py:JsonReader",
-        "custom_components/adjustable_bed/doublesleep_state.py:daily_report",
-        "custom_components/adjustable_bed/doublesleep_state.py:report_records",
-        "custom_components/adjustable_bed/beds/doublesleep.py:_receive",
-        "custom_components/adjustable_bed/beds/doublesleep.py:_report",
-        "custom_components/adjustable_bed/beds/doublesleep.py:request"
+        "custom_components/adjustable_bed/beds/doublesleep/state.py:BinaryHistory",
+        "custom_components/adjustable_bed/beds/doublesleep/state.py:JsonReader",
+        "custom_components/adjustable_bed/beds/doublesleep/state.py:daily_report",
+        "custom_components/adjustable_bed/beds/doublesleep/state.py:report_records",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:_receive",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:_report",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:request"
       ],
       "tests": [
         "tests/test_doublesleep_protocol.py:test_history_daily_monthly_and_retained_completion",
@@ -170,11 +170,11 @@
     },
     "LEGACY": {
       "code": [
-        "custom_components/adjustable_bed/doublesleep_state.py:Notifications.legacy_feed",
-        "custom_components/adjustable_bed/doublesleep_state.py:Notifications.legacy_report",
-        "custom_components/adjustable_bed/beds/doublesleep.py:_schedule_legacy",
-        "custom_components/adjustable_bed/beds/doublesleep.py:_finish_legacy",
-        "custom_components/adjustable_bed/beds/doublesleep.py:execute"
+        "custom_components/adjustable_bed/beds/doublesleep/state.py:Notifications.legacy_feed",
+        "custom_components/adjustable_bed/beds/doublesleep/state.py:Notifications.legacy_report",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:_schedule_legacy",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:_finish_legacy",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:execute"
       ],
       "tests": [
         "tests/test_doublesleep_protocol.py:test_legacy_double_unpack_fields_and_calendar",
@@ -184,12 +184,12 @@
     },
     "EXPOSURE": {
       "code": [
-        "custom_components/adjustable_bed/beds/doublesleep.py:controller_button_specs",
-        "custom_components/adjustable_bed/beds/doublesleep.py:controller_select_specs",
-        "custom_components/adjustable_bed/beds/doublesleep.py:controller_state_sensor_specs",
-        "custom_components/adjustable_bed/beds/doublesleep.py:controller_state_binary_sensor_specs",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:controller_button_specs",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:controller_select_specs",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:controller_state_sensor_specs",
+        "custom_components/adjustable_bed/beds/doublesleep/controller.py:controller_state_binary_sensor_specs",
         "custom_components/adjustable_bed/setup_questions.py:_doublesleep_models",
-        "custom_components/adjustable_bed/doublesleep_services.py:async_register_doublesleep_services",
+        "custom_components/adjustable_bed/beds/doublesleep/services.py:async_register_doublesleep_services",
         "custom_components/adjustable_bed/frontend/src/discovery.ts:bedEntitiesForDevice"
       ],
       "tests": [
@@ -215,7 +215,7 @@
     "HA_LOCK": {
       "code": [
         "custom_components/adjustable_bed/coordinator.py:async_execute_controller_command",
-        "custom_components/adjustable_bed/beds/base.py:_write_gatt_with_retry"
+        "custom_components/adjustable_bed/beds/gatt_write.py:_write_gatt_with_retry"
       ],
       "tests": [
         "tests/test_coordinator.py:test_execute_controller_command_cancels_running",

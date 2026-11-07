@@ -10,19 +10,22 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds.motion_bed import (
+from custom_components.adjustable_bed.beds.motion_bed.actions import (
+    MOTION_BED_ACTIONS,
+    MotionBedAction,
+)
+from custom_components.adjustable_bed.beds.motion_bed.controller import (
     MotionBedController,
     button_actions_for,
     motion_bed_button_key,
     motion_bed_cover_key,
 )
-from custom_components.adjustable_bed.motion_bed_actions import MOTION_BED_ACTIONS, MotionBedAction
-from custom_components.adjustable_bed.motion_bed_models import (
+from custom_components.adjustable_bed.beds.motion_bed.models import (
     MOVEMENT_LAYOUTS,
     PRESET_VARIANTS,
     select_motion_bed,
 )
-from custom_components.adjustable_bed.motion_bed_protocol import SOURCE_COMMANDS
+from custom_components.adjustable_bed.beds.motion_bed.protocol import SOURCE_COMMANDS
 
 ENTITY_STRINGS = json.loads(
     (Path(__file__).parents[1] / "custom_components/adjustable_bed/strings.json").read_text()

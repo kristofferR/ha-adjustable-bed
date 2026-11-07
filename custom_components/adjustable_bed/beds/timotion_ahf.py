@@ -26,11 +26,8 @@ from ..const import (
 )
 from ..controller_state import StateKey
 from ..execution import ExecutionCapabilities
-from .base import (
-    BedController,
-    ControllerButtonSpec,
-    ControllerStateSensorSpec,
-)
+from .base import BedController
+from .entity_specs import ControllerButtonSpec, ControllerStateSensorSpec
 
 if TYPE_CHECKING:
     from bleak import BleakClient

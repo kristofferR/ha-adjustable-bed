@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from bleak.exc import BleakError
 
-from custom_components.adjustable_bed.beds.leggett_okin import LeggettOkinController
+from custom_components.adjustable_bed.beds.leggett.okin import LeggettOkinController
 from custom_components.adjustable_bed.const import (
     LEGGETT_OKIN_CHAR_UUID,
     LEGGETT_OKIN_NOTIFY_CHAR_UUID,
@@ -295,13 +295,13 @@ async def test_connect_refreshes_light_after_subscribing_and_again_after_disconn
 
     controller.write_command.side_effect = reply_to_idle
     await controller.start_notify()
-    assert controller.get_light_state() == {"is_on": True}
+    assert controller._light_is_on is True
     await controller.start_notify()
     assert controller.write_command.await_count == 1
     await controller.stop_notify()
     await controller.start_notify()
     assert controller.write_command.await_count == 2
-    assert controller.get_light_state() == {"is_on": True}
+    assert controller._light_is_on is True
 
 
 @pytest.mark.parametrize("reason", ["other_profile", "cancelled", "subscribe_failed"])
@@ -437,7 +437,7 @@ async def test_device_information_timeout_continues_to_next_field():
 
     controller.client.read_gatt_char.side_effect = read
     with patch(
-        "custom_components.adjustable_bed.beds.leggett_okin.DEVICE_INFO_READ_TIMEOUT",
+        "custom_components.adjustable_bed.beds.leggett.okin.DEVICE_INFO_READ_TIMEOUT",
         0.01,
     ):
         await controller._read_device_information(frozenset({manufacturer, model}))
@@ -573,7 +573,7 @@ async def test_unknown_or_unconfirmed_light_state_never_causes_a_retry_toggle():
     report_cu170(controller, 0)
     controller._tap_keycode = AsyncMock()
     with (
-        patch("custom_components.adjustable_bed.beds.leggett_okin.LIGHT_STATE_TIMEOUT_S", 0),
+        patch("custom_components.adjustable_bed.beds.leggett.okin.LIGHT_STATE_TIMEOUT_S", 0),
         pytest.raises(HomeAssistantError, match="did not confirm"),
     ):
         await controller.lights_on()
@@ -653,5 +653,5 @@ async def test_notifications_during_or_after_shutdown_cannot_restore_state(error
     else:
         await controller.stop_notify()
     report_cu170(controller, 0x20000)
-    assert controller.get_light_state() == {"is_on": None}
+    assert controller._light_is_on is None
     assert controller.protocol_diagnostics["notification_led_mask"] is None

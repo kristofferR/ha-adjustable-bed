@@ -172,6 +172,7 @@ These are additions. Existing entities keep their names, states and attributes.
 
 | Addition | Where | When it appears |
 |----------|-------|-----------------|
+| `card_section` attribute, with `card_role`, `card_motor` and `card_slot` where needed | Every entity | Always. Tells the dashboard card which section and control the entity belongs to; `hidden` keeps it out of the card. Not recorded in history |
 | `hold_lease_mode` attribute (`stream` or `latched`) | Covers, held buttons and combined paired controls | Only on beds that declare a renewable hold, listed under [Behavior Changes](#behavior-changes). A combined paired control carries it only when both sides declare the same mode |
 | `hold_lease_motor` attribute | Same entities, with the `timed_move` motor they hold | Together with `hold_lease_mode`, where the control maps to a `timed_move` motor |
 | `hold_owner` and `hold_generation` fields | `timed_move` and `hold_control` | Always listed. Beds that declare no renewable hold reject them before anything moves; calls without them behave as before. See [Renewable holds](SERVICES.md#renewable-holds) |

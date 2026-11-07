@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.beds.limoss.remote_state import LimossRemoteMemory
 from custom_components.adjustable_bed.button import (
     AdjustableBedButton,
     ControllerActionButton,
@@ -11,7 +12,6 @@ from custom_components.adjustable_bed.button import (
 )
 from custom_components.adjustable_bed.const import BED_TYPE_LIMOSS_REMOTE, DOMAIN
 from custom_components.adjustable_bed.cover import _cover_entities_for
-from custom_components.adjustable_bed.limoss_remote_state import LimossRemoteMemory
 from tests.test_limoss_remote import make_controller
 
 

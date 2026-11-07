@@ -5,8 +5,8 @@ import json
 
 import pytest
 
-from custom_components.adjustable_bed.beds.furnimove import build_furnimove_command
-from custom_components.adjustable_bed.furnimove_profiles import (
+from custom_components.adjustable_bed.beds.furnimove.controller import build_furnimove_command
+from custom_components.adjustable_bed.beds.furnimove.profiles import (
     FURNIMOVE_PRODUCTION_IDS,
     FURNIMOVE_PROFILES,
     get_furnimove_profile,

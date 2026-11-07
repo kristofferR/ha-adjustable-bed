@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta, timezone
 
 import pytest
 
-from custom_components.adjustable_bed.rmcontrol_protocol import (
+from custom_components.adjustable_bed.beds.rmcontrol.protocol import (
     Notification,
     NotificationBuffer,
     RepeatAlarm,
@@ -164,7 +164,7 @@ def test_malformed_unknown_and_outbound_are_ignored(frame: str) -> None:
 def test_partial_frame_expires_using_source_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
     timestamp = 1.0
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.rmcontrol_protocol.monotonic", lambda: timestamp
+        "custom_components.adjustable_bed.beds.rmcontrol.protocol.monotonic", lambda: timestamp
     )
     stream = NotificationBuffer()
     assert stream.feed(bytes.fromhex("6e20ff")) == ()

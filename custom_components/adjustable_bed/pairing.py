@@ -22,6 +22,8 @@ from typing import Any, Final, TypedDict, cast
 
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
+from .beds.goodvibe.catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
+from .beds.hjbed.catalog import PROFILE_CHOICES as HJBED_PROFILES
 from .const import (
     ADJUSTAMATTRESS_VARIANTS,
     BED_TYPE_ADJUSTAMATTRESS,
@@ -93,8 +95,6 @@ from .const import (
     VARIANT_AUTO,
     VMATBASIC_CONFIG_KEYS,
 )
-from .goodvibe_catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
-from .hjbed_catalog import PROFILE_CHOICES as HJBED_PROFILES
 
 # Explicit protocol variants whose entity-gating capabilities depend only on stored
 # config, for bed types that are not offline-safe as a whole (a Keeson "auto" entry
@@ -215,12 +215,12 @@ def supports_single_address_pairing(
         # Auto can resolve to incompatible P2/JSON/OEM frames at connection.
         return protocol_variant in {"base", "ergomotion"}
     if bed_type == BED_TYPE_ERGOMOTION_4:
-        from .ergomotion4_profiles import PRODUCTS
+        from .beds.ergomotion4.profiles import PRODUCTS
 
         product = PRODUCTS.get(product_type or "H")
         return product is not None and product.protocol == "P1"
     if bed_type == BED_TYPE_GMMOTOR:
-        from .gmmotor_profiles import load_profile
+        from .beds.gmmotor.profiles import load_profile
 
         try:
             return product_type is not None and 1 in load_profile(product_type).sides

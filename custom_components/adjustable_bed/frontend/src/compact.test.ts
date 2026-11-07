@@ -3,12 +3,13 @@ import { applyCompactPreset, cardNavigationPath, compactActions,
   compactActionOptions, compactStopEntities, compactTargets, fullCardDialogConfig } from "./compact";
 import { bedEntitiesForDevice } from "./discovery";
 import type { HomeAssistant } from "./types";
+import { placed } from "./test-placements";
 
 function fixture(): HomeAssistant {
-  const hass: HomeAssistant = {
+  const hass: HomeAssistant = placed({
     states: {}, entities: {}, devices: {}, themes: {},
     locale: { language: "en" }, language: "en", callService: async () => undefined,
-  };
+  });
   for (const [device, keys] of Object.entries({
     pair: ["preset_flat", "preset_memory_1", "program_memory_2", "stop_both"],
     left: ["preset_flat", "preset_memory_1", "preset_tv", "stop"],

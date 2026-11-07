@@ -17,7 +17,7 @@ from custom_components.adjustable_bed.alarm_table import (
     OneTimeAlarmRecord,
     WeeklyAlarmRecord,
 )
-from custom_components.adjustable_bed.beds.ergomotion4 import (
+from custom_components.adjustable_bed.beds.ergomotion4.controller import (
     CONF_MASSAGE_KEYS,
     CONF_MODEL_KEYS,
     CONF_PRODUCT_NAME,
@@ -30,9 +30,9 @@ from custom_components.adjustable_bed.beds.ergomotion4 import (
     p2_frame,
     parse_status,
 )
-from custom_components.adjustable_bed.beds.keeson import KeesonController
+from custom_components.adjustable_bed.beds.ergomotion4.profiles import ACTIONS, PRODUCTS
+from custom_components.adjustable_bed.beds.keeson.controller import KeesonController
 from custom_components.adjustable_bed.codec import keeson as codec
-from custom_components.adjustable_bed.ergomotion4_profiles import ACTIONS, PRODUCTS
 from custom_components.adjustable_bed.pairing import supports_single_address_pairing
 from tests.state_helpers import published, state_writer
 
@@ -46,7 +46,7 @@ CATALOG = json.loads((FIXTURES / "catalog.json").read_text())
 def hold_clock(monkeypatch):
     clock = SimpleNamespace(milliseconds=0.0)
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.ergomotion4.monotonic",
+        "custom_components.adjustable_bed.beds.ergomotion4.controller.monotonic",
         lambda: clock.milliseconds / 1000,
     )
     return clock
@@ -373,7 +373,7 @@ async def test_rename_clock_and_alarm_vectors():
         with pytest.raises(ValueError):
             ctrl.validate_device_rename(name)
     now = datetime(2026, 11, 3, 21, 7, 40, tzinfo=ZoneInfo("Europe/Oslo"))
-    with patch("custom_components.adjustable_bed.beds.keeson_layout_app.dt_util.now", return_value=now):
+    with patch("custom_components.adjustable_bed.beds.keeson.layout_app.dt_util.now", return_value=now):
         await ctrl.sync_clock()
     assert packets(coord)[-1].hex() == next(
         v["expected_bytes"] for v in VECTORS if v["id"] == "clock"
@@ -763,7 +763,7 @@ async def test_rgb_power_confirmation_timeout_never_sends_unguarded_color():
     _reported_light(ctrl, False)
     with (
         patch(
-            "custom_components.adjustable_bed.beds.ergomotion4.LIGHT_POWER_CONFIRM_TIMEOUT_SECONDS",
+            "custom_components.adjustable_bed.beds.ergomotion4.controller.LIGHT_POWER_CONFIRM_TIMEOUT_SECONDS",
             0,
         ),
         pytest.raises(TimeoutError),

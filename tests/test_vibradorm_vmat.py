@@ -10,7 +10,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed.beds.vibradorm_app import VibradormAppController
+from custom_components.adjustable_bed.beds.vibradorm.app import VibradormAppController
+from custom_components.adjustable_bed.beds.vibradorm.vmat_setup import (
+    DIS,
+    DIS_FIELDS,
+    validate_vmat_roles,
+)
 from custom_components.adjustable_bed.codec.vibradorm import CBI_CHAR_UUID as CBI
 from custom_components.adjustable_bed.codec.vibradorm import LIGHT_CHAR_UUID as LIGHT
 from custom_components.adjustable_bed.codec.vibradorm import MANAGEMENT_CHAR_UUID as MANAGEMENT
@@ -25,11 +30,6 @@ from custom_components.adjustable_bed.profiles.vibradorm import (
     MOTORS,
     VMAT_REMOTES,
     validate_vibradorm_app_profile,
-)
-from custom_components.adjustable_bed.vibradorm_vmat_setup import (
-    DIS,
-    DIS_FIELDS,
-    validate_vmat_roles,
 )
 
 VECTORS = json.loads((Path(__file__).parent / "fixtures/vibradorm_vmat_vectors.json").read_text())
@@ -85,7 +85,7 @@ async def test_ordinary_notification_startup_remains_cancellable(cancel_kind):
             settling.set()
             await hold.wait()
 
-        with patch("custom_components.adjustable_bed.beds.vibradorm_app.asyncio.sleep", side_effect=sleep):
+        with patch("custom_components.adjustable_bed.beds.vibradorm.app.asyncio.sleep", side_effect=sleep):
             startup = asyncio.create_task(c.start_notify())
             await settling.wait()
             startup.cancel()
@@ -138,7 +138,7 @@ async def test_floor_delivery_full_shipped_range(remote, level, raw, toggle):
     assert call.args[0].uuid == (LIGHT if remote == "01" else CBI)
     assert call.kwargs["response"] is (remote == "01")
     assert c._toggle == toggle  # construction and P1 execution flips cancel
-    assert c.get_light_state()["light_level"] == level
+    assert c._floor_light_intent()["light_level"] == level
 
 
 @pytest.mark.asyncio
@@ -259,7 +259,7 @@ async def test_single_shots_wait_after_success_completion_and_stop_bypasses_dela
     c.client.write_gatt_char.side_effect = write
     with (
         patch.object(asyncio.get_running_loop(), "time", side_effect=lambda: clock[0]),
-        patch("custom_components.adjustable_bed.beds.vibradorm_app.asyncio.sleep", new=sleep),
+        patch("custom_components.adjustable_bed.beds.vibradorm.app.asyncio.sleep", new=sleep),
     ):
         await c.set_mood_speed(0)
         await c.set_mood_speed(1)

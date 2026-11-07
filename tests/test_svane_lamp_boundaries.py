@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import pytest
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.adjustable_bed.beds.svane import SvaneController
+from custom_components.adjustable_bed.beds.svane.controller import SvaneController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SVANE,
     CONF_PROTOCOL_VARIANT,
@@ -27,7 +27,7 @@ def virtual_hold(monkeypatch, controller):
     clock = [0.0]
     local = SimpleNamespace(**vars(asyncio))
     local.get_running_loop = lambda: SimpleNamespace(time=lambda: clock[0])
-    monkeypatch.setattr('custom_components.adjustable_bed.beds.svane.asyncio', local)
+    monkeypatch.setattr('custom_components.adjustable_bed.beds.svane.controller.asyncio', local)
 
     async def wait(seconds):
         clock[0] += seconds
@@ -38,7 +38,7 @@ def virtual_hold(monkeypatch, controller):
 
 
 async def hold(hass, coordinator):
-    with patch_with_family("svane_services", 'custom_components.adjustable_bed.services._resolve_sided_targets',
+    with patch_with_family("beds.svane.services", 'custom_components.adjustable_bed.services._resolve_sided_targets',
                return_value=([(coordinator, SIDE_BOTH)], [])):
         await hass.services.async_call(DOMAIN, 'hold_control', {
             'device_id': 'bed', 'control': 'light_adjust', 'duration': .201,

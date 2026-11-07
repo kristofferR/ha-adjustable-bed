@@ -14,8 +14,8 @@ from bleak.exc import BleakError
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
 from custom_components.adjustable_bed.bed_traits import bed_traits
 from custom_components.adjustable_bed.beds.base import BedController
-from custom_components.adjustable_bed.beds.eshine_okin import EshineOkinController
-from custom_components.adjustable_bed.beds.eshine_okin_protocol import (
+from custom_components.adjustable_bed.beds.eshine_okin.controller import EshineOkinController
+from custom_components.adjustable_bed.beds.eshine_okin.protocol import (
     COMMANDS,
     HELD,
     NOTIFY_UUID,
@@ -268,7 +268,7 @@ def test_clock_and_alarm_vectors():
 
 async def test_alarm_double_set_query_order_and_clock(pauses, monkeypatch):
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.eshine_okin.dt_util.now", lambda: NOW
+        "custom_components.adjustable_bed.beds.eshine_okin.controller.dt_util.now", lambda: NOW
     )
     ctrl = make()
     await ctrl.async_discover_capabilities()
@@ -535,7 +535,7 @@ def test_discovery_candidate_never_selects_a_product(name):
 async def test_public_hold_sync_and_all_target_alarm_preflight(hass, ha_target, monkeypatch):
     from homeassistant.exceptions import ServiceValidationError
 
-    from custom_components.adjustable_bed import eshine_okin_services
+    from custom_components.adjustable_bed.beds.eshine_okin import services as eshine_okin_services
     from custom_components.adjustable_bed.const import DOMAIN, SIDE_BOTH
 
     coordinator, device_id = ha_target

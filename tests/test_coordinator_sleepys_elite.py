@@ -18,8 +18,8 @@ from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
-from custom_components.adjustable_bed.beds.sleepys_app import SleepysEliteAppController
-from custom_components.adjustable_bed.beds.sleepys_app_routes import ROUTES
+from custom_components.adjustable_bed.beds.sleepys.app import SleepysEliteAppController
+from custom_components.adjustable_bed.beds.sleepys.app_routes import ROUTES
 from custom_components.adjustable_bed.bluetooth_transport import ConnectionPath, TransportClass
 from custom_components.adjustable_bed.bond_verification import (
     BondEvidence,

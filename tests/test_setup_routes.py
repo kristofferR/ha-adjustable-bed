@@ -10,6 +10,11 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields
+from custom_components.adjustable_bed.beds.kaidi.protocol import (
+    KAIDI_ADV_TYPE_BROADCAST,
+    KaidiAdvertisement,
+)
+from custom_components.adjustable_bed.beds.richmat_mh.models import RICHMAT_MH_VARIANTS_BY_APP
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
@@ -25,11 +30,6 @@ from custom_components.adjustable_bed.detection import (
     get_bed_type_options,
     resolve_bed_type_choice,
 )
-from custom_components.adjustable_bed.kaidi_protocol import (
-    KAIDI_ADV_TYPE_BROADCAST,
-    KaidiAdvertisement,
-)
-from custom_components.adjustable_bed.richmat_mh_models import RICHMAT_MH_VARIANTS_BY_APP
 from tests.form_helpers import answer_app, complete, form_fields, select_options, suggested
 
 ADDRESS = "11:22:33:44:55:66"

@@ -10,16 +10,42 @@ No real Home Assistant connection or device commands are used.
 """
 
 import asyncio
+import json
 import os
 import shutil
 from pathlib import Path
 
 from playwright.async_api import async_playwright
 
-BUNDLE = (
-    Path(__file__).resolve().parents[1]
-    / "custom_components/adjustable_bed/frontend/dist/adjustable-bed-card.js"
-)
+ROOT = Path(__file__).resolve().parents[1]
+BUNDLE = ROOT / "custom_components/adjustable_bed/frontend/dist/adjustable-bed-card.js"
+# Where each entity sits in the card, as the integration publishes it.
+PLACEMENTS = ROOT / "tests/fixtures/card_placements.json"
+# Give the fake entities those placements whenever a card or editor gets hass.
+PLACE = """placements => {
+  const place = hass => {
+    for (const [id, entry] of Object.entries(hass?.entities ?? {})) {
+      if (entry.platform !== 'adjustable_bed' || !hass.states) continue;
+      const domain = id.split('.')[0], key = entry.translation_key;
+      const placement = placements[domain + ':' + key] ?? (domain === 'cover'
+        ? {card_section: 'motors', card_motor: key} : undefined);
+      const state = hass.states[id];
+      if (!placement) continue;
+      if (!state) hass.states[id] = {entity_id: id, state: 'unknown', attributes: {...placement},
+        last_changed: '', last_updated: ''};
+      else if (state.attributes?.card_section === undefined)
+        state.attributes = {...placement, ...state.attributes};
+    }
+    return hass;
+  };
+  for (const name of ['adjustable-bed-card', 'adjustable-bed-card-editor']) {
+    const prototype = customElements.get(name).prototype;
+    const accessor = Object.getOwnPropertyDescriptor(prototype, 'hass');
+    Object.defineProperty(prototype, 'hass', {...accessor, set(value) {
+      accessor.set.call(this, place(value));
+    }});
+  }
+}"""
 BOOT = """
 customElements.define('ha-card', class extends HTMLElement {
   constructor(){super();this.attachShadow({mode:'open'}).innerHTML='<style>:host{display:block;background:var(--card-background-color);border:1px solid var(--divider-color);border-radius:12px}</style><slot></slot>';}
@@ -96,6 +122,7 @@ async def main():
         await page.goto("http://bed-card.test/")
         await page.add_script_tag(content=BUNDLE.read_text(), type="module")
         await page.evaluate("customElements.whenDefined('adjustable-bed-card')")
+        await page.evaluate(PLACE, json.loads(PLACEMENTS.read_text()))
         await page.evaluate(BOOT)
         card = page.locator("adjustable-bed-card")
         await card.locator(".compact-card").wait_for()
@@ -383,7 +410,8 @@ async def main():
         # Full-card settings include memory available only on a side.
         await page.evaluate("""() => {
           const entity_id='button.left_program_memory_3';
-          const sideHass={...hass, entities:{...hass.entities,[entity_id]:{entity_id,device_id:'left',platform:'adjustable_bed',translation_key:'program_memory_3'}}};
+          const sideHass={...hass, entities:{...hass.entities,[entity_id]:{entity_id,device_id:'left',platform:'adjustable_bed',translation_key:'program_memory_3',name:'Memory 3'}},
+            formatEntityName:(stateObj)=>sideHass.entities[stateObj.entity_id]?.name||stateObj.entity_id};
           editor.hass=sideHass;editor.setConfig({...base,layout:'full'});
         }""")
         assert "Memory 3" in await editor.locator(".sub").inner_text()
@@ -400,11 +428,12 @@ async def main():
 
         # The same compact renderer supports a one-address pair, including
         # normalized favourites, and standalone beds without a side selector.
+        # One device holds every side; keys stay verbatim and bed_side scopes them.
         await page.evaluate("""async () => {window.nativeHass=hass;
           const entities={}, states={};
           for(const [id,entry] of Object.entries(hass.entities)) {
             const side=entry.device_id==='pair'?'both':entry.device_id;
-            entities[id]={...entry,device_id:'pair',translation_key:entry.translation_key+'_'+side};
+            entities[id]={...entry,device_id:'pair'};
             states[id]={...hass.states[id],attributes:{...hass.states[id].attributes,bed_side:side}};
           }
           hass={...hass,devices:{pair:{id:'pair',name:'Bed'}},entities,states};card.hass=hass;

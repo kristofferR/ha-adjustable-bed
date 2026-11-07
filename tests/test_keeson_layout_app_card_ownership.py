@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock
 import pytest
 from homeassistant.setup import async_setup_component
 
-from custom_components.adjustable_bed.beds.keeson_layout_app import AppController
+from custom_components.adjustable_bed.beds.keeson.layout_app import AppController
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
 from custom_components.adjustable_bed.paired_coordinator import PairedSideProxy

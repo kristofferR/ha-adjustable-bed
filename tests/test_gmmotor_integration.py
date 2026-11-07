@@ -8,9 +8,13 @@ import voluptuous as vol
 from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.gmmotor import GmmotorController
-from custom_components.adjustable_bed.beds.gmmotor_desk import GmmotorDeskController
-from custom_components.adjustable_bed.beds.gmmotor_sleep import GmmotorSleepController
+from custom_components.adjustable_bed.beds.gmmotor.controller import GmmotorController
+from custom_components.adjustable_bed.beds.gmmotor.desk import GmmotorDeskController
+from custom_components.adjustable_bed.beds.gmmotor.notifications import Event
+from custom_components.adjustable_bed.beds.gmmotor.requests import Request
+from custom_components.adjustable_bed.beds.gmmotor.services import async_register_gmmotor_services
+from custom_components.adjustable_bed.beds.gmmotor.sleep import GmmotorSleepController
+from custom_components.adjustable_bed.beds.gmmotor.transport import Transport
 from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
@@ -18,10 +22,6 @@ from custom_components.adjustable_bed.config_flow import (
 )
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.gmmotor_notifications import Event
-from custom_components.adjustable_bed.gmmotor_requests import Request
-from custom_components.adjustable_bed.gmmotor_services import async_register_gmmotor_services
-from custom_components.adjustable_bed.gmmotor_transport import Transport
 from custom_components.adjustable_bed.paired_coordinator import SingleAddressPairedCoordinator
 from custom_components.adjustable_bed.pairing import (
     build_pair_entry_data,
@@ -282,7 +282,7 @@ async def test_sleep_stop_service_waits_for_the_entire_active_frame(hass, sxb):
     with (
         patch.object(c, "async_connect", AsyncMock(return_value=True)),
         patch.object(ctrl, "validate_gmmotor_request", side_effect=admit),
-        patch("custom_components.adjustable_bed.beds.gmmotor_sleep._QUEUE_TICK", 0),
+        patch("custom_components.adjustable_bed.beds.gmmotor.sleep._QUEUE_TICK", 0),
         patch(
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(c, "both")], []),

@@ -9,9 +9,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed import richmat_mh_catalog as catalog
-from custom_components.adjustable_bed.beds import richmat_mh_protocol as protocol
-from custom_components.adjustable_bed.beds.richmat_mh import (
+from custom_components.adjustable_bed.beds.richmat_mh import catalog, protocol
+from custom_components.adjustable_bed.beds.richmat_mh.controller import (
     ALARM_OPTIONS,
     APP_GROUPS,
     RichmatMhController,
@@ -20,12 +19,12 @@ from custom_components.adjustable_bed.beds.richmat_mh import (
     resolve_model,
     selectable_models,
 )
-from custom_components.adjustable_bed.const import (
-    RICHMAT_MH_APPS,
-)
-from custom_components.adjustable_bed.richmat_mh_models import (
+from custom_components.adjustable_bed.beds.richmat_mh.models import (
     RICHMAT_MH_MODEL_CHOICES,
     RICHMAT_MH_VARIANTS_BY_APP,
+)
+from custom_components.adjustable_bed.const import (
+    RICHMAT_MH_APPS,
 )
 from tests.state_helpers import state_writer
 

@@ -4,13 +4,13 @@ import asyncio
 
 import pytest
 
-from custom_components.adjustable_bed.beds.reverie_comfort import ReverieComfortRequest
-from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import (
+from custom_components.adjustable_bed.beds.reverie.comfort import ReverieComfortRequest
+from custom_components.adjustable_bed.beds.reverie.pairlink_protocol import (
     PAIRLINK_BROADCAST_ADDRESS,
     decrypt_user_frame,
     encrypt_user_frame,
 )
-from custom_components.adjustable_bed.beds.reverie_pairlink_runtime import (
+from custom_components.adjustable_bed.beds.reverie.pairlink_runtime import (
     PairlinkRuntimeNotReadyError,
 )
 from custom_components.adjustable_bed.const import DOMAIN

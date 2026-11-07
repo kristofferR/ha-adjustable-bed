@@ -31,7 +31,7 @@ from custom_components.adjustable_bed.beds.innova import (
     innova_rename_frame,
     parse_innova_status,
 )
-from custom_components.adjustable_bed.beds.keeson import KeesonController
+from custom_components.adjustable_bed.beds.keeson.controller import KeesonController
 from custom_components.adjustable_bed.beds.ore_comfort_bed import OreComfortBedController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_KEESON,
@@ -177,7 +177,7 @@ def no_sleep(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
     sleep = AsyncMock()
     monkeypatch.setattr("custom_components.adjustable_bed.beds.base.asyncio.sleep", sleep)
     wait = AsyncMock()
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.keeson._wait_unless_cancelled", wait)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.keeson.controller._wait_unless_cancelled", wait)
     sleep.release_wait = wait
     return sleep
 
@@ -303,7 +303,7 @@ async def test_cancelling_mid_release_still_writes_the_zero_key(
         waiting.set()
         await asyncio.Event().wait()
 
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.keeson._wait_unless_cancelled", wait)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.keeson.controller._wait_unless_cancelled", wait)
     task = asyncio.create_task(controller.move_feet_up())
     await waiting.wait()
     task.cancel()
@@ -855,7 +855,7 @@ async def test_offline_safe_variants_build_without_a_client(coordinator, variant
         client=None,
         device_name="ORE bed",
     )
-    from custom_components.adjustable_bed.beds.keeson_okin_apps import OkinAppKeesonController
+    from custom_components.adjustable_bed.beds.keeson.okin_apps import OkinAppKeesonController
 
     assert isinstance(
         controller, (InnovaController, OreComfortBedController, OkinAppKeesonController)

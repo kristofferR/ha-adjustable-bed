@@ -38,8 +38,9 @@ from ..state_keys import (
     UNDER_BED_LIGHTS_ON,
     massage_intensity,
 )
-from .base import BedController, ControllerButtonSpec
-from .solace import (
+from .base import BedController
+from .entity_specs import ControllerButtonSpec
+from .solace.controller import (
     ALARM_ENABLED,
     ALARM_MASSAGE,
     ALARM_MODE,
@@ -266,14 +267,6 @@ class WoosaController(SolaceController):
             UNDER_BED_LIGHTS_ON(True),
             LIGHT_DEADLINE(asyncio.get_running_loop().time() + duration),
         )
-
-    def get_massage_state(self) -> dict[str, int | str | bool]:
-        state = self._coordinator.controller_state
-        return {
-            "head_intensity": state.get(massage_intensity("head")) or 0,
-            "foot_intensity": state.get(massage_intensity("foot")) or 0,
-            "timer_mode": str(state.get(MASSAGE_TIMER_MINUTES) or 0),
-        }
 
     async def set_massage_intensity(self, zone: str, level: int) -> None:
         if zone not in {"head", "foot"} or not 0 <= level <= 3:

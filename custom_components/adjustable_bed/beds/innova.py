@@ -26,6 +26,7 @@ from typing import Any, Final
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
+from ..card import CARD_LIGHTING, CARD_MASSAGE, CARD_MASSAGE_TIMER
 from ..codec import keeson as codec
 from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
@@ -33,14 +34,14 @@ from ..const import (
     KEESON_VARIANT_INNOVA,
 )
 from ..controller_state import StateKey, StateUpdate
-from .base import (
+from .entity_specs import (
     ControllerButtonSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
 )
-from .keeson import KeesonCommands, KeesonController
+from .keeson.controller import KeesonCommands, KeesonController
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -479,6 +480,7 @@ class InnovaController(KeesonController):
                 press_fn=_action("massage_level_step"),
                 icon="mdi:sine-wave",
                 translation_key=BUTTON_MASSAGE_LEVEL,
+                card=CARD_MASSAGE,
             ),
             ControllerButtonSpec(
                 key=BUTTON_MASSAGE_TIMER_HOLD,
@@ -486,6 +488,7 @@ class InnovaController(KeesonController):
                 press_fn=_action("massage_timer_hold"),
                 icon="mdi:timer-outline",
                 translation_key=BUTTON_MASSAGE_TIMER_HOLD,
+                card=CARD_MASSAGE,
             ),
         )
 
@@ -548,6 +551,7 @@ class InnovaController(KeesonController):
                 translation_key="innova_light",
                 state_key=STATE_LIGHT,
                 icon="mdi:lightbulb",
+                card=CARD_LIGHTING,
             ),
         )
 
@@ -560,6 +564,7 @@ class InnovaController(KeesonController):
                 state_key=STATE_MASSAGE_TIMER,
                 icon="mdi:timer-outline",
                 native_unit_of_measurement="min",
+                card=CARD_MASSAGE_TIMER,
             ),
         )
 

@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { bedEntitiesForDevice, hasLightingControls } from "./discovery";
 import { presentSections } from "./editor-sections";
 import type { BedEntities, HassEntity, HomeAssistant } from "./types";
+import { placed } from "./test-placements";
 
 const emptyBed = (): BedEntities => ({
   motors: [],
@@ -32,7 +33,7 @@ test("visual editor exposes utility controls", () => {
 
 test("visual editor offers lighting for a discovered state-only bed", () => {
   const entityId = "binary_sensor.bed_under_bed_lights";
-  const hass: HomeAssistant = {
+  const hass: HomeAssistant = placed({
     entities: {
       [entityId]: {
         entity_id: entityId,
@@ -47,7 +48,7 @@ test("visual editor offers lighting for a discovered state-only bed", () => {
     language: "en",
     themes: {},
     callService: async () => undefined,
-  };
+  });
   const bed = bedEntitiesForDevice(hass, "bed");
 
   expect(bed.lights.state).toBe(entityId);
@@ -59,7 +60,7 @@ test("visual editor offers lighting for a discovered state-only bed", () => {
 });
 
 test("visual editor offers bounded mood, pending floor timer and massage-only sections", () => {
-  const hass = { states: {} } as HomeAssistant;
+  const hass = placed({ states: {} } as HomeAssistant);
   const bed = emptyBed();
   bed.lights.mood = { selects: ["select.palette"], numbers: [] };
   expect(presentSections(bed, hass).lighting).toBe(true);
@@ -78,12 +79,12 @@ test("visual editor offers the graphic for degree and percentage panel groups", 
     { key: "back", position: "number.bed_back" },
     { key: "legs", position: "number.bed_legs" },
   ];
-  const hass = {
+  const hass = placed({
     states: {
       "number.bed_back": state("number.bed_back", "°"),
       "number.bed_legs": state("number.bed_legs", "%"),
     },
-  } as HomeAssistant;
+  } as HomeAssistant);
 
   expect(presentSections(bed, hass).graphic).toBe(false);
   expect(presentSections(bed, hass, {type: "custom:adjustable-bed-card", show_percentage_graphic: true}).graphic).toBe(true);

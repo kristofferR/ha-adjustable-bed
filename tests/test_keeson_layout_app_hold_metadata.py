@@ -7,12 +7,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from custom_components.adjustable_bed.bed_traits import bed_traits
-from custom_components.adjustable_bed.beds.base import (
+from custom_components.adjustable_bed.beds.entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
 )
-from custom_components.adjustable_bed.beds.keeson_layout_app import AppController
+from custom_components.adjustable_bed.beds.keeson.layout_app import AppController
 from custom_components.adjustable_bed.beds.serta_mp_remote import SertaMPRemoteController
 from custom_components.adjustable_bed.button import (
     ControllerActionButton,

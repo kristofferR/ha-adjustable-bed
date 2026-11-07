@@ -12,7 +12,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.beds.jiecang_app import require_app_transport
+from custom_components.adjustable_bed.beds.jiecang.app import require_app_transport
 from custom_components.adjustable_bed.codec.jiecang import TRANSPORTS
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.detection import bed_type_label

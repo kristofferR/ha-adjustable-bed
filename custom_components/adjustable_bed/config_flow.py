@@ -105,7 +105,11 @@ from .bed_traits import (
     passive_position_reconciliation_default_enabled,
     supports_passive_position_reconciliation,
 )
-from .beds.remacro_protocol import add_remacro_model, app_for_variant
+from .beds.kaidi.metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
+from .beds.octo.auth import OctoPinStatus, async_verify_octo_pin
+from .beds.remacro.discovery import remacro_entry_problem, remacro_manufacturer_data
+from .beds.remacro.protocol import add_remacro_model, app_for_variant
+from .beds.richmat_classic.profiles import APP_NAMES as RICHMAT_CLASSIC_APP_NAMES
 from .bluetooth_bond import (
     BondRemovalResult,
     BondSelectionStatus,
@@ -302,7 +306,6 @@ from .const import (
     ZSERIES_PULSE_COUNT_RANGE,
     DetectionResult,
     get_motor_pulse_defaults,
-    get_richmat_features,
     get_richmat_motor_count,
     grants_one_connection_per_pairing_window,
     requires_pairing,
@@ -328,8 +331,7 @@ from .discovery_settings import (
     async_is_discovery_disabled,
     async_set_discovery_disabled,
 )
-from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
-from .octo_auth import OctoPinStatus, async_verify_octo_pin
+from .import_executor import async_import_modules
 from .pairing import (
     KEY_SINGLE_ADDRESS_ORIGIN_ENTITY_UNIQUE_IDS,
     build_pair_entry_data,
@@ -356,8 +358,6 @@ from .profile_migration import (
     async_control_changes,
     reconfigure_family,
 )
-from .remacro_discovery import remacro_entry_problem, remacro_manufacturer_data
-from .richmat_classic_profiles import APP_NAMES as RICHMAT_CLASSIC_APP_NAMES
 from .setup_operation import (
     BluetoothOperationMixin,
     ConnectionLifetimePolicy,
@@ -370,9 +370,11 @@ from .setup_questions import (
     FlowContext,
     Question,
     SetupProfile,
+    async_import_profile,
     setup_profile,
     setup_profile_for,
 )
+from .support_proxy_logs import capture_proxy_logs
 from .unsupported import (
     PROXY_PAIRING_RECOVERY_URL,
     build_misidentified_issue_url,
@@ -1166,7 +1168,7 @@ async def _async_turn_off_limoss_remote_features(
     A cancelled, replaced or failed command returns False, so the caller keeps
     the saved setup.
     """
-    from .beds.limoss_remote import apply_limoss_remote_features
+    from .beds.limoss.remote import apply_limoss_remote_features
     from .coordinator import AdjustableBedCoordinator
     from .paired_coordinator import PairedBedCoordinator
 
@@ -1301,7 +1303,7 @@ def _richmat_mh_variant_error(
     """Return a form error when the Richmat MH app could not resolve the model."""
     if bed_type not in RICHMAT_MH_APPS:
         return None
-    from .beds.richmat_mh import resolve_model
+    from .beds.richmat_mh.controller import resolve_model
 
     name = None if is_mac_like_name(name) else name
     _model, problem = resolve_model(RICHMAT_MH_APPS[bed_type], protocol_variant, name)
@@ -1384,7 +1386,7 @@ def _add_leggett_app_schema_field(
 
 def _starcode_initial_transport(data: Mapping[str, Any], observed_name: str | None) -> str | None:
     """Resolve D from an explicit choice or original BLE identity, never a label."""
-    from .beds.starcode_abm5_4_profiles import constructor_selector
+    from .beds.starcode.abm5_4_profiles import constructor_selector
 
     selected = data.get(CONF_STARCODE_TRANSPORT_SELECTOR)
     if isinstance(selected, str) and selected and selected != "auto":
@@ -1397,7 +1399,7 @@ def _starcode_initial_transport(data: Mapping[str, Any], observed_name: str | No
 
 def _starcode_setup_transport_present(client: BleakClient, selector: str) -> bool:
     """Require both selected app roles under their exact service UUID."""
-    from .beds.starcode_abm5_4_profiles import TRANSPORTS
+    from .beds.starcode.abm5_4_profiles import TRANSPORTS
 
     transport = TRANSPORTS[selector]
     for service in client.services:
@@ -1430,7 +1432,7 @@ def starcode_live_transport_valid(hass: HomeAssistant, entry_id: str, selector: 
 
 
 def _limoss_remote_errors(data: dict[str, Any]) -> dict[str, str]:
-    from .beds.limoss_remote import validate_limoss_remote_profile
+    from .beds.limoss.remote import validate_limoss_remote_profile
 
     if data.get(CONF_PRODUCT_TYPE) not in PRODUCT_TYPES:
         return {CONF_PRODUCT_TYPE: "limoss_remote_product_required"}
@@ -2251,6 +2253,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             # The confirm step lists the controls of what the check resolved.
             self._migration_preview = dict(check(self.hass, client, data))
 
+    async def _async_import_endpoint_check(self, data: Mapping[str, Any]) -> None:
+        """Import what the staged route's family check reads, off the event loop."""
+        if self._migration_family is not None:
+            await async_import_modules(
+                self.hass, *_checked_family(self._migration_family, data).check_imports
+            )
+
     def _migration_probe_check(self) -> Callable[[BleakClient], None] | None:
         """Return the probe's strict migration check, or None outside a migration."""
         if self._migration is None or self._pending_entry is None:
@@ -2763,6 +2772,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         asking = self._asking
         profile = asking[0] if asking is not None else setup_profile_for(data)
         assert profile is not None and profile.questions
+        await async_import_profile(self.hass, profile)
         if profile.seed is not None:
             self._manual_data = data = profile.seed(self.hass, data, self._discovery_info)
         context = FlowContext(self.hass, verifiable=self._verification_possible())
@@ -3251,13 +3261,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         unknown and pairing is blocked rather than inferred from another protocol.
         The persisted snapshot keeps the decision auditable after absorption.
         """
+        from .beds.octo.runtime import octo_controller
         from .coordinator import AdjustableBedCoordinator
-        from .octo_runtime import octo_controller
 
         coordinator = self.hass.data.get(DOMAIN, {}).get(entry.entry_id)
         controller = getattr(coordinator, "capability_controller", None)
         if controller is None and not isinstance(coordinator, AdjustableBedCoordinator):
-            coordinator = AdjustableBedCoordinator(self.hass, entry)
+            coordinator = await AdjustableBedCoordinator.async_create(self.hass, entry)
         if coordinator.capability_controller is None:
             await coordinator.async_prime_offline_controller()
         controller = coordinator.capability_controller
@@ -3707,6 +3717,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         data = self._manual_data
         bed_type: str = data[CONF_BED_TYPE]
         variant: str = data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
+        from .coordinator import AdjustableBedCoordinator
+
+        # The motor count default and the profile's questions read the route's tables.
+        await AdjustableBedCoordinator.async_import_tables(self.hass, data)
+        await async_import_profile(self.hass, _final_settings_questions(bed_type, variant))
         info = self._discovery_info
         signals = detect_bed_type_detailed(info).signals if info is not None else None
         hidden = {*hidden_generic_fields(bed_type, variant), *self._journey_set}
@@ -3795,6 +3810,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     def _new_bed_motor_count(self, bed_type: str) -> int:
         """Return a new bed's default motor count, from its remote where it shows one."""
         if bed_type == BED_TYPE_RICHMAT and (remote := self._detected_richmat_remote()):
+            from .beds.richmat.features import get_richmat_features
+
             return get_richmat_motor_count(get_richmat_features(remote))
         name = self._discovery_info.name if self._discovery_info is not None else None
         return _default_motor_count(bed_type, name)
@@ -5346,8 +5363,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             NotImplementedError: the Bluetooth backend does not support pairing.
             NotAdvertisingError: the bed is not currently advertising.
         """
-        from .support_proxy_logs import capture_proxy_logs
-
         if not address:
             raise ValueError("No address provided for pairing")
 
@@ -5490,6 +5505,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             and self._manual_data is not None
             and self._manual_data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat"
         )
+        if self._migration is not None and self._manual_data is not None:
+            await self._async_import_endpoint_check(self._manual_data)
+        if bed_type == BED_TYPE_VIBRADORM_APP:
+            # vmat_setup imports the app module.
+            await async_import_modules(self.hass, "beds.vibradorm.vmat_setup")
         connect_lock = async_get_connect_lock(self.hass, address)
         if connect_lock.retained_setup_client is not None:
             with contextlib.suppress(Exception):
@@ -5575,8 +5595,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     self._migration_endpoint_check(client, self._manual_data)
                     self._migration_endpoints_checked = True
                 if vmat_profile:
+                    from .beds.vibradorm.vmat_setup import validate_vmat_roles
                     from .profiles.vibradorm import VMAT_REMOTES
-                    from .vibradorm_vmat_setup import validate_vmat_roles
 
                     assert self._manual_data is not None
                     remote = VMAT_REMOTES[self._manual_data[CONF_VIBRADORM_VMAT_REMOTE]]
@@ -5590,7 +5610,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     native_existing is not None and native_existing.proves_bond
                 ):
                     if bed_type == BED_TYPE_VIBRADORM_APP:
-                        from .beds.vibradorm_app import (
+                        from .beds.vibradorm.app import (
                             VibradormAppMetadataProgress,
                             async_prepare_vibradorm_app_pairing,
                         )
@@ -5722,7 +5742,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         and self._manual_data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat"
                         and client.is_connected
                     ):
-                        from .vibradorm_vmat_setup import async_close_vmat_setup
+                        from .beds.vibradorm.vmat_setup import async_close_vmat_setup
 
                         try:
                             await async_close_vmat_setup(client)
@@ -5803,7 +5823,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     def _record_selected_app_intent(self, data: dict[str, Any]) -> None:
         """Apply process-local app intent only once the saved selection is accepted."""
         if data.get(CONF_BED_TYPE) == BED_TYPE_VIBRADORM_APP:
-            from .vibradorm_app_state import (
+            from .beds.vibradorm.app_state import (
                 clear_vibradorm_app_session_intent,
                 mark_vibradorm_app_selection,
             )
@@ -5845,12 +5865,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     }
                 )
         if entry_data.get(CONF_BED_TYPE) == BED_TYPE_OKIN_RF_ECO_BT:
-            from .furnimove_repair import CONF_STAIRCASE_LAYOUT_CONFIRMED
+            from .beds.furnimove.repair import CONF_STAIRCASE_LAYOUT_CONFIRMED
 
             entry_data[CONF_STAIRCASE_LAYOUT_CONFIRMED] = True
             entry_data[CONF_MOTOR_COUNT] = 1
         if entry_data.get(CONF_BED_TYPE) == BED_TYPE_FURNIMOVE:
-            from .furnimove_profiles import FURNIMOVE_PROFILES
+            from .beds.furnimove.profiles import FURNIMOVE_PROFILES
 
             if entry_data.get(CONF_FURNIMOVE_REMOTE) not in FURNIMOVE_PROFILES:
                 self._manual_data = entry_data
@@ -5921,6 +5941,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             if self._pending_entry.get(CONF_BED_TYPE) == BED_TYPE_STARCODE_ABM5_4
             else None
         )
+        await self._async_import_endpoint_check(self._pending_entry)
         report = await self._probe_capabilities(
             self._pending_entry[CONF_ADDRESS],
             self._pending_entry.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO),
@@ -6143,7 +6164,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         else:
             evidence, device = async_gate_connection(self.hass, address, source=source)
         if bed_type == BED_TYPE_STARCODE_ABM5_4:
-            from .beds.starcode_abm5_4_profiles import constructor_selector
+            from .beds.starcode.abm5_4_profiles import constructor_selector
 
             if device is not None and isinstance(device.name, str) and device.name:
                 report.starcode_ble_device_name = device.name
@@ -6663,6 +6684,10 @@ def _shown_option_values(schema_dict: dict[Any, Any]) -> dict[str, Any]:
         return {}
 
 
+# What the Pairlink settings helpers import; pairlink_runtime loads cryptography.
+_PAIRLINK_SETTINGS_MODULES: Final = ("beds.reverie.pairlink_profile", "beds.reverie.pairlink_runtime")
+
+
 def _pairlink_settings_schema(
     hass: HomeAssistant,
     current_data: Mapping[str, Any],
@@ -6670,7 +6695,7 @@ def _pairlink_settings_schema(
     """Build private, per-target Pairlink role and credential fields."""
     local_sources: list[SelectOptionDict] = []
     try:
-        from .beds.reverie_pairlink_profile import pairlink_host_adapter_inventory
+        from .beds.reverie.pairlink_profile import pairlink_host_adapter_inventory
 
         local_sources = [
             {"value": item.source, "label": f"{item.source} ({item.adapter})"}
@@ -6733,10 +6758,10 @@ def _validate_pairlink_option_values(
     values: dict[str, Any],
 ) -> dict[str, str]:
     """Validate only explicit Pairlink inputs and current selected-source evidence."""
-    from .beds.reverie_pairlink_profile import (
+    from .beds.reverie.pairlink_profile import (
         pairlink_host_adapter_inventory,
     )
-    from .beds.reverie_pairlink_runtime import encode_pairlink_password, normalize_home_id
+    from .beds.reverie.pairlink_runtime import encode_pairlink_password, normalize_home_id
 
     errors: dict[str, str] = {}
     role = values.get(
@@ -6974,6 +6999,7 @@ class AdjustableBedOptionsFlow(
         """
         menu_options = ["settings"]
         data = self.config_entry.data
+        await async_import_profile(self.hass, setup_profile_for(data))
         if reconfigure_family(data) is not None:
             menu_options.append("change_app")
         if is_paired(data):
@@ -7061,11 +7087,13 @@ class AdjustableBedOptionsFlow(
             ),
         )
         if bed_type == BED_TYPE_REVERIE_PAIRLINK:
+            await async_import_modules(self.hass, *_PAIRLINK_SETTINGS_MODULES)
             schema.update(_pairlink_settings_schema(self.hass, current))
         _hide_owned_generic_fields(schema, bed_type, variant)
         # This receiver's own profile questions; the pair's shared form cannot
         # ask them, because each side may run another profile.
         questions = _configure_questions(current)
+        await async_import_profile(self.hass, questions)
         context = FlowContext(self.hass, self.config_entry.entry_id)
         if questions is not None:
             schema.update(
@@ -7373,6 +7401,10 @@ class AdjustableBedOptionsFlow(
                 current_data.pop(key, None)
         current_data = {**current_data, **self._pending_data}
         bed_type: str = current_data.get(CONF_BED_TYPE) or BED_TYPE_DIAGNOSTIC
+        # A rebuild for a newly selected bed type asks that profile's questions.
+        await async_import_profile(
+            self.hass, setup_profile_for({**current_data, CONF_BED_TYPE: bed_type})
+        )
 
         variants = get_variants_for_bed_type(bed_type)
         form_variant = self._variant_for_bed_type(bed_type, current_data)
@@ -7447,6 +7479,7 @@ class AdjustableBedOptionsFlow(
             ] = vol.In(variants)
 
         if bed_type == BED_TYPE_REVERIE_PAIRLINK and not separate_address_pair:
+            await async_import_modules(self.hass, *_PAIRLINK_SETTINGS_MODULES)
             schema_dict.update(_pairlink_settings_schema(self.hass, current_data))
 
         # Each route's own fields are on the form, shown only for that route.
@@ -7642,6 +7675,9 @@ class AdjustableBedOptionsFlow(
                 return await self._async_options_form(None, step_id=step_id)
 
             bed_type = requested_bed_type
+            await async_import_profile(
+                self.hass, setup_profile_for({**current_data, **user_input, CONF_BED_TYPE: bed_type})
+            )
             stale_profile_keys: frozenset[str] = frozenset()
             # What the declared profile sets itself, such as the generic fields it
             # owns. A paired save keeps only shown fields that changed, so these
@@ -8034,7 +8070,7 @@ class AdjustableBedOptionsFlow(
                     != self.config_entry.data.get(CONF_VIBRADORM_RESTORED, False)
                 )
                 if selection_changed:
-                    from .vibradorm_app_state import (
+                    from .beds.vibradorm.app_state import (
                         clear_vibradorm_app_session_intent,
                         mark_vibradorm_app_selection,
                     )
@@ -8065,7 +8101,7 @@ class AdjustableBedOptionsFlow(
                     CONF_STARCODE_LIFT_ENTRIES,
                 )
             ):
-                from .starcode_accessory_group import cancel_group_operations
+                from .beds.starcode.accessory_group import cancel_group_operations
 
                 cancel_group_operations(self.hass, self.config_entry.entry_id)
             self.hass.config_entries.async_update_entry(

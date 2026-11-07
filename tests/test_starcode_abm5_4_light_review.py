@@ -8,7 +8,7 @@ from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.beds.starcode_abm5_4 import StarcodeAbm5_4Controller
+from custom_components.adjustable_bed.beds.starcode.abm5_4 import StarcodeAbm5_4Controller
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from tests.starcode_abm5_4_vectors import BUILDER_VECTORS
@@ -153,7 +153,7 @@ async def test_actual_HA_light_catalog_does_not_claim_impossible_fresh_feedback(
                     assert controller.client.write_gatt_char.await_args.args[1] == native_frame(
                         command, builder
                     )
-            assert controller.get_light_state()["is_on"] is None
+            assert not controller._ui_state_observed
             observed_sensor = next(
                 row
                 for row in rows
@@ -170,7 +170,7 @@ async def test_actual_HA_light_catalog_does_not_claim_impossible_fresh_feedback(
 async def test_actual_HA_positive_C_feedback_boundary_reloads_exact_child_catalog(
     hass, enable_custom_integrations, paired, transition
 ):
-    from custom_components.adjustable_bed.beds.starcode_abm5_4_profiles import RetainedAppState
+    from custom_components.adjustable_bed.beds.starcode.abm5_4_profiles import RetainedAppState
     from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 
     left, right = "AA:BB:CC:DD:EE:01", "AA:BB:CC:DD:EE:02"
@@ -278,7 +278,7 @@ async def test_actual_HA_positive_C_feedback_boundary_reloads_exact_child_catalo
             assert (adopted.command_selector, adopted.ui_selector) == (transport, transport)
             assert adopted.supports_light_state_feedback == (transition == "gain")
             assert rebuilt.starcode_app_retained_state == retained
-            assert adopted.get_light_state()["is_on"] is True
+            assert adopted._ui_state_observed and adopted._light_on
             assert not adopted._parser_state_observed
             if transition == "gain":
                 assert native_frame("BOX25", "change2White") not in [

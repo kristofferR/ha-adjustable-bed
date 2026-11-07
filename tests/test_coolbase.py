@@ -15,7 +15,6 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.coolbase import (
     STATE_LEFT_FAN,
-    STATE_LIGHT,
     STATE_MASSAGE_MODE,
     STATE_RIGHT_FAN,
     CoolBaseCommands,
@@ -35,6 +34,7 @@ from custom_components.adjustable_bed.const import (
     KEESON_BASE_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
 from tests.state_helpers import published
 
 # -----------------------------------------------------------------------------
@@ -497,7 +497,7 @@ class TestCoolBaseAppVectors:
                 STATE_LEFT_FAN: expected["left"],
                 STATE_RIGHT_FAN: expected["right"],
                 STATE_MASSAGE_MODE: expected["mode"],
-                STATE_LIGHT: expected["light"],
+                UNDER_BED_LIGHTS_ON: expected["light"],
             }
 
     def test_out_of_range_values_keep_previous_state(self) -> None:
@@ -591,8 +591,7 @@ class TestCoolBaseAppVectors:
         controller = _controller()
         controller._parse_notification(_status(64, 1, 2, 3))
         controller.invalidate_diagnostics()
-        assert controller.get_light_state() == {"is_on": None}
-        assert published(*controller._coordinator.handle_controller_state_updates.call_args.args) == {STATE_LEFT_FAN: None, STATE_RIGHT_FAN: None, STATE_MASSAGE_MODE: None, STATE_LIGHT: None}
+        assert published(*controller._coordinator.handle_controller_state_updates.call_args.args) == {STATE_LEFT_FAN: None, STATE_RIGHT_FAN: None, STATE_MASSAGE_MODE: None, UNDER_BED_LIGHTS_ON: None}
 
     @pytest.mark.parametrize(
         ("reported", "requested", "toggles"),

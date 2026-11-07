@@ -15,7 +15,7 @@ from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
-from custom_components.adjustable_bed.beds.comfort_enhancements import (
+from custom_components.adjustable_bed.beds.comfort_enhancements.controller import (
     ComfortEnhancementsController,
     alarm_frame,
     clock_frame,
@@ -36,7 +36,9 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.state_keys import MASSAGE_TIMER_MINUTES
 from custom_components.adjustable_bed.validators import is_valid_variant_for_bed_type
+from tests.state_helpers import massage_levels
 
 ADDRESS = "AA:BB:CC:DD:01:10"
 STOP = "e5fe160000000006"
@@ -132,7 +134,7 @@ def written(client: MagicMock) -> list[str]:
 @pytest.fixture(autouse=True)
 def no_protocol_waits(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.comfort_enhancements.RELEASE_DELAY_S", 0
+        "custom_components.adjustable_bed.beds.comfort_enhancements.controller.RELEASE_DELAY_S", 0
     )
     monkeypatch.setattr(ComfortEnhancementsController, "_delay", AsyncMock())
 
@@ -292,7 +294,8 @@ async def test_gatt_last_matching_properties_notify_and_no_parser(
     for payload in [b"", b"\xe2\xfe\x16", bytes(range(20))]:
         c._notification(notify, bytearray(payload))
     assert raw.call_count == 3
-    assert not c._coordinator.controller_state
+    # Notifications have no parser; only the session's starting timer is published.
+    assert c._coordinator.controller_state == {MASSAGE_TIMER_MINUTES: 0}
     await c.stop_notify()
     assert mock_bleak_client.stop_notify.call_args.args[0] is notify
     mock_bleak_client.services = services(Char(KEESON_BASE_WRITE_CHAR_UUID, ["read"]))
@@ -346,7 +349,7 @@ async def test_all_preset_light_and_massage_sequences(
     assert written(mock_bleak_client) == [
         VECTORS[w] for w in [0x10000030, 0x10000031, 0x10000032, 0x10000013, 0x10000010, 0x11000010]
     ]
-    assert c.get_massage_state()["timer_mode"] == "0"
+    assert c._coordinator.controller_state[MASSAGE_TIMER_MINUTES] == 0
     c._coordinator.cancel_command.set()
     mock_bleak_client.write_gatt_char.reset_mock()
     await c.massage_mode_step()
@@ -393,7 +396,7 @@ async def test_ha_entities_and_alarm_service(
     assert exists("select", "massage_timer") == (layout != "mc3")
     dev = next(x.device_id for x in registry.entities.values() if x.config_entry_id == e.entry_id)
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.comfort_enhancements.dt_util.now",
+        "custom_components.adjustable_bed.beds.comfort_enhancements.controller.dt_util.now",
         lambda: datetime(2026, 11, 3, 20, 15, 30),
     )
     mock_bleak_client.write_gatt_char.reset_mock()
@@ -434,7 +437,7 @@ async def test_normal_release_uses_100ms_wait_and_cleanup_errors_surface(
     hass, mock_coordinator_connected, mock_bleak_client, monkeypatch
 ) -> None:
     c = await controller(hass, mock_bleak_client)
-    from custom_components.adjustable_bed.beds import comfort_enhancements as module
+    from custom_components.adjustable_bed.beds.comfort_enhancements import controller as module
 
     original_timeout = asyncio.timeout
     waits: list[float] = []
@@ -487,7 +490,9 @@ async def test_massage_shutdown_finishes_before_preempting_preset(
     await off
     words = [0x10000020, 0x11000010, 0x10000010] if wave else [0x10000010, 0x11000010]
     assert written(mock_bleak_client) == [VECTORS[w] for w in [*words, 0x01000002]]
-    assert c.get_massage_state() == {"timer_mode": "0", "head_intensity": 0, "foot_intensity": 0}
+    state = c._coordinator.controller_state
+    assert state[MASSAGE_TIMER_MINUTES] == 0
+    assert massage_levels(state, "head", "foot") == {"head": 0, "foot": 0}
 
 
 async def test_last_zone_off_restarts_timer_on_next_zone(
@@ -495,8 +500,9 @@ async def test_last_zone_off_restarts_timer_on_next_zone(
 ) -> None:
     c = await controller(hass, mock_bleak_client)
     await c.massage_head_toggle()
+    assert c._coordinator.controller_state[MASSAGE_TIMER_MINUTES] == 10
     await c.massage_head_toggle()
-    assert c.get_massage_state()["timer_mode"] == "0"
+    assert c._coordinator.controller_state[MASSAGE_TIMER_MINUTES] == 0
     mock_bleak_client.write_gatt_char.reset_mock()
     await c.massage_foot_toggle()
     assert written(mock_bleak_client) == [VECTORS[0x10000030], VECTORS[0x11000013]]

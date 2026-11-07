@@ -4893,9 +4893,6 @@
       "starcode_brightness": {
         "name": "RGB brightness"
       },
-      "svane_intensity": {
-        "name": "Lamp intensity"
-      },
       "richmat_mh_light_timer": {
         "name": "Light timeout"
       },

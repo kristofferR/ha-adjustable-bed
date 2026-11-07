@@ -19,7 +19,7 @@ from custom_components.adjustable_bed import (
     bluetooth_transport,
     pairing,
 )
-from custom_components.adjustable_bed.beds import reverie_pairlink_transport as transport
+from custom_components.adjustable_bed.beds.reverie import pairlink_transport as transport
 from custom_components.adjustable_bed.const import DOMAIN
 from tests.test_reverie_pairlink_production import (
     _adapter_objects,

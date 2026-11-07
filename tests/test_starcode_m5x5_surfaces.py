@@ -13,7 +13,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.starcode_state import state_updates
+from custom_components.adjustable_bed.beds.starcode.state import state_updates
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
@@ -201,7 +201,7 @@ async def test_registered_group_service_and_schema(hass: HomeAssistant) -> None:
     main.entry.mock_state(hass, ConfigEntryState.LOADED)
     await async_register_services(hass)
     with patch(
-        "custom_components.adjustable_bed.starcode_accessory_group.run_group", AsyncMock()
+        "custom_components.adjustable_bed.beds.starcode.accessory_group.run_group", AsyncMock()
     ) as run:
         await hass.services.async_call(
             DOMAIN,

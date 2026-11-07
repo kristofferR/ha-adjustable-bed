@@ -9,6 +9,7 @@ import pytest
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
+from custom_components.adjustable_bed.beds.doublesleep.services import build_request
 from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS, AdjustableBedButton
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
@@ -20,7 +21,6 @@ from custom_components.adjustable_bed.detection import (
     BED_TYPE_DISPLAY_NAMES,
     detect_bed_type_detailed,
 )
-from custom_components.adjustable_bed.doublesleep_services import build_request
 from tests.form_helpers import NEW_BED_ROUTES, finish_new_bed, start_new_bed
 from tests.test_doublesleep_controller import Bed
 

@@ -6,7 +6,7 @@ import hashlib
 import json
 
 from custom_components.adjustable_bed.bed_traits import bed_type_has_position_feedback
-from custom_components.adjustable_bed.beds.reverie_profiles import (
+from custom_components.adjustable_bed.beds.reverie.profiles import (
     REVERIE_MODEL_CHOICES,
     REVERIE_MODEL_PROFILES,
     resolve_reverie_model,

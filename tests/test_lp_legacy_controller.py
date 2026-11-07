@@ -7,8 +7,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed.beds.leggett_lp_legacy import LeggettLpLegacyController
-from custom_components.adjustable_bed.lp_legacy_profiles import (
+from custom_components.adjustable_bed.beds.leggett.lp_legacy import LeggettLpLegacyController
+from custom_components.adjustable_bed.beds.leggett.lp_legacy_profiles import (
     LP_LEGACY_PROFILE_CODES,
     LpLegacyControl,
     get_lp_legacy_profile,
@@ -109,11 +109,11 @@ async def test_hold_cadence_absorbs_write_latency_and_never_waits_negative(coord
     coordinator.cancel_command.wait = AsyncMock(side_effect=TimeoutError)
     with (
         patch(
-            "custom_components.adjustable_bed.beds.leggett_lp_legacy.monotonic",
+            "custom_components.adjustable_bed.beds.leggett.lp_legacy.monotonic",
             side_effect=[100.0, 100.06, 200.0, 200.14],
         ),
         patch(
-            "custom_components.adjustable_bed.beds.leggett_lp_legacy.asyncio.timeout",
+            "custom_components.adjustable_bed.beds.leggett.lp_legacy.asyncio.timeout",
             wraps=asyncio.timeout,
         ) as timeout,
     ):

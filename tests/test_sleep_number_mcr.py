@@ -11,8 +11,8 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.sleep_number_mcr import SleepNumberMcrController
-from custom_components.adjustable_bed.beds.sleep_number_mcr_protocol import decode_foundation
+from custom_components.adjustable_bed.beds.sleep_number.mcr import SleepNumberMcrController
+from custom_components.adjustable_bed.beds.sleep_number.mcr_protocol import decode_foundation
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEP_NUMBER_MCR,
     CONF_BED_TYPE,
@@ -68,7 +68,7 @@ def sleep_number_mcr_coordinator(hass: HomeAssistant, mock_coordinator_connected
 @pytest.fixture
 def controller():
     """A protocol unit fixture with explicit feature discovery state."""
-    from custom_components.adjustable_bed.beds.sleep_number_mcr_protocol import FoundationFeatures
+    from custom_components.adjustable_bed.beds.sleep_number.mcr_protocol import FoundationFeatures
 
     coordinator = MagicMock()
     coordinator.entry.data = {"sleep_number_mcr_client_id": 0x0102030405060708}
@@ -514,7 +514,7 @@ async def test_motion_cancellation_releases_and_refreshes(controller, motion, op
 
 async def test_position_timeout_stops_and_does_not_claim_success(controller, motion, monkeypatch):
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.sleep_number_mcr._FOUNDATION_TIMEOUT_SECONDS", 0.01
+        "custom_components.adjustable_bed.beds.sleep_number.mcr._FOUNDATION_TIMEOUT_SECONDS", 0.01
     )
 
     async def blocked(_seconds):
@@ -543,7 +543,7 @@ async def test_held_duration_expires_without_hanging_on_status(controller, motio
 
 async def test_stalled_held_target_still_releases(controller, motion, monkeypatch):
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.sleep_number_mcr._FOUNDATION_TIMEOUT_SECONDS",
+        "custom_components.adjustable_bed.beds.sleep_number.mcr._FOUNDATION_TIMEOUT_SECONDS",
         0.01,
     )
     normal = controller._mcr_request.side_effect
@@ -590,7 +590,7 @@ async def test_foundation_delay_observes_cancel_signal(controller):
 
 async def test_stop_timeout_still_releases_other_side(controller, motion, monkeypatch):
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.sleep_number_mcr._FOUNDATION_CLEANUP_TIMEOUT_SECONDS",
+        "custom_components.adjustable_bed.beds.sleep_number.mcr._FOUNDATION_CLEANUP_TIMEOUT_SECONDS",
         0.01,
     )
 
@@ -607,7 +607,7 @@ async def test_stop_timeout_still_releases_other_side(controller, motion, monkey
 
 async def test_final_read_timeout_does_not_claim_success(controller, motion, monkeypatch):
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.sleep_number_mcr._FOUNDATION_CLEANUP_TIMEOUT_SECONDS",
+        "custom_components.adjustable_bed.beds.sleep_number.mcr._FOUNDATION_CLEANUP_TIMEOUT_SECONDS",
         0.01,
     )
 
@@ -705,7 +705,7 @@ async def test_long_read_rejects_bad_data(controller, case):
 
 
 def test_capability_and_state_vectors(controller):
-    from custom_components.adjustable_bed.beds.sleep_number_mcr_protocol import (
+    from custom_components.adjustable_bed.beds.sleep_number.mcr_protocol import (
         decode_foundation,
         decode_massage,
         decode_pinch,
@@ -728,7 +728,7 @@ def test_capability_and_state_vectors(controller):
 
 
 def test_smartpump_classification_vectors():
-    from custom_components.adjustable_bed.beds.sleep_number_mcr_protocol import classify_smartpump
+    from custom_components.adjustable_bed.beds.sleep_number.mcr_protocol import classify_smartpump
 
     assert classify_smartpump(bytes.fromhex("000002"), "64:00:00:00:00:00")["model"] == "360"
     assert (
@@ -871,7 +871,7 @@ async def test_failed_stop_still_releases_other_side(controller):
 
 
 async def test_response_timeout_retries_exactly_three_times(controller):
-    from custom_components.adjustable_bed.beds.sleep_number_mcr import _ResponseTimeout
+    from custom_components.adjustable_bed.beds.sleep_number.mcr import _ResponseTimeout
 
     controller._async_send_frame_once = AsyncMock(
         side_effect=[_ResponseTimeout(), _ResponseTimeout(), _ResponseTimeout(), []]
@@ -1069,7 +1069,7 @@ async def test_optional_mcr_hydration_isolates_only_payload_failures(controller,
     controller._async_read_underbed_light_state = AsyncMock()
     controller._read_massage = AsyncMock(side_effect=failure)
     controller._read_warming = AsyncMock(side_effect=ValueError("payload"))
-    with patch("custom_components.adjustable_bed.beds.sleep_number_mcr.decode_system",
+    with patch("custom_components.adjustable_bed.beds.sleep_number.mcr.decode_system",
                return_value=(controller._foundation_features, {})):
         if isinstance(failure, TimeoutError):
             with pytest.raises(TimeoutError):

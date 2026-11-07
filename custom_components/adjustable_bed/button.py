@@ -15,13 +15,25 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import UndefinedType
 
-from .beds.base import (
-    CONTROLLER_GESTURE_RELEASE,
-    ProductButtonSpec,
-    controller_as,
-    require_controller,
-)
+from .beds.base import CONTROLLER_GESTURE_RELEASE, controller_as, require_controller
+from .beds.entity_specs import ProductButtonSpec
 from .beds.family_actions import MotionBedModuleActions, SolaceAudioActions, YogaPresetActions
+from .beds.limoss.remote_state import LIMOSS_REMOTE_MEMORY_NAMES
+from .beds.octo.runtime import octo_controller
+from .beds.remacro.discovery import remacro_side_lacks_global_stop
+from .card import (
+    CARD_HIDDEN,
+    CARD_LIGHT_TOGGLE,
+    CARD_MASSAGE,
+    CARD_PRESETS,
+    CARD_STOP,
+    CARD_UTILITY,
+    CardPlacement,
+    CardRole,
+    CardSection,
+    memory_card,
+    motor_card,
+)
 from .const import (
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_MOTION_BED,
@@ -32,12 +44,10 @@ from .const import (
     SIDE_BOTH,
 )
 from .controller_state import ControllerState
-from .entity import AdjustableBedEntity, RenamesInPlace, hold_lease_attributes
+from .entity import AdjustableBedEntity, PlacedInCard, RenamesInPlace, hold_lease_attributes
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime, controller_side_scope
 from .entity_sweep import PlatformEntities, records_entities
-from .limoss_remote_state import LIMOSS_REMOTE_MEMORY_NAMES
-from .octo_runtime import octo_controller
 from .paired_coordinator import (
     PairedBedCoordinator,
     SingleAddressPairedCoordinator,
@@ -48,15 +58,10 @@ from .position_estimate import (
     track_motor_command,
 )
 from .position_estimate_entities import async_setup_estimate_buttons
-from .remacro_discovery import remacro_side_lacks_global_stop
 
 if TYPE_CHECKING:
-    from .beds.base import (
-        BedController,
-        ControllerButtonSpec,
-        ControllerMotorHoldSpec,
-        MotorControlSpec,
-    )
+    from .beds.base import BedController
+    from .beds.entity_specs import ControllerButtonSpec, ControllerMotorHoldSpec, MotorControlSpec
     from .coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -85,6 +90,17 @@ class AdjustableBedButtonEntityDescription(ButtonEntityDescription):
     memory_slot: int | None = None
     # Whether this is a memory programming button (requires supports_memory_programming)
     is_program_button: bool = False
+    # Memory and massage buttons are placed by memory_slot and requires_massage.
+    card: CardPlacement = CARD_UTILITY
+
+
+def _button_card(description: AdjustableBedButtonEntityDescription) -> CardPlacement:
+    """Return where a described button sits in the card."""
+    if description.memory_slot is not None:
+        return memory_card(description.memory_slot, save=description.is_program_button)
+    if description.requires_massage:
+        return CARD_MASSAGE
+    return description.card
 
 
 def _supports_solace_audio(controller: BedController) -> bool:
@@ -169,6 +185,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="preset_flat",
         translation_key="preset_flat",
+        card=CARD_PRESETS,
         icon="mdi:bed",
         press_fn=lambda ctrl: ctrl.preset_flat(),
         cancel_movement=True,
@@ -177,6 +194,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="preset_zero_g",
         translation_key="preset_zero_g",
+        card=CARD_PRESETS,
         icon="mdi:rocket-launch",
         press_fn=lambda ctrl: ctrl.preset_zero_g(),
         cancel_movement=True,
@@ -185,6 +203,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="preset_anti_snore",
         translation_key="preset_anti_snore",
+        card=CARD_PRESETS,
         icon="mdi:sleep-off",
         press_fn=lambda ctrl: ctrl.preset_anti_snore(),
         cancel_movement=True,
@@ -193,6 +212,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="preset_tv",
         translation_key="preset_tv",
+        card=CARD_PRESETS,
         icon="mdi:television",
         press_fn=lambda ctrl: ctrl.preset_tv(),
         cancel_movement=True,
@@ -201,6 +221,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="preset_lounge",
         translation_key="preset_lounge",
+        card=CARD_PRESETS,
         icon="mdi:seat-recline-normal",
         press_fn=lambda ctrl: ctrl.preset_lounge(),
         cancel_movement=True,
@@ -209,6 +230,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="preset_reading",
         translation_key="preset_reading",
+        card=CARD_PRESETS,
         icon="mdi:book-open-page-variant",
         press_fn=lambda ctrl: ctrl.preset_reading(),
         cancel_movement=True,
@@ -217,6 +239,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="preset_swing",
         translation_key="preset_swing",
+        card=CARD_PRESETS,
         icon="mdi:bed-clock",
         press_fn=lambda ctrl: ctrl.preset_swing(),
         cancel_movement=True,
@@ -225,6 +248,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="preset_incline",
         translation_key="preset_incline",
+        card=CARD_PRESETS,
         icon="mdi:angle-acute",
         press_fn=lambda ctrl: ctrl.preset_incline(),
         cancel_movement=True,
@@ -233,6 +257,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="preset_both_up",
         translation_key="preset_both_up",
+        card=CARD_PRESETS,
         icon="mdi:arrow-up-bold",
         press_fn=lambda ctrl: ctrl.preset_both_up(),
         cancel_movement=True,
@@ -241,6 +266,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="preset_yoga",
         translation_key="preset_yoga",
+        card=CARD_PRESETS,
         icon="mdi:yoga",
         press_fn=lambda ctrl: require_controller(ctrl, YogaPresetActions).preset_yoga(),
         cancel_movement=True,
@@ -251,6 +277,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="preset_relaxing_bedtime",
         translation_key="preset_relaxing_bedtime",
+        card=CARD_PRESETS,
         icon="mdi:weather-night",
         press_fn=lambda ctrl: ctrl.preset_relaxing_bedtime(),
         cancel_movement=True,
@@ -362,6 +389,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="control_mode_press_and_hold",
         translation_key="control_mode_press_and_hold",
+        card=CARD_HIDDEN,
         icon="mdi:gesture-tap-hold",
         entity_category=EntityCategory.CONFIG,
         press_fn=lambda ctrl: ctrl.set_control_mode_press_and_hold(),
@@ -371,6 +399,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="control_mode_press_and_release",
         translation_key="control_mode_press_and_release",
+        card=CARD_HIDDEN,
         icon="mdi:gesture-tap",
         entity_category=EntityCategory.CONFIG,
         press_fn=lambda ctrl: ctrl.set_control_mode_press_and_release(),
@@ -381,6 +410,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="stop",
         translation_key="stop",
+        card=CARD_STOP,
         icon="mdi:stop",
         press_fn=lambda ctrl: ctrl.stop_all(),
         is_supported=lambda c: c.supports_stop_all,
@@ -390,6 +420,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         key="disconnect",
         name=None,
         translation_key="disconnect",
+        card=CardPlacement(CardSection.CONNECTION, CardRole.DISCONNECT),
         icon="mdi:bluetooth-off",
         entity_category=EntityCategory.DIAGNOSTIC,
         is_coordinator_action=True,
@@ -398,6 +429,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         key="connect",
         name=None,
         translation_key="connect",
+        card=CardPlacement(CardSection.CONNECTION, CardRole.CONNECT),
         icon="mdi:bluetooth-connect",
         entity_category=EntityCategory.DIAGNOSTIC,
         is_coordinator_action=True,
@@ -642,6 +674,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="toggle_light",
         translation_key="toggle_light",
+        card=CARD_LIGHT_TOGGLE,
         icon="mdi:lightbulb",
         press_fn=lambda ctrl: ctrl.lights_toggle(),
         is_supported=lambda c: c.supports_light_toggle_control,
@@ -649,6 +682,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="light_cycle",
         translation_key="light_cycle",
+        card=CardPlacement(CardSection.LIGHTING, CardRole.CYCLE),
         icon="mdi:lightbulb-multiple",
         press_fn=lambda ctrl: ctrl.lights_on(),
         is_supported=lambda c: c.supports_light_cycle,
@@ -676,6 +710,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="head_up",
         translation_key="head_up",
+        card=motor_card("head", CardRole.UP),
         icon="mdi:arrow-up",
         press_fn=lambda ctrl: ctrl.move_head_up(),
         cancel_movement=True,
@@ -684,6 +719,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="head_down",
         translation_key="head_down",
+        card=motor_card("head", CardRole.DOWN),
         icon="mdi:arrow-down",
         press_fn=lambda ctrl: ctrl.move_head_down(),
         cancel_movement=True,
@@ -692,6 +728,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="legs_up",
         translation_key="legs_up",
+        card=motor_card("legs", CardRole.UP),
         icon="mdi:arrow-up",
         press_fn=lambda ctrl: ctrl.move_legs_up(),
         cancel_movement=True,
@@ -700,6 +737,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
     AdjustableBedButtonEntityDescription(
         key="legs_down",
         translation_key="legs_down",
+        card=motor_card("legs", CardRole.DOWN),
         icon="mdi:arrow-down",
         press_fn=lambda ctrl: ctrl.move_legs_down(),
         cancel_movement=True,
@@ -1122,7 +1160,7 @@ class AdjustableBedProductButton(AdjustableBedEntity, ButtonEntity):
     """An extra action from the exact selected product's command catalog."""
 
     def __init__(self, coordinator: EntityRuntime, spec: ProductButtonSpec) -> None:
-        super().__init__(coordinator)
+        super().__init__(coordinator, spec.card)
         self._spec = spec
         self._attr_unique_id = coordinator.entity_unique_id(f"product_action_{spec.key}")
         self._attr_translation_key = "product_action"
@@ -1190,7 +1228,7 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
         description: AdjustableBedButtonEntityDescription,
     ) -> None:
         """Initialize the button."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, _button_card(description))
         self.entity_description = description
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         translation_key = _button_translation_key(
@@ -1285,7 +1323,7 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
     _attr_translation_key = "remote_action"
 
     def __init__(self, coordinator: EntityRuntime, spec: ControllerButtonSpec) -> None:
-        super().__init__(coordinator)
+        super().__init__(coordinator, spec.card)
         self._spec = spec
         self._attr_unique_id = coordinator.entity_unique_id(spec.key)
         self._attr_icon = spec.icon
@@ -1348,7 +1386,7 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
                 CONTROLLER_GESTURE_RELEASE.reset(token)
             return
         if self._spec.key == "hjbed_release":
-            from .hjbed_state import GESTURE_RELEASE
+            from .beds.hjbed.state import GESTURE_RELEASE
 
             # STOP admission also invalidates a hold still awaiting Bluetooth
             # preflight. Only its action cleanup may send a release packet.
@@ -1398,7 +1436,7 @@ def _paired_entity_unique_id(coordinator: PairedBedCoordinator, key: str) -> str
     return f"{coordinator.pair_id}_{key}"
 
 
-class PairedBedStopButton(RenamesInPlace, ButtonEntity):
+class PairedBedStopButton(RenamesInPlace, PlacedInCard, ButtonEntity):
     """Combined STOP for a paired bed.
 
     Lives on the synthetic parent device and stops BOTH sides with the resilient
@@ -1413,6 +1451,7 @@ class PairedBedStopButton(RenamesInPlace, ButtonEntity):
         self._coordinator = coordinator
         self._attr_unique_id = _paired_entity_unique_id(coordinator, "stop_both")
         self._attr_device_info = coordinator.device_info
+        self._card = CARD_STOP
         if isinstance(coordinator, SingleAddressPairedCoordinator):
             self._attr_extra_state_attributes = {"bed_side": SIDE_BOTH}
 
@@ -1427,7 +1466,7 @@ class PairedBedStopButton(RenamesInPlace, ButtonEntity):
         await self._coordinator.async_stop_command(side=SIDE_BOTH)
 
 
-class PairedBedCombinedButton(RenamesInPlace, ButtonEntity):
+class PairedBedCombinedButton(RenamesInPlace, PlacedInCard, ButtonEntity):
     """A 'both sides' movement/preset button on the paired parent device.
 
     Reuses the per-side button's translation_key (the parent device name keeps it
@@ -1451,6 +1490,7 @@ class PairedBedCombinedButton(RenamesInPlace, ButtonEntity):
         )
         self._attr_unique_id = _paired_entity_unique_id(coordinator, f"{description.key}_both")
         self._attr_device_info = coordinator.device_info
+        self._card = _button_card(description)
         if isinstance(coordinator, SingleAddressPairedCoordinator):
             self._attr_extra_state_attributes = {"bed_side": SIDE_BOTH}
 
@@ -1534,7 +1574,7 @@ class PairedBedCombinedButton(RenamesInPlace, ButtonEntity):
         return attributes
 
 
-class PairedBedCombinedMotorButton(RenamesInPlace, ButtonEntity):
+class PairedBedCombinedMotorButton(RenamesInPlace, PlacedInCard, ButtonEntity):
     """A 'move both sides' up/down motion button on the paired parent device.
 
     Cover-based pairs (Linak etc.) have no discrete motor buttons and no combined
@@ -1566,6 +1606,9 @@ class PairedBedCombinedMotorButton(RenamesInPlace, ButtonEntity):
         self._attr_translation_key = f"{spec.translation_key}_{direction}"
         self._attr_unique_id = _paired_entity_unique_id(coordinator, f"{spec.key}_{direction}_both")
         self._attr_device_info = coordinator.device_info
+        self._card = motor_card(
+            spec.translation_key, CardRole.UP if direction == "up" else CardRole.DOWN
+        )
         self._attr_extra_state_attributes = (
             {"bed_side": SIDE_BOTH}
             if isinstance(coordinator, SingleAddressPairedCoordinator)

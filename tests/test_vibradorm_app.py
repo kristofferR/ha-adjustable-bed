@@ -8,13 +8,17 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed.beds.vibradorm_app import (
+from custom_components.adjustable_bed.beds.vibradorm.app import (
     INFO_FIELDS,
     VibradormAppController,
     async_prepare_vibradorm_app_pairing,
     decode_standard_info,
     parse_article,
     parse_sync,
+)
+from custom_components.adjustable_bed.beds.vibradorm.app_state import (
+    VibradormAppFloorIntent,
+    VibradormAppTimerIntent,
 )
 from custom_components.adjustable_bed.codec.vibradorm import CBI_CHAR_UUID as CBI
 from custom_components.adjustable_bed.codec.vibradorm import LIGHT_CHAR_UUID as LIGHT
@@ -25,10 +29,6 @@ from custom_components.adjustable_bed.light import (
     AdjustableBedOnOffLight,
 )
 from custom_components.adjustable_bed.profiles.vibradorm import validate_vibradorm_app_profile
-from custom_components.adjustable_bed.vibradorm_app_state import (
-    VibradormAppFloorIntent,
-    VibradormAppTimerIntent,
-)
 from tests.hold_lease_wire import virtual_clock
 
 
@@ -1430,7 +1430,7 @@ async def test_pre_cancelled_floor_actions_preserve_session_intent_and_sequence(
         timer_intent=timer,
     )
     c._toggle = 0x8000
-    before = c.get_light_state()
+    before = c._floor_light_intent()
     c._coordinator.cancel_command.set()
     if action == "on":
         await c.lights_on()
@@ -1443,7 +1443,7 @@ async def test_pre_cancelled_floor_actions_preserve_session_intent_and_sequence(
     assert written(c) == []
     assert floor.level == initial_level and floor.default_level == 6
     assert timer.enabled and timer.minutes == 12
-    assert c._toggle == 0x8000 and c.get_light_state() == before
+    assert c._toggle == 0x8000 and c._floor_light_intent() == before
     c._coordinator.remember_vibradorm_app_floor_default.assert_not_called()
     c._coordinator.handle_controller_state_updates.assert_not_called()
     c._coordinator.record_command_trace.assert_not_called()
@@ -2090,7 +2090,7 @@ async def test_manifest_globals_startup_zero_first_floor_toggle_on_exact_routes(
     await c.lights_toggle()
     assert written(c) == [expected]
     assert c._toggle == 0x8000
-    assert c.get_light_state()["state_source"] == "local_intent"
+    assert c._floor_light_intent()["state_source"] == "local_intent"
 
 
 # unconfigure writes both local level and remembered level6. The same positive

@@ -8,12 +8,12 @@ import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.adjustable_bed.beds.malouf_app import MaloufAppController
+from custom_components.adjustable_bed.beds.linak.services import SERVICE_LINAK_MOVE_SIMULTANEOUS
+from custom_components.adjustable_bed.beds.malouf.app import MaloufAppController
+from custom_components.adjustable_bed.beds.malouf.app_services import SERVICE_MALOUF_SET_ALARM
 from custom_components.adjustable_bed.codec.malouf import TRANSPORTS
 from custom_components.adjustable_bed.const import BED_TYPE_MALOUF_APP, DOMAIN, SIDE_BOTH
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.linak_services import SERVICE_LINAK_MOVE_SIMULTANEOUS
-from custom_components.adjustable_bed.malouf_app_services import SERVICE_MALOUF_SET_ALARM
 from custom_components.adjustable_bed.services import (
     SERVICE_MALOUF_SYNC_CLOCK,
     SERVICE_TIMED_MOVE,

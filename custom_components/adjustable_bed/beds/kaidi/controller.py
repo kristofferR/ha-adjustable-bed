@@ -1,0 +1,986 @@
+"""Kaidi Seat controller, and the session glue the Floyd route reuses.
+
+Rize, Floyd Home and ISleep (``com.kaidi_test4.*``) drive the Kaidi mesh codec
+(``codec/kaidi.py``). The controller joins the room carried in the bed's
+advertisement, finds the bed's virtual address, then sends the command bytes of
+its Seat profile (``profiles/kaidi.py``) in control frames.
+
+All three OEM apps (Rize 1.3.0, ISleep 1.6.3, Floyd 1.0.7) use exclusively
+SEAT_* command values (1-167).  The BED_* constants (71-115) found in
+PLDataTrans.java are legacy/enterprise firmware values and are NOT used by any
+consumer mobile app.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import logging
+from collections.abc import Callable, Mapping
+from typing import TYPE_CHECKING
+
+from bleak.backends.characteristic import BleakGATTCharacteristic
+
+from ...codec import kaidi as codec
+from ...const import (
+    CONF_KAIDI_PRODUCT_ID,
+    CONF_KAIDI_ROOM_ID,
+    CONF_KAIDI_SOFA_ACU_NO,
+    CONF_KAIDI_TARGET_VADDR,
+    KAIDI_VARIANT_FLOYD,
+    KAIDI_VARIANT_SEAT_1,
+    KAIDI_VARIANT_SEAT_1_2,
+    KAIDI_VARIANT_SEAT_3,
+    SIDE_BOTH,
+    SIDE_LEFT,
+    SIDE_RIGHT,
+    VARIANT_AUTO,
+)
+from ...execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
+from ...profiles.kaidi import (
+    DEFAULT_PRODUCT_FAMILY,
+    KAIDI_PRODUCT_FAMILIES,
+    SEAT_1,
+    SEAT_1_2_SECONDARY,
+    SEAT_2,
+    SEAT_PROFILES,
+    KaidiCommandProfile,
+    KaidiProductFamily,
+)
+from ...state_keys import MASSAGE_TIMER_MINUTES
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import POSITION_UNIT_PERCENT, PositionNumberSpec, build_position_number_spec
+from .protocol import extract_kaidi_advertisement
+
+if TYPE_CHECKING:
+    from ...coordinator import AdjustableBedCoordinator
+
+_LOGGER = logging.getLogger(__name__)
+
+
+class KaidiController(BedController):
+    """Controller for Kaidi custom mesh-over-GATT beds."""
+
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        *,
+        device_name: str | None = None,
+        manufacturer_data: dict[int, bytes] | None = None,
+        variant: str = KAIDI_VARIANT_SEAT_1,
+        variant_source: str = "legacy_fallback",
+    ) -> None:
+        """Initialize the Kaidi controller."""
+        super().__init__(coordinator)
+        self._device_name = device_name
+        self._manufacturer_data = dict(manufacturer_data or {})
+        self._variant = variant
+        self._variant_source = variant_source
+        profile = SEAT_PROFILES.get(variant)
+        if profile is None:
+            raise ValueError(
+                f"Unsupported Kaidi variant '{variant}'. "
+                f"Expected one of: {', '.join(sorted(SEAT_PROFILES))}"
+            )
+        self.profile: KaidiCommandProfile = profile
+        # Seat 1+2 also sends each command's Seat 2 equivalent.
+        self._dual_map = SEAT_1_2_SECONDARY if variant == KAIDI_VARIANT_SEAT_1_2 else {}
+
+        self._notify_started = False
+        self._session_ready = False
+        self._session_lock = asyncio.Lock()
+
+        self._join_event = asyncio.Event()
+        self._own_vaddr_event = asyncio.Event()
+        self._target_vaddr_event = asyncio.Event()
+
+        self._join_status: int | None = None
+        self._room_id: int | None = None
+        self._own_vaddr: int | None = None
+        self._target_vaddr: int | None = None
+        self._write_with_response = True
+        self._product_id: int | None = None
+        self._sofa_acu_no: int | None = None
+        self._massage_active = False
+        self._massage_mode_index = 0
+        self._set_massage_timer_mode(0)
+
+        entry_data = getattr(getattr(self._coordinator, "entry", None), "data", {})
+        cached_room_id = entry_data.get(CONF_KAIDI_ROOM_ID)
+        cached_target_vaddr = entry_data.get(CONF_KAIDI_TARGET_VADDR)
+        cached_product_id = entry_data.get(CONF_KAIDI_PRODUCT_ID)
+        cached_sofa_acu_no = entry_data.get(CONF_KAIDI_SOFA_ACU_NO)
+        if isinstance(cached_room_id, int):
+            self._room_id = cached_room_id
+            _LOGGER.debug("Loaded cached room_id=%s from entry data", cached_room_id)
+        if isinstance(cached_target_vaddr, int):
+            self._target_vaddr = cached_target_vaddr
+            _LOGGER.debug("Loaded cached target_vaddr=%s from entry data", cached_target_vaddr)
+        if isinstance(cached_product_id, int):
+            self._product_id = cached_product_id
+        if isinstance(cached_sofa_acu_no, int):
+            self._sofa_acu_no = cached_sofa_acu_no
+
+        if self._manufacturer_data:
+            _LOGGER.debug(
+                "Kaidi init manufacturer_data keys=%s, payload_lengths=%s",
+                list(self._manufacturer_data.keys()),
+                {k: len(v) for k, v in self._manufacturer_data.items()},
+            )
+            for company_id, payload in self._manufacturer_data.items():
+                _LOGGER.debug(
+                    "  company_id=%d (0x%04X): %s",
+                    company_id, company_id, payload.hex(),
+                )
+        else:
+            _LOGGER.debug("Kaidi init: no manufacturer_data available")
+
+        advertisement = extract_kaidi_advertisement(self._manufacturer_data)
+        if advertisement is not None:
+            _LOGGER.debug(
+                "Parsed Kaidi advertisement: type=%s room_id=%s vaddr=%s product_id=%s sofa_acu_no=%s variant=%s (%s)",
+                advertisement.adv_type,
+                advertisement.room_id,
+                advertisement.vaddr,
+                advertisement.product_id,
+                advertisement.sofa_acu_no,
+                self._variant,
+                self._variant_source,
+            )
+            if advertisement.room_id is not None:
+                self._room_id = advertisement.room_id
+            if advertisement.vaddr is not None:
+                self._target_vaddr = advertisement.vaddr
+            if advertisement.product_id is not None:
+                self._product_id = advertisement.product_id
+            if advertisement.sofa_acu_no is not None:
+                self._sofa_acu_no = advertisement.sofa_acu_no
+        elif self._manufacturer_data:
+            _LOGGER.warning(
+                "Manufacturer data present but not recognized as Kaidi advertisement "
+                "for %s - room ID cannot be extracted",
+                self._coordinator.address,
+            )
+
+    # ------------------------------------------------------------------
+    # Product family helpers
+    # ------------------------------------------------------------------
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """One start per press, then a per-axis release (#483)."""
+        # Floyd has no complete report. A dual-seat bed starts seat 2 only after
+        # seat 1's repeats, so an open-ended hold would never move seat 2.
+        if self._variant in (KAIDI_VARIANT_FLOYD, KAIDI_VARIANT_SEAT_1_2):
+            return NO_EXECUTION_CAPABILITIES
+        return ExecutionCapabilities(hold="latched")
+
+    @property
+    def _product_family(self) -> KaidiProductFamily:
+        """Return the capability set for this bed's product ID."""
+        if self._product_id is not None:
+            return KAIDI_PRODUCT_FAMILIES.get(self._product_id, DEFAULT_PRODUCT_FAMILY)
+        return DEFAULT_PRODUCT_FAMILY
+
+    @property
+    def _command_profile(self) -> KaidiCommandProfile:
+        """Return the profile for the logical side bound to this command."""
+        if self._variant != KAIDI_VARIANT_SEAT_1_2:
+            return self.profile
+        if self.command_side == SIDE_LEFT:
+            return SEAT_1
+        if self.command_side == SIDE_RIGHT:
+            return SEAT_2
+        return self.profile
+
+    # ------------------------------------------------------------------
+    # Capability properties
+    # ------------------------------------------------------------------
+
+    @property
+    def protocol_diagnostics(self) -> dict[str, object]:
+        return {"variant": self._variant, "variant_source": self._variant_source}
+
+    @property
+    def control_characteristic_uuid(self) -> str:
+        """Return the UUID of the control characteristic."""
+        return codec.WRITE_CHAR_UUID
+
+    @property
+    def supports_single_address_pairing(self) -> bool:
+        """Only the APK-backed Seat 1+2 family has two addressable lanes."""
+        return self._variant == KAIDI_VARIANT_SEAT_1_2
+
+    @property
+    def supports_preset_flat(self) -> bool:
+        return self._command_profile.preset_flat is not None
+
+    @property
+    def supports_preset_zero_g(self) -> bool:
+        return self._command_profile.preset_zero_g is not None
+
+    @property
+    def supports_preset_anti_snore(self) -> bool:
+        return self._command_profile.preset_anti_snore is not None
+
+    @property
+    def supports_preset_tv(self) -> bool:
+        return (
+            self._command_profile.preset_book is not None
+            and self._product_family.has_book
+        )
+
+    @property
+    def supports_preset_lounge(self) -> bool:
+        return (
+            self._command_profile.preset_leisure is not None
+            and self._product_family.has_leisure
+        )
+
+    @property
+    def supports_memory_presets(self) -> bool:
+        return bool(self._command_profile.memory_recall)
+
+    @property
+    def memory_slot_count(self) -> int:
+        return len(self._command_profile.memory_recall)
+
+    @property
+    def supports_memory_programming(self) -> bool:
+        return bool(self._command_profile.memory_save)
+
+    @property
+    def supports_lights(self) -> bool:
+        return (
+            self._command_profile.light_on is not None
+            and self._product_family.has_lights
+        )
+
+    @property
+    def supports_discrete_light_control(self) -> bool:
+        return self.supports_lights
+
+    @property
+    def supports_direct_position_control(self) -> bool:
+        return (
+            self._command_profile.head_setting is not None
+            and self._command_profile.leg_setting is not None
+        )
+
+    @property
+    def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
+        """Expose back/legs percentage sliders when the profile can set positions.
+
+        Kaidi writes target positions directly rather than seeking with feedback,
+        and its targets are percentages, so angle calibration does not apply.
+        """
+        if not self.supports_direct_position_control:
+            return ()
+        return (
+            build_position_number_spec("back", max_value=100.0, unit=POSITION_UNIT_PERCENT),
+            build_position_number_spec("legs", max_value=100.0, unit=POSITION_UNIT_PERCENT),
+        )
+
+    @property
+    def supports_massage(self) -> bool:
+        return (
+            self._coordinator.has_massage
+            and (
+                self.supports_massage_toggle_control
+                or self.supports_massage_timer
+            )
+        )
+
+    @property
+    def supports_massage_off_control(self) -> bool:
+        return self._command_profile.massage_stop is not None
+
+    @property
+    def supports_massage_toggle_control(self) -> bool:
+        return self._command_profile.massage_start is not None
+
+    @property
+    def supports_massage_mode_step_control(self) -> bool:
+        return self._command_profile.massage_mode_1 is not None
+
+    @property
+    def supports_massage_timer(self) -> bool:
+        return bool(self.massage_timer_options)
+
+    @property
+    def has_lumbar_support(self) -> bool:
+        waist_commands_available = (
+            self._command_profile.waist_up is not None
+            and self._command_profile.waist_down is not None
+            and self._command_profile.waist_stop is not None
+        )
+        if not waist_commands_available:
+            return False
+
+        if self._variant == KAIDI_VARIANT_SEAT_3:
+            return True
+
+        return self._product_family.has_waist
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        options: list[int] = []
+        if self._command_profile.massage_timer_15 is not None:
+            options.append(15)
+        if self._command_profile.massage_timer_30 is not None:
+            options.append(30)
+        if self._command_profile.massage_timer_45 is not None:
+            options.append(45)
+        return options
+
+    # ------------------------------------------------------------------
+    # BLE transport
+    # ------------------------------------------------------------------
+
+    def _refresh_write_mode(self) -> None:
+        """Refresh write mode from discovered GATT characteristics when available."""
+        client = self.client
+        services = getattr(client, "services", None)
+        if client is None or services is None:
+            return
+
+        try:
+            iterable = list(services)
+        except TypeError:
+            return
+
+        for service in iterable:
+            for char in getattr(service, "characteristics", []):
+                if str(char.uuid).lower() != codec.WRITE_CHAR_UUID:
+                    continue
+                properties = {prop.lower() for prop in getattr(char, "properties", [])}
+                self._write_with_response = "write" in properties
+                if not self._write_with_response and "write-without-response" in properties:
+                    self._write_with_response = False
+                return
+
+    def _build_ping_packet(self) -> bytes:
+        """Build a ping-all packet used to discover this bed's virtual address."""
+        return codec.ping(self._own_vaddr if self._own_vaddr is not None else codec.BROADCAST)
+
+    def _build_control_packet(self, command_id: int, param: int = 0) -> bytes:
+        """Build a framed Kaidi control packet."""
+        if self._target_vaddr is None:
+            raise RuntimeError("Kaidi target virtual address not initialized")
+        own = self._own_vaddr if self._own_vaddr is not None else codec.BROADCAST
+        return codec.control(self._target_vaddr, own, command_id, param)
+
+    def _handle_notification(
+        self,
+        _sender: BleakGATTCharacteristic,
+        data: bytearray,
+    ) -> None:
+        """Handle Kaidi notifications."""
+        payload = bytes(data)
+        self.forward_raw_notification(codec.NOTIFY_CHAR_UUID, payload)
+        match codec.parse_notification(payload):
+            case codec.JoinReply(status):
+                self._join_status = status
+                self._join_event.set()
+            case codec.OwnAddress(vaddr):
+                self._own_vaddr = vaddr or codec.BROADCAST
+                self._own_vaddr_event.set()
+            case codec.PingReply(node, vaddr) if node == self._coordinator.address.upper():
+                self._target_vaddr = vaddr
+                self._target_vaddr_event.set()
+
+    async def _ensure_notify_started(self) -> None:
+        """Ensure protocol notifications are active."""
+        if self._notify_started:
+            return
+
+        client = self.client
+        if client is None or not client.is_connected:
+            raise ConnectionError("Not connected to Kaidi bed")
+
+        self._refresh_write_mode()
+        async with self._ble_lock:
+            await client.start_notify(codec.NOTIFY_CHAR_UUID, self._handle_notification)
+        self._notify_started = True
+
+    async def _wait_for_event(self, event: asyncio.Event, timeout: float, name: str) -> None:
+        """Wait for an asyncio.Event with a labeled timeout."""
+        try:
+            await asyncio.wait_for(event.wait(), timeout=timeout)
+        except TimeoutError as err:
+            raise TimeoutError(f"Timed out waiting for Kaidi {name}") from err
+
+    def _try_resolve_room_id_from_ha(self) -> None:
+        """Attempt to resolve room ID from Home Assistant's Bluetooth scanner."""
+        hass = getattr(self._coordinator, "hass", None)
+        if hass is None:
+            return
+        try:
+            from .metadata import resolve_kaidi_advertisement
+            advertisement = resolve_kaidi_advertisement(
+                hass,
+                self._coordinator.address,
+                manufacturer_data=(self._manufacturer_data or None),
+            )
+            if advertisement is not None:
+                if advertisement.room_id is not None:
+                    self._room_id = advertisement.room_id
+                    _LOGGER.info(
+                        "Resolved Kaidi room ID %s from HA Bluetooth scanner for %s",
+                        self._room_id,
+                        self._coordinator.address,
+                    )
+                if advertisement.vaddr is not None and self._target_vaddr is None:
+                    self._target_vaddr = advertisement.vaddr
+                    _LOGGER.info(
+                        "Resolved Kaidi target vaddr %s from HA Bluetooth scanner for %s",
+                        self._target_vaddr,
+                        self._coordinator.address,
+                    )
+                if advertisement.product_id is not None:
+                    self._product_id = advertisement.product_id
+                if advertisement.sofa_acu_no is not None:
+                    self._sofa_acu_no = advertisement.sofa_acu_no
+        except Exception:
+            _LOGGER.debug(
+                "Could not resolve Kaidi metadata from HA scanner for %s",
+                self._coordinator.address,
+                exc_info=True,
+            )
+
+    async def _ensure_session_ready(self) -> None:
+        """Ensure the Kaidi join sequence has completed."""
+        if self._session_ready and self._target_vaddr is not None:
+            return
+
+        async with self._session_lock:
+            if self._session_ready and self._target_vaddr is not None:
+                return
+
+            if self._room_id is None:
+                advertisement = extract_kaidi_advertisement(self._manufacturer_data)
+                if advertisement is not None:
+                    self._room_id = advertisement.room_id
+                    if self._target_vaddr is None:
+                        self._target_vaddr = advertisement.vaddr
+
+            # Last resort: try to get manufacturer data from HA's Bluetooth scanner
+            if self._room_id is None:
+                _LOGGER.debug(
+                    "No Kaidi room ID from constructor data for %s, "
+                    "trying HA Bluetooth scanner...",
+                    self._coordinator.address,
+                )
+                self._try_resolve_room_id_from_ha()
+
+            if self._room_id is None:
+                raise RuntimeError(
+                    "Kaidi room/home ID not found in advertisement data for "
+                    f"{self._coordinator.address}. Ensure the bed is powered on and "
+                    "has been provisioned in the official Rize/Floyd/ISleep app. "
+                    "The bed must be broadcasting its mesh advertisement for the "
+                    "integration to extract the room ID."
+                )
+
+            await self._ensure_notify_started()
+
+            join_packet = codec.join(self._room_id)
+            _LOGGER.debug(
+                "Sending Kaidi join packet for %s: room_id=%s, write_with_response=%s, "
+                "packet=%s",
+                self._coordinator.address,
+                self._room_id,
+                self._write_with_response,
+                join_packet.hex(),
+            )
+            self._join_event.clear()
+            self._join_status = None
+            await self._write_gatt_with_retry(
+                codec.WRITE_CHAR_UUID,
+                join_packet,
+                response=self._write_with_response,
+            )
+            await self._wait_for_event(self._join_event, timeout=5.0, name="join response")
+
+            _LOGGER.debug(
+                "Kaidi join response for %s: status=%s",
+                self._coordinator.address,
+                self._join_status,
+            )
+            if self._join_status != 0:
+                raise RuntimeError(f"Kaidi join rejected with status {self._join_status}")
+
+            if self._own_vaddr is None:
+                self._own_vaddr_event.clear()
+                try:
+                    await asyncio.wait_for(self._own_vaddr_event.wait(), timeout=1.0)
+                except TimeoutError:
+                    pass
+
+            if self._own_vaddr is None:
+                self._own_vaddr = codec.BROADCAST
+
+            if self._target_vaddr is None:
+                self._target_vaddr_event.clear()
+                await self._write_gatt_with_retry(
+                    codec.WRITE_CHAR_UUID,
+                    self._build_ping_packet(),
+                    response=self._write_with_response,
+                )
+                await self._wait_for_event(
+                    self._target_vaddr_event,
+                    timeout=5.0,
+                    name="target virtual address",
+                )
+
+            self._session_ready = self._target_vaddr is not None
+            _LOGGER.debug(
+                "Kaidi session ready for %s (room_id=%s, own_vaddr=%s, target_vaddr=%s)",
+                self._coordinator.address,
+                self._room_id,
+                self._own_vaddr,
+                self._target_vaddr,
+            )
+
+    # ------------------------------------------------------------------
+    # Command helpers
+    # ------------------------------------------------------------------
+
+    async def write_command(
+        self,
+        command: bytes,
+        repeat_count: int = 1,
+        repeat_delay_ms: int = 100,
+        cancel_event: asyncio.Event | None = None,
+    ) -> None:
+        """Write a fully framed Kaidi packet."""
+        await self._ensure_session_ready()
+        await self._write_gatt_with_retry(
+            codec.WRITE_CHAR_UUID,
+            command,
+            repeat_count=repeat_count,
+            repeat_delay_ms=repeat_delay_ms,
+            cancel_event=cancel_event,
+            response=self._write_with_response,
+        )
+
+    async def _write_control_command(
+        self,
+        command_id: int,
+        *,
+        param: int = 0,
+        repeat_count: int = 1,
+        repeat_delay_ms: int = 100,
+        cancel_event: asyncio.Event | None = None,
+    ) -> None:
+        """Build and send a Kaidi control command.
+
+        For dual-bed variants (seat_1_2), also sends the seat_2 equivalent so
+        both sides of a split bed move together.
+        """
+        await self._ensure_session_ready()
+        await self._write_gatt_with_retry(
+            codec.WRITE_CHAR_UUID,
+            self._build_control_packet(command_id, param=param),
+            repeat_count=repeat_count,
+            repeat_delay_ms=repeat_delay_ms,
+            cancel_event=cancel_event,
+            response=self._write_with_response,
+        )
+        secondary_id = (
+            self._dual_map.get(command_id)
+            if self.command_side in {None, SIDE_BOTH}
+            else None
+        )
+        if secondary_id is not None:
+            await self._write_gatt_with_retry(
+                codec.WRITE_CHAR_UUID,
+                self._build_control_packet(secondary_id, param=param),
+                repeat_count=repeat_count,
+                repeat_delay_ms=repeat_delay_ms,
+                cancel_event=cancel_event,
+                response=self._write_with_response,
+            )
+
+    async def start_notify(
+        self,
+        callback: Callable[[str, float], None] | None = None,
+    ) -> None:
+        """Start protocol notifications.
+
+        Kaidi notifications are used for protocol session management rather than
+        position feedback, so the callback is stored but not populated with motor
+        angles.
+        """
+        self._notify_callback = callback
+        await self._ensure_notify_started()
+
+    async def stop_notify(self) -> None:
+        """Stop Kaidi notifications."""
+        self._notify_callback = None
+        if not self._notify_started or self.client is None or not self.client.is_connected:
+            return
+        async with self._ble_lock:
+            await self.client.stop_notify(codec.NOTIFY_CHAR_UUID)
+        self._notify_started = False
+
+    # ------------------------------------------------------------------
+    # Movement helpers
+    # ------------------------------------------------------------------
+
+    async def _move_with_stop_command(self, move_command: int, stop_command: int) -> None:
+        """Send a movement command, then stop that motor."""
+        count = self._coordinator.motor_pulse_count
+        delay = self._coordinator.motor_pulse_delay_ms
+        if delay > 0:
+            # A renewable hold (#483) repeats until its lease ends, within its ceiling.
+            count = self.leased_hold_ms(count * delay) // delay
+        try:
+            await self._write_control_command(
+                move_command,
+                repeat_count=count,
+                repeat_delay_ms=delay,
+            )
+        finally:
+            try:
+                await self._write_control_command(
+                    stop_command,
+                    cancel_event=asyncio.Event(),
+                )
+            except ConnectionError:
+                _LOGGER.debug("Kaidi cleanup stop skipped because device disconnected")
+
+    def _require_memory_command(self, command_map: Mapping[int, int], memory_num: int) -> int:
+        """Resolve a Kaidi memory command or raise a helpful error."""
+        if not command_map:
+            raise NotImplementedError(
+                f"Kaidi variant {self._variant} does not expose memory presets"
+            )
+        try:
+            return command_map[memory_num]
+        except KeyError as err:
+            raise ValueError(f"Invalid Kaidi memory slot {memory_num}") from err
+
+    async def _write_optional_control_command(self, command_id: int | None, label: str) -> None:
+        """Send a variant-specific command that may not exist on all profiles."""
+        if command_id is None:
+            raise NotImplementedError(
+                f"Kaidi variant {self._variant} does not support {label}"
+            )
+        await self._write_control_command(command_id)
+
+    # ------------------------------------------------------------------
+    # Core motor methods (all beds)
+    # ------------------------------------------------------------------
+
+    async def move_head_up(self) -> None:
+        await self._move_with_stop_command(
+            self._command_profile.head_up,
+            self._command_profile.head_stop,
+        )
+
+    async def move_head_down(self) -> None:
+        await self._move_with_stop_command(
+            self._command_profile.head_down,
+            self._command_profile.head_stop,
+        )
+
+    async def move_head_stop(self) -> None:
+        await self._write_control_command(
+            self._command_profile.head_stop,
+            cancel_event=asyncio.Event(),
+        )
+
+    async def move_back_up(self) -> None:
+        p = self._command_profile
+        if p.back_up is not None and p.back_stop is not None and self._product_family.has_back:
+            await self._move_with_stop_command(p.back_up, p.back_stop)
+        else:
+            await self.move_head_up()
+
+    async def move_back_down(self) -> None:
+        p = self._command_profile
+        if p.back_down is not None and p.back_stop is not None and self._product_family.has_back:
+            await self._move_with_stop_command(p.back_down, p.back_stop)
+        else:
+            await self.move_head_down()
+
+    async def move_back_stop(self) -> None:
+        p = self._command_profile
+        if p.back_stop is not None and self._product_family.has_back:
+            await self._write_control_command(p.back_stop, cancel_event=asyncio.Event())
+        else:
+            await self.move_head_stop()
+
+    async def move_legs_up(self) -> None:
+        await self._move_with_stop_command(
+            self._command_profile.foot_up,
+            self._command_profile.foot_stop,
+        )
+
+    async def move_legs_down(self) -> None:
+        await self._move_with_stop_command(
+            self._command_profile.foot_down,
+            self._command_profile.foot_stop,
+        )
+
+    async def move_legs_stop(self) -> None:
+        await self._write_control_command(
+            self._command_profile.foot_stop,
+            cancel_event=asyncio.Event(),
+        )
+
+    async def move_feet_up(self) -> None:
+        await self.move_legs_up()
+
+    async def move_feet_down(self) -> None:
+        await self.move_legs_down()
+
+    async def move_feet_stop(self) -> None:
+        await self.move_legs_stop()
+
+    async def move_lumbar_up(self) -> None:
+        waist_up = self._command_profile.waist_up
+        waist_stop = self._command_profile.waist_stop
+        if not self.has_lumbar_support or waist_up is None or waist_stop is None:
+            raise NotImplementedError(
+                f"Kaidi variant {self._variant} does not support waist control"
+            )
+        await self._move_with_stop_command(waist_up, waist_stop)
+
+    async def move_lumbar_down(self) -> None:
+        waist_down = self._command_profile.waist_down
+        waist_stop = self._command_profile.waist_stop
+        if not self.has_lumbar_support or waist_down is None or waist_stop is None:
+            raise NotImplementedError(
+                f"Kaidi variant {self._variant} does not support waist control"
+            )
+        await self._move_with_stop_command(waist_down, waist_stop)
+
+    async def move_lumbar_stop(self) -> None:
+        waist_stop = self._command_profile.waist_stop
+        if not self.has_lumbar_support or waist_stop is None:
+            raise NotImplementedError(
+                f"Kaidi variant {self._variant} does not support waist control"
+            )
+        await self._write_control_command(waist_stop, cancel_event=asyncio.Event())
+
+    async def stop_all(self) -> None:
+        if self._command_profile.stop_all is not None:
+            await self._write_control_command(
+                self._command_profile.stop_all,
+                cancel_event=asyncio.Event(),
+            )
+            return
+
+        stop_commands = [
+            self._command_profile.head_stop,
+            self._command_profile.foot_stop,
+        ]
+        waist_stop = self._command_profile.waist_stop
+        if self.has_lumbar_support and waist_stop is not None:
+            stop_commands.append(waist_stop)
+
+        for command_id in dict.fromkeys(stop_commands):
+            await self._write_control_command(command_id, cancel_event=asyncio.Event())
+
+    # ------------------------------------------------------------------
+    # Presets
+    # ------------------------------------------------------------------
+
+    async def preset_flat(self) -> None:
+        await self._write_optional_control_command(
+            self._command_profile.preset_flat,
+            "the flat preset",
+        )
+
+    async def preset_zero_g(self) -> None:
+        await self._write_optional_control_command(
+            self._command_profile.preset_zero_g,
+            "the Zero-G preset",
+        )
+
+    async def preset_anti_snore(self) -> None:
+        await self._write_optional_control_command(
+            self._command_profile.preset_anti_snore,
+            "the anti-snore preset",
+        )
+
+    async def preset_tv(self) -> None:
+        await self._write_optional_control_command(
+            self._command_profile.preset_book,
+            "the book preset",
+        )
+
+    async def preset_lounge(self) -> None:
+        await self._write_optional_control_command(
+            self._command_profile.preset_leisure,
+            "the leisure preset",
+        )
+
+    async def preset_memory(self, memory_num: int) -> None:
+        command_id = self._require_memory_command(
+            self._command_profile.memory_recall,
+            memory_num,
+        )
+        await self._write_control_command(command_id)
+
+    async def program_memory(self, memory_num: int) -> None:
+        command_id = self._require_memory_command(
+            self._command_profile.memory_save,
+            memory_num,
+        )
+        await self._write_control_command(command_id)
+
+    # ------------------------------------------------------------------
+    # Lights
+    # ------------------------------------------------------------------
+
+    async def lights_on(self) -> None:
+        await self._write_optional_control_command(
+            self._command_profile.light_on,
+            "lights",
+        )
+
+    async def lights_off(self) -> None:
+        await self._write_optional_control_command(
+            self._command_profile.light_off,
+            "lights",
+        )
+
+    # ------------------------------------------------------------------
+    # Direct position control
+    # ------------------------------------------------------------------
+
+    def angle_to_native_position(self, motor: str, angle: float) -> int:  # noqa: ARG002
+        """Kaidi uses percentage-style progress writes for direct position targeting."""
+        return max(0, min(100, int(round(angle))))
+
+    async def set_motor_position(self, motor: str, position: int) -> None:
+        """Set a Kaidi motor to a specific 0-100 progress target."""
+        normalized_motor = motor.lower()
+        if normalized_motor in ("back", "head"):
+            command_id = self._command_profile.head_setting
+        elif normalized_motor in ("legs", "feet"):
+            command_id = self._command_profile.leg_setting
+        else:
+            raise ValueError(f"Unknown Kaidi motor for direct position control: {motor}")
+
+        if command_id is None:
+            raise NotImplementedError(
+                f"Kaidi variant {self._variant} does not support direct {normalized_motor} positioning"
+            )
+        await self._write_control_command(command_id, param=max(0, min(100, int(position))))
+
+    # ------------------------------------------------------------------
+    # Massage
+    # ------------------------------------------------------------------
+
+    async def massage_toggle(self) -> None:
+        """Toggle Kaidi massage on/off using the dedicated start/stop commands."""
+        if self._massage_active:
+            await self.massage_off()
+            return
+
+        await self._write_optional_control_command(
+            self._command_profile.massage_start,
+            "massage start",
+        )
+        self._massage_active = True
+
+    async def massage_off(self) -> None:
+        """Turn off Kaidi massage when the profile exposes a stop command."""
+        await self._write_optional_control_command(
+            self._command_profile.massage_stop,
+            "massage stop",
+        )
+        self._massage_active = False
+        self._massage_mode_index = 0
+        self._set_massage_timer_mode(0)
+
+    async def massage_mode_step(self) -> None:
+        """Cycle through the APK-backed Kaidi massage modes."""
+        mode_commands = [
+            command_id
+            for command_id in (
+                self._command_profile.massage_mode_1,
+                self._command_profile.massage_mode_2,
+                self._command_profile.massage_mode_3,
+            )
+            if command_id is not None
+        ]
+        if not mode_commands:
+            raise NotImplementedError(
+                f"Kaidi variant {self._variant} does not support massage modes"
+            )
+
+        next_mode_index = self._massage_mode_index % len(mode_commands)
+        await self._write_control_command(mode_commands[next_mode_index])
+        self._massage_active = True
+        self._massage_mode_index = next_mode_index + 1
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        """Set the Kaidi massage timer to 15, 30, or 45 minutes."""
+        if minutes == 0:
+            await self.massage_off()
+            return
+
+        command_by_minutes = {
+            15: self._command_profile.massage_timer_15,
+            30: self._command_profile.massage_timer_30,
+            45: self._command_profile.massage_timer_45,
+        }
+        command_id = command_by_minutes.get(minutes)
+        if command_id is None:
+            raise ValueError(
+                f"Unsupported Kaidi massage timer value {minutes}; expected one of {self.massage_timer_options}"
+            )
+
+        await self._write_control_command(command_id)
+        self._massage_active = True
+        self._set_massage_timer_mode(minutes)
+
+    def _set_massage_timer_mode(self, minutes: int) -> None:
+        """Track the timer this integration last selected."""
+        self._massage_timer_mode = minutes
+        self.forward_controller_state_update(MASSAGE_TIMER_MINUTES, minutes)
+
+
+async def build_controller(ctx: BuildContext) -> BedController:
+    """Build the controller for the command family the product metadata selects."""
+    from ...profiles.kaidi import resolve_kaidi_variant
+    from .protocol import extract_kaidi_advertisement
+
+    advertisement = extract_kaidi_advertisement(ctx.manufacturer_data)
+    resolution = resolve_kaidi_variant(
+        ctx.variant or VARIANT_AUTO,
+        product_id=(
+            advertisement.product_id
+            if advertisement is not None and advertisement.product_id is not None
+            else ctx.data.get(CONF_KAIDI_PRODUCT_ID)
+        ),
+        sofa_acu_no=(
+            advertisement.sofa_acu_no
+            if advertisement is not None and advertisement.sofa_acu_no is not None
+            else ctx.data.get(CONF_KAIDI_SOFA_ACU_NO)
+        ),
+    )
+    if resolution.variant is None:
+        raise ValueError(
+            "Kaidi product metadata could not be mapped to a command family. "
+            "Select a Kaidi protocol variant manually in options."
+        )
+    if resolution.variant == KAIDI_VARIANT_FLOYD:
+        await ctx.preload("kaidi.floyd")
+        from .floyd import FloydController
+
+        return FloydController(
+            ctx.coordinator, device_name=ctx.device_name, manufacturer_data=ctx.manufacturer_data
+        )
+    return KaidiController(
+        ctx.coordinator,
+        device_name=ctx.device_name,
+        manufacturer_data=ctx.manufacturer_data,
+        variant=resolution.variant,
+        variant_source=resolution.source,
+    )

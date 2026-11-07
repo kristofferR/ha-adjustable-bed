@@ -16,7 +16,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.keeson import (
+from custom_components.adjustable_bed.beds.keeson.controller import (
     STATE_ADJUSTABLE_LITE_LIGHT,
     STATE_ADJUSTABLE_LITE_MASSAGE_TIMER,
     STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW,

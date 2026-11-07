@@ -22,7 +22,7 @@ from custom_components.adjustable_bed.app_state_store import (
     app_state_store,
     async_remove_app_states,
 )
-from custom_components.adjustable_bed.beds.fsm_relax import FsmRelaxController
+from custom_components.adjustable_bed.beds.fsm_relax.controller import FsmRelaxController
 from custom_components.adjustable_bed.codec import limoss as codec
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator, ChildEntryView

@@ -19,7 +19,9 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
 from .bed_traits import bed_traits
-from .beds.base import ControllerMotorHoldSpec
+from .beds.entity_specs import ControllerMotorHoldSpec
+from .beds.octo.runtime import octo_controller
+from .card import motor_card
 from .const import (
     DOMAIN,
 )
@@ -27,16 +29,12 @@ from .entity import AdjustableBedEntity, hold_lease_attributes
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
 from .entity_sweep import PlatformEntities, records_entities
-from .octo_runtime import octo_controller
 from .paired_coordinator import entity_runtimes
 from .position_estimate import track_motor_command
 
 if TYPE_CHECKING:
-    from .beds.base import (
-        BedController,
-        ControllerMotorHoldSpec,
-        MotorControlSpec,
-    )
+    from .beds.base import BedController
+    from .beds.entity_specs import ControllerMotorHoldSpec, MotorControlSpec
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -292,9 +290,10 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
         description: AdjustableBedCoverEntityDescription,
     ) -> None:
         """Initialize the cover."""
-        super().__init__(coordinator)
+        translation_key = description.translation_key or description.key
+        super().__init__(coordinator, motor_card(translation_key))
         self.entity_description = description
-        self._attr_translation_key = description.translation_key or description.key
+        self._attr_translation_key = translation_key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._is_moving = False
         self._move_direction: str | None = None

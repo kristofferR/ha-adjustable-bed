@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { afterAll, test } from "bun:test";
 import { plugin } from "bun";
+import { placed } from "./test-placements";
 
 plugin({
   name: "card-hold-ownership-lit",
@@ -163,7 +164,7 @@ function makeM1Fixture(mode, { combinedHold = true } = {}) {
     });
 
   const clock = new FakeClock();
-  const hass = {
+  const hass = placed({
     entities,
     states,
     devices,
@@ -177,7 +178,7 @@ function makeM1Fixture(mode, { combinedHold = true } = {}) {
       }
       return Promise.resolve();
     },
-  };
+  });
   assert.ok(Object.values(entities).every((entry) => typeof entry.entity_id === "string"),
     JSON.stringify(Object.entries(entities).filter(([, entry]) => typeof entry.entity_id !== "string")));
   const sideBed = (side) => bedEntitiesForDevice(
@@ -322,7 +323,7 @@ test("a same-device Both STOP still overlaps and cancels a started side hold", a
 
 test("an explicit unsided STOP remains broad within its own device", async () => {
   const deviceId = "standalone-device";
-  const hass = {
+  const hass = placed({
     entities: {
       "cover.raw_part": {
         entity_id: "cover.raw_part",
@@ -362,7 +363,7 @@ test("an explicit unsided STOP remains broad within its own device", async () =>
       calls.push({ domain, service, data });
       return new Promise((resolve) => pending.push(resolve));
     },
-  };
+  });
   const calls = [];
   const pending = [];
   const card = new AdjustableBedCard();

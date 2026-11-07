@@ -13,26 +13,26 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds.richmat_mh import resolve_model
-from custom_components.adjustable_bed.beds.richmat_mh_protocol import GATT_MAPS, Event, finalize
-from custom_components.adjustable_bed.beds.ruf_richmat import (
+from custom_components.adjustable_bed.beds.richmat_mh.controller import resolve_model
+from custom_components.adjustable_bed.beds.richmat_mh.protocol import GATT_MAPS, Event, finalize
+from custom_components.adjustable_bed.beds.ruf_richmat.controller import (
     AppClassifier,
     RufRichmatController,
     load_app_model,
     waist_init,
 )
-from custom_components.adjustable_bed.beds.ruf_richmat_sleep import RufRichmatSleepController
-from custom_components.adjustable_bed.const import RUF_RICHMAT_APPS, SUPPORTED_BED_TYPES
-from custom_components.adjustable_bed.controller_factory import create_controller
-from custom_components.adjustable_bed.detection import BED_TYPE_DISPLAY_NAMES
-from custom_components.adjustable_bed.ruf_richmat_models import MODEL_IDS
-from custom_components.adjustable_bed.ruf_richmat_profiles import profiles
-from custom_components.adjustable_bed.ruf_richmat_protocol import (
+from custom_components.adjustable_bed.beds.ruf_richmat.models import MODEL_IDS
+from custom_components.adjustable_bed.beds.ruf_richmat.profiles import profiles
+from custom_components.adjustable_bed.beds.ruf_richmat.protocol import (
     AlarmRequest,
     alarm_frame,
     calendar_clock,
     sleep_frame,
 )
+from custom_components.adjustable_bed.beds.ruf_richmat.sleep import RufRichmatSleepController
+from custom_components.adjustable_bed.const import RUF_RICHMAT_APPS, SUPPORTED_BED_TYPES
+from custom_components.adjustable_bed.controller_factory import create_controller
+from custom_components.adjustable_bed.detection import BED_TYPE_DISPLAY_NAMES
 from custom_components.adjustable_bed.validators import is_valid_variant_for_bed_type
 from tests.state_helpers import state_writer
 
@@ -397,7 +397,7 @@ async def test_factory_selects_real_app_controller(bed, app):
 
 
 def test_restored_normal_mattress_matches_all_accepted_vectors():
-    from custom_components.adjustable_bed.beds.richmat_mh_protocol import mattress_frame
+    from custom_components.adjustable_bed.beds.richmat_mh.protocol import mattress_frame
 
     data = json.loads(
         (Path(__file__).parent / "fixtures/ruf_richmat_normal_mattress_vectors.json").read_text()
@@ -470,7 +470,7 @@ def test_calendar_capability_and_position_gates_are_model_specific():
 async def test_alarm_service_schema_and_validation(hass, monkeypatch):
     from homeassistant.core import ServiceCall
 
-    from custom_components.adjustable_bed import ruf_richmat_services as service
+    from custom_components.adjustable_bed.beds.ruf_richmat import services as service
 
     c = make("wsilver2", "bfrm_mattress")
     c._normal_ready = True
@@ -544,7 +544,7 @@ def test_normal_mattress_variant_preserves_verified_ver2_bed_controls(model):
 
 
 def test_selector_validation_does_not_load_catalog_files(monkeypatch):
-    from custom_components.adjustable_bed import ruf_richmat_profiles
+    from custom_components.adjustable_bed.beds.ruf_richmat import profiles as ruf_richmat_profiles
 
     def blocked(_app):
         pytest.fail("A synchronous setup selector must not read/decompress a catalog")
@@ -556,7 +556,7 @@ def test_selector_validation_does_not_load_catalog_files(monkeypatch):
 
 
 async def test_factory_preloads_only_the_selected_catalog_in_executor(monkeypatch):
-    from custom_components.adjustable_bed import ruf_richmat_profiles
+    from custom_components.adjustable_bed.beds.ruf_richmat import profiles as ruf_richmat_profiles
     from tests.test_controller_contract import _FactoryCoordinator
 
     c = _FactoryCoordinator()

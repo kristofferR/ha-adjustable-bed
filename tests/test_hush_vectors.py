@@ -8,9 +8,9 @@ from pathlib import Path
 import pytest
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.beds.hush_base.catalog import ACTIONS as CATALOG_ACTIONS
 from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.controller_factory import create_controller
-from custom_components.adjustable_bed.hush_catalog import ACTIONS as CATALOG_ACTIONS
 from custom_components.adjustable_bed.profiles.hush import ACTIONS, CURRENT, PROFILES, HushProfile
 from tests.casper_frames import rebuild
 from tests.hush_vectors import FROZEN_FRAMES, SHARED_FRAMES
@@ -57,7 +57,7 @@ def test_the_music_page_sends_frozen_frames():
 
 def test_the_controller_builds_no_frame_of_its_own():
     beds = Path(__file__).parents[1] / "custom_components/adjustable_bed/beds"
-    assert not re.search(r"""b["']\\x6e|bytes\(\(0x6E""", (beds / "hush_base.py").read_text(), re.I)
+    assert not re.search(r"""b["']\\x6e|bytes\(\(0x6E""", (beds / "hush_base/controller.py").read_text(), re.I)
 
 
 async def test_the_route_drives_its_profile():

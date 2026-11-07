@@ -39,8 +39,8 @@ from ..codec import okin_nframe as codec
 from ..const import NORDIC_UART_WRITE_CHAR_UUID, VARIANT_AUTO
 from ..profiles.okin_nframe import OKIN_DOT
 from .builder import BuildContext
-from .okin_uuid import OKIN_UUID_REMOTES, OkinUuidController
-from .okin_uuid_remotes import DEFAULT_OKIN_DOT_REMOTE
+from .okin_uuid.controller import OKIN_UUID_REMOTES, OkinUuidController
+from .okin_uuid.remotes import DEFAULT_OKIN_DOT_REMOTE
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator

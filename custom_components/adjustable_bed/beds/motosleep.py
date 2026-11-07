@@ -14,8 +14,9 @@ from ..profiles.motosleep import (
     MotoSleepTransport,
     resolve_motosleep_profile,
 )
-from .base import BedController, MotorCommandCallable, MotorControlSpec
+from .base import BedController
 from .builder import BuildContext
+from .entity_specs import MotorCommandCallable, MotorControlSpec
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -416,9 +417,6 @@ class MotoSleepController(BedController):
                 await asyncio.sleep(0.02)
         if any(rgb_color):
             self._light_rgb = rgb_color
-
-    def get_light_state(self) -> dict[str, object]:
-        return {"rgb_color": self._light_rgb}
 
     async def _massage(self, key: str) -> None:
         action = self.profile.massage.get(key)

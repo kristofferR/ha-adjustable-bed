@@ -13,13 +13,13 @@ from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import _async_ensure_paired_device_registry, button, cover
-from custom_components.adjustable_bed.beds.hush_base import HushBaseController
-from custom_components.adjustable_bed.beds.hush_sleep import HushSleepController
-from custom_components.adjustable_bed.casper_base_protocol import Request
-from custom_components.adjustable_bed.casper_base_services import (
+from custom_components.adjustable_bed.beds.casper_base.protocol import Request
+from custom_components.adjustable_bed.beds.casper_base.services import (
     async_register_casper_base_services,
 )
-from custom_components.adjustable_bed.casper_sleep_protocol import envelope
+from custom_components.adjustable_bed.beds.casper_sleep.protocol import envelope
+from custom_components.adjustable_bed.beds.hush_base.controller import HushBaseController
+from custom_components.adjustable_bed.beds.hush_sleep.controller import HushSleepController
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator

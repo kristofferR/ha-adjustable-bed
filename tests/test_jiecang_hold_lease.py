@@ -17,8 +17,8 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from custom_components.adjustable_bed.beds.base import BedController
-from custom_components.adjustable_bed.beds.jiecang_app import JiecangAppController
-from custom_components.adjustable_bed.beds.logicdata_app import LogicdataAppController
+from custom_components.adjustable_bed.beds.jiecang.app import JiecangAppController
+from custom_components.adjustable_bed.beds.logicdata.app import LogicdataAppController
 from custom_components.adjustable_bed.codec.jiecang import TRANSPORTS
 from custom_components.adjustable_bed.execution import STREAM_HOLD
 from custom_components.adjustable_bed.profiles import jiecang, logicdata
@@ -218,7 +218,7 @@ def test_motor_covers_advertise_the_stream_hold(family: str, key: str) -> None:
 
 
 def test_comfort_motion_covers_advertise_no_hold() -> None:
-    from custom_components.adjustable_bed.beds.jiecang import JiecangProfileController
+    from custom_components.adjustable_bed.beds.jiecang.controller import JiecangProfileController
     from custom_components.adjustable_bed.entity import hold_lease_attributes
 
     controller = JiecangProfileController(

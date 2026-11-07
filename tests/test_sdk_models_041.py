@@ -5,7 +5,7 @@ from typing import Never, SupportsIndex
 
 import pytest
 
-from custom_components.adjustable_bed.beds.reverie_pairlink_sdk_models import (
+from custom_components.adjustable_bed.beds.reverie.pairlink_sdk_models import (
     PairlinkModelBoundsError,
     PairlinkModelNegativeLengthError,
     PairlinkModelNullError,

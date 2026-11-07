@@ -19,7 +19,9 @@ from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinato
 from custom_components.adjustable_bed.cover import _cover_entities_for
 from custom_components.adjustable_bed.light import _light_entities_for
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
+from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
 from tests.conftest import make_controller_mock
+from tests.state_helpers import published
 from tests.test_malouf_app_entities import configure_entity_runtime
 from tests.test_serenity import make_controller, written
 
@@ -92,7 +94,10 @@ async def test_native_light_toggle_keeps_unknown_physical_state(hass):
     )
     await button.async_press()
     assert "0c02000200000000000000000000" in written(controller)
-    assert not controller.get_light_state()
+    assert all(
+        UNDER_BED_LIGHTS_ON not in published(*call.args)
+        for call in controller._coordinator.handle_controller_state_updates.call_args_list
+    )
     assert not any(
         getattr(light, "supports_color", False) for light in _light_entities_for(hass, runtime)
     )
@@ -172,7 +177,10 @@ async def test_discrete_light_switch_tracks_only_commanded_intent(hass):
     frames = written(controller)
     assert "0c02000000000000004000000000" in frames
     assert "0c02000000000000008000000000" in frames
-    assert controller.get_light_state() == {}
+    assert all(
+        UNDER_BED_LIGHTS_ON not in published(*call.args)
+        for call in controller._coordinator.handle_controller_state_updates.call_args_list
+    )
 
 
 async def test_parser_publishes_native_diagnostic_values_and_signed_alarm_attributes(hass):

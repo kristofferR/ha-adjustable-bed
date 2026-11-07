@@ -11,8 +11,8 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.setup import async_setup_component
 
 from custom_components import adjustable_bed
-from custom_components.adjustable_bed import pairlink_local_setup
-from custom_components.adjustable_bed.beds import reverie_pairlink_transport as transport
+from custom_components.adjustable_bed.beds.reverie import pairlink_local_setup
+from custom_components.adjustable_bed.beds.reverie import pairlink_transport as transport
 from custom_components.adjustable_bed.const import DOMAIN
 from tests.test_reverie_pairlink_lease_transfer import SOURCES, TrackedBus, fixture_pair
 from tests.test_reverie_pairlink_production import (

@@ -18,6 +18,7 @@ from homeassistant.const import EntityCategory, Platform
 from homeassistant.core import HomeAssistant, callback
 
 from .bed_traits import bed_traits
+from .card import CARD_HIDDEN, motor_card
 from .const import (
     BED_TYPE_LINAK,
     CONF_BED_TYPE,
@@ -27,16 +28,17 @@ from .const import (
     DEFAULT_MOTOR_COUNT,
     DOMAIN,
 )
-from .controller_state import ControllerState
+from .controller_state import ControllerState, StateKey
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
 from .entity_sweep import PlatformEntities, records_entities
 from .paired_coordinator import entity_runtimes
 from .position_estimate_entities import async_setup_estimate_sensors
+from .state_keys import MASSAGE_TIMER_MINUTES, massage_intensity
 
 if TYPE_CHECKING:
-    from .beds.base import ControllerStateSensorSpec
+    from .beds.entity_specs import ControllerStateSensorSpec
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -100,7 +102,7 @@ SENSOR_DESCRIPTIONS: tuple[AdjustableBedSensorEntityDescription, ...] = (
 class AdjustableBedMassageSensorEntityDescription(SensorEntityDescription):
     """Describes a massage state sensor entity."""
 
-    state_key: str  # Key in get_massage_state() dict
+    state_key: StateKey[int | None]
 
 
 MASSAGE_SENSOR_DESCRIPTIONS: tuple[AdjustableBedMassageSensorEntityDescription, ...] = (
@@ -110,7 +112,7 @@ MASSAGE_SENSOR_DESCRIPTIONS: tuple[AdjustableBedMassageSensorEntityDescription, 
         icon="mdi:vibrate",
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        state_key="head_intensity",
+        state_key=massage_intensity("head"),
     ),
     AdjustableBedMassageSensorEntityDescription(
         key="massage_foot_level",
@@ -118,14 +120,14 @@ MASSAGE_SENSOR_DESCRIPTIONS: tuple[AdjustableBedMassageSensorEntityDescription, 
         icon="mdi:vibrate",
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        state_key="foot_intensity",
+        state_key=massage_intensity("foot"),
     ),
     AdjustableBedMassageSensorEntityDescription(
         key="massage_timer_mode",
         translation_key="massage_timer_mode",
         icon="mdi:timer",
         entity_category=EntityCategory.DIAGNOSTIC,
-        state_key="timer_mode",
+        state_key=MASSAGE_TIMER_MINUTES,
     ),
 )
 
@@ -216,7 +218,7 @@ class AdjustableBedAngleSensor(AdjustableBedEntity, SensorEntity):
         description: AdjustableBedSensorEntityDescription,
     ) -> None:
         """Initialize the sensor."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, motor_card(description.position_key))
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
@@ -263,7 +265,7 @@ class AdjustableBedMassageSensor(AdjustableBedEntity, SensorEntity):
         description: AdjustableBedMassageSensorEntityDescription,
     ) -> None:
         """Initialize the massage sensor."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_HIDDEN)
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
@@ -272,13 +274,7 @@ class AdjustableBedMassageSensor(AdjustableBedEntity, SensorEntity):
     async def async_added_to_hass(self) -> None:
         """Run when entity is added to hass."""
         await super().async_added_to_hass()
-        # Register for position callbacks because the BLE position notifications
-        # (parsed by _parse_position_message in Keeson/Ergomotion controllers) also
-        # contain massage state data. When the controller receives a notification,
-        # it parses both position and massage state, then triggers all registered
-        # position callbacks. Our _handle_state_update receives these updates and
-        # refreshes the entity state, which reads massage data via get_massage_state().
-        self._unregister_callback = self._coordinator.register_position_callback(
+        self._unregister_callback = self._coordinator.register_controller_state_callback(
             self._handle_state_update
         )
 
@@ -289,37 +285,21 @@ class AdjustableBedMassageSensor(AdjustableBedEntity, SensorEntity):
         await super().async_will_remove_from_hass()
 
     @callback
-    def _handle_state_update(self, _position_data: dict[str, float]) -> None:
-        """Handle state update from BLE notifications."""
+    def _handle_state_update(self, _state: ControllerState) -> None:
         self.async_write_ha_state()
 
     @property
     def native_value(self) -> str | int | None:
-        """Return the massage state value from controller."""
-        controller = self._coordinator.controller
-        if controller is None:
-            return None
-
-        with self._side_scope():
-            state = controller.get_massage_state()
-        value = state.get(self.entity_description.state_key)
-
-        # Return appropriate type based on state key
-        if value is None:
-            return None
-
-        # Timer mode is a string, intensity is int
-        if self.entity_description.state_key == "timer_mode":
-            # Normalize: treat "0", 0, or empty string as "Off"
-            str_value = str(value)
-            if str_value == "" or str_value == "0":
-                return "Off"
-            return str_value
-        try:
-            return int(value)
-        except ValueError, TypeError:
-            _LOGGER.debug("Non-numeric massage state value: %s", value)
-            return None
+        """Return the value the controller last published."""
+        key = self.entity_description.state_key
+        state = self._coordinator.controller_state
+        if key != MASSAGE_TIMER_MINUTES:
+            # Like the massage number, a connected bed with no report yet shows zero.
+            if key not in state:
+                return None if self._coordinator.controller is None else 0
+            return state[key]
+        value = state.get(key)
+        return None if value is None else str(value) if value else "Off"
 
 
 class AdjustableBedControllerStateSensor(AdjustableBedEntity, SensorEntity):
@@ -331,7 +311,7 @@ class AdjustableBedControllerStateSensor(AdjustableBedEntity, SensorEntity):
         spec: ControllerStateSensorSpec,
     ) -> None:
         """Initialize a controller-state sensor."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, spec.card)
         self._spec = spec
         self._attr_unique_id = coordinator.entity_unique_id(spec.key)
         self._attr_translation_key = spec.translation_key

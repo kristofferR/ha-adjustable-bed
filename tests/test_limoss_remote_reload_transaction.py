@@ -9,10 +9,11 @@ from bleak.backends.device import BLEDevice
 from homeassistant.exceptions import HomeAssistantError
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed import const, limoss_remote_services, services
+from custom_components.adjustable_bed import const, services
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
+from custom_components.adjustable_bed.beds.limoss import remote_services as limoss_remote_services
+from custom_components.adjustable_bed.beds.limoss.remote_state import get_limoss_remote_session
 from custom_components.adjustable_bed.codec import limoss as codec
-from custom_components.adjustable_bed.limoss_remote_state import get_limoss_remote_session
 from tests.test_limoss_remote import make_controller
 from tests.test_limoss_remote_config import app_data
 from tests.test_limoss_remote_review_lifecycle import CAPS

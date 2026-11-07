@@ -13,7 +13,10 @@ from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.beds.base import ControllerButtonSpec, ProductButtonSpec
+from custom_components.adjustable_bed.beds.entity_specs import (
+    ControllerButtonSpec,
+    ProductButtonSpec,
+)
 from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.paired_coordinator import (

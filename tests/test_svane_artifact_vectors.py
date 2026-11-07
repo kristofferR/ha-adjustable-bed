@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds.svane import SvaneCommands
+from custom_components.adjustable_bed.beds.svane.controller import SvaneCommands
 from tests.test_svane import make_controller, written
 
 ROWS = (

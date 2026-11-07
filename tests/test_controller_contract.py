@@ -14,11 +14,12 @@ from bleak.exc import BleakError
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.bed_traits import bed_traits
-from custom_components.adjustable_bed.beds.base import (
+from custom_components.adjustable_bed.beds.base import BedController
+from custom_components.adjustable_bed.beds.entity_specs import (
     POSITION_UNIT_DEGREES,
     POSITION_UNIT_PERCENT,
-    BedController,
 )
+from custom_components.adjustable_bed.beds.leggett.lp_legacy_profiles import LP_LEGACY_PROFILE_CODES
 from custom_components.adjustable_bed.const import (
     BED_TYPE_COOLBASE,
     BED_TYPE_KEESON,
@@ -241,8 +242,6 @@ async def _create_controller_for_bed_type(
         )
 
     if bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
-        from custom_components.adjustable_bed.lp_legacy_profiles import LP_LEGACY_PROFILE_CODES
-
         coordinator.entry = SimpleNamespace(
             data={
                 CONF_LP_LEGACY_MODEL: LP_LEGACY_PROFILE_CODES[0],
@@ -666,7 +665,7 @@ async def test_factory_enables_coolbase_dewert_okin_profile_for_btcb_name() -> N
 
 async def test_betterliving_preset_commands() -> None:
     """BetterLiving presets use the BED_DEFAULT words on the big-endian E5 frame."""
-    from custom_components.adjustable_bed.beds.keeson import KeesonController
+    from custom_components.adjustable_bed.beds.keeson.controller import KeesonController
     from custom_components.adjustable_bed.profiles.keeson import BETTERLIVING
 
     controller = KeesonController(_FactoryCoordinator(), variant="sino", betterliving_presets=True)
@@ -679,7 +678,7 @@ async def test_betterliving_preset_commands() -> None:
 
 async def test_cb1322_preset_commands() -> None:
     """CB1322 memory words use the little-endian OKIN (E6) frame."""
-    from custom_components.adjustable_bed.beds.keeson import KeesonController
+    from custom_components.adjustable_bed.beds.keeson.controller import KeesonController
     from custom_components.adjustable_bed.profiles.keeson import CB1322
 
     controller = KeesonController(_FactoryCoordinator(), variant="okin", cb1322_presets=True)

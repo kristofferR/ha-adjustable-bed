@@ -19,7 +19,7 @@ from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import position_estimate as pe
-from custom_components.adjustable_bed.beds.leggett_okin import LeggettOkinController
+from custom_components.adjustable_bed.beds.leggett.okin import LeggettOkinController
 from custom_components.adjustable_bed.codec import okin_nframe as codec
 from custom_components.adjustable_bed.command_scheduler import CommandKind
 from custom_components.adjustable_bed.const import (

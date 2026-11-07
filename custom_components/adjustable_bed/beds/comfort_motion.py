@@ -22,7 +22,7 @@ from ..profiles.jiecang import (
     preset_command,
 )
 from ..state_keys import UNDER_BED_LIGHTS_ON, massage_intensity
-from .jiecang import JiecangProfileController
+from .jiecang.controller import JiecangProfileController
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -222,13 +222,6 @@ class ComfortMotionController(JiecangProfileController):
     def massage_intensity_zones(self) -> list[str]:
         return list(_MASSAGE_ZONES)
 
-    def get_massage_state(self) -> dict[str, object]:
-        levels = self.profile.massage_levels
-        return {
-            f"{zone}_intensity": levels.index(value) if value in levels else None
-            for zone, value in self._levels.items()
-        }
-
     async def set_massage_intensity(self, zone: str, level: int) -> None:
         if zone not in _MASSAGE_ZONES or level not in range(len(self.profile.massage_levels)):
             raise ValueError("Comfort Motion massage accepts head/foot levels 0..3")
@@ -293,9 +286,6 @@ class ComfortMotionController(JiecangProfileController):
             raise ValueError("Read light state before using a desired-state light action")
         if self._light != desired:
             await self.lights_toggle()
-
-    def get_light_state(self) -> dict[str, object]:
-        return {"is_on": self._light} if self._light is not None else {}
 
     # Rename
 

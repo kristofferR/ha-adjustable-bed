@@ -795,7 +795,7 @@ L&P MlRM sends only its frozen frames, the pre-v5 controller's.
 These opt-in profiles preserve the app's exact product choices and individual
 button commands. Movement, preset, memory, massage, light and extra-action
 opcodes are per product: they come from the RMControl catalog in
-[`richmat_profiles.py`](../../custom_components/adjustable_bed/richmat_profiles.py),
+[`beds/rmcontrol/profiles.py`](../../custom_components/adjustable_bed/beds/rmcontrol/profiles.py),
 with separate short, long-press and Nordic short opcodes. An action absent from,
 or ambiguous in, the selected catalog is rejected.
 
@@ -1005,7 +1005,7 @@ Revive Control, Best Mattress, Blvd Home, HARMONY and Idealbed share one BLE
 library. Their model catalogs, page gates and a few callbacks differ, so each
 app is its own explicit bed type and profile. Motor, preset, memory, massage and
 page-button opcodes are per model: they come from the generated catalog
-[`richmat_mh_catalog.py`](../../custom_components/adjustable_bed/richmat_mh_catalog.py)
+[`beds/richmat_mh/catalog.py`](../../custom_components/adjustable_bed/beds/richmat_mh/catalog.py)
 (app route, kind, page, app label, opcode, and KEEP interval or 0 for a single
 tap). Each is sent as `6e 01 M C SUM`.
 
@@ -1252,7 +1252,7 @@ which record the evidence and every exclusion. Real users should confirm model s
 name, KEEP/STOP behavior, alarm countdown semantics, LED timeout units and the
 waist mattress controls after a beta or release.
 
-`tools/generate_richmat_mh_catalog.py` builds `richmat_mh_catalog.py` from the
+`tools/generate_richmat_mh_catalog.py` builds `beds/richmat_mh/catalog.py` from the
 machine-local frozen reports (hash-pinned). It reads them from `--phase4-dir`,
 `$ADJUSTABLE_BED_PHASE4_DIR`, `disassembly/output/phase4-early` in the checkout,
 or the main checkout of a linked worktree; `--check` verifies the committed file
@@ -1369,10 +1369,10 @@ selected side after the final nominal tick. Explicit held durations keep their
 requested end. Card release works for standalone,
 single-address side controls and two-address pairs.
 
-Values below come from the shipped `beds/hjbed.py` controller and its imported
+Values below come from the shipped `beds/hjbed/controller.py` controller and its imported
 catalog/packet builders. Detail IDs distinguish product-specific variants. Each
 product exposes only its selected controls. The full profile bindings are in the
-[HJBed catalog](../../custom_components/adjustable_bed/hjbed_catalog.py). Exit limit
+[HJBed catalog](../../custom_components/adjustable_bed/beds/hjbed/catalog.py). Exit limit
 and the clock, light and music menu probes use [function selectors](#function-selectors);
 in single-code mode they send `00` and `01`.
 
@@ -1543,7 +1543,7 @@ blanket and detection data. These passive readings do not enable an outbound
 command. Raw values are retained where physical units or motor mappings are not
 proven. Position seeking is not inferred from those observations.
 
-The six service/write pairs are in `beds/hjbed.py:GATT`. The first
+The six service/write pairs are in `beds/hjbed/controller.py:GATT`. The first
 eligible write and first notify characteristic are retained in returned order;
 the last matched service decides single-code versus framed generic commands.
 Write selection requires `write`, notification selection requires `notify`.
@@ -1627,7 +1627,7 @@ The current 19 profiles have all advanced music/alarm/repeat/light-page flags
 false. A feature reply cannot override that static gate. Simple lamp buttons,
 selected massage lists, and independently named music routes remain independent.
 The full per-product action and flag inventory is in the
-[HJBed catalog](../../custom_components/adjustable_bed/hjbed_catalog.py).
+[HJBed catalog](../../custom_components/adjustable_bed/beds/hjbed/catalog.py).
 Alarm action keys are snake-case names such as `zero_gravity`, `anti_snoring`,
 `memory_position1`, `tv_position`, or `lounge_position`, and must belong to the
 selected product's alarm list.
@@ -1762,7 +1762,7 @@ lock, music, mode and component checks.
 - RGB, alarm, anti-snore configuration, lock and music state is read-only; no
   outbound builder is inferred from a receive branch.
 
-`beds/eshine_protocol.py` parses the stream:
+`beds/eshine/protocol.py` parses the stream:
 
 - Type `20` frames accumulate across notifications and need an exact length and
   the additive checksum.
@@ -1887,7 +1887,7 @@ working save by copying another profile's bytes.
 This indexes the operands stored in the five shipped catalogs. Values are sets
 across the exact layouts that bind each resource, not universal capabilities.
 FRAMED values are wrapped as above. The complete node tables ship in
-`richmat_classic_data/`.
+`beds/richmat_classic/data/`.
 
 | Bound resource | RAW short operand(s) | Current short operand(s) | Long operand(s) |
 |---|---|---|---|
@@ -2162,14 +2162,14 @@ remain explicit there. Static acceptance is not hardware confirmation.
 
 A per-product catalog app over this codec, plus independent sleep sensors that
 speak their own JSON envelope. Its product catalog stays controller data; the
-[Good Vibe Sleep catalog](../../custom_components/adjustable_bed/goodvibe_catalog.py)
+[Good Vibe Sleep catalog](../../custom_components/adjustable_bed/beds/goodvibe/catalog.py)
 lists every product, alias and action.
 
 #### Setup
 
 - Choose the exact product or remote shown in Good Vibe Sleep. Shared Bluetooth
   services do not identify a model. Detection: the app's own name filter
-  ([`goodvibe_discovery.py`](../../custom_components/adjustable_bed/goodvibe_discovery.py))
+  ([`beds/goodvibe/discovery.py`](../../custom_components/adjustable_bed/beds/goodvibe/discovery.py))
   offers Good Vibe Sleep and suggests a product (step 1); it never chooses one.
 - The catalog supplies 848 admitted normal-product/configuration choices and 27
   remote/image aliases. The row116 audit retains every accepted selector,
@@ -2463,7 +2463,7 @@ audit limits.
 The `leggett_lp_legacy` bed type follows the legacy app's 122 remote layouts,
 each selected by the four-character code used in that app's manual or QR setup
 (for example `A2RM`, `B1RM`, `ZR00`); the full list is `LP_LEGACY_PROFILE_CODES`
-in `lp_legacy_profiles.py`. I0RM has no proven bed commands in this app and
+in `beds/leggett/lp_legacy_profiles.py`. I0RM has no proven bed commands in this app and
 therefore exposes no remote action buttons. It does not change existing Richmat
 or L&P QRRM configurations.
 
@@ -2535,7 +2535,7 @@ builds the packet for the entry's mode.
 | (empty) | Nothing | `6E 01 00 00 6F` | Empty token; Legacy writes nothing |
 <!-- /generated -->
 
-The complete per-layout catalog is `lp_legacy_catalog.py`.
+The complete per-layout catalog is `beds/leggett/lp_legacy_catalog.py`.
 
 ##### Event states
 
@@ -2601,8 +2601,8 @@ protocol verification.
 The Casper Base and Hush Base apps ship one Richmat library: its transports,
 connect queries, fixed codes, receive parser and settings records are the same
 in both. Each app keeps its own product catalog, in
-[`casper_base_catalog.py`](../../custom_components/adjustable_bed/casper_base_catalog.py)
-and [`hush_catalog.py`](../../custom_components/adjustable_bed/hush_catalog.py);
+[`beds/casper_base/catalog.py`](../../custom_components/adjustable_bed/beds/casper_base/catalog.py)
+and [`beds/hush_base/catalog.py`](../../custom_components/adjustable_bed/beds/hush_base/catalog.py);
 the library's data is in
 [`profiles/casper.py`](../../custom_components/adjustable_bed/profiles/casper.py).
 Setup, the separate sleep sensors and the remote finder are in the

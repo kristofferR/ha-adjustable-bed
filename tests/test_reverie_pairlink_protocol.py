@@ -2,7 +2,7 @@
 
 import pytest
 
-from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import (
+from custom_components.adjustable_bed.beds.reverie.pairlink_protocol import (
     PAIRLINK_BROADCAST_ADDRESS,
     PAIRLINK_WRITE_UUID,
     PairlinkSignGate,

@@ -11,7 +11,7 @@ from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.beds.starcode_abm5_4_profiles import SELECTORS, TRANSPORTS
+from custom_components.adjustable_bed.beds.starcode.abm5_4_profiles import SELECTORS, TRANSPORTS
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.services import async_register_services

@@ -15,9 +15,9 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds import octo as octo_module
 from custom_components.adjustable_bed.beds.base import BedController
-from custom_components.adjustable_bed.beds.octo import (
+from custom_components.adjustable_bed.beds.octo import controller as octo_module
+from custom_components.adjustable_bed.beds.octo.controller import (
     OCTO_FEATURE_END,
     OCTO_FEATURE_LIGHT,
     OCTO_FEATURE_LIGHT_AUTO,
@@ -1553,7 +1553,7 @@ class TestOctoCommands:
 
         monkeypatch.setattr("custom_components.adjustable_bed.beds.base.asyncio.sleep", AsyncMock())
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.octo.asyncio.wait_for", _raise_timeout
+            "custom_components.adjustable_bed.beds.octo.controller.asyncio.wait_for", _raise_timeout
         )
         mock_bleak_client.write_gatt_char.reset_mock()
 
@@ -2360,7 +2360,7 @@ class TestOctoRGBWILightEntity:
         light.async_write_ha_state = MagicMock()
         remove_callback = coordinator.register_controller_state_callback(light._handle_light_state)
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.octo.OCTO_PIN_LOCK_RETRY_DELAY_SECONDS", 10
+            "custom_components.adjustable_bed.beds.octo.controller.OCTO_PIN_LOCK_RETRY_DELAY_SECONDS", 10
         )
 
         controller._handle_pin_notification(OCTO_SYSTEM_PIN_LOCK, [])
@@ -3427,7 +3427,7 @@ class TestOctoCapabilityControls:
         controller._pin_locked = False
         controller.write_command = AsyncMock()
         sleep = AsyncMock()
-        monkeypatch.setattr("custom_components.adjustable_bed.beds.octo.asyncio.sleep", sleep)
+        monkeypatch.setattr("custom_components.adjustable_bed.beds.octo.controller.asyncio.sleep", sleep)
 
         await controller.reset_defaults()
 
@@ -3698,7 +3698,7 @@ class TestPinReauth:
     async def test_pin_lock_schedules_resend(self, monkeypatch: pytest.MonkeyPatch):
         ctrl, coordinator, order = self._ctrl()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.octo.OCTO_PIN_LOCK_RETRY_DELAY_SECONDS", 0
+            "custom_components.adjustable_bed.beds.octo.controller.OCTO_PIN_LOCK_RETRY_DELAY_SECONDS", 0
         )
         ctrl._handle_pin_notification(OCTO_SYSTEM_PIN_LOCK, [])
         assert ctrl._pin_locked is True
@@ -3711,7 +3711,7 @@ class TestPinReauth:
     async def test_pin_lock_waits_exactly_one_second(self, monkeypatch: pytest.MonkeyPatch):
         ctrl, coordinator, order = self._ctrl()
         sleep = AsyncMock()
-        monkeypatch.setattr("custom_components.adjustable_bed.beds.octo.asyncio.sleep", sleep)
+        monkeypatch.setattr("custom_components.adjustable_bed.beds.octo.controller.asyncio.sleep", sleep)
 
         ctrl._handle_pin_notification(OCTO_SYSTEM_PIN_LOCK, [])
         assert ctrl._pin_resend_task is not None
@@ -3740,7 +3740,7 @@ class TestPinReauth:
         controller._pin_locked = False
         controller._features_complete.set()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.octo.OCTO_PIN_LOCK_RETRY_DELAY_SECONDS", 0
+            "custom_components.adjustable_bed.beds.octo.controller.OCTO_PIN_LOCK_RETRY_DELAY_SECONDS", 0
         )
 
         packets: list[bytes] = []
@@ -3792,7 +3792,7 @@ class TestPinReauth:
         """A PIN challenge split across notifications is handled after reassembly."""
         ctrl, coordinator, order = self._ctrl()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.octo.OCTO_PIN_LOCK_RETRY_DELAY_SECONDS", 0
+            "custom_components.adjustable_bed.beds.octo.controller.OCTO_PIN_LOCK_RETRY_DELAY_SECONDS", 0
         )
         response = _build_octo_response(
             ctrl,
@@ -3836,7 +3836,7 @@ class TestPinReauth:
         timed_out._pin_locked = True
         timed_out._pin_state_event.clear()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.octo.OCTO_PIN_ACCEPTANCE_TIMEOUT", 0
+            "custom_components.adjustable_bed.beds.octo.controller.OCTO_PIN_ACCEPTANCE_TIMEOUT", 0
         )
         with pytest.raises(TimeoutError, match="Timed out"):
             await timed_out.async_wait_for_pin_acceptance(asyncio.Event())
@@ -4072,7 +4072,7 @@ class TestOctoPinLockDiagnostics:
         """The user follows the repair while the bed is offline; it must clear."""
         from homeassistant.helpers import issue_registry as ir
 
-        from custom_components.adjustable_bed.octo_runtime import async_refresh_octo_pin_issue
+        from custom_components.adjustable_bed.beds.octo.runtime import async_refresh_octo_pin_issue
         from custom_components.adjustable_bed.unsupported import (
             update_octo_pin_required_issue,
         )
@@ -4103,7 +4103,7 @@ class TestOctoPinLockDiagnostics:
         """A repair raised before issues had entries goes with its entry."""
         from homeassistant.helpers import issue_registry as ir
 
-        from custom_components.adjustable_bed.octo_runtime import async_refresh_octo_pin_issue
+        from custom_components.adjustable_bed.beds.octo.runtime import async_refresh_octo_pin_issue
         from custom_components.adjustable_bed.unsupported import (
             update_octo_pin_required_issue,
         )
@@ -4208,7 +4208,7 @@ class TestOctoPinLockDiagnostics:
         """Star2 has no PIN, and its controller could never clear the issue."""
         from homeassistant.helpers import issue_registry as ir
 
-        from custom_components.adjustable_bed.octo_runtime import async_refresh_octo_pin_issue
+        from custom_components.adjustable_bed.beds.octo.runtime import async_refresh_octo_pin_issue
         from custom_components.adjustable_bed.unsupported import (
             update_octo_pin_required_issue,
         )

@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds.vmatbasic import VMatBasicController
+from custom_components.adjustable_bed.beds.vmatbasic.controller import VMatBasicController
 from custom_components.adjustable_bed.codec import vibradorm as codec
 from custom_components.adjustable_bed.profiles import vmatbasic as vmat_profiles
 from tests.state_helpers import state_writer

@@ -9,10 +9,10 @@ from pathlib import Path
 import pytest
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.beds.jensen import JensenController
+from custom_components.adjustable_bed.beds.jensen.controller import JensenController
+from custom_components.adjustable_bed.beds.svane.state import svane_preferences
 from custom_components.adjustable_bed.codec import jmc
 from custom_components.adjustable_bed.profiles.jmc import JENSEN, PROFILES, SVANE_REMOTE, JmcProfile
-from custom_components.adjustable_bed.svane_state import svane_preferences
 from tests.jmc_vectors import FROZEN_FRAMES, FROZEN_REPORTS
 from tests.test_controller_contract import _create_controller_for_bed_type
 
@@ -176,7 +176,7 @@ def test_other_notifications_are_not_position_reports(data: str) -> None:
     assert jmc.position_report(bytes.fromhex(data)) is None
 
 
-@pytest.mark.parametrize("module", ["jensen", "svane"])
+@pytest.mark.parametrize("module", ["jensen/controller", "svane/controller"])
 def test_the_controllers_build_no_jmc_frame_of_their_own(module: str) -> None:
     source = (ROOT / f"custom_components/adjustable_bed/beds/{module}.py").read_text()
     assert not re.search(r"bytes\(\s*[\[(]\s*0x(?:0a|1[0-4e])\b", source, re.I)

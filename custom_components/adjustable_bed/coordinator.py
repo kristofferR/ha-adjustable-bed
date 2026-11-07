@@ -16,7 +16,7 @@ from collections.abc import (
     Mapping,
 )
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Self, TypeVar, cast
 from uuid import uuid4
 from weakref import WeakKeyDictionary
 
@@ -33,6 +33,11 @@ from .bed_traits import (
     bed_traits,
     disconnect_after_command_default_enabled,
     passive_position_reconciliation_default_enabled,
+)
+from .beds.vibradorm.app_state import (
+    ControlType,
+    VibradormAppSessionIntent,
+    get_vibradorm_app_session_intent,
 )
 from .ble_auth import is_ble_authentication_error
 from .bluetooth_transport import (
@@ -163,7 +168,6 @@ from .const import (
     SOLACE_VARIANT_WOOSA,
     STARCODE_GROUP_BED_TYPES,
     get_motor_pulse_defaults,
-    get_richmat_features,
     get_richmat_motor_count,
     resolve_explicit_bed_type,
     resolve_richmat_remote_code,
@@ -178,6 +182,7 @@ from .detection import (
     is_mac_like_name,
 )
 from .execution import HOLD_CEILING_MS
+from .import_executor import async_import_modules
 from .pairing import (
     OFFLINE_CAPABILITY_SAFE_VARIANTS,
     filter_child_options,
@@ -195,16 +200,11 @@ from .state_keys import (
     LINAK_MODEL_VARIANT,
     UNDER_BED_LIGHTS_ON,
 )
-from .vibradorm_app_state import (
-    ControlType,
-    VibradormAppSessionIntent,
-    get_vibradorm_app_session_intent,
-)
 
 if TYPE_CHECKING:
     from .beds.base import BedController
-    from .beds.reverie_pairlink_runtime import PairlinkRuntime
-    from .beds.starcode_abm5_4_profiles import RetainedAppState
+    from .beds.reverie.pairlink_runtime import PairlinkRuntime
+    from .beds.starcode.abm5_4_profiles import RetainedAppState
 
 T = TypeVar("T")
 _LOGGER = logging.getLogger(__name__)
@@ -318,6 +318,24 @@ class AdjustableBedCoordinator(
 ):
     """Coordinator for managing bed connection and state."""
 
+    @staticmethod
+    async def async_import_tables(hass: HomeAssistant, data: Mapping[str, Any]) -> None:
+        """Import the tables the constructor reads for ``data``, off the event loop.
+
+        The Richmat remote feature table is too large to import on the loop
+        (issue #368).
+        """
+        if profile_route(entry_profile_id(data)).bed_type == BED_TYPE_RICHMAT:
+            await async_import_modules(hass, "beds.richmat.features")
+
+    @classmethod
+    async def async_create(
+        cls, hass: HomeAssistant, entry: ConfigEntry | ChildEntryView
+    ) -> Self:
+        """Build the coordinator once its tables are imported."""
+        await cls.async_import_tables(hass, entry.data)
+        return cls(hass, entry)
+
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry | ChildEntryView) -> None:
         """Initialize the coordinator."""
         self.hass = hass
@@ -340,6 +358,8 @@ class AdjustableBedCoordinator(
         self._furnimove_bond_task: asyncio.Task[None] | None = None
         self._furnimove_bond_request: dict[str, object] = {"status": "not_requested"}
         if self._bed_type == BED_TYPE_RICHMAT:
+            from .beds.richmat.features import get_richmat_features
+
             # Entities need the motor count before the first connection, so it
             # comes from the stored remote code, as the Richmat builder resolves it.
             richmat_remote = resolve_richmat_remote_code(
@@ -721,8 +741,7 @@ class AdjustableBedCoordinator(
             owns_loaded_child = callable(child_for_side) and child_for_side(side) is self
         if loaded is not self and not owns_loaded_child:
             return
-        from .beds.starcode_abm5_4 import StarcodeAbm5_4Controller
-        from .beds.starcode_abm5_4_profiles import RetainedAppState
+        from .beds.starcode.abm5_4_profiles import RetainedAppState
 
         retained_states = {
             (child.entry.entry_id, child.address): child.starcode_app_retained_state
@@ -734,6 +753,11 @@ class AdjustableBedCoordinator(
         self._pending_capability_reload = False
         if not await self.hass.config_entries.async_reload(self.entry.entry_id):
             return
+        if not retained_states:
+            return
+        await async_import_modules(self.hass, "beds.starcode.abm5_4")
+        from .beds.starcode.abm5_4 import StarcodeAbm5_4Controller
+
         reloaded = self.hass.data.get(DOMAIN, {}).get(self.entry.entry_id)
         for child in self._starcode_reload_coordinators(reloaded):
             retained = retained_states.get((child.entry.entry_id, child.address))
@@ -1428,7 +1452,7 @@ class AdjustableBedCoordinator(
 
     def remember_limoss_remote_capabilities(self, capabilities: Mapping[str, int]) -> None:
         """Persist the reported capability record, which decides the entity layout."""
-        from .limoss_remote_state import validate_limoss_remote_state
+        from .beds.limoss.remote_state import validate_limoss_remote_state
 
         if self._bed_type != BED_TYPE_LIMOSS_REMOTE:
             raise ValueError("Invalid Limoss Remote local data")
@@ -1452,7 +1476,7 @@ class AdjustableBedCoordinator(
             return
         self._begin_internal_entry_update(self._ble_bond_established)
         self._offline_controller = self._controller or self._offline_controller
-        from .beds.limoss_remote import LimossRemoteController
+        from .beds.limoss.remote import LimossRemoteController
 
         if isinstance(self._offline_controller, LimossRemoteController):
             self._offline_controller.underbed_light = light
@@ -1936,7 +1960,7 @@ class AdjustableBedCoordinator(
         _LOGGER.info("Stop requested - cancelling current command")
 
         if self._bed_type in STARCODE_GROUP_BED_TYPES:
-            from .starcode_accessory_group import cancel_group_operations
+            from .beds.starcode.accessory_group import cancel_group_operations
 
             # Fence public STOP before the wire wait; retained cleanup has its
             # own scope and must not invalidate the replacing individual move.
@@ -2064,7 +2088,7 @@ class AdjustableBedCoordinator(
             )
         await self._async_refresh_controller_auth()
         if self._bed_type == BED_TYPE_OCTO:
-            from .octo_runtime import octo_controller
+            from .beds.octo.runtime import octo_controller
 
             octo = octo_controller(controller)
             if octo is not None:
@@ -2488,7 +2512,7 @@ class AdjustableBedCoordinator(
         if stream_member and self.stop_stream_member(resource):
             return
         if self._bed_type in STARCODE_GROUP_BED_TYPES:
-            from .starcode_accessory_group import cancel_group_operations
+            from .beds.starcode.accessory_group import cancel_group_operations
 
             cancel_group_operations(self.hass, self.entry.entry_id)
         # Keep preemptible non-scheduler work responsive, as every STOP does.
@@ -2658,7 +2682,7 @@ class AdjustableBedCoordinator(
             return
 
         if self._bed_type in STARCODE_GROUP_BED_TYPES:
-            from .starcode_accessory_group import prepare_individual_command
+            from .beds.starcode.accessory_group import prepare_individual_command
 
             settled_group = await prepare_individual_command(self, controller_command)
             if settled_group and expected_stop_epoch is not None:

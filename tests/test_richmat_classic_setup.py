@@ -8,6 +8,13 @@ from types import SimpleNamespace
 
 import pytest
 
+from custom_components.adjustable_bed.beds.richmat_classic.models import MODEL_CHOICES
+from custom_components.adjustable_bed.beds.richmat_classic.profiles import (
+    APP_NAMES,
+    DATA_DIR,
+    load_catalog,
+    resolve_layout,
+)
 from custom_components.adjustable_bed.catalog_json import load
 from custom_components.adjustable_bed.const import (
     BED_TYPE_RICHMAT_CLASSIC_APPS,
@@ -17,12 +24,6 @@ from custom_components.adjustable_bed.const import (
     CONF_RICHMAT_CLASSIC_THIRD_SERVICE,
 )
 from custom_components.adjustable_bed.detection import get_bed_type_options
-from custom_components.adjustable_bed.richmat_classic_models import MODEL_CHOICES
-from custom_components.adjustable_bed.richmat_classic_profiles import (
-    APP_NAMES,
-    load_catalog,
-    resolve_layout,
-)
 from custom_components.adjustable_bed.setup_questions import SetupProfile, setup_profile
 
 PROFILE = setup_profile(BED_TYPE_RICHMAT_CLASSIC_APPS)
@@ -63,7 +64,7 @@ def test_runtime_catalog_matches_every_frozen_member_layout_contract():
     with gzip.open(path, "rt") as source:
         expected = json.load(source)
     assert len(expected["models"]) == 3569
-    catalogs = {app: load("richmat_classic_data", app).entries() for app in APP_NAMES}
+    catalogs = {app: load(DATA_DIR, app).entries() for app in APP_NAMES}
     for catalog in catalogs.values():
         assert catalog["fields"].json() == expected["fields"]
     models = {app: catalog["models"].entries() for app, catalog in catalogs.items()}
@@ -97,7 +98,7 @@ def test_explicit_layout_is_required_and_aliases_are_package_local():
 
 
 def test_every_member_alias_preserves_name_manual_and_scan_boundaries():
-    from custom_components.adjustable_bed.richmat_classic_discovery import matching_apps
+    from custom_components.adjustable_bed.beds.richmat_classic.discovery import matching_apps
 
     cases = json.loads((Path(__file__).parent / "fixtures/richmat_classic/alias_cases.json").read_text())
     assert len(cases) == 122
@@ -147,8 +148,8 @@ def test_manual_aliases_are_selectable_but_diagnostic_layouts_are_rejected():
 
 
 def test_name_admission_is_only_an_app_hint_and_excludes_diagnostic_names():
+    from custom_components.adjustable_bed.beds.richmat_classic.discovery import matching_apps
     from custom_components.adjustable_bed.detection import detect_bed_type_detailed
-    from custom_components.adjustable_bed.richmat_classic_discovery import matching_apps
     assert matching_apps('6BRM-123') == tuple(APP_NAMES)
     assert matching_apps(' B6RU') == ()
     assert matching_apps(None) == ()

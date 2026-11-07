@@ -8,14 +8,14 @@ from homeassistant.const import CONF_ADDRESS
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import _build_paired_children, const
-from custom_components.adjustable_bed.beds.limoss_remote import LimossRemoteController
-from custom_components.adjustable_bed.codec import limoss as codec
-from custom_components.adjustable_bed.controller_factory import create_controller
-from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.limoss_remote_state import (
+from custom_components.adjustable_bed.beds.limoss.remote import LimossRemoteController
+from custom_components.adjustable_bed.beds.limoss.remote_state import (
     LimossRemoteSession,
     get_limoss_remote_session,
 )
+from custom_components.adjustable_bed.codec import limoss as codec
+from custom_components.adjustable_bed.controller_factory import create_controller
+from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.pairing import get_child
 from tests.app_state_helpers import restart_app_state, stored_app_state
 from tests.test_limoss_remote import make_controller

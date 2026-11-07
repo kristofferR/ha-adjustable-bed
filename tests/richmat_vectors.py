@@ -37,7 +37,7 @@ def _goodvibe() -> frozenset[str]:
 
 
 # RUF and Richmat apps (PR #928): RUF, W.Silver, AMERICANSTAR, Bailey and TX run the MH
-# library over their own accepted model catalogs (ruf_richmat_data). Each app freezes
+# library over their own accepted model catalogs (beds/ruf_richmat/data). Each app freezes
 # every fixed frame the merged pre-v5 controller sends: the session queries plus
 # each catalog control. The accepted control vectors in
 # tests/fixtures/ruf_richmat_control_vectors.json.gz are a subset of each set.

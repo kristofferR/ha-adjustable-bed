@@ -732,7 +732,7 @@ def test_notice_describes_the_actual_controls_lost_and_gained():
     from pathlib import Path
 
     from custom_components.adjustable_bed.beds.adjustable_lumbar import AdjustableLumbarController
-    from custom_components.adjustable_bed.beds.sleepys_box25 import SleepysBox25Controller
+    from custom_components.adjustable_bed.beds.sleepys.box25 import SleepysBox25Controller
 
     current = AdjustableLumbarController(MagicMock(), device_name="Star254202000001")
     suggested = SleepysBox25Controller(MagicMock())

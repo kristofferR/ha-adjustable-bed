@@ -75,7 +75,6 @@ Key modules (not an exhaustive listing — check the folder for the rest):
 custom_components/adjustable_bed/
 ├── __init__.py           # Integration setup, migration and platform loading
 ├── services.py           # Generic actions, shared target resolution and admission
-├── <family>_services.py  # One family's actions, schemas and registration
 ├── config_flow.py        # Device discovery and setup wizard
 ├── coordinator.py        # BLE connection management (central hub)
 ├── coordinator_bonds.py  # Coordinator mixin: bond verification and pairing
@@ -93,10 +92,15 @@ custom_components/adjustable_bed/
 ├── paired_devices.py     # Native parent/child devices and service targeting
 ├── codec/                # Wire codecs: one module per proven wire format
 ├── profiles/             # Typed app profiles that drive a codec
-├── beds/                 # Bed controllers — one module per protocol
+├── beds/                 # Bed controllers and everything bed-specific
 │   ├── base.py           # Abstract base class (BedController)
+│   ├── entity_specs.py   # Entity spec dataclasses controllers declare
+│   ├── gatt_write.py     # Traced, retried GATT writes (BedController's base)
+│   ├── builder.py        # BuildContext for async controller builders
 │   ├── diagnostic.py     # Debug controller for unsupported beds
-│   └── ...               # See the README "Supported Beds" table and docs/beds/
+│   ├── <family>/         # One package per family with satellites, e.g. gmmotor/:
+│   │                     # controller.py plus protocol, catalog, state, services, ...
+│   └── <protocol>.py     # A family with only a controller stays one module
 ├── cover.py / button.py / sensor.py / switch.py / light.py / climate.py /
 │       select.py / number.py / binary_sensor.py   # HA entity platforms
 ├── diagnostics.py        # HA diagnostics download support
@@ -160,7 +164,11 @@ custom_components/adjustable_bed/
 
 The supported-protocol list lives in the README's "Supported Beds" table — that is the single source of truth; don't mirror it here. To find how a specific bed works:
 
-- `custom_components/adjustable_bed/beds/` — one controller module per protocol
+- `custom_components/adjustable_bed/beds/` — one package per bed family (`beds/<family>/`,
+  main controller in `controller.py`) holding its controllers and every
+  family-specific module: protocol, catalog, state, services, discovery, repair
+  and data. A family with only a controller is a single `beds/<protocol>.py`.
+  Shared wire formats stay in `codec/` and typed app profiles in `profiles/`.
 - `detection.py` — how each bed type is auto-detected (service UUIDs, name patterns)
 - `controller_factory.py` — which bed type maps to which controller class, including
   variants that share a controller (e.g. Serta/Ergomotion → `KeesonController`)
@@ -202,7 +210,11 @@ A new app is normally a profile plus its vectors, not a new controller.
 
 4. **Wire the controller in `beds/`.** A profile over an existing codec usually
    needs only its family controller and the profile's key. A new family adds a
-   controller that drives its codec from the profile:
+   controller that drives its codec from the profile, as `beds/newbed.py`, or as
+   a `beds/newbed/` package (`controller.py` plus satellites such as
+   `protocol.py`, `state.py` and `services.py`) once it needs more than one
+   module. Keep the package's `__init__.py` empty so importing a satellite never
+   loads the controller:
    - Extend `BedController`, or the family's shared controller
    - Implement all abstract methods
    - Build every frame through the codec, never as literals in the controller
@@ -243,6 +255,9 @@ A new app is normally a profile plus its vectors, not a new controller.
    BED_TYPE_NEWBED: _ControllerSpec("newbed", "NewbedController"),
    ```
 
+   The module is relative to `beds/`, so a family package registers
+   `_ControllerSpec("newbed.controller", "NewbedController")`.
+
    When construction needs the variant, entry data, the advertisement or the
    live GATT table, write an async builder in the bed module that takes a
    `BuildContext` (`beds/builder.py`) and register it in `_BUILDERS`:
@@ -253,7 +268,8 @@ A new app is normally a profile plus its vectors, not a new controller.
 
    A builder reads its settings from `ctx.data`; never add a bed-specific
    parameter to `create_controller()`. A builder that picks a class from another
-   module loads it with `await ctx.preload("module")` first.
+   module loads it with `await ctx.preload("family.module")` first; the name is
+   relative to `beds/`.
    `tests/test_controller_contract.py` resolves every entry and keeps the two
    registries disjoint.
 
@@ -267,7 +283,8 @@ A new app is normally a profile plus its vectors, not a new controller.
 9. **Update `beds/__init__.py`** to export the new controller
 
 10. **If the bed reports motor positions**, override `position_number_specs` to
-   return the sliders, building each with `build_position_number_spec()`:
+   return the sliders, building each with `build_position_number_spec()` from
+   `beds/entity_specs.py`:
 
    ```python
    @property
@@ -348,9 +365,9 @@ a two-address pair.
 The complete public action index is [Actions and Automations](docs/SERVICES.md).
 `services.yaml` defines the UI fields. `services.py` holds the generic actions,
 target resolution and preflight admission, and calls each family module's
-register function; a family's own actions live in its `<family>_services.py`
-(for example `reverie_services.py` or `sleep_number_services.py`). Memory actions accept slots
-1–6 subject to controller capabilities. `set_positions` validates all requested
+register function; a family's own actions live in its package's `services.py`
+(for example `beds/reverie/services.py` or `beds/sleep_number/services.py`).
+Memory actions accept slots 1–6 subject to controller capabilities. `set_positions` validates all requested
 targets before executing the ordered movement. Control actions support paired
 side routing; support capture requires one physical target.
 
@@ -404,10 +421,15 @@ The integration ships a native Lovelace card, `custom:adjustable-bed-card`,
 under `custom_components/adjustable_bed/frontend/`.
 
 - **Source**: `frontend/src/*.ts` (Lit + TypeScript). Key modules:
-  - `discovery.ts` — given a `device_id`, buckets the device's entities by
-    `translation_key` into UI sections. This is what makes the card generic
-    across all bed types; **when you add a new entity, give it a stable
-    `translation_key`** and, if it belongs in the card, add it to a bucket here.
+  - `discovery.ts` — given a `device_id`, buckets the device's entities into
+    UI sections by the placement each publishes (`card_section`, plus
+    `card_role`, `card_motor` and `card_slot` where needed). This is what makes
+    the card generic across all bed types. The placement is declared in Python
+    (`card.py`): each spec type has a default (controller buttons, selects and
+    numbers go to utility, controller state stays hidden), so **when you add an
+    entity that belongs elsewhere in the card, set `card=` on its spec or
+    description**; never add key lists to the card. Then regenerate the card's
+    test fixture with `uv run --no-sync python -m tests.card_placements`.
   - `adjustable-bed-card.ts` — the card element (renders only sections that have
     entities; all colour comes from HA theme CSS variables).
   - `editor.ts` — visual editor (`ha-form` + device picker + section toggles).

@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from custom_components.adjustable_bed.richmat_classic_transport import ROUTES, select
+from custom_components.adjustable_bed.beds.richmat_classic.transport import ROUTES, select
 
 
 class Service:

@@ -1215,7 +1215,7 @@ async def async_create_fix_flow(
     if issue_id.startswith(RECOMMENDATION_ISSUE_PREFIX):
         return ProfileRecommendationRepairFlow(issue_id, payload.get("rule", ""))
 
-    from .furnimove_repair import ISSUE_PREFIX, FurniMoveLayoutRepairFlow
+    from .beds.furnimove.repair import ISSUE_PREFIX, FurniMoveLayoutRepairFlow
 
     if issue_id.startswith(ISSUE_PREFIX):
         return FurniMoveLayoutRepairFlow(payload.get("entry_id", ""), payload.get("side"))
@@ -1226,8 +1226,8 @@ async def async_create_fix_flow(
     if issue_id.startswith(PROFILE_REVIEW_ISSUE_PREFIX):
         return ProfileReviewRepairFlow(payload.get("entry_id", ""))
 
-    from .remacro_discovery import ISSUE_PREFIX as REMACRO_ISSUE_PREFIX
-    from .remacro_discovery import RemacroAppRepairFlow
+    from .beds.remacro.discovery import ISSUE_PREFIX as REMACRO_ISSUE_PREFIX
+    from .beds.remacro.discovery import RemacroAppRepairFlow
 
     if issue_id.startswith(REMACRO_ISSUE_PREFIX):
         return RemacroAppRepairFlow(

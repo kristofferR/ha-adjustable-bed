@@ -18,8 +18,8 @@ from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
-from custom_components.adjustable_bed.beds import keeson
-from custom_components.adjustable_bed.beds.keeson import (
+from custom_components.adjustable_bed.beds.keeson import controller as keeson
+from custom_components.adjustable_bed.beds.keeson.controller import (
     RESTONIC_A_CONTROLS,
     RESTONIC_B_CONTROLS,
     RESTONIC_ZZZ_BUTTON_KEY,

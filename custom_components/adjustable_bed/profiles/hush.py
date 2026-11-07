@@ -3,7 +3,7 @@
 The app (``com.richmat.hushbase``, row126) lists twelve products of its own,
 catalog indices 46 to 57. It also restores products a phone saved under its
 shared catalog, the other indices from 1 to 71; those keep the Hush app's own
-rows. Each row in ``hush_catalog.py`` names the product, its action groups,
+rows. Each row in ``beds/hush_base/catalog.py`` names the product, its action groups,
 alarm positions and page flags, from the accepted product joins. The app ships
 the Casper Base library: its transports, queries and fixed opcodes are in
 ``profiles/casper.py``.
@@ -14,9 +14,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Final
 
+from ..beds.hush_base.catalog import ACTIONS as _CATALOG_ACTIONS
+from ..beds.hush_base.catalog import INDICES, PRODUCTS
 from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
-from ..hush_catalog import ACTIONS as _CATALOG_ACTIONS
-from ..hush_catalog import INDICES, PRODUCTS
 from .casper import Action, ProductRow
 
 # The app's own products; the others are restored profiles.

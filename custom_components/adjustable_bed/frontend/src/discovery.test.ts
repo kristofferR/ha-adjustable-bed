@@ -10,6 +10,7 @@ import {
   resolvePairedParentId,
 } from "./discovery";
 import { heldButtonMotor } from "./hold";
+import { placed, publish } from "./test-placements";
 import type { EntityRegistryDisplayEntry, HomeAssistant } from "./types";
 
 function entry(
@@ -24,7 +25,7 @@ function entry(
 function hassWith(entries: EntityRegistryDisplayEntry[]): HomeAssistant {
   const entities: Record<string, EntityRegistryDisplayEntry> = {};
   for (const e of entries) entities[e.entity_id] = e;
-  return {
+  return placed({
     entities,
     states: {},
     devices: {},
@@ -32,7 +33,7 @@ function hassWith(entries: EntityRegistryDisplayEntry[]): HomeAssistant {
     language: "en",
     themes: {},
     callService: async () => undefined,
-  };
+  });
 }
 
 test("GM product controls and raw session state stay with their physical device", () => {
@@ -258,6 +259,9 @@ test("Octo backend motor and dynamic memory metadata is retained for the card", 
     entity_id: "button.octo_save_memory_9", state: "unknown", last_changed: "", last_updated: "",
     attributes: {},
   };
+  // Octo reports how many memory slots it has once connected.
+  publish(hass, "button.octo_memory_9", { card_section: "memory", card_role: "recall", card_slot: 9 });
+  publish(hass, "button.octo_save_memory_9", { card_section: "memory", card_role: "save", card_slot: 9 });
   const bed = bedEntitiesForDevice(hass, "octo");
   expect(bed.motors[0].heldControls).toEqual({
     up: { control: "back_up", startDelayMs: 100, releaseDelayMs: 100 },
@@ -419,14 +423,12 @@ test("INNOVA massage level and memory-page timer buttons join the massage sectio
 test("Sleepy's timer select remains in massage alongside Pairlink selectors", () => {
   const bed = bedEntitiesForDevice(hassWith([
     entry("select.sleepys_timer", "sleepys_app_massage_timer_code"),
-    entry("sensor.sleepys_timer", "sleepys_app_massage_timer_code"),
     entry("select.pairlink_mode", "reverie_pairlink_massage_mode"),
     entry("select.pairlink_rhythm", "reverie_pairlink_massage_rhythm"),
   ]), "dev1");
   expect(bed.massage.selects).toEqual([
     "select.sleepys_timer", "select.pairlink_mode", "select.pairlink_rhythm",
   ]);
-  expect(bed.massage.states).toEqual(["sensor.sleepys_timer"]);
   expect(bedIsEmpty(bed)).toBe(false);
 });
 
@@ -451,7 +453,8 @@ test("Pairlink massage controls and state join the massage section", () => {
     "select.pairlink_mode",
     "select.pairlink_rhythm",
   ]);
-  expect(bed.utility).toEqual(["binary_sensor.pairlink_low_battery"]);
+  // A reading, not a button: it sits with the other utility states.
+  expect(bed.utilityStates).toEqual(["binary_sensor.pairlink_low_battery"]);
 });
 
 test("exact app controls separate floor, bounded mood and massage surfaces", () => {
@@ -475,6 +478,7 @@ test("exact app controls separate floor, bounded mood and massage surfaces", () 
     entry("button.all_down", "vibradorm_app_all_down"),
     entry("button.sync", "vibradorm_app_sync"),
   ]);
+  publish(hass, "button.sync", { card_section: "utility" });
   const bed = bedEntitiesForDevice(hass, "dev1");
   expect(bed.lights.light).toBe("light.floor");
   expect(bed.lights.level).toBe("number.floor_level");
@@ -857,7 +861,6 @@ test("fan level renders in the climate section", () => {
 test("presence-only device is treated as empty (no presence section)", () => {
   const hass = hassWith([entry("binary_sensor.b_pres", "bed_presence")]);
   const bed = bedEntitiesForDevice(hass, "dev1");
-  expect(bed.presence).toEqual(["binary_sensor.b_pres"]);
   expect(bedIsEmpty(bed)).toBe(true);
 });
 
@@ -1156,7 +1159,7 @@ test("SIMMONS inclined controls join presets and clock/alarm actions land in uti
 test("Svane lamp intensity is exposed with its under-bed-light switch", () => {
   const hass = hassWith([
     entry("switch.svane_lamp", "under_bed_lights"),
-    entry("number.svane_intensity", "svane_intensity"),
+    entry("number.svane_intensity", "light_level"),
   ]);
   const bed = bedEntitiesForDevice(hass, "dev1");
   expect(bed.lights.switch).toBe("switch.svane_lamp");
@@ -1211,6 +1214,12 @@ test("Richmat MH app-labelled buttons, sliders and selectors land in their secti
     entry("select.waist_left_heat", "richmat_mh_waist_left_heat"),
     entry("light.led", "light"),
   ]);
+  // These controls exist only once the bed reports its model's pages.
+  publish(hass, "number.head", { card_section: "massage" });
+  publish(hass, "number.back_angle", { card_section: "motors", card_motor: "back" });
+  publish(hass, "select.mode", { card_section: "utility" });
+  publish(hass, "select.waist", { card_section: "massage" });
+  publish(hass, "select.waist_left_heat", { card_section: "massage" });
   const bed = bedEntitiesForDevice(hass, "dev1");
   expect(bed.presets).toEqual(["button.flat", "button.read", "button.relax"]);
   expect(bed.massage.buttons).toEqual(["button.wave"]);
@@ -1234,6 +1243,10 @@ test("Richmat MH VER1 angle targets join their motors and the LED timeout is lig
     entry("number.pillow_angle", "richmat_mh_pillow_angle"),
     entry("number.led_timer", "richmat_mh_light_timer"),
   ]);
+  // VER1 reports these angle targets once connected.
+  publish(hass, "number.back_angle", { card_section: "motors", card_motor: "back" });
+  publish(hass, "number.foot_angle", { card_section: "motors", card_motor: "feet" });
+  publish(hass, "number.pillow_angle", { card_section: "motors", card_motor: "pillow" });
   const bed = bedEntitiesForDevice(hass, "dev1");
   const position = Object.fromEntries(bed.motors.map((m) => [m.key, m.position]));
   expect(position).toEqual({
@@ -1537,13 +1550,17 @@ test("Good Vibe Sleep exposes app controls, side selection and independent sleep
 });
 
 test("Classic Richmat app actions, selectors and state stay in the utility section", () => {
-  const bed = bedEntitiesForDevice(hassWith([
+  const hass = hassWith([
     entry("button.lounge", "richmat_classic_action"),
     entry("button.release", "richmat_classic_release"),
     entry("select.mode", "richmat_classic_mode"),
     entry("select.hold", "richmat_classic_hold"),
     entry("sensor.status", "richmat_classic_status"),
-  ]), "dev1");
+  ]);
+  // The app's selectors appear once its session starts.
+  publish(hass, "select.mode", { card_section: "utility" });
+  publish(hass, "select.hold", { card_section: "utility" });
+  const bed = bedEntitiesForDevice(hass, "dev1");
   expect(bed.utility).toEqual(["button.lounge", "button.release"]);
   expect(bed.utilitySelects).toEqual(["select.mode", "select.hold"]);
   expect(bed.utilityStates).toEqual(["sensor.status"]);

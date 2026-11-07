@@ -115,7 +115,7 @@ async def test_advisory_duration_accepts_ui_selection_without_wire_or_preemption
 
 
 async def test_advisory_duration_updates_disconnected_receiver_and_survives_reconnect(hass):
-    from custom_components.adjustable_bed.beds.furnimove import FurniMoveController
+    from custom_components.adjustable_bed.beds.furnimove.controller import FurniMoveController
     from custom_components.adjustable_bed.const import CONF_FURNIMOVE_REMOTE
     from tests.test_furnimove_connection import coordinator as make_coordinator
 

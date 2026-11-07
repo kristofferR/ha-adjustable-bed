@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from custom_components.adjustable_bed.beds.jensen_linon import (
+from custom_components.adjustable_bed.beds.jensen.linon import (
     HOLD_INTERVAL_MS,
     JensenLinonCommands,
 )

@@ -12,7 +12,8 @@ import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.motomotion import MotoMotionController
+from custom_components.adjustable_bed.beds.motomotion.controller import MotoMotionController
+from custom_components.adjustable_bed.beds.motomotion.protocol import posture
 from custom_components.adjustable_bed.codec.motomotion import (
     Position,
     ascii_command,
@@ -21,7 +22,6 @@ from custom_components.adjustable_bed.codec.motomotion import (
 from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_BLE_DEVICE_NAME, DOMAIN
 from custom_components.adjustable_bed.controller_state import StateKey
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.motomotion_protocol import posture
 
 
 def runtime(hass, name="SOFA000001A000H", address="AA:BB:CC:DD:EE:13"):
@@ -215,7 +215,7 @@ async def test_fine_tune_targets_survive_disconnect_and_controller_replacement(h
 async def test_public_user_action_validates_all_targets_before_any_write(hass):
     from homeassistant.exceptions import ServiceValidationError
 
-    from custom_components.adjustable_bed import motomotion_services as service
+    from custom_components.adjustable_bed.beds.motomotion import services as service
 
     a, b = runtime(hass), runtime(hass, "BT2010000", "AA:BB:CC:DD:EE:14")
     await a.async_prime_offline_controller()
@@ -244,7 +244,7 @@ async def test_public_user_action_validates_all_targets_before_any_write(hass):
 
 
 async def test_public_posture_request_and_restore_have_one_physical_owner(hass):
-    from custom_components.adjustable_bed import motomotion_services as service
+    from custom_components.adjustable_bed.beds.motomotion import services as service
 
     c = runtime(hass)
     await c.async_prime_offline_controller()
@@ -355,7 +355,7 @@ async def connected_runtime(hass, name):
 
 @pytest.fixture
 def protocol_clock(monkeypatch):
-    from custom_components.adjustable_bed.beds import motomotion as bed
+    from custom_components.adjustable_bed.beds.motomotion import controller as bed
 
     now = [0.0]
 
@@ -532,7 +532,7 @@ async def test_single_address_parent_holds_and_stop_fan_out_exact_side_packets(
 async def test_home_release_button_cancels_held_refresh_without_extra_stop(hass, monkeypatch):
     import asyncio
 
-    from custom_components.adjustable_bed.beds import motomotion as bed
+    from custom_components.adjustable_bed.beds.motomotion import controller as bed
     from custom_components.adjustable_bed.button import ControllerActionButton
     from custom_components.adjustable_bed.codec.motomotion import ascii_command
 
@@ -590,7 +590,7 @@ async def test_card_pointer_to_wire_charges_native_timing_once(
     hass, monkeypatch, key, release_at, command, stops
 ):
     from custom_components.adjustable_bed import button
-    from custom_components.adjustable_bed.beds import motomotion as bed
+    from custom_components.adjustable_bed.beds.motomotion import controller as bed
     from custom_components.adjustable_bed.codec.motomotion import ascii_command
 
     c, ctrl = await connected_runtime(hass, "SOFA000001MCE0M")
@@ -953,8 +953,8 @@ async def test_working_targets_survive_real_idle_replacement_next_axis_and_save(
 ):
     from dataclasses import replace
 
+    from custom_components.adjustable_bed.beds.motomotion.requests import Request
     from custom_components.adjustable_bed.button import ControllerActionButton
-    from custom_components.adjustable_bed.motomotion_requests import Request
     from custom_components.adjustable_bed.number import AdjustableBedControllerNumber
 
     c, ctrl = await loaded_runtime(hass, "SOFA000001A000H", mock_bleak_client)
@@ -1091,8 +1091,8 @@ async def test_invalid_optional_intent_cannot_reset_valid_right_side(
 
 
 async def test_working_intent_address_and_exact_profile_isolation(hass):
+    from custom_components.adjustable_bed.beds.motomotion.requests import Request
     from custom_components.adjustable_bed.codec.motomotion import Position
-    from custom_components.adjustable_bed.motomotion_requests import Request
 
     name = "SOFA000001A000H"
     c, ctrl = await connected_runtime(hass, name)

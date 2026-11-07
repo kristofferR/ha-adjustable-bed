@@ -1,13 +1,13 @@
 # Okin UUID remote-code table regeneration
 
-This directory regenerates `custom_components/adjustable_bed/beds/okin_uuid_remotes.py`
+This directory regenerates `custom_components/adjustable_bed/beds/okin_uuid/remotes.py`
 (the per-remote-code keycode table) and the `OKIMAT_VARIANTS` /
 `OKIN_DOT_VARIANTS` dropdowns in `const.py`.
 
 ## Source of truth
 
 Codes in the pinned FurniMove production catalog
-(`custom_components/adjustable_bed/furnimove_profiles.py`, captured
+(`custom_components/adjustable_bed/beds/furnimove/profiles.py`, captured
 2026-09-30 for the accepted `com.okin.okinsmartcomfort` 2.2.0 audit) are the
 exception: `okin_uuid.py` derives their keycodes and memory-save timing from
 that catalog, and `gen_module.py` emits labels but no data row for them. Every

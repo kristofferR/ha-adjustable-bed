@@ -14,7 +14,9 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ServiceValidationError
 
-from .beds.base import ControllerSelectSpec
+from .beds.entity_specs import ControllerSelectSpec
+from .beds.octo.runtime import octo_controller
+from .card import CARD_CLIMATE, CARD_LIGHTING, CARD_MASSAGE_TIMER, CardPlacement
 from .const import (
     DOMAIN,
 )
@@ -23,7 +25,6 @@ from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime, named_for_side, own_sides
 from .entity_sweep import PlatformEntities, records_entities
-from .octo_runtime import octo_controller
 from .paired_coordinator import entity_runtimes
 from .state_keys import (
     FOOTWARMING_TIMER_OPTION,
@@ -48,6 +49,7 @@ class AdjustableBedControllerStateSelectDescription(SelectEntityDescription):
     options_fn: Callable[[BedController], list[str]]
     state_key: StateKey[str | None]
     select_fn: Callable[[BedController, str], Coroutine[Any, Any, None]]
+    card: CardPlacement
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -73,6 +75,7 @@ LIGHT_TIMER_DESCRIPTION = AdjustableBedControllerStateSelectDescription(
     options_fn=lambda c: c.light_timer_options,
     state_key=LIGHT_TIMER_OPTION,
     select_fn=lambda c, option: c.set_light_timer(option),
+    card=CARD_LIGHTING,
 )
 
 THERMAL_TIMER_DESCRIPTION = AdjustableBedControllerStateSelectDescription(
@@ -83,6 +86,7 @@ THERMAL_TIMER_DESCRIPTION = AdjustableBedControllerStateSelectDescription(
     options_fn=lambda c: c.thermal_timer_options,
     state_key=THERMAL_TIMER_OPTION,
     select_fn=lambda c, option: c.set_thermal_timer(option),
+    card=CARD_CLIMATE,
 )
 
 FOOTWARMING_TIMER_DESCRIPTION = AdjustableBedControllerStateSelectDescription(
@@ -93,6 +97,7 @@ FOOTWARMING_TIMER_DESCRIPTION = AdjustableBedControllerStateSelectDescription(
     options_fn=lambda c: c.footwarming_timer_options,
     state_key=FOOTWARMING_TIMER_OPTION,
     select_fn=lambda c, option: c.set_footwarming_timer(option),
+    card=CARD_CLIMATE,
 )
 
 THERMAL_TIMER_LEFT_DESCRIPTION = AdjustableBedSideStateSelectDescription(
@@ -325,7 +330,7 @@ class AdjustableBedControllerSelect(AdjustableBedEntity, SelectEntity):
     """A declared product option, unknown until the controller publishes state."""
 
     def __init__(self, coordinator: EntityRuntime, spec: ControllerSelectSpec) -> None:
-        super().__init__(coordinator)
+        super().__init__(coordinator, spec.card)
         self._spec = spec
         self.entity_description = SelectEntityDescription(
             key=f"controller_select_{spec.key}", translation_key=spec.translation_key
@@ -395,7 +400,7 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
         timer_options: list[int],
     ) -> None:
         """Initialize the massage timer select entity."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_MASSAGE_TIMER)
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
@@ -422,30 +427,15 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
 
     @property
     def current_option(self) -> str | None:
-        """Return the current timer setting from controller state."""
-        controller = self._coordinator.controller
-        timer_mode: object
-        if controller is None:
-            # Between connections, the timer the profile last published.
-            timer_mode = self._coordinator.controller_state.get(
-                sided(
-                    MASSAGE_TIMER_MINUTES,
-                    massage_state_side(self._coordinator.bed_type, self._coordinator.entity_side),
-                )
+        """Return the last published timer, or "Off"."""
+        minutes = self._coordinator.controller_state.get(
+            sided(
+                MASSAGE_TIMER_MINUTES,
+                massage_state_side(self._coordinator.bed_type, self._coordinator.entity_side),
             )
-        else:
-            with self._side_scope():
-                timer_mode = controller.get_massage_state().get("timer_mode")
-
-        # Normalize: treat "0", 0, empty, or None as "Off"
-        if not timer_mode or str(timer_mode) == "0":
-            return "Off"
-
-        # Format as option string and validate against allowed options
-        formatted = f"{timer_mode} min"
-        if formatted in self._attr_options:
-            return formatted
-        return "Off"
+        )
+        formatted = f"{minutes} min"
+        return formatted if minutes and formatted in self._attr_options else "Off"
 
     async def async_select_option(self, option: str) -> None:
         """Set the massage timer duration."""
@@ -498,7 +488,7 @@ class AdjustableBedControllerStateSelect(AdjustableBedEntity, SelectEntity):
         timer_options: list[str],
     ) -> None:
         """Initialize the controller-state-backed select entity."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, description.card)
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
@@ -570,7 +560,7 @@ class AdjustableBedSideStateSelect(AdjustableBedEntity, SelectEntity):
         options: list[str],
     ) -> None:
         """Initialize the side-specific select entity."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_CLIMATE)
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)

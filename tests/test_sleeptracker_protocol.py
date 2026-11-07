@@ -7,7 +7,7 @@ import json
 
 import pytest
 
-from custom_components.adjustable_bed import sleeptracker_protocol as p
+from custom_components.adjustable_bed.beds.sleeptracker import protocol as p
 
 
 def test_movement_and_release_exact_pretty_wire() -> None:

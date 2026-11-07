@@ -9,7 +9,9 @@ State described: `v5` at `bf0ccd65`, before the #744 pilot. `ergomotion_4`
 arrived later from `main` (`bb15d70d`, #751). Its rows below were classified by
 the same predicates on its own snapshot scenarios; the counts do not include it.
 The pilot consolidates the Jiecang modules listed below into `codec/jiecang.py`
-and `profiles/jiecang.py`; this document describes the pre-pilot layout.
+and `profiles/jiecang.py`; this document describes the pre-pilot layout. Module
+paths are that commit's, before bed families moved into `beds/<family>/`
+packages.
 
 No integration behavior changed. The only code added is the capture tool and its
 guard test (see [How the proof was produced](#how-the-proof-was-produced)).
@@ -172,7 +174,7 @@ Cross-family notes:
 
 | App or product | Route A | Route B | Bytes |
 | --- | --- | --- | --- |
-| **Comfort Motion** | bed type `comfort_motion`, `JiecangController` (`beds/jiecang.py`) | `jiecang_app` with profile `comfort_motion`, `ComfortMotionController` (`beds/comfort_motion.py`) | Motion, preset and memory frames **identical** on the shared commands; the sets differ (route A also covers massage start/stop and 3 memory slots). Different: pulse (25 x 50 ms vs 10 x 100 ms), memory slots (3 vs 2), a connect-time setup schedule and name/notify roles only in route B, two massage encodings |
+| **Comfort Motion** | bed type `comfort_motion`, `JiecangController` (`beds/jiecang/controller.py`) | `jiecang_app` with profile `comfort_motion`, `ComfortMotionController` (`beds/comfort_motion.py`) | Motion, preset and memory frames **identical** on the shared commands; the sets differ (route A also covers massage start/stop and 3 memory slots). Different: pulse (25 x 50 ms vs 10 x 100 ms), memory slots (3 vs 2), a connect-time setup schedule and name/notify roles only in route B, two massage encodings |
 | **Jiecang `jiecang` bed type** | legacy `jiecang` (README: Glideaway, Dream Motion, LOGICDATA) | `jiecang_app` DreamAsk/Dreamotion/DreamHD profiles | Same F1 frame, different payload width for memory (`01` vs `00 00`), different pulse and release schedule |
 | **LOGICDATA MOTIONrelax / Sleep Smart** | `jiecang` (its FE60/FE61 "Lierda3" write-characteristic branch) | `logicdata_app` (`logicdata_app_protocol.py`, T1/T2/T3 equal Jiecang G1/G2/G3) | Same F1 frames: all 9 captured `logicdata_app` scenarios satisfy the F1 rule. P1 uses the legacy `01` payload (memory recall equals the legacy route); P2 uses `00 00` for every command, which no Jiecang profile does |
 | **JMC400 / Jensen** | `jensen` (`JensenController`) | `svane` variant `svane_remote_jmc` (`SvaneController`) | Same motor and STOP frames on the `1111` characteristic; different pulse (4 x 300 ms against 10 x 100 ms), connect sequence and memory handling (Jensen PIN and saved slots, Svane raw position reads) |
@@ -274,10 +276,10 @@ shared infrastructure (`base`, `const`, `coordinator`, `detection`, `app_session
 | `bedsense` | `BedSenseController` (`bedsense`, 1099) | `bedsense_commands.py`, `bedsense_memory.py` | S1 FFFF frame | bedsense_1, bedsense_2, bedsense_3, bedsense_4, bedsense_5 +4 | `test_bedsense.py` |
 | `bedtech` | `BedTechController` (`bedtech`, 395) | inline | R1 Richmat 6E |  | `test_bedtech.py` |
 | `bf` | `BfCherishController` (`bf_cherish`, 779) | inline | K1 Keeson E5/E6 |  | `test_bf_cherish.py` |
-| `casper_base` | `CasperBaseController` (`casper_base`, 1480) | `casper_base_catalog.py`, `casper_base_protocol.py` | D distinct |  | `test_casper_base.py` |
-| `casper_remote` | `CasperRemoteController` (`casper_sleep`, 1025) | `casper_base_protocol.py`, `casper_sleep_protocol.py` | N/A not a bed |  | `test_casper_base.py` |
-| `casper_sleep_mm` | `CasperSleepController` (`casper_sleep`, 1025) | `casper_base_protocol.py`, `casper_sleep_protocol.py` | N/A sensor |  | `test_casper_base.py` |
-| `casper_sleep_sxb` | `CasperSleepController` (`casper_sleep`, 1025) | `casper_base_protocol.py`, `casper_sleep_protocol.py` | N/A sensor |  | `test_casper_base.py` |
+| `casper_base` | `CasperBaseController` (`casper_base`, 1480) | `beds/casper_base/catalog.py`, `beds/casper_base/protocol.py` | D distinct |  | `test_casper_base.py` |
+| `casper_remote` | `CasperRemoteController` (`casper_sleep`, 1025) | `beds/casper_base/protocol.py`, `beds/casper_sleep/protocol.py` | N/A not a bed |  | `test_casper_base.py` |
+| `casper_sleep_mm` | `CasperSleepController` (`casper_sleep`, 1025) | `beds/casper_base/protocol.py`, `beds/casper_sleep/protocol.py` | N/A sensor |  | `test_casper_base.py` |
+| `casper_sleep_sxb` | `CasperSleepController` (`casper_sleep`, 1025) | `beds/casper_base/protocol.py`, `beds/casper_sleep/protocol.py` | N/A sensor |  | `test_casper_base.py` |
 | `cherish` | `BfCherishController` (`bf_cherish`, 779) | inline | K1 Keeson E5/E6 |  | `test_bf_cherish.py` |
 | `comfort_enhancements` | `ComfortEnhancementsController` (`comfort_enhancements`, 539) | inline | K1 Keeson E5/E6 | mc2, mc3, mc4, mc5 | `test_comfort_enhancements.py` |
 | `comfort_motion` | `JiecangController` (`jiecang`, 393) | inline | J1 Jiecang F1 |  | `test_jiecang.py` |
@@ -287,32 +289,32 @@ shared infrastructure (`base`, `const`, `coordinator`, `detection`, `app_session
 | `customatic_remedy` | `CustomaticController` (`customatic`, 462) | inline | O1 Okin N-frame |  | `test_customatic.py` |
 | `customatic_zseries` | `ZSeriesController` (`serenity`, 1883) | `okin_cst.py`, `okin_protocol.py` | O1 Okin N-frame |  | `test_serenity.py` |
 | `dewertokin` | `OkinHandleController` (`okin_handle`, 321) | inline | O1 Okin N-frame |  | `test_okin_handle.py` |
-| `doublesleep` | `DoubleSleepController` (`doublesleep`, 2393) | `doublesleep_services.py`, `doublesleep_state.py`, `doublesleep_protocol.py` | O1 Okin N-frame | p1, p2, p3 | `test_doublesleep_controller.py` |
+| `doublesleep` | `DoubleSleepController` (`doublesleep`, 2393) | `beds/doublesleep/services.py`, `beds/doublesleep/state.py`, `beds/doublesleep/protocol.py` | O1 Okin N-frame | p1, p2, p3 | `test_doublesleep_controller.py` |
 | `ergo_slim` | `ErgoSlimController` (`ergo_slim`, 1184) | `keeson_layout_app.py`, `profiles/keeson.py` | K1 Keeson E5/E6 |  | none direct |
 | `ergomotion` | `KeesonController` (`keeson`, 2417) | `okin_protocol.py` | K1 Keeson E5/E6 |  | `test_keeson.py` |
 | `ergomotion_app` | `ErgomotionAppController` (`ergomotion_app`, 1184) | `keeson_layout_app.py`, `profiles/keeson.py` | K1 Keeson E5/E6 |  | none direct |
-| `ergomotion_4` | `Ergomotion4Controller` (`ergomotion4`, 3207) | `keeson_layout_app.py`, `profiles/keeson.py`, `ergomotion4_profiles.py` | K1 Keeson E5/E6 (P1 products); P2 products send the O1 32-bit `04 02` frame | M10, M14, M19, M22, M30, 4194RGB, custom | `test_ergomotion4.py` |
+| `ergomotion_4` | `Ergomotion4Controller` (`ergomotion4`, 3207) | `keeson_layout_app.py`, `profiles/keeson.py`, `beds/ergomotion4/profiles.py` | K1 Keeson E5/E6 (P1 products); P2 products send the O1 32-bit `04 02` frame | M10, M14, M19, M22, M30, 4194RGB, custom | `test_ergomotion4.py` |
 | `eshine` | `EshineController` (`eshine`, 714) | `eshine_protocol.py` | D distinct |  | `test_eshine.py` |
-| `fsm_relax` | `FsmRelaxController` (`fsm_relax`, 1571) | `limoss.py`, `fsm_relax_state.py` | L1 Limoss DD |  | `test_fsm_relax.py` |
-| `furnimove` | `FurniMoveController` (`furnimove`, 3028) | `furnimove_profiles.py` | K1 Keeson E5/E6 |  | `test_furnimove.py` |
+| `fsm_relax` | `FsmRelaxController` (`fsm_relax`, 1571) | `limoss.py`, `beds/fsm_relax/state.py` | L1 Limoss DD |  | `test_fsm_relax.py` |
+| `furnimove` | `FurniMoveController` (`furnimove`, 3028) | `beds/furnimove/profiles.py` | K1 Keeson E5/E6 |  | `test_furnimove.py` |
 | `glideaway_motion` | `GlideawayMotionController` (`glideaway_motion`, 609) | inline | K1 Keeson E5/E6 |  | `test_glideaway_motion.py` |
-| `gmmotor` | `GmmotorController` (`gmmotor`, 1575) | `gmmotor_catalog_types.py`, `gmmotor_notifications.py`, `gmmotor_profiles.py`, `gmmotor_protocol.py`, `gmmotor_requests.py`, `gmmotor_sessions.py`, `gmmotor_transport.py` | R1 Richmat 6E (partial) |  | `test_gmmotor.py` |
-| `gmmotor_sleep_mm` | `GmmotorSleepController` (`gmmotor_sleep`, 1822) | `gmmotor_notifications.py`, `gmmotor_protocol.py`, `gmmotor_requests.py`, `gmmotor_sessions.py`, `gmmotor_sleep_protocol.py`, `gmmotor_sleep_reports.py`, `gmmotor_sleep_state.py`, `gmmotor_transport.py` | N/A sensor |  | `test_gmmotor_sleep.py` |
-| `gmmotor_sleep_sxb` | `GmmotorSleepController` (`gmmotor_sleep`, 1822) | `gmmotor_notifications.py`, `gmmotor_protocol.py`, `gmmotor_requests.py`, `gmmotor_sessions.py`, `gmmotor_sleep_protocol.py`, `gmmotor_sleep_reports.py`, `gmmotor_sleep_state.py`, `gmmotor_transport.py` | N/A sensor |  | `test_gmmotor_sleep.py` |
-| `hjbed` | `HJBedController` (`hjbed`, 2503) | `hjbed_catalog.py`, `hjbed_protocol.py`, `hjbed_receive.py`, `hjbed_requests.py`, `hjbed_state.py` | R1 Richmat 6E |  | `test_hjbed.py` |
-| `isleep` | `IsleepController` (`isleep`, 1072) | `isleep_profile.py`, `kaidi_protocol.py` | D Kaidi mesh |  | `test_isleep.py` |
+| `gmmotor` | `GmmotorController` (`gmmotor`, 1575) | `beds/gmmotor/catalog_types.py`, `beds/gmmotor/notifications.py`, `beds/gmmotor/profiles.py`, `beds/gmmotor/protocol.py`, `beds/gmmotor/requests.py`, `beds/gmmotor/sessions.py`, `beds/gmmotor/transport.py` | R1 Richmat 6E (partial) |  | `test_gmmotor.py` |
+| `gmmotor_sleep_mm` | `GmmotorSleepController` (`gmmotor_sleep`, 1822) | `beds/gmmotor/notifications.py`, `beds/gmmotor/protocol.py`, `beds/gmmotor/requests.py`, `beds/gmmotor/sessions.py`, `beds/gmmotor/sleep_protocol.py`, `beds/gmmotor/sleep_reports.py`, `beds/gmmotor/sleep_state.py`, `beds/gmmotor/transport.py` | N/A sensor |  | `test_gmmotor_sleep.py` |
+| `gmmotor_sleep_sxb` | `GmmotorSleepController` (`gmmotor_sleep`, 1822) | `beds/gmmotor/notifications.py`, `beds/gmmotor/protocol.py`, `beds/gmmotor/requests.py`, `beds/gmmotor/sessions.py`, `beds/gmmotor/sleep_protocol.py`, `beds/gmmotor/sleep_reports.py`, `beds/gmmotor/sleep_state.py`, `beds/gmmotor/transport.py` | N/A sensor |  | `test_gmmotor_sleep.py` |
+| `hjbed` | `HJBedController` (`hjbed`, 2503) | `beds/hjbed/catalog.py`, `beds/hjbed/protocol.py`, `beds/hjbed/receive.py`, `beds/hjbed/requests.py`, `beds/hjbed/state.py` | R1 Richmat 6E |  | `test_hjbed.py` |
+| `isleep` | `IsleepController` (`isleep`, 1072) | `isleep_profile.py`, `beds/kaidi/protocol.py` | D Kaidi mesh |  | `test_isleep.py` |
 | `jensen` | `JensenController` (`jensen`, 1003) | inline | D distinct |  | `test_jensen.py` |
 | `jiecang` | `JiecangController` (`jiecang`, 393) | inline | J1 Jiecang F1 |  | `test_jiecang.py` |
 | `jiecang_app` | `JiecangAppController` (`jiecang_app`, 1336) | `jiecang_app_protocol.py` | J1 Jiecang F1 | comfort_motion:standard_2:g1, comfort_motion:standard_2:g2, comfort_motion:standard_3_neck:g1, comfort_motion:standard_4_legacy:g1, dreamask:standard_2:g1 +11 | `test_dreamhd.py` |
-| `kaidi` | `KaidiController` (`kaidi`, 1668) | `kaidi_metadata.py`, `kaidi_protocol.py` | D Kaidi mesh | floyd, seat_1, seat_1_2, seat_2, seat_3 | `test_kaidi.py` |
+| `kaidi` | `KaidiController` (`kaidi`, 1668) | `beds/kaidi/metadata.py`, `beds/kaidi/protocol.py` | D Kaidi mesh | floyd, seat_1, seat_1_2, seat_2, seat_3 | `test_kaidi.py` |
 | `keeson` | `KeesonController` (`keeson`, 2417) | `okin_protocol.py` | K0 Keeson (variants) | adjustable_lite, americanstar, avanti_bases, base, bedsense_bases +18 | `test_keeson.py` |
 | `leggett_gen2` | `LeggettGen2Controller` (`leggett_gen2`, 836) | `leggett_gen2_profiles.py` | D distinct |  | `test_leggett.py` |
-| `leggett_lp_legacy` | `LeggettLpLegacyController` (`leggett_lp_legacy`, 557) | `lp_legacy_profiles.py` | D distinct |  | `test_paired_setup.py` |
+| `leggett_lp_legacy` | `LeggettLpLegacyController` (`leggett_lp_legacy`, 557) | `beds/leggett/lp_legacy_profiles.py` | D distinct |  | `test_paired_setup.py` |
 | `leggett_okin` | `LeggettOkinController` (`leggett_okin`, 1443) | `okin_protocol.py`, `leggett_app_protocol.py` | O1 Okin N-frame |  | `test_leggett.py` |
 | `leggett_platt` | `LeggettOkinController` (`leggett_okin`, 1443) | `okin_protocol.py`, `leggett_app_protocol.py` | O1 Okin N-frame | gen2, mlrm, okin | `test_leggett.py` |
 | `leggett_wilinke` | `LeggettWilinkeController` (`leggett_wilinke`, 501) | inline | R1 Richmat 6E |  | `test_leggett_wilinke.py` |
 | `limoss` | `LimossController` (`limoss`, 682) | inline | L1 Limoss DD |  | `test_limoss.py` |
-| `limoss_remote` | `LimossRemoteController` (`limoss_remote`, 1385) | `limoss_remote_protocol.py`, `limoss_remote_state.py` | L1 Limoss DD (partial) |  | `test_limoss_remote.py` |
+| `limoss_remote` | `LimossRemoteController` (`limoss_remote`, 1385) | `limoss_remote_protocol.py`, `beds/limoss/remote_state.py` | L1 Limoss DD (partial) |  | `test_limoss_remote.py` |
 | `linak` | `LinakController` (`linak`, 2568) | `linak_protocol.py` | D distinct | bed_control, performance_legacy | `test_linak.py` |
 | `logicdata` | `LogicdataController` (`logicdata`, 393) | inline | D distinct |  | none direct |
 | `logicdata_air_pump` | `LogicdataAirPumpController` (`logicdata_air_pump`, 386) | inline | D distinct |  | `test_logicdata_air_pump.py` |
@@ -321,11 +323,11 @@ shared infrastructure (`base`, `const`, `coordinator`, `detection`, `app_session
 | `malouf_legacy_okin` | `MaloufLegacyOkinController` (`malouf`, 889) | inline | K1 Keeson E5/E6 |  | `test_malouf.py` |
 | `malouf_new_okin` | `MaloufNewOkinController` (`malouf`, 889) | inline | D distinct (Okin-like, one extra byte) |  | `test_malouf.py` |
 | `mattressfirm` | `OkinNordicController` (`okin_nordic`, 445) | `okin_7byte.py` | O2 Okin 5A |  | `test_okin_nordic.py` |
-| `motion_bed` | `MotionBedController` (`motion_bed`, 4676) | `motion_bed_actions.py`, `motion_bed_models.py`, `motion_bed_protocol.py`, `motion_bed_requests.py`, `motion_bed_state.py` | S1 FFFF frame |  | `test_paired_setup.py` |
+| `motion_bed` | `MotionBedController` (`motion_bed`, 4676) | `beds/motion_bed/actions.py`, `beds/motion_bed/models.py`, `beds/motion_bed/protocol.py`, `beds/motion_bed/requests.py`, `beds/motion_bed/state.py` | S1 FFFF frame |  | `test_paired_setup.py` |
 | `motosleep` | `MotoSleepController` (`motosleep`, 1006) | `motosleep_profiles.py` | D distinct |  | `test_motosleep.py` |
 | `nectar` | `Okin7ByteController` (`okin_7byte`, 411) | inline | O2 Okin 5A |  | `test_okin_7byte.py` |
 | `octo` | `OctoController` (`octo`, 2941) | inline | D distinct | standard, star2 | `test_octo.py` |
-| `okimat` | `OkinUuidController` (`okin_uuid`, 3272) | `okin_protocol.py`, `okin_uuid_remotes.py`, `furnimove_profiles.py` | O1 Okin N-frame |  | `test_okin_uuid.py` |
+| `okimat` | `OkinUuidController` (`okin_uuid`, 3272) | `okin_protocol.py`, `okin_uuid_remotes.py`, `beds/furnimove/profiles.py` | O1 Okin N-frame |  | `test_okin_uuid.py` |
 | `okin_64bit` | `Okin64BitController` (`okin_64bit`, 378) | inline | O1 Okin N-frame | custom, nordic | `test_okin_64bit.py` |
 | `okin_7byte` | `Okin7ByteController` (`okin_7byte`, 411) | inline | O2 Okin 5A |  | `test_okin_7byte.py` |
 | `okin_cb24` | `OkinCB24Controller` (`okin_cb24`, 755) | `okin_protocol.py` | O1 Okin N-frame | cb1221, cb24, cb24_ab, cb27, cb27new +3 | `test_okin_cb24.py` |
@@ -337,7 +339,7 @@ shared infrastructure (`base`, `const`, `coordinator`, `detection`, `app_session
 | `okin_nordic` | `OkinNordicController` (`okin_nordic`, 445) | `okin_7byte.py` | O2 Okin 5A |  | `test_okin_nordic.py` |
 | `okin_ore` | `OkinOreController` (`okin_ore`, 458) | inline | D distinct |  | `test_okin_ore.py` |
 | `okin_rf_eco_bt` | `OkinRfEcoBtController` (`okin_rf_eco_bt`, 1281) | `okin_uuid.py` | O1 Okin N-frame |  | `test_okin_rf_eco_bt.py` |
-| `okin_uuid` | `OkinUuidController` (`okin_uuid`, 3272) | `okin_protocol.py`, `okin_uuid_remotes.py`, `furnimove_profiles.py` | O1 Okin N-frame |  | `test_okin_uuid.py` |
+| `okin_uuid` | `OkinUuidController` (`okin_uuid`, 3272) | `okin_protocol.py`, `okin_uuid_remotes.py`, `beds/furnimove/profiles.py` | O1 Okin N-frame |  | `test_okin_uuid.py` |
 | `omazz_adjusto_iii` | `OmazzAdjustoIIIController` (`omazz_adjusto_iii`, 1184) | `keeson_layout_app.py`, `profiles/keeson.py` | K1 Keeson E5/E6 |  | none direct |
 | `qplus_app` | `QPlusAppController` (`sbi`, 1744) | `keeson_layout_app.py`, `profiles/keeson.py` | K1 Keeson E5/E6 |  | `test_sbi.py` |
 | `remacro` | `RemacroController` (`remacro`, 1198) | `remacro_protocol.py` | D distinct | jeromes, the_brick | `test_remacro.py` |
@@ -345,11 +347,11 @@ shared infrastructure (`base`, `const`, `coordinator`, `detection`, `app_session
 | `reverie_nightstand` | `ReverieNightstandController` (`reverie_nightstand`, 2573) | `reverie_comfort.py`, `reverie_profiles.py` | D distinct |  | `test_reverie_nightstand.py` |
 | `reverie_pairlink` | `ReveriePairlinkController` (`reverie_pairlink`, 10363) | `reverie_pairlink_profile.py`, `reverie_pairlink_protocol.py`, `reverie_pairlink_runtime.py`, `reverie_pairlink_sdk*.py`, `reverie_pairlink_transport.py`, `reverie_comfort.py` | gap (no successful command) |  | `test_reverie_pairlink*.py` |
 | `richmat` | `RichmatController` (`richmat`, 1112) | inline | R1 Richmat 6E | nordic, prefix55, prefixaa, wilinke | `test_richmat.py` |
-| `richmat_best_mattress` | `RichmatMhController` (`richmat_mh`, 6109) | `richmat_mh_protocol.py`, `richmat_mh_catalog.py` | R1 Richmat 6E | model_bfrm, model_vsrm | `test_richmat_mh.py` |
-| `richmat_blvd_home` | `RichmatMhController` (`richmat_mh`, 6109) | `richmat_mh_protocol.py`, `richmat_mh_catalog.py` | R1 Richmat 6E | model_bfrm, model_eorm | `test_richmat_mh.py` |
-| `richmat_harmony` | `RichmatMhController` (`richmat_mh`, 6109) | `richmat_mh_protocol.py`, `richmat_mh_catalog.py` | R1 Richmat 6E | model_t3rm, model_utrm | `test_richmat_mh.py` |
-| `richmat_idealbed` | `RichmatMhController` (`richmat_mh`, 6109) | `richmat_mh_protocol.py`, `richmat_mh_catalog.py` | R1 Richmat 6E | model_3i, model_p6rm | `test_richmat_mh.py` |
-| `richmat_revive` | `RichmatMhController` (`richmat_mh`, 6109) | `richmat_mh_protocol.py`, `richmat_mh_catalog.py` | R1 Richmat 6E | model_vjrm, model_vorm | `test_richmat_mh.py` |
+| `richmat_best_mattress` | `RichmatMhController` (`richmat_mh`, 6109) | `richmat_mh_protocol.py`, `beds/richmat_mh/catalog.py` | R1 Richmat 6E | model_bfrm, model_vsrm | `test_richmat_mh.py` |
+| `richmat_blvd_home` | `RichmatMhController` (`richmat_mh`, 6109) | `richmat_mh_protocol.py`, `beds/richmat_mh/catalog.py` | R1 Richmat 6E | model_bfrm, model_eorm | `test_richmat_mh.py` |
+| `richmat_harmony` | `RichmatMhController` (`richmat_mh`, 6109) | `richmat_mh_protocol.py`, `beds/richmat_mh/catalog.py` | R1 Richmat 6E | model_t3rm, model_utrm | `test_richmat_mh.py` |
+| `richmat_idealbed` | `RichmatMhController` (`richmat_mh`, 6109) | `richmat_mh_protocol.py`, `beds/richmat_mh/catalog.py` | R1 Richmat 6E | model_3i, model_p6rm | `test_richmat_mh.py` |
+| `richmat_revive` | `RichmatMhController` (`richmat_mh`, 6109) | `richmat_mh_protocol.py`, `beds/richmat_mh/catalog.py` | R1 Richmat 6E | model_vjrm, model_vorm | `test_richmat_mh.py` |
 | `rondure` | `RondureController` (`rondure`, 382) | inline | K1 Keeson E5/E6 | both, side_a, side_b | `test_rondure.py` |
 | `row_control` | `RowControlController` (`row_control`, 1184) | `keeson_layout_app.py`, `profiles/keeson.py` | K1 Keeson E5/E6 |  | none direct |
 | `sbi` | `SBIController` (`sbi`, 1744) | `keeson_layout_app.py`, `profiles/keeson.py` | K1 Keeson E5/E6 | both, side_a, side_b | `test_sbi.py` |
@@ -358,27 +360,27 @@ shared infrastructure (`base`, `const`, `coordinator`, `detection`, `app_session
 | `serta` | `KeesonController` (`keeson`, 2417) | `okin_protocol.py` | K1 Keeson E5/E6 |  | `test_keeson.py` |
 | `serta_mp_remote` | `SertaMPRemoteController` (`serta_mp_remote`, 1574) | `keeson_layout_app.py`, `profiles/keeson.py` | K1 Keeson E5/E6 |  | `test_keeson_layout_app.py` |
 | `simmons` | `SimmonsController` (`simmons`, 1064) | `simmons_protocol.py` | O1 Okin N-frame | simmons_inclined, simmons_inclined_okin, simmons_inclined_smartbed, simmons_okin, simmons_smartbed | `test_simmons.py` |
-| `sleep_number` | `SleepNumberController` (`sleep_number`, 3211) | `sleep_number_commands.py`, `sleep_number_auth.py` | D distinct |  | `test_sleep_number.py` |
+| `sleep_number` | `SleepNumberController` (`sleep_number`, 3211) | `sleep_number_commands.py`, `beds/sleep_number/auth.py` | D distinct |  | `test_sleep_number.py` |
 | `sleep_number_mcr` | `SleepNumberMcrController` (`sleep_number_mcr`, 2079) | `sleep_number_mcr_protocol.py` | D distinct |  | `test_sleep_number_mcr.py` |
 | `sleepstar` | `SleepStarController` (`sleepstar`, 1221) | inline | D distinct |  | `test_sleepstar.py` |
-| `sleeptracker` | `SleeptrackerController` (`sleeptracker`, 1756) | `sleeptracker_protocol.py` | D distinct (cloud-adjacent) |  | `test_sleeptracker_exposure.py` |
+| `sleeptracker` | `SleeptrackerController` (`sleeptracker`, 1756) | `beds/sleeptracker/protocol.py` | D distinct (cloud-adjacent) |  | `test_sleeptracker_exposure.py` |
 | `sleepys_box15` | `SleepysBox15Controller` (`sleepys`, 507) | inline | K1 Keeson E5/E6 |  | `test_sleepys.py` |
 | `sleepys_box24` | `SleepysBox24Controller` (`sleepys`, 507) | inline | D distinct |  | `test_sleepys.py` |
 | `sleepys_box25` | `SleepysBox25LegacyController` (`sleepys_box25`, 913) | inline | O1 Okin N-frame | box25_legacy, box25_star | `test_sleepys.py` |
 | `sleepys_elite_app` | `SleepysEliteAppController` (`sleepys_app`, 6918) | `sleepys_app_routes.py` | D distinct |  | `test_sleepys_elite_app.py` |
 | `solace` | `SolaceController` (`solace`, 1143) | inline | S1 FFFF frame | woosa | `test_solace.py` |
-| `star_elevate` | `StarElevateController` (`star_elevate`, 794) | `starcode_accessory_group.py` | O2 Okin 5A | adjustable_comfort_m1x12 | `test_star_elevate.py` |
+| `star_elevate` | `StarElevateController` (`star_elevate`, 794) | `beds/starcode/accessory_group.py` | O2 Okin 5A | adjustable_comfort_m1x12 | `test_star_elevate.py` |
 | `starcode_abm5_4` | `StarcodeAbm5_4Controller` (`starcode_abm5_4`, 1735) | `starcode_abm5_4_profiles.py` | O1 Okin N-frame |  | `test_starcode_abm5_4.py` |
-| `starcode_m1x12` | `StarcodeM1X12Controller` (`starcode_m1x12`, 2507) | `star_elevate.py`, `starcode_m1x12_protocol.py`, `starcode_accessory_group.py` | O1 Okin N-frame (partial: motion and presets) |  | `test_starcode_m1x12.py` |
-| `starcode_m5x5` | `StarcodeM5X5Controller` (`starcode_m5x5`, 1685) | `starcode_m5x5_protocol.py`, `starcode_accessory_group.py` | O1 Okin N-frame (partial: motion and presets) |  | `test_starcode_m5x5.py` |
+| `starcode_m1x12` | `StarcodeM1X12Controller` (`starcode_m1x12`, 2507) | `star_elevate.py`, `starcode_m1x12_protocol.py`, `beds/starcode/accessory_group.py` | O1 Okin N-frame (partial: motion and presets) |  | `test_starcode_m1x12.py` |
+| `starcode_m5x5` | `StarcodeM5X5Controller` (`starcode_m5x5`, 1685) | `starcode_m5x5_protocol.py`, `beds/starcode/accessory_group.py` | O1 Okin N-frame (partial: motion and presets) |  | `test_starcode_m5x5.py` |
 | `suta` | `SutaController` (`suta`, 542) | inline | D distinct |  | `test_suta.py` |
-| `svane` | `SvaneController` (`svane`, 1018) | `svane_state.py` | D distinct | jensen_linon, svane_remote_jmc | `test_svane.py` |
+| `svane` | `SvaneController` (`svane`, 1018) | `beds/svane/state.py` | D distinct | jensen_linon, svane_remote_jmc | `test_svane.py` |
 | `tempur_au` | `TempurAUController` (`tempur_au`, 1184) | `keeson_layout_app.py`, `profiles/keeson.py` | K1 Keeson E5/E6 |  | none direct |
 | `tempur_curve` | `TempurCurveController` (`tempur_curve`, 1184) | `keeson_layout_app.py`, `profiles/keeson.py` | K1 Keeson E5/E6 |  | none direct |
 | `timotion_ahf` | `TiMOTIONAhfController` (`timotion_ahf`, 714) | inline | D distinct |  | `test_timotion_ahf.py` |
 | `tranquil` | `TranquilController` (`serenity`, 1883) | `okin_cst.py`, `okin_protocol.py` | O1 Okin N-frame |  | `test_serenity.py` |
 | `vibradorm` | `VibradormController` (`vibradorm`, 1163) | inline | D distinct |  | `test_vibradorm.py` |
-| `vibradorm_app` | `VibradormAppController` (`vibradorm_app`, 1983) | `vibradorm_app_state.py`, `vibradorm_vmat_profiles.py`, `vibradorm_vmat_setup.py` | D distinct |  | `test_vibradorm_app.py` |
+| `vibradorm_app` | `VibradormAppController` (`vibradorm_app`, 1983) | `beds/vibradorm/app_state.py`, `vibradorm_vmat_profiles.py`, `beds/vibradorm/vmat_setup.py` | D distinct |  | `test_vibradorm_app.py` |
 | `vmatbasic` | `VMatBasicController` (`vmatbasic`, 1024) | `vmatbasic_protocol.py` | D distinct |  | `test_vmatbasic.py` |
 
 ### Config keys and APK reports

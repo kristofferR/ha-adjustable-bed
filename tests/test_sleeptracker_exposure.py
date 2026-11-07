@@ -16,7 +16,7 @@ from pytest_homeassistant.common import MockConfigEntry
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
 from custom_components.adjustable_bed.bed_traits import bed_traits
-from custom_components.adjustable_bed.beds.sleeptracker import SleeptrackerController
+from custom_components.adjustable_bed.beds.sleeptracker.controller import SleeptrackerController
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
@@ -84,7 +84,7 @@ def test_profile_owns_selectors_and_options_keep_product():
 
 
 def test_unique_processor_service_wins_without_reclassifying_uart(mock_bluetooth_service_info):
-    from custom_components.adjustable_bed import sleeptracker_protocol as p
+    from custom_components.adjustable_bed.beds.sleeptracker import protocol as p
 
     info = mock_bluetooth_service_info
     info.name = "KSSF05C"
@@ -424,7 +424,7 @@ def test_secrets_redacted_in_captures_and_structured_diagnostics():
 
 def test_every_generated_entity_has_english_translation():
     strings = json.loads(Path("custom_components/adjustable_bed/strings.json").read_text())
-    from custom_components.adjustable_bed.sleeptracker_protocol import MODELS
+    from custom_components.adjustable_bed.beds.sleeptracker.protocol import MODELS
 
     for model in MODELS:
         controller = SleeptrackerController(MagicMock(), model=model, restricted=True)

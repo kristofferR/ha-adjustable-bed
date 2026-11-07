@@ -27,15 +27,17 @@ from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import services
-from custom_components.adjustable_bed.beds.richmat_classic import RichmatClassicController
+from custom_components.adjustable_bed.beds.richmat_classic.caller import Selection
+from custom_components.adjustable_bed.beds.richmat_classic.controller import (
+    RichmatClassicController,
+)
+from custom_components.adjustable_bed.beds.richmat_classic.profiles import Control
+from custom_components.adjustable_bed.beds.richmat_classic.transport import Transport
 from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.command_scheduler import CommandKind, CommandOutcome
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.execution import HOLD_CEILING_MS, NO_EXECUTION_CAPABILITIES
-from custom_components.adjustable_bed.richmat_classic_caller import Selection
-from custom_components.adjustable_bed.richmat_classic_profiles import Control
-from custom_components.adjustable_bed.richmat_classic_transport import Transport
 from tests.hold_lease_wire import intervals, leased_hold, virtual_clock
 from tests.test_richmat_classic import controller
 
