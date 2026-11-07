@@ -8,7 +8,7 @@ This guide covers every bed that sends Okin N-frame command words. The 32-bit
 profiles are Okimat handset tables, DewertOkin, the OKIN Smart Remote stair lift,
 the Customatic apps and the Leggett & Platt Okin apps. The 40-bit profiles are
 OKIN SmartBed CB24, Okin DOT, SIMMONS, OKIN SleepEase, the Sleepy's Elite legacy
-CB25 dialect and the AdjustableM5X4 key selectors. The 96-bit profiles are the
+CB25 dialect, the AdjustableM5X4 key selectors and the eShine app's products. The 96-bit profiles are the
 Okin CST (CSTProtocol) products and the OKIN Bedding apps: Jordan's Serenity,
 Jordan's Tranquil and Customatic Z-Series. The 64-bit profiles are Okin 64-Bit
 and the Adjustable bed (Lumbar) app.
@@ -28,6 +28,7 @@ and the Adjustable bed (Lumbar) app.
 | [OKIN SleepEase](#okin-sleepease) | OKIN SleepEase / DoubleSleep / XiaoBao app models |
 | [Sleepy's legacy CB25](#sleepys-legacy-cb25) | Sleepy's Elite BOX25 receivers whose Device Information manufacturer is not `star` |
 | [AdjustableM5X4](#adjustablem5x4) | StarCode beds operated with the AdjustableM5X4 app |
+| [eShine](#eshine) | eShine app products E2000, E3000/E3100 (one selector) and E5000 |
 | [Okin CST](#okin-cst) | Mattress Firm 900-O / Rize MF900, Rize Sanctuary, Resident, Aviada, Bob, Contempo, Rize II Carefree and Clarity, Support, Nectar Motion (Nectar Move) |
 | [Jordan's Serenity](#jordans-serenity) | Beds controlled with the Jordan's Serenity app |
 | [Jordan's Tranquil](#jordans-tranquil) | Beds controlled with the Jordan's Tranquil app |
@@ -75,7 +76,7 @@ Customatic app profiles.
 | ✅ | [Jordan's Serenity](https://play.google.com/store/apps/details?id=com.okin.bedding.serenity) 1.0.1 (code 2) | `com.okin.bedding.serenity` | [Jordan's Serenity](#jordans-serenity) |
 | ✅ | Adjustable bed | `com.okin.bedding.adjustbed` | [Okin 64-Bit](#okin-64-bit) |
 | ✅ | [Adjustable bed(Lumbar)](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustablelumbar) 1.2.2 (code 33) | `com.okin.bedding.adjustablelumbar` | [Adjustable bed (Lumbar)](#adjustable-bed-lumbar) |
-| ✅ | [eShine](https://play.google.com/store/apps/details?id=com.okin.eshine) 1.1.8 (22) | `com.okin.eshine` | Own guide, [eShine E2000 / E3000 / E3100 / E5000](eshine-okin.md): its 40-bit command words match this codec, but its `07 04` clock and `07 05` alarm frames do not |
+| ✅ | [eShine](https://play.google.com/store/apps/details?id=com.okin.eshine) 1.1.8 (22) | `com.okin.eshine` | [eShine](#eshine) (E2000, E3000/E3100, E5000) |
 
 ⚠️ Legacy analysis only: these apps have no accepted APK Protocol Audit report,
 so the profile listed for them is unverified and setup does not name them. An
@@ -105,18 +106,18 @@ Beds controlled with FurniMove handset IDs normally use the explicit
 
 The 40-bit profiles:
 
-| Feature | CB24 | DOT | SIMMONS | SleepEase | Sleepy's legacy CB25 | AdjustableM5X4 |
-|---|---|---|---|---|---|---|
-| Motor control | ✅ Head, feet | ✅ Two motors per handset | ✅ Back, legs | ✅ Head, foot, lumbar, headrest, hips (P1, P2) | ✅ Head, foot, lumbar, neck | ✅ Head, foot, union |
-| Position feedback | ❌ | ❌ | ❌ | ❌ | ✅ 0-100 % | ❌ |
-| Presets | ✅ Flat, Zero-G, Lounge, TV, Anti-snore | ✅ Flat; Zero-G, Quiet Sleep, Anti-snore on RF1058 | ✅ Flat; Zero-G, TV/PC, Anti-snore on a regular bed | ✅ Held (P1) or one-shot (P2) recalls | ✅ Flat, TV, Zero-G, Anti-snore, Lounge | ✅ Flat, TV, Lounge, Zero-G, Anti-snore |
-| Memory presets | ✅ 3 slots, no save | ✅ RF1058 and RF34 codes, tap to recall | ✅ Custom Mode, saved by a 5.5 s hold | ✅ Two recalls | ✅ 2 slots with save | ✅ Memory A, named saves and reset |
-| Massage | ✅ | ✅ RF1058 codes | ❌ | ✅ | ✅ | ✅ Behind the massage-on gate |
-| Under-bed lights | ✅ Toggle (CBNew: on/off) | ✅ Toggle | ✅ | ✅ Toggle | ✅ | ✅ Per selector |
-| Alarms and clock | ❌ | ❌ | ✅ Two slots, clock sync | ✅ | ❌ | ❌ |
-| Single-address sides | ✅ Legacy CB24 selector | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Hold until release | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ |
-| BLE pairing | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Feature | CB24 | DOT | SIMMONS | SleepEase | Sleepy's legacy CB25 | AdjustableM5X4 | eShine |
+|---|---|---|---|---|---|---|---|
+| Motor control | ✅ Head, feet | ✅ Two motors per handset | ✅ Back, legs | ✅ Head, foot, lumbar, headrest, hips (P1, P2) | ✅ Head, foot, lumbar, neck | ✅ Head, foot, union | ✅ Head, foot; E5000 adds Head Tilt |
+| Position feedback | ❌ | ❌ | ❌ | ❌ | ✅ 0-100 % | ❌ | ❌ |
+| Presets | ✅ Flat, Zero-G, Lounge, TV, Anti-snore | ✅ Flat; Zero-G, Quiet Sleep, Anti-snore on RF1058 | ✅ Flat; Zero-G, TV/PC, Anti-snore on a regular bed | ✅ Held (P1) or one-shot (P2) recalls | ✅ Flat, TV, Zero-G, Anti-snore, Lounge | ✅ Flat, TV, Lounge, Zero-G, Anti-snore | ✅ Held Flat, Zero-G, Anti-snore, Reading, TV, Flat + Zero-G |
+| Memory presets | ✅ 3 slots, no save | ✅ RF1058 and RF34 codes, tap to recall | ✅ Custom Mode, saved by a 5.5 s hold | ✅ Two recalls | ✅ 2 slots with save | ✅ Memory A, named saves and reset | ❌ |
+| Massage | ✅ | ✅ RF1058 codes | ❌ | ✅ | ✅ | ✅ Behind the massage-on gate | ✅ E3000/E3100, E5000 |
+| Under-bed lights | ✅ Toggle (CBNew: on/off) | ✅ Toggle | ✅ | ✅ Toggle | ✅ | ✅ Per selector | ✅ E3000/E3100, E5000: held toggle with feedback |
+| Alarms and clock | ❌ | ❌ | ✅ Two slots, clock sync | ✅ | ❌ | ❌ | ✅ Next-occurrence alarm, clock sync |
+| Single-address sides | ✅ Legacy CB24 selector | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Hold until release | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ |
+| BLE pairing | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
 The 96-bit profiles:
 
@@ -150,7 +151,7 @@ Leggett Okin by Leggett names; each profile's Setup lists its rules. The stair
 lift and the Customatic apps are explicit choices, and Leggett Okin entries
 choose their app. CB24 is detected from the OKIN manufacturer ID, DOT from the
 Nordic UART write characteristic on an Okin handset entry; SIMMONS, SleepEase,
-Sleepy's Elite and AdjustableM5X4 are explicit app choices.
+Sleepy's Elite, AdjustableM5X4 and eShine are explicit app choices.
 
 ### Home Assistant setup
 
@@ -424,12 +425,16 @@ per action, so a key's word records its field. The 40-bit profiles use
 (`codec.frame40()`). The selector picks a legacy CB24 bed side (`AA` for A,
 `BB` for B) and is `00` everywhere else. The 64-bit profiles use `N = 8`, ten bytes,
 and Sleepy's legacy CB25 and AdjustableM5X4 send a few 64-bit `08 02` frames
-too. The codec also builds the 48-bit width. There is no checksum, sequence number or authentication payload.
+too. The codec also builds the 48-bit width, which [AdjustaMattress](keeson.md#adjustamattress)
+P4 sends. There is no checksum, sequence number or authentication payload.
 
 **Other frames of the 40-bit routes:** two-byte `00 <code>` requests
 (`codec.request()`), 6-byte `04 E0 <parameter> <value> <value2> 00` setting
 frames (`codec.extended()`) and 5-byte `03 F0 <axis> <target> 00` position
-targets (`codec.position_target()`). What each one asks for is profile data.
+targets (`codec.position_target()`), the 9-byte `07 04` clock (`codec.clock()`)
+and alarm frames that carry their field count first, `07 05` or `08 05`
+(`codec.alarm()`). What each one asks for, and how an app derives its clock and
+alarm fields, is profile data. eShine and AdjustaMattress P3 and P4 send them.
 SIMMONS OKIN names carry the same 32-bit masks in a Keeson E6 frame,
 `E6 FE 16 <word, little-endian> 00 <checksum>`, built by `codec/keeson.py`.
 
@@ -887,6 +892,9 @@ frames, listed in its profile.
 | `parse_status` | Leggett Okin | Status notification: the app's LED mask (operations 6, 7, 8, 9 and 11) and signed status byte |
 | `parse_receipt` | Prodigy CE | 20-byte CU170 status frame: `09 0B`, two identical big-endian status dwords, ten trailing bytes |
 
+eShine parses its own `A5 0B 0E` and `A5 0C 0E` replies; see its
+[Notifications](#eshine).
+
 Okimat angles are `raw / max_raw × max_angle`, clamped:
 
 | Motor | Max raw value | Max angle |
@@ -908,7 +916,8 @@ Okimat angles are `raw / max_raw × max_angle`, clamped:
   after the release.
 - CB24, DOT and Sleepy's legacy CB25 release with one STOP; a CB24 or Sleepy's
   preset STOP commits the recall. SIMMONS sends two STOPs 100 and 400 ms after
-  every release. SleepEase P1 sends its index 1 STOP after every hold.
+  every release. SleepEase P1 sends its index 1 STOP after every hold. eShine
+  sends one STOP 200 ms after the last held write.
 - Every cleanup runs with a fresh cancel event, so a stop request cannot
   suppress it.
 
@@ -923,7 +932,10 @@ E6 frames, SleepEase its pinned P1 vectors), and the Okimat, DewertOkin, RF ECO
 BT, CB24, DOT, Sleepy's legacy CB25 and AdjustableM5X4 routes take the frames
 the pre-v5 controllers sent, including the RF-Gateway envelopes. `tests/test_okin_nframe_vectors.py` checks that every
 literal round-trips through the codec and that every fixed frame a profile can
-send is frozen.
+send is frozen. eShine's requests, clock and alarm frames are frozen in
+`SETTING_FRAMES`, and the AdjustaMattress P3/P4 vectors in
+`tests/fixtures/adjustamattress/commands.json` round-trip through the same
+builders.
 
 ## Profiles
 
@@ -3266,6 +3278,184 @@ public-domain rejection tests; no accepted evidence or exclusion is rewritten.
   PR must finish its review/CI/merge gates.
 - Hardware checks HW01–HW06 remain deferred to real users after beta/release;
   they do not defer artifact-backed implementation.
+
+### eShine
+
+**App:** [eShine](https://play.google.com/store/apps/details?id=com.okin.eshine) 1.1.8 (22), `com.okin.eshine`
+
+**Status:** ❓ Needs testing (static APK evidence; hardware unverified)
+
+One profile per product selector in the app: E2000 (`eshine_e2000`),
+E3000/E3100 (`eshine_e30003100`, one selector) and E5000 (`eshine_e5000`). They
+share the app's key table, timing, clock and alarm, and differ in the keys they
+expose. The [E6000 app profile](eshine.md) uses a different app and controller.
+
+#### Setup
+
+Select **eShine app** and the same E2000, E3000/E3100 or E5000 selector used in
+the app. Choose the product explicitly: the name and service do not identify the
+model. The app accepts a case-sensitive `Smartbed` substring anywhere in a device
+name. `Smartbed` advertisements offer an app candidate; they never select the
+product. Identical names at different addresses remain separate devices.
+Automatic discovery uses the existing advertised Nordic UART service registration.
+HA rejects leading-wildcard name matchers, so a name-only advertisement with
+`Smartbed` in the middle of its name remains available through **Add integration**
+and the manual scan. No guessed name prefix or default product is substituted.
+The app search hint does not question an already matching receiver profile.
+
+Generic motor count, massage opt-in and refresh delay are owned by this profile.
+The pulse count bounds an ordinary HA press; sustained actions accept a duration.
+Single-address pairing is unavailable. For two independent addresses, configure
+each side's own product before combining them using HA's existing paired setup.
+
+##### eShine GATT roles and write mode
+
+The profile uses the Nordic UART service, write and notify roles in
+[Transports](#transports). Both exact characteristic roles are required; a shared
+UART service does not prove that this app profile is appropriate. Writes go
+without response, and the write characteristic must advertise that property. The
+receive characteristic may notify or indicate; HA/Bleak manages its CCCD. There
+is no app-specific authentication, bond request or startup handshake.
+
+Frames are direct 2-byte requests, 7-byte key frames and 9-byte clock and alarm
+writes, with no added header, checksum, encryption, sequence or terminator.
+Dynamic clock fields use their low eight bits.
+
+#### Controls
+
+| Feature | E2000 | E3000 / E3100 | E5000 |
+|---------|-------|---------------|-------|
+| Motor Control | ✅ Head, Foot | ✅ Head, Foot | ✅ Head, Foot, Head Tilt |
+| Position Feedback | ❌ | ❌ | ❌ |
+| Named Presets | ✅ Flat, Zero Gravity, Anti Snore, Reading, Watch TV | ✅ Same | ✅ Same |
+| Flat + Zero Gravity chord | ✅ | ✅ | ✅ |
+| Numbered Memory Slots | ❌ | ❌ | ❌ |
+| Massage | ❌ | ✅ On/off, separate strengths, wave, timer | ✅ Same |
+| Night Light | ❌ | ✅ Held toggle and feedback | ✅ Same |
+| Local Clock / Alarm | ✅ Zero Gravity / Flat | ✅ Zero Gravity / Flat / Massage | ✅ Same |
+| Single-address Split / Coupling | ❌ | ❌ | ❌ |
+| HA two-address pair | ✅ Independent sides | ✅ Independent sides | ✅ Independent sides |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds): 300 ms refresh, STOP 200 ms after the lease ends) | ✅ Same | ✅ Same |
+
+Every control sends a row of the [eShine keys](#eshine-keys) table; the Profiles
+column lists the products that expose it.
+
+| Controls | Keys | Behavior |
+|---|---|---|
+| Head, Foot, Head Tilt (E5000) | `head_*`, `feet_*`, `pillow_*` | Held |
+| Flat, Zero Gravity, Anti Snore, Reading, Watch TV | `flat`, `zero_g`, `anti_snore`, `reading`, `tv` | Held |
+| Flat + Zero Gravity chord | `flat_zero_g` | Held |
+| Night Light | `light` | Held toggle, then a state query |
+| Massage on, off | `massage_on`, `massage_off` | One write, then a state query |
+| Head and Foot strength, timer | `massage_head_strength`, `massage_foot_strength`, `massage_timer` | One increment or cycle, then a state query |
+| Massage wave | `massage_wave` | One increment, only while massage is reported on |
+| STOP | `stop` | Movement and release request |
+
+| Request | Bytes | Description |
+|---|---|---|
+| `query_state` | `00 B0` | Query massage and light state |
+| `query_alarm` | `00 C0` | Query alarm |
+| `disable_alarm` | `07 05 00 00 00 00 00 00 00` | Disable the local alarm |
+
+Massage and alarm sensors expose the complete received state as attributes; the
+card includes them in its existing massage and utility sections. A clock sync
+button, state and alarm refresh buttons and separate strength and timer buttons
+are also exposed. There are no angles, positions, battery or firmware and
+device-information parsers.
+
+##### eShine sustained presets and chord
+
+Use `adjustable_bed.hold_control` with `flat`, `zero_g`, `anti_snore`, `reading`,
+`tv` or `flat_zero_g` and a duration in seconds. The same held bytes are used for
+long holds. The app's 5.5-second Set/Reset toast does not prove physical saving or
+reset success; there is no separate save/reset packet or numbered memory command.
+The ordinary preset buttons use a bounded pulse window rather than an assumed
+one-shot motion.
+
+#### Timing
+
+Hold refresh and release are in the [hold and release timing](#hold-and-release-timing)
+table; the rest of the app's sequences:
+
+| Operation | Timing |
+|-----------|--------|
+| Held movement, presets, chord and Night Light | Immediate write, refresh every 300 ms while held |
+| Release / STOP | Captured literal after 200 ms, with uncancelled cleanup to original session |
+| Night Light state refresh | 300 ms after release request |
+| Massage increment/on/off | One write, query after 50 ms, no movement STOP |
+| Clock | Wait 100 ms, clock write, alarm query after 200 ms |
+| Alarm enable | Set, wait 200 ms, query then set, wait 200 ms, query |
+| Connect | Subscribe once, query massage/light, wait 200 ms, query alarm |
+
+HA serializes operations and bounds held controls to at most 60 seconds.
+Cancellation/error release uses shielded, drained `finally` cleanup; delayed work
+cannot migrate to another session. Timing describes requested writes, not
+measured on-air or firmware timing.
+
+#### Notifications
+
+The profile parses its own replies (`eshine_okin_protocol.py`):
+
+| Header | Fields |
+|--------|--------|
+| `a5 0b 0e` | Seconds=`d4*256+d5`; timer index=ceil(seconds/600); wave=`d6-1`; Head uses `d7&15`, Foot uses unmasked `d8`; each strength=`v%3+v//3+(v>1)`; light is on exactly when `d13==1` |
+| `a5 0c 0e` | Weekday mask `d4`, action `d5`, hour `d6`, minute `d7`, enabled `d9`; enabled1 with all four preceding fields zero means off; other nonzero enabled means on |
+
+Timer indexes 1/2/3 correspond to the app's 10/20/30-minute indicators. Reported
+values remain unclamped, including wave -1, Head6, Foot86/87 or timer110. Disabled
+massage zeroes its displayed wave/strengths while preserving raw observations.
+Alarm actions map 1/9/8 to Zero Gravity/Flat/Massage; unknown action is reported as
+unknown. Overflow hours/minutes normalize in the local reference date; raw fields
+remain available. Received actions never enable additional product capabilities.
+
+HA ignores incomplete or unknown notifications atomically. In particular, the
+app's unknown `fe 16` marker is not treated as a proven fragmentation format and
+cannot suppress the next valid delivery. State is invalidated on disconnect.
+The row122 audit records every intentional app-to-HA framing and lifecycle
+correction.
+
+#### Services
+
+##### eShine clock and alarms
+
+| Command | Bytes | Description |
+|---------|-------|-------------|
+| Local clock | `07 04 YY MM DD WW hh mm ss` | Year minus 2000; weekday Monday=1 through Sunday=7 |
+| Enable alarm | `07 05 days action hh mm 00 01 01` | `days` is one next-occurrence day bit, Sunday bit0 |
+| Alarm action | `01` / `09` / `08` | Zero Gravity / Flat / Massage; Massage unavailable on E2000 |
+
+`adjustable_bed.eshine_set_alarm` accepts `enabled`, minute-precision `time` and
+`wake_mode` (`zero_g`, `flat`, `massage`). A time at or before now selects tomorrow.
+An enabled alarm synchronizes the local clock first. Setting writes the same
+snapshot twice with a query between them and after them, spaced 200 ms. Disabling
+writes the nine-byte zero form and queries after 200 ms. No arbitrary weekday
+schedule, massage intensity or alarm slot is inferred.
+
+```yaml
+action: adjustable_bed.eshine_set_alarm
+data:
+  device_id: YOUR_DEVICE_ID
+  enabled: true
+  time: "07:00:00"
+  wake_mode: zero_g
+```
+
+#### Evidence
+
+eShine sends only its frozen row122 frames: its key frames, requests, clock and
+alarm frames are frozen in `tests/okin_nframe_vectors.py`.
+
+- All physical behavior remains unverified, including STOP scope and long-hold
+  preset persistence. Do not infer either from the shared transport.
+- No WiFi/cloud/account/OTA management is included.
+- Real users may validate physical behavior after a beta or release.
+
+###### eShine analysis provenance
+
+- Package `com.okin.eshine` 1.1.8, version code 22.
+- Six-file artifact set SHA-256: `fbf9cbc16b7f016c296821899e11e0d540f609af5ad9fb05bd3842a63acf9a5a`.
+- Base APK SHA-256: `aa46126cc2dacb0ac8ecbdfb7968624cce4efba419c66ef3d1aa8000c45af7cd`.
+- Audit: APK Protocol Audit row122.
 
 ### Okin CST
 

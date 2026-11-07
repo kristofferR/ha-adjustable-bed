@@ -718,7 +718,7 @@ minute-precision `time`. `wake_mode` is `zero_g` (default), `flat`, or `massage`
 Every selected target is validated before any clock or alarm write.
 
 Use `sync_clock`, `hold_control`, and the profile's refresh/strength/timer buttons
-for other controls. See the [protocol guide](beds/eshine-okin.md#clock-and-alarms)
+for other controls. See the [protocol guide](beds/okin-nframe.md#eshine-clock-and-alarms)
 for packet values, timing and hardware-unverified status. This is separate from
 the E6000 app profile.
 
