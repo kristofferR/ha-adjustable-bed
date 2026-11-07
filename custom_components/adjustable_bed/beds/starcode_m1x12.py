@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Final
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ..codec import okin_5a
 from ..execution import ExecutionCapabilities
 from .base import (
     POSITION_UNIT_PERCENT,
@@ -39,7 +40,6 @@ from .starcode_m1x12_protocol import (
     StateValue,
     clock_packet,
     extended_packet,
-    keep_open_packet,
     long_packet,
     manufacturer_dialect,
     normal_packet,
@@ -618,7 +618,7 @@ class StarcodeM1X12Controller(BedController):
                 self._apply_notification(payload)
             self._pending_notifications.clear()
             if self.dialect == "star":
-                await self.write_command(keep_open_packet())
+                await self.write_command(okin_5a.WAKE)
             if self.profile in ("f23", "kneading"):
                 await self.write_command(clock_packet(dt_util.now()))
             await self.query_status()

@@ -29,6 +29,7 @@ from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
+from ..codec import okin_5a as star
 from ..codec import okin_nframe as codec
 from ..const import NORDIC_UART_WRITE_CHAR_UUID
 from ..execution import STREAM_HOLD, ExecutionCapabilities
@@ -53,16 +54,6 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
-def _star_command(key: int, category: int = 0x30) -> bytes:
-    """Build an OEM BOX25_STAR command frame."""
-    return bytes([0x5A, 0x01, 0x03, 0x10, category, key, 0xA5])
-
-
-def _star_extended(subcommand: int, value: int, value2: int = 0) -> bytes:
-    """Build an OEM BOX25_STAR extended-value frame."""
-    return bytes([0x5A, 0xE0, 0x04, subcommand, value, value2, 0x00, 0xA5])
-
-
 _MASSAGE_MODES = (0x52, 0x53, 0x54)
 
 
@@ -72,53 +63,53 @@ class Box25Commands:
     # The previously used 00 D0 / 00 B0 initializers and 05/08/04 command
     # families belong to legacy BOX25. The Sleepy's app selects BOX25_STAR after
     # the NUS/Device Information check and uses StarCode for every control.
-    WAKE = bytes([0x5A, 0x0B, 0x00, 0xA5])
-    QUERY_STATUS = bytes([0x5A, 0xB0, 0x00, 0xA5])
+    WAKE = star.WAKE
+    QUERY_STATUS = star.request(0xB0)
 
-    MOTOR_STOP = _star_command(0x0F)
-    HEAD_UP = _star_command(0x00)
-    HEAD_DOWN = _star_command(0x01)
-    FOOT_UP = _star_command(0x02)
-    FOOT_DOWN = _star_command(0x03)
-    LUMBAR_UP = _star_command(0x06)
-    LUMBAR_DOWN = _star_command(0x07)
-    NECK_TILT_UP = _star_command(0x0A)
-    NECK_TILT_DOWN = _star_command(0x0B)
+    MOTOR_STOP = star.command(0x0F)
+    HEAD_UP = star.command(0x00)
+    HEAD_DOWN = star.command(0x01)
+    FOOT_UP = star.command(0x02)
+    FOOT_DOWN = star.command(0x03)
+    LUMBAR_UP = star.command(0x06)
+    LUMBAR_DOWN = star.command(0x07)
+    NECK_TILT_UP = star.command(0x0A)
+    NECK_TILT_DOWN = star.command(0x0B)
 
-    STAR_PRESET_FLAT = _star_command(0x10)
-    STAR_PRESET_TV = _star_command(0x11)
-    STAR_PRESET_ZERO_GRAVITY = _star_command(0x13)
-    STAR_PRESET_ANTI_SNORE = _star_command(0x16)
-    STAR_PRESET_LOUNGE = _star_command(0x17)  # app "reading"
-    STAR_PRESET_MEMORY_1 = _star_command(0x1A)
-    STAR_PRESET_MEMORY_2 = _star_command(0x1B)
+    STAR_PRESET_FLAT = star.command(0x10)
+    STAR_PRESET_TV = star.command(0x11)
+    STAR_PRESET_ZERO_GRAVITY = star.command(0x13)
+    STAR_PRESET_ANTI_SNORE = star.command(0x16)
+    STAR_PRESET_LOUNGE = star.command(0x17)  # app "reading"
+    STAR_PRESET_MEMORY_1 = star.command(0x1A)
+    STAR_PRESET_MEMORY_2 = star.command(0x1B)
     STAR_MEMORY_PRESETS = (STAR_PRESET_MEMORY_1, STAR_PRESET_MEMORY_2)
     STAR_PRESET_TERMINATOR = MOTOR_STOP
 
     # Saving a position is a long-press operation in the M1X12 app. It repeats
     # the selected key 110 times at the sender's 100 ms interval, without a
     # trailing terminator.
-    STAR_STORE_MEMORY_1 = _star_command(0x94)
-    STAR_STORE_MEMORY_2 = _star_command(0x95)
+    STAR_STORE_MEMORY_1 = star.command(0x94)
+    STAR_STORE_MEMORY_2 = star.command(0x95)
     STAR_MEMORY_STORE = (STAR_STORE_MEMORY_1, STAR_STORE_MEMORY_2)
 
     # The dedicated ON resets the LEDs to white (#557). Some Star firmware
     # ignores RGB and brightness frames while the LEDs are off, so turning on
     # always starts with ON and reapplies colour and level afterwards (#702).
-    LIGHT_ON_WHITE = _star_command(0x73)
-    LIGHT_OFF = _star_command(0x74)
-    LIGHT_TOGGLE = _star_command(0x71)
-    MASSAGE_TOGGLE = _star_command(0x5A)
-    MASSAGE_EXIT = _star_command(0x6F)
-    MASSAGE_WAVE1 = _star_command(0x52)
-    MASSAGE_WAVE2 = _star_command(0x53)
-    MASSAGE_WAVE3 = _star_command(0x54)
-    MASSAGE_INTENSITY_UP = _star_command(0x60, category=0x40)
-    MASSAGE_INTENSITY_DOWN = _star_command(0x61, category=0x40)
-    MASSAGE_HEAD_UP = _star_command(0x60)
-    MASSAGE_HEAD_DOWN = _star_command(0x61)
-    MASSAGE_FOOT_UP = _star_command(0x62)
-    MASSAGE_FOOT_DOWN = _star_command(0x63)
+    LIGHT_ON_WHITE = star.command(0x73)
+    LIGHT_OFF = star.command(0x74)
+    LIGHT_TOGGLE = star.command(0x71)
+    MASSAGE_TOGGLE = star.command(0x5A)
+    MASSAGE_EXIT = star.command(0x6F)
+    MASSAGE_WAVE1 = star.command(0x52)
+    MASSAGE_WAVE2 = star.command(0x53)
+    MASSAGE_WAVE3 = star.command(0x54)
+    MASSAGE_INTENSITY_UP = star.command(0x60, star.ALTERNATE)
+    MASSAGE_INTENSITY_DOWN = star.command(0x61, star.ALTERNATE)
+    MASSAGE_HEAD_UP = star.command(0x60)
+    MASSAGE_HEAD_DOWN = star.command(0x61)
+    MASSAGE_FOOT_UP = star.command(0x62)
+    MASSAGE_FOOT_DOWN = star.command(0x63)
     MASSAGE_MODES = (MASSAGE_WAVE1, MASSAGE_WAVE2, MASSAGE_WAVE3)
 
 
@@ -508,8 +499,7 @@ class SleepysBox25Controller(BedController):
             raise ValueError(f"Unknown motor: {motor}")
 
         pos = max(0, min(100, int(position)))
-        cmd = bytes([0x5A, 0xF0, 0x03, zone, pos, 0x00, 0xA5])
-        await self._write_motor_command(cmd)
+        await self._write_motor_command(star.position_target(zone, pos))
 
     def angle_to_native_position(self, motor: str, angle: float) -> int:  # noqa: ARG002
         """Convert angle to position (0-100 percentage-based)."""
@@ -630,7 +620,7 @@ class SleepysBox25Controller(BedController):
                     Box25Commands.STAR_PRESET_TERMINATOR,
                     cancel_event=asyncio.Event(),
                 )
-            except (BleakError, ConnectionError):
+            except BleakError, ConnectionError:
                 _LOGGER.debug(
                     "Failed to send committing terminator after preset",
                     exc_info=True,
@@ -692,9 +682,7 @@ class SleepysBox25Controller(BedController):
     async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
         """Show an RGB colour on lit LEDs; not every base turns on from it."""
         red, green, blue = (max(0, min(255, int(channel))) for channel in rgb_color)
-        await self._write_massage_light_command(
-            bytes([0x5A, 0xE0, 0x04, 0x02, red, green, blue, 0xA5])
-        )
+        await self._write_massage_light_command(star.extended(0x02, red, green, blue))
         self.forward_controller_state_updates(
             {"under_bed_lights_on": True, "under_bed_lights_rgb": (red, green, blue)}
         )
@@ -702,7 +690,7 @@ class SleepysBox25Controller(BedController):
     async def set_light_level(self, level: int) -> None:
         """Set the exact OEM 0-6 under-bed light brightness value."""
         normalized = max(0, min(self.light_level_max, int(level)))
-        await self._write_massage_light_command(_star_extended(0x00, normalized))
+        await self._write_massage_light_command(star.extended(0x00, normalized))
         self._light_level = normalized
         self.forward_controller_state_updates(
             {
@@ -718,9 +706,7 @@ class SleepysBox25Controller(BedController):
         await self._write_motor_command(Box25Commands.MASSAGE_EXIT)
         self._massage_active = False
         self._massage_timer_minutes = 0
-        self.forward_controller_state_updates(
-            {"massage_active": False, "massage_timer": 0}
-        )
+        self.forward_controller_state_updates({"massage_active": False, "massage_timer": 0})
 
     async def massage_toggle(self) -> None:
         """Send the OEM's dedicated massage on/off toggle."""
@@ -763,7 +749,7 @@ class SleepysBox25Controller(BedController):
         # The UI presents 0..7 but encodes positive levels as 2..8. Feedback
         # decoders in the corroborating StarCode apps subtract one again.
         encoded = normalized + 1 if normalized > 0 else 0
-        await self._write_massage_light_command(_star_extended(0x06, encoded, encoded))
+        await self._write_massage_light_command(star.extended(0x06, encoded, encoded))
         self._massage_intensity = normalized
         self.forward_controller_state_update("massage_intensity", normalized)
 
@@ -779,7 +765,7 @@ class SleepysBox25Controller(BedController):
                 f"Unsupported BOX25 massage timer {minutes}; "
                 f"expected one of {self.massage_timer_options}"
             ) from err
-        await self._write_massage_light_command(_star_extended(0x07, encoded))
+        await self._write_massage_light_command(star.extended(0x07, encoded))
         self._massage_timer_minutes = int(minutes)
         self.forward_controller_state_update("massage_timer", int(minutes))
 
@@ -793,7 +779,9 @@ class SleepysBox25Controller(BedController):
 
 
 def _star_action(name: str) -> bytes:
-    return getattr(Box25Commands, name.upper(), None) or getattr(Box25Commands, f"STAR_{name.upper()}")
+    return getattr(Box25Commands, name.upper(), None) or getattr(
+        Box25Commands, f"STAR_{name.upper()}"
+    )
 
 
 # Each inherited StarCode action framed by the legacy profile. The light's
@@ -813,15 +801,15 @@ def _translate_star_to_legacy(command: bytes) -> bytes:
         return command
     if command == Box25Commands.QUERY_STATUS:
         return codec.request(0xD0)
-    if len(command) == 7 and command[:4] == b"\x5A\x01\x03\x10" and command[-1] == 0xA5:
+    if len(command) == 7 and command[:4] == b"\x5a\x01\x03\x10" and command[-1] == 0xA5:
         if (legacy := _LEGACY_BY_STAR_ACTION.get(command)) is None:
             raise ValueError(
                 f"No artifact-proven legacy CB25 mapping for StarCode action {command.hex()}"
             )
         return legacy
-    if len(command) == 7 and command[:3] == b"\x5A\xF0\x03" and command[-1] == 0xA5:
+    if len(command) == 7 and command[:3] == b"\x5a\xf0\x03" and command[-1] == 0xA5:
         return codec.position_target(command[3], command[4])
-    if len(command) == 8 and command[:3] == b"\x5A\xE0\x04" and command[-1] == 0xA5:
+    if len(command) == 8 and command[:3] == b"\x5a\xe0\x04" and command[-1] == 0xA5:
         return codec.extended(command[3], command[4], command[5])
     raise ValueError(f"Unsupported StarCode frame for legacy CB25: {command.hex()}")
 

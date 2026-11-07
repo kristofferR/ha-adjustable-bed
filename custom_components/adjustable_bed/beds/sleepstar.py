@@ -3,6 +3,7 @@
 The SleepSpa app does not treat ``SLEEPSTAR`` as a normal CB25 controller.
 It creates a CB37 sleep-monitor session over Nordic UART and tunnels StarCode
 bed actions inside an ``AA 00 00 09 02`` transparent-transmission envelope.
+The StarCode frames come from ``codec/okin_5a.py``.
 
 Static behavior was recovered from SleepSpa 1.3.7
 (``com.dot.bedding.sleepspa.sleep_spa``). Physical hardware validation remains
@@ -22,6 +23,7 @@ from typing import TYPE_CHECKING, Any
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ..codec import okin_5a as star
 from ..const import (
     NORDIC_UART_READ_CHAR_UUID,
     NORDIC_UART_WRITE_CHAR_UUID,
@@ -54,26 +56,6 @@ _MEMORY_STORE_REPEAT_COUNT = 55
 def _as_local_datetime(now: datetime) -> datetime:
     """Localize naive values while preserving an explicit local timezone."""
     return now.astimezone() if now.tzinfo is None else now
-
-
-def star_normal(key: int) -> bytes:
-    """Build the app's seven-byte StarCode normal frame."""
-    return b"\x5a\x01" + int(key).to_bytes(4, "big") + b"\xa5"
-
-
-def star_extended(key: int, value: int, value2: int = 0, value3: int = 0) -> bytes:
-    """Build the app's StarCode extended-value frame."""
-    return bytes([0x5A, 0xE0, 0x04, key & 0xFF, value & 0xFF, value2 & 0xFF, value3 & 0xFF, 0xA5])
-
-
-def star_motor_position(zone: int, position: int) -> bytes:
-    """Build a StarCode progress-motor frame for zone 0..4."""
-    return bytes([0x5A, 0xF0, 0x03, zone & 0xFF, max(0, min(100, position)), 0x00, 0xA5])
-
-
-def star_query(key: int) -> bytes:
-    """Build a StarCode query frame."""
-    return bytes([0x5A, key & 0xFF, 0x00, 0xA5])
 
 
 def wrap_control_box(payload: bytes) -> bytes:
@@ -125,22 +107,8 @@ def build_cb37_time(now: datetime) -> bytes:
 def build_wrapped_star_time(now: datetime) -> bytes:
     """Build the demo device's transparent StarCode time calibration frame."""
     local = _as_local_datetime(now)
-    inner = bytes(
-        [
-            0x5A,
-            0x14,
-            7,
-            (local.year - 2000) & 0xFF,
-            local.month,
-            local.day,
-            local.hour,
-            local.minute,
-            local.second,
-            local.isoweekday(),
-            0xA5,
-        ]
-    )
-    return wrap_control_box(inner)
+    fields = (local.month, local.day, local.hour, local.minute, local.second, local.isoweekday())
+    return wrap_control_box(star.clock(((local.year - 2000) & 0xFF, *fields)))
 
 
 def build_sleep_query_config() -> bytes:
@@ -238,40 +206,40 @@ def resolve_sleepstar_variant(manufacturer_data: dict[int, bytes] | None) -> str
 class SleepStarCommands:
     """Final SLEEPSTAR packets for integration-facing bed actions."""
 
-    STOP = wrap_control_box(star_normal(0x0310300F))
+    STOP = wrap_control_box(star.normal(0x0310300F))
 
-    HEAD_UP = wrap_control_box(star_normal(0x03103000))
-    HEAD_DOWN = wrap_control_box(star_normal(0x03103001))
-    FEET_UP = wrap_control_box(star_normal(0x03103002))
-    FEET_DOWN = wrap_control_box(star_normal(0x03103003))
-    LUMBAR_UP = wrap_control_box(star_normal(0x03103004))
-    LUMBAR_DOWN = wrap_control_box(star_normal(0x03103005))
-    PART4_UP = wrap_control_box(star_normal(0x03103008))
-    PART4_DOWN = wrap_control_box(star_normal(0x03103009))
-    PART5_UP = wrap_control_box(star_normal(0x0310300A))
-    PART5_DOWN = wrap_control_box(star_normal(0x0310300B))
-    HEAD_FEET_UP = wrap_control_box(star_normal(0x0310300C))
-    HEAD_FEET_DOWN = wrap_control_box(star_normal(0x0310300D))
+    HEAD_UP = wrap_control_box(star.normal(0x03103000))
+    HEAD_DOWN = wrap_control_box(star.normal(0x03103001))
+    FEET_UP = wrap_control_box(star.normal(0x03103002))
+    FEET_DOWN = wrap_control_box(star.normal(0x03103003))
+    LUMBAR_UP = wrap_control_box(star.normal(0x03103004))
+    LUMBAR_DOWN = wrap_control_box(star.normal(0x03103005))
+    PART4_UP = wrap_control_box(star.normal(0x03103008))
+    PART4_DOWN = wrap_control_box(star.normal(0x03103009))
+    PART5_UP = wrap_control_box(star.normal(0x0310300A))
+    PART5_DOWN = wrap_control_box(star.normal(0x0310300B))
+    HEAD_FEET_UP = wrap_control_box(star.normal(0x0310300C))
+    HEAD_FEET_DOWN = wrap_control_box(star.normal(0x0310300D))
 
-    PRESET_FLAT = wrap_control_box(star_normal(0x03103010))
-    PRESET_TV = wrap_control_box(star_normal(0x03103011))
-    PRESET_ZERO_G = wrap_control_box(star_normal(0x03103013))
-    PRESET_ANTI_SNORE = wrap_control_box(star_normal(0x03103016))
-    PRESET_LOUNGE = wrap_control_box(star_normal(0x03103017))
-    PRESET_MEMORY_1 = wrap_control_box(star_normal(0x0310301A))
-    PRESET_MEMORY_2 = wrap_control_box(star_normal(0x0310301B))
+    PRESET_FLAT = wrap_control_box(star.normal(0x03103010))
+    PRESET_TV = wrap_control_box(star.normal(0x03103011))
+    PRESET_ZERO_G = wrap_control_box(star.normal(0x03103013))
+    PRESET_ANTI_SNORE = wrap_control_box(star.normal(0x03103016))
+    PRESET_LOUNGE = wrap_control_box(star.normal(0x03103017))
+    PRESET_MEMORY_1 = wrap_control_box(star.normal(0x0310301A))
+    PRESET_MEMORY_2 = wrap_control_box(star.normal(0x0310301B))
     MEMORY_PRESETS = (PRESET_MEMORY_1, PRESET_MEMORY_2)
 
-    STORE_MEMORY_1 = wrap_control_box(star_normal(0x03103094))
-    STORE_MEMORY_2 = wrap_control_box(star_normal(0x03103095))
+    STORE_MEMORY_1 = wrap_control_box(star.normal(0x03103094))
+    STORE_MEMORY_2 = wrap_control_box(star.normal(0x03103095))
     MEMORY_STORE = (STORE_MEMORY_1, STORE_MEMORY_2)
 
-    LIGHT_TOGGLE = wrap_control_box(star_normal(0x03103070))
-    LIGHT_ON = wrap_control_box(star_normal(0x03103073))
-    LIGHT_OFF = wrap_control_box(star_normal(0x03103074))
+    LIGHT_TOGGLE = wrap_control_box(star.normal(0x03103070))
+    LIGHT_ON = wrap_control_box(star.normal(0x03103073))
+    LIGHT_OFF = wrap_control_box(star.normal(0x03103074))
 
-    QUERY_LIGHT = wrap_control_box(star_query(0xB0))
-    QUERY_MOTORS = wrap_control_box(star_query(0xD0))
+    QUERY_LIGHT = wrap_control_box(star.request(0xB0))
+    QUERY_MOTORS = wrap_control_box(star.request(0xD0))
 
 
 class SleepStarController(BedController):
@@ -836,7 +804,7 @@ class SleepStarController(BedController):
         except KeyError as err:
             raise ValueError(f"Unknown SLEEPSTAR motor: {motor}") from err
         await self.write_command(
-            wrap_control_box(star_motor_position(zone, max(0, min(100, int(position)))))
+            wrap_control_box(star.position_target(zone, max(0, min(100, int(position)))))
         )
 
     def angle_to_native_position(self, motor: str, angle: float) -> int:  # noqa: ARG002
@@ -1044,7 +1012,7 @@ class SleepStarController(BedController):
         if normalized == 0:
             await self.lights_off()
             return
-        await self._send_twice_then_stop(wrap_control_box(star_extended(0x00, normalized)))
+        await self._send_twice_then_stop(wrap_control_box(star.extended(0x00, normalized)))
         self._light_level = normalized
         self.forward_controller_state_updates(
             {"under_bed_lights_on": True, "light_level": normalized}
@@ -1054,7 +1022,7 @@ class SleepStarController(BedController):
         """Set one of the app's eight palette indices (0..7)."""
         if not 0 <= index <= 7:
             raise ValueError("SLEEPSTAR color index must be in range 0..7")
-        await self._send_twice_then_stop(wrap_control_box(star_extended(0x01, index)))
+        await self._send_twice_then_stop(wrap_control_box(star.extended(0x01, index)))
 
     async def massage_off(self) -> None:
         """Stop sonic massage by selecting the zero timer value."""
@@ -1063,17 +1031,17 @@ class SleepStarController(BedController):
     async def massage_mode_step(self) -> None:
         """Cycle through the five app-visible sonic modes."""
         self._massage_mode = (self._massage_mode + 1) % 5
-        await self._send_twice_then_stop(wrap_control_box(star_extended(0x08, self._massage_mode)))
+        await self._send_twice_then_stop(wrap_control_box(star.extended(0x08, self._massage_mode)))
 
     async def set_massage_intensity(self, zone: str, level: int) -> None:
         """Set head, foot, or combined sonic intensity from 0 through 6."""
         normalized = max(0, min(self.massage_intensity_max, int(level)))
         if zone == "head":
-            command = star_extended(0x0F, normalized)
+            command = star.extended(0x0F, normalized)
         elif zone == "foot":
-            command = star_extended(0x10, normalized)
+            command = star.extended(0x10, normalized)
         elif zone == "all":
-            command = star_extended(0x11, normalized, normalized)
+            command = star.extended(0x11, normalized, normalized)
         else:
             raise ValueError(f"Unsupported SLEEPSTAR sonic zone: {zone}")
         await self._send_twice_then_stop(wrap_control_box(command))
@@ -1092,7 +1060,7 @@ class SleepStarController(BedController):
                 encoded = self.massage_timer_options.index(int(minutes)) + 1
             except ValueError as err:
                 raise ValueError("SLEEPSTAR sonic timer must be 0, 10, 20, or 30 minutes") from err
-        await self._send_twice_then_stop(wrap_control_box(star_extended(0x0B, encoded)))
+        await self._send_twice_then_stop(wrap_control_box(star.extended(0x0B, encoded)))
         self._massage_timer_minutes = int(minutes)
         self.forward_controller_state_updates(
             {
@@ -1153,69 +1121,69 @@ class SleepStarController(BedController):
 
     async def media_previous(self) -> None:
         """Select the previous media track."""
-        await self.write_command(wrap_control_box(star_normal(0x03104018)))
+        await self.write_command(wrap_control_box(star.normal(0x03104018)))
 
     async def media_play_pause(self) -> None:
         """Toggle media playback."""
-        await self.write_command(wrap_control_box(star_normal(0x0310401A)))
+        await self.write_command(wrap_control_box(star.normal(0x0310401A)))
 
     async def media_next(self) -> None:
         """Select the next media track."""
-        await self.write_command(wrap_control_box(star_normal(0x03104019)))
+        await self.write_command(wrap_control_box(star.normal(0x03104019)))
 
     async def media_volume_up(self) -> None:
         """Increase media volume by one command step."""
-        await self.write_command(wrap_control_box(star_normal(0x03104016)))
+        await self.write_command(wrap_control_box(star.normal(0x03104016)))
 
     async def media_volume_down(self) -> None:
         """Decrease media volume by one command step."""
-        await self.write_command(wrap_control_box(star_normal(0x03104017)))
+        await self.write_command(wrap_control_box(star.normal(0x03104017)))
 
     async def usb_play(self) -> None:
         """Select USB playback."""
-        await self.write_command(wrap_control_box(star_normal(51400707)))
+        await self.write_command(wrap_control_box(star.normal(51400707)))
 
     async def usb_exit(self) -> None:
         """Exit USB playback."""
-        await self.write_command(wrap_control_box(star_normal(51396657)))
+        await self.write_command(wrap_control_box(star.normal(51396657)))
 
     async def play_noise(self, index: int) -> None:
         """Play one of the three app-visible noise tracks."""
         if index not in (1, 2, 3):
             raise ValueError("SLEEPSTAR noise index must be 1, 2, or 3")
-        await self.write_command(wrap_control_box(star_normal(0x0310401F + index)))
+        await self.write_command(wrap_control_box(star.normal(0x0310401F + index)))
 
     async def stop_noise(self) -> None:
         """Stop the current noise track."""
-        await self.write_command(wrap_control_box(star_normal(0x03104023)))
+        await self.write_command(wrap_control_box(star.normal(0x03104023)))
 
     async def set_noise_volume(self, level: int) -> None:
         """Set the app's raw noise-volume value."""
-        await self.write_command(wrap_control_box(star_extended(10, max(0, min(255, int(level))))))
+        await self.write_command(wrap_control_box(star.extended(10, max(0, min(255, int(level))))))
 
     async def set_sonic_type(self, sonic_type: int) -> None:
         """Select one of the two app-proven sonic types."""
         if sonic_type not in (0, 1):
             raise ValueError("SLEEPSTAR sonic type must be 0 or 1")
-        await self.write_command(wrap_control_box(star_normal((51396626, 51396627)[sonic_type])))
+        await self.write_command(wrap_control_box(star.normal((51396626, 51396627)[sonic_type])))
 
     async def reset_sound(self) -> None:
         """Reset sound settings with the app's dedicated key."""
-        await self.write_command(wrap_control_box(star_normal(51396661)))
+        await self.write_command(wrap_control_box(star.normal(51396661)))
 
     async def select_sound_preset(self, preset: int) -> None:
         """Select one of the six EQ presets in app order."""
         keys = (51396659, 51396666, 51396658, 51396660, 51396667, 51396668)
         if not 0 <= preset < len(keys):
             raise ValueError("SLEEPSTAR sound preset must be in range 0..5")
-        await self.write_command(wrap_control_box(star_normal(keys[preset])))
+        await self.write_command(wrap_control_box(star.normal(keys[preset])))
 
     async def set_sound_cutoff(self, value: int) -> None:
         """Set the raw sound-cutoff value."""
-        await self.write_command(wrap_control_box(star_extended(14, max(0, min(255, int(value))))))
+        await self.write_command(wrap_control_box(star.extended(14, max(0, min(255, int(value))))))
 
     async def set_eq_profile_value(self, value: int) -> None:
         """Set one of the app's eight EQ brands or two band selectors."""
         if not 1 <= value <= 10:
             raise ValueError("SLEEPSTAR EQ profile value must be in range 1..10")
-        await self.write_command(wrap_control_box(star_extended(13, value)))
+        await self.write_command(wrap_control_box(star.extended(13, value)))
