@@ -2,6 +2,7 @@
 
 Labels describe the app's controls, not verified physical motor semantics.
 The catalog deliberately does not share newer Richmat remote-code mappings.
+It stores each event's app token; the Richmat 6E codec builds its packets.
 """
 
 from __future__ import annotations
@@ -12,6 +13,8 @@ from functools import cache
 from pathlib import Path
 from types import MappingProxyType
 from typing import Literal, TypedDict, cast
+
+from .codec import richmat as codec
 
 LpLegacyState = Literal[1, 2, 3, 4, 5]
 LpLegacyConfidence = Literal["INFERRED", "TENTATIVE", "UNKNOWN"]
@@ -144,13 +147,24 @@ LP_LEGACY_PROFILE_CODES = (
 
 @dataclass(frozen=True, slots=True)
 class LpLegacyAction:
-    """One compiled event: None means undefined mode; empty bytes mean no write."""
+    """One compiled event: a character, optionally followed by four hex digits."""
 
     source_id: str
     token: str
-    legacy: bytes | None
-    framed: bytes | None
     state: LpLegacyState
+
+    @property
+    def legacy(self) -> bytes:
+        """The first character as one byte; an empty token writes nothing."""
+        return codec.encode("nordic", ord(self.token[0])) if self.token else b""
+
+    @property
+    def framed(self) -> bytes | None:
+        """``6E 01 hi lo sum8`` from the hex digits; None for a lone character."""
+        if len(self.token) == 1:
+            return None
+        hi, lo = divmod(int(self.token[1:] or "0", 16), 256)
+        return codec.command(lo, hi)
 
 
 @dataclass(frozen=True, slots=True)
@@ -176,8 +190,6 @@ class LpLegacyProfile:
 class _ActionData(TypedDict):
     source_id: str
     token: str
-    legacy: str | None
-    framed: str | None
     state: LpLegacyState
 
 
@@ -199,16 +211,6 @@ class _CatalogData(TypedDict):
     profiles: list[_ProfileData]
 
 
-def _load_action(data: _ActionData) -> LpLegacyAction:
-    return LpLegacyAction(
-        source_id=data["source_id"],
-        token=data["token"],
-        legacy=bytes.fromhex(data["legacy"]) if data["legacy"] is not None else None,
-        framed=bytes.fromhex(data["framed"]) if data["framed"] is not None else None,
-        state=data["state"],
-    )
-
-
 @cache
 def _load_profiles() -> MappingProxyType[str, LpLegacyProfile]:
     data = cast(
@@ -225,8 +227,8 @@ def _load_profiles() -> MappingProxyType[str, LpLegacyProfile]:
                         label=control["label"],
                         confidence=control["confidence"],
                         label_basis=control["label_basis"],
-                        press=_load_action(control["press"]),
-                        release=_load_action(control["release"]),
+                        press=LpLegacyAction(**control["press"]),
+                        release=LpLegacyAction(**control["release"]),
                     )
                     for control in profile["controls"]
                 ),

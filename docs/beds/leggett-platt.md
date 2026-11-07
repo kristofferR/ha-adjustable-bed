@@ -52,7 +52,7 @@ from that app's accepted report; the bed's name never decides it.
 | LP Control app with an LP Comfort Connect base | [Gen2](#gen2-variant); requires pairing |
 | L&P Adjustable Base app with an MlRM base | [MlRM](#mlrm-variant) |
 | L&P Adjustable Base app with a QRRM remote (Flat, Zero G, Custom 1, Custom 2) | [Richmat](richmat.md) with the **L&P QRRM** remote |
-| L&P Adjustable Base legacy app (2.2.1) | [L&P legacy](lp-legacy.md), which keeps its own row and settings |
+| L&P Adjustable Base legacy app (2.2.1) | [L&P legacy app](richmat.md#lp-legacy-app), which keeps its own row and settings |
 | I don't know: keep the current controls | The detected or chosen route |
 
 LP Control lists its own Okin products, but none is proven to change the Leggett
@@ -350,4 +350,12 @@ Multiple motors can be moved simultaneously by OR-ing their command values toget
 This variant uses Richmat WiLinke BLE hardware with Leggett & Platt codes: discrete
 massage up/down commands instead of the Richmat step commands, and held presets.
 Its frames, timing and controls are in the [L&P MlRM profile](richmat.md#lp-mlrm)
+of the Richmat codec guide.
+
+## Legacy App Variant (Richmat 6E)
+
+The L&P Adjustable Base 2.2.1 legacy app (`leggett_lp_legacy`) sends Richmat 6E
+packets built from its per-layout catalog tokens, as one bare byte or a
+`6E 01` frame depending on the entry's packet mode. Its layouts, packet modes,
+event states and timing are in the [L&P legacy app profile](richmat.md#lp-legacy-app)
 of the Richmat codec guide.

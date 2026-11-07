@@ -14,7 +14,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [MotoSleep](beds/motosleep.md) | Model-dependent HHC/MOTO controls, memory, massage and lighting |
 | [OCTO Smart Control](beds/octo.md) | Standard OCTO capability-advertised motor, memory, light and setting controls; separate Star2 variant. Hardware validation is deferred |
 | [Solace](beds/ff_frame.md#solace-name-routes) | Name-based profiles, named presets, optional massage/lights, exact S4-Y lift/tilt; explicit [Woosa Sleep](beds/ff_frame.md#woosa-sleep) profile with one Favourite memory |
-| [Leggett & Platt](beds/leggett-platt.md) | Gen2 motor control and RGB lighting; Okin tilt/lumbar and massage; [Prodigy / U Series](beds/okin-nframe.md#leggett-okin-family) layouts and timers, [L&P legacy](beds/lp-legacy.md) model settings |
+| [Leggett & Platt](beds/leggett-platt.md) | Gen2 motor control and RGB lighting; Okin tilt/lumbar and massage; [Prodigy / U Series](beds/okin-nframe.md#leggett-okin-family) layouts and timers, [L&P legacy](beds/richmat.md#lp-legacy-app) model settings |
 | [Reverie](beds/reverie.md) | Position control (0-100%), 4 presets, wave massage |
 | [Okimat/Okin](beds/okin-nframe.md#okimat) | 4 memory presets, massage, lights (requires pairing) |
 | [Okin 64-Bit](beds/okin-nframe.md#okin-64-bit) | 10-byte Nordic/custom OKIN protocol, lumbar, lights, massage |

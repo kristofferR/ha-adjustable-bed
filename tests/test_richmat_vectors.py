@@ -13,6 +13,10 @@ from custom_components.adjustable_bed.beds import richmat_mh_protocol as mh
 from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.goodvibe_catalog import ACTIONS as GOODVIBE_ACTIONS
 from custom_components.adjustable_bed.hjbed_catalog import ACTIONS
+from custom_components.adjustable_bed.lp_legacy_profiles import (
+    LP_LEGACY_PROFILE_CODES,
+    get_lp_legacy_profile,
+)
 from custom_components.adjustable_bed.profiles import richmat as profiles
 from tests.richmat_vectors import FROZEN_FRAMES
 
@@ -26,6 +30,7 @@ PROFILES = {
     "hjbed": profiles.HJBED,
     "eshine": profiles.ESHINE,
     "goodvibe": profiles.GOODVIBE,
+    "leggett_lp_legacy": profiles.LP_LEGACY,
     **{profile.key: profile for profile in profiles.RICHMAT_MH.values()},
     **{profile.key: profile for profile in profiles.RICHMAT_CLASSIC.values()},
 }
@@ -165,6 +170,18 @@ def _classic_census() -> set[str]:
     return {frame.hex() for frame in frames}
 
 
+def _lp_legacy_census() -> set[str]:
+    """Both packet modes of every event in every layout; an empty token writes nothing."""
+    actions = [
+        action
+        for code in LP_LEGACY_PROFILE_CODES
+        for control in get_lp_legacy_profile(code).controls
+        for action in (control.press, control.release)
+    ]
+    frames = {action.legacy for action in actions} | {action.framed for action in actions}
+    return {frame.hex() for frame in frames if frame}
+
+
 def _census(key: str) -> set[str]:
     if key == "hjbed":
         return _hjbed_census()
@@ -172,6 +189,8 @@ def _census(key: str) -> set[str]:
         return _eshine_census()
     if key == "goodvibe":
         return _goodvibe_census()
+    if key == "leggett_lp_legacy":
+        return _lp_legacy_census()
     if key.startswith("richmat_classic_"):
         return _classic_census()
     if key.startswith("richmat_mh_"):
@@ -199,6 +218,6 @@ def test_every_profile_has_vectors() -> None:
 def test_profile_sends_only_frozen_frames(key: str) -> None:
     census = _census(key)
     assert census <= FROZEN_FRAMES[key]
-    if key in FIXED_ROUTES:
-        # Without a report, the pre-v5 controller's frames are the complete vector set.
+    if key in FIXED_ROUTES or key == "leggett_lp_legacy":
+        # The pre-v5 controller's frames, or the LP catalog's, are the complete vector set.
         assert census == FROZEN_FRAMES[key]

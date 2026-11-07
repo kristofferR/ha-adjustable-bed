@@ -14,6 +14,7 @@ from custom_components.adjustable_bed import rmcontrol_protocol as rmcontrol_fra
 from custom_components.adjustable_bed.beds import eshine as eshine_bed
 from custom_components.adjustable_bed.beds import goodvibe as goodvibe_bed
 from custom_components.adjustable_bed.beds import hjbed as hjbed_bed
+from custom_components.adjustable_bed.beds import leggett_lp_legacy as lp_legacy_bed
 from custom_components.adjustable_bed.beds import richmat_mh_protocol as mh_frames
 from custom_components.adjustable_bed.beds import rmcontrol as rmcontrol_bed
 from custom_components.adjustable_bed.beds.hjbed import action_label as hjbed_label
@@ -21,6 +22,10 @@ from custom_components.adjustable_bed.cluster018_profiles import APP_NAMES as CL
 from custom_components.adjustable_bed.codec import richmat as richmat_codec
 from custom_components.adjustable_bed.goodvibe_catalog import ACTION_EXPANSIONS
 from custom_components.adjustable_bed.goodvibe_catalog import ACTIONS as GOODVIBE_ACTIONS
+from custom_components.adjustable_bed.lp_legacy_profiles import (
+    LP_LEGACY_PROFILE_CODES,
+    get_lp_legacy_profile,
+)
 from custom_components.adjustable_bed.profiles import richmat as richmat_profiles
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
@@ -36,6 +41,7 @@ _RICHMAT_NAMES = {
     "hjbed": "HJBed",
     "eshine": "Eshine",
     "goodvibe": "Good Vibe Sleep",
+    "leggett_lp_legacy": "L&P legacy app",
     **{
         profile.key: f"Richmat MH {name}"
         for profile, name in zip(
@@ -103,6 +109,7 @@ def _richmat_profiles() -> dict[str, richmat_profiles.RichmatProfile]:
             *richmat_profiles.RICHMAT_MH.values(),
             *richmat_profiles.RICHMAT_CLASSIC.values(),
             richmat_profiles.GOODVIBE,
+            richmat_profiles.LP_LEGACY,
         )
     }
 
@@ -127,6 +134,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
             for profile in richmat_profiles.RICHMAT_CLASSIC.values()
         },
         "goodvibe": (_const.BED_TYPE_GOODVIBE,),
+        "leggett_lp_legacy": (_const.BED_TYPE_LEGGETT_LP_LEGACY,),
     }
 
 
@@ -135,7 +143,7 @@ def _catalog_kind(key: str) -> str:
         return "per-product catalog"
     if key == "eshine":
         return "[fixed E6000 table](#eshine-commands)"
-    if key.startswith("richmat_classic_"):
+    if key.startswith("richmat_classic_") or key == "leggett_lp_legacy":
         return "per-layout catalog"
     return "per-model catalog"
 
@@ -193,7 +201,8 @@ def render_richmat_profiles() -> str:
             (
                 _RICHMAT_NAMES[key],
                 ", ".join(f"`{bed_type}`" for bed_type in types[key]),
-                ", ".join(transport.upper() for transport in profile.transports),
+                ", ".join(transport.upper() for transport in profile.transports)
+                or "configured characteristics",
                 _catalog_kind(key),
                 _lease(profile),
             )
@@ -634,6 +643,21 @@ def render_richmat_catalog_timing() -> str:
                     f"dropped after {_ms(goodvibe_bed.EXPIRY_S)}",
                 ),
                 ("Good Vibe Sleep", "Live sleep data", f"polled every {goodvibe_bed.POLL_S} s"),
+                (
+                    "L&P legacy app",
+                    "Held press",
+                    f"every {_ms(lp_legacy_bed.TICK_S)} for the entry pulse count, then its release",
+                ),
+                (
+                    "L&P legacy app",
+                    "Long press",
+                    f"one write after {_ms(lp_legacy_bed.TICK_S * lp_legacy_bed.LONG_PRESS_TICKS)}",
+                ),
+                (
+                    "L&P legacy app",
+                    "One-shot press",
+                    f"one write, then one {_ms(lp_legacy_bed.TICK_S)} tick",
+                ),
             ),
         )
     )
@@ -869,6 +893,55 @@ def render_goodvibe_startup() -> str:
     )
 
 
+def render_lp_legacy_tokens() -> str:
+    controls = [
+        control
+        for code in LP_LEGACY_PROFILE_CODES
+        for control in get_lp_legacy_profile(code).controls
+    ]
+    events = {
+        action.token: action for control in controls for action in (control.press, control.release)
+    }
+    releases = sum(control.release.token == "n006E" for control in controls)
+    notes = {
+        "n006E": f"Release of {releases:,} of the {len(controls):,} catalogued controls",
+        "$0024": "",
+        "40024": "6BRM; the two modes differ",
+        "2": "Single character, Legacy only",
+        "": "Empty token; Legacy writes nothing",
+    }
+
+    def cell(frame: bytes | None) -> str:
+        return "Undefined" if frame is None else _hex(frame) if frame else "Nothing"
+
+    return _block(
+        _table(
+            ("Token", "Legacy", "Framed", "Notes"),
+            (
+                (
+                    f"`{token}`" if token else "(empty)",
+                    cell(events[token].legacy),
+                    cell(events[token].framed),
+                    note,
+                )
+                for token, note in notes.items()
+            ),
+        )
+    )
+
+
+def render_lp_legacy_notifications() -> str:
+    return _block(
+        _table(
+            ("Frame", "Reported effect"),
+            (
+                (_hex(frame), f"`{effect}`")
+                for frame, effect in lp_legacy_bed.NOTIFICATION_EFFECTS.items()
+            ),
+        )
+    )
+
+
 BLOCKS: list[Block] = [
     (GUIDE, "richmat-profiles", render_richmat_profiles),
     (GUIDE, "richmat-transports", render_richmat_transports),
@@ -889,4 +962,6 @@ BLOCKS: list[Block] = [
     (GUIDE, "goodvibe-lights", render_goodvibe_lights),
     (GUIDE, "goodvibe-settings", render_goodvibe_settings),
     (GUIDE, "goodvibe-startup", render_goodvibe_startup),
+    (GUIDE, "lp-legacy-tokens", render_lp_legacy_tokens),
+    (GUIDE, "lp-legacy-notifications", render_lp_legacy_notifications),
 ]

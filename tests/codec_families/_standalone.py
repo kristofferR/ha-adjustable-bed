@@ -22,7 +22,6 @@ STANDALONE: dict[str, str] = {
     "hush_sleep_sxb": "sleep sensor without bed commands",
     "jensen": "own wire format",
     "leggett_gen2": "own wire format",
-    "leggett_lp_legacy": "own wire format",
     "linak": "own wire format",
     "logicdata": "own wire format",
     "logicdata_air_pump": "own wire format",

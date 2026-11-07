@@ -1,5 +1,6 @@
 """Legacy L&P catalog boundaries that differ from generic Richmat commands."""
 
+import hashlib
 from collections import Counter
 from dataclasses import FrozenInstanceError
 
@@ -80,6 +81,21 @@ def test_empty_token_is_distinct_from_undefined_packet_mode() -> None:
     assert legacy_only.press.framed is None
     assert legacy_only.release.legacy == b"\x6e"
     assert legacy_only.release.framed is None
+
+
+def test_tokens_rebuild_every_frozen_catalog_packet() -> None:
+    """SHA-256 of each event's Legacy and Framed packets as the pre-v5 catalog stored them."""
+    rows = [
+        f"{code} {item.key} {name} {action.legacy.hex()} "
+        f"{None if action.framed is None else action.framed.hex()}"
+        for code in LP_LEGACY_PROFILE_CODES
+        for item in get_lp_legacy_profile(code).controls
+        for name, action in (("press", item.press), ("release", item.release))
+    ]
+    assert len(rows) == 3430
+    assert hashlib.sha256("\n".join(rows).encode()).hexdigest() == (
+        "2b322486159cd5be573c838a7cb617eec04fb7ecaae833ba1da8a3f67d1e364e"
+    )
 
 
 def test_catalog_frames_have_valid_checksum_and_keep_uncertain_labels() -> None:
