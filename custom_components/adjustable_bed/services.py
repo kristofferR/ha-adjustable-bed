@@ -4645,6 +4645,9 @@ async def async_register_services(hass: HomeAssistant) -> None:
     async_register_casper_base_services(hass)
     async_register_gmmotor_services(hass)
     async_register_richmat_mh_services(hass)
+    from .row061_services import async_register_row061_services
+
+    async_register_row061_services(hass)
     async_register_cluster018_services(hass)
     async_register_motomotion_services(hass)
     async_register_hjbed_services(hass)

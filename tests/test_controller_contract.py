@@ -249,6 +249,8 @@ async def _create_controller_for_bed_type(bed_type: str) -> BedController:
         coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "6BRM", const.CONF_PROTOCOL_VARIANT: "avocadoecobase"})
         return await create_controller(coordinator, bed_type, "avocadoecobase", client)
 
+    if bed_type == "richmat_sleep_receiver":
+        return await create_controller(coordinator, bed_type, "wsilver2", client)
     if bed_type == const.BED_TYPE_HJBED:
         return await create_controller(coordinator, bed_type, "hj_bedbjrn", client)
     if bed_type == const.BED_TYPE_DOUBLESLEEP:

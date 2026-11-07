@@ -259,6 +259,7 @@ from .const import (
 )
 from .fsm_relax_discovery import matches_fsm_relax_candidate
 from .kaidi_protocol import extract_kaidi_advertisement, is_floyd_advertisement
+from .row061_profiles import DISPLAY_NAMES as ROW061_DISPLAY_NAMES
 from .svane_state import is_svane_discovery_name
 
 _LOGGER = logging.getLogger(__name__)
@@ -582,6 +583,8 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
 # are NOT included here - they're only kept for backward compatibility with
 # existing config entries. New users should select the protocol-based equivalents.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
+    **ROW061_DISPLAY_NAMES,
+    "richmat_sleep_receiver": "W.Silver / AMERICANSTAR / Bailey / TX sleep receiver (HJ_Bed)",
     "gmmotor": "GM Control (exact app product)",
     "gmmotor_sleep_mm": "GM Control sleep module (MM)",
     "gmmotor_sleep_sxb": "GM Control sleep module (SXB)",
@@ -717,6 +720,9 @@ def is_jensen_linon_name(name: str | None) -> bool:
 # users find them by app name. A bed type's own entry names the app its auto
 # variant selects; see AGENTS.md "Adding a New Bed Type".
 APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
+    **{("richmat_sleep_receiver", app): f"{label} separate sleep receiver"
+       for app, label in (("wsilver2", "W.Silver Products"), ("americanstar", "AMERICANSTAR"),
+                          ("bailey2", "Bailey's Bed Control"), ("tx", "TX"))},
     **{(BED_TYPE_GOODVIBE, profile): f"Good Vibe Sleep ({label})" for profile, label in GOODVIBE_PROFILES.items()},
     **{(BED_TYPE_ESHINE_OKIN, profile): f"eShine app ({label})" for profile, label in ESHINE_OKIN_PROFILES.items()},
     **{(BED_TYPE_CLUSTER018, app): label for app, label in CLUSTER018_APPS.items()},
