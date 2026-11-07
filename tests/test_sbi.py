@@ -7,6 +7,9 @@ from unittest.mock import MagicMock
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.sbi import (
@@ -34,6 +37,7 @@ from custom_components.adjustable_bed.const import (
     SIDE_RIGHT,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.services import SERVICE_SET_POSITION
 
 # -----------------------------------------------------------------------------
 # Test Fixtures
@@ -49,7 +53,7 @@ def mock_sbi_config_entry_data() -> dict:
         CONF_BED_TYPE: BED_TYPE_SBI,
         CONF_MOTOR_COUNT: 4,  # Head, foot, tilt, lumbar
         CONF_HAS_MASSAGE: True,
-        CONF_DISABLE_ANGLE_SENSING: True,  # SBI position parsing is not yet verified
+        CONF_DISABLE_ANGLE_SENSING: True,
         CONF_PREFERRED_ADAPTER: "auto",
         CONF_PROTOCOL_VARIANT: SBI_VARIANT_BOTH,
     }
@@ -573,6 +577,75 @@ class TestSBIMassage:
 
 class TestSBIPositionFeedback:
     """Test SBI position feedback notification parsing."""
+
+    async def test_sliders_are_the_reported_back_and_legs_axes(
+        self,
+        hass: HomeAssistant,
+        mock_sbi_config_entry_data: dict,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Four motors still get only the two axes the notifications report (#239)."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="SBI Test Bed",
+            data={**mock_sbi_config_entry_data, CONF_DISABLE_ANGLE_SENSING: False},
+            unique_id="AA:BB:CC:DD:EE:FF",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        registry = er.async_get(hass)
+        for key, max_angle in (("back", 60), ("legs", 32)):
+            entity_id = registry.async_get_entity_id(
+                "number", DOMAIN, f"AA:BB:CC:DD:EE:FF_{key}_position"
+            )
+            assert entity_id is not None
+            state = hass.states.get(entity_id)
+            assert state is not None
+            assert state.attributes["max"] == max_angle
+            assert state.attributes["unit_of_measurement"] == "°"
+        for key in ("head", "feet"):
+            assert (
+                registry.async_get_entity_id("number", DOMAIN, f"AA:BB:CC:DD:EE:FF_{key}_position")
+                is None
+            )
+
+    @pytest.mark.parametrize(
+        ("motor", "position", "message"),
+        [("head", 10, "Valid motors: back, legs"), ("back", 61, "Valid range: 0-60"), ("legs", 33, "Valid range: 0-32")],
+    )
+    async def test_set_position_rejects_axes_and_angles_it_cannot_report(
+        self,
+        hass: HomeAssistant,
+        mock_sbi_config_entry_data: dict,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+        motor: str,
+        position: int,
+        message: str,
+    ):
+        """Targets beyond the pulse tables would only stall the seek."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="SBI Test Bed",
+            data={**mock_sbi_config_entry_data, CONF_DISABLE_ANGLE_SENSING: False},
+            unique_id="AA:BB:CC:DD:EE:FF",
+        )
+        entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        (device,) = dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)
+
+        with pytest.raises(ServiceValidationError, match=message):
+            await hass.services.async_call(
+                DOMAIN,
+                SERVICE_SET_POSITION,
+                {"device_id": [device.id], "motor": motor, "position": position},
+                blocking=True,
+            )
 
     async def test_parse_notification_extracts_head_and_foot_angles(
         self,

@@ -61,6 +61,7 @@ from .const import (
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
+    BED_TYPE_SBI,
     BED_TYPE_SERTA_MP_REMOTE,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER_MCR,
@@ -1028,9 +1029,11 @@ async def _set_position_plan(
             controller.reports_percentage_position is True
         )
 
-        if bed_type in (BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_SERTA_MP_REMOTE):
-            # These direct setters own native bounds independently of generic
-            # angle overrides. Validate every axis/target before scheduling.
+        if bed_type in (BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_SBI):
+            # These controllers' position specs own their axes and native bounds,
+            # independently of generic angle overrides (SBI reports back/legs
+            # only, within its pulse tables). Validate every axis/target before
+            # scheduling.
             motor_configs = {
                 spec.position_key: {
                     "position_key": spec.position_key,

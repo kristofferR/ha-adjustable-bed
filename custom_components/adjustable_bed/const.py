@@ -3018,6 +3018,8 @@ BEDS_WITH_POSITION_FEEDBACK: Final = frozenset(
         BED_TYPE_SLEEPYS_BOX25,
         BED_TYPE_SLEEPSTAR,
         BED_TYPE_BEDJET_POWERLAYER,
+        # Head and foot angles come from the app's pulse lookup tables (#239).
+        BED_TYPE_SBI,
     }
 )
 
