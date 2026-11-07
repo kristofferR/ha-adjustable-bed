@@ -16,8 +16,8 @@ from homeassistant.util import dt as dt_util
 from ...card import CARD_HIDDEN
 from ...codec import richmat as codec
 from ...controller_state import StateKey
-from ...profiles.richmat import HJBED
-from ..base import BedController, require_controller
+from ...profiles.richmat import HJBED, RichmatProfile
+from ..base import BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
 from ..entity_specs import (
     ControllerButtonSpec,
@@ -127,7 +127,7 @@ AVAILABLE_ALARM_SLOTS: Final = StateKey[list[int]]("hjbed_available_alarm_slots"
 REJECTION: Final = StateKey[str | None]("hjbed_rejection")
 
 
-class HJBedController(BedController):
+class HJBedController(ProfileExecution[RichmatProfile], BedController):
     """Opt-in product profile; shared UUIDs never select an HJBed layout."""
 
     def __init__(self, coordinator: AdjustableBedCoordinator, *, profile: str) -> None:

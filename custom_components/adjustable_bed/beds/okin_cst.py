@@ -49,7 +49,7 @@ from ..profiles.okin_nframe import (
     OkinNFrameProfile,
     Tap,
 )
-from .base import BedController
+from .base import BedController, ProfileExecution
 from .builder import BuildContext
 from .entity_specs import ControllerStateBinarySensorSpec, MotorControlSpec
 from .furnimove.repair import CONF_OKIMAT_MODEL_ON_CST, async_refresh_furnimove_layout_issues
@@ -69,7 +69,7 @@ def _product(profile: OkinNFrameProfile) -> CstProduct:
 MEMORY_SAVE_RESPONSE_OBSERVED: Final = StateKey[bool]("memory_save_response_observed")
 
 
-class OkinCstController(BedController):
+class OkinCstController(ProfileExecution[OkinNFrameProfile], BedController):
     """Controller for OKIN CSTProtocol beds (Rize MF900, etc.).
 
     Uses 14-byte packets with separate motor and control fields.

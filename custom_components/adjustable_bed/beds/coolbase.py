@@ -38,7 +38,7 @@ from ..const import (
 from ..controller_state import StateKey
 from ..profiles import keeson as keeson_profiles
 from ..state_keys import UNDER_BED_LIGHTS_ON
-from .base import BedController
+from .base import BedController, ProfileExecution
 from .builder import BuildContext
 from .entity_specs import ControllerButtonSpec, ControllerStateSensorSpec
 
@@ -96,7 +96,7 @@ class CoolBaseCommands:
     FAN_SYNC = 0x00040000  # cmd2=0x04 - both fans together
 
 
-class CoolBaseController(BedController):
+class CoolBaseController(ProfileExecution[keeson_profiles.KeesonProfile], BedController):
     """Controller for Cool Base beds (Keeson BaseI5 with fan control)."""
 
     def __init__(

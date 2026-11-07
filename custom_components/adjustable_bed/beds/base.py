@@ -38,7 +38,12 @@ from ..controller_state import (
     StateKey,
     StateUpdate,
 )
-from ..execution import HOLD_CEILING_MS, NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
+from ..execution import (
+    HOLD_CEILING_MS,
+    NO_EXECUTION_CAPABILITIES,
+    ExecutionCapabilities,
+    ExecutionProfile,
+)
 from ..position_seek import PositionSeekPolicy
 from .entity_specs import (
     POSITION_UNIT_DEGREES,
@@ -196,13 +201,10 @@ class BedController(GattWriter):
     def execution(self) -> ExecutionCapabilities:
         """Return the held and concurrent execution this controller may use.
 
-        Family controllers carry their app's declaration on ``self.profile``;
-        standalone controllers override this property. Anything else keeps
-        the empty default: finite pulses, serialized motors.
+        Family controllers take their app profile's declaration through
+        ``ProfileExecution``; standalone controllers override this property.
+        Anything else keeps the empty default: finite pulses, serialized motors.
         """
-        execution = getattr(getattr(self, "profile", None), "execution", None)
-        if isinstance(execution, ExecutionCapabilities):
-            return execution
         return NO_EXECUTION_CAPABILITIES
 
     # Merged stream (#516). A controller that declares ``execution.concurrent``
@@ -2572,6 +2574,21 @@ class BedController(GattWriter):
     def capability_snapshot_policy(self) -> CapabilitySnapshotPolicy | None:
         """How ``capability_snapshot()`` persists; None keeps it session-only."""
         return None
+
+
+class ProfileExecution[P: ExecutionProfile | None]:
+    """Mixin for a family controller whose execution is its app profile's.
+
+    List it before ``BedController`` so its ``execution`` wins.
+    """
+
+    profile: P
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """Return the app profile's declaration, or the empty default without one."""
+        profile = self.profile
+        return NO_EXECUTION_CAPABILITIES if profile is None else profile.execution
 
 
 def controller_as[T](controller: BedController | None, interface: type[T]) -> T | None:

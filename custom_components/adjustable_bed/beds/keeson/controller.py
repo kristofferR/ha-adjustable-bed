@@ -72,7 +72,7 @@ from ...profiles.keeson import (
     is_ksbt03c_name as is_ksbt03c_name,
 )
 from ...state_keys import MASSAGE_TIMER_MINUTES, massage_intensity
-from ..base import BedController
+from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import (
     POSITION_UNIT_PERCENT,
@@ -136,7 +136,7 @@ _MOTOR_BITS: dict[str, tuple[int, int]] = {
 }
 
 
-class KeesonController(BedController):
+class KeesonController(ProfileExecution[KeesonProfile], BedController):
     """Controller for every Keeson profile that has no app controller of its own."""
 
     def __init__(

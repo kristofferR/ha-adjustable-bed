@@ -42,7 +42,7 @@ from ..const import (
 from ..controller_state import StateKey
 from ..profiles import keeson as profiles
 from ..profiles.keeson import KeesonProfile
-from .base import BedController
+from .base import BedController, ProfileExecution
 from .entity_specs import (
     ControllerButtonSpec,
     ControllerNumberSpec,
@@ -124,7 +124,7 @@ LAYOUTS: Final[dict[int, tuple[_Axis, ...]]] = {
 _LAYOUT_NAMES: Final = {2: "bedding2 (2M)", 3: "bedding3 (3M)", 4: "bedding4 (4M)"}
 
 
-class OreComfortBedController(BedController):
+class OreComfortBedController(ProfileExecution[KeesonProfile], BedController):
     """Controller for the artifact-verified ORE comfort-bed app profiles."""
 
     def __init__(self, coordinator: AdjustableBedCoordinator, *, app: str) -> None:

@@ -52,7 +52,7 @@ from ...const import (
     VARIANT_AUTO,
 )
 from ...profiles.okin_nframe import OKIMAT, OkinNFrameProfile, Tap
-from ..base import BedController
+from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import MotorControlSpec
 from ..furnimove.profiles import FURNIMOVE_PRODUCTION_IDS, FurniMoveProfile, get_furnimove_profile
@@ -228,7 +228,7 @@ OKIN_UUID_REMOTES: dict[str, OkinUuidRemoteConfig] = {
 DEFAULT_REMOTE = DEFAULT_OKIN_UUID_REMOTE
 
 
-class OkinUuidController(OkinNFrameController):
+class OkinUuidController(ProfileExecution[OkinNFrameProfile], OkinNFrameController):
     """Controller for beds using Okin UUID-based protocol.
 
     Note: These beds require BLE pairing before they can be controlled.

@@ -34,8 +34,8 @@ from ...const import (
     MALOUF_MEMORY_SLOTS_AUTO,
 )
 from ...profiles import keeson as keeson_profiles
-from ...profiles.malouf import NEW_OKIN
-from ..base import BedController
+from ...profiles.malouf import NEW_OKIN, MaloufRouteProfile
+from ..base import BedController, ProfileExecution
 from ..entity_specs import MotorControlSpec
 
 if TYPE_CHECKING:
@@ -209,7 +209,7 @@ def _save_memory_command(memory_num: int, device_name: str | None) -> int | None
     return None
 
 
-class MaloufNewOkinController(BedController):
+class MaloufNewOkinController(ProfileExecution[MaloufRouteProfile], BedController):
     """Malouf NEW_OKIN route: ``05 02`` key-word frames over Nordic UART.
 
     The bed advertises service 01000001-0000-1000-8000-00805f9b34fb. Frames come
@@ -478,7 +478,7 @@ class MaloufNewOkinController(BedController):
         await self.write_command(self._frame("massage_timer_step"))
 
 
-class MaloufLegacyOkinController(BedController):
+class MaloufLegacyOkinController(ProfileExecution[keeson_profiles.KeesonProfile], BedController):
     """Controller for Malouf beds using LEGACY_OKIN protocol.
 
     Protocol characteristics:

@@ -23,8 +23,8 @@ from ...codec import okin_5a as codec
 # starcode_m1x12 imports the RX characteristic from here.
 from ...const import NORDIC_UART_READ_CHAR_UUID as NORDIC_UART_READ_CHAR_UUID
 from ...const import STAR_ELEVATE_VARIANT_M1X12
-from ...profiles.okin_5a import ELEVATE
-from ..base import BedController
+from ...profiles.okin_5a import ELEVATE, Okin5AProfile
+from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import MotorControlSpec
 
@@ -54,7 +54,7 @@ class StarElevateCommands:
     INTERRUPT = ELEVATE.frame("interrupt")
 
 
-class StarElevateController(BedController):
+class StarElevateController(ProfileExecution[Okin5AProfile], BedController):
     """Controller for the separate ``ELEVATE*`` Nordic UART accessory."""
 
     profile = ELEVATE

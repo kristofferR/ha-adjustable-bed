@@ -22,7 +22,7 @@ from ...const import (
 )
 from ...controller_state import StateKey
 from ...profiles.ff_frame import MOTION_BED, MotionBedProfile
-from ..base import BedController, require_controller
+from ..base import BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
 from ..entity_specs import (
     ControllerButtonSpec,
@@ -151,7 +151,7 @@ def _field_key(name: str) -> StateKey[ScalarState]:
     return StateKey[ScalarState]("motion_bed_" + name)
 
 
-class MotionBedController(BedController, MotionBedModuleActions):
+class MotionBedController(ProfileExecution[MotionBedProfile], BedController, MotionBedModuleActions):
     """Expose app controls without inferring motors or thermostat temperatures."""
 
     profile: MotionBedProfile = MOTION_BED

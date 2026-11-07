@@ -24,7 +24,7 @@ from ..const import (
 )
 from ..profiles.okin_nframe import OKIN_64BIT_KEYS as _KEYS
 from ..profiles.okin_nframe import OKIN_64BIT_PROFILES, OkinNFrameProfile
-from .base import BedController
+from .base import BedController, ProfileExecution
 from .builder import BuildContext
 
 if TYPE_CHECKING:
@@ -38,7 +38,7 @@ OKIN_64BIT_VARIANT_NORDIC = "nordic"  # Protocol 25_42_02 - Nordic UART, fire-an
 OKIN_64BIT_VARIANT_CUSTOM = "custom"  # Protocol 36_33_04a - Custom OKIN, wait-for-response
 
 
-class Okin64BitController(BedController):
+class Okin64BitController(ProfileExecution[OkinNFrameProfile], BedController):
     """Controller for OKIN 64-bit beds.
 
     Supports two protocol variants:

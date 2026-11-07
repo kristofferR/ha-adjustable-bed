@@ -19,7 +19,7 @@ from bleak.exc import BleakError
 
 from ...const import KEESON_BASE_WRITE_CHAR_UUID, SLEEPYS_BOX24_WRITE_CHAR_UUID
 from ...profiles import keeson as keeson_profiles
-from ..base import BedController
+from ..base import BedController, ProfileExecution
 
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
@@ -71,7 +71,7 @@ class SleepysBox24Commands:
     ZERO_G = 0x60
 
 
-class SleepysBox15Controller(BedController):
+class SleepysBox15Controller(ProfileExecution[keeson_profiles.KeesonProfile], BedController):
     """Controller for Sleepy's Elite beds using BOX15 protocol.
 
     Protocol characteristics:

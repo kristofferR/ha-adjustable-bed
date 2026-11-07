@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Final, Literal
 from ...card import CARD_MASSAGE, CARD_UTILITY
 from ...codec import richmat as codec
 from ...controller_state import StateKey
-from ...profiles.richmat import ESHINE, Button
-from ..base import BedController
+from ...profiles.richmat import ESHINE, Button, RichmatProfile
+from ..base import BedController, ProfileExecution
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerStateSensorSpec,
@@ -117,7 +117,7 @@ def _action(action: Action) -> MotorCommandCallable:
     return invoke
 
 
-class EshineController(BedController):
+class EshineController(ProfileExecution[RichmatProfile], BedController):
     """The app's fixed controls, with serialized writes and guaranteed release."""
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:

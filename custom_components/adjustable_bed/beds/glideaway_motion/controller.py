@@ -22,7 +22,7 @@ from ...codec import keeson as codec
 from ...const import GLIDEAWAY_MOTION_MODELS
 from ...controller_state import StateKey
 from ...profiles import keeson as keeson_profiles
-from ..base import BedController
+from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import (
     ControllerButtonSpec,
@@ -110,7 +110,7 @@ def alarm_frame(enabled: bool, hour: int, minute: int, wake: str, now: datetime)
     return codec.alarm_table(codec.ALARM_WEEKLY, fields)
 
 
-class GlideawayMotionController(BedController):
+class GlideawayMotionController(ProfileExecution[keeson_profiles.KeesonProfile], BedController):
     """Manually selected app model, with bounded holds and serialized releases."""
 
     def __init__(self, coordinator: AdjustableBedCoordinator, *, model: str | None) -> None:

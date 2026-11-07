@@ -38,7 +38,7 @@ from ...profiles.okin_nframe import (
     SIMMONS_SAVE_HOLD_MS,
     OkinNFrameProfile,
 )
-from ..base import BedController
+from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import (
     ControllerButtonSpec,
@@ -190,7 +190,7 @@ def _action(name: str) -> MotorCommandCallable:
     return invoke
 
 
-class SimmonsController(BedController):
+class SimmonsController(ProfileExecution[OkinNFrameProfile], BedController):
     """Faithful SIMMONS app controls, clock sync and two-slot alarms."""
 
     def __init__(

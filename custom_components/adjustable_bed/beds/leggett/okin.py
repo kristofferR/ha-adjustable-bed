@@ -45,11 +45,12 @@ from ...profiles.okin_nframe import (
     LEGGETT_REFRESH_MS,
     LEGGETT_STORE_HOLD_MS,
     USERIES_SLEEP_MINUTES,
+    OkinNFrameProfile,
     leggett_alarm,
     leggett_sleep_timer,
 )
 from ...state_keys import UNDER_BED_LIGHTS_ON
-from ..base import BedController
+from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import (
     ControllerStateBinarySensorSpec,
@@ -85,7 +86,7 @@ class MotorDirection(Enum):
     STOP = "stop"
 
 
-class LeggettOkinController(BedController):
+class LeggettOkinController(ProfileExecution[OkinNFrameProfile], BedController):
     """Controller for Leggett & Platt beds using Okin protocol.
 
     These beds use the binary Okin protocol and require BLE pairing.

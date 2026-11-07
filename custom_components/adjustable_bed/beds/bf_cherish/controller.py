@@ -22,7 +22,7 @@ from ...codec import keeson as codec
 from ...controller_state import StateKey
 from ...profiles import keeson as keeson_profiles
 from ...state_keys import MASSAGE_TIMER_MINUTES
-from ..base import BedController
+from ..base import BedController, ProfileExecution
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerNumberSpec,
@@ -165,7 +165,7 @@ def _action(method: str, *args: object) -> MotorCommandCallable:
     return invoke
 
 
-class BfCherishController(BedController):
+class BfCherishController(ProfileExecution[keeson_profiles.KeesonProfile], BedController):
     """App-owned controls with HA serialization, cancellation and readiness checks."""
 
     def __init__(self, coordinator: Any, *, cherish: bool = False) -> None:

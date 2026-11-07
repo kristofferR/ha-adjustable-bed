@@ -34,7 +34,7 @@ from ..const import (
     SIDE_RIGHT,
 )
 from ..profiles import keeson as keeson_profiles
-from .base import BedController
+from .base import BedController, ProfileExecution
 from .builder import BuildContext
 
 if TYPE_CHECKING:
@@ -79,7 +79,7 @@ class RondureCommands:
     STOP = 0x00000000
 
 
-class RondureController(BedController):
+class RondureController(ProfileExecution[keeson_profiles.KeesonProfile], BedController):
     """Controller for Rondure / 1500 Tilt Base beds."""
 
     def __init__(

@@ -18,8 +18,8 @@ from bleak.exc import BleakError
 
 from ...codec import limoss as codec
 from ...const import LIMOSS_CHAR_UUID, LIMOSS_SERVICE_UUID
-from ...profiles.limoss import LEGACY
-from ..base import BedController
+from ...profiles.limoss import LEGACY, LimossProfile
+from ..base import BedController, ProfileExecution
 
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
@@ -45,7 +45,7 @@ MOTORS: dict[str, int] = {"back": 1, "legs": 2, "head": 3, "feet": 4}
 POSITION_MAP: dict[int, str] = {index * 0x10: name for name, index in MOTORS.items()}
 
 
-class LimossController(BedController):
+class LimossController(ProfileExecution[LimossProfile], BedController):
     """Controller for the legacy Limoss / Stawett route."""
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:

@@ -28,7 +28,7 @@ from ...profiles.okin_nframe import (
     OkinNFrameProfile,
 )
 from ...state_keys import UNDER_BED_LIGHTS_ON
-from ..base import BedController
+from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import (
     ControllerButtonSpec,
@@ -129,7 +129,7 @@ def _state_key(field: str) -> AnyStateKey:
     )
 
 
-class StarcodeAbm5_4Controller(BedController):
+class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedController):
     """C builds/parses, D selects roles/write mode, U consumes state/releases."""
 
     @property

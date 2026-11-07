@@ -21,7 +21,7 @@ from ..const import (
     KEESON_BASE_WRITE_CHAR_UUID,
 )
 from ..profiles import keeson as keeson_profiles
-from .base import BedController
+from .base import BedController, ProfileExecution
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -66,7 +66,7 @@ class ScottLivingCommands:
     PRESET_FLAT = 134217728  # 0x8000000 -> cmd3=0x08
 
 
-class ScottLivingController(BedController):
+class ScottLivingController(ProfileExecution[keeson_profiles.KeesonProfile], BedController):
     """Controller for Scott Living beds (9-byte Keeson variant)."""
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:

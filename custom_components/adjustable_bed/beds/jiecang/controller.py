@@ -26,7 +26,7 @@ from ...profiles.jiecang import (
     motion_command,
     preset_command,
 )
-from ..base import BedController
+from ..base import BedController, ProfileExecution
 from ..entity_specs import MotorControlSpec
 
 if TYPE_CHECKING:
@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
-class JiecangProfileController(BedController):
+class JiecangProfileController(ProfileExecution[JiecangProfile], BedController):
     """Drive the Jiecang codec from a profile; subclasses select the transport."""
 
     def __init__(

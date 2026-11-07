@@ -13,6 +13,7 @@ from homeassistant.util import dt as dt_util
 
 from ...codec import richmat as codec
 from ...controller_state import StateKey
+from ...execution import ExecutionCapabilities
 from ...profiles.casper import (
     ACTIONS,
     ANTI_SNORE,
@@ -25,7 +26,7 @@ from ...profiles.casper import (
     ProductRow,
     light_duration,
 )
-from ..base import BedController
+from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import ControllerButtonSpec, ControllerStateSensorSpec, MotorControlSpec
 from .protocol import (
@@ -74,6 +75,9 @@ class ProductProfile(Protocol):
     @property
     def row(self) -> ProductRow: ...
 
+    @property
+    def execution(self) -> ExecutionCapabilities: ...
+
 
 def action_label(name: str) -> str:
     return (
@@ -93,7 +97,7 @@ async def invoke(
     await target.async_perform_casper_base_action(action, save=save, music_page=music_page)
 
 
-class CasperBaseController(BedController, CasperBaseActions):
+class CasperBaseController(ProfileExecution[ProductProfile], BedController, CasperBaseActions):
     """Use selected product actions with live coherent service/characteristic pairing."""
 
     profiles: ClassVar[Mapping[str, ProductProfile]] = PROFILES

@@ -43,7 +43,7 @@ from ..const import (
 )
 from ..profiles import keeson as keeson_profiles
 from ..profiles.keeson import app_profile
-from .base import BedController
+from .base import BedController, ProfileExecution
 from .builder import BuildContext
 from .entity_specs import POSITION_UNIT_DEGREES, PositionNumberSpec, build_position_number_spec
 from .keeson.layout_app import AppController
@@ -130,7 +130,7 @@ class SBICommands:
     STOP = 0x00000000
 
 
-class SBIController(BedController):
+class SBIController(ProfileExecution[keeson_profiles.KeesonProfile], BedController):
     """Controller for SBI/Q-Plus beds (Costco).
 
     Supports dual-bed A/B/Both modes for split-king configurations.

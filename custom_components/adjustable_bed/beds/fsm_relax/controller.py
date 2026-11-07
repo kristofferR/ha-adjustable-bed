@@ -21,8 +21,8 @@ from ...const import (
     LIMOSS_SERVICE_UUID,
 )
 from ...controller_state import StateKey
-from ...profiles.limoss import FSM_LABELS, FSM_RELAX, Burst, fsm_relax_layout
-from ..base import BedController
+from ...profiles.limoss import FSM_LABELS, FSM_RELAX, Burst, LimossProfile, fsm_relax_layout
+from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import (
     ControllerButtonSpec,
@@ -81,7 +81,7 @@ def _action(opcode: int) -> Callable[[BedController], Coroutine[Any, Any, None]]
     return invoke
 
 
-class FsmRelaxController(BedController):
+class FsmRelaxController(ProfileExecution[LimossProfile], BedController):
     """Separate app semantics, with opaque signed memories and bounded sessions."""
 
     def __init__(

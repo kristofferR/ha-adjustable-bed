@@ -47,7 +47,7 @@ from ...const import (
 )
 from ...position_estimate import notify_release_failed
 from ...profiles.richmat import GGRM_ACTIONS, RICHMAT, Button, RichmatProfile
-from ..base import BedController
+from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import ControllerButtonSpec, MotorControlSpec
 from .features import get_richmat_features
@@ -94,7 +94,7 @@ async def _ggrm_button_action(controller: BedController, *, command: int) -> Non
     await target.tap_ggrm_action(command)
 
 
-class RichmatProfileController(BedController):
+class RichmatProfileController(ProfileExecution[RichmatProfile], BedController):
     """Fixed-table Richmat route: every frame comes from the profile's codes."""
 
     def __init__(

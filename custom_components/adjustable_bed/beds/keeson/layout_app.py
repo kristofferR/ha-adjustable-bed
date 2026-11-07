@@ -18,7 +18,7 @@ from ...card import CARD_MASSAGE_TIMER
 from ...codec import keeson as codec
 from ...controller_state import StateKey
 from ...profiles.keeson import AppAction, AppProfile
-from ..base import BedController
+from ..base import BedController, ProfileExecution
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -60,7 +60,7 @@ def name_frame(name: str, *, max_units: int = 15) -> bytes:
 APP_TIMER_STATUS: Final = StateKey[int | None]("app_timer_status")
 
 
-class AppController(BedController):
+class AppController(ProfileExecution[AppProfile], BedController):
     """One current GATT session, existing coordinator scheduling and bounded holds."""
 
     def __init__(

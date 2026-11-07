@@ -33,7 +33,7 @@ from ..profiles.okin_nframe import (
     ADJUSTABLE_LUMBAR_SAVE_HOLD_MS,
     OkinNFrameProfile,
 )
-from .base import BedController
+from .base import BedController, ProfileExecution
 from .builder import BuildContext
 from .entity_specs import ControllerButtonSpec, MotorCommandCallable, MotorControlSpec
 
@@ -182,7 +182,7 @@ def _action(name: str) -> MotorCommandCallable:
     return invoke
 
 
-class AdjustableLumbarController(BedController):
+class AdjustableLumbarController(ProfileExecution[OkinNFrameProfile | None], BedController):
     """Faithful Adjustable bed (Lumbar) app controls for all three tables."""
 
     def __init__(

@@ -22,8 +22,8 @@ from ...const import (
     CONF_LP_LEGACY_WRITE_UUID,
 )
 from ...controller_state import StateKey
-from ...profiles.richmat import LP_LEGACY
-from ..base import BedController
+from ...profiles.richmat import LP_LEGACY, RichmatProfile
+from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import ControllerButtonSpec, ControllerStateSensorSpec, MotorCommandCallable
 from .lp_legacy_profiles import LpLegacyAction, LpLegacyControl, get_lp_legacy_profile
@@ -57,7 +57,7 @@ NOTIFICATION: Final = StateKey[str]("lp_legacy_notification")
 NOTIFICATION_EFFECT: Final = StateKey[str]("lp_legacy_notification_effect")
 
 
-class LeggettLpLegacyController(BedController):
+class LeggettLpLegacyController(ProfileExecution[RichmatProfile], BedController):
     """Execute a user-selected app form against explicitly selected GATT endpoints."""
 
     def __init__(

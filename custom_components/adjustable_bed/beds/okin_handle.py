@@ -14,8 +14,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from ..profiles.okin_nframe import DEWERTOKIN
-from .base import BedController
+from ..profiles.okin_nframe import DEWERTOKIN, OkinNFrameProfile
+from .base import BedController, ProfileExecution
 from .builder import BuildContext
 from .okin_nframe import OkinNFrameController
 
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
-class OkinHandleController(OkinNFrameController):
+class OkinHandleController(ProfileExecution[OkinNFrameProfile], OkinNFrameController):
     """Head and feet motors, presets, two memories, massage and a light toggle."""
 
     profile = DEWERTOKIN

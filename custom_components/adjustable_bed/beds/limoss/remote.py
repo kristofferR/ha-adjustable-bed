@@ -24,8 +24,8 @@ from ...const import (
     LIMOSS_SERVICE_UUID,
 )
 from ...controller_state import StateKey
-from ...profiles.limoss import LIMOSS_REMOTE, REMOTE_CHANNELS, REMOTE_THEMES
-from ..base import BedController
+from ...profiles.limoss import LIMOSS_REMOTE, REMOTE_CHANNELS, REMOTE_THEMES, LimossProfile
+from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import (
     ControllerButtonSpec,
@@ -126,7 +126,7 @@ class _ReplyWaitTimeout(TimeoutError):
 _INFORMATION_TIMEOUT_SECONDS = 10
 
 
-class LimossRemoteController(BedController):
+class LimossRemoteController(ProfileExecution[LimossProfile], BedController):
     """Native rendered controls and local eight-slot position capture/recall."""
 
     def __init__(

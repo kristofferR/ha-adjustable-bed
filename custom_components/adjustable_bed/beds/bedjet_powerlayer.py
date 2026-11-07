@@ -35,7 +35,7 @@ from bleak.exc import BleakError
 
 from ..codec import bedjet_powerlayer as codec
 from ..profiles.bedjet_powerlayer import POWERLAYER, PowerLayerProfile, raw_count_to_angle
-from .base import BedController
+from .base import BedController, ProfileExecution
 from .entity_specs import POSITION_UNIT_DEGREES, PositionNumberSpec, build_position_number_spec
 
 if TYPE_CHECKING:
@@ -44,7 +44,7 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
-class BedJetPowerLayerController(BedController):
+class BedJetPowerLayerController(ProfileExecution[PowerLayerProfile], BedController):
     """Controller for the BedJet PowerLayer adjustable frame."""
 
     _write_with_response = False

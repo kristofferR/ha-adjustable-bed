@@ -38,11 +38,12 @@ from ...profiles.logicdata import (
     Family,
     HeldPreset,
     Layout,
+    LogicdataProfile,
     MassageMode,
     TransportChoice,
 )
 from ...state_keys import UNDER_BED_LIGHTS_ON, massage_intensity
-from ..base import BedController
+from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import (
     ControllerButtonSpec,
@@ -77,7 +78,7 @@ ALARM: Final = StateKey[bool]("logicdata_app_alarm")
 ALARM_CONFIG: Final = StateKey[dict[str, object]]("logicdata_app_alarm_config")
 
 
-class LogicdataAppController(BedController):
+class LogicdataAppController(ProfileExecution[LogicdataProfile], BedController):
     """Keep packet family, app edition, physical layout and GATT independent."""
 
     def __init__(

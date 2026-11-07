@@ -19,8 +19,9 @@ from ...profiles.okin_nframe import (
     CUSTOMATIC_MOTOR_KEYS,
     CUSTOMATIC_PROFILES,
     CUSTOMATIC_REFRESH_MS,
+    OkinNFrameProfile,
 )
-from ..base import BedController
+from ..base import BedController, ProfileExecution
 from ..entity_specs import (
     POSITION_AXIS_COMMANDS,
     ControllerButtonSpec,
@@ -59,7 +60,7 @@ def _button_callback(action: str) -> MotorCommandCallable:
     return invoke
 
 
-class CustomaticController(BedController):
+class CustomaticController(ProfileExecution[OkinNFrameProfile], BedController):
     """Keep app reachability independent of shared UUIDs or reported DIS strings."""
 
     def __init__(self, coordinator: AdjustableBedCoordinator, *, profile: str) -> None:

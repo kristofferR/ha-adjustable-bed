@@ -22,7 +22,7 @@ from ...const import (
 )
 from ...profiles import keeson as keeson_profiles
 from ...state_keys import MASSAGE_TIMER_MINUTES, massage_intensity
-from ..base import BedController
+from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import ControllerButtonSpec, MotorCommandCallable, MotorControlSpec
 
@@ -67,7 +67,7 @@ def _axis_action(axis: str, up: bool) -> MotorCommandCallable:
     return action
 
 
-class ComfortEnhancementsController(BedController):
+class ComfortEnhancementsController(ProfileExecution[keeson_profiles.KeesonProfile], BedController):
     """One address, three controls and an explicitly selected app layout."""
 
     def __init__(self, coordinator: AdjustableBedCoordinator, *, layout: str) -> None:

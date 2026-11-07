@@ -26,7 +26,7 @@ from ..const import CONF_BLE_DEVICE_NAME
 from ..controller_state import StateKey
 from ..detection import is_mac_like_name
 from ..profiles.ff_frame import BEDSENSE, BedSenseProfile, bedsense_layout
-from .base import BedController
+from .base import BedController, ProfileExecution
 from .builder import BuildContext
 from .entity_specs import (
     ControllerButtonSpec,
@@ -81,7 +81,7 @@ _SENSOR_CARDS = {
 }
 
 
-class BedSenseController(BedController):
+class BedSenseController(ProfileExecution[BedSenseProfile], BedController):
     """One GATT target, with explicit app-labelled controls for nine layouts."""
 
     profile: BedSenseProfile = BEDSENSE

@@ -26,7 +26,7 @@ from ...profiles.ff_frame import (
     solace_query_family,
 )
 from ...state_keys import LIGHT_LEVEL
-from ..base import BedController
+from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import (
     ControllerStateBinarySensorSpec,
@@ -109,7 +109,7 @@ def build_solace_alarm_command(
     )
 
 
-class SolaceController(BedController, SolaceAudioActions):
+class SolaceController(ProfileExecution[SolaceProfile], BedController, SolaceAudioActions):
     """Controller for Solace beds."""
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:

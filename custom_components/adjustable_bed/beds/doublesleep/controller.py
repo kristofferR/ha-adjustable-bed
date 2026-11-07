@@ -15,8 +15,8 @@ from ...app_session import app_session
 from ...card import CARD_LIGHTING, CARD_MASSAGE, CARD_UTILITY
 from ...const import CONF_BLE_DEVICE_NAME, CONF_PRODUCT_TYPE
 from ...controller_state import StateKey
-from ...profiles.okin_nframe import DOUBLESLEEP
-from ..base import BedController
+from ...profiles.okin_nframe import DOUBLESLEEP, OkinNFrameProfile
+from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import (
     ControllerButtonSpec,
@@ -82,7 +82,7 @@ def _field_key(field: str) -> StateKey[object]:
     return StateKey[object]("doublesleep_" + field)
 
 
-class DoubleSleepController(BedController):
+class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
     profile = DOUBLESLEEP
 
     def __init__(

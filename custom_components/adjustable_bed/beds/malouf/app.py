@@ -24,9 +24,9 @@ from ...const import (
     CONF_MALOUF_APP_TRANSPORT,
 )
 from ...controller_state import StateKey, StateUpdate
-from ...profiles.malouf import APP_PROFILES, MALOUF_APP_MODELS, Route
+from ...profiles.malouf import APP_PROFILES, MALOUF_APP_MODELS, MaloufAppProfile, Route
 from ...state_keys import UNDER_BED_LIGHTS_ON
-from ..base import BedController
+from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import (
     ControllerButtonSpec,
@@ -55,7 +55,7 @@ def _app_callback(action: str) -> MotorCommandCallable:
 MASSAGE_REMAINING_MINUTES: Final = StateKey[int | None]("massage_remaining_minutes")
 
 
-class MaloufAppController(BedController):
+class MaloufAppController(ProfileExecution[MaloufAppProfile], BedController):
     """Keep retail model, physical role, and GATT transport independent."""
 
     def __init__(

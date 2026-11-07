@@ -34,8 +34,8 @@ from ...card import (
 from ...const import CONF_BLE_DEVICE_NAME, RICHMAT_MH_APPS, RUF_RICHMAT_APPS, VARIANT_AUTO
 from ...controller_state import StateKey, StateUpdate
 from ...detection import is_mac_like_name
-from ...profiles.richmat import RICHMAT_MH
-from ..base import BedController
+from ...profiles.richmat import RICHMAT_MH, RichmatProfile
+from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import (
     ControllerButtonSpec,
@@ -407,7 +407,7 @@ class SessionFlags:
     waist: bool = False
 
 
-class RichmatMhController(BedController, YogaPresetActions):
+class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaPresetActions):
     """Faithful Richmat MH app controls for one selected model."""
 
     _app_groups: Mapping[str, AppGroup] = APP_GROUPS

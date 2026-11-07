@@ -54,8 +54,8 @@ from ..const import (
     SIDE_LEFT,
     SIDE_RIGHT,
 )
-from ..profiles.okin_nframe import OKIN_CB24
-from .base import BedController
+from ..profiles.okin_nframe import OKIN_CB24, OkinNFrameProfile
+from .base import BedController, ProfileExecution
 from .builder import BuildContext
 
 if TYPE_CHECKING:
@@ -131,7 +131,7 @@ def build_cbnew_light_command(is_on: bool) -> bytes:
     return bytes.fromhex("aa0000040105") + bytes([0x00, int(is_on), 0, 0, 0, 0])
 
 
-class OkinCB24Controller(BedController):
+class OkinCB24Controller(ProfileExecution[OkinNFrameProfile], BedController):
     """Controller for beds using Okin CB24 protocol over Nordic UART.
 
     Protocol discovered from SmartBed by Okin app analysis.

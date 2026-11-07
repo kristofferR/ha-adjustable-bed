@@ -17,7 +17,7 @@ from ...const import CONF_BLE_DEVICE_NAME
 from ...controller_state import StateKey
 from ...detection import is_mac_like_name
 from ...profiles import keeson as keeson_profiles
-from ..base import BedController
+from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import (
     ControllerButtonSpec,
@@ -125,7 +125,7 @@ def _action(name: str) -> MotorCommandCallable:
     return invoke
 
 
-class AdjustaMattressController(BedController):
+class AdjustaMattressController(ProfileExecution[keeson_profiles.KeesonProfile | None], BedController):
     """One physical receiver with explicit model/layout and serialized lifecycles."""
 
     def __init__(
