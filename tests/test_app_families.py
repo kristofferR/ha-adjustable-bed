@@ -37,7 +37,7 @@ def _flow(hass, family: AppFamily) -> AdjustableBedConfigFlow:
 
 
 def _offered(result: Any, family: AppFamily) -> list[str]:
-    options = result["data_schema"].schema[family.field].config["options"]
+    options = result["data_schema"].schema["choice"].config["options"]
     return [option if isinstance(option, str) else option["value"] for option in options]
 
 
@@ -57,7 +57,7 @@ async def test_each_family_row_asks_its_declared_answers(hass, family: AppFamily
     # Only a family that always offers Keep offers it on the bare row.
     keep = ["keep"] if family.offers_keep is keep_always else []
     assert _offered(result, family) == [*family.answers, *keep]
-    config = result["data_schema"].schema[family.field].config
+    config = result["data_schema"].schema["choice"].config
     if family.form is Form.DROPDOWN:
         assert "translation_key" not in config
     else:
@@ -74,7 +74,7 @@ async def test_each_answer_stages_its_route_and_settings(hass, family: AppFamily
     step = getattr(flow, f"async_step_{family.step}")
     await step()
     answer = family.answers[key]
-    result = await step({family.field: key})
+    result = await step({"choice": key})
     if answer.step is not None:
         # A narrowing step asks first; each of its answers is a route of its own.
         assert result["step_id"] == answer.step

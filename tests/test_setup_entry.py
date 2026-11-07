@@ -405,15 +405,15 @@ async def test_the_final_settings_come_after_the_apps_questions(hass, enable_cus
 
 
 async def test_the_vibradorm_question_offers_another_app(hass, mock_bluetooth_service_info):
-    """Vibradorm's question answers on its own field, and still searches every app."""
+    """Vibradorm's question answers on the shared field, and still searches every app."""
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context = hass, {}
     flow._discovery_info = mock_bluetooth_service_info
     flow._disambiguated_bed_type = const.BED_TYPE_VIBRADORM
     result = await flow.async_step_bluetooth_confirm()
     assert result["step_id"] == "vibradorm"
-    assert list(select_options(result, "app"))[-1] == "another"
-    result = await flow.async_step_vibradorm({"app": "another"})
+    assert list(select_options(result, "choice"))[-1] == "another"
+    result = await flow.async_step_vibradorm({"choice": "another"})
     assert result["step_id"] == "select_app"
 
 

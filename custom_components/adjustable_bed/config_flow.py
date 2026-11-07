@@ -953,13 +953,10 @@ def _default_setup_route(bed_type: str) -> str:
 
 
 def _offer_another_app(schema: vol.Schema) -> vol.Schema:
-    """Add "Another app or remote" to a family question's answers, before Keep.
-
-    The answer field is ``choice``, or ``app`` for Vibradorm's question.
-    """
+    """Add "Another app or remote" to a family question's answers, before Keep."""
     fields = dict(schema.schema)
     for marker, selector in fields.items():
-        if marker not in ("choice", "app") or not isinstance(selector, SelectSelector):
+        if marker != "choice" or not isinstance(selector, SelectSelector):
             continue
         options = list(selector.config["options"])
         values = [option if isinstance(option, str) else option["value"] for option in options]
@@ -2626,7 +2623,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if family.settled(visit):
             return await self._async_continue_route()
         offered = family.offered(visit)
-        choice = (user_input or {}).get(family.field)
+        choice = (user_input or {}).get("choice")
         if choice is None:
             choice = family.preselect(visit)
         if isinstance(choice, str) and (answer := offered.get(choice)) is not None:
@@ -2664,9 +2661,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             )
         )
         marker = (
-            vol.Required(family.field, default=family.suggest(visit))
+            vol.Required("choice", default=family.suggest(visit))
             if family.suggest is not None
-            else vol.Required(family.field)
+            else vol.Required("choice")
         )
         return self.async_show_form(
             step_id=family.step,
@@ -3614,7 +3611,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self, user_input: dict[str, Any] | None
     ) -> ConfigFlowResult | None:
         """Search every app when a family question's answer asks for another one."""
-        answer = (user_input or {}).get("choice", (user_input or {}).get("app"))
+        answer = (user_input or {}).get("choice")
         if self._another_app_step is None or answer != _ANOTHER_APP:
             return None
         return await self._async_search_every_app()

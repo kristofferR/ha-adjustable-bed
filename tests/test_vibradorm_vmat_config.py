@@ -302,7 +302,7 @@ async def test_public_options_switch_from_vmat_removes_remote_before_factory(has
     flow.hass = hass
     await flow.async_step_reconfigure()
     # The family step switches the app; the new app's questions follow.
-    rebuilt = await flow.async_step_vibradorm({"app": app})
+    rebuilt = await flow.async_step_vibradorm({"choice": app})
     assert rebuilt["type"] == FlowResultType.FORM
     assert not rebuilt["errors"]
     schema = rebuilt["data_schema"]
@@ -559,7 +559,7 @@ async def test_vmat_asks_its_remote_then_enters_existing_bond_flow(hass):
     flow.hass = hass
     flow._manual_data = {CONF_ADDRESS: "11:22:33:44:55:66", const.CONF_BED_TYPE: const.BED_TYPE_VIBRADORM_APP}
     # The family step chooses VMAT; its only question is the remote.
-    result = await flow.async_step_vibradorm({"app": "vmat"})
+    result = await flow.async_step_vibradorm({"choice": "vmat"})
     fields = {marker.schema for marker in result["data_schema"].schema}
     assert fields == {const.CONF_VIBRADORM_VMAT_REMOTE}
     with patch.object(flow, "async_step_manual_pairing", new=AsyncMock()) as pairing:

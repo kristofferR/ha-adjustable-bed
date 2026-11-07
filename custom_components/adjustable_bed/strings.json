@@ -465,7 +465,7 @@
         "title": "Vibradorm setup",
         "description": "Choose the app you normally use on your phone. We’ll ask for the matching remote or product next. You can keep your current setup, or choose Legacy setup for the previous controls.",
         "data": {
-          "app": "App or current setup"
+          "choice": "App or current setup"
         }
       },
       "migration_confirm": {

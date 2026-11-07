@@ -330,8 +330,6 @@ class AppFamily:
     # shows the route by its own label.
     routes_show_row: bool = True
     form: Form = Form.KEYS
-    # The answer field: "choice", except Vibradorm's.
-    field: str = "choice"
     keep_label: str = "keep"
     offers_keep: Callable[[Visit], bool] = keep_when_guided
     # How setup continues after Keep.
@@ -653,7 +651,6 @@ VIBRADORM_FAMILY: Final = AppFamily(
     routes=frozenset({BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC}),
     picks_route=False,
     form=Form.DROPDOWN,
-    field="app",
     keep_label="Keep current setup",
     offers_keep=lambda visit: visit.guided and not _on_legacy_vibradorm(visit),
     offer=_vibradorm_answers,

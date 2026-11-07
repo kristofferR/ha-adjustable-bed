@@ -81,7 +81,7 @@ async def test_every_setup_route_collects_app_then_pairs(hass, mock_bluetooth_se
     settings = {CONF_NAME: "App bed", const.CONF_DISCONNECT_AFTER_COMMAND: False, const.CONF_PREFERRED_ADAPTER: "auto"}
     result = await start_new_bed(flow, route, const.BED_TYPE_VIBRADORM_APP)
     assert result["step_id"] == "vibradorm"
-    result = await flow.async_step_vibradorm({"app": "caresse"})
+    result = await flow.async_step_vibradorm({"choice": "caresse"})
     assert result["step_id"] == "profile_questions"
     assert result["type"] == FlowResultType.FORM
     fields = {marker.schema: marker for marker in result["data_schema"].schema}
@@ -167,7 +167,7 @@ async def test_app_switch_in_the_family_step_discards_old_app_fields(hass, optio
         flow.context = {}
         flow._manual_data = dict(old)
     new_app = "werkmeister" if old_app == "caresse" else "caresse"
-    rendered = await flow.async_step_vibradorm({"app": new_app})
+    rendered = await flow.async_step_vibradorm({"choice": new_app})
     assert rendered["step_id"] == "profile_questions"
     assert rendered["data_schema"] is not None
     defaults = rendered["data_schema"]({})
@@ -762,7 +762,7 @@ async def test_guided_retained_setup_persists_literal_remote_and_independent_fea
     flow.context = {"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
     flow.hass = hass
     await flow.async_step_reconfigure()
-    await flow.async_step_vibradorm({"app": "caresse"})
+    await flow.async_step_vibradorm({"choice": "caresse"})
     with patch.object(flow, "async_step_manual_pairing", new=AsyncMock()) as pairing:
         await flow.async_step_profile_questions({
             const.CONF_VIBRADORM_CONTROL_TYPE: control,
