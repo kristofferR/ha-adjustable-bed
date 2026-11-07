@@ -9,14 +9,10 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds.kaidi import (
-    KAIDI_COMMAND_PROFILES,
-    KaidiCommands,
-    KaidiController,
-)
+from custom_components.adjustable_bed.beds.kaidi import KaidiController
+from custom_components.adjustable_bed.codec import kaidi as codec
 from custom_components.adjustable_bed.const import (
     CONF_KAIDI_ROOM_ID,
-    KAIDI_BROADCAST_VADDR,
     KAIDI_VARIANT_SEAT_1,
     KAIDI_VARIANT_SEAT_1_2,
     KAIDI_VARIANT_SEAT_2,
@@ -31,11 +27,14 @@ from custom_components.adjustable_bed.kaidi_protocol import (
     KAIDI_ADV_TYPE_SINGLE,
     extract_best_kaidi_advertisement,
     extract_kaidi_advertisement,
-    format_kaidi_node_address,
     kaidi_advertisement_to_dict,
     parse_kaidi_manufacturer_payload,
 )
-from custom_components.adjustable_bed.kaidi_variants import resolve_kaidi_variant
+from custom_components.adjustable_bed.profiles.kaidi import (
+    SEAT_1,
+    SEAT_PROFILES,
+    resolve_kaidi_variant,
+)
 
 BROADCAST_MANUFACTURER_DATA = {
     0xFFFF: bytes.fromhex("c0ff0278563412ffeeddccbbaa0000810100a004030201")
@@ -98,7 +97,7 @@ async def _prepare_controller(
     async def write_side_effect(_uuid: str, data: bytes, response: bool = True) -> None:
         del response
         assert notify_callback is not None
-        if data == controller._build_join_packet(0x12345678):
+        if data == codec.join(0x12345678):
             notify_callback(MagicMock(), bytearray([0x02, 0x16, 0x00]))
 
     mock_bleak_client.start_notify = AsyncMock(side_effect=start_notify)
@@ -176,9 +175,9 @@ def test_merge_kaidi_advertisement_snapshots() -> None:
     assert parsed.sofa_acu_no == 0x0100
 
 
-def test_format_kaidi_node_address() -> None:
+def test_node_address_formats_as_mac() -> None:
     """Ping response node addresses should format to standard MAC notation."""
-    assert format_kaidi_node_address(bytes.fromhex("ffeeddccbbaa")) == "AA:BB:CC:DD:EE:FF"
+    assert codec.node_address(bytes.fromhex("ffeeddccbbaa")) == "AA:BB:CC:DD:EE:FF"
 
 
 # ---------------------------------------------------------------------------
@@ -294,7 +293,7 @@ async def test_session_uses_advertised_vaddr_without_ping(mock_bleak_client: Mag
 
     async def write_side_effect(_uuid: str, data: bytes, response: bool = True) -> None:
         del response
-        if data == controller._build_join_packet(0x12345678):
+        if data == codec.join(0x12345678):
             assert notify_callback is not None
             notify_callback(MagicMock(), bytearray([0x02, 0x16, 0x00]))
 
@@ -305,7 +304,7 @@ async def test_session_uses_advertised_vaddr_without_ping(mock_bleak_client: Mag
 
     assert controller._room_id == 0x12345678
     assert controller._target_vaddr == 0x01020304
-    assert controller._own_vaddr == KAIDI_BROADCAST_VADDR
+    assert controller._own_vaddr == codec.BROADCAST
     assert mock_bleak_client.write_gatt_char.await_count == 1
 
 
@@ -328,7 +327,7 @@ async def test_session_pings_when_advertisement_lacks_vaddr(mock_bleak_client: M
     async def write_side_effect(_uuid: str, data: bytes, response: bool = True) -> None:
         del response
         assert notify_callback is not None
-        if data == controller._build_join_packet(0x12345678):
+        if data == codec.join(0x12345678):
             notify_callback(MagicMock(), bytearray([0x02, 0x16, 0x00]))
         elif data == controller._build_ping_packet():
             notify_callback(
@@ -367,7 +366,7 @@ async def test_session_uses_cached_room_id_when_manufacturer_data_is_missing(
     async def write_side_effect(_uuid: str, data: bytes, response: bool = True) -> None:
         del response
         assert notify_callback is not None
-        if data == controller._build_join_packet(0x12345678):
+        if data == codec.join(0x12345678):
             notify_callback(MagicMock(), bytearray([0x02, 0x16, 0x00]))
         elif data == controller._build_ping_packet():
             notify_callback(
@@ -450,7 +449,7 @@ async def test_stop_all_uses_dedicated_command_when_available(mock_bleak_client:
 
     calls = mock_bleak_client.write_gatt_char.await_args_list
     assert len(calls) == 1
-    assert calls[0].args[1] == controller._build_control_packet(KaidiCommands.STOP_ALL)
+    assert calls[0].args[1] == controller._build_control_packet(SEAT_1.stop_all)
 
 
 @pytest.mark.asyncio
@@ -769,7 +768,7 @@ def test_only_seat_1_2_supports_single_address_pairing() -> None:
 def test_primary_seat_profiles_have_verified_extended_commands() -> None:
     """Seat_1 and seat_2 profiles should include verified Kaidi OEM commands."""
     for variant_key in (KAIDI_VARIANT_SEAT_1, KAIDI_VARIANT_SEAT_2):
-        profile = KAIDI_COMMAND_PROFILES[variant_key]
+        profile = SEAT_PROFILES[variant_key]
         assert profile.back_up is not None, f"{variant_key} missing back_up"
         assert profile.waist_up is not None, f"{variant_key} missing waist_up"
         assert profile.neck_up is not None, f"{variant_key} missing neck_up"
@@ -782,7 +781,7 @@ def test_primary_seat_profiles_have_verified_extended_commands() -> None:
 
 def test_seat_3_profile_includes_verified_waist_commands() -> None:
     """Seat_3 should carry the waist opcodes confirmed in PLDataTrans.java."""
-    profile = KAIDI_COMMAND_PROFILES[KAIDI_VARIANT_SEAT_3]
+    profile = SEAT_PROFILES[KAIDI_VARIANT_SEAT_3]
     assert profile.waist_up == 0x19
     assert profile.waist_down == 0x1A
     assert profile.waist_stop == 0x1B
@@ -790,8 +789,8 @@ def test_seat_3_profile_includes_verified_waist_commands() -> None:
 
 def test_seat_1_2_profile_uses_seat_1_values() -> None:
     """seat_1_2 profile should have the same command values as seat_1."""
-    seat_1 = KAIDI_COMMAND_PROFILES[KAIDI_VARIANT_SEAT_1]
-    seat_1_2 = KAIDI_COMMAND_PROFILES[KAIDI_VARIANT_SEAT_1_2]
+    seat_1 = SEAT_PROFILES[KAIDI_VARIANT_SEAT_1]
+    seat_1_2 = SEAT_PROFILES[KAIDI_VARIANT_SEAT_1_2]
 
     assert seat_1_2.head_up == seat_1.head_up
     assert seat_1_2.foot_down == seat_1.foot_down
@@ -801,5 +800,5 @@ def test_seat_1_2_profile_uses_seat_1_values() -> None:
 
 def test_no_bed_variant_profiles_exist() -> None:
     """BED_* variant profiles must not exist — they used wrong command values."""
-    for key in KAIDI_COMMAND_PROFILES:
+    for key in SEAT_PROFILES:
         assert not key.startswith("bed_"), f"Found legacy BED profile: {key}"

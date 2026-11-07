@@ -1,7 +1,8 @@
 """ISleep com.kaidi_test4 1.6.3 (45), accepted standalone row064 evidence.
 
 One press and a matching release, no held refresh and no position telemetry.
-The independent app profile deliberately does not reuse sibling command tables.
+Frames come from the Kaidi mesh codec; the command table is this app's own
+profile (``profiles/kaidi.py``), never a sibling app's.
 """
 
 from __future__ import annotations
@@ -12,81 +13,14 @@ from typing import TYPE_CHECKING, Any, cast
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
-from ..const import KAIDI_NOTIFY_CHAR_UUID, KAIDI_WRITE_CHAR_UUID, SIDE_LEFT, SIDE_RIGHT
+from ..codec import kaidi as codec
+from ..const import SIDE_LEFT, SIDE_RIGHT
 from ..execution import ExecutionCapabilities
-from ..isleep_profile import validate_isleep_profile
-from ..kaidi_protocol import format_kaidi_node_address
+from ..profiles.kaidi import isleep_advertisement, validate_isleep_profile
 from .base import BedController, ControllerButtonSpec, MotorControlSpec
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
-
-# Values are the app's live UI, including Flat despite its misleading constant name.
-# tuple order: single/left, right, both (only role1 uses columns 2 and 3).
-COMMANDS: dict[str, tuple[int, int, int]] = {
-    "head_up": (1, 10, 19),
-    "head_down": (2, 11, 20),
-    "head_stop": (3, 12, 21),
-    "legs_up": (4, 13, 22),
-    "legs_down": (5, 14, 23),
-    "legs_stop": (6, 15, 24),
-    "all_up": (7, 16, 25),
-    "all_down": (8, 17, 26),
-    "all_stop": (9, 18, 27),
-    "flat": (28, 29, 30),
-    "save_1": (37, 45, 53),
-    "save_2": (38, 46, 54),
-    "save_3": (39, 47, 55),
-    "memory_1": (41, 49, 57),
-    "memory_2": (42, 50, 58),
-    "memory_3": (43, 51, 59),
-    "massage_on": (71, 73, 75),
-    "massage_off": (72, 74, 76),
-    "head_strength": (77, 78, 81),
-    "foot_strength": (79, 80, 82),
-    "timer_1": (83, 86, 89),
-    "timer_2": (84, 87, 90),
-    "timer_3": (85, 88, 91),
-    "light_on": (92, 94, 96),
-    "light_off": (93, 95, 97),
-    "zero_g": (98, 99, 100),
-    "anti_snore": (101, 102, 103),
-    "pattern_1": (107, 108, 109),
-    "pattern_2": (110, 111, 112),
-    "pattern_3": (113, 114, 115),
-    "pattern_cancel": (116, 117, 118),
-    "timer_cancel": (119, 120, 121),
-    "back_up": (122, 122, 122),
-    "back_down": (123, 123, 123),
-    "back_stop": (124, 124, 124),
-    "lumbar_up": (131, 131, 131),
-    "lumbar_down": (132, 132, 132),
-    "lumbar_stop": (133, 133, 133),
-    "new_all_up": (149, 149, 149),
-    "new_all_down": (150, 150, 150),
-    "new_all_stop": (151, 151, 151),
-}
-
-
-def room_frame(room: int, *, enroll: bool = False) -> bytes:
-    """Exact selected-room auth/enrollment encodings, signed Java LE32."""
-    return (
-        (b"\x01\x03" if enroll else b"\x01\x16\x01")
-        + (room & 0xFFFFFFFF).to_bytes(4, "little")
-        + b"1122"
-        + (b"\0" * 4 if enroll else b"")
-    )
-
-
-def control_frame(own: int, target: int, opcode: int, parameter: int) -> bytes:
-    """The retained parameter belongs to the physical connection, across sides."""
-    return (
-        b"\x03"
-        + (target & 0xFFFFFFFF).to_bytes(4, "little")
-        + b"\x20"
-        + (own & 0xFFFFFFFF).to_bytes(4, "little")
-        + bytes((1, opcode & 255, parameter & 255, 0))
-    )
 
 
 class IsleepController(BedController):
@@ -122,7 +56,7 @@ class IsleepController(BedController):
 
     @property
     def control_characteristic_uuid(self) -> str:
-        return KAIDI_WRITE_CHAR_UUID
+        return codec.WRITE_CHAR_UUID
 
     @property
     def requires_notification_channel(self) -> bool:
@@ -139,7 +73,7 @@ class IsleepController(BedController):
         return {SIDE_LEFT: 0, SIDE_RIGHT: 1}.get(self.command_side or "both", 2)
 
     def _opcode(self, action: str, lane: int | None = None) -> int:
-        return COMMANDS[action][self._lane if lane is None else lane]
+        return self.profile.commands[action][self._lane if lane is None else lane]
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
@@ -373,7 +307,7 @@ class IsleepController(BedController):
                 self._notification(sender, data)
 
         async with self._ble_lock:
-            await client.start_notify(KAIDI_NOTIFY_CHAR_UUID, notification)
+            await client.start_notify(codec.NOTIFY_CHAR_UUID, notification)
         if generation != self._generation:
             raise ConnectionError("ISleep disconnected while subscribing")
         self._notify_started = True
@@ -383,7 +317,7 @@ class IsleepController(BedController):
         try:
             if self._notify_started and client and client.is_connected:
                 async with self._ble_lock:
-                    await client.stop_notify(KAIDI_NOTIFY_CHAR_UUID)
+                    await client.stop_notify(codec.NOTIFY_CHAR_UUID)
         finally:
             self.on_disconnect()
 
@@ -392,25 +326,23 @@ class IsleepController(BedController):
 
     def _notification(self, _sender: BleakGATTCharacteristic, data: bytearray) -> None:
         frame = bytes(data)
-        self.forward_raw_notification(KAIDI_NOTIFY_CHAR_UUID, frame)
-        if len(frame) >= 3 and frame[:2] == b"\x02\x16":
-            self._auth_status = frame[2]
-            self._auth.set()
-        elif len(frame) >= 3 and frame[:2] == b"\x02\x03":
-            self._enroll_status = frame[2]
-            self._enrollment.set()
-        elif len(frame) >= 6 and frame[:2] == b"\x01\x0a":
-            self._own = int.from_bytes(frame[2:6], "little") or 0xFFFFFFFF
-            self._own_event.set()
-        elif len(frame) >= 10 and frame[:2] == b"\x01\x02":
-            self._target = None
-            self._roster.clear()
-        elif len(frame) >= 16 and frame[0] == 3 and frame[5] == 255:
-            if format_kaidi_node_address(frame[6:12]) != self._coordinator.address.upper():
-                return
-            target = int.from_bytes(frame[12:16], "little")
-            self._target = 0 if target in (0, 0xFFFFFFFE) else target
-            self._roster.set()
+        self.forward_raw_notification(codec.NOTIFY_CHAR_UUID, frame)
+        match codec.parse_notification(frame):
+            case codec.JoinReply(status) if status is not None:
+                self._auth_status = status
+                self._auth.set()
+            case codec.EnrollReply(status):
+                self._enroll_status = status
+                self._enrollment.set()
+            case codec.OwnAddress(own):
+                self._own = own or codec.BROADCAST
+                self._own_event.set()
+            case codec.RosterChange():
+                self._target = None
+                self._roster.clear()
+            case codec.PingReply(node, target) if node == self._coordinator.address.upper():
+                self._target = 0 if target in (0, 0xFFFFFFFE) else target
+                self._roster.set()
         # 20 has no telemetry; 2F is a phone alarm; library metadata has no control consumer.
 
     async def write_command(
@@ -422,7 +354,7 @@ class IsleepController(BedController):
     ) -> None:
         """One GATT write, no retry or hold refresh in the artifact."""
         await self._write_gatt_with_retry(
-            KAIDI_WRITE_CHAR_UUID, command, response=True, cancel_event=cancel_event
+            codec.WRITE_CHAR_UUID, command, response=True, cancel_event=cancel_event
         )
 
     async def _wait(self, event: asyncio.Event, timeout: float, generation: int) -> None:
@@ -441,7 +373,7 @@ class IsleepController(BedController):
             if not self._ready:
                 self._auth.clear()
                 self._auth_status = None
-                await self.write_command(room_frame(self.profile.room))
+                await self.write_command(codec.join(self.profile.room))
                 await self._wait(self._auth, 5, generation)
                 if self._auth_status != 0:
                     raise ConnectionError(
@@ -452,9 +384,7 @@ class IsleepController(BedController):
                     await self._wait(self._own_event, 5, generation)
                 self._ready = True
             self._roster.clear()
-            await self.write_command(
-                b"\x03\xff\xff\xff\xff\xfe" + cast(int, self._own).to_bytes(4, "little")
-            )
+            await self.write_command(codec.ping(cast(int, self._own)))
             await self._wait(self._roster, 5, generation)
             await self._flush_pending_ack()
 
@@ -462,7 +392,7 @@ class IsleepController(BedController):
         """Send a pending enrollment acknowledgment, clearing it only on success."""
         if not self._pending_ack:
             return
-        await self._send_opcode(69, cancel=asyncio.Event())
+        await self._send_opcode(self.profile.enroll_ack, cancel=asyncio.Event())
         self._pending_ack = False
         self._pending_room = None
         await self._coordinator.async_write_app_state(self, self.persisted_app_state)
@@ -471,7 +401,7 @@ class IsleepController(BedController):
         if self._own is None or self._target is None:
             raise ConnectionError("ISleep has no live current-MAC roster mapping")
         await self.write_command(
-            control_frame(self._own, self._target, opcode, self._parameter), cancel_event=cancel
+            codec.control(self._target, self._own, opcode, self._parameter), cancel_event=cancel
         )
 
     async def _action(self, action: str, *, parameter: int | None = None) -> None:
@@ -528,7 +458,7 @@ class IsleepController(BedController):
             ):
                 assert own is not None and target is not None
                 await self.write_command(
-                    control_frame(own, target, self._opcode(axis + "_stop", lane), self._parameter),
+                    codec.control(target, own, self._opcode(axis + "_stop", lane), self._parameter),
                     cancel_event=asyncio.Event(),
                 )
 
@@ -684,8 +614,6 @@ class IsleepController(BedController):
         """Explicit fresh-device enrollment; never reset or steal another room."""
         from homeassistant.components import bluetooth
 
-        from ..isleep_profile import isleep_advertisement
-
         info = bluetooth.async_last_service_info(
             self._coordinator.hass, self._coordinator.address, connectable=True
         )
@@ -699,8 +627,8 @@ class IsleepController(BedController):
         self._enrollment.clear()
         self._enroll_status = None
         try:
-            await self.write_command(room_frame(self.profile.room, enroll=True))
-            await self._wait(self._enrollment, 8, generation)
+            await self.write_command(codec.enroll(self.profile.room))
+            await self._wait(self._enrollment, self.profile.enroll_wait_s, generation)
             if self._enroll_status != 0:
                 raise ConnectionError(f"ISleep enrollment rejected ({self._enroll_status})")
             self._pending_ack = True
