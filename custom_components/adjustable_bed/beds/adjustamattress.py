@@ -45,6 +45,7 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -831,3 +832,10 @@ class AdjustaMattressController(BedController):
 
     async def program_memory(self, memory_num: int) -> None:
         raise NotImplementedError("The app defines no memory programming action")
+
+
+async def build_controller(ctx: BuildContext) -> AdjustaMattressController:
+    """Build the controller; the app's name rule reads only a live BLE name."""
+    return AdjustaMattressController(
+        ctx.coordinator, protocol_variant=ctx.variant, device_name=ctx.live_device_name
+    )

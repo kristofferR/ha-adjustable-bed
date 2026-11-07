@@ -2,8 +2,7 @@
 
 This codec follows the accepted M1X12 artifact report. It deliberately keeps
 raw Part numbers instead of assigning physical names to unverified actuators.
-The StarCode dialect's frames come from ``codec/okin_5a.py`` and the legacy
-dialect's from ``codec/okin_nframe.py``.
+Control frames for both dialects come from ``starcode_dialect.py``.
 """
 
 from __future__ import annotations
@@ -12,7 +11,8 @@ from collections.abc import Mapping
 from datetime import datetime
 from typing import Final
 
-from ..codec import okin_5a, okin_nframe
+from ..codec import okin_5a
+from .starcode_dialect import is_star
 
 type StateValue = str | int | float | bool | None | list[StateValue] | dict[str, StateValue]
 
@@ -36,53 +36,6 @@ def profile_from_name(name: str) -> str | None:
     if normalized.startswith("STAR25"):
         return "cb25"
     return None
-
-
-def manufacturer_dialect(data: bytes) -> str:
-    """Decode exact raw character codes; only case-insensitive ``star`` selects S."""
-    return "star" if "".join(chr(value) for value in data).lower() == "star" else "legacy"
-
-
-def normal_packet(key: int, dialect: str) -> bytes:
-    """Build one accepted M1X12 normal control frame."""
-    if dialect == "star":
-        return okin_5a.normal(key & 0xFFFFFFFF)
-    if dialect == "legacy":
-        return okin_nframe.frame40(key & 0xFFFFFFFF)
-    raise ValueError(f"Unknown M1X12 dialect: {dialect}")
-
-
-def long_packet(key: int) -> bytes:
-    """Build the ten-byte C-maker light command, a 64-bit Okin N-frame."""
-    return okin_nframe.frame(key & 0xFFFFFFFF, 8)
-
-
-def extended_packet(command: int, value: int, dialect: str) -> bytes:
-    """Build the accepted brightness/color/duration packet."""
-    if dialect == "star":
-        return okin_5a.extended(command & 0xFF, value & 0xFF)
-    if dialect == "legacy":
-        return okin_nframe.extended(command & 0xFF, value & 0xFF)
-    raise ValueError(f"Unknown M1X12 dialect: {dialect}")
-
-
-def position_packet(axis: int, target: int, dialect: str) -> bytes:
-    """Build a raw Part target frame, clamping both byte arguments."""
-    pair = bytes((max(0, min(axis, 255)), max(0, min(target, 255))))
-    if dialect == "star":
-        return okin_5a.position_target(*pair)
-    if dialect == "legacy":
-        return okin_nframe.position_target(*pair)
-    raise ValueError(f"Unknown M1X12 dialect: {dialect}")
-
-
-def query_packet(dialect: str) -> bytes:
-    """Build the profile's status query."""
-    if dialect == "star":
-        return okin_5a.request(0xB0)
-    if dialect == "legacy":
-        return okin_nframe.request(0xB0)
-    raise ValueError(f"Unknown M1X12 dialect: {dialect}")
 
 
 def time_packet(
@@ -254,8 +207,7 @@ def parse_notification(
     del previous  # Consumers merge deltas so untouched domains retain their prior values.
     if profile not in PROFILES:
         raise ValueError(f"Unknown Adjustable Comfort M1X12 profile: {profile}")
-    if dialect not in ("star", "legacy"):
-        raise ValueError(f"Unknown M1X12 dialect: {dialect}")
+    is_star(dialect)  # Rejects unknown dialects.
     if len(data) < 2 or data[0] != 0xA5:
         return {}
     match data[1]:

@@ -12,6 +12,7 @@ from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.actuator_groups import actuator_group_for
+from custom_components.adjustable_bed.bed_traits import bed_traits, bed_type_has_position_feedback
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedOptionsFlow,
@@ -22,7 +23,6 @@ from custom_components.adjustable_bed.const import (
     ADJUSTABLE_LUMBAR_VARIANTS,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_DIAGNOSTIC,
-    BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
     CONF_DISABLE_ANGLE_SENSING,
@@ -33,7 +33,6 @@ from custom_components.adjustable_bed.const import (
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
     SIDE_BOTH,
     VARIANT_AUTO,
-    bed_type_has_position_feedback,
     get_motor_pulse_defaults,
     requires_pairing,
 )
@@ -75,7 +74,7 @@ async def test_offline_factory_never_reads_the_display_name(variant, stored, bra
 
 def test_profile_constants_and_setup_options():
     assert BED_TYPE_ADJUSTABLE_LUMBAR in OFFLINE_CAPABILITY_SAFE_BED_TYPES
-    assert BED_TYPE_ADJUSTABLE_LUMBAR in BEDS_WITHOUT_ANGLE_FEEDBACK
+    assert bed_traits(BED_TYPE_ADJUSTABLE_LUMBAR).no_angle_feedback
     assert not bed_type_has_position_feedback(BED_TYPE_ADJUSTABLE_LUMBAR, VARIANT_AUTO)
     assert not requires_pairing(BED_TYPE_ADJUSTABLE_LUMBAR)
     assert get_motor_pulse_defaults(BED_TYPE_ADJUSTABLE_LUMBAR) == (10, 100)

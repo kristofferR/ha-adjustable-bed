@@ -30,10 +30,10 @@ from custom_components.adjustable_bed.beds.base import (
     build_position_number_spec,
 )
 from custom_components.adjustable_bed.const import (
-    BED_TYPE_CLUSTER018,
     BED_TYPE_LINAK,
     BED_TYPE_MOTION_BED,
     BED_TYPE_OKIMAT,
+    BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_SLEEP_NUMBER,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
@@ -324,7 +324,7 @@ _KEPT_BINARY = ControllerStateBinarySensorSpec("kept_flag", "kept_flag", "kept_f
 # (retired helper, entry data, controller state, rows it removed, rows that stay)
 RETIRED_HELPER_CASES = [
     pytest.param(
-        {CONF_BED_TYPE: BED_TYPE_CLUSTER018},
+        {CONF_BED_TYPE: BED_TYPE_RICHMAT_CLASSIC_APPS},
         {},
         [("number", "back_position"), ("number", "legs_position_left")],
         [],
@@ -371,7 +371,7 @@ RETIRED_HELPER_CASES = [
         id="number._async_remove_stale_controller_numbers",
     ),
     pytest.param(
-        {CONF_BED_TYPE: BED_TYPE_CLUSTER018, CONF_DISABLE_ANGLE_SENSING: False},
+        {CONF_BED_TYPE: BED_TYPE_RICHMAT_CLASSIC_APPS, CONF_DISABLE_ANGLE_SENSING: False},
         {},
         [("sensor", "back_angle"), ("sensor", "legs_angle")],
         [],

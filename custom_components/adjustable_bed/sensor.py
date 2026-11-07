@@ -17,18 +17,15 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory, Platform
 from homeassistant.core import HomeAssistant, callback
 
+from .bed_traits import bed_traits
 from .const import (
     BED_TYPE_LINAK,
-    BED_TYPE_REVERIE,
-    BED_TYPE_REVERIE_NIGHTSTAND,
-    BEDS_WITH_ANGLE_SENSING,
     CONF_BED_TYPE,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_PROTOCOL_VARIANT,
     DEFAULT_MOTOR_COUNT,
     DOMAIN,
-    bed_type_has_position_feedback,
 )
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
@@ -157,9 +154,7 @@ def _sensor_entities_for(
     bed_type = entry.data.get(CONF_BED_TYPE)
     protocol_variant = entry.data.get(CONF_PROTOCOL_VARIANT)
     has_massage = entry.data.get(CONF_HAS_MASSAGE, False)
-    has_angle_feedback = bed_type in BEDS_WITH_ANGLE_SENSING
-    if bed_type in (BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND):
-        has_angle_feedback = bed_type_has_position_feedback(bed_type, protocol_variant)
+    has_angle_feedback = bed_traits(bed_type, protocol_variant).angle_sensors
     # capability_controller: an offline paired side still gets its sensors built
     # from a client-free controller minted from config (see coordinator).
     controller = coordinator.capability_controller
@@ -222,7 +217,7 @@ class AdjustableBedAngleSensor(AdjustableBedEntity, SensorEntity):
         """Initialize the sensor."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._unregister_callback: Callable[[], None] | None = None
 
@@ -269,7 +264,7 @@ class AdjustableBedMassageSensor(AdjustableBedEntity, SensorEntity):
         """Initialize the massage sensor."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._unregister_callback: Callable[[], None] | None = None
 

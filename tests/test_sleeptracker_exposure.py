@@ -15,6 +15,7 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
+from custom_components.adjustable_bed.bed_traits import bed_traits
 from custom_components.adjustable_bed.beds.sleeptracker import SleeptrackerController
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
@@ -61,7 +62,7 @@ async def test_every_setup_route_collects_processor_profile(
     assert data["has_massage"] is True and data["disable_angle_sensing"] is True
     assert data["motor_count"] == 3
     assert data["sleeptracker_foundation"] == "Unspecified"
-    assert const.BED_TYPE_SLEEPTRACKER in const.BEDS_WITHOUT_ANGLE_FEEDBACK
+    assert bed_traits(const.BED_TYPE_SLEEPTRACKER).no_angle_feedback
     assert "Sleeptracker" in BED_TYPE_DISPLAY_NAMES[const.BED_TYPE_SLEEPTRACKER]
 
 
@@ -136,7 +137,6 @@ async def test_safety_light_uses_app_button_without_an_inferred_assumed_light(
     runtime.entity_side = None
     runtime.has_massage = True
     runtime.entity_unique_id.side_effect = lambda key: "processor_" + key
-    runtime.entity_translation_key.side_effect = lambda key: key
     controller._restricted = restricted
     controller._control = AsyncMock()
     buttons = {entity.translation_key: entity for entity in _button_entities_for(hass, runtime)}
@@ -155,7 +155,6 @@ async def test_profile_change_builds_only_the_current_sleeptracker_buttons(hass)
     runtime.entity_side = "left"
     runtime.has_massage = True
     runtime.entity_unique_id.side_effect = lambda key: f"processor_{key}_left"
-    runtime.entity_translation_key.side_effect = lambda key: key
     old._restricted = True
     previous = {spec.key for spec in old.controller_button_specs}
     current = SleeptrackerController(runtime, model="ergo", restricted=False)
@@ -181,7 +180,6 @@ async def test_profile_change_builds_only_the_current_sleeptracker_state(hass, m
     runtime.device_info = {}
     runtime.entity_side = "left"
     runtime.entity_unique_id.side_effect = lambda key: f"processor_{key}_left"
-    runtime.entity_translation_key.side_effect = lambda key: key
     previous = {
         (domain, spec.key)
         for domain, specs in (
@@ -484,7 +482,6 @@ async def test_platform_entities_route_actions_and_show_only_published_state(has
     runtime.disable_angle_sensing = True
     runtime.controller_state = {}
     runtime.entity_unique_id.side_effect = lambda key: "processor_" + key
-    runtime.entity_translation_key.side_effect = lambda key: key
     runtime.handle_controller_state_updates.side_effect = runtime.controller_state.update
     selects = {e.translation_key: e for e in _select_entities_for(hass, runtime)}
     numbers = {e.translation_key: e for e in _number_entities_for(hass, runtime)}

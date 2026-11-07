@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 from bleak.exc import BleakError
@@ -29,10 +29,27 @@ from custom_components.adjustable_bed.const import (
     RICHMAT_REMOTE_AUTO,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.position_seek import PositionFeedbackError
+from custom_components.adjustable_bed.position_seek import PositionFeedbackError, PositionSeekPolicy
 from tests.coordinator_patches import patch_coordinator_global
 
 from .conftest import TEST_ADDRESS, TEST_NAME, make_controller_mock
+
+
+class _PulseStepPolicy(PositionSeekPolicy):
+    """Pulse-driven policy that records its custom seek steps."""
+
+    reverses_on_overshoot = False
+
+    def __init__(self, controller: MagicMock, **tuning: float | bool) -> None:
+        super().__init__(controller)
+        for name, value in tuning.items():
+            assert name in vars(PositionSeekPolicy), f"unknown seek tuning: {name}"
+            setattr(self, name, value)
+        self.steps = AsyncMock()
+
+    async def async_issue_step(self, position_key, moving_up, default_step) -> None:
+        del default_step
+        await self.steps(position_key, moving_up)
 
 
 class TestCoordinatorPositionSeek:
@@ -130,10 +147,9 @@ class TestCoordinatorPositionSeek:
 
         controller = make_controller_mock()
         controller.supports_direct_position_control = False
-        controller.reverses_position_seek_on_overshoot = False
-        controller.uses_custom_position_seek_steps = True
-        controller.seek_position_step = AsyncMock()
         controller.auto_stops_on_idle = True
+        policy = _PulseStepPolicy(controller)
+        controller.position_seek_policy = policy
         coordinator._controller = controller
 
         move_up = AsyncMock()
@@ -164,7 +180,7 @@ class TestCoordinatorPositionSeek:
                 lambda c: move_stop(c),
             )
 
-        controller.seek_position_step.assert_awaited_once_with("legs", True, 20.0)
+        policy.steps.assert_awaited_once_with("legs", True)
         move_up.assert_not_awaited()
         move_down.assert_not_awaited()
         move_stop.assert_not_awaited()
@@ -182,8 +198,6 @@ class TestCoordinatorPositionSeek:
 
         controller = make_controller_mock()
         controller.supports_direct_position_control = False
-        controller.reverses_position_seek_on_overshoot = True
-        controller.uses_custom_position_seek_steps = False
         controller.auto_stops_on_idle = True
         coordinator._controller = controller
 
@@ -231,11 +245,9 @@ class TestCoordinatorPositionSeek:
 
         controller = make_controller_mock()
         controller.supports_direct_position_control = False
-        controller.reverses_position_seek_on_overshoot = False
-        controller.uses_custom_position_seek_steps = True
-        controller.position_seek_tolerance = 0.5
-        controller.seek_position_step = AsyncMock()
         controller.auto_stops_on_idle = True
+        policy = _PulseStepPolicy(controller, tolerance=0.5)
+        controller.position_seek_policy = policy
         coordinator._controller = controller
 
         move_up = AsyncMock()
@@ -266,7 +278,7 @@ class TestCoordinatorPositionSeek:
             )
 
         assert read_positions.await_count == 3
-        controller.seek_position_step.assert_awaited_once_with("legs", True, 10.0)
+        policy.steps.assert_awaited_once_with("legs", True)
         move_up.assert_not_awaited()
         move_down.assert_not_awaited()
         move_stop.assert_not_awaited()
@@ -284,12 +296,9 @@ class TestCoordinatorPositionSeek:
 
         controller = make_controller_mock()
         controller.supports_direct_position_control = False
-        controller.reverses_position_seek_on_overshoot = False
-        controller.uses_custom_position_seek_steps = True
-        controller.position_seek_tolerance = 0.5
-        controller.position_seek_stall_count = 1
-        controller.seek_position_step = AsyncMock()
         controller.auto_stops_on_idle = True
+        policy = _PulseStepPolicy(controller, tolerance=0.5, stall_count=1)
+        controller.position_seek_policy = policy
         coordinator._controller = controller
 
         move_up = AsyncMock()
@@ -319,9 +328,7 @@ class TestCoordinatorPositionSeek:
                 lambda c: move_stop(c),
             )
 
-        assert controller.seek_position_step.await_count == 2
-        controller.seek_position_step.assert_any_await("legs", True, 10.0)
-        controller.seek_position_step.assert_any_await("legs", True, 3.0)
+        assert policy.steps.await_args_list == [call("legs", True), call("legs", True)]
         move_up.assert_not_awaited()
         move_down.assert_not_awaited()
         move_stop.assert_not_awaited()
@@ -339,15 +346,16 @@ class TestCoordinatorPositionSeek:
 
         controller = make_controller_mock()
         controller.supports_direct_position_control = False
-        controller.reverses_position_seek_on_overshoot = False
-        controller.uses_custom_position_seek_steps = True
-        controller.position_seek_tolerance = 0.5
-        controller.position_seek_stall_count = 3
-        controller.position_seek_stall_threshold = 0.2
-        controller.chains_position_seek_steps_while_moving = True
-        controller.position_seek_chain_min_remaining_distance = 5.0
-        controller.seek_position_step = AsyncMock()
         controller.auto_stops_on_idle = True
+        policy = _PulseStepPolicy(
+            controller,
+            tolerance=0.5,
+            stall_count=3,
+            stall_threshold=0.2,
+            chains_steps_while_moving=True,
+            chain_min_remaining_distance=5.0,
+        )
+        controller.position_seek_policy = policy
         coordinator._controller = controller
 
         move_up = AsyncMock()
@@ -377,9 +385,7 @@ class TestCoordinatorPositionSeek:
                 lambda c: move_stop(c),
             )
 
-        assert controller.seek_position_step.await_count == 2
-        controller.seek_position_step.assert_any_await("legs", True, 20.0)
-        controller.seek_position_step.assert_any_await("legs", True, 10.0)
+        assert policy.steps.await_args_list == [call("legs", True), call("legs", True)]
         move_up.assert_not_awaited()
         move_down.assert_not_awaited()
         move_stop.assert_not_awaited()
@@ -397,9 +403,11 @@ class TestCoordinatorPositionSeek:
 
         controller = make_controller_mock()
         controller.supports_direct_position_control = False
-        controller.reverses_position_seek_on_overshoot = False
-        controller.uses_custom_position_seek_steps = False
         controller.auto_stops_on_idle = False
+        policy = PositionSeekPolicy(controller)
+        policy.reverses_on_overshoot = False
+        policy.timeout = 0
+        controller.position_seek_policy = policy
         coordinator._controller = controller
 
         move_up = AsyncMock()
@@ -409,13 +417,7 @@ class TestCoordinatorPositionSeek:
         controller.read_positions = AsyncMock(
             side_effect=lambda _count: coordinator._handle_position_update("legs", 0.0)
         )
-        with (
-            patch(
-                "custom_components.adjustable_bed.position_seek.POSITION_SEEK_TIMEOUT",
-                0,
-            ),
-            pytest.raises(TimeoutError, match="Position seek timed out"),
-        ):
+        with pytest.raises(TimeoutError, match="Position seek timed out"):
             await coordinator.async_seek_position(
                 "legs",
                 20.0,
@@ -495,12 +497,13 @@ class TestCoordinatorPositionSeek:
         assert pairing_attempt["bond_marker_before_attempt"] is True
         assert pairing_attempt["requested"] is False
 
-    @pytest.mark.usefixtures("mock_coordinator_connected")
-    async def test_connect_richmat_auto_remote_uses_ble_name_detection(
+    async def test_richmat_auto_remote_uses_live_ble_name_detection(
         self,
         hass: HomeAssistant,
     ):
-        """Richmat auto remote should be inferred from BLE name when available."""
+        """An Auto Richmat remote is inferred from a live BLE name, never offline."""
+        from custom_components.adjustable_bed.controller_factory import create_controller
+
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Richmat Test Bed",
@@ -518,32 +521,18 @@ class TestCoordinatorPositionSeek:
             entry_id="richmat_auto_remote_test",
         )
         entry.add_to_hass(hass)
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        client = MagicMock(is_connected=True)
 
-        adapter_result = MagicMock()
-        adapter_result.device = MagicMock()
-        adapter_result.device.address = TEST_ADDRESS
-        adapter_result.device.name = "QRRM141291"
-        adapter_result.device.details = {"source": "local"}
-        adapter_result.rssi = -55
-        adapter_result.adapter = "local"
+        live = await create_controller(
+            coordinator, BED_TYPE_RICHMAT, "nordic", client, device_name="QRRM141291"
+        )
+        offline = await create_controller(
+            coordinator, BED_TYPE_RICHMAT, "nordic", None, device_name="QRRM141291"
+        )
 
-        with (
-            patch(
-                "custom_components.adjustable_bed.coordinator_connection.select_adapter",
-                new_callable=AsyncMock,
-                return_value=adapter_result,
-            ),
-            patch_coordinator_global(
-                "create_controller",
-                new_callable=AsyncMock,
-                return_value=make_controller_mock(),
-            ) as mock_create_controller,
-        ):
-            coordinator = AdjustableBedCoordinator(hass, entry)
-            result = await coordinator.async_connect()
-
-        assert result is True
-        assert mock_create_controller.await_args.kwargs["richmat_remote"] == "qrrm"
+        assert live._remote_code == "qrrm"
+        assert offline._remote_code == RICHMAT_REMOTE_AUTO
 
     async def test_connect_auto_mode_sets_fresh_device_callback_with_selected_source(
         self,

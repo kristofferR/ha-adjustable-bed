@@ -278,7 +278,8 @@ async def test_remote_capabilities(coordinator):
         controller = _lite(coordinator, name)
         assert [spec.key for spec in controller.motor_control_specs] == ["head", "feet"]
         assert controller.protocol_diagnostics == {
-            "adjustable_lite_remote": "KSBT03C" if ksbt03c else "KSBT01C"
+            "variant": "adjustable_lite",
+            "adjustable_lite_remote": "KSBT03C" if ksbt03c else "KSBT01C",
         }
         assert controller.memory_slot_count == 3
         assert not controller.supports_memory_programming

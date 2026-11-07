@@ -43,7 +43,7 @@
       "code": [
         "custom_components/adjustable_bed/ergomotion4_profiles.py::PRODUCTS",
         "custom_components/adjustable_bed/beds/ergomotion4.py::custom_product",
-        "custom_components/adjustable_bed/config_flow.py::_add_cluster033_schema_fields",
+        "custom_components/adjustable_bed/setup_questions.py::_app_layout_profile",
         "custom_components/adjustable_bed/app_profiles.py::_BY_BED_TYPE"
       ],
       "tests": [
@@ -56,7 +56,7 @@
     "transport": {
       "code": [
         "custom_components/adjustable_bed/beds/ergomotion4.py::start_notify",
-        "custom_components/adjustable_bed/beds/cluster033.py::AppController.write_command",
+        "custom_components/adjustable_bed/beds/keeson_layout_app.py::AppController.write_command",
         "custom_components/adjustable_bed/beds/ergomotion4.py::stop_notify"
       ],
       "tests": [
@@ -107,7 +107,7 @@
     "rename": {
       "code": [
         "custom_components/adjustable_bed/beds/ergomotion4.py::_device_name_frame",
-        "custom_components/adjustable_bed/beds/cluster033.py::AppController.rename_device",
+        "custom_components/adjustable_bed/beds/keeson_layout_app.py::AppController.rename_device",
         "custom_components/adjustable_bed/services.py::handle_rename"
       ],
       "tests": [
@@ -116,19 +116,19 @@
     },
     "clock_alarm": {
       "code": [
-        "custom_components/adjustable_bed/beds/cluster033.py::AppController.sync_clock",
-        "custom_components/adjustable_bed/beds/cluster033.py::AppController.configure_alarm_table_schedule",
+        "custom_components/adjustable_bed/beds/keeson_layout_app.py::AppController.sync_clock",
+        "custom_components/adjustable_bed/beds/keeson_layout_app.py::AppController.configure_alarm_table_schedule",
         "custom_components/adjustable_bed/alarm_table.py::AlarmTableScheduleSpec",
         "custom_components/adjustable_bed/services.py::handle_configure_alarm_schedule"
       ],
       "tests": [
         "tests/test_ergomotion4.py::test_rename_clock_and_alarm_vectors",
-        "tests/test_cluster033_services.py::test_service_uses_single_local_reference_and_current_configuration_scheduler"
+        "tests/test_keeson_layout_app_services.py::test_service_uses_single_local_reference_and_current_configuration_scheduler"
       ]
     },
     "dismiss": {
       "code": [
-        "custom_components/adjustable_bed/beds/cluster033.py::AppController.stop_wake_routine",
+        "custom_components/adjustable_bed/beds/keeson_layout_app.py::AppController.stop_wake_routine",
         "custom_components/adjustable_bed/beds/ergomotion4.py::controller_button_specs"
       ],
       "tests": [

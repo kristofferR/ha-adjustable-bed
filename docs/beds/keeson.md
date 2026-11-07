@@ -7,7 +7,7 @@
 One wire codec (the K1 `E5/E6 FE 16` frame and the other carriers of the Keeson
 32-bit key word) serves every `keeson` protocol variant, the `ergomotion`,
 `serta` and `okin_ffe` bed types, the audited Keeson, Okin and ORE app
-profiles, and the cluster033 app bed types. This guide covers the codec first, then one section per profile. See
+profiles, and the Keeson layout app bed types. This guide covers the codec first, then one section per profile. See
 [Protocol codecs and app profiles](../design/protocol-codecs.md) for the
 architecture.
 
@@ -79,7 +79,7 @@ APK Protocol Audit row044.
 | ✅ | Scott Living | `com.keeson.scottlivingrelease` | [Scott Living](#scott-living) |
 | Separate processor | Tempur Sleeptracker-AI ([framed-JSON processor guide](sleeptracker.md)) | `com.fullpower.applications.horizon` | none |
 
-The eight apps of the [cluster033 app family](#cluster033-app-family) (Tempur
+The eight apps of the [Keeson layout app family](#keeson-layout-app-family) (Tempur
 Curve, Q-Plus, Serta MP Remote, Omazz Adjusto III, Ergomotion, ROW Control, Ergo
 Slim and TEMPUR AU) are also their own bed types with their app's exact keys and
 layouts; the "also" routes are the generic Keeson variants that drive the same beds.
@@ -112,8 +112,8 @@ accepted report for it and keep finite pulses.
 
 Detection suggests the Base, Ergomotion, Serta, OKIN FFE, JSON/A00A, KSBT and
 KSBT03CR routes, and Cool Base for `base-i5` names; every app profile is an
-explicit choice. The cluster033 apps are bed types of their own, listed in the
-[cluster033 app family](#cluster033-app-family). The tables below are generated
+explicit choice. The Keeson layout apps are bed types of their own, listed in the
+[Keeson layout app family](#keeson-layout-app-family). The tables below are generated
 from the profile data.
 
 ### Home Assistant setup
@@ -126,7 +126,7 @@ use. Shared names and Bluetooth services never decide it.
 |---|---|---|
 | Sleep Harmony app | | [Sleep Harmony](#sleep-harmony-variant) |
 | Restonic BT app | The remote style the app's settings chose | [Restonic BT](#restonic-bt-profiles) A or B |
-| Ergomotion, Ergomotion 4.0 or Serta MP Remote app | The app, then its own app step | [Cluster033 apps](#cluster033-app-family), [Ergomotion 4.0](#ergomotion-40) |
+| Ergomotion, Ergomotion 4.0 or Serta MP Remote app | The app, then its own app step | [Keeson layout apps](#keeson-layout-app-family), [Ergomotion 4.0](#ergomotion-40) |
 | Avanti, AMERICANSTAR, Bedsense Bases, INNOVA, MaxCoil Una or Dynasty app | The app, then its 2M, 3M or 4M screen, which sets the motor count | [ORE apps](#ore-comfort-bed-profiles), [INNOVA](#innova-profile) |
 | Adjustable Lite, Simon Li, Heal Every Night or OKIN-Seating app | The app | [Adjustable Lite](#adjustable-lite-profile), [Simon Li, Heal Every Night and OKIN-Seating](#simon-li-heal-every-night-and-okin-seating-profiles) |
 | Purple Smart Base, Member's Mark or Linx / Juna Sleep | Which of them | [Purple](#purple-variant), [Base](#base-basei4i5), [JSON/A00A](#jsona00a-variant-juna-linx-ergo-health) |
@@ -470,11 +470,11 @@ uses `km=3, keykt=1`; see [JSON/A00A](#jsona00a-variant-juna-linx-ergo-health).
 
 `00 B0` is the two-byte status query of the direct P2 remotes and Q-Plus MX. It
 is not a STOP. `EF 02` + the name zero-filled to 15 bytes + checksum is the
-rename frame of INNOVA and the cluster033 apps.
+rename frame of INNOVA and the Keeson layout apps.
 
 #### Setup frames
 
-The cluster033 apps also send these checked frames, built by the codec:
+The Keeson layout apps also send these checked frames, built by the codec:
 `E7 80 01` + year minus 1900, zero-based month, day, hour, minute, second +
 checksum (clock); `E1 80 04 9A` (wake alarm dismissal); and `E5 FE 17` + two
 little-endian 16-bit pulse counts + checksum (Serta MP Remote position targets).
@@ -491,8 +491,8 @@ Their `ED 80` alarm tables come from `alarm_table.py`; see
 - **Adjustable Lite**, **INNOVA**: see their sections.
 - **Okin apps:** subscribed, replies discarded.
 - **ORE comfort-bed apps:** never subscribed; see their section.
-- **Cluster033 apps:** the app timer status, and Serta MP Remote positions; see
-  the [cluster033 app family](#cluster033-app-family).
+- **Keeson layout apps:** the app timer status, and Serta MP Remote positions; see
+  the [Keeson layout app family](#keeson-layout-app-family).
 
 Every other profile reads nothing.
 
@@ -518,7 +518,7 @@ when held past 2100 ms.
 `tests/keeson_vectors.py` lists each profile's frozen single-frame literals:
 the test vectors of the accepted Adjustable Lite, Restonic BT, INNOVA, Simon Li,
 Heal Every Night, OKIN-Seating, MaxCoil Una, Dynasty Bases, Bedsense Bases,
-Avanti Bases and AMERICANSTAR reports, every codec frame the cluster033, Glideaway Motion
+Avanti Bases and AMERICANSTAR reports, every codec frame the Keeson layout app, Glideaway Motion
 and AdjustaMattress reports spell (plus the pre-v5 frame of any key a report lists without spelling it), and
 for every other route (which has no report) every frame the pre-v5 controller
 could send.
@@ -1357,9 +1357,9 @@ the physical axis for each layout (especially 2M's combined key and 4M's waist),
 hold and release behavior, preset save/recall, massage levels and timer
 durations, and the actual write type.
 
-### Cluster033 app family
+### Keeson layout app family
 
-Eight apps share one controller (`beds/cluster033.py`) and the profile type
+Eight apps share one controller (`beds/keeson_layout_app.py`) and the profile type
 `AppProfile`. Each app is its own bed type, chosen by hand with the layout its
 app shows; nothing in an advertisement selects one. Each accepted report proves
 its own key table: a repeated mask is a separate package receipt, not an inferred
@@ -1554,7 +1554,7 @@ firmware interpretation are unverified.
 **Status:** ❓ Needs testing (static artifact evidence, hardware unverified)
 
 Bed type `tempur_curve`, one layout. Shared behavior is in the
-[cluster033 app family](#cluster033-app-family).
+[Keeson layout app family](#keeson-layout-app-family).
 
 #### Controls
 
@@ -3236,7 +3236,7 @@ replacement command, even if cancelled; delayed start writes remain cancellable.
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 The `ergomotion_4` bed type is an app profile over this codec, like the
-[cluster033 apps](#cluster033-app-family). This codec builds every frame it
+[Keeson layout apps](#keeson-layout-app-family). This codec builds every frame it
 sends: the K1 and side frames for P1 products, the `04 02` frames and status
 query for P2 products, and its custom massage and RGB frames. Its product
 catalog, not the profile, picks the keys each product sends. Its frozen vectors
@@ -4472,6 +4472,6 @@ types store their own defaults and are left unchanged.
 - Avanti Bases 1.0.5 (7) (`com.ore.AvantiBases`, standalone FULL row065):
   independently accepted.
 - AMERICANSTAR 1.0 (1) (`com.ore.americanstar`): independently accepted (row062).
-- Cluster033 apps: see the [cluster033 app family](#cluster033-app-family).
+- Keeson layout apps: see the [Keeson layout app family](#keeson-layout-app-family).
 - The other routes come from the smartbed-mqtt reverse engineering, fresh
   decompilation of the OEM apps listed above, and hardware reports.

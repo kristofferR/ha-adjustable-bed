@@ -19,6 +19,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ServiceValidationError
 
+from .bed_traits import bed_type_has_position_feedback
 from .beds.base import ControllerNumberSpec, PositionNumberSpec
 from .const import (
     BED_TYPE_ISLEEP,
@@ -27,7 +28,6 @@ from .const import (
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
     SIDE_BOTH,
-    bed_type_has_position_feedback,
 )
 from .entity import AdjustableBedEntity, RenamesInPlace
 from .entity_discovery import async_setup_dynamic_entities
@@ -510,7 +510,7 @@ class AdjustableBedControllerNumber(AdjustableBedEntity, NumberEntity):
             mode=NumberMode.SLIDER,
         )
         self._attr_unique_id = coordinator.entity_unique_id(self.entity_description.key)
-        self._set_sided_translation_key(spec.translation_key, spec.key)
+        self._attr_translation_key = spec.translation_key
         self._unregister_callback: Callable[[], None] | None = None
 
     @property
@@ -633,7 +633,7 @@ class AdjustableBedPositionNumber(AdjustableBedEntity, NumberEntity):
         """Initialize the number entity."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._unregister_callback: Callable[[], None] | None = None
 
@@ -709,12 +709,9 @@ class PairedBedCombinedPositionNumber(RenamesInPlace, NumberEntity):
         self.entity_description = description
         self._attr_unique_id = coordinator.entity_unique_id(f"{description.key}_both")
         self._attr_device_info = coordinator.device_info
-        translation_key = description.translation_key or description.key
+        self._attr_translation_key = description.translation_key or description.key
         if isinstance(coordinator, SingleAddressPairedCoordinator):
-            self._attr_translation_key = f"{translation_key}_both"
             self._attr_extra_state_attributes = {"bed_side": SIDE_BOTH}
-        else:
-            self._attr_translation_key = translation_key
         self._unregister_callbacks: list[Callable[[], None]] = []
 
     @property
@@ -789,7 +786,7 @@ class AdjustableBedMassageNumber(AdjustableBedEntity, NumberEntity):
         """Initialize the massage number entity."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._unregister_callback: Callable[[], None] | None = None
 
@@ -888,7 +885,7 @@ class AdjustableBedLevelNumber(AdjustableBedEntity, NumberEntity):
         """Initialize the level number entity."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._unregister_callback: Callable[[], None] | None = None
 
@@ -992,7 +989,7 @@ class AdjustableBedSleepNumberSettingNumber(AdjustableBedEntity, NumberEntity):
         """Initialize the Sleep Number setting entity."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._unregister_callback: Callable[[], None] | None = None
 
@@ -1061,7 +1058,7 @@ class AdjustableBedSideStateNumber(AdjustableBedEntity, NumberEntity):
         """Initialize the side-specific number entity."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._unregister_callback: Callable[[], None] | None = None
 

@@ -19,6 +19,7 @@ from custom_components.adjustable_bed.setup_questions import (
     REQUIRED,
     SET_BY_PROFILE,
     SETUP_PROFILES,
+    FlowContext,
     setup_profile,
     setup_profile_for,
 )
@@ -59,7 +60,12 @@ def test_every_declared_question_has_its_labels():
         for question in profile.questions:
             strings = step["sections"]["advanced"] if question.advanced else step
             assert question.key in strings["data"], (key, question.key)
-            if question.choices is not None or question.text or question.validator is not None:
+            if (
+                question.choices is not None
+                or question.context_choices is not None
+                or question.text
+                or question.validator is not None
+            ):
                 assert question.key in strings["data_description"], (key, question.key)
             assert question.key in settings, (key, question.key)
 
@@ -182,16 +188,25 @@ async def test_whole_number_answers_are_coerced_from_select_text(hass):
 
 
 def test_every_profile_with_questions_has_a_setup_step_that_asks_them():
-    """A declared question hides its generic field, so some step must ask it."""
-    from custom_components.adjustable_bed.config_flow import _APP_SETUP_STEPS
+    """A declared question hides its generic field, so some step must ask it.
+
+    A route without an app step asks its questions in the final settings.
+    """
+    from custom_components.adjustable_bed.config_flow import (
+        _APP_SETUP_STEPS,
+        _final_settings_questions,
+    )
     from custom_components.adjustable_bed.profile_id import profile_route
 
     for key, profile in SETUP_PROFILES.items():
         if profile.questions:
-            assert profile_route(key).bed_type in _APP_SETUP_STEPS, key
+            route = profile_route(key)
+            assert route.bed_type in _APP_SETUP_STEPS or _final_settings_questions(
+                route.bed_type, route.variant
+            ), key
 
 
-def test_a_condition_renders_as_a_native_conditional_field():
+async def test_a_condition_renders_as_a_native_conditional_field(hass):
     from custom_components.adjustable_bed.config_flow import _profile_question_schema
 
     data = {
@@ -200,7 +215,10 @@ def test_a_condition_renders_as_a_native_conditional_field():
     }
     profile = setup_profile_for(data)
     assert profile is not None
-    markers = {marker.schema: marker for marker in _profile_question_schema(profile, data)}
+    markers = {
+        marker.schema: marker
+        for marker in _profile_question_schema(profile, data, FlowContext(hass))
+    }
     assert markers[const.CONF_VIBRADORM_RESTORED].visible is None
     assert markers[const.CONF_VIBRADORM_RGB].visible == {
         "field": const.CONF_VIBRADORM_RESTORED,
@@ -208,7 +226,7 @@ def test_a_condition_renders_as_a_native_conditional_field():
     }
 
 
-def test_a_condition_on_an_answer_the_form_omits_is_settled_by_the_saved_setup():
+async def test_a_condition_on_an_answer_the_form_omits_is_settled_by_the_saved_setup(hass):
     from custom_components.adjustable_bed.config_flow import _profile_question_schema
 
     profile = SETUP_PROFILES[const.BED_TYPE_VMATBASIC]
@@ -216,10 +234,11 @@ def test_a_condition_on_an_answer_the_form_omits_is_settled_by_the_saved_setup()
     without_product = replace(profile, questions=profile.questions[1:])
     cbi = {const.CONF_VMATBASIC_PROFILE: "cbi"}
     basic = {const.CONF_VMATBASIC_PROFILE: "basic"}
-    shown = {m.schema: m for m in _profile_question_schema(without_product, cbi)}
+    context = FlowContext(hass)
+    shown = {m.schema: m for m in _profile_question_schema(without_product, cbi, context)}
     assert const.CONF_VMATBASIC_FLOOR_LEVEL in shown
     assert shown[const.CONF_VMATBASIC_FLOOR_LEVEL].visible is None
-    assert not _profile_question_schema(without_product, basic)
+    assert not _profile_question_schema(without_product, basic, context)
 
 
 def test_a_profile_cleans_its_answers_before_checking_them():

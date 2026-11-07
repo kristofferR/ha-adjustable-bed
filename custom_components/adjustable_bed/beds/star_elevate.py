@@ -22,8 +22,10 @@ from ..codec import okin_5a as codec
 
 # starcode_m1x12 imports the RX characteristic from here.
 from ..const import NORDIC_UART_READ_CHAR_UUID as NORDIC_UART_READ_CHAR_UUID
+from ..const import STAR_ELEVATE_VARIANT_M1X12
 from ..profiles.okin_5a import ELEVATE
 from .base import BedController, MotorControlSpec
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -287,3 +289,13 @@ async def _move_elevate_both_down(controller: BedController) -> None:
     if not isinstance(controller, StarElevateController):
         raise TypeError("ELEVATE union control requires StarElevateController")
     await controller.move_both_down()
+
+
+async def build_controller(ctx: BuildContext) -> BedController:
+    """Build the Star Elevate controller, or the M1X12 one for its variant."""
+    if ctx.variant == STAR_ELEVATE_VARIANT_M1X12:
+        await ctx.preload("starcode_m1x12")
+        from .starcode_m1x12 import StarElevateM1X12Controller
+
+        return StarElevateM1X12Controller(ctx.coordinator)
+    return StarElevateController(ctx.coordinator)

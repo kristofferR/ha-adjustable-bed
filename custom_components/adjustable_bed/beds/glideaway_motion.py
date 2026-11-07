@@ -27,6 +27,7 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -586,3 +587,8 @@ async def _wait_for_cancel(event: asyncio.Event, delay: float) -> None:
             await event.wait()
     except TimeoutError:
         pass
+
+
+async def build_controller(ctx: BuildContext) -> GlideawayMotionController:
+    """Build the controller for the selected model."""
+    return GlideawayMotionController(ctx.coordinator, model=ctx.variant)

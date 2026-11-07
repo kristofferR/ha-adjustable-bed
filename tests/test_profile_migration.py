@@ -10,15 +10,17 @@ from homeassistant.setup import async_setup_component
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.app_families import (
+    LEGGETT_FAMILY,
+    OKIN_FAMILY,
+    VIBRADORM_FAMILY,
+)
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedOptionsFlow,
     _vibradorm_app_data,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.profile_migration import (
-    LEGGETT_FAMILY,
-    OKIN_FAMILY,
-    VIBRADORM_FAMILY,
     MigrationSnapshot,
     async_control_changes,
     managed_family,

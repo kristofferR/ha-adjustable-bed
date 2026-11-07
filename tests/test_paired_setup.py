@@ -31,6 +31,7 @@ from custom_components.adjustable_bed import (
     async_unpair_entry,
     paired_topology,
 )
+from custom_components.adjustable_bed.beds.lifecycle import CapabilitySnapshotPolicy
 from custom_components.adjustable_bed.const import (
     BED_TYPE_BEDTECH,
     BED_TYPE_ESHINE_OKIN,
@@ -2856,8 +2857,7 @@ class TestPairBedsConversion:
             stop_notify=AsyncMock(),
             start_notify=AsyncMock(),
             stop_keepalive=AsyncMock(),
-            send_pin=AsyncMock(),
-            start_keepalive=AsyncMock(),
+            async_resume_session=AsyncMock(),
         )
         coord._client = client
         coord._controller = controller
@@ -2874,8 +2874,7 @@ class TestPairBedsConversion:
         controller.stop_keepalive.assert_awaited_once_with()
         controller.stop_notify.assert_awaited_once_with()
         controller.start_notify.assert_awaited_once_with(None)
-        controller.send_pin.assert_awaited_once_with()
-        controller.start_keepalive.assert_awaited_once_with()
+        controller.async_resume_session.assert_awaited_once_with()
         # Let teardown's shutdown disconnect instead of stalling for 5s.
         client.disconnect.side_effect = None
 
@@ -2919,8 +2918,7 @@ class TestPairBedsConversion:
             stop_notify=AsyncMock(),
             start_notify=AsyncMock(side_effect=stalled_start_notify),
             stop_keepalive=AsyncMock(),
-            send_pin=AsyncMock(),
-            start_keepalive=AsyncMock(),
+            async_resume_session=AsyncMock(),
         )
         coord._client = client
         coord._controller = controller
@@ -2940,8 +2938,7 @@ class TestPairBedsConversion:
         assert coord.is_connected
         assert coord._pairing_transfer_active is False
         controller.start_notify.assert_awaited_once_with(None)
-        controller.send_pin.assert_not_awaited()
-        controller.start_keepalive.assert_not_awaited()
+        controller.async_resume_session.assert_not_awaited()
         # Let teardown's shutdown disconnect instead of stalling for 5s.
         client.disconnect.side_effect = None
 
@@ -4012,7 +4009,7 @@ class TestCombinedPositionSliders:
         single = SingleAddressPairedCoordinator.__new__(SingleAddressPairedCoordinator)
         single._single_inner = SimpleNamespace(address="AA:BB:CC:DD:EE:50", device_info={})
         single_entity = PairedBedCombinedPositionNumber(single, _build_position_description(back))
-        assert single_entity.translation_key == "back_position_both"
+        assert single_entity.translation_key == "back_position"
         assert single_entity.extra_state_attributes == {"bed_side": SIDE_BOTH}
 
     async def test_parent_device_gets_position_sliders_when_sides_report_angles(
@@ -4407,7 +4404,7 @@ class TestOfflineSafeBedTypes:
         self, hass: HomeAssistant, profile: str | None
     ) -> None:
         from custom_components.adjustable_bed.beds.eshine_okin import EshineOkinController
-        from custom_components.adjustable_bed.const import OFFLINE_CAPABILITY_SAFE_VARIANTS
+        from custom_components.adjustable_bed.pairing import OFFLINE_CAPABILITY_SAFE_VARIANTS
 
         assert BED_TYPE_ESHINE_OKIN not in OFFLINE_CAPABILITY_SAFE_BED_TYPES
         assert OFFLINE_CAPABILITY_SAFE_VARIANTS[BED_TYPE_ESHINE_OKIN] == frozenset(ESHINE_OKIN_PROFILES)
@@ -5198,6 +5195,9 @@ class TestOctoLegacyMotorFallbackSetup:
         await hass.async_block_till_done()
 
 
+_OCTO_SNAPSHOT_POLICY = CapabilitySnapshotPolicy(paired_side_only=True)
+
+
 class TestOctoSnapshotBackfill:
     """Phase 2.5 C3 (commit 4): a paired Octo side persists its freshly-discovered
     capability snapshot into its child descriptor on connect."""
@@ -5221,8 +5221,8 @@ class TestOctoSnapshotBackfill:
         left = _build_paired_children(hass, entry)[SIDE_LEFT]
 
         snap = {"has_lights": True, "memory_count": 4, "has_rgbwi": False}
-        left._controller = SimpleNamespace(capability_snapshot=lambda: dict(snap))
-        left._backfill_octo_snapshot()
+        left._controller = SimpleNamespace(capability_snapshot_policy=_OCTO_SNAPSHOT_POLICY, capability_snapshot=lambda: dict(snap))
+        left._persist_capability_snapshot()
 
         # The snapshot was persisted into the parent entry's left descriptor.
         assert octo_snapshot_from_descriptor(get_child(entry.data, SIDE_LEFT)) == snap
@@ -5253,14 +5253,14 @@ class TestOctoSnapshotBackfill:
         left = _build_paired_children(hass, entry)[SIDE_LEFT]
 
         real = {"has_lights": True, "memory_count": 4, "has_rgbwi": True}
-        left._controller = SimpleNamespace(capability_snapshot=lambda: dict(real))
-        left._backfill_octo_snapshot()
+        left._controller = SimpleNamespace(capability_snapshot_policy=_OCTO_SNAPSHOT_POLICY, capability_snapshot=lambda: dict(real))
+        left._persist_capability_snapshot()
         assert octo_snapshot_from_descriptor(get_child(entry.data, SIDE_LEFT)) == real
 
         # Transient discovery timeout -> capability_snapshot() is None -> no-op,
         # the real pairing-time snapshot survives.
-        left._controller = SimpleNamespace(capability_snapshot=lambda: None)
-        left._backfill_octo_snapshot()
+        left._controller = SimpleNamespace(capability_snapshot_policy=_OCTO_SNAPSHOT_POLICY, capability_snapshot=lambda: None)
+        left._persist_capability_snapshot()
         assert octo_snapshot_from_descriptor(get_child(entry.data, SIDE_LEFT)) == real
 
     async def test_backfill_refreshes_stale_offline_controller(self, hass: HomeAssistant):
@@ -5289,10 +5289,10 @@ class TestOctoSnapshotBackfill:
         left._offline_controller = stale
         # Live controller has freshly discovered (different) caps.
         new_snap = {"has_lights": True, "memory_count": 4, "has_rgbwi": True}
-        live = SimpleNamespace(capability_snapshot=lambda: dict(new_snap))
+        live = SimpleNamespace(capability_snapshot_policy=_OCTO_SNAPSHOT_POLICY, capability_snapshot=lambda: dict(new_snap))
         left._controller = live
 
-        left._backfill_octo_snapshot()
+        left._persist_capability_snapshot()
 
         # Descriptor backfilled AND the offline controller refreshed to the live
         # one (no longer the stale pairing-time controller).

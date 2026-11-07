@@ -8,6 +8,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.app_families import SLEEPYS_FAMILY
 from custom_components.adjustable_bed.codec.okin_nframe import SERVICE_UUID, WRITE_UUID
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
@@ -16,7 +17,7 @@ from custom_components.adjustable_bed.config_flow import (
 )
 from custom_components.adjustable_bed.detection import bed_type_label, get_bed_type_options
 from custom_components.adjustable_bed.profile_id import resolve_profile_id
-from custom_components.adjustable_bed.profile_migration import SLEEPYS_FAMILY
+from custom_components.adjustable_bed.profile_migration import MigrationSnapshot
 from tests.form_helpers import finish_new_bed, start_new_bed
 from tests.test_sleepys_family_flow import finish_check, gatt_client, reconfigure
 from tests.test_vibradorm_family_flow import bluetooth_patches
@@ -118,7 +119,7 @@ async def test_the_starcode_row_hands_each_app_to_its_own_step(hass):
     result = await flow.async_step_starcode_family()
     assert choices(result) == ["m5x4", "m5x5", "m1x12"]
     result = await flow.async_step_starcode_family({"choice": "m5x5"})
-    assert result["step_id"] == "starcode_m5x5"
+    assert result["step_id"] == "profile_questions"
     assert flow._manual_data[const.CONF_BED_TYPE] == const.BED_TYPE_STARCODE_M5X5
 
 
@@ -184,7 +185,7 @@ async def test_the_jordans_row_asks_which_jordans_app(hass):
 
 async def test_another_familys_guided_change_never_offers_keep_here(hass):
     flow = setup_flow(hass, const.BED_TYPE_STARCODE_ABM5_4)
-    flow._migration = object()  # type: ignore[assignment]
+    flow._migration = MigrationSnapshot({}, {})
     flow._migration_family = SLEEPYS_FAMILY
     result = await flow.async_step_starcode_family()
     assert "keep" not in choices(result)

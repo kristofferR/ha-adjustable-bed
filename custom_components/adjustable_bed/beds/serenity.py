@@ -25,6 +25,7 @@ from ..const import (
     CONF_BLE_BOND_ESTABLISHED,
     CONF_ZSERIES_ALARM_AVAILABLE,
     ZSERIES_PULSE_COUNT_RANGE,
+    ZSERIES_VARIANTS,
 )
 from ..profiles.okin_nframe import (
     BEDDING_HOLD,
@@ -45,6 +46,7 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
+from .builder import BuildContext
 from .okin_cst import OkinCstController, _product
 
 if TYPE_CHECKING:
@@ -724,3 +726,10 @@ def require_app_roles(client: object, app: str) -> None:
     """
     link = cast("AdjustableBedCoordinator", SimpleNamespace(client=client))
     OkinBeddingAppController(link, app=app).require_roles()
+
+
+async def build_zseries(ctx: BuildContext) -> ZSeriesController:
+    """Build the Z-Series controller; nothing on the bed identifies the app page."""
+    if ctx.variant not in ZSERIES_VARIANTS:
+        raise ValueError("Choose the Z-230 or Z-280 page selected in the Z-Series app")
+    return ZSeriesController(ctx.coordinator, model=ctx.variant)

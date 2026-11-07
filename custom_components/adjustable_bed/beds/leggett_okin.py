@@ -37,7 +37,7 @@ from ..codec.okin_nframe import (
     parse_receipt,
     parse_status,
 )
-from ..const import DEVICE_INFO_READ_TIMEOUT
+from ..const import CONF_LEGGETT_APP_PROFILE, DEVICE_INFO_READ_TIMEOUT, LEGGETT_APP_DEFAULT_PROFILE
 from ..profiles.okin_nframe import (
     LEGGETT_FLAT_HOLD_MS,
     LEGGETT_PROFILES,
@@ -53,6 +53,7 @@ from .base import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..command_scheduler import StreamMember
@@ -1168,3 +1169,11 @@ class LeggettOkinController(BedController):
     async def move_lumbar_stop(self) -> None:
         """Stop lumbar motor."""
         await self._move_motor("lumbar", MotorDirection.STOP)
+
+
+async def build_controller(ctx: BuildContext) -> LeggettOkinController:
+    """Build the controller for the stored app profile."""
+    return LeggettOkinController(
+        ctx.coordinator,
+        app_profile=ctx.data.get(CONF_LEGGETT_APP_PROFILE, LEGGETT_APP_DEFAULT_PROFILE),
+    )

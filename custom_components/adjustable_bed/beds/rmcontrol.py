@@ -783,6 +783,7 @@ class RmcontrolController(RichmatController):
             }
         )
         return {
+            **super().protocol_diagnostics,
             "rmcontrol_product": self.rmcontrol_product,
             "product_settings": self.product_profile.settings._asdict(),
             "light_rgb_palette": self._light_palette,

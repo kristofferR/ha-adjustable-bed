@@ -16,6 +16,7 @@ from ..hush_protocol import HushMainReceive, decode
 from ..profiles.casper import MUSIC_BLUETOOTH
 from ..profiles.hush import ACTIONS, PROFILES
 from .base import ControllerButtonSpec
+from .builder import BuildContext
 from .casper_base import CasperBaseController
 
 if TYPE_CHECKING:
@@ -251,3 +252,8 @@ class HushBaseController(CasperBaseController):
             if self._snore_poll is asyncio.current_task():
                 self._snore_poll = None
                 self._coordinator.resume_disconnect_timer()
+
+
+async def build_controller(ctx: BuildContext) -> HushBaseController:
+    """Build the controller for the selected Hush base product."""
+    return HushBaseController(ctx.coordinator, product=ctx.variant or "")

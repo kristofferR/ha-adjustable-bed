@@ -24,6 +24,9 @@ from bleak.exc import BleakError
 
 from ..codec import richmat as codec
 from ..const import (
+    CONF_RICHMAT_REMOTE,
+    CONF_RMCONTROL_PRODUCT,
+    CONF_RMCONTROL_SIDE,
     RICHMAT_NORDIC_CHAR_UUID,
     RICHMAT_PROTOCOL_PREFIX55,
     RICHMAT_PROTOCOL_PREFIXAA,
@@ -32,14 +35,20 @@ from ..const import (
     RICHMAT_REMOTE_AUTO,
     RICHMAT_REMOTE_GGRM,
     RICHMAT_REMOTE_LP_QRRM,
+    RICHMAT_VARIANT_NORDIC,
+    RICHMAT_VARIANT_PREFIX55,
+    RICHMAT_VARIANT_PREFIXAA,
+    RICHMAT_VARIANT_WILINKE,
     RICHMAT_WILINKE_STOP_COMPAT_REMOTE_CODES,
     RichmatFeatures,
     get_richmat_features,
+    resolve_richmat_remote_code,
     richmat_remote_has_combined_head_feet,
 )
 from ..position_estimate import notify_release_failed
 from ..profiles.richmat import GGRM_ACTIONS, RICHMAT, Button, RichmatProfile
 from .base import BedController, ControllerButtonSpec, MotorControlSpec
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -443,6 +452,10 @@ class RichmatController(RichmatProfileController):
             return None
 
         return RICHMAT_LIGHT_PROTOCOL_LEGACY_RGB
+
+    @property
+    def protocol_diagnostics(self) -> dict[str, object]:
+        return {"richmat_is_wilinke": self._is_wilinke}
 
     @property
     def features(self) -> RichmatFeatures:
@@ -909,3 +922,114 @@ async def detect_richmat_variant(client: BleakClient) -> tuple[bool, str | None,
         w1_write_char,
     )
     return True, w1_write_char, True
+
+
+def _remote_code(ctx: BuildContext) -> str:
+    """Resolve the remote code from the entry, its names and a live BLE name.
+
+    An Auto remote is inferred from the BLE name at connect time, which keeps
+    entries created before the code was stored working.
+    """
+    from ..detection import detect_richmat_remote_from_name
+
+    coordinator = ctx.coordinator
+    remote = resolve_richmat_remote_code(
+        ctx.data.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO),
+        entry_title=coordinator.entry.title,
+        configured_name=coordinator.name,
+    )
+    if ctx.client is None:
+        return remote
+    if remote == RICHMAT_REMOTE_AUTO and (detected := detect_richmat_remote_from_name(ctx.device_name)):
+        _LOGGER.info(
+            "Auto-detected Richmat remote code '%s' from BLE name '%s'", detected, ctx.device_name
+        )
+        remote = detected
+    return resolve_richmat_remote_code(
+        remote,
+        entry_title=coordinator.entry.title,
+        configured_name=coordinator.name,
+        device_name=ctx.device_name,
+    )
+
+
+_OFFLINE_ERRORS: dict[str | None, str] = {
+    RICHMAT_VARIANT_WILINKE: "Cannot use WiLinke variant: client not connected",
+    RICHMAT_VARIANT_PREFIX55: "Cannot use Prefix55 variant: client not connected",
+    RICHMAT_VARIANT_PREFIXAA: "Cannot use PrefixAA variant: client not connected",
+}
+_CONFIGURED_PROTOCOLS: dict[str | None, str] = {
+    RICHMAT_VARIANT_PREFIX55: RICHMAT_PROTOCOL_PREFIX55,
+    RICHMAT_VARIANT_PREFIXAA: RICHMAT_PROTOCOL_PREFIXAA,
+}
+
+
+async def build_controller(ctx: BuildContext) -> BedController:
+    """Build the Richmat or RMControl controller for the configured or detected transport."""
+    coordinator = ctx.coordinator
+    variant = ctx.variant
+    client = ctx.client
+    remote = _remote_code(ctx)
+    names = {
+        "entry_title": coordinator.entry.title,
+        "configured_name": coordinator.name,
+        "device_name": ctx.device_name,
+    }
+
+    rmcontrol_product = ctx.data.get(CONF_RMCONTROL_PRODUCT, "")
+    if rmcontrol_product:
+        await ctx.preload("rmcontrol")
+        from .rmcontrol import RmcontrolController, detect_rmcontrol_transport
+
+        if variant in {RICHMAT_VARIANT_PREFIX55, RICHMAT_VARIANT_PREFIXAA}:
+            raise ValueError("RMControl app profiles require Nordic or WiLinke transport")
+        if client is None or not client.is_connected:
+            raise ConnectionError("Cannot select RMControl transport: client not connected")
+        framed, char_uuid, write_with_response = await detect_rmcontrol_transport(client)
+        if (variant == RICHMAT_VARIANT_NORDIC and framed) or (
+            variant == RICHMAT_VARIANT_WILINKE and not framed
+        ):
+            raise ValueError("Configured RMControl transport disagrees with the GATT service")
+        return RmcontrolController(
+            coordinator,
+            rmcontrol_product=rmcontrol_product,
+            rmcontrol_side=ctx.data.get(CONF_RMCONTROL_SIDE, "left"),
+            is_wilinke=framed,
+            char_uuid=char_uuid,
+            remote_code=remote,
+            write_with_response=write_with_response,
+            **names,
+        )
+
+    if variant == RICHMAT_VARIANT_NORDIC:
+        _LOGGER.debug("Using Nordic Richmat variant (configured)")
+        return RichmatController(coordinator, is_wilinke=False, remote_code=remote, **names)
+    if client is None or not client.is_connected:
+        raise ConnectionError(_OFFLINE_ERRORS.get(variant, "Cannot detect variant: client not connected"))
+    # Even a configured WiLinke variant detects its characteristic: different
+    # WiLinke devices use different UUIDs.
+    is_wilinke, char_uuid, write_with_response = await detect_richmat_variant(client)
+    if variant in _CONFIGURED_PROTOCOLS:
+        _LOGGER.debug("Using %s Richmat variant (configured)", variant)
+        return RichmatController(
+            coordinator,
+            is_wilinke=True,
+            remote_code=remote,
+            command_protocol=_CONFIGURED_PROTOCOLS[variant],
+            char_uuid=char_uuid,
+            write_with_response=write_with_response,
+            **names,
+        )
+    if variant == RICHMAT_VARIANT_WILINKE:
+        _LOGGER.debug("Using WiLinke Richmat variant (configured)")
+        is_wilinke = True
+    else:
+        _LOGGER.debug("Auto-detected Richmat variant (wilinke=%s)", is_wilinke)
+    return RichmatController(
+        coordinator,
+        is_wilinke=is_wilinke,
+        char_uuid=char_uuid,
+        remote_code=remote,
+        write_with_response=write_with_response,
+        **names,
+    )

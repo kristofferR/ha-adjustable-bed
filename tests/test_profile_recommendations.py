@@ -1758,7 +1758,7 @@ async def test_keep_in_the_guided_change_keeps_the_profile(hass, enable_custom_i
 async def test_a_saved_guided_change_answers_the_review(hass, enable_custom_integrations):
     target, observed, flow_id = await keeson_review(hass)
     result = await hass.config_entries.flow.async_configure(flow_id, {"choice": "other_route"})
-    assert result["step_id"] == "keeson_route"
+    assert result["step_id"] == "profile_questions"
     result = await hass.config_entries.flow.async_configure(
         flow_id, {CONF_PROTOCOL_VARIANT: "ksbt", CONF_MOTOR_COUNT: "2"}
     )

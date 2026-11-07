@@ -31,7 +31,13 @@ from bleak.exc import BleakError
 
 from ..codec import okin_5a as star
 from ..codec import okin_nframe as codec
-from ..const import NORDIC_UART_WRITE_CHAR_UUID
+from ..const import (
+    NORDIC_UART_WRITE_CHAR_UUID,
+    SLEEPYS_BOX25_FIXED_STAR_NAME_PREFIXES,
+    SLEEPYS_BOX25_VARIANT_LEGACY,
+    SLEEPYS_BOX25_VARIANT_STAR,
+    VARIANT_AUTO,
+)
 from ..execution import STREAM_HOLD, ExecutionCapabilities
 from ..profiles.okin_nframe import (
     SLEEPYS_BOX25_LEGACY,
@@ -45,6 +51,7 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -266,15 +273,6 @@ class SleepysBox25Controller(BedController):
     def light_level_max(self) -> int:
         """Return the OEM UI's exact 0-6 brightness range."""
         return 6
-
-    @property
-    def supports_position_feedback(self) -> bool:
-        return True
-
-    @property
-    def reports_percentage_position(self) -> bool:
-        """Return True because BOX25 reports percentage positions."""
-        return True
 
     @property
     def supports_direct_position_control(self) -> bool:
@@ -877,3 +875,26 @@ class SleepysBox25LegacyController(SleepysBox25Controller):
         )
         if not self._is_cancelled(cancel_event):
             self._initialized = True
+
+
+async def build_controller(ctx: BuildContext) -> BedController:
+    """Build the legacy or StarCode BOX25 dialect controller."""
+    variant = ctx.variant or VARIANT_AUTO
+    normalized_name = (ctx.device_name or "").strip().casefold()
+    if variant == SLEEPYS_BOX25_VARIANT_LEGACY:
+        use_legacy, reason = True, "configured legacy override"
+    elif variant == SLEEPYS_BOX25_VARIANT_STAR:
+        use_legacy, reason = False, "configured StarCode override"
+    elif normalized_name.startswith(SLEEPYS_BOX25_FIXED_STAR_NAME_PREFIXES):
+        use_legacy, reason = False, "fixed StarCode product name"
+    elif "star" in (ctx.ble_manufacturer or "").casefold():
+        use_legacy, reason = False, "Device Information manufacturer contains 'star'"
+    else:
+        # This is the OEM runtime fallback for missing, unreadable, empty, or
+        # non-Star 0x2A29 values. Do not infer StarCode from NUS alone.
+        use_legacy, reason = True, "Device Information legacy fallback"
+    if use_legacy:
+        _LOGGER.info("Using legacy BOX25 dialect (%s)", reason)
+        return SleepysBox25LegacyController(ctx.coordinator)
+    _LOGGER.info("Using BOX25 StarCode dialect (%s)", reason)
+    return SleepysBox25Controller(ctx.coordinator)

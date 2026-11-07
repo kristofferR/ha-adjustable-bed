@@ -24,7 +24,7 @@ from bleak.exc import BleakError
 from homeassistant.helpers.storage import Store
 
 from ..codec import jmc
-from ..const import DOMAIN
+from ..const import CONF_JENSEN_PIN, DOMAIN
 from ..execution import ExecutionCapabilities
 from ..profiles.jmc import JENSEN, JmcProfile
 from .base import (
@@ -33,9 +33,12 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
+from .builder import BuildContext
+from .lifecycle import CapabilitySnapshotPolicy
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
+    from .lifecycle import ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -162,6 +165,26 @@ class JensenController(BedController):
     def execution(self) -> ExecutionCapabilities:
         """The app refreshes held motion every 300 ms, then sends STOP once (#483)."""
         return ExecutionCapabilities(hold="stream")
+
+    async def async_after_connect(self, session: ControllerSession) -> None:
+        """Read the config report and persist it when it changed."""
+        await self.query_config()
+        session.persist_capability_snapshot()
+
+    async def async_refresh_auth(self) -> None:
+        # Jensen can require a fresh PIN unlock even on a reused BLE connection.
+        _LOGGER.debug("Refreshing Jensen PIN unlock before command on %s", self._coordinator.address)
+        await self.send_pin()
+
+    async def async_resume_session(self) -> None:
+        await self.send_pin()
+
+    @property
+    def capability_snapshot_policy(self) -> CapabilitySnapshotPolicy:
+        # Entities built from a missing or older report (a config timeout at
+        # setup) are rebuilt by a reload deferred until the link is released,
+        # so the command that opened this connection still runs.
+        return CapabilitySnapshotPolicy(deferred_reload=True)
 
     def capability_snapshot(self) -> dict[str, Any] | None:
         """Return the bed-reported features and box type, once known."""
@@ -295,16 +318,6 @@ class JensenController(BedController):
         return True
 
     @property
-    def supports_position_feedback(self) -> bool:
-        """Return True - Jensen beds report position via notifications."""
-        return True
-
-    @property
-    def reports_percentage_position(self) -> bool:
-        """Return True because Jensen normalizes reported positions to percentages."""
-        return True
-
-    @property
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
         """Expose back and legs as percentage sliders."""
         return (
@@ -418,31 +431,6 @@ class JensenController(BedController):
             self._config_loaded = True
             self._config_received = None
             self._config_data = None
-
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        """Write a command to the bed."""
-        _LOGGER.debug(
-            "Writing command to Jensen bed: %s (repeat: %d, delay: %dms, response=%s)",
-            command.hex(),
-            repeat_count,
-            repeat_delay_ms,
-            self._write_with_response,
-        )
-
-        await self._write_gatt_with_retry(
-            jmc.CHAR_UUID,
-            command,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            cancel_event=cancel_event,
-            response=self._write_with_response,
-        )
 
     def _handle_notification(self, _sender: BleakGATTCharacteristic, data: bytearray) -> None:
         """Handle a report from the bed.
@@ -945,3 +933,12 @@ class JensenController(BedController):
         else:
             foot_raw = _percentage_to_raw(position, FOOT_POS_FLAT, FOOT_POS_MAX)
         await self._run_monitored(jmc.goto(jmc.position(head_raw, foot_raw)))
+
+
+async def build_controller(ctx: BuildContext) -> JensenController:
+    """Build the controller with the stored PIN and config report."""
+    return JensenController(
+        ctx.coordinator,
+        pin=ctx.data.get(CONF_JENSEN_PIN, ""),
+        capability_snapshot=ctx.stored_capabilities("jensen"),
+    )

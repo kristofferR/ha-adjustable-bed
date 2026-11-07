@@ -189,7 +189,6 @@ async def test_custom_translation_key_and_live_side_bound_controller_dispatch(ha
     coordinator.device_info = {}
     coordinator.entity_side = "left"
     coordinator.entity_unique_id.side_effect = lambda key: f"bed_{key}_left"
-    coordinator.entity_translation_key.side_effect = lambda key: f"{key}_left"
 
     async def stop(controller: BedController) -> None:
         await controller.stop_all()
@@ -211,7 +210,7 @@ async def test_custom_translation_key_and_live_side_bound_controller_dispatch(ha
 
     coordinator.async_execute_controller_command = AsyncMock(side_effect=dispatch)
     assert button.unique_id == "bed_vibradorm_app_sync_left"
-    assert button.translation_key == "vibradorm_app_sync_left"
+    assert button.translation_key == "vibradorm_app_sync"
     await button.async_press()
     assert written(current) == ["00ff"]
     assert written(previous) == []
@@ -223,7 +222,6 @@ async def test_held_action_publishes_the_card_hold_contract_with_side(hass):
     coordinator.device_info = {}
     coordinator.entity_side = "right"
     coordinator.entity_unique_id.side_effect = lambda key: f"bed_{key}_right"
-    coordinator.entity_translation_key.side_effect = lambda key: f"{key}_right"
     button = ControllerActionButton(
         coordinator,
         ControllerButtonSpec(
@@ -254,7 +252,6 @@ async def test_translated_action_names_come_from_the_translation(
     coordinator.device_info = {}
     coordinator.entity_side = None
     coordinator.entity_unique_id.side_effect = lambda key: f"bed_{key}"
-    coordinator.entity_translation_key.side_effect = lambda key: key
     coordinator.register_controller_state_callback.return_value = lambda: None
     press = AsyncMock()
     buttons = [

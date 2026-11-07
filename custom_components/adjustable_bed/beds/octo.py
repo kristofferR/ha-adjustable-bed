@@ -29,10 +29,15 @@ from bleak.exc import BleakError
 
 from ..const import (
     CONF_OCTO_MOTOR_COUNT_OVERRIDE,
+    CONF_OCTO_PIN,
+    DEFAULT_OCTO_PIN,
     OCTO_CHAR_UUID,
     OCTO_LIGHT_AUTO_OFF_SECONDS,
     OCTO_PIN_KEEPALIVE_INTERVAL,
     OCTO_STAR2_CHAR_UUID,
+    OCTO_STAR2_SERVICE_UUID,
+    OCTO_VARIANT_STAR2,
+    VARIANT_AUTO,
 )
 from ..execution import ExecutionCapabilities
 from .base import (
@@ -44,9 +49,12 @@ from .base import (
     ControllerSelectSpec,
     MotorControlSpec,
 )
+from .builder import BuildContext
+from .lifecycle import CapabilitySnapshotPolicy
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
+    from .lifecycle import ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -511,6 +519,40 @@ class OctoController(BedController, OctoPacketCodec):
     def execution(self) -> ExecutionCapabilities:
         """The app streams held motion until release, then sends STOP (#483)."""
         return ExecutionCapabilities(hold="stream")
+
+    async def async_on_connect(self, session: ControllerSession) -> None:
+        """Subscribe, discover, persist the snapshot, then PIN and keepalive, in order."""
+        from ..unsupported import update_octo_pin_required_issue
+
+        await session.async_start_notify()
+        # Standard Octo Smart Control declares this ordered session handshake
+        # as required; a session that did not complete fails the connection.
+        discovery_complete = await self.discover_features()
+        if self.requires_ordered_discovery and discovery_complete is False:
+            raise ConnectionError("Octo Smart Control session discovery did not complete")
+        # Persist this paired side's freshly-discovered capabilities so the
+        # OFFLINE side / a reload mints correct entities.
+        session.persist_capability_snapshot()
+        # Send initial PIN if the authoritative capability state requires it.
+        await self.send_pin()
+        await self.start_keepalive()
+        # Surface the missing credential when this receiver reports an active
+        # PIN lock and no local PIN is configured.
+        update_octo_pin_required_issue(
+            session.hass,
+            session.address,
+            session.name,
+            self.pin_locked_without_pin,
+            entry_id=session.entry_id,
+        )
+
+    async def async_resume_session(self) -> None:
+        await self.send_pin()
+        await self.start_keepalive()
+
+    @property
+    def capability_snapshot_policy(self) -> CapabilitySnapshotPolicy:
+        return CapabilitySnapshotPolicy(paired_side_only=True)
 
     def capability_snapshot(self) -> dict[str, Any] | None:
         """Return discovered capabilities as a JSON-serialisable snapshot to
@@ -1194,6 +1236,7 @@ class OctoController(BedController, OctoPacketCodec):
             "discovered_motor_count": self._discovered_motor_count,
             "motor_count_invalid": self._motor_count_invalid,
             "has_synchro": self._has_synchro,
+            "supports_synchro": self.supports_synchro,
             "synchro_active": self._synchro_active,
             "remote_lock_active": self._remote_lock_active,
             "light_duration_minutes": self._light_duration_minutes,
@@ -1212,31 +1255,20 @@ class OctoController(BedController, OctoPacketCodec):
         count and Auto cannot safely choose an actuator layout.
         """
         override = self._coordinator.entry.data.get(CONF_OCTO_MOTOR_COUNT_OVERRIDE)
-        if override == "auto":
-            if self._motor_count_invalid:
-                return None
-            return self._discovered_motor_count or self._rtv_fallback_motor_count()
         if isinstance(override, str) and override.isascii() and override.isdecimal():
             override = int(override)
         if type(override) is int and 1 <= override <= 4:
             return override
-        configured = self._coordinator.motor_count
         if self._motor_count_invalid:
-            if override is None and configured != 2 and 1 <= configured <= 4:
-                return configured
             return None
-        # Existing non-default values were explicit user selections before the
-        # OCTO-only Auto option existed. Preserve those choices across upgrades.
-        if override is None and configured != 2 and 1 <= configured <= 4:
-            return configured
-        return self._discovered_motor_count or self._rtv_fallback_motor_count(configured)
+        return self._discovered_motor_count or self._rtv_fallback_motor_count()
 
-    def _rtv_fallback_motor_count(self, default: int | None = None) -> int:
+    def _rtv_fallback_motor_count(self) -> int:
         """Use the historical RTV lift layout only when no motor count was advertised."""
         name = self._coordinator.ble_device_name
         if isinstance(name, str) and name.strip().lower().startswith("rtv"):
             return 1
-        return self._coordinator.motor_count if default is None else default
+        return self._coordinator.motor_count
 
     @property
     def supports_lights(self) -> bool:
@@ -2972,3 +3004,24 @@ class OctoStar2Controller(BedController):
             "Octo Star2 beds don't support programming memory presets (requested memory_num=%d)",
             memory_num,
         )
+
+
+async def build_controller(ctx: BuildContext) -> BedController:
+    """Build the standard Octo controller, or Star2's when selected or advertised."""
+    auto = ctx.variant in (None, VARIANT_AUTO)
+    use_star2 = (
+        ctx.has_characteristic(OCTO_STAR2_SERVICE_UUID, OCTO_STAR2_CHAR_UUID)
+        if auto
+        else ctx.variant == OCTO_VARIANT_STAR2
+    )
+    if use_star2:
+        _LOGGER.debug(
+            "Using Star2 Octo variant (%s)", "auto-detected from GATT" if auto else "configured"
+        )
+        return OctoStar2Controller(ctx.coordinator)
+    _LOGGER.debug("Using standard Octo variant")
+    return OctoController(
+        ctx.coordinator,
+        pin=ctx.data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN),
+        capability_snapshot=ctx.stored_capabilities("octo"),
+    )
