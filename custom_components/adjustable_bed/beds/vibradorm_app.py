@@ -543,10 +543,6 @@ class VibradormAppController(BedController):
         return self.supports_lights
 
     @property
-    def prunes_stale_light_level(self) -> bool:
-        return True
-
-    @property
     def light_switch_follows_level_intent(self) -> bool:
         return True
 

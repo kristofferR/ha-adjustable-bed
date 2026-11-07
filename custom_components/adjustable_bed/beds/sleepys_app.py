@@ -131,7 +131,6 @@ _APP_STATE_FIELDS_BY_SELECTOR = {
         }
     ),
 }
-_ALL_APP_STATE_FIELDS = frozenset().union(*_APP_STATE_FIELDS_BY_SELECTOR.values())
 _REPEATABLE_BUTTONS = {
     "sleepys_app_program": "program",
     "sleepys_app_reset_memory": "resetMemory",
@@ -1197,17 +1196,6 @@ class SleepysEliteAppController(BedController):
                 for axis in range(3)
             )
         return tuple(specs)
-
-    @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        active = {spec.key for spec in self.controller_state_sensor_specs}
-        return frozenset(
-            {
-                *(f"sleepys_app_position_axis_{axis}" for axis in range(3)),
-                *(f"sleepys_app_{field}" for field in _ALL_APP_STATE_FIELDS),
-            }
-            - active
-        )
 
     async def set_position_target(self, axis: int, target: int) -> None:
         if self.selector not in _POSITION_UI_SELECTORS:

@@ -93,17 +93,6 @@ class OkinDotController(OkinUuidController):
         """Return the Nordic UART write characteristic used by DOT boxes."""
         return NORDIC_UART_WRITE_CHAR_UUID
 
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Clean up motor covers when the variant changes; no stair legacy here.
-
-        DOT boxes were never misdetected as the RF ECO BT stair profile, but
-        switching between DOT variants with different handset layouts (e.g.
-        RF34 Back/Legs -> RF1058 Head/Feet) should still remove the old axes
-        (active keys are skipped by the cleanup).
-        """
-        return frozenset({"back", "legs", "head", "feet"})
-
     def _build_command(self, command_value: int) -> bytes:
         """Build a DOT frame: [0x05, 0x02, <4-byte keycode big-endian>, 0x00]."""
         return codec.frame40(command_value)

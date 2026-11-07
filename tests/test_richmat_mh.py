@@ -692,7 +692,6 @@ async def test_blvd_hnrm_factory_reset_uses_the_common_widget_frame(sleeps) -> N
 def test_legacy_route_has_no_ver1_entities_and_stale_keys_cover_them() -> None:
     controller = make(snapshot=vers0("7irm"))
     assert not controller.controller_number_specs and not controller.controller_select_specs
-    assert controller.stale_controller_state_sensor_entity_keys >= {"richmat_mh_memory_arrival"}
 
 
 def test_alarm_options_are_stable_service_values() -> None:

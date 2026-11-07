@@ -361,10 +361,6 @@ class StarcodeM1X12Controller(BedController):
         )
 
     @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset({"back", "legs", "head", "feet", "lumbar", "starcode_union"})
-
-    @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         buttons = (
             ("memory_8", "MemoryType 8"),
@@ -503,52 +499,6 @@ class StarcodeM1X12Controller(BedController):
             )
             for key in keys
         )
-
-    @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        all_keys = (
-            "firmware",
-            "massage_time_raw",
-            "massage_head_level",
-            "massage_foot_level",
-            "massage_mode",
-            "light_brightness",
-            "light_color_index",
-            "light_rgb_mode",
-            "light_mode",
-            "sonic_time_raw",
-            "sonic_frequency",
-            "sonic_head_level",
-            "sonic_foot_level",
-            "sonic_mode",
-            "sonic_massage_type",
-            *(f"part_{part}_position" for part in (1, 2, 4, 8, 16, 32)),
-            "alarm_0",
-            "alarm_1",
-            "eq_volume",
-            "eq_preset",
-            "eq_low_frequency",
-            "eq_high_frequency",
-            *(f"eq_band_{index}" for index in range(8)),
-            "kneading_time_raw",
-            "kneading_mode",
-        )
-        active = {spec.key for spec in self.controller_state_sensor_specs}
-        return frozenset(f"starcode_m1x12_{key}" for key in all_keys) - active
-
-    @property
-    def stale_controller_state_binary_sensor_entity_keys(self) -> frozenset[str]:
-        all_keys = (
-            "motor_stopped",
-            "massage_active",
-            "light_on",
-            "sonic_active",
-            "usb_on",
-            "kneading_on",
-            "kneading_demo",
-        )
-        active = {spec.key for spec in self.controller_state_binary_sensor_specs}
-        return frozenset(f"starcode_m1x12_{key}" for key in all_keys) - active
 
     @property
     def held_control_options(self) -> tuple[str, ...]:

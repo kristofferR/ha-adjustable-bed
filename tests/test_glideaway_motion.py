@@ -535,11 +535,9 @@ async def test_manual_setup_saves_explicit_app_model(hass, model):
     [("motion_400", False), ("motion_450", False), ("motion_500", True), ("motion_600", True)],
 )
 @pytest.mark.parametrize("retained_massage", [False, True])
-async def test_entity_exposure_and_stale_model_cleanup(
+async def test_entity_exposure_follows_the_model(
     hass, alarm_target, model, extra, retained_massage
 ):
-    from homeassistant.helpers import entity_registry as er
-
     from custom_components.adjustable_bed import sensor
     from custom_components.adjustable_bed.button import _button_entities_for
     from custom_components.adjustable_bed.cover import _cover_entities_for
@@ -548,13 +546,6 @@ async def test_entity_exposure_and_stale_model_cleanup(
     coordinator._has_massage = retained_massage
     controller = gm.GlideawayMotionController(coordinator, model=model)
     coordinator._controller = controller
-    registry = er.async_get(hass)
-    stale = registry.async_get_or_create(
-        "sensor",
-        DOMAIN,
-        coordinator.entity_unique_id(gm.STATE_TIMER),
-        config_entry=coordinator.entry,
-    )
     covers = _cover_entities_for(hass, coordinator)
     assert len(covers) == len(gm.LAYOUTS[model])
     buttons = _button_entities_for(hass, coordinator)
@@ -581,7 +572,6 @@ async def test_entity_exposure_and_stale_model_cleanup(
     assert (
         any(s.unique_id == coordinator.entity_unique_id(gm.STATE_TIMER) for s in received) == extra
     )
-    assert (registry.async_get(stale.entity_id) is not None) == extra
 
 
 @pytest.mark.parametrize(

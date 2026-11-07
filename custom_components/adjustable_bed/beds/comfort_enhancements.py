@@ -214,10 +214,6 @@ class ComfortEnhancementsController(BedController):
             for axis in self._axes
         )
 
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset({"back", "legs", "both", "lumbar", "bed_height"})
-
     async def move_back_up(self) -> None:
         await self._move("back", True)
 

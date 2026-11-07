@@ -597,10 +597,6 @@ class FurniMoveController(BedController):
         return bool(self.motor_control_specs)
 
     @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset({"stair"})
-
-    @property
     def supports_simultaneous_movement(self) -> bool:
         return len(self.motor_control_specs) >= 2
 

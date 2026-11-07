@@ -354,7 +354,6 @@ async def test_remote_capabilities(coordinator):
         assert [spec.key for spec in controller.motor_control_specs] == (
             ["head", "feet", "back_legs"] if remote_b else ["head", "feet"]
         )
-        assert "back_legs" in controller.stale_motor_entity_keys
         assert controller.held_control_options == tuple(
             RESTONIC_B_CONTROLS if remote_b else RESTONIC_A_CONTROLS
         )

@@ -452,13 +452,6 @@ class TestMaloufCapabilities:
         specs = coordinator.controller.motor_control_specs
 
         assert [spec.key for spec in specs] == ["back", "legs"]
-        assert coordinator.controller.stale_motor_entity_keys == {
-            "head",
-            "feet",
-            "tilt",
-            "lumbar",
-            "bed_height",
-        }
 
     async def test_legacy_okin_two_motor_layout_is_not_hilo(
         self,

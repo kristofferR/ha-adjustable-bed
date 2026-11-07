@@ -255,14 +255,6 @@ class OkinCstController(BedController):
         return tuple(spec for spec in specs if spec.key in self._profile.motors)
 
     @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Remove aliases and axes absent from the selected product profile."""
-        stale = {"back", "legs", "tilt"}
-        if "lumbar" not in self._profile.motors:
-            stale.add("lumbar")
-        return frozenset(stale)
-
-    @property
     def protocol_diagnostics(self) -> dict[str, object]:
         """Report the explicitly resolved fixed CST product profile."""
         return {

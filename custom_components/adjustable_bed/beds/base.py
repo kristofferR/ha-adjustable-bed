@@ -1456,35 +1456,17 @@ class BedController(ABC):
         return False
 
     @property
-    def position_number_pruning(self) -> frozenset[str] | None:
-        """Extra position-number keys pruned with the standard ones when unsupported.
-
-        Applied once entity discovery completes. None keeps unsupported sliders.
-        """
-        return None
-
-    @property
-    def prunes_stale_light_level(self) -> bool:
-        """Whether setup removes a light-level number this controller lacks."""
-        return False
-
-    @property
-    def prunes_stale_fan_level(self) -> bool:
-        """Whether setup removes a fan-level number this controller lacks."""
-        return False
-
-    @property
-    def prunes_stale_massage_numbers(self) -> bool:
-        """Whether setup removes every massage number this controller lacks.
-
-        Other controllers only retire the right-side intensity number.
-        """
-        return False
-
-    @property
     def controller_entity_discovery_complete(self) -> bool:
         """Whether setup has finished discovering controller-gated entities."""
         return True
+
+    @property
+    def retained_entity_keys(self) -> frozenset[tuple[str, str]]:
+        """(platform, key) of entities that appear only once the bed reports them.
+
+        The stale-entity sweep keeps their registry rows while they are not built.
+        """
+        return frozenset()
 
     def controller_button_available(self, key: str) -> bool:
         """Whether a named action remains valid for current discovered capabilities."""
@@ -1556,16 +1538,6 @@ class BedController(ABC):
     ) -> tuple[ControllerStateBinarySensorSpec, ...]:
         """Return controller-state binary diagnostics exposed by this protocol."""
         return ()
-
-    @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        """Return controller-state sensor entity keys omitted by this snapshot."""
-        return frozenset()
-
-    @property
-    def stale_controller_state_binary_sensor_entity_keys(self) -> frozenset[str]:
-        """Return controller-state binary sensor keys omitted by this snapshot."""
-        return frozenset()
 
     @property
     def supports_wake_control(self) -> bool:
@@ -2203,11 +2175,6 @@ class BedController(ABC):
         map makes the bed's estimates unknown. The default declares no motors.
         """
         return {}
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Return motor entity keys that should be removed when this controller loads."""
-        return frozenset()
 
     # Lumbar motor control (optional - only some beds have this)
 

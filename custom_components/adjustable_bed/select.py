@@ -10,10 +10,9 @@ from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ServiceValidationError
-from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .beds.base import ControllerSelectSpec
 from .const import (
@@ -23,6 +22,7 @@ from .const import (
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime, own_sides
+from .entity_sweep import PlatformEntities, records_entities
 from .octo_runtime import octo_controller
 from .paired_coordinator import entity_runtimes
 
@@ -142,16 +142,16 @@ FOUNDATION_PRESET_RIGHT_DESCRIPTION = AdjustableBedSideStateSelectDescription(
 )
 
 
+@records_entities(Platform.SELECT)
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed select entities."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
     for runtime in entity_runtimes(coordinator):
         async_setup_dynamic_entities(
-            hass,
             entry,
             runtime,
             async_add_entities,
@@ -182,10 +182,6 @@ def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                     coordinator, MASSAGE_TIMER_DESCRIPTION, timer_options
                 )
             )
-        else:
-            _async_remove_stale_select_entity(hass, coordinator, MASSAGE_TIMER_DESCRIPTION.key)
-    elif controller is not None:
-        _async_remove_stale_select_entity(hass, coordinator, MASSAGE_TIMER_DESCRIPTION.key)
 
     if controller is not None:
         if LIGHT_TIMER_DESCRIPTION.is_supported(controller):
@@ -204,11 +200,6 @@ def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                         timer_options,
                     )
                 )
-        elif not controller.light_timer_pending:
-            # A reclassified entry (e.g. Richmat QRRM corrected to BedTech, #410)
-            # can leave behind the old light-timer select; remove it so a dead
-            # control doesn't linger in the UI and card.
-            _async_remove_stale_select_entity(hass, coordinator, LIGHT_TIMER_DESCRIPTION.key)
 
         thermal_timer_options = list(
             THERMAL_TIMER_DESCRIPTION.options_fn(controller)
@@ -221,7 +212,6 @@ def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                 thermal_sides,
                 thermal_timer_options,
             )
-            _async_remove_stale_select_entity(hass, coordinator, THERMAL_TIMER_DESCRIPTION.key)
             for side_description in (
                 THERMAL_TIMER_LEFT_DESCRIPTION,
                 THERMAL_TIMER_RIGHT_DESCRIPTION,
@@ -261,11 +251,6 @@ def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                 coordinator.name,
                 footwarming_sides,
                 footwarming_timer_options,
-            )
-            _async_remove_stale_select_entity(
-                hass,
-                coordinator,
-                FOOTWARMING_TIMER_DESCRIPTION.key,
             )
             for side_description in (
                 FOOTWARMING_TIMER_LEFT_DESCRIPTION,
@@ -323,32 +308,9 @@ def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
 
     if controller is not None:
         specs = controller.controller_select_specs
-        if controller.controller_entity_discovery_complete:
-            _async_remove_stale_controller_selects(hass, coordinator, specs)
         entities.extend(AdjustableBedControllerSelect(coordinator, spec) for spec in specs)
 
     return entities
-
-
-def _async_remove_stale_controller_selects(
-    hass: HomeAssistant, coordinator: EntityRuntime, specs: tuple[ControllerSelectSpec, ...]
-) -> None:
-    """Remove only this runtime's retired controller-declared selects."""
-    desired = {coordinator.entity_unique_id(f"controller_select_{spec.key}") for spec in specs}
-    prefix, suffix = coordinator.entity_unique_id("controller_select_").split(
-        "controller_select_", 1
-    )
-    prefix += "controller_select_"
-    registry = er.async_get(hass)
-    for row in list(er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)):
-        if (
-            row.domain == "select"
-            and row.platform == DOMAIN
-            and row.unique_id.startswith(prefix)
-            and row.unique_id.endswith(suffix)
-            and row.unique_id not in desired
-        ):
-            registry.async_remove(row.entity_id)
 
 
 class AdjustableBedControllerSelect(AdjustableBedEntity, SelectEntity):
@@ -411,22 +373,6 @@ class AdjustableBedControllerSelect(AdjustableBedEntity, SelectEntity):
             await live.select_fn(ctrl, option)
 
         await self._coordinator.async_execute_controller_command(select)
-
-
-def _async_remove_stale_select_entity(
-    hass: HomeAssistant,
-    coordinator: EntityRuntime,
-    key: str,
-) -> None:
-    """Remove a select registry entry the current controller no longer provides."""
-    registry = er.async_get(hass)
-    entity_id = registry.async_get_entity_id(
-        "select",
-        DOMAIN,
-        coordinator.entity_unique_id(key),
-    )
-    if entity_id is not None:
-        registry.async_remove(entity_id)
 
 
 class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):

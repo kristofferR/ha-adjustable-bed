@@ -16,6 +16,7 @@ from custom_components.adjustable_bed.beds.base import (
 )
 from custom_components.adjustable_bed.beds.diagnostic import DiagnosticBedController
 from custom_components.adjustable_bed.const import BED_TYPE_DIAGNOSTIC, CONF_BED_TYPE, DOMAIN
+from custom_components.adjustable_bed.entity_sweep import async_sweep_after_setup
 from custom_components.adjustable_bed.number import (
     AdjustableBedControllerNumber,
     AdjustableBedLevelNumber,
@@ -110,6 +111,7 @@ def runtime_for(hass, controller, side=None, entry=None):
     runtime = MagicMock()
     runtime.entry = entry
     runtime.entity_side = side
+    runtime.controller_side = None
     runtime.device_info = {}
     runtime.has_massage = False
     runtime.disable_angle_sensing = True
@@ -250,37 +252,6 @@ async def test_state_callbacks_watch_declared_key_and_unsubscribe(hass, domain, 
 
 
 @pytest.mark.parametrize("domain", ["select", "number"])
-@pytest.mark.parametrize("complete", [False, True])
-async def test_stale_cleanup_is_bounded_to_profile_side_platform_and_entry(hass, domain, complete):
-    controller = ProductController()
-    controller.complete = complete
-    controller.selects = controller.numbers = False
-    runtime = runtime_for(hass, controller, "left")
-    registry = er.async_get(hass)
-    stale = registry.async_get_or_create(
-        domain, DOMAIN, f"bed_controller_{domain}_old_left", config_entry=runtime.entry
-    )
-    other_side = registry.async_get_or_create(
-        domain, DOMAIN, f"bed_controller_{domain}_old_right", config_entry=runtime.entry
-    )
-    unrelated = registry.async_get_or_create(
-        domain, DOMAIN, "bed_unrelated_left", config_entry=runtime.entry
-    )
-    other_platform = registry.async_get_or_create(
-        domain, "other", f"bed_controller_{domain}_old_left", config_entry=runtime.entry
-    )
-    other_entry = MockConfigEntry(domain=DOMAIN)
-    other_entry.add_to_hass(hass)
-    other_bed = registry.async_get_or_create(
-        domain, DOMAIN, f"another_controller_{domain}_old_left", config_entry=other_entry
-    )
-    (_select_entities_for if domain == "select" else _number_entities_for)(hass, runtime)
-    assert (registry.async_get(stale.entity_id) is not None) is (not complete)
-    for kept in (other_side, unrelated, other_platform, other_bed):
-        assert registry.async_get(kept.entity_id) is not None
-
-
-@pytest.mark.parametrize("domain", ["select", "number"])
 async def test_late_capabilities_add_once_and_do_not_delete_pending_registry(hass, domain):
     controller = ProductController()
     controller.complete = False
@@ -295,13 +266,16 @@ async def test_late_capabilities_add_once_and_do_not_delete_pending_registry(has
     module = f"custom_components.adjustable_bed.{domain}"
     with patch(f"{module}.entity_runtimes", return_value=[runtime]):
         await (setup_selects if domain == "select" else setup_numbers)(hass, runtime.entry, add)
+    async_sweep_after_setup(hass, runtime.entry, (domain,))
     discover = runtime.register_controller_state_callback.call_args.args[0]
     assert registry.async_get(old.entity_id) is not None
     controller.selects = controller.numbers = True
     controller.complete = True
     discover({})
     discover({})
-    assert add.call_count == 2
+    await hass.async_block_till_done()
+    # Nothing was built at setup; the late capability is added exactly once.
+    assert add.call_count == 1
     assert len(add.call_args.args[0]) == 1
     assert registry.async_get(old.entity_id) is None
 

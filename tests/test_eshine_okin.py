@@ -694,37 +694,17 @@ async def test_reported_light_drives_enabled_entity_and_safe_desired_state(
         await entity.async_will_remove_from_hass()
 
 
-async def test_profile_change_removes_obsolete_actions_and_retains_sibling_registry(
-    hass, ha_target
-):
-    from homeassistant.helpers import entity_registry as er
-
+async def test_profile_change_drops_obsolete_actions(hass, ha_target):
     from custom_components.adjustable_bed.button import _button_entities_for
-    from custom_components.adjustable_bed.const import DOMAIN
 
     coordinator, _ = ha_target
-    registry = er.async_get(hass)
     old_keys = [spec.key for spec in coordinator._controller.controller_button_specs]
-    old = {
-        key: registry.async_get_or_create(
-            "button",
-            DOMAIN,
-            coordinator.entity_unique_id(key),
-            config_entry=coordinator.entry,
-        ).entity_id
-        for key in old_keys
-    }
-    sibling = registry.async_get_or_create(
-        "button",
-        DOMAIN,
-        "other_address_eshine_okin_massage_on",
-        config_entry=coordinator.entry,
-    )
     coordinator._controller = EshineOkinController(coordinator, profile="eshine_e2000")
-    _button_entities_for(hass, coordinator)
-    for key, entity_id in old.items():
-        assert (registry.async_get(entity_id) is None) == key.startswith("eshine_okin_massage_")
-    assert registry.async_get(sibling.entity_id) is not None
+    built = {entity.unique_id for entity in _button_entities_for(hass, coordinator)}
+    for key in old_keys:
+        assert (coordinator.entity_unique_id(key) not in built) == key.startswith(
+            "eshine_okin_massage_"
+        )
 
 
 async def test_motor_covers_publish_controller_owned_hold_metadata(hass, ha_target):

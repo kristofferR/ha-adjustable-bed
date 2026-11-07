@@ -1095,15 +1095,6 @@ async def test_legacy_ahf_entities_keep_their_ids_and_send_app_actions(
     legacy_light = registry.async_get_or_create(
         "light", DOMAIN, "bed_under_bed_lights_assumed", config_entry=entry
     )
-    legacy_toggle = registry.async_get_or_create(
-        "button", DOMAIN, "bed_toggle_light", config_entry=entry
-    )
-    stale_named_action = registry.async_get_or_create(
-        "button", DOMAIN, "bed_timotion_ahf_old_axis", config_entry=entry
-    )
-    unrelated_action = registry.async_get_or_create(
-        "button", DOMAIN, "bed_other_app_action", config_entry=entry
-    )
     controller_runtime = _Coordinator()
     controller_runtime.motor_count = 5
     controller, _ = controller_for(runtime=controller_runtime)
@@ -1131,11 +1122,7 @@ async def test_legacy_ahf_entities_keep_their_ids_and_send_app_actions(
     assert len(actions) == 13
     assert stop_button.available
     assert [light.unique_id for light in lights] == [legacy_light.unique_id]
-    assert all(registry.async_get(row.entity_id) is not None for row in legacy_covers)
-    assert registry.async_get(legacy_light.entity_id) is not None
-    assert registry.async_get(legacy_toggle.entity_id) is not None
-    assert registry.async_get(stale_named_action.entity_id) is None
-    assert registry.async_get(unrelated_action.entity_id) is not None
+    assert "bed_timotion_ahf_old_axis" not in {button.unique_id for button in buttons}
 
     writes: list[bytes] = []
 

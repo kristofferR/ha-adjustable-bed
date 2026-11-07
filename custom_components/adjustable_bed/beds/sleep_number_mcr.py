@@ -283,10 +283,6 @@ class SleepNumberMcrController(BedController, SleepNumberActions):
         return True
 
     @property
-    def position_number_pruning(self) -> frozenset[str] | None:
-        return frozenset()
-
-    @property
     def supports_discrete_light_control(self) -> bool:
         """The BAM/MCR bed has separate under-bed light on/off writes."""
         return self.supports_lights

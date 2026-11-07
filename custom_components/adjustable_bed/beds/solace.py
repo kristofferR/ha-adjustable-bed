@@ -152,20 +152,6 @@ class SolaceController(BedController):
         )
 
     @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        """Remove MotionFlex-only sensor entities from narrower profiles."""
-        if self.supports_solace_audio:
-            return frozenset()
-        return frozenset({"solace_audio_volume"})
-
-    @property
-    def stale_controller_state_binary_sensor_entity_keys(self) -> frozenset[str]:
-        """Remove MotionFlex-only binary sensors from narrower profiles."""
-        if self.supports_solace_alarm:
-            return frozenset()
-        return frozenset({"solace_alarm_enabled"})
-
-    @property
     def control_characteristic_uuid(self) -> str:
         """Return the UUID of the control characteristic."""
         return SOLACE_CHAR_UUID
@@ -419,11 +405,6 @@ class SolaceController(BedController):
             )
 
         return tuple(spec(axis) for axis in self.profile.axes)
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Remove covers left behind by the former union/motor-count layout."""
-        return frozenset({"back", "legs", "head", "feet", "hip", "lumbar", "bed_height", "tilt"})
 
     # HA cover actions have no button-release event. Keep the existing timeout as
     # an integration safety cap, while still allowing an explicit stop to cancel it.
@@ -783,10 +764,6 @@ class SolaceController(BedController):
         """Turn lights off."""
         await self.write_command(SolaceCommands.LIGHT_LEVELS[0])
         self.forward_controller_state_update("light_level", 0)
-
-    @property
-    def prunes_stale_light_level(self) -> bool:
-        return True
 
     @property
     def supports_light_level_control(self) -> bool:

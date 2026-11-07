@@ -11,7 +11,6 @@ import pytest
 import voluptuous as vol
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
-from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
@@ -140,24 +139,15 @@ async def test_safety_light_uses_app_button_without_an_inferred_assumed_light(
     runtime.entity_unique_id.side_effect = lambda key: "processor_" + key
     controller._restricted = restricted
     controller._control = AsyncMock()
-    registry = er.async_get(hass)
-    assumed = registry.async_get_or_create(
-        "light", const.DOMAIN, "processor_under_bed_lights_assumed", config_entry=runtime.entry
-    )
-    generic = registry.async_get_or_create(
-        "button", const.DOMAIN, "processor_toggle_light", config_entry=runtime.entry
-    )
     buttons = {entity.translation_key: entity for entity in _button_entities_for(hass, runtime)}
     assert "sleeptracker_light_toggle" in buttons
     assert "toggle_light" not in buttons
     assert _light_entities_for(hass, runtime) == []
-    assert registry.async_get(assumed.entity_id) is None
-    assert registry.async_get(generic.entity_id) is None
     await buttons["sleeptracker_light_toggle"].async_press()
     controller._control.assert_awaited_once()
 
 
-async def test_profile_change_retires_sleeptracker_buttons_for_only_the_affected_side(hass):
+async def test_profile_change_builds_only_the_current_sleeptracker_buttons(hass):
     from custom_components.adjustable_bed.button import _button_entities_for
 
     runtime, old = target(hass, "activebreeze_large")
@@ -166,37 +156,23 @@ async def test_profile_change_retires_sleeptracker_buttons_for_only_the_affected
     runtime.has_massage = True
     runtime.entity_unique_id.side_effect = lambda key: f"processor_{key}_left"
     old._restricted = True
-    registry = er.async_get(hass)
-    previous = {
-        spec.key: registry.async_get_or_create(
-            "button", const.DOMAIN, runtime.entity_unique_id(spec.key), config_entry=runtime.entry
-        )
-        for spec in old.controller_button_specs
-    }
-    other = registry.async_get_or_create(
-        "button", const.DOMAIN, "processor_sleeptracker_light_off_right", config_entry=runtime.entry
-    )
-    unrelated = registry.async_get_or_create(
-        "button", const.DOMAIN, "processor_other_action_left", config_entry=runtime.entry
-    )
+    previous = {spec.key for spec in old.controller_button_specs}
     current = SleeptrackerController(runtime, model="ergo", restricted=False)
     current._processor_type = 5
     runtime.controller = runtime.capability_controller = current
     remaining = {spec.key for spec in current.controller_button_specs}
-    retired = previous.keys() - remaining
+    retired = previous - remaining
     assert retired >= {
         "sleeptracker_identify_local", "sleeptracker_light_off", "sleeptracker_save_zero_g",
         "sleeptracker_massage_28hz", "sleeptracker_massage_40hz",
     }
-    _button_entities_for(hass, runtime)
-    for key, entity in previous.items():
-        assert (registry.async_get(entity.entity_id) is not None) is (key in remaining)
-    assert registry.async_get(other.entity_id) is not None
-    assert registry.async_get(unrelated.entity_id) is not None
+    built = {entity.unique_id for entity in _button_entities_for(hass, runtime)}
+    for key in previous:
+        assert (runtime.entity_unique_id(key) in built) is (key in remaining)
 
 
 @pytest.mark.parametrize("model", ["ergo_smart", "ergo_prosmart"])
-async def test_profile_change_retires_sleeptracker_state_for_only_the_affected_side(hass, model):
+async def test_profile_change_builds_only_the_current_sleeptracker_state(hass, model):
     from custom_components.adjustable_bed.binary_sensor import _binary_sensor_entities_for
     from custom_components.adjustable_bed.sensor import _sensor_entities_for
 
@@ -204,28 +180,14 @@ async def test_profile_change_retires_sleeptracker_state_for_only_the_affected_s
     runtime.device_info = {}
     runtime.entity_side = "left"
     runtime.entity_unique_id.side_effect = lambda key: f"processor_{key}_left"
-    registry = er.async_get(hass)
     previous = {
-        (domain, spec.key): registry.async_get_or_create(
-            domain, const.DOMAIN, runtime.entity_unique_id(spec.key), config_entry=runtime.entry
-        )
+        (domain, spec.key)
         for domain, specs in (
             ("sensor", old.controller_state_sensor_specs),
             ("binary_sensor", old.controller_state_binary_sensor_specs),
         )
         for spec in specs
     }
-    others = [
-        registry.async_get_or_create(
-            domain, const.DOMAIN, unique_id, config_entry=runtime.entry
-        )
-        for domain, unique_id in (
-            ("sensor", "processor_sleeptracker_left_commanded_timer_seconds_right"),
-            ("binary_sensor", "processor_sleeptracker_wind_down_running_right"),
-            ("sensor", "processor_other_state_left"),
-            ("binary_sensor", "processor_other_state_left"),
-        )
-    ]
     current = SleeptrackerController(runtime, model=model)
     runtime.controller = runtime.capability_controller = current
     remaining = {
@@ -236,11 +198,11 @@ async def test_profile_change_retires_sleeptracker_state_for_only_the_affected_s
         )
         for spec in specs
     }
-    _sensor_entities_for(hass, runtime)
-    _binary_sensor_entities_for(hass, runtime)
-    for key, entity in previous.items():
-        assert (registry.async_get(entity.entity_id) is not None) is (key in remaining)
-    assert all(registry.async_get(entity.entity_id) is not None for entity in others)
+    built = {
+        ("sensor", entity.unique_id) for entity in _sensor_entities_for(hass, runtime)
+    } | {("binary_sensor", entity.unique_id) for entity in _binary_sensor_entities_for(hass, runtime)}
+    for domain, key in previous:
+        assert ((domain, runtime.entity_unique_id(key)) in built) is ((domain, key) in remaining)
 
 
 async def test_wave_entities_keep_shared_settings_across_reconnect_and_restart(hass):

@@ -4,7 +4,6 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.const import (
@@ -40,53 +39,23 @@ from tests.test_vibradorm_app import make_controller, written
     ("control", "app"),
     [(None, "werkmeister"), (2, "caresse"), (3, "caresse"), (5, "werkmeister"), (7, "werkmeister")],
 )
-async def test_profile_switch_reconciles_metadata_and_sync_for_only_its_side(hass, control, app):
+async def test_profile_switch_builds_only_its_metadata_and_sync(hass, control, app):
     controller = (
         make_controller(control, app=app)
         if control is not None
         else make_controller_mock(
             controller_state_sensor_specs=(),
-            stale_controller_state_sensor_entity_keys=frozenset(),
             position_number_specs=(),
         )
     )
     runtime = configure_entity_runtime(
         hass, controller, BED_TYPE_VIBRADORM_APP if control else BED_TYPE_DIAGNOSTIC
     )
-    registry = er.async_get(hass)
-    keys = {
-        "vibradorm_app_model",
-        "vibradorm_app_firmware",
-        "vibradorm_app_software",
-        "vibradorm_app_main_firmware_article",
-        "vibradorm_app_sync_observed",
-    }
-    old = {
-        key: registry.async_get_or_create(
-            "sensor", DOMAIN, f"bed_{key}_left", config_entry=runtime.entry
-        )
-        for key in keys
-    }
-    other_side = registry.async_get_or_create(
-        "sensor", DOMAIN, "bed_vibradorm_app_sync_observed_right", config_entry=runtime.entry
-    )
-    unrelated = registry.async_get_or_create(
-        "sensor", DOMAIN, "bed_unrelated_left", config_entry=runtime.entry
-    )
-    other_platform = registry.async_get_or_create(
-        "sensor",
-        "another_integration",
-        "bed_vibradorm_app_sync_observed_left",
-        config_entry=runtime.entry,
-    )
     entities = _sensor_entities_for(hass, runtime)
     active = {spec.key for spec in controller.controller_state_sensor_specs}
     assert ("vibradorm_app_main_firmware_article" in active) is (control in (5, 7))
+    # The entry's stale sweep retires the profile's former telemetry.
     assert {entity._spec.key for entity in entities if hasattr(entity, "_spec")} == active
-    for key, row in old.items():
-        assert (registry.async_get(row.entity_id) is not None) == (key in active)
-    for row in (other_side, unrelated, other_platform):
-        assert registry.async_get(row.entity_id) is not None
 
 
 async def floor_runtime(hass, app="caresse", control=2, *, floor=True, extension=False, rgb=False):
@@ -255,25 +224,10 @@ async def test_actual_floor_gate_is_independent_of_restored_mood_rgb(hass, floor
 
 
 @pytest.mark.parametrize("control", [2, 7])
-async def test_floor_capability_loss_removes_only_its_number_registry_entry(hass, control):
+async def test_floor_capability_loss_drops_its_number(hass, control):
     runtime, _ = await floor_runtime(hass, control=control, floor=False)
-    registry = er.async_get(hass)
-    unique_id = runtime.entity_unique_id("light_level")
-    stale = registry.async_get_or_create("number", DOMAIN, unique_id, config_entry=runtime.entry)
-    other_side = registry.async_get_or_create(
-        "number", DOMAIN, unique_id + "_right", config_entry=runtime.entry
-    )
-    other_platform = registry.async_get_or_create(
-        "number", "another_integration", unique_id, config_entry=runtime.entry
-    )
-    unrelated = registry.async_get_or_create(
-        "number", DOMAIN, runtime.entity_unique_id("unrelated"), config_entry=runtime.entry
-    )
     numbers = _number_entities_for(hass, runtime)
     assert not any(entity.entity_description.key == "light_level" for entity in numbers)
-    assert registry.async_get(stale.entity_id) is None
-    for kept in (other_side, other_platform, unrelated):
-        assert registry.async_get(kept.entity_id) is not None
 
 
 async def test_failed_public_floor_off_retains_last_publication_and_source_intent(hass):

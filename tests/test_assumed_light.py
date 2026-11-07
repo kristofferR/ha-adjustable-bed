@@ -208,17 +208,10 @@ async def test_assumed_light_does_not_replace_other_light_modes(
 ) -> None:
     for key, value in capabilities.items():
         setattr(toggle_runtime.capability_controller, key, value)
-    entry = MockConfigEntry(domain=DOMAIN, data={})
-    entry.add_to_hass(hass)
-    registry = er.async_get(hass)
-    stale = registry.async_get_or_create(
-        "light", DOMAIN, "bed_under_bed_lights_assumed", config_entry=entry
-    )
 
     lights = _light_entities_for(hass, toggle_runtime)
 
     assert not any(isinstance(light, AdjustableBedAssumedLight) for light in lights)
-    assert registry.async_get(stale.entity_id) is None
 
 
 async def test_unknown_capabilities_preserve_existing_assumed_light(

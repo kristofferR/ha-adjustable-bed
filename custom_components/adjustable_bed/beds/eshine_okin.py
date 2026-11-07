@@ -245,10 +245,6 @@ class EshineOkinController(BedController):
             for group in (("massage", "alarm") if self.supports_massage else ("alarm",))
         )
 
-    @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        return frozenset() if self.supports_massage else frozenset({"eshine_okin_massage"})
-
     def invalidate_diagnostics(self) -> None:
         self._observed.clear()
         self.forward_controller_state_updates(

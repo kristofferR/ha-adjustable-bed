@@ -1092,23 +1092,11 @@ def test_unrelated_manufacturer_block_does_not_erase_model(controller, reverse):
     assert actual._pump_model == "360"
 
 
-async def test_changed_foundation_removes_only_stale_position_numbers(hass, sleep_number_mcr_coordinator):
+async def test_changed_foundation_offers_only_its_position_numbers(hass, sleep_number_mcr_coordinator):
     from dataclasses import replace
-
-    from homeassistant.helpers import entity_registry as er
-
-    from custom_components.adjustable_bed.number import _number_entities_for
 
     coordinator = await sleep_number_mcr_coordinator(address="AA:BB:CC:DD:EE:51", name="MCR", entry_id="mcr_cleanup")
     controller = coordinator.controller
-    registry = er.async_get(hass)
-    keys = ("back_position_left", "back_position_right", "legs_position_left", "legs_position_right", "sleep_number_left")
-    entries = {key: registry.async_get_or_create(
-        "number", DOMAIN, coordinator.entity_unique_id(key), config_entry=coordinator.entry
-    ) for key in keys}
     controller._foundation_features = replace(controller._foundation_features, configuration=0, foot=False)
-    _number_entities_for(hass, coordinator)
-    for key in ("back_position_left", "legs_position_left", "legs_position_right"):
-        assert registry.async_get(entries[key].entity_id) is None
-    for key in ("back_position_right", "sleep_number_left"):
-        assert registry.async_get(entries[key].entity_id) is not None
+    # The entry's stale sweep retires the sliders this foundation no longer offers.
+    assert {spec.key for spec in controller.position_number_specs} == {"back_position_right"}

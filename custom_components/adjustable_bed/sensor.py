@@ -14,10 +14,8 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import EntityCategory
+from homeassistant.const import EntityCategory, Platform
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .bed_traits import bed_traits
 from .const import (
@@ -30,11 +28,9 @@ from .const import (
     DOMAIN,
 )
 from .entity import AdjustableBedEntity
-from .entity_discovery import (
-    async_remove_retired_rmcontrol_telemetry,
-    async_setup_dynamic_entities,
-)
+from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
+from .entity_sweep import PlatformEntities, records_entities
 from .paired_coordinator import entity_runtimes
 from .position_estimate_entities import async_setup_estimate_sensors
 
@@ -133,20 +129,19 @@ MASSAGE_SENSOR_DESCRIPTIONS: tuple[AdjustableBedMassageSensorEntityDescription, 
 )
 
 
+@records_entities(Platform.SENSOR)
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed sensor entities."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
     # Opt-in travel-time estimates and saved positions (#601).
     async_setup_estimate_sensors(hass, entry, async_add_entities)
     for runtime in entity_runtimes(coordinator):
-        async_remove_retired_rmcontrol_telemetry(hass, entry, runtime, "sensor")
         async_setup_dynamic_entities(
-            hass, entry, runtime, async_add_entities,
-            partial(_sensor_entities_for, hass, runtime),
+            entry, runtime, async_add_entities, partial(_sensor_entities_for, hass, runtime)
         )
 
 
@@ -172,32 +167,6 @@ def _sensor_entities_for(
     )
 
     entities: list[SensorEntity] = []
-
-    # Only protocols in the explicit angle-sensing capability set may expose degree
-    # sensors. Clean up entities created by older permissive logic so unsupported
-    # beds cannot leave dead "unknown" angles in Home Assistant or the card.
-    if bed_type == BED_TYPE_LINAK:
-        # Linak position numbers already expose the app's exact reference values.
-        # Remove every legacy angle entity, including axes omitted by a new mask.
-        _async_remove_stale_angle_entities(hass, coordinator)
-    elif not has_angle_feedback:
-        _async_remove_stale_angle_entities(hass, coordinator)
-    elif position_number_keys:
-        # A position number already exposes the same live value while also
-        # allowing a target to be set. Keep one entity per axis and remove the
-        # duplicate read-only angle sensor left by earlier releases.
-        _async_remove_stale_angle_entities(
-            hass,
-            coordinator,
-            position_keys=position_number_keys,
-        )
-
-    if bed_type == BED_TYPE_LINAK:
-        _async_remove_stale_sensor_entities(
-            hass,
-            coordinator,
-            keys=("linak_model_variant",),
-        )
 
     # Set up angle sensors only when both the protocol and configuration support it.
     if not coordinator.disable_angle_sensing:
@@ -228,110 +197,11 @@ def _sensor_entities_for(
 
     if controller is not None:
         specs = controller.controller_state_sensor_specs
-        active_keys = {spec.key for spec in specs}
-        from .beds.starcode_abm5_4_profiles import STATE_KEYS
-
-        starcode_keys = {"starcode_abm5_4_" + key for key in STATE_KEYS}
-        stale_keys = (starcode_keys - active_keys) | controller.stale_controller_state_sensor_entity_keys | (
-            {
-                "leggett_led_mask", "leggett_status", "logicdata_app_alarm",
-                "logicdata_app_family_match", "logicdata_app_massage_mode",
-                "logicdata_air_pump_pressure", "malouf_massage_remaining",
-                "customatic_manufacturer", "customatic_hardware_revision",
-                "customatic_software_revision", "customatic_firmware_revision",
-                "customatic_model",
-                "serenity_manufacturer", "serenity_status_code",
-                "serenity_massage_timer_code", "serenity_massage_timer_minutes",
-                "serenity_save_event_code", "serenity_alarm_type",
-                "tranquil_manufacturer", "tranquil_status_code",
-                "tranquil_massage_timer_code", "tranquil_massage_timer_minutes",
-                "tranquil_save_event_code", "tranquil_alarm_type",
-                "zseries_manufacturer", "zseries_status_code",
-                "zseries_massage_timer_code", "zseries_massage_timer_minutes",
-                "zseries_save_event_code", "zseries_alarm_type",
-                "furnimove_model", "furnimove_hardware", "furnimove_software",
-                "furnimove_firmware", "furnimove_control_mode", "furnimove_massage_type",
-                "furnimove_massage_intensity", "furnimove_massage_program",
-                "furnimove_massage_timer_minutes", "furnimove_function_result",
-                "vibradorm_app_model", "vibradorm_app_firmware",
-                "vibradorm_app_software", "vibradorm_app_main_firmware_article",
-                "vibradorm_app_sync_observed",
-                "vibradorm_app_xmc_status", "vibradorm_app_opmode",
-                "vibradorm_app_device_name", "vibradorm_app_revision_id",
-                "vibradorm_app_revision_string", "vibradorm_app_variant",
-                "vmatbasic_model", "vmatbasic_firmware", "vmatbasic_temperature",
-                "vmatbasic_floor_level_observed", "vmatbasic_floor_minutes_observed",
-                "vmatbasic_floor_percent_observed", "vmatbasic_rssi",
-                "svane_head_raw", "svane_feet_raw", "svane_position_raw",
-                "svane_firmware", "svane_hardware", "svane_manufacturer",
-                "limoss_remote_hardware_version", "limoss_remote_software_version",
-                "limoss_remote_serial", "limoss_remote_key_count", "limoss_remote_motor_count",
-                "limoss_remote_configuration", "limoss_remote_memory_slots",
-                "limoss_remote_reported_entry", "limoss_remote_calibration_result",
-                "limoss_remote_motor_1_position_raw", "limoss_remote_motor_2_position_raw",
-                "limoss_remote_motor_3_position_raw", "limoss_remote_motor_4_position_raw",
-                "coolbase_left_fan_level", "coolbase_right_fan_level", "coolbase_massage_mode",
-                "simmons_alarm_1", "simmons_alarm_2",
-                "adjustable_lite_massage_timer", "innova_massage_timer",
-            } - active_keys
-        )
-        _async_remove_stale_sensor_entities(
-            hass,
-            coordinator,
-            keys=tuple(stale_keys),
-        )
         entities.extend(
             AdjustableBedControllerStateSensor(coordinator, spec) for spec in specs
         )
 
-    if controller is not None:
-        # Retire this runtime's app telemetry after a protocol/profile change.
-        for namespace in ("motion_bed_", "sleeptracker_", "bedsense_", "sleepys_app_", "glideaway_motion_"):
-            prefix, suffix = coordinator.entity_unique_id(namespace).split(namespace, 1)
-            prefix += namespace
-            desired = {coordinator.entity_unique_id(spec.key) for spec in controller.controller_state_sensor_specs}
-            registry = er.async_get(hass)
-            for row in list(er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)):
-                if (row.domain == "sensor" and row.platform == DOMAIN
-                        and row.unique_id.startswith(prefix) and row.unique_id.endswith(suffix)
-                        and row.unique_id not in desired):
-                    registry.async_remove(row.entity_id)
-
     return entities
-
-
-def _async_remove_stale_angle_entities(
-    hass: HomeAssistant,
-    coordinator: EntityRuntime,
-    *,
-    position_keys: set[str] | None = None,
-) -> None:
-    """Remove stale angle entities for protocols without degree feedback."""
-    registry = er.async_get(hass)
-    for description in SENSOR_DESCRIPTIONS:
-        if position_keys is not None and description.position_key not in position_keys:
-            continue
-        entity_id = registry.async_get_entity_id(
-            "sensor", DOMAIN, coordinator.entity_unique_id(description.key)
-        )
-        if entity_id is not None:
-            registry.async_remove(entity_id)
-
-
-def _async_remove_stale_sensor_entities(
-    hass: HomeAssistant,
-    coordinator: EntityRuntime,
-    *,
-    keys: tuple[str, ...],
-) -> None:
-    """Remove sensor entities retired in favor of device metadata."""
-    registry = er.async_get(hass)
-    for key in keys:
-        entity_id = registry.async_get_entity_id(
-            "sensor", DOMAIN, coordinator.entity_unique_id(key)
-        )
-        if entity_id is not None:
-            registry.async_remove(entity_id)
 
 
 class AdjustableBedAngleSensor(AdjustableBedEntity, SensorEntity):

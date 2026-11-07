@@ -164,10 +164,6 @@ class VMatBasicController(BedController):
         return False
 
     @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset({"head", "feet", "lumbar", "tilt", "bed_height"})
-
-    @property
     def memory_slot_count(self) -> int:
         return 0
 

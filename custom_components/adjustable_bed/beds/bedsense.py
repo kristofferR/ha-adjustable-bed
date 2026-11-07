@@ -231,10 +231,6 @@ class BedSenseController(BedController):
         )
 
     @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset(axis for axes in LAYOUTS.values() for axis in axes)
-
-    @property
     def protocol_diagnostics(self) -> dict[str, object]:
         return {
             "app_package": "com.fenmenbielei.bedsense",

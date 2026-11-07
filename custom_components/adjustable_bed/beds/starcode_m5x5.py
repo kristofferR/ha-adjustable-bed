@@ -198,14 +198,6 @@ class StarcodeM5X5Controller(BedController):
         return True
 
     @property
-    def position_number_pruning(self) -> frozenset[str] | None:
-        return frozenset({"lumbar_position"})
-
-    @property
-    def prunes_stale_light_level(self) -> bool:
-        return True
-
-    @property
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
         return tuple(
             build_position_number_spec(axis, max_value=100, unit=POSITION_UNIT_PERCENT)
@@ -247,10 +239,6 @@ class StarcodeM5X5Controller(BedController):
                 position_key="lumbar",
             ),
         )
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset(("head", "feet"))
 
     @property
     def memory_slot_count(self) -> int:
@@ -339,54 +327,6 @@ class StarcodeM5X5Controller(BedController):
     @property
     def controller_entity_discovery_complete(self) -> bool:
         return self._ready
-
-    @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        all_keys = (
-            "firmware",
-            "massage_time_raw",
-            "massage_head_level",
-            "massage_foot_level",
-            "massage_mode",
-            "light_brightness",
-            "light_color_index",
-            "light_rgb_mode",
-            "light_mode",
-            "motor_part4",
-            "motor_part5",
-            "motor_part6",
-            "alarm_0",
-            "alarm_1",
-            "sonic_time_raw",
-            "sonic_frequency",
-            "sonic_head_level",
-            "sonic_foot_level",
-            "sonic_mode",
-            "sonic_massage_type",
-            "eq_volume",
-            "eq_preset",
-            "eq_low_frequency",
-            "eq_high_frequency",
-            "kneading_time_raw",
-            "kneading_mode",
-        ) + tuple(f"eq_band_{i}" for i in range(8))
-        active = {spec.key for spec in self.controller_state_sensor_specs}
-        return frozenset(f"starcode_{key}" for key in all_keys) - active
-
-    @property
-    def stale_controller_state_binary_sensor_entity_keys(self) -> frozenset[str]:
-        all_keys = (
-            "firmware_read_ok",
-            "motor_stopped",
-            "massage_active",
-            "light_on",
-            "sonic_active",
-            "usb_on",
-            "kneading_on",
-            "kneading_demo",
-        )
-        active = {spec.key for spec in self.controller_state_binary_sensor_specs}
-        return frozenset(f"starcode_{key}" for key in all_keys) - active
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:

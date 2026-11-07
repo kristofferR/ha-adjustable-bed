@@ -3,14 +3,14 @@ from dataclasses import replace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from homeassistant.const import CONF_NAME
+from homeassistant.const import CONF_NAME, Platform
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.motion_bed import MotionBedController
 from custom_components.adjustable_bed.beds.solace import SolaceController
-from custom_components.adjustable_bed.button import ControllerActionButton, async_setup_entry
+from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTION_BED,
@@ -26,6 +26,7 @@ from custom_components.adjustable_bed.detection import detect_bed_type_detailed
 from custom_components.adjustable_bed.motion_bed_models import select_motion_bed
 from tests.form_helpers import finish_new_bed
 from tests.test_detection import _make_service_info
+from tests.test_entity_sweep import async_setup_platforms_and_sweep
 from tests.test_motion_bed_lifecycle import real_coordinator
 
 
@@ -44,10 +45,9 @@ async def test_hub_reload_keeps_registry_customization_through_inventory_changes
         existing.entity_id, name="My air stop", disabled_by=er.RegistryEntryDisabler.USER
     )
     hass.data[DOMAIN] = {coord.entry.entry_id: coord}
-    added = []
     controller._spawn = MagicMock()
     await controller.start_notify()
-    await async_setup_entry(hass, coord.entry, added.extend)
+    added = await async_setup_platforms_and_sweep(hass, coord.entry, coord, (Platform.BUTTON,))
     assert registry.async_get(existing.entity_id) == customized
     receive = coord.client.start_notify.call_args.args[1]
     frame = bytearray.fromhex("FFFFFFFF010027140000000000000000")
@@ -65,7 +65,7 @@ async def test_hub_reload_keeps_registry_customization_through_inventory_changes
     assert coord.client.write_gatt_char.await_count == writes
     # A genuine profile change still removes stale hub-only identities.
     coord._controller = MotionBedController(coord, selection=select_motion_bed("QMS-IQ"))
-    await async_setup_entry(hass, coord.entry, lambda entities: None)
+    await async_setup_platforms_and_sweep(hass, coord.entry, coord, (Platform.BUTTON,))
     assert registry.async_get(existing.entity_id) is None
     await coord.entry._async_process_on_unload(hass)
     coord._cancel_disconnect_timer()
