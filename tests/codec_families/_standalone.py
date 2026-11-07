@@ -12,8 +12,6 @@ STANDALONE: dict[str, str] = {
     "casper_sleep_mm": "sleep sensor without bed commands",
     "casper_sleep_sxb": "sleep sensor without bed commands",
     "eshine": "own wire format",
-    "eshine_okin": "command words and requests use codec/okin_nframe.py's 40-bit and"
-    " request forms; its 07 04 clock and 07 05 alarm frames have no codec builder",
     "furnimove": "frames use codec/keeson.py; the per-handset FurniMove key catalog"
     " and its combined-key frames stay controller code",
     "gmmotor": "frames use codec/richmat.py; the GM Control product catalog, its P1"

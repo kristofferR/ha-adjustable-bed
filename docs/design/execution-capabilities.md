@@ -82,6 +82,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `serenity` | S stream | U | U | serenity | remaining bitmask restarts a recognized command or is ignored |
 | `tranquil` | S stream | U | U | tranquil | recognized masks only |
 | `adjustable_lumbar` (both routes) | S stream | U | U | lumbar | unsupported chord only stops |
+| `eshine_okin` (E2000, E3000/E3100, E5000) | S stream | U | U | eshine-okin | held keys write at once, refresh every 300 ms with no fixed count, STOP 200 ms after release; hold declared. Single-touch coordination excludes a second movement control; the one multi-touch path, Flat+Zero Gravity, is a fixed frame either release stops. None of its 25 constructors sets a speed |
 | `simmons` (all routes) | S stream | U | U | simmons | one held action |
 | `starcode_abm5_4` | S stream | U | U | abm5_4 | one held action |
 | `starcode_m1x12` | S stream | U | U | m1x12 | no bitmask combination; hold declared |
@@ -173,7 +174,6 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `vibradorm_app` | S stream | U | U | diamant, werkmeister | STOP on release; speed is mood light; hold declared, including its VMAT profile (vmat) |
 | `vmatbasic` | S stream | U | U | vmatbasic | all-up/all-down are fixed keys; speed is mood light; hold declared |
 | `eshine` | S stream | U | U | eshine | STOP once after a sustained press; hold declared |
-| `eshine_okin` (E2000, E3000/E3100, E5000) | S stream | U | U | eshine-okin | held keys write at once, refresh every 300 ms with no fixed count, STOP 200 ms after release; hold declared. Single-touch coordination excludes a second movement control; the one multi-touch path, Flat+Zero Gravity, is a fixed frame either release stops. None of its 25 constructors sets a speed |
 | `goodvibe` | S stream | U | U | goodvibe | sustained controls refresh every 100 ms, then release `6e`; hold declared per control, on the held controls whose effective gesture is a sustained press (see [per-control scope](#per-control-hold-scope)). Each frame carries one operand and the only release is the side's STOP; all-motor moves are fixed operands; speed rows are massage and music shake |
 | `sleepys_elite_app` | S stream | U | U | sleepy | selector STOP once at release; hold declared |
 | `motosleep` | S stream | B | B | motosleep, powerbob, motosleep-guide | movement repeats every 100 ms while held; release sends `$b` five times (MotoSleep HHC and the Power Bob profiles whose release has it) or the MOTO release frame (zero five times, or `0x9088/0x0001` six times on WR219); other Power Bob profiles stop when the refresh ends. #516 and #591: the guide covers only the commands the integration sends, and the frozen reports that would show composition and the full command inventory are not retained. MotoMotion is another app, with its own row |

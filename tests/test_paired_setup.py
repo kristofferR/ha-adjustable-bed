@@ -4485,7 +4485,7 @@ class TestOfflineSafeBedTypes:
             controller = child.capability_controller
             if expected in ESHINE_OKIN_PROFILES:
                 assert isinstance(controller, EshineOkinController)
-                assert controller.profile == expected
+                assert controller.profile.key == expected
                 assert controller.has_pillow_support == (expected == "eshine_e5000")
                 assert controller.supports_massage == (expected != "eshine_e2000")
             else:

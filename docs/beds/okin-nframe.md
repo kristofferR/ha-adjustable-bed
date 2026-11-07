@@ -221,6 +221,9 @@ are unchanged.
 | AdjustableM5X4 BOX25 | `starcode_abm5_4_box25` | `starcode_abm5_4` | 40-bit | plain frame | without response | head, foot | 1 |
 | AdjustableM5X4 BOX15 | `starcode_abm5_4_box15` | `starcode_abm5_4` | 40-bit | plain frame | without response | head, foot | 1 |
 | AdjustableM5X4 BOX1220 | `starcode_abm5_4_box1220` | `starcode_abm5_4` | 40-bit | plain frame | without response | head, foot | 1 |
+| eShine E2000 | `eshine_e2000` | `eshine_okin` | 40-bit | plain frame | without response | head, feet | 0 |
+| eShine E3000 / E3100 | `eshine_e30003100` | `eshine_okin` | 40-bit | plain frame | without response | head, feet | 0 |
+| eShine E5000 | `eshine_e5000` | `eshine_okin` | 40-bit | plain frame | without response | head, feet, pillow | 0 |
 | Rize Sanctuary | `cst_sanctuary` | `okin_cst` | 96-bit | plain frame | with response | head, feet | 2 |
 | Rize Resident | `cst_resident` | `okin_cst` | 96-bit | plain frame | with response | head, feet | 4 |
 | Rize Aviada | `cst_aviada` | `okin_cst` | 96-bit | plain frame | with response | head, feet, lumbar | 3 |
@@ -265,6 +268,9 @@ are unchanged.
 | AdjustableM5X4 BOX25 | 100 ms | entry pulse count; until release with a renewable hold | 1 STOP |
 | AdjustableM5X4 BOX15 | n/a | n/a | moves with its own frames |
 | AdjustableM5X4 BOX1220 | n/a | n/a | moves with its own frames |
+| eShine E2000 | 300 ms | entry pulse count; until release with a renewable hold | 1 STOP, 200 ms after the last write |
+| eShine E3000 / E3100 | 300 ms | entry pulse count; until release with a renewable hold | 1 STOP, 200 ms after the last write |
+| eShine E5000 | 300 ms | entry pulse count; until release with a renewable hold | 1 STOP, 200 ms after the last write |
 | Rize Sanctuary | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
 | Rize Resident | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
 | Rize Aviada | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
@@ -311,6 +317,9 @@ Entry pulse settings are the configured motor pulse count and delay.
 | AdjustableM5X4 BOX25 | n/a | n/a | n/a | n/a | once, no STOP | n/a |
 | AdjustableM5X4 BOX15 | n/a | n/a | n/a | n/a | once, no STOP | n/a |
 | AdjustableM5X4 BOX1220 | n/a | n/a | n/a | n/a | once, no STOP | n/a |
+| eShine E2000 | n/a | n/a | n/a | n/a | n/a | n/a |
+| eShine E3000 / E3100 | n/a | n/a | n/a | n/a | once, no STOP | n/a |
+| eShine E5000 | n/a | n/a | n/a | n/a | once, no STOP | n/a |
 | Rize Sanctuary | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
 | Rize Resident | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
 | Rize Aviada | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
@@ -335,8 +344,9 @@ holding the store key 5000 ms, then the slot 2000 ms. Customatic named memory
 controls hold 2700 ms with no STOP. SIMMONS saves Custom Mode by holding its
 recall key 5500 ms. AdjustableM5X4 presets and recalls are held keys on its
 refresh; it streams Flat for 600 ms and saves or resets for 6000 ms. SleepEase P1
-presets are held keys on its refresh too. The OKIN Bedding apps hold every action
-to its own deadline, saves for 5000 ms; see their profiles.
+presets are held keys on its refresh too, as are eShine presets, its Flat + Zero-G
+chord and its light; its massage keys are one write. The OKIN Bedding apps hold
+every action to its own deadline, saves for 5000 ms; see their profiles.
 <!-- /generated -->
 
 ### Aliases
@@ -391,7 +401,7 @@ times them. Every frame table in this section is generated from the codec.
 | Settings notify | `90311725-25fa-3346-12ef-3cfb7a2556ac` | Leggett Okin Prodigy profiles |
 | Service | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | 40-bit profiles |
 | Write | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | 40-bit profiles |
-| Notify | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | SIMMONS, SleepEase, Sleepy's, AdjustableM5X4 |
+| Notify | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | SIMMONS, SleepEase, Sleepy's, AdjustableM5X4, eShine |
 
 The settings channel opens with `01 02` after subscribing. SIMMONS also accepts
 FFE5/FFE9 with FFE0/FFE4, and AdjustableM5X4 two more transports; see their
@@ -687,6 +697,33 @@ other static frames and the XiaoBao (P2) and P3 packets are listed in its sectio
 
 Keyed by the app's action names. BOX15 and BOX1220 move with their own frames, so
 their profiles hold only the shared keys; BOX25_STAR sends StarCode only.
+
+#### eShine keys
+
+| Command | Word | Profiles | Frame |
+|---|---|---|---|
+| Wave massage | `0x0010000000` | eShine E3000 / E3100, eShine E5000 | `05 02 10 00 00 00 00` |
+| STOP / release | `0x0000000000` | all | `05 02 00 00 00 00 00` |
+| TV | `0x0000004000` | all | `05 02 00 00 40 00 00` |
+| Anti-snore / Snore | `0x0000008000` | all | `05 02 00 00 80 00 00` |
+| Zero-G | `0x0000001000` | all | `05 02 00 00 10 00 00` |
+| Feet down | `0x0000000008` | all | `05 02 00 00 00 08 00` |
+| Feet up | `0x0000000004` | all | `05 02 00 00 00 04 00` |
+| Head down | `0x0000000002` | all | `05 02 00 00 00 02 00` |
+| Head up | `0x0000000001` | all | `05 02 00 00 00 01 00` |
+| Pillow down | `0x0000000020` | eShine E5000 | `05 02 00 00 00 20 00` |
+| Pillow up | `0x0000000010` | eShine E5000 | `05 02 00 00 00 10 00` |
+| Under-bed light toggle | `0x0000020000` | eShine E3000 / E3100, eShine E5000 | `05 02 00 02 00 00 00` |
+| Flat | `0x0008000000` | all | `05 02 08 00 00 00 00` |
+| Reading | `0x0000002000` | all | `05 02 00 00 20 00 00` |
+| Foot massage strength step | `0x0000000400` | eShine E3000 / E3100, eShine E5000 | `05 02 00 00 04 00 00` |
+| Head massage strength step | `0x0000000800` | eShine E3000 / E3100, eShine E5000 | `05 02 00 00 08 00 00` |
+| Massage timer step | `0x0000000200` | eShine E3000 / E3100, eShine E5000 | `05 02 00 00 02 00 00` |
+| Massage off | `0x0002000000` | eShine E3000 / E3100, eShine E5000 | `05 02 02 00 00 00 00` |
+| `massage_on` | `0x0000000100` | eShine E3000 / E3100, eShine E5000 | `05 02 00 00 01 00 00` |
+| Flat + Zero-G chord | `0x0008001000` | all | `05 02 08 00 10 00 00` |
+
+The app's one key table; each product selector exposes the rows listed for it.
 
 #### Okin CST keys
 
