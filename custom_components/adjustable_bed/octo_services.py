@@ -22,6 +22,7 @@ from .services import (
     _command_targets,
     _execute_sided,
     _get_controller_for_service,
+    _release_preflighted,
 )
 
 if TYPE_CHECKING:
@@ -58,6 +59,8 @@ async def _single_octo_service_target(
     controller = await _get_controller_for_service(target)
     octo = octo_controller(controller)
     if octo is None:
+        # The lookup may have connected without an idle timer; hand it one.
+        await _release_preflighted([(coordinator, target)])
         raise ServiceValidationError("This action is not available for the selected OCTO variant")
     return coordinator, side, target, octo
 

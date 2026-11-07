@@ -1078,3 +1078,44 @@ async def test_octo_reset_requires_true_confirmation_and_routes_once(
         )
 
     controller.reset_defaults.assert_awaited_once_with()
+
+
+async def test_octo_lookup_hands_back_a_link_it_opened_for_the_wrong_controller(
+    hass: HomeAssistant,
+) -> None:
+    """A connect that yields no Standard OCTO controller still restores the idle timer."""
+    await async_register_services(hass)
+    other = SimpleNamespace(requires_disconnected_transport=False)
+    coordinator = MagicMock(spec=AdjustableBedCoordinator)
+    coordinator.name = "Star2"
+    coordinator.bed_type = BED_TYPE_OCTO
+    coordinator.capability_controller = None
+    coordinator.controller = None
+    coordinator.is_connected = False
+    coordinator.pairlink_peripheral = False
+
+    async def connect(*, reset_timer: bool) -> bool:
+        coordinator.controller = other
+        coordinator.is_connected = True
+        return True
+
+    coordinator.async_ensure_connected = AsyncMock(side_effect=connect)
+
+    with (
+        patch(
+            "custom_components.adjustable_bed.octo_services._call_targets",
+            return_value=[(coordinator, SIDE_BOTH)],
+        ),
+        pytest.raises(ServiceValidationError, match="selected OCTO variant"),
+    ):
+        await hass.services.async_call(
+            DOMAIN,
+            "octo_enroll_pin",
+            {"device_id": "octo-device", CONF_OCTO_PIN: "1234", "octo_pin_confirmation": "1234"},
+            blocking=True,
+        )
+
+    assert [call.kwargs for call in coordinator.async_ensure_connected.await_args_list] == [
+        {"reset_timer": False},
+        {"reset_timer": True},
+    ]
