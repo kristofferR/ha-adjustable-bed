@@ -33,130 +33,130 @@
   },
   "implementation_groups": {
     "bed_command": [
-      "custom_components/adjustable_bed/beds/casper_base.py:async_perform_casper_base_action/async_execute_casper_base_request/start_notify",
-      "custom_components/adjustable_bed/beds/casper_base.py:_snore_result"
+      "custom_components/adjustable_bed/beds/casper_base/controller.py:async_perform_casper_base_action/async_execute_casper_base_request/start_notify",
+      "custom_components/adjustable_bed/beds/casper_base/controller.py:_snore_result"
     ],
     "bed_notification": [
-      "custom_components/adjustable_bed/casper_base_protocol.py:MainReceive/decode_main/decode_extra",
-      "custom_components/adjustable_bed/beds/casper_base.py:_consume"
+      "custom_components/adjustable_bed/beds/casper_base/protocol.py:MainReceive/decode_main/decode_extra",
+      "custom_components/adjustable_bed/beds/casper_base/controller.py:_consume"
     ],
     "bed_discovery_rules": [
-      "custom_components/adjustable_bed/beds/casper_base.py",
-      "custom_components/adjustable_bed/casper_base_protocol.py",
+      "custom_components/adjustable_bed/beds/casper_base/controller.py",
+      "custom_components/adjustable_bed/beds/casper_base/protocol.py",
       "docs/beds/casper-base.md"
     ],
     "bed_gatt": [
-      "custom_components/adjustable_bed/beds/casper_base.py",
-      "custom_components/adjustable_bed/casper_base_protocol.py",
+      "custom_components/adjustable_bed/beds/casper_base/controller.py",
+      "custom_components/adjustable_bed/beds/casper_base/protocol.py",
       "docs/beds/casper-base.md"
     ],
     "bed_session_sequence": [
-      "custom_components/adjustable_bed/beds/casper_base.py",
-      "custom_components/adjustable_bed/casper_base_protocol.py",
+      "custom_components/adjustable_bed/beds/casper_base/controller.py",
+      "custom_components/adjustable_bed/beds/casper_base/protocol.py",
       "docs/beds/casper-base.md",
       "custom_components/adjustable_bed/coordinator.py:async_start_notify"
     ],
     "bed_packet_format": [
-      "custom_components/adjustable_bed/beds/casper_base.py",
-      "custom_components/adjustable_bed/casper_base_protocol.py",
+      "custom_components/adjustable_bed/beds/casper_base/controller.py",
+      "custom_components/adjustable_bed/beds/casper_base/protocol.py",
       "docs/beds/casper-base.md"
     ],
     "bed_capabilities": [
-      "custom_components/adjustable_bed/beds/casper_base.py",
-      "custom_components/adjustable_bed/casper_base_protocol.py",
+      "custom_components/adjustable_bed/beds/casper_base/controller.py",
+      "custom_components/adjustable_bed/beds/casper_base/protocol.py",
       "docs/beds/casper-base.md"
     ],
     "bed_timing": [
-      "custom_components/adjustable_bed/beds/casper_base.py",
-      "custom_components/adjustable_bed/casper_base_protocol.py",
+      "custom_components/adjustable_bed/beds/casper_base/controller.py",
+      "custom_components/adjustable_bed/beds/casper_base/protocol.py",
       "docs/beds/casper-base.md"
     ],
     "bed_release_behavior": [
-      "custom_components/adjustable_bed/beds/casper_base.py",
-      "custom_components/adjustable_bed/casper_base_protocol.py",
+      "custom_components/adjustable_bed/beds/casper_base/controller.py",
+      "custom_components/adjustable_bed/beds/casper_base/protocol.py",
       "docs/beds/casper-base.md"
     ],
     "sensor_command": [
-      "custom_components/adjustable_bed/beds/casper_sleep.py:_send/async_execute_casper_base_request"
+      "custom_components/adjustable_bed/beds/casper_sleep/controller.py:_send/async_execute_casper_base_request"
     ],
     "sensor_notification": [
-      "custom_components/adjustable_bed/casper_sleep_protocol.py:Receive/decode_bean/Live",
-      "custom_components/adjustable_bed/beds/casper_sleep.py:_consume"
+      "custom_components/adjustable_bed/beds/casper_sleep/protocol.py:Receive/decode_bean/Live",
+      "custom_components/adjustable_bed/beds/casper_sleep/controller.py:_consume"
     ],
     "sensor_discovery_rules": [
-      "custom_components/adjustable_bed/beds/casper_sleep.py",
-      "custom_components/adjustable_bed/casper_sleep_protocol.py",
+      "custom_components/adjustable_bed/beds/casper_sleep/controller.py",
+      "custom_components/adjustable_bed/beds/casper_sleep/protocol.py",
       "docs/beds/casper-base.md"
     ],
     "sensor_gatt": [
-      "custom_components/adjustable_bed/beds/casper_sleep.py",
-      "custom_components/adjustable_bed/casper_sleep_protocol.py",
+      "custom_components/adjustable_bed/beds/casper_sleep/controller.py",
+      "custom_components/adjustable_bed/beds/casper_sleep/protocol.py",
       "docs/beds/casper-base.md"
     ],
     "sensor_session_sequence": [
-      "custom_components/adjustable_bed/beds/casper_sleep.py",
-      "custom_components/adjustable_bed/casper_sleep_protocol.py",
+      "custom_components/adjustable_bed/beds/casper_sleep/controller.py",
+      "custom_components/adjustable_bed/beds/casper_sleep/protocol.py",
       "docs/beds/casper-base.md",
       "custom_components/adjustable_bed/coordinator.py:async_start_notify"
     ],
     "sensor_packet_format": [
-      "custom_components/adjustable_bed/beds/casper_sleep.py",
-      "custom_components/adjustable_bed/casper_sleep_protocol.py",
+      "custom_components/adjustable_bed/beds/casper_sleep/controller.py",
+      "custom_components/adjustable_bed/beds/casper_sleep/protocol.py",
       "docs/beds/casper-base.md"
     ],
     "sensor_capabilities": [
-      "custom_components/adjustable_bed/beds/casper_sleep.py",
-      "custom_components/adjustable_bed/casper_sleep_protocol.py",
+      "custom_components/adjustable_bed/beds/casper_sleep/controller.py",
+      "custom_components/adjustable_bed/beds/casper_sleep/protocol.py",
       "docs/beds/casper-base.md"
     ],
     "sensor_timing": [
-      "custom_components/adjustable_bed/beds/casper_sleep.py",
-      "custom_components/adjustable_bed/casper_sleep_protocol.py",
+      "custom_components/adjustable_bed/beds/casper_sleep/controller.py",
+      "custom_components/adjustable_bed/beds/casper_sleep/protocol.py",
       "docs/beds/casper-base.md"
     ],
     "sensor_release_behavior": [
-      "custom_components/adjustable_bed/beds/casper_sleep.py",
-      "custom_components/adjustable_bed/casper_sleep_protocol.py",
+      "custom_components/adjustable_bed/beds/casper_sleep/controller.py",
+      "custom_components/adjustable_bed/beds/casper_sleep/protocol.py",
       "docs/beds/casper-base.md"
     ],
     "product": [
-      "custom_components/adjustable_bed/casper_base_catalog.py:PRODUCTS",
-      "custom_components/adjustable_bed/beds/casper_base.py:actions/controller_button_specs/motor_control_specs",
+      "custom_components/adjustable_bed/beds/casper_base/catalog.py:PRODUCTS",
+      "custom_components/adjustable_bed/beds/casper_base/controller.py:actions/controller_button_specs/motor_control_specs",
       "custom_components/adjustable_bed/profiles/casper.py:CASPER_BASE_VARIANTS"
     ],
     "command_item": [
-      "custom_components/adjustable_bed/casper_base_catalog.py:ACTIONS",
-      "custom_components/adjustable_bed/beds/casper_base.py:async_perform_casper_base_action/start_notify/async_execute_casper_base_request"
+      "custom_components/adjustable_bed/beds/casper_base/catalog.py:ACTIONS",
+      "custom_components/adjustable_bed/beds/casper_base/controller.py:async_perform_casper_base_action/start_notify/async_execute_casper_base_request"
     ],
     "decoder": [
-      "custom_components/adjustable_bed/casper_sleep_schema.py:SCHEMAS",
-      "custom_components/adjustable_bed/casper_sleep_protocol.py:decode_bean/numeric/Live"
+      "custom_components/adjustable_bed/beds/casper_sleep/schema.py:SCHEMAS",
+      "custom_components/adjustable_bed/beds/casper_sleep/protocol.py:decode_bean/numeric/Live"
     ],
     "receive_consumer": [
-      "custom_components/adjustable_bed/beds/casper_base.py:_consume/_publish",
-      "custom_components/adjustable_bed/casper_base_protocol.py:decode_main/decode_extra",
+      "custom_components/adjustable_bed/beds/casper_base/controller.py:_consume/_publish",
+      "custom_components/adjustable_bed/beds/casper_base/protocol.py:decode_main/decode_extra",
       "custom_components/adjustable_bed/coordinator.py:handle_controller_state_updates"
     ],
     "behavior.automatic_detector": [
-      "custom_components/adjustable_bed/beds/casper_base.py:_poll_snore/_snore_result"
+      "custom_components/adjustable_bed/beds/casper_base/controller.py:_poll_snore/_snore_result"
     ],
     "behavior.sensor_information": [
-      "custom_components/adjustable_bed/beds/casper_sleep.py:_consume"
+      "custom_components/adjustable_bed/beds/casper_sleep/controller.py:_consume"
     ],
     "behavior.sensor_live": [
-      "custom_components/adjustable_bed/casper_sleep_protocol.py:Live/live_typed"
+      "custom_components/adjustable_bed/beds/casper_sleep/protocol.py:Live/live_typed"
     ],
     "behavior.remote_finder": [
-      "custom_components/adjustable_bed/beds/casper_sleep.py:CasperRemoteController"
+      "custom_components/adjustable_bed/beds/casper_sleep/controller.py:CasperRemoteController"
     ],
     "behavior.music_sources": [
-      "custom_components/adjustable_bed/beds/casper_base.py:async_perform_casper_base_action"
+      "custom_components/adjustable_bed/beds/casper_base/controller.py:async_perform_casper_base_action"
     ],
     "behavior.alarm_merge": [
-      "custom_components/adjustable_bed/beds/casper_base.py:_consume/async_execute_casper_base_request"
+      "custom_components/adjustable_bed/beds/casper_base/controller.py:_consume/async_execute_casper_base_request"
     ],
     "behavior.ha_routes": [
-      "custom_components/adjustable_bed/casper_base_services.py:handle",
+      "custom_components/adjustable_bed/beds/casper_base/services.py:handle",
       "custom_components/adjustable_bed/pairing.py:supports_single_address_pairing",
       "custom_components/adjustable_bed/config_flow.py:async_step_pair_sides"
     ],

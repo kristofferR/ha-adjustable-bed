@@ -19,8 +19,8 @@ def test_base_and_factory_do_not_import_concrete_controllers():
             assert not concrete, concrete
             # Legacy exports still resolve the selected class on demand.
             from custom_components.adjustable_bed.beds import JensenController
-            assert JensenController.__module__ == prefix + "jensen"
-            assert prefix + "reverie" not in sys.modules
+            assert JensenController.__module__ == prefix + "jensen.controller"
+            assert prefix + "reverie.controller" not in sys.modules
         ''')],
         capture_output=True, text=True, check=False,
     )

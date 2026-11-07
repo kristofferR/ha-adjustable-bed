@@ -57,10 +57,10 @@
     },
     "movement": {
       "code": [
-        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.movement_commands",
-        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.hold_control",
-        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.stop_all",
-        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController._refresh_held"
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::MotoMotionController.movement_commands",
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::MotoMotionController.hold_control",
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::MotoMotionController.stop_all",
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::MotoMotionController._refresh_held"
       ],
       "tests": [
         "tests/test_motomotion.py::test_held_movement_cadence_and_fresh_cleanup",
@@ -72,11 +72,11 @@
     },
     "memory": {
       "code": [
-        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.preset_memory",
-        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.program_memory",
-        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.supports_memory_presets",
-        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.supports_memory_programming",
-        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.action"
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::MotoMotionController.preset_memory",
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::MotoMotionController.program_memory",
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::MotoMotionController.supports_memory_presets",
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::MotoMotionController.supports_memory_programming",
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::MotoMotionController.action"
       ],
       "tests": [
         "tests/test_motomotion.py::test_memory_cancel_cleanup_cannot_be_suppressed",
@@ -87,8 +87,8 @@
     },
     "levels": {
       "code": [
-        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.action",
-        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController._comfort"
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::MotoMotionController.action",
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::MotoMotionController._comfort"
       ],
       "tests": [
         "tests/test_motomotion.py::test_right_child_level_consumes_right_delivered_state",
@@ -97,11 +97,11 @@
     },
     "rgb": {
       "code": [
-        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController._color",
-        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController._prepare_light",
-        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController._lumbar",
-        "custom_components/adjustable_bed/motomotion_protocol.py::rgb_total",
-        "custom_components/adjustable_bed/motomotion_protocol.py::light_cycle"
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::MotoMotionController._color",
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::MotoMotionController._prepare_light",
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::MotoMotionController._lumbar",
+        "custom_components/adjustable_bed/beds/motomotion/protocol.py::rgb_total",
+        "custom_components/adjustable_bed/beds/motomotion/protocol.py::light_cycle"
       ],
       "tests": [
         "tests/test_motomotion.py::test_long_padded_rgb_failure_then_live_toggle",
@@ -112,8 +112,8 @@
     },
     "music": {
       "code": [
-        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.select",
-        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.set_number",
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::MotoMotionController.select",
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::MotoMotionController.set_number",
         "custom_components/adjustable_bed/codec/motomotion.py::music_command"
       ],
       "tests": [
@@ -123,11 +123,11 @@
     },
     "users": {
       "code": [
-        "custom_components/adjustable_bed/motomotion_protocol.py::posture",
-        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.async_execute_motomotion_request",
-        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.restore_persisted_app_state",
-        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController._select_posture",
-        "custom_components/adjustable_bed/motomotion_services.py::handle"
+        "custom_components/adjustable_bed/beds/motomotion/protocol.py::posture",
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::MotoMotionController.async_execute_motomotion_request",
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::MotoMotionController.restore_persisted_app_state",
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::MotoMotionController._select_posture",
+        "custom_components/adjustable_bed/beds/motomotion/services.py::handle"
       ],
       "tests": [
         "tests/test_motomotion.py::test_custom_postures_stay_with_selected_user",
@@ -138,12 +138,12 @@
     },
     "session": {
       "code": [
-        "custom_components/adjustable_bed/beds/motomotion.py::select_transport",
-        "custom_components/adjustable_bed/beds/motomotion.py::select_unpair_characteristic",
-        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.start_notify",
-        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.stop_notify",
-        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.write_command",
-        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.action"
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::select_transport",
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::select_unpair_characteristic",
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::MotoMotionController.start_notify",
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::MotoMotionController.stop_notify",
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::MotoMotionController.write_command",
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::MotoMotionController.action"
       ],
       "tests": [
         "tests/test_motomotion.py::test_binding_cache_request_before_ble_without_durability",
@@ -159,7 +159,7 @@
         "custom_components/adjustable_bed/profiles/motomotion.py::eligible",
         "custom_components/adjustable_bed/setup_questions.py::_motomotion_errors",
         "custom_components/adjustable_bed/controller_factory.py::create_controller",
-        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController.memory_slot_count",
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::MotoMotionController.memory_slot_count",
         "custom_components/adjustable_bed/pairing.py::supports_single_address_pairing",
         "custom_components/adjustable_bed/paired_coordinator.py::SingleAddressPairedCoordinator._targets_for"
       ],
@@ -175,10 +175,10 @@
     },
     "receive": {
       "code": [
-        "custom_components/adjustable_bed/motomotion_state.py::State.parse",
-        "custom_components/adjustable_bed/motomotion_state.py::State.feed",
-        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController._notification",
-        "custom_components/adjustable_bed/beds/motomotion.py::MotoMotionController._deliver"
+        "custom_components/adjustable_bed/beds/motomotion/state.py::State.parse",
+        "custom_components/adjustable_bed/beds/motomotion/state.py::State.feed",
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::MotoMotionController._notification",
+        "custom_components/adjustable_bed/beds/motomotion/controller.py::MotoMotionController._deliver"
       ],
       "tests": [
         "tests/test_motomotion.py::test_every_receive_length_and_exact_event_multiplicity",

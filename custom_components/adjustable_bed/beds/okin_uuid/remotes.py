@@ -7,11 +7,11 @@ serves. Regenerate with ``tools/okin_remotes/gen_module.py`` (see the README
 there for the full pipeline).
 
 Codes in the pinned FurniMove production catalog (``beds/furnimove/profiles.py``)
-are labelled here but have no data row: ``okin_uuid.py`` derives their
+are labelled here but have no data row: ``controller.py`` derives their
 keycodes from that catalog, the single source for those handsets.
 
 Each entry is keyword arguments for ``OkinUuidRemoteConfig`` (see
-``okin_uuid.py``). Keycodes are the 32-bit Okin command values; the standard
+``controller.py``). Keycodes are the 32-bit Okin command values; the standard
 controller wraps them as ``[0x04, 0x02, <4-byte big-endian>]``. ``memory_save``
 may be a ``(keycode, count, delay_ms)`` hold tuple when the backend specifies
 hold timing for that handset. UBL/light commands are always single keycodes:

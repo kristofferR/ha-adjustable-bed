@@ -16,7 +16,7 @@
       "disposition": "IMPLEMENTED",
       "accepted_source": "PRODUCT-JOINS.json; accepted/s00_selection.json E-PRODUCT/E-PERSIST; s05..s08 exact products",
       "reason": "",
-      "code": "hush_catalog.py; beds/hush_base.py:HushBaseController; validators.py; app_profiles.py; controller_factory.py",
+      "code": "beds/hush_base/catalog.py; beds/hush_base/controller.py:HushBaseController; validators.py; app_profiles.py; controller_factory.py",
       "tests": "tests/test_hush_base.py:test_all_exact_ordered_memberships_and_capabilities; tests/test_hush_ha.py:test_factory_notification_channel_and_entities"
     },
     {
@@ -24,7 +24,7 @@
       "disposition": "ALREADY_IMPLEMENTED",
       "accepted_source": "accepted/s01_shared_ble.json builders; accepted/s03_auxiliary.json commands; s06 exact command vectors",
       "reason": "",
-      "code": "casper_base_protocol.py:control/special/extra/light_rgb/light_seconds/time_sync",
+      "code": "beds/casper_base/protocol.py:control/special/extra/light_rgb/light_seconds/time_sync",
       "tests": "tests/test_casper_base_protocol.py; tests/test_hush_base.py:test_transport_side_stop_and_initialization; tests/test_hush_sleep.py:test_accepted_command_examples"
     },
     {
@@ -32,7 +32,7 @@
       "disposition": "ALREADY_IMPLEMENTED",
       "accepted_source": "accepted/s02_controls.json; s06..s08 commands and release contracts",
       "reason": "",
-      "code": "beds/casper_base.py:async_perform_casper_base_action/motor_control_specs/stop_all",
+      "code": "beds/casper_base/controller.py:async_perform_casper_base_action/motor_control_specs/stop_all",
       "tests": "tests/test_casper_base.py:test_cleanup_on_task_cancel; tests/test_hush_base.py:test_transport_side_stop_and_initialization"
     },
     {
@@ -40,7 +40,7 @@
       "disposition": "IMPLEMENTED",
       "accepted_source": "PRODUCT-JOINS.json; accepted/s02_controls.json; accepted/s03_auxiliary.json; accepted/s05_other_products.json action_policy",
       "reason": "",
-      "code": "beds/hush_base.py:actions/alarm_opcode/_perform_action/controller_button_specs",
+      "code": "beds/hush_base/controller.py:actions/alarm_opcode/_perform_action/controller_button_specs",
       "tests": "tests/test_hush_base.py:test_alarm_order_fan_release_and_saved_light; tests/test_hush_base.py:test_dedicated_music_descriptors_and_phone_only_exclusion"
     },
     {
@@ -48,7 +48,7 @@
       "disposition": "IMPLEMENTED",
       "accepted_source": "accepted/s03_auxiliary.json PRODUCT-AUXILIARY-MATRIX and light page/widget claims; root-s03 one-row timing adoption; current019 COLOR proofs",
       "reason": "",
-      "code": "beds/hush_base.py:validate_casper_base_request/persisted_app_state/restore_persisted_app_state",
+      "code": "beds/hush_base/controller.py:validate_casper_base_request/persisted_app_state/restore_persisted_app_state",
       "tests": "tests/test_hush_base.py:test_profile_is_explicit_and_light_policy_is_hush_specific; tests/test_hush_base.py:test_alarm_order_fan_release_and_saved_light"
     },
     {
@@ -56,7 +56,7 @@
       "disposition": "IMPLEMENTED",
       "accepted_source": "accepted/s03_auxiliary.json alarm/repeat commands; PRODUCT-JOINS.json off34/off48",
       "reason": "",
-      "code": "beds/hush_base.py:async_execute_casper_base_request/alarm_opcode; beds/casper_base.py:_consume/async_execute_casper_base_request",
+      "code": "beds/hush_base/controller.py:async_execute_casper_base_request/alarm_opcode; beds/casper_base/controller.py:_consume/async_execute_casper_base_request",
       "tests": "tests/test_hush_base.py:test_alarm_order_fan_release_and_saved_light; tests/test_casper_base.py; tests/test_hush_notifications.py"
     },
     {
@@ -64,7 +64,7 @@
       "disposition": "IMPLEMENTED",
       "accepted_source": "accepted/s01_shared_ble.json notifications; NOTIFICATIONS.md/PARSER-VECTORS.json s01 revision002; current019 receive/error compositions",
       "reason": "",
-      "code": "hush_protocol.py:decode/HushMainReceive; beds/hush_base.py:_on_notification; beds/casper_base.py:_consume/_publish",
+      "code": "beds/hush_base/protocol.py:decode/HushMainReceive; beds/hush_base/controller.py:_on_notification; beds/casper_base/controller.py:_consume/_publish",
       "tests": "tests/test_hush_notifications.py; tests/test_casper_base_protocol.py"
     },
     {
@@ -72,7 +72,7 @@
       "disposition": "IMPLEMENTED",
       "accepted_source": "accepted/s01_shared_ble.json bridge/lifecycle; audit018 AGGREGATE-JOINS018 gatt-order; current019 source dependency tables",
       "reason": "",
-      "code": "beds/hush_base.py:_send/on_disconnect/_poll_snore; beds/hush_sleep.py:_send/_schedule/on_disconnect; beds/base.py:_write_gatt_with_retry(expected_client)",
+      "code": "beds/hush_base/controller.py:_send/on_disconnect/_poll_snore; beds/hush_sleep/controller.py:_send/_schedule/on_disconnect; beds/gatt_write.py:_write_gatt_with_retry(expected_client)",
       "tests": "tests/test_hush_ha.py:test_ble_lock_checks_physical_client_after_wait; tests/test_hush_base.py:test_disconnect_during_tick_does_not_write_new_target; tests/test_hush_sleep.py:test_delayed_handshake_uses_actual_admitted_controller"
     },
     {
@@ -80,7 +80,7 @@
       "disposition": "IMPLEMENTED",
       "accepted_source": "accepted/s00_selection.json startup/profile/remote; s06..s08 side predicates",
       "reason": "",
-      "code": "detection.py; controller_factory.py; casper_base_services.py; config_flow.py; pairing.py; frontend/src/discovery.ts",
+      "code": "detection.py; controller_factory.py; beds/casper_base/services.py; config_flow.py; pairing.py; frontend/src/discovery.ts",
       "tests": "tests/test_hush_ha.py; tests/test_hush_base.py:test_profile_is_explicit_and_light_policy_is_hush_specific; custom_components/adjustable_bed/frontend/src/discovery.test.ts"
     },
     {
@@ -88,7 +88,7 @@
       "disposition": "IMPLEMENTED",
       "accepted_source": "accepted/s04_sleep.json commands/feature_domains; s04 revision004 command-matrix.json; accepted/s00_selection.json P3",
       "reason": "",
-      "code": "beds/hush_sleep.py; hush_sleep_protocol.py:build; casper_sleep_protocol.py:command/envelope",
+      "code": "beds/hush_sleep/controller.py; beds/hush_sleep/protocol.py:build; beds/casper_sleep/protocol.py:command/envelope",
       "tests": "tests/test_hush_sleep.py:test_accepted_command_examples/test_sensor_settings_and_part_domains; tests/test_hush_base.py:test_remote_is_connect_only; tests/test_hush_ha.py"
     },
     {
@@ -96,7 +96,7 @@
       "disposition": "IMPLEMENTED",
       "accepted_source": "accepted/s04_sleep.json; s04 revision004 parser-contracts.json/PARSERS.md; independent017/018 qualified numeric/list/codec/source lemmas",
       "reason": "",
-      "code": "hush_sleep_schema.py; hush_sleep_protocol.py:parse/report/HushReceive; beds/hush_sleep.py:_consume",
+      "code": "beds/hush_sleep/schema.py; beds/hush_sleep/protocol.py:parse/report/HushReceive; beds/hush_sleep/controller.py:_consume",
       "tests": "tests/test_hush_sleep.py:test_all_source_schema_fields_and_required_types/test_compressed_multi_report_and_typed_fields/test_sensor_settings_and_part_domains"
     },
     {
@@ -104,7 +104,7 @@
       "disposition": "ALREADY_IMPLEMENTED",
       "accepted_source": "accepted/s04_sleep.json realtime/UI state; s04 revision004 realtime-vectors.json",
       "reason": "",
-      "code": "casper_sleep_protocol.py:Live; beds/casper_sleep.py:_publish_live/_on_notification",
+      "code": "beds/casper_sleep/protocol.py:Live; beds/casper_sleep/controller.py:_publish_live/_on_notification",
       "tests": "tests/test_casper_base.py; tests/test_hush_sleep.py:test_sensor_settings_and_part_domains"
     },
     {
@@ -112,7 +112,7 @@
       "disposition": "IMPLEMENTED",
       "accepted_source": "accepted/s04_sleep.json software_lifecycle_control/SESSION; audit018 direct lifetime qualifications, safety adaptation below",
       "reason": "",
-      "code": "beds/hush_sleep.py:persisted_app_state/requests_connection_recovery/on_connection_release/on_disconnect/_poll_live; app_state_store.py",
+      "code": "beds/hush_sleep/controller.py:persisted_app_state/requests_connection_recovery/on_connection_release/on_disconnect/_poll_live; app_state_store.py",
       "tests": "tests/test_hush_sleep.py:test_intent_survives_link_loss_but_explicit_release_clears/test_sleep_fragment_connection_loss_does_not_retarget"
     },
     {
@@ -120,7 +120,7 @@
       "disposition": "EXCLUDED",
       "accepted_source": "CONFLICT-RESOLUTION.json C05..C09; current019 joins; accepted s01/s02/s03/s04 lifecycle/error source predicates",
       "reason": "Safety constraint: never create motion via an undefined fallback or allow callbacks/STOP to act on another physical target. App UI gesture timings/persistence are replaced by explicit HA actions, not hardware protocol changes.",
-      "code": "beds/hush_base.py; beds/hush_sleep.py; hush_protocol.py; hush_sleep_protocol.py",
+      "code": "beds/hush_base/controller.py; beds/hush_sleep/controller.py; beds/hush_base/protocol.py; beds/hush_sleep/protocol.py",
       "tests": "tests/test_hush_base.py:test_disconnect_during_tick_does_not_write_new_target; tests/test_hush_ha.py:test_ble_lock_checks_physical_client_after_wait; tests/test_hush_notifications.py:test_extended_integrity_fragmentation_and_nonprogress_rejection"
     },
     {

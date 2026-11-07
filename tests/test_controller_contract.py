@@ -19,6 +19,7 @@ from custom_components.adjustable_bed.beds.entity_specs import (
     POSITION_UNIT_DEGREES,
     POSITION_UNIT_PERCENT,
 )
+from custom_components.adjustable_bed.beds.leggett.lp_legacy_profiles import LP_LEGACY_PROFILE_CODES
 from custom_components.adjustable_bed.const import (
     BED_TYPE_COOLBASE,
     BED_TYPE_KEESON,
@@ -241,10 +242,6 @@ async def _create_controller_for_bed_type(
         )
 
     if bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
-        from custom_components.adjustable_bed.beds.leggett.lp_legacy_profiles import (
-            LP_LEGACY_PROFILE_CODES,
-        )
-
         coordinator.entry = SimpleNamespace(
             data={
                 CONF_LP_LEGACY_MODEL: LP_LEGACY_PROFILE_CODES[0],

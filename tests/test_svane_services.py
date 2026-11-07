@@ -45,7 +45,7 @@ async def test_real_hold_endpoint_frames_and_cleanup(hass, profile):
     await async_register_services(hass)
     coordinator, controller = target(profile)
     with patch_with_family(
-        "svane_services",
+        "beds.svane.services",
         "custom_components.adjustable_bed.services._resolve_sided_targets",
         return_value=([(coordinator, SIDE_BOTH)], []),
     ):
@@ -81,7 +81,7 @@ async def test_later_target_rejected_before_first_motion(hass, failure):
         two.client.services[0].characteristics[0].properties = ["read"]
     with (
         patch_with_family(
-            "svane_services",
+            "beds.svane.services",
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(first, SIDE_BOTH), (second, SIDE_BOTH)], []),
         ),
@@ -127,7 +127,7 @@ async def test_mixed_profile_native_pair_routes_each_physical_target(hass, side)
     }
     pair = PairedBedCoordinator(hass, SimpleNamespace(data={CONF_PAIR_ID: "svane-pair"}), children)
     with patch_with_family(
-        "svane_services",
+        "beds.svane.services",
         "custom_components.adjustable_bed.services._resolve_sided_targets",
         return_value=([(pair, side)], []),
     ):
@@ -149,7 +149,7 @@ async def test_axis_release_endpoint_signals_active_real_writer_no_independent_b
     await async_register_services(hass)
     coordinator, controller = target("jmc")
     with patch_with_family(
-        "svane_services",
+        "beds.svane.services",
         "custom_components.adjustable_bed.services._resolve_sided_targets",
         return_value=([(coordinator, SIDE_BOTH)], []),
     ):
@@ -183,7 +183,7 @@ async def test_release_selection_preflight_no_partial_intent_mutation(hass):
     second, _ = target(bed_type="jensen")
     with (
         patch_with_family(
-            "svane_services",
+            "beds.svane.services",
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(first, SIDE_BOTH), (second, SIDE_BOTH)], []),
         ),
@@ -205,7 +205,7 @@ async def test_goto_preset_later_unsaved_multi_slot_prevents_earlier_jmc_write(h
     second, multi = target("multi")
     with (
         patch_with_family(
-            "svane_services",
+            "beds.svane.services",
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(first, SIDE_BOTH), (second, SIDE_BOTH)], []),
         ),
@@ -228,7 +228,7 @@ async def test_goto_preset_mixed_saved_memories_preserves_each_profile_packet(ha
     multi.session.multi_slots[1] = (b"head", b"feet")
     with (
         patch_with_family(
-            "svane_services",
+            "beds.svane.services",
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(first, SIDE_BOTH), (second, SIDE_BOTH)], []),
         ),
@@ -250,7 +250,7 @@ async def test_goto_preset_later_empty_axis_rejects_every_target(hass, saved):
     multi.session.multi_slots[1] = saved
     with (
         patch_with_family(
-            "svane_services",
+            "beds.svane.services",
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(first, SIDE_BOTH), (second, SIDE_BOTH)], []),
         ),

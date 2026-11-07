@@ -123,7 +123,7 @@ async def test_public_both_release_signals_moving_side_with_offline_sibling(hass
 
     controller._motor_wait = waiting
     left.async_connect.side_effect = connect_waiting
-    with patch_with_family("svane_services", "custom_components.adjustable_bed.services._resolve_sided_targets",
+    with patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._resolve_sided_targets",
                return_value=([(pair, SIDE_LEFT)], [])):
         held = asyncio.create_task(hass.services.async_call(DOMAIN, "hold_control", {
             "device_id": "pair", "control": "head_up", "duration": .2,
@@ -131,7 +131,7 @@ async def test_public_both_release_signals_moving_side_with_offline_sibling(hass
         try:
             async with asyncio.timeout(1):
                 await started.wait()
-                with patch_with_family("svane_services", "custom_components.adjustable_bed.services._resolve_sided_targets",
+                with patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._resolve_sided_targets",
                            return_value=([(pair, SIDE_BOTH)], [])):
                     await hass.services.async_call(DOMAIN, "svane_release_axis", {
                         "device_id": "pair", "motor": "head",
@@ -153,7 +153,7 @@ async def test_public_both_preflight_never_opens_two_links(hass, sequential_pair
     data = {"device_id": "pair", "control": "head_up", "duration": .2} if endpoint == "hold_control" else {
         "device_id": "pair", "motor": "back", "direction": "up", "duration_ms": 200,
     }
-    with patch_with_family("svane_services", "custom_components.adjustable_bed.services._resolve_sided_targets",
+    with patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._resolve_sided_targets",
                return_value=([(pair, SIDE_BOTH)], [])):
         await hass.services.async_call(DOMAIN, endpoint, data, blocking=True)
     assert all(client.write_gatt_char.await_count for client in clients.values())
@@ -170,7 +170,7 @@ async def test_later_sequential_invalid_role_prevents_all_movement(hass, sequent
     data = {"device_id": "pair", "control": "head_up", "duration": .2} if endpoint == "hold_control" else {
         "device_id": "pair", "motor": "back", "direction": "up", "duration_ms": 200,
     }
-    with patch_with_family("svane_services", "custom_components.adjustable_bed.services._resolve_sided_targets",
+    with patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._resolve_sided_targets",
                return_value=([(pair, SIDE_BOTH)], [])), pytest.raises(HomeAssistantError):
         await hass.services.async_call(DOMAIN, endpoint, data, blocking=True)
     assert all(not client.write_gatt_char.await_count for client in clients.values())

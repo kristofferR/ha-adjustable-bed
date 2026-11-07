@@ -48,7 +48,7 @@ async def test_public_lamp_hold_persists_final_intent_once(hass, runtime, monkey
     controller._wait = advance
     client.write_gatt_char.side_effect = write
     with (
-        patch_with_family("svane_services", "custom_components.adjustable_bed.services._resolve_sided_targets",
+        patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._resolve_sided_targets",
               return_value=([(coordinator, SIDE_BOTH)], [])),
         patch.object(coordinator, "save_app_state", wraps=coordinator.save_app_state) as save,
         patch.object(hass.config_entries, "async_update_entry",
@@ -101,7 +101,7 @@ async def test_unchanged_public_lamp_hold_does_not_persist(hass, runtime, reason
 
     controller._wait = wait_without_step
     with (
-        patch_with_family("svane_services", "custom_components.adjustable_bed.services._resolve_sided_targets",
+        patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._resolve_sided_targets",
               return_value=([(coordinator, SIDE_BOTH)], [])),
         patch.object(coordinator, "save_app_state") as save,
     ):

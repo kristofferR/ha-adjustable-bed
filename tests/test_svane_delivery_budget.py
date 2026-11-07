@@ -58,7 +58,7 @@ async def test_registered_hold_reports_incomplete_delivery_and_preserves_normal_
     controller.client.write_gatt_char.side_effect = write
     duration = .103 if scenario == "nearby_complete" else .201 if scenario == "previous_feet_delivery" else .101
     control = "feet_up" if "feet_wait" in scenario else "head_up_feet_up"
-    with patch_with_family("svane_services", "custom_components.adjustable_bed.services._resolve_sided_targets",
+    with patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._resolve_sided_targets",
                return_value=([(coordinator, SIDE_BOTH)], [])):
         if scenario.endswith("exhausts_budget"):
             with pytest.raises(ServiceValidationError, match="selected feet axis could start"):

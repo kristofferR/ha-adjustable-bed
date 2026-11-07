@@ -2,7 +2,7 @@
 
 This codec follows the accepted M1X12 artifact report. It deliberately keeps
 raw Part numbers instead of assigning physical names to unverified actuators.
-Control frames for both dialects come from ``starcode_dialect.py``.
+Control frames for both dialects come from ``dialect.py``.
 """
 
 from __future__ import annotations

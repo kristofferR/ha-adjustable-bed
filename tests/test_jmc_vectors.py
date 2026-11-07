@@ -176,7 +176,7 @@ def test_other_notifications_are_not_position_reports(data: str) -> None:
     assert jmc.position_report(bytes.fromhex(data)) is None
 
 
-@pytest.mark.parametrize("module", ["jensen", "svane"])
+@pytest.mark.parametrize("module", ["jensen/controller", "svane/controller"])
 def test_the_controllers_build_no_jmc_frame_of_their_own(module: str) -> None:
     source = (ROOT / f"custom_components/adjustable_bed/beds/{module}.py").read_text()
     assert not re.search(r"bytes\(\s*[\[(]\s*0x(?:0a|1[0-4e])\b", source, re.I)

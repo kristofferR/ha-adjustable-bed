@@ -2,7 +2,7 @@
 
 Feedback is a delta: callers retain fields from other domains. Short frames are
 ignored safely instead of reproducing the application's out-of-bounds errors.
-Control frames for both dialects come from ``starcode_dialect.py``.
+Control frames for both dialects come from ``dialect.py``.
 """
 
 from collections.abc import Mapping
