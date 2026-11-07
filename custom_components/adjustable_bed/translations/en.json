@@ -8525,6 +8525,9 @@
       "name": "Set Richmat app alarm",
       "description": "Set a model-supported calendar alarm or an initialized normal-mattress alarm.",
       "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
         "family": {
           "name": "Alarm family"
         },
@@ -8551,11 +8554,11 @@
         },
         "mode": {
           "name": "Calendar position opcode",
-          "description": "Choose an opcode from this model’s alarm list."
+          "description": "Decimal opcode from this model's alarm position list."
         },
         "weekdays": {
           "name": "Calendar weekdays",
-          "description": "Monday is 0, Sunday is 6. Leave empty for once."
+          "description": "Leave empty for a one-time alarm."
         },
         "side": {
           "name": "Paired bed side"
