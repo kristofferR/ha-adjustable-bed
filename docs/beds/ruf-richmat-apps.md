@@ -205,6 +205,8 @@ values, not live UI controls. They are not offered as an Off command.
 
 Weekly slots are 1–7. Mode is an exact position opcode in the selected model's
 alarm list. New records use bed 0; editing preserves a received record's bed.
+After a change, the alarm sensor rebuilds its list from the receiver's query
+replies, removing cached slots that are no longer reported.
 Week bits 7 through 1 mean Monday through Sunday; bit 0 enables the alarm.
 An empty weekday list means once. Clock synchronization sends epoch seconds
 (big endian) with whole raw timezone hours, then local year-minus-1970,

@@ -273,7 +273,7 @@ class Row061Controller(RichmatMhController):
         if self.route == "L" or not self.model:
             return ()
         modes = _map(_feature(self._app, self.model.model_id, "motorModeMap"))
-        values = modes.get("20")
+        values = modes.get("20" if self.route == "D" else "2")
         names = {"01": "mode1", "02": "mode2", "03": "mode3", "11": "left", "12": "right"}
         return (
             tuple(names[str(v)] for v in values if str(v) in names)
@@ -545,12 +545,7 @@ class Row061Controller(RichmatMhController):
                 "mode": frame[10],
                 "week": frame[11],
             }
-            self.forward_controller_state_updates(
-                {
-                    "row061_calendar_alarms": dict(self._calendar_alarms),
-                    "row061_calendar_alarm_count": len(self._calendar_alarms),
-                }
-            )
+            self._publish_calendar_alarms()
         elif device == 2 and prop == 1 and len(frame) in (9, 11):
             values = dict(self._intensity)
             for offset in (6, 8) if len(frame) == 11 else (6,):
@@ -558,6 +553,14 @@ class Row061Controller(RichmatMhController):
                 if zone:
                     values[zone] = frame[offset + 1] if frame[offset + 1] <= 7 else 1
             self._apply_intensity(values)
+
+    def _publish_calendar_alarms(self) -> None:
+        self.forward_controller_state_updates(
+            {
+                "row061_calendar_alarms": dict(self._calendar_alarms),
+                "row061_calendar_alarm_count": len(self._calendar_alarms),
+            }
+        )
 
     async def set_angle(self, bits: int, angle: int) -> None:
         spec = next((x for x in self._angles() if x[0] == bits), None)
@@ -790,6 +793,9 @@ class Row061Controller(RichmatMhController):
         await self.write_command(alarm_frame(request, now))
         if request.family == "calendar":
             await asyncio.sleep(0.3)
+            # Rebuild the list from readback so absent slots do not survive a deletion.
+            self._calendar_alarms.clear()
+            self._publish_calendar_alarms()
             await self.write_command(query_frame("6e2008050100009c"))
 
     async def write_light_timer(self, seconds: int, shown: int) -> None:

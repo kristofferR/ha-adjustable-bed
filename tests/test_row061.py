@@ -243,6 +243,21 @@ async def test_extended_angle_and_mode_frames_are_not_legacy(delays):
         await c.set_angle(1, 181)
 
 
+@pytest.mark.parametrize("app", ["wsilver2", "americanstar", "bailey2", "tx"])
+@pytest.mark.parametrize("model", ["7irm", "kwrm"])
+async def test_legacy_motor_modes_expose_selection_writes_and_reported_state(app, model):
+    c = make(app, model, "0001")
+    spec = next(s for s in c.controller_select_specs if s.key == "richmat_mh_motor_mode")
+    assert spec.options == ("mode1", "mode2", "mode3")
+    c._apply(Event("motor_mode", "11"))
+    assert c._coordinator.controller_state[spec.state_key] == "mode3"
+    await spec.select_fn(c, "mode2")
+    assert frames(c) == ["6e8818000e"]
+    assert c._coordinator.controller_state[spec.state_key] == "mode2"
+    c._call_page = False
+    assert c.motor_mode_options == ()
+
+
 def test_classifier_fragmented_extended_and_version_two():
     p = AppClassifier("bailey2")
     assert p.feed(bytes.fromhex("6e900002ff")) == [Event("version", "0002")]
@@ -261,6 +276,39 @@ def test_calendar_and_mattress_alarm_exact_frames():
     assert alarm_frame(req, now).hex() == "6e200d0501010200071e2e837a"
     assert len(calendar_clock(now)[0]) == 12
     assert len(calendar_clock(now)[1]) == 13
+
+
+@pytest.mark.parametrize("remaining", [False, True])
+@pytest.mark.parametrize("app", ["wsilver2", "americanstar", "bailey2", "tx"])
+async def test_calendar_refresh_removes_deleted_slots_and_keeps_reported_records(delays, remaining, app):
+    c = make(app, "amrn")
+    records = [
+        finalize([0x6E, 0x20, 13, 5, 1, 2, slot, 2, 7, 30, 0x2E, 0x83, 0])
+        for slot in (1, 2)
+    ]
+    for record in records:
+        c._apply(Event("extended", record.hex()))
+    state = c._coordinator.controller_state
+    assert state["row061_calendar_alarm_count"] == 2
+    previous = state["row061_calendar_alarms"]
+    original = c.write_command
+    query_count = 0
+
+    async def write(command, **kwargs):
+        nonlocal query_count
+        await original(command, **kwargs)
+        if command.hex() == "6e2008050100009c":
+            query_count += 1
+            if query_count == 2 and remaining:
+                c._apply(Event("extended", records[1].hex()))
+
+    c.write_command = AsyncMock(side_effect=write)
+    await c.row061_alarm(AlarmRequest("calendar", False, delete=True, slot=1))
+    assert query_count == 2
+    assert frames(c)[-2:] == ["6e2008050201019f", "6e2008050100009c"]
+    assert state["row061_calendar_alarm_count"] == int(remaining)
+    assert state["row061_calendar_alarms"] == ({2: previous[2]} if remaining else {})
+    assert len(previous) == 2
 
 
 def test_sleep_frames_and_reply_semantics():
