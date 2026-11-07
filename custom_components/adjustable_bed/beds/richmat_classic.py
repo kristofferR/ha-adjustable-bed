@@ -14,9 +14,18 @@ from typing import TYPE_CHECKING
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
-from ..cluster018_caller import RETAIN, Selection, effective_status, transition
-from ..cluster018_profiles import Control, controls, load_catalog
-from ..cluster018_protocol import (
+from ..command_scheduler import current_command_context
+from ..const import (
+    CONF_MOTOR_PULSE_COUNT,
+    CONF_PRODUCT_TYPE,
+    CONF_PROTOCOL_VARIANT,
+    CONF_RICHMAT_CLASSIC_THIRD_SERVICE,
+)
+from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
+from ..profiles.richmat import RICHMAT_CLASSIC
+from ..richmat_classic_caller import RETAIN, Selection, effective_status, transition
+from ..richmat_classic_profiles import Control, controls, load_catalog
+from ..richmat_classic_protocol import (
     ALARM_QUERY,
     ALARM_SPACING_MS,
     AROMA_QUERY,
@@ -47,18 +56,9 @@ from ..cluster018_protocol import (
     rgb,
     worker_interval,
 )
-from ..cluster018_receive import MalformedFrame, ReceiveState
-from ..cluster018_requests import Request
-from ..cluster018_transport import Transport, select
-from ..command_scheduler import current_command_context
-from ..const import (
-    CONF_CLUSTER018_THIRD_SERVICE,
-    CONF_MOTOR_PULSE_COUNT,
-    CONF_PRODUCT_TYPE,
-    CONF_PROTOCOL_VARIANT,
-)
-from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
-from ..profiles.richmat import RICHMAT_CLASSIC
+from ..richmat_classic_receive import MalformedFrame, ReceiveState
+from ..richmat_classic_requests import Request
+from ..richmat_classic_transport import Transport, select
 from .base import (
     CONTROLLER_GESTURE_RELEASE,
     BedController,
@@ -74,8 +74,8 @@ if TYPE_CHECKING:
 
 
 def _node(control: str) -> int:
-    """The catalog node behind a held control key (``cluster018_<node>[_hold]``)."""
-    return int(control.removeprefix("cluster018_").removesuffix("_hold"))
+    """The catalog node behind a held control key (``richmat_classic_<node>[_hold]``)."""
+    return int(control.removeprefix("richmat_classic_").removesuffix("_hold"))
 
 
 # Settings rows a capability reply reveals (``ReceiveState.menu``).
@@ -83,12 +83,12 @@ _MENU_ROWS = frozenset({"alarm", "light", "aroma"})
 
 
 async def _press(controller: BedController, node: int, long: bool = False) -> None:
-    if not isinstance(controller, Cluster018Controller):
+    if not isinstance(controller, RichmatClassicController):
         raise TypeError("This action requires the selected app controller")
     await controller.execute_action(node, long=long)
 
 
-class Cluster018Controller(BedController):
+class RichmatClassicController(BedController):
     """One selected package/layout and one current physical BLE session."""
 
     def __init__(
@@ -153,12 +153,12 @@ class Cluster018Controller(BedController):
         return False
 
     @property
-    def supports_cluster018(self) -> bool:
+    def supports_richmat_classic(self) -> bool:
         return True
 
     @property
     def persisted_app_state_key(self) -> str:
-        return f"cluster018:{self.app}:{self.layout}"
+        return f"{self.app}:{self.layout}"
 
     @property
     def persisted_app_state(self) -> Mapping[str, object]:
@@ -203,16 +203,16 @@ class Cluster018Controller(BedController):
         state = asdict(self._receive)
         state["menu"] = sorted(self._receive.menu)
         self.forward_controller_state_updates({
-            "cluster018_status": "ready" if self._session else "disconnected",
-            "cluster018_app": self.app,
-            "cluster018_layout": self.layout,
-            "cluster018_state": state,
-            "cluster018_preferences": dict(self._preferences),
-            "cluster018_rejection": self._rejection,
-            "cluster018_mode": str(self._mode),
-            "cluster018_program": "armed" if self._selection.armed else "recall",
-            "cluster018_hold": "hold" if self._selection.hold else "release",
-            "cluster018_head_foot": "head" if self._selection.head else "foot",
+            "richmat_classic_status": "ready" if self._session else "disconnected",
+            "richmat_classic_app": self.app,
+            "richmat_classic_layout": self.layout,
+            "richmat_classic_state": state,
+            "richmat_classic_preferences": dict(self._preferences),
+            "richmat_classic_rejection": self._rejection,
+            "richmat_classic_mode": str(self._mode),
+            "richmat_classic_program": "armed" if self._selection.armed else "recall",
+            "richmat_classic_hold": "hold" if self._selection.hold else "release",
+            "richmat_classic_head_foot": "head" if self._selection.head else "foot",
         })
 
     @property
@@ -231,8 +231,8 @@ class Cluster018Controller(BedController):
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (ControllerStateSensorSpec(
-            "cluster018_status", "cluster018_status", "cluster018_status", "mdi:bed",
-            attribute_keys=("cluster018_app", "cluster018_layout", "cluster018_state", "cluster018_preferences", "cluster018_rejection"),
+            "richmat_classic_status", "richmat_classic_status", "richmat_classic_status", "mdi:bed",
+            attribute_keys=("richmat_classic_app", "richmat_classic_layout", "richmat_classic_state", "richmat_classic_preferences", "richmat_classic_rejection"),
         ),)
 
     def _notification(self, session: Transport, _sender: BleakGATTCharacteristic, data: bytearray) -> None:
@@ -269,7 +269,7 @@ class Cluster018Controller(BedController):
         client = self.client
         if client is None or not client.is_connected:
             raise ConnectionError("The app's bed is disconnected")
-        session = select(client, third_service=self._coordinator.entry.data.get(CONF_CLUSTER018_THIRD_SERVICE, False))
+        session = select(client, third_service=self._coordinator.entry.data.get(CONF_RICHMAT_CLASSIC_THIRD_SERVICE, False))
         name = self._device_name if self._device_name is not None else self._coordinator.entry.data.get("ble_device_name")
         self._worker.set_interval(worker_interval(name, session.wire))
         self._session = session
@@ -518,10 +518,10 @@ class Cluster018Controller(BedController):
         await self.execute_action(_node(control), hold_ms=duration_ms)
 
     def controller_button_available(self, key: str) -> bool:
-        if key == "cluster018_release":
+        if key == "richmat_classic_release":
             return True
         try:
-            node = int(key.removeprefix("cluster018_").removesuffix("_long").removesuffix("_hold"))
+            node = int(key.removeprefix("richmat_classic_").removesuffix("_long").removesuffix("_hold"))
             button = self._button(node)
         except ValueError:
             return False
@@ -543,27 +543,27 @@ class Cluster018Controller(BedController):
                 continue
             if button.short is None and button.short_old is None and button.long is None and button.tag is None:
                 continue
-            key = f"cluster018_{button.node}"
+            key = f"richmat_classic_{button.node}"
             result.append(ControllerButtonSpec(
                 key, button.label, partial(_press, node=button.node),
-                translation_key="cluster018_action", translation_placeholders={"action": button.label},
-                hold=ControllerHoldSpec(key, release_button_key="cluster018_release") if button.status == 1 else None,
+                translation_key="richmat_classic_action", translation_placeholders={"action": button.label},
+                hold=ControllerHoldSpec(key, release_button_key="richmat_classic_release") if button.status == 1 else None,
             ))
             if button.hold_affected and not button.view_id.endswith("Long"):
                 held_key = key + "_hold"
                 name = "Hold " + button.label
                 result.append(ControllerButtonSpec(
                     held_key, name, partial(_press, node=button.node),
-                    translation_key="cluster018_action", translation_placeholders={"action": name},
-                    hold=ControllerHoldSpec(held_key, release_button_key="cluster018_release"),
+                    translation_key="richmat_classic_action", translation_placeholders={"action": name},
+                    hold=ControllerHoldSpec(held_key, release_button_key="richmat_classic_release"),
                 ))
             if button.status == 3 and button.long and not button.mem_special and not button.select_special:
                 name = "Long press " + button.label
                 result.append(ControllerButtonSpec(
                     key + "_long", name, partial(_press, node=button.node, long=True),
-                    translation_key="cluster018_action", translation_placeholders={"action": name},
+                    translation_key="richmat_classic_action", translation_placeholders={"action": name},
                 ))
-        result.append(ControllerButtonSpec("cluster018_release", "Release", lambda c: c.stop_all(), translation_key="cluster018_release", release_only=True))
+        result.append(ControllerButtonSpec("richmat_classic_release", "Release", lambda c: c.stop_all(), translation_key="richmat_classic_release", release_only=True))
         return tuple(result)
 
     def _select(self, kind: str, value: str) -> None:
@@ -598,14 +598,14 @@ class Cluster018Controller(BedController):
             async def selected(_controller: BedController, value: str, *, key: str = kind) -> None:
                 self._select(key, value)
 
-            specs.append(ControllerSelectSpec("cluster018_" + kind, "cluster018_" + kind, "cluster018_" + kind, options, selected, local_select_fn=local))
+            specs.append(ControllerSelectSpec("richmat_classic_" + kind, "richmat_classic_" + kind, "richmat_classic_" + kind, options, selected, local_select_fn=local))
         return tuple(specs)
 
     def _alarm_actions(self) -> dict[str, int]:
         allowed = set(load_catalog(self.app)["alarm_allowlist"].values())
         return {f"node_{c.node}": int(c.alarm_clock, 16) for c in self._controls if c.rich_button and c.alarm_clock in allowed and c.alarm_clock is not None}
 
-    def validate_cluster018_request(self, request: Request) -> None:
+    def validate_richmat_classic_request(self, request: Request) -> None:
         op = request.operation
         if op == "query":
             return
@@ -652,8 +652,8 @@ class Cluster018Controller(BedController):
             if op == "desk_recall" and not 1 <= request.duration_ms <= 60000:
                 raise ValueError("Desk button duration must be between 1 and 60000 ms")
 
-    async def async_execute_cluster018_request(self, request: Request) -> None:
-        self.validate_cluster018_request(request)
+    async def async_execute_richmat_classic_request(self, request: Request) -> None:
+        self.validate_richmat_classic_request(request)
         op = request.operation
         if op == "query":
             frames = ([ALARM_QUERY] if any(c.alarm_clock is not None for c in self._controls) else []) + [LAMP_QUERY, AROMA_QUERY]

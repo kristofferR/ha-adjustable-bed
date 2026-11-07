@@ -6,19 +6,19 @@ from unittest.mock import AsyncMock
 import pytest
 from homeassistant.setup import async_setup_component
 
-from custom_components.adjustable_bed.beds.cluster033 import AppController
+from custom_components.adjustable_bed.beds.keeson_layout_app import AppController
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
 from custom_components.adjustable_bed.paired_coordinator import PairedSideProxy
 
 from .entry_entities import async_add_entry_entities
-from .test_cluster033_hold_admission import _connected_pair
+from .test_keeson_layout_app_hold_admission import _connected_pair
 
 
 @pytest.fixture(autouse=True)
 async def cleanup_targets(hass):
     yield
-    for target in hass.data.get("cluster033_test_targets", []):
+    for target in hass.data.get("keeson_layout_app_test_targets", []):
         await target.async_shutdown()
 
 
@@ -142,7 +142,7 @@ async def test_registered_source_specific_release_policy_probe(hass, monkeypatch
     from custom_components.adjustable_bed.codec import keeson as codec
     from custom_components.adjustable_bed.services import async_register_services
 
-    from .test_cluster033_hold_admission import _target
+    from .test_keeson_layout_app_hold_admission import _target
 
     target, controller, client = await _target(hass, mx=kind == "mx")
     target._client, target._controller = client, controller
@@ -208,7 +208,7 @@ def test_existing_combined_entity_drops_hold_offer_after_live_sequential_transit
     from custom_components.adjustable_bed.button import _combined_motor_buttons_for
     from custom_components.adjustable_bed.profiles.keeson import app_profile
 
-    from .test_cluster033 import coordinator
+    from .test_keeson_layout_app import coordinator
 
     ctrl = AppController(coordinator(), app_profile("tempur_curve"))
     parent = MagicMock(

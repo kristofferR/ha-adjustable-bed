@@ -10,10 +10,10 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds import cluster018 as bed
-from custom_components.adjustable_bed.cluster018_profiles import APP_NAMES
-from custom_components.adjustable_bed.cluster018_requests import Request
-from custom_components.adjustable_bed.cluster018_transport import Transport
+from custom_components.adjustable_bed.beds import richmat_classic as bed
+from custom_components.adjustable_bed.richmat_classic_profiles import APP_NAMES
+from custom_components.adjustable_bed.richmat_classic_requests import Request
+from custom_components.adjustable_bed.richmat_classic_transport import Transport
 
 
 def controller(app="avocadoecobase", layout="GXRM", wire="FRAMED"):
@@ -25,7 +25,7 @@ def controller(app="avocadoecobase", layout="GXRM", wire="FRAMED"):
     coord.client.write_gatt_char = AsyncMock()
     coord.client.start_notify = AsyncMock()
     coord.client.stop_notify = AsyncMock()
-    ctrl = bed.Cluster018Controller(coord)
+    ctrl = bed.RichmatClassicController(coord)
     write = SimpleNamespace(uuid="write", properties=["write"], handle=66)
     notify = SimpleNamespace(uuid="notify", properties=["notify"], handle=67)
     ctrl._session = Transport(coord.client, write, notify, wire)
@@ -36,7 +36,7 @@ def controller(app="avocadoecobase", layout="GXRM", wire="FRAMED"):
 def instant(monkeypatch):
     async def wait(_ms, cancel):
         return not cancel.is_set()
-    monkeypatch.setattr(bed.Cluster018Controller, "_wait", staticmethod(wait))
+    monkeypatch.setattr(bed.RichmatClassicController, "_wait", staticmethod(wait))
     sleep = AsyncMock()
     monkeypatch.setattr(bed.asyncio, "sleep", sleep)
     return sleep
@@ -50,9 +50,9 @@ async def test_null_worker_boundaries_preserve_raw_drop_and_framed_failure(insta
     import json
     from pathlib import Path
 
-    from custom_components.adjustable_bed.cluster018_protocol import Worker
+    from custom_components.adjustable_bed.richmat_classic_protocol import Worker
 
-    cases = json.loads((Path(__file__).parent / "fixtures/cluster018/null_worker_cases.json").read_text())
+    cases = json.loads((Path(__file__).parent / "fixtures/richmat_classic/null_worker_cases.json").read_text())
     assert len(cases) == 90
     for case in cases:
         ctrl, coord = controller(case["member"].split(".")[-1], wire=case["wire"])
@@ -74,15 +74,15 @@ def test_hold_selectors_preserve_source_callback_mutations():
     import json
     from pathlib import Path
 
-    from custom_components.adjustable_bed.cluster018_caller import effective_status
+    from custom_components.adjustable_bed.richmat_classic_caller import effective_status
 
-    cases = json.loads((Path(__file__).parent / "fixtures/cluster018/hold_callbacks.json").read_text())
+    cases = json.loads((Path(__file__).parent / "fixtures/richmat_classic/hold_callbacks.json").read_text())
     for case in cases:
         ctrl, _ = controller(case["app"], case["layout"])
         expected = case["expected"]
         if not expected["affected_recall_ids"]:
             # The accepted callback exists, but mutates no widget in this layout.
-            assert all(s.key != "cluster018_hold" for s in ctrl.controller_select_specs)
+            assert all(s.key != "richmat_classic_hold" for s in ctrl.controller_select_specs)
             continue
         hold = not expected["setReleaseHold"]
         ctrl._select("hold", "hold" if hold else "release")
@@ -90,17 +90,17 @@ def test_hold_selectors_preserve_source_callback_mutations():
             if c.view_id in expected["affected_recall_ids"]:
                 assert effective_status(c, ctrl.layout, ctrl._selection) == (1 if hold else 3), case
             if c.view_id in expected["affected_save_ids"]:
-                assert ctrl.controller_button_available(f"cluster018_{c.node}") == hold, case
+                assert ctrl.controller_button_available(f"richmat_classic_{c.node}") == hold, case
             if c.view_id == "btnFlat":
                 assert effective_status(c, ctrl.layout, ctrl._selection) == expected["flat_status"], case
 
 
 @pytest.mark.parametrize("app", ("fortywinks", "superior"))
 def test_zrs6_navigation_is_not_exposed_as_a_bed_command(app):
-    from custom_components.adjustable_bed.cluster018_caller import Retain, transition
+    from custom_components.adjustable_bed.richmat_classic_caller import Retain, transition
 
     ctrl, _ = controller(app, "ZRS6")
-    assert [s.key for s in ctrl.controller_button_specs] == ["cluster018_release"]
+    assert [s.key for s in ctrl.controller_button_specs] == ["richmat_classic_release"]
     for c in ctrl._controls:
         result = transition(c, "ZRS6", "FRAMED", ctrl._selection, "DOWN", app=app)
         assert result.local == "navigate:" + c.tag
@@ -233,17 +233,17 @@ async def test_startup_uses_exact_transport_initialization(app, wire, layout, ex
 
 async def test_settings_queries_and_menu_gates(instant):
     ctrl, coord = controller(layout="A0RN")
-    await ctrl.async_execute_cluster018_request(Request("query"))
+    await ctrl.async_execute_richmat_classic_request(Request("query"))
     assert packets(coord) == ["6e08010178", "6e0a000179", "6e1a000088"]
     with pytest.raises(ValueError, match="capability"):
-        ctrl.validate_cluster018_request(Request("aroma", aroma_values=(1, 1, 2)))
+        ctrl.validate_richmat_classic_request(Request("aroma", aroma_values=(1, 1, 2)))
     ctrl._receive.feed(bytes.fromhex("6e1a000189"), app=ctrl.app, layout=ctrl.layout)
-    ctrl.validate_cluster018_request(Request("aroma", aroma_values=(1, 1, 2)))
+    ctrl.validate_richmat_classic_request(Request("aroma", aroma_values=(1, 1, 2)))
 
 
 async def test_proven_settings_rows_survive_a_reconnect_and_a_new_controller(instant, monkeypatch):
     """With a disconnect between calls, a query's proven rows still gate the next call."""
-    from custom_components.adjustable_bed.cluster018_protocol import rgb
+    from custom_components.adjustable_bed.richmat_classic_protocol import rgb
 
     ctrl, _ = controller(layout="A0RN")
     for reply in ("6e0e00037f", "6e1a000189"):
@@ -257,22 +257,22 @@ async def test_proven_settings_rows_survive_a_reconnect_and_a_new_controller(ins
     monkeypatch.setattr(bed, "select", lambda *_args, **_kwargs: selected)
     replacement._session = None
     await replacement.start_notify()
-    replacement.validate_cluster018_request(Request("aroma", aroma_values=(1, 1, 2)))
-    await replacement.async_execute_cluster018_request(Request("rgb", color=(255, 0, 0)))
+    replacement.validate_richmat_classic_request(Request("aroma", aroma_values=(1, 1, 2)))
+    await replacement.async_execute_richmat_classic_request(Request("rgb", color=(255, 0, 0)))
     assert packets(coord)[-1] == rgb(255, 0, 0).hex()
     with pytest.raises(ValueError, match="capability"):
-        replacement.validate_cluster018_request(Request("cancel_alarm"))
+        replacement.validate_richmat_classic_request(Request("cancel_alarm"))
 
 
 def test_capability_and_layout_alarm_gate():
     ctrl, _ = controller(layout="A0RN")
     with pytest.raises(ValueError, match="capability"):
-        ctrl.validate_cluster018_request(Request("rgb", color=(255, 0, 0)))
+        ctrl.validate_richmat_classic_request(Request("rgb", color=(255, 0, 0)))
     ctrl._receive.feed(bytes.fromhex("6e0e00037f"), app=ctrl.app, layout=ctrl.layout)
-    ctrl.validate_cluster018_request(Request("rgb", color=(255, 0, 0)))
+    ctrl.validate_richmat_classic_request(Request("rgb", color=(255, 0, 0)))
     ctrl._receive.feed(bytes.fromhex("6e09010078"), app=ctrl.app, layout=ctrl.layout)
     with pytest.raises(ValueError, match="alarm action"):
-        ctrl.validate_cluster018_request(Request("alarm", action="arbitrary", when=time(7, 0)))
+        ctrl.validate_richmat_classic_request(Request("alarm", action="arbitrary", when=time(7, 0)))
 
 
 def test_avocado_urrm_observer_starvation_remains_member_specific():
@@ -289,13 +289,13 @@ async def test_hold_state_reveals_separate_save_and_gates_long_press(instant):
     ctrl, coord = controller(layout="YGRM")
     save = next(c for c in ctrl._controls if c.view_id == "btnM1Long")
     recall = next(c for c in ctrl._controls if c.view_id == "btnM1")
-    assert not ctrl.controller_button_available(f"cluster018_{save.node}")
+    assert not ctrl.controller_button_available(f"richmat_classic_{save.node}")
     with pytest.raises(ValueError, match="hidden"):
         await ctrl.execute_action(save.node)
     ctrl._select("hold", "hold")
-    assert ctrl.controller_button_available(f"cluster018_{save.node}")
-    assert f"cluster018_{recall.node}_hold" in ctrl.held_control_options
-    assert not ctrl.controller_button_available(f"cluster018_{recall.node}_long")
+    assert ctrl.controller_button_available(f"richmat_classic_{save.node}")
+    assert f"richmat_classic_{recall.node}_hold" in ctrl.held_control_options
+    assert not ctrl.controller_button_available(f"richmat_classic_{recall.node}_long")
     await ctrl.execute_action(save.node)
     assert packets(coord) == ["6e01002b9a", "6e01006edd"]
 
@@ -303,7 +303,7 @@ async def test_hold_state_reveals_separate_save_and_gates_long_press(instant):
 @pytest.mark.parametrize("slot,packet", [(1,"6e96000408"),(2,"6e9600080c"),(3,"6e96001014"),(4,"6e95000003")])
 async def test_desk_buttons_repeat_only_for_the_bounded_hold(slot, packet, instant):
     ctrl, coord = controller(layout="FWRM")
-    await ctrl.async_execute_cluster018_request(Request("desk_recall", slot=slot, duration_ms=400))
+    await ctrl.async_execute_richmat_classic_request(Request("desk_recall", slot=slot, duration_ms=400))
     assert packets(coord) == [packet, packet]
 
 
@@ -311,7 +311,7 @@ async def test_desk_source_lifecycle_vectors_end_on_cancel_or_link_loss(instant,
     import json
     from pathlib import Path
 
-    cases = json.loads((Path(__file__).parent / "fixtures/cluster018/desk_lifecycles.json").read_text())
+    cases = json.loads((Path(__file__).parent / "fixtures/richmat_classic/desk_lifecycles.json").read_text())
     for case in cases:
         ctrl, coord = controller("milemont", "FWRM")
 
@@ -326,9 +326,9 @@ async def test_desk_source_lifecycle_vectors_end_on_cancel_or_link_loss(instant,
         request = Request("desk_recall", slot=case["slot"], duration_ms=800)
         if case["kind"] == "disconnect_resume":
             with pytest.raises(ConnectionError, match="session"):
-                await ctrl.async_execute_cluster018_request(request)
+                await ctrl.async_execute_richmat_classic_request(request)
         else:
-            await ctrl.async_execute_cluster018_request(request)
+            await ctrl.async_execute_richmat_classic_request(request)
         assert packets(coord) == [case["expected_first"]], case
 
 
@@ -337,7 +337,7 @@ def test_old_desk_response_hides_all_modern_controls(operation):
     ctrl, _ = controller(layout="FWRM")
     ctrl._receive.feed(bytes.fromhex("6e080064da"), app=ctrl.app, layout=ctrl.layout)
     with pytest.raises(ValueError, match="old-desk"):
-        ctrl.validate_cluster018_request(operation)
+        ctrl.validate_richmat_classic_request(operation)
 
 
 @pytest.mark.parametrize("app", APP_NAMES)
@@ -345,15 +345,15 @@ async def test_error_confirmation_requires_a_new_desk_callback(app, instant):
     ctrl, coord = controller(app, "FWRM")
     request = Request("desk_reset")
     with pytest.raises(ValueError, match="awaiting confirmation"):
-        ctrl.validate_cluster018_request(request)
+        ctrl.validate_richmat_classic_request(request)
     # Valid sixteen-byte 6e97 callback. The source error is buffer[6:8].
     ctrl._receive.feed(bytes.fromhex("6e970001000000000000000000000006"), app=app, layout="FWRM")
     assert ctrl._receive.error == "01"
-    await ctrl.async_execute_cluster018_request(request)
+    await ctrl.async_execute_richmat_classic_request(request)
     assert packets(coord) == ["6e95000003"]
     assert ctrl._receive.error == "01"  # Confirmation does not prove hardware recovery.
     with pytest.raises(ValueError, match="awaiting confirmation"):
-        ctrl.validate_cluster018_request(request)
+        ctrl.validate_richmat_classic_request(request)
 
 
 async def test_cancelled_settings_do_not_consume_confirmation_or_save_unsent_values(instant):
@@ -361,8 +361,8 @@ async def test_cancelled_settings_do_not_consume_confirmation_or_save_unsent_val
     ctrl._receive.feed(bytes.fromhex("6e970001000000000000000000000006"), app=ctrl.app, layout=ctrl.layout)
     ctrl._receive.menu.add("light")
     coord.cancel_command.set()
-    await ctrl.async_execute_cluster018_request(Request("desk_reset"))
-    await ctrl.async_execute_cluster018_request(Request("lamp_save", minutes=7))
+    await ctrl.async_execute_richmat_classic_request(Request("desk_reset"))
+    await ctrl.async_execute_richmat_classic_request(Request("lamp_save", minutes=7))
     assert packets(coord) == []
     assert ctrl._receive.error_confirmation_pending
     assert ctrl.persisted_app_state["lamp_minutes"] == 0
@@ -372,7 +372,7 @@ def test_saved_local_state_is_scoped_and_rejects_foreign_alarm_selection():
     ctrl, _ = controller(layout="A0RN")
     ctrl.restore_persisted_app_state({"lamp_minutes":5,"lamp_rgb":"00ff00"})
     assert ctrl.persisted_app_state["lamp_minutes"] == 5
-    assert ctrl.persisted_app_state_key == "cluster018:avocadoecobase:A0RN"
+    assert ctrl.persisted_app_state_key == "avocadoecobase:A0RN"
     with pytest.raises(ValueError, match="alarm action"):
         ctrl.restore_persisted_app_state({"alarm_selection":"foreign"})
 
@@ -405,10 +405,10 @@ async def test_member_slider_resources_and_saved_progress(instant):
     import json
     from pathlib import Path
 
-    cases = json.loads((Path(__file__).parent / "fixtures/cluster018/slider_vectors.json").read_text())
+    cases = json.loads((Path(__file__).parent / "fixtures/richmat_classic/slider_vectors.json").read_text())
     for case in cases:
         ctrl, coord = controller(case["app"], case["layout"])
-        await ctrl.async_execute_cluster018_request(Request("massage_timer", progress=case["progress"]))
+        await ctrl.async_execute_richmat_classic_request(Request("massage_timer", progress=case["progress"]))
         assert packets(coord) == [case["expected"]], case
         restored, _ = controller(case["app"], case["layout"])
         restored.restore_persisted_app_state(ctrl.persisted_app_state)
@@ -472,7 +472,7 @@ def test_unexpected_disconnect_invalidates_session_and_publishes_status():
     ctrl.on_disconnect()
     assert ctrl._session is None
     assert ctrl._worker.mode == -1
-    assert coord.handle_controller_state_updates.call_args.args[0]["cluster018_status"] == "disconnected"
+    assert coord.handle_controller_state_updates.call_args.args[0]["richmat_classic_status"] == "disconnected"
     ctrl._notification(old, old.notify, bytearray.fromhex("6e0e00037f"))
     assert not ctrl._receive.light_capable
 
@@ -492,10 +492,10 @@ async def test_real_coordinator_disconnect_keeps_latest_local_selector_owner(has
     coord = AdjustableBedCoordinator(hass, entry)
     await coord.async_prime_offline_controller()
     old = coord.capability_controller
-    assert isinstance(old, bed.Cluster018Controller)
+    assert isinstance(old, bed.RichmatClassicController)
     client = MagicMock(is_connected=True)
     coord._client = client
-    live = bed.Cluster018Controller(coord)
+    live = bed.RichmatClassicController(coord)
     coord._controller = live
     await coord._async_restore_app_state(live)
     live._select("hold", "hold")
@@ -506,16 +506,16 @@ async def test_real_coordinator_disconnect_keeps_latest_local_selector_owner(has
     assert coord.capability_controller is live
     assert coord.capability_controller is not old
     assert coord.capability_controller.held_control_options == expected
-    spec = next(s for s in live.controller_select_specs if s.key == "cluster018_hold")
+    spec = next(s for s in live.controller_select_specs if s.key == "richmat_classic_hold")
     entity = AdjustableBedControllerSelect(coord, spec)
     await entity.async_select_option("release")
     assert live._selection.hold is False
-    next_live = bed.Cluster018Controller(coord)
+    next_live = bed.RichmatClassicController(coord)
     coord._controller = next_live
     await coord._async_restore_app_state(next_live)
     assert next_live._selection.hold is False
     recall = next(c for c in next_live._controls if c.view_id == "btnM1")
-    assert f"cluster018_{recall.node}_hold" not in next_live.held_control_options
+    assert f"richmat_classic_{recall.node}_hold" not in next_live.held_control_options
 
 
 async def test_native_release_entity_keeps_the_admitted_mode_through_cleanup(hass, monkeypatch):
@@ -533,7 +533,7 @@ async def test_native_release_entity_keeps_the_admitted_mode_through_cleanup(has
     entry.add_to_hass(hass)
     coord = AdjustableBedCoordinator(hass, entry)
     coord._client = MagicMock(is_connected=True, disconnect=AsyncMock(), stop_notify=AsyncMock())
-    ctrl = bed.Cluster018Controller(coord)
+    ctrl = bed.RichmatClassicController(coord)
     coord._controller = ctrl
     coord._offline_controller = ctrl
     ctrl._session = Transport(coord.client, SimpleNamespace(uuid="write", properties=["write"]), SimpleNamespace(uuid="notify", properties=["notify"]), "FRAMED")
@@ -545,7 +545,7 @@ async def test_native_release_entity_keeps_the_admitted_mode_through_cleanup(has
     coord._client.write_gatt_char = AsyncMock(side_effect=write)
     monkeypatch.setattr(coord, "async_ensure_connected", AsyncMock(return_value=True))
     monkeypatch.setattr(coord, "_async_refresh_controller_auth", AsyncMock())
-    movement = ControllerActionButton(coord, next(s for s in ctrl.controller_button_specs if s.key == "cluster018_5"))
+    movement = ControllerActionButton(coord, next(s for s in ctrl.controller_button_specs if s.key == "richmat_classic_5"))
     release_button = ControllerActionButton(coord, next(s for s in ctrl.controller_button_specs if s.release_only))
     task = asyncio.create_task(movement.async_press())
     await first_write.wait()

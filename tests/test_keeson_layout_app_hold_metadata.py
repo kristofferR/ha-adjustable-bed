@@ -11,7 +11,7 @@ from custom_components.adjustable_bed.beds.base import (
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
 )
-from custom_components.adjustable_bed.beds.cluster033 import AppController
+from custom_components.adjustable_bed.beds.keeson_layout_app import AppController
 from custom_components.adjustable_bed.beds.serta_mp_remote import SertaMPRemoteController
 from custom_components.adjustable_bed.button import (
     ControllerActionButton,
@@ -20,7 +20,7 @@ from custom_components.adjustable_bed.button import (
 from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
 from custom_components.adjustable_bed.profiles.keeson import APP_LAYOUTS, app_profile
 
-from .test_cluster033 import coordinator
+from .test_keeson_layout_app import coordinator
 
 # A concurrent two-address pair; only its size matters for hold routing.
 PAIR_CHILDREN = {side: SimpleNamespace(bed_type="tempur_curve") for side in ("left", "right")}

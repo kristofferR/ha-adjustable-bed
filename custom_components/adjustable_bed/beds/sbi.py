@@ -41,7 +41,7 @@ from ..const import (
 from ..profiles import keeson as keeson_profiles
 from ..profiles.keeson import app_profile
 from .base import BedController
-from .cluster033 import AppController
+from .keeson_layout_app import AppController
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator

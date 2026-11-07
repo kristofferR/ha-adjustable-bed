@@ -1540,15 +1540,31 @@ test("Good Vibe Sleep exposes app controls, side selection and independent sleep
 
 test("Classic Richmat app actions, selectors and state stay in the utility section", () => {
   const bed = bedEntitiesForDevice(hassWith([
-    entry("button.lounge", "cluster018_action"),
-    entry("button.release", "cluster018_release"),
-    entry("select.mode", "cluster018_mode"),
-    entry("select.hold", "cluster018_hold"),
-    entry("sensor.status", "cluster018_status"),
+    entry("button.lounge", "richmat_classic_action"),
+    entry("button.release", "richmat_classic_release"),
+    entry("select.mode", "richmat_classic_mode"),
+    entry("select.hold", "richmat_classic_hold"),
+    entry("sensor.status", "richmat_classic_status"),
   ]), "dev1");
   expect(bed.utility).toEqual(["button.lounge", "button.release"]);
   expect(bed.utilitySelects).toEqual(["select.mode", "select.hold"]);
   expect(bed.utilityStates).toEqual(["sensor.status"]);
+  expect(bedIsEmpty(bed)).toBe(false);
+});
+
+test("RUF and Richmat app mattress, alarm and sleep receiver entities reach the card", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("select.pressure", "ruf_richmat_mattress_left_pressure"),
+    entry("select.heat", "ruf_richmat_mattress_right_heat_level"),
+    entry("select.sleep_mode", "ruf_richmat_sleep_mode"),
+    entry("select.intervention", "ruf_richmat_sleep_left_intervention"),
+    entry("sensor.alarm", "ruf_richmat_mattress_left_alarm"),
+    entry("sensor.calendar", "ruf_richmat_calendar_alarms"),
+    entry("sensor.heart_rate", "ruf_richmat_sleep_right_heart_rate"),
+  ]), "dev1");
+  expect(bed.massage.selects).toEqual(["select.pressure", "select.heat"]);
+  expect(bed.utilitySelects).toEqual(["select.sleep_mode", "select.intervention"]);
+  expect(bed.utilityStates).toEqual(["sensor.alarm", "sensor.calendar", "sensor.heart_rate"]);
   expect(bedIsEmpty(bed)).toBe(false);
 });
 

@@ -7,7 +7,7 @@ import pytest
 from homeassistant.helpers import device_registry as dr
 from homeassistant.setup import async_setup_component
 
-from custom_components.adjustable_bed.beds.cluster033 import AppController
+from custom_components.adjustable_bed.beds.keeson_layout_app import AppController
 from custom_components.adjustable_bed.beds.serta_mp_remote import (
     HEAD_TABLE,
     SertaMPRemoteController,
@@ -18,7 +18,7 @@ from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.services import async_register_services
 
 from .entry_entities import async_add_entry_entities
-from .test_cluster033_hold_admission import _connected_pair, _target
+from .test_keeson_layout_app_hold_admission import _connected_pair, _target
 
 ZERO = bytes.fromhex("e5fe160000000006")
 LOCAL = codec.position_target(HEAD_TABLE[1], 0x8000)
@@ -27,7 +27,7 @@ LOCAL = codec.position_target(HEAD_TABLE[1], 0x8000)
 @pytest.fixture(autouse=True)
 async def cleanup_targets(hass):
     yield
-    for target in hass.data.get("cluster033_test_targets", []):
+    for target in hass.data.get("keeson_layout_app_test_targets", []):
         await target.async_shutdown()
 
 

@@ -392,14 +392,14 @@
             "name": "Advanced",
             "data": {
               "jiecang_app_transport": "BLE transport",
-              "cluster018_third_service": "Allow the app’s third-service fallback",
+              "richmat_classic_third_service": "Allow the app’s third-service fallback",
               "protocol_variant": "Packet dialect",
               "logicdata_app_transport": "BLE transport",
               "malouf_app_transport": "Bluetooth transport"
             },
             "data_description": {
               "jiecang_app_transport": "Change only if Auto can't find the bed's endpoints. Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion and Dream Motion HD also allow manual standalone G2, without a startup-query burst. Comfort Motion supports G1 and G2 only.",
-              "cluster018_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes.",
+              "richmat_classic_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes.",
               "protocol_variant": "Auto picks the packet dialect from what the bed reports: a BOX25 receiver's manufacturer name (text containing star selects StarCode, anything else the legacy CB25 packets), or a Richmat bed's services. Change it only if Auto picks the wrong one.",
               "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports.",
               "malouf_app_transport": "Automatic uses the advertised device name and discovered services. Select a known transport only when automatic selection is ambiguous."
@@ -488,7 +488,7 @@
           "starcode_lift_entries": "Choose up to two separately configured ELEVATE entries explicitly set to Adjustable Comfort M1X12 ELEVATE. Existing ELEVATE entries are not changed when linking."
         }
       },
-      "cluster033_app": {
+      "keeson_layout_app": {
         "title": "App controls",
         "description": "Choose the layout shown by your bed app. Layouts do not identify physical motor count. Q-Plus A/B/Both selects app wire addressing, independently from paired Left/Right sides.",
         "data": {
@@ -843,11 +843,11 @@
       "starcode_m1x12_profile_mismatch": "Choose the M1X12 profile matching the exact Bluetooth name.",
       "starcode_invalid_m1x12_lifts": "Select up to two distinct configured Adjustable Comfort M1X12 ELEVATE entries with different Bluetooth addresses.",
       "starcode_m1x12_elevate_reconfigure": "Reconfigure this ELEVATE entry as Adjustable Comfort M1X12 ELEVATE before linking it.",
-      "cluster033_layout": "Choose a layout belonging to the selected app.",
+      "keeson_app_layout": "Choose a layout belonging to the selected app.",
       "doublesleep_profile": "Select a supported SleepEase model and BLE driver.",
       "gmmotor_product": "Choose an exact admitted GM Control product.",
       "gmmotor_side": "This product does not expose the selected app side.",
-      "cluster018_layout": "Choose a layout shipped in the selected app.",
+      "richmat_classic_layout": "Choose a layout shipped in the selected app.",
       "motomotion_profile": "Enter a complete MotoMotion Bluetooth local name."
     }
   },
@@ -960,7 +960,7 @@
           "ergomotion4_massage_keys": "Other product: massage keys",
           "ergomotion4_rgb": "Other product: RGB lighting",
           "ergomotion4_product_name": "Other product: exact app product name",
-          "cluster018_third_service": "Allow the app’s third-service fallback"
+          "richmat_classic_third_service": "Allow the app’s third-service fallback"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -1027,7 +1027,7 @@
           "sleeptracker_snapshot_side": "App snapshot ordinal: 0 left, 1 right, 2 entire bed, 3 other.",
           "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count.",
           "sleepys_elite_selector": "Choose the selector saved for this physical bed. Paired sides keep their selector independently.",
-          "cluster018_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes."
+          "richmat_classic_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes."
         }
       },
       "remove_bond": {
@@ -1099,7 +1099,7 @@
           "sleeptracker_snapshot_side": "Status snapshot side ordinal",
           "sleeptracker_restricted": "Restricted app session (no authentication)",
           "sleeptracker_processor_type": "Processor type (0 if unknown)",
-          "cluster018_third_service": "Allow the app’s third-service fallback",
+          "richmat_classic_third_service": "Allow the app’s third-service fallback",
           "furnimove_remote": "FurniMove handset ID",
           "has_light": "Enable light controls",
           "has_massage": "Has massage feature",
@@ -1157,7 +1157,7 @@
           "sleeptracker_snapshot_side": "App snapshot ordinal: 0 left, 1 right, 2 entire bed, 3 other.",
           "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count.",
           "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Enter 0 to keep the bed connected; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on.",
-          "cluster018_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes.",
+          "richmat_classic_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes.",
           "has_light": "Expose light controls when the bed has lighting.",
           "jiecang_app_layout": "Select the layout configured in the app. Dream Motion HD does not support the bilateral or split-after-bilateral layouts. The device name and motor count do not identify the layout.",
           "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion and Dream Motion HD also allow manual standalone G2, without a startup-query burst. Comfort Motion supports G1 and G2 only.",
@@ -1211,7 +1211,7 @@
           "sleeptracker_snapshot_side": "Status snapshot side ordinal",
           "sleeptracker_restricted": "Restricted app session (no authentication)",
           "sleeptracker_processor_type": "Processor type (0 if unknown)",
-          "cluster018_third_service": "Allow the app’s third-service fallback",
+          "richmat_classic_third_service": "Allow the app’s third-service fallback",
           "furnimove_remote": "FurniMove handset ID",
           "has_light": "Enable light controls",
           "has_massage": "Has massage feature",
@@ -1269,7 +1269,7 @@
           "sleeptracker_snapshot_side": "App snapshot ordinal: 0 left, 1 right, 2 entire bed, 3 other.",
           "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count.",
           "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Enter 0 to keep the bed connected; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on.",
-          "cluster018_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes.",
+          "richmat_classic_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes.",
           "has_light": "Expose light controls when the bed has lighting.",
           "jiecang_app_layout": "Select the layout configured in the app. Dream Motion HD does not support the bilateral or split-after-bilateral layouts. The device name and motor count do not identify the layout.",
           "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion and Dream Motion HD also allow manual standalone G2, without a startup-query burst. Comfort Motion supports G1 and G2 only.",
@@ -1475,7 +1475,7 @@
       "gmmotor_side": "This product does not expose the selected app side.",
       "estimate_acknowledge_required": "Confirm that you understand positions are estimated.",
       "migration_reconfigure_required": "To change the app or layout, close Configure and select Reconfigure from this entry's three-dot menu. The guided change checks it before saving.",
-      "cluster018_layout": "Choose a layout shipped in the selected app."
+      "richmat_classic_layout": "Choose a layout shipped in the selected app."
     },
     "progress": {
       "connecting": "Connecting over Bluetooth…",
@@ -4554,22 +4554,22 @@
       "eshine_okin_massage_timer_right": {
         "name": "Right: Massage timer"
       },
-      "cluster018_action": {
+      "richmat_classic_action": {
         "name": "{action}"
       },
-      "cluster018_action_left": {
+      "richmat_classic_action_left": {
         "name": "Left: {action}"
       },
-      "cluster018_action_right": {
+      "richmat_classic_action_right": {
         "name": "Right: {action}"
       },
-      "cluster018_release": {
+      "richmat_classic_release": {
         "name": "Release held action"
       },
-      "cluster018_release_left": {
+      "richmat_classic_release_left": {
         "name": "Left: Release held action"
       },
-      "cluster018_release_right": {
+      "richmat_classic_release_right": {
         "name": "Right: Release held action"
       },
       "motomotion_action": {
@@ -6192,101 +6192,77 @@
       "set_tv_lift_reference_right": {
         "name": "Right: Set TV lift reference"
       },
-      "row061_mattress_left_pillow_up": {
+      "ruf_richmat_mattress_left_pillow_up": {
         "name": "Left mattress pillow Up"
       },
-      "row061_mattress_left_pillow_up_left": {
+      "ruf_richmat_mattress_left_pillow_up_left": {
         "name": "Left: Left mattress pillow Up"
       },
-      "row061_mattress_left_pillow_up_right": {
+      "ruf_richmat_mattress_left_pillow_up_right": {
         "name": "Right: Left mattress pillow Up"
       },
-      "row061_mattress_left_pillow_up_both": {
+      "ruf_richmat_mattress_left_pillow_up_both": {
         "name": "Both sides: Left mattress pillow Up"
       },
-      "row061_mattress_left_pillow_down": {
+      "ruf_richmat_mattress_left_pillow_down": {
         "name": "Left mattress pillow Down"
       },
-      "row061_mattress_left_pillow_down_left": {
+      "ruf_richmat_mattress_left_pillow_down_left": {
         "name": "Left: Left mattress pillow Down"
       },
-      "row061_mattress_left_pillow_down_right": {
+      "ruf_richmat_mattress_left_pillow_down_right": {
         "name": "Right: Left mattress pillow Down"
       },
-      "row061_mattress_left_pillow_down_both": {
+      "ruf_richmat_mattress_left_pillow_down_both": {
         "name": "Both sides: Left mattress pillow Down"
       },
-      "row061_mattress_right_pillow_up": {
+      "ruf_richmat_mattress_right_pillow_up": {
         "name": "Right mattress pillow Up"
       },
-      "row061_mattress_right_pillow_up_left": {
+      "ruf_richmat_mattress_right_pillow_up_left": {
         "name": "Left: Right mattress pillow Up"
       },
-      "row061_mattress_right_pillow_up_right": {
+      "ruf_richmat_mattress_right_pillow_up_right": {
         "name": "Right: Right mattress pillow Up"
       },
-      "row061_mattress_right_pillow_up_both": {
+      "ruf_richmat_mattress_right_pillow_up_both": {
         "name": "Both sides: Right mattress pillow Up"
       },
-      "row061_mattress_right_pillow_down": {
+      "ruf_richmat_mattress_right_pillow_down": {
         "name": "Right mattress pillow Down"
       },
-      "row061_mattress_right_pillow_down_left": {
+      "ruf_richmat_mattress_right_pillow_down_left": {
         "name": "Left: Right mattress pillow Down"
       },
-      "row061_mattress_right_pillow_down_right": {
+      "ruf_richmat_mattress_right_pillow_down_right": {
         "name": "Right: Right mattress pillow Down"
       },
-      "row061_mattress_right_pillow_down_both": {
+      "ruf_richmat_mattress_right_pillow_down_both": {
         "name": "Both sides: Right mattress pillow Down"
       },
-      "row061_lift_up": {
+      "ruf_richmat_lift_up": {
         "name": "Lift Up"
       },
-      "row061_lift_up_left": {
+      "ruf_richmat_lift_up_left": {
         "name": "Left: Lift Up"
       },
-      "row061_lift_up_right": {
+      "ruf_richmat_lift_up_right": {
         "name": "Right: Lift Up"
       },
-      "row061_lift_up_both": {
+      "ruf_richmat_lift_up_both": {
         "name": "Both sides: Lift Up"
       },
-      "row061_lift_down": {
+      "ruf_richmat_lift_down": {
         "name": "Lift Down"
       },
-      "row061_lift_down_left": {
+      "ruf_richmat_lift_down_left": {
         "name": "Left: Lift Down"
       },
-      "row061_lift_down_right": {
+      "ruf_richmat_lift_down_right": {
         "name": "Right: Lift Down"
       },
-      "row061_lift_down_both": {
+      "ruf_richmat_lift_down_both": {
         "name": "Both sides: Lift Down"
-      },
-      "row061_115_up": {
-        "name": "115 Up"
-      },
-      "row061_115_up_left": {
-        "name": "Left: 115 Up"
-      },
-      "row061_115_up_right": {
-        "name": "Right: 115 Up"
-      },
-      "row061_115_up_both": {
-        "name": "Both sides: 115 Up"
-      },
-      "row061_115_down": {
-        "name": "115 Down"
-      },
-      "row061_115_down_left": {
-        "name": "Left: 115 Down"
-      },
-      "row061_115_down_right": {
-        "name": "Right: 115 Down"
-      },
-      "row061_115_down_both": {
-        "name": "Both sides: 115 Down"
       }
     },
     "cover": {
@@ -6947,41 +6923,32 @@
       "hjbed_sofa_travel_right": {
         "name": "Right Sofa travel"
       },
-      "row061_mattress_left_pillow": {
+      "ruf_richmat_mattress_left_pillow": {
         "name": "Left mattress pillow"
       },
-      "row061_mattress_left_pillow_left": {
+      "ruf_richmat_mattress_left_pillow_left": {
         "name": "Left: Left mattress pillow"
       },
-      "row061_mattress_left_pillow_right": {
+      "ruf_richmat_mattress_left_pillow_right": {
         "name": "Right: Left mattress pillow"
       },
-      "row061_mattress_right_pillow": {
+      "ruf_richmat_mattress_right_pillow": {
         "name": "Right mattress pillow"
       },
-      "row061_mattress_right_pillow_left": {
+      "ruf_richmat_mattress_right_pillow_left": {
         "name": "Left: Right mattress pillow"
       },
-      "row061_mattress_right_pillow_right": {
+      "ruf_richmat_mattress_right_pillow_right": {
         "name": "Right: Right mattress pillow"
       },
-      "row061_lift": {
+      "ruf_richmat_lift": {
         "name": "Lift"
       },
-      "row061_lift_left": {
+      "ruf_richmat_lift_left": {
         "name": "Left: Lift"
       },
-      "row061_lift_right": {
+      "ruf_richmat_lift_right": {
         "name": "Right: Lift"
-      },
-      "row061_115": {
-        "name": "115"
-      },
-      "row061_115_left": {
-        "name": "Left: 115"
-      },
-      "row061_115_right": {
-        "name": "Right: 115"
       }
     },
     "sensor": {
@@ -8335,7 +8302,7 @@
       "eshine_okin_alarm": {
         "name": "Alarm state"
       },
-      "cluster018_status": {
+      "richmat_classic_status": {
         "name": "App connection and state"
       },
       "motomotion_status": {
@@ -8356,43 +8323,43 @@
       "hush_sleep_settings": {
         "name": "Hush sleep settings"
       },
-      "row061_mattress_left_alarm": {
+      "ruf_richmat_mattress_left_alarm": {
         "name": "Left mattress alarm"
       },
-      "row061_sleep_left_heart_rate": {
+      "ruf_richmat_sleep_left_heart_rate": {
         "name": "Left heart rate"
       },
-      "row061_sleep_left_breathing_rate": {
+      "ruf_richmat_sleep_left_breathing_rate": {
         "name": "Left breathing rate"
       },
-      "row061_sleep_left_occupancy": {
+      "ruf_richmat_sleep_left_occupancy": {
         "name": "Left occupancy"
       },
-      "row061_sleep_left_movement": {
+      "ruf_richmat_sleep_left_movement": {
         "name": "Left movement"
       },
-      "row061_mattress_right_alarm": {
+      "ruf_richmat_mattress_right_alarm": {
         "name": "Right mattress alarm"
       },
-      "row061_sleep_right_heart_rate": {
+      "ruf_richmat_sleep_right_heart_rate": {
         "name": "Right heart rate"
       },
-      "row061_sleep_right_breathing_rate": {
+      "ruf_richmat_sleep_right_breathing_rate": {
         "name": "Right breathing rate"
       },
-      "row061_sleep_right_occupancy": {
+      "ruf_richmat_sleep_right_occupancy": {
         "name": "Right occupancy"
       },
-      "row061_sleep_right_movement": {
+      "ruf_richmat_sleep_right_movement": {
         "name": "Right movement"
       },
-      "row061_calendar_alarms": {
+      "ruf_richmat_calendar_alarms": {
         "name": "Calendar alarms"
       },
-      "row061_sleep_attributes": {
+      "ruf_richmat_sleep_attributes": {
         "name": "Sleep receiver firmware"
       },
-      "row061_music_status": {
+      "ruf_richmat_music_status": {
         "name": "Bed audio status"
       }
     },
@@ -10724,7 +10691,7 @@
           "30": "30 minutes"
         }
       },
-      "cluster018_mode": {
+      "richmat_classic_mode": {
         "name": "App mode",
         "state": {
           "0": "Mode 1",
@@ -10732,7 +10699,7 @@
           "2": "Mode 3"
         }
       },
-      "cluster018_mode_left": {
+      "richmat_classic_mode_left": {
         "name": "Left: App mode",
         "state": {
           "0": "Mode 1",
@@ -10740,7 +10707,7 @@
           "2": "Mode 3"
         }
       },
-      "cluster018_mode_right": {
+      "richmat_classic_mode_right": {
         "name": "Right: App mode",
         "state": {
           "0": "Mode 1",
@@ -10748,63 +10715,63 @@
           "2": "Mode 3"
         }
       },
-      "cluster018_program": {
+      "richmat_classic_program": {
         "name": "Memory selection",
         "state": {
           "recall": "Recall",
           "armed": "Save next action"
         }
       },
-      "cluster018_program_left": {
+      "richmat_classic_program_left": {
         "name": "Left: Memory selection",
         "state": {
           "recall": "Recall",
           "armed": "Save next action"
         }
       },
-      "cluster018_program_right": {
+      "richmat_classic_program_right": {
         "name": "Right: Memory selection",
         "state": {
           "recall": "Recall",
           "armed": "Save next action"
         }
       },
-      "cluster018_hold": {
+      "richmat_classic_hold": {
         "name": "Press behavior",
         "state": {
           "release": "Release",
           "hold": "Hold"
         }
       },
-      "cluster018_hold_left": {
+      "richmat_classic_hold_left": {
         "name": "Left: Press behavior",
         "state": {
           "release": "Release",
           "hold": "Hold"
         }
       },
-      "cluster018_hold_right": {
+      "richmat_classic_hold_right": {
         "name": "Right: Press behavior",
         "state": {
           "release": "Release",
           "hold": "Hold"
         }
       },
-      "cluster018_head_foot": {
+      "richmat_classic_head_foot": {
         "name": "Selected control",
         "state": {
           "head": "Head",
           "foot": "Foot"
         }
       },
-      "cluster018_head_foot_left": {
+      "richmat_classic_head_foot_left": {
         "name": "Left: Selected control",
         "state": {
           "head": "Head",
           "foot": "Foot"
         }
       },
-      "cluster018_head_foot_right": {
+      "richmat_classic_head_foot_right": {
         "name": "Right: Selected control",
         "state": {
           "head": "Head",
@@ -10895,7 +10862,7 @@
       "octo_light_sensitivity_right": {
         "name": "Right: Light sensitivity"
       },
-      "row061_mattress_left_pressure": {
+      "ruf_richmat_mattress_left_pressure": {
         "name": "Left mattress pressure",
         "state": {
           "low": "Low",
@@ -10903,7 +10870,7 @@
           "high": "High"
         }
       },
-      "row061_mattress_left_pressure_left": {
+      "ruf_richmat_mattress_left_pressure_left": {
         "name": "Left: Left mattress pressure",
         "state": {
           "low": "Low",
@@ -10911,7 +10878,7 @@
           "high": "High"
         }
       },
-      "row061_mattress_left_pressure_right": {
+      "ruf_richmat_mattress_left_pressure_right": {
         "name": "Right: Left mattress pressure",
         "state": {
           "low": "Low",
@@ -10919,7 +10886,7 @@
           "high": "High"
         }
       },
-      "row061_mattress_left_heat_level": {
+      "ruf_richmat_mattress_left_heat_level": {
         "name": "Left mattress heat level",
         "state": {
           "off": "Off",
@@ -10928,7 +10895,7 @@
           "high": "High"
         }
       },
-      "row061_mattress_left_heat_level_left": {
+      "ruf_richmat_mattress_left_heat_level_left": {
         "name": "Left: Left mattress heat level",
         "state": {
           "off": "Off",
@@ -10937,7 +10904,7 @@
           "high": "High"
         }
       },
-      "row061_mattress_left_heat_level_right": {
+      "ruf_richmat_mattress_left_heat_level_right": {
         "name": "Right: Left mattress heat level",
         "state": {
           "off": "Off",
@@ -10946,7 +10913,7 @@
           "high": "High"
         }
       },
-      "row061_mattress_left_heat_duration": {
+      "ruf_richmat_mattress_left_heat_duration": {
         "name": "Left mattress heat duration",
         "state": {
           "2_hours": "2 hours",
@@ -10955,7 +10922,7 @@
           "8_hours": "8 hours"
         }
       },
-      "row061_mattress_left_heat_duration_left": {
+      "ruf_richmat_mattress_left_heat_duration_left": {
         "name": "Left: Left mattress heat duration",
         "state": {
           "2_hours": "2 hours",
@@ -10964,7 +10931,7 @@
           "8_hours": "8 hours"
         }
       },
-      "row061_mattress_left_heat_duration_right": {
+      "ruf_richmat_mattress_left_heat_duration_right": {
         "name": "Right: Left mattress heat duration",
         "state": {
           "2_hours": "2 hours",
@@ -10973,7 +10940,7 @@
           "8_hours": "8 hours"
         }
       },
-      "row061_mattress_left_heat_area": {
+      "ruf_richmat_mattress_left_heat_area": {
         "name": "Left mattress heat area",
         "state": {
           "off": "Off",
@@ -10982,7 +10949,7 @@
           "both": "Both"
         }
       },
-      "row061_mattress_left_heat_area_left": {
+      "ruf_richmat_mattress_left_heat_area_left": {
         "name": "Left: Left mattress heat area",
         "state": {
           "off": "Off",
@@ -10991,7 +10958,7 @@
           "both": "Both"
         }
       },
-      "row061_mattress_left_heat_area_right": {
+      "ruf_richmat_mattress_left_heat_area_right": {
         "name": "Right: Left mattress heat area",
         "state": {
           "off": "Off",
@@ -11000,7 +10967,7 @@
           "both": "Both"
         }
       },
-      "row061_mattress_left_mode": {
+      "ruf_richmat_mattress_left_mode": {
         "name": "Left mattress mode",
         "state": {
           "off": "Off",
@@ -11010,7 +10977,7 @@
           "leg": "Leg"
         }
       },
-      "row061_mattress_left_mode_left": {
+      "ruf_richmat_mattress_left_mode_left": {
         "name": "Left: Left mattress mode",
         "state": {
           "off": "Off",
@@ -11020,7 +10987,7 @@
           "leg": "Leg"
         }
       },
-      "row061_mattress_left_mode_right": {
+      "ruf_richmat_mattress_left_mode_right": {
         "name": "Right: Left mattress mode",
         "state": {
           "off": "Off",
@@ -11030,7 +10997,7 @@
           "leg": "Leg"
         }
       },
-      "row061_mattress_left_pillow_duration": {
+      "ruf_richmat_mattress_left_pillow_duration": {
         "name": "Left mattress pillow duration",
         "state": {
           "20_minutes": "20 minutes",
@@ -11038,7 +11005,7 @@
           "60_minutes": "60 minutes"
         }
       },
-      "row061_mattress_left_pillow_duration_left": {
+      "ruf_richmat_mattress_left_pillow_duration_left": {
         "name": "Left: Left mattress pillow duration",
         "state": {
           "20_minutes": "20 minutes",
@@ -11046,7 +11013,7 @@
           "60_minutes": "60 minutes"
         }
       },
-      "row061_mattress_left_pillow_duration_right": {
+      "ruf_richmat_mattress_left_pillow_duration_right": {
         "name": "Right: Left mattress pillow duration",
         "state": {
           "20_minutes": "20 minutes",
@@ -11054,7 +11021,7 @@
           "60_minutes": "60 minutes"
         }
       },
-      "row061_mattress_left_sleep_duration": {
+      "ruf_richmat_mattress_left_sleep_duration": {
         "name": "Left mattress sleep duration",
         "state": {
           "15_minutes": "15 minutes",
@@ -11062,7 +11029,7 @@
           "30_minutes": "30 minutes"
         }
       },
-      "row061_mattress_left_sleep_duration_left": {
+      "ruf_richmat_mattress_left_sleep_duration_left": {
         "name": "Left: Left mattress sleep duration",
         "state": {
           "15_minutes": "15 minutes",
@@ -11070,7 +11037,7 @@
           "30_minutes": "30 minutes"
         }
       },
-      "row061_mattress_left_sleep_duration_right": {
+      "ruf_richmat_mattress_left_sleep_duration_right": {
         "name": "Right: Left mattress sleep duration",
         "state": {
           "15_minutes": "15 minutes",
@@ -11078,7 +11045,7 @@
           "30_minutes": "30 minutes"
         }
       },
-      "row061_mattress_right_pressure": {
+      "ruf_richmat_mattress_right_pressure": {
         "name": "Right mattress pressure",
         "state": {
           "low": "Low",
@@ -11086,7 +11053,7 @@
           "high": "High"
         }
       },
-      "row061_mattress_right_pressure_left": {
+      "ruf_richmat_mattress_right_pressure_left": {
         "name": "Left: Right mattress pressure",
         "state": {
           "low": "Low",
@@ -11094,7 +11061,7 @@
           "high": "High"
         }
       },
-      "row061_mattress_right_pressure_right": {
+      "ruf_richmat_mattress_right_pressure_right": {
         "name": "Right: Right mattress pressure",
         "state": {
           "low": "Low",
@@ -11102,7 +11069,7 @@
           "high": "High"
         }
       },
-      "row061_mattress_right_heat_level": {
+      "ruf_richmat_mattress_right_heat_level": {
         "name": "Right mattress heat level",
         "state": {
           "off": "Off",
@@ -11111,7 +11078,7 @@
           "high": "High"
         }
       },
-      "row061_mattress_right_heat_level_left": {
+      "ruf_richmat_mattress_right_heat_level_left": {
         "name": "Left: Right mattress heat level",
         "state": {
           "off": "Off",
@@ -11120,7 +11087,7 @@
           "high": "High"
         }
       },
-      "row061_mattress_right_heat_level_right": {
+      "ruf_richmat_mattress_right_heat_level_right": {
         "name": "Right: Right mattress heat level",
         "state": {
           "off": "Off",
@@ -11129,7 +11096,7 @@
           "high": "High"
         }
       },
-      "row061_mattress_right_heat_duration": {
+      "ruf_richmat_mattress_right_heat_duration": {
         "name": "Right mattress heat duration",
         "state": {
           "2_hours": "2 hours",
@@ -11138,7 +11105,7 @@
           "8_hours": "8 hours"
         }
       },
-      "row061_mattress_right_heat_duration_left": {
+      "ruf_richmat_mattress_right_heat_duration_left": {
         "name": "Left: Right mattress heat duration",
         "state": {
           "2_hours": "2 hours",
@@ -11147,7 +11114,7 @@
           "8_hours": "8 hours"
         }
       },
-      "row061_mattress_right_heat_duration_right": {
+      "ruf_richmat_mattress_right_heat_duration_right": {
         "name": "Right: Right mattress heat duration",
         "state": {
           "2_hours": "2 hours",
@@ -11156,7 +11123,7 @@
           "8_hours": "8 hours"
         }
       },
-      "row061_mattress_right_heat_area": {
+      "ruf_richmat_mattress_right_heat_area": {
         "name": "Right mattress heat area",
         "state": {
           "off": "Off",
@@ -11165,7 +11132,7 @@
           "both": "Both"
         }
       },
-      "row061_mattress_right_heat_area_left": {
+      "ruf_richmat_mattress_right_heat_area_left": {
         "name": "Left: Right mattress heat area",
         "state": {
           "off": "Off",
@@ -11174,7 +11141,7 @@
           "both": "Both"
         }
       },
-      "row061_mattress_right_heat_area_right": {
+      "ruf_richmat_mattress_right_heat_area_right": {
         "name": "Right: Right mattress heat area",
         "state": {
           "off": "Off",
@@ -11183,7 +11150,7 @@
           "both": "Both"
         }
       },
-      "row061_mattress_right_mode": {
+      "ruf_richmat_mattress_right_mode": {
         "name": "Right mattress mode",
         "state": {
           "off": "Off",
@@ -11193,7 +11160,7 @@
           "leg": "Leg"
         }
       },
-      "row061_mattress_right_mode_left": {
+      "ruf_richmat_mattress_right_mode_left": {
         "name": "Left: Right mattress mode",
         "state": {
           "off": "Off",
@@ -11203,7 +11170,7 @@
           "leg": "Leg"
         }
       },
-      "row061_mattress_right_mode_right": {
+      "ruf_richmat_mattress_right_mode_right": {
         "name": "Right: Right mattress mode",
         "state": {
           "off": "Off",
@@ -11213,7 +11180,7 @@
           "leg": "Leg"
         }
       },
-      "row061_mattress_right_pillow_duration": {
+      "ruf_richmat_mattress_right_pillow_duration": {
         "name": "Right mattress pillow duration",
         "state": {
           "20_minutes": "20 minutes",
@@ -11221,7 +11188,7 @@
           "60_minutes": "60 minutes"
         }
       },
-      "row061_mattress_right_pillow_duration_left": {
+      "ruf_richmat_mattress_right_pillow_duration_left": {
         "name": "Left: Right mattress pillow duration",
         "state": {
           "20_minutes": "20 minutes",
@@ -11229,7 +11196,7 @@
           "60_minutes": "60 minutes"
         }
       },
-      "row061_mattress_right_pillow_duration_right": {
+      "ruf_richmat_mattress_right_pillow_duration_right": {
         "name": "Right: Right mattress pillow duration",
         "state": {
           "20_minutes": "20 minutes",
@@ -11237,7 +11204,7 @@
           "60_minutes": "60 minutes"
         }
       },
-      "row061_mattress_right_sleep_duration": {
+      "ruf_richmat_mattress_right_sleep_duration": {
         "name": "Right mattress sleep duration",
         "state": {
           "15_minutes": "15 minutes",
@@ -11245,7 +11212,7 @@
           "30_minutes": "30 minutes"
         }
       },
-      "row061_mattress_right_sleep_duration_left": {
+      "ruf_richmat_mattress_right_sleep_duration_left": {
         "name": "Left: Right mattress sleep duration",
         "state": {
           "15_minutes": "15 minutes",
@@ -11253,7 +11220,7 @@
           "30_minutes": "30 minutes"
         }
       },
-      "row061_mattress_right_sleep_duration_right": {
+      "ruf_richmat_mattress_right_sleep_duration_right": {
         "name": "Right: Right mattress sleep duration",
         "state": {
           "15_minutes": "15 minutes",
@@ -11261,63 +11228,63 @@
           "30_minutes": "30 minutes"
         }
       },
-      "row061_sleep_mode": {
+      "ruf_richmat_sleep_mode": {
         "name": "Mode",
         "state": {
           "single": "Single",
           "double": "Double"
         }
       },
-      "row061_sleep_mode_left": {
+      "ruf_richmat_sleep_mode_left": {
         "name": "Left: Mode",
         "state": {
           "single": "Single",
           "double": "Double"
         }
       },
-      "row061_sleep_mode_right": {
+      "ruf_richmat_sleep_mode_right": {
         "name": "Right: Mode",
         "state": {
           "single": "Single",
           "double": "Double"
         }
       },
-      "row061_sleep_left_intervention": {
+      "ruf_richmat_sleep_left_intervention": {
         "name": "Left intervention",
         "state": {
           "off": "Off",
           "on": "On"
         }
       },
-      "row061_sleep_left_intervention_left": {
+      "ruf_richmat_sleep_left_intervention_left": {
         "name": "Left: Left intervention",
         "state": {
           "off": "Off",
           "on": "On"
         }
       },
-      "row061_sleep_left_intervention_right": {
+      "ruf_richmat_sleep_left_intervention_right": {
         "name": "Right: Left intervention",
         "state": {
           "off": "Off",
           "on": "On"
         }
       },
-      "row061_sleep_right_intervention": {
+      "ruf_richmat_sleep_right_intervention": {
         "name": "Right intervention",
         "state": {
           "off": "Off",
           "on": "On"
         }
       },
-      "row061_sleep_right_intervention_left": {
+      "ruf_richmat_sleep_right_intervention_left": {
         "name": "Left: Right intervention",
         "state": {
           "off": "Off",
           "on": "On"
         }
       },
-      "row061_sleep_right_intervention_right": {
+      "ruf_richmat_sleep_right_intervention_right": {
         "name": "Right: Right intervention",
         "state": {
           "off": "Off",

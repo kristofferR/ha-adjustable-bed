@@ -368,7 +368,7 @@ async def test_rename_clock_and_alarm_vectors():
         with pytest.raises(ValueError):
             ctrl.validate_device_rename(name)
     now = datetime(2026, 11, 3, 21, 7, 40, tzinfo=ZoneInfo("Europe/Oslo"))
-    with patch("custom_components.adjustable_bed.beds.cluster033.dt_util.now", return_value=now):
+    with patch("custom_components.adjustable_bed.beds.keeson_layout_app.dt_util.now", return_value=now):
         await ctrl.sync_clock()
     assert packets(coord)[-1].hex() == next(
         v["expected_bytes"] for v in VECTORS if v["id"] == "clock"
@@ -470,15 +470,15 @@ async def test_catalog_action_bytes(vector):
 async def test_configuration_and_actual_entity_exposure(hass):
     from custom_components.adjustable_bed.button import _button_entities_for
     from custom_components.adjustable_bed.config_flow import (
-        _add_cluster033_schema_fields,
-        _normalize_cluster033_data,
+        _add_keeson_layout_app_schema_fields,
+        _normalize_keeson_layout_app_data,
     )
     from custom_components.adjustable_bed.detection import get_bed_type_options
 
     data = {"bed_type": "ergomotion_4", "product_type": "M30"}
     schema = {}
-    _add_cluster033_schema_fields(schema, data)
-    _normalize_cluster033_data(data)
+    _add_keeson_layout_app_schema_fields(schema, data)
+    _normalize_keeson_layout_app_data(data)
     assert data["disable_angle_sensing"] is True
     assert data["has_massage"] is False
     assert any(choice["value"] == "ergomotion_4" for choice in get_bed_type_options())

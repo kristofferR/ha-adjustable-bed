@@ -1,4 +1,4 @@
-"""Registered cluster033 holds use the approved scheduler STOP-epoch seam.
+"""Registered Keeson layout app holds use the approved scheduler STOP-epoch seam.
 
 Temporal cases adapt the immutable shared-admission regressions. These use real
 HA service/device routing and coordinators; no M1X12 protocol code is imported.
@@ -17,7 +17,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.cluster033 import AppController
+from custom_components.adjustable_bed.beds.keeson_layout_app import AppController
 from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_PAIR_ID, DOMAIN
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
@@ -25,11 +25,11 @@ from custom_components.adjustable_bed.paired_devices import child_device_info
 from custom_components.adjustable_bed.profiles.keeson import app_profile
 from custom_components.adjustable_bed.services import async_register_services
 
-from .test_cluster033 import coordinator as mock_transport
+from .test_keeson_layout_app import coordinator as mock_transport
 
 
 async def _target(hass: HomeAssistant, *, mx: bool = False):
-    sequence = len(hass.data.setdefault("cluster033_test_targets", [])) + 1
+    sequence = len(hass.data.setdefault("keeson_layout_app_test_targets", [])) + 1
     address = f"AA:33:00:00:00:{sequence:02X}"
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -57,14 +57,14 @@ async def _target(hass: HomeAssistant, *, mx: bool = False):
     target._ready = True
     entry.mock_state(hass, ConfigEntryState.LOADED)
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = target
-    hass.data["cluster033_test_targets"].append(target)
+    hass.data["keeson_layout_app_test_targets"].append(target)
     return target, controller, client
 
 
 @pytest.fixture(autouse=True)
 async def _cleanup_targets(hass):
     yield
-    for target in hass.data.get("cluster033_test_targets", []):
+    for target in hass.data.get("keeson_layout_app_test_targets", []):
         await target.async_shutdown()
 
 
@@ -76,7 +76,7 @@ async def _connected_pair(hass, monkeypatch):
         monkeypatch.setattr(child, "async_ensure_connected", AsyncMock(return_value=True))
         monkeypatch.setattr(controller, "stop_all", AsyncMock())
         triples[side] = child, controller, client
-    entry = MockConfigEntry(domain=DOMAIN, data={CONF_PAIR_ID: "cluster033-admission"})
+    entry = MockConfigEntry(domain=DOMAIN, data={CONF_PAIR_ID: "keeson_layout_app-admission"})
     entry.add_to_hass(hass)
     entry.mock_state(hass, ConfigEntryState.LOADED)
     pair = PairedBedCoordinator(hass, entry, {side: triple[0] for side, triple in triples.items()})

@@ -9,7 +9,6 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 
 from .beds.reverie_profiles import REVERIE_MODEL_CHOICES
-from .cluster018_profiles import APP_NAMES as CLUSTER018_APPS
 from .const import (
     ADAPTER_AUTO,
     ADJUSTABLE_LUMBAR_VARIANTS,
@@ -18,7 +17,6 @@ from .const import (
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_BEDSENSE,
     BED_TYPE_CASPER_BASE,
-    BED_TYPE_CLUSTER018,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ESHINE_OKIN,
@@ -42,6 +40,7 @@ from .const import (
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
+    BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
     BED_TYPE_SIMMONS,
@@ -87,6 +86,7 @@ from .const import (
     VARIANT_REQUIRED_BED_TYPES,
     ZSERIES_VARIANTS,
 )
+from .richmat_classic_profiles import APP_NAMES as RICHMAT_CLASSIC_APPS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -117,7 +117,7 @@ def is_valid_octo_pin(pin: str) -> bool:
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_GOODVIBE: GOODVIBE_PROFILES,
-    BED_TYPE_CLUSTER018: CLUSTER018_APPS,
+    BED_TYPE_RICHMAT_CLASSIC_APPS: RICHMAT_CLASSIC_APPS,
     BED_TYPE_HJBED: HJBED_PROFILES,
     BED_TYPE_ESHINE_OKIN: ESHINE_OKIN_PROFILES,
     BED_TYPE_DOUBLESLEEP: DOUBLESLEEP_VARIANTS,

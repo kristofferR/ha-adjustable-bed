@@ -6,8 +6,8 @@ from typing import Final, overload
 
 from . import hush_catalog as _hush_catalog
 from . import richmat_mh_catalog as _richmat_mh_catalog
-from . import row061_models as _row061_models
-from . import row061_profiles as _row061_profiles
+from . import ruf_richmat_models as _ruf_richmat_models
+from . import ruf_richmat_profiles as _ruf_richmat_profiles
 from .goodvibe_catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
 from .hjbed_catalog import PROFILE_CHOICES as HJBED_PROFILES
 from .profiles import casper as _casper_profiles
@@ -506,9 +506,9 @@ BED_TYPE_SERENITY: Final = "serenity"  # Explicit Jordan's Serenity app profile
 BED_TYPE_TRANQUIL: Final = "tranquil"  # Explicit Jordan's Tranquil app profile
 # Glideaway model is selected manually; no advertisement-derived model rule.
 BED_TYPE_GOODVIBE: Final = "goodvibe"
-BED_TYPE_CLUSTER018: Final = "richmat_classic_apps"
+BED_TYPE_RICHMAT_CLASSIC_APPS: Final = "richmat_classic_apps"
 # Opt-in to the classic apps' third-service fallback when no fixed service exists.
-CONF_CLUSTER018_THIRD_SERVICE: Final = "cluster018_third_service"
+CONF_RICHMAT_CLASSIC_THIRD_SERVICE: Final = "richmat_classic_third_service"
 BED_TYPE_MOTOMOTION: Final = "motomotion"
 BED_TYPE_HJBED: Final = "hjbed"
 HJBED_SCAN_KEYWORDS: Final = ("QRRM", "COOL", "MPE_", "209A", "ZRA1")
@@ -536,7 +536,7 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc5": "MC5: Hi Lo Lift / Massage Plus",
 }
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
-    {"richmat_sleep_receiver", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, "casper_base", BED_TYPE_CLUSTER018}
+    {"richmat_sleep_receiver", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
 )
 # Explicit OKIN Bedding app profiles sharing the Serenity controller core.
 OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
@@ -581,7 +581,7 @@ RICHMAT_MH_APPS: Final[dict[str, str]] = {
     BED_TYPE_RICHMAT_BLVD_HOME: "blvd_home",
     BED_TYPE_RICHMAT_HARMONY: "harmony",
     BED_TYPE_RICHMAT_IDEALBED: "idealbed",
-    **_row061_profiles.APPS,
+    **_ruf_richmat_profiles.APPS,
 }
 RICHMAT_MH_BED_TYPES: Final = frozenset(RICHMAT_MH_APPS)
 BED_TYPE_CUSTOMATIC_CLARITY: Final = "customatic_clarity"
@@ -708,13 +708,13 @@ BED_TYPE_ERGOMOTION_4: Final = "ergomotion_4"
 BED_TYPE_ROW_CONTROL: Final = 'row_control'
 BED_TYPE_ERGO_SLIM: Final = 'ergo_slim'
 BED_TYPE_TEMPUR_AU: Final = 'tempur_au'
-CLUSTER033_BED_TYPES: Final = frozenset({BED_TYPE_TEMPUR_CURVE, BED_TYPE_QPLUS_APP, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_OMAZZ_ADJUSTO_III, BED_TYPE_ERGOMOTION_APP, BED_TYPE_ROW_CONTROL, BED_TYPE_ERGO_SLIM, BED_TYPE_TEMPUR_AU})
+KEESON_LAYOUT_APP_BED_TYPES: Final = frozenset({BED_TYPE_TEMPUR_CURVE, BED_TYPE_QPLUS_APP, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_OMAZZ_ADJUSTO_III, BED_TYPE_ERGOMOTION_APP, BED_TYPE_ROW_CONTROL, BED_TYPE_ERGO_SLIM, BED_TYPE_TEMPUR_AU})
 
 SUPPORTED_BED_TYPES: Final = [
-    BED_TYPE_CLUSTER018,
+    BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_ERGOMOTION_4,
     BED_TYPE_GMMOTOR, BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB,
-    *sorted(CLUSTER033_BED_TYPES),
+    *sorted(KEESON_LAYOUT_APP_BED_TYPES),
     BED_TYPE_GOODVIBE,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_HJBED,
@@ -773,7 +773,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_RICHMAT_BLVD_HOME,
     BED_TYPE_RICHMAT_HARMONY,
     BED_TYPE_RICHMAT_IDEALBED,
-    *_row061_profiles.APPS,
+    *_ruf_richmat_profiles.APPS,
     "richmat_sleep_receiver",
     # Explicit Customatic app profiles
     BED_TYPE_ZSERIES,
@@ -877,9 +877,9 @@ SUPPORTED_BED_TYPES: Final = [
 OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
     {
         BED_TYPE_MOTOMOTION,
-        BED_TYPE_CLUSTER018,
+        BED_TYPE_RICHMAT_CLASSIC_APPS,
         BED_TYPE_ERGOMOTION_4,
-        *CLUSTER033_BED_TYPES,
+        *KEESON_LAYOUT_APP_BED_TYPES,
         BED_TYPE_BEDSENSE,
         BED_TYPE_FURNIMOVE,
         BED_TYPE_OKIN_HANDLE,
@@ -1771,7 +1771,7 @@ def _richmat_mh_model_choices(app: str) -> tuple[tuple[str, str], ...]:
 RICHMAT_MH_MODEL_CHOICES: Final[dict[str, tuple[tuple[str, str], ...]]] = {
     **{app: _richmat_mh_model_choices(app) for app in _richmat_mh_catalog.MODELS},
     **{app: tuple((model, model.upper()) for model in models)
-       for app, models in _row061_models.MODEL_IDS.items()},
+       for app, models in _ruf_richmat_models.MODEL_IDS.items()},
 }
 RICHMAT_MH_VARIANTS_BY_APP: Final[dict[str, dict[str, str]]] = {
     app: {
@@ -1786,7 +1786,7 @@ RICHMAT_MH_VARIANTS_BY_APP: Final[dict[str, dict[str, str]]] = {
 for _app in ("wsilver2", "americanstar", "tx"):
     RICHMAT_MH_VARIANTS_BY_APP[_app].update({
         f"model_{model}_mattress": f"{model.upper()} with normal mattress (explicit opt-in)"
-        for model in _row061_models.MODEL_IDS[_app]
+        for model in _ruf_richmat_models.MODEL_IDS[_app]
     })
 # Explicit app bed types whose name rule reads the stored raw Bluetooth name.
 NAME_RULE_VARIANTS_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
@@ -2983,13 +2983,13 @@ def bed_type_has_position_feedback(bed_type: str | None, protocol_variant: str |
 # not remain "unknown" forever (#322, #344, #501).
 BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
     {
-        BED_TYPE_CLUSTER018,
+        BED_TYPE_RICHMAT_CLASSIC_APPS,
         BED_TYPE_ERGOMOTION_4,
         BED_TYPE_DOUBLESLEEP,
         # The app exposes raw motor-index/desk reports, without a proven
         # mapping to HA's generic head/back/legs/feet angle entities.
         BED_TYPE_GMMOTOR, BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB,
-        *(CLUSTER033_BED_TYPES - {BED_TYPE_SERTA_MP_REMOTE}),
+        *(KEESON_LAYOUT_APP_BED_TYPES - {BED_TYPE_SERTA_MP_REMOTE}),
         BED_TYPE_GOODVIBE,
         BED_TYPE_MOTOMOTION,
         BED_TYPE_HJBED,

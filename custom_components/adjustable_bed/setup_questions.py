@@ -29,7 +29,6 @@ from .const import (
     BED_TYPE_BF,
     BED_TYPE_CASPER_BASE,
     BED_TYPE_CHERISH,
-    BED_TYPE_CLUSTER018,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ESHINE,
@@ -63,6 +62,7 @@ from .const import (
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
+    BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
@@ -83,10 +83,8 @@ from .const import (
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
-    CLUSTER033_BED_TYPES,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
-    CONF_CLUSTER018_THIRD_SERVICE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_FURNIMOVE_REMOTE,
     CONF_GMMOTOR_SIDE,
@@ -124,6 +122,7 @@ from .const import (
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
     CONF_REVERSE_MOTORS,
+    CONF_RICHMAT_CLASSIC_THIRD_SERVICE,
     CONF_RICHMAT_REMOTE,
     CONF_RMCONTROL_PRODUCT,
     CONF_RMCONTROL_SIDE,
@@ -151,6 +150,7 @@ from .const import (
     JIECANG_APP_LAYOUTS,
     JIECANG_APP_TRANSPORTS,
     KAIDI_VARIANT_FLOYD,
+    KEESON_LAYOUT_APP_BED_TYPES,
     KEESON_VARIANT_AMERICANSTAR,
     KEESON_VARIANT_AVANTI_BASES,
     KEESON_VARIANT_BEDSENSE_BASES,
@@ -219,7 +219,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "gmmotor_sleep_sxb": GENERIC_FIELDS,
     BED_TYPE_BF: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_CHERISH: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
-    **dict.fromkeys(CLUSTER033_BED_TYPES, _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT}),
+    **dict.fromkeys(KEESON_LAYOUT_APP_BED_TYPES, _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT}),
     # OCTO motor layout comes from its advertised capability record, with an
     # OCTO-specific explicit override in the profile's own setup/options UI.
     BED_TYPE_OCTO: frozenset({CONF_MOTOR_COUNT}),
@@ -815,7 +815,7 @@ _CLASSIC_EXCLUDED: Final = frozenset({"TEST", "RMCS", "ZRS6"})
 
 def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
     """The chosen app's own layout codes, aliases and ZRS6 layout picks."""
-    from .cluster018_models import LAYOUT_PICKER_CHOICES, MANUAL_ALIASES, MODEL_CHOICES
+    from .richmat_classic_models import LAYOUT_PICKER_CHOICES, MANUAL_ALIASES, MODEL_CHOICES
 
     app = str(data.get(CONF_PROTOCOL_VARIANT, ""))
     codes = {
@@ -828,7 +828,7 @@ def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
 
 def _classic_normalize(previous: Mapping[str, Any], answers: Mapping[str, Any]) -> dict[str, Any]:
     """Resolve an alias or a ZRS6 pick to the layout the app opens."""
-    from .cluster018_models import LAYOUT_PICKER_CHOICES, MANUAL_ALIASES
+    from .richmat_classic_models import LAYOUT_PICKER_CHOICES, MANUAL_ALIASES
 
     data = {**previous, **answers}
     if CONF_PRODUCT_TYPE in answers:
@@ -841,17 +841,17 @@ def _classic_normalize(previous: Mapping[str, Any], answers: Mapping[str, Any]) 
 
 def _classic_errors(data: Mapping[str, Any]) -> dict[str, str]:
     """Require a layout the chosen app ships; a shared service never selects one."""
-    from .cluster018_models import MODEL_CHOICES
+    from .richmat_classic_models import MODEL_CHOICES
 
     layout = data.get(CONF_PRODUCT_TYPE)
     shipped = MODEL_CHOICES.get(str(data.get(CONF_PROTOCOL_VARIANT, "")), ())
     if layout in _CLASSIC_EXCLUDED or layout not in shipped:
-        return {CONF_PRODUCT_TYPE: "cluster018_layout"}
+        return {CONF_PRODUCT_TYPE: "richmat_classic_layout"}
     return {}
 
 
 def _classic_title(data: Mapping[str, Any]) -> str:
-    from .cluster018_profiles import APP_NAMES
+    from .richmat_classic_profiles import APP_NAMES
 
     return APP_NAMES.get(str(data.get(CONF_PROTOCOL_VARIANT, "")), "Classic Richmat app")
 
@@ -1446,7 +1446,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     ),
     # The app is the variant, chosen from the bed-type list. Its layout owns
     # every control and the app its own refresh; none reports positions.
-    BED_TYPE_CLUSTER018: SetupProfile(
+    BED_TYPE_RICHMAT_CLASSIC_APPS: SetupProfile(
         owns={
             CONF_MOTOR_COUNT: 2,
             CONF_HAS_MASSAGE: False,
@@ -1455,7 +1455,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         },
         questions=(
             Question(CONF_PRODUCT_TYPE, _classic_layouts),
-            Question(CONF_CLUSTER018_THIRD_SERVICE, default=False, advanced=True),
+            Question(CONF_RICHMAT_CLASSIC_THIRD_SERVICE, default=False, advanced=True),
         ),
         normalize=_classic_normalize,
         validate=_classic_errors,

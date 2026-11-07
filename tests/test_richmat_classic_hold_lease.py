@@ -27,23 +27,23 @@ from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import services
-from custom_components.adjustable_bed.beds.cluster018 import Cluster018Controller
+from custom_components.adjustable_bed.beds.richmat_classic import RichmatClassicController
 from custom_components.adjustable_bed.button import ControllerActionButton
-from custom_components.adjustable_bed.cluster018_caller import Selection
-from custom_components.adjustable_bed.cluster018_profiles import Control
-from custom_components.adjustable_bed.cluster018_transport import Transport
 from custom_components.adjustable_bed.command_scheduler import CommandKind, CommandOutcome
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.execution import HOLD_CEILING_MS, NO_EXECUTION_CAPABILITIES
+from custom_components.adjustable_bed.richmat_classic_caller import Selection
+from custom_components.adjustable_bed.richmat_classic_profiles import Control
+from custom_components.adjustable_bed.richmat_classic_transport import Transport
 from tests.hold_lease_wire import intervals, leased_hold, virtual_clock
-from tests.test_cluster018 import controller
+from tests.test_richmat_classic import controller
 
-FIXTURES = Path(__file__).parent / "fixtures" / "cluster018"
+FIXTURES = Path(__file__).parent / "fixtures" / "richmat_classic"
 # The default wire-snapshot route: Avocado Eco Base GORM, framed over W4.
 SCENARIO = "richmat_classic_apps"
 NORDIC = "richmat_classic_apps:avocadoecobase:GORM:nordic"
-HEAD_UP = "cluster018_6"  # GORM keep button, operand 0x43
+HEAD_UP = "richmat_classic_6"  # GORM keep button, operand 0x43
 FRAME = bytes.fromhex("6e010043b2")
 RELEASE = bytes.fromhex("6e01006edd")
 
@@ -90,7 +90,7 @@ def test_the_scope_follows_the_accepted_caller_vectors() -> None:
         selection = Selection(**down["selection"])
         stub = SimpleNamespace(layout=down["layout"], app=None)
         assert (
-            Cluster018Controller._keeps_on(cast(Any, stub), control, selection, down["wire"])
+            RichmatClassicController._keeps_on(cast(Any, stub), control, selection, down["wire"])
             is expected
         ), down
         checked += 1
@@ -122,7 +122,7 @@ def test_the_hold_selector_moves_presets_into_the_scope() -> None:
 def test_arming_a_save_takes_its_selectview_actions_out_of_the_scope() -> None:
     ctrl, _ = controller(layout="GXRM")
     special = {
-        f"cluster018_{button.node}" for button in ctrl._controls if button.select_special
+        f"richmat_classic_{button.node}" for button in ctrl._controls if button.select_special
     } & set(ctrl.held_control_options)
     assert special and special <= (ctrl.execution.hold_controls or frozenset())
     ctrl._select("program", "armed")
@@ -132,7 +132,7 @@ def test_arming_a_save_takes_its_selectview_actions_out_of_the_scope() -> None:
 def test_the_foot_selection_takes_its_null_getter_controls_out() -> None:
     ctrl, _ = controller(layout="GVRM", wire="RAW")
     tagged = {
-        f"cluster018_{button.node}" for button in ctrl._controls if button.tag == "63"
+        f"richmat_classic_{button.node}" for button in ctrl._controls if button.tag == "63"
     } & set(ctrl.held_control_options)
     assert tagged and tagged <= (ctrl.execution.hold_controls or frozenset())
     ctrl._selection = replace(ctrl._selection, head=False)
@@ -144,7 +144,7 @@ def test_offline_the_last_session_wire_keeps_its_raw_only_controls() -> None:
     ctrl, _ = controller(layout="GVRM", wire="RAW")
     ctrl._wire = "RAW"
     raw_only = {
-        f"cluster018_{button.node}"
+        f"richmat_classic_{button.node}"
         for button in ctrl._controls
         if button.short is None and button.short_old is not None and button.tag is None
     } & set(ctrl.held_control_options)
@@ -164,7 +164,7 @@ async def test_a_framed_session_refuses_a_raw_only_lease_without_writing() -> No
     errors: list[str] = []
     wire = await leased_hold(
         SCENARIO,
-        _hold("cluster018_7", errors),
+        _hold("richmat_classic_7", errors),
         end_after_s=1,
         end="expire",
         entry_data={"product_type": "GVRM"},
@@ -211,7 +211,7 @@ async def test_a_selector_change_after_admission_refuses_the_lease_without_writi
 
     async def move(ctrl: Any) -> None:
         ctrl._select("program", "armed")
-        await _hold("cluster018_4", errors)(ctrl)
+        await _hold("richmat_classic_4", errors)(ctrl)
 
     wire = await leased_hold(
         SCENARIO, move, end_after_s=1, end="expire", entry_data={"product_type": "GXRM"}
@@ -230,7 +230,7 @@ def _runtime(hass: HomeAssistant, layout: str) -> AdjustableBedCoordinator:
     entry.add_to_hass(hass)
     coordinator = AdjustableBedCoordinator(hass, entry)
     coordinator._client = MagicMock(is_connected=True, disconnect=AsyncMock(), stop_notify=AsyncMock())
-    ctrl = Cluster018Controller(coordinator)
+    ctrl = RichmatClassicController(coordinator)
     coordinator._controller = coordinator._offline_controller = ctrl
     ctrl._session = Transport(
         coordinator._client,
@@ -292,12 +292,12 @@ async def test_renewals_keep_a_keep_button_refreshing_until_the_lease_lapses(
 ) -> None:
     hass, coordinator, writes = bed
     began = clock.time()
-    start = asyncio.create_task(_hold_control(hass, "cluster018_1", 1))
+    start = asyncio.create_task(_hold_control(hass, "richmat_classic_1", 1))
     # The card renews a 750 ms lease every 250 ms.
     for _ in range(4):
         await asyncio.sleep(0.25)
         before = len(writes)
-        await asyncio.wait_for(_hold_control(hass, "cluster018_1", 1), 0.05)
+        await asyncio.wait_for(_hold_control(hass, "richmat_classic_1", 1), 0.05)
         # A renewal writes no frame of its own.
         assert len(writes) == before
         assert not start.done()
@@ -321,7 +321,7 @@ async def test_an_armed_action_refuses_a_lease_as_an_undeclared_bed_does(
     ctrl = coordinator._controller
     ctrl._select("program", "armed")
     with pytest.raises(ServiceValidationError, match="does not support renewable holds"):
-        await _hold_control(hass, "cluster018_4", 1)
+        await _hold_control(hass, "richmat_classic_4", 1)
     assert writes == []
     assert ctrl._selection.armed
 

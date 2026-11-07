@@ -17,28 +17,28 @@ from .test_generic_services import target
 @pytest.fixture
 async def resolve(hass):
     await async_register_services(hass)
-    with patch('custom_components.adjustable_bed.cluster018_services._resolve_sided_targets') as resolver:
+    with patch('custom_components.adjustable_bed.richmat_classic_services._resolve_sided_targets') as resolver:
         yield resolver
 
 
 async def test_second_target_rejection_prevents_first_write(hass, resolve):
-    one, a = target(supports_cluster018=True, validate_cluster018_request=lambda r: None, async_execute_cluster018_request=AsyncMock())
+    one, a = target(supports_richmat_classic=True, validate_richmat_classic_request=lambda r: None, async_execute_richmat_classic_request=AsyncMock())
     def reject(request):
         raise ValueError('wrong layout')
-    two, b = target(supports_cluster018=True, validate_cluster018_request=reject, async_execute_cluster018_request=AsyncMock())
+    two, b = target(supports_richmat_classic=True, validate_richmat_classic_request=reject, async_execute_richmat_classic_request=AsyncMock())
     resolve.return_value = ([(one, 'both'), (two, 'both')], [])
     with pytest.raises(ServiceValidationError, match='wrong layout'):
         await hass.services.async_call(DOMAIN, 'richmat_classic', {'device_id':['one','two'],'operation':'lamp_save','minutes':0}, blocking=True)
-    a.async_execute_cluster018_request.assert_not_awaited()
-    b.async_execute_cluster018_request.assert_not_awaited()
+    a.async_execute_richmat_classic_request.assert_not_awaited()
+    b.async_execute_richmat_classic_request.assert_not_awaited()
 
 
 @pytest.mark.parametrize('operation,resource,cancel', [('query','configuration',False),('desk_recall','movement',True)])
 async def test_desk_hold_uses_movement_admission_and_query_does_not(hass, resolve, operation, resource, cancel):
-    coordinator, ctrl = target(supports_cluster018=True, validate_cluster018_request=lambda r: None, async_execute_cluster018_request=AsyncMock())
+    coordinator, ctrl = target(supports_richmat_classic=True, validate_richmat_classic_request=lambda r: None, async_execute_richmat_classic_request=AsyncMock())
     resolve.return_value = ([(coordinator, 'both')], [])
     await hass.services.async_call(DOMAIN, 'richmat_classic', {'device_id':'one','operation':operation,'slot':1,'duration_ms':300}, blocking=True)
-    request = ctrl.async_execute_cluster018_request.await_args.args[0]
+    request = ctrl.async_execute_richmat_classic_request.await_args.args[0]
     assert request.duration_ms == 300
     assert coordinator.async_execute_controller_command.await_args.kwargs['resource'] == resource
     assert coordinator.async_execute_controller_command.await_args.kwargs['cancel_running'] is cancel
@@ -59,7 +59,7 @@ async def test_stop_on_second_target_invalidates_its_pending_desk_hold(hass, res
 
     def scheduled_target(name, action):
         scheduler = DeviceCommandScheduler(name)
-        ctrl = SimpleNamespace(supports_cluster018=True, validate_cluster018_request=lambda _request: None, async_execute_cluster018_request=action)
+        ctrl = SimpleNamespace(supports_richmat_classic=True, validate_richmat_classic_request=lambda _request: None, async_execute_richmat_classic_request=action)
         coord = SimpleNamespace(name=name, capability_controller=ctrl, entry=SimpleNamespace(data={}), _command_scheduler=scheduler)
 
         async def execute(command, *, expected_stop_epoch=None, **_kwargs):

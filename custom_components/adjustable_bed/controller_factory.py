@@ -23,7 +23,6 @@ from .const import (
     BED_TYPE_BF,
     BED_TYPE_CASPER_BASE,
     BED_TYPE_CHERISH,
-    BED_TYPE_CLUSTER018,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
@@ -90,6 +89,7 @@ from .const import (
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
+    BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
     BED_TYPE_SCOTT_LIVING,
@@ -118,7 +118,6 @@ from .const import (
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
     CB1322_MANUFACTURER_MARKERS,
-    CLUSTER033_BED_TYPES,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
     CONF_FSM_RELAX_MEMORY_NAMES,
@@ -182,6 +181,7 @@ from .const import (
     KEESON_BETTERLIVING_SERVICE_UUIDS,
     KEESON_FALLBACK_GATT_PAIRS,
     KEESON_JSON_SERVICE_UUID,
+    KEESON_LAYOUT_APP_BED_TYPES,
     KEESON_SINO_NAME_PATTERNS,
     # Variants and UUIDs
     KEESON_VARIANT_ADJUSTABLE_LITE,
@@ -731,10 +731,10 @@ async def create_controller(
         return ReverieController(coordinator, model=protocol_variant)
 
     if bed_type == "richmat_sleep_receiver":
-        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.row061_sleep", __package__)
-        from .beds.row061_sleep import Row061SleepController
+        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.ruf_richmat_sleep", __package__)
+        from .beds.ruf_richmat_sleep import RufRichmatSleepController
 
-        return Row061SleepController(coordinator, app=protocol_variant or "")
+        return RufRichmatSleepController(coordinator, app=protocol_variant or "")
 
     if bed_type in RICHMAT_MH_APPS:
         # The app's name rule picks the model unless the variant fixes it;
@@ -743,18 +743,18 @@ async def create_controller(
             import_module, ".beds.richmat_mh", __package__
         )
         from .beds.richmat_mh import RichmatMhController
-        from .row061_profiles import APPS as row061_apps
+        from .ruf_richmat_profiles import APPS as ruf_richmat_apps
 
         controller_class = RichmatMhController
-        if bed_type in row061_apps:
+        if bed_type in ruf_richmat_apps:
             await coordinator.hass.async_add_import_executor_job(
-                import_module, ".beds.row061", __package__
+                import_module, ".beds.ruf_richmat", __package__
             )
-            from .beds.row061 import Row061Controller
-            from .row061_profiles import profiles
+            from .beds.ruf_richmat import RufRichmatController
+            from .ruf_richmat_profiles import profiles
 
-            await coordinator.hass.async_add_executor_job(profiles, row061_apps[bed_type])
-            controller_class = Row061Controller
+            await coordinator.hass.async_add_executor_job(profiles, ruf_richmat_apps[bed_type])
+            controller_class = RufRichmatController
         return controller_class(
             coordinator,
             app=RICHMAT_MH_APPS[bed_type],
@@ -804,13 +804,13 @@ async def create_controller(
         from .beds.eshine_okin import EshineOkinController
         return EshineOkinController(coordinator, profile=protocol_variant or "")
 
-    if bed_type == BED_TYPE_CLUSTER018:
+    if bed_type == BED_TYPE_RICHMAT_CLASSIC_APPS:
         # The app's catalog is a gzip file: load it off the event loop first.
-        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.cluster018", __package__)
-        from .beds.cluster018 import Cluster018Controller
-        from .cluster018_profiles import load_catalog
+        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.richmat_classic", __package__)
+        from .beds.richmat_classic import RichmatClassicController
+        from .richmat_classic_profiles import load_catalog
         await coordinator.hass.async_add_executor_job(load_catalog, protocol_variant)
-        return Cluster018Controller(coordinator, app=protocol_variant, device_name=device_name)
+        return RichmatClassicController(coordinator, app=protocol_variant, device_name=device_name)
 
     if bed_type == BED_TYPE_MOTOMOTION:
         await coordinator.hass.async_add_import_executor_job(import_module, ".beds.motomotion", __package__)
@@ -1937,7 +1937,7 @@ async def create_controller(
         )
         return CoolBaseController(coordinator, dewert_okin_profile=dewert_okin_profile)
 
-    if bed_type in CLUSTER033_BED_TYPES:
+    if bed_type in KEESON_LAYOUT_APP_BED_TYPES:
         module_name, class_name = {
             'tempur_curve': ('tempur_curve', 'TempurCurveController'),
             'qplus_app': ('sbi', 'QPlusAppController'),

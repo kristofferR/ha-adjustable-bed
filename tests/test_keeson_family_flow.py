@@ -127,7 +127,7 @@ async def test_ergomotion_apps_continue_in_their_own_app_step(hass):
     flow = setup_flow(hass, const.BED_TYPE_KEESON)
     await flow.async_step_keeson_family({"choice": "ergomotion_apps"})
     result = await flow.async_step_keeson_app({"choice": const.BED_TYPE_ERGOMOTION_4})
-    assert result["step_id"] == "cluster033_app"
+    assert result["step_id"] == "keeson_layout_app"
     assert flow._manual_data[const.CONF_BED_TYPE] == const.BED_TYPE_ERGOMOTION_4
 
 

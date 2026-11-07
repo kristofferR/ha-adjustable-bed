@@ -7,7 +7,14 @@ import json
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import TypedDict, cast
+from typing import Final, TypedDict, cast
+
+# Entity keys and held controls start with KEY_PREFIX; 4.4 shipped them under
+# LEGACY_KEY_PREFIX, which the schema 5.4 migration and hold_control still read.
+KEY_PREFIX: Final = "richmat_classic_"
+LEGACY_KEY_PREFIX: Final = "cluster018_"
+# 4.4 also prefixed each app's stored state slot key (``app:layout``).
+LEGACY_APP_STATE_KEY_PREFIX: Final = "cluster018:"
 
 APP_NAMES = {
     "avocadoecobase": "Avocado Eco Base",
@@ -16,6 +23,13 @@ APP_NAMES = {
     "milemont": "Milemont",
     "superior": "Superior",
 }
+
+
+def current_control_name(control: str) -> str:
+    """Return a held control's current name, accepting the name 4.4 shipped."""
+    if control.startswith(LEGACY_KEY_PREFIX):
+        return KEY_PREFIX + control.removeprefix(LEGACY_KEY_PREFIX)
+    return control
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,7 +84,7 @@ def load_catalog(app: str) -> CatalogData:
     """Load on the import executor before constructing a controller."""
     if app not in APP_NAMES:
         raise ValueError("Choose one of the five supported apps")
-    path = Path(__file__).with_name("cluster018_data") / f"{app}.json.gz"
+    path = Path(__file__).with_name("richmat_classic_data") / f"{app}.json.gz"
     with gzip.open(path, "rt") as source:
         return cast(CatalogData, json.load(source))
 

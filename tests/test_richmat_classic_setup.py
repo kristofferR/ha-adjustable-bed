@@ -8,23 +8,23 @@ from types import SimpleNamespace
 
 import pytest
 
-from custom_components.adjustable_bed.cluster018_models import MODEL_CHOICES
-from custom_components.adjustable_bed.cluster018_profiles import (
+from custom_components.adjustable_bed.const import (
+    BED_TYPE_RICHMAT_CLASSIC_APPS,
+    CONF_DISABLE_ANGLE_SENSING,
+    CONF_HAS_MASSAGE,
+    CONF_MOTOR_COUNT,
+    CONF_RICHMAT_CLASSIC_THIRD_SERVICE,
+)
+from custom_components.adjustable_bed.detection import get_bed_type_options
+from custom_components.adjustable_bed.richmat_classic_models import MODEL_CHOICES
+from custom_components.adjustable_bed.richmat_classic_profiles import (
     APP_NAMES,
     load_catalog,
     resolve_layout,
 )
-from custom_components.adjustable_bed.const import (
-    BED_TYPE_CLUSTER018,
-    CONF_CLUSTER018_THIRD_SERVICE,
-    CONF_DISABLE_ANGLE_SENSING,
-    CONF_HAS_MASSAGE,
-    CONF_MOTOR_COUNT,
-)
-from custom_components.adjustable_bed.detection import get_bed_type_options
 from custom_components.adjustable_bed.setup_questions import SetupProfile, setup_profile
 
-PROFILE = setup_profile(BED_TYPE_CLUSTER018)
+PROFILE = setup_profile(BED_TYPE_RICHMAT_CLASSIC_APPS)
 assert isinstance(PROFILE, SetupProfile)
 LAYOUT, THIRD_SERVICE = PROFILE.questions
 
@@ -58,7 +58,7 @@ def test_all_five_app_choices_are_findable_and_model_inventories_are_distinct():
 
 def test_runtime_catalog_matches_every_frozen_member_layout_contract():
     """Expected digests come from accepted CP/MS records, before runtime import."""
-    path = Path(__file__).parent / "fixtures/cluster018/catalog_contracts.json.gz"
+    path = Path(__file__).parent / "fixtures/richmat_classic/catalog_contracts.json.gz"
     with gzip.open(path, "rt") as source:
         expected = json.load(source)
     assert len(expected["models"]) == 3569
@@ -70,10 +70,10 @@ def test_runtime_catalog_matches_every_frozen_member_layout_contract():
 
 
 def test_the_app_is_its_variant_and_setup_asks_its_layout():
-    assert BED_TYPE_CLUSTER018 not in {o["value"] for o in get_bed_type_options()}
+    assert BED_TYPE_RICHMAT_CLASSIC_APPS not in {o["value"] for o in get_bed_type_options()}
     assert LAYOUT.key == "product_type"
     assert (THIRD_SERVICE.key, THIRD_SERVICE.default, THIRD_SERVICE.advanced) == (
-        CONF_CLUSTER018_THIRD_SERVICE, False, True,
+        CONF_RICHMAT_CLASSIC_THIRD_SERVICE, False, True,
     )
     saved = _setup({"protocol_variant": "milemont", "product_type": "6BRM"})
     assert {key: saved[key] for key in (CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING)} == {
@@ -93,9 +93,9 @@ def test_explicit_layout_is_required_and_aliases_are_package_local():
 
 
 def test_every_member_alias_preserves_name_manual_and_scan_boundaries():
-    from custom_components.adjustable_bed.cluster018_discovery import matching_apps
+    from custom_components.adjustable_bed.richmat_classic_discovery import matching_apps
 
-    cases = json.loads((Path(__file__).parent / "fixtures/cluster018/alias_cases.json").read_text())
+    cases = json.loads((Path(__file__).parent / "fixtures/richmat_classic/alias_cases.json").read_text())
     assert len(cases) == 122
     for case in cases:
         assert resolve_layout(case["app"], case["alias"], from_name=True) == case["target"], case
@@ -143,8 +143,8 @@ def test_manual_aliases_are_selectable_but_diagnostic_layouts_are_rejected():
 
 
 def test_name_admission_is_only_an_app_hint_and_excludes_diagnostic_names():
-    from custom_components.adjustable_bed.cluster018_discovery import matching_apps
     from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+    from custom_components.adjustable_bed.richmat_classic_discovery import matching_apps
     assert matching_apps('6BRM-123') == tuple(APP_NAMES)
     assert matching_apps(' B6RU') == ()
     assert matching_apps(None) == ()
@@ -159,7 +159,7 @@ def test_name_admission_is_only_an_app_hint_and_excludes_diagnostic_names():
 @pytest.mark.parametrize("app", tuple(APP_NAMES))
 def test_app_hint_preserves_explicit_member_selection(app):
     from custom_components.adjustable_bed.const import (
-        BED_TYPE_CLUSTER018,
+        BED_TYPE_RICHMAT_CLASSIC_APPS,
         CONF_BED_TYPE,
         CONF_PROTOCOL_VARIANT,
     )
@@ -173,9 +173,9 @@ def test_app_hint_preserves_explicit_member_selection(app):
         manufacturer_data={19543: bytes.fromhex("54307651")},
         service_data={},
     )
-    assert BED_TYPE_CLUSTER018 in (detect_bed_type_detailed(advert).ambiguous_types or ())
+    assert BED_TYPE_RICHMAT_CLASSIC_APPS in (detect_bed_type_detailed(advert).ambiguous_types or ())
     assert recommend_profile(
-        {CONF_BED_TYPE: BED_TYPE_CLUSTER018, CONF_PROTOCOL_VARIANT: app}, advert, {}
+        {CONF_BED_TYPE: BED_TYPE_RICHMAT_CLASSIC_APPS, CONF_PROTOCOL_VARIANT: app}, advert, {}
     ) is None
 
 
@@ -196,13 +196,13 @@ async def test_manual_setup_asks_the_chosen_apps_layout_on_the_generic_step(hass
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {"source": "user"}
-    flow._selected_bed_type, flow._selected_protocol_variant = BED_TYPE_CLUSTER018, "fortywinks"
+    flow._selected_bed_type, flow._selected_protocol_variant = BED_TYPE_RICHMAT_CLASSIC_APPS, "fortywinks"
     result = await flow.async_step_manual_entry({CONF_ADDRESS: "AA:BB:CC:DD:EE:18"})
     assert result["step_id"] == "profile_questions"
     assert result["description_placeholders"] == {"profile": "Forty Winks"}
     # Forty Winks ships every other app's layouts, so a diagnostic one is the refusal.
     invalid = await flow.async_step_profile_questions({CONF_PRODUCT_TYPE: "TEST"})
-    assert invalid["errors"] == {CONF_PRODUCT_TYPE: "cluster018_layout"}
+    assert invalid["errors"] == {CONF_PRODUCT_TYPE: "richmat_classic_layout"}
     with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
         result = await flow.async_step_profile_questions({CONF_PRODUCT_TYPE: "ZRS6:CORN"})
         assert result["step_id"] == "finish_settings"
@@ -212,15 +212,15 @@ async def test_manual_setup_asks_the_chosen_apps_layout_on_the_generic_step(hass
     assert result["type"] == FlowResultType.CREATE_ENTRY
     data = result["data"]
     assert (data[CONF_BED_TYPE], data[CONF_PROTOCOL_VARIANT], data[CONF_PRODUCT_TYPE]) == (
-        BED_TYPE_CLUSTER018, "fortywinks", "CORN",
+        BED_TYPE_RICHMAT_CLASSIC_APPS, "fortywinks", "CORN",
     )
     assert (data[CONF_MOTOR_COUNT], data[CONF_HAS_MASSAGE], data[CONF_DISABLE_ANGLE_SENSING]) == (
         2, False, True,
     )
-    assert data[CONF_CLUSTER018_THIRD_SERVICE] is False
+    assert data[CONF_RICHMAT_CLASSIC_THIRD_SERVICE] is False
     from custom_components.adjustable_bed.profile_id import resolve_profile_id
 
-    assert resolve_profile_id(data) == f"{BED_TYPE_CLUSTER018}:fortywinks"
+    assert resolve_profile_id(data) == f"{BED_TYPE_RICHMAT_CLASSIC_APPS}:fortywinks"
 
 
 async def test_configure_rejects_another_apps_layout_and_saves_the_fallback(hass):
@@ -240,7 +240,7 @@ async def test_configure_rejects_another_apps_layout_and_saves_the_fallback(hass
         domain=DOMAIN,
         data={
             CONF_ADDRESS: "AA:BB:CC:DD:EE:18",
-            CONF_BED_TYPE: BED_TYPE_CLUSTER018,
+            CONF_BED_TYPE: BED_TYPE_RICHMAT_CLASSIC_APPS,
             CONF_PROTOCOL_VARIANT: "milemont",
             CONF_PRODUCT_TYPE: "6BRM",
         },
@@ -251,14 +251,14 @@ async def test_configure_rejects_another_apps_layout_and_saves_the_fallback(hass
     flow.handler = entry.entry_id
     form = await flow.async_step_settings()
     shown = {str(key) for key in form["data_schema"].schema}
-    assert {CONF_PRODUCT_TYPE, CONF_CLUSTER018_THIRD_SERVICE} <= shown
+    assert {CONF_PRODUCT_TYPE, CONF_RICHMAT_CLASSIC_THIRD_SERVICE} <= shown
     assert not {CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING} & shown
     exclusive = min(set(_layouts("fortywinks")) - set(_layouts("milemont")) - {"ZRS6:CORN", "ZRS6:CPRN"})
     result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: "milemont", CONF_PRODUCT_TYPE: exclusive})
     assert result["errors"]
     result = await flow.async_step_settings(
-        {CONF_PRODUCT_TYPE: "B6RU", CONF_CLUSTER018_THIRD_SERVICE: True}
+        {CONF_PRODUCT_TYPE: "B6RU", CONF_RICHMAT_CLASSIC_THIRD_SERVICE: True}
     )
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert entry.data[CONF_PRODUCT_TYPE] == "B6RM"
-    assert entry.data[CONF_CLUSTER018_THIRD_SERVICE] is True
+    assert entry.data[CONF_RICHMAT_CLASSIC_THIRD_SERVICE] is True

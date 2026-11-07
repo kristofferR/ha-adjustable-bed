@@ -172,7 +172,7 @@ flows, so a new step cannot appear unrecorded and a removed one cannot linger.
 | `verify_octo_pin` | Authentication: setup finishes only after the bed accepts the PIN, or the user corrects it |
 | `starcode_app` | Probes the transport over a live connection when the Bluetooth name cannot settle it |
 | `starcode_m5x5`, `starcode_m1x12` | Their lift groups name other config entries, which a declaration's checks cannot see |
-| `cluster033_app` | A custom product picks its keys in multi-select lists, which a question cannot ask yet |
+| `keeson_layout_app` | A custom product picks its keys in multi-select lists, which a question cannot ask yet |
 | `fsm_relax` | The eight memory names are one multi-value text field, which a question cannot ask yet |
 
 ## Shared steps

@@ -1,4 +1,4 @@
-"""Session-safe transport for the explicitly selected cluster033 app profiles.
+"""Session-safe transport for the explicitly selected Keeson layout app profiles.
 
 The profiles (``profiles/keeson.py``) carry each app's keys, caller gates and
 timing; every frame is built by the Keeson codec. A shared UUID never selects

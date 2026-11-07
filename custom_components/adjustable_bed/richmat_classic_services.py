@@ -11,8 +11,8 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from .beds.base import BedController, SideBoundController
-from .cluster018_requests import Operation, Request
 from .const import DOMAIN
+from .richmat_classic_requests import Operation, Request
 from .services import (
     SIDE_FIELD,
     _capture_command_admission,
@@ -45,7 +45,7 @@ FIELDS: dict[vol.Marker, object] = {
 FIELDS.update(SIDE_FIELD.items())
 
 
-async def handle_cluster018(call: ServiceCall) -> None:
+async def handle_richmat_classic(call: ServiceCall) -> None:
     request = Request(
         operation=cast(Operation, call.data["operation"]), action=call.data.get("action"),
         when=call.data.get("time"), minutes=call.data.get("minutes"),
@@ -64,13 +64,13 @@ async def handle_cluster018(call: ServiceCall) -> None:
     }
 
     def validate(controller: BedController | SideBoundController) -> None:
-        controller.validate_cluster018_request(request)
+        controller.validate_richmat_classic_request(request)
 
-    preflighted = await _preflight_capability(targets, "supports_cluster018", "Selected app settings", validate)
+    preflighted = await _preflight_capability(targets, "supports_richmat_classic", "Selected app settings", validate)
 
     async def execute(controller: BedController) -> None:
         try:
-            await controller.async_execute_cluster018_request(request)
+            await controller.async_execute_richmat_classic_request(request)
         except ValueError as err:
             raise ServiceValidationError(str(err)) from err
 
@@ -82,5 +82,5 @@ async def handle_cluster018(call: ServiceCall) -> None:
         raise
 
 
-def async_register_cluster018_services(hass: HomeAssistant) -> None:
-    hass.services.async_register(DOMAIN, "richmat_classic", handle_cluster018, schema=vol.Schema(FIELDS))
+def async_register_richmat_classic_services(hass: HomeAssistant) -> None:
+    hass.services.async_register(DOMAIN, "richmat_classic", handle_richmat_classic, schema=vol.Schema(FIELDS))

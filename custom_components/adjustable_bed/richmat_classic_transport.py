@@ -7,9 +7,9 @@ from dataclasses import dataclass
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
-from .cluster018_protocol import Wire
 from .codec import richmat as codec
 from .profiles.richmat import CLASSIC_TRANSPORTS
+from .richmat_classic_protocol import Wire
 
 # The five apps share one fixed service order: W1, W2, Nordic UART, then W4.
 # Nordic UART takes the bare resource bytes (RAW); the others are framed.

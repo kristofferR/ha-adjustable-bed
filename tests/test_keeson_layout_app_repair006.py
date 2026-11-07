@@ -22,7 +22,7 @@ from custom_components.adjustable_bed.profiles.keeson import APP_LAYOUTS, DEFAUL
 from custom_components.adjustable_bed.services import async_register_services
 
 from .entry_entities import async_add_entry_entities
-from .test_cluster033 import coordinator as transport
+from .test_keeson_layout_app import coordinator as transport
 
 NONDEFAULTS = [
     (app, layout)

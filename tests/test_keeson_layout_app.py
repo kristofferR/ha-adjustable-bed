@@ -1,4 +1,4 @@
-"""Accepted cluster033 packet, caller-domain, session and state conformance."""
+"""Accepted Keeson layout app packet, caller-domain, session and state conformance."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from custom_components.adjustable_bed.alarm_table import (
     OneTimeAlarmRecord,
     WeeklyAlarmRecord,
 )
-from custom_components.adjustable_bed.beds.cluster033 import (
+from custom_components.adjustable_bed.beds.keeson_layout_app import (
     FFE4,
     FFE9,
     NUS_RX,
@@ -37,7 +37,7 @@ from custom_components.adjustable_bed.profiles.keeson import (
     app_profile,
 )
 
-FIXTURES = json.loads((Path(__file__).parent / "fixtures/cluster033/vectors.json").read_text())
+FIXTURES = json.loads((Path(__file__).parent / "fixtures/keeson_layout_app/vectors.json").read_text())
 APPS = tuple(APP_LAYOUTS)
 NOW = datetime(2026, 10, 27, 10, 0, tzinfo=ZoneInfo("Europe/Oslo"))
 
@@ -461,7 +461,7 @@ async def test_serta_local_memory_separate_from_m4_and_progress_equality_wins():
 
 
 ACTION_RECEIPTS = json.loads(
-    (Path(__file__).parent / "fixtures/cluster033/action_receipts.json").read_text()
+    (Path(__file__).parent / "fixtures/keeson_layout_app/action_receipts.json").read_text()
 )["receipts"]
 
 
@@ -535,7 +535,7 @@ async def test_initialization_source_frames_and_gates(app, expected, waits):
     coord = coordinator()
     ctrl = AppController(coord, app_profile(app))
     ctrl._wait = AsyncMock(return_value=False)
-    with patch("custom_components.adjustable_bed.beds.cluster033.dt_util.now", return_value=NOW):
+    with patch("custom_components.adjustable_bed.beds.keeson_layout_app.dt_util.now", return_value=NOW):
         await ctrl.start_notify()
     assert [p.hex() for p in packets(coord)] == expected
     assert [c.args[0] for c in ctrl._wait.await_args_list] == waits
@@ -555,7 +555,7 @@ async def test_initialization_source_frames_and_gates(app, expected, waits):
 async def test_clock_uses_exact_local_calendar_fields(app):
     ctrl, coord = await ready(app)
     ctrl._wait.reset_mock()
-    with patch("custom_components.adjustable_bed.beds.cluster033.dt_util.now", return_value=NOW):
+    with patch("custom_components.adjustable_bed.beds.keeson_layout_app.dt_util.now", return_value=NOW):
         await ctrl.sync_clock()
     assert packets(coord) == [bytes.fromhex("e780017e091b0a0000eb")]
     ctrl._wait.assert_awaited_once_with(500)

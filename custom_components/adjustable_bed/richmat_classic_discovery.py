@@ -1,6 +1,6 @@
 """The five apps' finite scan-name admission, offered only as an app hint."""
 
-from .cluster018_models import MODEL_CHOICES
+from .richmat_classic_models import MODEL_CHOICES
 
 _PREFIXES = (
     "200IV2", "208A14", "209A05", "200U&I", "FC200", "MPE_HJ001", "MPE_HJ002",

@@ -1,4 +1,4 @@
-"""Production-path assertions for the five consolidated Cluster033 repairs."""
+"""Production-path assertions for the five consolidated Keeson layout app repairs."""
 
 import asyncio
 from unittest.mock import AsyncMock
@@ -20,7 +20,7 @@ from custom_components.adjustable_bed.paired_devices import child_device_info
 from custom_components.adjustable_bed.services import async_register_services
 
 from .entry_entities import async_add_entry_entities
-from .test_cluster033 import coordinator as transport
+from .test_keeson_layout_app import coordinator as transport
 
 LOCAL = bytes.fromhex("e5fe175001008034")
 ZERO = bytes.fromhex("e5fe160000000006")

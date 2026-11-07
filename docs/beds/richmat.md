@@ -1887,7 +1887,7 @@ working save by copying another profile's bytes.
 This indexes the operands stored in the five shipped catalogs. Values are sets
 across the exact layouts that bind each resource, not universal capabilities.
 FRAMED values are wrapped as above. The complete node tables ship in
-`cluster018_data/`.
+`richmat_classic_data/`.
 
 | Bound resource | RAW short operand(s) | Current short operand(s) | Long operand(s) |
 |---|---|---|---|
