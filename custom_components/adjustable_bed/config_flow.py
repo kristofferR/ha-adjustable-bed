@@ -94,12 +94,10 @@ from .bond_verification import (
     bond_owner_from_entry,
     build_bond_context,
 )
-from .cluster018_profiles import APP_NAMES as CLUSTER018_APP_NAMES
 from .const import (
     ADAPTER_AUTO,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_BEDSENSE,
-    BED_TYPE_CLUSTER018,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
     BED_TYPE_CUSTOMATIC_CLARITY,
@@ -148,6 +146,7 @@ from .const import (
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
+    BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_SERENITY,
     BED_TYPE_SERTA_MP_REMOTE,
     BED_TYPE_SIMMONS,
@@ -175,7 +174,6 @@ from .const import (
     CB24_BED_SELECTION_B,
     CB24_BED_SELECTION_DEFAULT,
     CHAIR_AND_BED_APP_BED_TYPES,
-    CLUSTER033_BED_TYPES,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ATTEMPTED_SOURCE,
@@ -274,6 +272,7 @@ from .const import (
     HAS_LIGHT_DEFAULTS,
     IDLE_DISCONNECT_KEEP_CONNECTED,
     JIECANG_APP_PROFILES,
+    KEESON_LAYOUT_APP_BED_TYPES,
     KEESON_VARIANT_ADJUSTABLE_LITE,
     KEESON_VARIANT_AMERICANSTAR,
     KEESON_VARIANT_AVANTI_BASES,
@@ -433,6 +432,7 @@ from .profile_migration import (
 )
 from .profiles.keeson import APP_LAYOUTS, APP_NAMES, DEFAULT_LAYOUTS
 from .remacro_discovery import remacro_entry_problem, remacro_manufacturer_data
+from .richmat_classic_profiles import APP_NAMES as RICHMAT_CLASSIC_APP_NAMES
 from .setup_operation import (
     BluetoothOperationMixin,
     ConnectionLifetimePolicy,
@@ -471,7 +471,7 @@ CONFIGURED_RETRY_PREFIX = "configured_retry::"
 _AUTO_DETECT_MIN_CONFIDENCE = 0.7
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
-    {BED_TYPE_CLUSTER018, BED_TYPE_MOTOMOTION, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
+    {BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
      BED_TYPE_GMMOTOR, "gmmotor_sleep_mm", "gmmotor_sleep_sxb"}
 )
 
@@ -886,8 +886,8 @@ def _bed_type_selector(
         }
         # The classic Richmat apps are app rows, each with the app's own label.
         unguided_apps = {
-            bed_type_choice(BED_TYPE_CLUSTER018, app): APP_VARIANT_CHOICES[BED_TYPE_CLUSTER018, app]
-            for app in CLUSTER018_APP_NAMES
+            bed_type_choice(BED_TYPE_RICHMAT_CLASSIC_APPS, app): APP_VARIANT_CHOICES[BED_TYPE_RICHMAT_CLASSIC_APPS, app]
+            for app in RICHMAT_CLASSIC_APP_NAMES
         }
         options = sorted(
             [
@@ -1402,8 +1402,8 @@ def _vibradorm_selection_label(data: Mapping[str, Any]) -> str:
 
 _APP_SETUP_STEPS: Final[dict[str, str]] = {
     # Declared questions only: the app is its variant, chosen from the bed-type list.
-    BED_TYPE_CLUSTER018: "profile_questions",
-    **dict.fromkeys(CLUSTER033_BED_TYPES | {"ergomotion_4"}, "cluster033_app"),
+    BED_TYPE_RICHMAT_CLASSIC_APPS: "profile_questions",
+    **dict.fromkeys(KEESON_LAYOUT_APP_BED_TYPES | {"ergomotion_4"}, "keeson_layout_app"),
     # One row each asks the app's exact product.
     **dict.fromkeys(PRODUCT_QUESTION_BED_TYPES, "profile_questions"),
     BED_TYPE_VIBRADORM: "vibradorm",
@@ -2265,7 +2265,7 @@ _REMACRO_APPS: Final[dict[str, str]] = {
 _RICHMAT_APPS: Final[dict[str, tuple[str, str | None]]] = {
     "rmcontrol": (BED_TYPE_RICHMAT, None),
     **{app: (bed_type, None) for bed_type, app in RICHMAT_MH_APPS.items()},
-    **{app: (BED_TYPE_CLUSTER018, app) for app in CLUSTER018_APP_NAMES},
+    **{app: (BED_TYPE_RICHMAT_CLASSIC_APPS, app) for app in RICHMAT_CLASSIC_APP_NAMES},
     "remote": (BED_TYPE_RICHMAT, None),
 }
 
@@ -2527,7 +2527,7 @@ _OCTO_PIN_MESSAGES: Final[dict[OctoPinStatus, str]] = {
 _PROBE_ADVERTISEMENT_WAIT_SECONDS = 10.0
 
 
-def _add_cluster033_schema_fields(schema: dict[vol.Marker, Any], data: Mapping[str, Any]) -> None:
+def _add_keeson_layout_app_schema_fields(schema: dict[vol.Marker, Any], data: Mapping[str, Any]) -> None:
     bed_type = data[CONF_BED_TYPE]
     if bed_type == "ergomotion_4":
         from .beds.ergomotion4 import (
@@ -2560,7 +2560,7 @@ def _add_cluster033_schema_fields(schema: dict[vol.Marker, Any], data: Mapping[s
                 schema[vol.Required(key, default=data.get(key, default))] = vol.All(int, vol.Range(min=0, max=maximum))
 
 
-def _normalize_cluster033_data(data: dict[str, Any]) -> None:
+def _normalize_keeson_layout_app_data(data: dict[str, Any]) -> None:
     bed_type = data[CONF_BED_TYPE]
     choices = ERGOMOTION4_CHOICES if bed_type == "ergomotion_4" else APP_LAYOUTS[bed_type]
     layout = data.get(CONF_PRODUCT_TYPE, "H" if bed_type == "ergomotion_4" else DEFAULT_LAYOUTS[bed_type])
@@ -2584,7 +2584,7 @@ def _normalize_cluster033_data(data: dict[str, Any]) -> None:
 
 # Options fields of app profiles whose adder needs only the current data.
 _OPTIONS_APP_FIELDS: Final[dict[str, Callable[[dict[vol.Marker, Any], dict[str, Any]], None]]] = {
-    **dict.fromkeys(CLUSTER033_BED_TYPES | {"ergomotion_4"}, _add_cluster033_schema_fields),
+    **dict.fromkeys(KEESON_LAYOUT_APP_BED_TYPES | {"ergomotion_4"}, _add_keeson_layout_app_schema_fields),
     BED_TYPE_STARCODE_ABM5_4: _add_starcode_app_schema_fields,
     BED_TYPE_FSM_RELAX: _add_fsm_relax_schema_fields,
 }
@@ -2704,7 +2704,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     # docs/design/config-keys.md; minor version 3 turns Massage off on layouts
     # whose profile has no massage.
     VERSION = 5
-    MINOR_VERSION = 3
+    MINOR_VERSION = 4
 
     @staticmethod
     def _mark_ble_bond_established(entry_data: dict[str, Any]) -> dict[str, Any]:
@@ -4295,22 +4295,22 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             step_id="starcode_app", data_schema=vol.Schema(schema), errors=errors
         )
 
-    async def async_step_cluster033_app(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+    async def async_step_keeson_layout_app(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Choose a source-owned app layout without guessing from shared adverts."""
         assert self._manual_data is not None
         data = {**self._manual_data, **(user_input or {})}
         errors = {}
         if user_input is not None:
             try:
-                _normalize_cluster033_data(data)
+                _normalize_keeson_layout_app_data(data)
             except ValueError:
-                errors["base"] = "cluster033_layout"
+                errors["base"] = "keeson_app_layout"
             else:
                 self._manual_data = data
                 return await self._finish_with_verify(data, data.get(CONF_NAME, APP_NAMES.get(data[CONF_BED_TYPE], "Ergomotion 4.0")))
         schema: dict[vol.Marker, Any] = {}
-        _add_cluster033_schema_fields(schema, data)
-        return self.async_show_form(step_id="cluster033_app", data_schema=vol.Schema(schema), errors=errors)
+        _add_keeson_layout_app_schema_fields(schema, data)
+        return self.async_show_form(step_id="keeson_layout_app", data_schema=vol.Schema(schema), errors=errors)
 
     async def async_step_fsm_relax(
         self, user_input: dict[str, Any] | None = None
@@ -9843,12 +9843,12 @@ class AdjustableBedOptionsFlow(
                 user_input[CONF_MOTOR_COUNT] = 2
                 user_input[CONF_HAS_MASSAGE] = True
                 user_input[CONF_DISABLE_ANGLE_SENSING] = True
-            if bed_type in CLUSTER033_BED_TYPES | {"ergomotion_4"} and not separate_address_pair:
+            if bed_type in KEESON_LAYOUT_APP_BED_TYPES | {"ergomotion_4"} and not separate_address_pair:
                 app_data = {**current_data, **user_input}
                 try:
-                    _normalize_cluster033_data(app_data)
+                    _normalize_keeson_layout_app_data(app_data)
                 except ValueError:
-                    return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors={"base": "cluster033_layout"})
+                    return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors={"base": "keeson_app_layout"})
                 user_input.update({key: app_data[key] for key in (CONF_PRODUCT_TYPE, CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING, CONF_MOTOR_PULSE_USER_SET)})
             if bed_type == BED_TYPE_FSM_RELAX and not separate_address_pair:
                 if errors := _fsm_relax_errors({**current_data, **user_input}):

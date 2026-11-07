@@ -41,16 +41,29 @@ def side_identifier(coordinator: PairedBedCoordinator, side: str) -> tuple[str, 
 
 
 def child_device_info(coordinator: PairedBedCoordinator, side: str) -> dr.ChildDeviceInfo:
-    """Describe a side without exposing physical-only fields on a child."""
+    """Describe a side without exposing physical-only fields on a child.
+
+    A two-address side keeps its own bed's name. A single-address side shares
+    the physical bed's name, so its device name carries the side and its
+    entities' names need not.
+    """
     registry = dr.async_get(coordinator.hass)
     parent_identifier = next(iter(coordinator.device_info.get("identifiers", set())))
     parent = registry.async_get_device_by_identifier(parent_identifier, coordinator.entry.entry_id)
     if parent is None:
         raise RuntimeError("Paired parent device must be registered before its entities")
+    name = coordinator.children[side].name
+    if coordinator.entry.data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS:
+        return dr.ChildDeviceInfo(
+            identifiers={side_identifier(coordinator, side)},
+            parent_device_id=parent.id,
+            translation_key=f"{side}_side",
+            translation_placeholders={"name": name},
+        )
     return dr.ChildDeviceInfo(
         identifiers={side_identifier(coordinator, side)},
         parent_device_id=parent.id,
-        name=coordinator.children[side].name,
+        name=name,
     )
 
 

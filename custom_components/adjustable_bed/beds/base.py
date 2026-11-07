@@ -25,7 +25,6 @@ if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
     from ..casper_base_protocol import Request as CasperBaseRequest
-    from ..cluster018_requests import Request as Cluster018Request
     from ..command_scheduler import StreamMember
     from ..coordinator import AdjustableBedCoordinator
     from ..gmmotor_requests import Request as GmmotorRequest
@@ -33,7 +32,8 @@ if TYPE_CHECKING:
     from ..hjbed_requests import Request as HJBedRequest
     from ..motion_bed_requests import MotionBedWrite
     from ..motomotion_requests import Request as MotoMotionRequest
-    from ..row061_protocol import AlarmRequest
+    from ..richmat_classic_requests import Request as RichmatClassicRequest
+    from ..ruf_richmat_protocol import AlarmRequest
     from ..sleeptracker_protocol import Request as SleeptrackerRequest
 
 from ..alarm_table import (
@@ -1467,13 +1467,13 @@ class BedController(ABC):
         return {}
 
     @property
-    def supports_cluster018(self) -> bool:
+    def supports_richmat_classic(self) -> bool:
         return False
 
-    def validate_cluster018_request(self, request: Cluster018Request) -> None:
+    def validate_richmat_classic_request(self, request: RichmatClassicRequest) -> None:
         raise NotImplementedError("This controller does not support these app settings")
 
-    async def async_execute_cluster018_request(self, request: Cluster018Request) -> None:
+    async def async_execute_richmat_classic_request(self, request: RichmatClassicRequest) -> None:
         raise NotImplementedError("This controller does not support these app settings")
 
     @property
@@ -1667,14 +1667,14 @@ class BedController(ABC):
         raise NotImplementedError("RMControl snore intervention is not supported")
 
     @property
-    def supports_row061_alarms(self) -> bool:
+    def supports_ruf_richmat_alarms(self) -> bool:
         """Whether the explicitly selected app/model has a mattress or calendar alarm."""
         return False
 
-    def validate_row061_alarm(self, request: AlarmRequest) -> None:
+    def validate_ruf_richmat_alarm(self, request: AlarmRequest) -> None:
         raise NotImplementedError("This bed has no supported app alarm")
 
-    async def row061_alarm(self, request: AlarmRequest) -> None:
+    async def ruf_richmat_alarm(self, request: AlarmRequest) -> None:
         raise NotImplementedError("This bed has no supported app alarm")
 
     @property

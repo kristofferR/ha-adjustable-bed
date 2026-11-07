@@ -1,4 +1,4 @@
-"""Config entry migration of values released in v4.0.2, through schema 5.3."""
+"""Config entry migration of values released in v4.0.2, through schema 5.4."""
 
 from __future__ import annotations
 
@@ -69,7 +69,7 @@ async def test_ore_alias_becomes_sino(hass: HomeAssistant) -> None:
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 3)
+    assert (entry.version, entry.minor_version) == (5, 4)
     assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_SINO
     assert entry.data[CONF_PROFILE_ID] == "keeson:sino"
 
@@ -125,7 +125,7 @@ async def test_other_entries_are_unchanged(hass: HomeAssistant) -> None:
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 3)
+    assert (entry.version, entry.minor_version) == (5, 4)
     migrated = dict(entry.data)
     assert migrated.pop(CONF_PROFILE_ID) == BED_TYPE_LINAK
     assert migrated.pop(CONF_PROFILE_MIGRATION)["fields"] == {
@@ -165,7 +165,7 @@ async def test_a_4x_pair_drops_obsolete_keys_on_its_way_to_5_2(hass: HomeAssista
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 3)
+    assert (entry.version, entry.minor_version) == (5, 4)
     assert "pair_schema_version" not in entry.data
     assert dict(entry.options) == {"later_key": 3}
     migrated_left, migrated_right = entry.data[CONF_PAIR_CHILDREN]
@@ -198,7 +198,7 @@ async def test_a_5_1_entry_without_obsolete_keys_only_moves_to_the_current_schem
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 3)
+    assert (entry.version, entry.minor_version) == (5, 4)
     assert dict(entry.data) == data
     assert dict(entry.options) == {"later_key": 2}
 
@@ -262,7 +262,7 @@ async def test_schema_5_3_turns_massage_off_without_a_massage_page(
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 3)
+    assert (entry.version, entry.minor_version) == (5, 4)
     assert entry.data[CONF_HAS_MASSAGE] is False
     assert entry.data[CONF_PROFILE_MIGRATION] == {
         "from_version": 5,
@@ -286,7 +286,7 @@ async def test_schema_5_3_leaves_a_layout_with_massage_alone(
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 3)
+    assert (entry.version, entry.minor_version) == (5, 4)
     assert dict(entry.data) == data
 
 
@@ -393,7 +393,7 @@ async def test_a_4x_entry_turns_massage_off_on_its_way_to_5_3(hass: HomeAssistan
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 3)
+    assert (entry.version, entry.minor_version) == (5, 4)
     assert entry.data[CONF_HAS_MASSAGE] is False
     record = entry.data[CONF_PROFILE_MIGRATION]
     assert (record["from_version"], record["from_minor_version"]) == (4, 1)

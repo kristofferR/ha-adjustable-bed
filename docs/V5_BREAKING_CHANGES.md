@@ -17,7 +17,7 @@ what each beta ships.
 ## Contents
 
 - [Before You Upgrade](#before-you-upgrade)
-- [Config Entry Migration (Schema 5.3)](#config-entry-migration-schema-53)
+- [Config Entry Migration (Schema 5.4)](#config-entry-migration-schema-54)
 - [Removed or Renamed Options, Bed Types and Entities](#removed-or-renamed-options-bed-types-and-entities)
 - [New Entities, Attributes and Actions](#new-entities-attributes-and-actions)
 - [Behavior Changes](#behavior-changes)
@@ -48,10 +48,10 @@ entry, migration retry without a restart, and faster Bluetooth wake-up.
 To stop receiving betas, choose **Exclude pre-releases** in the same menu. An
 installed beta stays until a newer stable version is out.
 
-## Config Entry Migration (Schema 5.3)
+## Config Entry Migration (Schema 5.4)
 
 On the first start, every config entry at schema 4 or older migrates to schema
-5, minor version 3. Earlier 4.x steps still run first for entries that missed
+5, minor version 4. Earlier 4.x steps still run first for entries that missed
 them. The schema 5 step stores the profile id each entry runs, which is the one
 name for the route its bed type, protocol variant and app key used to select
 together. The [profile id design note](design/profile-id.md) describes the
@@ -64,11 +64,12 @@ format.
 | App keys (`jiecang_app_profile`, `leggett_app_profile`, `logicdata_app_profile`, `malouf_app_profile`, `vibradorm_app_profile`) | Unchanged |
 | `pair_schema_version`, and a per-entry copy of `disable_discovery` | **Dropped** by the 5.2 step, from data, options, each paired side and the original settings a side restores on unpair. Nothing reads them: the discovery toggle is saved integration-wide |
 | `has_massage` | **Turned off** by the 5.3 step on the three layouts that have no massage: a FurniMove handset without massage rows, Comfort Enhancements MC3, and a Sleepy's Elite app control box other than BOX25. The step reads the same profile data a new setup uses, for a standalone entry, each paired side and the original settings a side restores on unpair. Every other layout keeps its saved value. These layouts now keep Massage per side of a pair, so a paired entry with one of them moves an old shared Massage option into the sides it reached; each side keeps the value it ran with. This removes their massage buttons; see [Removed Massage Buttons](#removed-massage-buttons) |
+| `cluster018_third_service` | **Renamed** by the 5.4 step to `richmat_classic_third_service`, in data, options, each paired side and the original settings a side restores on unpair. The classic Richmat apps' entity unique IDs and stored app preferences move to the same name; see [Removed or Renamed Options, Bed Types and Entities](#removed-or-renamed-options-bed-types-and-entities) |
 | Every other saved field and option | Unchanged |
 | Paired side descriptors (`pair_children`) | Unchanged, except that each side gains its own `profile_id`, loses the dropped keys above and has Massage turned off on the layouts above |
 | `profile_id` | **Added.** Derived from the saved fields above, for example `keeson:sino` or `jiecang_app@dreamask`. A paired side's id comes from that side's own settings and never from the parent |
 | `profile_migration` | **Added.** A record of the migration: `from_version`, `from_minor_version`, `resolver_version`, the new `profile_id`, the saved `fields` it was derived from and, for a paired entry, the same for each side under `sides`. When the 5.2 step drops a key, `dropped_keys` lists it by where it was stored (`data`, `options`, `data.left`, `data.left.origin_options` and so on). When the 5.3 step turns Massage off, `massage_off` lists where the same way (`data`, `data.left`, `data.left.origin_data`) |
-| Schema version | Becomes 5.3 |
+| Schema version | Becomes 5.4 |
 
 The migration changes no entry, device or entity identity, so dashboards,
 automations and actions keep their targets. The only entities it removes are
@@ -96,9 +97,16 @@ The migration record appears in two places:
 
 **One removal: the massage buttons of three layouts without massage** (see
 below). No bed type, option, action or action field is removed or renamed in
-v5, no other entity or unique ID is removed or renamed, and no saved config key
-a setting reads is removed. Schema 5.2 drops two stored keys nothing reads (see
-[the migration](#config-entry-migration-schema-53)). The comparison covered
+v5, no other entity is removed, and no saved config key a setting reads is
+removed. The classic Richmat apps (Avocado Eco Base, CoasterSleep, Forty Winks,
+Milemont and Superior) shipped in 4.4 with an internal audit name in their
+unique IDs, translation keys, status sensor attributes and the
+`cluster018_third_service` key. The 5.4 step renames them to
+`richmat_classic_...`: entity IDs, names and history stay, and the
+`hold_control` action still accepts the old `cluster018_<node>` control names.
+Templates that read the status sensor's attributes need the new names, such as
+`richmat_classic_layout` for `cluster018_layout`. Schema 5.2 drops two stored keys nothing reads (see
+[the migration](#config-entry-migration-schema-54)). The comparison covered
 `const.py`, `config_flow.py`, `strings.json`, `translations/en.json`,
 `services.yaml` and every entity platform between `main` and `v5`. Byte-identical aliases such as
 `okimat` and `okin_uuid` keep their own bed type and their own profile id; the
@@ -140,7 +148,7 @@ Massage was enabled in the entry's settings. Pressing one raised an error,
 except FurniMove's **Massage: Off**, which sent nothing
 ([#787](https://github.com/kristofferR/ha-adjustable-bed/issues/787)). New v5
 setups take Massage from the layout, and the
-[5.3 step](#config-entry-migration-schema-53) turns it off on saved entries
+[5.3 step](#config-entry-migration-schema-54) turns it off on saved entries
 with these layouts, so their massage buttons are removed:
 
 | Layout | Removed buttons |

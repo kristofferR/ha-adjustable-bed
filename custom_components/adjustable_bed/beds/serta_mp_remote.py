@@ -24,7 +24,7 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
-from .cluster033 import AppController
+from .keeson_layout_app import AppController
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator

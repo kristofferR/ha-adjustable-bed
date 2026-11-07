@@ -141,6 +141,26 @@ class AppStateStore:
                         "Unable to persist app state during unload; retry scheduled", exc_info=True
                     )
 
+    async def async_rename_slots(self, old_prefix: str, new_prefix: str) -> None:
+        """Move slots from ``old_prefix`` to ``new_prefix`` for a schema migration.
+
+        A slot already stored under the new name is kept.
+        """
+        async with self._lock:
+            data = await self._async_load()
+            renamed = {
+                new_prefix + slot.removeprefix(old_prefix): state
+                for slot, state in data.items()
+                if slot.startswith(old_prefix)
+            }
+            if not renamed:
+                return
+            kept = {slot: state for slot, state in data.items() if not slot.startswith(old_prefix)}
+            updated = {**renamed, **kept}
+            await self._store.async_save(updated)
+            data.clear()
+            data.update(updated)
+
     async def async_remove(self, *, keep_slots: Iterable[str] = ()) -> None:
         """Forget app preferences, optionally retaining durable support evidence."""
         async with self._lock:

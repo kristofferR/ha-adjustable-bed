@@ -82,7 +82,7 @@ the wider command plan now reaches:
 | Family | Bed type | Frames outside the rule |
 | --- | --- | --- |
 | J1 | `jiecang_app`, `logicdata_app` | `01 FC 07 ...` and the ASCII name (`rename_device`) |
-| K1 | cluster033 apps (`ergo_slim`, `ergomotion_app`, `qplus_app`, `row_control`, `tempur_au`, `tempur_curve`, `omazz_adjusto_iii`, `serta_mp_remote`), `keeson` | `E7 80 ...` 10-byte clock sync, `E1 80 ...` 4-byte alarm dismiss, `EF 02 ...` 18-byte rename |
+| K1 | Keeson layout apps (`ergo_slim`, `ergomotion_app`, `qplus_app`, `row_control`, `tempur_au`, `tempur_curve`, `omazz_adjusto_iii`, `serta_mp_remote`), `keeson` | `E7 80 ...` 10-byte clock sync, `E1 80 ...` 4-byte alarm dismiss, `EF 02 ...` 18-byte rename |
 | K1 | `adjustamattress`, `glideaway_motion`, `bf`, `comfort_enhancements` | `E2 80`/`E2 FE` alarm queries and clock, `E7 80` clock sync, `ED 80` 16-byte alarm commit |
 | K1 | `furnimove` | `00 B0` position request, ASCII rename |
 | K1 | `ergomotion_4` | P1 (`H`): the cluster033 `E1 80`, `E7 80` and `EF 02` frames. P2 products: `04 02` O1 frames for every key, `00 B0` queries, `07 D0` 9-byte frames (M22), `09 0A`/`0A 02` RGB frames (M19, 4194RGB) |
@@ -129,7 +129,7 @@ the axes it has. The digits after a class name count the core commands.
 
 | Family | Core class | Members |
 | --- | --- | --- |
-| K1 | **A, Keeson mask** (13) | `coolbase`, `ergomotion`, `serta`, `rondure`, `sbi`, `keeson:base`/`ergomotion`/`serta`/`restonic_a`/`restonic_b`/`innova`, the cluster033 apps `ergo_slim`, `ergomotion_app`, `omazz_adjusto_iii`, `qplus_app`, `row_control`, `serta_mp_remote`, `tempur_au`, `tempur_curve`, and `rondure:both`, `sbi:both` (21 scenarios) |
+| K1 | **A, Keeson mask** (13) | `coolbase`, `ergomotion`, `serta`, `rondure`, `sbi`, `keeson:base`/`ergomotion`/`serta`/`restonic_a`/`restonic_b`/`innova`, the Keeson layout apps `ergo_slim`, `ergomotion_app`, `omazz_adjusto_iii`, `qplus_app`, `row_control`, `serta_mp_remote`, `tempur_au`, `tempur_curve`, and `rondure:both`, `sbi:both` (21 scenarios) |
 | K1 | **B, E6 9-byte** (13) | `adjustamattress` (base and 3 layouts), `malouf_legacy_okin`, `sleepys_box15`, `simmons:simmons_okin`, `simmons_inclined_okin` (8) |
 | K1 | **C, comfort_enhancements** (13) | `comfort_enhancements` and `mc2` to `mc5` (5) |
 | K1 | **D, ORE bases** (11) | `keeson:americanstar`, `avanti_bases`, `bedsense_bases`, `dynasty_bases`, `maxcoil_una` (5) |
@@ -220,7 +220,7 @@ plan that differ (status, events or timing):
 | --- | --- |
 | `okin_ffe` vs `keeson:okin` (`KeesonController`) | movement timing only: 7 x 150 ms against 10 x 100 ms |
 | `leggett_wilinke` vs `leggett_platt:mlrm` (`LeggettWilinkeController`) | movement timing only: 10 x 110 ms against 10 x 100 ms |
-| `tempur_au` vs `tempur_curve` (two cluster033 apps) | same motor frames; 12 controller-declared buttons differ |
+| `tempur_au` vs `tempur_curve` (two Keeson layout apps) | same motor frames; 12 controller-declared buttons differ |
 | `bf` vs `cherish` (`BfCherishController`) | 30 of 47, including head moves, lights, massage and memory program |
 | `customatic_clarity` vs `_jeromes` vs `_remedy` (`CustomaticController`) | 41 of 76 and 24 of 96: product buttons, held combinations, lumbar |
 | `remacro:the_brick` vs `remacro:jeromes` | 39 of 42 |
@@ -288,10 +288,10 @@ shared infrastructure (`base`, `const`, `coordinator`, `detection`, `app_session
 | `customatic_zseries` | `ZSeriesController` (`serenity`, 1883) | `okin_cst.py`, `okin_protocol.py` | O1 Okin N-frame |  | `test_serenity.py` |
 | `dewertokin` | `OkinHandleController` (`okin_handle`, 321) | inline | O1 Okin N-frame |  | `test_okin_handle.py` |
 | `doublesleep` | `DoubleSleepController` (`doublesleep`, 2393) | `doublesleep_services.py`, `doublesleep_state.py`, `doublesleep_protocol.py` | O1 Okin N-frame | p1, p2, p3 | `test_doublesleep_controller.py` |
-| `ergo_slim` | `ErgoSlimController` (`ergo_slim`, 1184) | `cluster033.py`, `cluster033_profiles.py` | K1 Keeson E5/E6 |  | none direct |
+| `ergo_slim` | `ErgoSlimController` (`ergo_slim`, 1184) | `keeson_layout_app.py`, `profiles/keeson.py` | K1 Keeson E5/E6 |  | none direct |
 | `ergomotion` | `KeesonController` (`keeson`, 2417) | `okin_protocol.py` | K1 Keeson E5/E6 |  | `test_keeson.py` |
-| `ergomotion_app` | `ErgomotionAppController` (`ergomotion_app`, 1184) | `cluster033.py`, `cluster033_profiles.py` | K1 Keeson E5/E6 |  | none direct |
-| `ergomotion_4` | `Ergomotion4Controller` (`ergomotion4`, 3207) | `cluster033.py`, `cluster033_profiles.py`, `ergomotion4_profiles.py` | K1 Keeson E5/E6 (P1 products); P2 products send the O1 32-bit `04 02` frame | M10, M14, M19, M22, M30, 4194RGB, custom | `test_ergomotion4.py` |
+| `ergomotion_app` | `ErgomotionAppController` (`ergomotion_app`, 1184) | `keeson_layout_app.py`, `profiles/keeson.py` | K1 Keeson E5/E6 |  | none direct |
+| `ergomotion_4` | `Ergomotion4Controller` (`ergomotion4`, 3207) | `keeson_layout_app.py`, `profiles/keeson.py`, `ergomotion4_profiles.py` | K1 Keeson E5/E6 (P1 products); P2 products send the O1 32-bit `04 02` frame | M10, M14, M19, M22, M30, 4194RGB, custom | `test_ergomotion4.py` |
 | `eshine` | `EshineController` (`eshine`, 714) | `eshine_protocol.py` | D distinct |  | `test_eshine.py` |
 | `fsm_relax` | `FsmRelaxController` (`fsm_relax`, 1571) | `limoss.py`, `fsm_relax_state.py` | L1 Limoss DD |  | `test_fsm_relax.py` |
 | `furnimove` | `FurniMoveController` (`furnimove`, 3028) | `furnimove_profiles.py` | K1 Keeson E5/E6 |  | `test_furnimove.py` |
@@ -338,8 +338,8 @@ shared infrastructure (`base`, `const`, `coordinator`, `detection`, `app_session
 | `okin_ore` | `OkinOreController` (`okin_ore`, 458) | inline | D distinct |  | `test_okin_ore.py` |
 | `okin_rf_eco_bt` | `OkinRfEcoBtController` (`okin_rf_eco_bt`, 1281) | `okin_uuid.py` | O1 Okin N-frame |  | `test_okin_rf_eco_bt.py` |
 | `okin_uuid` | `OkinUuidController` (`okin_uuid`, 3272) | `okin_protocol.py`, `okin_uuid_remotes.py`, `furnimove_profiles.py` | O1 Okin N-frame |  | `test_okin_uuid.py` |
-| `omazz_adjusto_iii` | `OmazzAdjustoIIIController` (`omazz_adjusto_iii`, 1184) | `cluster033.py`, `cluster033_profiles.py` | K1 Keeson E5/E6 |  | none direct |
-| `qplus_app` | `QPlusAppController` (`sbi`, 1744) | `cluster033.py`, `cluster033_profiles.py` | K1 Keeson E5/E6 |  | `test_sbi.py` |
+| `omazz_adjusto_iii` | `OmazzAdjustoIIIController` (`omazz_adjusto_iii`, 1184) | `keeson_layout_app.py`, `profiles/keeson.py` | K1 Keeson E5/E6 |  | none direct |
+| `qplus_app` | `QPlusAppController` (`sbi`, 1744) | `keeson_layout_app.py`, `profiles/keeson.py` | K1 Keeson E5/E6 |  | `test_sbi.py` |
 | `remacro` | `RemacroController` (`remacro`, 1198) | `remacro_protocol.py` | D distinct | jeromes, the_brick | `test_remacro.py` |
 | `reverie` | `ReverieController` (`reverie`, 2077) | `reverie_comfort.py`, `reverie_profiles.py` | D distinct |  | `test_reverie.py` |
 | `reverie_nightstand` | `ReverieNightstandController` (`reverie_nightstand`, 2573) | `reverie_comfort.py`, `reverie_profiles.py` | D distinct |  | `test_reverie_nightstand.py` |
@@ -351,12 +351,12 @@ shared infrastructure (`base`, `const`, `coordinator`, `detection`, `app_session
 | `richmat_idealbed` | `RichmatMhController` (`richmat_mh`, 6109) | `richmat_mh_protocol.py`, `richmat_mh_catalog.py` | R1 Richmat 6E | model_3i, model_p6rm | `test_richmat_mh.py` |
 | `richmat_revive` | `RichmatMhController` (`richmat_mh`, 6109) | `richmat_mh_protocol.py`, `richmat_mh_catalog.py` | R1 Richmat 6E | model_vjrm, model_vorm | `test_richmat_mh.py` |
 | `rondure` | `RondureController` (`rondure`, 382) | inline | K1 Keeson E5/E6 | both, side_a, side_b | `test_rondure.py` |
-| `row_control` | `RowControlController` (`row_control`, 1184) | `cluster033.py`, `cluster033_profiles.py` | K1 Keeson E5/E6 |  | none direct |
-| `sbi` | `SBIController` (`sbi`, 1744) | `cluster033.py`, `cluster033_profiles.py` | K1 Keeson E5/E6 | both, side_a, side_b | `test_sbi.py` |
+| `row_control` | `RowControlController` (`row_control`, 1184) | `keeson_layout_app.py`, `profiles/keeson.py` | K1 Keeson E5/E6 |  | none direct |
+| `sbi` | `SBIController` (`sbi`, 1744) | `keeson_layout_app.py`, `profiles/keeson.py` | K1 Keeson E5/E6 | both, side_a, side_b | `test_sbi.py` |
 | `scott_living` | `ScottLivingController` (`scott_living`, 460) | inline | K1 Keeson E5/E6 |  | `test_scott_living.py` |
 | `serenity` | `SerenityController` (`serenity`, 1883) | `okin_cst.py`, `okin_protocol.py` | O1 Okin N-frame |  | `test_serenity.py` |
 | `serta` | `KeesonController` (`keeson`, 2417) | `okin_protocol.py` | K1 Keeson E5/E6 |  | `test_keeson.py` |
-| `serta_mp_remote` | `SertaMPRemoteController` (`serta_mp_remote`, 1574) | `cluster033.py`, `cluster033_profiles.py` | K1 Keeson E5/E6 |  | `test_cluster033.py` |
+| `serta_mp_remote` | `SertaMPRemoteController` (`serta_mp_remote`, 1574) | `keeson_layout_app.py`, `profiles/keeson.py` | K1 Keeson E5/E6 |  | `test_keeson_layout_app.py` |
 | `simmons` | `SimmonsController` (`simmons`, 1064) | `simmons_protocol.py` | O1 Okin N-frame | simmons_inclined, simmons_inclined_okin, simmons_inclined_smartbed, simmons_okin, simmons_smartbed | `test_simmons.py` |
 | `sleep_number` | `SleepNumberController` (`sleep_number`, 3211) | `sleep_number_commands.py`, `sleep_number_auth.py` | D distinct |  | `test_sleep_number.py` |
 | `sleep_number_mcr` | `SleepNumberMcrController` (`sleep_number_mcr`, 2079) | `sleep_number_mcr_protocol.py` | D distinct |  | `test_sleep_number_mcr.py` |
@@ -373,8 +373,8 @@ shared infrastructure (`base`, `const`, `coordinator`, `detection`, `app_session
 | `starcode_m5x5` | `StarcodeM5X5Controller` (`starcode_m5x5`, 1685) | `starcode_m5x5_protocol.py`, `starcode_accessory_group.py` | O1 Okin N-frame (partial: motion and presets) |  | `test_starcode_m5x5.py` |
 | `suta` | `SutaController` (`suta`, 542) | inline | D distinct |  | `test_suta.py` |
 | `svane` | `SvaneController` (`svane`, 1018) | `svane_state.py` | D distinct | jensen_linon, svane_remote_jmc | `test_svane.py` |
-| `tempur_au` | `TempurAUController` (`tempur_au`, 1184) | `cluster033.py`, `cluster033_profiles.py` | K1 Keeson E5/E6 |  | none direct |
-| `tempur_curve` | `TempurCurveController` (`tempur_curve`, 1184) | `cluster033.py`, `cluster033_profiles.py` | K1 Keeson E5/E6 |  | none direct |
+| `tempur_au` | `TempurAUController` (`tempur_au`, 1184) | `keeson_layout_app.py`, `profiles/keeson.py` | K1 Keeson E5/E6 |  | none direct |
+| `tempur_curve` | `TempurCurveController` (`tempur_curve`, 1184) | `keeson_layout_app.py`, `profiles/keeson.py` | K1 Keeson E5/E6 |  | none direct |
 | `timotion_ahf` | `TiMOTIONAhfController` (`timotion_ahf`, 714) | inline | D distinct |  | `test_timotion_ahf.py` |
 | `tranquil` | `TranquilController` (`serenity`, 1883) | `okin_cst.py`, `okin_protocol.py` | O1 Okin N-frame |  | `test_serenity.py` |
 | `vibradorm` | `VibradormController` (`vibradorm`, 1163) | inline | D distinct |  | `test_vibradorm.py` |
@@ -558,7 +558,7 @@ needs more than one PR gets its own sub-issue.
 
 - [ ] **0. J1 Jiecang** (#744 pilot): `jiecang`, `comfort_motion`, `jiecang_app` (DreamAsk, Dreamotion, DreamHD, Comfort Motion). Resolves the Comfort Motion double route.
 - [ ] **1. J1 LOGICDATA** (first #745 family): `logicdata_app` (phone, tablet, Sleep Smart) onto the Jiecang codec. Same frame and transports as J1; small, no new users at risk; proves the codec on a second profile set. `logicdata` (legacy 13-byte) and `logicdata_air_pump` stay standalone.
-- [ ] **2. K1 Keeson E5/E6** (23 bed types, largest verified duplication, stateless): sub-PRs for (a) core `KeesonController` variants and the alias bed types `ergomotion`, `serta`, `okin_ffe`; (b) cluster033 apps (already one base class, so mostly a codec move); (c) the E6 9-byte group `adjustamattress`, `glideaway_motion`, `malouf_legacy_okin`, `sleepys_box15`, `scott_living`, Simmons Okin; (d) `sbi`, `rondure`, `coolbase`, `bf`, `cherish`, `comfort_enhancements`, `furnimove`.
+- [ ] **2. K1 Keeson E5/E6** (23 bed types, largest verified duplication, stateless): sub-PRs for (a) core `KeesonController` variants and the alias bed types `ergomotion`, `serta`, `okin_ffe`; (b) Keeson layout apps (already one base class, so mostly a codec move); (c) the E6 9-byte group `adjustamattress`, `glideaway_motion`, `malouf_legacy_okin`, `sleepys_box15`, `scott_living`, Simmons Okin; (d) `sbi`, `rondure`, `coolbase`, `bf`, `cherish`, `comfort_enhancements`, `furnimove`.
 - [ ] **3. O1 Okin N-frame** (22 bed types, most users): one sub-issue, PRs per command word width: 32-bit (`okimat`/`okin_uuid`, `dewertokin`/`okin_handle`, `customatic_*`, `leggett_okin`, `okin_rf_eco_bt`), 40-bit (`okin_cb24`, `simmons`, `doublesleep`, `sleepys_box25`, `starcode_abm5_4`, `okin_dot`, and the motion and preset frames of Starcode M1X12/M5X5), 96-bit (`okin_cst`, `serenity`, `tranquil`, `customatic_zseries`), 64-bit (`okin_64bit`, `adjustable_lumbar`). Keep sessions, bonds and DoubleSleep state in profile controllers.
 - [ ] **4. R1 Richmat 6E** (`richmat`, `bedtech`, `leggett_wilinke`, `hjbed`, `richmat_mh` apps, the 6E frames of `gmmotor`): the Richmat MH catalogs stay data; `hjbed` and `gmmotor` sessions stay controller code.
 - [ ] **5. S1 FFFF** (`solace`/`woosa`, `bedsense`, `motion_bed`): identify the trailer algorithm first (not done here).

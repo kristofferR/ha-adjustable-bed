@@ -16,7 +16,7 @@ from homeassistant.config_entries import (
     ConfigEntryState,
 )
 from homeassistant.const import CONF_ADDRESS, CONF_NAME, Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryError, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
@@ -36,6 +36,7 @@ from .const import (
     BED_TYPE_REMACRO,
     BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
+    BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_VIBRADORM,
@@ -64,6 +65,7 @@ from .const import (
     CONF_PROFILE_MIGRATION,
     CONF_PROFILE_REVIEW_PENDING,
     CONF_PROTOCOL_VARIANT,
+    CONF_RICHMAT_CLASSIC_THIRD_SERVICE,
     CONF_RICHMAT_REMOTE,
     CONF_SIDE,
     DOMAIN,
@@ -528,6 +530,61 @@ def _massage_button_unique_ids(data: Mapping[str, Any], turned_off: list[str]) -
     return unique_ids
 
 
+def migrate_v5_4_data(data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return entry data or options with the classic Richmat key's current name.
+
+    4.4 stored the third-service fallback under the audit-tracker name. Paired
+    sides and the original entries they restore on unpair are migrated too.
+    """
+    from .richmat_classic_profiles import KEY_PREFIX, LEGACY_KEY_PREFIX
+
+    legacy_key = LEGACY_KEY_PREFIX + CONF_RICHMAT_CLASSIC_THIRD_SERVICE.removeprefix(KEY_PREFIX)
+    migrated = dict(data)
+    if legacy_key in migrated:
+        migrated.setdefault(CONF_RICHMAT_CLASSIC_THIRD_SERVICE, migrated.pop(legacy_key))
+    for key in (KEY_ORIGIN_DATA, KEY_ORIGIN_OPTIONS):
+        if isinstance(nested := migrated.get(key), Mapping):
+            migrated[key] = migrate_v5_4_data(nested)
+    if isinstance(children := migrated.get(CONF_PAIR_CHILDREN), list):
+        migrated[CONF_PAIR_CHILDREN] = [
+            migrate_v5_4_data(child) if isinstance(child, Mapping) else child
+            for child in children
+        ]
+    return migrated
+
+
+async def _async_migrate_v5_4_ids(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Give the classic Richmat entities and stored app state their current names."""
+    from .app_state_store import app_state_slot, app_state_store
+    from .richmat_classic_profiles import (
+        KEY_PREFIX,
+        LEGACY_APP_STATE_KEY_PREFIX,
+        LEGACY_KEY_PREFIX,
+    )
+
+    registry = er.async_get(hass)
+    # Unique ids are ``<address or pair id>_<key>[_<side>]``.
+    legacy, current = f"_{LEGACY_KEY_PREFIX}", f"_{KEY_PREFIX}"
+
+    @callback
+    def rename(entity: er.RegistryEntry) -> dict[str, Any] | None:
+        if legacy not in entity.unique_id:
+            return None
+        unique_id = entity.unique_id.replace(legacy, current, 1)
+        if registry.async_get_entity_id(entity.domain, DOMAIN, unique_id) is not None:
+            return None
+        return {"new_unique_id": unique_id}
+
+    await er.async_migrate_entries(hass, entry.entry_id, rename)
+    old_slots = app_state_slot(BED_TYPE_RICHMAT_CLASSIC_APPS, None, LEGACY_APP_STATE_KEY_PREFIX)
+    new_slots = old_slots.removesuffix(LEGACY_APP_STATE_KEY_PREFIX)
+    for address in _entry_addresses(entry):
+        try:
+            await app_state_store(hass, address).async_rename_slots(old_slots, new_slots)
+        except OSError:
+            _LOGGER.warning("Could not rename stored app preferences for %s", address, exc_info=True)
+
+
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Migrate config entries to newer schema versions.
 
@@ -637,6 +694,17 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
                 registry.async_remove(entity_id)
         hass.config_entries.async_update_entry(
             entry, data=data, options=options, minor_version=3
+        )
+
+    if entry.version == 5 and entry.minor_version < 4:
+        # v5.3 -> v5.4: the classic Richmat apps' config key, entity unique ids
+        # and stored app state leave the audit-tracker name 4.4 shipped them with.
+        await _async_migrate_v5_4_ids(hass, entry)
+        hass.config_entries.async_update_entry(
+            entry,
+            data=migrate_v5_4_data(entry.data),
+            options=migrate_v5_4_data(entry.options),
+            minor_version=4,
         )
 
     _LOGGER.debug(

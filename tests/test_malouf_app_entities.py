@@ -39,7 +39,6 @@ def configure_entity_runtime(
     coordinator.device_info = {}
     coordinator.entity_side = "left"
     coordinator.entity_unique_id.side_effect = lambda key: f"bed_{key}_left"
-    coordinator.entity_translation_key.side_effect = lambda key: key
     return coordinator
 
 
