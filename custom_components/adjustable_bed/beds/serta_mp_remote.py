@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING
 
 from ..codec import keeson as codec
 from ..command_scheduler import CommandKind, CommandOutcome, current_command_context
+from ..const import CONF_PRODUCT_TYPE
 from ..profiles.keeson import app_profile
 from .base import (
     BedController,
@@ -24,6 +25,7 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
+from .builder import BuildContext
 from .cluster033 import AppController
 
 if TYPE_CHECKING:
@@ -402,3 +404,19 @@ class SertaMPRemoteController(AppController):
             )
         self.forward_controller_state_updates(updates)
         super()._parse_notification(data)
+
+
+async def build_controller(ctx: BuildContext) -> SertaMPRemoteController:
+    """Build the controller for the stored layout and memory targets."""
+    data = ctx.data
+    return SertaMPRemoteController(
+        ctx.coordinator,
+        layout=data.get(CONF_PRODUCT_TYPE),
+        memories=tuple(
+            (
+                data.get(f"serta_mp_memory_{slot}_head", 15),
+                data.get(f"serta_mp_memory_{slot}_foot", 0 if slot == 4 else 35),
+            )
+            for slot in range(1, 5)
+        ),
+    )

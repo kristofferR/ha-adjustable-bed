@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Final
 from homeassistant.util import dt as dt_util
 
 from ..codec import okin_5a
+from ..const import CONF_BLE_DEVICE_NAME, CONF_STARCODE_M5X5_PROFILE
 from ..execution import ExecutionCapabilities
 from .base import (
     POSITION_UNIT_PERCENT,
@@ -28,6 +29,7 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
+from .builder import BuildContext
 from .starcode_m5x5_protocol import (
     StateValue,
     clock_packet,
@@ -924,3 +926,12 @@ class StarcodeM5X5Controller(BedController):
         if isinstance(memory_num, bool) or memory_num not in (1, 2):
             raise ValueError("AdjustableM5X5 has two programmable memory slots")
         await self.app_action(f"save_memory_{memory_num}")
+
+
+async def build_controller(ctx: BuildContext) -> StarcodeM5X5Controller:
+    """Build the controller for the stored profile and BLE name."""
+    return StarcodeM5X5Controller(
+        ctx.coordinator,
+        profile=ctx.data[CONF_STARCODE_M5X5_PROFILE],
+        device_name=ctx.data[CONF_BLE_DEVICE_NAME],
+    )

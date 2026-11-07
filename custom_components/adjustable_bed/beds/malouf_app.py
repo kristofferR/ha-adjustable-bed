@@ -17,6 +17,12 @@ from homeassistant.util import dt as dt_util
 
 from ..codec import malouf as codec
 from ..codec.malouf import TRANSPORTS, TransportKey
+from ..const import (
+    CONF_MALOUF_APP_MODEL,
+    CONF_MALOUF_APP_PRIMARY,
+    CONF_MALOUF_APP_PROFILE,
+    CONF_MALOUF_APP_TRANSPORT,
+)
 from ..profiles.malouf import APP_PROFILES, MALOUF_APP_MODELS, Route
 from .base import (
     BedController,
@@ -26,6 +32,7 @@ from .base import (
     MotorControlSpec,
     SideBoundController,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -867,3 +874,15 @@ def require_app_transport(
         return controller._resolve_transport()  # noqa: SLF001 - the controller's own selection
     except ValueError as err:
         raise ConnectionError(str(err)) from err
+
+
+async def build_controller(ctx: BuildContext) -> MaloufAppController:
+    """Build the controller for the stored app profile."""
+    data = ctx.data
+    return MaloufAppController(
+        ctx.coordinator,
+        app_profile=data[CONF_MALOUF_APP_PROFILE],
+        model=data[CONF_MALOUF_APP_MODEL],
+        transport=data.get(CONF_MALOUF_APP_TRANSPORT, "auto"),
+        primary=data.get(CONF_MALOUF_APP_PRIMARY, True),
+    )

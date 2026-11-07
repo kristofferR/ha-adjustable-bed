@@ -33,6 +33,7 @@ from ..const import (
     LINAK_POSITION_SERVICE_UUID,
     LINAK_TIMER_CHAR_UUID,
     LINAK_TIMER_SERVICE_UUID,
+    LINAK_VARIANT_PERFORMANCE,
 )
 from ..execution import ExecutionCapabilities
 from ..position_seek import PositionSeekPolicy, SeekSample
@@ -46,6 +47,7 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
+from .builder import BuildContext
 from .lifecycle import CapabilitySnapshotPolicy
 from .linak_protocol import (
     LINAK_AXIS_MASKS,
@@ -2159,3 +2161,15 @@ class LinakController(BedController):
             )
         finally:
             await self._send_stop()
+
+
+async def build_controller(ctx: BuildContext) -> LinakController:
+    """Build the controller for the selected profile and stored capabilities."""
+    profile = (
+        LinakProfile.PERFORMANCE
+        if ctx.variant == LINAK_VARIANT_PERFORMANCE
+        else LinakProfile.BED_CONTROL
+    )
+    return LinakController(
+        ctx.coordinator, profile=profile, capability_snapshot=ctx.stored_capabilities("linak")
+    )

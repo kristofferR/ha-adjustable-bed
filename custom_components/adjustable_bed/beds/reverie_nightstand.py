@@ -48,6 +48,7 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
+from .builder import BuildContext
 from .reverie_comfort import (
     ReverieComfortRequest,
     build_p1_composer_payload,
@@ -1632,3 +1633,8 @@ class ReverieNightstandController(BedController):
             self.forward_controller_state_update("reverie_stk_global_massage", level)
             return
         raise ValueError(f"Unsupported Reverie massage zone: {zone}")
+
+
+async def build_controller(ctx: BuildContext) -> ReverieNightstandController:
+    """Build the controller for the selected Reverie model."""
+    return ReverieNightstandController(ctx.coordinator, model=ctx.variant)

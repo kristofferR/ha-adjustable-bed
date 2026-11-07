@@ -34,6 +34,7 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
+from .builder import BuildContext
 from .sleep_number_commands import (
     COMMANDS,
     combine_temperature_programs,
@@ -2466,3 +2467,12 @@ class SleepNumberController(BedController):
         if normalized in option_map:
             return option_map[normalized]
         raise ValueError(f"Unsupported Sleep Number timer option: {timer_option}")
+
+
+async def build_controller(ctx: BuildContext) -> SleepNumberController:
+    """Build the controller for the selected side."""
+    side = ctx.variant or VARIANT_AUTO
+    if side not in {VARIANT_AUTO, SLEEP_NUMBER_VARIANT_LEFT, SLEEP_NUMBER_VARIANT_RIGHT}:
+        _LOGGER.debug("Unknown Sleep Number side variant %s, defaulting to auto", side)
+        side = VARIANT_AUTO
+    return SleepNumberController(ctx.coordinator, side=side)

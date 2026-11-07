@@ -29,10 +29,15 @@ from bleak.exc import BleakError
 
 from ..const import (
     CONF_OCTO_MOTOR_COUNT_OVERRIDE,
+    CONF_OCTO_PIN,
+    DEFAULT_OCTO_PIN,
     OCTO_CHAR_UUID,
     OCTO_LIGHT_AUTO_OFF_SECONDS,
     OCTO_PIN_KEEPALIVE_INTERVAL,
     OCTO_STAR2_CHAR_UUID,
+    OCTO_STAR2_SERVICE_UUID,
+    OCTO_VARIANT_STAR2,
+    VARIANT_AUTO,
 )
 from ..execution import ExecutionCapabilities
 from .base import (
@@ -44,6 +49,7 @@ from .base import (
     ControllerSelectSpec,
     MotorControlSpec,
 )
+from .builder import BuildContext
 from .lifecycle import CapabilitySnapshotPolicy
 
 if TYPE_CHECKING:
@@ -3029,3 +3035,24 @@ class OctoStar2Controller(BedController):
             "Octo Star2 beds don't support programming memory presets (requested memory_num=%d)",
             memory_num,
         )
+
+
+async def build_controller(ctx: BuildContext) -> BedController:
+    """Build the standard Octo controller, or Star2's when selected or advertised."""
+    auto = ctx.variant in (None, VARIANT_AUTO)
+    use_star2 = (
+        ctx.has_characteristic(OCTO_STAR2_SERVICE_UUID, OCTO_STAR2_CHAR_UUID)
+        if auto
+        else ctx.variant == OCTO_VARIANT_STAR2
+    )
+    if use_star2:
+        _LOGGER.debug(
+            "Using Star2 Octo variant (%s)", "auto-detected from GATT" if auto else "configured"
+        )
+        return OctoStar2Controller(ctx.coordinator)
+    _LOGGER.debug("Using standard Octo variant")
+    return OctoController(
+        ctx.coordinator,
+        pin=ctx.data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN),
+        capability_snapshot=ctx.stored_capabilities("octo"),
+    )

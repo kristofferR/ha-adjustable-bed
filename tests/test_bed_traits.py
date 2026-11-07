@@ -20,11 +20,13 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_SBI,
+    BED_TYPE_STARCODE_ABM5_4,
     CONF_BED_TYPE,
     DOMAIN,
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_OKIN,
+    STARCODE_APP_CONNECTION_TIMEOUT_SECONDS,
     VARIANT_AUTO,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -112,3 +114,22 @@ async def test_persistent_beds_hold_the_link_before_first_connect(
 
     assert coordinator._controller is None
     assert coordinator._uses_persistent_connection()
+
+
+async def test_starcode_app_connect_timeout_overrides_the_profile(hass: HomeAssistant) -> None:
+    """The StarCode app's own connect timeout replaces the connection profile's."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
+            CONF_NAME: "Bed",
+            CONF_BED_TYPE: BED_TYPE_STARCODE_ABM5_4,
+        },
+        unique_id="AA:BB:CC:DD:EE:FF",
+    )
+    entry.add_to_hass(hass)
+
+    coordinator = AdjustableBedCoordinator(hass, entry)
+
+    assert coordinator._connection_timeout == STARCODE_APP_CONNECTION_TIMEOUT_SECONDS
+    assert bed_traits(BED_TYPE_LINAK).connection_timeout is None

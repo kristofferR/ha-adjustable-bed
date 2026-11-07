@@ -25,6 +25,7 @@ from ..const import (
 from ..profiles.okin_nframe import OKIN_64BIT_KEYS as _KEYS
 from ..profiles.okin_nframe import OKIN_64BIT_PROFILES, OkinNFrameProfile
 from .base import BedController
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -297,3 +298,10 @@ class Okin64BitController(BedController):
 
     async def massage_mode_step(self) -> None:
         await self.write_command(self._build_command(_KEYS["wave_mode"]))
+
+
+async def build_controller(ctx: BuildContext) -> Okin64BitController:
+    """Build the controller; Auto defaults to Nordic UART (fire-and-forget)."""
+    variant = ctx.variant if ctx.variant and ctx.variant != "auto" else "nordic"
+    _LOGGER.debug("Using OKIN 64-bit variant: %s", variant)
+    return Okin64BitController(ctx.coordinator, variant=variant)

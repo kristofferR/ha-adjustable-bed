@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from bleak.exc import BleakError
 
 from ..app_session import app_session
-from ..const import REMACRO_READ_CHAR_UUID, REMACRO_WRITE_CHAR_UUID
+from ..const import CONF_REMACRO_MODEL, REMACRO_READ_CHAR_UUID, REMACRO_WRITE_CHAR_UUID
 from ..execution import ExecutionCapabilities
 from .base import (
     BedController,
@@ -34,6 +34,7 @@ from .base import (
     MotorControlSpec,
     SideBoundController,
 )
+from .builder import BuildContext
 from .remacro_protocol import (
     APP_JEROMES,
     APP_LED_SETTINGS_MODEL_IDS,
@@ -742,3 +743,23 @@ class RemacroController(BedController):
 
 
 __all__ = ["APP_JEROMES", "APP_SLUMBERLAND", "APP_THE_BRICK", "RemacroController"]
+
+
+async def build_controller(ctx: BuildContext) -> RemacroController:
+    """Build the controller for the advertised model.
+
+    The live advertisement wins, as in the apps; the stored selector only
+    covers offline capability minting and missing history.
+    """
+    from .remacro_protocol import app_for_variant, remacro_led_level, resolve_model
+
+    coordinator = ctx.coordinator
+    app = app_for_variant(ctx.variant)
+    model = resolve_model(app, ctx.manufacturer_data, ctx.data.get(CONF_REMACRO_MODEL))
+    return RemacroController(
+        coordinator,
+        app=app,
+        model=model,
+        session=remacro_session(coordinator.hass, coordinator.address, app, model.model_id),
+        led_level=remacro_led_level(ctx.data, model.model_id),
+    )

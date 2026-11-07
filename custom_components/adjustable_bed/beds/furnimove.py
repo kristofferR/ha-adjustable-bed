@@ -15,6 +15,7 @@ from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING
 
 from ..codec import keeson as codec
+from ..const import CONF_FURNIMOVE_REMOTE
 from ..execution import ExecutionCapabilities
 from ..furnimove_profiles import FurniMoveAction, get_furnimove_profile
 from .base import (
@@ -28,6 +29,7 @@ from .base import (
     MotorControlSpec,
     SideBoundController,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -1317,3 +1319,8 @@ class FurniMoveController(BedController):
             response=self._response_mode(characteristic),
             characteristic=characteristic,
         )
+
+
+async def build_controller(ctx: BuildContext) -> FurniMoveController:
+    """Build the controller for the stored handset."""
+    return FurniMoveController(ctx.coordinator, handset_id=ctx.data[CONF_FURNIMOVE_REMOTE])

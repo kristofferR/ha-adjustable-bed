@@ -109,14 +109,12 @@ from .const import (
     CONF_BLE_BOND_ESTABLISHED,
     CONF_BLE_BOND_MARKER_UNRELIABLE,
     CONF_BLE_DEVICE_NAME,
-    CONF_CB24_BED_SELECTION,
     CONF_CONNECTION_PROFILE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
-    CONF_JENSEN_PIN,
     CONF_KAIDI_ROOM_ID,
     CONF_KAIDI_TARGET_VADDR,
     CONF_LEGS_MAX_ANGLE,
@@ -125,7 +123,6 @@ from .const import (
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_MOTOR_PULSE_USER_SET,
-    CONF_OCTO_PIN,
     CONF_PAIR_MODE,
     CONF_PASSIVE_POSITION_RECONCILIATION,
     CONF_POSITION_MODE,
@@ -133,8 +130,6 @@ from .const import (
     CONF_PROFILE_ID,
     CONF_REMACRO_LED_LEVEL,
     CONF_RICHMAT_REMOTE,
-    CONF_RMCONTROL_PRODUCT,
-    CONF_RMCONTROL_SIDE,
     CONF_SIDE,
     CONF_VIBRADORM_APP_METADATA,
     CONF_VIBRADORM_APP_PROFILE,
@@ -154,7 +149,6 @@ from .const import (
     DEFAULT_IDLE_DISCONNECT_SECONDS,
     DEFAULT_LEGS_MAX_ANGLE,
     DEFAULT_MOTOR_COUNT,
-    DEFAULT_OCTO_PIN,
     DEFAULT_POSITION_MODE,
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
@@ -171,7 +165,6 @@ from .const import (
     RICHMAT_MH_BED_TYPES,
     RICHMAT_REMOTE_AUTO,
     SOLACE_VARIANT_WOOSA,
-    STARCODE_APP_CONNECTION_TIMEOUT_SECONDS,
     STARCODE_GROUP_BED_TYPES,
     get_motor_pulse_defaults,
     get_richmat_features,
@@ -186,10 +179,8 @@ from .coordinator_positions import CoordinatorPositionsMixin
 from .detection import (
     OKIN_SHARED_UUID_GATT_REFINABLE_TYPES,
     is_mac_like_name,
-    is_okimat_bed_model,
 )
 from .execution import HOLD_CEILING_MS
-from .furnimove_repair import CONF_OKIMAT_MODEL_ON_CST, async_refresh_furnimove_layout_issues
 from .pairing import (
     filter_child_options,
     is_paired,
@@ -343,14 +334,15 @@ class AdjustableBedCoordinator(
         self._observed_ble_device_name: str | None = None
         self._furnimove_bond_task: asyncio.Task[None] | None = None
         self._furnimove_bond_request: dict[str, object] = {"status": "not_requested"}
-        self._richmat_remote: str = entry.data.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO)
         if self._bed_type == BED_TYPE_RICHMAT:
-            self._richmat_remote = resolve_richmat_remote_code(
-                self._richmat_remote,
+            # Entities need the motor count before the first connection, so it
+            # comes from the stored remote code, as the Richmat builder resolves it.
+            richmat_remote = resolve_richmat_remote_code(
+                entry.data.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO),
                 entry_title=entry.title,
                 configured_name=self._name,
             )
-            self._motor_count = get_richmat_motor_count(get_richmat_features(self._richmat_remote))
+            self._motor_count = get_richmat_motor_count(get_richmat_features(richmat_remote))
         else:
             self._motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
         self._has_massage: bool = entry.data.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE)
@@ -391,9 +383,8 @@ class AdjustableBedCoordinator(
         self._retry_base_delay: float = profile_settings.retry_base_delay
         self._retry_jitter: float = profile_settings.retry_jitter
         self._connection_timeout: float = (
-            STARCODE_APP_CONNECTION_TIMEOUT_SECONDS
-            if self._bed_type == BED_TYPE_STARCODE_ABM5_4
-            else profile_settings.connection_timeout
+            bed_traits(self._bed_type, self._protocol_variant).connection_timeout
+            or profile_settings.connection_timeout
         )
         if entry.data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat":
             self._connection_timeout = 10.0
@@ -652,23 +643,6 @@ class AdjustableBedCoordinator(
                 {**self.entry.data, CONF_BLE_DEVICE_NAME: device_name},
                 keys={CONF_BLE_DEVICE_NAME},
             )
-
-    def _record_okimat_model_on_cst(self, ble_model: str | None) -> None:
-        """Offer the route repair when an OKIMAT drive is configured as Okin CST (#555)."""
-        if (
-            self._bed_type != BED_TYPE_OKIN_CST
-            or not is_okimat_bed_model(ble_model)
-            or self.entry.data.get(CONF_OKIMAT_MODEL_ON_CST) == ble_model
-        ):
-            return
-        # Internal write: keep this link instead of reloading the entry.
-        self._begin_internal_entry_update(
-            bool(self.entry.data.get(CONF_BLE_BOND_ESTABLISHED, False))
-        )
-        # Full data: a paired side's persist callback drops bond keys it is not sent.
-        self._async_persist_config({**self.entry.data, CONF_OKIMAT_MODEL_ON_CST: ble_model})
-        if (entry := self.hass.config_entries.async_get_entry(self.entry.entry_id)) is not None:
-            async_refresh_furnimove_layout_issues(self.hass, entry)
 
     def _schedule_pending_capability_reload(self) -> None:
         """Reload capability-gated entities once this BLE link is released."""
@@ -1179,13 +1153,6 @@ class AdjustableBedCoordinator(
                 protocol_variant=self._protocol_variant,
                 client=None,
                 device_name=self._name,
-                octo_pin=self.entry.data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN),
-                richmat_remote=self._richmat_remote,
-                rmcontrol_product=self.entry.data.get(CONF_RMCONTROL_PRODUCT, ""),
-                rmcontrol_side=self.entry.data.get(CONF_RMCONTROL_SIDE, "left"),
-                jensen_pin=self.entry.data.get(CONF_JENSEN_PIN, ""),
-                cb24_bed_selection=self.entry.data.get(CONF_CB24_BED_SELECTION, 0x00),
-                capability_snapshot=octo_snapshot or linak_snapshot or jensen_snapshot,
             )
             if not preview:
                 await self._async_restore_app_state(self._offline_controller)

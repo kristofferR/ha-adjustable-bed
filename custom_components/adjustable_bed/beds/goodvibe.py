@@ -33,6 +33,7 @@ from .base import (
     ControllerStateSensorSpec,
     SideBoundController,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -1214,3 +1215,8 @@ class GoodVibeController(BedController):
         raise NotImplementedError("Use the exact app-labelled action")
 
     program_memory = preset_memory
+
+
+async def build_controller(ctx: BuildContext) -> GoodVibeController:
+    """Build the controller for the selected GoodVibe profile."""
+    return GoodVibeController(ctx.coordinator, profile=ctx.variant or "")

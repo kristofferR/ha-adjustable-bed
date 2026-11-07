@@ -44,6 +44,7 @@ from .base import (
     MotorControlSpec,
     SideBoundController,
 )
+from .builder import BuildContext
 from .simmons_protocol import (
     ALARM_MODES,
     FFE0_SERVICE,
@@ -821,3 +822,10 @@ class SimmonsController(BedController):
                 }
             )
         self.forward_controller_state_updates(updates)
+
+
+async def build_controller(ctx: BuildContext) -> SimmonsController:
+    """Build the controller; the app picks the packet format from a live BLE name."""
+    return SimmonsController(
+        ctx.coordinator, protocol_variant=ctx.variant, device_name=ctx.live_device_name
+    )

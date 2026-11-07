@@ -13,7 +13,16 @@ from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
 from ..codec import limoss as codec
-from ..const import LIMOSS_CHAR_UUID, LIMOSS_SERVICE_UUID
+from ..const import (
+    CONF_HAS_LIGHT,
+    CONF_HAS_MASSAGE,
+    CONF_LIMOSS_REMOTE_STATE,
+    CONF_LIMOSS_REMOTE_THEME,
+    CONF_PRODUCT_TYPE,
+    CONF_REVERSE_MOTORS,
+    LIMOSS_CHAR_UUID,
+    LIMOSS_SERVICE_UUID,
+)
 from ..limoss_remote_state import LimossRemoteSession
 from ..profiles.limoss import LIMOSS_REMOTE, REMOTE_CHANNELS, REMOTE_THEMES
 from .base import (
@@ -24,6 +33,7 @@ from .base import (
     MotorControlSpec,
     SideBoundController,
 )
+from .builder import BuildContext
 from .limoss_remote_protocol import (
     APP_SEQUENCE,
     LimossRemoteCapabilities,
@@ -929,3 +939,26 @@ def require_app_route(client: BleakClient) -> None:
     The controller's own lookup, so a guided change requires what the runtime does.
     """
     _characteristic(client)
+
+
+async def build_controller(ctx: BuildContext) -> LimossRemoteController:
+    """Build the controller from the stored setup and cached capabilities."""
+    from ..limoss_remote_state import get_limoss_remote_session, validate_limoss_remote_state
+
+    coordinator = ctx.coordinator
+    data = ctx.data
+    state = validate_limoss_remote_state(data.get(CONF_LIMOSS_REMOTE_STATE, {}))
+    cached = state.get("capabilities")
+    reverse = tuple(data.get(key, False) for key in CONF_REVERSE_MOTORS)
+    return LimossRemoteController(
+        coordinator,
+        product=data.get(CONF_PRODUCT_TYPE),
+        underbed_light=data.get(CONF_HAS_LIGHT, False),
+        massage=data.get(CONF_HAS_MASSAGE, False),
+        theme=data.get(CONF_LIMOSS_REMOTE_THEME),
+        reverse_motors=(reverse[0], reverse[1], reverse[2], reverse[3]),
+        cached_capabilities=(
+            LimossRemoteCapabilities(**cached) if isinstance(cached, dict) else None
+        ),
+        session=get_limoss_remote_session(coordinator.hass, coordinator.address),
+    )

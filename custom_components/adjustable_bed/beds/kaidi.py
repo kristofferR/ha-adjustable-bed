@@ -33,6 +33,7 @@ from ..const import (
     SIDE_BOTH,
     SIDE_LEFT,
     SIDE_RIGHT,
+    VARIANT_AUTO,
 )
 from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ..kaidi_protocol import extract_kaidi_advertisement
@@ -52,6 +53,7 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -949,3 +951,43 @@ class KaidiController(BedController):
             "foot_active": self._massage_active,
             "mode": self._massage_mode_index or None,
         }
+
+
+async def build_controller(ctx: BuildContext) -> BedController:
+    """Build the controller for the command family the product metadata selects."""
+    from ..kaidi_protocol import extract_kaidi_advertisement
+    from ..profiles.kaidi import resolve_kaidi_variant
+
+    advertisement = extract_kaidi_advertisement(ctx.manufacturer_data)
+    resolution = resolve_kaidi_variant(
+        ctx.variant or VARIANT_AUTO,
+        product_id=(
+            advertisement.product_id
+            if advertisement is not None and advertisement.product_id is not None
+            else ctx.data.get(CONF_KAIDI_PRODUCT_ID)
+        ),
+        sofa_acu_no=(
+            advertisement.sofa_acu_no
+            if advertisement is not None and advertisement.sofa_acu_no is not None
+            else ctx.data.get(CONF_KAIDI_SOFA_ACU_NO)
+        ),
+    )
+    if resolution.variant is None:
+        raise ValueError(
+            "Kaidi product metadata could not be mapped to a command family. "
+            "Select a Kaidi protocol variant manually in options."
+        )
+    if resolution.variant == KAIDI_VARIANT_FLOYD:
+        await ctx.preload("floyd")
+        from .floyd import FloydController
+
+        return FloydController(
+            ctx.coordinator, device_name=ctx.device_name, manufacturer_data=ctx.manufacturer_data
+        )
+    return KaidiController(
+        ctx.coordinator,
+        device_name=ctx.device_name,
+        manufacturer_data=ctx.manufacturer_data,
+        variant=resolution.variant,
+        variant_source=resolution.source,
+    )

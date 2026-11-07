@@ -43,6 +43,7 @@ def _make_factory_coordinator(hass) -> SimpleNamespace:
         motor_pulse_delay_ms=100,
         address="AA:BB:CC:DD:EE:FF",
         name="CB24 Test Bed",
+        entry=SimpleNamespace(data={}),
         motor_count=2,
         has_massage=True,
         disable_angle_sensing=True,

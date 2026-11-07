@@ -68,6 +68,7 @@ from .base import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -745,3 +746,11 @@ class Cluster018Controller(BedController):
 
     async def program_memory(self, memory_num: int) -> None:
         raise NotImplementedError("Use the selected app's labelled programming controls")
+
+
+async def build_controller(ctx: BuildContext) -> Cluster018Controller:
+    """Build the controller after loading the app's gzip catalog off the event loop."""
+    from ..cluster018_profiles import load_catalog
+
+    await ctx.coordinator.hass.async_add_executor_job(load_catalog, ctx.variant)
+    return Cluster018Controller(ctx.coordinator, app=ctx.variant, device_name=ctx.device_name)

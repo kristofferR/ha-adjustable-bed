@@ -228,20 +228,28 @@ A new app is normally a profile plus its vectors, not a new controller.
        return BED_TYPE_NEWBED
    ```
 
-6. **Register the controller in `controller_factory.py`.** Most beds are one line
-   in the `_SIMPLE_CONTROLLERS` registry, which lazily imports the module so
-   integration startup does not pay for ~50 unused controllers:
+6. **Register the controller in `controller_factory.py`.** The factory imports
+   bed modules lazily, so integration startup does not pay for unused
+   controllers. A controller built from the coordinator plus fixed kwargs is one
+   line in `_SIMPLE_CONTROLLERS`:
 
    ```python
    BED_TYPE_NEWBED: _ControllerSpec("newbed", "NewbedController"),
    ```
 
-   Pass fixed constructor kwargs as a third argument when needed. Only add an
-   explicit branch in `create_controller()` when construction needs runtime
-   detection, variant resolution, or arguments derived from the advertisement.
-   A bed type must not be both registered and branched on: the registry is
-   consulted last, so the entry would be silently unreachable.
-   `tests/test_controller_contract.py` enforces this and resolves every entry.
+   When construction needs the variant, entry data, the advertisement or the
+   live GATT table, write an async builder in the bed module that takes a
+   `BuildContext` (`beds/builder.py`) and register it in `_BUILDERS`:
+
+   ```python
+   BED_TYPE_NEWBED: _BuilderSpec("newbed"),  # beds/newbed.py: build_controller(ctx)
+   ```
+
+   A builder reads its settings from `ctx.data`; never add a bed-specific
+   parameter to `create_controller()`. A builder that picks a class from another
+   module loads it with `await ctx.preload("module")` first.
+   `tests/test_controller_contract.py` resolves every entry and keeps the two
+   registries disjoint.
 
 7. **Add to `const.py`** `SUPPORTED_BED_TYPES` list
 

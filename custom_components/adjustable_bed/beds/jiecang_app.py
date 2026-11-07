@@ -17,6 +17,14 @@ from homeassistant.util import dt as dt_util
 
 from ..codec import jiecang as codec
 from ..codec.jiecang import Notification, TransportKey, Wake
+from ..const import (
+    BED_TYPE_JIECANG_APP,
+    CONF_HAS_LIGHT,
+    CONF_JIECANG_APP_LAYOUT,
+    CONF_JIECANG_APP_PROFILE,
+    CONF_JIECANG_APP_TRANSPORT,
+    HAS_LIGHT_DEFAULTS,
+)
 from ..profiles.jiecang import (
     APP_LAYOUT_AXES,
     APP_PROFILES,
@@ -33,6 +41,7 @@ from ..profiles.jiecang import (
     wake_schedule,
 )
 from .base import BedController
+from .builder import BuildContext
 from .jiecang import JiecangProfileController
 
 if TYPE_CHECKING:
@@ -737,3 +746,25 @@ def require_app_transport(client: BleakClient, data: Mapping[str, Any]) -> None:
     else:
         controller = JiecangAppController(link, profile=profile, layout=layout, transport=transport)
     controller._select_transport()  # noqa: SLF001 - the controller's own selection
+
+
+async def build_controller(ctx: BuildContext) -> BedController:
+    """Build the controller for the stored app profile."""
+    data = ctx.data
+    if data[CONF_JIECANG_APP_PROFILE] == "comfort_motion":
+        await ctx.preload("comfort_motion")
+        from .comfort_motion import ComfortMotionController
+
+        return ComfortMotionController(
+            ctx.coordinator,
+            layout=data[CONF_JIECANG_APP_LAYOUT],
+            transport=data.get(CONF_JIECANG_APP_TRANSPORT, "auto"),
+            has_light=data.get(CONF_HAS_LIGHT, True),
+        )
+    return JiecangAppController(
+        ctx.coordinator,
+        profile=data[CONF_JIECANG_APP_PROFILE],
+        layout=data[CONF_JIECANG_APP_LAYOUT],
+        transport=data.get(CONF_JIECANG_APP_TRANSPORT, "auto"),
+        has_light=data.get(CONF_HAS_LIGHT, HAS_LIGHT_DEFAULTS[BED_TYPE_JIECANG_APP]),
+    )

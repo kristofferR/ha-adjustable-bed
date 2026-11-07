@@ -27,7 +27,8 @@ the app fixes its layout and refresh interval.
 ## Keys
 
 "Set by" names the form or module that writes the key. "Read by" names the
-modules that act on it; diagnostics and support bundles also show most keys.
+modules that act on it; diagnostics and support bundles also show most keys. "Bed builders" are the controller builders in `beds/` that
+`controller_factory.py` routes each bed type to.
 Paired sides store the same keys in their descriptors, and an absorbed entry's
 original data and options keep them under `origin_data` and `origin_options`.
 
@@ -38,10 +39,10 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `bed_type` | Profile | Bed-type list in setup, a family step, Configure, Reconfigure | `profile_id.py`, `controller_factory.py`, entity platforms |
 | `protocol_variant` | Profile | Route choice in setup (`route` step), a family step, Configure; a question of `bedsense`, `okin_uuid`, `okimat`, `okin_dot`, `sleepys_box25`, `doublesleep`, `richmat`, the Richmat MH apps and `hush_base`; owned by the declarations that fix it | `profile_id.py`, controllers |
 | `jiecang_app_profile` | Profile | `jiecang_family` | `profile_id.py`, `beds/jiecang_app.py` |
-| `leggett_app_profile` | Profile | `leggett_family`, Configure | `profile_id.py`, `controller_factory.py` |
-| `logicdata_app_profile` | Profile | `logicdata_family`; a question of `logicdata_app` for an entry Configure switches in | `profile_id.py`, `controller_factory.py` |
-| `malouf_app_profile` | Profile | `malouf_family`; a question of `malouf_app` for an entry Configure switches in | `profile_id.py`, `controller_factory.py` |
-| `vibradorm_app_profile` | Profile | `vibradorm` family step | `profile_id.py`, `controller_factory.py`, `coordinator_bonds.py`, `coordinator_connection.py` |
+| `leggett_app_profile` | Profile | `leggett_family`, Configure | `profile_id.py`, bed builders |
+| `logicdata_app_profile` | Profile | `logicdata_family`; a question of `logicdata_app` for an entry Configure switches in | `profile_id.py`, bed builders |
+| `malouf_app_profile` | Profile | `malouf_family`; a question of `malouf_app` for an entry Configure switches in | `profile_id.py`, bed builders |
+| `vibradorm_app_profile` | Profile | `vibradorm` family step | `profile_id.py`, bed builders, `coordinator_bonds.py`, `coordinator_connection.py` |
 | `profile_id` | Internal | `profile_id.with_profile_ids` at migration and every setup | `coordinator.py`, diagnostics |
 | `address` (Home Assistant's `CONF_ADDRESS`) | Internal | Discovery or the typed address | Coordinator, device registry |
 | `name` (Home Assistant's `CONF_NAME`) | User | Setup; the FurniMove rename action and a confirmed V-MAT Basic name write | `coordinator.py` |
@@ -52,13 +53,13 @@ original data and options keep them under `origin_data` and `origin_options`.
 |---|---|---|---|
 | `motor_count` | User | Setup and Configure; a question of the Keeson ORE apps and INNOVA, the Okin remotes and Sleepy's BOX15 and BOX24; owned by the declarations that fix it | `coordinator.py`, controllers, entity platforms |
 | `has_massage` | User | Setup and Configure; a question of `vibradorm_app@caresse` and `sleepys_box25`; owned by the declarations that fix or derive it; turned off by [schema 5.3](#massage-off-in-schema-53) where the profile has no massage | Controllers, entity platforms |
-| `has_light` | User | The chair-and-bed app steps, `cluster033_app` and Configure; a question of `jiecang_app` and `logicdata_app` | `controller_factory.py`, `coordinator.py` |
+| `has_light` | User | The chair-and-bed app steps, `cluster033_app` and Configure; a question of `jiecang_app` and `logicdata_app` | bed builders, `coordinator.py` |
 | `disable_angle_sensing` | User | Setup and Configure; owned by the declarations that fix it | `coordinator.py` |
 | `motor_pulse_count` | User | Setup and Configure; owned by the declarations that fix it | `coordinator.py`, `beds/cluster018.py` |
 | `motor_pulse_delay_ms` | User | Setup and Configure; owned by the declarations that fix it | `coordinator.py` |
 | `motor_pulse_user_set` | Internal | Setup and Configure record whether the user changed the pulse fields | `coordinator.py` (a profile default applies otherwise) |
-| `product_type` | User | App steps (Limoss Remote, FSM Relax, Ergomotion 4 apps), Configure; a question of `richmat_classic_apps`, `gmmotor`, `isleep`, `doublesleep` and `sleeptracker` | `controller_factory.py`, `pairing.py` |
-| `reverse_motor_1`, `reverse_motor_2`, `reverse_motor_3`, `reverse_motor_4` | User | Limoss Remote and FSM Relax steps, Configure | `controller_factory.py` |
+| `product_type` | User | App steps (Limoss Remote, FSM Relax, Ergomotion 4 apps), Configure; a question of `richmat_classic_apps`, `gmmotor`, `isleep`, `doublesleep` and `sleeptracker` | bed builders, `pairing.py` |
+| `reverse_motor_1`, `reverse_motor_2`, `reverse_motor_3`, `reverse_motor_4` | User | Limoss Remote and FSM Relax steps, Configure | bed builders |
 | `ble_device_name` | User | Setup stores the advertised name; the StarCode steps and Configure ask it; a question of `motion_bed` and `motomotion` | Name rules in controllers, `coordinator.py` |
 | `preferred_adapter` | User | Setup and Configure | `coordinator.py`, repairs |
 | `connection_profile` | User | Configure | `coordinator.py` |
@@ -76,57 +77,57 @@ original data and options keep them under `origin_data` and `origin_options`.
 |---|---|---|---|
 | `jiecang_app_layout` | Profile | A question of `jiecang_app` | `beds/jiecang_app.py` |
 | `jiecang_app_transport` | Profile | An Advanced question of `jiecang_app` | `beds/jiecang_app.py` |
-| `furnimove_remote` | Profile | A question of `furnimove` | `controller_factory.py`, `furnimove_repair.py` |
-| `lp_legacy_model` | Profile | A question of `leggett_lp_legacy` | `controller_factory.py` |
-| `lp_legacy_mode` | Profile | A question of `leggett_lp_legacy` | `controller_factory.py` |
-| `lp_legacy_write_uuid` | Profile | A question of `leggett_lp_legacy` | `controller_factory.py` |
-| `lp_legacy_read_uuid` | Profile | A question of `leggett_lp_legacy` | `controller_factory.py` |
+| `furnimove_remote` | Profile | A question of `furnimove` | bed builders, `furnimove_repair.py` |
+| `lp_legacy_model` | Profile | A question of `leggett_lp_legacy` | bed builders |
+| `lp_legacy_mode` | Profile | A question of `leggett_lp_legacy` | bed builders |
+| `lp_legacy_write_uuid` | Profile | A question of `leggett_lp_legacy` | bed builders |
+| `lp_legacy_read_uuid` | Profile | A question of `leggett_lp_legacy` | bed builders |
 | `cluster018_third_service` | Profile | An Advanced question of `richmat_classic_apps` | `beds/cluster018.py` |
-| `sleepys_elite_selector` | Profile | A question of `sleepys_elite_app` | `controller_factory.py` |
-| `vibradorm_control_type` | Profile | A question of `vibradorm_app@werkmeister` and `vibradorm_app@caresse`; derived for `vibradorm_app@vmat` | `controller_factory.py`, `coordinator_bonds.py` |
-| `vibradorm_vmat_remote` | Profile | A question of `vibradorm_app@vmat` | `controller_factory.py`, `coordinator_bonds.py` |
-| `vibradorm_restored` | Profile | A question of `vibradorm_app@caresse` | `controller_factory.py`, `coordinator.py` |
-| `vibradorm_floor_light` | Profile | A question of `vibradorm_app@caresse` | `controller_factory.py` |
-| `vibradorm_floor_default` | Profile | A question of `vibradorm_app@caresse` | `controller_factory.py`, `coordinator.py` |
-| `vibradorm_rgb` | Profile | A question of `vibradorm_app@caresse` | `controller_factory.py` |
-| `vibradorm_light_extension` | Profile | A question of `vibradorm_app@caresse` | `controller_factory.py`, `coordinator.py` |
+| `sleepys_elite_selector` | Profile | A question of `sleepys_elite_app` | bed builders |
+| `vibradorm_control_type` | Profile | A question of `vibradorm_app@werkmeister` and `vibradorm_app@caresse`; derived for `vibradorm_app@vmat` | bed builders, `coordinator_bonds.py` |
+| `vibradorm_vmat_remote` | Profile | A question of `vibradorm_app@vmat` | bed builders, `coordinator_bonds.py` |
+| `vibradorm_restored` | Profile | A question of `vibradorm_app@caresse` | bed builders, `coordinator.py` |
+| `vibradorm_floor_light` | Profile | A question of `vibradorm_app@caresse` | bed builders |
+| `vibradorm_floor_default` | Profile | A question of `vibradorm_app@caresse` | bed builders, `coordinator.py` |
+| `vibradorm_rgb` | Profile | A question of `vibradorm_app@caresse` | bed builders |
+| `vibradorm_light_extension` | Profile | A question of `vibradorm_app@caresse` | bed builders, `coordinator.py` |
 | `vibradorm_app_metadata` | Internal | Vibradorm app setup and bonding keep the identity the bed reported | `coordinator.py`, `coordinator_bonds.py` |
-| `vmatbasic_profile` | Profile | A question of `vmatbasic` | `controller_factory.py`, `coordinator.py` |
-| `vmatbasic_floor_level` | Profile | A question of `vmatbasic`; `coordinator.py` saves a level set on the bed's controls | `controller_factory.py` |
-| `vmatbasic_floor_minutes` | Profile | A question of `vmatbasic`; `coordinator.py` saves a timer set on the bed's controls | `controller_factory.py` |
-| `logicdata_app_family` | Profile | A question of `logicdata_app` | `controller_factory.py` |
-| `logicdata_app_layout` | Profile | A question of `logicdata_app@phone` and `logicdata_app@tablet` for P1, and of `logicdata_app@sleep_smart`; `normalize` sets the MOTIONrelax P2 middle layout | `controller_factory.py` |
-| `logicdata_app_transport` | Profile | An Advanced question of `logicdata_app` | `controller_factory.py` |
-| `malouf_app_model` | User | `malouf_app` profile questions, Configure | `controller_factory.py` |
-| `malouf_app_transport` | User | `malouf_app` profile questions, Configure | `controller_factory.py` |
-| `malouf_app_primary` | User | `malouf_app` profile questions, Configure | `controller_factory.py` |
+| `vmatbasic_profile` | Profile | A question of `vmatbasic` | bed builders, `coordinator.py` |
+| `vmatbasic_floor_level` | Profile | A question of `vmatbasic`; `coordinator.py` saves a level set on the bed's controls | bed builders |
+| `vmatbasic_floor_minutes` | Profile | A question of `vmatbasic`; `coordinator.py` saves a timer set on the bed's controls | bed builders |
+| `logicdata_app_family` | Profile | A question of `logicdata_app` | bed builders |
+| `logicdata_app_layout` | Profile | A question of `logicdata_app@phone` and `logicdata_app@tablet` for P1, and of `logicdata_app@sleep_smart`; `normalize` sets the MOTIONrelax P2 middle layout | bed builders |
+| `logicdata_app_transport` | Profile | An Advanced question of `logicdata_app` | bed builders |
+| `malouf_app_model` | User | `malouf_app` profile questions, Configure | bed builders |
+| `malouf_app_transport` | User | `malouf_app` profile questions, Configure | bed builders |
+| `malouf_app_primary` | User | `malouf_app` profile questions, Configure | bed builders |
 | `malouf_layout` | User | Malouf receiver profile questions, Configure | `beds/malouf.py` |
 | `malouf_memory_slots` | User | Malouf receiver profile questions, Configure | `beds/malouf.py` |
-| `octo_pin` | User | Octo setup fields, `verify_octo_pin`, Configure, the Octo PIN action | `coordinator.py`, `coordinator_connection.py`, `octo_runtime.py`, `octo_services.py` |
+| `octo_pin` | User | Octo setup fields, `verify_octo_pin`, Configure, the Octo PIN action | `beds/octo.py`, `octo_runtime.py`, `octo_services.py` |
 | `octo_motor_count_override` | User | Configure, for Octo | `beds/octo.py` |
-| `jensen_pin` | User | A question of `jensen`, Configure | `coordinator.py`, `coordinator_connection.py` |
-| `richmat_remote` | Profile | A question of `richmat` without an RMControl product; the Richmat question stages the code the Bluetooth name carries | `coordinator.py`, `profile_recommendations.py` |
-| `rmcontrol_product` | Profile | A question of `richmat`; the Richmat question's RMControl answer requires one | `coordinator.py`, `coordinator_connection.py` |
-| `rmcontrol_side` | Profile | A question of `richmat` with an RMControl product | `coordinator.py`, `coordinator_connection.py` |
-| `cb24_bed_selection` | User | Configure, for CB24 | `coordinator.py`, `coordinator_connection.py` |
-| `gmmotor_side` | Profile | A question of `gmmotor` | `controller_factory.py` |
-| `starcode_abm5_4_command_selector` | User | `starcode_app` step, Configure | `controller_factory.py` |
-| `starcode_abm5_4_ui_selector` | Internal | `starcode_app` copies the command selector | `controller_factory.py` |
-| `starcode_abm5_4_transport_selector` | User | `starcode_app` step (or its connection probe), Configure | `controller_factory.py` |
-| `starcode_m5x5_profile` | User | `starcode_m5x5` step, Configure | `controller_factory.py`, `starcode_accessory_group.py` |
-| `starcode_m1x12_profile` | User | `starcode_m1x12` step, Configure | `controller_factory.py`, `starcode_accessory_group.py` |
+| `jensen_pin` | User | A question of `jensen`, Configure | `beds/jensen.py` |
+| `richmat_remote` | Profile | A question of `richmat` without an RMControl product; the Richmat question stages the code the Bluetooth name carries | `beds/richmat.py`, `coordinator.py`, `profile_recommendations.py` |
+| `rmcontrol_product` | Profile | A question of `richmat`; the Richmat question's RMControl answer requires one | `beds/richmat.py` |
+| `rmcontrol_side` | Profile | A question of `richmat` with an RMControl product | `beds/richmat.py` |
+| `cb24_bed_selection` | User | Configure, for CB24 | `beds/okin_cb24.py` |
+| `gmmotor_side` | Profile | A question of `gmmotor` | bed builders |
+| `starcode_abm5_4_command_selector` | User | `starcode_app` step, Configure | bed builders |
+| `starcode_abm5_4_ui_selector` | Internal | `starcode_app` copies the command selector | bed builders |
+| `starcode_abm5_4_transport_selector` | User | `starcode_app` step (or its connection probe), Configure | bed builders |
+| `starcode_m5x5_profile` | User | `starcode_m5x5` step, Configure | bed builders, `starcode_accessory_group.py` |
+| `starcode_m1x12_profile` | User | `starcode_m1x12` step, Configure | bed builders, `starcode_accessory_group.py` |
 | `starcode_lift_entries` | User | StarCode and ELEVATE steps, Configure | `starcode_accessory_group.py`, `pairing_candidates.py` |
-| `motion_bed_restored` | Profile | A question of `motion_bed` | `controller_factory.py` |
-| `motion_bed_preset` | Profile | A question of `motion_bed` | `controller_factory.py` |
-| `motion_bed_movement` | Profile | A question of `motion_bed` | `controller_factory.py` |
-| `sleeptracker_foundation` | Profile | A question of `sleeptracker` | `controller_factory.py` |
-| `sleeptracker_unit_number` | Profile | A question of `sleeptracker` | `controller_factory.py` |
-| `sleeptracker_snapshot_side` | Profile | A question of `sleeptracker` | `controller_factory.py` |
-| `sleeptracker_restricted` | Profile | A question of `sleeptracker` | `controller_factory.py` |
-| `sleeptracker_processor_type` | Profile | A question of `sleeptracker` | `controller_factory.py` |
-| `limoss_remote_theme` | User | `limoss_remote` step, Configure | `controller_factory.py` |
-| `limoss_remote_state` | Internal | `coordinator.py` keeps the remote's state | `controller_factory.py` |
-| `fsm_relax_memory_names` | User | `fsm_relax` step, Configure | `controller_factory.py` |
+| `motion_bed_restored` | Profile | A question of `motion_bed` | bed builders |
+| `motion_bed_preset` | Profile | A question of `motion_bed` | bed builders |
+| `motion_bed_movement` | Profile | A question of `motion_bed` | bed builders |
+| `sleeptracker_foundation` | Profile | A question of `sleeptracker` | bed builders |
+| `sleeptracker_unit_number` | Profile | A question of `sleeptracker` | bed builders |
+| `sleeptracker_snapshot_side` | Profile | A question of `sleeptracker` | bed builders |
+| `sleeptracker_restricted` | Profile | A question of `sleeptracker` | bed builders |
+| `sleeptracker_processor_type` | Profile | A question of `sleeptracker` | bed builders |
+| `limoss_remote_theme` | User | `limoss_remote` step, Configure | bed builders |
+| `limoss_remote_state` | Internal | `coordinator.py` keeps the remote's state | bed builders |
+| `fsm_relax_memory_names` | User | `fsm_relax` step, Configure | bed builders |
 | `ergomotion4_model_keys` | User | `cluster033_app` step for a custom product, Configure | `beds/ergomotion4.py` |
 | `ergomotion4_massage_keys` | User | `cluster033_app` step for a custom product, Configure | `beds/ergomotion4.py` |
 | `ergomotion4_product_name` | User | `cluster033_app` step for a custom product, Configure | `beds/ergomotion4.py` |
@@ -137,17 +138,17 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `pairlink_password_text` | User | Configure, for Reverie Pairlink | `beds/reverie_pairlink_runtime.py` |
 | `pairlink_password_hex` | User | Configure, for Reverie Pairlink | `beds/reverie_pairlink_runtime.py` |
 | `kaidi_room_id` | Profile | A question of `isleep`; `kaidi_metadata.py` reads it from a Kaidi bed's advertisement | `beds/kaidi.py`, `beds/floyd.py`, `profiles/kaidi.py` |
-| `kaidi_sofa_acu_no` | Profile | A question of `isleep`; `kaidi_metadata.py` reads it from a Kaidi bed's advertisement | `beds/kaidi.py`, `controller_factory.py`, `profiles/kaidi.py` |
+| `kaidi_sofa_acu_no` | Profile | A question of `isleep`; `kaidi_metadata.py` reads it from a Kaidi bed's advertisement | `beds/kaidi.py`, bed builders, `profiles/kaidi.py` |
 | `kaidi_target_vaddr` | Internal | `kaidi_metadata.py` from the advertisement | `beds/kaidi.py` |
-| `kaidi_product_id` | Internal | `kaidi_metadata.py` from the advertisement | `beds/kaidi.py`, `controller_factory.py`, `profiles/kaidi.py` |
+| `kaidi_product_id` | Internal | `kaidi_metadata.py` from the advertisement | `beds/kaidi.py`, bed builders, `profiles/kaidi.py` |
 | `kaidi_adv_type` | Internal | `kaidi_metadata.py` from the advertisement | Setup log, diagnostics |
 | `kaidi_resolved_variant` | Internal | `kaidi_metadata.py` from the advertisement | `pairing.py`, `config_flow.py` |
 | `kaidi_variant_source` | Internal | `kaidi_metadata.py` from the advertisement | Setup log, diagnostics |
-| `remacro_model` | Internal | `beds/remacro_protocol.py` caches the advertised model | `controller_factory.py`, `remacro_discovery.py` |
+| `remacro_model` | Internal | `beds/remacro_protocol.py` caches the advertised model | bed builders, `remacro_discovery.py` |
 | `remacro_led_level` | Internal | `coordinator.py` keeps the LED levels | `beds/remacro_protocol.py` |
 | `zseries_alarm_available` | Internal | `beds/serenity.py` records whether the alarm exists | `beds/serenity.py` |
-| `sleep_number_mcr_client_id` | Internal | `coordinator_connection.py` keeps the MCR client id | `beds/sleep_number_mcr.py` |
-| `okimat_model_on_cst` | Internal | `coordinator.py` records an Okimat model seen on an Okin CST route | `furnimove_repair.py` |
+| `sleep_number_mcr_client_id` | Internal | `beds/sleep_number_mcr.py` keeps the MCR client id | `beds/sleep_number_mcr.py` |
+| `okimat_model_on_cst` | Internal | `beds/okin_cst.py` records an Okimat model seen on an Okin CST route | `furnimove_repair.py` |
 | `rf_eco_staircase_confirmed` | Internal | The FurniMove layout repair records the answer | `furnimove_repair.py` |
 | `furnimove_route_kept` | Internal | The FurniMove route repair records Keep | `furnimove_repair.py` |
 | `okin_cst_kept` | Internal | The Okin CST route repair records Keep | `furnimove_repair.py` |

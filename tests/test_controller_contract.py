@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-import ast
 import asyncio
 import inspect
 from importlib import import_module
-from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -14,7 +12,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from bleak.exc import BleakError
 
-from custom_components.adjustable_bed import const, controller_factory
+from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.bed_traits import bed_traits
 from custom_components.adjustable_bed.beds.base import (
     POSITION_UNIT_DEGREES,
@@ -47,6 +45,7 @@ from custom_components.adjustable_bed.const import (
     VARIANT_AUTO,
 )
 from custom_components.adjustable_bed.controller_factory import (
+    _BUILDERS,
     _SIMPLE_CONTROLLERS,
     _create_from_registry,
     create_controller,
@@ -103,7 +102,10 @@ class _FactoryCoordinator(SimpleNamespace):
             ),
             client=None,
             controller_state={},
+            _pairlink_runtime=None,
             entry=SimpleNamespace(
+                title="Contract Test Bed",
+                options={},
                 data={
                     const.CONF_FURNIMOVE_REMOTE: "00000",
                     const.CONF_LOGICDATA_APP_PROFILE: "phone",
@@ -146,6 +148,17 @@ class _FactoryCoordinator(SimpleNamespace):
     async def async_execute_controller_command(self, *args: Any, **kwargs: Any) -> None:
         """Stub command executor used by keepalive-capable controllers."""
         return None
+
+    _ble_bond_established = False
+
+    def _begin_internal_entry_update(self, bond_established: bool) -> None:
+        """Accept the internal-update marker a builder sets before persisting."""
+        del bond_established
+
+    def _async_persist_config(self, data: dict[str, Any], *, keys: set[str]) -> None:
+        """Persist builder-written entry data onto the stub entry."""
+        del keys
+        self.entry.data = data
 
     def get_max_angle(self, position_key: str) -> float:
         """Return the integration's default calibration for a position axis."""
@@ -217,13 +230,13 @@ async def _create_controller_for_bed_type(
         )
 
     if bed_type == BED_TYPE_RICHMAT:
+        coordinator.entry.data[const.CONF_RICHMAT_REMOTE] = "qrrm"
         return await create_controller(
             coordinator,
             bed_type,
             variant or RICHMAT_VARIANT_WILINKE,
             client,
             device_name="Casper QRRM Bed",
-            richmat_remote="qrrm",
         )
 
     if bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
@@ -448,35 +461,19 @@ async def test_registry_entries_resolve_to_controller_classes(bed_type: str) -> 
     assert [call[0] for call in executor.calls] == [import_module]
 
 
-def test_registry_and_explicit_branches_are_disjoint() -> None:
-    """A bed type handled by an explicit branch must not also sit in the registry.
+@pytest.mark.parametrize("bed_type", sorted(_BUILDERS))
+async def test_builder_entries_resolve_to_builders(bed_type: str) -> None:
+    """Every _BUILDERS entry must name a real module and async builder function."""
+    spec = _BUILDERS[bed_type]
+    builder = getattr(import_module(f"custom_components.adjustable_bed.beds.{spec.module}"), spec.function)
 
-    create_controller() consults the registry only after every explicit branch, so
-    a duplicate would be silently unreachable rather than an error.
-    """
-    factory_source = Path(controller_factory.__file__).read_text()
-    create_fn = next(
-        node
-        for node in ast.walk(ast.parse(factory_source))
-        if isinstance(node, ast.AsyncFunctionDef) and node.name == "create_controller"
-    )
-    # Walk every If in the function, not just top-level ones: elif chains live in
-    # `orelse` and a dispatch branch could be nested inside another conditional.
-    explicit: set[str] = {
-        node.id
-        for branch in ast.walk(create_fn)
-        if isinstance(branch, ast.If)
-        for node in ast.walk(branch.test)
-        if isinstance(node, ast.Name) and node.id.startswith("BED_TYPE_")
-    }
-    registry = {
-        name
-        for name, value in vars(const).items()
-        if name.startswith("BED_TYPE_") and isinstance(value, str) and value in _SIMPLE_CONTROLLERS
-    }
-    assert not (explicit & registry), (
-        f"Bed types are both branched on and registered: {sorted(explicit & registry)}"
-    )
+    assert inspect.iscoroutinefunction(builder)
+    assert list(inspect.signature(builder).parameters) == ["ctx"]
+
+
+def test_class_and_builder_registries_are_disjoint() -> None:
+    """A bed type has exactly one way to be built; the builder would shadow the class."""
+    assert not set(_SIMPLE_CONTROLLERS) & set(_BUILDERS)
 
 
 async def test_factory_auto_detects_keeson_sino_variant_for_okin_ble_signature() -> None:

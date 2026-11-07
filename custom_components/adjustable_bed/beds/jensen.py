@@ -24,7 +24,7 @@ from bleak.exc import BleakError
 from homeassistant.helpers.storage import Store
 
 from ..codec import jmc
-from ..const import DOMAIN
+from ..const import CONF_JENSEN_PIN, DOMAIN
 from ..execution import ExecutionCapabilities
 from ..profiles.jmc import JENSEN, JmcProfile
 from .base import (
@@ -33,6 +33,7 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
+from .builder import BuildContext
 from .lifecycle import CapabilitySnapshotPolicy
 
 if TYPE_CHECKING:
@@ -957,3 +958,12 @@ class JensenController(BedController):
         else:
             foot_raw = _percentage_to_raw(position, FOOT_POS_FLAT, FOOT_POS_MAX)
         await self._run_monitored(jmc.goto(jmc.position(head_raw, foot_raw)))
+
+
+async def build_controller(ctx: BuildContext) -> JensenController:
+    """Build the controller with the stored PIN and config report."""
+    return JensenController(
+        ctx.coordinator,
+        pin=ctx.data.get(CONF_JENSEN_PIN, ""),
+        capability_snapshot=ctx.stored_capabilities("jensen"),
+    )

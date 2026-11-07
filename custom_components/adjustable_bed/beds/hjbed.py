@@ -40,6 +40,7 @@ from .base import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -969,3 +970,8 @@ class HJBedController(BedController):
             assert request.alarm_id is not None
             self._free_alarm_slots.add(request.alarm_id)
         self._publish()
+
+
+async def build_controller(ctx: BuildContext) -> HJBedController:
+    """Build the controller for the selected profile."""
+    return HJBedController(ctx.coordinator, profile=ctx.variant or "")

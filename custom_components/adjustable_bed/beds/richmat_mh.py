@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 from homeassistant.util import dt as dt_util
 
-from ..const import CONF_BLE_DEVICE_NAME, RICHMAT_MH_MODEL_CHOICES, VARIANT_AUTO
+from ..const import CONF_BLE_DEVICE_NAME, RICHMAT_MH_APPS, RICHMAT_MH_MODEL_CHOICES, VARIANT_AUTO
 from ..detection import is_mac_like_name
 from ..profiles.richmat import RICHMAT_MH
 from ..row061_models import MODEL_IDS as ROW061_MODEL_IDS
@@ -37,6 +37,7 @@ from .base import (
     MotorControlSpec,
     SideBoundController,
 )
+from .builder import BuildContext
 from .richmat_mh_protocol import (
     ALARM_MASSAGE_CODES,
     ALARM_TASK_SLEEP_S,
@@ -1745,3 +1746,27 @@ def _tap_action(code: int) -> MotorCommandCallable:
         await richmat_mh_target(controller).tap(code)
 
     return invoke
+
+
+async def build_controller(ctx: BuildContext) -> RichmatMhController:
+    """Build the controller for the app's model.
+
+    The app's name rule picks the model unless the variant fixes it; offline
+    controllers must not read the display name.
+    """
+    from ..row061_profiles import APPS as row061_apps
+
+    controller_class = RichmatMhController
+    if ctx.bed_type in row061_apps:
+        await ctx.preload("row061")
+        from ..row061_profiles import profiles
+        from .row061 import Row061Controller
+
+        await ctx.coordinator.hass.async_add_executor_job(profiles, row061_apps[ctx.bed_type])
+        controller_class = Row061Controller
+    return controller_class(
+        ctx.coordinator,
+        app=RICHMAT_MH_APPS[ctx.bed_type],
+        protocol_variant=ctx.variant,
+        device_name=ctx.live_device_name,
+    )

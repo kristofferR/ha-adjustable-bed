@@ -15,6 +15,7 @@ from ..profiles.motosleep import (
     resolve_motosleep_profile,
 )
 from .base import BedController, MotorCommandCallable, MotorControlSpec
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -478,3 +479,8 @@ class MotoSleepController(BedController):
 
     async def massage_foot_down(self) -> None:
         await self._massage("foot_down")
+
+
+async def build_controller(ctx: BuildContext) -> MotoSleepController:
+    """Build the controller with the BLE name."""
+    return MotoSleepController(ctx.coordinator, device_name=ctx.device_name)

@@ -31,6 +31,7 @@ from .base import (
     MotorControlSpec,
     PositionNumberSpec,
 )
+from .builder import BuildContext
 from .sleep_number_mcr_protocol import (
     FoundationFeatures,
     classify_smartpump,
@@ -1914,3 +1915,18 @@ class SleepNumberMcrController(BedController):
             return _SIDE_NAME_TO_VALUE[side]
         except KeyError as err:
             raise ValueError(f"Unsupported Sleep Number MCR side: {side}") from err
+
+
+async def build_controller(ctx: BuildContext) -> SleepNumberMcrController:
+    """Build the controller, first persisting the app's client identity on a live link."""
+    coordinator = ctx.coordinator
+    client_id = ctx.data.get(CONF_SLEEP_NUMBER_MCR_CLIENT_ID)
+    if ctx.client is not None and (type(client_id) is not int or not 0 < client_id < 2**64):
+        # The app persists a random client identity; it is not the bed's MAC
+        # address or the assigned session address.
+        coordinator._begin_internal_entry_update(coordinator._ble_bond_established)
+        coordinator._async_persist_config(
+            {**ctx.data, CONF_SLEEP_NUMBER_MCR_CLIENT_ID: secrets.randbits(64) or 1},
+            keys={CONF_SLEEP_NUMBER_MCR_CLIENT_ID},
+        )
+    return SleepNumberMcrController(coordinator, manufacturer_data=ctx.manufacturer_data)

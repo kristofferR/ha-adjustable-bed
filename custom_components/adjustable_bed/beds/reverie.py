@@ -32,6 +32,7 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
+from .builder import BuildContext
 from .reverie_comfort import ReverieComfortRequest, validate_comfort_request
 from .reverie_profiles import (
     REVERIE_MODEL_FALLBACK,
@@ -1148,3 +1149,8 @@ class ReverieController(BedController):
             "foot_intensity": self._massage_foot_level,
             "wave_intensity": self._massage_wave_level,
         }
+
+
+async def build_controller(ctx: BuildContext) -> ReverieController:
+    """Build the controller for the selected Reverie model."""
+    return ReverieController(ctx.coordinator, model=ctx.variant)

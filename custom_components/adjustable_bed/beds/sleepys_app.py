@@ -18,6 +18,7 @@ from bleak.exc import BleakError
 from ..codec import okin_5a, okin_nframe
 from ..command_scheduler import CommandContext, current_command_context
 from ..const import (
+    CONF_SLEEPYS_ELITE_SELECTOR,
     DEVICE_INFO_CHARS,
     DEVICE_INFO_READ_TIMEOUT,
     DEVICE_INFO_SERVICE_UUID,
@@ -35,6 +36,7 @@ from .base import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
+from .builder import BuildContext
 from .sleepys_app_routes import CANONICAL_ROUTE_SHA256, ROUTES, SleepysAppRoute
 
 if TYPE_CHECKING:
@@ -1468,3 +1470,13 @@ def require_selector_route(client: object, selector: str) -> None:
     SleepysEliteAppController._characteristic(  # noqa: SLF001
         client, service_uuid, characteristic_uuid
     )
+
+
+async def build_controller(ctx: BuildContext) -> SleepysEliteAppController:
+    """Build the controller for the selected control box, options taking precedence."""
+    selector = ctx.coordinator.entry.options.get(
+        CONF_SLEEPYS_ELITE_SELECTOR, ctx.data.get(CONF_SLEEPYS_ELITE_SELECTOR)
+    )
+    if selector is None:
+        raise ValueError("Sleepy's Elite app profile requires an explicit selector")
+    return SleepysEliteAppController(ctx.coordinator, selector)

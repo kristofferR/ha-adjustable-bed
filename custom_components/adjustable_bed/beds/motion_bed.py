@@ -14,6 +14,12 @@ from typing import TYPE_CHECKING
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ..const import (
+    CONF_BLE_DEVICE_NAME,
+    CONF_MOTION_BED_MOVEMENT,
+    CONF_MOTION_BED_PRESET,
+    CONF_MOTION_BED_RESTORED,
+)
 from ..motion_bed_actions import ACTION_BY_KEY, MOTION_BED_ACTIONS, MotionBedAction
 from ..motion_bed_models import MotionBedSelection
 from ..motion_bed_protocol import SOURCE_COMMANDS, build_clock, build_thermal_clock
@@ -34,6 +40,7 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -926,3 +933,19 @@ class MotionBedController(BedController):
     async def preset_flat(self) -> None: raise NotImplementedError("Use the app-labelled flat action")
     async def preset_memory(self, memory_num: int) -> None: raise NotImplementedError("Use the app-labelled memory action")
     async def program_memory(self, memory_num: int) -> None: raise NotImplementedError("Use confirmed Motion Bed programming")
+
+
+async def build_controller(ctx: BuildContext) -> MotionBedController:
+    """Build the controller for the stored or name-selected model."""
+    from homeassistant.const import CONF_NAME
+
+    from ..motion_bed_models import select_motion_bed
+
+    data = ctx.data
+    selection = select_motion_bed(
+        data.get(CONF_BLE_DEVICE_NAME, data.get(CONF_NAME, "")),
+        restored=data.get(CONF_MOTION_BED_RESTORED, False),
+        preset_override=data.get(CONF_MOTION_BED_PRESET),
+        movement_override=data.get(CONF_MOTION_BED_MOVEMENT),
+    )
+    return MotionBedController(ctx.coordinator, selection=selection)

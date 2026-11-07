@@ -38,6 +38,7 @@ from .base import (
     MotorControlSpec,
     PositionNumberSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -1177,3 +1178,9 @@ class SleepStarController(BedController):
         if not 1 <= value <= 10:
             raise ValueError("SLEEPSTAR EQ profile value must be in range 1..10")
         await self.write_command(wrap_control_box(star.extended(13, value)))
+
+
+async def build_controller(ctx: BuildContext) -> SleepStarController:
+    """Build the controller with the advertised data."""
+    _LOGGER.debug("Using SleepSpa S9000AI SLEEPSTAR controller")
+    return SleepStarController(ctx.coordinator, manufacturer_data=ctx.manufacturer_data)

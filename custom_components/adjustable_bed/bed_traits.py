@@ -100,6 +100,7 @@ from .const import (
     KEESON_VARIANT_SINO,
     ORE_COMFORT_BED_VARIANTS,
     RICHMAT_MH_BED_TYPES,
+    STARCODE_APP_CONNECTION_TIMEOUT_SECONDS,
     VARIANT_AUTO,
     resolve_explicit_bed_type,
 )
@@ -124,6 +125,8 @@ class BedTraits:
     # keeps the link between commands by default.
     connection_scoped_state: bool = False
     passive_position_reconciliation: bool = False
+    # Overrides the connection profile's connect timeout, in seconds.
+    connection_timeout: float | None = None
 
     @property
     def disconnect_after_command(self) -> bool:
@@ -254,7 +257,12 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     # them to this integration's named motor positions.
     BED_TYPE_SLEEPYS_ELITE_APP: _NONE,
     BED_TYPE_SLEEPYS_BOX25: _PERCENT_FEEDBACK_SCOPED,
-    BED_TYPE_STARCODE_ABM5_4: _NO_ANGLES_SCOPED,
+    # The app gives up on a connect attempt after its own timeout.
+    BED_TYPE_STARCODE_ABM5_4: BedTraits(
+        no_angle_feedback=True,
+        connection_scoped_state=True,
+        connection_timeout=STARCODE_APP_CONNECTION_TIMEOUT_SECONDS,
+    ),
     # M1X12 feedback reports opaque Part percentages, not named degree axes.
     BED_TYPE_STARCODE_M1X12: _NO_ANGLES,
     BED_TYPE_STARCODE_M5X5: BedTraits(position_feedback=True, percentage_positions=True),

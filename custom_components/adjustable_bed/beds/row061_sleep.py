@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 
 from ..row061_protocol import crc8, sleep_frame
 from .base import BedController, ControllerSelectSpec, ControllerStateSensorSpec
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -326,3 +327,8 @@ class Row061SleepController(BedController):
 
     async def program_memory(self, memory_num: int) -> None:
         await self._unsupported()
+
+
+async def build_controller(ctx: BuildContext) -> Row061SleepController:
+    """Build the controller for the selected sleep receiver app."""
+    return Row061SleepController(ctx.coordinator, app=ctx.variant or "")

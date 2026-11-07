@@ -41,6 +41,10 @@ from bleak.exc import BleakError
 
 from ..codec import okin_nframe as codec
 from ..const import (
+    NORDIC_UART_SERVICE_UUID,
+    NORDIC_UART_WRITE_CHAR_UUID,
+    OKIMAT_SERVICE_UUID,
+    OKIMAT_WRITE_CHAR_UUID,
     OKIN_FOOT_MAX_ANGLE,
     OKIN_FOOT_MAX_RAW,
     OKIN_HEAD_MAX_ANGLE,
@@ -49,7 +53,8 @@ from ..const import (
 )
 from ..furnimove_profiles import FURNIMOVE_PRODUCTION_IDS, FurniMoveProfile, get_furnimove_profile
 from ..profiles.okin_nframe import OKIMAT, OkinNFrameProfile, Tap
-from .base import MotorControlSpec
+from .base import BedController, MotorControlSpec
+from .builder import BuildContext
 from .okin_nframe import OkinNFrameController
 from .okin_uuid_remotes import (
     DEFAULT_OKIN_UUID_REMOTE,
@@ -787,3 +792,39 @@ class OkinUuidController(OkinNFrameController):
 
     async def preset_anti_snore(self) -> None:
         await self._press(self._anti_snore_keycode, self._route_profile.recall, "Anti-snore")
+
+
+async def build_controller(ctx: BuildContext) -> BedController:
+    """Build the Okin UUID controller, or the receiver the live link turns out to be."""
+    variant = ctx.variant or "auto"
+    await ctx.preload("dewertokin_rf_gateway")
+    from .dewertokin_rf_gateway import DewertOkinUuidRfGatewayController, is_rf_gateway
+
+    if is_rf_gateway(ctx):
+        _LOGGER.info(
+            "Auto-detected DewertOkin RF-Gateway command endpoint for %s "
+            "using Okin UUID variant %s",
+            ctx.coordinator.address,
+            variant,
+        )
+        return DewertOkinUuidRfGatewayController(ctx.coordinator, variant=variant)
+
+    # FurniMove flags a DOT box by its Nordic UART write characteristic. A DOT
+    # box has no Okin 62741523 service, so require both signals to avoid
+    # demoting a standard Okimat box that also exposes Nordic UART.
+    if ctx.has_characteristic(
+        NORDIC_UART_SERVICE_UUID, NORDIC_UART_WRITE_CHAR_UUID
+    ) and not ctx.has_characteristic(OKIMAT_SERVICE_UUID, OKIMAT_WRITE_CHAR_UUID):
+        await ctx.preload("okin_dot")
+        from .okin_dot import OkinDotController
+
+        _LOGGER.info(
+            "Auto-detected DewertOkin DOT PROTOCOL box for %s "
+            "(Nordic UART, no Okin 62741523 service); using variant %s",
+            ctx.coordinator.address,
+            variant,
+        )
+        return OkinDotController(ctx.coordinator, variant=variant)
+
+    _LOGGER.debug("Using Okin UUID variant: %s", variant)
+    return OkinUuidController(ctx.coordinator, variant=variant)

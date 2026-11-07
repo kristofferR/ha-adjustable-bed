@@ -34,6 +34,7 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
+from .builder import BuildContext
 from .reverie_comfort import ReverieComfortRequest, validate_comfort_request
 from .reverie_pairlink_profile import (
     PAIRLINK_BED_TYPES,
@@ -2900,3 +2901,25 @@ def _validated_rgb_channel(channel: int) -> int:
     if isinstance(channel, bool) or not isinstance(channel, int):
         raise ValueError("Pairlink RGB channels must be integers")
     return min(255, max(0, channel))
+
+
+async def build_controller(ctx: BuildContext) -> ReveriePairlinkController:
+    """Build the controller around the entry's PairLink runtime, creating it once."""
+    coordinator = ctx.coordinator
+    runtime = coordinator._pairlink_runtime
+    if runtime is None:
+        runtime = create_pairlink_runtime_for_entry(
+            ctx.data, coordinator.entry.options, manufacturer_data=ctx.manufacturer_data
+        )
+        coordinator._pairlink_runtime = runtime
+    else:
+        runtime.refresh_configured_inputs(
+            ctx.data, coordinator.entry.options, manufacturer_data=ctx.manufacturer_data
+        )
+    return ReveriePairlinkController(
+        coordinator,
+        model=ctx.variant,
+        device_name=ctx.device_name,
+        manufacturer_data=ctx.manufacturer_data,
+        runtime=runtime,
+    )

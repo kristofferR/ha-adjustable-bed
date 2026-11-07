@@ -11,10 +11,9 @@ import asyncio
 import contextlib
 import logging
 import random
-import secrets
 import time
 import traceback
-from collections.abc import AsyncIterator, Callable, Coroutine, Iterator, Mapping
+from collections.abc import AsyncIterator, Callable, Coroutine, Iterator
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
@@ -51,43 +50,30 @@ from .const import (
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LIMOSS_REMOTE,
-    BED_TYPE_LINAK,
-    BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REVERIE_PAIRLINK,
-    BED_TYPE_RICHMAT,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
-    CONF_CB24_BED_SELECTION,
-    CONF_JENSEN_PIN,
-    CONF_OCTO_PIN,
     CONF_PAIRLINK_ROLE,
-    CONF_RMCONTROL_PRODUCT,
-    CONF_RMCONTROL_SIDE,
-    CONF_SLEEP_NUMBER_MCR_CLIENT_ID,
     CONF_VIBRADORM_APP_PROFILE,
-    DEFAULT_OCTO_PIN,
     IDLE_DISCONNECT_KEEP_CONNECTED,
     LEGGETT_VARIANT_GEN2,
     OKIMAT_SERVICE_UUID,
     PAIRLINK_ROLE_PERIPHERAL,
-    RICHMAT_REMOTE_AUTO,
     VARIANT_AUTO,
     VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS,
     VIBRADORM_VMAT_ONBOARDING_TIMEOUT_SECONDS,
     grants_one_connection_per_pairing_window,
     requires_pairing,
-    resolve_richmat_remote_code,
 )
 from .controller_factory import create_controller
 from .detection import (
-    detect_richmat_remote_from_name,
     refine_dewertokin_star_protocol_from_name,
     refine_malouf_protocol_from_gatt,
     refine_nordic_uart_protocol_from_device_info,
@@ -1366,7 +1352,6 @@ class CoordinatorConnectionMixin:
                     self._client.services,
                 )
                 bed_type_corrected = self._apply_runtime_bed_type_correction(corrected_bed_type)
-                self._record_okimat_model_on_cst(ble_model)
                 if (
                     bed_type_corrected
                     and not bed_requires_pairing
@@ -1393,26 +1378,6 @@ class CoordinatorConnectionMixin:
                         attempt_limit += 1
                     continue
 
-                # If remote is set to auto, infer Richmat remote code from BLE name at runtime.
-                # This preserves compatibility for existing entries created before auto-code storage.
-                richmat_remote = self._richmat_remote
-                if self._bed_type == BED_TYPE_RICHMAT and richmat_remote == RICHMAT_REMOTE_AUTO:
-                    detected_remote = detect_richmat_remote_from_name(device.name)
-                    if detected_remote:
-                        richmat_remote = detected_remote
-                        _LOGGER.info(
-                            "Auto-detected Richmat remote code '%s' from BLE name '%s'",
-                            detected_remote,
-                            device.name,
-                        )
-                if self._bed_type == BED_TYPE_RICHMAT:
-                    richmat_remote = resolve_richmat_remote_code(
-                        richmat_remote,
-                        entry_title=self.entry.title,
-                        configured_name=self._name,
-                        device_name=device.name,
-                    )
-
                 manufacturer_data: dict[int, bytes] | None = None
                 advertisement = bluetooth.async_last_service_info(
                     self.hass,
@@ -1436,32 +1401,6 @@ class CoordinatorConnectionMixin:
                         sorted(manufacturer_data),
                     )
 
-                if self._bed_type == BED_TYPE_SLEEP_NUMBER_MCR:
-                    client_id = self.entry.data.get(CONF_SLEEP_NUMBER_MCR_CLIENT_ID)
-                    if type(client_id) is not int or not 0 < client_id < 2**64:
-                        # The app persists a random client identity; it is not
-                        # the bed's MAC address or the assigned session address.
-                        self._begin_internal_entry_update(self._ble_bond_established)
-                        self._async_persist_config(
-                            {
-                                **self.entry.data,
-                                CONF_SLEEP_NUMBER_MCR_CLIENT_ID: secrets.randbits(64) or 1,
-                            },
-                            keys={CONF_SLEEP_NUMBER_MCR_CLIENT_ID},
-                        )
-
-                stored_capabilities = self.entry.data.get("capabilities")
-                stored_capability_snapshot: Mapping[str, Any] | None = None
-                if isinstance(stored_capabilities, dict):
-                    namespace = {
-                        BED_TYPE_OCTO: "octo",
-                        BED_TYPE_LINAK: "linak",
-                        BED_TYPE_JENSEN: "jensen",
-                    }.get(self._bed_type)
-                    candidate = stored_capabilities.get(namespace) if namespace else None
-                    if isinstance(candidate, Mapping):
-                        stored_capability_snapshot = candidate
-
                 # Create the controller
                 _LOGGER.debug("Creating %s controller...", self._bed_type)
                 self._controller = await create_controller(
@@ -1470,17 +1409,10 @@ class CoordinatorConnectionMixin:
                     protocol_variant=self._protocol_variant,
                     client=self._client,
                     device_name=device.name,
-                    octo_pin=self.entry.data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN),
-                    richmat_remote=richmat_remote,
-                    rmcontrol_product=self.entry.data.get(CONF_RMCONTROL_PRODUCT, ""),
-                    rmcontrol_side=self.entry.data.get(CONF_RMCONTROL_SIDE, "left"),
-                    jensen_pin=self.entry.data.get(CONF_JENSEN_PIN, ""),
-                    cb24_bed_selection=self.entry.data.get(CONF_CB24_BED_SELECTION, 0x00),
                     ble_manufacturer=ble_manufacturer,
                     ble_model=ble_model,
                     manufacturer_data=manufacturer_data,
                     advertisement_name=advertisement.name if advertisement is not None else None,
-                    capability_snapshot=stored_capability_snapshot,
                 )
                 if self._bed_type == BED_TYPE_SLEEPYS_BOX25:
                     dialect = type(self._controller)

@@ -495,12 +495,13 @@ class TestCoordinatorPositionSeek:
         assert pairing_attempt["bond_marker_before_attempt"] is True
         assert pairing_attempt["requested"] is False
 
-    @pytest.mark.usefixtures("mock_coordinator_connected")
-    async def test_connect_richmat_auto_remote_uses_ble_name_detection(
+    async def test_richmat_auto_remote_uses_live_ble_name_detection(
         self,
         hass: HomeAssistant,
     ):
-        """Richmat auto remote should be inferred from BLE name when available."""
+        """An Auto Richmat remote is inferred from a live BLE name, never offline."""
+        from custom_components.adjustable_bed.controller_factory import create_controller
+
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Richmat Test Bed",
@@ -518,32 +519,18 @@ class TestCoordinatorPositionSeek:
             entry_id="richmat_auto_remote_test",
         )
         entry.add_to_hass(hass)
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        client = MagicMock(is_connected=True)
 
-        adapter_result = MagicMock()
-        adapter_result.device = MagicMock()
-        adapter_result.device.address = TEST_ADDRESS
-        adapter_result.device.name = "QRRM141291"
-        adapter_result.device.details = {"source": "local"}
-        adapter_result.rssi = -55
-        adapter_result.adapter = "local"
+        live = await create_controller(
+            coordinator, BED_TYPE_RICHMAT, "nordic", client, device_name="QRRM141291"
+        )
+        offline = await create_controller(
+            coordinator, BED_TYPE_RICHMAT, "nordic", None, device_name="QRRM141291"
+        )
 
-        with (
-            patch(
-                "custom_components.adjustable_bed.coordinator_connection.select_adapter",
-                new_callable=AsyncMock,
-                return_value=adapter_result,
-            ),
-            patch_coordinator_global(
-                "create_controller",
-                new_callable=AsyncMock,
-                return_value=make_controller_mock(),
-            ) as mock_create_controller,
-        ):
-            coordinator = AdjustableBedCoordinator(hass, entry)
-            result = await coordinator.async_connect()
-
-        assert result is True
-        assert mock_create_controller.await_args.kwargs["richmat_remote"] == "qrrm"
+        assert live._remote_code == "qrrm"
+        assert offline._remote_code == RICHMAT_REMOTE_AUTO
 
     async def test_connect_auto_mode_sets_fresh_device_callback_with_selected_source(
         self,

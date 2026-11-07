@@ -39,6 +39,7 @@ from .base import (
     MotorControlSpec,
     SideBoundController,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -571,3 +572,8 @@ class CasperBaseController(BedController):
 
     async def program_memory(self, memory_num: int) -> None:
         await self.async_perform_casper_base_action(f"MemoryPosition{memory_num}", save=True)
+
+
+async def build_controller(ctx: BuildContext) -> CasperBaseController:
+    """Build the controller for the selected Casper base product."""
+    return CasperBaseController(ctx.coordinator, product=ctx.variant or "")

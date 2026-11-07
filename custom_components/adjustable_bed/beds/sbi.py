@@ -29,6 +29,7 @@ from bleak.exc import BleakError
 
 from ..codec import keeson as codec
 from ..const import (
+    CONF_PRODUCT_TYPE,
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
     SBI_VARIANT_BOTH,
@@ -46,6 +47,7 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
+from .builder import BuildContext
 from .cluster033 import AppController
 
 if TYPE_CHECKING:
@@ -589,3 +591,19 @@ class QPlusAppController(AppController):
 
     def __init__(self, coordinator: AdjustableBedCoordinator, *, layout: str | None = None, side: str = "both") -> None:
         super().__init__(coordinator, app_profile('qplus_app', layout), side=side)
+
+
+async def build_controller(ctx: BuildContext) -> SBIController:
+    """Build the controller; Auto controls both sides."""
+    variant = ctx.variant if ctx.variant and ctx.variant != "auto" else SBI_VARIANT_BOTH
+    _LOGGER.debug("Using SBI controller with variant: %s", variant)
+    return SBIController(ctx.coordinator, variant=variant)
+
+
+async def build_qplus(ctx: BuildContext) -> QPlusAppController:
+    """Build the Q-Plus app controller for the stored layout and selected side."""
+    return QPlusAppController(
+        ctx.coordinator,
+        layout=ctx.data.get(CONF_PRODUCT_TYPE),
+        side=ctx.variant if ctx.variant in ("both", "side_a", "side_b") else "both",
+    )
