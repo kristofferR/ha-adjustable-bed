@@ -114,13 +114,13 @@ async def test_feedback_light_entity_toggles_without_initial_state(
     coordinator.async_execute_controller_command = AsyncMock(side_effect=dispatch)
     light = _light_entities_for(hass, coordinator)[0]
     assert light.is_on is None
-    assert controller.get_light_state() == {}
+    assert controller._light_status is None
 
     await light.async_toggle()
 
     assert [frame.hex() for frame in written(controller)] == expected
     assert light.is_on is None
-    assert controller.get_light_state() == {}
+    assert controller._light_status is None
 
 
 @pytest.mark.parametrize(("light_byte", "is_on"), [(0x40, True), (0, False)])

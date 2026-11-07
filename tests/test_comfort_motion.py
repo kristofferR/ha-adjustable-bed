@@ -34,6 +34,7 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
 )
 from custom_components.adjustable_bed.profiles.jiecang import COMFORT_MOTION
+from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
 from tests.state_helpers import massage_levels, state_writer
 
 # Frozen Comfort Motion 2.2.1 literals.
@@ -182,7 +183,7 @@ async def test_all_24_variants_and_temporal_retention(make_controller, transport
             "head": 2,
             "foot": 3,
         }
-        assert controller.get_light_state() == {"is_on": True}
+        assert coordinator.controller_state[UNDER_BED_LIGHTS_ON] is True
     assert controller.protocol_diagnostics["reported_layout"] == 0
     assert controller.supports_lights is light
     client.is_connected = False
@@ -220,7 +221,7 @@ async def test_short_unknown_and_light_only_preserve_massage(make_controller):
         controller._handle_notification(sender, bytearray(value))
     controller._handle_notification(sender, bytearray.fromhex("000005000000000040"))
     assert massage_levels(coordinator.controller_state, "head", "foot") == {"head": 0, "foot": 0}
-    assert controller.get_light_state() == {"is_on": True}
+    assert coordinator.controller_state[UNDER_BED_LIGHTS_ON] is True
 
 
 @pytest.mark.parametrize("task_cancel", [False, True])
@@ -430,18 +431,18 @@ async def test_profile_setup_accepts_comfort_motion(hass, layout):
 
 
 async def test_light_feedback_and_unknown_state(make_controller):
-    controller, _, client = make_controller()
+    controller, coordinator, client = make_controller()
     with pytest.raises(ValueError, match="Read light state"):
         await controller.lights_on()
     await controller.lights_toggle()
-    assert controller.get_light_state() == {}
+    assert UNDER_BED_LIGHTS_ON not in coordinator.controller_state
     sender = SimpleNamespace(uuid="test")
     controller._handle_notification(sender, bytearray.fromhex("000005000000000040"))
     await controller.lights_on()
     assert len(packets(client)) == 1
     await controller.lights_off()
     assert packets(client) == ["f1f10f000f7e"] * 2
-    assert controller.get_light_state() == {"is_on": True}
+    assert coordinator.controller_state[UNDER_BED_LIGHTS_ON] is True
 
 
 async def test_setup_cancellation_cleans_without_cross_link_timers(make_controller):

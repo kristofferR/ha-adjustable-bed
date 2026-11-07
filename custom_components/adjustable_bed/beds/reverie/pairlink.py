@@ -2486,17 +2486,6 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
         for selector, value in zip((17, 18, 19), values, strict=True):
             await self.async_send_payload(a7_payload(selector, value))
 
-    def get_light_state(self) -> dict[str, Any]:
-        state: dict[str, Any] = {}
-        if isinstance(self._state.get("under_bed_lights_on"), bool):
-            state["is_on"] = self._state["under_bed_lights_on"]
-        if isinstance(self._state.get("light_level"), int):
-            state["light_level"] = self._state["light_level"]
-        rgb = tuple(self._state.get(f"reverie_pairlink_rgb_{index}") for index in (1, 2, 3))
-        if all(isinstance(channel, int) for channel in rgb):
-            state["rgb_color"] = rgb
-        return state
-
     async def read_light_state(self) -> tuple[StateUpdate, ...]:
         """Return only current event-backed values; no undocumented query is sent."""
         on = self._state.get(UNDER_BED_LIGHTS_ON)

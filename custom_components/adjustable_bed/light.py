@@ -757,21 +757,20 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             self._attr_is_on = None
             self.async_write_ha_state()
         else:
-            self._handle_controller_state_update(ControllerState())
+            self._handle_controller_state_update(self._coordinator.controller_state)
 
     @callback
     def _handle_controller_state_update(self, state: ControllerState) -> None:
-        """Update state from controller light telemetry when available."""
-        if self._feedback_only:
-            controller = self._coordinator.controller
-            with self._side_scope():
-                value = (
-                    controller.get_light_state().get("is_on") if controller is not None else None
-                )
-        elif UNDER_BED_LIGHTS_ON in state:
-            value = state[UNDER_BED_LIGHTS_ON]
-        else:
+        """Update state from published light state.
+
+        Feedback controllers publish what the bed reported on the current link,
+        so the light is unknown while no controller is connected.
+        """
+        if UNDER_BED_LIGHTS_ON not in state:
             return
+        value = state[UNDER_BED_LIGHTS_ON]
+        if self._feedback_only and self._coordinator.controller is None:
+            value = None
         self._attr_is_on = None if value is None else bool(value)
         self.async_write_ha_state()
 

@@ -169,9 +169,6 @@ class EshineOkinController(BedController):
     def supports_light_state_feedback(self) -> bool:
         return self.supports_lights
 
-    def get_light_state(self) -> dict[str, object]:
-        return {"is_on": self._observed.get("massage", {}).get("light")}
-
     async def lights_on(self) -> None:
         await self._set_light(True)
 
@@ -181,7 +178,7 @@ class EshineOkinController(BedController):
     async def _set_light(self, desired: bool) -> None:
         if not self.supports_lights:
             raise ValueError("E2000 has no Night Light control")
-        observed = self.get_light_state()["is_on"]
+        observed = self._observed.get("massage", {}).get("light")
         if observed is None:
             raise ValueError(
                 "Refresh light state before using turn_on or turn_off; toggle is available"

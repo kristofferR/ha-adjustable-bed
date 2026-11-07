@@ -25,6 +25,7 @@ from custom_components.adjustable_bed.beds.starcode.m1x12_protocol import (
     parse_notification,
 )
 from custom_components.adjustable_bed.beds.starcode.star_elevate import StarElevateCommands
+from custom_components.adjustable_bed.beds.starcode.state import FIRMWARE_VERSION
 from custom_components.adjustable_bed.button import _combined_motor_buttons_for
 from custom_components.adjustable_bed.const import (
     BED_TYPE_STAR_ELEVATE,
@@ -47,6 +48,7 @@ from custom_components.adjustable_bed.pairing_candidates import (
 )
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
 from custom_components.adjustable_bed.services import async_register_services
+from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
 from tests.state_helpers import published
 from tests.test_starcode_m1x12 import (
     _controller_target,
@@ -360,7 +362,7 @@ def test_combined_motor_hold_intersection_checks_direction_and_timing(
     assert ("held_control" in button.extra_state_attributes) is expected_hold
 
 
-async def test_light_telemetry_getter_updates_actual_light_and_teardown_clears_it(
+async def test_light_telemetry_updates_actual_light_and_teardown_clears_it(
     hass: HomeAssistant,
 ) -> None:
     client = _GattClient()
@@ -377,7 +379,7 @@ async def test_light_telemetry_getter_updates_actual_light_and_teardown_clears_i
     payload[:2] = b"\xa5\x0b"
     payload[14] = 1
     controller._apply_notification(bytes(payload))
-    assert controller.get_light_state() == {"is_on": True}
+    assert coordinator.controller_state[UNDER_BED_LIGHTS_ON] is True
     assert light.is_on is True
 
     controller.query_status = AsyncMock()
@@ -386,10 +388,31 @@ async def test_light_telemetry_getter_updates_actual_light_and_teardown_clears_i
 
     controller._next_tick = asyncio.get_running_loop().time()
     await controller.stop_notify()
-    assert controller.get_light_state() == {"is_on": None}
+    assert coordinator.controller_state[UNDER_BED_LIGHTS_ON] is None
     assert light.is_on is None
     assert ("stop_notify", "6e400003-b5a3-f393-e0a9-e50e24dcca9e") in client.events
     unregister()
+
+
+async def test_unexpected_disconnect_clears_every_link_report(hass: HomeAssistant) -> None:
+    """A dropped link clears what only a live link vouches for, as a clean teardown does."""
+    client = _GattClient()
+    coordinator, controller = await _create_controller(hass, client=client)
+    await controller.start_notify()
+    payload = bytearray(20)
+    payload[:2] = b"\xa5\x0b"
+    payload[14] = 1
+    client.notify_callback(Mock(), bytearray(payload))
+    reported = {key for key, value in coordinator.controller_state.items() if value is not None}
+    assert {UNDER_BED_LIGHTS_ON, "light_on", FIRMWARE_VERSION} <= reported
+
+    client.is_connected = False
+    coordinator._on_disconnect(client)
+    coordinator._cancel_auto_reconnect()
+
+    assert coordinator.controller is None
+    assert all(coordinator.controller_state.get(key) is None for key in reported)
+    assert controller.protocol_diagnostics["firmware"] is None
 
 
 @pytest.mark.parametrize("profile", ("f23", "kneading"))

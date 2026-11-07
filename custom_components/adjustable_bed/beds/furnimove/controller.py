@@ -890,9 +890,6 @@ class FurniMoveController(BedController):
         if self._state["furnimove_ubl"]:
             await self.lights_toggle()
 
-    def get_light_state(self) -> dict[str, object]:
-        return {"is_on": self._state["furnimove_ubl"]}
-
     @property
     def supports_massage(self) -> bool:
         return bool(self.profile.by_type("massage-function"))
