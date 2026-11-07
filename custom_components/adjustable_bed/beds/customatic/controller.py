@@ -20,9 +20,9 @@ from ...profiles.okin_nframe import (
     CUSTOMATIC_PROFILES,
     CUSTOMATIC_REFRESH_MS,
 )
-from ..base import (
+from ..base import BedController
+from ..entity_specs import (
     POSITION_AXIS_COMMANDS,
-    BedController,
     ControllerButtonSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,

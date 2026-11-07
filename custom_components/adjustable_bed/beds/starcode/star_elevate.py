@@ -24,8 +24,9 @@ from ...codec import okin_5a as codec
 from ...const import NORDIC_UART_READ_CHAR_UUID as NORDIC_UART_READ_CHAR_UUID
 from ...const import STAR_ELEVATE_VARIANT_M1X12
 from ...profiles.okin_5a import ELEVATE
-from ..base import BedController, MotorControlSpec
+from ..base import BedController
 from ..builder import BuildContext
+from ..entity_specs import MotorControlSpec
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic

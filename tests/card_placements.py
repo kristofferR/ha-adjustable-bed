@@ -23,11 +23,8 @@ from unittest.mock import MagicMock
 
 from homeassistant.helpers.entity import Entity
 
-from custom_components.adjustable_bed.beds.base import (
-    BedController,
-    MotorControlSpec,
-    ProductButtonSpec,
-)
+from custom_components.adjustable_bed.beds.base import BedController
+from custom_components.adjustable_bed.beds.entity_specs import MotorControlSpec, ProductButtonSpec
 from custom_components.adjustable_bed.beds.sleeptracker import protocol as sleeptracker_protocol
 from custom_components.adjustable_bed.binary_sensor import (
     BINARY_SENSOR_DESCRIPTIONS,

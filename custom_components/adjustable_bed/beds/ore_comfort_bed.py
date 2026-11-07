@@ -42,8 +42,8 @@ from ..const import (
 from ..controller_state import StateKey
 from ..profiles import keeson as profiles
 from ..profiles.keeson import KeesonProfile
-from .base import (
-    BedController,
+from .base import BedController
+from .entity_specs import (
     ControllerButtonSpec,
     ControllerNumberSpec,
     ControllerSelectSpec,

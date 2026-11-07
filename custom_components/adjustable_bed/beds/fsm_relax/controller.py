@@ -22,14 +22,14 @@ from ...const import (
 )
 from ...controller_state import StateKey
 from ...profiles.limoss import FSM_LABELS, FSM_RELAX, Burst, fsm_relax_layout
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
     PositionNumberSpec,
 )
-from ..builder import BuildContext
 from .state import (
     FsmRelaxSession,
     validate_capability_body,

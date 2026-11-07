@@ -16,8 +16,9 @@ from ...card import CARD_LIGHTING, CARD_MASSAGE, CARD_UTILITY
 from ...const import CONF_BLE_DEVICE_NAME, CONF_PRODUCT_TYPE
 from ...controller_state import StateKey
 from ...profiles.okin_nframe import DOUBLESLEEP
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
@@ -28,7 +29,6 @@ from ..base import (
     MotorControlSpec,
     PositionNumberSpec,
 )
-from ..builder import BuildContext
 from . import protocol as p
 from .state import Notifications, Report, report_records
 

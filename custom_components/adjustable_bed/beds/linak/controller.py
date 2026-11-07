@@ -39,17 +39,17 @@ from ...controller_state import AnyStateKey, StateKey
 from ...execution import ExecutionCapabilities
 from ...position_seek import PositionSeekPolicy, SeekSample
 from ...state_keys import LINAK_AUTOMATIC_DRIVE, LINAK_MODEL_VARIANT
-from ..base import (
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     POSITION_AXIS_COMMANDS,
     POSITION_UNIT_DEGREES,
-    BedController,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
     PositionNumberSpec,
     build_position_number_spec,
 )
-from ..builder import BuildContext
 from ..lifecycle import CapabilitySnapshotPolicy
 from .protocol import (
     LINAK_AXIS_MASKS,

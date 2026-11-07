@@ -38,14 +38,14 @@ from ...profiles.okin_nframe import (
     SIMMONS_SAVE_HOLD_MS,
     OkinNFrameProfile,
 )
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
 )
-from ..builder import BuildContext
 from .protocol import (
     ALARM_MODES,
     FFE0_SERVICE,

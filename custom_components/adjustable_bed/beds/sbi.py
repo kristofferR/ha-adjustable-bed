@@ -41,13 +41,9 @@ from ..const import (
 )
 from ..profiles import keeson as keeson_profiles
 from ..profiles.keeson import app_profile
-from .base import (
-    POSITION_UNIT_DEGREES,
-    BedController,
-    PositionNumberSpec,
-    build_position_number_spec,
-)
+from .base import BedController
 from .builder import BuildContext
+from .entity_specs import POSITION_UNIT_DEGREES, PositionNumberSpec, build_position_number_spec
 from .keeson.layout_app import AppController
 
 if TYPE_CHECKING:

@@ -17,17 +17,16 @@ from ...card import CARD_HIDDEN
 from ...codec import richmat as codec
 from ...controller_state import StateKey
 from ...profiles.richmat import HJBED
-from ..base import (
-    BedController,
+from ..base import BedController, require_controller
+from ..builder import BuildContext
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
     ControllerSelectSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
-    require_controller,
 )
-from ..builder import BuildContext
 from .catalog import ACTIONS, MUSIC_ACTIONS, PRODUCTS, Action
 from .protocol import (
     Alarm,

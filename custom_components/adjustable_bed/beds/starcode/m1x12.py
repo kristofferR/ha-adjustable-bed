@@ -31,9 +31,10 @@ from ...const import CONF_BLE_DEVICE_NAME, CONF_STARCODE_M1X12_PROFILE
 from ...controller_state import StateUpdate
 from ...execution import ExecutionCapabilities
 from ...state_keys import UNDER_BED_LIGHTS_ON
-from ..base import (
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     POSITION_UNIT_PERCENT,
-    BedController,
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
@@ -42,7 +43,6 @@ from ..base import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
-from ..builder import BuildContext
 from .dialect import (
     extended_packet,
     long_packet,

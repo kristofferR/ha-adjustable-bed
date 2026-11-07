@@ -15,8 +15,8 @@ from ...codec import keeson as codec
 from ...controller_state import StateKey, StateUpdate
 from ...profiles.keeson import ergomotion_4_profile
 from ...state_keys import UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerStateBinarySensorSpec,

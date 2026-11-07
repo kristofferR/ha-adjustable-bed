@@ -10,8 +10,9 @@ from typing import TYPE_CHECKING, Final
 from homeassistant.util import dt as dt_util
 
 from ...controller_state import StateKey, StateUpdate
-from ..base import BedController, ControllerStateSensorSpec
+from ..base import BedController
 from ..casper_base.protocol import CasperBaseActions, Request, SensorKind
+from ..entity_specs import ControllerStateSensorSpec
 from .protocol import (
     NOTIFY,
     SERVICES,

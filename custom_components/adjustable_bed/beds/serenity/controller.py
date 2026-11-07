@@ -40,14 +40,14 @@ from ...profiles.okin_nframe import (
     ZSERIES_Z280_ACTIONS,
     OkinNFrameProfile,
 )
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
 )
-from ..builder import BuildContext
 from ..okin_cst import OkinCstController, _product
 
 if TYPE_CHECKING:

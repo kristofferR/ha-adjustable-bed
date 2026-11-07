@@ -30,7 +30,8 @@ from .paired_coordinator import entity_runtimes
 from .state_keys import BED_PRESENCE, BED_PRESENCE_SIDE
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, ControllerStateBinarySensorSpec
+    from .beds.base import BedController
+    from .beds.entity_specs import ControllerStateBinarySensorSpec
 
 _LOGGER = logging.getLogger(__name__)
 

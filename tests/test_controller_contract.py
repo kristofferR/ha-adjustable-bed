@@ -14,10 +14,10 @@ from bleak.exc import BleakError
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.bed_traits import bed_traits
-from custom_components.adjustable_bed.beds.base import (
+from custom_components.adjustable_bed.beds.base import BedController
+from custom_components.adjustable_bed.beds.entity_specs import (
     POSITION_UNIT_DEGREES,
     POSITION_UNIT_PERCENT,
-    BedController,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_COOLBASE,

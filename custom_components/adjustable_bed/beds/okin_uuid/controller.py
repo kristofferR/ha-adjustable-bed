@@ -52,8 +52,9 @@ from ...const import (
     VARIANT_AUTO,
 )
 from ...profiles.okin_nframe import OKIMAT, OkinNFrameProfile, Tap
-from ..base import BedController, MotorControlSpec
+from ..base import BedController
 from ..builder import BuildContext
+from ..entity_specs import MotorControlSpec
 from ..furnimove.profiles import FURNIMOVE_PRODUCTION_IDS, FurniMoveProfile, get_furnimove_profile
 from ..okin_nframe import OkinNFrameController
 from .remotes import (

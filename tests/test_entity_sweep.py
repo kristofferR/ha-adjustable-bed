@@ -22,7 +22,7 @@ from homeassistant.helpers.entity import Entity
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import _build_paired_children
-from custom_components.adjustable_bed.beds.base import (
+from custom_components.adjustable_bed.beds.entity_specs import (
     ControllerNumberSpec,
     ControllerSelectSpec,
     ControllerStateBinarySensorSpec,

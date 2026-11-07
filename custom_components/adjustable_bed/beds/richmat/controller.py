@@ -48,8 +48,9 @@ from ...const import (
 )
 from ...position_estimate import notify_release_failed
 from ...profiles.richmat import GGRM_ACTIONS, RICHMAT, Button, RichmatProfile
-from ..base import BedController, ControllerButtonSpec, MotorControlSpec
+from ..base import BedController
 from ..builder import BuildContext
+from ..entity_specs import ControllerButtonSpec, MotorControlSpec
 
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator

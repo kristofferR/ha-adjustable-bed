@@ -11,8 +11,9 @@ from typing import TYPE_CHECKING, Final
 
 from ...card import CARD_UTILITY
 from ...controller_state import StateKey, StateUpdate
-from ..base import BedController, ControllerSelectSpec, ControllerStateSensorSpec
+from ..base import BedController
 from ..builder import BuildContext
+from ..entity_specs import ControllerSelectSpec, ControllerStateSensorSpec
 from .protocol import crc8, sleep_frame
 
 if TYPE_CHECKING:

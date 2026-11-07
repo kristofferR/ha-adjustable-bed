@@ -18,8 +18,8 @@ from ...card import CARD_MASSAGE_TIMER
 from ...codec import keeson as codec
 from ...controller_state import StateKey
 from ...profiles.keeson import AppAction, AppProfile
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerMotorHoldSpec,

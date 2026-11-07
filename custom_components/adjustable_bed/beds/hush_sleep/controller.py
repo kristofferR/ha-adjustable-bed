@@ -10,7 +10,6 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ...controller_state import StateKey
-from ..base import ControllerStateSensorSpec
 from ..casper_base.protocol import Request, SensorKind
 from ..casper_sleep.controller import (
     INFO,
@@ -21,6 +20,7 @@ from ..casper_sleep.controller import (
     CasperSleepController,
 )
 from ..casper_sleep.protocol import Json, mapping
+from ..entity_specs import ControllerStateSensorSpec
 from .protocol import HushReceive, build, integer, parse, report
 
 if TYPE_CHECKING:

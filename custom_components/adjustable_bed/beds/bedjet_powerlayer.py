@@ -35,12 +35,8 @@ from bleak.exc import BleakError
 
 from ..codec import bedjet_powerlayer as codec
 from ..profiles.bedjet_powerlayer import POWERLAYER, PowerLayerProfile, raw_count_to_angle
-from .base import (
-    POSITION_UNIT_DEGREES,
-    BedController,
-    PositionNumberSpec,
-    build_position_number_spec,
-)
+from .base import BedController
+from .entity_specs import POSITION_UNIT_DEGREES, PositionNumberSpec, build_position_number_spec
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator

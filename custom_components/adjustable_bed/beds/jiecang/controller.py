@@ -26,7 +26,8 @@ from ...profiles.jiecang import (
     motion_command,
     preset_command,
 )
-from ..base import BedController, MotorControlSpec
+from ..base import BedController
+from ..entity_specs import MotorControlSpec
 
 if TYPE_CHECKING:
     from ...codec.jiecang import Axis, Preset

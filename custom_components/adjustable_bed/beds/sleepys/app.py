@@ -37,8 +37,9 @@ from ...const import (
 from ...controller_state import StateKey, StateUpdate
 from ...execution import ExecutionCapabilities
 from ...state_keys import LIGHT_LEVEL, massage_intensity
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
@@ -47,7 +48,6 @@ from ..base import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
-from ..builder import BuildContext
 from .app_routes import CANONICAL_ROUTE_SHA256, ROUTES, SleepysAppRoute
 
 if TYPE_CHECKING:

@@ -45,8 +45,8 @@ from ...const import (
 )
 from ...controller_state import StateKey, StateUpdate
 from ...state_keys import MASSAGE_TIMER_MINUTES
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerNumberSpec,
     ControllerSelectSpec,

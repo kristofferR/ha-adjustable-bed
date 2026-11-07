@@ -25,13 +25,9 @@ from ...profiles.casper import (
     ProductRow,
     light_duration,
 )
-from ..base import (
-    BedController,
-    ControllerButtonSpec,
-    ControllerStateSensorSpec,
-    MotorControlSpec,
-)
+from ..base import BedController
 from ..builder import BuildContext
+from ..entity_specs import ControllerButtonSpec, ControllerStateSensorSpec, MotorControlSpec
 from .protocol import (
     RGB_TIMERS,
     CasperBaseActions,

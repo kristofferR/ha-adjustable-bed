@@ -26,8 +26,9 @@ from ...const import (
     CONF_SLEEPTRACKER_UNIT,
 )
 from ...controller_state import StateKey, StateUpdate
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerNumberSpec,
     ControllerSelectSpec,
@@ -37,7 +38,6 @@ from ..base import (
     MotorControlSpec,
     PositionNumberSpec,
 )
-from ..builder import BuildContext
 from . import protocol as p
 
 if TYPE_CHECKING:

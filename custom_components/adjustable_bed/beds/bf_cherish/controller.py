@@ -22,8 +22,8 @@ from ...codec import keeson as codec
 from ...controller_state import StateKey
 from ...profiles import keeson as keeson_profiles
 from ...state_keys import MASSAGE_TIMER_MINUTES
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerNumberSpec,
     ControllerStateSensorSpec,

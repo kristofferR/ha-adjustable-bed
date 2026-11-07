@@ -16,7 +16,7 @@ from ...codec import kaidi as codec
 from ...const import CONF_KAIDI_ROOM_ID
 from ...controller_state import StateKey
 from ...profiles.kaidi import FLOYD, KaidiProductFamily
-from ..base import ControllerStateBinarySensorSpec, MotorControlSpec
+from ..entity_specs import ControllerStateBinarySensorSpec, MotorControlSpec
 from .controller import KaidiController
 from .protocol import extract_kaidi_advertisement, is_floyd_advertisement
 

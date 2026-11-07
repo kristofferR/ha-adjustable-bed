@@ -40,14 +40,14 @@ from ..state_keys import (
     UNDER_BED_LIGHTS_ON,
     massage_intensity,
 )
-from .base import (
+from .base import BedController
+from .builder import BuildContext
+from .entity_specs import (
     POSITION_AXIS_ICONS,
     POSITION_UNIT_PERCENT,
-    BedController,
     MotorControlSpec,
     PositionNumberSpec,
 )
-from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic

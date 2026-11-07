@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING
 
-from ..base import ControllerButtonSpec, ControllerHoldSpec
+from ..entity_specs import ControllerButtonSpec, ControllerHoldSpec
 from .controller import GmmotorController
 from .protocol import Material, desk_packet, stop_packet
 from .requests import Request

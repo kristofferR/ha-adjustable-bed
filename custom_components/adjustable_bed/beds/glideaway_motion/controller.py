@@ -22,14 +22,14 @@ from ...codec import keeson as codec
 from ...const import GLIDEAWAY_MOTION_MODELS
 from ...controller_state import StateKey
 from ...profiles import keeson as keeson_profiles
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
 )
-from ..builder import BuildContext
 
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator

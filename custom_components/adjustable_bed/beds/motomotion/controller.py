@@ -17,17 +17,15 @@ from ...codec.motomotion import Position, ascii_command, binary_command, music_c
 from ...const import CONF_BLE_DEVICE_NAME
 from ...controller_state import StateKey
 from ...profiles.motomotion import Profile
-from ..base import (
-    CONTROLLER_GESTURE_RELEASE,
-    BedController,
+from ..base import CONTROLLER_GESTURE_RELEASE, BedController, require_controller
+from ..builder import BuildContext
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerNumberSpec,
     ControllerSelectSpec,
     ControllerStateSensorSpec,
-    require_controller,
 )
-from ..builder import BuildContext
 from .protocol import color_parameters, decimal, light_cycle, posture, rgb_total
 from .requests import Request
 from .state import Comfort, State

@@ -10,8 +10,8 @@ from ...card import CARD_MASSAGE, CARD_UTILITY
 from ...codec import richmat as codec
 from ...controller_state import StateKey
 from ...profiles.richmat import ESHINE, Button
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,

@@ -45,9 +45,10 @@ from ...state_keys import (
     UNDER_BED_LIGHTS_RGB,
     massage_intensity,
 )
-from ..base import (
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     POSITION_UNIT_PERCENT,
-    BedController,
     ControllerMotorHoldSpec,
     ControllerNumberSpec,
     ControllerSelectSpec,
@@ -56,7 +57,6 @@ from ..base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
-from ..builder import BuildContext
 from .comfort import (
     ReverieComfortActions,
     ReverieComfortRequest,

@@ -38,7 +38,8 @@ from ..state_keys import (
     UNDER_BED_LIGHTS_ON,
     massage_intensity,
 )
-from .base import BedController, ControllerButtonSpec
+from .base import BedController
+from .entity_specs import ControllerButtonSpec
 from .solace.controller import (
     ALARM_ENABLED,
     ALARM_MASSAGE,

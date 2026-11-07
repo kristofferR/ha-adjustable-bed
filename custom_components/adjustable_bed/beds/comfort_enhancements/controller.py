@@ -22,8 +22,9 @@ from ...const import (
 )
 from ...profiles import keeson as keeson_profiles
 from ...state_keys import MASSAGE_TIMER_MINUTES, massage_intensity
-from ..base import BedController, ControllerButtonSpec, MotorCommandCallable, MotorControlSpec
+from ..base import BedController
 from ..builder import BuildContext
+from ..entity_specs import ControllerButtonSpec, MotorCommandCallable, MotorControlSpec
 
 if TYPE_CHECKING:
     from datetime import datetime

@@ -26,8 +26,9 @@ from ..const import CONF_BLE_DEVICE_NAME
 from ..controller_state import StateKey
 from ..detection import is_mac_like_name
 from ..profiles.ff_frame import BEDSENSE, BedSenseProfile, bedsense_layout
-from .base import (
-    BedController,
+from .base import BedController
+from .builder import BuildContext
+from .entity_specs import (
     ControllerButtonSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
@@ -35,7 +36,6 @@ from .base import (
     MotorControlSpec,
     PositionNumberSpec,
 )
-from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator

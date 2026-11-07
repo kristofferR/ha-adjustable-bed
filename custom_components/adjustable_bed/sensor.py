@@ -38,7 +38,7 @@ from .position_estimate_entities import async_setup_estimate_sensors
 from .state_keys import MASSAGE_TIMER_MINUTES, massage_intensity
 
 if TYPE_CHECKING:
-    from .beds.base import ControllerStateSensorSpec
+    from .beds.entity_specs import ControllerStateSensorSpec
 
 _LOGGER = logging.getLogger(__name__)
 

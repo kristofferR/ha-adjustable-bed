@@ -19,7 +19,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
 from .bed_traits import bed_traits
-from .beds.base import ControllerMotorHoldSpec
+from .beds.entity_specs import ControllerMotorHoldSpec
 from .beds.octo.runtime import octo_controller
 from .card import motor_card
 from .const import (
@@ -33,11 +33,8 @@ from .paired_coordinator import entity_runtimes
 from .position_estimate import track_motor_command
 
 if TYPE_CHECKING:
-    from .beds.base import (
-        BedController,
-        ControllerMotorHoldSpec,
-        MotorControlSpec,
-    )
+    from .beds.base import BedController
+    from .beds.entity_specs import ControllerMotorHoldSpec, MotorControlSpec
 
 _LOGGER = logging.getLogger(__name__)
 

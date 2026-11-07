@@ -20,7 +20,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ServiceValidationError
 
 from .bed_traits import bed_type_has_position_feedback
-from .beds.base import ControllerNumberSpec, PositionNumberSpec
+from .beds.entity_specs import ControllerNumberSpec, PositionNumberSpec
 from .beds.octo.runtime import octo_controller
 from .card import (
     CARD_CLIMATE,

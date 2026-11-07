@@ -49,13 +49,13 @@ from ...profiles.okin_nframe import (
     leggett_sleep_timer,
 )
 from ...state_keys import UNDER_BED_LIGHTS_ON
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
-from ..builder import BuildContext
 
 if TYPE_CHECKING:
     from ...command_scheduler import StreamMember

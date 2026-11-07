@@ -16,13 +16,8 @@ from homeassistant.util import dt as dt_util
 
 from ...card import CARD_UTILITY
 from ...controller_state import StateKey, StateUpdate
-from ..base import (
-    BedController,
-    ControllerButtonSpec,
-    ControllerStateSensorSpec,
-    MotorControlSpec,
-    require_controller,
-)
+from ..base import BedController, require_controller
+from ..entity_specs import ControllerButtonSpec, ControllerStateSensorSpec, MotorControlSpec
 from .notifications import Value
 from .protocol import MalformedNotification
 from .requests import GmmotorActions, Operation, Request

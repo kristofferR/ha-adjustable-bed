@@ -27,8 +27,9 @@ from ...profiles.okin_nframe import (
     STARCODE_ABM5_4_SAVE_HOLD_MS,
     OkinNFrameProfile,
 )
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerNumberSpec,
     ControllerSelectSpec,
@@ -36,7 +37,6 @@ from ..base import (
     MotorControlSpec,
     PositionNumberSpec,
 )
-from ..builder import BuildContext
 from .abm5_4_profiles import (
     FIRMWARE_UUID,
     MANUFACTURER_UUID,

@@ -19,7 +19,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.base import ControllerHoldSpec
+from custom_components.adjustable_bed.beds.entity_specs import ControllerHoldSpec
 from custom_components.adjustable_bed.beds.octo.controller import (
     OCTO_FEATURE_MEMCOUNT,
     OCTO_MOTOR_HEAD,
@@ -797,7 +797,7 @@ def test_combined_motor_button_keeps_controller_hold_metadata() -> None:
     """Paired motor buttons expose the same bounded hold contract as each side."""
     from unittest.mock import MagicMock
 
-    from custom_components.adjustable_bed.beds.base import (
+    from custom_components.adjustable_bed.beds.entity_specs import (
         ControllerMotorHoldSpec,
         MotorControlSpec,
     )

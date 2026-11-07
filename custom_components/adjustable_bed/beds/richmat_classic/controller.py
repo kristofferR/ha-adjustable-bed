@@ -25,16 +25,15 @@ from ...const import (
 from ...controller_state import StateKey
 from ...execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ...profiles.richmat import RICHMAT_CLASSIC
-from ..base import (
-    CONTROLLER_GESTURE_RELEASE,
-    BedController,
+from ..base import CONTROLLER_GESTURE_RELEASE, BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerSelectSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
-from ..builder import BuildContext
 from .caller import RETAIN, Selection, effective_status, transition
 from .profiles import Control, controls, load_catalog
 from .protocol import (

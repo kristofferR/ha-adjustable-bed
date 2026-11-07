@@ -72,9 +72,10 @@ from ...profiles.keeson import (
     is_ksbt03c_name as is_ksbt03c_name,
 )
 from ...state_keys import MASSAGE_TIMER_MINUTES, massage_intensity
-from ..base import (
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     POSITION_UNIT_PERCENT,
-    BedController,
     ControllerButtonSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
@@ -82,7 +83,6 @@ from ..base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
-from ..builder import BuildContext
 
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator

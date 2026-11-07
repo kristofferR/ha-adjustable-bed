@@ -34,7 +34,7 @@ from ..const import (
     KEESON_VARIANT_INNOVA,
 )
 from ..controller_state import StateKey, StateUpdate
-from .base import (
+from .entity_specs import (
     ControllerButtonSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,

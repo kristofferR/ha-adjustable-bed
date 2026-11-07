@@ -37,8 +37,9 @@ from ..const import (
 )
 from ..controller_state import StateKey
 from ..profiles import keeson as keeson_profiles
-from .base import BedController, ControllerButtonSpec, ControllerStateSensorSpec
+from .base import BedController
 from .builder import BuildContext
+from .entity_specs import ControllerButtonSpec, ControllerStateSensorSpec
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator

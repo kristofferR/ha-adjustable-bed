@@ -17,8 +17,9 @@ from ...const import CONF_BLE_DEVICE_NAME
 from ...controller_state import StateKey
 from ...detection import is_mac_like_name
 from ...profiles import keeson as keeson_profiles
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
@@ -29,7 +30,6 @@ from ..base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
-from ..builder import BuildContext
 from .protocol import (
     BASE_ACTIONS,
     CYCLIC,

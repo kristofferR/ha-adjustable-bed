@@ -9,7 +9,8 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity import Entity
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.base import BedController, ProductButtonSpec
+from custom_components.adjustable_bed.beds.base import BedController
+from custom_components.adjustable_bed.beds.entity_specs import ProductButtonSpec
 from custom_components.adjustable_bed.beds.rmcontrol.protocol import Notification
 from custom_components.adjustable_bed.beds.rmcontrol.services import (
     ALARM_SCHEMA,

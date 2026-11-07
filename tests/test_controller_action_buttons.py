@@ -8,8 +8,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry, MockEntityPlatform
 
-from custom_components.adjustable_bed.beds.base import (
-    BedController,
+from custom_components.adjustable_bed.beds.base import BedController
+from custom_components.adjustable_bed.beds.entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ProductButtonSpec,

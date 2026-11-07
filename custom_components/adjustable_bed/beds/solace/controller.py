@@ -26,13 +26,13 @@ from ...profiles.ff_frame import (
     solace_query_family,
 )
 from ...state_keys import LIGHT_LEVEL
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
-from ..builder import BuildContext
 
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator

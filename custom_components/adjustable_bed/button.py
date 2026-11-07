@@ -15,7 +15,8 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import UndefinedType
 
-from .beds.base import CONTROLLER_GESTURE_RELEASE, ProductButtonSpec
+from .beds.base import CONTROLLER_GESTURE_RELEASE
+from .beds.entity_specs import ProductButtonSpec
 from .beds.limoss.remote_state import LIMOSS_REMOTE_MEMORY_NAMES
 from .beds.octo.runtime import octo_controller
 from .beds.remacro.discovery import remacro_side_lacks_global_stop
@@ -58,12 +59,8 @@ from .position_estimate import (
 from .position_estimate_entities import async_setup_estimate_buttons
 
 if TYPE_CHECKING:
-    from .beds.base import (
-        BedController,
-        ControllerButtonSpec,
-        ControllerMotorHoldSpec,
-        MotorControlSpec,
-    )
+    from .beds.base import BedController
+    from .beds.entity_specs import ControllerButtonSpec, ControllerMotorHoldSpec, MotorControlSpec
     from .coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)

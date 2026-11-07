@@ -42,15 +42,15 @@ from ...profiles.logicdata import (
     TransportChoice,
 )
 from ...state_keys import UNDER_BED_LIGHTS_ON, massage_intensity
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
 )
-from ..builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak import BleakClient

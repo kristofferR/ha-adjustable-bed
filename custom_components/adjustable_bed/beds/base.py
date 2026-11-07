@@ -8,29 +8,21 @@ command encoding and position reading.
 from __future__ import annotations
 
 import asyncio
-import inspect
 import logging
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from collections.abc import (
-    Awaitable,
     Callable,
-    Coroutine,
     Iterator,
     Mapping,
     Sequence,
 )
 from contextlib import contextmanager
 from contextvars import ContextVar
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Final, Literal
+from typing import TYPE_CHECKING, Any, Final
 
 from bleak import BleakClient
-from bleak.exc import BleakError
 
 if TYPE_CHECKING:
-
-    from bleak.backends.characteristic import BleakGATTCharacteristic
-
     from ..command_scheduler import StreamMember
     from ..coordinator import AdjustableBedCoordinator
 
@@ -41,256 +33,32 @@ from ..alarm_table import (
     WeeklyAlarmRecord as WeeklyAlarmRecord,
 )
 from ..bed_traits import BedTraits
-from ..card import CARD_HIDDEN, CARD_UTILITY, CardPlacement
 from ..command_scheduler import current_command_context
 from ..controller_state import (
-    AnyStateKey,
     StateKey,
     StateUpdate,
 )
-from ..diagnostic_payloads import format_payload
 from ..execution import HOLD_CEILING_MS, NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ..position_seek import PositionSeekPolicy
+from .entity_specs import (
+    POSITION_UNIT_DEGREES,
+    ControllerButtonSpec,
+    ControllerHoldSpec,
+    ControllerNumberSpec,
+    ControllerSelectSpec,
+    ControllerStateBinarySensorSpec,
+    ControllerStateSensorSpec,
+    MotorCommandCallable,
+    MotorControlSpec,
+    PositionNumberSpec,
+    build_position_number_spec,
+)
+from .gatt_write import GattWriter
 from .lifecycle import CapabilitySnapshotPolicy, ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 
 CONTROLLER_GESTURE_RELEASE: ContextVar[bool] = ContextVar("controller_gesture_release", default=False)
-
-MotorCommandCallable = Callable[["BedController"], Coroutine[Any, Any, None]]
-
-
-@dataclass(frozen=True, slots=True)
-class ControllerButtonSpec:
-    """An app-labelled action whose physical semantics need no inferred axis."""
-
-    key: str
-    name: str
-    press_fn: MotorCommandCallable
-    icon: str = "mdi:gesture-tap"
-    translation_key: str | None = None
-    cancel_movement: bool = field(default=True, kw_only=True)
-    scheduler_resource: str | None = field(default=None, kw_only=True)
-    hold: ControllerHoldSpec | None = field(default=None, kw_only=True)
-    # Cancel held admission; only the held task owns its protocol release frame.
-    release_only: bool = field(default=False, kw_only=True)
-    # Fills a translated name template, e.g. ``{action}``, with an app label.
-    translation_placeholders: Mapping[str, str] | None = field(default=None, kw_only=True)
-    card: CardPlacement = field(default=CARD_UTILITY, kw_only=True)
-
-
-@dataclass(frozen=True, slots=True)
-class ControllerSelectSpec:
-    """An immutable controller-declared option control backed by published state."""
-
-    key: str
-    translation_key: str
-    state_key: StateKey[str | None]
-    options: tuple[str, ...]
-    select_fn: Callable[[BedController, str], Awaitable[None]]
-    # An app-local choice that sends no frame: applied without connecting.
-    local_select_fn: Callable[[str], None] | None = field(default=None, kw_only=True)
-    card: CardPlacement = field(default=CARD_UTILITY, kw_only=True)
-
-
-@dataclass(frozen=True, slots=True)
-class ControllerNumberSpec:
-    """An immutable controller-declared numeric control backed by published state."""
-
-    key: str
-    translation_key: str
-    state_key: StateKey[int | None] | StateKey[float | None]
-    native_min_value: float
-    native_max_value: float
-    native_step: float
-    set_fn: Callable[[BedController, float], Awaitable[None]]
-    native_unit_of_measurement: str | None = None
-    card: CardPlacement = field(default=CARD_UTILITY, kw_only=True)
-
-
-@dataclass(frozen=True, slots=True)
-class ProductButtonSpec(ControllerButtonSpec):
-    """An optional product action with its own entity namespace."""
-
-    icon: str = "mdi:gesture-tap-button"
-    entity_registry_enabled_default: bool = False
-    card: CardPlacement = field(default=CARD_HIDDEN, kw_only=True)
-
-
-@dataclass(frozen=True, slots=True)
-class ControllerActionSpec:
-    """One ordered app action, including duplicate or arbitrary labels."""
-
-    row_index: int
-    name: str
-    category: str
-    duration_ms: int = 0
-    frequency_ms: int = 0
-
-
-@dataclass(frozen=True, slots=True)
-class ControllerHoldSpec:
-    """Timing around a controller-owned held action."""
-
-    control: str
-    start_delay_ms: int = 0
-    release_delay_ms: int = 0
-    release_button_key: str | None = None
-
-    def __post_init__(self) -> None:
-        _validate_hold_metadata(self.control, self.start_delay_ms, self.release_delay_ms)
-
-
-@dataclass(frozen=True, slots=True)
-class ControllerMotorHoldSpec:
-    """Direction-specific controls for a bounded motor hold."""
-
-    up_control: str
-    down_control: str
-    start_delay_ms: int = 0
-    release_delay_ms: int = 0
-    release_button_key: str | None = None
-    stop_scope: Literal["motor", "side"] = field(default="motor", kw_only=True)
-    # A cover or button press holds the control this long. None keeps the
-    # plain motor route: the metadata then only describes the card's gesture.
-    press_hold_ms: int | None = field(default=1000, kw_only=True)
-    # The controller's hold prepares the motor and times the press itself, so a
-    # press skips movement preparation and the card's start/release delays.
-    press_is_native: bool = field(default=False, kw_only=True)
-
-    def __post_init__(self) -> None:
-        _validate_hold_metadata(self.up_control, self.start_delay_ms, self.release_delay_ms)
-        _validate_hold_metadata(self.down_control, self.start_delay_ms, self.release_delay_ms)
-
-
-def _validate_hold_metadata(control: str, start_delay_ms: int, release_delay_ms: int) -> None:
-    if not isinstance(control, str) or not control:
-        raise ValueError("Held control names must be non-empty strings")
-    for name, delay in (
-        ("start_delay_ms", start_delay_ms),
-        ("release_delay_ms", release_delay_ms),
-    ):
-        if isinstance(delay, bool) or not isinstance(delay, int) or delay < 0:
-            raise ValueError(f"{name} must be a non-negative integer")
-
-
-@dataclass(frozen=True, slots=True)
-class MotorControlSpec:
-    """Describes a motor control surface exposed by a controller."""
-
-    key: str
-    translation_key: str
-    open_fn: MotorCommandCallable
-    close_fn: MotorCommandCallable
-    stop_fn: MotorCommandCallable
-    position_key: str | None = None
-    max_angle: float = 68
-    scheduler_resource: str | None = None
-    hold: ControllerMotorHoldSpec | None = field(default=None, kw_only=True)
-
-
-# Units a position slider can be scaled in.
-POSITION_UNIT_PERCENT: Final = "%"
-POSITION_UNIT_DEGREES: Final = "°"
-
-
-@dataclass(frozen=True, slots=True)
-class PositionNumberSpec:
-    """Describes a position slider the controller exposes.
-
-    Distinct from MotorControlSpec, which is about *movement* (and drives the
-    cover entities): this describes a numeric position the bed can be told to
-    seek. Values are fully resolved by the controller -- ``native_max_value``
-    already accounts for the user's angle calibration where that applies -- so
-    the number platform renders these without knowing any bed types.
-
-    ``key`` names the entity while ``position_key`` names the axis to read from
-    ``coordinator.position_data``; they differ on beds whose remote labels a
-    motor differently from the axis its firmware reports (e.g. Keeson exposes
-    "head" but reports it as "back").
-    """
-
-    key: str
-    translation_key: str
-    position_key: str
-    icon: str
-    native_max_value: float
-    native_unit_of_measurement: str
-    open_fn: MotorCommandCallable
-    close_fn: MotorCommandCallable
-    stop_fn: MotorCommandCallable
-    # The motor (its cover's translation key) the slider sits with in the card.
-    motor: str = field(kw_only=True)
-
-
-@dataclass(frozen=True, slots=True)
-class ControllerStateSensorSpec:
-    """Describe a diagnostic sensor backed by coordinator controller state."""
-
-    key: str
-    translation_key: str
-    state_key: AnyStateKey
-    icon: str
-    native_unit_of_measurement: str | None = None
-    attribute_keys: tuple[AnyStateKey, ...] = ()
-    entity_registry_enabled_default: bool = True
-    suggested_display_precision: int | None = None
-    # Controller state is diagnostic; the card shows only what a spec places.
-    card: CardPlacement = field(default=CARD_HIDDEN, kw_only=True)
-
-
-@dataclass(frozen=True, slots=True)
-class ControllerStateBinarySensorSpec:
-    """Describe a binary diagnostic backed by coordinator controller state."""
-
-    key: str
-    translation_key: str
-    state_key: AnyStateKey
-    icon: str
-    attribute_keys: tuple[AnyStateKey, ...] = ()
-    entity_registry_enabled_default: bool = True
-    card: CardPlacement = field(default=CARD_HIDDEN, kw_only=True)
-
-
-# Movement commands for the four standard position axes, so controllers can
-# build sliders without restating the lambdas.
-POSITION_AXIS_COMMANDS: Final[
-    dict[str, tuple[MotorCommandCallable, MotorCommandCallable, MotorCommandCallable]]
-] = {
-    "back": (
-        lambda ctrl: ctrl.move_back_up(),
-        lambda ctrl: ctrl.move_back_down(),
-        lambda ctrl: ctrl.move_back_stop(),
-    ),
-    "legs": (
-        lambda ctrl: ctrl.move_legs_up(),
-        lambda ctrl: ctrl.move_legs_down(),
-        lambda ctrl: ctrl.move_legs_stop(),
-    ),
-    "head": (
-        lambda ctrl: ctrl.move_head_up(),
-        lambda ctrl: ctrl.move_head_down(),
-        lambda ctrl: ctrl.move_head_stop(),
-    ),
-    "feet": (
-        lambda ctrl: ctrl.move_feet_up(),
-        lambda ctrl: ctrl.move_feet_down(),
-        lambda ctrl: ctrl.move_feet_stop(),
-    ),
-    "lumbar": (
-        lambda ctrl: ctrl.move_lumbar_up(),
-        lambda ctrl: ctrl.move_lumbar_down(),
-        lambda ctrl: ctrl.move_lumbar_stop(),
-    ),
-}
-
-POSITION_AXIS_ICONS: Final[dict[str, str]] = {
-    "back": "mdi:human-handsup",
-    "legs": "mdi:human-handsdown",
-    "head": "mdi:head",
-    "feet": "mdi:foot-print",
-    "lumbar": "mdi:human-handsup",
-}
 
 # The standard motor layout: axis -> motor_count needed before it is exposed.
 _STANDARD_POSITION_AXES: Final[tuple[tuple[str, int], ...]] = (
@@ -301,37 +69,7 @@ _STANDARD_POSITION_AXES: Final[tuple[tuple[str, int], ...]] = (
 )
 
 
-def build_position_number_spec(
-    axis: str,
-    *,
-    max_value: float,
-    unit: str,
-    position_key: str | None = None,
-    key: str | None = None,
-    icon: str | None = None,
-) -> PositionNumberSpec:
-    """Build a slider for ``axis`` using that axis's standard commands and icon.
-
-    ``position_key`` defaults to ``axis``; override it when the firmware reports
-    the axis under a different name. ``key`` defaults to ``f"{axis}_position"``.
-    """
-    open_fn, close_fn, stop_fn = POSITION_AXIS_COMMANDS[axis]
-    entity_key = key or f"{axis}_position"
-    return PositionNumberSpec(
-        key=entity_key,
-        translation_key=entity_key,
-        position_key=position_key or axis,
-        icon=icon or POSITION_AXIS_ICONS.get(axis, "mdi:bed-outline"),
-        native_max_value=max_value,
-        native_unit_of_measurement=unit,
-        open_fn=open_fn,
-        close_fn=close_fn,
-        stop_fn=stop_fn,
-        motor=axis,
-    )
-
-
-class BedController(ABC):
+class BedController(GattWriter):
     """Abstract base class for bed controllers.
 
     Subclasses must implement:
@@ -678,191 +416,6 @@ class BedController(ABC):
 
         This is the BLE characteristic that accepts motor/preset commands.
         """
-
-    def _format_command_trace_payload(self, command: bytes) -> dict[str, Any] | None:
-        """Return a safe diagnostic representation of a command."""
-        return format_payload(command)
-
-    def _record_command_trace(
-        self,
-        char_uuid: str,
-        command: bytes,
-        *,
-        response: bool,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 0,
-        command_origin: str | None = None,
-        characteristic: BleakGATTCharacteristic | None = None,
-    ) -> None:
-        """Record a write for support bundles.
-
-        ``_write_gatt_with_retry`` calls this itself. A controller with its own
-        write loop calls it once per run of identical writes; the origin then
-        defaults to the function that called that write method.
-        """
-        payload = self._format_command_trace_payload(command)
-        if payload is None:
-            return
-        if command_origin is None:
-            frame = inspect.currentframe()
-            caller = frame.f_back.f_back if frame and frame.f_back else None
-            command_origin = caller.f_code.co_name if caller else None
-        handle: int | None = getattr(characteristic, "handle", None)
-        client = self.client
-        if characteristic is None and client is not None and client.services:
-            for service in client.services:
-                for discovered in service.characteristics:
-                    if discovered.uuid == char_uuid:
-                        handle = getattr(discovered, "handle", None)
-                        break
-                if handle is not None:
-                    break
-        self._coordinator.record_command_trace(
-            payload=payload,
-            characteristic_uuid=char_uuid,
-            characteristic_handle=handle,
-            response=response,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            command_origin=command_origin,
-            controller_class=type(self).__name__,
-        )
-
-    async def _write_gatt_with_retry(
-        self,
-        char_uuid: str,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-        response: bool = True,
-        log_errors: bool = True,
-        wall_clock_pacing: bool = False,
-        on_write: Callable[[], None] | None = None,
-        characteristic: BleakGATTCharacteristic | None = None,
-        expected_client: BleakClient | None = None,
-    ) -> None:
-        """Write a command to a GATT characteristic with retry support.
-
-        This is a helper method that handles the common pattern of:
-        - Checking connection state
-        - Writing to a characteristic with optional response
-        - Repeating the command with delays
-        - Checking for cancellation between writes
-
-        Args:
-            char_uuid: The characteristic UUID to write to
-            command: The command bytes to send
-            repeat_count: Number of times to repeat the command (default: 1)
-            repeat_delay_ms: Delay between repeats in milliseconds (default: 100)
-            cancel_event: Optional event that signals cancellation. If set,
-                         the command loop will exit early.
-            response: Whether to wait for a write response from the device.
-                     True = write-with-response (more reliable, slower) [default]
-                     False = write-without-response (faster, less reliable)
-            log_errors: Whether to log BleakError failures at ERROR level.
-                     Set to False for callers that recover from expected errors
-                     (e.g. Linak's post-connect auth-window probes).
-            wall_clock_pacing: Measure the repeat interval from the start of each
-                     write, so BLE round-trip time is absorbed into the interval
-                     instead of added to it.
-            on_write: Called synchronously after each successful GATT write,
-                     before any repeat delay or cancellation can interrupt it.
-            characteristic: Exact discovered destination when duplicate UUIDs
-                     require a particular characteristic instance.
-            expected_client: Optional connection identity checked after acquiring
-                     the BLE lock, so queued writes cannot migrate on reconnect.
-
-        Raises:
-            ConnectionError: If not connected to the bed
-            BleakError: If the GATT write fails
-        """
-        client = self.client
-        if client is None or not client.is_connected:
-            _LOGGER.error("Cannot write command: BLE client not connected")
-            raise ConnectionError("Not connected to bed")
-
-        effective_cancel = cancel_event or self._coordinator.cancel_command
-        payload = self._format_command_trace_payload(command)
-        logged_command = str(payload.get("hex", "**REDACTED**")) if payload else "**REDACTED**"
-
-        _LOGGER.debug(
-            "GATT write to %s (%s): %s (response=%s, repeat=%d, delay=%dms, wall_clock_pacing=%s)",
-            self._coordinator.address,
-            char_uuid,
-            logged_command,
-            response,
-            repeat_count,
-            repeat_delay_ms,
-            wall_clock_pacing,
-        )
-
-        caller_frame = inspect.currentframe()
-        command_origin = None
-        if caller_frame is not None and caller_frame.f_back is not None:
-            command_origin = caller_frame.f_back.f_code.co_name
-
-        self._record_command_trace(
-            char_uuid,
-            command,
-            response=response,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            command_origin=command_origin,
-            characteristic=characteristic,
-        )
-
-        for i in range(repeat_count):
-            if effective_cancel is not None and effective_cancel.is_set():
-                _LOGGER.debug("Command cancelled after %d/%d writes", i, repeat_count)
-                return
-
-            write_started: float | None = None
-            try:
-                # Acquire BLE lock for each individual write to prevent conflicts
-                # with concurrent position reads during movement
-                async with self._ble_lock:
-                    # A read may have held this lane while STOP invalidated the
-                    # movement. Do not send a stale write or acknowledge a no-op.
-                    if effective_cancel is not None and effective_cancel.is_set():
-                        return
-                    client = self.client
-                    if expected_client is not None and client is not expected_client:
-                        raise ConnectionError("Command belongs to a previous BLE connection")
-                    if client is None or not client.is_connected:
-                        _LOGGER.error("Cannot write command: BLE client disconnected during write")
-                        raise ConnectionError("Not connected to bed")
-                    if wall_clock_pacing:
-                        write_started = asyncio.get_running_loop().time()
-                    await client.write_gatt_char(
-                        characteristic if characteristic is not None else char_uuid,
-                        command,
-                        response=response,
-                    )
-                    if on_write is not None:
-                        on_write()
-            except BleakError:
-                if log_errors:
-                    _LOGGER.exception(
-                        "Failed to write command %s to %s",
-                        logged_command,
-                        char_uuid,
-                    )
-                else:
-                    _LOGGER.debug(
-                        "Suppressed write failure for %s to %s",
-                        logged_command,
-                        char_uuid,
-                        exc_info=True,
-                    )
-                raise
-
-            if i < repeat_count - 1:
-                delay_seconds = repeat_delay_ms / 1000
-                if write_started is not None:
-                    delay_seconds -= asyncio.get_running_loop().time() - write_started
-                if delay_seconds > 0:
-                    await asyncio.sleep(delay_seconds)
 
     async def write_command(
         self,

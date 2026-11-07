@@ -20,18 +20,17 @@ from ...const import CONF_FURNIMOVE_REMOTE
 from ...controller_state import StateKey, StateUpdate
 from ...execution import ExecutionCapabilities
 from ...state_keys import massage_intensity
-from ..base import (
+from ..base import BedController, require_controller
+from ..builder import BuildContext
+from ..entity_specs import (
     POSITION_AXIS_COMMANDS,
-    BedController,
     ControllerActionSpec,
     ControllerButtonSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
-    require_controller,
 )
-from ..builder import BuildContext
 from .profiles import FurniMoveAction, get_furnimove_profile
 
 if TYPE_CHECKING:

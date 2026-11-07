@@ -22,17 +22,16 @@ from ...const import (
 )
 from ...controller_state import StateKey
 from ...profiles.ff_frame import MOTION_BED, MotionBedProfile
-from ..base import (
-    BedController,
+from ..base import BedController, require_controller
+from ..builder import BuildContext
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerSelectSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
-    require_controller,
 )
-from ..builder import BuildContext
 from .actions import ACTION_BY_KEY, MOTION_BED_ACTIONS, MotionBedAction
 from .models import MotionBedSelection
 from .protocol import SOURCE_COMMANDS, build_clock, build_thermal_clock

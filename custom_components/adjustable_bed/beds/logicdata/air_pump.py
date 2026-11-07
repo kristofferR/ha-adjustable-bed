@@ -16,8 +16,8 @@ from typing import TYPE_CHECKING, Final, cast
 
 from ...card import CARD_FIRMNESS
 from ...controller_state import StateKey
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,

@@ -38,12 +38,8 @@ from homeassistant.util import dt as dt_util
 
 from .alarm_table import AlarmTableSchedule, OneTimeAlarmRecord, WeeklyAlarmRecord
 from .bed_traits import bed_type_has_position_feedback
-from .beds.base import (
-    POSITION_UNIT_DEGREES,
-    POSITION_UNIT_PERCENT,
-    BedController,
-    controller_as,
-)
+from .beds.base import BedController, controller_as
+from .beds.entity_specs import POSITION_UNIT_DEGREES, POSITION_UNIT_PERCENT
 from .command_scheduler import (
     ALL_COMMAND_RESOURCES,
     HoldClaim,
@@ -92,7 +88,7 @@ from .position_estimate import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import ControllerMotorHoldSpec
+    from .beds.entity_specs import ControllerMotorHoldSpec
     from .beds.limoss.remote import LimossRemoteController
     from .beds.svane.controller import SvaneHoldAdmission
 

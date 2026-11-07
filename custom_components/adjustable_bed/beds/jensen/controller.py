@@ -34,13 +34,9 @@ from ...state_keys import (
     massage_active,
     massage_intensity,
 )
-from ..base import (
-    POSITION_UNIT_PERCENT,
-    BedController,
-    PositionNumberSpec,
-    build_position_number_spec,
-)
+from ..base import BedController
 from ..builder import BuildContext
+from ..entity_specs import POSITION_UNIT_PERCENT, PositionNumberSpec, build_position_number_spec
 from ..lifecycle import CapabilitySnapshotPolicy
 
 if TYPE_CHECKING:

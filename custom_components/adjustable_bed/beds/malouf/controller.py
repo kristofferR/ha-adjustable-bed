@@ -35,7 +35,8 @@ from ...const import (
 )
 from ...profiles import keeson as keeson_profiles
 from ...profiles.malouf import NEW_OKIN
-from ..base import BedController, MotorControlSpec
+from ..base import BedController
+from ..entity_specs import MotorControlSpec
 
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator

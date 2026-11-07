@@ -14,7 +14,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
 from custom_components.adjustable_bed import position_estimate as pe
-from custom_components.adjustable_bed.beds.base import ControllerMotorHoldSpec
+from custom_components.adjustable_bed.beds.entity_specs import ControllerMotorHoldSpec
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.position_estimate import (
     EstimateReason,

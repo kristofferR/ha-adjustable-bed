@@ -219,7 +219,10 @@ async def test_real_entity_projection_matches_card_fixture(hass):
 
 
 async def test_standalone_controller_action_preserves_flat_hold_contract(hass):
-    from custom_components.adjustable_bed.beds.base import ControllerButtonSpec, ControllerHoldSpec
+    from custom_components.adjustable_bed.beds.entity_specs import (
+        ControllerButtonSpec,
+        ControllerHoldSpec,
+    )
     from custom_components.adjustable_bed.button import ControllerActionButton
 
     child, controller = make_child(hass, 3)

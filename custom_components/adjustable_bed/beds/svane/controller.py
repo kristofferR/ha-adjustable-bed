@@ -26,15 +26,15 @@ from ...controller_state import StateKey
 from ...execution import ExecutionCapabilities
 from ...profiles.jmc import SVANE_REMOTE
 from ...state_keys import LIGHT_LEVEL, UNDER_BED_LIGHTS_ON
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
     PositionNumberSpec,
 )
-from ..builder import BuildContext
 from .state import SvaneProfile, SvaneSession, integer
 
 if TYPE_CHECKING:

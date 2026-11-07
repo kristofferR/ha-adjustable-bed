@@ -26,15 +26,15 @@ from ...const import REVERIE_BACK_MAX_ANGLE, REVERIE_CHAR_UUID
 from ...controller_state import StateKey
 from ...execution import ExecutionCapabilities
 from ...state_keys import massage_intensity
-from ..base import (
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     POSITION_UNIT_DEGREES,
-    BedController,
     ControllerMotorHoldSpec,
     MotorControlSpec,
     PositionNumberSpec,
     build_position_number_spec,
 )
-from ..builder import BuildContext
 from .comfort import (
     ReverieComfortActions,
     ReverieComfortRequest,

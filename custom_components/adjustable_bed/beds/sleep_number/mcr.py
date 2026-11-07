@@ -34,14 +34,14 @@ from ...state_keys import (
     SLEEP_NUMBER,
     UNDER_BED_LIGHTS_ON,
 )
-from ..base import (
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     POSITION_UNIT_PERCENT,
-    BedController,
     MotorCommandCallable,
     MotorControlSpec,
     PositionNumberSpec,
 )
-from ..builder import BuildContext
 from .commands import SleepNumberActions
 from .mcr_protocol import (
     FoundationFeatures,

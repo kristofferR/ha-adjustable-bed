@@ -35,8 +35,9 @@ from ...const import CONF_BLE_DEVICE_NAME, RICHMAT_MH_APPS, RUF_RICHMAT_APPS, VA
 from ...controller_state import StateKey, StateUpdate
 from ...detection import is_mac_like_name
 from ...profiles.richmat import RICHMAT_MH
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerNumberSpec,
     ControllerSelectSpec,
@@ -45,7 +46,6 @@ from ..base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
-from ..builder import BuildContext
 from ..ruf_richmat.models import MODEL_IDS as RUF_RICHMAT_MODEL_IDS
 from .models import RICHMAT_MH_MODEL_CHOICES
 from .protocol import (

@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Final
 from ...card import CARD_MASSAGE, CARD_UTILITY, CardPlacement, CardRole, CardSection
 from ...codec import richmat as codec
 from ...controller_state import StateKey, StateUpdate
-from ..base import (
+from ..entity_specs import (
     ControllerNumberSpec,
     ControllerSelectSpec,
     ControllerStateSensorSpec,

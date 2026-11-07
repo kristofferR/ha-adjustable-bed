@@ -22,8 +22,8 @@ from ...const import RICHMAT_PROTOCOL_SINGLE, RICHMAT_PROTOCOL_WILINKE, RichmatF
 from ...controller_state import StateKey
 from ...execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ...state_keys import LIGHT_TIMER_OPTION, UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..entity_specs import (
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,

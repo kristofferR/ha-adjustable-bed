@@ -17,14 +17,14 @@ from homeassistant.util import dt as dt_util
 from ...card import CARD_UTILITY
 from ...const import CONF_GMMOTOR_SIDE, CONF_PRODUCT_TYPE
 from ...controller_state import StateKey
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
-from ..builder import BuildContext
 from .catalog_types import Phase
 from .notifications import Event, Value, common, desk21, extra
 from .profiles import Action, load_profile

@@ -25,14 +25,14 @@ from ...const import (
 )
 from ...controller_state import StateKey
 from ...profiles.limoss import LIMOSS_REMOTE, REMOTE_CHANNELS, REMOTE_THEMES
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
 )
-from ..builder import BuildContext
 from .remote_protocol import (
     APP_SEQUENCE,
     LimossRemoteCapabilities,

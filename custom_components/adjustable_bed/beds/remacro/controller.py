@@ -27,15 +27,15 @@ from ...card import CARD_LIGHT_LEVEL, CARD_LIGHTING, CardPlacement, CardSection
 from ...const import CONF_REMACRO_MODEL, REMACRO_READ_CHAR_UUID, REMACRO_WRITE_CHAR_UUID
 from ...controller_state import StateKey, StateUpdate
 from ...execution import ExecutionCapabilities
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerNumberSpec,
     ControllerSelectSpec,
     MotorCommandCallable,
     MotorControlSpec,
 )
-from ..builder import BuildContext
 from .protocol import (
     APP_JEROMES,
     APP_LED_SETTINGS_MODEL_IDS,

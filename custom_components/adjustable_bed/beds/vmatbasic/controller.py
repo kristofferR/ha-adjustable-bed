@@ -30,17 +30,16 @@ from ...const import (
 from ...controller_state import StateKey
 from ...execution import ExecutionCapabilities
 from ...profiles import vmatbasic as vmat_profiles
-from ..base import (
-    BedController,
+from ..base import BedController, require_controller
+from ..builder import BuildContext
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerNumberSpec,
     ControllerSelectSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
-    require_controller,
 )
-from ..builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak import BleakClient

@@ -14,8 +14,9 @@ from ...controller_state import StateKey
 from ...execution import ExecutionCapabilities
 from ...profiles.okin_nframe import ESHINE_PROFILES, ESHINE_REFRESH_MS
 from ...state_keys import UNDER_BED_LIGHTS_ON
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
@@ -23,7 +24,6 @@ from ..base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
-from ..builder import BuildContext
 from .protocol import (
     ALARM_TYPES,
     COMMANDS,

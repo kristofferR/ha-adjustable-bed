@@ -64,9 +64,10 @@ from ...profiles.vibradorm import (
     vibradorm_app_metadata_key,
 )
 from ...state_keys import LIGHT_LEVEL, LIGHT_TIMER_OPTION
-from ..base import (
+from ..base import BedController, require_controller
+from ..builder import BuildContext
+from ..entity_specs import (
     POSITION_AXIS_COMMANDS,
-    BedController,
     ControllerButtonSpec,
     ControllerNumberSpec,
     ControllerSelectSpec,
@@ -74,9 +75,7 @@ from ..base import (
     MotorCommandCallable,
     MotorControlSpec,
     PositionNumberSpec,
-    require_controller,
 )
-from ..builder import BuildContext
 from .app_state import (
     VibradormAppFloorIntent,
     VibradormAppMassageIntent,

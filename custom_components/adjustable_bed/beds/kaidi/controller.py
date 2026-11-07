@@ -47,13 +47,9 @@ from ...profiles.kaidi import (
     KaidiProductFamily,
 )
 from ...state_keys import MASSAGE_TIMER_MINUTES
-from ..base import (
-    POSITION_UNIT_PERCENT,
-    BedController,
-    PositionNumberSpec,
-    build_position_number_spec,
-)
+from ..base import BedController
 from ..builder import BuildContext
+from ..entity_specs import POSITION_UNIT_PERCENT, PositionNumberSpec, build_position_number_spec
 from .protocol import extract_kaidi_advertisement
 
 if TYPE_CHECKING:

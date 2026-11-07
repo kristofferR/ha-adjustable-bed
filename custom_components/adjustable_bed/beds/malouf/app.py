@@ -26,14 +26,14 @@ from ...const import (
 from ...controller_state import StateKey, StateUpdate
 from ...profiles.malouf import APP_PROFILES, MALOUF_APP_MODELS, Route
 from ...state_keys import UNDER_BED_LIGHTS_ON
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
 )
-from ..builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak import BleakClient

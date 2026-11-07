@@ -23,13 +23,9 @@ from ...const import (
 )
 from ...controller_state import StateKey
 from ...profiles.richmat import LP_LEGACY
-from ..base import (
-    BedController,
-    ControllerButtonSpec,
-    ControllerStateSensorSpec,
-    MotorCommandCallable,
-)
+from ..base import BedController
 from ..builder import BuildContext
+from ..entity_specs import ControllerButtonSpec, ControllerStateSensorSpec, MotorCommandCallable
 from .lp_legacy_profiles import LpLegacyAction, LpLegacyControl, get_lp_legacy_profile
 
 if TYPE_CHECKING:

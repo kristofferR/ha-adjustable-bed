@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds.base import MotorControlSpec
+from custom_components.adjustable_bed.beds.entity_specs import MotorControlSpec
 from custom_components.adjustable_bed.button import PairedBedCombinedMotorButton
 from custom_components.adjustable_bed.const import SIDE_LEFT, SIDE_RIGHT
 from custom_components.adjustable_bed.cover import (

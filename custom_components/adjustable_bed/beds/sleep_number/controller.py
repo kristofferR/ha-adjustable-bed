@@ -54,14 +54,14 @@ from ...state_keys import (
     THERMAL_TIMER_OPTION,
     UNDER_BED_LIGHTS_ON,
 )
-from ..base import (
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     POSITION_UNIT_PERCENT,
-    BedController,
     MotorControlSpec,
     PositionNumberSpec,
     build_position_number_spec,
 )
-from ..builder import BuildContext
 from .auth import async_read_sleep_number_session
 from .commands import (
     COMMANDS,

@@ -49,8 +49,9 @@ from ..profiles.okin_nframe import (
     OkinNFrameProfile,
     Tap,
 )
-from .base import BedController, ControllerStateBinarySensorSpec, MotorControlSpec
+from .base import BedController
 from .builder import BuildContext
+from .entity_specs import ControllerStateBinarySensorSpec, MotorControlSpec
 from .furnimove.repair import CONF_OKIMAT_MODEL_ON_CST, async_refresh_furnimove_layout_issues
 
 if TYPE_CHECKING:

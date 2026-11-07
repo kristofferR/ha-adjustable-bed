@@ -52,8 +52,9 @@ from ...state_keys import (
     UNDER_BED_LIGHTS_RGB,
     UNDER_BED_LIGHTS_RGBW,
 )
-from ..base import (
-    BedController,
+from ..base import BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
@@ -61,7 +62,6 @@ from ..base import (
     ControllerSelectSpec,
     MotorControlSpec,
 )
-from ..builder import BuildContext
 from ..lifecycle import CapabilitySnapshotPolicy
 
 if TYPE_CHECKING:

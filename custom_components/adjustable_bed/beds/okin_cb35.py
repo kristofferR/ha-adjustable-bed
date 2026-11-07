@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING
 from bleak.exc import BleakError
 
 from ..profiles.okin_5a import OKIN_CB35
-from .base import MotorControlSpec
+from .entity_specs import MotorControlSpec
 from .okin_7byte import Okin7ByteController
 
 if TYPE_CHECKING:

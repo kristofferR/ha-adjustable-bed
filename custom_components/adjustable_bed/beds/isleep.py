@@ -20,7 +20,8 @@ from ..controller_state import StateUpdate, sided
 from ..execution import ExecutionCapabilities
 from ..profiles.kaidi import isleep_advertisement, validate_isleep_profile
 from ..state_keys import MASSAGE_TIMER_MINUTES, massage_intensity
-from .base import BedController, ControllerButtonSpec, MotorControlSpec
+from .base import BedController
+from .entity_specs import ControllerButtonSpec, MotorControlSpec
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator

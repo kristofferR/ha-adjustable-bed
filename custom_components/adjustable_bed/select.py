@@ -14,7 +14,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ServiceValidationError
 
-from .beds.base import ControllerSelectSpec
+from .beds.entity_specs import ControllerSelectSpec
 from .beds.octo.runtime import octo_controller
 from .card import CARD_CLIMATE, CARD_LIGHTING, CARD_MASSAGE_TIMER, CardPlacement
 from .const import (

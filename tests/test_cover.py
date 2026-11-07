@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds.base import (
+from custom_components.adjustable_bed.beds.entity_specs import (
     ControllerMotorHoldSpec,
     MotorControlSpec,
 )

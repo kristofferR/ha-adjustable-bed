@@ -21,16 +21,15 @@ from ...command_scheduler import CommandContext, current_command_context
 from ...controller_state import StateKey
 from ...execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ...profiles.richmat import GOODVIBE
-from ..base import (
-    CONTROLLER_GESTURE_RELEASE,
-    BedController,
+from ..base import CONTROLLER_GESTURE_RELEASE, BedController
+from ..builder import BuildContext
+from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerNumberSpec,
     ControllerSelectSpec,
     ControllerStateSensorSpec,
 )
-from ..builder import BuildContext
 from . import protocol as p
 from .catalog import ACTION_EXPANSIONS, ACTIONS, PRODUCTS, Action
 from .receive import Notifications

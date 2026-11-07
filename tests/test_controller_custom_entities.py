@@ -9,12 +9,12 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.base import (
+from custom_components.adjustable_bed.beds.diagnostic import DiagnosticBedController
+from custom_components.adjustable_bed.beds.entity_specs import (
     ControllerNumberSpec,
     ControllerSelectSpec,
     build_position_number_spec,
 )
-from custom_components.adjustable_bed.beds.diagnostic import DiagnosticBedController
 from custom_components.adjustable_bed.const import BED_TYPE_DIAGNOSTIC, CONF_BED_TYPE, DOMAIN
 from custom_components.adjustable_bed.entity_sweep import async_sweep_after_setup
 from custom_components.adjustable_bed.number import (

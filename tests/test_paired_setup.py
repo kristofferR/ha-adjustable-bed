@@ -3394,7 +3394,7 @@ class TestSideServiceRouting:
         from types import SimpleNamespace
         from unittest.mock import MagicMock
 
-        from custom_components.adjustable_bed.beds.base import MotorControlSpec
+        from custom_components.adjustable_bed.beds.entity_specs import MotorControlSpec
         from custom_components.adjustable_bed.button import (
             PairedBedCombinedMotorButton,
             _combined_motor_buttons_for,
@@ -3473,7 +3473,7 @@ class TestSideServiceRouting:
         from types import SimpleNamespace
         from unittest.mock import MagicMock
 
-        from custom_components.adjustable_bed.beds.base import (
+        from custom_components.adjustable_bed.beds.entity_specs import (
             ControllerMotorHoldSpec,
             MotorControlSpec,
         )
@@ -3736,7 +3736,7 @@ class TestPairedReceiverSettings:
         from types import SimpleNamespace
         from unittest.mock import MagicMock
 
-        from custom_components.adjustable_bed.beds.base import (
+        from custom_components.adjustable_bed.beds.entity_specs import (
             ControllerMotorHoldSpec,
             MotorControlSpec,
         )
@@ -3778,7 +3778,7 @@ class TestPairedReceiverSettings:
         from types import SimpleNamespace
         from unittest.mock import MagicMock
 
-        from custom_components.adjustable_bed.beds.base import MotorControlSpec
+        from custom_components.adjustable_bed.beds.entity_specs import MotorControlSpec
         from custom_components.adjustable_bed.button import PairedBedCombinedMotorButton
 
         spec = MotorControlSpec(motor, motor, AsyncMock(), AsyncMock(), AsyncMock())
@@ -3928,7 +3928,7 @@ class TestCombinedPositionSliders:
     def test_builder_intersects_side_specs_and_needs_both_capability_sources(self):
         from unittest.mock import MagicMock
 
-        from custom_components.adjustable_bed.beds.base import build_position_number_spec
+        from custom_components.adjustable_bed.beds.entity_specs import build_position_number_spec
         from custom_components.adjustable_bed.number import (
             _combined_position_entities_for,
         )
@@ -3974,7 +3974,7 @@ class TestCombinedPositionSliders:
         from types import SimpleNamespace
         from unittest.mock import AsyncMock, MagicMock
 
-        from custom_components.adjustable_bed.beds.base import build_position_number_spec
+        from custom_components.adjustable_bed.beds.entity_specs import build_position_number_spec
         from custom_components.adjustable_bed.number import (
             PairedBedCombinedPositionNumber,
             _build_position_description,
@@ -4020,7 +4020,7 @@ class TestCombinedPositionSliders:
     ):
         from unittest.mock import PropertyMock
 
-        from custom_components.adjustable_bed.beds.base import build_position_number_spec
+        from custom_components.adjustable_bed.beds.entity_specs import build_position_number_spec
         from custom_components.adjustable_bed.beds.linak.controller import LinakController
 
         data = _paired_entry_data()
