@@ -41,7 +41,7 @@ from ..const import (
 from ..profiles import keeson as keeson_profiles
 from ..profiles.keeson import app_profile
 from .base import BedController
-from .cluster033 import AppController
+from .keeson_layout_app import AppController
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -248,28 +248,6 @@ class SBIController(BedController):
             return keeson_profiles.encode(self.profile, command_value & 0xFFFFFFFF)
         selector = self.profile.split_sides["side_a" if variant == SBI_VARIANT_SIDE_A else "side_b"]
         return codec.frame(command_value & 0xFFFFFFFF, header=0xE6, side=selector)
-
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        """Write a command to the bed."""
-        _LOGGER.debug(
-            "Writing command to SBI bed: %s (repeat: %d, delay: %dms)",
-            command.hex(),
-            repeat_count,
-            repeat_delay_ms,
-        )
-        await self._write_gatt_with_retry(
-            self._char_uuid,
-            command,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            cancel_event=cancel_event,
-        )
 
     async def start_notify(
         self, callback: Callable[[str, float], None] | None = None

@@ -143,28 +143,6 @@ class ScottLivingController(BedController):
         """Build a nine-byte E6 frame through the Keeson codec (side byte ``01``)."""
         return keeson_profiles.encode(self.profile, key & 0xFFFFFFFF)
 
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        """Write a command to the bed."""
-        _LOGGER.debug(
-            "Writing command to Scott Living bed: %s (repeat: %d, delay: %dms)",
-            command.hex(),
-            repeat_count,
-            repeat_delay_ms,
-        )
-        await self._write_gatt_with_retry(
-            self._char_uuid,
-            command,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            cancel_event=cancel_event,
-        )
-
     async def start_notify(
         self, callback: Callable[[str, float], None] | None = None
     ) -> None:

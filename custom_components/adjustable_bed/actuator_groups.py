@@ -87,7 +87,7 @@ from .const import (
     ZSERIES_VARIANT_Z230,
     ZSERIES_VARIANT_Z280,
 )
-from .row061_profiles import DISPLAY_NAMES as ROW061_DISPLAY_NAMES
+from .ruf_richmat_profiles import DISPLAY_NAMES as RUF_RICHMAT_DISPLAY_NAMES
 
 # A route: a bed type, and the app variant its own row selects.
 Route = tuple[str, str | None]
@@ -180,7 +180,7 @@ ACTUATOR_GROUPS: Final[dict[str, tuple[Route, ...]]] = {
     "reverie": ((BED_TYPE_REVERIE_NIGHTSTAND, None),),
     "richmat": ((BED_TYPE_RICHMAT, None),),
     "richmat_apps": (
-        *((bed_type, None) for bed_type in ROW061_DISPLAY_NAMES),
+        *((bed_type, None) for bed_type in RUF_RICHMAT_DISPLAY_NAMES),
         *(("richmat_sleep_receiver", app) for app in ("wsilver2", "americanstar", "bailey2", "tx")),
         (BED_TYPE_RICHMAT_REVIVE, None),
         (BED_TYPE_RICHMAT_BEST_MATTRESS, None),

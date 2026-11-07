@@ -92,9 +92,7 @@ const flushMicrotasks = async () => {
 function makeM1Fixture(mode, { combinedHold = true } = {}) {
   const root = "pair-root";
   const nativeTwoAddress = mode === "native-two-address";
-  const legacyOneDevice = mode === "legacy-one-device";
   const sideAttributes = (side) => ({ bed_side: side });
-  const stopAttributes = (side) => legacyOneDevice ? {} : sideAttributes(side);
   const devices = { [root]: { id: root } };
   const entities = {};
   const states = {};
@@ -129,19 +127,16 @@ function makeM1Fixture(mode, { combinedHold = true } = {}) {
     devices["left-device"] = { id: "left-device", parent_device_id: root };
     devices["right-device"] = { id: "right-device", parent_device_id: root };
   }
-  add(ids.bothStop, root, "stop_both", stopAttributes("both"));
-  add(ids.leftStop, nativeTwoAddress ? "left-device" : root,
-    nativeTwoAddress ? "stop" : "stop_left", stopAttributes("left"));
-  add(ids.rightStop, nativeTwoAddress ? "right-device" : root,
-    nativeTwoAddress ? "stop" : "stop_right", stopAttributes("right"));
+  add(ids.bothStop, root, "stop_both", sideAttributes("both"));
+  add(ids.leftStop, nativeTwoAddress ? "left-device" : root, "stop", sideAttributes("left"));
+  add(ids.rightStop, nativeTwoAddress ? "right-device" : root, "stop", sideAttributes("right"));
 
   for (const side of ["left", "right"]) {
     const deviceId = nativeTwoAddress ? `${side}-device` : root;
-    const sideSuffix = nativeTwoAddress ? "" : `_${side}`;
     for (const part of [1, 2, 4, 8, 16]) {
       const entityId = part === 1 ? ids[`${side}Part1`] :
         part === 2 ? ids[`${side}Part2`] : `cover.${side}_part_${part}`;
-      add(entityId, deviceId, `starcode_m1x12_part_${part}${sideSuffix}`, {
+      add(entityId, deviceId, `starcode_m1x12_part_${part}`, {
         ...sideAttributes(side),
         held_control_up: `part_${part}_up`,
         held_control_down: `part_${part}_down`,
@@ -151,10 +146,7 @@ function makeM1Fixture(mode, { combinedHold = true } = {}) {
       });
     }
   }
-  const bothButtonKey = nativeTwoAddress
-    ? "starcode_m1x12_part_1_up"
-    : "starcode_m1x12_part_1_up_both";
-  add(ids.bothUp, root, bothButtonKey, {
+  add(ids.bothUp, root, "starcode_m1x12_part_1_up", {
     ...sideAttributes("both"),
     ...(combinedHold ? {
       held_control: "part_1_up",
@@ -163,8 +155,7 @@ function makeM1Fixture(mode, { combinedHold = true } = {}) {
     } : {}),
   });
   add(ids.rightWave, nativeTwoAddress ? "right-device" : root,
-    nativeTwoAddress ? "starcode_m1x12_hold_massage_wave_up" :
-      "starcode_m1x12_hold_massage_wave_up_right", {
+    "starcode_m1x12_hold_massage_wave_up", {
       ...sideAttributes("right"),
       held_control: "massage_wave_up",
       hold_start_delay_ms: 100,
@@ -249,15 +240,11 @@ function makeM1Fixture(mode, { combinedHold = true } = {}) {
   };
 }
 
-const modes = ["native-two-address", "native-single-address", "legacy-one-device"];
+const modes = ["native-two-address", "native-single-address"];
 
 for (const mode of modes) {
   test(`${mode}: Left STOP preserves the Right keyboard hold and its own release target`, async () => {
     const fixture = makeM1Fixture(mode);
-    if (mode === "legacy-one-device") {
-      assert.equal(fixture.hass.states[fixture.ids.leftStop].attributes.bed_side, undefined);
-      assert.equal(fixture.hass.entities[fixture.ids.leftStop].translation_key, "stop_left");
-    }
     const right = fixture.motorForCover("right", fixture.ids.rightPart1);
     fixture.startKey(right, fixture.ids.rightStop);
     fixture.clock.advance(100);

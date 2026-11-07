@@ -370,7 +370,7 @@ class TestLinakController:
         assert subscribe.await_count == 2
         assert _written_commands(mock_bleak_client) == [LinakCommands.MOVE_STOP] * 2
 
-    async def test_seek_position_step_refreshes_without_intermediate_release(
+    async def test_seek_step_refreshes_without_intermediate_release(
         self,
         hass: HomeAssistant,
         mock_config_entry,
@@ -382,8 +382,12 @@ class TestLinakController:
         await coordinator.async_connect()
         _mark_session_ready(coordinator)
 
-        await coordinator.controller.seek_position_step("legs", True, remaining_distance=25.0)
-        await coordinator.controller.seek_position_step("legs", True, remaining_distance=2.0)
+        policy = coordinator.controller.position_seek_policy
+        default_step = AsyncMock()
+        await policy.async_issue_step("legs", True, default_step)
+        await policy.async_issue_step("legs", True, default_step)
+
+        default_step.assert_not_awaited()
 
         assert _written_commands(mock_bleak_client) == [
             LinakCommands.MOVE_LEGS_UP,
@@ -399,8 +403,15 @@ class TestLinakController:
         """Linak set-position seeks should finish much closer than the global default."""
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
+        policy = coordinator.controller.position_seek_policy
 
-        assert coordinator.controller.position_seek_tolerance == pytest.approx(0.3)
+        assert policy.tolerance == pytest.approx(0.3)
+        # Held refreshes chain until feedback enters the band, and never reverse.
+        assert policy.chains_steps_while_moving is True
+        assert policy.chain_min_remaining_distance == pytest.approx(0.3)
+        assert policy.reverses_on_overshoot is False
+        assert policy.prefers_cached_position_feedback is True
+        assert policy.cached_position_feedback_max_age == pytest.approx(0.5)
 
     async def test_downward_seek_releases_early_from_live_speed(
         self,
@@ -486,19 +497,15 @@ class TestLinakController:
         hass.config_entries.async_update_entry(mock_config_entry, data=data_without_snapshot)
         coordinator._handle_position_update("back", 10.0)
 
-        async def finish_step(
-            position_key: str,
-            moving_up: bool,
-            remaining_distance: float | None,
-        ) -> None:
-            assert (position_key, moving_up, remaining_distance) == ("back", True, 10.0)
+        async def finish_step(position_key: str, moving_up: bool, _default_step) -> None:
+            assert (position_key, moving_up) == ("back", True)
             coordinator._handle_position_update("back", 20.0)
 
         read_positions = AsyncMock()
         with (
             patch.object(
-                coordinator.controller,
-                "seek_position_step",
+                LinakPositionSeekPolicy,
+                "async_issue_step",
                 new=AsyncMock(side_effect=finish_step),
             ),
             patch.object(coordinator, "_async_read_positions", new=read_positions),
@@ -535,8 +542,8 @@ class TestLinakController:
         read_positions = AsyncMock(side_effect=refresh_position)
         with (
             patch.object(
-                coordinator.controller,
-                "seek_position_step",
+                LinakPositionSeekPolicy,
+                "async_issue_step",
                 new=AsyncMock(side_effect=stale_after_step),
             ),
             patch.object(coordinator, "_async_read_positions", new=read_positions),
@@ -562,9 +569,10 @@ class TestLinakController:
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
-        assert coordinator.controller.position_seek_stall_count == 1
-        assert coordinator.controller.position_seek_check_interval == pytest.approx(0.1)
-        assert coordinator.controller.position_seek_stall_threshold == pytest.approx(0.2)
+        policy = coordinator.controller.position_seek_policy
+        assert policy.stall_count == 1
+        assert policy.check_interval == pytest.approx(0.1)
+        assert policy.stall_threshold == pytest.approx(0.2)
 
     async def test_seek_refreshes_continuously_then_releases_once(
         self,

@@ -107,7 +107,7 @@ class EstimatedPositionNumber(_ListensToEstimates, AdjustableBedEntity, NumberEn
         self._motor = motor
         key = f"{motor}_position_estimated"
         self._attr_unique_id = runtime.entity_unique_id(key)
-        self._set_sided_translation_key(key, key)
+        self._attr_translation_key = key
         self._attr_icon = ESTIMATED_MOTOR_ICONS.get(motor, "mdi:arrow-up-down")
 
     @property
@@ -174,7 +174,7 @@ class SetReferenceButton(_ListensToEstimates, AdjustableBedEntity, ButtonEntity)
         self._motor = motor
         key = f"set_{motor}_reference"
         self._attr_unique_id = runtime.entity_unique_id(key)
-        self._set_sided_translation_key(key, key)
+        self._attr_translation_key = key
 
     @property
     def available(self) -> bool:
@@ -196,7 +196,7 @@ class RemoteUsedButton(AdjustableBedEntity, ButtonEntity):
         self._bed = bed
         key = "estimate_remote_used"
         self._attr_unique_id = runtime.entity_unique_id(key)
-        self._set_sided_translation_key(key, key)
+        self._attr_translation_key = key
 
     async def async_press(self) -> None:
         self._bed.invalidate(EstimateReason.REMOTE)

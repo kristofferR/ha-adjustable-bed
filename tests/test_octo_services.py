@@ -736,7 +736,7 @@ async def test_octo_memory_action_specs_publish_card_metadata_for_standalone_and
     left = paired.children[SIDE_LEFT]
     side_button = ControllerActionButton(left, recall_spec)
     assert side_button.unique_id.endswith("_preset_memory_9_left")
-    assert side_button.translation_key == "preset_memory_9_left"
+    assert side_button.translation_key == "preset_memory_9"
     assert {
         key: side_button.extra_state_attributes[key] for key in standalone.extra_state_attributes
     } == standalone.extra_state_attributes
