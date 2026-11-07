@@ -9,7 +9,7 @@
 - eShine app selectors: E2000, E3000/E3100 (one selector), E5000.
 - The app accepts a case-sensitive `Smartbed` substring anywhere in a device name.
 - Choose the product explicitly; the name/service does not identify the model.
-- The [E6000 app profile](eshine.md) uses a different app and controller.
+- The [E6000 app profile](richmat.md#eshine) uses a different app and controller.
 
 ## Apps
 

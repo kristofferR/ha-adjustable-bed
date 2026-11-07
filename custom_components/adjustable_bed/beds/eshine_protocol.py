@@ -3,73 +3,18 @@
 Common frames retain the app's notification-boundary delimiter behavior.
 Malformed lengths/ranges are discarded instead of reproducing Dart exceptions
 or nonprogress. No outbound query or physical motor mapping is inferred.
+Outbound frames come from ``codec/richmat.py``.
 """
 
 from __future__ import annotations
 
 from typing import Final
 
+from ..codec import richmat as codec
+
 type Value = bool | int | float | str | None | list[int] | dict[str, int | float]
 type Event = tuple[str, Value]
 
-# Service, write, declared notify. The app actually selects notify by property.
-GATT_MAPS: Final = (
-    (
-        "6e400001-b5a3-f393-e0a9-e50e24dcca9e",
-        "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
-        "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
-    ),
-    (
-        "0000fee9-0000-1000-8000-00805f9b34fb",
-        "d44bc439-abfd-45a2-b575-925416129600",
-        "d44bc439-abfd-45a2-b575-925416129601",
-    ),
-    (
-        "0000fee9-0000-1000-8000-00805f9b34bb",
-        "d44bc439-abfd-45a2-b575-925416129622",
-        "d44bc439-abfd-45a2-b575-925416129611",
-    ),
-    (
-        "0000ffe0-0000-1000-8000-00805f9b34fb",
-        "0000ffe2-0000-1000-8000-00805f9b34fb",
-        "0000ffe1-0000-1000-8000-00805f9b34fb",
-    ),
-    (
-        "0000fff0-0000-1000-8000-00805f9b34fb",
-        "0000fff2-0000-1000-8000-00805f9b34fb",
-        "0000fff1-0000-1000-8000-00805f9b34fb",
-    ),
-    (
-        "0000e0ff-3c17-d293-8e48-14fe2e4da212",
-        "00000002-3c17-d293-8e48-14fe2e4da212",
-        "00000003-3c17-d293-8e48-14fe2e4da212",
-    ),
-)
-OPCODES: Final = {
-    "head_up": 0x24,
-    "head_down": 0x25,
-    "feet_up": 0x26,
-    "feet_down": 0x27,
-    "lumbar_up": 0x3F,
-    "lumbar_down": 0x40,
-    "pillow_up": 0x41,
-    "pillow_down": 0x42,
-    "flat": 0x31,
-    "light": 0x3C,
-    "massage_head_strength": 0x4C,
-    "massage_foot_strength": 0x4E,
-    "massage_mode": 0x48,
-    "massage_off": 0x5E,
-    "massage_10_minutes": 0x5F,
-    "massage_20_minutes": 0x63,
-    "massage_30_minutes": 0x61,
-    "anti_snore": 0x46,
-    "zero_g": 0x45,
-    "save_anti_snore": 0x69,
-    "save_zero_g": 0x66,
-    "stop": 0x6E,
-    "exit_limit": 0,
-}
 EXACT_COMMON: Final = {
     "6e09010078": "clock_capability",
     "6e0e00037f": "light_capability",
@@ -83,15 +28,6 @@ EXACT_COMMON: Final = {
     "6e23008415": "box_unlock",
     # 6e23a06e9f is unreachable: the stream splits its embedded 6e.
 }
-
-
-def control_frame(action: str, compact: bool) -> bytes:
-    code = OPCODES[action]
-    if compact:
-        return bytes((code,))
-    prefix = b"\x6e\x02\x01" if action == "exit_limit" else b"\x6e\x01\x00"
-    data = prefix + bytes((code,))
-    return data + bytes((sum(data) & 0xFF,))
 
 
 def parse_common(data: bytes) -> list[Event]:
@@ -268,7 +204,7 @@ class NotificationStream:
             frame = bytes(self.buffer[:size])
             del self.buffer[:size]
             if kind == 0x20:
-                if sum(frame[:-1]) & 0xFF == frame[-1]:
+                if codec.is_valid(frame):
                     events.extend(parse_extended(frame))
             elif kind != 0x40:
                 events.extend(parse_common(frame))

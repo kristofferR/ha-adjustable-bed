@@ -7,6 +7,7 @@ from custom_components.adjustable_bed import const as _const
 from custom_components.adjustable_bed import hjbed_catalog
 from custom_components.adjustable_bed import hjbed_protocol as hjbed_frames
 from custom_components.adjustable_bed import rmcontrol_protocol as rmcontrol_frames
+from custom_components.adjustable_bed.beds import eshine as eshine_bed
 from custom_components.adjustable_bed.beds import hjbed as hjbed_bed
 from custom_components.adjustable_bed.beds import richmat_mh_protocol as mh_frames
 from custom_components.adjustable_bed.beds import rmcontrol as rmcontrol_bed
@@ -26,6 +27,7 @@ _RICHMAT_NAMES = {
     "bedtech": "BedTech",
     "leggett_wilinke": "L&P MlRM",
     "hjbed": "HJBed",
+    "eshine": "Eshine",
     **{
         profile.key: f"Richmat MH {name}"
         for profile, name in zip(
@@ -89,6 +91,7 @@ def _richmat_profiles() -> dict[str, richmat_profiles.RichmatProfile]:
         for profile in (
             *_FIXED_ROUTES,
             richmat_profiles.HJBED,
+            richmat_profiles.ESHINE,
             *richmat_profiles.RICHMAT_MH.values(),
             *richmat_profiles.RICHMAT_CLASSIC.values(),
         )
@@ -105,6 +108,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
         "bedtech": (_const.BED_TYPE_BEDTECH,),
         "leggett_wilinke": (_const.BED_TYPE_LEGGETT_WILINKE,),
         "hjbed": (_const.BED_TYPE_HJBED,),
+        "eshine": (_const.BED_TYPE_ESHINE,),
         **{
             profile.key: (mh_types[profile.key.removeprefix("richmat_mh_")],)
             for profile in richmat_profiles.RICHMAT_MH.values()
@@ -119,6 +123,8 @@ def bed_types() -> dict[str, tuple[str, ...]]:
 def _catalog_kind(key: str) -> str:
     if key == "hjbed":
         return "per-product catalog"
+    if key == "eshine":
+        return "[fixed E6000 table](#eshine-commands)"
     if key.startswith("richmat_classic_"):
         return "per-layout catalog"
     return "per-model catalog"
@@ -179,7 +185,7 @@ def render_richmat_profiles() -> str:
                 _lease(profile),
             )
             for key, profile in _richmat_profiles().items()
-            if profile.codes is None
+            if profile not in _FIXED_ROUTES
         ),
     )
     return _block(
@@ -548,6 +554,12 @@ def render_richmat_catalog_timing() -> str:
                 ("HJBed", "Menu probes at connect", f"{_ms(hjbed_bed.MENU_PROBE_S)} apart"),
                 ("HJBed", "BJRN preset save", f"waits {hjbed_bed.BJRN_SAVE_WAIT_S} s"),
                 (
+                    "Eshine",
+                    "Held refresh",
+                    f"every {eshine_bed.REFRESH_MS} ms for the entry pulse count, then STOP",
+                ),
+                ("Eshine", "Other buttons and STOP", "one write"),
+                (
                     "Classic apps",
                     "Worker tick",
                     f"{classic_frames.TICK_MS} ms; {classic_frames.FAST_TICK_MS} ms for "
@@ -656,6 +668,33 @@ def render_hjbed_startup() -> str:
     )
 
 
+def render_eshine_commands() -> str:
+    labels = {button: label for label, button in eshine_bed.EXTRA_BUTTONS.values()}
+    held = f"refresh {eshine_bed.REFRESH_MS} ms; STOP"
+
+    def row(name: str, code: int, sends: str, action: str = "") -> tuple[str, ...]:
+        bare = richmat_codec.function(code, action=action, single=True)
+        return name, _hex(bare), _hex(richmat_codec.function(code, action=action)), sends
+
+    return _block(
+        _table(
+            ("Command", "Bare (N1)", "Framed", "Sends"),
+            (
+                *(
+                    row(
+                        labels.get(button) or _BUTTON_LABELS[button],
+                        code,
+                        held if button in eshine_bed.HELD else "once",
+                    )
+                    for button, code in eshine_bed.CODES.items()
+                ),
+                row("STOP", richmat_profiles.ESHINE.stop, "once"),
+                row("ExitLimit (setup)", 0, "once after subscribing", eshine_bed.EXIT_LIMIT),
+            ),
+        )
+    )
+
+
 BLOCKS: list[Block] = [
     (GUIDE, "richmat-profiles", render_richmat_profiles),
     (GUIDE, "richmat-transports", render_richmat_transports),
@@ -671,4 +710,5 @@ BLOCKS: list[Block] = [
     (GUIDE, "richmat-catalog-timing", render_richmat_catalog_timing),
     (GUIDE, "rmcontrol-startup", render_rmcontrol_startup),
     (GUIDE, "hjbed-startup", render_hjbed_startup),
+    (GUIDE, "eshine-commands", render_eshine_commands),
 ]

@@ -638,7 +638,7 @@ that side, then combine them again.
 | Keeson app family | [Tempur Curve, Q-Plus Adjustable Remote, Serta MP Remote, Omazz Adjusto III, Ergomotion, ROW Control, Ergo Slim and TEMPUR AU](beds/keeson.md#cluster033-app-family): the exact app and the layout it shows; Q-Plus also has a Both/Side A/Side B selector. |
 | Ergomotion 4.0 | [Exact product, or another catalog product by name and feature keys](beds/keeson.md#ergomotion-40-home-assistant-setup). |
 | BF / Cherish | [The exact app](beds/keeson.md#bf-and-cherish); it fixes the layout and movement refresh. |
-| Eshine | [Explicit app profile](beds/eshine.md#home-assistant-setup) with a fixed head, feet, lumbar, pillow, massage and light layout. |
+| Eshine | [Explicit app profile](beds/richmat.md#eshine) with a fixed head, feet, lumbar, pillow, massage and light layout. |
 | Kaidi | [ISleep](beds/isleep.md#home-assistant-setup): product, room ID and actuator descriptor. [Floyd Home](beds/floyd.md#home-assistant-setup): product 139. |
 | BedSense | [Layout, or the Bluetooth-name layout rule](beds/ff_frame.md#bedsense). |
 | Casper Base | [PRO/MAX product](beds/casper-base.md#home-assistant-setup); sleep sensors and the RCRM handset are separate entries. |

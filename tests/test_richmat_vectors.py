@@ -21,6 +21,7 @@ FIXED_ROUTES = {
 PROFILES = {
     **FIXED_ROUTES,
     "hjbed": profiles.HJBED,
+    "eshine": profiles.ESHINE,
     **{profile.key: profile for profile in profiles.RICHMAT_MH.values()},
     **{profile.key: profile for profile in profiles.RICHMAT_CLASSIC.values()},
 }
@@ -89,6 +90,17 @@ def _hjbed_census() -> set[str]:
     return frames
 
 
+def _eshine_census() -> set[str]:
+    """Every code, STOP and setup's ExitLimit, framed and bare."""
+    codes = {*(profiles.ESHINE.codes or {}).values(), profiles.ESHINE.stop}
+    frames = {
+        codec.function(code, action=action, single=single)
+        for single in (False, True)
+        for code, action in ((0, "deviceFunctionItemExitLimit"), *((code, "") for code in codes))
+    }
+    return {frame.hex() for frame in frames}
+
+
 def _classic_census() -> set[str]:
     """The classic apps' fixed frames, in mode 0.
 
@@ -119,6 +131,8 @@ def _classic_census() -> set[str]:
 def _census(key: str) -> set[str]:
     if key == "hjbed":
         return _hjbed_census()
+    if key == "eshine":
+        return _eshine_census()
     if key.startswith("richmat_classic_"):
         return _classic_census()
     if key.startswith("richmat_mh_"):

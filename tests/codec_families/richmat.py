@@ -45,6 +45,7 @@ FAMILY = CodecFamily(
     bed_types=frozenset(
         {
             "bedtech",
+            "eshine",
             "hjbed",
             "leggett_wilinke",
             "richmat",

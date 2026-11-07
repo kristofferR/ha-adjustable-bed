@@ -178,6 +178,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "OkinNFrameProfile:zseries_z230": {"hold": ("glory",)},
     "OkinNFrameProfile:zseries_z280": {"hold": ("glory",)},
     # Richmat 6E (#483): BedTech, GM Motor and Casper Base are blocked.
+    "RichmatProfile:eshine": {"hold": ("eshine",)},
     "RichmatProfile:hjbed": {"hold": ("row121",)},
     "RichmatProfile:leggett_wilinke": {"hold": ("lp2",)},
     "RichmatProfile:richmat_mh_best_mattress": {"hold": ("best", "row055")},
@@ -201,7 +202,6 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     # and ``leggett_lp_legacy`` is not declared yet (see the design note). Svane
     # Remote declares hold and composition on its controller (#516), and Sleepy's
     # BOX25 declares on the controller for both dialects.
-    "eshine": {"hold": ("eshine",)},
     "eshine_okin": {"hold": ("eshine-okin",)},
     "furnimove": {"hold": ("fm157",)},
     # Scoped to held controls whose effective gesture is a sustained press:
@@ -264,8 +264,6 @@ _SIMMONS = ("OkinNFrameProfile:simmons_okin", "OkinNFrameProfile:simmons_smartbe
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "beds/cluster018.py:<module>.Cluster018Controller": ("richmat_classic_apps",),
     "beds/cluster018.py:<module>.Cluster018Controller.execution": ("richmat_classic_apps",),
-    "beds/eshine.py:<module>.EshineController": ("eshine",),
-    "beds/eshine.py:<module>.EshineController.execution": ("eshine",),
     "beds/eshine_okin.py:<module>.EshineOkinController": ("eshine_okin",),
     "beds/eshine_okin.py:<module>.EshineOkinController.execution": ("eshine_okin",),
     "beds/furnimove.py:<module>.FurniMoveController": ("furnimove",),
@@ -355,6 +353,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     ),
     "profiles/okin_nframe.py:<module>._lumbar": _LUMBAR,
     "profiles/okin_nframe.py:<module>._simmons": _SIMMONS,
+    "profiles/richmat.py:<module>.ESHINE": ("RichmatProfile:eshine",),
     "profiles/richmat.py:<module>.HJBED": ("RichmatProfile:hjbed",),
     "profiles/richmat.py:<module>.LEGGETT_WILINKE": ("RichmatProfile:leggett_wilinke",),
     "profiles/richmat.py:<module>.RICHMAT": tuple(

@@ -36,6 +36,8 @@ Button = Literal[
     "tv",
     "lounge",
     "save_lounge",
+    "save_zero_g",
+    "save_anti_snore",
     "light_toggle",
     "light_off",
     "massage_toggle",
@@ -227,3 +229,33 @@ RICHMAT_CLASSIC: Final[dict[str, RichmatProfile]] = {
     app: RichmatProfile(key=f"richmat_classic_{app}", transports=CLASSIC_TRANSPORTS)
     for app in ("avocadoecobase", "coastersleep", "fortywinks", "milemont", "superior")
 }
+
+# Eshine 1.0.1 (row106): the E6000's one fixed table, over the app's transports.
+ESHINE: Final = RichmatProfile(
+    key="eshine",
+    execution=STREAM_HOLD,
+    transports=("n1", "w1", "w2", "w3", "w4", "w5"),
+    codes={
+        "head_up": 0x24,
+        "head_down": 0x25,
+        "feet_up": 0x26,
+        "feet_down": 0x27,
+        "lumbar_up": 0x3F,
+        "lumbar_down": 0x40,
+        "pillow_up": 0x41,
+        "pillow_down": 0x42,
+        "flat": 0x31,
+        "zero_g": 0x45,
+        "anti_snore": 0x46,
+        "save_zero_g": 0x66,
+        "save_anti_snore": 0x69,
+        "light_toggle": 0x3C,
+        "massage_head": 0x4C,
+        "massage_foot": 0x4E,
+        "massage_mode": 0x48,
+        "massage_off": 0x5E,
+        "massage_timer_10": 0x5F,
+        "massage_timer_20": 0x63,
+        "massage_timer_30": 0x61,
+    },
+)
