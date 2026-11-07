@@ -2,11 +2,12 @@
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.exceptions import ServiceValidationError
 
+from custom_components.adjustable_bed.beds.cluster018 import Cluster018Controller
 from custom_components.adjustable_bed.command_scheduler import CommandIntent, DeviceCommandScheduler
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.services import async_register_services
@@ -17,15 +18,15 @@ from .test_generic_services import target
 @pytest.fixture
 async def resolve(hass):
     await async_register_services(hass)
-    with patch('custom_components.adjustable_bed.cluster018_services._resolve_sided_targets') as resolver:
+    with patch('custom_components.adjustable_bed.services._resolve_sided_targets') as resolver:
         yield resolver
 
 
 async def test_second_target_rejection_prevents_first_write(hass, resolve):
-    one, a = target(supports_cluster018=True, validate_cluster018_request=lambda r: None, async_execute_cluster018_request=AsyncMock())
+    one, a = target(family=Cluster018Controller, validate_cluster018_request=lambda r: None, async_execute_cluster018_request=AsyncMock())
     def reject(request):
         raise ValueError('wrong layout')
-    two, b = target(supports_cluster018=True, validate_cluster018_request=reject, async_execute_cluster018_request=AsyncMock())
+    two, b = target(family=Cluster018Controller, validate_cluster018_request=reject, async_execute_cluster018_request=AsyncMock())
     resolve.return_value = ([(one, 'both'), (two, 'both')], [])
     with pytest.raises(ServiceValidationError, match='wrong layout'):
         await hass.services.async_call(DOMAIN, 'richmat_classic', {'device_id':['one','two'],'operation':'lamp_save','minutes':0}, blocking=True)
@@ -35,7 +36,7 @@ async def test_second_target_rejection_prevents_first_write(hass, resolve):
 
 @pytest.mark.parametrize('operation,resource,cancel', [('query','configuration',False),('desk_recall','movement',True)])
 async def test_desk_hold_uses_movement_admission_and_query_does_not(hass, resolve, operation, resource, cancel):
-    coordinator, ctrl = target(supports_cluster018=True, validate_cluster018_request=lambda r: None, async_execute_cluster018_request=AsyncMock())
+    coordinator, ctrl = target(family=Cluster018Controller, validate_cluster018_request=lambda r: None, async_execute_cluster018_request=AsyncMock())
     resolve.return_value = ([(coordinator, 'both')], [])
     await hass.services.async_call(DOMAIN, 'richmat_classic', {'device_id':'one','operation':operation,'slot':1,'duration_ms':300}, blocking=True)
     request = ctrl.async_execute_cluster018_request.await_args.args[0]
@@ -59,7 +60,7 @@ async def test_stop_on_second_target_invalidates_its_pending_desk_hold(hass, res
 
     def scheduled_target(name, action):
         scheduler = DeviceCommandScheduler(name)
-        ctrl = SimpleNamespace(supports_cluster018=True, validate_cluster018_request=lambda _request: None, async_execute_cluster018_request=action)
+        ctrl = MagicMock(spec=Cluster018Controller, validate_cluster018_request=lambda _request: None, async_execute_cluster018_request=action)
         coord = SimpleNamespace(name=name, controller_side=None, capability_controller=ctrl, entry=SimpleNamespace(data={}), _command_scheduler=scheduler)
 
         async def execute(command, *, expected_stop_epoch=None, **_kwargs):

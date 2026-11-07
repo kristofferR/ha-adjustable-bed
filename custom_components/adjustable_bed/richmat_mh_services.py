@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
-
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
@@ -11,18 +9,10 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
-from .beds.base import BedController
-from .beds.richmat_mh import ALARM_OPTION_CODES
+from .beds.richmat_mh import ALARM_OPTION_CODES, RichmatMhController
 from .beds.richmat_mh_protocol import WAIST_ALARM_REPEAT, WAIST_SIDES, alarm_countdown_minutes
 from .const import DOMAIN
-from .services import (
-    SIDE_FIELD,
-    _execute_sided,
-    _missing_device_error,
-    _preflight_capability,
-    _release_preflighted,
-    _resolve_sided_targets,
-)
+from .services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
 
 SERVICE_RICHMAT_MH_ALARM = "richmat_mh_alarm"
 SERVICE_RICHMAT_MH_AROMA = "richmat_mh_aroma"
@@ -31,7 +21,7 @@ SERVICE_RICHMAT_MH_LIGHT_COLOR = "richmat_mh_light_color"
 _OPTIONS = tuple(ALARM_OPTION_CODES)
 
 _ALARM_FIELDS: dict[vol.Marker, object] = {
-    vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+    vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
     vol.Required("enabled"): cv.boolean,
     vol.Optional("time"): cv.time,
     vol.Optional("position"): vol.In(_OPTIONS),
@@ -41,7 +31,7 @@ _ALARM_FIELDS: dict[vol.Marker, object] = {
 _ALARM_FIELDS.update(SIDE_FIELD.items())
 ALARM_SCHEMA = vol.Schema(_ALARM_FIELDS)
 _AROMA_FIELDS: dict[vol.Marker, object] = {
-    vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+    vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
     vol.Required("mode2_startup_minutes"): vol.All(vol.Coerce(int), vol.Range(min=1, max=60)),
     vol.Required("mode3_startup_minutes"): vol.All(vol.Coerce(int), vol.Range(min=1, max=60)),
     vol.Required("mode3_pause_hours"): vol.All(vol.Coerce(int), vol.Range(min=1, max=12)),
@@ -49,7 +39,7 @@ _AROMA_FIELDS: dict[vol.Marker, object] = {
 _AROMA_FIELDS.update(SIDE_FIELD.items())
 AROMA_SCHEMA = vol.Schema(_AROMA_FIELDS)
 _WAIST_ALARM_FIELDS: dict[vol.Marker, object] = {
-    vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+    vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
     vol.Required("enabled"): cv.boolean,
     vol.Required("waist_side"): vol.In(tuple(WAIST_SIDES)),
     vol.Optional("time"): cv.time,
@@ -59,45 +49,13 @@ _WAIST_ALARM_FIELDS: dict[vol.Marker, object] = {
 _WAIST_ALARM_FIELDS.update(SIDE_FIELD.items())
 WAIST_ALARM_SCHEMA = vol.Schema(_WAIST_ALARM_FIELDS)
 _LIGHT_COLOR_FIELDS: dict[vol.Marker, object] = {
-    vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+    vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
     vol.Required("rgb_color"): vol.All(
         vol.ExactSequence((cv.byte, cv.byte, cv.byte)), vol.Coerce(tuple)
     ),
 }
 _LIGHT_COLOR_FIELDS.update(SIDE_FIELD.items())
 LIGHT_COLOR_SCHEMA = vol.Schema(_LIGHT_COLOR_FIELDS)
-
-
-async def _execute(
-    call: ServiceCall,
-    capability: str,
-    label: str,
-    command: Callable[[BedController], Awaitable[None]],
-    validate: Callable[[BedController], None] | None = None,
-) -> None:
-    """Validate every physical target first, then write each one in turn."""
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data[CONF_DEVICE_ID], call.data.get("side")
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    preflighted = await _preflight_capability(targets, capability, label, validate)
-
-    async def control(controller: BedController) -> None:
-        try:
-            await command(controller)
-        except ValueError as err:
-            raise ServiceValidationError(str(err)) from err
-
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(
-                coordinator, side, control, cancel_running=False, resource="configuration"
-            )
-    except BaseException:
-        # Cancellation must also hand the preflighted links back to idle.
-        await _release_preflighted(preflighted)
-        raise
 
 
 async def handle_richmat_mh_alarm(call: ServiceCall) -> None:
@@ -113,12 +71,12 @@ async def handle_richmat_mh_alarm(call: ServiceCall) -> None:
         if when.second or when.microsecond:
             raise ServiceValidationError("Richmat MH alarms use minute precision")
 
-    def validate(controller: BedController) -> None:
+    def validate(controller: RichmatMhController) -> None:
         controller.validate_richmat_mh_alarm(
             enabled=enabled, position=position, massage=massage, slot=slot
         )
 
-    async def program(controller: BedController) -> None:
+    async def program(controller: RichmatMhController) -> None:
         minutes = 0
         if enabled and when is not None:
             # The app sends the minutes from now until the next occurrence; read the
@@ -131,20 +89,33 @@ async def handle_richmat_mh_alarm(call: ServiceCall) -> None:
             enabled=enabled, minutes=minutes, position=position, massage=massage, slot=slot
         )
 
-    await _execute(call, "supports_richmat_mh_alarm", "Richmat MH alarms", program, validate)
+    await _preflight_and_execute(
+        _call_targets(call),
+        RichmatMhController,
+        "Richmat MH alarms",
+        program,
+        supported=lambda controller: controller.supports_richmat_mh_alarm,
+        validate=validate,
+    )
 
 
 async def handle_richmat_mh_aroma(call: ServiceCall) -> None:
     """Write the aroma page's three timing sliders as the app does on release."""
 
-    async def program(controller: BedController) -> None:
+    async def program(controller: RichmatMhController) -> None:
         await controller.richmat_mh_aroma(
             call.data["mode2_startup_minutes"],
             call.data["mode3_startup_minutes"],
             call.data["mode3_pause_hours"],
         )
 
-    await _execute(call, "supports_richmat_mh_aroma", "Richmat MH aroma timing", program)
+    await _preflight_and_execute(
+        _call_targets(call),
+        RichmatMhController,
+        "Richmat MH aroma timing",
+        program,
+        supported=lambda controller: controller.supports_richmat_mh_aroma,
+    )
 
 
 async def handle_richmat_mh_waist_alarm(call: ServiceCall) -> None:
@@ -156,7 +127,7 @@ async def handle_richmat_mh_waist_alarm(call: ServiceCall) -> None:
     if when is not None and (when.second or when.microsecond):
         raise ServiceValidationError("Richmat MH alarms use minute precision")
 
-    async def program(controller: BedController) -> None:
+    async def program(controller: RichmatMhController) -> None:
         now = dt_util.now()  # The phone's time when this target's frames are built.
         await controller.richmat_mh_waist_alarm(
             enabled=enabled,
@@ -169,8 +140,12 @@ async def handle_richmat_mh_waist_alarm(call: ServiceCall) -> None:
             intensity=call.data["intensity"],
         )
 
-    await _execute(
-        call, "supports_richmat_mh_waist_alarm", "Richmat MH waist mattress alarms", program
+    await _preflight_and_execute(
+        _call_targets(call),
+        RichmatMhController,
+        "Richmat MH waist mattress alarms",
+        program,
+        supported=lambda controller: controller.supports_richmat_mh_waist_alarm,
     )
 
 
@@ -178,10 +153,16 @@ async def handle_richmat_mh_light_color(call: ServiceCall) -> None:
     """Write the LED or button-light page's colour (one 10-byte frame)."""
     rgb: tuple[int, int, int] = call.data["rgb_color"]
 
-    async def program(controller: BedController) -> None:
+    async def program(controller: RichmatMhController) -> None:
         await controller.set_light_color(rgb)
 
-    await _execute(call, "supports_richmat_mh_light_color", "Richmat MH light colour", program)
+    await _preflight_and_execute(
+        _call_targets(call),
+        RichmatMhController,
+        "Richmat MH light colour",
+        program,
+        supported=lambda controller: controller.supports_richmat_mh_light_color,
+    )
 
 
 def async_register_richmat_mh_services(hass: HomeAssistant) -> None:

@@ -137,7 +137,7 @@ async def test_capability_reload_waits_for_real_public_transaction(hass, paired,
         targets = ([(original, const.SIDE_BOTH)], [])
         with (
             patch.object(services, "_resolve_sided_targets", return_value=targets),
-            patch.object(limoss_remote_services, "_resolve_sided_targets", return_value=targets),
+            patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=targets),
             patch.object(limoss_remote_services, "_preflight_live_limoss_remote", side_effect=preflight_then_disconnect),
         ):
             await asyncio.wait_for(hass.services.async_call(

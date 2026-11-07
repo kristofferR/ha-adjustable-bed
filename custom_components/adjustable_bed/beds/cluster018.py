@@ -153,10 +153,6 @@ class Cluster018Controller(BedController):
         return False
 
     @property
-    def supports_cluster018(self) -> bool:
-        return True
-
-    @property
     def persisted_app_state_key(self) -> str:
         return f"cluster018:{self.app}:{self.layout}"
 

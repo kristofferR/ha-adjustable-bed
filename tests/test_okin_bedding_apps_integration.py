@@ -219,14 +219,14 @@ async def test_hold_services_preflight_profile_and_literal_action(
     [
         (BED_TYPE_ZSERIES, True, None),
         (BED_TYPE_ZSERIES, False, "does not support"),
-        (BED_TYPE_TRANQUIL, True, "not a Customatic Z-Series"),
+        (BED_TYPE_TRANQUIL, True, "does not support"),
     ],
 )
 async def test_alarm_service_requires_zseries_and_manufacturer_enabled_page(
     hass, bed_type, available, error
 ):
     await async_register_services(hass)
-    controller = zseries("z280")
+    controller = zseries("z280") if bed_type == BED_TYPE_ZSERIES else tranquil()
     controller._alarm_available = available
     coordinator = _target(bed_type, controller)
     with (
@@ -235,7 +235,7 @@ async def test_alarm_service_requires_zseries_and_manufacturer_enabled_page(
             return_value=([(coordinator, SIDE_BOTH)], []),
         ) as resolve,
         patch(
-            "custom_components.adjustable_bed.serenity_services._resolve_sided_targets",
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
             new=resolve,
         ),
         patch("asyncio.sleep", new=AsyncMock()),
@@ -401,7 +401,7 @@ async def test_enabling_alarm_requires_time_and_clearing_does_not(hass):
     coordinator = _target(BED_TYPE_ZSERIES, controller)
     with (
         patch(
-            "custom_components.adjustable_bed.serenity_services._resolve_sided_targets",
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(coordinator, SIDE_BOTH)], []),
         ),
         patch("asyncio.sleep", new=AsyncMock()),
@@ -443,7 +443,7 @@ async def _set_alarm(hass, controller):
     target = _target(BED_TYPE_ZSERIES, controller)
     with (
         patch(
-            "custom_components.adjustable_bed.serenity_services._resolve_sided_targets",
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(target, SIDE_BOTH)], []),
         ),
         patch("asyncio.sleep", new=AsyncMock()),
@@ -548,7 +548,7 @@ async def _call(hass, resolved, service="zseries_set_alarm"):
         data |= {"enabled": True, "time": "07:45:00", "wake_mode": "massage"}
     with (
         patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=(resolved, [])) as resolve,
-        patch("custom_components.adjustable_bed.serenity_services._resolve_sided_targets", new=resolve),
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets", new=resolve),
         patch("asyncio.sleep", new=AsyncMock()),
     ):
         await hass.services.async_call(DOMAIN, service, data, blocking=True)

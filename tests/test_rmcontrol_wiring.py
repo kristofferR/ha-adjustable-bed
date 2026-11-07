@@ -92,13 +92,31 @@ async def test_alarm_required_fields_fail_before_connect(
         execute.assert_not_awaited()
 
 
+_RMCONTROL_GATES = (
+    "supports_rmcontrol_single_alarm",
+    "supports_rmcontrol_repeat_alarm",
+    "supports_rmcontrol_alarm_time_sync",
+    "supports_rmcontrol_anti_snore",
+)
+
+
+def _rmcontrol_with(gate: str) -> MagicMock:
+    """A product controller offering exactly one RMControl gate."""
+    from custom_components.adjustable_bed.beds.rmcontrol import RmcontrolController
+
+    controller = MagicMock(spec=RmcontrolController)
+    for name in _RMCONTROL_GATES:
+        setattr(controller, name, name == gate)
+    return controller
+
+
 async def test_repeat_alarm_names_are_converted_once(hass: HomeAssistant) -> None:
-    controller = MagicMock(spec=BedController)
+    controller = _rmcontrol_with("supports_rmcontrol_repeat_alarm")
     controller.rmcontrol_repeat_alarm = AsyncMock()
 
-    async def execute(call, capability, command, validate):
+    async def execute(call, supported, command, validate):
         validate(controller)
-        assert capability == "supports_rmcontrol_repeat_alarm"
+        assert supported(controller)
         await command(controller)
 
     data = ALARM_SCHEMA(
@@ -144,16 +162,20 @@ async def test_alarm_operations_require_their_specific_capability(
         if capability == "time_sync"
         else f"supports_rmcontrol_{capability}_alarm"
     )
-    assert execute.await_args.args[1] == expected
+    supported = execute.await_args.args[1]
+    assert supported(_rmcontrol_with(expected))
+    assert not any(
+        supported(_rmcontrol_with(gate)) for gate in _RMCONTROL_GATES if gate != expected
+    )
 
 
 async def test_snore_configuration_is_not_enable_switch(hass: HomeAssistant) -> None:
-    controller = MagicMock(spec=BedController)
+    controller = _rmcontrol_with("supports_rmcontrol_anti_snore")
     controller.rmcontrol_anti_snore_config = AsyncMock()
     controller.rmcontrol_anti_snore_switch = AsyncMock()
 
-    async def execute(call, capability, command):
-        assert capability == "supports_rmcontrol_anti_snore"
+    async def execute(call, supported, command):
+        assert supported(controller)
         await command(controller)
 
     data = ANTI_SNORE_SCHEMA(
@@ -555,10 +577,10 @@ async def test_alarm_validates_every_product_before_writing(hass, operation, pai
         return [first, second] if paired else [coordinator]
 
     with (
-        patch("custom_components.adjustable_bed.rmcontrol_services._resolve_sided_targets",
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets",
               return_value=(targets, [])),
         patch("custom_components.adjustable_bed.services._command_targets", side_effect=physical),
-        patch("custom_components.adjustable_bed.rmcontrol_services._execute_sided",
+        patch("custom_components.adjustable_bed.services._execute_sided",
               new_callable=AsyncMock) as execute,
         pytest.raises(ServiceValidationError, match="absent or ambiguous"),
     ):

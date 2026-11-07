@@ -33,6 +33,7 @@ from .base import (
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
+    require_controller,
 )
 
 if TYPE_CHECKING:
@@ -111,7 +112,9 @@ def button_actions_for(owners: frozenset[str]) -> Mapping[str, MotionBedAction]:
 
 def _action_callback(key: str) -> MotorCommandCallable:
     async def invoke(controller: BedController) -> None:
-        await controller.async_execute_motion_bed_action(key)
+        await require_controller(controller, MotionBedController).async_execute_motion_bed_action(
+            key
+        )
     return invoke
 
 
@@ -324,7 +327,7 @@ class MotionBedController(BedController):
         if self.selection.surface != "hub":
             return ()
         async def select(controller: BedController, value: str) -> None:
-            await controller.set_motion_bed_surface(value)
+            await require_controller(controller, MotionBedController).set_motion_bed_surface(value)
         return (ControllerSelectSpec("motion_bed_active_module", "motion_bed_active_module",
                                      "motion_bed_active_module", ("motor", "air", "thermal"), select),)
 
@@ -611,7 +614,7 @@ class MotionBedController(BedController):
         }[effect.action]
         async def execute(controller: BedController) -> None:
             if controller is self and current():
-                await controller.async_execute_motion_bed_internal_query(key)
+                await self.async_execute_motion_bed_internal_query(key)
         await self._coordinator.async_execute_controller_query(execute, cancel_running=False, skip_disconnect=True,
                                                                      run_if=current)
 

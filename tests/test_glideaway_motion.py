@@ -22,6 +22,7 @@ from pytest_homeassistant.common import MockConfigEntry
 from custom_components.adjustable_bed import services
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
 from custom_components.adjustable_bed.beds import glideaway_motion as gm
+from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_OKIN_ORE,
@@ -496,7 +497,7 @@ async def test_alarm_service_validation_and_queue(hass, alarm_target):
     await hass.services.async_call(DOMAIN, "glideaway_set_alarm", calls, blocking=True)
     coordinator.async_execute_controller_command.assert_awaited_once()
     command = coordinator.async_execute_controller_command.await_args.args[0]
-    controller = MagicMock()
+    controller = MagicMock(spec=gm.GlideawayMotionController)
     controller.configure_clock_alarm = AsyncMock()
     await command(controller)
     controller.configure_clock_alarm.assert_awaited_once_with(
@@ -508,7 +509,8 @@ async def test_alarm_service_validation_and_queue(hass, alarm_target):
             await hass.services.async_call(DOMAIN, "glideaway_set_alarm", invalid, blocking=True)
     coordinator.async_execute_controller_command.assert_not_awaited()
     coordinator._bed_type = BED_TYPE_OKIN_ORE
-    with pytest.raises(ServiceValidationError):
+    coordinator._controller = MagicMock(spec=BedController, requires_disconnected_transport=False)
+    with pytest.raises(ServiceValidationError, match="does not support Glideaway alarms"):
         await hass.services.async_call(DOMAIN, "glideaway_set_alarm", calls, blocking=True)
     coordinator.async_execute_controller_command.assert_not_awaited()
 

@@ -286,8 +286,8 @@ async def test_public_configuration_preflights_every_target_before_any_write(has
     b._client.write_gatt_char = AsyncMock()
     service.async_register_goodvibe_services(hass)
     with (
-        patch.object(
-            service, "_resolve_sided_targets", return_value=([(a, "both"), (b, "both")], [])
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets", return_value=([(a, "both"), (b, "both")], [])
         ),
         pytest.raises(ServiceValidationError),
     ):
@@ -347,7 +347,7 @@ async def test_public_configuration_and_dynamic_entities_use_real_scheduler(hass
     with (
         patch.object(c, "async_ensure_connected", AsyncMock(return_value=True)),
         patch.object(c, "_async_refresh_controller_auth", AsyncMock()),
-        patch.object(service, "_resolve_sided_targets", return_value=([(c, "both")], [])),
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=([(c, "both")], [])),
     ):
         await duration.async_select_option("300")
         await count.async_set_native_value(17)

@@ -7,21 +7,12 @@ from math import isfinite
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .beds.base import BedController
 from .codec.motomotion import Position
 from .const import DOMAIN
 from .motomotion_requests import Request
-from .services import (
-    SIDE_FIELD,
-    _execute_sided,
-    _missing_device_error,
-    _preflight_capability,
-    _release_preflighted,
-    _resolve_sided_targets,
-)
+from .services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
 
 
 def finite(value: object) -> float:
@@ -31,7 +22,7 @@ def finite(value: object) -> float:
 
 
 FIELDS: dict[vol.Marker, object] = {
-    vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+    vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
     vol.Required("operation"): vol.In(
         (
             "save_user",
@@ -66,6 +57,8 @@ SCHEMA = vol.Schema(FIELDS)
 
 
 async def handle(call: ServiceCall) -> None:
+    from .beds.motomotion import MotoMotionController
+
     request = Request(
         operation=call.data["operation"],
         user=call.data.get("user"),
@@ -73,33 +66,15 @@ async def handle(call: ServiceCall) -> None:
         posture=call.data["posture"],
         targets=Position(**call.data["targets"]) if "targets" in call.data else None,
     )
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data[CONF_DEVICE_ID], call.data.get("side")
+    await _preflight_and_execute(
+        _call_targets(call),
+        MotoMotionController,
+        "MotoMotion users",
+        lambda controller: controller.async_execute_motomotion_request(request),
+        supported=lambda controller: controller.supports_motomotion_users,
+        validate=lambda controller: controller.validate_motomotion_request(request),
+        cancel_running=True,
     )
-    if missing:
-        raise _missing_device_error(missing[0])
-
-    def validate(controller: BedController) -> None:
-        controller.validate_motomotion_request(request)
-
-    preflighted = await _preflight_capability(
-        targets, "supports_motomotion_users", "MotoMotion users", validate
-    )
-
-    async def execute(controller: BedController) -> None:
-        try:
-            await controller.async_execute_motomotion_request(request)
-        except ValueError as err:
-            raise ServiceValidationError(str(err)) from err
-
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(
-                coordinator, side, execute, cancel_running=True, resource="configuration"
-            )
-    except BaseException:
-        await _release_preflighted(preflighted)
-        raise
 
 
 def async_register_motomotion_services(hass: HomeAssistant) -> None:

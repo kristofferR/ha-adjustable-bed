@@ -13,6 +13,7 @@ from homeassistant.util import dt as dt_util
 
 from ..casper_base_protocol import (
     RGB_TIMERS,
+    CasperBaseActions,
     Event,
     MainReceive,
     Request,
@@ -85,10 +86,10 @@ async def invoke(
     target = controller
     if not isinstance(target, CasperBaseController):
         raise TypeError("Casper Base controller required")
-    await controller.async_perform_casper_base_action(action, save=save, music_page=music_page)
+    await target.async_perform_casper_base_action(action, save=save, music_page=music_page)
 
 
-class CasperBaseController(BedController):
+class CasperBaseController(BedController, CasperBaseActions):
     """Use selected product actions with live coherent service/characteristic pairing."""
 
     profiles: ClassVar[Mapping[str, ProductProfile]] = PROFILES

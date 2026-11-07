@@ -166,7 +166,7 @@ async def bed(hass: HomeAssistant, request: pytest.FixtureRequest) -> AsyncItera
         )
         stack.enter_context(
             patch(
-                "custom_components.adjustable_bed.limoss_remote_services._resolve_sided_targets",
+                "custom_components.adjustable_bed.services._resolve_sided_targets",
                 new=resolve,
             )
         )

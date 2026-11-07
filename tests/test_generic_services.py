@@ -33,26 +33,39 @@ from custom_components.adjustable_bed.services import async_register_services
 ROOT = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
 
 
-def target(bed_type: str = BED_TYPE_KEESON, name: str = "Bed", **capabilities: object):
-    """A coordinator whose capability controller declares only ``capabilities``."""
-    controller = SimpleNamespace(
-        held_control_options=(),
-        validate_hold_control=MagicMock(),
-        hold_control=AsyncMock(),
-        supports_device_rename=False,
-        disconnects_after_rename=False,
-        validate_device_rename=MagicMock(),
-        rename_device=AsyncMock(),
-        supports_clock_sync=False,
-        sync_clock=AsyncMock(),
-        supports_memory_presets=True,
-        memory_slot_count=4,
-        supports_held_memory_recall=False,
-        validate_memory_recall=MagicMock(),
-        preset_memory=AsyncMock(),
-        recall_memory=AsyncMock(),
-    )
-    vars(controller).update(capabilities)
+def target(
+    bed_type: str = BED_TYPE_KEESON,
+    name: str = "Bed",
+    family: type | None = None,
+    **capabilities: object,
+):
+    """A coordinator whose capability controller declares only ``capabilities``.
+
+    ``family`` makes the controller a mock of that controller class, so family
+    actions find their interface.
+    """
+    members: dict[str, object] = {
+        "held_control_options": (),
+        "validate_hold_control": MagicMock(),
+        "hold_control": AsyncMock(),
+        "supports_device_rename": False,
+        "disconnects_after_rename": False,
+        "validate_device_rename": MagicMock(),
+        "rename_device": AsyncMock(),
+        "supports_clock_sync": False,
+        "sync_clock": AsyncMock(),
+        "supports_memory_presets": True,
+        "memory_slot_count": 4,
+        "supports_held_memory_recall": False,
+        "validate_memory_recall": MagicMock(),
+        "preset_memory": AsyncMock(),
+        "recall_memory": AsyncMock(),
+        **capabilities,
+    }
+    controller = SimpleNamespace(**members) if family is None else MagicMock(spec=family)
+    if family is not None:
+        for key, value in members.items():
+            setattr(controller, key, value)
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     coordinator.name = name
     coordinator.bed_type = bed_type

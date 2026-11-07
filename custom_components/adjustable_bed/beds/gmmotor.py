@@ -35,7 +35,7 @@ from ..gmmotor_protocol import (
     snore_enabled,
     stop_packet,
 )
-from ..gmmotor_requests import Request
+from ..gmmotor_requests import GmmotorActions, Request
 from ..gmmotor_sessions import product_ui_states
 from ..gmmotor_transport import Transport, native_write_lock, select_p1
 from .base import (
@@ -66,7 +66,7 @@ def _label(action: Action) -> str:
     return re.sub(r"(?<=[a-z0-9])(?=[A-Z])", " ", text)
 
 
-class GmmotorController(BedController):
+class GmmotorController(BedController, GmmotorActions):
     """One physical P1 session with an explicitly selected app product."""
 
     def __init__(
@@ -130,10 +130,6 @@ class GmmotorController(BedController):
 
     @property
     def supports_stop_all(self) -> bool:
-        return True
-
-    @property
-    def supports_gmmotor_controls(self) -> bool:
         return True
 
     @property

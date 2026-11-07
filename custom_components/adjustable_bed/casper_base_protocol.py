@@ -6,6 +6,7 @@ package. Shared UUIDs do not identify an app.
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Final, Literal
@@ -275,3 +276,25 @@ def decode_extra(b: bytes) -> Event | None:
         )
         return Event("desk_extra", values)
     return None
+
+
+class CasperBaseActions(ABC):
+    """Typed product actions shared by the Casper and Hush bases and sleep sensors."""
+
+    @property
+    def supports_casper_base_controls(self) -> bool:
+        """Whether the explicit Casper Base app's named actions are available."""
+        return False
+
+    @property
+    def supports_hush_base_controls(self) -> bool:
+        """Whether the explicit Hush Base app's named actions are available."""
+        return False
+
+    @abstractmethod
+    def validate_casper_base_request(self, request: Request) -> None:
+        """Validate a request before any selected target writes."""
+
+    @abstractmethod
+    async def async_execute_casper_base_request(self, request: Request) -> None:
+        """Execute one validated product action."""

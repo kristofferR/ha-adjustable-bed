@@ -646,11 +646,11 @@ async def test_alarm_sound_preflight_checks_all_targets(hass, controller) -> Non
     )
     with (
         patch(
-            "custom_components.adjustable_bed.solace_services._resolve_sided_targets",
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(motionflex, "both"), (woosa, "both")], []),
         ),
         patch(
-            "custom_components.adjustable_bed.solace_services._execute_sided", new_callable=AsyncMock
+            "custom_components.adjustable_bed.services._execute_sided", new_callable=AsyncMock
         ) as execute,
         pytest.raises(ServiceValidationError, match="sound"),
     ):

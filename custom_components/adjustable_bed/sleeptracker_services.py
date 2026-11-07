@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Literal, cast
 
@@ -11,8 +10,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .beds.base import BedController
-from .const import BED_TYPE_SLEEPTRACKER, DOMAIN
+from .const import DOMAIN
 from .sleeptracker_protocol import FREQUENCIES, PRESETS, FanSide, Request
 
 if TYPE_CHECKING:
@@ -66,53 +64,22 @@ def build_request(service: str, data: Mapping[str, object]) -> Request:
 
 
 async def handle_sleeptracker(call: ServiceCall) -> None:
-    from .services import (
-        ATTR_SIDE,
-        CONF_DEVICE_ID,
-        _command_targets,
-        _execute_sided,
-        _missing_device_error,
-        _preflight_capability,
-        _release_preflighted,
-        _resolve_sided_targets,
-    )
+    from .beds.sleeptracker import SleeptrackerController
+    from .services import _call_targets, _preflight_and_execute
 
     try:
         request = build_request(call.service, call.data)
     except (ValueError, KeyError) as err:
         raise ServiceValidationError(str(err)) from err
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
+    await _preflight_and_execute(
+        _call_targets(call),
+        SleeptrackerController,
+        "Sleeptracker processor controls",
+        lambda controller: controller.async_execute_sleeptracker_request(request),
+        validate=lambda controller: controller.validate_sleeptracker_request(request),
+        cancel_running=True,
+        resource="*",
     )
-    if missing:
-        raise _missing_device_error(missing[0])
-    for coordinator, side in targets:
-        if any(
-            target.bed_type != BED_TYPE_SLEEPTRACKER
-            for target in _command_targets(coordinator, side)
-        ):
-            raise ServiceValidationError(
-                "Select the Sleeptracker app processor, not an Adjustable Lite UART base"
-            )
-
-    def validate(controller: BedController) -> None:
-        controller.validate_sleeptracker_request(request)
-
-    async def execute(controller: BedController) -> None:
-        await controller.async_execute_sleeptracker_request(request)
-
-    try:
-        preflighted = await _preflight_capability(
-            targets, "supports_sleeptracker_controls", "Sleeptracker processor controls", validate
-        )
-    except ValueError as err:
-        raise ServiceValidationError(str(err)) from err
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(coordinator, side, execute, resource="*")
-    except Exception, asyncio.CancelledError:
-        await _release_preflighted(preflighted)
-        raise
 
 
 def _integer(value: object) -> int:

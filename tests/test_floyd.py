@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed.beds.floyd import FloydController
 from custom_components.adjustable_bed.const import (
@@ -434,7 +435,7 @@ async def test_room_assignment_failure_disconnects_without_persisting(hass, floy
     floyd.floyd_action = AsyncMock(side_effect=ValueError("assignment rejected"))
     with patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=(
         [(target, "both")], [],
-    )), pytest.raises(ValueError, match="assignment rejected"):
+    )), pytest.raises(ServiceValidationError, match="assignment rejected"):
         await hass.services.async_call(DOMAIN, "floyd_action", {
             "device_id": "one", "action": "assign_room", "confirm": True, "room_id": 23,
         }, blocking=True)

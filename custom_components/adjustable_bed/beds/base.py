@@ -14,7 +14,6 @@ from abc import ABC, abstractmethod
 from collections.abc import (
     Awaitable,
     Callable,
-    Collection,
     Coroutine,
     Iterator,
     Mapping,
@@ -29,21 +28,11 @@ from bleak import BleakClient
 from bleak.exc import BleakError
 
 if TYPE_CHECKING:
-    from datetime import datetime
 
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..casper_base_protocol import Request as CasperBaseRequest
-    from ..cluster018_requests import Request as Cluster018Request
     from ..command_scheduler import StreamMember
     from ..coordinator import AdjustableBedCoordinator
-    from ..gmmotor_requests import Request as GmmotorRequest
-    from ..goodvibe_services import Request as GoodVibeRequest
-    from ..hjbed_requests import Request as HJBedRequest
-    from ..motion_bed_requests import MotionBedWrite
-    from ..motomotion_requests import Request as MotoMotionRequest
-    from ..row061_protocol import AlarmRequest
-    from ..sleeptracker_protocol import Request as SleeptrackerRequest
 
 from ..alarm_table import (
     AlarmTableSchedule,
@@ -1242,15 +1231,6 @@ class BedController(ABC):
             memory_num: Memory slot number (1-4, availability varies by bed)
         """
 
-    @property
-    def supports_confirmed_calibration(self) -> bool:
-        """Whether an explicitly confirmed calibration action is available."""
-        return False
-
-    async def calibrate(self, *, confirmed: bool) -> None:
-        """Calibrate only with explicit confirmation where supported."""
-        raise NotImplementedError("Confirmed calibration is unavailable")
-
     async def recall_memory(self, slot: int, *, hold_ms: int) -> None:
         """Recall a local memory with an explicit caller-owned hold policy."""
         raise NotImplementedError("Held local memories are unavailable")
@@ -1339,16 +1319,6 @@ class BedController(ABC):
     def supports_solace_audio(self) -> bool:
         """Return True if the bed exposes the Solace music/audio surface."""
         return False
-
-    @property
-    def supports_solace_alarm(self) -> bool:
-        """Return True if the bed exposes the Solace alarm surface."""
-        return False
-
-    @property
-    def solace_alarm_sound_options(self) -> tuple[str, ...]:
-        """Sounds accepted by this app profile's alarm action."""
-        return ("none", "alarm", "music_1", "music_2", "music_3", "music_4", "music_5")
 
     @property
     def supports_memory_presets(self) -> bool:
@@ -1548,16 +1518,6 @@ class BedController(ABC):
         return {}
 
     @property
-    def supports_cluster018(self) -> bool:
-        return False
-
-    def validate_cluster018_request(self, request: Cluster018Request) -> None:
-        raise NotImplementedError("This controller does not support these app settings")
-
-    async def async_execute_cluster018_request(self, request: Cluster018Request) -> None:
-        raise NotImplementedError("This controller does not support these app settings")
-
-    @property
     def has_dynamic_controller_entities(self) -> bool:
         """Whether notifications can reveal additional entities after setup."""
         return False
@@ -1692,16 +1652,6 @@ class BedController(ABC):
         raise NotImplementedError("Massage speed control is not supported")
 
     @property
-    def supports_goodvibe(self) -> bool:
-        return False
-
-    def validate_goodvibe_request(self, request: GoodVibeRequest) -> None:
-        raise NotImplementedError("Good Vibe Sleep configuration is unavailable")
-
-    async def async_execute_goodvibe_request(self, request: GoodVibeRequest) -> None:
-        raise NotImplementedError("Good Vibe Sleep configuration is unavailable")
-
-    @property
     def requests_connection_recovery(self) -> bool:
         """Whether a user-started background session needs recovery after link loss."""
         return False
@@ -1712,245 +1662,10 @@ class BedController(ABC):
     def on_gesture_release(self) -> None:  # noqa: B027
         """Mark the current admitted gesture as released before STOP invalidates it."""
 
-    async def async_execute_motomotion_action(self, key: str) -> None:
-        raise NotImplementedError("MotoMotion actions are unavailable")
-
-    async def async_set_motomotion_number(self, key: str, value: float) -> None:
-        raise NotImplementedError("MotoMotion settings are unavailable")
-
-    async def async_select_motomotion(self, key: str, value: str) -> None:
-        raise NotImplementedError("MotoMotion selections are unavailable")
-
-    @property
-    def supports_motomotion_users(self) -> bool:
-        return False
-
-    def validate_motomotion_request(self, request: MotoMotionRequest) -> None:
-        raise NotImplementedError("MotoMotion users are unavailable")
-
-    async def async_execute_motomotion_request(self, request: MotoMotionRequest) -> None:
-        raise NotImplementedError("MotoMotion users are unavailable")
-
-    @property
-    def supports_hjbed(self) -> bool:
-        """Whether this is an explicit HJBed app product."""
-        return False
-
-    async def async_execute_hjbed_action(self, detail: str, *, save: bool = False) -> None:
-        """Execute a catalogued HJBed detail through the normal command lock."""
-        raise NotImplementedError("HJBed controls are unavailable")
-
-    def validate_hjbed_request(self, request: HJBedRequest) -> None:
-        """Validate every HJBed target before executing configuration writes."""
-        raise NotImplementedError("HJBed configuration is unavailable")
-
-    async def async_execute_hjbed_request(self, request: HJBedRequest) -> None:
-        """Execute a preflighted HJBed request under the command lock."""
-        raise NotImplementedError("HJBed configuration is unavailable")
-
-    @property
-    def supports_rmcontrol_alarm(self) -> bool:
-        """Whether the selected RMControl product supports alarm configuration."""
-        return False
-
-    @property
-    def supports_rmcontrol_single_alarm(self) -> bool:
-        """Whether this product exposes the countdown alarm operation."""
-        return False
-
-    @property
-    def supports_rmcontrol_repeat_alarm(self) -> bool:
-        """Whether this product exposes repeating alarm records."""
-        return False
-
-    @property
-    def supports_rmcontrol_alarm_time_sync(self) -> bool:
-        """Whether the selected product requests alarm clock synchronization."""
-        return False
-
-    @property
-    def supports_rmcontrol_anti_snore(self) -> bool:
-        """Whether the selected RMControl product supports snore intervention."""
-        return False
-
-    def validate_rmcontrol_alarm_action(self, action: str) -> None:
-        """Validate a product-specific alarm action without writing to the bed."""
-        raise NotImplementedError("RMControl alarm actions are not supported")
-
-    async def rmcontrol_single_alarm(self, minutes: int, action: str | None) -> None:
-        raise NotImplementedError("RMControl single alarms are not supported")
-
-    async def rmcontrol_repeat_alarm(
-        self, alarm_id: int, hour: int, minute: int, weekdays: tuple[int, ...], action: str
-    ) -> None:
-        raise NotImplementedError("RMControl repeating alarms are not supported")
-
-    async def rmcontrol_delete_alarm(self, alarm_id: int) -> None:
-        raise NotImplementedError("RMControl repeating alarms are not supported")
-
-    async def rmcontrol_query_alarms(self) -> None:
-        raise NotImplementedError("RMControl alarms are not supported")
-
-    async def rmcontrol_sync_alarm_time(self, now: datetime) -> None:
-        raise NotImplementedError("RMControl alarm time synchronization is not supported")
-
-    async def rmcontrol_anti_snore_switch(self, enabled: bool) -> None:
-        raise NotImplementedError("RMControl snore intervention is not supported")
-
-    async def rmcontrol_anti_snore_config(self, mode: Literal["count", "time"], value: int) -> None:
-        raise NotImplementedError("RMControl snore intervention is not supported")
-
-    async def rmcontrol_query_anti_snore(self) -> None:
-        raise NotImplementedError("RMControl snore intervention is not supported")
-
-    @property
-    def supports_row061_alarms(self) -> bool:
-        """Whether the explicitly selected app/model has a mattress or calendar alarm."""
-        return False
-
-    def validate_row061_alarm(self, request: AlarmRequest) -> None:
-        raise NotImplementedError("This bed has no supported app alarm")
-
-    async def row061_alarm(self, request: AlarmRequest) -> None:
-        raise NotImplementedError("This bed has no supported app alarm")
-
-    @property
-    def supports_richmat_mh_alarm(self) -> bool:
-        """Whether a Richmat MH app profile currently shows its alarm page."""
-        return False
-
-    def validate_richmat_mh_alarm(
-        self,
-        *,
-        enabled: bool,
-        position: str | None,
-        massage: Sequence[str],
-        slot: int | None,
-    ) -> None:
-        """Validate a Richmat MH alarm request without writing to the bed."""
-        raise NotImplementedError("Richmat MH alarms are not supported")
-
-    async def richmat_mh_alarm(
-        self,
-        *,
-        enabled: bool,
-        minutes: int,
-        position: str | None,
-        massage: Sequence[str],
-        slot: int | None,
-    ) -> None:
-        """Program or cancel a Richmat MH countdown alarm."""
-        raise NotImplementedError("Richmat MH alarms are not supported")
-
-    @property
-    def supports_richmat_mh_waist_alarm(self) -> bool:
-        """Whether a Richmat MH app profile currently shows its waist mattress page."""
-        return False
-
-    async def richmat_mh_waist_alarm(
-        self,
-        *,
-        enabled: bool,
-        waist_side: str,
-        hour: int,
-        minute: int,
-        now_hour: int,
-        now_minute: int,
-        repeat: str,
-        intensity: int,
-    ) -> None:
-        """Save or cancel one side's Richmat MH waist mattress alarm."""
-        raise NotImplementedError("Richmat MH waist mattress alarms are not supported")
-
-    @property
-    def supports_richmat_mh_light_color(self) -> bool:
-        """Whether a Richmat MH app profile shows an LED or button-light colour page."""
-        return False
-
-    @property
-    def supports_richmat_mh_aroma(self) -> bool:
-        """Whether a Richmat MH app profile currently shows its aroma page."""
-        return False
-
-    async def richmat_mh_aroma(
-        self, mode2_startup_minutes: int, mode3_startup_minutes: int, mode3_pause_hours: int
-    ) -> None:
-        """Write the Richmat MH aroma timing triplet."""
-        raise NotImplementedError("Richmat MH aroma timing is not supported")
-
-    @property
-    def supports_floyd_actions(self) -> bool:
-        """Whether the Floyd Home room and preset actions are available."""
-        return False
-
-    def validate_floyd_action(
-        self, action: str, internal_side: str, confirm: bool, room_id: int | None,
-    ) -> None:
-        """Validate a Floyd Home action before any target writes."""
-        raise NotImplementedError("Floyd Home actions are unavailable")
-
-    async def floyd_action(
-        self, action: str, internal_side: str, confirm: bool, room_id: int | None,
-    ) -> None:
-        """Execute an explicit Floyd Home BLE room or preset action."""
-        raise NotImplementedError("Floyd Home actions are unavailable")
-
-    @property
-    def supports_doublesleep_controls(self) -> bool:
-        """Whether the controller accepts validated OKIN SleepEase actions."""
-        return False
-
-    @property
-    def supports_sleeptracker_controls(self) -> bool:
-        """Whether typed local Sleeptracker processor actions are available."""
-        return False
-
-    @property
-    def supports_hush_base_controls(self) -> bool:
-        return False
-
-    @property
-    def supports_casper_base_controls(self) -> bool:
-        """Whether the explicit Casper Base app's named actions are available."""
-        return False
-
-    def validate_casper_base_request(self, request: CasperBaseRequest) -> None:
-        raise NotImplementedError("Casper Base controls are unavailable")
-
-    async def async_perform_casper_base_action(
-        self, action: str, *, save: bool = False, music_page: bool = False
-    ) -> None:
-        """Run one product action on the side bound by the command."""
-        raise NotImplementedError("Casper Base actions are unavailable")
-
-    async def async_execute_casper_base_request(self, request: CasperBaseRequest) -> None:
-        raise NotImplementedError("Casper Base controls are unavailable")
-
-    def validate_sleeptracker_request(self, request: SleeptrackerRequest) -> None:
-        """Preflight every target before sending local processor controls."""
-        raise NotImplementedError("Sleeptracker controls are unavailable")
-
-    async def async_execute_sleeptracker_request(self, request: SleeptrackerRequest) -> None:
-        """Execute one validated, finite Sleeptracker action."""
-        raise NotImplementedError("Sleeptracker controls are unavailable")
-
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         """Return controller-state diagnostic sensors exposed by this protocol."""
         return ()
-
-    @property
-    def supports_gmmotor_controls(self) -> bool:
-        """Whether the exact GM Control app profile admits specialized actions."""
-        return False
-
-    def validate_gmmotor_request(self, request: GmmotorRequest) -> None:
-        """Validate a model/session request before any selected target writes."""
-        raise NotImplementedError("GM Control actions are unavailable")
-
-    async def async_execute_gmmotor_request(self, request: GmmotorRequest) -> None:
-        """Execute one admitted GM Control direct BLE action."""
-        raise NotImplementedError("GM Control actions are unavailable")
 
     @property
     def controller_state_binary_sensor_specs(
@@ -2014,31 +1729,6 @@ class BedController(ABC):
         return False
 
     @property
-    def supports_alarm(self) -> bool:
-        """Return True if the controller exposes the BLE timer/alarm service."""
-        return False
-
-    @property
-    def supports_sleep_timer(self) -> bool:
-        """Return True if a delayed preset can be programmed and cancelled."""
-        return False
-
-    @property
-    def sleep_timer_memory_options(self) -> tuple[int, ...]:
-        """Return selectable sleep actions, with zero representing flat."""
-        return ()
-
-    @property
-    def sleep_timer_duration_options(self) -> tuple[int, ...]:
-        """Return discrete minute choices, or empty for a continuous minute range."""
-        return ()
-
-    @property
-    def supports_alarm_timer(self) -> bool:
-        """Return True if an alarm delay can be programmed and cancelled."""
-        return False
-
-    @property
     def held_control_options(self) -> tuple[str, ...]:
         """Return controls with a protocol-defined held-command lifecycle."""
         return ()
@@ -2054,14 +1744,6 @@ class BedController(ABC):
         ``hold_control`` checks membership in ``held_control_options`` first.
         """
         return None
-
-    def validate_svane_hold_control(self, control: str, duration_ms: int) -> None:
-        """Validate exact live Svane roles before any target starts motion."""
-        raise ValueError("This profile does not support Svane held actions")
-
-    def request_svane_axis_release(self, axis: str) -> None:
-        """Signal an active Svane writer without doing BLE I/O."""
-        raise ValueError("This profile does not support Svane axis release")
 
     @property
     def requires_linked_live_readiness(self) -> bool:
@@ -2884,98 +2566,10 @@ class BedController(ABC):
         """Stop the Solace music feature."""
         raise NotImplementedError("Solace audio not supported on this bed")
 
-    async def solace_select_music(self, track: int, *, preview: bool = False) -> None:
-        """Select or preview a Solace music track."""
-        raise NotImplementedError("Solace audio not supported on this bed")
-
-    async def solace_set_audio_volume(self, level: int) -> None:
-        """Set the Solace audio volume."""
-        raise NotImplementedError("Solace audio not supported on this bed")
-
-    async def solace_query_audio_volume(self) -> None:
-        """Request the Solace audio volume."""
-        raise NotImplementedError("Solace audio not supported on this bed")
-
-    async def program_solace_alarm(
-        self,
-        *,
-        enabled: bool,
-        hour: int,
-        minute: int,
-        weekdays: Collection[int],
-        mode: str,
-        massage: bool,
-        sound: str,
-    ) -> None:
-        """Program a Solace alarm."""
-        raise NotImplementedError("Solace alarm programming not supported on this bed")
-
-    def validate_motion_bed_write(self, request: MotionBedWrite) -> None:
-        raise NotImplementedError("Motion Bed configuration unavailable")
-
-    async def async_execute_motion_bed_write(self, request: MotionBedWrite) -> None:
-        raise NotImplementedError("Motion Bed configuration unavailable")
-
     @property
     def supports_motion_bed_actions(self) -> bool:
         """Whether the explicit Motion Bed app action surface is available."""
         return False
-
-    async def set_motion_bed_surface(self, surface: str) -> None:
-        raise NotImplementedError("Motion Bed hub module selection unavailable")
-
-    def validate_motion_bed_action(
-        self, key: str, *, branch: str = "app", duration: float = 1, confirmed: bool = False
-    ) -> None:
-        raise NotImplementedError("Motion Bed actions unavailable")
-
-    async def async_execute_motion_bed_action(
-        self, key: str, *, branch: str = "app", duration: float = 1, confirmed: bool = False
-    ) -> None:
-        raise NotImplementedError("Motion Bed actions unavailable")
-
-    async def async_execute_motion_bed_internal_query(self, key: str) -> None:
-        raise NotImplementedError("Motion Bed callback queries unavailable")
-
-    @property
-    def furnimove_action_specs(self) -> tuple[ControllerActionSpec, ...]:
-        """Return reachable rows from the selected FurniMove table."""
-        return ()
-
-    def validate_furnimove_action(
-        self, row_index: int, *, duration_ms: int | None = None, consumer: str = "app"
-    ) -> tuple[str, str]:
-        """Validate an app row and return its action name and category."""
-        raise NotImplementedError("FurniMove actions not supported on this bed")
-
-    async def async_execute_furnimove_action(
-        self, row_index: int, *, duration_ms: int | None = None, consumer: str = "app"
-    ) -> None:
-        """Execute one validated app row through its traced consumer."""
-        raise NotImplementedError("FurniMove actions not supported on this bed")
-
-    def validate_furnimove_massage_program(self, program: int) -> None:
-        """Validate program availability before any target begins writing."""
-        raise NotImplementedError("FurniMove massage programs not supported on this bed")
-
-    async def set_furnimove_massage_program(self, program: int) -> None:
-        """Select one of the app's four massage programs."""
-        raise NotImplementedError("FurniMove massage programs not supported on this bed")
-
-    def validate_furnimove_rename(self, name: str) -> None:
-        """Validate a device name without writing it."""
-        raise NotImplementedError("FurniMove rename not supported on this bed")
-
-    def validate_furnimove_simultaneous(
-        self,
-        first_axis: str,
-        first_up: bool,
-        second_axis: str,
-        second_up: bool,
-        duration_ms: int | None = None,
-    ) -> None:
-        """Validate two selected FurniMove motor directions before writing."""
-        raise NotImplementedError("FurniMove movement not supported on this bed")
 
     async def sync_positions(self) -> None:
         """Run the controller's synchronization action."""
@@ -3066,32 +2660,6 @@ class BedController(ABC):
     async def hold_preset(self, preset: str, duration_ms: int) -> None:
         """Hold a preset using the protocol's refresh and release lifecycle."""
         raise NotImplementedError("Held preset not supported on this bed")
-
-    async def program_alarm(
-        self,
-        seconds: int,
-        actions: Sequence[Any],
-        recurrence_count: int,
-        recurrence_minutes: int,
-    ) -> None:
-        """Program a protocol-supported wake alarm."""
-        raise NotImplementedError("Alarm programming not supported on this bed")
-
-    async def set_sleep_timer(self, minutes: int, memory_num: int = 1) -> None:
-        """Schedule a delayed preset using a supported sleep action."""
-        raise NotImplementedError("Sleep timer not supported on this bed")
-
-    async def cancel_sleep_timer(self) -> None:
-        """Cancel the stored sleep timer."""
-        raise NotImplementedError("Sleep timer not supported on this bed")
-
-    async def set_alarm_timer(self, minutes: int) -> None:
-        """Schedule an alarm after the given number of minutes."""
-        raise NotImplementedError("Alarm timer not supported on this bed")
-
-    async def cancel_alarm_timer(self) -> None:
-        """Cancel the stored alarm timer."""
-        raise NotImplementedError("Alarm timer not supported on this bed")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         """Hold a supported control for a bounded duration, then release it."""
@@ -3505,23 +3073,6 @@ class BedController(ABC):
         """
         raise NotImplementedError("Light timer not supported on this bed")
 
-    @property
-    def sleep_number_command_names(self) -> tuple[str, ...]:
-        """Return the supported semantic Sleep Number configuration actions."""
-        return ()
-
-    def validate_sleep_number_command(self, command: str, parameters: Mapping[str, object]) -> None:
-        """Validate a complete action without changing the bed."""
-        raise ValueError("Sleep Number configuration actions are not supported on this bed")
-
-    async def async_execute_sleep_number_command(
-        self, command: str, parameters: Mapping[str, object]
-    ) -> dict[str, object]:
-        """Execute an allowlisted action and return its structured result."""
-        raise NotImplementedError(
-            "Sleep Number configuration actions are not supported on this bed"
-        )
-
     async def read_bed_presence(self) -> bool | None:
         """Read bed occupancy state for the configured side.
 
@@ -3626,3 +3177,23 @@ class BedController(ABC):
             NotImplementedError: If the bed doesn't support circulation massage
         """
         raise NotImplementedError("Circulation massage not supported on this bed")
+
+
+def controller_as[T](controller: BedController | None, interface: type[T]) -> T | None:
+    """Return ``controller`` as a family interface it implements, else None.
+
+    Vendor features live on their family's class, not on ``BedController``,
+    so callers look the family up instead of probing for its members.
+    """
+    return controller if isinstance(controller, interface) else None
+
+
+def require_controller[T](controller: BedController, interface: type[T]) -> T:
+    """Return ``controller`` as ``interface`` for a family's own entity callbacks.
+
+    Any other controller lacks the feature, as the base class's stubs did.
+    """
+    family = controller_as(controller, interface)
+    if family is None:
+        raise NotImplementedError(f"{interface.__name__} features are unavailable")
+    return family

@@ -221,8 +221,8 @@ async def test_public_user_action_validates_all_targets_before_any_write(hass):
     await b.async_prime_offline_controller()
     service.async_register_motomotion_services(hass)
     with (
-        patch.object(
-            service, "_resolve_sided_targets", return_value=([(a, "left"), (b, "left")], [])
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets", return_value=([(a, "left"), (b, "left")], [])
         ),
         pytest.raises(ServiceValidationError),
     ):
@@ -258,7 +258,7 @@ async def test_public_posture_request_and_restore_have_one_physical_owner(hass):
     ctrl._session = (c._client, char, char)
     service.async_register_motomotion_services(hass)
     with (
-        patch.object(service, "_resolve_sided_targets", return_value=([(c, "both")], [])),
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=([(c, "both")], [])),
         patch.object(c, "async_ensure_connected", AsyncMock(return_value=True)),
         patch.object(c, "_async_refresh_controller_auth", AsyncMock()),
     ):

@@ -59,21 +59,20 @@ async def test_named_action_callback_executes_current_controller_through_queue()
     current.hold_control.assert_awaited_once_with("command_22", 120)
 
 
+def _calibration_target(ctrl):
+    c = ctrl._coordinator
+    c.controller = c.capability_controller = ctrl
+    c.controller_side = None
+    return c
+
+
 async def test_calibration_preflight_serialized_current_action():
     ctrl = make_controller()
     ctrl.session.slots[8] = {0: -1}
     ctrl._subscribed = True
     ctrl.calibrate = AsyncMock()
-    ctrl.recall_memory = AsyncMock()
-    c = ctrl._coordinator
-    c.bed_type = const.BED_TYPE_FSM_RELAX
-    call = SimpleNamespace(
-        hass=MagicMock(),
-        data={"device_id": ["device"], "preset": 8, "duration": 0.12, "confirmed": True},
-    )
-
-    async def preflight(targets, capability, label, validator=None):
-        assert capability == "supports_confirmed_calibration"
+    c = _calibration_target(ctrl)
+    call = SimpleNamespace(hass=MagicMock(), data={"device_id": ["device"], "confirmed": True})
 
     async def execute(coordinator, side, fn, **kwargs):
         assert kwargs["cancel_running"] is True
@@ -81,26 +80,48 @@ async def test_calibration_preflight_serialized_current_action():
 
     with (
         patch.object(services, "_resolve_sided_targets", return_value=([(c, "both")], [])),
-        patch.object(fsm_relax_services, "_command_targets", return_value=[c]),
-        patch.object(fsm_relax_services, "_preflight_capability", side_effect=preflight),
-        patch.object(fsm_relax_services, "_execute_sided", side_effect=execute),
+        patch.object(services, "_execute_sided", side_effect=execute),
     ):
         await fsm_relax_services.handle_fsm_relax_calibrate(call)
     ctrl.calibrate.assert_awaited_once_with(confirmed=True)
 
 
+async def test_calibration_failure_releases_links_opened_by_preflight():
+    """A failed write hands a link opened only for validation back to its idle timer."""
+    ctrl = make_controller()
+    c = _calibration_target(ctrl)
+    c.capability_controller = None
+    c.is_connected = True
+    c.async_ensure_connected = AsyncMock(return_value=True)
+    call = SimpleNamespace(hass=MagicMock(), data={"device_id": ["device"], "confirmed": True})
+
+    async def connect(parent, target, preflighted):
+        preflighted.append((parent, target))
+        return ctrl
+
+    with (
+        patch.object(services, "_resolve_sided_targets", return_value=([(c, "both")], [])),
+        patch.object(services, "_validation_controller", side_effect=connect),
+        patch.object(services, "_execute_sided", AsyncMock(side_effect=BleakError("lost"))),
+        pytest.raises(BleakError),
+    ):
+        await fsm_relax_services.handle_fsm_relax_calibrate(call)
+    c.async_ensure_connected.assert_awaited_once_with(reset_timer=True)
+
+
 async def test_false_confirmation_and_wrong_profile_fail_before_execution():
-    c = MagicMock(bed_type=const.BED_TYPE_LIMOSS)
+    c = MagicMock(bed_type=const.BED_TYPE_LIMOSS, controller_side=None)
+    c.name = "Other bed"
+    c.capability_controller = MagicMock()
     call = SimpleNamespace(hass=MagicMock(), data={"device_id": ["device"], "confirmed": False})
     with (
         patch.object(services, "_resolve_sided_targets", return_value=([(c, "both")], [])),
-        patch.object(fsm_relax_services, "_command_targets", return_value=[c]),
-        patch.object(fsm_relax_services, "_execute_sided", AsyncMock()) as execute,
+        patch.object(services, "_execute_sided", AsyncMock()) as execute,
     ):
         with pytest.raises(ServiceValidationError, match="confirmation"):
             await fsm_relax_services.handle_fsm_relax_calibrate(call)
         call.data["confirmed"] = True
-        with pytest.raises(ServiceValidationError, match="profile"):
+        with pytest.raises(ServiceValidationError, match="does not support FSM Relax"):
             await fsm_relax_services.handle_fsm_relax_calibrate(call)
         execute.assert_not_called()
 

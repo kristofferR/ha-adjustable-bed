@@ -473,12 +473,13 @@ async def test_alarm_service_schema_and_validation(hass, monkeypatch):
     c = make("wsilver2", "bfrm_mattress")
     c._normal_ready = True
 
-    async def execute(call, capability, label, command, validate):
-        assert capability == "supports_row061_alarms"
+    async def execute(targets, interface, label, command, *, supported, validate):
+        assert isinstance(c, interface) and supported(c)
         validate(c)
         await command(c)
 
-    monkeypatch.setattr(service, "_execute", execute)
+    monkeypatch.setattr(service, "_call_targets", lambda _call: [])
+    monkeypatch.setattr(service, "_preflight_and_execute", execute)
     data = service.SCHEMA(
         {"device_id": ["bed"], "family": "mattress", "time": "07:30:00", "mattress_side": "right"}
     )

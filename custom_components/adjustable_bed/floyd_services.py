@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
-from typing import TYPE_CHECKING
-
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
@@ -13,25 +10,25 @@ from homeassistant.helpers import config_validation as cv
 
 from .const import DOMAIN
 from .services import (
+    DEVICE_IDS,
     SIDE_FIELD,
     BedTarget,
     _call_targets,
     _execute_sided,
+    _family_command,
     _preflight_capability,
     _release_preflighted,
 )
-
-if TYPE_CHECKING:
-    from .beds.base import BedController
-
 
 SERVICE_FLOYD_ACTION = "floyd_action"
 
 
 async def handle_floyd_action(call: ServiceCall) -> None:
     """Run Floyd presets or explicitly assign one unassigned standalone node."""
+    from .beds.floyd import FloydController
     from .coordinator import AdjustableBedCoordinator
 
+    label = "Floyd Home actions"
     targets = _call_targets(call)
     action = call.data["action"]
     internal_side = call.data.get("internal_side", "first")
@@ -42,18 +39,16 @@ async def handle_floyd_action(call: ServiceCall) -> None:
     ):
         raise ServiceValidationError("Assign one standalone Floyd bed at a time")
 
-    def validate(controller: BedController) -> None:
+    def validate(controller: FloydController) -> None:
         controller.validate_floyd_action(action, internal_side, confirm, room_id)
 
-    preflighted = await _preflight_capability(
-        targets, "supports_floyd_actions", "Floyd Home actions", validate,
-    )
+    preflighted = await _preflight_capability(targets, FloydController, label, validate=validate)
     try:
         for coordinator, side in targets:
             assignment_completed = False
 
             async def execute(
-                controller: BedController, *, target: BedTarget = coordinator,
+                controller: FloydController, *, target: BedTarget = coordinator,
             ) -> None:
                 nonlocal assignment_completed
                 await controller.floyd_action(action, internal_side, confirm, room_id)
@@ -65,7 +60,7 @@ async def handle_floyd_action(call: ServiceCall) -> None:
 
             try:
                 await _execute_sided(
-                    coordinator, side, execute,
+                    coordinator, side, _family_command(FloydController, label, execute),
                     resource="configuration" if action.startswith("save_") or action in {"assign_room", "confirm_add"} else None,
                 )
             finally:
@@ -76,10 +71,14 @@ async def handle_floyd_action(call: ServiceCall) -> None:
                     raise ServiceValidationError("Floyd room assignment was cancelled before acknowledgement")
                 await _execute_sided(
                     coordinator, side,
-                    lambda controller: controller.floyd_action("confirm_add", "first", True, None),
+                    _family_command(
+                        FloydController,
+                        label,
+                        lambda controller: controller.floyd_action("confirm_add", "first", True, None),
+                    ),
                     resource="configuration",
                 )
-    except (Exception, asyncio.CancelledError):
+    except BaseException:
         await _release_preflighted(preflighted)
         raise
 
@@ -89,7 +88,7 @@ def async_register_floyd_services(hass: HomeAssistant) -> None:
     hass.services.async_register(
         DOMAIN, SERVICE_FLOYD_ACTION, handle_floyd_action,
         schema=vol.Schema({
-            vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+            vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
             vol.Required("action"): vol.In((
                 "zero_g", "flat", "anti_snore", "memory_1", "memory_2", "memory_3",
                 "save_zero_g", "save_anti_snore", "assign_room", "confirm_add",

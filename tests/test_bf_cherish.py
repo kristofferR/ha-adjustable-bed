@@ -436,12 +436,13 @@ async def test_alarm_service_validates_all_profiles_before_serialized_write(hass
     register_services(hass)
 
     async def execute(coordinator, side, command, **kwargs):
-        assert kwargs == {"cancel_running": False, "resource": "configuration"}
+        assert kwargs["cancel_running"] is False
+        assert kwargs["resource"] == "configuration"
         with ctrl.side_scope(side):
             await command(ctrl)
 
-    async def preflight(targets, capability, label, validate):
-        assert capability == "supports_clock_alarm"
+    async def preflight(targets, interface, label, supported, validate):
+        assert isinstance(ctrl, interface) and supported(ctrl)
         validate(ctrl)
         return []
 

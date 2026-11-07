@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Coroutine
-from typing import TYPE_CHECKING, Any
+from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING
 
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
@@ -11,59 +11,44 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .const import BED_TYPE_ZSERIES, DOMAIN
+from .beds.base import controller_as
+from .const import DOMAIN
 from .services import (
     ATTR_ENABLED,
-    ATTR_SIDE,
     ATTR_TIME,
     ATTR_WAKE_MODE,
+    DEVICE_IDS,
     SIDE_FIELD,
+    _call_targets,
     _command_targets,
     _execute_sided,
+    _family_command,
     _get_controller_for_service,
-    _missing_device_error,
     _preflight_capability,
     _release_preflighted,
-    _resolve_sided_targets,
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController
     from .beds.serenity import ZSeriesController
 
 
 SERVICE_ZSERIES_SET_ALARM = "zseries_set_alarm"
 
 
-def _zseries_controller(controller: BedController) -> ZSeriesController:
-    """Return the Z-Series controller behind a service target."""
-    from .beds.serenity import ZSeriesController as ZSeries
-
-    if not isinstance(controller, ZSeries):
-        raise ServiceValidationError("This action requires a Customatic Z-Series app controller")
-    return controller
-
-
 async def _execute_zseries_alarm(
     call: ServiceCall,
     label: str,
-    command: Callable[[BedController], Coroutine[Any, Any, None]],
+    command: Callable[[ZSeriesController], Awaitable[None]],
 ) -> None:
     """Preflight every physical Z-Series target before any alarm or clock write."""
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    for coordinator, side in targets:
-        for target in _command_targets(coordinator, side):
-            if target.bed_type != BED_TYPE_ZSERIES:
-                raise ServiceValidationError(
-                    f"Device '{target.name}' is not a Customatic Z-Series app controller"
-                )
+    from .beds.serenity import ZSeriesController
+
+    targets = _call_targets(call)
     # The alarm page exists only after an exact CST13/CST14 manufacturer read.
     # A cached controller can only rule a bed out on a confirmed other string.
-    preflighted = await _preflight_capability(targets, "alarm_not_ruled_out", label)
+    preflighted = await _preflight_capability(
+        targets, ZSeriesController, label, supported=lambda zseries: zseries.alarm_not_ruled_out
+    )
     try:
         # All-or-nothing: resolve every unknown state on a live connection before
         # any bed receives a clock or alarm frame.
@@ -73,13 +58,15 @@ async def _execute_zseries_alarm(
             for target in _command_targets(coordinator, side)
         ]
         for coordinator, target in physical:
-            cached = target.capability_controller
-            state = _zseries_controller(cached).alarm_state if cached is not None else None
+            cached = controller_as(target.capability_controller, ZSeriesController)
+            state = cached.alarm_state if cached is not None else None
             if state is None:
                 opened = not target.is_connected
                 if not any(known is target for _, known in preflighted):
                     preflighted.append((coordinator, target))
-                live = _zseries_controller(await _get_controller_for_service(target))
+                live = controller_as(await _get_controller_for_service(target), ZSeriesController)
+                if live is None:
+                    raise ServiceValidationError(f"Device '{target.name}' does not support {label}")
                 state = await live.resolve_alarm_state()
                 if opened and len(physical) > 1:
                     # Like _validation_controller, never hold a capability-only link
@@ -101,7 +88,9 @@ async def _execute_zseries_alarm(
                 raise ServiceValidationError(f"Device '{target.name}' does not support {label}")
         for coordinator, side in targets:
             # The app cancels the running stream first; HA also releases it safely.
-            await _execute_sided(coordinator, side, command)
+            await _execute_sided(
+                coordinator, side, _family_command(ZSeriesController, label, command)
+            )
     except ValueError as err:
         await _release_preflighted(preflighted)
         raise ServiceValidationError(str(err)) from err
@@ -132,7 +121,7 @@ async def handle_zseries_set_alarm(call: ServiceCall) -> None:
         raise ServiceValidationError("Z-Series alarms use minute precision")
     hour, minute = (alarm_time.hour, alarm_time.minute) if alarm_time is not None else (0, 0)
 
-    async def program(controller: BedController) -> None:
+    async def program(controller: ZSeriesController) -> None:
         await controller.configure_clock_alarm(
             enabled=enabled,
             weekdays=(),
@@ -152,7 +141,7 @@ def async_register_serenity_services(hass: HomeAssistant) -> None:
         handle_zseries_set_alarm,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required(ATTR_ENABLED): cv.boolean,
                 vol.Optional(ATTR_TIME): cv.time,
                 vol.Optional(ATTR_WAKE_MODE): vol.In(("massage", "memory_1")),

@@ -11,6 +11,7 @@ import pytest
 from bleak.exc import BleakError
 
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
+from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.beds.eshine_okin import EshineOkinController
 from custom_components.adjustable_bed.beds.eshine_okin_protocol import (
     COMMANDS,
@@ -447,7 +448,9 @@ async def test_alarm_service_validation_and_serialized_execution(hass, ha_target
     await hass.services.async_call(DOMAIN, "eshine_set_alarm", data, blocking=True)
     coordinator.async_execute_controller_command.assert_awaited_once()
     command = coordinator.async_execute_controller_command.await_args.args[0]
-    controller = MagicMock(sync_clock=AsyncMock(), configure_clock_alarm=AsyncMock())
+    controller = MagicMock(
+        spec=EshineOkinController, sync_clock=AsyncMock(), configure_clock_alarm=AsyncMock()
+    )
     await command(controller)
     controller.sync_clock.assert_awaited_once()
     controller.configure_clock_alarm.assert_awaited_once_with(
@@ -465,7 +468,8 @@ async def test_alarm_service_validation_and_serialized_execution(hass, ha_target
     with pytest.raises(ServiceValidationError, match="does not expose"):
         await hass.services.async_call(DOMAIN, "eshine_set_alarm", data, blocking=True)
     coordinator._bed_type = "eshine"  # E6000 is a different app, despite shared branding.
-    with pytest.raises(ServiceValidationError, match="Choose an eShine"):
+    coordinator._controller = MagicMock(spec=BedController, requires_disconnected_transport=False)
+    with pytest.raises(ServiceValidationError, match="does not support eShine alarms"):
         await hass.services.async_call(DOMAIN, "eshine_set_alarm", data, blocking=True)
     coordinator.async_execute_controller_command.assert_not_awaited()
 

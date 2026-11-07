@@ -31,6 +31,7 @@ from .base import (
     MotorControlSpec,
     PositionNumberSpec,
 )
+from .sleep_number_commands import SleepNumberActions
 from .sleep_number_mcr_protocol import (
     FoundationFeatures,
     classify_smartpump,
@@ -194,7 +195,7 @@ def _motor_command(side: str, axis: str, direction: str) -> MotorCommandCallable
     return execute
 
 
-class SleepNumberMcrController(BedController):
+class SleepNumberMcrController(BedController, SleepNumberActions):
     """Controller for older Sleep Number BAM / MCR beds."""
 
     def __init__(

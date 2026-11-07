@@ -10,12 +10,10 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from .const import DOMAIN
-from .gmmotor_requests import Operation, Request
+from .gmmotor_requests import GmmotorActions, Operation, Request
 
 if TYPE_CHECKING:
     from homeassistant.helpers.typing import VolSchemaType
-
-    from .beds.base import BedController
 
 OPERATIONS = get_args(Operation.__value__)
 
@@ -29,13 +27,7 @@ def _integer(value: object) -> int:
 
 
 async def handle(call: ServiceCall) -> None:
-    from .services import (
-        _execute_sided,
-        _missing_device_error,
-        _preflight_capability,
-        _release_preflighted,
-        _resolve_sided_targets,
-    )
+    from .services import _call_targets, _preflight_and_execute
 
     data = call.data
     try:
@@ -58,44 +50,27 @@ async def handle(call: ServiceCall) -> None:
         )
     except ValueError as err:
         raise ServiceValidationError(str(err)) from err
-    targets, missing = _resolve_sided_targets(call.hass, data["device_id"], data.get("side"))
-    if missing:
-        raise _missing_device_error(missing[0])
-
-    def validate(controller: BedController) -> None:
-        controller.validate_gmmotor_request(request)
-
-    async def execute(controller: BedController) -> None:
-        await controller.async_execute_gmmotor_request(request)
-
-    try:
-        preflighted = await _preflight_capability(
-            targets, "supports_gmmotor_controls", "GM Control actions", validate
-        )
-    except ValueError as err:
-        raise ServiceValidationError(str(err)) from err
-    try:
-        for coordinator, side in targets:
-            # A sleep stop clears polling/assembly locally; it has no wire STOP.
-            # Serialize it with the current GATT operation instead of cancelling
-            # a partially sent SDK frame.
-            await _execute_sided(
-                coordinator, side, execute, cancel_running=False, resource="configuration"
-            )
-    except BaseException:
-        await _release_preflighted(preflighted)
-        raise
+    # A sleep stop clears polling/assembly locally; it has no wire STOP.
+    # Serialize it with the current GATT operation instead of cancelling a
+    # partially sent SDK frame.
+    await _preflight_and_execute(
+        _call_targets(call),
+        GmmotorActions,
+        "GM Control actions",
+        lambda controller: controller.async_execute_gmmotor_request(request),
+        validate=lambda controller: controller.validate_gmmotor_request(request),
+    )
 
 
 def async_register_gmmotor_services(hass: HomeAssistant) -> None:
-    from .services import SIDE_FIELD
+    from .services import DEVICE_IDS, SIDE_FIELD
 
     def integer(maximum: int) -> vol.All:
         return vol.All(_integer, vol.Range(min=0, max=maximum))
 
     schema = vol.Schema(
         {
-            vol.Required("device_id"): vol.All(cv.ensure_list, vol.Length(min=1)),
+            vol.Required("device_id"): DEVICE_IDS,
             **SIDE_FIELD,
             vol.Required("operation"): vol.In(OPERATIONS),
             vol.Optional("value", default=0): integer(65535),

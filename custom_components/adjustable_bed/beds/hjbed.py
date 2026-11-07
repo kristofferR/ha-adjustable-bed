@@ -39,6 +39,7 @@ from .base import (
     ControllerSelectSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
+    require_controller,
 )
 
 if TYPE_CHECKING:
@@ -101,7 +102,9 @@ def action_label(action: Action) -> str:
 
 
 async def _action(controller: BedController, *, detail: str, save: bool = False) -> None:
-    await controller.async_execute_hjbed_action(detail, save=save)
+    await require_controller(controller, HJBedController).async_execute_hjbed_action(
+        detail, save=save
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -183,10 +186,6 @@ class HJBedController(BedController):
     @property
     def supports_single_address_pairing(self) -> bool:
         return self.product.coupled
-
-    @property
-    def supports_hjbed(self) -> bool:
-        return True
 
     @property
     def persisted_app_state_key(self) -> str:

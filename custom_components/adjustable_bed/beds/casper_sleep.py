@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 from homeassistant.util import dt as dt_util
 
-from ..casper_base_protocol import Request, SensorKind
+from ..casper_base_protocol import CasperBaseActions, Request, SensorKind
 from ..casper_sleep_protocol import (
     NOTIFY,
     SERVICES,
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
-class CasperSleepController(BedController):
+class CasperSleepController(BedController, CasperBaseActions):
     """Own parser, command and timer state for one physical sensor."""
 
     def __init__(self, coordinator: AdjustableBedCoordinator, *, kind: SensorKind) -> None:
