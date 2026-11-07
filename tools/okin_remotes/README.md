@@ -9,7 +9,7 @@ This directory regenerates `custom_components/adjustable_bed/beds/okin_uuid/remo
 Codes in the pinned FurniMove production catalog
 (`custom_components/adjustable_bed/beds/furnimove/profiles.py`, captured
 2026-09-30 for the accepted `com.okin.okinsmartcomfort` 2.2.0 audit) are the
-exception: `okin_uuid.py` derives their keycodes and memory-save timing from
+exception: `beds/okin_uuid/controller.py` derives their keycodes and memory-save timing from
 that catalog, and `gen_module.py` emits labels but no data row for them. Every
 overlapping handset matched the earlier backend capture byte for byte when the
 tables were merged; `tests/test_okin_uuid.py` pins the resulting table.
@@ -37,7 +37,7 @@ The captured data is committed as `master.json` so the table can be regenerated
 
 ```bash
 cd tools/okin_remotes
-uv run gen_module.py   # -> okin_uuid_remotes.py (copy into beds/)
+uv run gen_module.py   # -> remotes.py (copy into beds/okin_uuid/)
                        #    + gen_okimat_variants.py (OKIMAT_VARIANTS body for const.py)
 ```
 

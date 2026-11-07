@@ -984,7 +984,7 @@ def test_remote_table_records_its_generator_input() -> None:
     import hashlib
     from pathlib import Path
 
-    from custom_components.adjustable_bed.beds import okin_uuid_remotes
+    from custom_components.adjustable_bed.beds.okin_uuid import remotes as okin_uuid_remotes
 
     master = Path(__file__).parents[1] / "tools/okin_remotes/master.json"
     digest = hashlib.sha256(master.read_bytes()).hexdigest()

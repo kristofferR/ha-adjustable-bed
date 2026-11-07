@@ -1103,7 +1103,7 @@ async def test_octo_lookup_hands_back_a_link_it_opened_for_the_wrong_controller(
 
     with (
         patch(
-            "custom_components.adjustable_bed.octo_services._call_targets",
+            "custom_components.adjustable_bed.beds.octo.services._call_targets",
             return_value=[(coordinator, SIDE_BOTH)],
         ),
         pytest.raises(ServiceValidationError, match="selected OCTO variant"),

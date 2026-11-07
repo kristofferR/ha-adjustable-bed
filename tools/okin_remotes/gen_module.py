@@ -4,14 +4,14 @@
 """Emit the generated remote-code artifacts from master.json.
 
 Outputs (single source for all so labels always agree):
-- okin_uuid_remotes.py    -> copy to custom_components/adjustable_bed/beds/
+- remotes.py             -> copy to custom_components/adjustable_bed/beds/okin_uuid/
 - gen_okimat_variants.py  -> OKIMAT_VARIANTS + OKIN_DOT_VARIANTS bodies to
                              sync into const.py
 
 Codes present in the pinned FurniMove production catalog
 (``custom_components/adjustable_bed/beds/furnimove/profiles.py``) keep their labels
-here, but their keycodes come only from that catalog: ``okin_uuid.py`` derives
-them at import, so they are left out of ``OKIN_UUID_REMOTE_DATA``.
+here, but their keycodes come only from that catalog: ``beds/okin_uuid/controller.py``
+derives them at import, so they are left out of ``OKIN_UUID_REMOTE_DATA``.
 """
 import hashlib
 import importlib.util
@@ -152,11 +152,11 @@ there for the full pipeline).
 Input SHA-256: tools/okin_remotes/master.json @MASTER_SHA256@
 
 Codes in the pinned FurniMove production catalog (``beds/furnimove/profiles.py``)
-are labelled here but have no data row: ``okin_uuid.py`` derives their
+are labelled here but have no data row: ``controller.py`` derives their
 keycodes from that catalog, the single source for those handsets.
 
 Each entry is keyword arguments for ``OkinUuidRemoteConfig`` (see
-``okin_uuid.py``). Keycodes are the 32-bit Okin command values; the standard
+``controller.py``). Keycodes are the 32-bit Okin command values; the standard
 controller wraps them as ``[0x04, 0x02, <4-byte big-endian>]``. ``memory_save``
 may be a ``(keycode, count, delay_ms)`` hold tuple when the backend specifies
 hold timing for that handset. UBL/light commands are always single keycodes:
@@ -209,7 +209,7 @@ lines.append("OKIN_UUID_REMOTE_DATA: dict[str, dict] = {")
 for c in (c for c in codes if c not in FURNIMOVE_CODES):
     lines.append(f'    "{c}": {{{kwargs_of(c)}}},  # {master[c].get("source", "")}')
 lines.append("}")
-open("okin_uuid_remotes.py", "w").write("\n".join(lines) + "\n")
+open("remotes.py", "w").write("\n".join(lines) + "\n")
 
 # ---- const.py OKIMAT_VARIANTS + OKIN_DOT_VARIANTS bodies ----
 out = ["OKIMAT_VARIANTS: Final = {", '    VARIANT_AUTO: "Auto-detect (try 82417 first)",']
@@ -224,4 +224,4 @@ for c in dot_codes:
 out.append("}")
 open("gen_okimat_variants.py", "w").write("\n".join(out) + "\n")
 
-print("wrote okin_uuid_remotes.py + gen_okimat_variants.py:", len(codes), "codes")
+print("wrote remotes.py + gen_okimat_variants.py:", len(codes), "codes")
