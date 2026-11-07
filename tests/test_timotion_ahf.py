@@ -1117,7 +1117,6 @@ async def test_legacy_ahf_entities_keep_their_ids_and_send_app_actions(
         device_info={},
         entity_side=None,
         entity_unique_id=lambda key: f"bed_{key}",
-        entity_translation_key=lambda key: key,
     )
 
     covers = _cover_entities_for(hass, runtime)

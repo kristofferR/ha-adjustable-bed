@@ -7,11 +7,11 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
+from custom_components.adjustable_bed.app_families import _jensen_suggestion
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
     _bed_type_selector,
-    _jensen_suggestion,
 )
 from custom_components.adjustable_bed.detection import bed_type_choice, get_bed_type_options
 from custom_components.adjustable_bed.profile_id import resolve_profile_id

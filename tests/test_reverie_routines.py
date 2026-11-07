@@ -426,7 +426,6 @@ def test_stk_side_changes_only_legacy_wave_number_availability(side):
     coordinator.capability_controller = controller
     coordinator.entity_side = None
     coordinator.device_info = {}
-    coordinator.entity_translation_key = lambda key: key
     coordinator.entity_unique_id = lambda key: key
     controller._set_stk_side(side)
     numbers = {

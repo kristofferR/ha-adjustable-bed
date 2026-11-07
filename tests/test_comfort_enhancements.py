@@ -505,7 +505,7 @@ async def test_last_zone_off_restarts_timer_on_next_zone(
 async def test_new_entries_keep_connection_state_and_layout_change_retires_actions(
     hass, mock_coordinator_connected, mock_bleak_client, enable_custom_integrations
 ) -> None:
-    from custom_components.adjustable_bed.const import disconnect_after_command_default_enabled
+    from custom_components.adjustable_bed.bed_traits import disconnect_after_command_default_enabled
 
     assert not disconnect_after_command_default_enabled(BED_TYPE_COMFORT_ENHANCEMENTS, "mc2")
     mock_bleak_client.services = services(

@@ -131,7 +131,7 @@ function ownershipFixture(mode: "native" | "legacy" | "via") {
     devices[owner(side)] = { id: owner(side), [mode === "via" ? "via_device_id" : "parent_device_id"]: root };
   }
   function add(id: string, side: "left" | "right" | "both", key: string, attributes = {}) {
-    entities[id] = { entity_id: id, device_id: owner(side), platform: "adjustable_bed", translation_key: mode === "legacy" ? `${key}_${side}` : key };
+    entities[id] = { entity_id: id, device_id: owner(side), platform: "adjustable_bed", translation_key: key };
     states[id] = { entity_id: id, state: "unknown", attributes: { bed_side: side, ...attributes }, last_changed: "", last_updated: "" };
   }
   for (const side of ["left", "right", "both"] as const) {

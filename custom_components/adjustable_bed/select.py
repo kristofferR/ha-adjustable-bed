@@ -361,7 +361,7 @@ class AdjustableBedControllerSelect(AdjustableBedEntity, SelectEntity):
             key=f"controller_select_{spec.key}", translation_key=spec.translation_key
         )
         self._attr_unique_id = coordinator.entity_unique_id(self.entity_description.key)
-        self._set_sided_translation_key(spec.translation_key, spec.key)
+        self._attr_translation_key = spec.translation_key
         self._attr_options = list(spec.options)
         self._unregister_callback: Callable[[], None] | None = None
 
@@ -443,7 +443,7 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
         """Initialize the massage timer select entity."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._timer_options = timer_options
 
@@ -549,7 +549,7 @@ class AdjustableBedControllerStateSelect(AdjustableBedEntity, SelectEntity):
         """Initialize the controller-state-backed select entity."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._timer_options = timer_options
 
@@ -623,7 +623,7 @@ class AdjustableBedSideStateSelect(AdjustableBedEntity, SelectEntity):
         """Initialize the side-specific select entity."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._attr_options = options
         self._unregister_callback: Callable[[], None] | None = None

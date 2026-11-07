@@ -21,6 +21,7 @@ from bleak.exc import BleakError
 
 from ..codec import jmc
 from ..command_scheduler import current_command_context
+from ..const import SVANE_VARIANT_JENSEN_LINON, SVANE_VARIANT_JMC, SVANE_VARIANT_MULTI
 from ..execution import ExecutionCapabilities
 from ..profiles.jmc import SVANE_REMOTE
 from ..svane_state import SvaneProfile, SvaneSession, integer
@@ -32,6 +33,7 @@ from .base import (
     MotorControlSpec,
     PositionNumberSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..command_scheduler import StreamMember
@@ -1042,3 +1044,19 @@ class SvaneController(BedController):
             await self.read_positions()
         else:
             raise ValueError("Unknown Svane app control")
+
+
+async def build_controller(ctx: BuildContext) -> BedController:
+    """Build the Svane Remote controller, or Jensen Linon's for its profile."""
+    if ctx.variant == SVANE_VARIANT_JENSEN_LINON:
+        await ctx.preload("jensen_linon")
+        from .jensen_linon import JensenLinonController
+
+        return JensenLinonController(ctx.coordinator)
+    from ..svane_state import get_svane_session
+
+    if ctx.variant not in (None, SVANE_VARIANT_MULTI, SVANE_VARIANT_JMC):
+        raise ValueError("Unknown Svane Remote profile")
+    profile = "jmc" if ctx.variant == SVANE_VARIANT_JMC else "multi"
+    session = get_svane_session(ctx.coordinator.hass, ctx.coordinator.address, profile)
+    return SvaneController(ctx.coordinator, profile=profile, session=session)

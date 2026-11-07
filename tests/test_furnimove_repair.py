@@ -1,6 +1,6 @@
 """Legacy RF receivers get an offline, identity-preserving layout repair."""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS
@@ -23,6 +23,7 @@ from custom_components.adjustable_bed.const import (
     CONF_PAIR_MODE,
     CONF_PROTOCOL_VARIANT,
     CONF_SIDE,
+    CONF_STAIRCASE_LAYOUT_CONFIRMED,
     DOMAIN,
     PAIR_MODE_SEPARATE_ADDRESS,
     SIDE_LEFT,
@@ -32,7 +33,6 @@ from custom_components.adjustable_bed.furnimove_repair import (
     CONF_FURNIMOVE_ROUTE_KEPT,
     CONF_OKIMAT_MODEL_ON_CST,
     CONF_OKIN_CST_KEPT,
-    CONF_STAIRCASE_LAYOUT_CONFIRMED,
     FurniMoveLayoutRepairFlow,
     async_refresh_furnimove_layout_issues,
 )
@@ -321,6 +321,8 @@ async def test_okimat_drive_on_cst_can_keep_cst_and_other_cst_entries_get_no_pro
 async def test_paired_okimat_side_on_cst_keeps_its_bond_and_gets_its_own_repair(hass):
     """Recording the #555 model on one side must not drop that side's bond markers."""
     from custom_components.adjustable_bed import _build_paired_children
+    from custom_components.adjustable_bed.beds.okin_cst import OkinCstController
+    from custom_components.adjustable_bed.controller_factory import create_controller
 
     entry = MockConfigEntry(domain=DOMAIN, title="Bed", version=4, data={
         CONF_PAIR_ID: "pair_555", CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
@@ -331,7 +333,11 @@ async def test_paired_okimat_side_on_cst_keeps_its_bond_and_gets_its_own_repair(
     })
     entry.add_to_hass(hass)
     children = _build_paired_children(hass, entry)
-    children[SIDE_LEFT]._record_okimat_model_on_cst("OKIMAT 4 IPS")
+    left_side = children[SIDE_LEFT]
+    offline = await create_controller(left_side, BED_TYPE_OKIN_CST, "auto", None, ble_model="OKIMAT 4 IPS")
+    assert type(offline) is OkinCstController
+    assert CONF_OKIMAT_MODEL_ON_CST not in effective_child_data(entry.data, SIDE_LEFT, entry.options)
+    await create_controller(left_side, BED_TYPE_OKIN_CST, "auto", MagicMock(), ble_model="OKIMAT 4 IPS")
     left = effective_child_data(entry.data, SIDE_LEFT, entry.options)
     assert left[CONF_OKIMAT_MODEL_ON_CST] == "OKIMAT 4 IPS"
     assert left[CONF_BLE_BOND_ESTABLISHED] is True

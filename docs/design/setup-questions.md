@@ -21,6 +21,7 @@ A `SetupProfile` has:
 | `derive` | The owned fields the profile computes from its answers, such as a FurniMove handset table's motor count and massage. |
 | `title` | The name the step shows for the staged route. |
 | `seed` | Fills setup's defaults from the bed's advertisement before the first form, such as the ISleep product and room or the Motion Bed name. It never replaces a chosen value, and Configure does not run it. |
+| `check` | Errors that read Home Assistant through the flow's `FlowContext`: other config entries, such as a StarCode main's lifts, or the live link Configure must not disturb. It runs once `validate` finds nothing. |
 
 A `Question` stores its answer under `key`. Its `choices` are fixed labels or a
 function of the staged setup, such as the layouts the chosen app supports;
@@ -31,7 +32,15 @@ default, and `staged_when` limits when a staged answer is the default at all,
 for a value the profile stored itself. `validator` replaces the one the choices
 imply, for a range or a format. An `advanced` question sits in a collapsed
 Advanced section in setup. A `searchable` question's choices are a picker the
-user searches by label, for a long list such as a Good Vibe Sleep product.
+user searches by label, for a long list such as a Good Vibe Sleep product. A
+`multiple` question takes a list: several of its choices, such as an Ergomotion
+4.0 product's feature keys, or several lines of text, such as FSM Relax's eight
+memory names. `context_choices` reads the choices from Home Assistant instead,
+such as the config entries a StarCode main can drive as lifts.
+
+`FlowContext` is what a question or check may read beyond the staged setup:
+Home Assistant, the entry Configure edits (none in setup) and whether setup can
+check the connection before it saves.
 
 `when` is the condition for asking a question: a Home Assistant field condition
 on another answer of the same form (`{"field": ..., "value": ...}`, or an
@@ -64,8 +73,8 @@ returns.
   lists them, and Configure keeps them by name.
 - A family row reads `<apps> · <family>`, and each row of that family's
   journey `<app> · <family>`. The family is the one the row's journey asks:
-  `FAMILY_ROWS` names each family row's family, and `_APP_SETUP_STEPS` maps a
-  route to its family's question, so the label cannot name another family. A
+  each family's declaration (`app_families.py`) names its row, the routes
+  behind it and its answers, so the label cannot name another family. A
   row outside every family journey is its own brand and names itself. Saved
   entries keep their own route's label.
 - The final settings come after the app's questions, so every route the
@@ -117,6 +126,18 @@ say ([#745](https://github.com/kristofferR/ha-adjustable-bed/issues/745)):
 `tests/test_app_profiles.py` checks that every declared question belongs to its
 side and that the table repeats none of them.
 
+## Settings a bed type owns
+
+`profile_settings` in `app_profiles.py` names every setting a bed type's
+profiles own: each question its declarations ask under any variant or app,
+each per-side setting of its side profiles, and the few it saves outside them
+(`_STORED_BY_BED_TYPE`, such as repair markers and app metadata). The settings
+every route reads, such as the motor count, are no bed type's. When setup or
+Configure changes the bed type, the settings another bed type owns leave, so a
+setting of the old app cannot linger on the new one. Only the settings a route,
+not a bed type, decides keep their own rule: the L&P app layout, passive
+position reconciliation and the angle limits.
+
 ## The new-bed journey
 
 A new bed is set up in one order (#676 direction A):
@@ -133,15 +154,24 @@ A new bed is set up in one order (#676 direction A):
 3. **The final settings** (`finish_settings`), drawn for the one route the
    journey staged: the name, the Bluetooth adapter and disconnect after each
    command; the generic fields the profile neither sets nor asks, and that no
-   family step set itself (`_journey_set`); a bed type's own settings (Octo PIN
-   and motor count, CB24 side); the route's labelled routes, when it has
-   several, in a collapsed Advanced section; and the pulse count and delay and
-   the idle timeout, collapsed under "Advanced connection and timing". A
-   client that submits a field the form does not show cannot set it.
+   family step set itself (`_journey_set`); the declared questions of a route
+   without an app step, such as the Octo PIN and motor layout or the CB24
+   side; the route's labelled routes, when it has several, in a collapsed
+   Advanced section; and the pulse count and delay and the idle timeout,
+   collapsed under "Advanced connection and timing". A client that submits a
+   field the form does not show cannot set it.
 4. Pairing, then the connection check.
 
 Defaults are the staged route's own: a family answer that changed the route
 gave it Configure's defaults, and the final settings start from them.
+
+The final settings, Configure and each paired receiver's settings build their
+generic fields with one builder (`_settings_fields`) and check the pulse count,
+pulse delay and angle limits with one parser (`_parse_settings`): a blank value
+takes the route's default, anything else must be a whole number of at least 1
+(an angle more than 0 and at most 180), and an error names its field. Each
+field defaults to the saved value, else the route's own default, including the
+per-bed disconnect-after-command default.
 
 **Disable angle sensing** shows only where a route of the staged bed type
 reports positions, and starts off (positions are read): every such route's own
@@ -156,6 +186,15 @@ field. It redraws after a bed-type change, and after a route change that alters
 the motor count choices or position feedback: those change defaults and the
 route list, which a field condition cannot.
 
+## Family answers' own questions
+
+A family answer that needs a little more than its route asks it on the generic
+`profile_questions` step too, from a `SetupProfile` the family keeps, and
+applies the answers itself: the Restonic BT app's remote style, an older
+Keeson remote's route and motor count, and the motor count of a legacy Jiecang
+remote chosen in place of an app. These are not saved profiles, so Configure
+does not ask them.
+
 ## Dedicated steps
 
 A dedicated step remains only for what data cannot express, with its reason
@@ -166,14 +205,9 @@ flows, so a new step cannot appear unrecorded and a removed one cannot linger.
 | Step | Why it is not data |
 |---|---|
 | Family steps (`jiecang_family`, `okin_family`, `keeson_family`, `solace_family`, `leggett_family`, `sleepys_family`, `malouf_family`, `customatic_family`, `jordans_family`, `starcode_family`, `remacro_family`, `logicdata_family`, `reverie_family`, `richmat_family`, `sleep_number_family`, `jensen_family`, `limoss_family`, `vibradorm`) | They choose the profile itself, and Keep, before any profile's questions exist |
-| `keeson_app`, `keeson_restonic`, `keeson_route` | Each picks the Keeson variant, which is the profile, not one of its answers |
+| `keeson_app` | Expands a grouped Keeson answer into its exact app or route, which is the profile, not one of its answers |
 | `solace_woosa` | A note before choosing Woosa Sleep; it asks nothing |
-| `jiecang_legacy` | Part of the Jiecang journey: a remote route chosen in place of an app needs the motor count and cadence the app had fixed |
 | `verify_octo_pin` | Authentication: setup finishes only after the bed accepts the PIN, or the user corrects it |
-| `starcode_app` | Probes the transport over a live connection when the Bluetooth name cannot settle it |
-| `starcode_m5x5`, `starcode_m1x12` | Their lift groups name other config entries, which a declaration's checks cannot see |
-| `cluster033_app` | A custom product picks its keys in multi-select lists, which a question cannot ask yet |
-| `fsm_relax` | The eight memory names are one multi-value text field, which a question cannot ask yet |
 
 ## Shared steps
 
@@ -190,7 +224,7 @@ These steps serve every bed type or route, so no profile owns them.
 | `setup_progress`, `verify_connection` | Connection check and capability checklist |
 | `keep_detected`, `keep_back`, `keep_continue` | Keep on a new bed: what the detected controls are, their pairing, and the way to an app later |
 | `pair_beds` | Combine two beds |
-| `diagnostic`, `diagnostic_confirm`, `diagnostic_manual` | Browse an unsupported device |
+| `diagnostic`, `diagnostic_manual` | Browse an unsupported device |
 | `reconfigure`, `migration_split`, `migration_keep`, `migration_check`, `migration_pairing`, `migration_check_failed`, `migration_confirm` | The [guided change](guided-setup-changes.md) |
 
 ### Configure
@@ -245,6 +279,13 @@ These steps serve every bed type or route, so no profile owns them.
 | `vibradorm` | The legacy setup's motor count, massage motors and angle sensing: a form drawn for a detected app or V-MAT Basic sets these itself. |
 | `jensen` | The JMC400 box's PIN (free text; empty uses the default), motor count, massage motors and angle sensing: the family row's form is drawn for Svane, which sets these itself. |
 | `svane:jensen_linon` | Motor count. |
+| `starcode_abm5_4` | The saved command selector and the transport, or the transport from the original Bluetooth name, which setup seeds from the advertisement. A changed command selector sets the app's UI selector. Setup without a scanner needs a transport now; Configure checks a changed one on the live link without connecting. A failed connection check reopens these questions. |
+| `starcode_m5x5`, `starcode_m1x12` | The exact Bluetooth name, the bedding class it selects and the lifts this main drives, which are other config entries. |
+| `star_elevate` | The lifts an ELEVATE main drives. |
+| `fsm_relax` | Bed or chair, light, massage, the four reversals and the eight memory names. |
+| `tempur_curve`, `qplus_app`, `serta_mp_remote`, `omazz_adjusto_iii`, `ergomotion_app`, `row_control`, `ergo_slim`, `tempur_au`, `ergomotion_4` | The layout the app shows. Q-Plus also asks its A, B or Both addressing, Serta MP Remote its four local memories' head and foot angles, and Ergomotion 4.0's Other product its model keys, massage keys, name, light and RGB. The app's labelled controls own every generic field. |
+| `octo` | The PIN (free text; empty when the bed has none) and the motor layout: the advertised count or an explicit 1 to 4. Octo has no app step, so setup asks them in the final settings. Owns the motor count. |
+| `okin_cb24` | The native CB24 side: both, A or B. Asked in the final settings. |
 | `limoss_remote` | Bed or chair, light, massage, the four reversals and the optional artwork theme; the connected device supplies its key layout. |
 
 The other profiles declare only the generic fields they own, converted from the

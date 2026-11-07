@@ -340,7 +340,7 @@ class TestOctoRequiredStartupDiscovery:
                 OctoController, "discover_features", new_callable=AsyncMock, return_value=False
             ) as discover,
             patch.object(OctoController, "send_pin", new_callable=AsyncMock) as send_pin,
-            patch.object(AdjustableBedCoordinator, "_backfill_octo_snapshot") as backfill_snapshot,
+            patch.object(AdjustableBedCoordinator, "_persist_capability_snapshot") as backfill_snapshot,
         ):
             assert await coordinator.async_connect() is False
 
@@ -374,7 +374,7 @@ class TestOctoRequiredStartupDiscovery:
                 OctoController, "discover_features", new_callable=AsyncMock, return_value=True
             ) as discover,
             patch.object(OctoController, "send_pin", new_callable=AsyncMock) as send_pin,
-            patch.object(AdjustableBedCoordinator, "_backfill_octo_snapshot") as backfill_snapshot,
+            patch.object(AdjustableBedCoordinator, "_persist_capability_snapshot") as backfill_snapshot,
         ):
             assert await coordinator.async_connect() is True
 
@@ -4072,7 +4072,7 @@ class TestOctoPinLockDiagnostics:
         """The user follows the repair while the bed is offline; it must clear."""
         from homeassistant.helpers import issue_registry as ir
 
-        from custom_components.adjustable_bed import _async_clear_stale_octo_pin_issue
+        from custom_components.adjustable_bed.octo_runtime import async_refresh_octo_pin_issue
         from custom_components.adjustable_bed.unsupported import (
             update_octo_pin_required_issue,
         )
@@ -4091,7 +4091,7 @@ class TestOctoPinLockDiagnostics:
         )
         entry.add_to_hass(hass)
 
-        _async_clear_stale_octo_pin_issue(hass, entry)
+        await async_refresh_octo_pin_issue(hass, entry)
 
         assert registry.async_get_issue(DOMAIN, issue_id) is None
 
@@ -4103,7 +4103,7 @@ class TestOctoPinLockDiagnostics:
         """A repair raised before issues had entries goes with its entry."""
         from homeassistant.helpers import issue_registry as ir
 
-        from custom_components.adjustable_bed import _async_clear_stale_octo_pin_issue
+        from custom_components.adjustable_bed.octo_runtime import async_refresh_octo_pin_issue
         from custom_components.adjustable_bed.unsupported import (
             update_octo_pin_required_issue,
         )
@@ -4116,7 +4116,7 @@ class TestOctoPinLockDiagnostics:
         entry.add_to_hass(hass)
 
         # The bed stays unreachable, so only setup can link the repair.
-        _async_clear_stale_octo_pin_issue(hass, entry)
+        await async_refresh_octo_pin_issue(hass, entry)
         issue = registry.async_get_issue(DOMAIN, issue_id)
         assert issue is not None and issue.config_entry_id == entry.entry_id
 
@@ -4208,7 +4208,7 @@ class TestOctoPinLockDiagnostics:
         """Star2 has no PIN, and its controller could never clear the issue."""
         from homeassistant.helpers import issue_registry as ir
 
-        from custom_components.adjustable_bed import _async_clear_stale_octo_pin_issue
+        from custom_components.adjustable_bed.octo_runtime import async_refresh_octo_pin_issue
         from custom_components.adjustable_bed.unsupported import (
             update_octo_pin_required_issue,
         )
@@ -4227,7 +4227,7 @@ class TestOctoPinLockDiagnostics:
         )
         entry.add_to_hass(hass)
 
-        _async_clear_stale_octo_pin_issue(hass, entry)
+        await async_refresh_octo_pin_issue(hass, entry)
 
         assert registry.async_get_issue(DOMAIN, issue_id) is None
 
@@ -4248,7 +4248,11 @@ class TestOctoPinLockDiagnostics:
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Octo Test Bed",
-            data={**mock_octo_config_entry_data, CONF_MOTOR_COUNT: motor_count},
+            data={
+                **mock_octo_config_entry_data,
+                CONF_MOTOR_COUNT: motor_count,
+                CONF_OCTO_MOTOR_COUNT_OVERRIDE: str(motor_count),
+            },
             unique_id="AA:BB:CC:DD:EE:FF",
             entry_id=f"octo_flat_{motor_count}",
         )
@@ -4398,7 +4402,11 @@ class TestOctoMemoryInfoAndCombinedStep:
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Octo Test Bed",
-            data={**mock_octo_config_entry_data, CONF_MOTOR_COUNT: 4},
+            data={
+                **mock_octo_config_entry_data,
+                CONF_MOTOR_COUNT: 4,
+                CONF_OCTO_MOTOR_COUNT_OVERRIDE: "4",
+            },
             unique_id="AA:BB:CC:DD:EE:FF",
             entry_id="octo_m34",
         )

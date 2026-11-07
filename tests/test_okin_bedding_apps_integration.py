@@ -14,6 +14,8 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 
 from custom_components.adjustable_bed.actuator_groups import actuator_group_for
+from custom_components.adjustable_bed.app_families import FAMILY_STEP_ROUTES
+from custom_components.adjustable_bed.bed_traits import bed_type_has_position_feedback
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.config_flow import (
     _motor_count_options,
@@ -25,14 +27,12 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_ZSERIES,
     DOMAIN,
     SIDE_BOTH,
-    bed_type_has_position_feedback,
     get_motor_pulse_defaults,
     requires_pairing,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.detection import (
-    FAMILY_STEP_ROUTES,
     HIDDEN_APP_CHOICES,
     bed_type_choice,
     detect_bed_type,

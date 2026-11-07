@@ -12,7 +12,12 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ..command_scheduler import copy_context_without_command
-from ..const import CONF_BLE_DEVICE_NAME
+from ..const import (
+    CONF_BLE_DEVICE_NAME,
+    CONF_STARCODE_COMMAND_SELECTOR,
+    CONF_STARCODE_TRANSPORT_SELECTOR,
+    CONF_STARCODE_UI_SELECTOR,
+)
 from ..profiles.okin_nframe import (
     STARCODE_ABM5_4_FLAT_HOLD_MS,
     STARCODE_ABM5_4_PROFILES,
@@ -29,6 +34,7 @@ from .base import (
     MotorControlSpec,
     PositionNumberSpec,
 )
+from .builder import BuildContext
 from .starcode_abm5_4_profiles import (
     FIRMWARE_UUID,
     MANUFACTURER_UUID,
@@ -243,10 +249,6 @@ class StarcodeAbm5_4Controller(BedController):
             "BOX25",
             "BOX25_STAR",
         )
-
-    @property
-    def supports_position_feedback(self) -> bool:
-        return False
 
     @property
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
@@ -1247,3 +1249,14 @@ class StarcodeAbm5_4Controller(BedController):
     async def async_discover_capabilities(self) -> None:
         if not self._ready:
             await self.start_notify()
+
+
+async def build_controller(ctx: BuildContext) -> StarcodeAbm5_4Controller:
+    """Build the controller for the stored app selectors."""
+    data = ctx.data
+    return StarcodeAbm5_4Controller(
+        ctx.coordinator,
+        command_selector=data.get(CONF_STARCODE_COMMAND_SELECTOR, "none"),
+        ui_selector=data.get(CONF_STARCODE_UI_SELECTOR),
+        transport_selector=data.get(CONF_STARCODE_TRANSPORT_SELECTOR),
+    )

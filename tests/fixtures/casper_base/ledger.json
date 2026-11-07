@@ -122,7 +122,7 @@
     "product": [
       "custom_components/adjustable_bed/casper_base_catalog.py:PRODUCTS",
       "custom_components/adjustable_bed/beds/casper_base.py:actions/controller_button_specs/motor_control_specs",
-      "custom_components/adjustable_bed/const.py:CASPER_BASE_VARIANTS"
+      "custom_components/adjustable_bed/profiles/casper.py:CASPER_BASE_VARIANTS"
     ],
     "command_item": [
       "custom_components/adjustable_bed/casper_base_catalog.py:ACTIONS",

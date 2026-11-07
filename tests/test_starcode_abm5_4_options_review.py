@@ -224,15 +224,13 @@ async def test_public_options_corrected_selection_rechecks_same_current_receiver
 async def test_public_options_unrelated_save_does_not_validate_unchanged_transport(
     hass: HomeAssistant, enable_custom_integrations
 ) -> None:
-    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
 
     entry, _, _ = runtime_entry(hass, "BOX25")
     stored = entry.data[const.CONF_STARCODE_TRANSPORT_SELECTOR]
     with (
         patch.object(hass.config_entries, "async_reload", new=AsyncMock()),
-        patch.object(
-            AdjustableBedOptionsFlow,
-            "_starcode_live_transport_valid",
+        patch(
+            "custom_components.adjustable_bed.config_flow.starcode_live_transport_valid",
             side_effect=AssertionError("Unchanged transport should not be probed"),
         ),
     ):
@@ -261,7 +259,6 @@ async def test_public_options_unrelated_save_does_not_validate_unchanged_transpo
 async def test_public_pair_options_cannot_copy_app_selectors_between_addresses(
     hass: HomeAssistant, enable_custom_integrations, key: str, value: str
 ) -> None:
-    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
     from custom_components.adjustable_bed.pairing import build_pair_entry_data
 
     first, _, _ = runtime_entry(hass, "BOX25")
@@ -277,9 +274,8 @@ async def test_public_pair_options_cannot_copy_app_selectors_between_addresses(
     original = dict(entry.data)
     with (
         patch.object(hass.config_entries, "async_reload", new=AsyncMock()) as reload,
-        patch.object(
-            AdjustableBedOptionsFlow,
-            "_starcode_live_transport_valid",
+        patch(
+            "custom_components.adjustable_bed.config_flow.starcode_live_transport_valid",
             side_effect=AssertionError("Paired selectors must remain side-local"),
         ),
     ):

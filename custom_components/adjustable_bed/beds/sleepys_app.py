@@ -18,6 +18,10 @@ from bleak.exc import BleakError
 from ..codec import okin_5a, okin_nframe
 from ..command_scheduler import CommandContext, current_command_context
 from ..const import (
+    CONF_SLEEPYS_ELITE_SELECTOR,
+    DEVICE_INFO_CHARS,
+    DEVICE_INFO_READ_TIMEOUT,
+    DEVICE_INFO_SERVICE_UUID,
     SLEEPYS_ELITE_NATIVE_ACTION_MS,
     SLEEPYS_ELITE_SELECTORS,
 )
@@ -32,6 +36,7 @@ from .base import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
+from .builder import BuildContext
 from .sleepys_app_routes import CANONICAL_ROUTE_SHA256, ROUTES, SleepysAppRoute
 
 if TYPE_CHECKING:
@@ -39,6 +44,7 @@ if TYPE_CHECKING:
     from bleak.backends.service import BleakGATTService
 
     from ..coordinator import AdjustableBedCoordinator
+    from .lifecycle import ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 _AppFieldValue = int | bool | float
@@ -200,6 +206,54 @@ class SleepysEliteAppController(BedController):
         self._light_color_code = 1
         self._targets: dict[int, int] = {}
         self._last_notify_error: str | None = None
+
+    async def async_read_device_info(self, session: ControllerSession) -> bool:
+        """Read the app's exact optional Device Information fields after notify setup."""
+        client = session.client
+        if client is None or not session.is_current():
+            return True
+        if not any(
+            service.uuid.lower() == DEVICE_INFO_SERVICE_UUID for service in (client.services or ())
+        ):
+            _LOGGER.debug("Sleepy's Device Information service is absent on %s", session.address)
+            return True
+
+        values: dict[str, str | None] = {
+            "manufacturer_name": None,
+            "software_revision": None,
+        }
+        for field in ("manufacturer_name", "software_revision"):
+            if not session.is_current():
+                return True
+            try:
+                raw_value = await asyncio.wait_for(
+                    client.read_gatt_char(DEVICE_INFO_CHARS[field]),
+                    DEVICE_INFO_READ_TIMEOUT,
+                )
+            except Exception as err:
+                _LOGGER.debug(
+                    "Could not read Sleepy's Device Information %s from %s: %s",
+                    field,
+                    session.address,
+                    err,
+                )
+                continue
+
+            if not session.is_current():
+                return True
+            try:
+                values[field] = raw_value.decode("utf-8").rstrip("\x00")
+            except UnicodeDecodeError as err:
+                _LOGGER.debug(
+                    "Could not decode Sleepy's Device Information %s from %s: %s",
+                    field,
+                    session.address,
+                    err,
+                )
+
+        if session.is_current():
+            session.store_device_info(values["manufacturer_name"], values["software_revision"])
+        return True
 
     @property
     def execution(self) -> ExecutionCapabilities:
@@ -692,16 +746,6 @@ class SleepysEliteAppController(BedController):
                 "field_0x1b": raw[8],
             }
         return None
-
-    @property
-    def supports_position_feedback(self) -> bool:
-        # The app reports three axes, but the accepted parser evidence does not
-        # map them to this integration's named motor positions.
-        return False
-
-    @property
-    def reports_percentage_position(self) -> bool:
-        return False
 
     @property
     def supports_preset_flat(self) -> bool:
@@ -1428,3 +1472,13 @@ def require_selector_route(client: object, selector: str) -> None:
     SleepysEliteAppController._characteristic(  # noqa: SLF001
         client, service_uuid, characteristic_uuid
     )
+
+
+async def build_controller(ctx: BuildContext) -> SleepysEliteAppController:
+    """Build the controller for the selected control box, options taking precedence."""
+    selector = ctx.coordinator.entry.options.get(
+        CONF_SLEEPYS_ELITE_SELECTOR, ctx.data.get(CONF_SLEEPYS_ELITE_SELECTOR)
+    )
+    if selector is None:
+        raise ValueError("Sleepy's Elite app profile requires an explicit selector")
+    return SleepysEliteAppController(ctx.coordinator, selector)

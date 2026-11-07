@@ -32,6 +32,7 @@ from .base import (
     ControllerSelectSpec,
     ControllerStateSensorSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -220,7 +221,7 @@ class GoodVibeController(BedController):
 
     @property
     def requires_persistent_connection(self) -> bool:
-        return self.choices.monitoring or (
+        return super().requires_persistent_connection or self.choices.monitoring or (
             self._sleep is not None and self._sleep.last in ("q_report", "q_report_allow")
         )
 
@@ -1211,3 +1212,8 @@ class GoodVibeController(BedController):
         raise NotImplementedError("Use the exact app-labelled action")
 
     program_memory = preset_memory
+
+
+async def build_controller(ctx: BuildContext) -> GoodVibeController:
+    """Build the controller for the selected GoodVibe profile."""
+    return GoodVibeController(ctx.coordinator, profile=ctx.variant or "")

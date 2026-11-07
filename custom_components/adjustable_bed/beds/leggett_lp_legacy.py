@@ -15,6 +15,12 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 from ..codec import richmat as codec
+from ..const import (
+    CONF_LP_LEGACY_MODE,
+    CONF_LP_LEGACY_MODEL,
+    CONF_LP_LEGACY_READ_UUID,
+    CONF_LP_LEGACY_WRITE_UUID,
+)
 from ..lp_legacy_profiles import LpLegacyAction, LpLegacyControl, get_lp_legacy_profile
 from ..profiles.richmat import LP_LEGACY
 from .base import (
@@ -23,6 +29,7 @@ from .base import (
     ControllerStateSensorSpec,
     MotorCommandCallable,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -311,3 +318,19 @@ class LeggettLpLegacyController(BedController):
 
     async def program_memory(self, memory_num: int) -> None:
         raise NotImplementedError("Use the selected LP app control")
+
+
+async def build_controller(ctx: BuildContext) -> LeggettLpLegacyController:
+    """Build the controller, loading the immutable app catalog off the event loop."""
+    from ..lp_legacy_profiles import get_lp_legacy_profile
+
+    data = ctx.data
+    model = data.get(CONF_LP_LEGACY_MODEL, "")
+    await ctx.coordinator.hass.async_add_executor_job(get_lp_legacy_profile, model)
+    return LeggettLpLegacyController(
+        ctx.coordinator,
+        model=model,
+        mode=data.get(CONF_LP_LEGACY_MODE, ""),
+        write_uuid=data.get(CONF_LP_LEGACY_WRITE_UUID, ""),
+        read_uuid=data.get(CONF_LP_LEGACY_READ_UUID) or None,
+    )

@@ -21,6 +21,7 @@ from ..const import (
 )
 from ..profiles import keeson as keeson_profiles
 from .base import BedController, ControllerButtonSpec, MotorCommandCallable, MotorControlSpec
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -537,3 +538,8 @@ class ComfortEnhancementsController(BedController):
                 )
             )
         return tuple(specs)
+
+
+async def build_controller(ctx: BuildContext) -> ComfortEnhancementsController:
+    """Build the controller for the selected Comfort Enhancements layout."""
+    return ComfortEnhancementsController(ctx.coordinator, layout=ctx.variant or "")
