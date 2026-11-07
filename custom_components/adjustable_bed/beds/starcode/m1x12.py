@@ -43,6 +43,7 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
+from ..family_actions import StarcodeGroupMember
 from .dialect import (
     extended_packet,
     long_packet,
@@ -195,7 +196,7 @@ def _state_card(key: str) -> CardPlacement:
     return CARD_UTILITY
 
 
-class StarcodeM1X12Controller(BedController):
+class StarcodeM1X12Controller(BedController, StarcodeGroupMember):
     """Controller for one explicitly configured Adjustable Comfort M1X12 address."""
 
     _write_with_response = False

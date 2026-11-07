@@ -41,3 +41,29 @@ class SolaceAudioActions(ABC):
 
 class MotionBedModuleActions:
     """A Motion Bed hub, whose module controls appear as the hub reports them."""
+
+
+class StarcodeGroupMember(ABC):
+    """An AdjustableM5X5 main, M1X12 main or ELEVATE lift the lift group drives."""
+
+    @property
+    @abstractmethod
+    def ready(self) -> bool:
+        """Return whether the member is connected and ready for group motion."""
+
+    @property
+    @abstractmethod
+    def session_generation(self) -> int:
+        """Identify the notification session a delayed group action retains."""
+
+    @abstractmethod
+    async def interrupt(self) -> None:
+        """Send the app's interrupt frame, which ends the member's current motion."""
+
+    @abstractmethod
+    async def move_both_up(self) -> None:
+        """Raise both actuators."""
+
+    @abstractmethod
+    async def move_both_down(self) -> None:
+        """Lower both actuators."""

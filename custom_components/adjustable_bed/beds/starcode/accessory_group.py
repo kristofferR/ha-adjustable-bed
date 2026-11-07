@@ -38,17 +38,15 @@ from ...const import (
 )
 from ...coordinator import AdjustableBedCoordinator
 from ...pairing import is_paired
-from ..base import BedController
-from .m1x12 import StarcodeM1X12Controller
-from .m5x5 import PROFILES, StarcodeM5X5Controller
-from .star_elevate import StarElevateController
+from ..base import BedController, controller_as
+from ..family_actions import StarcodeGroupMember
+from .m5x5_protocol import PROFILES
 
 _LOGGER = logging.getLogger(__name__)
 
 _OPERATIONS = f"{DOMAIN}_starcode_group_operations"
 _GROUP_DISPATCH: ContextVar[bool] = ContextVar("starcode_group_dispatch", default=False)
 type GroupTasks = dict[str, set[asyncio.Task[object]]]
-type GroupController = StarcodeM5X5Controller | StarcodeM1X12Controller | StarElevateController
 
 
 def is_group_member(data: Mapping[str, object]) -> bool:
@@ -176,16 +174,11 @@ def _resolve(hass: HomeAssistant, entry_id: str) -> AdjustableBedCoordinator:
     return value
 
 
-def _controller(controller: BedController | None) -> GroupController:
-    if (
-        not isinstance(
-            controller,
-            (StarcodeM5X5Controller, StarcodeM1X12Controller, StarElevateController),
-        )
-        or not controller.ready
-    ):
+def _controller(controller: BedController | None) -> StarcodeGroupMember:
+    member = controller_as(controller, StarcodeGroupMember)
+    if member is None or not member.ready:
         raise ConnectionError("An AdjustableM5X5 group member is not ready")
-    return controller
+    return member
 
 
 async def _interrupt(controller: BedController) -> None:
@@ -203,8 +196,9 @@ def _group_dispatch() -> Iterator[None]:
 
 
 async def _flat(controller: BedController) -> None:
+    _controller(controller)
     with _group_dispatch():
-        await _controller(controller).preset_flat()
+        await controller.preset_flat()
 
 
 async def _up(controller: BedController) -> None:

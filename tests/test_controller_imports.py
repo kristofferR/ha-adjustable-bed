@@ -30,6 +30,26 @@ def test_base_and_factory_do_not_import_concrete_controllers():
     assert result.returncode == 0, result.stderr
 
 
+def test_service_registration_imports_no_controller():
+    """Family action modules load their controllers when an action runs, not at startup."""
+    result = subprocess.run(
+        [sys.executable, "-c", textwrap.dedent('''
+            import sys
+            from custom_components.adjustable_bed.beds.base import BedController
+            from custom_components.adjustable_bed.services import _import_service_registrars
+            _import_service_registrars()
+            prefix = "custom_components.adjustable_bed.beds."
+            concrete = [name for name, module in list(sys.modules.items())
+                        if name.startswith(prefix) and name != prefix + "base"
+                        and any(isinstance(value, type) and issubclass(value, BedController)
+                                and value is not BedController for value in vars(module).values())]
+            assert not concrete, concrete
+        ''')],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
 # Fails any integration-module import on the main (event loop) thread; the
 # recording import executor runs its jobs on a worker thread.
 _LOOP_IMPORT_GUARD = textwrap.dedent('''

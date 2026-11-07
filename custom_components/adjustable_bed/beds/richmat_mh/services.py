@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
@@ -10,9 +12,12 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
 from ...const import DOMAIN
+from ...import_executor import async_import_modules
 from ...services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
-from .controller import ALARM_OPTION_CODES, RichmatMhController
-from .protocol import WAIST_ALARM_REPEAT, WAIST_SIDES, alarm_countdown_minutes
+from .protocol import ALARM_OPTION_CODES, WAIST_ALARM_REPEAT, WAIST_SIDES, alarm_countdown_minutes
+
+if TYPE_CHECKING:
+    from .controller import RichmatMhController
 
 SERVICE_RICHMAT_MH_ALARM = "richmat_mh_alarm"
 SERVICE_RICHMAT_MH_AROMA = "richmat_mh_aroma"
@@ -58,6 +63,14 @@ _LIGHT_COLOR_FIELDS.update(SIDE_FIELD.items())
 LIGHT_COLOR_SCHEMA = vol.Schema(_LIGHT_COLOR_FIELDS)
 
 
+async def _controller_class(call: ServiceCall) -> type[RichmatMhController]:
+    """Load the controller off the event loop when an action first needs it."""
+    await async_import_modules(call.hass, "beds.richmat_mh.controller")
+    from .controller import RichmatMhController
+
+    return RichmatMhController
+
+
 async def handle_richmat_mh_alarm(call: ServiceCall) -> None:
     """Set or cancel the app's countdown alarm with a page-listed position."""
     enabled: bool = call.data["enabled"]
@@ -91,7 +104,7 @@ async def handle_richmat_mh_alarm(call: ServiceCall) -> None:
 
     await _preflight_and_execute(
         _call_targets(call),
-        RichmatMhController,
+        await _controller_class(call),
         "Richmat MH alarms",
         program,
         supported=lambda controller: controller.supports_richmat_mh_alarm,
@@ -111,7 +124,7 @@ async def handle_richmat_mh_aroma(call: ServiceCall) -> None:
 
     await _preflight_and_execute(
         _call_targets(call),
-        RichmatMhController,
+        await _controller_class(call),
         "Richmat MH aroma timing",
         program,
         supported=lambda controller: controller.supports_richmat_mh_aroma,
@@ -142,7 +155,7 @@ async def handle_richmat_mh_waist_alarm(call: ServiceCall) -> None:
 
     await _preflight_and_execute(
         _call_targets(call),
-        RichmatMhController,
+        await _controller_class(call),
         "Richmat MH waist mattress alarms",
         program,
         supported=lambda controller: controller.supports_richmat_mh_waist_alarm,
@@ -158,7 +171,7 @@ async def handle_richmat_mh_light_color(call: ServiceCall) -> None:
 
     await _preflight_and_execute(
         _call_targets(call),
-        RichmatMhController,
+        await _controller_class(call),
         "Richmat MH light colour",
         program,
         supported=lambda controller: controller.supports_richmat_mh_light_color,

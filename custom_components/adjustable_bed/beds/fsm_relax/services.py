@@ -9,8 +9,8 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...import_executor import async_import_modules
 from ...services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
-from .controller import FsmRelaxController
 
 SERVICE_FSM_RELAX_CALIBRATE = "fsm_relax_calibrate"
 
@@ -20,6 +20,8 @@ async def handle_fsm_relax_calibrate(call: ServiceCall) -> None:
     targets = _call_targets(call)
     if call.data.get("confirmed") is not True:
         raise ServiceValidationError("Calibration requires explicit confirmation")
+    await async_import_modules(call.hass, "beds.fsm_relax.controller")
+    from .controller import FsmRelaxController
 
     async def execute(controller: FsmRelaxController) -> None:
         await controller.calibrate(confirmed=True)

@@ -23,6 +23,8 @@ from .feedback import (
     motor,
 )
 
+# AdjustableM5X5 bed classes.
+PROFILES: Final = ("cb25", "f23", "kneading")
 _MOTOR_NAMES: Final = ("back", "legs", "lumbar", "motor_part4", "motor_part5", "motor_part6")
 _ALARM_SLOTS: Final[tuple[AlarmOffsets, ...]] = (
     (3, 4, 5, 6, 7, 8, 9, 11, 12, 13),

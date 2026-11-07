@@ -512,3 +512,28 @@ class Classifier:
             position += index + 10
         if found:
             self.buffer = ""
+
+
+# Alarm page choices: app opcode -> stable service option.
+ALARM_OPTIONS: Final = {
+    0x58: "tv",
+    0x45: "zero_g",
+    0x46: "anti_snore",
+    0x59: "lounge",
+    0x2E: "memory_1",
+    0x2F: "memory_2",
+    0x30: "memory_3",
+    0xB2: "memory_4",
+    0xF4: "memory_5",
+    0xF0: "yoga",
+    0xB0: "alarm_mode_1",
+    0xB1: "alarm_mode_2",
+    0x4C: "head_massage",
+    0x4E: "foot_massage",
+    0x5D: "head_foot_massage",
+    0x34: "head_foot_massage_intensity",
+    0x4D: "head_massage_intensity_down",
+    0x9D: "heat",
+    0x86: "sleep_aid",
+}
+ALARM_OPTION_CODES: Final = {name: code for code, name in ALARM_OPTIONS.items()}

@@ -11,7 +11,6 @@ import pytest
 
 from custom_components.adjustable_bed.beds.richmat_mh import catalog, protocol
 from custom_components.adjustable_bed.beds.richmat_mh.controller import (
-    ALARM_OPTIONS,
     APP_GROUPS,
     RichmatMhController,
     SessionFlags,
@@ -23,6 +22,7 @@ from custom_components.adjustable_bed.beds.richmat_mh.models import (
     RICHMAT_MH_MODEL_CHOICES,
     RICHMAT_MH_VARIANTS_BY_APP,
 )
+from custom_components.adjustable_bed.beds.richmat_mh.protocol import ALARM_OPTIONS
 from custom_components.adjustable_bed.const import (
     RICHMAT_MH_APPS,
 )

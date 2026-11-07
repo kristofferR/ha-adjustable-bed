@@ -40,6 +40,7 @@ from ..entity_specs import (
     PositionNumberSpec,
     build_position_number_spec,
 )
+from ..family_actions import StarcodeGroupMember
 from .dialect import (
     extended_packet,
     long_packet,
@@ -49,6 +50,7 @@ from .dialect import (
 )
 from .feedback import StateValue
 from .m5x5_protocol import (
+    PROFILES,
     clock_packet,
     parse_notification,
 )
@@ -73,7 +75,6 @@ WRITE: Final = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
 NOTIFY: Final = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
 FIRMWARE: Final = "00002a28-0000-1000-8000-00805f9b34fb"
 MANUFACTURER: Final = "00002a29-0000-1000-8000-00805f9b34fb"
-PROFILES: Final = ("cb25", "f23", "kneading")
 SPECIAL_REMOTES: Final = frozenset(("252201", "254202", "352201"))
 # P1/P2 keys are paired only where the frozen app implements the same action.
 KEYS: Final = {
@@ -134,7 +135,7 @@ def _action(action: str) -> Callable[[BedController], Coroutine[object, object, 
     return run
 
 
-class StarcodeM5X5Controller(BedController):
+class StarcodeM5X5Controller(BedController, StarcodeGroupMember):
     """One address and sender; accessory groups keep independent coordinators."""
 
     _write_with_response = False

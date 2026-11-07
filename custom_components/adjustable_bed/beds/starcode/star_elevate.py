@@ -27,6 +27,7 @@ from ...profiles.okin_5a import ELEVATE, Okin5AProfile
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import MotorControlSpec
+from ..family_actions import StarcodeGroupMember
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -54,7 +55,7 @@ class StarElevateCommands:
     INTERRUPT = ELEVATE.frame("interrupt")
 
 
-class StarElevateController(ProfileExecution[Okin5AProfile], BedController):
+class StarElevateController(ProfileExecution[Okin5AProfile], BedController, StarcodeGroupMember):
     """Controller for the separate ``ELEVATE*`` Nordic UART accessory."""
 
     profile = ELEVATE
