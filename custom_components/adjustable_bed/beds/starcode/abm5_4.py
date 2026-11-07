@@ -27,6 +27,7 @@ from ...profiles.okin_nframe import (
     STARCODE_ABM5_4_SAVE_HOLD_MS,
     OkinNFrameProfile,
 )
+from ...state_keys import UNDER_BED_LIGHTS_ON
 from ..base import BedController
 from ..builder import BuildContext
 from ..entity_specs import (
@@ -316,12 +317,6 @@ class StarcodeAbm5_4Controller(BedController):
     @property
     def supports_light_state_feedback(self) -> bool:
         return self.ui_selector in ("BOX25", "BOX25_STAR") and self._transport.subscribe
-
-    def get_light_state(self) -> dict[str, object]:
-        return {
-            "is_on": self._light_on if self._ui_state_observed else None,
-            "light_level": self._level,
-        }
 
     @property
     def supports_massage(self) -> bool:
@@ -923,6 +918,11 @@ class StarcodeAbm5_4Controller(BedController):
             *(_field_key(k)(v) for k, v in values.items()),
             MASSAGE_TIMER(str(self._timer_index * 10) if self._timer_index else None),
             LIGHT_LEVEL(self._level),
+            *(
+                (UNDER_BED_LIGHTS_ON(self._light_on if self._ui_state_observed else None),)
+                if self.supports_light_state_feedback
+                else ()
+            ),
         )
 
     def _spawn(self, operation: Callable[[], Coroutine[object, object, None]]) -> None:

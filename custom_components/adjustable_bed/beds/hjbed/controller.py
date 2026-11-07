@@ -357,12 +357,17 @@ class HJBedController(BedController):
             raise
         self._publish()
 
-    async def stop_notify(self) -> None:
-        session, self._session = self._session, None
+    def on_disconnect(self) -> None:
+        """Forget the ended link's stream, pending alarm and freed alarm slots."""
+        self._session = None
         self._stream.clear()
         self._state.pending_alarm = None
         self._free_alarm_slots.clear()
         self._publish()
+
+    async def stop_notify(self) -> None:
+        session = self._session
+        self.on_disconnect()
         if session is not None and session.client.is_connected:
             await session.client.stop_notify(session.notify)
 

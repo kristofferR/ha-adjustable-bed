@@ -428,11 +428,12 @@ async def main():
 
         # The same compact renderer supports a one-address pair, including
         # normalized favourites, and standalone beds without a side selector.
+        # One device holds every side; keys stay verbatim and bed_side scopes them.
         await page.evaluate("""async () => {window.nativeHass=hass;
           const entities={}, states={};
           for(const [id,entry] of Object.entries(hass.entities)) {
             const side=entry.device_id==='pair'?'both':entry.device_id;
-            entities[id]={...entry,device_id:'pair',translation_key:entry.translation_key+'_'+side};
+            entities[id]={...entry,device_id:'pair'};
             states[id]={...hass.states[id],attributes:{...hass.states[id].attributes,bed_side:side}};
           }
           hass={...hass,devices:{pair:{id:'pair',name:'Bed'}},entities,states};card.hass=hass;

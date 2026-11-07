@@ -738,21 +738,6 @@ class SleepNumberController(BedController, SleepNumberActions):
         """Convert direct-position values to Sleep Number's 0-100 native range."""
         return max(_SLEEP_NUMBER_MIN_POSITION, min(_SLEEP_NUMBER_MAX_POSITION, round(angle)))
 
-    def get_light_state(self) -> dict[str, Any]:
-        """Return the last known underbed light state."""
-        state: dict[str, Any] = {}
-        if self._underbed_light_level is not None:
-            level_value = _SLEEP_NUMBER_LIGHT_LEVEL_TO_VALUE.get(self._underbed_light_level)
-            state["is_on"] = self._underbed_light_level != "off"
-            if level_value is not None:
-                state["light_level"] = level_value
-        if self._underbed_light_timer_minutes is not None:
-            state["light_timer_minutes"] = self._underbed_light_timer_minutes
-            state["light_timer_option"] = self._format_light_timer_option(
-                self._underbed_light_timer_minutes
-            )
-        return state
-
     @staticmethod
     def _require_side(side: str) -> str:
         """Validate and normalize an explicit left/right side value."""
@@ -1679,7 +1664,7 @@ class SleepNumberController(BedController, SleepNumberActions):
         return self._underbed_light_updates()
 
     def _underbed_light_updates(self) -> tuple[StateUpdate, ...]:
-        """The last known underbed light state, as ``get_light_state`` reports it."""
+        """The last known underbed light state."""
         updates: list[StateUpdate] = []
         if self._underbed_light_level is not None:
             updates.append(UNDER_BED_LIGHTS_ON(self._underbed_light_level != "off"))

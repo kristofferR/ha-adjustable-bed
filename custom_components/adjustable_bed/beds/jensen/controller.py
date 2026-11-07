@@ -846,10 +846,6 @@ class JensenController(BedController):
         """Toggle the light."""
         await (self.lights_off() if self._light_level else self.lights_on())
 
-    def get_light_state(self) -> dict[str, Any]:
-        """Return the light state this integration last sent."""
-        return {"is_on": self._light_level > 0, "light_level": self._light_level}
-
     # Fan
     async def set_fan_level(self, level: int) -> None:
         """Set the fan level (0 turns it off)."""

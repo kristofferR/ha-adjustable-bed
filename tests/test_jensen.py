@@ -1172,7 +1172,6 @@ class TestJensenLightsAndFan:
             "130204000000",
         ]
         assert published(*controller._coordinator.handle_controller_state_updates.call_args.args) == {"light_level": 4, "under_bed_lights_on": True}
-        assert controller.get_light_state() == {"is_on": True, "light_level": 4}
 
     async def test_lights_require_feature(self):
         """Beds without a light raise instead of writing."""

@@ -24,6 +24,8 @@ from custom_components.adjustable_bed.beds.starcode.m5x5 import (
     profile_from_name,
 )
 from custom_components.adjustable_bed.beds.starcode.m5x5_protocol import clock_packet
+from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
+from tests.state_helpers import state_writer
 
 # ELEVATE (P3) rows are verified against the star_elevate controller instead.
 VECTORS = [
@@ -222,6 +224,23 @@ async def test_stale_callbacks_are_discarded(hass: HomeAssistant) -> None:
     old(MagicMock(), bytearray.fromhex("a50d00000a140b1e0c00280000000000000000"))
     c._coordinator.handle_controller_state_updates.assert_not_called()
     assert c.client.stop_notify.await_count == 1
+
+
+async def test_dropped_link_clears_every_status_report(hass: HomeAssistant) -> None:
+    """A dropped link clears the status reports a clean teardown clears."""
+    c = make_controller(hass)
+    state: dict[str, object] = {}
+    c._coordinator.handle_controller_state_updates.side_effect = state_writer(state)
+    with patch.object(c, "write_command", AsyncMock()):
+        await c.start_notify()
+    session_keys = set(state)
+    receive = c.client.start_notify.await_args.args[1]
+    receive(MagicMock(), bytearray.fromhex("a50b0000012c0243000000000000511000000000"))
+    reported = set(state) - session_keys
+    assert {UNDER_BED_LIGHTS_ON, "light_on"} <= reported
+
+    c.on_disconnect()
+    assert all(state[key] is None for key in reported)
 
 
 async def test_cancelled_firmware_read_unsubscribes_owned_session(hass: HomeAssistant) -> None:
