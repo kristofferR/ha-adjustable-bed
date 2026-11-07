@@ -38,6 +38,13 @@ docstring names its routes and their evidence.
 Which bed types each family backs is in its registration module (see
 [Registering a family](#registering-a-family)).
 
+`codec/okin_ore.py` builds the Okin ORE `A5 5A` frame for the `okin_ore`
+controller and the BOX1220 routes of Sleepy's Elite and AdjustableM5X4. No app
+profile drives it, so it has no family registration; its vectors are in
+`tests/test_okin_ore_vectors.py`. Standalone controllers that send frames from
+several codecs (StarCode M1X12 and M5X5, Sleepy's Elite) build every frame a
+codec covers through that codec.
+
 ## Registering a family
 
 A family registers itself in files it owns, so parallel family PRs do not touch
