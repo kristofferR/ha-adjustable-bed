@@ -29,6 +29,7 @@ from bleak.exc import BleakError
 
 from ..codec import keeson as codec
 from ..const import (
+    CONF_PRODUCT_TYPE,
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
     SBI_VARIANT_BOTH,
@@ -40,8 +41,14 @@ from ..const import (
 )
 from ..profiles import keeson as keeson_profiles
 from ..profiles.keeson import app_profile
-from .base import BedController
-from .cluster033 import AppController
+from .base import (
+    POSITION_UNIT_DEGREES,
+    BedController,
+    PositionNumberSpec,
+    build_position_number_spec,
+)
+from .builder import BuildContext
+from .keeson_layout_app import AppController
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -64,6 +71,9 @@ FOOT_PULSE_TABLE: list[int] = [
     3578, 3819, 4039, 4261, 4544, 4895, 5170, 5461, 5723, 6020, 6334, 6631, 6922,
     7243, 7546, 7810, 8174, 8546, 8718,
 ]  # 33 values for 0-32 degrees
+
+_HEAD_MAX_ANGLE: float = len(HEAD_PULSE_TABLE) - 1
+_FOOT_MAX_ANGLE: float = len(FOOT_PULSE_TABLE) - 1
 
 
 def pulse_to_angle(pulse: int, table: list[int]) -> int:
@@ -158,6 +168,10 @@ class SBIController(BedController):
         _LOGGER.debug("SBIController initialized with variant: %s", variant)
 
     @property
+    def protocol_diagnostics(self) -> dict[str, object]:
+        return {"variant": self._variant}
+
+    @property
     def control_characteristic_uuid(self) -> str:
         """Return the UUID of the control characteristic."""
         return self._char_uuid
@@ -212,9 +226,21 @@ class SBIController(BedController):
         return True
 
     @property
-    def supports_position_feedback(self) -> bool:
-        """Return True - SBI beds support position feedback via pulse notifications."""
-        return True
+    def motor_max_angles(self) -> dict[str, float]:
+        """Return the travel the pulse tables can report."""
+        return {"back": _HEAD_MAX_ANGLE, "legs": _FOOT_MAX_ANGLE}
+
+    @property
+    def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
+        """Return the head and foot angles the notifications report, as back and legs."""
+        return (
+            build_position_number_spec(
+                "back", max_value=_HEAD_MAX_ANGLE, unit=POSITION_UNIT_DEGREES
+            ),
+            build_position_number_spec(
+                "legs", max_value=_FOOT_MAX_ANGLE, unit=POSITION_UNIT_DEGREES
+            ),
+        )
 
     @property
     def head_angle(self) -> int:
@@ -244,28 +270,6 @@ class SBIController(BedController):
             return keeson_profiles.encode(self.profile, command_value & 0xFFFFFFFF)
         selector = self.profile.split_sides["side_a" if variant == SBI_VARIANT_SIDE_A else "side_b"]
         return codec.frame(command_value & 0xFFFFFFFF, header=0xE6, side=selector)
-
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        """Write a command to the bed."""
-        _LOGGER.debug(
-            "Writing command to SBI bed: %s (repeat: %d, delay: %dms)",
-            command.hex(),
-            repeat_count,
-            repeat_delay_ms,
-        )
-        await self._write_gatt_with_retry(
-            self._char_uuid,
-            command,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            cancel_event=cancel_event,
-        )
 
     async def start_notify(
         self, callback: Callable[[str, float], None] | None = None
@@ -565,3 +569,19 @@ class QPlusAppController(AppController):
 
     def __init__(self, coordinator: AdjustableBedCoordinator, *, layout: str | None = None, side: str = "both") -> None:
         super().__init__(coordinator, app_profile('qplus_app', layout), side=side)
+
+
+async def build_controller(ctx: BuildContext) -> SBIController:
+    """Build the controller; Auto controls both sides."""
+    variant = ctx.variant if ctx.variant and ctx.variant != "auto" else SBI_VARIANT_BOTH
+    _LOGGER.debug("Using SBI controller with variant: %s", variant)
+    return SBIController(ctx.coordinator, variant=variant)
+
+
+async def build_qplus(ctx: BuildContext) -> QPlusAppController:
+    """Build the Q-Plus app controller for the stored layout and selected side."""
+    return QPlusAppController(
+        ctx.coordinator,
+        layout=ctx.data.get(CONF_PRODUCT_TYPE),
+        side=ctx.variant if ctx.variant in ("both", "side_a", "side_b") else "both",
+    )

@@ -261,11 +261,6 @@ class OreComfortBedController(BedController):
         )
 
     @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        # Covers from the other screens and from the generic Keeson profiles.
-        return frozenset({"back", "feet", "both", "head", "waist", "lumbar", "tilt", "legs"})
-
-    @property
     def has_lumbar_support(self) -> bool:
         return "lumbar" in self._axes
 

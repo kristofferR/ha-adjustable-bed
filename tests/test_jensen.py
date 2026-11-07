@@ -308,7 +308,15 @@ class TestJensenNotificationStartup:
 
 
 class TestJensenCoordinatorAuthRefresh:
-    """Test Jensen command auth refresh in coordinator command paths."""
+    """Test command paths refresh the controller's auth first."""
+
+    async def test_refresh_auth_sends_pin(self, hass: HomeAssistant, mock_jensen_config_entry):
+        """Jensen re-sends its PIN unlock on a reused link."""
+        coordinator = AdjustableBedCoordinator(hass, mock_jensen_config_entry)
+        controller = JensenController(coordinator)
+        with patch.object(controller, "send_pin", new=AsyncMock()) as send_pin:
+            await controller.async_refresh_auth()
+        send_pin.assert_awaited_once_with()
 
     async def test_async_execute_controller_command_refreshes_pin(
         self,
@@ -320,7 +328,7 @@ class TestJensenCoordinatorAuthRefresh:
         coordinator._client = MagicMock()
         coordinator._client.is_connected = True
         coordinator._controller = make_controller_mock()
-        coordinator._controller.send_pin = AsyncMock()
+        coordinator._controller.async_refresh_auth = AsyncMock()
         coordinator._controller.command_called = AsyncMock()
 
         async def _command_fn(_controller):
@@ -329,7 +337,7 @@ class TestJensenCoordinatorAuthRefresh:
         await coordinator.async_execute_controller_command(_command_fn, cancel_running=False)
 
         coordinator._controller.assert_has_calls(
-            [call.send_pin(), call.command_called()],
+            [call.async_refresh_auth(), call.command_called()],
             any_order=False,
         )
 
@@ -343,7 +351,7 @@ class TestJensenCoordinatorAuthRefresh:
         coordinator._client = MagicMock()
         coordinator._client.is_connected = True
         coordinator._controller = make_controller_mock()
-        coordinator._controller.send_pin = AsyncMock()
+        coordinator._controller.async_refresh_auth = AsyncMock()
         coordinator._controller.write_command = AsyncMock()
 
         await coordinator.async_write_command(
@@ -351,13 +359,13 @@ class TestJensenCoordinatorAuthRefresh:
             cancel_running=False,
         )
 
-        send_pin_idx = coordinator._controller.mock_calls.index(call.send_pin())
+        refresh_idx = coordinator._controller.mock_calls.index(call.async_refresh_auth())
         write_idx = next(
             idx
             for idx, mock_call in enumerate(coordinator._controller.mock_calls)
             if mock_call[0] == "write_command"
         )
-        assert send_pin_idx < write_idx
+        assert refresh_idx < write_idx
 
     async def test_async_stop_command_refreshes_pin(
         self,
@@ -369,14 +377,14 @@ class TestJensenCoordinatorAuthRefresh:
         coordinator._client = MagicMock()
         coordinator._client.is_connected = True
         coordinator._controller = make_controller_mock()
-        coordinator._controller.send_pin = AsyncMock()
+        coordinator._controller.async_refresh_auth = AsyncMock()
         coordinator._controller.stop_all = AsyncMock()
 
         await coordinator.async_stop_command()
 
-        send_pin_idx = coordinator._controller.mock_calls.index(call.send_pin())
+        refresh_idx = coordinator._controller.mock_calls.index(call.async_refresh_auth())
         stop_all_idx = coordinator._controller.mock_calls.index(call.stop_all())
-        assert send_pin_idx < stop_all_idx
+        assert refresh_idx < stop_all_idx
 
     async def test_async_stop_command_continues_when_auth_refresh_fails(
         self,
@@ -388,12 +396,12 @@ class TestJensenCoordinatorAuthRefresh:
         coordinator._client = MagicMock()
         coordinator._client.is_connected = True
         coordinator._controller = MagicMock()
-        coordinator._controller.send_pin = AsyncMock(side_effect=BleakError("PIN failed"))
+        coordinator._controller.async_refresh_auth = AsyncMock(side_effect=BleakError("PIN failed"))
         coordinator._controller.stop_all = AsyncMock()
 
         await coordinator.async_stop_command()
 
-        coordinator._controller.send_pin.assert_awaited_once()
+        coordinator._controller.async_refresh_auth.assert_awaited_once()
         coordinator._controller.stop_all.assert_awaited_once()
 
     async def test_async_seek_position_uses_direct_control(
@@ -406,7 +414,7 @@ class TestJensenCoordinatorAuthRefresh:
         coordinator._client = MagicMock()
         coordinator._client.is_connected = True
         coordinator._controller = make_controller_mock()
-        coordinator._controller.send_pin = AsyncMock()
+        coordinator._controller.async_refresh_auth = AsyncMock()
         coordinator._controller.supports_direct_position_control = True
         coordinator._controller.angle_to_native_position = MagicMock(return_value=55)
         coordinator._controller.set_motor_position = AsyncMock()
@@ -416,11 +424,11 @@ class TestJensenCoordinatorAuthRefresh:
             "back", 20.0, lambda c: move(c), lambda c: move(c), lambda c: move(c)
         )
 
-        send_pin_idx = coordinator._controller.mock_calls.index(call.send_pin())
+        refresh_idx = coordinator._controller.mock_calls.index(call.async_refresh_auth())
         set_position_idx = coordinator._controller.mock_calls.index(
             call.set_motor_position("back", 55)
         )
-        assert send_pin_idx < set_position_idx
+        assert refresh_idx < set_position_idx
         move.assert_not_awaited()
 
 
@@ -526,8 +534,8 @@ class TestJensenConfig:
             "async_update_entry",
             wraps=hass.config_entries.async_update_entry,
         ) as update_entry:
-            coordinator._backfill_jensen_snapshot()
-            coordinator._backfill_jensen_snapshot()
+            coordinator._persist_capability_snapshot()
+            coordinator._persist_capability_snapshot()
 
         update_entry.assert_called_once()
         # Not loaded here, so no listener could consume a deferred reload.
@@ -548,7 +556,7 @@ class TestJensenConfig:
         await self._query(controller, bytes.fromhex("0a0503080175"))
         coordinator._controller = controller
 
-        coordinator._backfill_jensen_snapshot()
+        coordinator._persist_capability_snapshot()
 
         assert coordinator._pending_capability_reload
         assert coordinator.consume_internal_entry_update(mock_jensen_config_entry)

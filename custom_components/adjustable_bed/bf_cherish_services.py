@@ -7,20 +7,11 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .beds.base import BedController
-from .const import BED_TYPE_BF, BED_TYPE_CHERISH, DOMAIN
+from .const import DOMAIN
 
 
 def register_services(hass: HomeAssistant) -> None:
-    from .services import (
-        SIDE_FIELD,
-        _command_targets,
-        _execute_sided,
-        _missing_device_error,
-        _preflight_capability,
-        _release_preflighted,
-        _resolve_sided_targets,
-    )
+    from .services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
 
     async def set_alarm(call: ServiceCall) -> None:
         from homeassistant.util import dt as dt_util
@@ -35,25 +26,10 @@ def register_services(hass: HomeAssistant) -> None:
             raise ServiceValidationError("BF and Cherish alarms use minute precision")
         hour, minute = (time.hour, time.minute) if time else (0, 0)
         memory = call.data["memory"]
-        targets, missing = _resolve_sided_targets(
-            call.hass, call.data["device_id"], call.data.get("side")
-        )
-        if missing:
-            raise _missing_device_error(missing[0])
-        for owner, side in targets:
-            for target in _command_targets(owner, side):
-                if target.bed_type not in (BED_TYPE_BF, BED_TYPE_CHERISH):
-                    raise ServiceValidationError("Select only BF or Cherish app beds")
 
-        def controller(value: BedController) -> BfCherishController:
-            physical = value
-            if not isinstance(physical, BfCherishController):
-                raise ServiceValidationError("Requires a BF or Cherish app profile")
-            return physical
-
-        def validate(value: BedController) -> None:
+        def validate(controller: BfCherishController) -> None:
             alarm_frame(
-                controller(value).cherish,
+                controller.cherish,
                 dt_util.now(),
                 enabled=enabled,
                 hour=hour,
@@ -61,23 +37,19 @@ def register_services(hass: HomeAssistant) -> None:
                 memory=memory,
             )
 
-        preflighted = await _preflight_capability(
-            targets, "supports_clock_alarm", "BF/Cherish alarms", validate
-        )
-
-        async def program(value: BedController) -> None:
-            await controller(value).configure_clock_alarm(
+        async def program(controller: BfCherishController) -> None:
+            await controller.configure_clock_alarm(
                 enabled=enabled, hour=hour, minute=minute, preset=memory
             )
 
-        try:
-            for owner, side in targets:
-                await _execute_sided(
-                    owner, side, program, cancel_running=False, resource="configuration"
-                )
-        except BaseException:
-            await _release_preflighted(preflighted)
-            raise
+        await _preflight_and_execute(
+            _call_targets(call),
+            BfCherishController,
+            "BF/Cherish alarms",
+            program,
+            supported=lambda controller: controller.supports_clock_alarm,
+            validate=validate,
+        )
 
     hass.services.async_register(
         DOMAIN,
@@ -85,7 +57,7 @@ def register_services(hass: HomeAssistant) -> None:
         set_alarm,
         schema=vol.Schema(
             {
-                vol.Required("device_id"): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required("device_id"): DEVICE_IDS,
                 vol.Required("enabled"): cv.boolean,
                 vol.Optional("time"): cv.time,
                 vol.Optional("memory", default="none"): vol.In(("none", "memory_1", "memory_2")),

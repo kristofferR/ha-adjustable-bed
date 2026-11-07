@@ -10,6 +10,7 @@ import voluptuous as vol
 from homeassistant.components import bluetooth
 from homeassistant.components.repairs import RepairsFlow, RepairsFlowResult
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.issue_registry import (
     IssueSeverity,
@@ -21,19 +22,22 @@ from .beds.remacro_protocol import (
     APP_LABELS,
     ModelProblem,
     RemacroApp,
+    add_remacro_model,
     app_for_variant,
     apps_listing,
     model_problem,
 )
 from .const import (
     BED_TYPE_REMACRO,
+    CONF_BED_TYPE,
+    CONF_PAIR_CHILDREN,
     CONF_PROTOCOL_VARIANT,
     CONF_REMACRO_MODEL,
     DOMAIN,
     PAIR_SIDES,
 )
 from .entity_runtime import EntityRuntime
-from .pairing import get_child, is_paired, with_updated_child
+from .pairing import effective_child_data, get_child, is_paired, with_updated_child
 
 if TYPE_CHECKING:
     from .coordinator import AdjustableBedCoordinator
@@ -230,4 +234,75 @@ class RemacroAppRepairFlow(RepairsFlow):
                 "name": entry.title,
                 "apps": " or ".join(APP_LABELS[app] for app in self._apps),
             },
+        )
+
+
+async def async_prepare_remacro_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Cache the Remacro model and refresh its Repairs warning before connecting.
+
+    A model the selected app does not list, or one not seen yet, still loads on
+    the fallback controls, as every Remacro bed did in v4.0.2; it never blocks setup.
+    """
+    if entry.data.get(CONF_BED_TYPE) == BED_TYPE_REMACRO:
+        manufacturer_data = remacro_manufacturer_data(hass, entry.data[CONF_ADDRESS])
+        new_data = add_remacro_model(entry.data, manufacturer_data)
+        if new_data != dict(entry.data):
+            hass.config_entries.async_update_entry(entry, data=new_data)
+    async_refresh_remacro_issues(hass, entry)
+
+
+def cache_paired_remacro_models(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Remember each Remacro side's model and refresh its Repairs warning.
+
+    The stored model lets a side without history resolve its screen at connect
+    and offline; a live advertisement still wins.
+    """
+    children = entry.data.get(CONF_PAIR_CHILDREN)
+    if not isinstance(children, list):
+        return
+    updated: list[Any] = []
+    for child in children:
+        if (
+            isinstance(child, dict)
+            and child.get(CONF_BED_TYPE, entry.data.get(CONF_BED_TYPE)) == BED_TYPE_REMACRO
+            and isinstance(child.get(CONF_ADDRESS), str)
+        ):
+            child = add_remacro_model(
+                child, remacro_manufacturer_data(hass, child[CONF_ADDRESS])
+            )
+        updated.append(child)
+    if updated != children:
+        hass.config_entries.async_update_entry(
+            entry, data={**entry.data, CONF_PAIR_CHILDREN: updated}
+        )
+    async_refresh_remacro_issues(hass, entry)
+
+
+def async_refresh_remacro_issues(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Raise or clear the Remacro model warning of every bed the entry runs.
+
+    The warning is keyed by bed, so this also hands it to the entry: the one
+    that ran the bed before may be gone, or is about to be.
+    """
+    if is_paired(entry.data):
+        beds = [
+            (f"{entry.title} ({side})", side, effective_child_data(entry.data, side, entry.options))
+            for side in PAIR_SIDES
+            if get_child(entry.data, side) is not None
+        ]
+    else:
+        beds = [(entry.title, None, dict(entry.data))]
+    for name, side, data in beds:
+        address = data.get(CONF_ADDRESS)
+        if not isinstance(address, str):
+            continue
+        if data.get(CONF_BED_TYPE) != BED_TYPE_REMACRO:
+            # An earlier Remacro setup may have raised a model issue for this bed.
+            clear_remacro_model_issues(hass, [address])
+            continue
+        problem, placeholders = remacro_entry_problem(
+            data, remacro_manufacturer_data(hass, address)
+        )
+        update_remacro_model_issue(
+            hass, address, name, problem, placeholders, entry_id=entry.entry_id, side=side
         )

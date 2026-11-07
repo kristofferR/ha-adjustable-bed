@@ -547,6 +547,21 @@ class TestIntegrationSetup:
         devices = dr.async_entries_for_config_entry(device_registry, entry.entry_id)
         assert len(devices) == 1
 
+        # Options saved while it is still offline reload it like any other entry.
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.bluetooth.async_ble_device_from_address",
+                return_value=None,
+            ),
+            patch.object(
+                hass.config_entries, "async_reload", AsyncMock(return_value=True)
+            ) as reload,
+        ):
+            hass.config_entries.async_update_entry(entry, options={"motor_pulse_count": 5})
+            await hass.async_block_till_done()
+
+        reload.assert_awaited_once_with(entry.entry_id)
+
     async def test_setup_entry_reclassifies_bedtech_qrrm_richmat_entry(
         self,
         hass: HomeAssistant,
@@ -2345,8 +2360,8 @@ class TestServices:
         coordinator.entry = entry
         coordinator.controller = MagicMock()
         coordinator.controller.position_number_specs = (
-            SimpleNamespace(position_key="back"),
-            SimpleNamespace(position_key="legs"),
+            SimpleNamespace(position_key="back", native_unit_of_measurement="°"),
+            SimpleNamespace(position_key="legs", native_unit_of_measurement="°"),
         )
         coordinator.capability_controller = coordinator.controller
         coordinator.name = entry.title
@@ -2457,8 +2472,8 @@ class TestServices:
         coordinator.entry = entry
         coordinator.controller = MagicMock()
         coordinator.controller.position_number_specs = (
-            SimpleNamespace(position_key="back"),
-            SimpleNamespace(position_key="legs"),
+            SimpleNamespace(position_key="back", native_unit_of_measurement="°"),
+            SimpleNamespace(position_key="legs", native_unit_of_measurement="°"),
         )
         coordinator.capability_controller = coordinator.controller
         coordinator.name = entry.title

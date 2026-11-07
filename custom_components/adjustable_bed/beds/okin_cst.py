@@ -29,13 +29,17 @@ from bleak.exc import BleakError
 
 from ..codec import okin_nframe as codec
 from ..const import (
+    CONF_BLE_BOND_ESTABLISHED,
     OKIMAT_NOTIFY_CHAR_UUID,
     OKIMAT_WRITE_CHAR_UUID,
     OKIN_CST_VARIANT_MF900,
     OKIN_CST_VARIANT_NECTAR_MOVE,
+    OKIN_CST_VARIANTS,
     VARIANT_AUTO,
 )
 from ..controller_state import StateKey
+from ..detection import is_okimat_bed_model
+from ..furnimove_repair import CONF_OKIMAT_MODEL_ON_CST, async_refresh_furnimove_layout_issues
 from ..profiles.okin_nframe import (
     CST_PROFILES,
     CstFields,
@@ -46,6 +50,7 @@ from ..profiles.okin_nframe import (
     Tap,
 )
 from .base import BedController, ControllerStateBinarySensorSpec, MotorControlSpec
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -252,14 +257,6 @@ class OkinCstController(BedController):
             ),
         )
         return tuple(spec for spec in specs if spec.key in self._profile.motors)
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Remove aliases and axes absent from the selected product profile."""
-        stale = {"back", "legs", "tilt"}
-        if "lumbar" not in self._profile.motors:
-            stale.add("lumbar")
-        return frozenset(stale)
 
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
@@ -715,3 +712,29 @@ class OkinCstController(BedController):
             ) % len(commands)
         command = commands[self._massage_wave_index]
         await self._send_button_press(control_value=command)
+
+
+def _record_okimat_model(ctx: BuildContext) -> None:
+    """Offer the route repair when an OKIMAT drive is configured as Okin CST (#555)."""
+    coordinator = ctx.coordinator
+    data = ctx.data
+    if not is_okimat_bed_model(ctx.ble_model) or data.get(CONF_OKIMAT_MODEL_ON_CST) == ctx.ble_model:
+        return
+    # Internal write: keep this link instead of reloading the entry.
+    coordinator._begin_internal_entry_update(bool(data.get(CONF_BLE_BOND_ESTABLISHED, False)))
+    # Full data: a paired side's persist callback drops bond keys it is not sent.
+    coordinator._async_persist_config({**data, CONF_OKIMAT_MODEL_ON_CST: ctx.ble_model})
+    hass = coordinator.hass
+    if (entry := hass.config_entries.async_get_entry(coordinator.entry.entry_id)) is not None:
+        async_refresh_furnimove_layout_issues(hass, entry)
+
+
+async def build_controller(ctx: BuildContext) -> OkinCstController:
+    """Build the controller for the selected profile; a live OKIMAT drive offers its repair."""
+    if ctx.client is not None:
+        _record_okimat_model(ctx)
+    variant = ctx.variant or VARIANT_AUTO
+    if variant not in OKIN_CST_VARIANTS:
+        _LOGGER.warning("Unknown Okin CST profile %s, using auto", variant)
+        variant = VARIANT_AUTO
+    return OkinCstController(ctx.coordinator, variant=variant)

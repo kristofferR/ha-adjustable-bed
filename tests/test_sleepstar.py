@@ -23,9 +23,9 @@ from custom_components.adjustable_bed.beds.sleepstar import (
     build_sleep_query_config,
     build_sleep_zone_config,
     build_wrapped_star_time,
-    crc16_modbus,
     resolve_sleepstar_variant,
     wrap_control_box,
+    wrap_environment,
 )
 from custom_components.adjustable_bed.codec import okin_5a as star
 from custom_components.adjustable_bed.const import (
@@ -102,9 +102,31 @@ def test_time_calibration_frames() -> None:
     assert build_wrapped_star_time(local).hex().upper() == "AA000009020B5A14071A07100D2D1E04A5"
 
 
+def _reference_crc16_modbus(data: bytes) -> int:
+    """The controller's former private CRC-16/MODBUS, kept as a differential oracle."""
+    crc = 0xFFFF
+    for value in data:
+        crc ^= value
+        for _ in range(8):
+            crc = ((crc >> 1) ^ 0xA001) if crc & 1 else crc >> 1
+    return crc & 0xFFFF
+
+
+def _reference_environment_frame(payload: bytes) -> bytes:
+    crc = _reference_crc16_modbus(payload)
+    return wrap_environment(payload + bytes([crc & 0xFF, crc >> 8]))
+
+
 def test_environment_crc_is_inner_modbus_only() -> None:
-    """The environment route uses low-byte-first MODBUS CRC inside the wrapper."""
-    assert crc16_modbus(bytes.fromhex("000200000001")) == 0x1BB8
+    """The shared FFFF codec CRC matches the former inner MODBUS CRC on every reachable input."""
+    assert _reference_crc16_modbus(bytes.fromhex("000200000001")) == 0x1BB8
+    assert build_environment_address_query() == _reference_environment_frame(
+        bytes.fromhex("000200000001")
+    )
+    for address in range(256):
+        assert build_environment_register_query(address) == _reference_environment_frame(
+            bytes([address & 0xFF, 3, 0, 2, 0, 7])
+        )
 
 
 @pytest.mark.parametrize(

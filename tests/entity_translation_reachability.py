@@ -1,31 +1,20 @@
-"""Which paired-side entity translation keys any code path can produce.
+"""Which entity translation keys code can give an entity.
 
-Both directions are checked: a side variant no entity can be given is dead
+Both directions are checked: a side-suffixed key no entity can be given is dead
 weight, and a key an entity can be given but that has no translation leaves
 Home Assistant naming the entity after its device alone (#711).
 
-Side variants are where unused strings accumulate, so this models exactly how
-each platform derives them:
+Paired side devices carry their side in the device name, and combined controls
+sit on the parent device, so no entity appends ``_left``, ``_right`` or
+``_both`` to its key. A key with one of those suffixes is reachable only when
+code states it: a literal, or a spec or description a bed builds for a side it
+controls natively (such as Sleep Number's per-side climate). Unsuffixed keys
+are not judged as dead weight: confirming every base would need every app
+profile's specs.
 
-* ``_left``/``_right``: a single-address paired side view appends its side via
-  ``entity_translation_key``. Every platform does so, except controller-state
-  sensors and binary sensors, which use their spec's key verbatim.
-* ``_both``: only the paired parent's combined controls carry it: the stop
-  button, combined preset/action and per-motor buttons, and combined position
-  sliders. No other platform has a "both sides" entity.
+Run as a script to list both::
 
-Unsuffixed keys, and ``_left``/``_right`` variants on always-sided platforms,
-are not judged: confirming their base would need every app profile's specs.
-
-For the same reason, every translated control on an always-sided platform must
-have both side variants, whether or not an offline controller shows it: app
-catalogs and runtime capabilities add controls no offline configuration
-reaches, and a missing side variant names the control after its device.
-Run as a script to list (``--prune`` to delete) the side variants that no code
-path reaches, and (``--fill`` to add) the side variants an entity can be given
-that have no translation::
-
-    uv run --no-sync python -m tests.entity_translation_reachability [--prune] [--fill]
+    uv run --no-sync python -m tests.entity_translation_reachability
 """
 
 from __future__ import annotations
@@ -34,21 +23,26 @@ import ast
 import asyncio
 import json
 import re
-import sys
 from collections.abc import Iterable
 from pathlib import Path
 
 from homeassistant.helpers.entity import EntityDescription
 
 from custom_components.adjustable_bed.beds.base import BedController
-from custom_components.adjustable_bed.binary_sensor import BINARY_SENSOR_DESCRIPTIONS
+from custom_components.adjustable_bed.binary_sensor import (
+    BINARY_SENSOR_DESCRIPTIONS,
+    _build_side_presence_description,
+)
 from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS
 from custom_components.adjustable_bed.climate import (
     FOOTWARMING_CLIMATE_DESCRIPTION,
     SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION,
+    _build_side_footwarming_climate_description,
+    _build_side_thermal_climate_description,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTOMOTION,
+    BED_TYPE_SLEEP_NUMBER_MCR,
     CONF_BLE_DEVICE_NAME,
     CONF_PROTOCOL_VARIANT,
     SUPPORTED_BED_TYPES,
@@ -72,9 +66,7 @@ from custom_components.adjustable_bed.switch import SWITCH_DESCRIPTIONS
 
 INTEGRATION = Path(__file__).parents[1] / "custom_components/adjustable_bed"
 TRANSLATION_FILES = (INTEGRATION / "strings.json", INTEGRATION / "translations/en.json")
-SIDE_SUFFIXES = ("_left", "_right")
-BOTH_SUFFIX = "_both"
-SIDE_PREFIXES = {"_left": "Left: ", "_right": "Right: ", BOTH_SUFFIX: "Both sides: "}
+SIDE_SUFFIXES = ("_left", "_right", "_both")
 
 
 def entity_strings(path: Path = TRANSLATION_FILES[0]) -> dict[str, dict[str, object]]:
@@ -98,6 +90,10 @@ async def factory_controllers() -> list[BedController]:
     Layouts differ by variant and motor count, so one default controller per
     bed type misses the controls only some layouts have.
     """
+    from custom_components.adjustable_bed.beds.sleep_number_mcr import SleepNumberMcrController
+    from custom_components.adjustable_bed.beds.sleep_number_mcr_protocol import (
+        FoundationFeatures,
+    )
     from custom_components.adjustable_bed.config_flow import _motor_count_options
     from custom_components.adjustable_bed.controller_factory import create_controller
     from custom_components.adjustable_bed.validators import get_variants_for_bed_type
@@ -153,6 +149,11 @@ async def factory_controllers() -> list[BedController]:
             device_name="SOFA00000MAD00H",
         )
     )
+    # A Sleep Number MCR foundation reports its per-side motors once connected.
+    controller = await _create_controller_for_bed_type(BED_TYPE_SLEEP_NUMBER_MCR)
+    assert isinstance(controller, SleepNumberMcrController)
+    controller._foundation_features = FoundationFeatures(2, True, True, True, True, "360", "FF3")
+    controllers.append(controller)
     return controllers
 
 
@@ -215,85 +216,15 @@ def _spec_keys(controllers: Iterable[BedController]) -> dict[str, set[str]]:
             ("sensor", controller.controller_state_sensor_specs),
             ("binary_sensor", controller.controller_state_binary_sensor_specs),
         ):
-            keys.setdefault(platform, set()).update(spec.translation_key for spec in specs)
+            keys.setdefault(platform, set()).update(
+                spec.translation_key for spec in specs if spec.translation_key is not None
+            )
     return keys
 
 
-# Platforms whose every entity takes its side's suffix on a one-address pair.
-SIDED_PLATFORMS = ("button", "cover", "number", "select", "switch", "light", "climate")
-
-
-def _translated_bases(strings: dict[str, dict[str, object]], platform: str) -> set[str]:
-    """Return one platform's translated keys, without their side variants."""
-    keys = strings.get(platform, {})
-    return {
-        key
-        for key in keys
-        if not any(
-            key.endswith(suffix) and key.removesuffix(suffix) in keys for suffix in SIDE_PREFIXES
-        )
-    }
-
-
-def _combined_bases(
-    controllers: Iterable[BedController], strings: dict[str, dict[str, object]]
-) -> dict[str, set[str]]:
-    """Return the per-platform bases a paired parent's ``_both`` entity extends.
-
-    A combined motor button is named after its cover, and some covers exist only
-    for a layout or motor a bed reports at runtime, so every translated cover
-    counts as a possible combined motor.
-    """
-    controllers = tuple(controllers)
-    motor_keys = {
-        spec.translation_key
-        for controller in (*controllers, *_motion_bed_controllers())
-        for spec in controller.motor_control_specs
-    } | _translated_bases(strings, "cover")
-    buttons = {
-        description.translation_key or description.key
-        for description in BUTTON_DESCRIPTIONS
-        if not description.is_coordinator_action
-        and description.press_fn is not None
-        and description.key != "stop"
-    }
-    buttons |= {"massage_timer_step"}
-    buttons |= {f"{key}_{direction}" for key in motor_keys for direction in ("up", "down")}
-    positions = {
-        spec.translation_key for controller in controllers for spec in controller.position_number_specs
-    }
-    return {"button": buttons, "number": positions}
-
-
-def unreachable_side_variants(
-    strings: dict[str, dict[str, object]],
-    controllers: Iterable[BedController],
-) -> dict[str, set[str]]:
-    """Return side-variant keys no entity can be given, per platform."""
-    controllers = tuple(controllers)
-    exact = _spec_keys(controllers)
-    literals = literal_keys()
-    combined = _combined_bases(controllers, strings)
-    # Only these sensors are sided; controller-state sensors keep their spec key.
-    sided_sensors = {
-        "sensor": _description_keys((*SENSOR_DESCRIPTIONS, *MASSAGE_SENSOR_DESCRIPTIONS)),
-        "binary_sensor": _description_keys(BINARY_SENSOR_DESCRIPTIONS),
-    }
-    unreachable: dict[str, set[str]] = {}
-    for platform, keys in strings.items():
-        for key in keys:
-            if key in literals or key in exact.get(platform, ()):
-                continue
-            if key.endswith(BOTH_SUFFIX):
-                reachable = key.removesuffix(BOTH_SUFFIX) in combined.get(platform, ())
-            elif key.endswith(SIDE_SUFFIXES) and platform in sided_sensors:
-                reachable = key.rsplit("_", 1)[0] in sided_sensors[platform]
-            else:
-                # Every other entity is sided; its unsuffixed base is not judged.
-                continue
-            if not reachable:
-                unreachable.setdefault(platform, set()).add(key)
-    return unreachable
+def _is_side_variant(key: str, keys: Iterable[str]) -> bool:
+    """Return whether a key is a base in ``keys`` with a side suffix appended."""
+    return any(key.endswith(suffix) and key.removesuffix(suffix) in keys for suffix in SIDE_SUFFIXES)
 
 
 def required_keys(
@@ -301,61 +232,50 @@ def required_keys(
 ) -> dict[str, set[str]]:
     """Return the translation keys entities can be given, per platform.
 
-    Every key code states needs its base. Every base on an always-sided
-    platform, and every sided sensor, needs both side variants; every combined
-    base needs its ``_both`` variant. Controller-state sensors keep their spec
-    key on every side, so only their base is needed.
+    A paired parent's combined motor button is named after its cover's key plus
+    the direction. Some covers exist only for a layout or motor a bed reports at
+    runtime, so every translated cover counts as a possible combined motor.
     """
-    controllers = tuple(controllers)
-    specs = _spec_keys(controllers)
-    for platform, keys in literal_spec_keys().items():
-        specs.setdefault(platform, set()).update(keys)
-    sided_specs = {
-        platform: keys
-        for platform, keys in specs.items()
-        if platform not in ("sensor", "binary_sensor")
-    }
-    sided_specs["cover"] |= {
+    required = _spec_keys(controllers)
+    required["cover"] |= {
         spec.translation_key
         for controller in _motion_bed_controllers()
         for spec in controller.motor_control_specs
     }
+    for platform, keys in literal_spec_keys().items():
+        required.setdefault(platform, set()).update(keys)
+    sides = ("left", "right")
     descriptions = {
         # Product actions all share one translation, named by a placeholder.
         "button": _description_keys(BUTTON_DESCRIPTIONS) | {"product_action"},
         "light": _description_keys((LIGHT_DESCRIPTION, ASSUMED_LIGHT_DESCRIPTION)),
         "climate": _description_keys(
-            (SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION, FOOTWARMING_CLIMATE_DESCRIPTION)
+            (
+                SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION,
+                FOOTWARMING_CLIMATE_DESCRIPTION,
+                *map(_build_side_thermal_climate_description, sides),
+                *map(_build_side_footwarming_climate_description, sides),
+            )
         ),
         "select": _description_keys((MASSAGE_TIMER_DESCRIPTION,)),
         "cover": _description_keys(COVER_DESCRIPTIONS),
         "number": _description_keys((*NUMBER_DESCRIPTIONS, *MASSAGE_NUMBER_DESCRIPTIONS)),
         "switch": _description_keys(SWITCH_DESCRIPTIONS),
         "sensor": _description_keys((*SENSOR_DESCRIPTIONS, *MASSAGE_SENSOR_DESCRIPTIONS)),
-        "binary_sensor": _description_keys(BINARY_SENSOR_DESCRIPTIONS),
+        "binary_sensor": _description_keys(
+            (*BINARY_SENSOR_DESCRIPTIONS, *map(_build_side_presence_description, sides))
+        ),
     }
-    required: dict[str, set[str]] = {}
-    for source in (sided_specs, descriptions):
-        for platform, keys in source.items():
-            required.setdefault(platform, set()).update(
-                f"{key}{suffix}"
-                for key in keys
-                if key is not None
-                for suffix in ("", *SIDE_SUFFIXES)
-            )
-    for platform in ("sensor", "binary_sensor"):
-        required[platform].update(key for key in specs[platform] if key is not None)
-    for platform in SIDED_PLATFORMS:
-        required.setdefault(platform, set()).update(
-            f"{base}{suffix}"
-            for base in _translated_bases(strings, platform)
-            if not base.endswith(SIDE_SUFFIXES)
-            for suffix in SIDE_SUFFIXES
-        )
-    for platform, bases in _combined_bases(controllers, strings).items():
-        required.setdefault(platform, set()).update(
-            f"{base}{suffix}" for base in bases for suffix in ("", BOTH_SUFFIX)
-        )
+    for platform, keys in descriptions.items():
+        required.setdefault(platform, set()).update(keys)
+    # A natively sided motor differs between sides, so it is never combined.
+    covers = required["cover"] | strings.get("cover", {}).keys()
+    required["button"] |= {
+        f"{motor}_{direction}"
+        for motor in covers
+        if not _is_side_variant(motor, covers)
+        for direction in ("up", "down")
+    }
     return required
 
 
@@ -372,57 +292,23 @@ def missing_translations(
     return missing
 
 
-def _side_variant(base: dict[str, object], suffix: str) -> dict[str, object]:
-    """Return a side variant of one translation, named after its side."""
-    return {**base, "name": f"{SIDE_PREFIXES[suffix]}{base['name']}"}
-
-
-def _fill(entity: dict[str, dict[str, object]], missing: dict[str, set[str]]) -> None:
-    """Add each missing translation that a translated base determines.
-
-    A motor's up/down button is named after its cover, and a side variant
-    after its base. Other missing bases need a name written by hand.
-    """
-    buttons = entity["button"]
-    for key in missing.get("button", ()):
-        motor, _, direction = key.rpartition("_")
-        cover = entity["cover"].get(motor)
-        if direction in ("up", "down") and isinstance(cover, dict) and "name" in cover:
-            buttons[key] = {"name": f"{cover['name']} {direction.capitalize()}"}
-    for platform, keys in missing.items():
-        strings = entity[platform]
-        added = {}
-        for key in keys - strings.keys():
-            for suffix in SIDE_PREFIXES:
-                base = strings.get(key.removesuffix(suffix)) if key.endswith(suffix) else None
-                if isinstance(base, dict) and "name" in base:
-                    added[key] = _side_variant(base, suffix)
-                    break
-        entity[platform] = _insert_after_bases(strings, added)
-
-
-def _insert_after_bases(strings: dict[str, object], added: dict[str, object]) -> dict[str, object]:
-    """Insert each added variant after its base's existing entries, in side order."""
-    rank = {suffix: order for order, suffix in enumerate(SIDE_PREFIXES)}
-
-    def split(key: str) -> tuple[str, int]:
-        for suffix in SIDE_PREFIXES:
-            if key.endswith(suffix) and key.removesuffix(suffix) in strings:
-                return key.removesuffix(suffix), rank[suffix]
-        return key, -1
-
-    pending: dict[str, list[str]] = {}
-    for key in added:
-        pending.setdefault(split(key)[0], []).append(key)
-    keys = list(strings)
-    result: dict[str, object] = {}
-    for index, key in enumerate(keys):
-        result[key] = strings[key]
-        base = split(key)[0]
-        if index + 1 == len(keys) or split(keys[index + 1])[0] != base:
-            for variant in sorted(pending.pop(base, ()), key=lambda variant: split(variant)[1]):
-                result[variant] = added[variant]
-    return result
+def unreachable_side_keys(
+    strings: dict[str, dict[str, object]],
+    controllers: Iterable[BedController],
+) -> dict[str, set[str]]:
+    """Return side-suffixed copies of a translated base that no entity is given."""
+    required = required_keys(controllers, strings)
+    literals = literal_keys()
+    unreachable: dict[str, set[str]] = {}
+    for platform, keys in strings.items():
+        for key in keys:
+            if (
+                _is_side_variant(key, keys)
+                and key not in literals
+                and key not in required.get(platform, ())
+            ):
+                unreachable.setdefault(platform, set()).add(key)
+    return unreachable
 
 
 def _report(title: str, keys_by_platform: dict[str, set[str]]) -> None:
@@ -434,24 +320,11 @@ def _report(title: str, keys_by_platform: dict[str, set[str]]) -> None:
     print(f"total: {sum(map(len, keys_by_platform.values()))}")
 
 
-def main(argv: list[str]) -> None:
+def main() -> None:
     controllers = asyncio.run(factory_controllers())
-    unreachable = unreachable_side_variants(entity_strings(), controllers)
-    missing = missing_translations(entity_strings(), controllers)
-    _report("unreachable:", unreachable)
-    _report("missing:", missing)
-    if "--prune" not in argv and "--fill" not in argv:
-        return
-    for path in TRANSLATION_FILES:
-        data = json.loads(path.read_text())
-        if "--prune" in argv:
-            for platform, keys in unreachable.items():
-                for key in keys:
-                    del data["entity"][platform][key]
-        if "--fill" in argv:
-            _fill(data["entity"], missing)
-        path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+    _report("unreachable:", unreachable_side_keys(entity_strings(), controllers))
+    _report("missing:", missing_translations(entity_strings(), controllers))
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()

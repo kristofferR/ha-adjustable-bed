@@ -22,6 +22,7 @@ from ..const import (
 from ..profiles import keeson as keeson_profiles
 from ..state_keys import MASSAGE_TIMER_MINUTES, massage_intensity
 from .base import BedController, ControllerButtonSpec, MotorCommandCallable, MotorControlSpec
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -213,10 +214,6 @@ class ComfortEnhancementsController(BedController):
             )
             for axis in self._axes
         )
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset({"back", "legs", "both", "lumbar", "bed_height"})
 
     async def move_back_up(self) -> None:
         await self._move("back", True)
@@ -538,3 +535,8 @@ class ComfortEnhancementsController(BedController):
                 )
             )
         return tuple(specs)
+
+
+async def build_controller(ctx: BuildContext) -> ComfortEnhancementsController:
+    """Build the controller for the selected Comfort Enhancements layout."""
+    return ComfortEnhancementsController(ctx.coordinator, layout=ctx.variant or "")

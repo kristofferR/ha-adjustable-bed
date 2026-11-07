@@ -40,7 +40,9 @@ from .base import (
     ControllerSelectSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
+    require_controller,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -102,7 +104,9 @@ def action_label(action: Action) -> str:
 
 
 async def _action(controller: BedController, *, detail: str, save: bool = False) -> None:
-    await controller.async_execute_hjbed_action(detail, save=save)
+    await require_controller(controller, HJBedController).async_execute_hjbed_action(
+        detail, save=save
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -193,10 +197,6 @@ class HJBedController(BedController):
     @property
     def supports_single_address_pairing(self) -> bool:
         return self.product.coupled
-
-    @property
-    def supports_hjbed(self) -> bool:
-        return True
 
     @property
     def persisted_app_state_key(self) -> str:
@@ -971,3 +971,8 @@ class HJBedController(BedController):
             assert request.alarm_id is not None
             self._free_alarm_slots.add(request.alarm_id)
         self._publish()
+
+
+async def build_controller(ctx: BuildContext) -> HJBedController:
+    """Build the controller for the selected profile."""
+    return HJBedController(ctx.coordinator, profile=ctx.variant or "")

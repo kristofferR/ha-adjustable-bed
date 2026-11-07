@@ -14,18 +14,10 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
 from . import goodvibe_protocol as p
-from .beds.base import BedController
 from .codec import richmat as codec
 from .const import DOMAIN
 from .goodvibe_catalog import ACTIONS
-from .services import (
-    SIDE_FIELD,
-    _execute_sided,
-    _missing_device_error,
-    _preflight_capability,
-    _release_preflighted,
-    _resolve_sided_targets,
-)
+from .services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
 
 if TYPE_CHECKING:
     from .beds.goodvibe import GoodVibeController
@@ -236,7 +228,7 @@ class Request:
 
 
 FIELDS: dict[vol.Marker, object] = {
-    vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+    vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
     vol.Required("operation"): vol.In(OPERATIONS),
     vol.Optional("action"): cv.string,
     vol.Optional("datetime"): cv.datetime,
@@ -259,7 +251,7 @@ SCHEMA = vol.Schema(FIELDS)
 
 
 async def handle_goodvibe(call: ServiceCall) -> None:
-    from .beds.goodvibe import selected
+    from .beds.goodvibe import GoodVibeController
 
     request = Request(
         operation=call.data["operation"],
@@ -275,40 +267,24 @@ async def handle_goodvibe(call: ServiceCall) -> None:
         date=call.data.get("date"),
         report_type=call.data["report_type"],
     )
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data[CONF_DEVICE_ID], call.data.get("side")
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-
     plans: dict[tuple[str, str], Request] = {}
 
-    def validate(controller: BedController) -> None:
-        target = selected(controller)
+    def validate(target: GoodVibeController) -> None:
         plans[(target._address.upper(), target.product_key)] = request.plan(target)
 
-    preflighted = await _preflight_capability(
-        targets, "supports_goodvibe", "Good Vibe Sleep configuration", validate
-    )
-
-    async def execute(controller: BedController) -> None:
-        target = selected(controller)
+    async def execute(target: GoodVibeController) -> None:
         plan = plans.get((target._address.upper(), target.product_key))
         if plan is None:
             raise ServiceValidationError("The Good Vibe Sleep target changed after validation")
-        try:
-            await controller.async_execute_goodvibe_request(plan)
-        except ValueError as err:
-            raise ServiceValidationError(str(err)) from err
+        await target.async_execute_goodvibe_request(plan)
 
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(
-                coordinator, side, execute, cancel_running=False, resource="configuration"
-            )
-    except BaseException:
-        await _release_preflighted(preflighted)
-        raise
+    await _preflight_and_execute(
+        _call_targets(call),
+        GoodVibeController,
+        "Good Vibe Sleep configuration",
+        execute,
+        validate=validate,
+    )
 
 
 def async_register_goodvibe_services(hass: HomeAssistant) -> None:

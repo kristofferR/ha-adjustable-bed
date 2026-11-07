@@ -22,6 +22,8 @@ from bleak.exc import BleakError
 
 from ..codec import malouf as malouf_codec
 from ..const import (
+    CONF_MALOUF_LAYOUT,
+    CONF_MALOUF_MEMORY_SLOTS,
     MALOUF_LAYOUT_AUTO,
     MALOUF_LAYOUT_FOUR_MOTOR,
     MALOUF_LAYOUT_HEAD_TILT,
@@ -169,7 +171,7 @@ def _malouf_motor_control_specs(layout: str) -> tuple[MotorControlSpec, ...]:
 
 def _resolve_malouf_layout(coordinator: AdjustableBedCoordinator) -> str:
     """Resolve an actuator layout without using a retail model as a protocol."""
-    configured = coordinator.malouf_layout
+    configured: str = coordinator.entry.data.get(CONF_MALOUF_LAYOUT, MALOUF_LAYOUT_AUTO)
     if configured != MALOUF_LAYOUT_AUTO:
         return configured
     if coordinator.motor_count <= 2:
@@ -181,7 +183,7 @@ def _resolve_malouf_layout(coordinator: AdjustableBedCoordinator) -> str:
 
 def _resolve_malouf_memory_slots(coordinator: AdjustableBedCoordinator, layout: str) -> int:
     """Resolve memory capacity independently from command protocol."""
-    configured = coordinator.malouf_memory_slots
+    configured = int(coordinator.entry.data.get(CONF_MALOUF_MEMORY_SLOTS, MALOUF_MEMORY_SLOTS_AUTO))
     if configured != MALOUF_MEMORY_SLOTS_AUTO:
         return configured
     return 1 if layout == MALOUF_LAYOUT_TWO_MOTOR else 2
@@ -294,12 +296,6 @@ class MaloufNewOkinController(BedController):
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
         """Return controls for the selected physical actuator layout."""
         return _malouf_motor_control_specs(self._layout)
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Remove legacy aliases and controls absent from the selected layout."""
-        active = {spec.key for spec in self.motor_control_specs}
-        return frozenset({"head", "feet", "tilt", "lumbar", "bed_height"} - active)
 
     async def _send_stop(self) -> None:
         await self.write_command(self._frame("stop"), cancel_event=asyncio.Event())
@@ -569,12 +565,6 @@ class MaloufLegacyOkinController(BedController):
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
         """Return controls for the selected physical actuator layout."""
         return _malouf_motor_control_specs(self._layout)
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Remove legacy aliases and controls absent from the selected layout."""
-        active = {spec.key for spec in self.motor_control_specs}
-        return frozenset({"head", "feet", "tilt", "lumbar", "bed_height"} - active)
 
     def _build_command(self, command_value: int) -> bytes:
         """Build a nine-byte E6 frame through the Keeson codec (side byte ``00``)."""

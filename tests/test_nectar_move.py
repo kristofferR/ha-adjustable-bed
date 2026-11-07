@@ -16,6 +16,7 @@ from homeassistant.helpers import issue_registry as ir
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
+from custom_components.adjustable_bed.bed_traits import bed_traits
 from custom_components.adjustable_bed.beds.okin_cst import OkinCstController
 from custom_components.adjustable_bed.binary_sensor import AdjustableBedControllerStateBinarySensor
 from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS, _should_add_button
@@ -23,8 +24,6 @@ from custom_components.adjustable_bed.codec.okin_nframe import frame96
 from custom_components.adjustable_bed.config_flow import _apply_bed_type_choice
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIN_CST,
-    BEDS_WITH_POSITION_FEEDBACK,
-    BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
@@ -172,8 +171,8 @@ async def test_factory_profile_is_two_axes_without_position_feedback(
     assert isinstance(controller, OkinCstController)
     assert tuple(spec.key for spec in controller.motor_control_specs) == ("head", "feet")
     assert controller.supports_position_feedback is False
-    assert BED_TYPE_OKIN_CST not in BEDS_WITH_POSITION_FEEDBACK
-    assert BED_TYPE_OKIN_CST in BEDS_WITHOUT_ANGLE_FEEDBACK
+    assert not bed_traits(BED_TYPE_OKIN_CST).position_feedback
+    assert bed_traits(BED_TYPE_OKIN_CST).no_angle_feedback
 
 
 def test_profile_exposes_only_reachable_controls(

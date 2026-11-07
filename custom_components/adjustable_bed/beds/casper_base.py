@@ -13,6 +13,7 @@ from homeassistant.util import dt as dt_util
 
 from ..casper_base_protocol import (
     RGB_TIMERS,
+    CasperBaseActions,
     Event,
     MainReceive,
     Request,
@@ -39,6 +40,7 @@ from .base import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -92,10 +94,10 @@ async def invoke(
     target = controller
     if not isinstance(target, CasperBaseController):
         raise TypeError("Casper Base controller required")
-    await controller.async_perform_casper_base_action(action, save=save, music_page=music_page)
+    await target.async_perform_casper_base_action(action, save=save, music_page=music_page)
 
 
-class CasperBaseController(BedController):
+class CasperBaseController(BedController, CasperBaseActions):
     """Use selected product actions with live coherent service/characteristic pairing."""
 
     profiles: ClassVar[Mapping[str, ProductProfile]] = PROFILES
@@ -162,7 +164,7 @@ class CasperBaseController(BedController):
 
     @property
     def requires_persistent_connection(self) -> bool:
-        return self._snore_poll is not None
+        return super().requires_persistent_connection or self._snore_poll is not None
 
     def controller_button_available(self, key: str) -> bool:
         return not key.startswith("casper_music_page_") or "music_available" in self.events
@@ -575,3 +577,8 @@ class CasperBaseController(BedController):
 
     async def program_memory(self, memory_num: int) -> None:
         await self.async_perform_casper_base_action(f"MemoryPosition{memory_num}", save=True)
+
+
+async def build_controller(ctx: BuildContext) -> CasperBaseController:
+    """Build the controller for the selected Casper base product."""
+    return CasperBaseController(ctx.coordinator, product=ctx.variant or "")

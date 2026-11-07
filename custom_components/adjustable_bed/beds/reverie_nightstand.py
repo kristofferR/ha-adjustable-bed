@@ -55,8 +55,11 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
+from .builder import BuildContext
 from .reverie_comfort import (
+    ReverieComfortActions,
     ReverieComfortRequest,
+    RoutineSteps,
     build_p1_composer_payload,
     build_stk_composer_payload,
     validate_comfort_request,
@@ -128,7 +131,7 @@ class ReverieNightstandCommands:
         return memory_num + 83
 
 
-class ReverieNightstandController(BedController):
+class ReverieNightstandController(BedController, ReverieComfortActions):
     """Controller for Reverie Nightstand beds (Protocol 110).
 
     This protocol uses direct writes to specific characteristics rather than
@@ -162,7 +165,7 @@ class ReverieNightstandController(BedController):
         self._diagnostic_timer: asyncio.TimerHandle | None = None
         self._diagnostic_connection_release: Callable[[], None] | None = None
         self._routine_timer: asyncio.TimerHandle | None = None
-        self._routine_steps: list[tuple[ReverieComfortRequest | None, int]] = []
+        self._routine_steps: list[tuple[ReverieComfortRequest, int]] = []
         self._routine_generation = 0
         self._routine_connection_release: Callable[[], None] | None = None
         self._active_notify_characteristics: list[str] = []
@@ -253,14 +256,6 @@ class ReverieNightstandController(BedController):
     def has_lumbar_support(self) -> bool:
         """Return True - Reverie Nightstand has lumbar motor control."""
         return self.model.lumbar
-
-    @property
-    def supports_position_feedback(self) -> bool:
-        return self.model.positions
-
-    @property
-    def reports_percentage_position(self) -> bool:
-        return self.model.positions
 
     @property
     def supports_direct_position_control(self) -> bool:
@@ -551,22 +546,6 @@ class ReverieNightstandController(BedController):
                 _LOGGER.exception("Failed to write to %s", char_uuid)
                 raise
 
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        """Write a command to the bed (writes to linear head characteristic)."""
-        await self._write_gatt_with_retry(
-            REVERIE_NIGHTSTAND_LINEAR_HEAD_UUID,
-            command,
-            repeat_count,
-            repeat_delay_ms,
-            cancel_event,
-        )
-
     async def start_notify(
         self, callback: Callable[[str, float], None] | None = None
     ) -> None:
@@ -769,7 +748,7 @@ class ReverieNightstandController(BedController):
         await self._write_bytes_to_char(REVERIE_NIGHTSTAND_PRESETS_UUID, payload)
 
     def validate_routine(
-        self, steps: list[tuple[ReverieComfortRequest | None, int]]
+        self, steps: RoutineSteps
     ) -> None:
         if not self.model.routines:
             raise ValueError(f"Model {self.model_id} has no Composer routines")
@@ -819,7 +798,7 @@ class ReverieNightstandController(BedController):
         await self._write_bytes_to_char(REVERIE_NIGHTSTAND_PRESETS_UUID, payload)
 
     async def async_start_routine(
-        self, steps: list[tuple[ReverieComfortRequest | None, int]]
+        self, steps: RoutineSteps
     ) -> None:
         """Replace this physical address's Composer queue and start its first step."""
         self.validate_routine(steps)
@@ -827,11 +806,13 @@ class ReverieNightstandController(BedController):
             return
         self._cancel_routine()
         stopped_on_missing = False
-        for step in steps:
-            if step[0] is None:
+        for request, duration in steps:
+            if request is None:
                 stopped_on_missing = True
                 break
-            self._routine_steps.append(step)
+            if duration is None:  # validate_routine already rejects this
+                raise ValueError("Routine step duration must be an integer number of minutes")
+            self._routine_steps.append((request, duration))
         if stopped_on_missing or not self._routine_steps:
             return
         self._hold_routine_connection()
@@ -1648,3 +1629,8 @@ class ReverieNightstandController(BedController):
             self.forward_controller_state_update(STK_GLOBAL_MASSAGE, level)
             return
         raise ValueError(f"Unsupported Reverie massage zone: {zone}")
+
+
+async def build_controller(ctx: BuildContext) -> ReverieNightstandController:
+    """Build the controller for the selected Reverie model."""
+    return ReverieNightstandController(ctx.coordinator, model=ctx.variant)

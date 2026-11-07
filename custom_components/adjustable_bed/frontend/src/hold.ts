@@ -92,12 +92,9 @@ export function heldReleaseButton(hass: HomeAssistant | undefined, entityId: str
   const attributes = hass?.states[entityId]?.attributes;
   const key = attributes?.hold_release_button_key;
   if (!owner?.device_id || typeof key !== "string") return undefined;
-  const side = attributes?.bed_side;
-  const releaseKey = (side === "left" || side === "right") &&
-    owner.translation_key?.endsWith(`_${side}`) ? `${key}_${side}` : key;
   return Object.values(hass?.entities ?? {}).find((entry) =>
     entry.device_id === owner.device_id && entry.entity_id.startsWith("button.") &&
-    entry.translation_key === releaseKey,
+    entry.translation_key === key,
   )?.entity_id;
 }
 
@@ -294,23 +291,16 @@ function deviceHasChildren(deviceId: string, devices: HomeAssistant["devices"]):
   );
 }
 
-const STOP_TRANSLATION_SIDES: Record<string, HoldTargetSide> = {
-  stop_left: "left",
-  stop_right: "right",
-  stop_both: "both",
-};
-
 // State attributes can be missing while HA restores an entity; the registry's
-// sided Stop translation key still names its side. Conflicting sources are
-// ambiguous and claim no side.
+// combined Stop key still names Both. Conflicting sources are ambiguous and
+// claim no side.
 function sideForEntity(hass: HomeAssistant, entityId: string): HoldTargetSide | undefined {
   const attributes = hass.states[entityId]?.attributes;
   const declared = attributes?.bed_side ?? attributes?.side;
   const stateSide = declared === "left" || declared === "right" || declared === "both"
     ? declared
     : undefined;
-  const translationKey = hass.entities[entityId]?.translation_key;
-  const registrySide = translationKey ? STOP_TRANSLATION_SIDES[translationKey] : undefined;
+  const registrySide = hass.entities[entityId]?.translation_key === "stop_both" ? "both" : undefined;
   if (stateSide && registrySide && stateSide !== registrySide) return undefined;
   return stateSide ?? registrySide;
 }
@@ -319,8 +309,7 @@ function isStopEntity(hass: HomeAssistant, entityId: string): boolean {
   const entry = hass.entities[entityId];
   return entry?.platform === "adjustable_bed" &&
     entityId.startsWith("button.") &&
-    (entry.translation_key === "stop" ||
-      (entry.translation_key !== undefined && entry.translation_key in STOP_TRANSLATION_SIDES));
+    (entry.translation_key === "stop" || entry.translation_key === "stop_both");
 }
 
 export function holdTargetForEntity(
@@ -393,9 +382,7 @@ export function pairedPeerStopEntityIds(
   // An incomplete pair graph cannot prove which Stop owns the other side.
   if (childIds.length !== 2 || !childIds.includes(deviceId)) return [];
   const peerId = childIds.find((id) => id !== deviceId);
-  // Two-address children publish a plain "stop"; single-address children
-  // carry a side-suffixed key. Either way the peer's Stop must not claim Both
-  // or this Stop's own side.
+  // The peer's Stop must not claim Both or this Stop's own side.
   const stops = Object.values(hass.entities).filter((entry) => {
     if (entry.device_id !== peerId || !isStopEntity(hass, entry.entity_id)) return false;
     const peerSide = sideForEntity(hass, entry.entity_id);

@@ -10,9 +10,9 @@ from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
     BED_TYPE_REMACRO,
@@ -24,6 +24,7 @@ from .controller_state import ControllerState, StateKey
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
+from .entity_sweep import PlatformEntities, records_entities
 from .octo_runtime import octo_controller
 from .paired_coordinator import entity_runtimes
 from .state_keys import (
@@ -112,16 +113,16 @@ SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
 )
 
 
+@records_entities(Platform.SWITCH)
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed switch entities."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
     for runtime in entity_runtimes(coordinator):
         async_setup_dynamic_entities(
-            hass,
             entry,
             runtime,
             async_add_entities,
@@ -178,17 +179,14 @@ def _switch_entities_for(
                 DOMAIN,
                 coordinator.entity_unique_id(description.key),
             )
-            if existing is not None and not octo.supports_lights:
-                registry.async_remove(existing)
-                existing = None
             if (
-                existing is not None
+                (existing is not None and octo.supports_lights)
                 or octo.legacy_light_fallback
                 or (octo.supports_discrete_light_control and not octo.supports_light_color_control)
             ):
                 entities.append(AdjustableBedSwitch(coordinator, description))
             # OCTO keeps this legacy switch identity. Color surfaces use the
-            # light platform without deleting a user's existing switch row.
+            # light platform without retiring a user's existing switch row.
             continue
         if (
             description.key == "under_bed_lights"
@@ -203,30 +201,12 @@ def _switch_entities_for(
                 )
             )
         ):
-            entity_id = registry.async_get_entity_id(
-                "switch",
-                DOMAIN,
-                coordinator.entity_unique_id(description.key),
-            )
-            if entity_id is not None:
-                registry.async_remove(entity_id)
             continue
         # Skip switches that require capabilities the controller doesn't have
         if description.is_supported is not None:
             if controller is None:
                 continue
             if not description.is_supported(controller):
-                # Older releases may have created this switch before the
-                # capability was dropped (e.g. BedTech discrete lights, #410);
-                # remove the stale registry entry so a dead control doesn't
-                # linger in the UI and card.
-                entity_id = registry.async_get_entity_id(
-                    "switch",
-                    DOMAIN,
-                    coordinator.entity_unique_id(description.key),
-                )
-                if entity_id is not None:
-                    registry.async_remove(entity_id)
                 continue
         entities.append(AdjustableBedSwitch(coordinator, description))
 
@@ -271,7 +251,7 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
         """Initialize the switch."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         controller = coordinator.capability_controller
         self._app_floor_intent = (

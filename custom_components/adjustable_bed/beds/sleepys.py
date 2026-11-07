@@ -278,6 +278,9 @@ class SleepysBox24Controller(BedController):
       [0xA5, 0x5A, 0x00, 0x00, 0x00, 0x20, motor_cmd]
     """
 
+    # BOX24 writes are fire-and-forget.
+    _write_with_response = False
+
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         """Initialize the Sleepy's BOX24 controller."""
         super().__init__(coordinator)
@@ -322,29 +325,6 @@ class SleepysBox24Controller(BedController):
             7-byte command packet
         """
         return SleepysBox24Commands.HEADER + bytes([motor_cmd])
-
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        """Write a command to the bed."""
-        _LOGGER.debug(
-            "Writing command to Sleepy's BOX24 bed: %s (repeat: %d, delay: %dms)",
-            command.hex(),
-            repeat_count,
-            repeat_delay_ms,
-        )
-        await self._write_gatt_with_retry(
-            SLEEPYS_BOX24_WRITE_CHAR_UUID,
-            command,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            cancel_event=cancel_event,
-            response=False,  # Fire-and-forget for BOX24
-        )
 
     async def _move_with_stop(self, motor_cmd: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Execute a movement command and always send STOP at the end."""

@@ -8,7 +8,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
 from time import monotonic
 from typing import TYPE_CHECKING, Any, Final
@@ -33,6 +33,7 @@ from ..const import (
     LINAK_POSITION_SERVICE_UUID,
     LINAK_TIMER_CHAR_UUID,
     LINAK_TIMER_SERVICE_UUID,
+    LINAK_VARIANT_PERFORMANCE,
 )
 from ..controller_state import AnyStateKey, StateKey
 from ..execution import ExecutionCapabilities
@@ -48,6 +49,8 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
+from .builder import BuildContext
+from .lifecycle import CapabilitySnapshotPolicy
 from .linak_protocol import (
     LINAK_AXIS_MASKS,
     LinakAlarmStep,
@@ -66,6 +69,7 @@ from .linak_protocol import (
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
+    from .lifecycle import ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -152,14 +156,6 @@ LINAK_MAX_DOWNWARD_STOP_LEAD_DEGREES = 1.5
 LINAK_LOWER_ENDPOINT_MAX_ANGLE_DEGREES = 1.1
 LINAK_LOWER_ENDPOINT_STALL_CONFIRMATIONS = 2
 LINAK_MIN_OBSERVED_EXTENSION_COUNT = -3
-LINAK_CONTROLLER_STATE_SENSOR_ENTITY_KEYS = frozenset(
-    {
-        "linak_protocol_error",
-        "linak_alarm_status",
-        *(f"linak_{axis}_reported_speed" for axis in ("base", "feet", "head", "legs", "back")),
-    }
-)
-LINAK_CONTROLLER_STATE_BINARY_SENSOR_ENTITY_KEYS = frozenset({"linak_position_feedback_fault"})
 LINAK_MEMORY_RECALL_DURATION_S = 30
 LINAK_PERFORMANCE_HOLD_INTERVAL_MS = 300
 LINAK_BED_CONTROL_HOLD_INTERVAL_MS = 100
@@ -178,22 +174,29 @@ class LinakPositionSpec:
 
 
 class LinakPositionSeekPolicy(PositionSeekPolicy):
-    """Accept Linak's physically observed non-zero lower endpoint."""
+    """Seek with held-command refresh and Linak's non-zero lower endpoint."""
 
-    def __init__(self, controller: BedController) -> None:
+    tolerance = LINAK_POSITION_SEEK_TOLERANCE
+    # Faster reissue so held refreshes chain smoothly.
+    stall_count = LINAK_POSITION_SEEK_STALL_COUNT
+    # Bed Control's 100 ms held-command refresh cadence.
+    check_interval = LINAK_POSITION_SEEK_REFRESH_INTERVAL_S
+    stall_threshold = LINAK_POSITION_SEEK_STALL_THRESHOLD
+    # Keep refreshing while the motor advances, until feedback enters the band.
+    chains_steps_while_moving = True
+    chain_min_remaining_distance = LINAK_POSITION_SEEK_TOLERANCE
+    # Each step is a whole pulse, so reversing on overshoot hunts.
+    reverses_on_overshoot = False
+    # Reference-output notifications arrive throughout motion; fall back to an
+    # explicit read if they stop.
+    prefers_cached_position_feedback = True
+    cached_position_feedback_max_age = LINAK_POSITION_SEEK_CACHED_FEEDBACK_MAX_AGE_S
+
+    def __init__(self, controller: LinakController) -> None:
         super().__init__(controller)
+        self._linak = controller
         self._last_lower_endpoint_stall: float | None = None
         self._lower_endpoint_stall_confirmations = 0
-
-    @property
-    def prefers_cached_position_feedback(self) -> bool:
-        """Use the reference-output notifications already emitted during motion."""
-        return True
-
-    @property
-    def cached_position_feedback_max_age(self) -> float:
-        """Fall back to an explicit read if notifications stop arriving."""
-        return LINAK_POSITION_SEEK_CACHED_FEEDBACK_MAX_AGE_S
 
     @staticmethod
     def _is_observed_lower_endpoint(sample: SeekSample) -> bool:
@@ -226,10 +229,7 @@ class LinakPositionSeekPolicy(PositionSeekPolicy):
         # releasing early only leaves it sitting a degree above flat.
         if sample.target <= 0.0:
             return False
-        controller = self._controller
-        if not isinstance(controller, LinakController):
-            return False
-        stop_lead = controller.downward_stop_lead(sample.position_key)
+        stop_lead = self._linak.downward_stop_lead(sample.position_key)
         if stop_lead is None:
             return False
         return sample.remaining <= min(stop_lead, LINAK_MAX_DOWNWARD_STOP_LEAD_DEGREES)
@@ -249,6 +249,33 @@ class LinakPositionSeekPolicy(PositionSeekPolicy):
 
         return self._lower_endpoint_stall_confirmations >= LINAK_LOWER_ENDPOINT_STALL_CONFIRMATIONS
 
+
+    async def async_issue_step(
+        self,
+        position_key: str,
+        moving_up: bool,
+        default_step: Callable[[], Awaitable[None]],
+    ) -> None:
+        """Refresh one held movement without releasing between samples.
+
+        Bed Control refreshes a held command every 100 ms and writes one STOP
+        only when the gesture ends. The seek runner provides that cadence and
+        owns the terminal STOP, allowing one continuous motor movement.
+        """
+        del default_step
+        command = {
+            ("back", True): LinakCommands.MOVE_BACK_UP,
+            ("back", False): LinakCommands.MOVE_BACK_DOWN,
+            ("legs", True): LinakCommands.MOVE_LEGS_UP,
+            ("legs", False): LinakCommands.MOVE_LEGS_DOWN,
+            ("head", True): LinakCommands.MOVE_HEAD_UP,
+            ("head", False): LinakCommands.MOVE_HEAD_DOWN,
+            ("feet", True): LinakCommands.MOVE_FEET_UP,
+            ("feet", False): LinakCommands.MOVE_FEET_DOWN,
+        }.get((position_key, moving_up))
+        if command is None:
+            raise ValueError(f"Unsupported position key for seek step: {position_key}")
+        await self._linak.write_command(command)
 
 class LinakCommands:
     """Linak command constants."""
@@ -387,10 +414,6 @@ class LinakController(BedController):
         return True
 
     @property
-    def position_number_pruning(self) -> frozenset[str] | None:
-        return frozenset()
-
-    @property
     def supports_discrete_light_control(self) -> bool:
         """Expose hardware-verified AUX on/off for the modern profile (issue #615)."""
         return self._profile is LinakProfile.BED_CONTROL
@@ -411,49 +434,9 @@ class LinakController(BedController):
         return False
 
     @property
-    def reverses_position_seek_on_overshoot(self) -> bool:
-        """Return False - Linak seek steps are full pulses, so reversal hunts."""
-        return False
-
-    @property
-    def uses_custom_position_seek_steps(self) -> bool:
-        """Return True - Linak seek steps should use short remote-like pulses."""
-        return True
-
-    @property
-    def position_seek_tolerance(self) -> float:
-        """Return a tighter tolerance for Linak angle seeking."""
-        return LINAK_POSITION_SEEK_TOLERANCE
-
-    @property
-    def position_seek_stall_count(self) -> int:
-        """Return a faster reissue threshold so Linak pulses chain smoothly."""
-        return LINAK_POSITION_SEEK_STALL_COUNT
-
-    @property
-    def position_seek_check_interval(self) -> float:
-        """Match Bed Control's 100 ms held-command refresh cadence."""
-        return LINAK_POSITION_SEEK_REFRESH_INTERVAL_S
-
-    @property
-    def position_seek_stall_threshold(self) -> float:
-        """Return a smaller movement threshold for Linak angle feedback."""
-        return LINAK_POSITION_SEEK_STALL_THRESHOLD
-
-    @property
     def position_seek_policy(self) -> PositionSeekPolicy:
         """Return Linak's lower-endpoint-aware seek policy."""
         return LinakPositionSeekPolicy(self)
-
-    @property
-    def chains_position_seek_steps_while_moving(self) -> bool:
-        """Keep feeding Linak seek bursts while the motor is still advancing."""
-        return True
-
-    @property
-    def position_seek_chain_min_remaining_distance(self) -> float:
-        """Keep refreshing movement until feedback enters the target band."""
-        return LINAK_POSITION_SEEK_TOLERANCE
 
     @property
     def passive_position_reconciliation_interval(self) -> float | None:
@@ -480,7 +463,7 @@ class LinakController(BedController):
     @property
     def supports_position_feedback(self) -> bool:
         """Return whether an advanced Bed Control mask selected reference outputs."""
-        return bool(self._capabilities.position_axes)
+        return super().supports_position_feedback and bool(self._capabilities.position_axes)
 
     @property
     def requires_notification_channel(self) -> bool:
@@ -639,9 +622,21 @@ class LinakController(BedController):
             "timer_candidate": self._timer_candidate,
         }
 
-    def capability_snapshot(self) -> dict[str, Any]:
-        """Return a serializable snapshot for offline entity gating."""
-        return self._capabilities.as_dict()
+    async def async_on_connect(self, session: ControllerSession) -> None:
+        """Subscribe, then persist a model resolution the subscription completed."""
+        await session.async_start_notify()
+        session.persist_capability_snapshot()
+
+    @property
+    def capability_snapshot_policy(self) -> CapabilitySnapshotPolicy:
+        # A cold link can defer its actuator mask and timer channel until the
+        # first command, so the snapshot is also reconciled after operations.
+        return CapabilitySnapshotPolicy(after_operations=True)
+
+    def capability_snapshot(self) -> dict[str, Any] | None:
+        """Return a serializable snapshot for offline entity gating, once resolved."""
+        snapshot = self._capabilities.as_dict()
+        return snapshot if snapshot.get("discovery_complete") is True else None
 
     @property
     def controller_entity_discovery_complete(self) -> bool:
@@ -861,18 +856,6 @@ class LinakController(BedController):
         )
 
     @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        """Remove diagnostics omitted by the current profile and capability mask."""
-        active = {spec.key for spec in self.controller_state_sensor_specs}
-        return LINAK_CONTROLLER_STATE_SENSOR_ENTITY_KEYS - active
-
-    @property
-    def stale_controller_state_binary_sensor_entity_keys(self) -> frozenset[str]:
-        """Remove the aggregate feedback fault when no reference axes remain."""
-        active = {spec.key for spec in self.controller_state_binary_sensor_specs}
-        return LINAK_CONTROLLER_STATE_BINARY_SENSOR_ENTITY_KEYS - active
-
-    @property
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
         """Return sliders only for reference-output axes with calibrated angles."""
         return tuple(
@@ -916,11 +899,6 @@ class LinakController(BedController):
                 )
             )
         return tuple(specs)
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Clean up covers omitted by the current Linak actuator mask or profile."""
-        return frozenset({"back", "legs", "head", "feet", "bed_height"})
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -1216,7 +1194,7 @@ class LinakController(BedController):
             return None
         angular_speed = abs(float(raw_speed)) * spec.max_angle / spec.max_position
         return max(
-            self.position_seek_tolerance,
+            LINAK_POSITION_SEEK_TOLERANCE,
             angular_speed * LINAK_DOWNWARD_STOP_LEAD_TIME_S,
         )
 
@@ -1830,37 +1808,6 @@ class LinakController(BedController):
         """Send Linak's explicit STOP/release frame."""
         await self.write_command(self._stop_command, cancel_event=asyncio.Event())
 
-    async def seek_position_step(
-        self,
-        position_key: str,
-        moving_up: bool,
-        remaining_distance: float | None = None,
-    ) -> None:
-        """Refresh one held Linak movement without releasing between samples."""
-        command_map = {
-            ("back", True): LinakCommands.MOVE_BACK_UP,
-            ("back", False): LinakCommands.MOVE_BACK_DOWN,
-            ("legs", True): LinakCommands.MOVE_LEGS_UP,
-            ("legs", False): LinakCommands.MOVE_LEGS_DOWN,
-            ("head", True): LinakCommands.MOVE_HEAD_UP,
-            ("head", False): LinakCommands.MOVE_HEAD_DOWN,
-            ("feet", True): LinakCommands.MOVE_FEET_UP,
-            ("feet", False): LinakCommands.MOVE_FEET_DOWN,
-        }
-        command = command_map.get((position_key, moving_up))
-        if command is None:
-            await super().seek_position_step(
-                position_key,
-                moving_up,
-                remaining_distance,
-            )
-            return
-
-        # Bed Control refreshes a held command every 100 ms and writes one STOP
-        # only when the gesture ends. The seek runner provides that cadence and
-        # owns the terminal STOP, allowing one continuous motor movement.
-        await self.write_command(command)
-
     async def move_head_up(self) -> None:
         """Move head up."""
         await self._move_with_stop(LinakCommands.MOVE_HEAD_UP)
@@ -2200,3 +2147,15 @@ class LinakController(BedController):
             )
         finally:
             await self._send_stop()
+
+
+async def build_controller(ctx: BuildContext) -> LinakController:
+    """Build the controller for the selected profile and stored capabilities."""
+    profile = (
+        LinakProfile.PERFORMANCE
+        if ctx.variant == LINAK_VARIANT_PERFORMANCE
+        else LinakProfile.BED_CONTROL
+    )
+    return LinakController(
+        ctx.coordinator, profile=profile, capability_snapshot=ctx.stored_capabilities("linak")
+    )

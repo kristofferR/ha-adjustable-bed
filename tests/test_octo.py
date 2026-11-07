@@ -342,7 +342,7 @@ class TestOctoRequiredStartupDiscovery:
                 OctoController, "discover_features", new_callable=AsyncMock, return_value=False
             ) as discover,
             patch.object(OctoController, "send_pin", new_callable=AsyncMock) as send_pin,
-            patch.object(AdjustableBedCoordinator, "_backfill_octo_snapshot") as backfill_snapshot,
+            patch.object(AdjustableBedCoordinator, "_persist_capability_snapshot") as backfill_snapshot,
         ):
             assert await coordinator.async_connect() is False
 
@@ -376,7 +376,7 @@ class TestOctoRequiredStartupDiscovery:
                 OctoController, "discover_features", new_callable=AsyncMock, return_value=True
             ) as discover,
             patch.object(OctoController, "send_pin", new_callable=AsyncMock) as send_pin,
-            patch.object(AdjustableBedCoordinator, "_backfill_octo_snapshot") as backfill_snapshot,
+            patch.object(AdjustableBedCoordinator, "_persist_capability_snapshot") as backfill_snapshot,
         ):
             assert await coordinator.async_connect() is True
 
@@ -530,9 +530,10 @@ class TestOctoLegacyMotorSurface:
         mock_octo_config_entry: MockConfigEntry,
     ) -> None:
         """Only CAP_END retires fallback IDs after replacing the known layout."""
+        from homeassistant.const import Platform
         from homeassistant.helpers import entity_registry as er
 
-        from custom_components.adjustable_bed.cover import _cover_entities_for
+        from tests.test_entity_sweep import async_setup_platforms_and_sweep
 
         coordinator = AdjustableBedCoordinator(hass, mock_octo_config_entry)
         controller = OctoController(coordinator)
@@ -565,7 +566,10 @@ class TestOctoLegacyMotorSurface:
             controller._handle_feature_response([0xFF, 0xFF, 0xFF, 0, 0, 0])
 
         assert controller.controller_entity_discovery_complete is True
-        assert [entity.unique_id for entity in _cover_entities_for(hass, coordinator)] == [
+        covers = await async_setup_platforms_and_sweep(
+            hass, mock_octo_config_entry, coordinator, (Platform.COVER,)
+        )
+        assert [entity.unique_id for entity in covers] == [
             f"{mock_octo_config_entry.data[CONF_ADDRESS]}_tv_lift"
         ]
         assert all(
@@ -1448,9 +1452,6 @@ class TestOctoCommands:
         assert controller.discovered_motor_count is None
         assert controller.effective_motor_count is None
         assert controller.motor_control_specs == ()
-        assert controller.stale_motor_entity_keys == frozenset(
-            {"tv_lift", "back", "legs", "back_legs", "head", "feet", "head_feet"}
-        )
 
         coordinator.entry.data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] = "3"
         assert controller.effective_motor_count == 3
@@ -1608,9 +1609,6 @@ class TestOctoCommands:
         assert controller.supports_memory_presets is True
         assert controller.memory_slot_count == 4
         assert controller.supports_synchro is True
-        assert controller.stale_motor_entity_keys == frozenset(
-            {"back", "legs", "back_legs", "head", "feet", "head_feet"}
-        )
 
         mock_bleak_client.write_gatt_char.reset_mock()
         await controller.motor_control_specs[0].open_fn(controller)
@@ -1621,31 +1619,18 @@ class TestOctoCommands:
             controller._build_packet([0x02, 0x73]),
         ]
 
-    async def test_bed_layout_marks_tv_lift_entity_as_stale(
-        self,
-        hass: HomeAssistant,
-        mock_octo_config_entry,
-    ):
-        """Normal OCTO beds should clean up a former TV lift entity."""
-        coordinator = AdjustableBedCoordinator(hass, mock_octo_config_entry)
-        controller = OctoController(coordinator)
-
         # This fixture is a 2-motor bed, so the 4-motor combined step is stale
         # here too and must not linger in the registry.
-        assert controller.stale_motor_entity_keys == frozenset({"tv_lift", "head_feet"})
 
-    async def test_star2_layout_marks_tv_lift_entity_as_stale(
+    async def test_star2_layout_capabilities(
         self,
         hass: HomeAssistant,
         mock_octo_star2_config_entry,
     ):
-        """Star2 should clean up a former one-motor TV lift entity."""
+        """Star2 exposes its fixed motors and presets."""
         coordinator = AdjustableBedCoordinator(hass, mock_octo_star2_config_entry)
         controller = OctoStar2Controller(coordinator)
 
-        assert controller.stale_motor_entity_keys == frozenset(
-            {"tv_lift", "head", "feet", "head_feet"}
-        )
         assert controller.auto_stops_on_idle is True
         assert controller.supports_preset_both_up is False
         assert controller.supports_preset_flat is False
@@ -2395,7 +2380,10 @@ class TestOctoRGBWILightEntity:
         mock_octo_config_entry,
         mock_octo_ready_transport,
     ) -> None:
+        from homeassistant.const import Platform
         from homeassistant.helpers import entity_registry as er
+
+        from tests.test_entity_sweep import async_setup_platforms_and_sweep
 
         coordinator = AdjustableBedCoordinator(hass, mock_octo_config_entry)
         await coordinator.async_connect()
@@ -2420,12 +2408,17 @@ class TestOctoRGBWILightEntity:
         )
 
         controller._features_complete.clear()
-        incomplete = _light_entities_for(hass, coordinator)
+        incomplete = await async_setup_platforms_and_sweep(
+            hass, mock_octo_config_entry, coordinator, (Platform.LIGHT,)
+        )
         assert incomplete == []
         assert registry.async_get_entity_id("light", DOMAIN, unique_id) is not None
 
         _activate_capabilities(controller)
-        assert _light_entities_for(hass, coordinator) == []
+        retired = await async_setup_platforms_and_sweep(
+            hass, mock_octo_config_entry, coordinator, (Platform.LIGHT,)
+        )
+        assert retired == []
         assert registry.async_get_entity_id("light", DOMAIN, unique_id) is None
         assert (
             registry.async_get_entity_id(
@@ -3599,29 +3592,34 @@ class TestOctoDynamicEntities:
         coordinator.capability_controller = controller
         coordinator.register_controller_state_callback = MagicMock()
         entry = MagicMock()
-        add = MagicMock()
+        sink = MagicMock()
+        # The entry's sweep retires dropped rows once discovery is complete.
+        sink.has_row.side_effect = lambda _id: not controller.controller_entity_discovery_complete
         initial = MagicMock()
         initial.unique_id = "bed_octo_light"
         regained = MagicMock()
         regained.unique_id = "bed_octo_light"
         current = [initial]
-        async_setup_dynamic_entities(MagicMock(), entry, coordinator, add, lambda: tuple(current))
+
+        def added() -> list[list[MagicMock]]:
+            return [call.args[0] for call in sink.add_published.call_args_list if call.args[0]]
+
+        async_setup_dynamic_entities(entry, coordinator, sink, lambda: tuple(current))
         callback = coordinator.register_controller_state_callback.call_args.args[0]
-        add.assert_called_once_with([initial])
+        assert added() == [[initial]]
 
         controller._features_complete.clear()
         callback({})  # failed/incomplete discovery retains the prior surface
-        assert add.call_count == 1
+        assert added() == [[initial]]
 
         controller._handle_feature_response([0xFF, 0xFF, 0xFF, 0, 0, 0])
         current.clear()  # the complete capability set retires the Octo-owned row
         callback({})
-        assert add.call_count == 1
+        assert added() == [[initial]]
 
         current.append(regained)
         callback({})  # a later complete list can add the same stable ID again
-        assert add.call_count == 2
-        assert add.call_args.args == ([regained],)
+        assert added() == [[initial], [regained]]
         snapshot = controller.capability_snapshot()
         assert snapshot is not None
         assert snapshot["has_pin"] is None
@@ -4074,7 +4072,7 @@ class TestOctoPinLockDiagnostics:
         """The user follows the repair while the bed is offline; it must clear."""
         from homeassistant.helpers import issue_registry as ir
 
-        from custom_components.adjustable_bed import _async_clear_stale_octo_pin_issue
+        from custom_components.adjustable_bed.octo_runtime import async_refresh_octo_pin_issue
         from custom_components.adjustable_bed.unsupported import (
             update_octo_pin_required_issue,
         )
@@ -4093,7 +4091,7 @@ class TestOctoPinLockDiagnostics:
         )
         entry.add_to_hass(hass)
 
-        _async_clear_stale_octo_pin_issue(hass, entry)
+        await async_refresh_octo_pin_issue(hass, entry)
 
         assert registry.async_get_issue(DOMAIN, issue_id) is None
 
@@ -4105,7 +4103,7 @@ class TestOctoPinLockDiagnostics:
         """A repair raised before issues had entries goes with its entry."""
         from homeassistant.helpers import issue_registry as ir
 
-        from custom_components.adjustable_bed import _async_clear_stale_octo_pin_issue
+        from custom_components.adjustable_bed.octo_runtime import async_refresh_octo_pin_issue
         from custom_components.adjustable_bed.unsupported import (
             update_octo_pin_required_issue,
         )
@@ -4118,7 +4116,7 @@ class TestOctoPinLockDiagnostics:
         entry.add_to_hass(hass)
 
         # The bed stays unreachable, so only setup can link the repair.
-        _async_clear_stale_octo_pin_issue(hass, entry)
+        await async_refresh_octo_pin_issue(hass, entry)
         issue = registry.async_get_issue(DOMAIN, issue_id)
         assert issue is not None and issue.config_entry_id == entry.entry_id
 
@@ -4210,7 +4208,7 @@ class TestOctoPinLockDiagnostics:
         """Star2 has no PIN, and its controller could never clear the issue."""
         from homeassistant.helpers import issue_registry as ir
 
-        from custom_components.adjustable_bed import _async_clear_stale_octo_pin_issue
+        from custom_components.adjustable_bed.octo_runtime import async_refresh_octo_pin_issue
         from custom_components.adjustable_bed.unsupported import (
             update_octo_pin_required_issue,
         )
@@ -4229,7 +4227,7 @@ class TestOctoPinLockDiagnostics:
         )
         entry.add_to_hass(hass)
 
-        _async_clear_stale_octo_pin_issue(hass, entry)
+        await async_refresh_octo_pin_issue(hass, entry)
 
         assert registry.async_get_issue(DOMAIN, issue_id) is None
 
@@ -4250,7 +4248,11 @@ class TestOctoPinLockDiagnostics:
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Octo Test Bed",
-            data={**mock_octo_config_entry_data, CONF_MOTOR_COUNT: motor_count},
+            data={
+                **mock_octo_config_entry_data,
+                CONF_MOTOR_COUNT: motor_count,
+                CONF_OCTO_MOTOR_COUNT_OVERRIDE: str(motor_count),
+            },
             unique_id="AA:BB:CC:DD:EE:FF",
             entry_id=f"octo_flat_{motor_count}",
         )
@@ -4400,7 +4402,11 @@ class TestOctoMemoryInfoAndCombinedStep:
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Octo Test Bed",
-            data={**mock_octo_config_entry_data, CONF_MOTOR_COUNT: 4},
+            data={
+                **mock_octo_config_entry_data,
+                CONF_MOTOR_COUNT: 4,
+                CONF_OCTO_MOTOR_COUNT_OVERRIDE: "4",
+            },
             unique_id="AA:BB:CC:DD:EE:FF",
             entry_id="octo_m34",
         )
@@ -4496,28 +4502,6 @@ class TestOctoMemoryInfoAndCombinedStep:
 
         expected = controller._build_packet([0x10, 0x70], [0x00])
         assert expected in [c[0][1] for c in mock_bleak_client.write_gatt_char.call_args_list]
-
-    async def test_combined_cover_becomes_stale_when_motor_count_drops(
-        self,
-        hass: HomeAssistant,
-        mock_octo_config_entry_data: dict,
-        mock_octo_ready_transport,
-    ):
-        """Reconfiguring 4 motors down must not leave a ghost entity behind."""
-        entry = MockConfigEntry(
-            domain=DOMAIN,
-            title="Octo Test Bed",
-            data={**mock_octo_config_entry_data, CONF_MOTOR_COUNT: 2},
-            unique_id="AA:BB:CC:DD:EE:FF",
-            entry_id="octo_stale_m34",
-        )
-        entry.add_to_hass(hass)
-
-        coordinator = AdjustableBedCoordinator(hass, entry)
-        await coordinator.async_connect()
-        controller = cast(OctoController, coordinator.controller)
-
-        assert "head_feet" in controller.stale_motor_entity_keys
 
     def test_absent_meminfo_leaves_every_slot_programmable(self):
         """CAP_MEMINFO is optional; without it we must not infer any locking."""

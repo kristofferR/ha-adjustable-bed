@@ -19,6 +19,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.bed_traits import bed_type_has_position_feedback
 from custom_components.adjustable_bed.beds.solace import (
     SolaceController,
     build_solace_clock_command,
@@ -34,7 +35,6 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
     SOLACE_CHAR_UUID,
     SOLACE_VARIANT_WOOSA,
-    bed_type_has_position_feedback,
 )
 from custom_components.adjustable_bed.number import (
     MASSAGE_NUMBER_DESCRIPTIONS,
@@ -647,11 +647,11 @@ async def test_alarm_sound_preflight_checks_all_targets(hass, controller) -> Non
     )
     with (
         patch(
-            "custom_components.adjustable_bed.solace_services._resolve_sided_targets",
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(motionflex, "both"), (woosa, "both")], []),
         ),
         patch(
-            "custom_components.adjustable_bed.solace_services._execute_sided", new_callable=AsyncMock
+            "custom_components.adjustable_bed.services._execute_sided", new_callable=AsyncMock
         ) as execute,
         pytest.raises(ServiceValidationError, match="sound"),
     ):

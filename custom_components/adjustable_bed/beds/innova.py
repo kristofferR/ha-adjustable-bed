@@ -210,10 +210,6 @@ class InnovaController(KeesonController):
         return tuple(specs)
 
     @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset({"tilt", "lumbar", "waist", "back_legs"})
-
-    @property
     def _hold_interval_ms(self) -> int:
         assert self.profile.refresh_ms is not None
         return self.profile.refresh_ms
@@ -556,10 +552,6 @@ class InnovaController(KeesonController):
         )
 
     @property
-    def stale_controller_state_binary_sensor_entity_keys(self) -> frozenset[str]:
-        return frozenset()
-
-    @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (
             ControllerStateSensorSpec(
@@ -572,9 +564,5 @@ class InnovaController(KeesonController):
         )
 
     @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        return frozenset()
-
-    @property
     def protocol_diagnostics(self) -> dict[str, Any]:
-        return {"app": "INNOVA", "app_package": "com.ore.sfm 2.0 (3)", "layout": f"{self._layout}M"}
+        return {**super().protocol_diagnostics, "app": "INNOVA", "app_package": "com.ore.sfm 2.0 (3)", "layout": f"{self._layout}M"}

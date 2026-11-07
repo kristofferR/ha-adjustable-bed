@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Final, cast
 
 from ..app_session import app_session
 from ..codec import vibradorm as codec
+from ..const import CONF_VMATBASIC_FLOOR_LEVEL, CONF_VMATBASIC_FLOOR_MINUTES, CONF_VMATBASIC_PROFILE
 from ..controller_state import StateKey
 from ..execution import ExecutionCapabilities
 from ..profiles import vmatbasic as vmat_profiles
@@ -23,7 +24,9 @@ from .base import (
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
+    require_controller,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -185,16 +188,8 @@ class VMatBasicController(BedController):
         return False
 
     @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset({"head", "feet", "lumbar", "tilt", "bed_height"})
-
-    @property
     def memory_slot_count(self) -> int:
         return 0
-
-    @property
-    def supports_position_feedback(self) -> bool:
-        return False
 
     @property
     def supports_device_rename(self) -> bool:
@@ -709,14 +704,14 @@ class VMatBasicController(BedController):
                 _PREFIX + "mood_palette",
                 MOOD_PALETTE,
                 vmat_profiles.PALETTE_OPTIONS,
-                lambda ctrl, value: ctrl.set_mood_palette(value),
+                lambda ctrl, value: require_controller(ctrl, VMatBasicController).set_mood_palette(value),
             ),
             ControllerSelectSpec(
                 _PREFIX + "mood_effect",
                 _PREFIX + "mood_effect",
                 MOOD_EFFECT,
                 ("e1", "e2", "e3"),
-                lambda ctrl, value: ctrl.set_mood_effect(value),
+                lambda ctrl, value: require_controller(ctrl, VMatBasicController).set_mood_effect(value),
             ),
         )
 
@@ -762,7 +757,7 @@ class VMatBasicController(BedController):
                     0,
                     255,
                     1,
-                    lambda ctrl, value: ctrl.set_mood_speed(value),
+                    lambda ctrl, value: require_controller(ctrl, VMatBasicController).set_mood_speed(value),
                 ),
             ]
         return tuple(specs)
@@ -804,3 +799,19 @@ class VMatBasicController(BedController):
                 _PREFIX + "ed", _PREFIX + "ed", _read_key("ed"), "mdi:information-outline"
             ),
         )
+
+
+async def build_controller(ctx: BuildContext) -> VMatBasicController:
+    """Build the controller for the stored profile and floor-light settings."""
+    coordinator = ctx.coordinator
+    data = ctx.data
+    return VMatBasicController(
+        coordinator,
+        profile=data[CONF_VMATBASIC_PROFILE],
+        floor_level=data.get(CONF_VMATBASIC_FLOOR_LEVEL),
+        floor_minutes=data.get(CONF_VMATBASIC_FLOOR_MINUTES, 0),
+        remember_settings=coordinator.remember_vmatbasic_settings,
+        session_intent=get_vmatbasic_session_intent(
+            coordinator.hass, coordinator.address, data[CONF_VMATBASIC_PROFILE]
+        ),
+    )

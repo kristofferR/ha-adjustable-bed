@@ -3,15 +3,14 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable, Coroutine
-from typing import TYPE_CHECKING, Any
+from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING
 
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_DEVICE_ID, CONF_NAME
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
-from homeassistant.helpers import config_validation as cv
 
 from .const import BED_TYPE_FURNIMOVE, DOMAIN
 from .pairing import iter_children
@@ -22,21 +21,19 @@ from .services import (
     ATTR_FIRST_MOTOR,
     ATTR_SECOND_DIRECTION,
     ATTR_SECOND_MOTOR,
-    ATTR_SIDE,
+    DEVICE_IDS,
     SIDE_FIELD,
     BedTarget,
+    _call_targets,
     _command_targets,
-    _execute_sided,
     _hold_seconds,
     _leggett_integer,
-    _missing_device_error,
-    _preflight_capability,
+    _preflight_and_execute,
     _release_preflighted,
-    _resolve_sided_targets,
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController
+    from .beds.furnimove import FurniMoveController
 
 
 SERVICE_FURNIMOVE_ACTION = "furnimove_action"
@@ -45,39 +42,24 @@ SERVICE_FURNIMOVE_MASSAGE_DURATION = "furnimove_massage_duration"
 SERVICE_FURNIMOVE_MOVE_SIMULTANEOUSLY = "furnimove_move_simultaneously"
 
 
-def _furnimove_targets(call: ServiceCall) -> list[tuple[BedTarget, str]]:
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    for coordinator, side in targets:
-        for target in _command_targets(coordinator, side):
-            if target.bed_type != BED_TYPE_FURNIMOVE:
-                raise ServiceValidationError(f"Device '{target.name}' is not a FurniMove profile")
-    return targets
-
-
 async def _execute_furnimove(
     call: ServiceCall,
-    validate: Callable[[BedController], None],
-    operation: Callable[[BedController], Coroutine[Any, Any, None]],
-    *,
-    cancel_running: bool = True,
+    validate: Callable[[FurniMoveController], None],
+    operation: Callable[[FurniMoveController], Awaitable[None]],
 ) -> None:
-    targets = _furnimove_targets(call)
-    preflighted = await _preflight_capability(
-        targets, "furnimove_action_specs", "FurniMove app controls", validate
+    from .beds.furnimove import FurniMoveController
+
+    # Every consumer uses one mutable write role and global release.
+    await _preflight_and_execute(
+        _call_targets(call),
+        FurniMoveController,
+        "FurniMove app controls",
+        operation,
+        supported=lambda controller: bool(controller.furnimove_action_specs),
+        validate=validate,
+        cancel_running=True,
+        resource="*",
     )
-    try:
-        for coordinator, side in targets:
-            # Every consumer uses one mutable write role and global release.
-            await _execute_sided(
-                coordinator, side, operation, cancel_running=cancel_running, resource="*"
-            )
-    except Exception, asyncio.CancelledError:
-        await _release_preflighted(preflighted)
-        raise
 
 
 async def handle_furnimove_action(call: ServiceCall) -> None:
@@ -88,7 +70,7 @@ async def handle_furnimove_action(call: ServiceCall) -> None:
     consumer = call.data["consumer"]
     selected_action: tuple[str, str] | None = None
 
-    def validate(controller: BedController) -> None:
+    def validate(controller: FurniMoveController) -> None:
         nonlocal selected_action
         action = controller.validate_furnimove_action(
             row_index, duration_ms=duration_ms, consumer=consumer
@@ -99,7 +81,7 @@ async def handle_furnimove_action(call: ServiceCall) -> None:
             )
         selected_action = action
 
-    async def execute(controller: BedController) -> None:
+    async def execute(controller: FurniMoveController) -> None:
         await controller.async_execute_furnimove_action(
             row_index, duration_ms=duration_ms, consumer=consumer
         )
@@ -132,12 +114,12 @@ async def _rename_furnimove(
     if name.strip().lower() in names:
         raise ServiceValidationError("Choose a different, unique FurniMove name")
 
-    def validate(controller: BedController) -> None:
+    def validate(controller: FurniMoveController) -> None:
         controller.validate_furnimove_rename(name)
         if not controller.supports_device_rename:
             raise ValueError("This receiver has no writable rename characteristic")
 
-    async def execute(controller: BedController) -> None:
+    async def execute(controller: FurniMoveController) -> None:
         await controller.rename_device(name)
 
     try:
@@ -162,10 +144,10 @@ async def handle_furnimove_massage_program(call: ServiceCall) -> None:
     """Choose an app massage program independently of arbitrary row labels."""
     program = call.data["program"]
 
-    def validate(controller: BedController) -> None:
+    def validate(controller: FurniMoveController) -> None:
         controller.validate_furnimove_massage_program(program)
 
-    async def execute(controller: BedController) -> None:
+    async def execute(controller: FurniMoveController) -> None:
         await controller.set_furnimove_massage_program(program)
 
     await _execute_furnimove(call, validate, execute)
@@ -177,8 +159,10 @@ async def handle_furnimove_massage_duration(call: ServiceCall) -> None:
 
     minutes = call.data["minutes"]
     physical_targets: list[AdjustableBedCoordinator] = []
-    for coordinator, side in _furnimove_targets(call):
+    for coordinator, side in _call_targets(call):
         for target in _command_targets(coordinator, side):
+            if target.bed_type != BED_TYPE_FURNIMOVE:
+                raise ServiceValidationError(f"Device '{target.name}' is not a FurniMove profile")
             if not isinstance(target, AdjustableBedCoordinator):
                 raise ServiceValidationError("FurniMove requires a physical receiver target")
             await target.async_prime_offline_controller()
@@ -203,10 +187,10 @@ async def handle_furnimove_move_simultaneously(call: ServiceCall) -> None:
     second_up = call.data[ATTR_SECOND_DIRECTION] == "up"
     duration_ms = call.data[ATTR_DURATION_MS]
 
-    def validate(controller: BedController) -> None:
+    def validate(controller: FurniMoveController) -> None:
         controller.validate_furnimove_simultaneous(first, first_up, second, second_up, duration_ms)
 
-    async def execute(controller: BedController) -> None:
+    async def execute(controller: FurniMoveController) -> None:
         await controller.move_simultaneously(first, first_up, second, second_up, duration_ms)
 
     await _execute_furnimove(call, validate, execute)
@@ -215,7 +199,7 @@ async def handle_furnimove_move_simultaneously(call: ServiceCall) -> None:
 def async_register_furnimove_services(hass: HomeAssistant) -> None:
     """Register the FurniMove profile actions."""
     device_fields = {
-        vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+        vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
         **SIDE_FIELD,
     }
     hass.services.async_register(

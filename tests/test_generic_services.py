@@ -33,26 +33,39 @@ from custom_components.adjustable_bed.services import async_register_services
 ROOT = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
 
 
-def target(bed_type: str = BED_TYPE_KEESON, name: str = "Bed", **capabilities: object):
-    """A coordinator whose capability controller declares only ``capabilities``."""
-    controller = SimpleNamespace(
-        held_control_options=(),
-        validate_hold_control=MagicMock(),
-        hold_control=AsyncMock(),
-        supports_device_rename=False,
-        disconnects_after_rename=False,
-        validate_device_rename=MagicMock(),
-        rename_device=AsyncMock(),
-        supports_clock_sync=False,
-        sync_clock=AsyncMock(),
-        supports_memory_presets=True,
-        memory_slot_count=4,
-        supports_held_memory_recall=False,
-        validate_memory_recall=MagicMock(),
-        preset_memory=AsyncMock(),
-        recall_memory=AsyncMock(),
-    )
-    vars(controller).update(capabilities)
+def target(
+    bed_type: str = BED_TYPE_KEESON,
+    name: str = "Bed",
+    family: type | None = None,
+    **capabilities: object,
+):
+    """A coordinator whose capability controller declares only ``capabilities``.
+
+    ``family`` makes the controller a mock of that controller class, so family
+    actions find their interface.
+    """
+    members: dict[str, object] = {
+        "held_control_options": (),
+        "validate_hold_control": MagicMock(),
+        "hold_control": AsyncMock(),
+        "supports_device_rename": False,
+        "disconnects_after_rename": False,
+        "validate_device_rename": MagicMock(),
+        "rename_device": AsyncMock(),
+        "supports_clock_sync": False,
+        "sync_clock": AsyncMock(),
+        "supports_memory_presets": True,
+        "memory_slot_count": 4,
+        "supports_held_memory_recall": False,
+        "validate_memory_recall": MagicMock(),
+        "preset_memory": AsyncMock(),
+        "recall_memory": AsyncMock(),
+        **capabilities,
+    }
+    controller = SimpleNamespace(**members) if family is None else MagicMock(spec=family)
+    if family is not None:
+        for key, value in members.items():
+            setattr(controller, key, value)
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     coordinator.name = name
     coordinator.bed_type = bed_type
@@ -397,3 +410,24 @@ async def test_goto_preset_duration_rejected_where_unsupported(
         DOMAIN, "goto_preset", {"device_id": "bed", "preset": 1}, blocking=True,
     )
     controller.preset_memory.assert_awaited_once_with(1)
+
+
+async def test_percentage_bed_without_sliders_accepts_no_set_position_motor() -> None:
+    """A direct percentage bed with no sliders never falls back to generic motors."""
+    from custom_components.adjustable_bed import services
+    from custom_components.adjustable_bed.beds.base import BedController
+    from custom_components.adjustable_bed.const import BED_TYPE_SLEEP_NUMBER
+
+    controller = MagicMock(
+        spec=BedController,
+        supports_direct_position_control=True,
+        reports_percentage_position=True,
+        position_number_specs=(),
+        requires_disconnected_transport=False,
+    )
+    coordinator, _ = target(BED_TYPE_SLEEP_NUMBER)
+    coordinator.entry = SimpleNamespace(data={"bed_type": BED_TYPE_SLEEP_NUMBER})
+    coordinator.capability_controller = controller
+    coordinator.disable_angle_sensing = False
+    with pytest.raises(ServiceValidationError, match="Motor 'back' is not valid"):
+        await services._set_position_plan(coordinator, coordinator, [], "back", 50)

@@ -1973,21 +1973,6 @@ class TestKsbt03cMotorLayout:
         controller.write_command.assert_not_awaited()
         sleep.assert_not_awaited()
 
-    async def test_stale_motor_entity_keys(
-        self,
-        hass: HomeAssistant,
-        mock_keeson_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Test stale keys cover the optional motors and the Restonic BT combined cover."""
-        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.stale_motor_entity_keys == frozenset(
-            {"tilt", "lumbar", "back_legs"}
-        )
-
-
 class TestKeesonMassageOffGating:
     """Test massage-off capability gating (issue #408)."""
 

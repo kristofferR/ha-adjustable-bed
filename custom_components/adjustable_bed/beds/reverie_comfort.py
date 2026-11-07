@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .reverie_pairlink_runtime import PairlinkComfortPlan
 
 
 @dataclass(frozen=True, slots=True)
@@ -143,3 +148,62 @@ def _java_hex(value: int) -> str:
     """Match Integer.toHexString(int), including its signed 32-bit form."""
     encoded = format(value & 0xFFFFFFFF, "x")
     return encoded if len(encoded) != 1 else f"0{encoded}"
+
+
+# Each step's comfort setting (None ends the routine) and minutes to hold it.
+type RoutineSteps = list[tuple[ReverieComfortRequest | None, int | None]]
+
+
+class ReverieComfortActions(ABC):
+    """Comfort, routine and diagnostic actions shared by the Reverie protocols."""
+
+    @abstractmethod
+    def validate_comfort_request(self, request: ReverieComfortRequest) -> None:
+        """Reject a request this model cannot apply."""
+
+    @abstractmethod
+    async def async_set_comfort(self, request: ReverieComfortRequest) -> None:
+        """Apply one validated comfort setting."""
+
+    @abstractmethod
+    def validate_routine(self, steps: RoutineSteps) -> None:
+        """Reject a routine this model cannot run."""
+
+    @abstractmethod
+    async def async_start_routine(self, steps: RoutineSteps) -> None:
+        """Replace the routine queue and run its first step."""
+
+    @abstractmethod
+    def validate_diagnostic(self) -> None:
+        """Reject a diagnostic test this model cannot run."""
+
+    @abstractmethod
+    async def async_start_diagnostic(self) -> None:
+        """Start the model's timed diagnostic test."""
+
+
+class PairlinkComfortActions(ReverieComfortActions):
+    """PairLink comfort planned against one live runtime generation."""
+
+    @abstractmethod
+    def comfort_runtime_identity(self) -> object:
+        """Return the runtime key a prepared plan belongs to."""
+
+    @abstractmethod
+    def prepare_comfort(self, request: ReverieComfortRequest) -> PairlinkComfortPlan:
+        """Resolve a request against the live session."""
+
+    @abstractmethod
+    def comfort_plan_is_current(
+        self, request: ReverieComfortRequest, plan: PairlinkComfortPlan
+    ) -> bool:
+        """Revalidate a plan immediately before commit."""
+
+    @abstractmethod
+    async def async_set_comfort(
+        self,
+        request: ReverieComfortRequest,
+        *,
+        prepared_plan: PairlinkComfortPlan | None = None,
+    ) -> None:
+        """Send a plan bound to the current live generation."""

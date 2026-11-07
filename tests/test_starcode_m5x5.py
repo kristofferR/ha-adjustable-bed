@@ -457,7 +457,7 @@ EXISTING_LEAVES = json.loads(
 @pytest.mark.parametrize("case", EXISTING_LEAVES, ids=lambda case: case["id"])
 def test_all_frozen_existing_leaf_proofs(case: dict[str, object]) -> None:
     from custom_components.adjustable_bed.beds.star_elevate import _elevate_command
-    from custom_components.adjustable_bed.beds.starcode_m5x5_protocol import (
+    from custom_components.adjustable_bed.beds.starcode_dialect import (
         extended_packet,
         normal_packet,
     )

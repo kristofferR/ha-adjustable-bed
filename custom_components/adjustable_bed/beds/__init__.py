@@ -17,7 +17,6 @@ if TYPE_CHECKING:
     from .bf_cherish import BfCherishController as BfCherishController
     from .casper_base import CasperBaseController as CasperBaseController
     from .casper_sleep import CasperSleepController as CasperSleepController
-    from .cluster018 import Cluster018Controller as Cluster018Controller
     from .comfort_enhancements import ComfortEnhancementsController as ComfortEnhancementsController
     from .comfort_motion import ComfortMotionController as ComfortMotionController
     from .coolbase import CoolBaseController as CoolBaseController
@@ -81,11 +80,12 @@ if TYPE_CHECKING:
     from .reverie import ReverieController as ReverieController
     from .reverie_nightstand import ReverieNightstandController as ReverieNightstandController
     from .richmat import RichmatController as RichmatController
+    from .richmat_classic import RichmatClassicController as RichmatClassicController
     from .richmat_mh import RichmatMhController as RichmatMhController
     from .rondure import RondureController as RondureController
-    from .row061 import Row061Controller as Row061Controller
-    from .row061_sleep import Row061SleepController as Row061SleepController
     from .row_control import RowControlController as RowControlController
+    from .ruf_richmat import RufRichmatController as RufRichmatController
+    from .ruf_richmat_sleep import RufRichmatSleepController as RufRichmatSleepController
     from .sbi import QPlusAppController as QPlusAppController
     from .sbi import SBIController as SBIController
     from .scott_living import ScottLivingController as ScottLivingController
@@ -127,7 +127,7 @@ _EXPORT_MODULES = {
     'SertaMPRemoteController': 'serta_mp_remote',
     'OmazzAdjustoIIIController': 'omazz_adjusto_iii',
     'ErgomotionAppController': 'ergomotion_app',
-    'Cluster018Controller': 'cluster018',
+    'RichmatClassicController': 'richmat_classic',
     'Ergomotion4Controller': 'ergomotion4',
     'RowControlController': 'row_control',
     'ErgoSlimController': 'ergo_slim',
@@ -152,8 +152,8 @@ _EXPORT_MODULES = {
     "AdjustaMattressController": "adjustamattress",
     "AdjustableLumbarController": "adjustable_lumbar",
     "BedJetPowerLayerController": "bedjet_powerlayer",
-    "Row061Controller": "row061",
-    "Row061SleepController": "row061_sleep",
+    "RufRichmatController": "ruf_richmat",
+    "RufRichmatSleepController": "ruf_richmat_sleep",
     "RichmatMhController": "richmat_mh",
     "CustomaticController": "customatic",
     "CoolBaseController": "coolbase",
@@ -225,7 +225,7 @@ __all__ = [
     'SertaMPRemoteController',
     'OmazzAdjustoIIIController',
     'ErgomotionAppController',
-    'Cluster018Controller',
+    'RichmatClassicController',
     'Ergomotion4Controller',
     'RowControlController',
     'ErgoSlimController',

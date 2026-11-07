@@ -22,6 +22,8 @@ from custom_components.adjustable_bed.beds.richmat_mh import (
 )
 from custom_components.adjustable_bed.const import (
     RICHMAT_MH_APPS,
+)
+from custom_components.adjustable_bed.richmat_mh_models import (
     RICHMAT_MH_MODEL_CHOICES,
     RICHMAT_MH_VARIANTS_BY_APP,
 )
@@ -691,7 +693,6 @@ async def test_blvd_hnrm_factory_reset_uses_the_common_widget_frame(sleeps) -> N
 def test_legacy_route_has_no_ver1_entities_and_stale_keys_cover_them() -> None:
     controller = make(snapshot=vers0("7irm"))
     assert not controller.controller_number_specs and not controller.controller_select_specs
-    assert controller.stale_controller_state_sensor_entity_keys >= {"richmat_mh_memory_arrival"}
 
 
 def test_alarm_options_are_stable_service_values() -> None:

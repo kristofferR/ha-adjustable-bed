@@ -930,19 +930,6 @@ class TestOkinUuidMotorLayout:
 
         assert coordinator.controller.supports_lights is True
 
-    async def test_stale_keys_cover_absent_axes(
-        self,
-        hass: HomeAssistant,
-        mock_coordinator_connected,
-    ):
-        """All motor keys are stale candidates; active axes are skipped by cleanup."""
-        coordinator = self._controller(hass, "90658")
-        await coordinator.async_connect()
-
-        stale = coordinator.controller.stale_motor_entity_keys
-        assert {"stair", "back", "legs", "head", "feet"} <= stale
-
-
 class TestOkinUuidFurniMoveCatalog:
     """Handsets in the pinned FurniMove catalog have exactly one keycode source."""
 

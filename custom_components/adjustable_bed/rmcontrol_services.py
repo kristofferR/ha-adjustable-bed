@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING
 
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
@@ -11,16 +12,11 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
-from .beds.base import BedController
 from .const import DOMAIN
-from .services import (
-    SIDE_FIELD,
-    _execute_sided,
-    _missing_device_error,
-    _preflight_capability,
-    _release_preflighted,
-    _resolve_sided_targets,
-)
+from .services import SIDE_FIELD, _call_targets, _preflight_and_execute
+
+if TYPE_CHECKING:
+    from .beds.rmcontrol import RmcontrolController
 
 WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 _ALARM_FIELDS: dict[vol.Marker, object] = {
@@ -49,38 +45,21 @@ ANTI_SNORE_SCHEMA = vol.Schema(_ANTI_SNORE_FIELDS)
 
 async def _execute(
     call: ServiceCall,
-    capability: str,
-    command: Callable[[BedController], Awaitable[None]],
-    validate: Callable[[BedController], None] | None = None,
+    supported: Callable[[RmcontrolController], bool],
+    command: Callable[[RmcontrolController], Awaitable[None]],
+    validate: Callable[[RmcontrolController], None] | None = None,
 ) -> None:
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data[CONF_DEVICE_ID], call.data.get("side")
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    preflighted = await _preflight_capability(
-        targets, capability, "RMControl configuration", validate
-    )
+    from .beds.rmcontrol import RmcontrolController
 
-    async def control(controller: BedController) -> None:
-        try:
-            await command(controller)
-        except ValueError as err:
-            raise ServiceValidationError(str(err)) from err
-
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(
-                coordinator,
-                side,
-                control,
-                cancel_running=False,
-                skip_disconnect=call.data["operation"] == "query",
-                resource="configuration",
-            )
-    except Exception:
-        await _release_preflighted(preflighted)
-        raise
+    await _preflight_and_execute(
+        _call_targets(call),
+        RmcontrolController,
+        "RMControl configuration",
+        command,
+        supported=supported,
+        validate=validate,
+        skip_disconnect=call.data["operation"] == "query",
+    )
 
 
 def _require(call: ServiceCall, *fields: str) -> None:
@@ -103,7 +82,7 @@ async def handle_rmcontrol_alarm(call: ServiceCall) -> None:
     elif operation == "delete":
         _require(call, "alarm_id")
 
-    async def control(controller: BedController) -> None:
+    async def control(controller: RmcontrolController) -> None:
         if operation == "single":
             await controller.rmcontrol_single_alarm(call.data["minutes"], call.data["action"])
         elif operation == "cancel_single":
@@ -124,18 +103,18 @@ async def handle_rmcontrol_alarm(call: ServiceCall) -> None:
         else:
             await controller.rmcontrol_sync_alarm_time(dt_util.now())
 
-    if operation == "sync":
-        capability = "supports_rmcontrol_alarm_time_sync"
-    elif operation in ("single", "cancel_single"):
-        capability = "supports_rmcontrol_single_alarm"
-    else:
-        capability = "supports_rmcontrol_repeat_alarm"
+    def supported(controller: RmcontrolController) -> bool:
+        if operation == "sync":
+            return controller.supports_rmcontrol_alarm_time_sync
+        if operation in ("single", "cancel_single"):
+            return controller.supports_rmcontrol_single_alarm
+        return controller.supports_rmcontrol_repeat_alarm
 
-    def validate(controller: BedController) -> None:
+    def validate(controller: RmcontrolController) -> None:
         if operation in ("single", "repeat"):
             controller.validate_rmcontrol_alarm_action(call.data["action"])
 
-    await _execute(call, capability, control, validate)
+    await _execute(call, supported, control, validate)
 
 
 async def handle_rmcontrol_anti_snore(call: ServiceCall) -> None:
@@ -146,7 +125,7 @@ async def handle_rmcontrol_anti_snore(call: ServiceCall) -> None:
     elif operation == "configure":
         _require(call, "mode", "value")
 
-    async def control(controller: BedController) -> None:
+    async def control(controller: RmcontrolController) -> None:
         if operation == "switch":
             await controller.rmcontrol_anti_snore_switch(call.data["enabled"])
         elif operation == "configure":
@@ -154,7 +133,7 @@ async def handle_rmcontrol_anti_snore(call: ServiceCall) -> None:
         else:
             await controller.rmcontrol_query_anti_snore()
 
-    await _execute(call, "supports_rmcontrol_anti_snore", control)
+    await _execute(call, lambda controller: controller.supports_rmcontrol_anti_snore, control)
 
 
 def async_register_rmcontrol_services(hass: HomeAssistant) -> None:

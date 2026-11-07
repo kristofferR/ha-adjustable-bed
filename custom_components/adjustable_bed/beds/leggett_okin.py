@@ -37,7 +37,7 @@ from ..codec.okin_nframe import (
     parse_receipt,
     parse_status,
 )
-from ..const import DEVICE_INFO_READ_TIMEOUT
+from ..const import CONF_LEGGETT_APP_PROFILE, DEVICE_INFO_READ_TIMEOUT, LEGGETT_APP_DEFAULT_PROFILE
 from ..controller_state import StateKey
 from ..profiles.okin_nframe import (
     LEGGETT_FLAT_HOLD_MS,
@@ -55,6 +55,7 @@ from .base import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..command_scheduler import StreamMember
@@ -405,11 +406,6 @@ class LeggettOkinController(BedController):
             if (spec.key != "pillow" or self.has_pillow_support)
             and (spec.key != "lumbar" or self.has_lumbar_support)
         )
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Remove duplicate aliases and the former tilt label."""
-        return frozenset({"back", "legs", "tilt", "pillow", "lumbar"})
 
     def _available_characteristic_uuids(self) -> frozenset[str] | None:
         """Return discovered characteristic UUIDs, or None before discovery."""
@@ -1177,3 +1173,11 @@ class LeggettOkinController(BedController):
     async def move_lumbar_stop(self) -> None:
         """Stop lumbar motor."""
         await self._move_motor("lumbar", MotorDirection.STOP)
+
+
+async def build_controller(ctx: BuildContext) -> LeggettOkinController:
+    """Build the controller for the stored app profile."""
+    return LeggettOkinController(
+        ctx.coordinator,
+        app_profile=ctx.data.get(CONF_LEGGETT_APP_PROFILE, LEGGETT_APP_DEFAULT_PROFILE),
+    )

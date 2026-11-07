@@ -117,8 +117,8 @@ async def test_repeat_allocation_full_later_target_prevents_every_write(hass):
     b._client.write_gatt_char = AsyncMock()
     configuration.async_register_goodvibe_services(hass)
     with (
-        patch.object(
-            configuration, "_resolve_sided_targets", return_value=([(a, "both"), (b, "both")], [])
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets", return_value=([(a, "both"), (b, "both")], [])
         ),
         patch.object(a, "async_ensure_connected", AsyncMock(return_value=True)),
         patch.object(b, "async_ensure_connected", AsyncMock(return_value=True)),
@@ -241,8 +241,8 @@ async def test_repeat_execution_keeps_each_targets_preflighted_slot(hass):
     b._client.write_gatt_char = AsyncMock()
     configuration.async_register_goodvibe_services(hass)
     with (
-        patch.object(
-            configuration, "_resolve_sided_targets", return_value=([(a, "both"), (b, "both")], [])
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets", return_value=([(a, "both"), (b, "both")], [])
         ),
         patch.object(a, "async_ensure_connected", AsyncMock(return_value=True)),
         patch.object(b, "async_ensure_connected", AsyncMock(return_value=True)),

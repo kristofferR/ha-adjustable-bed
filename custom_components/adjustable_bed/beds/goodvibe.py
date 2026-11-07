@@ -33,6 +33,7 @@ from .base import (
     ControllerSelectSpec,
     ControllerStateSensorSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -225,10 +226,6 @@ class GoodVibeController(BedController):
         self._rejection: str | None = None
 
     @property
-    def supports_goodvibe(self) -> bool:
-        return True
-
-    @property
     def control_characteristic_uuid(self) -> str:
         return self._link.tx.uuid if self._link else "00000002-3c17-d293-8e48-14fe2e4da212"
 
@@ -238,7 +235,7 @@ class GoodVibeController(BedController):
 
     @property
     def requires_persistent_connection(self) -> bool:
-        return self.choices.monitoring or (
+        return super().requires_persistent_connection or self.choices.monitoring or (
             self._sleep is not None and self._sleep.last in ("q_report", "q_report_allow")
         )
 
@@ -698,7 +695,7 @@ class GoodVibeController(BedController):
             async def light_off(controller: BedController) -> None:
                 from ..goodvibe_services import Request
 
-                await controller.async_execute_goodvibe_request(Request("light_off"))
+                await selected(controller).async_execute_goodvibe_request(Request("light_off"))
 
             buttons.append(
                 ControllerButtonSpec(
@@ -932,7 +929,7 @@ class GoodVibeController(BedController):
             async def massage_timer(controller: BedController, value: str) -> None:
                 from ..goodvibe_services import Request
 
-                await controller.async_execute_goodvibe_request(
+                await selected(controller).async_execute_goodvibe_request(
                     Request("massage_timer", value=int(value))
                 )
 
@@ -965,7 +962,7 @@ class GoodVibeController(BedController):
             async def duration(controller: BedController, value: str) -> None:
                 from ..goodvibe_services import Request
 
-                await controller.async_execute_goodvibe_request(
+                await selected(controller).async_execute_goodvibe_request(
                     Request("light_duration", seconds=int(value))
                 )
 
@@ -996,7 +993,7 @@ class GoodVibeController(BedController):
 
             if value != int(value):
                 raise ValueError("Snore count must be an integer")
-            await controller.async_execute_goodvibe_request(
+            await selected(controller).async_execute_goodvibe_request(
                 Request("snore_count", value=int(value))
             )
 
@@ -1005,7 +1002,7 @@ class GoodVibeController(BedController):
 
             if value != int(value):
                 raise ValueError("Snore time must be an integer")
-            await controller.async_execute_goodvibe_request(Request("snore_time", value=int(value)))
+            await selected(controller).async_execute_goodvibe_request(Request("snore_time", value=int(value)))
 
         return (
             ControllerNumberSpec(
@@ -1237,3 +1234,8 @@ class GoodVibeController(BedController):
         raise NotImplementedError("Use the exact app-labelled action")
 
     program_memory = preset_memory
+
+
+async def build_controller(ctx: BuildContext) -> GoodVibeController:
+    """Build the controller for the selected GoodVibe profile."""
+    return GoodVibeController(ctx.coordinator, profile=ctx.variant or "")

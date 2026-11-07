@@ -244,7 +244,6 @@ APP_PROFILES: Final[dict[AppKey, LogicdataProfile]] = {
     "tablet": TABLET,
     "sleep_smart": SLEEP_SMART,
 }
-ALL_AXES: Final = frozenset(axis for axes in MOTIONRELAX_LAYOUTS.values() for axis in axes)
 
 
 def validate_setup(profile: LogicdataProfile, family: str, layout: str) -> None:

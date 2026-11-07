@@ -15,6 +15,7 @@ from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING
 
 from ..codec import keeson as codec
+from ..const import CONF_FURNIMOVE_REMOTE
 from ..controller_state import StateKey
 from ..execution import ExecutionCapabilities
 from ..furnimove_profiles import FurniMoveAction, get_furnimove_profile
@@ -27,7 +28,9 @@ from .base import (
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
+    require_controller,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -139,7 +142,9 @@ def validate_furnimove_name(name: str) -> None:
 
 def _action_callback(row_index: int) -> MotorCommandCallable:
     async def invoke(controller: BedController) -> None:
-        await controller.async_execute_furnimove_action(row_index)
+        await require_controller(controller, FurniMoveController).async_execute_furnimove_action(
+            row_index
+        )
 
     return invoke
 
@@ -595,10 +600,6 @@ class FurniMoveController(BedController):
     @property
     def supports_motor_control(self) -> bool:
         return bool(self.motor_control_specs)
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset({"stair"})
 
     @property
     def supports_simultaneous_movement(self) -> bool:
@@ -1321,3 +1322,8 @@ class FurniMoveController(BedController):
             response=self._response_mode(characteristic),
             characteristic=characteristic,
         )
+
+
+async def build_controller(ctx: BuildContext) -> FurniMoveController:
+    """Build the controller for the stored handset."""
+    return FurniMoveController(ctx.coordinator, handset_id=ctx.data[CONF_FURNIMOVE_REMOTE])

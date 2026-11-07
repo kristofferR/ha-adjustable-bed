@@ -15,6 +15,7 @@ from ..profiles.motosleep import (
     resolve_motosleep_profile,
 )
 from .base import BedController, MotorCommandCallable, MotorControlSpec
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -34,6 +35,7 @@ class MotoSleepController(BedController):
         super().__init__(coordinator)
         self._device_name = device_name or getattr(coordinator, "ble_device_name", None)
         self.profile: MotoSleepProfile = resolve_motosleep_profile(self._device_name)
+        self._write_with_response = self.profile.write_with_response
         self._light_rgb = (255, 255, 255)
         _LOGGER.info(
             "MotoSleep local name %r resolved to profile %s",
@@ -176,23 +178,6 @@ class MotoSleepController(BedController):
         return "tilt" in self.profile.motors
 
     @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset(
-            {
-                "back",
-                "legs",
-                "head",
-                "feet",
-                "lumbar",
-                "neck",
-                "tilt",
-                "auxiliary",
-                "auxiliary_1",
-                "auxiliary_2",
-            }
-        )
-
-    @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
         """Expose exactly the actuators rendered by the resolved app page."""
 
@@ -237,23 +222,6 @@ class MotoSleepController(BedController):
             self.profile.transport is MotoSleepTransport.HHC_ASCII and not self.profile.raw_hhc
         )
         return letter_command(action, wrapped=wrapped)
-
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        """Write with the response mode selected by the OEM app."""
-        await self._write_gatt_with_retry(
-            self.control_characteristic_uuid,
-            command,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            cancel_event=cancel_event,
-            response=self.profile.write_with_response,
-        )
 
     async def _send_action(
         self,
@@ -478,3 +446,8 @@ class MotoSleepController(BedController):
 
     async def massage_foot_down(self) -> None:
         await self._massage("foot_down")
+
+
+async def build_controller(ctx: BuildContext) -> MotoSleepController:
+    """Build the controller with the BLE name."""
+    return MotoSleepController(ctx.coordinator, device_name=ctx.device_name)

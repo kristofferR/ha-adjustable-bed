@@ -27,6 +27,7 @@ from ..const import (
     RONDURE_VARIANT_BOTH,
     RONDURE_VARIANT_SIDE_A,
     RONDURE_VARIANT_SIDE_B,
+    RONDURE_VARIANTS,
     RONDURE_WRITE_CHAR_UUID,
     SIDE_BOTH,
     SIDE_LEFT,
@@ -34,6 +35,7 @@ from ..const import (
 )
 from ..profiles import keeson as keeson_profiles
 from .base import BedController
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -95,6 +97,10 @@ class RondureController(BedController):
         self.profile = keeson_profiles.RONDURE
         self._variant = variant
         _LOGGER.debug("RondureController initialized with variant: %s", variant)
+
+    @property
+    def protocol_diagnostics(self) -> dict[str, object]:
+        return {"variant": self._variant}
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -364,3 +370,19 @@ class RondureController(BedController):
     async def lights_off(self) -> None:
         """Turn off under-bed light (toggle, no discrete off)."""
         await self.lights_toggle()
+
+
+async def build_controller(ctx: BuildContext) -> RondureController:
+    """Build the controller for the selected side, defaulting to both."""
+    variant = ctx.variant
+    if not variant or variant == "auto":
+        variant = "both"
+    elif variant not in RONDURE_VARIANTS:
+        _LOGGER.warning(
+            "Invalid Rondure variant '%s', defaulting to 'both'. Valid: %s",
+            variant,
+            list(RONDURE_VARIANTS),
+        )
+        variant = "both"
+    _LOGGER.debug("Using Rondure controller with variant: %s", variant)
+    return RondureController(ctx.coordinator, variant=variant)

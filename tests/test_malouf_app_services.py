@@ -24,7 +24,8 @@ from custom_components.adjustable_bed.services import (
 @pytest.fixture
 async def service_target(hass: HomeAssistant):
     await async_register_services(hass)
-    controller = SimpleNamespace(
+    controller = MagicMock(
+        spec=MaloufAppController,
         supports_clock_alarm=True, supports_clock_sync=True,
         clock_alarm_preset_options=("zero_g", "lounge", "tv", "anti_snore", "memory_1"),
         configure_clock_alarm=AsyncMock(), sync_clock=AsyncMock(),
@@ -42,7 +43,7 @@ async def service_target(hass: HomeAssistant):
     with (
         patch("custom_components.adjustable_bed.services._resolve_sided_targets",
               return_value=([(coordinator, SIDE_BOTH)], [])) as resolve,
-        patch("custom_components.adjustable_bed.malouf_app_services._resolve_sided_targets",
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets",
               new=resolve),
     ):
         yield coordinator, controller, resolve
@@ -86,7 +87,7 @@ async def test_alarm_preset_is_validated_on_every_target_before_writing(hass, se
     second.name = "One-slot bed"
     second.bed_type = BED_TYPE_MALOUF_APP
     second.controller_side = None
-    second.capability_controller = SimpleNamespace(supports_clock_alarm=True,
+    second.capability_controller = MagicMock(spec=MaloufAppController, supports_clock_alarm=True,
         clock_alarm_preset_options=("zero_g", "memory_1"))
     resolve.return_value = ([(coordinator, SIDE_BOTH), (second, SIDE_BOTH)], [])
     with pytest.raises(ServiceValidationError, match="unavailable"):
@@ -151,7 +152,7 @@ async def test_explicit_split_head_actions_route_main_dual_and_partner_foot(hass
     with (
         patch("custom_components.adjustable_bed.services._resolve_sided_targets",
               side_effect=resolve),
-        patch("custom_components.adjustable_bed.linak_services._resolve_sided_targets",
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets",
               side_effect=resolve),
     ):
         await asyncio.gather(

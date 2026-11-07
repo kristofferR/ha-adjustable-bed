@@ -462,13 +462,7 @@ def test_capabilities_follow_the_profile(coordinator):
     assert [spec.key for spec in controller.controller_state_sensor_specs] == [
         "logicdata_app_massage_mode"
     ]
-    assert controller.stale_controller_state_sensor_entity_keys == {
-        "logicdata_app_alarm",
-        "logicdata_app_family_match",
-    }
     quiet = bed(coordinator, has_massage=False)
     assert quiet.controller_state_sensor_specs == ()
-    assert "logicdata_app_massage_mode" in quiet.stale_controller_state_sensor_entity_keys
     phone = bed(coordinator, profile="phone", command_family="p2", layout="middle")
     assert phone.held_preset_options == ("flat", "memory_1", "memory_2")
-    assert "logicdata_app_massage_mode" in phone.stale_controller_state_sensor_entity_keys

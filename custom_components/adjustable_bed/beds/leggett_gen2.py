@@ -38,11 +38,17 @@ import contextlib
 import logging
 from typing import TYPE_CHECKING, Any
 
-from ..const import LEGGETT_GEN2_READ_CHAR_UUID, LEGGETT_GEN2_WRITE_CHAR_UUID
+from ..const import (
+    LEGGETT_GEN2_READ_CHAR_UUID,
+    LEGGETT_GEN2_WRITE_CHAR_UUID,
+    LEGGETT_VARIANT_MLRM,
+    LEGGETT_VARIANT_OKIN,
+)
 from ..controller_state import StateUpdate
 from ..execution import ExecutionCapabilities
 from ..state_keys import UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
 from .base import BedController
+from .builder import BuildContext
 from .leggett_gen2_profiles import (
     Gen2Capabilities,
     capabilities_for_product,
@@ -206,11 +212,6 @@ class LeggettGen2Controller(BedController):
         return LEGGETT_GEN2_WRITE_CHAR_UUID
 
     @property
-    def requires_persistent_connection(self) -> bool:
-        """Keep the Gen2 link open pending hardware confirmation of reconnects."""
-        return True
-
-    @property
     def manual_disconnect_strands_connection(self) -> bool:
         """Hide manual disconnect until bonded reconnects are hardware-confirmed."""
         return True
@@ -351,19 +352,6 @@ class LeggettGen2Controller(BedController):
         return tuple(
             spec for spec in super().motor_control_specs if present.get(spec.key, False)
         )
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Remove covers for actuators not in this profile.
-
-        Covers absent profile actuators plus the duplicate ``head``/``feet`` keys,
-        so cover.py cleans up covers left over from the old always-full feature set
-        (including no-actuator profiles).
-        """
-        present = self._present_specs()
-        stale = {key for key, is_present in present.items() if not is_present}
-        stale.update({"head", "feet"})
-        return frozenset(stale)
 
     # Motor control methods - Gen2 re-sends the move command every 200 ms while
     # held and sends an explicit per-actuator stop on release (matching the app).
@@ -692,3 +680,26 @@ class LeggettGen2Controller(BedController):
         modes = self._massage_modes()
         self._massage_mode_idx = (self._massage_mode_idx + 1) % len(modes)
         await self.write_command(LeggettGen2Commands.massage_mode(modes[self._massage_mode_idx]))
+
+
+async def build_controller(ctx: BuildContext) -> LeggettGen2Controller:
+    """Build the controller with the advertised product data."""
+    return LeggettGen2Controller(ctx.coordinator, manufacturer_data=ctx.manufacturer_data)
+
+
+async def build_leggett_platt(ctx: BuildContext) -> BedController:
+    """Build the controller for a Leggett & Platt variant the factory resolved."""
+    if ctx.variant == LEGGETT_VARIANT_MLRM:
+        await ctx.preload("leggett_wilinke")
+        from .leggett_wilinke import LeggettWilinkeController
+
+        _LOGGER.debug("Using MlRM Leggett & Platt variant")
+        return LeggettWilinkeController(ctx.coordinator)
+    if ctx.variant == LEGGETT_VARIANT_OKIN:
+        await ctx.preload("leggett_okin")
+        from .leggett_okin import build_controller as build_okin
+
+        _LOGGER.debug("Using Okin Leggett & Platt variant (configured)")
+        return await build_okin(ctx)
+    _LOGGER.debug("Using Gen2 Leggett & Platt variant")
+    return await build_controller(ctx)

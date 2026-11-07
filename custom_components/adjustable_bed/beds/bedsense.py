@@ -27,6 +27,7 @@ from .base import (
     MotorControlSpec,
     PositionNumberSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -234,10 +235,6 @@ class BedSenseController(BedController):
                 "wave_steps",
             )
         )
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset(axis for axes in LAYOUTS.values() for axis in axes)
 
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
@@ -541,3 +538,15 @@ class BedSenseController(BedController):
     move_head_stop = stop_all
     move_legs_stop = stop_all
     move_feet_stop = stop_all
+
+
+async def build_controller(ctx: BuildContext) -> BedSenseController:
+    """Build the controller with the connection-independent app session."""
+    from ..app_session import app_session
+
+    return BedSenseController(
+        ctx.coordinator,
+        variant=ctx.variant or "auto",
+        device_name=ctx.live_device_name,
+        session=app_session(ctx.coordinator.hass, ctx.coordinator.address, "bedsense", BedSenseSession),
+    )

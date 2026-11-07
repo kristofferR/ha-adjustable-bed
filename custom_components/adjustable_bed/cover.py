@@ -15,22 +15,21 @@ from homeassistant.components.cover import (
     CoverEntityFeature,
 )
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .bed_traits import bed_traits
 from .beds.base import ControllerMotorHoldSpec
 from .const import (
-    BEDS_WITH_PERCENTAGE_POSITIONS,
     DOMAIN,
 )
 from .entity import AdjustableBedEntity, hold_lease_attributes
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
+from .entity_sweep import PlatformEntities, records_entities
 from .octo_runtime import octo_controller
 from .paired_coordinator import entity_runtimes
 from .position_estimate import track_motor_command
-from .profiles.logicdata import ALL_AXES as LOGICDATA_AXES
 
 if TYPE_CHECKING:
     from .beds.base import (
@@ -192,16 +191,16 @@ COVER_DESCRIPTIONS: tuple[AdjustableBedCoverEntityDescription, ...] = (
 )
 
 
+@records_entities(Platform.COVER)
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed cover entities."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
     for runtime in entity_runtimes(coordinator):
         async_setup_dynamic_entities(
-            hass,
             entry,
             runtime,
             async_add_entities,
@@ -231,12 +230,7 @@ def _cover_entities_for(
     ):
         return []
 
-    _async_remove_stale_cover_entities(hass, coordinator, controller)
-
-    # Skip motor cover entities if bed doesn't support motor control. Still run
-    # stale cleanup first, so covers left over from an older config (e.g. a Gen2
-    # entry that resolved to a no-actuator profile) are removed rather than left
-    # registered and unavailable.
+    # Skip motor cover entities if bed doesn't support motor control.
     if not controller.supports_motor_control:
         _LOGGER.debug(
             "Skipping motor covers for %s - bed only supports presets",
@@ -284,52 +278,6 @@ def _build_cover_description(
     )
 
 
-def _async_remove_stale_cover_entities(
-    hass: HomeAssistant,
-    coordinator: EntityRuntime,
-    controller: BedController,
-) -> None:
-    """Remove stale cover entities that should no longer be exposed."""
-    registry = er.async_get(hass)
-    active_keys = (
-        {spec.key for spec in controller.motor_control_specs}
-        if controller.supports_motor_control and not controller.has_discrete_motor_control
-        else set()
-    )
-    # App-specific covers must retire when a different protocol replaces them.
-    stale_keys = controller.stale_motor_entity_keys | LOGICDATA_AXES | {
-        "both", "right_back", "right_legs", "both_backs", "both_legs", "waist",
-        "hip", "lift", "rise_and_fall", "back_and_leg",
-        "malouf_tilt_head", "malouf_full_tilt", "back_legs",
-        "motor_1", "motor_2", "motor_3", "motor_4",
-    }
-
-    for key in stale_keys:
-        if key in active_keys:
-            continue
-
-        unique_id = coordinator.entity_unique_id(key)
-        entity_id = registry.async_get_entity_id("cover", DOMAIN, unique_id)
-        if entity_id is not None:
-            registry.async_remove(entity_id)
-            _LOGGER.info("Removed stale cover entity %s for %s", entity_id, coordinator.name)
-
-    # Layout-specific app covers must also retire after a protocol change.
-    namespace = "motion_bed_"
-    prefix, suffix = coordinator.entity_unique_id(namespace).split(namespace, 1)
-    prefix += namespace
-    active_ids = {coordinator.entity_unique_id(key) for key in active_keys}
-    for row in list(er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)):
-        if (
-            row.domain == "cover"
-            and row.platform == DOMAIN
-            and row.unique_id.startswith(prefix)
-            and row.unique_id.endswith(suffix)
-            and row.unique_id not in active_ids
-        ):
-            registry.async_remove(row.entity_id)
-
-
 class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
     """Cover entity for Adjustable Bed motor control."""
 
@@ -346,7 +294,7 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
         """Initialize the cover."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._is_moving = False
         self._move_direction: str | None = None
@@ -437,7 +385,7 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
 
         # Check if bed type reports percentage directly (e.g., Keeson/Ergomotion/Serta)
         # Use bed_type constant check instead of controller to handle disconnected state
-        if self._coordinator.bed_type in BEDS_WITH_PERCENTAGE_POSITIONS:
+        if bed_traits(self._coordinator.bed_type).percentage_positions:
             # Position is already 0-100 percentage
             return min(100, max(0, int(position)))
 

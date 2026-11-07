@@ -3,16 +3,18 @@
 from dataclasses import replace
 
 import pytest
+from homeassistant.const import Platform
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.button import ControllerActionButton, async_setup_entry
+from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTION_BED,
     CONF_BLE_DEVICE_NAME,
     DOMAIN,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
+from tests.test_entity_sweep import async_setup_platforms_and_sweep
 from tests.test_motion_bed_lifecycle import real_coordinator
 
 
@@ -20,8 +22,7 @@ async def test_public_home_to_hub_prunes_home_only_registry_control(hass):
     coord = await real_coordinator(hass, "QMS-IQ")
     hass.data[DOMAIN] = {coord.entry.entry_id: coord}
     registry = er.async_get(hass)
-    home = []
-    await async_setup_entry(hass, coord.entry, home.extend)
+    home = await async_setup_platforms_and_sweep(hass, coord.entry, coord, (Platform.BUTTON,))
     hass.config_entries.async_update_entry(
         coord.entry, data={**coord.entry.data, CONF_BLE_DEVICE_NAME: "TL-Q"}
     )
@@ -49,9 +50,8 @@ async def test_public_home_to_hub_prunes_home_only_registry_control(hass):
         translation_key=home_entity.translation_key,
     )
     coord._controller = hub
-    new = []
     try:
-        await async_setup_entry(hass, coord.entry, new.extend)
+        new = await async_setup_platforms_and_sweep(hass, coord.entry, coord, (Platform.BUTTON,))
         assert home_entity.translation_key == "remote_action"
         assert old.unique_id not in {e.unique_id for e in new}
         assert registry.async_get(old.entity_id) is None, (
@@ -101,7 +101,7 @@ async def test_unknown_hub_inventory_preserves_customized_module_and_foreign_con
     ]
     hass.data[DOMAIN] = {coord.entry.entry_id: coord}
     try:
-        await async_setup_entry(hass, coord.entry, lambda entities: None)
+        await async_setup_platforms_and_sweep(hass, coord.entry, coord, (Platform.BUTTON,))
         assert ctrl.protocol_diagnostics["air_module_present"] is None
         assert registry.async_get(customized.entity_id) == customized
         assert registry.async_get(shared.entity_id) == shared
@@ -149,7 +149,7 @@ async def test_actual_paired_unknown_hub_keeps_both_customized_sides(hass):
         )
     hass.data[DOMAIN] = {entry.entry_id: pair}
     try:
-        await async_setup_entry(hass, entry, lambda entities: None)
+        await async_setup_platforms_and_sweep(hass, entry, pair, (Platform.BUTTON,))
         assert ctrl.protocol_diagnostics["air_module_present"] is None
         for row in rows:
             assert registry.async_get(row.entity_id) == row
@@ -185,7 +185,7 @@ async def test_all_possible_hub_button_identities_survive_unreported_inventory(
     )
     hass.data[DOMAIN] = {coord.entry.entry_id: coord}
     try:
-        await async_setup_entry(hass, coord.entry, lambda entities: None)
+        await async_setup_platforms_and_sweep(hass, coord.entry, coord, (Platform.BUTTON,))
         assert rows and all(registry.async_get(row.entity_id) == row for row in rows)
         coord.client.write_gatt_char.assert_not_awaited()
     finally:

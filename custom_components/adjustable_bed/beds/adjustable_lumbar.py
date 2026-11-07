@@ -38,6 +38,7 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -610,3 +611,10 @@ class AdjustableLumbarController(BedController):
             await self.check_massage()
         else:
             raise ValueError(f"Unknown Adjustable bed (Lumbar) action '{action}'")
+
+
+async def build_controller(ctx: BuildContext) -> AdjustableLumbarController:
+    """Build the controller; the app's name rule picks the table unless the variant fixes it."""
+    return AdjustableLumbarController(
+        ctx.coordinator, protocol_variant=ctx.variant, device_name=ctx.live_device_name
+    )

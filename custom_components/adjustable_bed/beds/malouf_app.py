@@ -17,6 +17,12 @@ from homeassistant.util import dt as dt_util
 
 from ..codec import malouf as codec
 from ..codec.malouf import TRANSPORTS, TransportKey
+from ..const import (
+    CONF_MALOUF_APP_MODEL,
+    CONF_MALOUF_APP_PRIMARY,
+    CONF_MALOUF_APP_PROFILE,
+    CONF_MALOUF_APP_TRANSPORT,
+)
 from ..controller_state import StateKey, StateUpdate
 from ..profiles.malouf import APP_PROFILES, MALOUF_APP_MODELS, Route
 from .base import (
@@ -26,6 +32,7 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -438,13 +445,6 @@ class MaloufAppController(BedController):
         return tuple(specs)
 
     @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset(
-            {"head", "feet", "tilt", "lumbar", "bed_height", "malouf_tilt_head", "malouf_full_tilt"}
-            - {spec.key for spec in self.motor_control_specs}
-        )
-
-    @property
     def has_tilt_support(self) -> bool:
         return "tilt" in self._model.manual
 
@@ -782,11 +782,6 @@ class MaloufAppController(BedController):
             )
         return ()
 
-    @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        active_keys = {spec.key for spec in self.controller_state_sensor_specs}
-        return frozenset({"malouf_massage_remaining"} - active_keys)
-
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         self._notify_callback = callback
         transport = self._resolve_transport()
@@ -868,3 +863,15 @@ def require_app_transport(
         return controller._resolve_transport()  # noqa: SLF001 - the controller's own selection
     except ValueError as err:
         raise ConnectionError(str(err)) from err
+
+
+async def build_controller(ctx: BuildContext) -> MaloufAppController:
+    """Build the controller for the stored app profile."""
+    data = ctx.data
+    return MaloufAppController(
+        ctx.coordinator,
+        app_profile=data[CONF_MALOUF_APP_PROFILE],
+        model=data[CONF_MALOUF_APP_MODEL],
+        transport=data.get(CONF_MALOUF_APP_TRANSPORT, "auto"),
+        primary=data.get(CONF_MALOUF_APP_PRIMARY, True),
+    )

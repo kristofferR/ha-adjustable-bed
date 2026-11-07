@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date
@@ -14,7 +13,6 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
-from .beds.base import BedController
 from .const import DOMAIN
 from .doublesleep_protocol import ALARM_PRESETS, PRESETS, SAVE, alarm_days
 
@@ -124,46 +122,22 @@ def build_request(data: Mapping[str, object]) -> Request:
 
 
 async def handle_doublesleep(call: ServiceCall) -> None:
-    from .beds.doublesleep import selected
-    from .services import (
-        ATTR_SIDE,
-        CONF_DEVICE_ID,
-        _execute_sided,
-        _missing_device_error,
-        _preflight_capability,
-        _release_preflighted,
-        _resolve_sided_targets,
-    )
+    from .beds.doublesleep import DoubleSleepController
+    from .services import _call_targets, _preflight_and_execute
 
     try:
         request = build_request(call.data)
     except (ValueError, KeyError) as err:
         raise ServiceValidationError(str(err)) from err
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
+    await _preflight_and_execute(
+        _call_targets(call),
+        DoubleSleepController,
+        "OKIN SleepEase controls",
+        lambda controller: controller.request(request),
+        validate=lambda controller: controller.validate_request(request),
+        cancel_running=True,
+        resource="*",
     )
-    if missing:
-        raise _missing_device_error(missing[0])
-
-    def validate(controller: BedController) -> None:
-        # Shared preflight supplies a BedController (possibly side-bound).
-        selected(controller).validate_request(request)
-
-    async def execute(controller: BedController) -> None:
-        await selected(controller).request(request)
-
-    try:
-        preflighted = await _preflight_capability(
-            targets, "supports_doublesleep_controls", "OKIN SleepEase controls", validate
-        )
-    except ValueError as err:
-        raise ServiceValidationError(str(err)) from err
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(coordinator, side, execute, resource="*")
-    except Exception, asyncio.CancelledError:
-        await _release_preflighted(preflighted)
-        raise
 
 
 def async_register_doublesleep_services(hass: HomeAssistant) -> None:

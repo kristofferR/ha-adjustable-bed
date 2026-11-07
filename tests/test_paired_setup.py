@@ -31,6 +31,7 @@ from custom_components.adjustable_bed import (
     async_unpair_entry,
     paired_topology,
 )
+from custom_components.adjustable_bed.beds.lifecycle import CapabilitySnapshotPolicy
 from custom_components.adjustable_bed.const import (
     BED_TYPE_BEDTECH,
     BED_TYPE_ESHINE_OKIN,
@@ -2856,8 +2857,7 @@ class TestPairBedsConversion:
             stop_notify=AsyncMock(),
             start_notify=AsyncMock(),
             stop_keepalive=AsyncMock(),
-            send_pin=AsyncMock(),
-            start_keepalive=AsyncMock(),
+            async_resume_session=AsyncMock(),
         )
         coord._client = client
         coord._controller = controller
@@ -2874,8 +2874,7 @@ class TestPairBedsConversion:
         controller.stop_keepalive.assert_awaited_once_with()
         controller.stop_notify.assert_awaited_once_with()
         controller.start_notify.assert_awaited_once_with(None)
-        controller.send_pin.assert_awaited_once_with()
-        controller.start_keepalive.assert_awaited_once_with()
+        controller.async_resume_session.assert_awaited_once_with()
         # Let teardown's shutdown disconnect instead of stalling for 5s.
         client.disconnect.side_effect = None
 
@@ -2919,8 +2918,7 @@ class TestPairBedsConversion:
             stop_notify=AsyncMock(),
             start_notify=AsyncMock(side_effect=stalled_start_notify),
             stop_keepalive=AsyncMock(),
-            send_pin=AsyncMock(),
-            start_keepalive=AsyncMock(),
+            async_resume_session=AsyncMock(),
         )
         coord._client = client
         coord._controller = controller
@@ -2940,8 +2938,7 @@ class TestPairBedsConversion:
         assert coord.is_connected
         assert coord._pairing_transfer_active is False
         controller.start_notify.assert_awaited_once_with(None)
-        controller.send_pin.assert_not_awaited()
-        controller.start_keepalive.assert_not_awaited()
+        controller.async_resume_session.assert_not_awaited()
         # Let teardown's shutdown disconnect instead of stalling for 5s.
         client.disconnect.side_effect = None
 
@@ -4012,64 +4009,8 @@ class TestCombinedPositionSliders:
         single = SingleAddressPairedCoordinator.__new__(SingleAddressPairedCoordinator)
         single._single_inner = SimpleNamespace(address="AA:BB:CC:DD:EE:50", device_info={})
         single_entity = PairedBedCombinedPositionNumber(single, _build_position_description(back))
-        assert single_entity.translation_key == "back_position_both"
+        assert single_entity.translation_key == "back_position"
         assert single_entity.extra_state_attributes == {"bed_side": SIDE_BOTH}
-
-    async def test_stale_cleanup_only_removes_combined_position_numbers(self, hass: HomeAssistant):
-        from unittest.mock import MagicMock
-
-        from custom_components.adjustable_bed.beds.base import build_position_number_spec
-        from custom_components.adjustable_bed.number import (
-            _async_remove_stale_combined_number_entities,
-            _combined_position_entities_for,
-        )
-
-        entry = MockConfigEntry(
-            domain=DOMAIN,
-            title="Master Bed",
-            data=_paired_entry_data(),
-            unique_id=PAIR_ID,
-            entry_id="combined_position_cleanup",
-            version=4,
-        )
-        entry.add_to_hass(hass)
-        coordinator = MagicMock(spec=PairedBedCoordinator)
-        coordinator.entry = entry
-        coordinator.entity_unique_id.side_effect = lambda key: f"{PAIR_ID}_{key}"
-        coordinator.device_info = {}
-
-        back = build_position_number_spec("back", max_value=68, unit="°")
-        children = [self._side((back,)), self._side((back,))]
-        entities = _combined_position_entities_for(coordinator, children)
-
-        registry = er.async_get(hass)
-        stale_position = registry.async_get_or_create(
-            "number",
-            DOMAIN,
-            f"{PAIR_ID}_lumbar_position_both",
-            config_entry=entry,
-            translation_key="lumbar_position",
-        )
-        unrelated = registry.async_get_or_create(
-            "number",
-            DOMAIN,
-            f"{PAIR_ID}_sleep_number_setting_both",
-            config_entry=entry,
-            translation_key="sleep_number_setting_both",
-        )
-        child_position = registry.async_get_or_create(
-            "number",
-            DOMAIN,
-            f"{LEFT_ADDR}_lumbar_position",
-            config_entry=entry,
-            translation_key="lumbar_position",
-        )
-
-        _async_remove_stale_combined_number_entities(hass, coordinator, children, entities)
-
-        assert registry.async_get(stale_position.entity_id) is None
-        assert registry.async_get(unrelated.entity_id) is not None
-        assert registry.async_get(child_position.entity_id) is not None
 
     async def test_parent_device_gets_position_sliders_when_sides_report_angles(
         self,
@@ -4186,7 +4127,9 @@ class TestOfflineSideEntities:
         hass: HomeAssistant,
     ) -> None:
         """Pair-level buttons must follow both sides' current memory capacity."""
-        from custom_components.adjustable_bed.button import async_setup_entry
+        from homeassistant.const import Platform
+
+        from tests.test_entity_sweep import async_setup_platforms_and_sweep
 
         data = _paired_entry_data()
         standard_snapshot = {
@@ -4227,8 +4170,9 @@ class TestOfflineSideEntities:
                 config_entry=entry,
             )
 
-        entities: list[Any] = []
-        await async_setup_entry(hass, entry, entities.extend)
+        entities = await async_setup_platforms_and_sweep(
+            hass, entry, coordinator, (Platform.BUTTON,)
+        )
 
         assert all(
             registry.async_get_entity_id("button", DOMAIN, unique_id) is None
@@ -4460,7 +4404,7 @@ class TestOfflineSafeBedTypes:
         self, hass: HomeAssistant, profile: str | None
     ) -> None:
         from custom_components.adjustable_bed.beds.eshine_okin import EshineOkinController
-        from custom_components.adjustable_bed.const import OFFLINE_CAPABILITY_SAFE_VARIANTS
+        from custom_components.adjustable_bed.pairing import OFFLINE_CAPABILITY_SAFE_VARIANTS
 
         assert BED_TYPE_ESHINE_OKIN not in OFFLINE_CAPABILITY_SAFE_BED_TYPES
         assert OFFLINE_CAPABILITY_SAFE_VARIANTS[BED_TYPE_ESHINE_OKIN] == frozenset(ESHINE_OKIN_PROFILES)
@@ -4747,20 +4691,31 @@ class TestOctoOfflineSnapshot:
         self, hass: HomeAssistant
     ) -> None:
         """Old paired snapshots retain known registry rows but grant no write access."""
+        from homeassistant.components.light import LightEntity
+        from homeassistant.components.switch import SwitchEntity
+        from homeassistant.const import Platform
+
         from custom_components.adjustable_bed.beds.octo import (
             OCTO_FEATURE_LIGHT,
             OctoCapabilityRecord,
             OctoController,
         )
-        from custom_components.adjustable_bed.light import (
-            LIGHT_DESCRIPTION,
-            _light_entities_for,
-        )
+        from custom_components.adjustable_bed.light import LIGHT_DESCRIPTION
         from custom_components.adjustable_bed.switch import (
             SWITCH_DESCRIPTIONS,
             AdjustableBedSwitch,
-            _switch_entities_for,
         )
+        from tests.test_entity_sweep import async_setup_platforms_and_sweep
+
+        async def setup_and_sweep() -> tuple[list[Any], list[Any]]:
+            # Only the left side has rows here, so it stands in for the pair.
+            created = await async_setup_platforms_and_sweep(
+                hass, entry, left, (Platform.LIGHT, Platform.SWITCH)
+            )
+            return (
+                [entity for entity in created if isinstance(entity, LightEntity)],
+                [entity for entity in created if isinstance(entity, SwitchEntity)],
+            )
 
         legacy_snapshot = {
             "has_lights": True,
@@ -4815,8 +4770,7 @@ class TestOctoOfflineSnapshot:
         )
         registry.async_get_or_create("switch", DOMAIN, synchro_unique_id, config_entry=entry)
 
-        light_entities = _light_entities_for(hass, left)
-        switch_entities = _switch_entities_for(hass, left)
+        light_entities, switch_entities = await setup_and_sweep()
         assert light_entities == []
         assert len(switch_entities) == 2
         unavailable_switches = {
@@ -4851,11 +4805,10 @@ class TestOctoOfflineSnapshot:
         controller._pending_capability_records = {OCTO_FEATURE_LIGHT: light_record}
         controller._handle_feature_response([0xFF, 0xFF, 0xFF, 0, 0, 0])
         assert controller.controller_entity_discovery_complete is True
-        discovered_lights = _light_entities_for(hass, left)
+        discovered_lights, discovered_switches = await setup_and_sweep()
         assert discovered_lights == []
         retained_light = registry.async_get(light_row.entity_id)
         assert retained_light is None
-        discovered_switches = _switch_entities_for(hass, left)
         assert len(discovered_switches) == 1
         assert discovered_switches[0].unique_id == legacy_light_switch_unique_id
         assert (
@@ -4866,8 +4819,7 @@ class TestOctoOfflineSnapshot:
 
         controller._pending_capability_records = {}
         controller._handle_feature_response([0xFF, 0xFF, 0xFF, 0, 0, 0])
-        assert _light_entities_for(hass, left) == []
-        assert _switch_entities_for(hass, left) == []
+        assert await setup_and_sweep() == ([], [])
         assert registry.async_get_entity_id("light", DOMAIN, light_unique_id) is None
         assert registry.async_get_entity_id("switch", DOMAIN, synchro_unique_id) is None
         assert data[CONF_PAIR_CHILDREN][0]["capabilities"]["octo"] == legacy_snapshot
@@ -5243,6 +5195,9 @@ class TestOctoLegacyMotorFallbackSetup:
         await hass.async_block_till_done()
 
 
+_OCTO_SNAPSHOT_POLICY = CapabilitySnapshotPolicy(paired_side_only=True)
+
+
 class TestOctoSnapshotBackfill:
     """Phase 2.5 C3 (commit 4): a paired Octo side persists its freshly-discovered
     capability snapshot into its child descriptor on connect."""
@@ -5266,8 +5221,8 @@ class TestOctoSnapshotBackfill:
         left = _build_paired_children(hass, entry)[SIDE_LEFT]
 
         snap = {"has_lights": True, "memory_count": 4, "has_rgbwi": False}
-        left._controller = SimpleNamespace(capability_snapshot=lambda: dict(snap))
-        left._backfill_octo_snapshot()
+        left._controller = SimpleNamespace(capability_snapshot_policy=_OCTO_SNAPSHOT_POLICY, capability_snapshot=lambda: dict(snap))
+        left._persist_capability_snapshot()
 
         # The snapshot was persisted into the parent entry's left descriptor.
         assert octo_snapshot_from_descriptor(get_child(entry.data, SIDE_LEFT)) == snap
@@ -5298,14 +5253,14 @@ class TestOctoSnapshotBackfill:
         left = _build_paired_children(hass, entry)[SIDE_LEFT]
 
         real = {"has_lights": True, "memory_count": 4, "has_rgbwi": True}
-        left._controller = SimpleNamespace(capability_snapshot=lambda: dict(real))
-        left._backfill_octo_snapshot()
+        left._controller = SimpleNamespace(capability_snapshot_policy=_OCTO_SNAPSHOT_POLICY, capability_snapshot=lambda: dict(real))
+        left._persist_capability_snapshot()
         assert octo_snapshot_from_descriptor(get_child(entry.data, SIDE_LEFT)) == real
 
         # Transient discovery timeout -> capability_snapshot() is None -> no-op,
         # the real pairing-time snapshot survives.
-        left._controller = SimpleNamespace(capability_snapshot=lambda: None)
-        left._backfill_octo_snapshot()
+        left._controller = SimpleNamespace(capability_snapshot_policy=_OCTO_SNAPSHOT_POLICY, capability_snapshot=lambda: None)
+        left._persist_capability_snapshot()
         assert octo_snapshot_from_descriptor(get_child(entry.data, SIDE_LEFT)) == real
 
     async def test_backfill_refreshes_stale_offline_controller(self, hass: HomeAssistant):
@@ -5334,10 +5289,10 @@ class TestOctoSnapshotBackfill:
         left._offline_controller = stale
         # Live controller has freshly discovered (different) caps.
         new_snap = {"has_lights": True, "memory_count": 4, "has_rgbwi": True}
-        live = SimpleNamespace(capability_snapshot=lambda: dict(new_snap))
+        live = SimpleNamespace(capability_snapshot_policy=_OCTO_SNAPSHOT_POLICY, capability_snapshot=lambda: dict(new_snap))
         left._controller = live
 
-        left._backfill_octo_snapshot()
+        left._persist_capability_snapshot()
 
         # Descriptor backfilled AND the offline controller refreshed to the live
         # one (no longer the stale pairing-time controller).

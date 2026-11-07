@@ -10,6 +10,14 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final, Literal
 
 from .. import sleeptracker_protocol as p
+from ..const import (
+    CONF_PRODUCT_TYPE,
+    CONF_SLEEPTRACKER_FOUNDATION,
+    CONF_SLEEPTRACKER_PROCESSOR_TYPE,
+    CONF_SLEEPTRACKER_RESTRICTED,
+    CONF_SLEEPTRACKER_SNAPSHOT_SIDE,
+    CONF_SLEEPTRACKER_UNIT,
+)
 from ..controller_state import StateKey, StateUpdate
 from .base import (
     BedController,
@@ -22,6 +30,7 @@ from .base import (
     MotorControlSpec,
     PositionNumberSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -50,7 +59,7 @@ def _controller(controller: BedController) -> SleeptrackerController:
 
 def _request_button(key: str, name: str, request: p.Request) -> ControllerButtonSpec:
     async def press(controller: BedController) -> None:
-        await controller.async_execute_sleeptracker_request(request)
+        await _controller(controller).async_execute_sleeptracker_request(request)
 
     return ControllerButtonSpec(key, name, press, translation_key=key)
 
@@ -165,10 +174,6 @@ class SleeptrackerController(BedController):
 
     @property
     def requires_notification_channel(self) -> bool:
-        return True
-
-    @property
-    def supports_sleeptracker_controls(self) -> bool:
         return True
 
     @property
@@ -1220,3 +1225,25 @@ class SleeptrackerController(BedController):
             if self._model.premium
             else ()
         )
+
+
+async def build_controller(ctx: BuildContext) -> SleeptrackerController:
+    """Build the controller for the stored foundation settings."""
+    from ..app_session import app_session
+
+    coordinator = ctx.coordinator
+    data = ctx.data
+    model = data.get(CONF_PRODUCT_TYPE, "unknown")
+    return SleeptrackerController(
+        coordinator,
+        model=model,
+        unit_number=data.get(CONF_SLEEPTRACKER_UNIT, 0),
+        snapshot_side=data.get(CONF_SLEEPTRACKER_SNAPSHOT_SIDE, 0),
+        restricted=data.get(CONF_SLEEPTRACKER_RESTRICTED, False),
+        processor_type=data.get(CONF_SLEEPTRACKER_PROCESSOR_TYPE, 0),
+        manufacturer_data=ctx.manufacturer_data,
+        foundation=data.get(CONF_SLEEPTRACKER_FOUNDATION, "Unspecified"),
+        wave_settings=app_session(
+            coordinator.hass, coordinator.address, ("sleeptracker", model), SleeptrackerWaveSettings
+        ),
+    )

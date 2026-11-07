@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import re
+from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
@@ -677,3 +678,22 @@ def combine_temperature_programs(info: object, settings: object) -> list[dict[st
         program["segments"] = matching.get("segments") or []
         programs.append(dict(validate_temperature_program(program)))
     return programs
+
+
+class SleepNumberActions(ABC):
+    """Semantic Sleep Number configuration actions shared by both transports."""
+
+    @property
+    @abstractmethod
+    def sleep_number_command_names(self) -> tuple[str, ...]:
+        """Return the supported semantic Sleep Number configuration actions."""
+
+    @abstractmethod
+    def validate_sleep_number_command(self, command: str, parameters: Mapping[str, object]) -> None:
+        """Validate a complete action without changing the bed."""
+
+    @abstractmethod
+    async def async_execute_sleep_number_command(
+        self, command: str, parameters: Mapping[str, object]
+    ) -> dict[str, object]:
+        """Execute an allowlisted action and return its structured result."""

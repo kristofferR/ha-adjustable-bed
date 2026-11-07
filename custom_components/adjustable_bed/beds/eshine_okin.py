@@ -22,6 +22,7 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
+from .builder import BuildContext
 from .eshine_okin_protocol import (
     ALARM_TYPES,
     COMMANDS,
@@ -253,10 +254,6 @@ class EshineOkinController(BedController):
             )
             for group in (("massage", "alarm") if self.supports_massage else ("alarm",))
         )
-
-    @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        return frozenset() if self.supports_massage else frozenset({"eshine_okin_massage"})
 
     def invalidate_diagnostics(self) -> None:
         self._observed.clear()
@@ -617,3 +614,8 @@ class EshineOkinController(BedController):
 
     async def massage_mode_step(self) -> None:
         await self.execute_action("massage_wave")
+
+
+async def build_controller(ctx: BuildContext) -> EshineOkinController:
+    """Build the controller for the selected profile."""
+    return EshineOkinController(ctx.coordinator, profile=ctx.variant or "")

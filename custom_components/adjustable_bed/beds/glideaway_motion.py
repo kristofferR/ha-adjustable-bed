@@ -28,6 +28,7 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -236,10 +237,6 @@ class GlideawayMotionController(BedController):
             )
             for axis in LAYOUTS[self.model]
         )
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset(AXES)
 
     async def move_back_up(self) -> None:
         await self._move_axis("back", True)
@@ -569,13 +566,6 @@ class GlideawayMotionController(BedController):
         )
         return (alarm, timer) if self.supports_massage else (alarm,)
 
-    @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        return frozenset({"glideaway_motion_massage_timer", "glideaway_motion_alarm"}) - {
-            s.key for s in self.controller_state_sensor_specs
-        }
-
-
 def _axis_action(axis: str, up: bool) -> MotorCommandCallable:
     async def move(controller: BedController) -> None:
         await cast(GlideawayMotionController, controller)._move_axis(axis, up)
@@ -590,3 +580,8 @@ async def _wait_for_cancel(event: asyncio.Event, delay: float) -> None:
             await event.wait()
     except TimeoutError:
         pass
+
+
+async def build_controller(ctx: BuildContext) -> GlideawayMotionController:
+    """Build the controller for the selected model."""
+    return GlideawayMotionController(ctx.coordinator, model=ctx.variant)

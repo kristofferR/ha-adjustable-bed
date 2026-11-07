@@ -21,17 +21,16 @@ from .services import (
     ATTR_DURATION,
     ATTR_NAME,
     ATTR_PRESET,
-    ATTR_SIDE,
+    DEVICE_IDS,
     SIDE_FIELD,
     BedTarget,
+    _call_targets,
     _command_targets,
     _execute_sided,
     _hold_seconds,
     _leggett_integer,
-    _missing_device_error,
     _preflight_capability,
     _release_preflighted,
-    _resolve_sided_targets,
 )
 
 if TYPE_CHECKING:
@@ -175,6 +174,8 @@ async def _execute_limoss_remote(
     targets: list[tuple[BedTarget, str]] | None = None,
     lease: HoldLease | None = None,
 ) -> None:
+    from .beds.limoss_remote import LimossRemoteController
+
     targets = _limoss_remote_targets(call) if targets is None else targets
 
     def check(controller: BedController) -> None:
@@ -186,7 +187,11 @@ async def _execute_limoss_remote(
     async with _limoss_remote_reload_transaction(targets):
         await _preflight_live_limoss_remote(targets, validate)
         preflighted = await _preflight_capability(
-            targets, "requires_notification_channel", "Limoss Remote", check
+            targets,
+            LimossRemoteController,
+            "Limoss Remote",
+            supported=lambda controller: controller.requires_notification_channel,
+            validate=check,
         )
         completed = 0
 
@@ -216,11 +221,7 @@ async def _execute_limoss_remote(
 
 
 def _limoss_remote_targets(call: ServiceCall) -> list[tuple[BedTarget, str]]:
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
+    targets = _call_targets(call)
     for coordinator, side in targets:
         if any(
             target.bed_type != BED_TYPE_LIMOSS_REMOTE
@@ -334,7 +335,7 @@ async def handle_limoss_remote_features(call: ServiceCall) -> None:
 def async_register_limoss_remote_services(hass: HomeAssistant) -> None:
     """Register the Limoss remote memory, calibration and feature actions."""
     device_fields = {
-        vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+        vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
         **SIDE_FIELD,
     }
     hass.services.async_register(

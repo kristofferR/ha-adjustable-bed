@@ -129,7 +129,6 @@ def test_nine_fresh_layouts_expose_only_proven_controls(layout, axes, cycle):
     c = make_controller(layout)
     assert {s.key for s in c.motor_control_specs} == axes
     assert all(s.scheduler_resource == "*" for s in c.motor_control_specs)
-    assert axes <= c.stale_motor_entity_keys
     buttons = {s.key.removeprefix("bedsense_") for s in c.controller_button_specs}
     assert {
         k.removeprefix("circulation_") for k in buttons if k.startswith("circulation_")
@@ -368,12 +367,10 @@ def test_memory_persistence_is_per_app_without_cross_device_state():
 
 
 @pytest.mark.parametrize("retain", [True, False])
-async def test_profile_entity_exposure_and_cleanup_is_side_scoped(hass, retain):
-    from homeassistant.helpers import entity_registry as er
-
+async def test_profile_entity_exposure_follows_the_profile(hass, retain):
     from custom_components.adjustable_bed.binary_sensor import _binary_sensor_entities_for
     from custom_components.adjustable_bed.button import _button_entities_for
-    from custom_components.adjustable_bed.const import BED_TYPE_DIAGNOSTIC, DOMAIN
+    from custom_components.adjustable_bed.const import BED_TYPE_DIAGNOSTIC
     from custom_components.adjustable_bed.cover import _cover_entities_for
     from custom_components.adjustable_bed.sensor import _sensor_entities_for
     from tests.conftest import make_controller_mock
@@ -384,9 +381,6 @@ async def test_profile_entity_exposure_and_cleanup_is_side_scoped(hass, retain):
         if retain
         else make_controller_mock(
             motor_control_specs=(),
-            stale_motor_entity_keys=frozenset(),
-            stale_controller_state_sensor_entity_keys=frozenset(),
-            stale_controller_state_binary_sensor_entity_keys=frozenset(),
             controller_button_specs=(),
             controller_state_sensor_specs=(),
             controller_state_binary_sensor_specs=(),
@@ -395,27 +389,14 @@ async def test_profile_entity_exposure_and_cleanup_is_side_scoped(hass, retain):
     runtime = configure_entity_runtime(
         hass, c, BED_TYPE_BEDSENSE if retain else BED_TYPE_DIAGNOSTIC
     )
-    registry = er.async_get(hass)
-    for domain, key, build in (
-        ("cover", "hip", _cover_entities_for),
-        ("button", "bedsense_rise", _button_entities_for),
-        ("sensor", "bedsense_head_bar", _sensor_entities_for),
-        ("binary_sensor", "bedsense_m1_saved", _binary_sensor_entities_for),
+    for key, build in (
+        ("hip", _cover_entities_for),
+        ("bedsense_rise", _button_entities_for),
+        ("bedsense_head_bar", _sensor_entities_for),
+        ("bedsense_m1_saved", _binary_sensor_entities_for),
     ):
-        rows = [
-            registry.async_get_or_create(
-                domain, DOMAIN, f"bed_{key}_{side}", config_entry=runtime.entry
-            )
-            for side in ("left", "right")
-        ]
-        unrelated = registry.async_get_or_create(
-            domain, DOMAIN, "bed_unrelated_left", config_entry=runtime.entry
-        )
         entities = build(hass, runtime)
-        assert (registry.async_get(rows[0].entity_id) is not None) is retain
-        assert registry.async_get(rows[1].entity_id) is not None
-        assert registry.async_get(unrelated.entity_id) is not None
-        assert (rows[0].unique_id in {e.unique_id for e in entities}) is retain
+        assert (f"bed_{key}_left" in {e.unique_id for e in entities}) is retain
 
 
 async def test_other_axis_stop_preempts_held_movement_through_scheduler(hass):

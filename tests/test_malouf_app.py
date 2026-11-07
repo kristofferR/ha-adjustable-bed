@@ -342,7 +342,6 @@ def test_model_axes_memory_and_legacy_entity_retirement(
     assert ctrl.memory_slot_count == slots
     assert ctrl.supports_memory_presets == (slots > 0)
     assert ctrl.supports_memory_programming == (slots > 0)
-    assert "bed_height" in ctrl.stale_motor_entity_keys
     assert ctrl.has_bed_height_support is False
 
 

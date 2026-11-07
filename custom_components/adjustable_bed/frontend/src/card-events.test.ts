@@ -304,13 +304,13 @@ function singleAddressOctoCardFixture(calls: RecordedServiceCall[]): {
   };
 
   add("button.both_stop", "stop_both", "both");
-  add("button.back_up_both", "back_up_both", "both", {
+  add("button.back_up_both", "back_up", "both", {
     held_control: "back_up",
     hold_start_delay_ms: 100,
     hold_release_delay_ms: 100,
   });
-  add("button.left_stop", "stop_left", "left");
-  add("button.right_stop", "stop_right", "right");
+  add("button.left_stop", "stop", "left");
+  add("button.right_stop", "stop", "right");
 
   return {
     card,
@@ -457,8 +457,6 @@ for (const shape of ["native", "single-address", "legacy-via-device"] as const) 
     }
 
     for (const [side, deviceId] of [["left", leftDevice], ["right", rightDevice]] as const) {
-      const key = (base: string): string =>
-        shape === "single-address" ? `${base}_${side}` : base;
       const entries = [
         [`button.${side}_stop`, "stop", { bed_side: side }],
         [
@@ -479,7 +477,7 @@ for (const shape of ["native", "single-address", "legacy-via-device"] as const) 
           entity_id: id,
           device_id: deviceId,
           platform: "adjustable_bed",
-          translation_key: key(baseKey),
+          translation_key: baseKey,
         };
         hass.states[id] = {
           entity_id: id,

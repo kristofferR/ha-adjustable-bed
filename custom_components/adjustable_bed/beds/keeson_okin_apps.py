@@ -277,7 +277,7 @@ class OkinAppKeesonController(KeesonController):
 
     @property
     def protocol_diagnostics(self) -> dict[str, Any]:
-        diagnostics: dict[str, Any] = {"okin_app": self._variant}
+        diagnostics: dict[str, Any] = {**super().protocol_diagnostics, "okin_app": self._variant}
         if self._is_heal:
             diagnostics["okin_app_product"] = f"Healing {self._product + 4}"
             diagnostics["okin_app_settings"] = self._settings()
@@ -323,10 +323,6 @@ class OkinAppKeesonController(KeesonController):
         if self._is_simon:
             specs.append(self._axis("lumbar", "lumbar", "lumbar_up", "lumbar_down"))
         return tuple(specs)
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset({"head", "back", "feet", "tilt", "lumbar"})
 
     @property
     def held_control_options(self) -> tuple[str, ...]:

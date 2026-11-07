@@ -14,7 +14,7 @@ sequence is justified by the available current-behavior evidence.
 The b4 report predates PR #539's continuous Linak seek lifecycle. Current code
 already differs from the old report's automatic-stop premise:
 
-- `LinakController.seek_position_step()` refreshes the held movement without
+- `LinakPositionSeekPolicy.async_issue_step()` refreshes the held movement without
   intermediate release.
 - `auto_stops_on_idle` is false. `PositionSeekRunner` sends terminal STOP in its
   cleanup, including replacement cancellation.

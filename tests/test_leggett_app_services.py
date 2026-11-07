@@ -8,6 +8,8 @@ import voluptuous as vol
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 
+from custom_components.adjustable_bed.beds.base import BedController
+from custom_components.adjustable_bed.beds.leggett_okin import LeggettOkinController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
@@ -37,7 +39,8 @@ from custom_components.adjustable_bed.services import (
 async def service_target(hass: HomeAssistant):
     """Keep real schemas and dispatch, replacing only the physical BLE target."""
     await async_register_services(hass)
-    controller = SimpleNamespace(
+    controller = MagicMock(
+        spec=LeggettOkinController,
         supports_sleep_timer=True,
         supports_alarm_timer=True,
         supports_held_control=True,
@@ -67,7 +70,7 @@ async def service_target(hass: HomeAssistant):
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(coordinator, SIDE_BOTH)], []),
         ) as resolve,
-        patch("custom_components.adjustable_bed.leggett_okin_services._resolve_sided_targets", new=resolve),
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets", new=resolve),
     ):
         yield coordinator, controller, resolve
 
@@ -118,7 +121,8 @@ async def test_profile_constraints_are_preflighted_before_any_device_write(
     useries.bed_type = BED_TYPE_LEGGETT_OKIN
     useries.entry = SimpleNamespace(data={})
     useries.controller_side = None
-    useries.capability_controller = SimpleNamespace(
+    useries.capability_controller = MagicMock(
+        spec=LeggettOkinController,
         supports_sleep_timer=True,
         sleep_timer_memory_options=(0, 1, 2, 3),
         sleep_timer_duration_options=(15, 30, 45, 60, 75, 90),
@@ -253,7 +257,8 @@ async def test_capability_and_protocol_are_required(
         await hass.services.async_call(DOMAIN, service, {"device_id": "bed", **data}, blocking=True)
     setattr(controller, capability, True)
     coordinator.bed_type = BED_TYPE_LINAK
-    with pytest.raises(ServiceValidationError, match="not a Leggett Okin controller"):
+    coordinator.capability_controller = MagicMock(spec=BedController)
+    with pytest.raises(ServiceValidationError, match="does not support Leggett"):
         await hass.services.async_call(DOMAIN, service, {"device_id": "bed", **data}, blocking=True)
     coordinator.async_execute_controller_command.assert_not_awaited()
 
@@ -311,7 +316,9 @@ async def test_other_legacy_variants_reject_before_dispatch(
     coordinator, _, _ = service_target
     coordinator.bed_type = BED_TYPE_LEGGETT_PLATT
     coordinator.entry.data = {CONF_PROTOCOL_VARIANT: variant}
-    with pytest.raises(ServiceValidationError, match="not a Leggett Okin controller"):
+    # Other routes build other controllers, which lack the Okin timers.
+    coordinator.capability_controller = MagicMock(spec=BedController)
+    with pytest.raises(ServiceValidationError, match="does not support Leggett"):
         await hass.services.async_call(
             DOMAIN,
             SERVICE_LEGGETT_SLEEP_TIMER,

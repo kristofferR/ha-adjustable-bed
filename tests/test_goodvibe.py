@@ -54,10 +54,10 @@ async def test_all_profile_factory_and_setup_contracts(hass, coordinator):
         hidden_generic_fields,
         per_side_profile,
     )
+    from custom_components.adjustable_bed.bed_traits import disconnect_after_command_default_enabled
     from custom_components.adjustable_bed.const import (
         BED_TYPE_GOODVIBE,
         CONF_MOTOR_COUNT,
-        disconnect_after_command_default_enabled,
     )
     from custom_components.adjustable_bed.controller_factory import create_controller
     from custom_components.adjustable_bed.detection import (
@@ -236,7 +236,6 @@ async def test_buttons_expose_only_exact_product_actions(coordinator):
     }
     assert not obj.supports_motor_control
     assert obj.memory_slot_count == 0
-    assert obj.supports_goodvibe
     with pytest.raises(ValueError):
         await obj.press("not-this-product", 1000)
 

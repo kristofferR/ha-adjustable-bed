@@ -19,10 +19,14 @@ from homeassistant.util import dt as dt_util
 
 from ..codec import jiecang as codec
 from ..const import (
+    BED_TYPE_LOGICDATA_APP,
+    CONF_HAS_LIGHT,
+    CONF_HAS_MASSAGE,
     CONF_LOGICDATA_APP_FAMILY,
     CONF_LOGICDATA_APP_LAYOUT,
     CONF_LOGICDATA_APP_PROFILE,
     CONF_LOGICDATA_APP_TRANSPORT,
+    HAS_LIGHT_DEFAULTS,
 )
 from ..controller_state import StateKey, StateUpdate
 from ..profiles import logicdata as profiles
@@ -45,6 +49,7 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -174,10 +179,6 @@ class LogicdataAppController(BedController):
         return self.profile.factory_reset
 
     @property
-    def prunes_stale_massage_numbers(self) -> bool:
-        return True
-
-    @property
     def supports_massage(self) -> bool:
         return self._has_massage
 
@@ -255,24 +256,8 @@ class LogicdataAppController(BedController):
         )
 
     @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return profiles.ALL_AXES - set(self._axes)
-
-    @property
     def _reports_massage_mode(self) -> bool:
         return self.profile.massage_mode_reply and self.supports_massage
-
-    @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        stale = set()
-        if not self.supports_clock_alarm:
-            stale.add("logicdata_app_alarm")
-        if not self.profile.family_reply:
-            # Sleep Smart never sends the MOTIONrelax family selector.
-            stale.add("logicdata_app_family_match")
-        if not self._reports_massage_mode:
-            stale.add("logicdata_app_massage_mode")
-        return frozenset(stale)
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
@@ -301,10 +286,6 @@ class LogicdataAppController(BedController):
                 icon="mdi:lightbulb",
             ),
         )
-
-    @property
-    def stale_controller_state_binary_sensor_entity_keys(self) -> frozenset[str]:
-        return frozenset() if self.supports_lights else frozenset({"under_bed_lights"})
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
@@ -913,3 +894,17 @@ def require_app_transport(client: BleakClient, data: Mapping[str, Any]) -> None:
         controller._select_transport(client)  # noqa: SLF001 - the controller's own selection
     except ValueError as err:
         raise ConnectionError(str(err)) from err
+
+
+async def build_controller(ctx: BuildContext) -> LogicdataAppController:
+    """Build the controller for the stored app profile."""
+    data = ctx.data
+    return LogicdataAppController(
+        ctx.coordinator,
+        profile=data[CONF_LOGICDATA_APP_PROFILE],
+        command_family=data[CONF_LOGICDATA_APP_FAMILY],
+        layout=data[CONF_LOGICDATA_APP_LAYOUT],
+        transport=data.get(CONF_LOGICDATA_APP_TRANSPORT, "auto"),
+        has_light=data.get(CONF_HAS_LIGHT, HAS_LIGHT_DEFAULTS[BED_TYPE_LOGICDATA_APP]),
+        has_massage=data.get(CONF_HAS_MASSAGE, False),
+    )
