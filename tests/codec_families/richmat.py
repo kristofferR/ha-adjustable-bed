@@ -45,6 +45,7 @@ FAMILY = CodecFamily(
     profiles={RichmatProfile: FROZEN_FRAMES},
     bed_types=frozenset(
         {
+            "bailey_bed_control",
             "bedtech",
             "eshine",
             "goodvibe",
@@ -52,12 +53,16 @@ FAMILY = CodecFamily(
             "leggett_lp_legacy",
             "leggett_wilinke",
             "richmat",
+            "richmat_americanstar",
             "richmat_best_mattress",
             "richmat_blvd_home",
             "richmat_classic_apps",
             "richmat_harmony",
             "richmat_idealbed",
             "richmat_revive",
+            "richmat_tx",
+            "ruf_betten",
+            "wsilver_products",
         }
     ),
     guide=CodecGuide(

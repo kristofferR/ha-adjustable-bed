@@ -753,3 +753,23 @@ See the [protocol guide](beds/richmat.md#classic-richmat-apps) for the frames.
 ### Hush Base
 
 Use `adjustable_bed.hush_base` for Hush bed and independent sleep-module configuration. The [Hush guide](beds/hush-base.md#configuration-actions) lists the finite operations, profile gates, packet formats and sensor partition domains.
+
+### Richmat app mattress and calendar alarms
+
+`adjustable_bed.richmat_app_alarm` supports the explicit W.Silver Products,
+AMERICANSTAR (Richmat), Bailey and TX profiles, subject to their model gates.
+See [the app guide](beds/ruf-richmat-apps.md#alarms) for the supported families.
+
+- `device_id`: one or more beds; `side` optionally targets a paired-bed side.
+- `family`: `mattress` or `calendar`.
+- `time`: local alarm time; `enabled`: whether to enable it.
+- Mattress: `mattress_side` (`left`/`right`), `repeat` (`once`/`daily`), `intensity` (1–3).
+  Requires the explicit normal-mattress variant and a fresh powered initialization.
+- Calendar: `slot` (1–7), `mode` (decimal opcode from the model's alarm position list),
+  `weekdays` (Monday 0 through Sunday 6, empty for once). `delete: true` deletes the slot;
+  `enabled: false` retains a disabled record. A received record's bed number is preserved.
+
+All selected targets are validated before any writes. Existing
+`richmat_mh_alarm`, `richmat_mh_waist_alarm`, `richmat_mh_aroma` and
+`richmat_mh_light_color` actions also work for the model/reply-gated features
+of these app profiles. RUF exposes only its waist alarm among those actions.

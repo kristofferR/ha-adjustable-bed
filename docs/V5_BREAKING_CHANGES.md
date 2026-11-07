@@ -112,7 +112,7 @@ bed's own settings come last. Rows that left the top-level list keep their bed
 type and ID, so every saved entry still loads unchanged. **Setup and
 Configure** under [Behavior Changes](#behavior-changes) describes each change.
 
-v5 includes every bed type in 4.4.0. Good Vibe Sleep and the eShine E2000,
+v5 includes every bed type in 4.4.2. Good Vibe Sleep and the eShine E2000,
 E3000/E3100 and E5000 app arrived through
 [#816](https://github.com/kristofferR/ha-adjustable-bed/pull/816), and every
 scripted command on them sends the same bytes as on `main`. The classic Richmat
@@ -127,7 +127,11 @@ same way: MotoMotion's exact Bluetooth name is asked on the profile setup step,
 and the PowerLayer uses the generic setup form. Hush Base
 ([#906](https://github.com/kristofferR/ha-adjustable-bed/pull/906)) arrived in
 4.4.0: the app is one row of the app list, and its product is asked on the
-profile setup step.
+profile setup step. The RUF | Betten Motor 2, W.Silver Products,
+AMERICANSTAR, Bailey's Bed Control and TX apps and their separate sleep receiver
+([#928](https://github.com/kristofferR/ha-adjustable-bed/pull/928)) arrived on
+`main` after 4.4.2: each app is an answer of the Richmat row, and its model is
+asked on the profile setup step.
 
 ### Removed Massage Buttons
 

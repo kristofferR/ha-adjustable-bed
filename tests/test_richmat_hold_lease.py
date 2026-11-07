@@ -59,7 +59,7 @@ def test_only_the_stream_rows_declare_a_hold() -> None:
         if profile.execution.hold == "stream"
     }
     assert profiles.BEDTECH.key not in declared
-    assert len(declared) == 11
+    assert len(declared) == 16
 
 
 async def _timed_move(controller: Any) -> None:

@@ -505,6 +505,18 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
 # are NOT included here - they're only kept for backward compatibility with
 # existing config entries. New users should select the protocol-based equivalents.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
+    # v5 names the row061 apps like the other Richmat MH apps.
+    **{
+        bed_type: f"{name} app (Richmat)"
+        for bed_type, name in (
+            ("ruf_betten", "RUF | Betten (Motor 2)"),
+            ("wsilver_products", "W.Silver Products"),
+            ("richmat_americanstar", "AMERICANSTAR"),
+            ("bailey_bed_control", "Bailey's Bed Control"),
+            ("richmat_tx", "TX"),
+        )
+    },
+    "richmat_sleep_receiver": "W.Silver / AMERICANSTAR / Bailey / TX sleep receiver (HJ_Bed)",
     "gmmotor": "GM Control (exact app product)",
     "gmmotor_sleep_mm": "GM Control sleep module (MM)",
     "gmmotor_sleep_sxb": "GM Control sleep module (SXB)",
@@ -653,6 +665,9 @@ def is_jensen_linon_name(name: str | None) -> bool:
 # users find them by app name. A bed type's own entry names the app its auto
 # variant selects; see AGENTS.md "Adding a New Bed Type".
 APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
+    **{("richmat_sleep_receiver", app): f"{label} separate sleep receiver"
+       for app, label in (("wsilver2", "W.Silver Products"), ("americanstar", "AMERICANSTAR"),
+                          ("bailey2", "Bailey's Bed Control"), ("tx", "TX"))},
     **{(BED_TYPE_GOODVIBE, profile): f"Good Vibe Sleep ({label})" for profile, label in GOODVIBE_PROFILES.items()},
     **{(BED_TYPE_ESHINE_OKIN, profile): f"eShine app ({label})" for profile, label in ESHINE_OKIN_PROFILES.items()},
     **{(BED_TYPE_CLUSTER018, app): label for app, label in CLUSTER018_APPS.items()},
@@ -791,9 +806,10 @@ FAMILY_ROWS: Final[dict[str, tuple[str, str]]] = {
     BED_TYPE_RICHMAT: (
         "Richmat",
         (
-            "RMControl, Revive Control, Best Mattress, Blvd Home, HARMONY, Idealbed, Avocado Eco "
-            "Base, CoasterSleep, Forty Winks, Milemont, Superior, SleepFunction and SVEN & SON "
-            "apps, and Richmat remotes"
+            "RMControl, Revive Control, Best Mattress, Blvd Home, HARMONY, Idealbed, "
+            "RUF | Betten (Motor 2), W.Silver Products, AMERICANSTAR, Bailey's Bed Control, TX, "
+            "Avocado Eco Base, CoasterSleep, Forty Winks, Milemont, Superior, SleepFunction and "
+            "SVEN & SON apps, and Richmat remotes"
         ),
     ),
     BED_TYPE_SLEEP_NUMBER: (
