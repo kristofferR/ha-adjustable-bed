@@ -328,7 +328,7 @@ async def test_zero_minute_pending_toggle_preserves_source_state_and_effective_t
     assert controller._timer_enabled and controller._timer_minutes == 0
     assert controller.protocol_diagnostics["pending_timer"] == {"enabled": True, "minutes": 0}
     assert timer.current_option == "Off"
-    assert controller.get_light_state()["light_timer_option"] == "Off"
+    assert controller._floor_light_intent()["light_timer_option"] == "Off"
     assert runtime.controller_state["vibradorm_app_floor_timer_enabled"] is False
     assert written(controller) == []
     await controller.set_light_level(6)

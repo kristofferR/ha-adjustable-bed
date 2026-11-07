@@ -14,7 +14,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
@@ -457,7 +457,3 @@ class JensenLinonController(BedController):
     async def set_light_level(self, level: int) -> None:
         """Not reachable in the Jensen LinOn profile."""
         raise NotImplementedError("Jensen LinOn beds have no light level control")
-
-    def get_light_state(self) -> dict[str, Any]:
-        """Return the light state this integration last sent."""
-        return {"is_on": self._light_on}

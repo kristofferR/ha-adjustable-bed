@@ -647,6 +647,12 @@ class LeggettOkinController(BedController):
             SLEEP_TIMER_INDICATOR(bool(display_mask & 0x8000)),
         )
 
+    def on_disconnect(self) -> None:
+        """Forget the light report of the dropped link."""
+        if self.supports_light_state_feedback and self._light_is_on is not None:
+            self._light_is_on = None
+            self.forward_controller_state_update(UNDER_BED_LIGHTS_ON, None)
+
     async def stop_notify(self) -> None:
         """Stop subscriptions and discard feedback, including on failed shutdown."""
         self._notify_callback = None
@@ -1062,10 +1068,6 @@ class LeggettOkinController(BedController):
             await self._send_release_frames(context, raise_on_error=completed)
 
     # Light methods
-    def get_light_state(self) -> dict[str, Any]:
-        """Return only feedback from this connection, never a persisted guess."""
-        return {"is_on": self._light_is_on}
-
     async def lights_toggle(self) -> None:
         """Toggle once, confirming the result when the initial state is known."""
         if self.supports_light_state_feedback and self._light_is_on is not None:

@@ -11,6 +11,7 @@ from custom_components.adjustable_bed.beds.logicdata.app import LogicdataAppCont
 from custom_components.adjustable_bed.codec import jiecang as codec
 from custom_components.adjustable_bed.profiles import logicdata as profiles
 from custom_components.adjustable_bed.profiles.logicdata import APP_PROFILES, PHONE
+from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
 from tests.state_helpers import published
 
 
@@ -262,7 +263,7 @@ def test_split_state_maps_raw_levels_and_keeps_light_contract(coordinator):
         bed._notification_handler(sender, bytearray(unknown))
     coordinator.handle_controller_state_updates.assert_not_called()
     bed._notification_handler(sender, bytearray.fromhex("aaaa06000400030040"))
-    assert bed.get_light_state() == {"is_on": True}
+    assert published(*coordinator.handle_controller_state_updates.call_args.args)[UNDER_BED_LIGHTS_ON] is True
     assert published(*coordinator.handle_controller_state_updates.call_args.args) == {
         "massage_head_intensity": 3,
         "massage_right_intensity": 2,
