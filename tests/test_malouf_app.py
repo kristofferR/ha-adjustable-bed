@@ -16,6 +16,7 @@ from custom_components.adjustable_bed.codec.malouf import (
     parse_notification,
 )
 from custom_components.adjustable_bed.profiles.malouf import APP_PROFILES, MALOUF_APP_MODELS
+from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
 from tests.state_helpers import published
 
 
@@ -518,7 +519,6 @@ async def test_notification_subscription_raw_forward_state_dedup_and_no_clock_on
         "massage_remaining_minutes": 20,
         "under_bed_lights_on": True,
     }
-    assert ctrl.get_light_state() == {"is_on": True}
     assert ctrl.controller_state_sensor_specs[0].state_key == "massage_remaining_minutes"
     await ctrl.stop_notify()
     ctrl.client.stop_notify.assert_awaited_once_with(sender.uuid)
@@ -532,7 +532,6 @@ async def test_custom_notifications_do_not_claim_light_feedback() -> None:
     assert ctrl._coordinator.handle_controller_state_updates.call_count == 1
     assert published(*ctrl._coordinator.handle_controller_state_updates.call_args.args) == {"massage_remaining_minutes": 20}
     assert not ctrl.supports_light_state_feedback
-    assert ctrl.get_light_state() == {}
 
 
 @pytest.mark.parametrize(
@@ -883,7 +882,8 @@ def test_legacy_light_boolean_matches_artifact_ui_nonzero_selection(
     data = bytearray(10)
     data[7] = light_byte
     ctrl._notification_handler(sender, data)
-    assert ctrl.get_light_state() == {"is_on": is_on}
+    published_state = published(*ctrl._coordinator.handle_controller_state_updates.call_args.args)
+    assert published_state[UNDER_BED_LIGHTS_ON] is is_on
     assert ctrl.protocol_diagnostics["underbed_light_status"] == raw
     assert (
         published(*ctrl._coordinator.handle_controller_state_updates.call_args.args)[

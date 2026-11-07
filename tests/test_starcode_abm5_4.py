@@ -22,6 +22,7 @@ from custom_components.adjustable_bed.beds.starcode.abm5_4_profiles import (
     parse_fields,
     scan_matches,
 )
+from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
 from tests.starcode_abm5_4_vectors import BUILDER_VECTORS, PARSER_VECTORS
 from tests.state_helpers import published
 
@@ -415,9 +416,9 @@ async def test_changed_U_callback_consumes_exact_fields_and_suppresses_duplicate
     role = c.client.services[0].characteristics[1]
     c._notification(c.client, 0, role, frame)
     assert c._massage_on and c._light_on and c._level == 2
-    assert c.get_light_state()["is_on"] is True
     assert len(pending) == 1
     values = published(*c._coordinator.handle_controller_state_updates.call_args.args)
+    assert values[UNDER_BED_LIGHTS_ON] is True
     assert values["starcode_abm5_4_massage_timer"] == "10"
     assert values["starcode_abm5_4_head_intensity"] == 0
     c._notification(c.client, 0, role, frame)

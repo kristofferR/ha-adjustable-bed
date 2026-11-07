@@ -1361,13 +1361,6 @@ class SleepysEliteAppController(BedController):
         enabled = self._app_fields.get("field_0x53")
         return enabled is True or (type(enabled) is int and enabled > 0)
 
-    def get_light_state(self) -> dict[str, int]:
-        return (
-            {"light_level": self._light_level}
-            if self.supports_lights and self._light_level_known
-            else {}
-        )
-
     async def lights_on(self) -> None:
         await self.send("turnonUnderbedLighting")
 

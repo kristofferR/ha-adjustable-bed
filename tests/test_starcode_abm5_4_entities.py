@@ -167,7 +167,7 @@ async def test_actual_entity_catalog_ranges_names_and_locked_dispatch(hass):
     assert {e.translation_key for e in covers} == {"back", "legs"}
     lights = _light_entities_for(hass, runtime)
     assert len(lights) == 1 and lights[0]._feedback_only
-    assert c.get_light_state()["is_on"] is None
+    assert not c._ui_state_observed
     sensors = _sensor_entities_for(hass, runtime)
     assert {s.translation_key for s in sensors} >= {
         "starcode_abm5_4_raw_b",

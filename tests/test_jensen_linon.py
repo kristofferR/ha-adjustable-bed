@@ -230,7 +230,6 @@ class TestJensenLinonLights:
 
         target = (SVANE_LIGHT_SERVICE_UUID, SVANE_LIGHT_ON_OFF_UUID)
         assert written(controller) == [(*target, "010000"), (*target, "000000"), (*target, "010000")]
-        assert controller.get_light_state() == {"is_on": True}
         assert published(*controller._coordinator.handle_controller_state_updates.call_args.args) == {"under_bed_lights_on": True}
 
     def test_light_frame_builder(self) -> None:
