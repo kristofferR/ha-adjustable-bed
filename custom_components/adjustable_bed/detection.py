@@ -259,7 +259,7 @@ from .const import (
 )
 from .fsm_relax_discovery import matches_fsm_relax_candidate
 from .kaidi_protocol import extract_kaidi_advertisement, is_floyd_advertisement
-from .row061_profiles import DISPLAY_NAMES as ROW061_DISPLAY_NAMES
+from .ruf_richmat_profiles import DISPLAY_NAMES as RUF_RICHMAT_DISPLAY_NAMES
 from .svane_state import is_svane_discovery_name
 
 _LOGGER = logging.getLogger(__name__)
@@ -583,7 +583,7 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
 # are NOT included here - they're only kept for backward compatibility with
 # existing config entries. New users should select the protocol-based equivalents.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
-    **ROW061_DISPLAY_NAMES,
+    **RUF_RICHMAT_DISPLAY_NAMES,
     "richmat_sleep_receiver": "W.Silver / AMERICANSTAR / Bailey / TX sleep receiver (HJ_Bed)",
     "gmmotor": "GM Control (exact app product)",
     "gmmotor_sleep_mm": "GM Control sleep module (MM)",

@@ -661,10 +661,10 @@ async def create_controller(
         return ReverieController(coordinator, model=protocol_variant)
 
     if bed_type == "richmat_sleep_receiver":
-        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.row061_sleep", __package__)
-        from .beds.row061_sleep import Row061SleepController
+        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.ruf_richmat_sleep", __package__)
+        from .beds.ruf_richmat_sleep import RufRichmatSleepController
 
-        return Row061SleepController(coordinator, app=protocol_variant or "")
+        return RufRichmatSleepController(coordinator, app=protocol_variant or "")
 
     if bed_type in RICHMAT_MH_APPS:
         # The app's name rule picks the model unless the variant fixes it;
@@ -673,18 +673,18 @@ async def create_controller(
             import_module, ".beds.richmat_mh", __package__
         )
         from .beds.richmat_mh import RichmatMhController
-        from .row061_profiles import APPS as row061_apps
+        from .ruf_richmat_profiles import APPS as ruf_richmat_apps
 
         controller_class = RichmatMhController
-        if bed_type in row061_apps:
+        if bed_type in ruf_richmat_apps:
             await coordinator.hass.async_add_import_executor_job(
-                import_module, ".beds.row061", __package__
+                import_module, ".beds.ruf_richmat", __package__
             )
-            from .beds.row061 import Row061Controller
-            from .row061_profiles import profiles
+            from .beds.ruf_richmat import RufRichmatController
+            from .ruf_richmat_profiles import profiles
 
-            await coordinator.hass.async_add_executor_job(profiles, row061_apps[bed_type])
-            controller_class = Row061Controller
+            await coordinator.hass.async_add_executor_job(profiles, ruf_richmat_apps[bed_type])
+            controller_class = RufRichmatController
         return controller_class(
             coordinator,
             app=RICHMAT_MH_APPS[bed_type],

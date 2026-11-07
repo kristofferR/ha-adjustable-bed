@@ -3563,17 +3563,14 @@
       "hjbed_sofa_travel_right": {
         "name": "Right Sofa travel"
       },
-      "row061_mattress_left_pillow": {
+      "ruf_richmat_mattress_left_pillow": {
         "name": "Left mattress pillow"
       },
-      "row061_mattress_right_pillow": {
+      "ruf_richmat_mattress_right_pillow": {
         "name": "Right mattress pillow"
       },
-      "row061_lift": {
+      "ruf_richmat_lift": {
         "name": "Lift"
-      },
-      "row061_115": {
-        "name": "115"
       }
     },
     "sensor": {
@@ -4942,43 +4939,43 @@
       "hush_sleep_settings": {
         "name": "Hush sleep settings"
       },
-      "row061_mattress_left_alarm": {
+      "ruf_richmat_mattress_left_alarm": {
         "name": "Left mattress alarm"
       },
-      "row061_sleep_left_heart_rate": {
+      "ruf_richmat_sleep_left_heart_rate": {
         "name": "Left heart rate"
       },
-      "row061_sleep_left_breathing_rate": {
+      "ruf_richmat_sleep_left_breathing_rate": {
         "name": "Left breathing rate"
       },
-      "row061_sleep_left_occupancy": {
+      "ruf_richmat_sleep_left_occupancy": {
         "name": "Left occupancy"
       },
-      "row061_sleep_left_movement": {
+      "ruf_richmat_sleep_left_movement": {
         "name": "Left movement"
       },
-      "row061_mattress_right_alarm": {
+      "ruf_richmat_mattress_right_alarm": {
         "name": "Right mattress alarm"
       },
-      "row061_sleep_right_heart_rate": {
+      "ruf_richmat_sleep_right_heart_rate": {
         "name": "Right heart rate"
       },
-      "row061_sleep_right_breathing_rate": {
+      "ruf_richmat_sleep_right_breathing_rate": {
         "name": "Right breathing rate"
       },
-      "row061_sleep_right_occupancy": {
+      "ruf_richmat_sleep_right_occupancy": {
         "name": "Right occupancy"
       },
-      "row061_sleep_right_movement": {
+      "ruf_richmat_sleep_right_movement": {
         "name": "Right movement"
       },
-      "row061_calendar_alarms": {
+      "ruf_richmat_calendar_alarms": {
         "name": "Calendar alarms"
       },
-      "row061_sleep_attributes": {
+      "ruf_richmat_sleep_attributes": {
         "name": "Sleep receiver firmware"
       },
-      "row061_music_status": {
+      "ruf_richmat_music_status": {
         "name": "Bed audio status"
       }
     },
@@ -6198,7 +6195,7 @@
           "lay": "Lay"
         }
       },
-      "row061_mattress_left_pressure": {
+      "ruf_richmat_mattress_left_pressure": {
         "name": "Left mattress pressure",
         "state": {
           "low": "Low",
@@ -6206,7 +6203,7 @@
           "high": "High"
         }
       },
-      "row061_mattress_left_heat_level": {
+      "ruf_richmat_mattress_left_heat_level": {
         "name": "Left mattress heat level",
         "state": {
           "off": "Off",
@@ -6215,7 +6212,7 @@
           "high": "High"
         }
       },
-      "row061_mattress_left_heat_duration": {
+      "ruf_richmat_mattress_left_heat_duration": {
         "name": "Left mattress heat duration",
         "state": {
           "2_hours": "2 hours",
@@ -6224,7 +6221,7 @@
           "8_hours": "8 hours"
         }
       },
-      "row061_mattress_left_heat_area": {
+      "ruf_richmat_mattress_left_heat_area": {
         "name": "Left mattress heat area",
         "state": {
           "off": "Off",
@@ -6233,7 +6230,7 @@
           "both": "Both"
         }
       },
-      "row061_mattress_left_mode": {
+      "ruf_richmat_mattress_left_mode": {
         "name": "Left mattress mode",
         "state": {
           "off": "Off",
@@ -6243,7 +6240,7 @@
           "leg": "Leg"
         }
       },
-      "row061_mattress_left_pillow_duration": {
+      "ruf_richmat_mattress_left_pillow_duration": {
         "name": "Left mattress pillow duration",
         "state": {
           "20_minutes": "20 minutes",
@@ -6251,7 +6248,7 @@
           "60_minutes": "60 minutes"
         }
       },
-      "row061_mattress_left_sleep_duration": {
+      "ruf_richmat_mattress_left_sleep_duration": {
         "name": "Left mattress sleep duration",
         "state": {
           "15_minutes": "15 minutes",
@@ -6259,7 +6256,7 @@
           "30_minutes": "30 minutes"
         }
       },
-      "row061_mattress_right_pressure": {
+      "ruf_richmat_mattress_right_pressure": {
         "name": "Right mattress pressure",
         "state": {
           "low": "Low",
@@ -6267,7 +6264,7 @@
           "high": "High"
         }
       },
-      "row061_mattress_right_heat_level": {
+      "ruf_richmat_mattress_right_heat_level": {
         "name": "Right mattress heat level",
         "state": {
           "off": "Off",
@@ -6276,7 +6273,7 @@
           "high": "High"
         }
       },
-      "row061_mattress_right_heat_duration": {
+      "ruf_richmat_mattress_right_heat_duration": {
         "name": "Right mattress heat duration",
         "state": {
           "2_hours": "2 hours",
@@ -6285,7 +6282,7 @@
           "8_hours": "8 hours"
         }
       },
-      "row061_mattress_right_heat_area": {
+      "ruf_richmat_mattress_right_heat_area": {
         "name": "Right mattress heat area",
         "state": {
           "off": "Off",
@@ -6294,7 +6291,7 @@
           "both": "Both"
         }
       },
-      "row061_mattress_right_mode": {
+      "ruf_richmat_mattress_right_mode": {
         "name": "Right mattress mode",
         "state": {
           "off": "Off",
@@ -6304,7 +6301,7 @@
           "leg": "Leg"
         }
       },
-      "row061_mattress_right_pillow_duration": {
+      "ruf_richmat_mattress_right_pillow_duration": {
         "name": "Right mattress pillow duration",
         "state": {
           "20_minutes": "20 minutes",
@@ -6312,7 +6309,7 @@
           "60_minutes": "60 minutes"
         }
       },
-      "row061_mattress_right_sleep_duration": {
+      "ruf_richmat_mattress_right_sleep_duration": {
         "name": "Right mattress sleep duration",
         "state": {
           "15_minutes": "15 minutes",
@@ -6320,21 +6317,21 @@
           "30_minutes": "30 minutes"
         }
       },
-      "row061_sleep_mode": {
+      "ruf_richmat_sleep_mode": {
         "name": "Mode",
         "state": {
           "single": "Single",
           "double": "Double"
         }
       },
-      "row061_sleep_left_intervention": {
+      "ruf_richmat_sleep_left_intervention": {
         "name": "Left intervention",
         "state": {
           "off": "Off",
           "on": "On"
         }
       },
-      "row061_sleep_right_intervention": {
+      "ruf_richmat_sleep_right_intervention": {
         "name": "Right intervention",
         "state": {
           "off": "Off",
