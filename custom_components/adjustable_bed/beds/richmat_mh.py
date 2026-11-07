@@ -65,12 +65,12 @@ from .richmat_mh_protocol import (
     RX_AROMA,
     RX_CALLBACK_PREFIX,
     RX_LED,
+    RX_MATTRESS,
     RX_SNORE_PREFIX,
+    RX_SPEECH,
     SMART_SET_LOCK_CODE,
     STOP_DELAY_S,
     TX_ALARM_CANCEL,
-    TX_MATTRESS,
-    TX_SPEECH,
     TX_START_DETECTION,
     TX_STOP_DETECTION,
     TX_VERSION,
@@ -97,7 +97,6 @@ from .richmat_mh_protocol import (
     motor_mode_frame,
     parse_waist_init,
     parse_waist_piece,
-    query_frame,
     rgb_frame,
     snore_frame,
     stop_frame,
@@ -1072,7 +1071,7 @@ class RichmatMhController(BedController):
             )
             await self._write_sequence(frames, MULTI_ALARM_SLEEP_S)
         elif action is None:
-            await self._write_sequence(tuple(query_frame(t) for t in TX_ALARM_CANCEL), ALARM_TASK_SLEEP_S)
+            await self._write_sequence(TX_ALARM_CANCEL, ALARM_TASK_SLEEP_S)
         else:
             await self._write_sequence(alarm_frames(minutes, action), ALARM_TASK_SLEEP_S)
 
@@ -1264,8 +1263,8 @@ class RichmatMhController(BedController):
             tasks = INIT_VER1 if pending.version == VER1 else INIT_VER0
             self._classifier.rx_type = "INIT"
             clock_sent = False
-            for hex_text in tasks:
-                await self._write_query(hex_text)
+            for frame in tasks:
+                await self._write_query(frame)
                 await asyncio.sleep(INIT_TASK_SLEEP_S)
                 if not clock_sent and self._pending_alarm_call_page(pending):
                     # AlarmCallFrag sends the phone clock when its page is created,
@@ -1301,8 +1300,8 @@ class RichmatMhController(BedController):
         for frame in clock_frames(now.hour, now.minute, now.second):
             await self.write_command(frame, cancel_event=asyncio.Event())
 
-    async def _write_query(self, hex_text: str) -> None:
-        await self.write_command(query_frame(hex_text), cancel_event=asyncio.Event())
+    async def _write_query(self, frame: bytes) -> None:
+        await self.write_command(frame, cancel_event=asyncio.Event())
 
     def _persist_snapshot(self) -> None:
         snapshot = self.capability_snapshot()
@@ -1392,9 +1391,9 @@ class RichmatMhController(BedController):
             dev["led"] = True
         elif rx == RX_AROMA:
             dev["aroma"] = True
-        elif rx == TX_MATTRESS:
+        elif rx == RX_MATTRESS:
             dev["mattress"] = True
-        elif rx == TX_SPEECH:
+        elif rx == RX_SPEECH:
             dev["speech"] = True
         elif session.version != VER1 and rx.startswith(RX_SNORE_PREFIX):
             dev["snore"] = True
@@ -1624,10 +1623,10 @@ class RichmatMhController(BedController):
     async def stop_detection(self) -> None:
         await self._detection_command(TX_STOP_DETECTION)
 
-    async def _detection_command(self, hex_text: str) -> None:
+    async def _detection_command(self, frame: bytes) -> None:
         if not self._detection_page():
             raise NotImplementedError("The bed has not reported a detection page")
-        await self._write_query(hex_text)
+        await self._write_query(frame)
 
     async def _move_group(self, keys: tuple[str, ...], direction: Literal["up", "down"]) -> None:
         key = next((k for k in keys if any(a.key == k for a in self._axes())), keys[0])

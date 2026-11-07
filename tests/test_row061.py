@@ -203,7 +203,7 @@ async def test_initialization_is_app_and_version_specific(
 
     async def query(raw):
         await original(raw)
-        if raw == "6e9a000008":
+        if raw.hex() == "6e9a000008":
             c._apply(Event("version", version))
 
     c._write_query = query

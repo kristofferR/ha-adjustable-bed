@@ -6,6 +6,7 @@ import asyncio
 import re
 from typing import TYPE_CHECKING
 
+from ..codec import richmat as codec
 from ..row061_profiles import Field, fields, profiles
 from ..row061_protocol import AlarmRequest
 from .base import (
@@ -32,8 +33,10 @@ from .richmat_mh_protocol import (
     MOTOR_MODE_BITS,
     RX_ALARM,
     RX_ALARM_MULTI,
+    TX_ALARM,
     TX_DETECTION,
     TX_EXIT_ONE_MIN,
+    TX_MOTOR_ANGLES,
     TX_MOTOR_MODE,
     TX_QUERY_MASSAGE,
     TX_VERSION,
@@ -45,23 +48,22 @@ from .richmat_mh_protocol import (
     massage_intensity_frame,
     mattress_frame,
     motor_mode_frame,
-    query_frame,
 )
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 VER2 = "0002"
-MUSIC_QUERY = "6e15010185"
+MUSIC_QUERY = codec.function(1, action="deviceFunctionItemCheckMusic")
 INIT_VER2 = (
     TX_MOTOR_MODE,
-    "6e9a300139",
+    TX_MOTOR_ANGLES[0],
     TX_QUERY_MASSAGE,
-    "6e08010178",
-    "6e2008010300009a",
-    "6e2008010500009c",
-    "6e20080b020000a3",
-    "6e20080201000099",
+    TX_ALARM,
+    codec.record_20_len(1, 3, 0, (0,)),
+    codec.record_20_len(1, 5, 0, (0,)),
+    codec.record_20_len(0x0B, 2, 0, (0,)),
+    codec.record_20_len(2, 1, 0, (0,)),
 )
 
 
@@ -456,8 +458,8 @@ class Row061Controller(RichmatMhController):
                 tasks, delay = (TX_EXIT_ONE_MIN, TX_DETECTION), 0.3
             else:
                 tasks, delay = INIT_VER0 + (() if self._app == "tx" else (MUSIC_QUERY,)), 0.3
-            for literal in tasks:
-                await self._write_query(literal)
+            for frame in tasks:
+                await self._write_query(frame)
                 await asyncio.sleep(delay)
         finally:
             if self._pending is pending:
@@ -586,7 +588,7 @@ class Row061Controller(RichmatMhController):
             raise ValueError("Angle is outside the selected model's reported range")
         await asyncio.sleep(0.1)
         frame = (
-            finalize([0x6E, 0x20, 0x0A, 1, 3, 1, bits, 0, abs(angle), 0])
+            codec.record_20_len(1, 3, 1, bytes((bits, 0, abs(angle))))
             if self.route == "D"
             else angle_frame(bits, angle)
         )
@@ -598,7 +600,7 @@ class Row061Controller(RichmatMhController):
         name = {"left": "LEFT", "right": "RIGHT"}.get(option, option.capitalize())
         bits = MOTOR_MODE_BITS[name]
         frame = (
-            finalize([0x6E, 0x20, 9, 0x0B, 2, 1, 0, bits - 1, 0])
+            codec.record_20_len(0x0B, 2, 1, bytes((0, bits - 1)))
             if self.route == "D"
             else motor_mode_frame(bits)
         )
@@ -612,7 +614,7 @@ class Row061Controller(RichmatMhController):
             raise ValueError("Intensity is outside the selected model's range")
         values = {**self._intensity, zone: value}
         frame = (
-            finalize([0x6E, 0x20, 9, 2, 1, 1, 1 if zone == "head" else 2, value, 0])
+            codec.record_20_len(2, 1, 1, bytes((1 if zone == "head" else 2, value)))
             if self.route == "D"
             else massage_intensity_frame(values["head"], values["foot"])
         )
@@ -798,7 +800,7 @@ class Row061Controller(RichmatMhController):
         self.validate_row061_alarm(request)
         now = dt_util.now()
         if request.family == "calendar":
-            await self.write_command(query_frame("6e2008050100009c"))
+            await self.write_command(codec.record_20_len(5, 1, 0, (0,)))
             for frame in calendar_clock(now):
                 await asyncio.sleep(0.2)
                 await self.write_command(frame)
@@ -814,7 +816,7 @@ class Row061Controller(RichmatMhController):
             # Rebuild the list from readback so absent slots do not survive a deletion.
             self._calendar_alarms.clear()
             self._publish_calendar_alarms()
-            await self.write_command(query_frame("6e2008050100009c"))
+            await self.write_command(codec.record_20_len(5, 1, 0, (0,)))
 
     async def write_light_timer(self, seconds: int, shown: int) -> None:
         await super().write_light_timer(seconds, shown)

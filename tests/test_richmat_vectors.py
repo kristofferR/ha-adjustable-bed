@@ -69,8 +69,8 @@ def _fixed_census(profile: profiles.RichmatProfile) -> set[str]:
 
 # Row061 session frames beyond the MH queries: the VER2 init, the music query
 # and the calendar alarm query, per app as Row061Controller sends them.
-_CALENDAR_QUERY = "6e2008050100009c"
-_ROW061_QUERIES: dict[str, set[str]] = {
+_CALENDAR_QUERY = bytes.fromhex("6e2008050100009c")
+_ROW061_QUERIES: dict[str, set[bytes]] = {
     "ruf": {*row061.INIT_VER2, row061.MUSIC_QUERY},
     "wsilver2": {row061.MUSIC_QUERY, _CALENDAR_QUERY},
     "americanstar": {*row061.INIT_VER2, row061.MUSIC_QUERY, _CALENDAR_QUERY},
@@ -95,7 +95,7 @@ def _mh_census(app: str) -> set[str]:
         codes |= {control.code for control in model.controls}
     return (
         {mh.stop_frame().hex()}
-        | {mh.query_frame(query).hex() for query in queries}
+        | {query.hex() for query in queries}
         | {mh.control_frame(code).hex() for code in codes}
     )
 
