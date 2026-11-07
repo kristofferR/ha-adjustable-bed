@@ -117,7 +117,6 @@ class LogicdataAppController(BedController):
         self._notify_roles: tuple[TransportChoice, ...] = ()
         self._name_roles: frozenset[TransportChoice] = frozenset()
         self._family_matches: bool | None = None
-        self._light_state: dict[str, bool] = {}
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -588,11 +587,6 @@ class LogicdataAppController(BedController):
         zones: dict[str, MassageZone] = {"head": "back", "foot": "legs", "right": "right"}
         await self.write_command(profiles.massage_command(zones[zone], level))
 
-    def get_light_state(self) -> dict[str, bool]:
-        if "under_bed_lights_on" not in self._light_state:
-            return {}
-        return {"is_on": self._light_state["under_bed_lights_on"]}
-
     def validate_device_rename(self, name: str) -> None:
         self.profile.name_rule.encode(name)
 
@@ -750,7 +744,6 @@ class LogicdataAppController(BedController):
             self._family_matches = notification.middle == (self._family == "p2")
             updates.append(FAMILY_MATCH(self._family_matches))
         if notification.light_on is not None and self.supports_lights:
-            self._light_state["under_bed_lights_on"] = notification.light_on
             updates.append(UNDER_BED_LIGHTS_ON(notification.light_on))
         if self.supports_massage:
             for zone, raw_level in (

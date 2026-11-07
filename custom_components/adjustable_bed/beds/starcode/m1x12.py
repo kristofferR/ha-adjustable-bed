@@ -675,11 +675,7 @@ class StarcodeM1X12Controller(BedController):
             except BleakError, ConnectionError, asyncio.CancelledError:
                 _LOGGER.debug("Could not release M1X12 on session teardown", exc_info=True)
         self._ready = False
-        if self._state:
-            cleared = state_updates(dict.fromkeys(self._state))
-            self._state.clear()
-            self.forward_controller_state_updates(*cleared)
-        self._firmware = None
+        self.on_disconnect()
         try:
             if self._subscribed and client is not None and client.is_connected:
                 await client.stop_notify(NOTIFY)
@@ -1140,9 +1136,13 @@ class StarcodeM1X12Controller(BedController):
         light_on = self._state.get("light_on")
         return (UNDER_BED_LIGHTS_ON(light_on if isinstance(light_on, bool) else None),)
 
-    def get_light_state(self) -> dict[str, object]:
-        """Return the latest parsed light telemetry for the HA light entity."""
-        return {"is_on": self._state.get("light_on")}
+    def on_disconnect(self) -> None:
+        """Forget every status report and the firmware of the ended link."""
+        if self._state:
+            cleared = state_updates(dict.fromkeys(self._state))
+            self._state.clear()
+            self.forward_controller_state_updates(*cleared)
+        self._firmware = None
 
 
 class StarElevateM1X12Controller(StarElevateController):

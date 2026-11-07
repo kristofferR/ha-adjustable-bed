@@ -1470,15 +1470,6 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
             LIGHT_LEVEL(brightness),
         )
 
-    def get_light_state(self) -> dict[str, object]:
-        state: dict[str, object] = {}
-        if self._light_brightness is not None:
-            state["light_level"] = self._light_brightness
-            state["under_bed_lights_on"] = self._light_brightness > 0
-        if self._light_rgb is not None:
-            state["under_bed_lights_rgb"] = self._light_rgb
-        return state
-
     async def read_light_state(self) -> tuple[StateUpdate, ...]:
         """Read LED, RGB and massage state from their P1 characteristics."""
         if not self.model.nightlight and not self.model.massage:

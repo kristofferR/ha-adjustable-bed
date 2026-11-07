@@ -822,8 +822,11 @@ class MaloufAppController(BedController):
         if updates:
             self.forward_controller_state_updates(*updates)
 
-    def get_light_state(self) -> dict[str, object]:
-        return {} if self._light_status is None else {"is_on": bool(self._light_status)}
+    def on_disconnect(self) -> None:
+        """Forget the light report of the dropped link."""
+        if self.supports_light_state_feedback and self._light_status is not None:
+            self._light_status = None
+            self.forward_controller_state_update(UNDER_BED_LIGHTS_ON, None)
 
 
 def require_app_transport(
