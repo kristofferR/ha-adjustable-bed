@@ -745,9 +745,6 @@ class BfCherishController(BedController):
         )
         self._publish()
 
-    def get_massage_state(self) -> dict[str, Any]:
-        return {"timer_mode": self.state.timer_selected}
-
     def _publish(self) -> None:
         state = self.state
         self.forward_controller_state_updates(

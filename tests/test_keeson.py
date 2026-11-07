@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, call
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -2112,3 +2112,38 @@ class TestKsbtMemoryPresets:
 
         assert "Memory 4 not supported" in caplog.text
         mock_bleak_client.write_gatt_char.assert_not_called()
+
+
+def test_ergomotion_status_feeds_the_massage_sensors(
+    hass: HomeAssistant, mock_keeson_config_entry
+) -> None:
+    """Ergomotion status levels and timer reach the sensors; repeats publish nothing."""
+    from custom_components.adjustable_bed.sensor import (
+        MASSAGE_SENSOR_DESCRIPTIONS,
+        AdjustableBedMassageSensor,
+    )
+
+    coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+    controller = KeesonController(coordinator, variant="ergomotion")
+    head, foot, timer = (
+        AdjustableBedMassageSensor(coordinator, description)
+        for description in MASSAGE_SENSOR_DESCRIPTIONS
+    )
+    assert (head.native_value, foot.native_value, timer.native_value) == (None, None, None)
+    coordinator._controller = controller
+    # Connected before the first report: levels read zero, the timer unknown.
+    assert (head.native_value, foot.native_value, timer.native_value) == (0, 0, None)
+    status = bytearray(16)
+    status[0], status[5], status[6], status[14] = 0xED, 3, 5, 2
+    with patch.object(coordinator, "save_app_state"):
+        controller._parse_notification(bytes(status))
+        with patch.object(coordinator, "handle_controller_state_updates") as publish:
+            controller._parse_notification(bytes(status))
+        publish.assert_not_called()
+        assert (head.native_value, foot.native_value, timer.native_value) == (3, 5, "20")
+        status[14] = 0
+        controller._parse_notification(bytes(status))
+        assert timer.native_value is None
+    # Between connections the last report stays visible.
+    coordinator._controller = None
+    assert (head.native_value, foot.native_value) == (3, 5)

@@ -226,13 +226,6 @@ class ComfortMotionController(JiecangProfileController):
     def massage_intensity_zones(self) -> list[str]:
         return list(_MASSAGE_ZONES)
 
-    def get_massage_state(self) -> dict[str, object]:
-        levels = self.profile.massage_levels
-        return {
-            f"{zone}_intensity": levels.index(value) if value in levels else None
-            for zone, value in self._levels.items()
-        }
-
     async def set_massage_intensity(self, zone: str, level: int) -> None:
         if zone not in _MASSAGE_ZONES or level not in range(len(self.profile.massage_levels)):
             raise ValueError("Comfort Motion massage accepts head/foot levels 0..3")

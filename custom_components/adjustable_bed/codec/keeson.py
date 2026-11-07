@@ -246,7 +246,7 @@ class PositionStatus:
     head_moving: bool
     foot_moving: bool
     led_on: bool
-    timer_minutes: str | None
+    timer_minutes: int | None
 
 
 _STATUS_LENGTHS: Final = {0xED: 16, 0xF0: 19, 0xF1: 20}
@@ -269,5 +269,5 @@ def parse_position_status(data: bytes) -> PositionStatus | None:
         head_moving=moving != 0xF and bool(moving & 1),
         foot_moving=moving != 0xF and bool(moving & 2),
         led_on=bool(data[13] & 0x40),
-        timer_minutes=("10", "20", "30")[timer - 1] if 1 <= timer <= 3 else None,
+        timer_minutes=10 * timer if 1 <= timer <= 3 else None,
     )

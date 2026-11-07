@@ -34,7 +34,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import _create_from_registry
 from custom_components.adjustable_bed.detection import get_bed_type_options
-from tests.state_helpers import published
+from tests.state_helpers import state_writer
 
 NOW = datetime(2026, 11, 1, 7, 5, 9, tzinfo=UTC)  # Sunday
 
@@ -551,11 +551,12 @@ async def test_actual_cherish_timer_select_retains_commanded_selection_when_disc
 
     ctrl, owner, _ = make_controller(hass, True)
     runtime = configure_entity_runtime(hass, ctrl, BED_TYPE_CHERISH)
+    runtime.controller_state = {}
+    owner.handle_controller_state_updates.side_effect = state_writer(runtime.controller_state)
     select = AdjustableBedMassageTimerSelect(runtime, MASSAGE_TIMER_DESCRIPTION, [10, 20, 30])
     assert select.current_option == "Off"
     await ctrl.set_massage_timer(20)
     assert select.current_option == "20 min"
-    runtime.controller_state = published(*owner.handle_controller_state_updates.call_args.args)
     runtime.controller = None
     assert select.current_option == "20 min"
     runtime.controller = ctrl
@@ -565,7 +566,6 @@ async def test_actual_cherish_timer_select_retains_commanded_selection_when_disc
         await ctrl.massage_off()
     assert select.current_option == "Off"
     assert ctrl.state.timer == 20  # Off retains the next start's selection.
-    runtime.controller_state = published(*owner.handle_controller_state_updates.call_args.args)
     runtime.controller = None
     assert select.current_option == "Off"
 

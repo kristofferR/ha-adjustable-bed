@@ -3347,21 +3347,6 @@ class BedController(ABC):
         """Return False while the legacy wave massage zone cannot be driven."""
         return True
 
-    def get_massage_state(self) -> dict[str, Any]:
-        """Return current massage state for state feedback.
-
-        Returns a dict with current state info (keys vary by bed):
-        - head_intensity: int (0-10 or 0-6)
-        - foot_intensity: int
-        - wave_intensity: int
-        - timer_mode: str | None ("10", "20", "30")
-        - head_active: bool
-        - foot_active: bool
-
-        Override in subclasses with state tracking/feedback.
-        """
-        return {}
-
     def get_light_state(self) -> dict[str, Any]:
         """Return current light state for state feedback.
 

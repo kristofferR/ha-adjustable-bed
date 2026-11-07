@@ -81,6 +81,8 @@ class ComfortEnhancementsController(BedController):
         self._levels = dict.fromkeys(MASSAGE_BASE, 0)
         self._timer = 0
         self._notify_char: BleakGATTCharacteristic | None = None
+        # The timer is tracked from this session's commands only.
+        self.forward_controller_state_updates(MASSAGE_TIMER_MINUTES(0))
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -452,13 +454,6 @@ class ComfortEnhancementsController(BedController):
         if not self._coordinator.cancel_command.is_set():
             self._timer = minutes
             self.forward_controller_state_updates(MASSAGE_TIMER_MINUTES(minutes))
-
-    def get_massage_state(self) -> dict[str, int | str]:
-        return {
-            "timer_mode": str(self._timer),
-            "head_intensity": self._levels["head"],
-            "foot_intensity": self._levels["foot"],
-        }
 
     async def _timer_click(self) -> None:
         if self._levels["head"] or self._levels["foot"]:

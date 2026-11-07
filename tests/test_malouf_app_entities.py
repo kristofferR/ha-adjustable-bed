@@ -9,17 +9,21 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.button import _button_entities_for
+from custom_components.adjustable_bed.codec.malouf import TRANSPORTS
 from custom_components.adjustable_bed.const import (
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_MALOUF_APP,
     CONF_BED_TYPE,
     DOMAIN,
 )
+from custom_components.adjustable_bed.controller_state import ControllerState, StateUpdate
 from custom_components.adjustable_bed.cover import _cover_entities_for
 from custom_components.adjustable_bed.light import _light_entities_for
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
+from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
 
 from .conftest import make_controller_mock
+from .state_helpers import state_writer
 from .test_malouf_app import make_controller, written
 
 
@@ -146,6 +150,31 @@ async def test_feedback_light_entity_toggles_without_initial_state(
     assert [frame.hex() for frame in written(controller)] == expected
     assert light.is_on is None
     assert controller.get_light_state() == {}
+
+
+@pytest.mark.parametrize(("light_byte", "is_on"), [(0x40, True), (0, False)])
+async def test_light_entity_reflects_the_published_light_state(
+    hass: HomeAssistant, light_byte: int, is_on: bool
+) -> None:
+    controller = make_controller("okin_legacy", "S750")
+    coordinator = configure_entity_runtime(hass, controller)
+    light = _light_entities_for(hass, coordinator)[0]
+    light.async_write_ha_state = MagicMock()
+    state = ControllerState()
+
+    def publish(*updates: StateUpdate) -> None:
+        state_writer(state)(*updates)
+        light._handle_controller_state_update(state)
+
+    controller._coordinator.handle_controller_state_updates.side_effect = publish
+    data = bytearray(10)
+    data[7] = light_byte
+    controller._notification_handler(
+        MagicMock(uuid=TRANSPORTS["okin_legacy"].notify_characteristic), data
+    )
+
+    assert state[UNDER_BED_LIGHTS_ON] is is_on
+    assert light.is_on is is_on
 
 
 @pytest.mark.parametrize("destination", ["different_bed_type", "okin", "retain"])

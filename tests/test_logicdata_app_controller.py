@@ -262,9 +262,12 @@ def test_split_state_maps_raw_levels_and_keeps_light_contract(coordinator):
         bed._notification_handler(sender, bytearray(unknown))
     coordinator.handle_controller_state_updates.assert_not_called()
     bed._notification_handler(sender, bytearray.fromhex("aaaa06000400030040"))
-    assert bed.get_massage_state() == {"head_intensity": 3, "right_intensity": 2}
     assert bed.get_light_state() == {"is_on": True}
-    assert published(*coordinator.handle_controller_state_updates.call_args.args) == {"head_intensity": 3, "right_intensity": 2, "under_bed_lights_on": True}
+    assert published(*coordinator.handle_controller_state_updates.call_args.args) == {
+        "massage_head_intensity": 3,
+        "massage_right_intensity": 2,
+        "under_bed_lights_on": True,
+    }
 
 
 async def test_clock_response_uses_coordinator_and_tablet_has_no_writer(coordinator):

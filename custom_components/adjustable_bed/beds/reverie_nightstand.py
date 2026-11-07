@@ -42,7 +42,7 @@ from ..state_keys import (
     LIGHT_LEVEL,
     UNDER_BED_LIGHTS_ON,
     UNDER_BED_LIGHTS_RGB,
-    massage_zone_intensity,
+    massage_intensity,
 )
 from .base import (
     POSITION_UNIT_PERCENT,
@@ -77,9 +77,10 @@ STK_SIDE_NO_DATA_UUID = REVERIE_STK_SIDE_NO_DATA_UUID
 
 
 STK_SIDE: Final = StateKey[str | None]("reverie_stk_side")
-MASSAGE_HEAD_INTENSITY: Final = massage_zone_intensity("head")
-MASSAGE_FOOT_INTENSITY: Final = massage_zone_intensity("foot")
-MASSAGE_WAVE: Final = StateKey[int | None]("reverie_massage_wave")
+MASSAGE_HEAD_INTENSITY: Final = massage_intensity("head")
+MASSAGE_FOOT_INTENSITY: Final = massage_intensity("foot")
+# The full wave byte; the generic wave slider shows the same value.
+MASSAGE_WAVE: Final = massage_intensity("wave")
 STK_HEAD_WAVE: Final = StateKey[int | None]("reverie_stk_head_wave")
 STK_GLOBAL_MASSAGE: Final = StateKey[int | None]("reverie_stk_global_massage")
 BODY_TILT: Final = StateKey[float | None]("reverie_body_tilt")
@@ -151,6 +152,9 @@ class ReverieNightstandController(BedController):
         self._massage_head_level = 0
         self._massage_foot_level = 0
         self._massage_wave_level = 0
+        self.forward_controller_state_updates(
+            MASSAGE_HEAD_INTENSITY(0), MASSAGE_FOOT_INTENSITY(0), MASSAGE_WAVE(0)
+        )
         self._light_brightness: int | None = None
         self._last_nonzero_light_brightness: int | None = None
         self._light_rgb: tuple[int, int, int] | None = None
@@ -1538,13 +1542,6 @@ class ReverieNightstandController(BedController):
         self.forward_controller_state_updates(*state)
         return tuple(state)
 
-    def get_massage_state(self) -> dict[str, int]:
-        return {
-            "head_intensity": self._massage_head_level,
-            "foot_intensity": self._massage_foot_level,
-            "wave_intensity": self._massage_wave_level,
-        }
-
     # Massage methods
     async def massage_off(self) -> None:
         """Turn off massage."""
@@ -1614,7 +1611,7 @@ class ReverieNightstandController(BedController):
                 self._massage_head_level = level
             else:
                 self._massage_foot_level = level
-            self.forward_controller_state_update(massage_zone_intensity(zone), level)
+            self.forward_controller_state_update(massage_intensity(zone), level)
             return
         if zone == "wave":
             if self.model.tandem and self._stk_selected_side != "1":

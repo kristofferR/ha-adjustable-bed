@@ -44,6 +44,11 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.select import (
+    MASSAGE_TIMER_DESCRIPTION,
+    AdjustableBedMassageTimerSelect,
+)
+from custom_components.adjustable_bed.state_keys import MASSAGE_TIMER_MINUTES
 from custom_components.adjustable_bed.validators import get_variants_for_bed_type
 from tests.coordinator_patches import patch_coordinator_global
 
@@ -1083,7 +1088,7 @@ class TestSleepysBox25Controller:
 
         for operation in (controller.massage_off, lambda: controller.set_massage_timer(0)):
             controller._massage_active = True
-            controller._massage_timer_minutes = 20
+            coordinator.controller_state[MASSAGE_TIMER_MINUTES] = 20
             state_before = dict(coordinator.controller_state)
             with (
                 patch.object(
@@ -1095,8 +1100,7 @@ class TestSleepysBox25Controller:
             ):
                 await operation()
 
-            assert controller.get_massage_state()["active"] is True
-            assert controller.get_massage_state()["timer_mode"] == "20"
+            assert controller._massage_active is True
             assert coordinator.controller_state == state_before
 
     async def test_all_controls_use_oem_box25_star_frames(
@@ -1218,11 +1222,9 @@ class TestSleepysBox25Controller:
             bytes.fromhex("5A E0 04 07 02 00 00 A5"),
             bytes.fromhex("5A E0 04 00 06 00 00 A5"),
         ]
-        assert controller.get_massage_state() == {
-            "intensity": 7,
-            "timer_mode": "20",
-            "active": False,
-        }
+        assert coordinator.controller_state["massage_all_intensity"] == 7
+        assert coordinator.controller_state["massage_timer"] == 20
+        assert controller._massage_active is False
         assert coordinator.controller_state["light_level"] == 6
         assert coordinator.controller_state["under_bed_lights_on"] is True
 
@@ -1370,9 +1372,12 @@ class TestSleepysBox25Controller:
             bytearray.fromhex("A5 0B 0E 00 02 59 00 00 00 00 00 00 00 00 00 00"),
         )
 
-        assert controller.get_massage_state()["timer_mode"] == "20"
         assert coordinator.controller_state["massage_timer"] == 20
         assert coordinator.controller_state["massage_active"] is True
+        select = AdjustableBedMassageTimerSelect(
+            coordinator, MASSAGE_TIMER_DESCRIPTION, controller.massage_timer_options
+        )
+        assert select.current_option == "20 min"
 
     async def test_preset_arms_then_commits_with_starcode_terminator(
         self,

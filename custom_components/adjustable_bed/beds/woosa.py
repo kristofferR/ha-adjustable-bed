@@ -267,14 +267,6 @@ class WoosaController(SolaceController):
             LIGHT_DEADLINE(asyncio.get_running_loop().time() + duration),
         )
 
-    def get_massage_state(self) -> dict[str, int | str | bool]:
-        state = self._coordinator.controller_state
-        return {
-            "head_intensity": state.get(massage_intensity("head")) or 0,
-            "foot_intensity": state.get(massage_intensity("foot")) or 0,
-            "timer_mode": str(state.get(MASSAGE_TIMER_MINUTES) or 0),
-        }
-
     async def set_massage_intensity(self, zone: str, level: int) -> None:
         if zone not in {"head", "foot"} or not 0 <= level <= 3:
             raise ValueError("Woosa massage supports head/foot levels 0-3")

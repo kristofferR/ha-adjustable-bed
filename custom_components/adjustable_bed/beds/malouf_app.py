@@ -19,6 +19,7 @@ from ..codec import malouf as codec
 from ..codec.malouf import TRANSPORTS, TransportKey
 from ..controller_state import StateKey, StateUpdate
 from ..profiles.malouf import APP_PROFILES, MALOUF_APP_MODELS, Route
+from ..state_keys import UNDER_BED_LIGHTS_ON
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -45,7 +46,6 @@ def _app_callback(action: str) -> MotorCommandCallable:
 
 
 MASSAGE_REMAINING_MINUTES: Final = StateKey[int | None]("massage_remaining_minutes")
-UNDERBED_LIGHT_ON: Final = StateKey[bool]("underbed_light_on")
 
 
 class MaloufAppController(BedController):
@@ -823,16 +823,9 @@ class MaloufAppController(BedController):
             self._light_status = state.light_status
             # RemoteFragment.setLightStatus selects the light for every
             # nonzero integer, including signed legacy notification values.
-            updates.append(UNDERBED_LIGHT_ON(bool(self._light_status)))
+            updates.append(UNDER_BED_LIGHTS_ON(bool(self._light_status)))
         if updates:
             self.forward_controller_state_updates(*updates)
-
-    def get_massage_state(self) -> dict[str, object]:
-        return (
-            {}
-            if self._massage_remaining is None
-            else {"remaining_minutes": self._massage_remaining}
-        )
 
     def get_light_state(self) -> dict[str, object]:
         return {} if self._light_status is None else {"is_on": bool(self._light_status)}

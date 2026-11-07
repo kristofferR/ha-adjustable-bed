@@ -990,15 +990,6 @@ class OkinAppKeesonController(KeesonController):
     async def massage_mode_step(self) -> None:
         raise NotImplementedError("These apps have no massage mode step")
 
-    def get_massage_state(self) -> dict[str, Any]:
-        session = self._session
-        return {
-            "head_intensity": session.head,
-            "foot_intensity": session.foot,
-            "wave_intensity": session.wave or None,
-            "timer_mode": str(session.timer_minutes) if session.timer_minutes else None,
-        }
-
     @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
         if not self._is_heal:

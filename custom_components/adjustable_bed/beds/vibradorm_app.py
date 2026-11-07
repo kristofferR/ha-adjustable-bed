@@ -1266,23 +1266,6 @@ class VibradormAppController(BedController):
         self._massage.indicators()
         return packet
 
-    def get_massage_state(self) -> dict[str, Any]:
-        if not self.profile.massage:
-            return {}
-        m = self._massage
-        return {
-            "is_on": any(m.zones),
-            "head_level": m.zones[0],
-            "foot_level": m.zones[1],
-            "head_active": m.flags[0],
-            "foot_active": m.flags[1],
-            "speed": m.speed,
-            "wave_mode": m.effect,
-            "automatic": m.automatic == 7,
-            "individual": m.individual == 9,
-            "state_source": "local_intent",
-        }
-
     async def _massage_callback(self, code: int) -> None:
         if not self.profile.massage:
             raise ValueError("This profile has no massage route")

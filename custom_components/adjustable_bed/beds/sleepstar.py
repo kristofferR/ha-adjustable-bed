@@ -35,10 +35,9 @@ from ..controller_state import StateKey
 from ..state_keys import (
     LIGHT_LEVEL,
     MASSAGE_ACTIVE,
-    MASSAGE_LEVEL,
     MASSAGE_TIMER_MINUTES,
     UNDER_BED_LIGHTS_ON,
-    massage_zone_intensity,
+    massage_intensity,
 )
 from .base import (
     POSITION_AXIS_ICONS,
@@ -299,8 +298,11 @@ class SleepStarController(BedController):
         self._last_notification: bytes | None = None
         self._last_notification_time = 0.0
         self._massage_mode = -1
-        self._massage_intensities = {"head": 0, "foot": 0, "all": 0}
-        self._massage_timer_minutes = 0
+        # Sonic levels and timer are tracked from this session's commands.
+        self.forward_controller_state_updates(
+            *(massage_intensity(zone)(0) for zone in ("head", "foot", "all")),
+            MASSAGE_TIMER_MINUTES(0),
+        )
         self._light_level = 0
 
     @property
@@ -1061,11 +1063,7 @@ class SleepStarController(BedController):
         else:
             raise ValueError(f"Unsupported SLEEPSTAR sonic zone: {zone}")
         await self._send_twice_then_stop(wrap_control_box(command))
-        self._massage_intensities[zone] = normalized
-        updates = [massage_zone_intensity(zone)(normalized)]
-        if zone == "all":
-            updates.append(MASSAGE_LEVEL(normalized))
-        self.forward_controller_state_updates(*updates)
+        self.forward_controller_state_updates(massage_intensity(zone)(normalized))
 
     async def set_massage_timer(self, minutes: int) -> None:
         """Set the sonic timer to off, 10, 20, or 30 minutes."""
@@ -1077,19 +1075,9 @@ class SleepStarController(BedController):
             except ValueError as err:
                 raise ValueError("SLEEPSTAR sonic timer must be 0, 10, 20, or 30 minutes") from err
         await self._send_twice_then_stop(wrap_control_box(star.extended(0x0B, encoded)))
-        self._massage_timer_minutes = int(minutes)
         self.forward_controller_state_updates(
             MASSAGE_TIMER_MINUTES(int(minutes)), MASSAGE_ACTIVE(int(minutes) > 0)
         )
-
-    def get_massage_state(self) -> dict[str, object]:
-        """Return cached sonic intensity, timer, and active state."""
-        return {
-            **{f"{zone}_intensity": value for zone, value in self._massage_intensities.items()},
-            "intensity": self._massage_intensities["all"],
-            "timer_mode": str(self._massage_timer_minutes),
-            "active": self._massage_timer_minutes > 0,
-        }
 
     async def query_sleep_config(self) -> None:
         """Query sleep-monitor configuration state."""

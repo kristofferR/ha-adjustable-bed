@@ -27,7 +27,7 @@ from ..state_keys import (
     LIGHT_LEVEL,
     UNDER_BED_LIGHTS_ON,
     UNDER_BED_LIGHTS_RGB,
-    massage_zone_intensity,
+    massage_intensity,
     rgb_triple,
 )
 from .base import (
@@ -145,8 +145,8 @@ _INTEGER_KEYS: Final[dict[str, StateKey[int | None]]] = {
     for key in (
         LIGHT_LEVEL,
         MASSAGE_TIMER,
-        massage_zone_intensity("head"),
-        massage_zone_intensity("foot"),
+        massage_intensity("head"),
+        massage_intensity("foot"),
     )
 }
 _OPTION_KEYS: Final[dict[str, StateKey[str | None]]] = {
@@ -227,6 +227,10 @@ class ReveriePairlinkController(BedController):
         self._event_callback: PairlinkMeshEventCallback | None = None
         self._sign_gate = runtime.sign_gate
         self._state: dict[str, object] = {}
+        # Unknown until the bed reports them.
+        self.forward_controller_state_updates(
+            massage_intensity("head")(None), massage_intensity("foot")(None)
+        )
         self._peer_states: dict[str, dict[str, object]] = {}
         self._peer_state_identities: dict[str, PairlinkPeerIdentity] = {}
         self._known_device_vaddrs: set[
@@ -2553,14 +2557,6 @@ class ReveriePairlinkController(BedController):
         if isinstance(current, bool) or not isinstance(current, int):
             raise ValueError("Pairlink massage mode is unknown")
         await self.set_massage_mode((current + 1) % 5)
-
-    def get_massage_state(self) -> dict[str, Any]:
-        return {
-            "head_intensity": self._state.get("massage_head_intensity"),
-            "foot_intensity": self._state.get("massage_foot_intensity"),
-            "timer_mode": self._state.get("reverie_massage_timer"),
-            "mode": self._state.get("reverie_massage_mode"),
-        }
 
     @property
     def _comfort_field_names(self) -> tuple[str, ...]:

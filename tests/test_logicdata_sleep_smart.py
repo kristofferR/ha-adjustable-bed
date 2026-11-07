@@ -422,7 +422,7 @@ async def test_notifications_publish_state_and_answer_clock_requests(coordinator
     controller._notification_handler(sender, bytearray.fromhex("f2f20d0103"))
     controller._notification_handler(sender, bytearray.fromhex("f2f20d0109"))
     assert updates == [
-        {"under_bed_lights_on": True, "head_intensity": 2, "right_intensity": 3},
+        {"under_bed_lights_on": True, "massage_head_intensity": 2, "massage_right_intensity": 3},
         {"logicdata_app_massage_mode": "wave"},
         {"logicdata_app_massage_mode": None},
     ]

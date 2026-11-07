@@ -376,6 +376,7 @@ async def test_registered_channel20_updates_state_without_sdk_fallthrough() -> N
 
     # The source envelope carries sender VA4, then 02/A7 and selector/value.
     packet = b"\x03\xFF\xFF\xFF\xFF\x20" + bytes.fromhex("11223344") + bytes.fromhex("02A70137")
+    controller._coordinator.handle_controller_state_updates.reset_mock()
     await _notify(client, tasks, packet)
 
     assert controller._state["back_position"] == 55

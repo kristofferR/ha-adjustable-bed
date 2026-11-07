@@ -603,19 +603,6 @@ class IsleepController(BedController):
             self._timers[affected] = selected
         self._save_intent()
 
-    def get_massage_state(self) -> dict[str, Any]:
-        return self._massage_state(self._lane)
-
-    def _massage_state(self, lane: int) -> dict[str, Any]:
-        return {
-            "head_active": self._massage[lane],
-            "foot_active": self._massage[lane] and self.profile.product != 143,
-            "head_intensity": self._strengths[lane]["head"],
-            "foot_intensity": self._strengths[lane]["foot"],
-            "mode": self._patterns[lane],
-            "timer_mode": str(self._timers[lane]) if self._timers[lane] else None,
-        }
-
     async def enroll_room(self) -> None:
         """Explicit fresh-device enrollment; never reset or steal another room."""
         from homeassistant.components import bluetooth

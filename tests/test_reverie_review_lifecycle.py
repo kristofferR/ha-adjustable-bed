@@ -129,7 +129,7 @@ async def test_pairlink_feedback_populates_selects_and_preserves_numeric_mode(ha
     assert mode_select.current_option == str(mode)
     assert rhythm_select.current_option == ("on" if rhythm else "off")
     assert type(coordinator.controller_state["reverie_massage_mode"]) is int
-    assert controller.get_massage_state()["mode"] == mode
+    assert controller._state["reverie_massage_mode"] == mode
     assert coordinator.controller_state["reverie_massage_rhythm"] is rhythm
     set_mode = AsyncMock()
     monkeypatch.setattr(controller, "set_massage_mode", set_mode)

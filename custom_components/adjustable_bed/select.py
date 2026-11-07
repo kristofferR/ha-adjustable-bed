@@ -476,30 +476,15 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
 
     @property
     def current_option(self) -> str | None:
-        """Return the current timer setting from controller state."""
-        controller = self._coordinator.controller
-        timer_mode: object
-        if controller is None:
-            # Between connections, the timer the profile last published.
-            timer_mode = self._coordinator.controller_state.get(
-                sided(
-                    MASSAGE_TIMER_MINUTES,
-                    massage_state_side(self._coordinator.bed_type, self._coordinator.entity_side),
-                )
+        """Return the last published timer, or "Off"."""
+        minutes = self._coordinator.controller_state.get(
+            sided(
+                MASSAGE_TIMER_MINUTES,
+                massage_state_side(self._coordinator.bed_type, self._coordinator.entity_side),
             )
-        else:
-            with self._side_scope():
-                timer_mode = controller.get_massage_state().get("timer_mode")
-
-        # Normalize: treat "0", 0, empty, or None as "Off"
-        if not timer_mode or str(timer_mode) == "0":
-            return "Off"
-
-        # Format as option string and validate against allowed options
-        formatted = f"{timer_mode} min"
-        if formatted in self._attr_options:
-            return formatted
-        return "Off"
+        )
+        formatted = f"{minutes} min"
+        return formatted if minutes and formatted in self._attr_options else "Off"
 
     async def async_select_option(self, option: str) -> None:
         """Set the massage timer duration."""

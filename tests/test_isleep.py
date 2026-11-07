@@ -21,12 +21,15 @@ from custom_components.adjustable_bed.const import (
     KAIDI_NOTIFY_CHAR_UUID,
     KAIDI_WRITE_CHAR_UUID,
 )
+from custom_components.adjustable_bed.controller_state import sided
 from custom_components.adjustable_bed.profiles.kaidi import (
     ISLEEP_PRODUCTS,
     add_isleep_metadata,
     isleep_advertisement,
     validate_isleep_profile,
 )
+from custom_components.adjustable_bed.state_keys import massage_intensity
+from tests.state_helpers import state_writer
 
 ROWS = json.loads((Path(__file__).parent / "fixtures/isleep_row064_commands.json").read_text())
 OWN = 0x90ABCDEF
@@ -57,7 +60,8 @@ def make_controller(product=129, *, split=False, ready=True):
             }
         ),
         record_command_trace=MagicMock(),
-        handle_controller_state_updates=MagicMock(),
+        controller_state=(state := {}),
+        handle_controller_state_updates=MagicMock(side_effect=state_writer(state)),
         save_app_state=MagicMock(),
         async_write_app_state=AsyncMock(),
         async_disconnect=AsyncMock(),
@@ -592,14 +596,17 @@ async def test_saved_intent_survives_reconnect_without_restoring_live_addresses(
     with c.side_scope("right"):
         await c.set_massage_intensity("head", 60)
     assert state["strengths"][1]["head"] == 50  # store snapshots cannot alias mutable state
-    new, _, _ = make_controller(130, split=True, ready=False)
+    new, co, _ = make_controller(130, split=True, ready=False)
     new.restore_persisted_app_state(state)
     assert new._own is None and new._target is None and not new._ready
     assert new._parameter == 50
-    with new.side_scope("left"):
-        assert new.get_massage_state()["head_active"]
-    with new.side_scope("right"):
-        assert new.get_massage_state()["head_intensity"] == 50
+    assert new._massage == [True, True, True]
+    head = massage_intensity("head")
+    assert [co.controller_state[sided(head, side)] for side in ("left", "right", "both")] == [
+        50,
+        50,
+        50,
+    ]
     new.restore_persisted_app_state({})
     assert new._parameter == 0 and not new._massage[0]
 

@@ -9,12 +9,13 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
 from ..const import LEGGETT_RICHMAT_CHAR_UUID
 from ..profiles.richmat import LEGGETT_WILINKE, Button
+from ..state_keys import MASSAGE_TIMER_MINUTES
 from .richmat import RichmatProfileController
 
 if TYPE_CHECKING:
@@ -35,8 +36,8 @@ class LeggettWilinkeController(RichmatProfileController):
         super().__init__(
             coordinator, LEGGETT_WILINKE, char_uuid=char_uuid or LEGGETT_RICHMAT_CHAR_UUID
         )
-        # Optimistic timer state (no BLE feedback): 0 = off, 10/20/30 = active.
-        self._timer_mode: int = 0
+        # The timer is optimistic (no BLE feedback); the remote can desync it.
+        self.forward_controller_state_update(MASSAGE_TIMER_MINUTES, 0)
 
     async def write_command(
         self,
@@ -96,7 +97,7 @@ class LeggettWilinkeController(RichmatProfileController):
 
     async def massage_off(self) -> None:
         await self._send("massage_off")
-        self._timer_mode = 0
+        self.forward_controller_state_update(MASSAGE_TIMER_MINUTES, 0)
 
     async def massage_head_up(self) -> None:
         await self._send("massage_head_up")
@@ -125,10 +126,7 @@ class LeggettWilinkeController(RichmatProfileController):
             await self.massage_off()
         elif minutes in _TIMERS:
             await self._send(_TIMERS[minutes])
-            self._timer_mode = minutes
+            self.forward_controller_state_update(MASSAGE_TIMER_MINUTES, minutes)
         else:
             _LOGGER.warning("Invalid timer duration: %d (valid: 0, 10, 20, 30)", minutes)
 
-    def get_massage_state(self) -> dict[str, Any]:
-        """Optimistic state from this controller's own commands; the remote can desync it."""
-        return {"timer_mode": str(self._timer_mode) if self._timer_mode > 0 else None}

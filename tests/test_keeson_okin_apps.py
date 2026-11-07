@@ -417,7 +417,7 @@ async def test_heal_massage_page_follows_the_app_state_machine(
     await controller.set_massage_timer(20)  # Every label sends timer1.
     assert _written(mock_bleak_client) == TIMER_INITIAL
     assert no_sleep.await_args_list == [call(0.1)] * 3
-    assert controller.get_massage_state()["timer_mode"] == "20"
+    assert coordinator.controller_state["massage_timer"] == 20
 
     mock_bleak_client.write_gatt_char.reset_mock()
     await controller.massage_wave_next()
@@ -848,7 +848,6 @@ async def test_heal_state_starts_without_a_wave_level_and_settings_are_heal_only
 ):
     controller = _ctrl(coordinator, KEESON_VARIANT_HEAL_EVERY_NIGHT)
     assert coordinator.controller_state["okin_app_massage_wave"] is None
-    assert controller.get_massage_state()["wave_intensity"] is None
     assert controller.persisted_app_state is not None
     assert _ctrl(coordinator, KEESON_VARIANT_SIMON_LI).persisted_app_state is None
 
@@ -1051,12 +1050,10 @@ async def test_massage_off_publishes_the_cleared_timer(
     with pytest.raises(BleakError):
         await controller.massage_off()
     assert coordinator.controller_state["massage_timer"] == 20
-    assert controller.get_massage_state()["timer_mode"] == "20"
 
     mock_bleak_client.write_gatt_char.side_effect = original
     await controller.massage_off()
     assert coordinator.controller_state["massage_timer"] is None
-    assert controller.get_massage_state()["timer_mode"] is None
 
 
 def _fail_write(client: MagicMock, *, nth: int) -> None:
@@ -1095,12 +1092,8 @@ async def test_timer_start_commits_nothing_until_the_whole_sequence_is_written(
     _fail_write(mock_bleak_client, nth=3)  # The head level of the start sequence fails.
     with pytest.raises(BleakError):
         await controller.set_massage_timer(10)
-    assert controller.get_massage_state() == {
-        "head_intensity": 0,
-        "foot_intensity": 0,
-        "wave_intensity": None,
-        "timer_mode": None,
-    }
+    session = controller._session
+    assert (session.head, session.foot, session.wave, session.timer_minutes) == (0, 0, 0, None)
     assert coordinator.controller_state["massage_timer"] is None
     assert coordinator.controller_state["okin_app_massage_wave"] is None
     with pytest.raises(ValueError):
@@ -1135,7 +1128,7 @@ async def test_a_cancelled_write_commits_no_app_state(
     await controller.preset_flat()  # A recall, not a re-tap STOP.
     await controller.lights_toggle()  # Still off, so the toggle turns it on.
     assert _written(mock_bleak_client) == ["e5fe160100000203", "e5fe1631000001d4"]
-    assert controller.get_massage_state()["timer_mode"] is None
+    assert coordinator.controller_state["massage_timer"] is None
 
 
 @pytest.mark.parametrize("heal_side", ["left", "right"])

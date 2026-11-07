@@ -73,20 +73,14 @@ FOOTWARMING_TOTAL_REMAINING_TIME_MINUTES: Final = StateKey[int](
 )
 FOOTWARMING_TIMER_OPTION: Final = StateKey[str | None]("footwarming_timer_option")
 
-# Massage. Live entities read ``get_massage_state()``; these keys carry the last
-# published values, which the entities show between connections.
+# Massage, as each controller last tracked or received it. The massage number,
+# timer select and sensors read these, connected or not.
 MASSAGE_TIMER_MINUTES: Final = StateKey[int | None]("massage_timer")
 MASSAGE_ACTIVE: Final = StateKey[bool]("massage_active")
-MASSAGE_LEVEL: Final = StateKey[int]("massage_intensity")
 
 
 def massage_intensity(zone: str) -> StateKey[int | None]:
-    """Last published intensity of one massage zone."""
-    return StateKey[int | None](f"{zone}_intensity")
-
-
-def massage_zone_intensity(zone: str) -> StateKey[int | None]:
-    """A zone's intensity as the Reverie and Star apps name it."""
+    """Intensity of one massage zone: ``all``, ``head``, ``foot``, ``right`` or ``wave``."""
     return StateKey[int | None](f"massage_{zone}_intensity")
 
 

@@ -289,7 +289,6 @@ async def test_split_series_right_massage_slider_dispatches_and_reads_its_own_zo
     assert float(hass.states.get(right_id).state) == 2
     assert float(hass.states.get(head_id).state) == 0
     assert float(hass.states.get(foot_id).state) == 0
-    assert coordinator.controller.get_massage_state()["right_intensity"] == 2
 
 
 @pytest.mark.parametrize(

@@ -15,9 +15,10 @@ from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING
 
 from ..codec import keeson as codec
-from ..controller_state import StateKey
+from ..controller_state import StateKey, StateUpdate
 from ..execution import ExecutionCapabilities
 from ..furnimove_profiles import FurniMoveAction, get_furnimove_profile
+from ..state_keys import massage_intensity
 from .base import (
     POSITION_AXIS_COMMANDS,
     BedController,
@@ -144,6 +145,11 @@ def _action_callback(row_index: int) -> MotorCommandCallable:
     return invoke
 
 
+_MASSAGE_SESSION_FIELDS = frozenset(
+    {"furnimove_massage_running", "furnimove_massage_type", "furnimove_massage_intensity"}
+)
+
+
 def _state_key(name: str) -> StateKey[object]:
     """FurniMove's published fields mirror its mixed-type local state."""
     return StateKey[object](name)
@@ -197,6 +203,7 @@ class FurniMoveController(BedController):
         program = retained.get(_state_key("furnimove_massage_program"))
         if type(program) is int and 0 <= program <= 4:
             self._state["furnimove_massage_program"] = program
+        self.forward_controller_state_updates(*self._massage_levels())
 
     @property
     def execution(self) -> ExecutionCapabilities:
@@ -254,6 +261,20 @@ class FurniMoveController(BedController):
     def _publish(self, key: str, value: object) -> None:
         self._state[key] = value
         self.forward_controller_state_update(_state_key(key), value)
+        if key in _MASSAGE_SESSION_FIELDS:
+            self.forward_controller_state_updates(*self._massage_levels())
+
+    def _massage_levels(self) -> tuple[StateUpdate, ...]:
+        """Zone levels the local massage selection implies."""
+        intensity = int(str(self._state["furnimove_massage_intensity"]))
+        zone = self._state["furnimove_massage_type"]
+        level = intensity if self._state["furnimove_massage_running"] else 0
+        return (
+            massage_intensity("all")(intensity),
+            massage_intensity("head")(level if zone in ("head", "both") else 0),
+            massage_intensity("foot")(level if zone in ("foot", "both") else 0),
+            massage_intensity("wave")(level if zone == "wave" else 0),
+        )
 
     def _clear_session(self) -> None:
         self._write_characteristic = self._feedback_characteristic = None
@@ -1117,25 +1138,6 @@ class FurniMoveController(BedController):
         await self.set_massage_intensity(
             zone if zone in ("head", "foot", "both", "wave") else "both", level
         )
-
-    def get_massage_state(self) -> dict[str, object]:
-        zone = self._state["furnimove_massage_type"]
-        level = (
-            self._state["furnimove_massage_intensity"]
-            if self._state["furnimove_massage_running"]
-            else 0
-        )
-        return {
-            "is_on": self._state["furnimove_massage_running"],
-            "intensity": self._state["furnimove_massage_intensity"],
-            "zone": self._state["furnimove_massage_type"],
-            "mode": self._state["furnimove_massage_program"],
-            "timer": self._state["furnimove_massage_timer_minutes"],
-            "source": "local_app_state",
-            "head_intensity": level if zone in ("head", "both") else 0,
-            "foot_intensity": level if zone in ("foot", "both") else 0,
-            "wave_intensity": level if zone == "wave" else 0,
-        }
 
     @property
     def persisted_app_state_key(self) -> str:

@@ -1,7 +1,8 @@
 """Every controller-state key the integration reads has a writer.
 
 Keys are declared once: ``StateKey[T]`` constants (or containers of them), key
-families (functions returning a key) and classes whose fields are all keys.
+families (functions returning a key) and base-less classes whose fields are all
+keys. An entity description that carries a key is not a key family.
 This test resolves each reference to its declaration and fails when a
 declaration is read but never written. A write calls a key with its value
 (``KEY(value)``) or passes the key to ``forward_controller_state_update``,
@@ -61,7 +62,11 @@ def _load() -> dict[str, _Module]:
                 module.families.add(node.name)
             elif isinstance(node, ast.ClassDef):
                 fields = [item for item in node.body if isinstance(item, ast.AnnAssign)]
-                if fields and all(_mentions_state_key(item.annotation) for item in fields):
+                if (
+                    fields
+                    and not node.bases
+                    and all(_mentions_state_key(item.annotation) for item in fields)
+                ):
                     module.families.add(node.name)
             elif isinstance(node, ast.ImportFrom) and node.level:
                 base = package[: len(package) - node.level + 1]
@@ -212,6 +217,24 @@ def test_every_read_state_key_has_a_writer() -> None:
         if module != CORE and not resolver.members((module, name)) & writes
     }
     assert unwritten == {}
+
+
+def test_massage_entities_read_published_keys() -> None:
+    """The massage number, timer select and sensors read keys controllers write."""
+    reads, writes = _usage()
+    readers = {
+        ("adjustable_bed.state_keys", "massage_intensity"): {
+            "adjustable_bed.number",
+            "adjustable_bed.sensor",
+        },
+        ("adjustable_bed.state_keys", "MASSAGE_TIMER_MINUTES"): {
+            "adjustable_bed.select",
+            "adjustable_bed.sensor",
+        },
+    }
+    for symbol, platforms in readers.items():
+        assert platforms <= reads[symbol]
+        assert symbol in writes
 
 
 def test_state_is_never_read_by_a_raw_name() -> None:

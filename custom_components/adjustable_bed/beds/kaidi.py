@@ -16,7 +16,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable, Mapping
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
@@ -46,6 +46,7 @@ from ..profiles.kaidi import (
     KaidiCommandProfile,
     KaidiProductFamily,
 )
+from ..state_keys import MASSAGE_TIMER_MINUTES
 from .base import (
     POSITION_UNIT_PERCENT,
     BedController,
@@ -104,7 +105,7 @@ class KaidiController(BedController):
         self._sofa_acu_no: int | None = None
         self._massage_active = False
         self._massage_mode_index = 0
-        self._massage_timer_mode = 0
+        self._set_massage_timer_mode(0)
 
         entry_data = getattr(getattr(self._coordinator, "entry", None), "data", {})
         cached_room_id = entry_data.get(CONF_KAIDI_ROOM_ID)
@@ -893,7 +894,7 @@ class KaidiController(BedController):
         )
         self._massage_active = False
         self._massage_mode_index = 0
-        self._massage_timer_mode = 0
+        self._set_massage_timer_mode(0)
 
     async def massage_mode_step(self) -> None:
         """Cycle through the APK-backed Kaidi massage modes."""
@@ -935,13 +936,10 @@ class KaidiController(BedController):
 
         await self._write_control_command(command_id)
         self._massage_active = True
-        self._massage_timer_mode = minutes
+        self._set_massage_timer_mode(minutes)
 
-    def get_massage_state(self) -> dict[str, Any]:
-        """Return the locally tracked Kaidi massage state."""
-        return {
-            "timer_mode": str(self._massage_timer_mode) if self._massage_timer_mode else None,
-            "head_active": self._massage_active,
-            "foot_active": self._massage_active,
-            "mode": self._massage_mode_index or None,
-        }
+    def _set_massage_timer_mode(self, minutes: int) -> None:
+        """Track the timer this integration last selected."""
+        self._massage_timer_mode = minutes
+        self.forward_controller_state_update(MASSAGE_TIMER_MINUTES, minutes)
+

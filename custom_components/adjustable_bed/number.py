@@ -1022,35 +1022,17 @@ class AdjustableBedMassageNumber(AdjustableBedEntity, NumberEntity):
 
     @property
     def native_value(self) -> float | None:
-        """Return the current massage intensity from controller state."""
-        controller = self._coordinator.controller
-        if controller is None:
-            # Between connections, the level the profile last published.
-            value = self._coordinator.controller_state.get(
-                sided(
-                    massage_intensity(self.entity_description.massage_zone),
-                    massage_state_side(self._coordinator.bed_type, self._coordinator.entity_side),
-                )
-            )
-            return None if value is None else float(value)
-
-        with self._side_scope():
-            state = controller.get_massage_state()
-        zone = self.entity_description.massage_zone
-
-        # Map zone to state key
-        key_map = {
-            "all": "intensity",
-            "head": "head_intensity",
-            "foot": "foot_intensity",
-            "right": "right_intensity",
-            "wave": "wave_intensity",
-        }
-        state_key = key_map.get(zone)
-        if state_key and state_key in state:
-            value = state[state_key]
-            return float(value) if value is not None else None
-        return 0.0
+        """Return the zone's last published intensity."""
+        key = sided(
+            massage_intensity(self.entity_description.massage_zone),
+            massage_state_side(self._coordinator.bed_type, self._coordinator.entity_side),
+        )
+        state = self._coordinator.controller_state
+        if key not in state:
+            # A connected bed that tracks no level for this zone shows zero.
+            return None if self._coordinator.controller is None else 0.0
+        value = state[key]
+        return None if value is None else float(value)
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the massage intensity level."""

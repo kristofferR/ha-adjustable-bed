@@ -127,6 +127,7 @@ async def test_pairlink_controller_hold_metadata_reaches_sided_cover_attributes(
         entity_unique_id=lambda key: key,
         name="Pairlink left",
         async_execute_controller_command=AsyncMock(),
+        handle_controller_state_updates=MagicMock(),
     )
     controller = ReveriePairlinkController(coordinator, model="R510L", runtime=runtime)
     spec = next(item for item in controller.motor_control_specs if item.key == "back")

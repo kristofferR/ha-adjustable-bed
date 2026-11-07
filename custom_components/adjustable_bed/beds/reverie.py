@@ -25,7 +25,7 @@ from bleak.exc import BleakError
 from ..const import REVERIE_BACK_MAX_ANGLE, REVERIE_CHAR_UUID
 from ..controller_state import StateKey
 from ..execution import ExecutionCapabilities
-from ..state_keys import massage_zone_intensity
+from ..state_keys import massage_intensity
 from .base import (
     POSITION_UNIT_DEGREES,
     BedController,
@@ -49,9 +49,9 @@ _LOGGER = logging.getLogger(__name__)
 
 HEAD_POSITION: Final = StateKey[int]("reverie_head_position")
 FOOT_POSITION: Final = StateKey[int]("reverie_foot_position")
-MASSAGE_HEAD_INTENSITY: Final = massage_zone_intensity("head")
-MASSAGE_FOOT_INTENSITY: Final = massage_zone_intensity("foot")
-WAVE_LEVEL: Final = StateKey[int]("reverie_wave_level")
+MASSAGE_HEAD_INTENSITY: Final = massage_intensity("head")
+MASSAGE_FOOT_INTENSITY: Final = massage_intensity("foot")
+MASSAGE_WAVE_INTENSITY: Final = massage_intensity("wave")
 
 
 class ReverieCommands:
@@ -133,6 +133,9 @@ class ReverieController(BedController):
         self._massage_head_level = 0
         self._massage_foot_level = 0
         self._massage_wave_level = 0
+        self.forward_controller_state_updates(
+            MASSAGE_HEAD_INTENSITY(0), MASSAGE_FOOT_INTENSITY(0), MASSAGE_WAVE_INTENSITY(0)
+        )
         self._last_notification_hex: str | None = None
         self._comfort_request: ReverieComfortRequest | None = None
         self._comfort_writes: deque[tuple[list[int], int]] = deque()
@@ -500,7 +503,7 @@ class ReverieController(BedController):
             FOOT_POSITION(foot_position),
             MASSAGE_HEAD_INTENSITY(head_wave),
             MASSAGE_FOOT_INTENSITY(foot_wave),
-            WAVE_LEVEL(self._massage_wave_level),
+            MASSAGE_WAVE_INTENSITY(self._massage_wave_level),
         )
 
         if self._notify_callback:
@@ -1045,7 +1048,7 @@ class ReverieController(BedController):
         self.forward_controller_state_updates(
             MASSAGE_HEAD_INTENSITY(0),
             MASSAGE_FOOT_INTENSITY(0),
-            WAVE_LEVEL(0),
+            MASSAGE_WAVE_INTENSITY(0),
         )
 
     async def massage_head_up(self) -> None:
@@ -1100,7 +1103,7 @@ class ReverieController(BedController):
         command = self._build_command(ReverieCommands.massage_wave(next_level))
         await self.write_command(command)
         self._massage_wave_level = next_level
-        self.forward_controller_state_update(WAVE_LEVEL, next_level)
+        self.forward_controller_state_update(MASSAGE_WAVE_INTENSITY, next_level)
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position."""
@@ -1142,18 +1145,7 @@ class ReverieController(BedController):
                 raise ValueError("Reverie wave level must be an integer")
             await self.write_command(self._build_command(ReverieCommands.massage_wave(level)))
             self._massage_wave_level = level
-            self.forward_controller_state_update(WAVE_LEVEL, level)
+            self.forward_controller_state_update(MASSAGE_WAVE_INTENSITY, level)
         else:
             _LOGGER.warning("Unknown massage zone: %s", zone)
 
-    def get_massage_state(self) -> dict[str, Any]:
-        """Return current massage state from internal tracking.
-
-        Returns:
-            dict with head_intensity, foot_intensity, wave_intensity
-        """
-        return {
-            "head_intensity": self._massage_head_level,
-            "foot_intensity": self._massage_foot_level,
-            "wave_intensity": self._massage_wave_level,
-        }

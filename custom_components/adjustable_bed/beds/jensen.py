@@ -148,6 +148,7 @@ class JensenController(BedController):
         # The bed does not report massage, light or fan state, so these track
         # what this integration last sent.
         self._massage_levels: dict[str, int] = {"head": 0, "foot": 0, "wave": 0}
+        self._publish_massage()
         self._light_level: int = 0
         self._last_light_level: int = _LEVEL_MAX
         self._fan_level: int = 0
@@ -936,16 +937,6 @@ class JensenController(BedController):
         if zone not in self._massage_levels:
             raise ValueError(f"Unknown Jensen massage zone: {zone}")
         await self._send_massage(**{zone: max(0, min(_LEVEL_MAX, level))})
-
-    def get_massage_state(self) -> dict[str, Any]:
-        """Return the massage levels this integration last sent."""
-        return {
-            "head_intensity": self._massage_levels["head"],
-            "foot_intensity": self._massage_levels["foot"],
-            "wave_intensity": self._massage_levels["wave"],
-            "head_active": self._massage_levels["head"] > 0,
-            "foot_active": self._massage_levels["foot"] > 0,
-        }
 
     # Direct position control
     def angle_to_native_position(self, motor: str, angle: float) -> int:

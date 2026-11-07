@@ -36,6 +36,7 @@ from custom_components.adjustable_bed.const import (
     JENSEN_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.state_keys import massage_intensity
 from tests.state_helpers import published
 
 from .conftest import make_controller_mock
@@ -1213,7 +1214,8 @@ class TestJensenMassage:
             "1206030a0000",
             "1200030a0000",
         ]
-        assert controller.get_massage_state()["wave_intensity"] == 10
+        state = published(*controller._coordinator.handle_controller_state_updates.call_args.args)
+        assert state[massage_intensity("wave")] == 10
 
     async def test_toggles(self):
         """Toggles switch a zone between level 5 and off."""
@@ -1239,10 +1241,10 @@ class TestJensenMassage:
         publish = controller._coordinator.handle_controller_state_updates
 
         await controller.massage_head_toggle()
-        assert published(*publish.call_args.args)["head_intensity"] == 5
+        assert published(*publish.call_args.args)[massage_intensity("head")] == 5
 
         await controller.massage_off()
-        assert published(*publish.call_args.args)["head_intensity"] == 0
+        assert published(*publish.call_args.args)[massage_intensity("head")] == 0
 
     async def test_massage_requires_feature(self):
         """Beds without massage raise instead of writing."""

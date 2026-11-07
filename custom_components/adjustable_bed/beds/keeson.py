@@ -48,6 +48,7 @@ from ..profiles.keeson import (
 from ..profiles.keeson import (
     is_ksbt03c_name as is_ksbt03c_name,
 )
+from ..state_keys import MASSAGE_TIMER_MINUTES, massage_intensity
 from .base import (
     POSITION_UNIT_PERCENT,
     BedController,
@@ -152,7 +153,7 @@ class KeesonController(BedController):
         self._foot_massage: int = 0
         self._wave_massage: int = 0
         self._led_on: bool = False
-        self._timer_mode: str | None = None
+        self._massage_report: tuple[int, int, int | None] | None = None
 
         transport = codec.TRANSPORTS[self.profile.transport]
         if char_uuid:
@@ -636,7 +637,14 @@ class KeesonController(BedController):
         self._head_moving = status.head_moving
         self._foot_moving = status.foot_moving
         self._led_on = status.led_on
-        self._timer_mode = status.timer_minutes
+        report = (status.head_massage, status.foot_massage, status.timer_minutes)
+        if self.reports_massage_state and report != self._massage_report:
+            self._massage_report = report
+            self.forward_controller_state_updates(
+                massage_intensity("head")(status.head_massage),
+                massage_intensity("foot")(status.foot_massage),
+                MASSAGE_TIMER_MINUTES(status.timer_minutes),
+            )
         if self._notify_callback is not None:
             # "back"/"legs" keys match the 2-motor sensors; values are percentages.
             self._notify_callback("back", float(status.head_position))
@@ -1220,12 +1228,3 @@ class KeesonController(BedController):
         else:
             await self._step(KeesonCommands.MASSAGE_FOOT_UP)
 
-    def get_massage_state(self) -> dict[str, Any]:
-        """Return massage state from Ergomotion notifications or Sino tracking."""
-        return {
-            "head_intensity": self._head_massage,
-            "foot_intensity": self._foot_massage,
-            "wave_intensity": self._wave_massage,
-            "timer_mode": self._timer_mode,
-            "led_on": self._led_on,
-        }

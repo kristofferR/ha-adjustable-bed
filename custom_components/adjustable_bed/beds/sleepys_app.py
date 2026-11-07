@@ -23,7 +23,7 @@ from ..const import (
 )
 from ..controller_state import StateKey, StateUpdate
 from ..execution import ExecutionCapabilities
-from ..state_keys import LIGHT_LEVEL
+from ..state_keys import LIGHT_LEVEL, massage_intensity
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -181,7 +181,7 @@ def _same_uuid(left: str, right: str) -> bool:
 
 COLOR_CODE: Final = StateKey[int | None]("sleepys_app_color_code")
 MASSAGE_TIMER_CODE: Final = StateKey[str | None]("sleepys_app_massage_timer_code")
-MASSAGE_INTENSITY: Final = StateKey[int]("sleepys_massage_intensity")
+MASSAGE_INTENSITY: Final = massage_intensity("all")
 
 
 def _field_key(field: str) -> StateKey[int | float]:
@@ -210,7 +210,7 @@ class SleepysEliteAppController(BedController):
         self._initialized = False
         self._position_data: dict[str, float] = {}
         self._app_fields: dict[str, _AppFieldValue] = {}
-        self._massage_intensity = 0
+        self.forward_controller_state_updates(MASSAGE_INTENSITY(0))
         self._light_level = 0
         self._light_level_known = False
         self._light_color_code = 1
@@ -1290,7 +1290,6 @@ class SleepysEliteAppController(BedController):
         # Event4 clears queued position events. It does not reset a running
         # axis, transition state, or send a STOP frame.
         await self._send_dynamic(route.builder, route.logical_values)
-        self._massage_intensity = level
         self.forward_controller_state_updates(MASSAGE_INTENSITY(level))
 
     def _massage_is_active(self) -> bool:
@@ -1307,9 +1306,6 @@ class SleepysEliteAppController(BedController):
             if self.supports_lights and self._light_level_known
             else {}
         )
-
-    def get_massage_state(self) -> dict[str, int]:
-        return {"intensity": self._massage_intensity} if self.supports_massage else {}
 
     async def lights_on(self) -> None:
         await self.send("turnonUnderbedLighting")

@@ -184,7 +184,7 @@ async def test_absolute_massage_vectors(controller, zone, frames) -> None:
     for level in range(4):
         await controller.set_massage_intensity(zone, level)
     assert written(controller) == frames
-    assert controller.get_massage_state()[f"{zone}_intensity"] == 3
+    assert controller._coordinator.controller_state[f"massage_{zone}_intensity"] == 3
 
 
 async def test_massage_level_writes_update_activity(controller) -> None:
@@ -229,15 +229,10 @@ def test_massage_entities_retain_state_without_live_controller(controller) -> No
     coordinator = controller._coordinator
     coordinator.controller = None
     coordinator.capability_controller = MagicMock()
-    coordinator.capability_controller.get_massage_state.return_value = {
-        "head_intensity": 1,
-        "foot_intensity": 1,
-        "timer_mode": "10",
-    }
     coordinator.entity_side = None
     coordinator.device_info = {}
     coordinator.controller_state.update(
-        {"head_intensity": 2, "foot_intensity": 3, "massage_timer": 20}
+        {"massage_head_intensity": 2, "massage_foot_intensity": 3, "massage_timer": 20}
     )
     head = AdjustableBedMassageNumber(coordinator, MASSAGE_NUMBER_DESCRIPTIONS[1])
     foot = AdjustableBedMassageNumber(coordinator, MASSAGE_NUMBER_DESCRIPTIONS[2])
@@ -249,11 +244,9 @@ def test_massage_entities_retain_state_without_live_controller(controller) -> No
     assert timer.current_option == "20 min"
 
     coordinator.controller = MagicMock()
-    coordinator.controller.get_massage_state.return_value = {
-        "head_intensity": 3,
-        "foot_intensity": 2,
-        "timer_mode": "30",
-    }
+    coordinator.controller_state.update(
+        {"massage_head_intensity": 3, "massage_foot_intensity": 2, "massage_timer": 30}
+    )
     assert head.native_value == 3
     assert foot.native_value == 2
     assert timer.current_option == "30 min"
@@ -275,7 +268,7 @@ async def test_massage_timer_expiry_clears_activity_and_preserves_preferences(co
     controller._expire_massage(state["woosa_massage_deadline"])
     assert state["woosa_massage_active"] is False
     assert state["massage_timer"] == 0
-    assert state["head_intensity"] == state["foot_intensity"] == 0
+    assert state["massage_head_intensity"] == state["massage_foot_intensity"] == 0
     assert state["woosa_head_preference"] == 2
     assert state["woosa_foot_preference"] == 3
     controller.write_command.reset_mock()
@@ -481,14 +474,14 @@ async def test_alarm_packet_and_sound_gate(controller) -> None:
 @pytest.mark.parametrize(
     ("frame", "key", "value"),
     [
-        ("FFFFFFFF0500000100D690", "head_intensity", 0),
-        ("FFFFFFFF050000011E5698", "head_intensity", 1),
-        ("FFFFFFFF050000011F9758", "head_intensity", 2),
-        ("FFFFFFFF0500000120D748", "head_intensity", 3),
-        ("FFFFFFFF0500000200D660", "foot_intensity", 0),
-        ("FFFFFFFF05000002211678", "foot_intensity", 1),
-        ("FFFFFFFF05000002225679", "foot_intensity", 2),
-        ("FFFFFFFF050000022397B9", "foot_intensity", 3),
+        ("FFFFFFFF0500000100D690", "massage_head_intensity", 0),
+        ("FFFFFFFF050000011E5698", "massage_head_intensity", 1),
+        ("FFFFFFFF050000011F9758", "massage_head_intensity", 2),
+        ("FFFFFFFF0500000120D748", "massage_head_intensity", 3),
+        ("FFFFFFFF0500000200D660", "massage_foot_intensity", 0),
+        ("FFFFFFFF05000002211678", "massage_foot_intensity", 1),
+        ("FFFFFFFF05000002225679", "massage_foot_intensity", 2),
+        ("FFFFFFFF050000022397B9", "massage_foot_intensity", 3),
         ("FFFFFFFF0500000324D7EB", "woosa_massage_mode", 1),
         ("FFFFFFFF0500000325162B", "woosa_massage_mode", 2),
         ("FFFFFFFF0500000326562A", "woosa_massage_mode", 3),
@@ -508,7 +501,7 @@ def test_ambiguous_light_value_is_diagnostic_only(controller) -> None:
     # The app's brightness-level2 frame is also its foot-massage level3 reply.
     controller._parse_notification(bytes.fromhex("FFFFFFFF050000022397B9"))
     state = controller._coordinator.controller_state
-    assert state["foot_intensity"] == 3
+    assert state["massage_foot_intensity"] == 3
     assert state["woosa_light_candidate"] == 2
     assert "light_level" not in state
     assert "under_bed_lights_on" not in state
@@ -554,7 +547,7 @@ async def test_custom_buttons_dispatch_to_live_controller(controller) -> None:
 async def test_timer_off_and_late_cancellation_clear_active_state(controller) -> None:
     await controller.set_massage_timer(20)
     await controller.set_massage_timer(0)
-    assert controller.get_massage_state()["timer_mode"] == "0"
+    assert controller._coordinator.controller_state["massage_timer"] == 0
     controller.write_command.reset_mock()
     waits = 0
 
@@ -580,7 +573,7 @@ async def test_timer_off_and_late_cancellation_clear_active_state(controller) ->
         "FFFFFFFF050000001CD6C9",
     ]
     assert not controller._coordinator.controller_state["woosa_massage_active"]
-    assert controller.get_massage_state()["timer_mode"] == "0"
+    assert controller._coordinator.controller_state["massage_timer"] == 0
 
 
 @pytest.mark.parametrize(

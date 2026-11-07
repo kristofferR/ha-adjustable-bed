@@ -17,7 +17,7 @@ from homeassistant.util import dt as dt_util
 
 from ..codec import jiecang as codec
 from ..codec.jiecang import Notification, TransportKey, Wake
-from ..controller_state import StateKey
+from ..controller_state import StateKey, StateUpdate
 from ..profiles.jiecang import (
     APP_LAYOUT_AXES,
     APP_PROFILES,
@@ -142,6 +142,7 @@ class JiecangAppController(JiecangProfileController):
         self._alarm: codec.AlarmState | None = None
         self._alarm_visible = False
         self._massage = dict.fromkeys(massage_zones(self._layout), 0)
+        self.forward_controller_state_updates(*self._massage_levels())
         self._clock_task: asyncio.Task[None] | None = None
         self._hd_light = DreamHDLightControls()
 
@@ -353,12 +354,14 @@ class JiecangAppController(JiecangProfileController):
             ]
         if self._alarm is not None:
             state.append(ALARM(asdict(self._alarm)))
-        state += [
+        self.forward_controller_state_updates(*state, *self._massage_levels())
+
+    def _massage_levels(self) -> list[StateUpdate]:
+        return [
             massage_intensity(key)(self._massage[value])
             for key, value in _ZONES.items()
             if value in self._massage
         ]
-        self.forward_controller_state_updates(*state)
 
     async def move_lumbar_up(self) -> None:
         await self._move_axis("lumbar", True)
@@ -420,13 +423,6 @@ class JiecangAppController(JiecangProfileController):
     @property
     def massage_intensity_zones(self) -> list[str]:
         return [key for key, value in _ZONES.items() if value in self._massage]
-
-    def get_massage_state(self) -> dict[str, object]:
-        return {
-            f"{key}_intensity": self._massage[value]
-            for key, value in _ZONES.items()
-            if value in self._massage
-        }
 
     async def set_massage_intensity(self, zone: str, level: int) -> None:
         if zone not in self.massage_intensity_zones:
@@ -751,7 +747,15 @@ def require_app_transport(client: BleakClient, data: Mapping[str, Any]) -> None:
         CONF_JIECANG_APP_TRANSPORT,
     )
 
-    link = cast("AdjustableBedCoordinator", SimpleNamespace(client=client, controller_state={}))
+    # The probe link discards the state a controller publishes at construction.
+    link = cast(
+        "AdjustableBedCoordinator",
+        SimpleNamespace(
+            client=client,
+            controller_state={},
+            handle_controller_state_updates=lambda *_updates: None,
+        ),
+    )
     profile = data[CONF_JIECANG_APP_PROFILE]
     layout = data[CONF_JIECANG_APP_LAYOUT]
     transport = data.get(CONF_JIECANG_APP_TRANSPORT, "auto")

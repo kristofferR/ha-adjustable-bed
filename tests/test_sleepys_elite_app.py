@@ -105,7 +105,10 @@ def _controller(selector: str, *, connected: bool = False) -> SleepysEliteAppCon
         record_command_trace=MagicMock(),
         handle_controller_state_updates=MagicMock(),
     )
-    return SleepysEliteAppController(coordinator, selector)
+    controller = SleepysEliteAppController(coordinator, selector)
+    # Only notifications matter here, not the massage level published at construction.
+    coordinator.handle_controller_state_updates.reset_mock()
+    return controller
 
 
 def _gatt_client(
@@ -257,6 +260,7 @@ async def test_app_selector_belongs_to_each_physical_side_and_factory_does_not_i
             address="AA:BB:CC:DD:EE:FF",
             client=None,
             cancel_command=asyncio.Event(),
+            handle_controller_state_updates=MagicMock(),
         )
         controller = await create_controller(
             coordinator,
