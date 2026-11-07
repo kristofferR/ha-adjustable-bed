@@ -37,7 +37,15 @@ def test_factory_first_use_imports_run_off_event_loop():
             from tests.test_controller_contract import (
                 _create_controller_for_bed_type, _RecordingImportExecutor,
             )
-            from custom_components.adjustable_bed.const import SUPPORTED_BED_TYPES
+            from types import SimpleNamespace
+            from custom_components.adjustable_bed.const import (
+                BED_TYPE_RICHMAT, CONF_BED_TYPE, CONF_RICHMAT_REMOTE, SUPPORTED_BED_TYPES,
+            )
+            from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+            from custom_components.adjustable_bed.profile_id import with_profile_ids
+
+            features = "custom_components.adjustable_bed.beds.richmat.features"
+            assert features not in sys.modules
 
             main_thread = threading.get_ident()
             class ImportGuard(importlib.abc.MetaPathFinder):
@@ -54,6 +62,20 @@ def test_factory_first_use_imports_run_off_event_loop():
             sys.meta_path.insert(0, ImportGuard())
 
             async def main():
+                # Entry setup resolves the Richmat motor count from the feature table.
+                recorder = _RecordingImportExecutor()
+                hass = SimpleNamespace(
+                    data={}, async_add_import_executor_job=recorder,
+                    config=SimpleNamespace(path=lambda *parts: "/".join(parts), config_dir="/"),
+                )
+                entry = SimpleNamespace(entry_id="richmat", title="Richmat", options={}, data=with_profile_ids({
+                    "address": "AA:BB:CC:DD:EE:FF",
+                    CONF_BED_TYPE: BED_TYPE_RICHMAT,
+                    CONF_RICHMAT_REMOTE: "a0rm",
+                }))
+                await AdjustableBedCoordinator.async_create(hass, entry)
+                assert features in sys.modules
+
                 for bed_type in SUPPORTED_BED_TYPES:
                     await _create_controller_for_bed_type(bed_type)
 

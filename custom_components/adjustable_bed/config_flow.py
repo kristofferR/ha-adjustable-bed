@@ -3259,7 +3259,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         coordinator = self.hass.data.get(DOMAIN, {}).get(entry.entry_id)
         controller = getattr(coordinator, "capability_controller", None)
         if controller is None and not isinstance(coordinator, AdjustableBedCoordinator):
-            coordinator = AdjustableBedCoordinator(self.hass, entry)
+            coordinator = await AdjustableBedCoordinator.async_create(self.hass, entry)
         if coordinator.capability_controller is None:
             await coordinator.async_prime_offline_controller()
         controller = coordinator.capability_controller

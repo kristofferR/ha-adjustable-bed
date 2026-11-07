@@ -16,7 +16,8 @@ from collections.abc import (
     Mapping,
 )
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from importlib import import_module
+from typing import TYPE_CHECKING, Any, Self, TypeVar, cast
 from uuid import uuid4
 from weakref import WeakKeyDictionary
 
@@ -319,6 +320,26 @@ class AdjustableBedCoordinator(
     CoordinatorBondsMixin, CoordinatorConnectionMixin, CoordinatorPositionsMixin
 ):
     """Coordinator for managing bed connection and state."""
+
+    @staticmethod
+    async def async_import_tables(hass: HomeAssistant, data: Mapping[str, Any]) -> None:
+        """Import the tables the constructor reads for ``data``, off the event loop.
+
+        The Richmat remote feature table is too large to import on the loop
+        (issue #368).
+        """
+        if profile_route(entry_profile_id(data)).bed_type == BED_TYPE_RICHMAT:
+            await hass.async_add_import_executor_job(
+                import_module, ".beds.richmat.features", __package__
+            )
+
+    @classmethod
+    async def async_create(
+        cls, hass: HomeAssistant, entry: ConfigEntry | ChildEntryView
+    ) -> Self:
+        """Build the coordinator once its tables are imported."""
+        await cls.async_import_tables(hass, entry.data)
+        return cls(hass, entry)
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry | ChildEntryView) -> None:
         """Initialize the coordinator."""

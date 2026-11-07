@@ -991,6 +991,11 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
         await _async_setup_single_address_paired_entry(hass, entry)
         return
 
+    for side in PAIR_SIDES:
+        if get_child(entry.data, side) is not None:
+            await AdjustableBedCoordinator.async_import_tables(
+                hass, effective_child_data(entry.data, side, entry.options)
+            )
     children = _build_paired_children(hass, entry)
     if not children:
         raise ConfigEntryError(translation_domain=DOMAIN, translation_key="paired_entry_has_no_sides")
@@ -1264,7 +1269,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
 
 async def _async_setup_single_address_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Set up a left/right/both surface over one physical coordinator."""
-    inner = AdjustableBedCoordinator(hass, entry)
+    inner = await AdjustableBedCoordinator.async_create(hass, entry)
     coordinator = SingleAddressPairedCoordinator(hass, entry, inner)
     dr.async_get(hass).async_get_or_create_from_info(
         config_entry_id=entry.entry_id, device_info=coordinator.device_info
@@ -1420,7 +1425,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         entry.data.get(CONF_HAS_MASSAGE),
     )
 
-    coordinator = AdjustableBedCoordinator(hass, entry)
+    coordinator = await AdjustableBedCoordinator.async_create(hass, entry)
     _async_ensure_device_registry_entry(hass, entry, coordinator)
     await async_watch_profile_recommendations(hass, entry, ((None, coordinator),))
 

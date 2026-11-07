@@ -252,7 +252,7 @@ async def _async_preview_labels(
         version=entry.version,
     )
     try:
-        runtime = AdjustableBedCoordinator(hass, preview)
+        runtime = await AdjustableBedCoordinator.async_create(hass, preview)
         await runtime.async_prime_offline_controller(preview=True)
         if runtime.capability_controller is None:
             return None

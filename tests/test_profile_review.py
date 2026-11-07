@@ -159,7 +159,7 @@ async def test_offline_entry_gets_the_review_before_connecting(hass: HomeAssista
     with (
         patch("custom_components.adjustable_bed.async_register_services", AsyncMock()),
         patch(
-            "custom_components.adjustable_bed.AdjustableBedCoordinator",
+            "custom_components.adjustable_bed.AdjustableBedCoordinator.async_create",
             side_effect=RuntimeError("offline"),
         ),
         pytest.raises(RuntimeError, match="offline"),

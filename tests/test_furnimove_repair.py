@@ -54,7 +54,8 @@ async def test_offline_entry_gets_repair_before_any_connection(hass):
     from custom_components.adjustable_bed import async_setup_entry
 
     with patch("custom_components.adjustable_bed.async_register_services", AsyncMock()), patch(
-        "custom_components.adjustable_bed.AdjustableBedCoordinator", side_effect=RuntimeError("offline")
+        "custom_components.adjustable_bed.AdjustableBedCoordinator.async_create",
+        side_effect=RuntimeError("offline"),
     ), pytest.raises(RuntimeError, match="offline"):
         await async_setup_entry(hass, entry)
     issue_id = f"furnimove_layout_{entry.entry_id}_standalone"
