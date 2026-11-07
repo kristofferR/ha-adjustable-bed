@@ -277,6 +277,6 @@ ESHINE: Final = RichmatProfile(
 )
 
 # L&P Adjustable Base 2.2.1 (row019): its per-layout tokens are
-# ``lp_legacy_profiles.json``. It writes to the characteristics the user
+# ``lp_legacy_catalog.py``. It writes to the characteristics the user
 # configures, so it drives none of the codec's transports.
 LP_LEGACY: Final = RichmatProfile(key="leggett_lp_legacy", transports=())

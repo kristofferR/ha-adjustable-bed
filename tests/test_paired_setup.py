@@ -4460,7 +4460,7 @@ class TestOfflineSafeBedTypes:
         self, hass: HomeAssistant, profile: str | None
     ) -> None:
         from custom_components.adjustable_bed.beds.eshine_okin import EshineOkinController
-        from custom_components.adjustable_bed.const import OFFLINE_CAPABILITY_SAFE_VARIANTS
+        from custom_components.adjustable_bed.pairing import OFFLINE_CAPABILITY_SAFE_VARIANTS
 
         assert BED_TYPE_ESHINE_OKIN not in OFFLINE_CAPABILITY_SAFE_BED_TYPES
         assert OFFLINE_CAPABILITY_SAFE_VARIANTS[BED_TYPE_ESHINE_OKIN] == frozenset(ESHINE_OKIN_PROFILES)

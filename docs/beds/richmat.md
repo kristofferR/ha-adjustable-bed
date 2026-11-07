@@ -2535,7 +2535,7 @@ builds the packet for the entry's mode.
 | (empty) | Nothing | `6E 01 00 00 6F` | Empty token; Legacy writes nothing |
 <!-- /generated -->
 
-The complete per-layout catalog is `lp_legacy_profiles.json`.
+The complete per-layout catalog is `lp_legacy_catalog.py`.
 
 ##### Event states
 

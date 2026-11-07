@@ -5,7 +5,11 @@ must explicitly select one. Empty catalogs are retained and conflicting getter
 contexts never resolve by selecting an arbitrary command.
 
 Regenerate the compact literals with tools/generate_richmat_profiles.py. The
-original APK, raw tables, and report remain machine-local.
+original APK, raw tables, and report remain machine-local. Input SHA-256 (the
+generator refuses any other input):
+    ACTIONS.tsv: 5267a88431aa50dd8d6d5bd5d917e9db32d5a7a82edda4e1aa0647a3995db5cc
+    SELECTORS.tsv: 7bc288c81b2438d2c97a5c9b11438021a0afcc68f59fd69223aa74761e025cbb
+    SCALARS.json: 6d5b25829da86dfbcbd9e2e8e504ed91b0e8591fc21f9af36b29ec1afd9a0517
 """
 
 from __future__ import annotations

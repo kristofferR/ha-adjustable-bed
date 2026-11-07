@@ -4,14 +4,6 @@ from dataclasses import dataclass, field
 from enum import IntFlag
 from typing import Final, overload
 
-from . import hush_catalog as _hush_catalog
-from . import richmat_mh_catalog as _richmat_mh_catalog
-from . import ruf_richmat_models as _ruf_richmat_models
-from . import ruf_richmat_profiles as _ruf_richmat_profiles
-from .goodvibe_catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
-from .hjbed_catalog import PROFILE_CHOICES as HJBED_PROFILES
-from .profiles import casper as _casper_profiles
-
 DOMAIN: Final = "adjustable_bed"
 
 
@@ -552,36 +544,32 @@ BED_TYPE_ADJUSTABLE_LUMBAR: Final = "adjustable_lumbar"
 BED_TYPE_HUSH_BASE: Final = "hush_base"
 BED_TYPE_HUSH_SLEEP_MM: Final = "hush_sleep_mm"
 BED_TYPE_HUSH_SLEEP_SXB: Final = "hush_sleep_sxb"
-HUSH_BASE_VARIANTS: Final = {
-    key: value[0] + ("" if 46 <= _hush_catalog.INDICES[key] <= 57 else " (restored profile)")
-    for key, value in _hush_catalog.PRODUCTS.items()
-}
-HUSH_BASE_SIDE_VARIANTS: Final = frozenset(key for key, value in _hush_catalog.PRODUCTS.items() if value[11])
 BED_TYPE_CASPER_BASE: Final = "casper_base"
 BED_TYPE_GMMOTOR: Final = "gmmotor"
 BED_TYPE_GMMOTOR_SLEEP_MM: Final = "gmmotor_sleep_mm"
 BED_TYPE_GMMOTOR_SLEEP_SXB: Final = "gmmotor_sleep_sxb"
 BED_TYPE_CASPER_SLEEP_MM: Final = "casper_sleep_mm"
 BED_TYPE_CASPER_SLEEP_SXB: Final = "casper_sleep_sxb"
-CASPER_BASE_VARIANTS: Final = {
-    key: profile.label + ("" if profile.current else " (stored profile)")
-    for key, profile in _casper_profiles.PROFILES.items()
-}
-CASPER_BASE_SIDE_VARIANTS: Final = frozenset(
-    key for key, profile in _casper_profiles.PROFILES.items() if profile.row[11]
-)
 BED_TYPE_RICHMAT_REVIVE: Final = "richmat_revive"  # com.richmat.revive3
 BED_TYPE_RICHMAT_BEST_MATTRESS: Final = "richmat_best_mattress"  # com.richmat.best_mattress
 BED_TYPE_RICHMAT_BLVD_HOME: Final = "richmat_blvd_home"  # com.richmat.blvd_home
 BED_TYPE_RICHMAT_HARMONY: Final = "richmat_harmony"  # com.richmat.harmony
 BED_TYPE_RICHMAT_IDEALBED: Final = "richmat_idealbed"  # com.richmat.idealbed
+# The RUF and Richmat app profiles, each with its catalog in ``ruf_richmat_data``.
+RUF_RICHMAT_APPS: Final[dict[str, str]] = {
+    "ruf_betten": "ruf",
+    "wsilver_products": "wsilver2",
+    "richmat_americanstar": "americanstar",
+    "bailey_bed_control": "bailey2",
+    "richmat_tx": "tx",
+}
 RICHMAT_MH_APPS: Final[dict[str, str]] = {
     BED_TYPE_RICHMAT_REVIVE: "revive",
     BED_TYPE_RICHMAT_BEST_MATTRESS: "best_mattress",
     BED_TYPE_RICHMAT_BLVD_HOME: "blvd_home",
     BED_TYPE_RICHMAT_HARMONY: "harmony",
     BED_TYPE_RICHMAT_IDEALBED: "idealbed",
-    **_ruf_richmat_profiles.APPS,
+    **RUF_RICHMAT_APPS,
 }
 RICHMAT_MH_BED_TYPES: Final = frozenset(RICHMAT_MH_APPS)
 BED_TYPE_CUSTOMATIC_CLARITY: Final = "customatic_clarity"
@@ -773,7 +761,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_RICHMAT_BLVD_HOME,
     BED_TYPE_RICHMAT_HARMONY,
     BED_TYPE_RICHMAT_IDEALBED,
-    *_ruf_richmat_profiles.APPS,
+    *RUF_RICHMAT_APPS,
     "richmat_sleep_receiver",
     # Explicit Customatic app profiles
     BED_TYPE_ZSERIES,
@@ -1752,42 +1740,6 @@ ADJUSTABLE_LUMBAR_VARIANTS: Final = {
 }
 
 
-# Richmat MH app model choices, from the generated catalog: each app's picker dialog
-# and setup wizard, Revive's six short manual identifiers, and every model for
-# Idealbed, whose manual dialog accepts any valid identifier. "auto" applies the
-# app's name rule: the first four characters of the raw Bluetooth name, lowercased,
-# name the model; QRRM asks for a choice.
-def _richmat_mh_model_choices(app: str) -> tuple[tuple[str, str], ...]:
-    catalog = _richmat_mh_catalog
-    choices: dict[str, str] = dict(catalog.PICKERS.get(app, ()))
-    manual = catalog.MANUAL_SHORT_IDS.get(app, ())
-    if app in catalog.MANUAL_ANY_MODEL:
-        manual = sorted(catalog.MODELS[app])
-    for model in manual:
-        choices.setdefault(model, model.upper())
-    return tuple(choices.items())
-
-
-RICHMAT_MH_MODEL_CHOICES: Final[dict[str, tuple[tuple[str, str], ...]]] = {
-    **{app: _richmat_mh_model_choices(app) for app in _richmat_mh_catalog.MODELS},
-    **{app: tuple((model, model.upper()) for model in models)
-       for app, models in _ruf_richmat_models.MODEL_IDS.items()},
-}
-RICHMAT_MH_VARIANTS_BY_APP: Final[dict[str, dict[str, str]]] = {
-    app: {
-        VARIANT_AUTO: "Model from the Bluetooth name (first four characters)",
-        **{
-            f"model_{model}": label if label == model.upper() else f"{label} ({model.upper()})"
-            for model, label in choices
-        },
-    }
-    for app, choices in RICHMAT_MH_MODEL_CHOICES.items()
-}
-for _app in ("wsilver2", "americanstar", "tx"):
-    RICHMAT_MH_VARIANTS_BY_APP[_app].update({
-        f"model_{model}_mattress": f"{model.upper()} with normal mattress (explicit opt-in)"
-        for model in _ruf_richmat_models.MODEL_IDS[_app]
-    })
 # Explicit app bed types whose name rule reads the stored raw Bluetooth name.
 NAME_RULE_VARIANTS_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_BEDSENSE: frozenset({VARIANT_AUTO}),
@@ -1965,23 +1917,11 @@ ORE_COMFORT_BED_VARIANTS: Final = frozenset(
         KEESON_VARIANT_AMERICANSTAR,
     }
 )
-# Explicit protocol variants whose entity-gating capabilities depend only on stored
-# config, for bed types that are not offline-safe as a whole (a Keeson "auto" entry
-# detects its variant live). A paired side on one of these variants can be minted
-# offline. Each bed type contributes its own frozenset, so profiles extend this
-# independently; every member must build its controller without a client.
+# Keeson's share of ``pairing.OFFLINE_CAPABILITY_SAFE_VARIANTS``: variants whose
+# capabilities come only from stored config ("auto" detects its variant live).
 OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS: Final = (
     ORE_COMFORT_BED_VARIANTS | {KEESON_VARIANT_INNOVA} | frozenset(OKIN_APP_VARIANTS)
 )
-OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
-    BED_TYPE_ADJUSTAMATTRESS: frozenset(v for v in ADJUSTAMATTRESS_VARIANTS if v != VARIANT_AUTO),
-    BED_TYPE_COMFORT_ENHANCEMENTS: frozenset(COMFORT_ENHANCEMENTS_VARIANTS),
-    BED_TYPE_GOODVIBE: frozenset(GOODVIBE_PROFILES),
-    BED_TYPE_HJBED: frozenset(HJBED_PROFILES),
-    BED_TYPE_ESHINE_OKIN: frozenset(ESHINE_OKIN_PROFILES),
-    BED_TYPE_GLIDEAWAY_MOTION: frozenset(GLIDEAWAY_MOTION_MODELS),
-    BED_TYPE_KEESON: OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS,
-}
 # Restonic BT Remote (com.keeson.restonicBT): the app's user-selected remote style.
 KEESON_VARIANT_RESTONIC_A: Final = "restonic_a"
 KEESON_VARIANT_RESTONIC_B: Final = "restonic_b"

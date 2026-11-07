@@ -1498,7 +1498,7 @@ _RICHMAT_CLASSIC: frozenset[str] = frozenset(
 
 # L&P Adjustable Base 2.2.1 legacy app (row019): every Legacy and Framed packet
 # the accepted catalog stored for its 122 layouts, frozen from
-# ``lp_legacy_profiles.json`` before the catalog kept only the app's tokens.
+# the catalog (then ``lp_legacy_profiles.json``) before it kept only the app's tokens.
 _LP_LEGACY: frozenset[str] = frozenset(
     {
         "21",

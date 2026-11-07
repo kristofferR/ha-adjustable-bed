@@ -232,6 +232,7 @@ from .const import (
     RICHMAT_VARIANT_PREFIXAA,
     RICHMAT_VARIANT_WILINKE,
     RICHMAT_WILINKE_SERVICE_UUIDS,
+    RUF_RICHMAT_APPS,
     SBI_VARIANT_BOTH,
     SLEEP_NUMBER_VARIANT_LEFT,
     SLEEP_NUMBER_VARIANT_RIGHT,
@@ -743,17 +744,16 @@ async def create_controller(
             import_module, ".beds.richmat_mh", __package__
         )
         from .beds.richmat_mh import RichmatMhController
-        from .ruf_richmat_profiles import APPS as ruf_richmat_apps
 
         controller_class = RichmatMhController
-        if bed_type in ruf_richmat_apps:
+        if bed_type in RUF_RICHMAT_APPS:
             await coordinator.hass.async_add_import_executor_job(
                 import_module, ".beds.ruf_richmat", __package__
             )
             from .beds.ruf_richmat import RufRichmatController
             from .ruf_richmat_profiles import profiles
 
-            await coordinator.hass.async_add_executor_job(profiles, ruf_richmat_apps[bed_type])
+            await coordinator.hass.async_add_executor_job(profiles, RUF_RICHMAT_APPS[bed_type])
             controller_class = RufRichmatController
         return controller_class(
             coordinator,

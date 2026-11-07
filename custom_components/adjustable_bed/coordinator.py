@@ -168,7 +168,6 @@ from .const import (
     NAME_RULE_VARIANTS_BY_BED_TYPE,
     OCTO_VARIANT_STAR2,
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
-    OFFLINE_CAPABILITY_SAFE_VARIANTS,
     PAIR_MODE_SINGLE_ADDRESS,
     POSITION_MODE_ACCURACY,
     REVERIE_BACK_MAX_ANGLE,
@@ -196,6 +195,7 @@ from .detection import (
 from .execution import HOLD_CEILING_MS
 from .furnimove_repair import CONF_OKIMAT_MODEL_ON_CST, async_refresh_furnimove_layout_issues
 from .pairing import (
+    OFFLINE_CAPABILITY_SAFE_VARIANTS,
     filter_child_options,
     is_paired,
     octo_snapshot_from_descriptor,

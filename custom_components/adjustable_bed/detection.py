@@ -147,8 +147,6 @@ from .const import (
     ERGOMOTION_NAME_PATTERNS,
     ESHINE_OKIN_PROFILES,
     GLIDEAWAY_MOTION_MODELS,
-    GOODVIBE_PROFILES,
-    HJBED_PROFILES,
     JENSEN_LINON_NAME_PATTERNS,
     JENSEN_NAME_FRAGMENT,
     JENSEN_NAME_PATTERNS,
@@ -267,6 +265,8 @@ from .discovery_hints import (
     first_pass,
 )
 from .fsm_relax_discovery import matches_fsm_relax_candidate
+from .goodvibe_catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
+from .hjbed_catalog import PROFILE_CHOICES as HJBED_PROFILES
 from .kaidi_protocol import extract_kaidi_advertisement, is_floyd_advertisement
 from .richmat_classic_discovery import matching_apps as richmat_classic_matching_apps
 from .richmat_classic_profiles import APP_NAMES as RICHMAT_CLASSIC_APPS

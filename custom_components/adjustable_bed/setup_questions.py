@@ -144,9 +144,7 @@ from .const import (
     CONF_VMATBASIC_FLOOR_LEVEL,
     CONF_VMATBASIC_FLOOR_MINUTES,
     CONF_VMATBASIC_PROFILE,
-    GOODVIBE_PROFILES,
     HAS_LIGHT_DEFAULTS,
-    HJBED_PROFILES,
     JIECANG_APP_LAYOUTS,
     JIECANG_APP_TRANSPORTS,
     KAIDI_VARIANT_FLOYD,
@@ -188,6 +186,8 @@ from .const import (
     VMATBASIC_PROFILES,
     bed_type_has_position_feedback,
 )
+from .goodvibe_catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
+from .hjbed_catalog import PROFILE_CHOICES as HJBED_PROFILES
 
 if TYPE_CHECKING:
     from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
@@ -1295,8 +1295,7 @@ def _limoss_remote_errors(data: Mapping[str, Any]) -> dict[str, str]:
 
 def _hush_products(_data: Mapping[str, Any]) -> Mapping[Any, str]:
     """The app's own twelve products first, then the profiles it restores."""
-    from .const import HUSH_BASE_VARIANTS
-    from .profiles.hush import PROFILES
+    from .profiles.hush import HUSH_BASE_VARIANTS, PROFILES
 
     return {
         key: HUSH_BASE_VARIANTS[key]

@@ -1,4 +1,7 @@
-"""Exact package-local selectable layouts; no hardware compatibility claim."""
+"""Exact package-local selectable layouts; no hardware compatibility claim.
+
+Generated outside this repository with ``richmat_classic_data``; no generator is checked in, so edits are by hand.
+"""
 
 # These source screens select another layout and have no ordinary bed controls.
 LAYOUT_PICKER_CHOICES: dict[str, dict[str, str]] = {
