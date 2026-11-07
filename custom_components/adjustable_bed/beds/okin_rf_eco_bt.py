@@ -95,24 +95,6 @@ class OkinRfEcoBtController(OkinUuidController):
             ),
         )
 
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Remove bed motor covers if an existing entry is switched to this profile."""
-        return frozenset(
-            {
-                "back",
-                "legs",
-                "head",
-                "feet",
-                "lumbar",
-                "pillow",
-                "neck",
-                "tilt",
-                "hip",
-                "bed_height",
-            }
-        )
-
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         """Store callback only; this profile has no supported position feedback."""
         self._notify_callback = callback

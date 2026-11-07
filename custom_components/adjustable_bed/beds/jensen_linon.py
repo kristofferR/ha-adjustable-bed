@@ -208,10 +208,6 @@ class JensenLinonController(BedController):
         return True
 
     @property
-    def prunes_stale_light_level(self) -> bool:
-        return True
-
-    @property
     def supports_discrete_light_control(self) -> bool:
         return True
 

@@ -16,18 +16,14 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntityDescription,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import EntityCategory
+from homeassistant.const import EntityCategory, Platform
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
 from .entity import AdjustableBedEntity
-from .entity_discovery import (
-    async_remove_retired_rmcontrol_telemetry,
-    async_setup_dynamic_entities,
-)
+from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime, own_sides
+from .entity_sweep import PlatformEntities, records_entities
 from .paired_coordinator import entity_runtimes
 
 if TYPE_CHECKING:
@@ -61,18 +57,17 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[AdjustableBedBinarySensorEntityDescription, ..
 )
 
 
+@records_entities(Platform.BINARY_SENSOR)
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed binary sensor entities."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
     for runtime in entity_runtimes(coordinator):
-        async_remove_retired_rmcontrol_telemetry(hass, entry, runtime, "binary_sensor")
         async_setup_dynamic_entities(
-            hass, entry, runtime, async_add_entities,
-            partial(_binary_sensor_entities_for, hass, runtime),
+            entry, runtime, async_add_entities, partial(_binary_sensor_entities_for, hass, runtime)
         )
 
 
@@ -90,9 +85,7 @@ def _binary_sensor_entities_for(
                 continue
 
             bed_presence_sides = own_sides(coordinator, controller.bed_presence_sides)
-            if bed_presence_sides:
-                _async_remove_stale_presence_entity(hass, coordinator)
-            else:
+            if not bed_presence_sides:
                 entities.append(AdjustableBedPresenceSensor(coordinator, description))
             for side in bed_presence_sides:
                 entities.append(
@@ -112,79 +105,12 @@ def _binary_sensor_entities_for(
         entities.append(AdjustableBedConnectionSensor(coordinator, description))
 
     if controller is not None:
-        specs = controller.controller_state_binary_sensor_specs
-        active_keys = {spec.key for spec in specs}
-        stale_keys = controller.stale_controller_state_binary_sensor_entity_keys | (
-            {
-                "leggett_alarm_indicator",
-                "leggett_sleep_timer_indicator",
-                "under_bed_lights",
-                "furnimove_ubl",
-                "furnimove_sync",
-                "furnimove_child_lock",
-                "furnimove_massage_running",
-                "vmatbasic_ed",
-                "adjustable_lite_light",
-                "innova_light",
-                "memory_save_response_observed",
-            }
-            - active_keys
-        )
-        _async_remove_stale_controller_state_binary_sensor_entities(
-            hass,
-            coordinator,
-            keys=frozenset(stale_keys),
-        )
         entities.extend(
             AdjustableBedControllerStateBinarySensor(coordinator, spec)
-            for spec in specs
+            for spec in controller.controller_state_binary_sensor_specs
         )
-
-    if controller is not None:
-        # Retire this runtime's app telemetry after a protocol/profile change.
-        for namespace in ("motion_bed_", "sleeptracker_", "bedsense_"):
-            prefix, suffix = coordinator.entity_unique_id(namespace).split(namespace, 1)
-            prefix += namespace
-            desired = {coordinator.entity_unique_id(spec.key) for spec in controller.controller_state_binary_sensor_specs}
-            registry = er.async_get(hass)
-            for row in list(er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)):
-                if (row.domain == "binary_sensor" and row.platform == DOMAIN
-                        and row.unique_id.startswith(prefix) and row.unique_id.endswith(suffix)
-                        and row.unique_id not in desired):
-                    registry.async_remove(row.entity_id)
 
     return entities
-
-
-def _async_remove_stale_presence_entity(
-    hass: HomeAssistant,
-    coordinator: EntityRuntime,
-) -> None:
-    """Remove the legacy single-side presence entity when split sensors exist."""
-    registry = er.async_get(hass)
-    entity_id = registry.async_get_entity_id(
-        "binary_sensor",
-        DOMAIN,
-        coordinator.entity_unique_id("bed_presence"),
-    )
-    if entity_id is not None:
-        registry.async_remove(entity_id)
-
-
-def _async_remove_stale_controller_state_binary_sensor_entities(
-    hass: HomeAssistant,
-    coordinator: EntityRuntime,
-    *,
-    keys: frozenset[str],
-) -> None:
-    """Remove controller diagnostics omitted by the current capability snapshot."""
-    registry = er.async_get(hass)
-    for key in keys:
-        entity_id = registry.async_get_entity_id(
-            "binary_sensor", DOMAIN, coordinator.entity_unique_id(key)
-        )
-        if entity_id is not None:
-            registry.async_remove(entity_id)
 
 
 class AdjustableBedConnectionSensor(AdjustableBedEntity, BinarySensorEntity):

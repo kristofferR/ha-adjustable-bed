@@ -51,6 +51,15 @@ _MODULE_OWNERS: Mapping[str, str] = {
     "QinangFragment": "air", "AnmoSetActivity": "air", "PressSetActivity": "air",
     "LengnuanFragment": "thermal",
 }
+# Every screen a hub can show, whichever modules it reports.
+_HUB_OWNERS: frozenset[str] = frozenset(
+    {
+        "Setting2Activity", "MainMcuActivity", "ChangeDeviceActivity", "ConnectMcuActivity",
+        "DiandongFragment", "DianDongSetActivity", "AlarmActivity",
+        "QinangFragment", "AnmoSetActivity", "PressSetActivity",
+        "LengnuanFragment", "TimeSettingActivity",
+    }
+)
 # Entity identities follow a control's function, not the app screen hosting it.
 _SCREEN_PREFIX = re.compile(
     r"(?:kuaijie_k\w+?fragment|weitiao_w\w+?fragment|setting2activity|\w+?_(?:activity|fragment))_"
@@ -250,6 +259,13 @@ class MotionBedController(BedController):
                         for action in self.actions],
             **self._state.to_updates(),
         }
+
+    @property
+    def retained_entity_keys(self) -> frozenset[tuple[str, str]]:
+        # A hub reports its modules after connecting; keep each module's controls.
+        if self.selection.surface != "hub":
+            return frozenset()
+        return frozenset(("button", key) for key in button_actions_for(_HUB_OWNERS))
 
     def _active_owners(self) -> frozenset[str]:
         owners: set[str] = {"Setting2Activity"}

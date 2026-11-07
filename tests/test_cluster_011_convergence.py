@@ -270,11 +270,6 @@ def test_fixed_product_profiles_expose_exact_reachable_entity_surface(
     zoned_massage = expected.massage_style == "zoned"
 
     assert tuple(spec.key for spec in controller.motor_control_specs) == expected.motors
-    assert controller.stale_motor_entity_keys == (
-        frozenset({"back", "legs", "tilt"})
-        if "lumbar" in expected.motors
-        else frozenset({"back", "legs", "lumbar", "tilt"})
-    )
     assert controller.has_lumbar_support is ("lumbar" in expected.motors)
     assert controller.supports_preset_zero_g is True
     assert controller.supports_preset_anti_snore is True

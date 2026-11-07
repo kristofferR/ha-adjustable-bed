@@ -4,7 +4,6 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.base import BedController
@@ -52,44 +51,26 @@ def configure_entity_runtime(
         ("okin_new", "Premium", "malouf", None),
     ],
 )
-async def test_profile_reload_reconciles_only_current_side_app_buttons(
+async def test_profile_app_buttons_follow_the_model(
     hass: HomeAssistant, transport: str, model: str, app: str, active_key: str | None
 ) -> None:
     controller = make_controller(transport, model, app)
     coordinator = configure_entity_runtime(hass, controller)
-    registry = er.async_get(hass)
-    previous = {
-        key: registry.async_get_or_create(
-            "button", DOMAIN, f"bed_{key}_left", config_entry=coordinator.entry
-        )
-        for key in ("malouf_read", "malouf_oz_save_memory_2")
-    }
-    other_side = registry.async_get_or_create(
-        "button", DOMAIN, "bed_malouf_read_right", config_entry=coordinator.entry
-    )
-    unrelated = registry.async_get_or_create(
-        "button", DOMAIN, "bed_other_action_left", config_entry=coordinator.entry
-    )
 
     entities = _button_entities_for(hass, coordinator)
 
-    for key, old in previous.items():
-        assert (registry.async_get(old.entity_id) is not None) is (key == active_key)
-    assert registry.async_get(other_side.entity_id) is not None
-    assert registry.async_get(unrelated.entity_id) is not None
     assert {
         entity.unique_id for entity in entities if "malouf_" in entity.unique_id
     } == ({f"bed_{active_key}_left"} if active_key else set())
 
 
 @pytest.mark.parametrize("destination", ["richmat", "no_massage", "different_bed_type", "retain"])
-async def test_profile_reload_reconciles_massage_sensor(
+async def test_profile_massage_sensor_follows_the_model(
     hass: HomeAssistant, destination: str
 ) -> None:
     controller = (
         make_controller_mock(
             controller_state_sensor_specs=(),
-            stale_controller_state_sensor_entity_keys=frozenset(),
             position_number_specs=(),
         )
         if destination == "different_bed_type"
@@ -102,18 +83,9 @@ async def test_profile_reload_reconciles_massage_sensor(
         hass, controller,
         BED_TYPE_DIAGNOSTIC if destination == "different_bed_type" else BED_TYPE_MALOUF_APP,
     )
-    registry = er.async_get(hass)
-    previous = registry.async_get_or_create(
-        "sensor", DOMAIN, "bed_malouf_massage_remaining_left", config_entry=coordinator.entry
-    )
-    other_side = registry.async_get_or_create(
-        "sensor", DOMAIN, "bed_malouf_massage_remaining_right", config_entry=coordinator.entry
-    )
 
     entities = _sensor_entities_for(hass, coordinator)
 
-    assert (registry.async_get(previous.entity_id) is not None) is (destination == "retain")
-    assert registry.async_get(other_side.entity_id) is not None
     assert any(
         entity.unique_id == "bed_malouf_massage_remaining_left" for entity in entities
     ) is (destination == "retain")
@@ -149,12 +121,12 @@ async def test_feedback_light_entity_toggles_without_initial_state(
 
 
 @pytest.mark.parametrize("destination", ["different_bed_type", "okin", "retain"])
-async def test_profile_reload_reconciles_altitude_covers(
+async def test_profile_altitude_covers_follow_the_transport(
     hass: HomeAssistant, destination: str
 ) -> None:
     controller = (
         make_controller_mock(
-            motor_control_specs=(), stale_motor_entity_keys=frozenset(),
+            motor_control_specs=(),
             supports_motor_control=False,
         )
         if destination == "different_bed_type"
@@ -164,28 +136,10 @@ async def test_profile_reload_reconciles_altitude_covers(
         hass, controller,
         BED_TYPE_DIAGNOSTIC if destination == "different_bed_type" else BED_TYPE_MALOUF_APP,
     )
-    registry = er.async_get(hass)
     keys = {"malouf_tilt_head", "malouf_full_tilt"}
-    old = [
-        registry.async_get_or_create(
-            "cover", DOMAIN, f"bed_{key}_left", config_entry=coordinator.entry
-        )
-        for key in keys
-    ]
-    other_side = registry.async_get_or_create(
-        "cover", DOMAIN, "bed_malouf_tilt_head_right", config_entry=coordinator.entry
-    )
-    unrelated = registry.async_get_or_create(
-        "cover", DOMAIN, "bed_other_axis_left", config_entry=coordinator.entry
-    )
 
     entities = _cover_entities_for(hass, coordinator)
 
-    assert all(
-        (registry.async_get(row.entity_id) is not None) is (destination == "retain") for row in old
-    )
-    assert registry.async_get(other_side.entity_id) is not None
-    assert registry.async_get(unrelated.entity_id) is not None
     assert {
         entity.unique_id for entity in entities if "malouf_" in entity.unique_id
     } == ({f"bed_{key}_left" for key in keys} if destination == "retain" else set())

@@ -15,7 +15,6 @@ from typing import TYPE_CHECKING
 from ..codec import jiecang as codec
 from ..const import JIECANG_CHAR_UUID
 from ..profiles.jiecang import (
-    ALL_AXES,
     LEGACY,
     JiecangProfile,
     Layout,
@@ -156,10 +155,6 @@ class JiecangProfileController(BedController):
             )
 
         return tuple(spec(axis) for axis in self.profile.layouts[self.layout])
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return ALL_AXES if self.layout is not None else frozenset()
 
     @staticmethod
     async def _dispatch_axis(controller: BedController, axis: Axis, up: bool) -> None:

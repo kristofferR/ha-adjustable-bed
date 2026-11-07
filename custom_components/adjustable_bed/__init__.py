@@ -83,6 +83,7 @@ from .controller_factory import create_controller
 from .coordinator import AdjustableBedCoordinator, ChildEntryView
 from .coordinator_connection import PairingOnlyConnectionActiveError
 from .entity_runtime import EntityRuntime
+from .entity_sweep import async_sweep_after_setup
 from .furnimove_repair import async_refresh_furnimove_layout_issues
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
 from .linak_services import SERVICE_LINAK_MOVE_SIMULTANEOUS, SERVICE_LINAK_SET_ALARM
@@ -789,6 +790,7 @@ async def _async_finish_entry_setup(
 
     _LOGGER.debug("Setting up platforms: %s", PLATFORMS)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    async_sweep_after_setup(hass, entry, PLATFORMS)
 
     if schedule_initial_position_read:
         # The successful connect also requests hydration. Route both paths
@@ -1250,6 +1252,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                 [(child.address, side) for side, child in coordinator.children.items()],
             )
             await hass.config_entries.async_forward_entry_setups(entry, PAIRED_PLATFORMS)
+            async_sweep_after_setup(hass, entry, PAIRED_PLATFORMS)
         except (Exception, asyncio.CancelledError):
             hass.data[DOMAIN].pop(entry.entry_id, None)
             await _shutdown_failed_pair()
@@ -1326,6 +1329,7 @@ async def _async_setup_single_address_paired_entry(hass: HomeAssistant, entry: C
         async_register_children(hass, coordinator)
         entry.async_on_unload(entry.add_update_listener(_async_update_listener))
         await hass.config_entries.async_forward_entry_setups(entry, PAIRED_PLATFORMS)
+        async_sweep_after_setup(hass, entry, PAIRED_PLATFORMS)
     except (Exception, asyncio.CancelledError):
         hass.data[DOMAIN].pop(entry.entry_id, None)
         await coordinator.async_shutdown()

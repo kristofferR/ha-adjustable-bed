@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import EntityCategory
+from homeassistant.const import EntityCategory, Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -28,6 +28,7 @@ from .const import (
 from .entity import AdjustableBedEntity, RenamesInPlace, hold_lease_attributes
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime, controller_side_scope
+from .entity_sweep import PlatformEntities, records_entities
 from .octo_runtime import octo_controller
 from .paired_coordinator import (
     PairedBedCoordinator,
@@ -705,10 +706,11 @@ def _moves_untimed(key: str, *, held: bool = False) -> bool:
     return held or key.startswith("preset_")
 
 
+@records_entities(Platform.BUTTON)
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed button entities."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
@@ -728,7 +730,6 @@ async def async_setup_entry(
         for runtime in entity_runtimes(coordinator):
             if octo_controller(runtime.capability_controller) is not None:
                 async_setup_dynamic_entities(
-                    hass,
                     entry,
                     runtime,
                     async_add_entities,
@@ -748,12 +749,10 @@ async def async_setup_entry(
             # Combined buttons read both children's live capabilities, so pass the
             # raw children (the button itself dispatches via the parent, side=both).
             entities.extend(_combined_button_entities_for(coordinator, children))
-            _async_remove_stale_combined_button_entities(hass, coordinator, children, entities)
             return entities
 
         if any(_has_dynamic_buttons(runtime) for runtime in static_runtimes):
             async_setup_dynamic_entities(
-                hass,
                 entry,
                 static_runtimes[0],
                 async_add_entities,
@@ -772,7 +771,6 @@ async def async_setup_entry(
     for runtime in entity_runtimes(coordinator):
         if _has_dynamic_buttons(runtime):
             async_setup_dynamic_entities(
-                hass,
                 entry,
                 runtime,
                 async_add_entities,
@@ -832,8 +830,7 @@ def _async_follow_motion_bed_module_actions(
 def _button_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> list[ButtonEntity]:
     """Build button entities for a single (child or standalone) coordinator."""
     # capability_controller: an offline paired side still gets its buttons built
-    # from a client-free controller minted from config (see coordinator); stale
-    # cleanup below runs against it too (only when non-None).
+    # from a client-free controller minted from config (see coordinator).
     controller = coordinator.capability_controller
     octo = octo_controller(controller)
     has_massage = _massage_entities_enabled(coordinator, controller)
@@ -847,10 +844,6 @@ def _button_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
 
     if controller is not None:
         _async_migrate_massage_intensity_button_unique_ids(hass, coordinator)
-        # Unresolved capabilities (for example Linak memory slots) are not proof
-        # that a button is gone, so keep existing entities until discovery ends.
-        if controller.controller_entity_discovery_complete:
-            _async_remove_stale_button_entities(hass, coordinator, controller, has_massage)
 
     entities: list[ButtonEntity] = []
     for description in BUTTON_DESCRIPTIONS:
@@ -868,104 +861,7 @@ def _button_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
             for spec in controller.controller_button_specs
             if isinstance(spec, ProductButtonSpec)
         )
-        desired = {coordinator.entity_unique_id(f"product_action_{spec.key}") for spec in specs}
-        prefix, suffix = coordinator.entity_unique_id("product_action_").split("product_action_", 1)
-        prefix += "product_action_"
-        registry = er.async_get(hass)
-        for row in list(er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)):
-            if (
-                row.domain == "button"
-                and row.platform == DOMAIN
-                and row.unique_id.startswith(prefix)
-                and row.unique_id.endswith(suffix)
-                and row.unique_id not in desired
-            ):
-                registry.async_remove(row.entity_id)
-
-        if octo is not None and octo.controller_entity_discovery_complete:
-            # Memory slots are discovered from the complete CAP_END list. Retire
-            # only this Octo runtime's slot identities, including slots above
-            # the old fixed 1..8 set, and keep child-side suffixes scoped.
-            memory_keys = {
-                spec.key
-                for spec in controller.controller_button_specs
-                if spec.key.startswith(("preset_memory_", "program_memory_"))
-            }
-            for slot_prefix in ("preset_memory_", "program_memory_"):
-                prefix, suffix = coordinator.entity_unique_id(slot_prefix).split(slot_prefix, 1)
-                prefix += slot_prefix
-                desired_memory = {
-                    coordinator.entity_unique_id(key)
-                    for key in memory_keys
-                    if key.startswith(slot_prefix)
-                }
-                for row in list(
-                    er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)
-                ):
-                    if (
-                        row.domain != "button"
-                        or row.platform != DOMAIN
-                        or not row.unique_id.startswith(prefix)
-                        or not row.unique_id.endswith(suffix)
-                    ):
-                        continue
-                    slot = row.unique_id[len(prefix) : len(row.unique_id) - len(suffix)]
-                    if slot.isdecimal() and row.unique_id not in desired_memory:
-                        registry.async_remove(row.entity_id)
         entities.extend(AdjustableBedProductButton(coordinator, spec) for spec in specs)
-        # Named app actions disappear when their profile or transport changes.
-        for namespace in ("octo_", "woosa_", "malouf_", "customatic_", "serenity_", "furnimove_", "vibradorm_app_", "vmatbasic_", "starcode_abm5_4_", "starcode_", "coolbase_", "remacro_", "fsm_relax_", "simmons_", "tranquil_", "zseries_", "adjustable_lumbar_", "logicdata_app_", "logicdata_air_pump_", "richmat_mh_", "svane_", "motion_bed_", "limoss_remote_", "okin_app_", "restonic_", "ore_comfort_", "innova_", "sleeptracker_", "doublesleep_", "bedsense_", "comfort_enhancements_", "timotion_ahf_", "sleepys_app_", "glideaway_motion_", "eshine_okin_"):
-            desired_actions = {
-                coordinator.entity_unique_id(spec.key)
-                for spec in controller.controller_button_specs
-                if spec.key.startswith(namespace)
-            }
-            if (
-                namespace == "motion_bed_"
-                and controller.supports_motion_bed_actions
-                and any(
-                    spec.key == "motion_bed_active_module"
-                    for spec in controller.controller_select_specs
-                )
-            ):
-                from .beds.motion_bed import button_actions_for
-
-                # Keep possible hub identities while inventory is unknown, but
-                # retire controls that only belong to the former home profile.
-                owners = frozenset(
-                    {
-                        "Setting2Activity",
-                        "MainMcuActivity",
-                        "ChangeDeviceActivity",
-                        "ConnectMcuActivity",
-                        "DiandongFragment",
-                        "DianDongSetActivity",
-                        "AlarmActivity",
-                        "QinangFragment",
-                        "AnmoSetActivity",
-                        "PressSetActivity",
-                        "LengnuanFragment",
-                        "TimeSettingActivity",
-                    }
-                )
-                desired_actions.update(
-                    coordinator.entity_unique_id(key) for key in button_actions_for(owners)
-                )
-            action_prefix, action_suffix = coordinator.entity_unique_id(namespace).split(
-                namespace, 1
-            )
-            action_prefix += namespace
-            for row in list(
-                er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)
-            ):
-                if (
-                    row.domain == "button"
-                    and row.platform == DOMAIN
-                    and row.unique_id.startswith(action_prefix)
-                    and row.unique_id.endswith(action_suffix)
-                    and row.unique_id not in desired_actions
-                ):
-                    registry.async_remove(row.entity_id)
         entities.extend(
             ControllerActionButton(coordinator, spec)
             for spec in controller.controller_button_specs
@@ -1184,53 +1080,6 @@ def _button_translation_key(
     ):
         return "massage_timer_step"
     return description.translation_key or description.key
-
-
-def _async_remove_stale_button_entities(
-    hass: HomeAssistant,
-    coordinator: EntityRuntime,
-    controller: BedController,
-    has_massage: bool,
-) -> None:
-    """Remove button entities that are no longer supported for this controller."""
-    registry = er.async_get(hass)
-    for description in BUTTON_DESCRIPTIONS:
-        if _should_add_button(description, controller, has_massage):
-            continue
-
-        entity_id = registry.async_get_entity_id(
-            "button",
-            DOMAIN,
-            coordinator.entity_unique_id(description.key),
-        )
-        if entity_id is not None:
-            registry.async_remove(entity_id)
-
-
-def _async_remove_stale_combined_button_entities(
-    hass: HomeAssistant,
-    coordinator: PairedBedCoordinator,
-    children: Sequence[EntityRuntime],
-    entities: list[ButtonEntity],
-) -> None:
-    """Remove pair-level controls no longer supported by both known sides."""
-    # A side whose capabilities are still unknown may yet support them.
-    if any(child.capability_controller is None for child in children):
-        return
-
-    desired_unique_ids = {
-        unique_id
-        for entity in entities
-        if (unique_id := entity.unique_id) is not None and unique_id.endswith("_both")
-    }
-    registry = er.async_get(hass)
-    for row in list(er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)):
-        if (
-            row.domain == "button"
-            and row.unique_id.endswith("_both")
-            and row.unique_id not in desired_unique_ids
-        ):
-            registry.async_remove(row.entity_id)
 
 
 def _discovered_memory_slot_name(

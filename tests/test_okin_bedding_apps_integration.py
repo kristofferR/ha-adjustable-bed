@@ -11,7 +11,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.exceptions import ServiceValidationError
-from homeassistant.helpers import entity_registry as er
 
 from custom_components.adjustable_bed.actuator_groups import actuator_group_for
 from custom_components.adjustable_bed.button import _button_entities_for
@@ -119,16 +118,12 @@ async def test_setup_hides_fixed_layout_and_refresh_delay(hass, bed_type):
     ("factory", "bed_type", "prefix"),
     [(tranquil, BED_TYPE_TRANQUIL, "tranquil"), (lambda: zseries("z280"), BED_TYPE_ZSERIES, "zseries")],
 )
-async def test_profile_change_retires_previous_app_buttons_and_sensors(hass, factory, bed_type, prefix):
+async def test_profile_change_builds_only_the_current_app_namespace(hass, factory, bed_type, prefix):
     runtime = configure_entity_runtime(hass, factory(), bed_type)
-    registry = er.async_get(hass)
-    stale = [
-        registry.async_get_or_create("button", DOMAIN, "bed_serenity_save_tv_left", config_entry=runtime.entry),
-        registry.async_get_or_create("sensor", DOMAIN, "bed_serenity_status_code_left", config_entry=runtime.entry),
-    ]
     buttons = {entity.unique_id for entity in _button_entities_for(hass, runtime)}
     sensors = {entity.unique_id for entity in _sensor_entities_for(hass, runtime)}
-    assert all(registry.async_get(row.entity_id) is None for row in stale)
+    assert "bed_serenity_save_tv_left" not in buttons
+    assert "bed_serenity_status_code_left" not in sensors
     assert f"bed_{prefix}_save_zero_g_left" in buttons
     assert f"bed_{prefix}_status_code_left" in sensors
     # Moving away from the app profile removes its namespace again.
@@ -137,18 +132,15 @@ async def test_profile_change_retires_previous_app_buttons_and_sensors(hass, fac
         make_controller_mock(
             controller_button_specs=(),
             controller_state_sensor_specs=(),
-            stale_controller_state_sensor_entity_keys=frozenset(),
             position_number_specs=(),
         ),
         BED_TYPE_DIAGNOSTIC,
     )
-    kept = [
-        registry.async_get_or_create("button", DOMAIN, f"bed_{prefix}_save_zero_g_left", config_entry=retired.entry),
-        registry.async_get_or_create("sensor", DOMAIN, f"bed_{prefix}_status_code_left", config_entry=retired.entry),
-    ]
-    _button_entities_for(hass, retired)
-    _sensor_entities_for(hass, retired)
-    assert all(registry.async_get(row.entity_id) is None for row in kept)
+    remaining = {
+        entity.unique_id
+        for entity in (*_button_entities_for(hass, retired), *_sensor_entities_for(hass, retired))
+    }
+    assert not {unique_id for unique_id in remaining if f"_{prefix}_" in unique_id}
 
 
 @pytest.mark.parametrize(("factory", "has_switch"), [(tranquil, True), (lambda: zseries("z230"), False)])

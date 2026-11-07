@@ -269,22 +269,6 @@ class OkinUuidController(OkinNFrameController):
         return self._route_profile
 
     @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Remove covers that no longer apply to this remote.
-
-        Installs misdetected as the RF ECO BT stair profile registered a
-        ``<address>_stair`` cover. When they are promoted back to this
-        multi-motor profile (issue #406), drop that orphaned stair entity so the
-        registry and Lovelace card no longer expose a dead control.
-
-        Earlier releases also exposed back/legs covers for every remote, even
-        when the handset has no such motor — listing all motor keys here lets
-        the cover platform clean up axes this remote doesn't drive (active keys
-        are skipped by the cleanup).
-        """
-        return frozenset({"stair", "back", "legs", "head", "feet"})
-
-    @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
         """Expose only the motor axes this remote actually drives.
 

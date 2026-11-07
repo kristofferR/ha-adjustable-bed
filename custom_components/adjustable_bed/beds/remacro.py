@@ -327,10 +327,6 @@ class RemacroController(BedController):
         return tuple(specs)
 
     @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset({"back", "legs", "head", "feet", "lumbar", "tilt", "all_motors"})
-
-    @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
         if not self._model.screen.split:
             return ()

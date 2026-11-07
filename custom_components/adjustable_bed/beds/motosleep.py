@@ -176,23 +176,6 @@ class MotoSleepController(BedController):
         return "tilt" in self.profile.motors
 
     @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset(
-            {
-                "back",
-                "legs",
-                "head",
-                "feet",
-                "lumbar",
-                "neck",
-                "tilt",
-                "auxiliary",
-                "auxiliary_1",
-                "auxiliary_2",
-            }
-        )
-
-    @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
         """Expose exactly the actuators rendered by the resolved app page."""
 

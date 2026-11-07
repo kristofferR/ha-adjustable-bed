@@ -167,10 +167,6 @@ WAIST_MODE_KEY: Final = "richmat_mh_waist_mode"
 # Waist page selects per side and field, with their option lists.
 WAIST_FIELDS: Final = {"heat": WAIST_HEAT, "pressure": WAIST_PRESSURE, "duration": WAIST_DURATION}
 WAIST_ALARM_KEYS: Final = {side: f"richmat_mh_waist_{side}_alarm" for side in WAIST_SIDES}
-_SENSOR_KEYS: Final = frozenset(
-    {DETECTION_KEY, ALARM_STATUS_KEY, MEMORY_ARRIVAL_KEY, *WAIST_ALARM_KEYS.values()}
-)
-_BINARY_SENSOR_KEYS: Final = frozenset({SMART_SET_LOCK_KEY, SMART_LIGHT_LOCK_KEY})
 CALLBACK_FUNCTION_LED: Final = "0a"  # EPack.LED function: the light-page lock switch
 
 
@@ -698,10 +694,6 @@ class RichmatMhController(BedController):
             for axis in self._axes()
         )
 
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset(key for key, _ in _AXES.values())
-
     def motor_pulse_settings(self) -> tuple[int, int]:
         """The pulse count bounds a hold; the app's own interval is per control."""
         return self._coordinator.motor_pulse_count, 100
@@ -956,10 +948,6 @@ class RichmatMhController(BedController):
                 )
         return tuple(specs)
 
-    @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        return _SENSOR_KEYS - {spec.key for spec in self.controller_state_sensor_specs}
-
     def _smart_light_lock(self) -> bool:
         """The light page shows its lock switch; no listener sends from it in these apps."""
         f = self._features
@@ -973,10 +961,6 @@ class RichmatMhController(BedController):
             if visible:
                 specs.append(ControllerStateBinarySensorSpec(key, key, key, "mdi:lock"))
         return tuple(specs)
-
-    @property
-    def stale_controller_state_binary_sensor_entity_keys(self) -> frozenset[str]:
-        return _BINARY_SENSOR_KEYS - {s.key for s in self.controller_state_binary_sensor_specs}
 
     @property
     def motor_mode_options(self) -> tuple[str, ...]:

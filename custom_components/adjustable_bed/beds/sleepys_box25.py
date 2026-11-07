@@ -330,11 +330,6 @@ class SleepysBox25Controller(BedController):
             ),
         )
 
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Remove stale standard-layout entities from older BOX25 setups."""
-        return frozenset({"back", "legs"})
-
     # ─── Init / Write Helpers ────────────────────────────────────────────
 
     def _effective_cancel_event(

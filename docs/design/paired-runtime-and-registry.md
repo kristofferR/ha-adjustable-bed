@@ -88,6 +88,17 @@ Single-address unpair retains its in-place config restoration and paired-only
 entity cleanup. Failures restoring its configuration or reloading it are reported
 without hiding the original failure.
 
+## Stale entity rows
+
+Entity builders only build. Every platform records the unique IDs it creates in
+`entity_sweep.py`, and once all forwarded platforms have set up, rows of the entry
+that nothing created are removed. Disabled entities are created too, so they stay.
+The sweep does nothing while any configured side is missing from the runtime, has
+no capability controller, or has not finished entity discovery, so an offline or
+retained side never loses the other side's rows. A controller lists entities that
+appear only once the bed reports them in `retained_entity_keys`. A dynamic builder
+that rebuilds after discovery replaces its own record and triggers the sweep again.
+
 ## Validation
 
 `test_entity_runtime.py` covers every platform in all three runtime shapes,

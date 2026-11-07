@@ -295,12 +295,6 @@ class MaloufNewOkinController(BedController):
         """Return controls for the selected physical actuator layout."""
         return _malouf_motor_control_specs(self._layout)
 
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Remove legacy aliases and controls absent from the selected layout."""
-        active = {spec.key for spec in self.motor_control_specs}
-        return frozenset({"head", "feet", "tilt", "lumbar", "bed_height"} - active)
-
     async def _send_stop(self) -> None:
         await self.write_command(self._frame("stop"), cancel_event=asyncio.Event())
 
@@ -569,12 +563,6 @@ class MaloufLegacyOkinController(BedController):
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
         """Return controls for the selected physical actuator layout."""
         return _malouf_motor_control_specs(self._layout)
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Remove legacy aliases and controls absent from the selected layout."""
-        active = {spec.key for spec in self.motor_control_specs}
-        return frozenset({"head", "feet", "tilt", "lumbar", "bed_height"} - active)
 
     def _build_command(self, command_value: int) -> bytes:
         """Build a nine-byte E6 frame through the Keeson codec (side byte ``00``)."""

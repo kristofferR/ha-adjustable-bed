@@ -322,10 +322,6 @@ class OkinAppKeesonController(KeesonController):
         return tuple(specs)
 
     @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset({"head", "back", "feet", "tilt", "lumbar"})
-
-    @property
     def held_control_options(self) -> tuple[str, ...]:
         """Every streamed app control, for the ``hold_control`` action."""
         if not self._is_heal:

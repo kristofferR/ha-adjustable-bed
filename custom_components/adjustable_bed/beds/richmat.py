@@ -613,16 +613,6 @@ class RichmatController(RichmatProfileController):
         return {key: motors for key, motors in groups.items() if key in keys}
 
     @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Remove legacy generic motor aliases when Richmat layout changes.
-
-        `head_feet` is listed too: correcting a bed to a single-axis remote
-        profile drops the combined step, and without this the old cover lingers
-        in the registry as an unavailable ghost.
-        """
-        return frozenset({"back", "legs", "pillow", "lumbar", "head_feet"})
-
-    @property
     def supports_lights(self) -> bool:
         """Return True if this bed supports under-bed lights."""
         return bool(self._features & RichmatFeatures.UNDER_BED_LIGHTS) or (

@@ -686,13 +686,7 @@ class TestCoolBaseAppVectors:
         controller = CoolBaseController(MagicMock(client=client), dewert_okin_profile=dewert_okin_profile)
         await controller.start_notify()
 
-    def test_dewert_okin_profile_marks_cool_base_sensors_stale(self) -> None:
-        assert _controller().stale_controller_state_sensor_entity_keys == frozenset()
-        assert _controller(dewert_okin_profile=True).stale_controller_state_sensor_entity_keys == {
-            STATE_LEFT_FAN,
-            STATE_RIGHT_FAN,
-            STATE_MASSAGE_MODE,
-        }
+    def test_dewert_okin_profile_needs_no_notification_channel(self) -> None:
         assert _controller(dewert_okin_profile=True).requires_notification_channel is False
 
     def test_capability_surface_has_no_position_or_settings(self) -> None:
@@ -702,10 +696,8 @@ class TestCoolBaseAppVectors:
         assert controller.supports_memory_programming is False
 
 
-async def test_protocol_change_removes_cool_base_entities(hass: HomeAssistant) -> None:
+async def test_protocol_change_drops_cool_base_entities(hass: HomeAssistant) -> None:
     """Changing bed type must not strand Cool Base sensors or app buttons."""
-    from homeassistant.helpers import entity_registry as er
-
     from custom_components.adjustable_bed.beds.okin_rf_eco_bt import OkinRfEcoBtController
     from custom_components.adjustable_bed.button import _button_entities_for
     from custom_components.adjustable_bed.const import BED_TYPE_OKIN_RF_ECO_BT
@@ -715,16 +707,9 @@ async def test_protocol_change_removes_cool_base_entities(hass: HomeAssistant) -
 
     controller = OkinRfEcoBtController(make_controller()._coordinator)
     runtime = configure_entity_runtime(hass, controller, BED_TYPE_OKIN_RF_ECO_BT)
-    registry = er.async_get(hass)
-    stale = [
-        registry.async_get_or_create(domain, DOMAIN, f"bed_{key}_left", config_entry=runtime.entry)
-        for domain, key in (
-            ("sensor", STATE_LEFT_FAN),
-            ("sensor", STATE_RIGHT_FAN),
-            ("sensor", STATE_MASSAGE_MODE),
-            ("button", "coolbase_left_fan"),
-        )
-    ]
-    _sensor_entities_for(hass, runtime)
-    _button_entities_for(hass, runtime)
-    assert all(registry.async_get(row.entity_id) is None for row in stale)
+    built = {
+        entity.unique_id
+        for entity in (*_sensor_entities_for(hass, runtime), *_button_entities_for(hass, runtime))
+    }
+    for key in (STATE_LEFT_FAN, STATE_RIGHT_FAN, STATE_MASSAGE_MODE, "coolbase_left_fan"):
+        assert f"bed_{key}_left" not in built

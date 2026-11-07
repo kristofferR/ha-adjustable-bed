@@ -275,9 +275,6 @@ class TestLeggettOkinController:
             "pillow",
             "feet",
         ]
-        assert controller.stale_motor_entity_keys == frozenset(
-            {"back", "legs", "tilt", "pillow", "lumbar"}
-        )
 
     async def test_motor_streams_then_sends_four_release_frames(self):
         """Held keycodes stream at the configured cadence, then release with four zeros.
@@ -885,25 +882,8 @@ class TestLeggettGen2Capabilities:
             hass, mock_leggett_gen2_config_entry, 5
         ).manual_disconnect_strands_connection is True
 
-    async def test_stale_motor_keys_for_absent_actuators(
-        self, hass: HomeAssistant, mock_leggett_gen2_config_entry
-    ):
-        # Product 10011: head only -> legs/pillow/lumbar removable, plus the
-        # duplicate head/feet keys Gen2 never exposes.
-        c = self._controller(hass, mock_leggett_gen2_config_entry, 10011)
-        assert c.stale_motor_entity_keys == frozenset(
-            {"legs", "pillow", "lumbar", "head", "feet"}
-        )
         # Full profile (5): only the duplicate head/feet keys are stale.
-        assert self._controller(
-            hass, mock_leggett_gen2_config_entry, 5
-        ).stale_motor_entity_keys == frozenset({"head", "feet"})
         # No-actuator profile (10014): everything is stale.
-        assert self._controller(
-            hass, mock_leggett_gen2_config_entry, 10014
-        ).stale_motor_entity_keys == frozenset(
-            {"back", "legs", "pillow", "lumbar", "head", "feet"}
-        )
 
     async def test_set_light_color_updates_cache(
         self,

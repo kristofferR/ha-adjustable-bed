@@ -318,12 +318,6 @@ async def test_other_keeson_profiles_drop_adjustable_lite_state_entities(coordin
     controller = KeesonController(coordinator, variant=KEESON_VARIANT_KSBT, device_name=KSBT03C)
     assert controller.controller_state_binary_sensor_specs == ()
     assert controller.controller_state_sensor_specs == ()
-    assert controller.stale_controller_state_binary_sensor_entity_keys == {
-        STATE_ADJUSTABLE_LITE_LIGHT
-    }
-    assert controller.stale_controller_state_sensor_entity_keys == {
-        STATE_ADJUSTABLE_LITE_MASSAGE_TIMER
-    }
     assert controller.diagnostic_poll_interval is None
     assert not controller.requires_notification_channel
 

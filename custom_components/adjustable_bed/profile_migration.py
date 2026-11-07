@@ -459,7 +459,7 @@ _PLATFORMS: Final = (
 def _read_only_entity_registry(hass: HomeAssistant) -> Iterator[None]:
     """Ignore entity registry writes while entities are only being listed.
 
-    Entity builders tidy up stale registry rows as they build. A preview of a
+    Entity builders migrate legacy unique IDs as they build. A preview of a
     route that is not saved must never remove or rewrite an existing row.
     ``er.async_get`` is cached per instance, so the instance's write methods are
     shadowed, and only around synchronous code, so nothing else runs meanwhile.

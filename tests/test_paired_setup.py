@@ -4015,62 +4015,6 @@ class TestCombinedPositionSliders:
         assert single_entity.translation_key == "back_position_both"
         assert single_entity.extra_state_attributes == {"bed_side": SIDE_BOTH}
 
-    async def test_stale_cleanup_only_removes_combined_position_numbers(self, hass: HomeAssistant):
-        from unittest.mock import MagicMock
-
-        from custom_components.adjustable_bed.beds.base import build_position_number_spec
-        from custom_components.adjustable_bed.number import (
-            _async_remove_stale_combined_number_entities,
-            _combined_position_entities_for,
-        )
-
-        entry = MockConfigEntry(
-            domain=DOMAIN,
-            title="Master Bed",
-            data=_paired_entry_data(),
-            unique_id=PAIR_ID,
-            entry_id="combined_position_cleanup",
-            version=4,
-        )
-        entry.add_to_hass(hass)
-        coordinator = MagicMock(spec=PairedBedCoordinator)
-        coordinator.entry = entry
-        coordinator.entity_unique_id.side_effect = lambda key: f"{PAIR_ID}_{key}"
-        coordinator.device_info = {}
-
-        back = build_position_number_spec("back", max_value=68, unit="°")
-        children = [self._side((back,)), self._side((back,))]
-        entities = _combined_position_entities_for(coordinator, children)
-
-        registry = er.async_get(hass)
-        stale_position = registry.async_get_or_create(
-            "number",
-            DOMAIN,
-            f"{PAIR_ID}_lumbar_position_both",
-            config_entry=entry,
-            translation_key="lumbar_position",
-        )
-        unrelated = registry.async_get_or_create(
-            "number",
-            DOMAIN,
-            f"{PAIR_ID}_sleep_number_setting_both",
-            config_entry=entry,
-            translation_key="sleep_number_setting_both",
-        )
-        child_position = registry.async_get_or_create(
-            "number",
-            DOMAIN,
-            f"{LEFT_ADDR}_lumbar_position",
-            config_entry=entry,
-            translation_key="lumbar_position",
-        )
-
-        _async_remove_stale_combined_number_entities(hass, coordinator, children, entities)
-
-        assert registry.async_get(stale_position.entity_id) is None
-        assert registry.async_get(unrelated.entity_id) is not None
-        assert registry.async_get(child_position.entity_id) is not None
-
     async def test_parent_device_gets_position_sliders_when_sides_report_angles(
         self,
         hass: HomeAssistant,
@@ -4186,7 +4130,9 @@ class TestOfflineSideEntities:
         hass: HomeAssistant,
     ) -> None:
         """Pair-level buttons must follow both sides' current memory capacity."""
-        from custom_components.adjustable_bed.button import async_setup_entry
+        from homeassistant.const import Platform
+
+        from tests.test_entity_sweep import async_setup_platforms_and_sweep
 
         data = _paired_entry_data()
         standard_snapshot = {
@@ -4227,8 +4173,9 @@ class TestOfflineSideEntities:
                 config_entry=entry,
             )
 
-        entities: list[Any] = []
-        await async_setup_entry(hass, entry, entities.extend)
+        entities = await async_setup_platforms_and_sweep(
+            hass, entry, coordinator, (Platform.BUTTON,)
+        )
 
         assert all(
             registry.async_get_entity_id("button", DOMAIN, unique_id) is None
@@ -4747,20 +4694,31 @@ class TestOctoOfflineSnapshot:
         self, hass: HomeAssistant
     ) -> None:
         """Old paired snapshots retain known registry rows but grant no write access."""
+        from homeassistant.components.light import LightEntity
+        from homeassistant.components.switch import SwitchEntity
+        from homeassistant.const import Platform
+
         from custom_components.adjustable_bed.beds.octo import (
             OCTO_FEATURE_LIGHT,
             OctoCapabilityRecord,
             OctoController,
         )
-        from custom_components.adjustable_bed.light import (
-            LIGHT_DESCRIPTION,
-            _light_entities_for,
-        )
+        from custom_components.adjustable_bed.light import LIGHT_DESCRIPTION
         from custom_components.adjustable_bed.switch import (
             SWITCH_DESCRIPTIONS,
             AdjustableBedSwitch,
-            _switch_entities_for,
         )
+        from tests.test_entity_sweep import async_setup_platforms_and_sweep
+
+        async def setup_and_sweep() -> tuple[list[Any], list[Any]]:
+            # Only the left side has rows here, so it stands in for the pair.
+            created = await async_setup_platforms_and_sweep(
+                hass, entry, left, (Platform.LIGHT, Platform.SWITCH)
+            )
+            return (
+                [entity for entity in created if isinstance(entity, LightEntity)],
+                [entity for entity in created if isinstance(entity, SwitchEntity)],
+            )
 
         legacy_snapshot = {
             "has_lights": True,
@@ -4815,8 +4773,7 @@ class TestOctoOfflineSnapshot:
         )
         registry.async_get_or_create("switch", DOMAIN, synchro_unique_id, config_entry=entry)
 
-        light_entities = _light_entities_for(hass, left)
-        switch_entities = _switch_entities_for(hass, left)
+        light_entities, switch_entities = await setup_and_sweep()
         assert light_entities == []
         assert len(switch_entities) == 2
         unavailable_switches = {
@@ -4851,11 +4808,10 @@ class TestOctoOfflineSnapshot:
         controller._pending_capability_records = {OCTO_FEATURE_LIGHT: light_record}
         controller._handle_feature_response([0xFF, 0xFF, 0xFF, 0, 0, 0])
         assert controller.controller_entity_discovery_complete is True
-        discovered_lights = _light_entities_for(hass, left)
+        discovered_lights, discovered_switches = await setup_and_sweep()
         assert discovered_lights == []
         retained_light = registry.async_get(light_row.entity_id)
         assert retained_light is None
-        discovered_switches = _switch_entities_for(hass, left)
         assert len(discovered_switches) == 1
         assert discovered_switches[0].unique_id == legacy_light_switch_unique_id
         assert (
@@ -4866,8 +4822,7 @@ class TestOctoOfflineSnapshot:
 
         controller._pending_capability_records = {}
         controller._handle_feature_response([0xFF, 0xFF, 0xFF, 0, 0, 0])
-        assert _light_entities_for(hass, left) == []
-        assert _switch_entities_for(hass, left) == []
+        assert await setup_and_sweep() == ([], [])
         assert registry.async_get_entity_id("light", DOMAIN, light_unique_id) is None
         assert registry.async_get_entity_id("switch", DOMAIN, synchro_unique_id) is None
         assert data[CONF_PAIR_CHILDREN][0]["capabilities"]["octo"] == legacy_snapshot
