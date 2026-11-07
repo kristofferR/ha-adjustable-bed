@@ -1771,33 +1771,6 @@ _OKIN_CST_APPS: Final[dict[str, str]] = {
 }
 
 
-def _route_and_motors_schema(
-    data: Mapping[str, Any], routes: Mapping[str, str], motor_counts: list[int]
-) -> vol.Schema:
-    """Ask a labelled route and the motor count, defaulting to the staged ones."""
-    variant = data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
-    motor_count = data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
-    return vol.Schema(
-        {
-            vol.Required(
-                CONF_PROTOCOL_VARIANT,
-                default=variant if variant in routes else next(iter(routes)),
-            ): SelectSelector(
-                SelectSelectorConfig(
-                    options=[
-                        SelectOptionDict(value=key, label=label) for key, label in routes.items()
-                    ],
-                    mode=SelectSelectorMode.DROPDOWN,
-                )
-            ),
-            vol.Required(
-                CONF_MOTOR_COUNT,
-                default=motor_count if motor_count in motor_counts else motor_counts[0],
-            ): vol.All(vol.Coerce(int), vol.In(motor_counts)),
-        }
-    )
-
-
 # The Keeson question's answers that expand into one exact app or route each.
 _KEESON_GROUPS: Final[dict[str, tuple[tuple[str, str | None], ...]]] = {
     "ergomotion_apps": (
@@ -2048,6 +2021,47 @@ _JIECANG_LEGACY_ROUTES: Final[dict[str, str]] = {
     "legacy_jiecang": BED_TYPE_JIECANG,
     "legacy_lierda": BED_TYPE_COMFORT_MOTION,
 }
+
+
+def _route_motor_counts(data: Mapping[str, Any]) -> Mapping[Any, str]:
+    return {count: str(count) for count in _motor_count_options(data[CONF_BED_TYPE])}
+
+
+# A legacy remote route chosen in place of a Jiecang app: the app had fixed the
+# motors, so the route asks its own.
+_LEGACY_MOTORS: Final = SetupProfile(
+    questions=(Question(CONF_MOTOR_COUNT, _route_motor_counts, DEFAULT_MOTOR_COUNT),)
+)
+# The remote style chosen in the Restonic BT app's settings; A is its default.
+_RESTONIC_STYLE: Final = SetupProfile(
+    questions=(
+        Question(
+            CONF_PROTOCOL_VARIANT,
+            {
+                KEESON_VARIANT_RESTONIC_A: "Remote A (6 buttons)",
+                KEESON_VARIANT_RESTONIC_B: "Remote B (10 buttons)",
+            },
+            KEESON_VARIANT_RESTONIC_A,
+        ),
+    ),
+    title=lambda _data: "Restonic BT",
+)
+# An older Keeson remote's route and the bed's motor count.
+_KEESON_REMOTE_ROUTE: Final = SetupProfile(
+    questions=(
+        Question(
+            CONF_PROTOCOL_VARIANT,
+            lambda _data: _labelled_routes(BED_TYPE_KEESON),
+            lambda _data: next(iter(_labelled_routes(BED_TYPE_KEESON))),
+        ),
+        Question(
+            CONF_MOTOR_COUNT,
+            _route_motor_counts,
+            lambda data: _motor_count_options(data[CONF_BED_TYPE])[0],
+        ),
+    ),
+    title=lambda _data: "Keeson remote",
+)
 
 
 def _configure_questions(
@@ -3009,7 +3023,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 if incoming == BED_TYPE_JIECANG_APP:
                     # The apps set the layout and cadence themselves, so the
                     # saved motor count means nothing here: ask the route's own.
-                    return await self.async_step_jiecang_legacy()
+                    data.pop(CONF_MOTOR_COUNT, None)
+                    return await self._async_ask(_LEGACY_MOTORS, self._async_jiecang_legacy)
                 return await self._async_finish_family_route()
             data[CONF_BED_TYPE] = BED_TYPE_JIECANG_APP
             data[CONF_JIECANG_APP_PROFILE] = choice
@@ -3035,32 +3050,17 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             description_placeholders={"current": bed_type_label(incoming)},
         )
 
-    async def async_step_jiecang_legacy(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Collect the motor count a legacy remote route needs, with its own cadence."""
+    async def _async_jiecang_legacy(self, answers: Mapping[str, Any]) -> ConfigFlowResult:
+        """Stage a legacy remote route's motor count, with the route's own cadence."""
         assert self._manual_data is not None
         data = self._manual_data
-        bed_type = data[CONF_BED_TYPE]
-        if user_input is not None:
-            data[CONF_MOTOR_COUNT] = int(user_input[CONF_MOTOR_COUNT])
-            self._journey_set.add(CONF_MOTOR_COUNT)
-            pulse_count, pulse_delay = get_motor_pulse_defaults(bed_type, VARIANT_AUTO)
-            data[CONF_MOTOR_PULSE_COUNT] = pulse_count
-            data[CONF_MOTOR_PULSE_DELAY_MS] = pulse_delay
-            data[CONF_MOTOR_PULSE_USER_SET] = False
-            return await self._async_finish_family_route()
-        return self.async_show_form(
-            step_id="jiecang_legacy",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(CONF_MOTOR_COUNT, default=DEFAULT_MOTOR_COUNT): vol.All(
-                        vol.Coerce(int), vol.In(_motor_count_options(bed_type))
-                    )
-                }
-            ),
-            description_placeholders={"current": bed_type_label(bed_type)},
-        )
+        data[CONF_MOTOR_COUNT] = answers[CONF_MOTOR_COUNT]
+        self._journey_set.add(CONF_MOTOR_COUNT)
+        pulse_count, pulse_delay = get_motor_pulse_defaults(data[CONF_BED_TYPE], VARIANT_AUTO)
+        data[CONF_MOTOR_PULSE_COUNT] = pulse_count
+        data[CONF_MOTOR_PULSE_DELAY_MS] = pulse_delay
+        data[CONF_MOTOR_PULSE_USER_SET] = False
+        return await self._async_finish_family_route()
 
     async def _async_finish_family_route(self) -> ConfigFlowResult:
         """Continue a route chosen in a family step: a new bed's settings, pairing, the check."""
@@ -3205,10 +3205,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             self._keeson_group = choice
             return await self.async_step_keeson_app()
         if choice == "restonic":
-            return await self.async_step_keeson_restonic()
+            return await self._async_ask_restonic_style()
         if choice == "other_route":
             self._select_family_route(BED_TYPE_KEESON, data.get(CONF_PROTOCOL_VARIANT))
-            return await self.async_step_keeson_route()
+            return await self._async_ask(_KEESON_REMOTE_ROUTE, self._async_keeson_remote_route)
         if choice in ("sleep_harmony", "coolbase"):
             self._select_family_route(
                 *(
@@ -3258,7 +3258,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             # Its own app step owns the layout.
             return await getattr(self, f"async_step_{_APP_SETUP_STEPS[bed_type]}")()
         if variant in _KEESON_RESTONIC:
-            return await self.async_step_keeson_restonic()
+            return await self._async_ask_restonic_style()
         return await self._async_ask_keeson_route()
 
     async def _async_ask_keeson_route(self) -> ConfigFlowResult:
@@ -3302,51 +3302,22 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             ),
         )
 
-    async def async_step_keeson_restonic(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def _async_ask_restonic_style(self) -> ConfigFlowResult:
         """Ask the remote style chosen in the Restonic BT app's settings."""
-        assert self._manual_data is not None
-        style = (user_input or {}).get(CONF_PROTOCOL_VARIANT)
-        if style in _KEESON_RESTONIC:
-            self._select_family_route(BED_TYPE_KEESON, style)
-            return await self._async_finish_family_route()
-        current = self._manual_data.get(CONF_PROTOCOL_VARIANT)
-        return self.async_show_form(
-            step_id="keeson_restonic",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        CONF_PROTOCOL_VARIANT,
-                        default=current if current in _KEESON_RESTONIC else KEESON_VARIANT_RESTONIC_A,
-                    ): SelectSelector(
-                        SelectSelectorConfig(
-                            options=sorted(_KEESON_RESTONIC),
-                            translation_key="keeson_restonic_style",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-        )
 
-    async def async_step_keeson_route(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Collect an older Keeson remote route and the motor count."""
+        async def chosen(answers: Mapping[str, Any]) -> ConfigFlowResult:
+            self._select_family_route(BED_TYPE_KEESON, answers[CONF_PROTOCOL_VARIANT])
+            return await self._async_finish_family_route()
+
+        return await self._async_ask(_RESTONIC_STYLE, chosen)
+
+    async def _async_keeson_remote_route(self, answers: Mapping[str, Any]) -> ConfigFlowResult:
+        """Stage an older Keeson remote route and its motor count."""
         assert self._manual_data is not None
-        data = self._manual_data
-        routes = _labelled_routes(BED_TYPE_KEESON)
-        motor_counts = _motor_count_options(BED_TYPE_KEESON)
-        if user_input is not None and user_input.get(CONF_PROTOCOL_VARIANT) in routes:
-            self._select_family_route(BED_TYPE_KEESON, user_input[CONF_PROTOCOL_VARIANT])
-            data[CONF_MOTOR_COUNT] = int(user_input[CONF_MOTOR_COUNT])
-            self._journey_set.add(CONF_MOTOR_COUNT)
-            return await self._async_ask_keeson_route()
-        return self.async_show_form(
-            step_id="keeson_route",
-            data_schema=_route_and_motors_schema(data, routes, motor_counts),
-        )
+        self._select_family_route(BED_TYPE_KEESON, answers[CONF_PROTOCOL_VARIANT])
+        self._manual_data[CONF_MOTOR_COUNT] = answers[CONF_MOTOR_COUNT]
+        self._journey_set.add(CONF_MOTOR_COUNT)
+        return await self._async_ask_keeson_route()
 
     async def async_step_solace_family(
         self, user_input: dict[str, Any] | None = None
@@ -3894,7 +3865,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
         assert self._manual_data is not None
         data = self._manual_data
-        profile = setup_profile_for(data)
+        asking = self._asking
+        profile = asking[0] if asking is not None else setup_profile_for(data)
         assert profile is not None and profile.questions
         if profile.seed is not None:
             self._manual_data = data = profile.seed(self.hass, data, self._discovery_info)
@@ -3902,6 +3874,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         answers = _profile_answers(profile, user_input or {}, data, context)
         candidate = profile.staged(data, answers)
         errors = profile.errors(candidate, context) if user_input is not None else {}
+        if user_input is not None and not errors and asking is not None:
+            self._asking = None
+            return await asking[1](answers)
         if user_input is not None and not errors:
             # What normalizing dropped stays dropped.
             # An answer that picks the route settles what that route's profile owns.
@@ -4000,6 +3975,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self._route_pairing_from_discovery = False
         # The declared questions are open again to correct a failed connection check.
         self._recheck_answers = False
+        # A family answer's own questions, asked on the generic step, and what
+        # applies their answers; None asks the staged profile's questions.
+        self._asking: (
+            tuple[SetupProfile, Callable[[Mapping[str, Any]], Awaitable[ConfigFlowResult]]] | None
+        ) = None
         # Guided change of an existing entry (profile_migration).
         self._migration: MigrationSnapshot | None = None
         self._migration_family: ManagedFamily | None = None
@@ -4756,6 +4736,16 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """Forget the route each family question started from, for a new journey."""
         self._family_incoming.clear()
         self._keeson_group = None
+        self._asking = None
+
+    async def _async_ask(
+        self,
+        questions: SetupProfile,
+        then: Callable[[Mapping[str, Any]], Awaitable[ConfigFlowResult]],
+    ) -> ConfigFlowResult:
+        """Ask a family answer's own questions on the generic step; ``then`` applies them."""
+        self._asking = (questions, then)
+        return await self.async_step_profile_questions()
 
     def _incoming(self, step_id: str) -> tuple[str, str]:
         """Return the route a family question started from, recorded on its first visit."""

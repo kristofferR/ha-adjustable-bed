@@ -368,7 +368,7 @@ async def test_a_route_the_receiver_settles_is_confirmed_before_its_questions(
 async def test_the_final_settings_come_after_the_apps_questions(hass, enable_custom_integrations):
     """A6: Restonic BT asks its remote style, then only the bed's own settings remain."""
     result = await _app_then_address(hass, "keeson:restonic_a")
-    assert result["step_id"] == "keeson_restonic"
+    assert result["step_id"] == "profile_questions"
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {const.CONF_PROTOCOL_VARIANT: const.KEESON_VARIANT_RESTONIC_B}
     )

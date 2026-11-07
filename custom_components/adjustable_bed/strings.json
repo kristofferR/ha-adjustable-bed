@@ -563,21 +563,6 @@
           "choice": "App"
         }
       },
-      "keeson_restonic": {
-        "title": "Restonic BT remote style",
-        "description": "The Restonic BT app lets you choose a remote style in its settings; A is the app's default. Choose the style your app shows.",
-        "data": {
-          "protocol_variant": "Remote style"
-        }
-      },
-      "keeson_route": {
-        "title": "Remote route and motors",
-        "description": "Choose the route of the remote that controls this bed, and how many motors the bed has. Keep Auto-detect if you don't know it.",
-        "data": {
-          "protocol_variant": "Remote route",
-          "motor_count": "Number of motors"
-        }
-      },
       "solace_family": {
         "title": "Which app controls this bed?",
         "description": "QMS and similar names are shared by several apps, so the name doesn't choose one. Choose the app you use on your phone. Current or detected route: **{current}**.",
@@ -657,13 +642,6 @@
         "description": "Limoss Remote, FSM Relax and the older Limoss controls share the receiver's Bluetooth name and service, so the name doesn't choose one. Choose the app you use on your phone, or the older controls if you use none. Each has its own controls and memory format, and none is translated into another.",
         "data": {
           "choice": "App"
-        }
-      },
-      "jiecang_legacy": {
-        "title": "Motors on this bed",
-        "description": "**{current}** decides its controls from the number of motors. Choose how many the bed has.",
-        "data": {
-          "motor_count": "Number of motors"
         }
       },
       "malouf_family": {
@@ -14408,12 +14386,6 @@
         "other_route": "No app: another Keeson remote route",
         "another": "Another app or remote: search every app",
         "keep": "I don't know: keep the detected controls"
-      }
-    },
-    "keeson_restonic_style": {
-      "options": {
-        "restonic_a": "Remote A (6 buttons)",
-        "restonic_b": "Remote B (10 buttons)"
       }
     },
     "solace_family_choice": {

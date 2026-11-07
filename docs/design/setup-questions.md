@@ -186,6 +186,15 @@ field. It redraws after a bed-type change, and after a route change that alters
 the motor count choices or position feedback: those change defaults and the
 route list, which a field condition cannot.
 
+## Family answers' own questions
+
+A family answer that needs a little more than its route asks it on the generic
+`profile_questions` step too, from a `SetupProfile` the family keeps, and
+applies the answers itself: the Restonic BT app's remote style, an older
+Keeson remote's route and motor count, and the motor count of a legacy Jiecang
+remote chosen in place of an app. These are not saved profiles, so Configure
+does not ask them.
+
 ## Dedicated steps
 
 A dedicated step remains only for what data cannot express, with its reason
@@ -196,9 +205,8 @@ flows, so a new step cannot appear unrecorded and a removed one cannot linger.
 | Step | Why it is not data |
 |---|---|
 | Family steps (`jiecang_family`, `okin_family`, `keeson_family`, `solace_family`, `leggett_family`, `sleepys_family`, `malouf_family`, `customatic_family`, `jordans_family`, `starcode_family`, `remacro_family`, `logicdata_family`, `reverie_family`, `richmat_family`, `sleep_number_family`, `jensen_family`, `limoss_family`, `vibradorm`) | They choose the profile itself, and Keep, before any profile's questions exist |
-| `keeson_app`, `keeson_restonic`, `keeson_route` | Each picks the Keeson variant, which is the profile, not one of its answers |
+| `keeson_app` | Expands a grouped Keeson answer into its exact app or route, which is the profile, not one of its answers |
 | `solace_woosa` | A note before choosing Woosa Sleep; it asks nothing |
-| `jiecang_legacy` | Part of the Jiecang journey: a remote route chosen in place of an app needs the motor count and cadence the app had fixed |
 | `verify_octo_pin` | Authentication: setup finishes only after the bed accepts the PIN, or the user corrects it |
 
 ## Shared steps

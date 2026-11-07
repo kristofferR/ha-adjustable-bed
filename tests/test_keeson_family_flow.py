@@ -11,6 +11,7 @@ from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.detection import get_bed_type_options
 from custom_components.adjustable_bed.profile_id import resolve_profile_id
+from tests.form_helpers import options_of
 
 ADDRESS = "11:22:33:44:55:66"
 
@@ -29,10 +30,7 @@ def setup_flow(hass, bed_type: str, variant: str = const.VARIANT_AUTO) -> Adjust
 
 
 def options(result, key: str = "choice") -> list[str]:
-    return [
-        option if isinstance(option, str) else option["value"]
-        for option in result["data_schema"].schema[key].config["options"]
-    ]
+    return [str(option) for option in options_of(result["data_schema"].schema[key])]
 
 
 def entry_for(hass, data) -> MockConfigEntry:
@@ -92,10 +90,10 @@ async def test_one_restonic_row_asks_the_apps_remote_style(hass):
     # Choosing the row is an app answer, so the style follows directly.
     flow = setup_flow(hass, const.BED_TYPE_KEESON, const.KEESON_VARIANT_RESTONIC_A)
     result = await flow.async_step_keeson_family()
-    assert result["step_id"] == "keeson_restonic"
+    assert result["step_id"] == "profile_questions"
     assert options(result, const.CONF_PROTOCOL_VARIANT) == ["restonic_a", "restonic_b"]
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_keeson_restonic({const.CONF_PROTOCOL_VARIANT: "restonic_b"})
+        await flow.async_step_profile_questions({const.CONF_PROTOCOL_VARIANT: "restonic_b"})
     assert finish.call_args.args[0][const.CONF_PROTOCOL_VARIANT] == "restonic_b"
 
 
@@ -134,10 +132,10 @@ async def test_ergomotion_apps_continue_in_their_own_app_step(hass):
 async def test_an_older_remote_route_stays_reachable(hass):
     flow = setup_flow(hass, const.BED_TYPE_COOLBASE)
     result = await flow.async_step_keeson_family({"choice": "other_route"})
-    assert result["step_id"] == "keeson_route"
+    assert result["step_id"] == "profile_questions"
     assert const.KEESON_VARIANT_KSBT_CR in options(result, const.CONF_PROTOCOL_VARIANT)
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_keeson_route(
+        await flow.async_step_profile_questions(
             {const.CONF_PROTOCOL_VARIANT: const.KEESON_VARIANT_KSBT_CR, const.CONF_MOTOR_COUNT: 3}
         )
     saved = finish.call_args.args[0]
