@@ -13,7 +13,6 @@ the ``5e`` header with the same additive checksum and no mode byte.
 
 from __future__ import annotations
 
-from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Any, Final, Literal
 
@@ -143,11 +142,6 @@ WAIST_ALARM_REPEAT: Final = {"once": 0x01, "daily": 0x02}
 MOTOR_MODE_BITS: Final = {"LEFT": 1, "RIGHT": 2, "Mode1": 1, "Mode2": 2, "Mode3": 3}
 
 AppGroup = Literal["revive", "legacy"]  # notification-callback families
-
-
-def checksum(data: Iterable[int]) -> int:
-    """Low byte of the signed-byte sum, which equals the unsigned sum mod 256."""
-    return sum(data) & 0xFF
 
 
 def finalize(template: bytes | bytearray | list[int]) -> bytes:
@@ -328,7 +322,7 @@ def chk_sum(hex_text: str) -> bool:
     if len(hex_text) < 4 or len(hex_text) % 2:
         return False
     data = bytes.fromhex(hex_text)
-    return checksum(data[:-1]) == data[-1]
+    return codec.is_valid(data)
 
 
 # ------------------------------------------------------------------ classifier
