@@ -185,13 +185,6 @@
           "address": "Device"
         }
       },
-      "diagnostic_confirm": {
-        "title": "Unsupported BLE Device Details",
-        "description": "Device: {name} ({address})",
-        "data": {
-          "name": "Device name"
-        }
-      },
       "diagnostic_manual": {
         "title": "Unsupported BLE Device - Manual Entry",
         "description": "Enter the Bluetooth MAC address of the device you want to inspect, then use that address with `adjustable_bed.generate_support_bundle`.",

@@ -2752,7 +2752,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if not isinstance(bed_type, str) or (step := _APP_SETUP_STEPS.get(bed_type)) is None:
             return None
         self._manual_data = entry_data
-        self._vibradorm_app_bluetooth_pairing = pairing_step == "bluetooth_pairing"
+        self._route_pairing_from_discovery = pairing_step == "bluetooth_pairing"
         return await getattr(self, f"async_step_{step}")()
 
     async def _async_keep_detected(
@@ -3385,7 +3385,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if requires_pairing(data[CONF_BED_TYPE], data.get(CONF_PROTOCOL_VARIANT)):
             return await (
                 self.async_step_bluetooth_pairing()
-                if self._vibradorm_app_bluetooth_pairing
+                if self._route_pairing_from_discovery
                 else self.async_step_manual_pairing()
             )
         return await self._finish_with_verify(data, data.get(CONF_NAME, "Adjustable Bed"))
@@ -4440,7 +4440,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self._discovered_devices: dict[str, BluetoothServiceInfoBleak] = {}
         self._all_ble_devices: dict[str, BluetoothServiceInfoBleak] = {}
         self._manual_data: dict[str, Any] | None = None
-        self._vibradorm_app_bluetooth_pairing = False
+        # A family route that needs pairing pairs from discovery, not manual entry.
+        self._route_pairing_from_discovery = False
         # Guided change of an existing entry (profile_migration).
         self._migration: MigrationSnapshot | None = None
         self._migration_family: ManagedFamily | None = None
@@ -4501,8 +4502,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # Set when the user chose to replace an existing host bond rather than
         # pair on top of it.
         self._pairing_remove_record: LocalBondRecord | None = None
-        # The evidence behind a verified bond, kept for logging and diagnostics.
-        self._pairing_success_evidence: BondEvidence | None = None
         # Which pairing form to return to on Retry, and whether the pairing
         # result form has actually been rendered (see async_step_pairing_result).
         self._pairing_origin_step: str | None = None
@@ -5279,7 +5278,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if app_step := await self._async_app_setup_step(data, pairing_step=pairing_step):
             return app_step
         self._manual_data = data
-        self._vibradorm_app_bluetooth_pairing = pairing_step == "bluetooth_pairing"
+        self._route_pairing_from_discovery = pairing_step == "bluetooth_pairing"
         return await self._async_finish_family_route()
 
     async def _async_new_bed_settings(self, then: Literal["route", "verify"]) -> ConfigFlowResult:
@@ -6852,7 +6851,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 entry_data = self._mark_ble_bond_established(entry_data)
                 entry_data[CONF_BLE_BOND_CONTEXT] = build_bond_context(evidence)
                 entry_data.pop(CONF_BLE_BOND_ATTEMPTED_SOURCE, None)
-                self._pairing_success_evidence = evidence
             elif succeeded and self._pairing_mode != "verify_existing":
                 # A bond was asked for and nothing contradicted it, but this
                 # protocol has no authentication-gated read to prove it with.
@@ -8272,18 +8270,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             data_schema=vol.Schema({vol.Required(CONF_ADDRESS): vol.In(devices)}),
         )
 
-    async def async_step_diagnostic_confirm(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Backward-compatible handler for old flow links."""
-        assert self._discovery_info is not None
-        return self._async_abort_diagnostic_browser(
-            address=self._discovery_info.address.upper(),
-            name=self._discovery_info.name,
-            source=getattr(self._discovery_info, "source", None),
-            connectable=getattr(self._discovery_info, "connectable", None),
-        )
-
     async def async_step_diagnostic_manual(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -9167,9 +9153,6 @@ class AdjustableBedOptionsFlow(
         step_id: str,
     ) -> ConfigFlowResult:
         """Show and save the normal options form."""
-        separate_address_pair = (
-            self.config_entry.data.get(CONF_PAIR_MODE) == PAIR_MODE_SEPARATE_ADDRESS
-        )
         # Get current values from config entry
         current_data: dict[str, Any] = dict(self.config_entry.data)
         separate_address_pair = (
