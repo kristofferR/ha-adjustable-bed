@@ -107,6 +107,7 @@ async def test_real_two_address_pair_dispatch_preserves_side_and_independent_C(h
             skip_disconnect=False,
             resource=None,
             resources=None,
+            expected_stop_epoch=None,
         ):
             await command_fn(self.controller)
 

@@ -3363,7 +3363,9 @@ class TestSideServiceRouting:
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
         coordinator = hass.data[DOMAIN][entry.entry_id]
-        coordinator.children[SIDE_RIGHT]._controller = SimpleNamespace(motor_control_specs=())
+        coordinator.children[SIDE_RIGHT]._controller = SimpleNamespace(
+            motor_control_specs=(), requires_disconnected_transport=False
+        )
         coordinator.async_run_child_operation = AsyncMock()
         parent = _device_for_entry_and_identifier(
             dr.async_get(hass), entry.entry_id, (DOMAIN, PAIR_ID)

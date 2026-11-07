@@ -60,6 +60,7 @@ def target(
         "validate_memory_recall": MagicMock(),
         "preset_memory": AsyncMock(),
         "recall_memory": AsyncMock(),
+        "requires_disconnected_transport": False,
         **capabilities,
     }
     controller = SimpleNamespace(**members) if family is None else MagicMock(spec=family)
@@ -72,6 +73,7 @@ def target(
     coordinator.entry = SimpleNamespace(data={})
     coordinator.controller_side = None
     coordinator.capability_controller = controller
+    coordinator.stop_epoch = 0
 
     async def execute(command, **kwargs):
         await command(controller)
@@ -137,13 +139,14 @@ async def test_hold_control_admission_survives_stop_during_live_preflight(
         held_control_options=("back_up",),
         validate_hold_control=MagicMock(),
         hold_control=AsyncMock(),
+        requires_disconnected_transport=False,
     )
     coordinator = SimpleNamespace(
         name="Pairlink",
         bed_type="reverie_pairlink",
         entry=SimpleNamespace(data={}),
         capability_controller=controller,
-        _command_scheduler=scheduler,
+        stop_epoch=scheduler.stop_epoch,
     )
     observed_stop_epochs: list[int | None] = []
 

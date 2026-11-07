@@ -169,9 +169,7 @@ class PairAdmission:
             expected_epoch = expected_stop_epochs.get(side)
             if expected_epoch is None:
                 continue
-            owner = getattr(child, "_single_inner", child)
-            scheduler = getattr(owner, "_command_scheduler", None)
-            if getattr(scheduler, "stop_epoch", None) != expected_epoch:
+            if child.stop_epoch != expected_epoch:
                 return False
         return True
 

@@ -314,7 +314,7 @@ async def test_service_validates_all_targets_before_overwrite(hass, floyd: Floyd
     first = service_target(floyd)
     second = service_target(floyd)
     second.controller_side = None
-    second.capability_controller = SimpleNamespace(supports_floyd_actions=False)
+    second.capability_controller = SimpleNamespace(supports_floyd_actions=False, requires_disconnected_transport=False)
     with patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=(
         [(first, "both"), (second, "both")], [],
     )), pytest.raises(ServiceValidationError, match="Floyd Home"):

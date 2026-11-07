@@ -118,6 +118,7 @@ async def test_mixed_profile_native_pair_routes_each_physical_target(hass, side)
             skip_disconnect=False,
             resource=None,
             resources=None,
+            expected_stop_epoch=None,
         ):
             await command_fn(self.controller)
 

@@ -601,6 +601,8 @@ class _OneSlotChild:
 
     slot: list[_OneSlotChild] = []
     controller_side = None
+    stop_epoch = 0
+    pairlink_peripheral = False
 
     def __init__(self, name: str, store: dict) -> None:
         self.name = name

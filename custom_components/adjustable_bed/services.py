@@ -133,11 +133,7 @@ def _capture_command_admission(
 
     stop_epochs: dict[str, int] = {}
     for target_side, child in targets:
-        owner = getattr(child, "_single_inner", child)
-        scheduler = getattr(owner, "_command_scheduler", None)
-        stop_epoch = getattr(scheduler, "stop_epoch", None)
-        if isinstance(stop_epoch, int) and not isinstance(stop_epoch, bool):
-            stop_epochs[target_side] = stop_epoch
+        stop_epochs[target_side] = child.stop_epoch
     return _CommandAdmission(scope, pair_generations, stop_epochs)
 
 
@@ -440,6 +436,12 @@ def _get_support_bundle_target_from_device(
     return address, coordinator, entry
 
 
+def _require_disconnected_transport_ready(target: BedChild, controller: BedController) -> None:
+    """Refuse a controller whose selected non-central transport cannot take commands."""
+    if controller.requires_disconnected_transport and not controller.disconnected_transport_ready:
+        raise ServiceValidationError(f"Device '{target.name}' local Pairlink session is not ready")
+
+
 async def _get_controller_for_service(
     coordinator: BedChild,
 ) -> BedController:
@@ -451,26 +453,15 @@ async def _get_controller_for_service(
     """
     controller = coordinator.controller
     if controller is not None:
-        if getattr(controller, "requires_disconnected_transport", False) is True:
-            if getattr(controller, "disconnected_transport_ready", False) is not True:
-                raise ServiceValidationError(
-                    f"Device '{coordinator.name}' local Pairlink session is not ready"
-                )
+        _require_disconnected_transport_ready(coordinator, controller)
         return controller
 
     capability_controller = coordinator.capability_controller
-    if (
-        capability_controller is not None
-        and getattr(capability_controller, "requires_disconnected_transport", False) is True
-    ):
-        if getattr(capability_controller, "disconnected_transport_ready", False) is not True:
-            raise ServiceValidationError(
-                f"Device '{coordinator.name}' local Pairlink session is not ready"
-            )
+    if capability_controller is not None and capability_controller.requires_disconnected_transport:
+        _require_disconnected_transport_ready(coordinator, capability_controller)
         return capability_controller
 
-    runtime = getattr(coordinator, "_pairlink_runtime", None)
-    if getattr(getattr(runtime, "role", None), "value", None) == "peripheral":
+    if coordinator.pairlink_peripheral:
         raise ServiceValidationError(
             f"Device '{coordinator.name}' local Pairlink controller is unavailable"
         )
@@ -508,12 +499,7 @@ async def _validation_controller(
     """
     controller = target.capability_controller
     if controller is not None:
-        if getattr(controller, "requires_disconnected_transport", False) is True and getattr(
-            controller, "disconnected_transport_ready", False
-        ) is not True:
-            raise ServiceValidationError(
-                f"Device '{target.name}' local Pairlink session is not ready"
-            )
+        _require_disconnected_transport_ready(target, controller)
         return controller
     controller = await _get_controller_for_service(target)
     preflighted.append((coordinator, target))
@@ -635,7 +621,7 @@ async def _side_validation(
 
 def _plan_key(target: BedChild) -> int:
     """Stable per-side key for a validated plan (a proxy shares its child's identity)."""
-    return getattr(target, "operation_identity", id(target))
+    return target.operation_identity
 
 
 def _timed_move_resource(target: BedChild, motor: str) -> str:
@@ -1961,18 +1947,10 @@ class _HoldAdmission:
     stop_epochs: Mapping[str, int] | None = None
 
 
-def _target_stop_epoch(target: BedChild) -> int | None:
-    """Read the owning physical scheduler's STOP epoch for one service target."""
-    owner = getattr(target, "_single_inner", target)
-    scheduler = getattr(owner, "_command_scheduler", None)
-    epoch = getattr(scheduler, "stop_epoch", None)
-    return epoch if isinstance(epoch, int) else None
-
-
 def _hold_admission(coordinator: BedTarget, side: str) -> _HoldAdmission:
     """Snapshot STOP ownership before a hold's possibly blocking preflight."""
     if not isinstance(coordinator, PairedBedCoordinator):
-        return _HoldAdmission(stop_epoch=_target_stop_epoch(coordinator))
+        return _HoldAdmission(stop_epoch=coordinator.stop_epoch)
 
     pair_generations: dict[str, tuple[int, ...]] = {}
     stop_epochs: dict[str, int] = {}
@@ -1980,9 +1958,7 @@ def _hold_admission(coordinator: BedTarget, side: str) -> _HoldAdmission:
         pair_generations[target_side] = coordinator._pair_cancel_generation(
             target_side, ALL_COMMAND_RESOURCES
         )
-        stop_epoch = _target_stop_epoch(target)
-        if stop_epoch is not None:
-            stop_epochs[target_side] = stop_epoch
+        stop_epochs[target_side] = target.stop_epoch
     return _HoldAdmission(
         pair_generations=pair_generations,
         stop_epochs=stop_epochs or None,

@@ -245,6 +245,7 @@ async def test_registered_preset_routes_use_actual_physical_children_and_native_
             skip_disconnect=False,
             resource=None,
             resources=None,
+            expected_stop_epoch=None,
         ):
             await command_fn(self.controller)
 

@@ -70,6 +70,8 @@ class RecordingChild:
     """A test double for a child coordinator that records an ordered trail."""
 
     controller_side = None
+    stop_epoch = 0
+    pairlink_peripheral = False
 
     def __init__(
         self,

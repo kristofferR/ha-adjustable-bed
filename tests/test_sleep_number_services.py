@@ -20,6 +20,7 @@ def controller(side=None):
         validate_sleep_number_command=MagicMock(),
         async_execute_sleep_number_command=AsyncMock(return_value={"level": 42}),
         command_side=side,
+        requires_disconnected_transport=False,
         _coordinator=SimpleNamespace(address="AA:BB"),
     )
     result.side_scope = MagicMock(return_value=contextlib.nullcontext())

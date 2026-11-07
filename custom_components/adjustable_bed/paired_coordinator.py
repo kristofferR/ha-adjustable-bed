@@ -740,6 +740,14 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
         return id(self._single_inner)
 
     @property
+    def stop_epoch(self) -> int:
+        return self._single_inner.stop_epoch
+
+    @property
+    def pairlink_peripheral(self) -> bool:
+        return self._single_inner.pairlink_peripheral
+
+    @property
     def position_data(self) -> dict[str, float]:
         return dict(self._single_position_data)
 

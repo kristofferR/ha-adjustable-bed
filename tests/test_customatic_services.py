@@ -44,6 +44,7 @@ def target(profile=BED_TYPE_CUSTOMATIC_REMEDY):
         ),
         validate_hold_control=MagicMock(),
         hold_control=AsyncMock(),
+        requires_disconnected_transport=False,
     )
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     coordinator.name = "Customatic bed"
@@ -51,6 +52,8 @@ def target(profile=BED_TYPE_CUSTOMATIC_REMEDY):
     coordinator.entry = SimpleNamespace(data={})
     coordinator.controller_side = None
     coordinator.capability_controller = controller
+    coordinator.stop_epoch = 0
+    coordinator.pairlink_peripheral = False
 
     async def execute(command, **kwargs):
         await command(controller)
@@ -309,7 +312,7 @@ async def test_real_pair_fans_out_and_stops_both_after_partial_failure(
 
         async def async_execute_controller_command(
             self, command_fn, cancel_running=True, skip_disconnect=False,
-            resource=None, resources=None,
+            resource=None, resources=None, expected_stop_epoch=None,
         ):
             self.log.append((self.side, "command"))
             await command_fn(self.controller)

@@ -275,6 +275,7 @@ async def test_actual_paired_floor_entities_use_each_physical_profile_and_callba
             skip_disconnect=False,
             resource=None,
             resources=None,
+            expected_stop_epoch=None,
         ):
             await command_fn(self.controller)
 

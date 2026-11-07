@@ -43,7 +43,6 @@ from .services import (
     _missing_device_error,
     _release_preflighted,
     _resolve_sided_targets,
-    _target_stop_epoch,
     _validation_controller,
 )
 
@@ -277,7 +276,7 @@ async def _execute_prepared_reverie_comfort(
                 )
             else:
                 epoch = admission.expected_stop_epochs.get(SIDE_BOTH)
-                invalidated = epoch is not None and _target_stop_epoch(coordinator) != epoch
+                invalidated = epoch is not None and coordinator.stop_epoch != epoch
             if invalidated:
                 raise PreparedCommandInvalidated("Comfort request was stopped during preflight")
         for target in physical:

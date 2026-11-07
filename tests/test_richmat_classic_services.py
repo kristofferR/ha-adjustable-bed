@@ -60,8 +60,8 @@ async def test_stop_on_second_target_invalidates_its_pending_desk_hold(hass, res
 
     def scheduled_target(name, action):
         scheduler = DeviceCommandScheduler(name)
-        ctrl = MagicMock(spec=RichmatClassicController, validate_richmat_classic_request=lambda _request: None, async_execute_richmat_classic_request=action)
-        coord = SimpleNamespace(name=name, controller_side=None, capability_controller=ctrl, entry=SimpleNamespace(data={}), _command_scheduler=scheduler)
+        ctrl = MagicMock(spec=RichmatClassicController, validate_richmat_classic_request=lambda _request: None, async_execute_richmat_classic_request=action, requires_disconnected_transport=False)
+        coord = SimpleNamespace(name=name, controller_side=None, capability_controller=ctrl, entry=SimpleNamespace(data={}), _command_scheduler=scheduler, stop_epoch=scheduler.stop_epoch)
 
         async def execute(command, *, expected_stop_epoch=None, **_kwargs):
             async def operation(_context):

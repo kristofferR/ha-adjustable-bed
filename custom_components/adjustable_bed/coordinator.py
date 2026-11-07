@@ -156,6 +156,7 @@ from .const import (
     OCTO_VARIANT_STAR2,
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
     PAIR_MODE_SINGLE_ADDRESS,
+    PAIRLINK_ROLE_PERIPHERAL,
     POSITION_MODE_ACCURACY,
     RICHMAT_MH_BED_TYPES,
     RICHMAT_REMOTE_AUTO,
@@ -912,6 +913,17 @@ class AdjustableBedCoordinator(
     def operation_identity(self) -> int:
         """Return the identity of this physical command scheduler."""
         return id(self._command_scheduler)
+
+    @property
+    def stop_epoch(self) -> int:
+        """Return the scheduler's STOP epoch, which every STOP on this bed advances."""
+        return self._command_scheduler.stop_epoch
+
+    @property
+    def pairlink_peripheral(self) -> bool:
+        """Return whether a local Pairlink runtime serves this bed as a peripheral."""
+        runtime = self._pairlink_runtime
+        return runtime is not None and runtime.role == PAIRLINK_ROLE_PERIPHERAL
 
     def entity_unique_id(self, key: str) -> str:
         """Return the stable unique id for one standalone entity key."""
