@@ -5,8 +5,9 @@ Nordic, Prefix55, PrefixAA); its remote codes select features, not frames.
 ``BEDTECH`` and ``LEGGETT_WILINKE`` are their own bed types. These three take
 their frames from the pre-v5 controllers. The catalog apps keep their per-model
 tables as data and use this module for their transports: RMControl 21.3.7
-(row018), the five Richmat MH apps (row055), HJBed 2.1.2 (row121) and the five
-classic apps (row066).
+(row018), the five Richmat MH apps (row055), HJBed 2.1.2 (row121), the five
+classic apps (row066), Good Vibe Sleep 2.0.1 (row116) and the legacy L&P
+Adjustable Base 2.2.1 (row019).
 """
 
 from __future__ import annotations
@@ -36,6 +37,8 @@ Button = Literal[
     "tv",
     "lounge",
     "save_lounge",
+    "save_zero_g",
+    "save_anti_snore",
     "light_toggle",
     "light_off",
     "massage_toggle",
@@ -209,16 +212,31 @@ LEGGETT_WILINKE: Final = RichmatProfile(
     recall=Recall(repeats=100, repeat_ms=300, release=True),
 )
 
-# The five apps share one BLE library and its transport order.
+# The five MH apps and the five row061 app profiles (RUF, W.Silver,
+# AMERICANSTAR, Bailey, TX) share one BLE library and its transport order.
 RICHMAT_MH: Final[dict[str, RichmatProfile]] = {
     app: RichmatProfile(
         key=f"richmat_mh_{app}", execution=STREAM_HOLD, transports=("n1", "w1", "w2", "w3", "w4")
     )
-    for app in ("revive", "best_mattress", "blvd_home", "harmony", "idealbed")
+    for app in (
+        "revive",
+        "best_mattress",
+        "blvd_home",
+        "harmony",
+        "idealbed",
+        "ruf",
+        "wsilver2",
+        "americanstar",
+        "bailey2",
+        "tx",
+    )
 }
 HJBED: Final = RichmatProfile(
     key="hjbed", execution=STREAM_HOLD, transports=("w1", "n1", "w5", "w4", "w3", "w2")
 )
+# The services Good Vibe accepts; it takes them in the bed's enumeration order.
+# Its controller declares holds per product, on the sustained-press controls.
+GOODVIBE: Final = RichmatProfile(key="goodvibe", transports=("w1", "n1", "w5", "w4", "w3", "w2"))
 # The five classic resource-driven apps (row066) share one builder and service
 # order; each keeps its own catalog in ``cluster018_data``. The first present
 # service wins, and Nordic UART takes the bare resource bytes.
@@ -227,3 +245,38 @@ RICHMAT_CLASSIC: Final[dict[str, RichmatProfile]] = {
     app: RichmatProfile(key=f"richmat_classic_{app}", transports=CLASSIC_TRANSPORTS)
     for app in ("avocadoecobase", "coastersleep", "fortywinks", "milemont", "superior")
 }
+
+# Eshine 1.0.1 (row106): the E6000's one fixed table, over the app's transports.
+ESHINE: Final = RichmatProfile(
+    key="eshine",
+    execution=STREAM_HOLD,
+    transports=("n1", "w1", "w2", "w3", "w4", "w5"),
+    codes={
+        "head_up": 0x24,
+        "head_down": 0x25,
+        "feet_up": 0x26,
+        "feet_down": 0x27,
+        "lumbar_up": 0x3F,
+        "lumbar_down": 0x40,
+        "pillow_up": 0x41,
+        "pillow_down": 0x42,
+        "flat": 0x31,
+        "zero_g": 0x45,
+        "anti_snore": 0x46,
+        "save_zero_g": 0x66,
+        "save_anti_snore": 0x69,
+        "light_toggle": 0x3C,
+        "massage_head": 0x4C,
+        "massage_foot": 0x4E,
+        "massage_mode": 0x48,
+        "massage_off": 0x5E,
+        "massage_timer_10": 0x5F,
+        "massage_timer_20": 0x63,
+        "massage_timer_30": 0x61,
+    },
+)
+
+# L&P Adjustable Base 2.2.1 (row019): its per-layout tokens are
+# ``lp_legacy_profiles.json``. It writes to the characteristics the user
+# configures, so it drives none of the codec's transports.
+LP_LEGACY: Final = RichmatProfile(key="leggett_lp_legacy", transports=())

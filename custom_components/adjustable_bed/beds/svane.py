@@ -1,4 +1,8 @@
-"""Svane Remote Version1.8: exact BLE paths with opaque host memory."""
+"""Svane Remote Version1.8: exact BLE paths with opaque host memory.
+
+The JMC400 route's frames, and both routes' light frames, come from
+``codec/jmc.py`` and the ``SVANE_REMOTE`` profile.
+"""
 
 from __future__ import annotations
 
@@ -15,8 +19,10 @@ from typing import TYPE_CHECKING, Final
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
+from ..codec import jmc
 from ..command_scheduler import current_command_context
 from ..execution import ExecutionCapabilities
+from ..profiles.jmc import SVANE_REMOTE
 from ..svane_state import SvaneProfile, SvaneSession, integer
 from .base import (
     BedController,
@@ -38,10 +44,9 @@ def uuid(short: str) -> str:
     return f"0000{short}-0000-1000-8000-00805f9b34fb"
 
 
-HEAD, FEET, LIGHT, OLD, DIS, SOFTWARE = (
-    uuid(x) for x in ("abcb", "c258", "d07b", "1234", "180a", "f92a")
-)
-POSITION, OLD_CHAR, UP, DOWN = (uuid(x) for x in ("143d", "1111", "01ac", "bae9"))
+HEAD, FEET, LIGHT, DIS, SOFTWARE = (uuid(x) for x in ("abcb", "c258", "d07b", "180a", "f92a"))
+POSITION, UP, DOWN = (uuid(x) for x in ("143d", "01ac", "bae9"))
+OLD, OLD_CHAR = jmc.SERVICE_UUID, jmc.CHAR_UUID
 MOTIONS: dict[str, tuple[bool | None, bool | None]] = {
     "head_up": (True, None),
     "head_down": (False, None),
@@ -69,35 +74,21 @@ _STREAM_SLACK_S: Final = 0.005
 
 
 class SvaneCommands:
-    """Reachable normal-control literals, without dormant firmware commands."""
+    """The multi-service route's literals, without dormant firmware commands.
+
+    JMC400 frames come from ``codec/jmc.py``.
+    """
 
     MOTOR_MOVE = bytes.fromhex("0100")
     MOTOR_STOP = bytes.fromhex("0000")
     SVANE_POSITION = bytes.fromhex("0300")
-    LIGHT_OFF = bytes.fromhex("130200000000")
     SOFTWARE_QUERY = bytes.fromhex("040000000000")
 
     @staticmethod
     def light_brightness(level: int) -> bytes:
+        """The app's light frame for a Java int level: its low byte, unclamped."""
         integer(level, -(2**31), 2**31 - 1)
-        return bytes((0x13, 2, level & 0xFF, 1, 0, 100))
-
-    @staticmethod
-    def motion(head: bool | None, feet: bool | None) -> bytes:
-        if (head is not None and type(head) is not bool) or (
-            feet is not None and type(feet) is not bool
-        ):
-            raise ValueError("Axis intent must be boolean or absent")
-        mask = (0 if head is None else 1 if head else 2) | (
-            0 if feet is None else 16 if feet else 32
-        )
-        return bytes((0x10, mask, 0, 0, 0, 0))
-
-    @staticmethod
-    def recall(position: bytes) -> bytes:
-        if not isinstance(position, bytes) or len(position) != 4:
-            raise ValueError("JMC recall requires four opaque bytes")
-        return b"\x10\x04" + position
+        return jmc.light(level & 0xFF, SVANE_REMOTE.light_on)
 
 
 def _action(name: str) -> MotorCommandCallable:
@@ -394,8 +385,8 @@ class SvaneController(BedController):
             else:
                 self.session.feet = bytes(data)
             updates[f"svane_{key}_raw"] = data.hex()
-        elif service == OLD and char == OLD_CHAR and len(data) >= 6 and data[0] == 0x10:
-            self.session.position = bytes(data[2:6])
+        elif service == OLD and char == OLD_CHAR and (report := jmc.position_report(data)):
+            self.session.position = report.position
             updates["svane_position_raw"] = self.session.position.hex()
         else:
             return False
@@ -448,8 +439,8 @@ class SvaneController(BedController):
         if fresh is not None and accepted:
             if service in (HEAD, FEET) and char == POSITION:
                 fresh["head" if service == HEAD else "feet"] = raw
-            elif service == OLD and char == OLD_CHAR:
-                fresh["position"] = raw[2:6]
+            elif service == OLD and char == OLD_CHAR and (report := jmc.position_report(raw)):
+                fresh["position"] = report.position
         if service != DIS:
             # Map source CCCD writes to the backend's supported subscription
             # API; a read-only role still remains readable and cacheable.
@@ -677,7 +668,7 @@ class SvaneController(BedController):
                     break
                 if self.profile == "jmc" and head is not None:
                     self._started.add((OLD, OLD_CHAR))
-                    await self._write(OLD, OLD_CHAR, SvaneCommands.motion(head, feet))
+                    await self._write(OLD, OLD_CHAR, jmc.motion(head, feet))
                     if feet is not None:
                         feet_started = True
                 else:
@@ -704,7 +695,7 @@ class SvaneController(BedController):
                         self._started.add(role)
                         await self._write(
                             *role,
-                            SvaneCommands.motion(None, feet)
+                            jmc.motion(None, feet)
                             if self.profile == "jmc"
                             else SvaneCommands.MOTOR_MOVE,
                         )
@@ -789,7 +780,7 @@ class SvaneController(BedController):
                 # Recorded as the write begins: an interrupted write may still
                 # have reached the bed, so its axes count as moving.
                 self._stream_written.update(members)
-                await self._start_role(OLD, OLD_CHAR, SvaneCommands.motion(head, feet))
+                await self._start_role(OLD, OLD_CHAR, jmc.motion(head, feet))
                 done = loop.time()
                 self._stream_last = (done, done)
             last = self._stream_last[0]
@@ -812,7 +803,7 @@ class SvaneController(BedController):
             self._stream_written.add(feet_m)
             try:
                 if self.profile == "jmc":
-                    await self._start_role(OLD, OLD_CHAR, SvaneCommands.motion(None, feet))
+                    await self._start_role(OLD, OLD_CHAR, jmc.motion(None, feet))
                 else:
                     await self._start_role(FEET, UP if feet else DOWN, SvaneCommands.MOTOR_MOVE)
             finally:
@@ -828,7 +819,7 @@ class SvaneController(BedController):
             # written, so a newcomer starts with its own timed tick.
             if remaining:
                 moving = tuple(m for m in remaining if m in self._stream_written)
-                mask = SvaneCommands.motion(*self._stream_axes(moving))
+                mask = jmc.motion(*self._stream_axes(moving))
                 await self._start_role(OLD, OLD_CHAR, mask)
                 done = asyncio.get_running_loop().time()
                 self._stream_last = (done, done)
@@ -860,9 +851,7 @@ class SvaneController(BedController):
                 await self._write(
                     service,
                     char,
-                    SvaneCommands.motion(None, None)
-                    if self.profile == "jmc"
-                    else SvaneCommands.MOTOR_STOP,
+                    jmc.command(jmc.STOP) if self.profile == "jmc" else SvaneCommands.MOTOR_STOP,
                 )
             except Exception as error:
                 errors.append(error)
@@ -949,7 +938,7 @@ class SvaneController(BedController):
         super().validate_memory_recall(memory_num)
         integer(memory_num, 1, 2)
         if self.profile == "jmc":
-            SvaneCommands.recall(self.session.jmc_slots[memory_num - 1])
+            jmc.goto(self.session.jmc_slots[memory_num - 1])
         else:
             saved = self.session.multi_slots.get(memory_num)
             if saved is None:
@@ -962,9 +951,7 @@ class SvaneController(BedController):
         if self._coordinator.cancel_command.is_set():
             return
         if self.profile == "jmc":
-            await self._write(
-                OLD, OLD_CHAR, SvaneCommands.recall(self.session.jmc_slots[memory_num - 1])
-            )
+            await self._write(OLD, OLD_CHAR, jmc.goto(self.session.jmc_slots[memory_num - 1]))
             await self._wait(1)
         else:
             saved = self.session.multi_slots.get(memory_num)
@@ -1011,7 +998,7 @@ class SvaneController(BedController):
         await self._write(
             OLD if self.profile == "jmc" else LIGHT,
             OLD_CHAR if self.profile == "jmc" else uuid("a8e0"),
-            SvaneCommands.LIGHT_OFF,
+            jmc.light(0, SVANE_REMOTE.light_off),
         )
 
     async def lights_toggle(self) -> None:
@@ -1041,9 +1028,7 @@ class SvaneController(BedController):
             await self._write(
                 OLD if self.profile == "jmc" else HEAD,
                 OLD_CHAR if self.profile == "jmc" else uuid("fb6e"),
-                bytes.fromhex("108100000000")
-                if self.profile == "jmc"
-                else SvaneCommands.SVANE_POSITION,
+                jmc.command(jmc.FLAT) if self.profile == "jmc" else SvaneCommands.SVANE_POSITION,
             )
         elif action == "light_toggle":
             await self.lights_toggle()

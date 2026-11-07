@@ -248,7 +248,7 @@ from .const import (
     ZSERIES_VARIANTS,
 )
 from .kaidi_protocol import extract_kaidi_advertisement
-from .kaidi_variants import resolve_kaidi_variant
+from .profiles.kaidi import resolve_kaidi_variant
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -730,6 +730,12 @@ async def create_controller(
 
         return ReverieController(coordinator, model=protocol_variant)
 
+    if bed_type == "richmat_sleep_receiver":
+        await coordinator.hass.async_add_import_executor_job(import_module, ".beds.row061_sleep", __package__)
+        from .beds.row061_sleep import Row061SleepController
+
+        return Row061SleepController(coordinator, app=protocol_variant or "")
+
     if bed_type in RICHMAT_MH_APPS:
         # The app's name rule picks the model unless the variant fixes it;
         # offline controllers must not read the display name.
@@ -737,8 +743,19 @@ async def create_controller(
             import_module, ".beds.richmat_mh", __package__
         )
         from .beds.richmat_mh import RichmatMhController
+        from .row061_profiles import APPS as row061_apps
 
-        return RichmatMhController(
+        controller_class = RichmatMhController
+        if bed_type in row061_apps:
+            await coordinator.hass.async_add_import_executor_job(
+                import_module, ".beds.row061", __package__
+            )
+            from .beds.row061 import Row061Controller
+            from .row061_profiles import profiles
+
+            await coordinator.hass.async_add_executor_job(profiles, row061_apps[bed_type])
+            controller_class = Row061Controller
+        return controller_class(
             coordinator,
             app=RICHMAT_MH_APPS[bed_type],
             protocol_variant=protocol_variant,

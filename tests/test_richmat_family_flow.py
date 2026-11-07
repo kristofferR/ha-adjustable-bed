@@ -25,6 +25,11 @@ APPS = [
     "blvd_home",
     "harmony",
     "idealbed",
+    "ruf",
+    "wsilver2",
+    "americanstar",
+    "bailey2",
+    "tx",
     "avocadoecobase",
     "coastersleep",
     "fortywinks",
@@ -183,6 +188,26 @@ async def test_an_mh_app_asks_the_model_from_the_raw_name(hass):
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
         await flow.async_step_profile_questions({const.CONF_PROTOCOL_VARIANT: "model_vorm"})
     assert finish.call_args.args[0][const.CONF_PROTOCOL_VARIANT] == "model_vorm"
+
+
+@pytest.mark.parametrize(
+    ("app", "bed_type", "model"),
+    [
+        ("ruf", "ruf_betten", "model_bqrm"),
+        ("wsilver2", "wsilver_products", "model_6brm_mattress"),
+        ("americanstar", "richmat_americanstar", "model_2i"),
+        ("bailey2", "bailey_bed_control", "model_2i"),
+        ("tx", "richmat_tx", "model_3i"),
+    ],
+)
+async def test_a_row061_app_asks_its_model(hass, app, bed_type, model):
+    flow = setup_flow(hass, "QRRM0001")
+    result, _finish = await answer(flow, app)
+    assert flow._manual_data[const.CONF_BED_TYPE] == bed_type
+    assert result["step_id"] == "profile_questions"
+    with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
+        await flow.async_step_profile_questions({const.CONF_PROTOCOL_VARIANT: model})
+    assert finish.call_args.args[0][const.CONF_PROTOCOL_VARIANT] == model
 
 
 async def test_a_classic_app_asks_its_layout(hass):

@@ -9,22 +9,22 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from custom_components.adjustable_bed.beds.vibradorm_app import (
-    CBI,
-    COMMAND,
     INFO_FIELDS,
-    LIGHT,
-    RESPONSE,
     VibradormAppController,
     async_prepare_vibradorm_app_pairing,
     decode_standard_info,
     parse_article,
     parse_sync,
-    validate_vibradorm_app_profile,
 )
+from custom_components.adjustable_bed.codec.vibradorm import CBI_CHAR_UUID as CBI
+from custom_components.adjustable_bed.codec.vibradorm import LIGHT_CHAR_UUID as LIGHT
+from custom_components.adjustable_bed.codec.vibradorm import MOTOR_CHAR_UUID as COMMAND
+from custom_components.adjustable_bed.codec.vibradorm import RESPONSE_CHAR_UUID as RESPONSE
 from custom_components.adjustable_bed.light import (
     LIGHT_DESCRIPTION,
     AdjustableBedOnOffLight,
 )
+from custom_components.adjustable_bed.profiles.vibradorm import validate_vibradorm_app_profile
 from custom_components.adjustable_bed.vibradorm_app_state import (
     VibradormAppFloorIntent,
     VibradormAppTimerIntent,

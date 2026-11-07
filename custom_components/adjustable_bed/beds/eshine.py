@@ -1,12 +1,13 @@
-"""Explicit Eshine E6000 profile (com.richmat.eshinesleep 1.0.1, row106)."""
+"""Explicit Eshine E6000 profile (com.richmat.eshinesleep 1.0.1, row106), over the Richmat codec."""
 
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Final
+from collections.abc import Callable, Mapping
+from typing import TYPE_CHECKING, Final, Literal
 
-from ..execution import ExecutionCapabilities
+from ..codec import richmat as codec
+from ..profiles.richmat import ESHINE, Button
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -15,7 +16,7 @@ from .base import (
     MotorControlSpec,
     SideBoundController,
 )
-from .eshine_protocol import GATT_MAPS, OPCODES, NotificationStream, Value, control_frame
+from .eshine_protocol import NotificationStream, Value
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -23,6 +24,21 @@ if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 REFRESH_MS: Final = 100
+CODES: Final[Mapping[Button, int]] = ESHINE.codes or {}
+HELD: Final[dict[str, int]] = {
+    button: code for button, code in CODES.items() if button.endswith(("_up", "_down"))
+}
+MOTORS: Final[tuple[tuple[str, Button, Button], ...]] = (
+    ("head", "head_up", "head_down"),
+    ("feet", "feet_up", "feet_down"),
+    ("lumbar", "lumbar_up", "lumbar_down"),
+    ("pillow", "pillow_up", "pillow_down"),
+)
+# Setup sends the ExitLimit function selector once, with code 0.
+EXIT_LIMIT: Final = "deviceFunctionItemExitLimit"
+TRANSPORTS: Final = {
+    codec.TRANSPORTS[key].service_uuid: codec.TRANSPORTS[key] for key in ESHINE.transports
+}
 # Read-only observations. Neither capability replies nor generic motor numbers
 # change the fixed E6000 layout or become physical position feedback.
 STATE_GROUPS: Final = {
@@ -67,18 +83,20 @@ STATE_GROUPS: Final = {
     "mode": ("bed_mode", "press_mode", "standard_split", "same_split"),
     "checks": ("detection_status", *(f"component_check_{i}" for i in range(1, 7))),
 }
-EXTRA_BUTTONS: Final = {
-    "save_zero_g": "Save Zero Gravity",
-    "save_anti_snore": "Save Anti-Snore",
-    "massage_head_strength": "Head massage strength",
-    "massage_foot_strength": "Foot massage strength",
-    "massage_10_minutes": "Massage 10 minutes",
-    "massage_20_minutes": "Massage 20 minutes",
-    "massage_30_minutes": "Massage 30 minutes",
+# Entity key -> (label, the profile button it sends).
+EXTRA_BUTTONS: Final[dict[str, tuple[str, Button]]] = {
+    "save_zero_g": ("Save Zero Gravity", "save_zero_g"),
+    "save_anti_snore": ("Save Anti-Snore", "save_anti_snore"),
+    "massage_head_strength": ("Head massage strength", "massage_head"),
+    "massage_foot_strength": ("Foot massage strength", "massage_foot"),
+    "massage_10_minutes": ("Massage 10 minutes", "massage_timer_10"),
+    "massage_20_minutes": ("Massage 20 minutes", "massage_timer_20"),
+    "massage_30_minutes": ("Massage 30 minutes", "massage_timer_30"),
 }
+type Action = Button | Literal["stop"]
 
 
-def _action(action: str) -> MotorCommandCallable:
+def _action(action: Action) -> MotorCommandCallable:
     async def invoke(controller: BedController | SideBoundController) -> None:
         target = (
             controller._controller if isinstance(controller, SideBoundController) else controller
@@ -95,6 +113,7 @@ class EshineController(BedController):
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         super().__init__(coordinator)
+        self.profile = ESHINE
         self._write_char: BleakGATTCharacteristic | None = None
         self._notify_char: BleakGATTCharacteristic | None = None
         self._compact = False
@@ -103,13 +122,8 @@ class EshineController(BedController):
         self._observed: dict[str, dict[str, Value]] = {}
 
     @property
-    def execution(self) -> ExecutionCapabilities:
-        """The app refreshes held motion every 100 ms, then sends STOP (#483)."""
-        return ExecutionCapabilities(hold="stream")
-
-    @property
     def control_characteristic_uuid(self) -> str:
-        return self._write_char.uuid if self._write_char else GATT_MAPS[1][1]
+        return self._write_char.uuid if self._write_char else codec.TRANSPORTS["w1"].write_uuid
 
     @property
     def requires_notification_channel(self) -> bool:
@@ -132,14 +146,9 @@ class EshineController(BedController):
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
         return tuple(
             MotorControlSpec(
-                key,
-                key,
-                _action(f"{key}_up"),
-                _action(f"{key}_down"),
-                _action("stop"),
-                scheduler_resource="*",
+                key, key, _action(up), _action(down), _action("stop"), scheduler_resource="*"
             )
-            for key in ("head", "feet", "lumbar", "pillow")
+            for key, up, down in MOTORS
         )
 
     def motor_pulse_settings(self) -> tuple[int, int]:
@@ -149,7 +158,7 @@ class EshineController(BedController):
 
     @property
     def held_control_options(self) -> tuple[str, ...]:
-        return tuple(action for action in OPCODES if action.endswith(("_up", "_down")))
+        return tuple(HELD)
 
     @property
     def has_lumbar_support(self) -> bool:
@@ -197,11 +206,11 @@ class EshineController(BedController):
             ControllerButtonSpec(
                 f"eshine_{key}",
                 label,
-                _action(key),
+                _action(button),
                 translation_key=f"eshine_{key}",
                 icon="mdi:content-save" if key.startswith("save_") else "mdi:vibrate",
             )
-            for key, label in EXTRA_BUTTONS.items()
+            for key, (label, button) in EXTRA_BUTTONS.items()
         )
 
     @property
@@ -226,24 +235,24 @@ class EshineController(BedController):
             raise ConnectionError("Eshine is not connected")
         candidates = []
         for service in client.services or ():
-            row = next((row for row in GATT_MAPS if row[0] == service.uuid.lower()), None)
-            if row is None:
+            transport = TRANSPORTS.get(service.uuid.lower())
+            if transport is None:
                 continue
             write = next(
                 (
                     c
                     for c in service.characteristics
-                    if c.uuid.lower() == row[1] and "write" in c.properties
+                    if c.uuid.lower() == transport.write_uuid and "write" in c.properties
                 ),
                 None,
             )
             notify = next((c for c in service.characteristics if "notify" in c.properties), None)
             if write is not None and notify is not None:
-                candidates.append((row, write, notify))
+                candidates.append((transport, write, notify))
         if len(candidates) != 1:
             raise ValueError("Eshine requires exactly one complete supported write/notify endpoint")
-        row, self._write_char, self._notify_char = candidates[0]
-        self._compact = row == GATT_MAPS[0]
+        transport, self._write_char, self._notify_char = candidates[0]
+        self._compact = transport.single
         self._observed.clear()
         self.forward_controller_state_updates(
             {
@@ -285,7 +294,8 @@ class EshineController(BedController):
         self._notifying = True
         # Setup is the sole reachable non-user write. Never send enum-only queries.
         await self.write_command(
-            control_frame("exit_limit", self._compact), cancel_event=asyncio.Event()
+            codec.function(0, action=EXIT_LIMIT, single=self._compact),
+            cancel_event=asyncio.Event(),
         )
 
     async def stop_notify(self) -> None:
@@ -320,15 +330,17 @@ class EshineController(BedController):
                 {f"eshine_{group}": event, f"eshine_{group}_data": dict(observed)}
             )
 
-    async def execute_action(self, action: str) -> None:
-        if action not in OPCODES or action == "exit_limit":
-            raise ValueError(f"Unsupported Eshine user action: {action}")
+    def _frame(self, code: int) -> bytes:
+        """The bare code on a ``single`` transport, else ``6E 01 00 code sum8``."""
+        return codec.function(code, single=self._compact)
+
+    async def execute_action(self, action: Action) -> None:
         if action == "stop":
             await self._send_stop()
-        elif action in self.held_control_options:
-            await self._move_with_stop(control_frame(action, self._compact))
+        elif action in HELD:
+            await self._move_with_stop(self._frame(CODES[action]))
         else:
-            await self.write_command(control_frame(action, self._compact))
+            await self.write_command(self._frame(CODES[action]))
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if control not in self.held_control_options:
@@ -349,7 +361,7 @@ class EshineController(BedController):
                 async with deadline:
                     try:
                         await self.write_command(
-                            control_frame(control, self._compact),
+                            self._frame(HELD[control]),
                             repeat_count=self.timed_move_repeat_count(duration_ms, REFRESH_MS),
                             repeat_delay_ms=REFRESH_MS,
                         )
@@ -363,7 +375,7 @@ class EshineController(BedController):
             await self._send_stop()
 
     async def _send_stop(self) -> None:
-        await self.write_command(control_frame("stop", self._compact), cancel_event=asyncio.Event())
+        await self.write_command(self._frame(self.profile.stop), cancel_event=asyncio.Event())
 
     async def stop_all(self) -> None:
         await self._send_stop()
@@ -438,7 +450,7 @@ class EshineController(BedController):
         raise NotImplementedError("Eshine saves named presets with dedicated buttons")
 
     async def lights_toggle(self) -> None:
-        await self.execute_action("light")
+        await self.execute_action("light_toggle")
 
     async def massage_off(self) -> None:
         await self.execute_action("massage_off")

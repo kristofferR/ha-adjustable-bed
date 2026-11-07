@@ -10,8 +10,10 @@ The 96-bit (CST) routes carry two independently routed 32-bit fields and 32
 zero bits. The 40-bit routes carry a 32-bit key word followed by one selector byte, which
 picks a CB24 bed side (``AA``/``BB``) and is ``00`` everywhere else. Several of
 them also send 64-bit ``08 02`` frames for a few lights and massage keys,
-two-byte ``00 <code>`` requests, ``04 E0`` setting frames and ``03 F0`` position
-targets. What a request or setting means is profile data.
+two-byte ``00 <code>`` requests, ``04 E0`` setting frames, ``03 F0`` position
+targets, a ``07 04`` clock and ``07 05`` or ``08 05`` alarm frames. What a
+request or setting means, and how an app derives its clock and alarm fields,
+is profile data.
 
 Two transports carry the frame. The plain route writes it to the Okin write
 characteristic. RF-Gateway receivers and revision-0 Leggett boxes take the same
@@ -24,6 +26,7 @@ Which words an app sends, with which timing and release, belongs to its profile
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Final
 
 from ..const import (
@@ -92,6 +95,23 @@ def extended(parameter: int, value: int, value2: int = 0) -> bytes:
 def position_target(axis: int, target: int) -> bytes:
     """Encode a 5-byte ``03 F0`` position target."""
     return bytes((0x03, 0xF0, axis, target, 0x00))
+
+
+def clock(fields: Sequence[int]) -> bytes:
+    """Encode the 9-byte ``07 04`` clock frame from seven date and time bytes.
+
+    Apps differ in how they derive the bytes (year and month bases).
+    """
+    if len(fields) != 7:
+        raise ValueError("The clock frame carries seven date and time bytes")
+    return bytes((0x07, 0x04, *fields))
+
+
+def alarm(fields: Sequence[int]) -> bytes:
+    """Encode an alarm frame: the field count (7 or 8), ``05``, then the fields."""
+    if len(fields) not in (7, 8):
+        raise ValueError("The alarm frame carries seven or eight bytes")
+    return bytes((len(fields), 0x05, *fields))
 
 
 def word_of(data: bytes) -> int:

@@ -30,12 +30,32 @@ docstring names its routes and their evidence.
 | S1 FFFF frame | `codec/ff_frame.py` | `profiles/ff_frame.py` | [FFFF frame](../beds/ff_frame.md) | `tests/ff_frame_vectors.py` |
 | L1 Limoss DD | `codec/limoss.py` | `profiles/limoss.py` | [Limoss](../beds/limoss.md) | `tests/limoss_vectors.py` |
 | Malouf (O2 Okin-like Malouf frames) | `codec/malouf.py` | `profiles/malouf.py` | [Malouf](../beds/malouf.md) | `tests/malouf_vectors.py` |
-| MotoMotion `$#` frames (from `main`) | `codec/motomotion.py` | `profiles/motomotion.py` | [MotoMotion](../beds/motomotion.md) | `tests/motomotion_vectors.py` |
+| HHC `$#` frames: MotoMotion (from `main`), MotoSleep and Power Bob | `codec/motomotion.py` | `profiles/motomotion.py`, `profiles/motosleep.py` | [HHC `$#` frames](../beds/motomotion.md) | `tests/motomotion_vectors.py` |
 | BedJet PowerLayer `01` keys (from `main`) | `codec/bedjet_powerlayer.py` | `profiles/bedjet_powerlayer.py` | [BedJet PowerLayer](../beds/bedjet-powerlayer.md) | `tests/bedjet_powerlayer_vectors.py` |
 | Casper 6E: Casper Base and Hush Base | `codec/casper.py` | `profiles/casper.py`, `profiles/hush.py` | [Casper Base](../beds/casper-base.md), [Hush Base](../beds/hush-base.md) | `tests/casper_base_vectors.py`, `tests/hush_vectors.py` |
+| Kaidi mesh: Rize Seat, Floyd Home and ISleep | `codec/kaidi.py` | `profiles/kaidi.py` | [Kaidi](../beds/kaidi.md) | `tests/kaidi_vectors.py` |
+| JMC400: Jensen Adjustable Sleep and Svane Remote | `codec/jmc.py` | `profiles/jmc.py` | [JMC400](../beds/jmc.md) | `tests/jmc_vectors.py` |
+| Vibradorm VMAT: generic route, Caresse, Werkmeister, VMAT and V-MAT Basic | `codec/vibradorm.py` | `profiles/vibradorm.py`, `profiles/vmatbasic.py` | [Vibradorm](../beds/vibradorm.md) | `tests/vibradorm_vectors.py` |
 
 Which bed types each family backs is in its registration module (see
 [Registering a family](#registering-a-family)).
+
+`codec/okin_ore.py` builds the Okin ORE `A5 5A` frame for the `okin_ore`
+controller and the BOX1220 routes of Sleepy's Elite and AdjustableM5X4. No app
+profile drives it, so it has no family registration; its vectors are in
+`tests/test_okin_ore_vectors.py`. Standalone controllers that send frames from
+several codecs (StarCode M1X12 and M5X5, Sleepy's Elite) build every frame a
+codec covers through that codec.
+
+`codec/sleep_envelope.py` builds the 14-byte sleep-sensor JSON envelope that the
+Casper Base, Hush Base and GM Control sleep sensors and Good Vibe Sleep's sleep
+routes send, and sizes the responses their receivers reassemble. Each app keeps
+its own JSON, request numbering and limits. No app profile drives it, so it has
+no family registration; its vectors are in `tests/test_sleep_envelope_vectors.py`.
+
+The standalone `svane` bed type builds its JMC400 route and both of its routes'
+lamp frames through `codec/jmc.py`, from the Svane Remote profile; its default
+route writes LinonPI frames, so its controller is not a profile over the codec.
 
 ## Registering a family
 

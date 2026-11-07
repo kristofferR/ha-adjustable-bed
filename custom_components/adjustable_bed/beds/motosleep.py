@@ -6,14 +6,15 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING, cast
 
+from ..codec.motomotion import ascii_command, binary_command, letter_command
 from ..const import MOTOSLEEP_CHAR_UUID
-from .base import BedController, MotorCommandCallable, MotorControlSpec
-from .motosleep_profiles import (
+from ..profiles.motosleep import (
     Command,
     MotoSleepProfile,
     MotoSleepTransport,
     resolve_motosleep_profile,
 )
+from .base import BedController, MotorCommandCallable, MotorControlSpec
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -22,70 +23,6 @@ _LOGGER = logging.getLogger(__name__)
 
 _FFE1 = "0000ffe1-0000-1000-8000-00805f9b34fb"
 _FFF1 = "0000fff1-0000-1000-8000-00805f9b34fb"
-
-
-class MotoSleepCommands:
-    """Stable ASCII command constants retained for API compatibility."""
-
-    PRESET_HOME = ord("O")
-    PRESET_MEMORY_1 = ord("U")
-    PRESET_MEMORY_2 = ord("V")
-    PRESET_ANTI_SNORE = ord("R")
-    PRESET_TV = ord("S")
-    PRESET_ZERO_G = ord("T")
-    PROGRAM_MEMORY_1 = ord("Z")
-    PROGRAM_MEMORY_2 = ord("a")
-    MOTOR_HEAD_UP = ord("K")
-    MOTOR_HEAD_DOWN = ord("L")
-    MOTOR_FEET_UP = ord("M")
-    MOTOR_FEET_DOWN = ord("N")
-    MOTOR_NECK_UP = ord("P")
-    MOTOR_NECK_DOWN = ord("Q")
-    MOTOR_LUMBAR_UP = ord("p")
-    MOTOR_LUMBAR_DOWN = ord("q")
-    MASSAGE_HEAD_STEP = ord("C")
-    MASSAGE_FOOT_STEP = ord("B")
-    MASSAGE_STOP = ord("D")
-    MASSAGE_HEAD_UP = ord("G")
-    MASSAGE_HEAD_DOWN = ord("H")
-    MASSAGE_FOOT_UP = ord("E")
-    MASSAGE_FOOT_DOWN = ord("F")
-    STOP = ord("b")
-    LIGHTS_TOGGLE = ord("A")
-
-
-def build_moto_binary_frame(command: int, data: int = 0) -> bytes:
-    """Build the exact nine-byte MOTO frame recovered from the APK."""
-    command &= 0xFFFF
-    data &= 0xFFFF
-    body = bytes((command >> 8, command & 0xFF, data >> 8, data & 0xFF))
-    checksum = body[0] ^ body[1] ^ body[2] ^ body[3]
-    return b"$#" + body + bytes((checksum, 0x41, 0x0D))
-
-
-def _xor_decimal_digits(value: str) -> int:
-    checksum = 0
-    for digit in value:
-        checksum ^= int(digit)
-    return checksum
-
-
-def build_power_bob_numeric_frame(selector: str, value: str) -> bytes:
-    """Build Power Bob's selector-then-value decimal frame."""
-    payload = selector + value
-    return f"$#{payload}{_xor_decimal_digits(payload):05d}R\r".encode()
-
-
-def build_motosleep_numeric_frame(value: str, selector: str) -> bytes:
-    """Build MotoSleep's value-then-selector decimal frame."""
-    payload = value + selector
-    return f"$#{payload}{_xor_decimal_digits(payload):05d}R\r".encode()
-
-
-def build_motosleep_sync_frame(opcode: str) -> bytes:
-    """Build the current MotoSleep MainPanel sync/bind frame."""
-    payload = opcode + "00000"
-    return f"$#{payload}{_xor_decimal_digits(payload):05d}R\r".encode()
 
 
 class MotoSleepController(BedController):
@@ -286,26 +223,20 @@ class MotoSleepController(BedController):
             for key in self.profile.motors
         )
 
-    def _build_command(self, char_code: int) -> bytes:
-        """Build an ASCII action according to the resolved HHC transport."""
-        return self._encode_action(chr(char_code))
-
     def _encode_action(self, action: Command, data: int = 0) -> bytes:
         if self.profile.transport is MotoSleepTransport.MOTO_BINARY:
             if not isinstance(action, int):
                 raise TypeError("MOTO binary actions must be integers")
-            return build_moto_binary_frame(action, data)
+            return binary_command(action, data)
 
-        if not isinstance(action, str) or len(action) != 1:
+        if not isinstance(action, str):
             raise TypeError("HHC actions must be one ASCII character")
-        raw = f"${action}".encode()
-        if self.profile.transport is MotoSleepTransport.POWER_BOB_ASCII:
-            return raw
-        if self.profile.raw_hhc:
-            return raw
         # The APK's wrapped path also drops the special $z query.  The
         # integration does not send that initialization-only action.
-        return b"$#" + raw + b"R\r"
+        wrapped = (
+            self.profile.transport is MotoSleepTransport.HHC_ASCII and not self.profile.raw_hhc
+        )
+        return letter_command(action, wrapped=wrapped)
 
     async def write_command(
         self,
@@ -465,8 +396,7 @@ class MotoSleepController(BedController):
     async def set_synchro(self, enabled: bool) -> None:
         if self.profile.synchro is None:
             raise NotImplementedError("Synchronization is not present on this model")
-        opcode = self.profile.synchro[0 if enabled else 1]
-        await self.write_command(build_motosleep_sync_frame(opcode))
+        await self.write_command(ascii_command(self.profile.synchro[0 if enabled else 1]))
 
     async def auxiliary_action(self) -> None:
         """Send a profile-specific action whose physical label is not proven."""
@@ -504,14 +434,14 @@ class MotoSleepController(BedController):
     async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
         if not self.profile.rgb_light:
             raise NotImplementedError("RGB light is not present on this model")
-        scaled = tuple(int(channel / 255 * 120) for channel in rgb_color)
-        frames = []
-        for selector, channel in zip(("00315", "00316", "00317"), scaled, strict=True):
-            value = f"{channel:05d}"
-            if self.profile.transport is MotoSleepTransport.POWER_BOB_ASCII:
-                frames.append(build_power_bob_numeric_frame(selector, value))
-            else:
-                frames.append(build_motosleep_numeric_frame(value, selector))
+        # Power Bob sends the channel selector before its level; MotoSleep after.
+        power_bob = self.profile.transport is MotoSleepTransport.POWER_BOB_ASCII
+        frames = [
+            ascii_command(selector, level) if power_bob else ascii_command(level, selector)
+            for selector, level in zip(
+                (315, 316, 317), (int(c / 255 * 120) for c in rgb_color), strict=True
+            )
+        ]
         for index, frame in enumerate(frames):
             await self.write_command(frame)
             if index < 2:

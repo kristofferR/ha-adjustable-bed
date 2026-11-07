@@ -41,6 +41,8 @@ CASES: dict[str, tuple[int, str]] = {
     "leggett_wilinke": (110, WILINKE_STOP),
     "leggett_platt:mlrm": (100, WILINKE_STOP),
     "hjbed": (100, WILINKE_STOP),
+    # Eshine's N1 scenario refreshes the bare code at its fixed 100 ms.
+    "eshine": (100, "6e"),
 }
 
 
@@ -57,7 +59,7 @@ def test_only_the_stream_rows_declare_a_hold() -> None:
         if profile.execution.hold == "stream"
     }
     assert profiles.BEDTECH.key not in declared
-    assert len(declared) == 11
+    assert len(declared) == 16
 
 
 async def _timed_move(controller: Any) -> None:

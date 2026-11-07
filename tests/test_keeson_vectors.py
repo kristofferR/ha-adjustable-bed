@@ -368,6 +368,23 @@ def test_k1_frame_layout() -> None:
         codec.frame(0, header=0xE7)
 
 
+@pytest.mark.parametrize(
+    ("records", "literal"),
+    [
+        # Glideaway Motion's cleared table and AdjustaMattress P1's default record.
+        ("", "ed80030000000000000000000000008f"),
+        ("00000013", "ed80030000001300000000000000007c"),
+        # A cluster033 weekly table record.
+        ("061e0413", "ed8003061e04130000000000000000" + "54"),
+    ],
+)
+def test_alarm_table_layout(records: str, literal: str) -> None:
+    frame = codec.alarm_table(codec.ALARM_WEEKLY, bytes.fromhex(records))
+    assert frame.hex() == literal
+    with pytest.raises(ValueError):
+        codec.alarm_table(codec.ALARM_WEEKLY, bytes(13))
+
+
 @pytest.mark.parametrize("key", ["base", "ergomotion"])
 @pytest.mark.parametrize("side", list(ERGOMOTION_4_P1_SIDE_VECTORS))
 def test_side_frames_match_the_ergomotion_4_report(key: str, side: codec.Side | None) -> None:

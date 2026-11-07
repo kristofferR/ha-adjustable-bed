@@ -7,6 +7,7 @@ row102 disposition ledger. Integers are masked only at the native byte boundary.
 
 from __future__ import annotations
 
+import binascii
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal
@@ -152,16 +153,6 @@ def desk_packet(material: Material, *, height: float = 0) -> bytes:
     return codec.frame(codec.BED, prefix, 0, code)
 
 
-def crc16(data: bytes) -> int:
-    """Source CRC16 XMODEM: init zero, polynomial 1021, no reflection/xor."""
-    crc = 0
-    for value in data:
-        crc ^= value << 8
-        for _ in range(8):
-            crc = ((crc << 1) ^ (0x1021 if crc & 0x8000 else 0)) & 65535
-    return crc
-
-
 class MalformedNotification(ValueError):
     """HA rejection of malformed app input, not an artifact-defined exception."""
 
@@ -218,7 +209,7 @@ class FrameBuffer:
                 if codec.is_valid(frame):
                     accepted.append((kind, frame))
             elif len(frame) > 3 and kind == 64:
-                if crc16(frame[:-2]) == int.from_bytes(frame[-2:], "big"):
+                if binascii.crc_hqx(frame[:-2], 0) == int.from_bytes(frame[-2:], "big"):
                     accepted.append((kind, frame))
             else:
                 accepted.append((0, frame))

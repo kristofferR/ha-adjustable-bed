@@ -25,6 +25,7 @@ from homeassistant.util import dt as dt_util
 from ..const import CONF_BLE_DEVICE_NAME, RICHMAT_MH_MODEL_CHOICES, VARIANT_AUTO
 from ..detection import is_mac_like_name
 from ..profiles.richmat import RICHMAT_MH
+from ..row061_models import MODEL_IDS as ROW061_MODEL_IDS
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -228,6 +229,10 @@ def _catalog() -> Any:
 
 def load_model(app: str, model_id: str) -> Model | None:
     """Return a catalog model, or None when the app has no such live model."""
+    if app in ("ruf", "wsilver2", "americanstar", "bailey2", "tx"):
+        from .row061 import load_app_model
+
+        return load_app_model(app, model_id)
     catalog = _catalog()
     row = catalog.MODELS.get(app, {}).get(model_id)
     if row is None:
@@ -246,6 +251,14 @@ def selectable_models(app: str) -> tuple[str, ...]:
     return tuple(model for model, _label in RICHMAT_MH_MODEL_CHOICES[app])
 
 
+def _model_is_known(app: str, model: str) -> bool:
+    """Validate new app selectors from static IDs without loading a catalog on HA's loop."""
+    if models := ROW061_MODEL_IDS.get(app):
+        base = model.removesuffix("_mattress")
+        return base in models and (model == base or app in ("wsilver2", "americanstar", "tx"))
+    return load_model(app, model) is not None
+
+
 ModelProblem = Literal["no_name", "choose_model", "unknown_model"]
 
 
@@ -259,19 +272,21 @@ def resolve_model(
     sentinel (Idealbed also asks for names starting with ``Cool Touch``), and a
     prefix without a live model is reported as invalid.
     """
+    if app == "ruf":
+        return ("bqrm", None) if protocol_variant in (None, VARIANT_AUTO, "model_bqrm") else (None, "unknown_model")
     if protocol_variant and protocol_variant.startswith(MODEL_VARIANT_PREFIX):
         model = protocol_variant[len(MODEL_VARIANT_PREFIX) :]
-        if model in selectable_models(app) and load_model(app, model) is not None:
+        if model.removesuffix("_mattress") in selectable_models(app) and _model_is_known(app, model):
             return model, None
         return None, "unknown_model"
     if not name or len(name) < 4:
         return None, "no_name"
-    if app == "idealbed" and len(name) >= 10 and name[:10].lower() == COOL_TOUCH:
+    if app in ("idealbed", "wsilver2", "americanstar", "bailey2", "tx") and len(name) >= 10 and name[:10].lower() == COOL_TOUCH:
         return None, "choose_model"
     prefix = name[:4].lower()
     if prefix == "qrrm":
         return None, "choose_model"
-    if load_model(app, prefix) is None:
+    if not _model_is_known(app, prefix):
         return None, "unknown_model"
     return prefix, None
 
@@ -371,6 +386,8 @@ class SessionFlags:
 class RichmatMhController(BedController):
     """Faithful Richmat MH app controls for one selected model."""
 
+    _app_groups: Mapping[str, AppGroup] = APP_GROUPS
+
     def __init__(
         self,
         coordinator: AdjustableBedCoordinator,
@@ -380,7 +397,7 @@ class RichmatMhController(BedController):
         device_name: str | None = None,
     ) -> None:
         super().__init__(coordinator)
-        if app not in APP_GROUPS:
+        if app not in self._app_groups:
             raise ValueError(f"Unknown Richmat MH app: {app}")
         self._app = app
         self.profile = RICHMAT_MH[app]
@@ -404,7 +421,7 @@ class RichmatMhController(BedController):
         # Replies of a running setup; the published flags above (the stored
         # snapshot) keep the entities and command gates until it completes.
         self._pending: SessionFlags | None = None
-        self._classifier = Classifier(APP_GROUPS[app])
+        self._classifier = Classifier(self._app_groups[app])
         self._write_char: BleakGATTCharacteristic | None = None
         self._notify_chars: list[BleakGATTCharacteristic] = []
         self._init_task: asyncio.Task[None] | None = None
@@ -439,7 +456,7 @@ class RichmatMhController(BedController):
             return "L"
         # Best Mattress and Idealbed rebuild pages from the version reply itself;
         # the other apps do it on the first initialization reply.
-        return "C" if APP_GROUPS[self._app] == "legacy" or self._call_page else "L"
+        return "C" if self._app_groups[self._app] == "legacy" or self._call_page else "L"
 
     def _controls(self) -> tuple[Control, ...]:
         if self._model is None:
@@ -1275,7 +1292,7 @@ class RichmatMhController(BedController):
         f = self._features
         if f is None or pending.version != VER1 or not f.alarm_call:
             return False
-        if APP_GROUPS[self._app] != "legacy" and not pending.call_page:
+        if self._app_groups[self._app] != "legacy" and not pending.call_page:
             return False
         return pending.dev.get("alarm", False)
 
@@ -1363,7 +1380,7 @@ class RichmatMhController(BedController):
         if session is None:
             return
         dev = session.dev
-        multi = APP_GROUPS[self._app] == "revive"
+        multi = self._app_groups[self._app] == "revive"
         if session.version == VER1:
             # VER1 resets these five flags before every reply (snore is kept).
             for key in ("alarm", "led", "aroma", "mattress", "speech"):

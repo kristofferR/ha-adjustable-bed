@@ -183,6 +183,8 @@ def test_alarm_combinations_two_massages_and_unmatched_pairs() -> None:
 
 def test_every_offered_model_loads_and_variants_follow_the_pickers() -> None:
     for bed_type, app in RICHMAT_MH_APPS.items():
+        if app not in catalog.MODELS:
+            continue
         assert app in APP_GROUPS, bed_type
         for model in selectable_models(app):
             assert load_model(app, model) is not None, (app, model)

@@ -12,7 +12,8 @@ import pytest
 from bleak.exc import BleakError
 
 from custom_components.adjustable_bed.beds.base import SideBoundController
-from custom_components.adjustable_bed.beds.isleep import IsleepController, control_frame, room_frame
+from custom_components.adjustable_bed.beds.isleep import IsleepController
+from custom_components.adjustable_bed.codec import kaidi as codec
 from custom_components.adjustable_bed.const import (
     BED_TYPE_ISLEEP,
     CONF_KAIDI_ROOM_ID,
@@ -21,7 +22,7 @@ from custom_components.adjustable_bed.const import (
     KAIDI_NOTIFY_CHAR_UUID,
     KAIDI_WRITE_CHAR_UUID,
 )
-from custom_components.adjustable_bed.isleep_profile import (
+from custom_components.adjustable_bed.profiles.kaidi import (
     ISLEEP_PRODUCTS,
     add_isleep_metadata,
     isleep_advertisement,
@@ -400,9 +401,9 @@ def test_discovery_gates_and_truncated_mode2_alternate():
     ],
 )
 def test_exact_room_builders(room, auth, enroll):
-    assert room_frame(room).hex() == auth
-    assert room_frame(room, enroll=True).hex() == enroll
-    assert control_frame(OWN, TARGET, 1, 0).hex() == "037856341220efcdab9001010000"
+    assert codec.join(room).hex() == auth
+    assert codec.enroll(room).hex() == enroll
+    assert codec.control(TARGET, OWN, 1, 0).hex() == "037856341220efcdab9001010000"
 
 
 async def test_enrollment_is_explicit_fresh_only_and_ack_is_durable():

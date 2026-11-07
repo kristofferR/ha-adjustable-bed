@@ -4,7 +4,8 @@ Every frame ends in ``sum8``, the low byte of the sum of the bytes before it.
 A command is ``6E 01 side code sum8``; ``code 6E`` is the release (STOP). Other
 second bytes select a function: queries, light timer and colour, countdown
 alarm. Extended frames carry their own length: ``6E len 20 domain command
-operation data sum8``. Nordic UART transports take the bare command byte.
+operation data sum8``; notifications, and Good Vibe Sleep's settings, put the
+length after ``20`` instead. Nordic UART transports take the bare command byte.
 
 Legacy Richmat routes also frame the command behind a ``55`` or ``AA`` header,
 and the RGB-strip remotes use ``04 len cmd 01 00 payload 00 00 sum8``. Which
@@ -14,7 +15,7 @@ transport, framing, codes and timing a bed uses belongs to its profile
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Final, Literal
@@ -123,8 +124,19 @@ def record(domain: int, command_id: int, operation: int, data: Iterable[int]) ->
     return extended(0x20, domain, command_id, operation, *data)
 
 
-def time_sync(now: datetime, zone: datetime | None = None) -> tuple[bytes, bytes]:
-    """Unix seconds and whole-hour zone, then the local calendar.
+def record_20_len(domain: int, command_id: int, operation: int, data: Iterable[int]) -> bytes:
+    """``6E 20 len domain command operation data sum8``; ``len`` counts the whole frame."""
+    body = (domain, command_id, operation, *data)
+    return frame(BED, 0x20, len(body) + 4, *body)
+
+
+Record = Callable[[int, int, int, Iterable[int]], bytes]
+
+
+def time_sync(
+    now: datetime, zone: datetime | None = None, *, build: Record = record
+) -> tuple[bytes, bytes]:
+    """Unix seconds and whole-hour zone, then the local calendar, as ``build`` records.
 
     The zone comes from ``zone`` when the app samples the clock twice.
     """
@@ -132,10 +144,10 @@ def time_sync(now: datetime, zone: datetime | None = None) -> tuple[bytes, bytes
     if now.utcoffset() is None or offset is None:
         raise ValueError("Time synchronization requires aware datetimes")
     return (
-        record(
+        build(
             8, 2, 1, (*int(now.timestamp()).to_bytes(4, "big"), int(offset.total_seconds() / 3600))
         ),
-        record(8, 3, 1, (now.year - 1970, now.month, now.day, now.hour, now.minute, now.second)),
+        build(8, 3, 1, (now.year - 1970, now.month, now.day, now.hour, now.minute, now.second)),
     )
 
 

@@ -100,7 +100,7 @@ def alarm_frame(enabled: bool, hour: int, minute: int, wake: str, now: datetime)
         fields = bytes((hour, minute, 1 << bit, WAKE_MODES[wake]))
     else:
         fields = bytes(4)
-    return codec.checked(b"\xed\x80\x03" + fields + bytes(8))
+    return codec.alarm_table(codec.ALARM_WEEKLY, fields)
 
 
 class GlideawayMotionController(BedController):

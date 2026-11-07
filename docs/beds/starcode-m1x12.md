@@ -61,8 +61,8 @@ The main profile also requires Device Information Service
 | Keep-open | n/a | `5a 0b 00 a5` |
 | Clock | n/a | `5a 14 07 year month day weekday hour minute second a5` |
 
-- Extended S/C, long C-light, position and query frames are implemented by the
-  target codec.
+- S frames come from the [Okin 5A codec](okin-5a.md#starcode-frames) and C
+  frames from the [Okin N-frame codec](okin-nframe.md#wire-codec).
 - Accepted literal packets, including unsigned high-bit keys, are in the
   [151-vector fixture](../../tests/fixtures/starcode_m1x12_vectors.json); all
   165 accepted command rows run through the M1X12 controller in focused tests.

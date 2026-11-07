@@ -50,7 +50,7 @@
 
 Sleep service whitelist: `0000e0ff-3c17-d293-8e48-14fe2e4da212` and
 `2320567c-05cf-6eb4-c341-772851827e1b`. MM selects write-without-response and notify properties; SXB uses write `00000002-3c17-d293-8e48-14fe2e4da212` and notify `00000003-3c17-d293-8e48-14fe2e4da212`.
-Frames contain the 14-byte envelope, sequence and compact ordered JSON, split at negotiated MTU minus three. Each HA entry owns one physical target, its parser, sequence, callbacks and live intent.
+Frames contain the 14-byte envelope, sequence and compact ordered JSON, built by Casper Base's sensor builders over `codec/sleep_envelope.py` and split at negotiated MTU minus three. Each HA entry owns one physical target, its parser, sequence, callbacks and live intent.
 
 ## Detection / Setup
 

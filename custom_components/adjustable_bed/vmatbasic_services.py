@@ -50,8 +50,8 @@ async def _hold_vmatbasic_floor(
 
 async def _rename_vmatbasic(targets: list[tuple[BedTarget, str]], name: str) -> None:
     """Rename exactly one selected primary receiver, retaining the old name on failure."""
-    from .beds.vmatbasic_protocol import rename
     from .coordinator import AdjustableBedCoordinator
+    from .profiles.vmatbasic import rename
 
     try:
         packet = rename(name)

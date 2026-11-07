@@ -61,8 +61,8 @@ def wire(values: Iterable[int]) -> bytes:
 
 
 def checked(values: list[int]) -> bytes:
-    """Append the OKIN additive complement: (255 - sum) & 255."""
-    return wire([*values, (255 - sum(values)) & 0xFF])
+    """Mask every value to a byte, then append the Keeson complement checksum."""
+    return keeson.checked(wire(values))
 
 
 def control_frame(protocol: Protocol, action: str) -> bytes:
@@ -79,7 +79,7 @@ def clock_frame(protocol: Protocol, now: datetime) -> bytes:
     if protocol == "okin":
         return checked([0xE7, 0x80, 0x01, *fields])
     # Dart DateTime.weekday: Monday 1 through Sunday 7.
-    return wire([0x07, 0x04, *fields, now.isoweekday()])
+    return okin_nframe.clock(wire([*fields, now.isoweekday()]))
 
 
 def query_frames(protocol: Protocol) -> tuple[bytes, ...]:
@@ -150,7 +150,7 @@ class AlarmSlot:
 
 def p1_alarm_frame(slot1: list[int], slot2: list[int]) -> bytes:
     """Program both OKIN records: hour, minute, weekday, type for each slot."""
-    return checked([*P1_ALARM_HEADER, *slot1, *slot2, 0, 0, 0, 0])
+    return keeson.alarm_table(keeson.ALARM_WEEKLY, wire([*slot1, *slot2]))
 
 
 def p2_alarm_frame(slot: int, weekday: int, wire_type: int, hour: int, minute: int) -> bytes:

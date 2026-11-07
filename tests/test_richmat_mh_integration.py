@@ -76,7 +76,7 @@ async def test_offline_factory_reads_only_the_stored_raw_name(bed_type: str) -> 
         coordinator, bed_type, VARIANT_AUTO, None, device_name="QRRM display"
     )
     assert controller.protocol_diagnostics["richmat_mh_app"] == RICHMAT_MH_APPS[bed_type]
-    assert controller.protocol_diagnostics["richmat_mh_model"] == "cerm"
+    assert controller.protocol_diagnostics["richmat_mh_model"] == ("bqrm" if bed_type == "ruf_betten" else "cerm")
 
 
 async def test_legacy_page_entities(hass) -> None:

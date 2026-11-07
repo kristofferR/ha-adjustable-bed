@@ -12,9 +12,10 @@ until that family's codec exists (#759). Which carrier, header, byte order and
 words an app uses belongs to its profile (``profiles/keeson.py``).
 
 The checked setup frames (``E5 FE 17`` pulse targets, ``E7 80`` clock,
-``E1 80`` alarm dismissal, ``E2 80`` alarm query, ``EF 02`` rename) end with the
-same checksum, as do the ``E2``/``EA``/``EB FE 16`` clock and alarm frames whose
-fields the BF, Cherish and Comfort Enhancements controllers fill in.
+``E1 80`` alarm dismissal, ``E2 80`` alarm query, ``ED 80`` alarm record,
+``EF 02`` rename) end with the same checksum, as do the ``E2``/``EA``/``EB FE 16``
+clock and alarm frames whose fields the BF, Cherish, Comfort Enhancements and
+AdjustaMattress P2 controllers fill in.
 
 Ergomotion 4.0 (com.sfd.hump 3.7) adds its ``07 D0`` custom massage frames and
 its ``09 0A`` and ``0A 02`` RGB frames, which carry no checksum.
@@ -220,6 +221,18 @@ def clock(now: datetime) -> bytes:
 ALARM_DISMISS: Final = checked(b"\xe1\x80\x04")
 # Asks for the stored alarm records (Glideaway Motion, AdjustaMattress P1).
 ALARM_QUERY: Final = checked(b"\xe2\x80\x03\x00")
+ALARM_WEEKLY: Final = 0x03
+ALARM_ONE_TIME: Final = 0x02
+
+
+def alarm_table(table: int, records: bytes) -> bytes:
+    """Encode an ``ED 80 table`` frame: up to three four-byte records, zero-padded.
+
+    Each app chooses what its four record bytes mean.
+    """
+    if len(records) > 12 or len(records) % 4:
+        raise ValueError("An alarm table carries up to three four-byte records")
+    return checked(bytes((0xED, 0x80, table)) + records.ljust(12, b"\x00"))
 
 
 @dataclass(frozen=True)

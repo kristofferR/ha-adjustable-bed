@@ -246,6 +246,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_ZSERIES: _FIXED_LAYOUT,
     BED_TYPE_SIMMONS: _FIXED_LAYOUT,
     **dict.fromkeys(RICHMAT_MH_BED_TYPES, _FIXED_LAYOUT),
+    "richmat_sleep_receiver": _FIXED_LAYOUT,
     BED_TYPE_LOGICDATA_AIR_PUMP: _FIXED_LAYOUT,
     # AHF has no massage. Motor count still sizes the legacy covers.
     BED_TYPE_TIMOTION_AHF: frozenset({CONF_HAS_MASSAGE}),
@@ -742,7 +743,7 @@ def _vibradorm_errors(data: Mapping[str, Any]) -> dict[str, str]:
 
 def _vibradorm_profile(data: Mapping[str, Any]) -> Mapping[str, Any]:
     """The validated app profile sets the motor groups and massage."""
-    from .beds.vibradorm_app import validate_vibradorm_app_profile
+    from .profiles.vibradorm import validate_vibradorm_app_profile
 
     control = data[CONF_VIBRADORM_CONTROL_TYPE]
     profile = validate_vibradorm_app_profile(
@@ -764,7 +765,7 @@ def _vibradorm_profile(data: Mapping[str, Any]) -> Mapping[str, Any]:
 
 
 def _vmat_remotes(_data: Mapping[str, Any]) -> Mapping[Any, str]:
-    from .vibradorm_vmat_profiles import VMAT_REMOTES
+    from .profiles.vibradorm import VMAT_REMOTES
 
     return {remote: f"Remote {remote} ({profile.asset})" for remote, profile in VMAT_REMOTES.items()}
 
@@ -919,7 +920,7 @@ def _goodvibe_seed(
 
 
 def _isleep_products(_data: Mapping[str, Any]) -> Mapping[Any, str]:
-    from .isleep_profile import ISLEEP_PRODUCTS
+    from .profiles.kaidi import ISLEEP_PRODUCTS
 
     return {product: str(product) for product in ISLEEP_PRODUCTS}
 
@@ -930,7 +931,7 @@ def _isleep_seed(
     """The advertised product, room and actuator descriptor, never over a chosen one."""
     from homeassistant.components import bluetooth
 
-    from .isleep_profile import add_isleep_metadata
+    from .profiles.kaidi import add_isleep_metadata
 
     info = discovered or bluetooth.async_last_service_info(
         hass, data[CONF_ADDRESS], connectable=False
@@ -939,7 +940,7 @@ def _isleep_seed(
 
 
 def _isleep_errors(data: Mapping[str, Any]) -> dict[str, str]:
-    from .isleep_profile import validate_isleep_profile
+    from .profiles.kaidi import validate_isleep_profile
 
     try:
         profile = validate_isleep_profile(data)
@@ -953,7 +954,7 @@ def _isleep_errors(data: Mapping[str, Any]) -> dict[str, str]:
 
 def _isleep_layout(data: Mapping[str, Any]) -> Mapping[str, Any]:
     """The product's rendered axes set the motor count."""
-    from .isleep_profile import validate_isleep_profile
+    from .profiles.kaidi import validate_isleep_profile
 
     return {
         CONF_MOTOR_COUNT: len(validate_isleep_profile(data).axes),

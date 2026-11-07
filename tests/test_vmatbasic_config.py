@@ -155,7 +155,7 @@ async def test_real_factory_profile_offline_exposure_and_no_model_inference(hass
         ble_model="XT-Box",
         manufacturer_data={0xFFFF: b"\xba\xbe\x11\x11\x00\x00"},
     )
-    assert controller.profile == profile
+    assert controller.profile.key == profile
     assert [spec.key for spec in controller.motor_control_specs] == ["back", "legs"]
     assert controller.memory_slot_count == 0
     assert const.BED_TYPE_VMATBASIC in const.OFFLINE_CAPABILITY_SAFE_BED_TYPES

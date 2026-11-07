@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from .codec import richmat as codec
+
 Event = tuple[str, object]
 
 
@@ -309,7 +311,7 @@ class Notifications:
                 if code in (0x21, 0x40):
                     continue
                 if code == 0x20:
-                    if len(frame) < 7 or sum(frame[:-1]) & 255 != frame[-1]:
+                    if len(frame) < 7 or not codec.is_valid(bytes(frame)):
                         continue
                     events = extended(frame)
                 else:

@@ -58,12 +58,15 @@ AA 00 00 09 02 LL [StarCode payload]
 AA 00 00 09 02 07 5A 01 03 10 30 0F A5
 ```
 
+The [Okin 5A codec](okin-5a.md#starcode-frames) builds every StarCode frame:
+
 | StarCode frame | Bytes |
 |----------------|-------|
 | Normal action | `5A 01 [32-bit key, big endian] A5` |
 | Extended value | `5A E0 04 key value value2 value3 A5` |
 | Direct motor position | `5A F0 03 zone position 00 A5` |
 | Query | `5A key 00 A5` |
+| Date/time | `5A 14 07 YY MM DD hh mm ss weekday A5` |
 
 Position is clamped to 0 through 100 and zones 0 through 4 address the five
 controllable actuator parts.

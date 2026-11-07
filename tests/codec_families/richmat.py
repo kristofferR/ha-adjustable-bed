@@ -1,4 +1,4 @@
-"""R1 Richmat 6E: Richmat, its app routes, BedTech, WiLinke, HJBed and the classic apps."""
+"""R1 Richmat 6E: Richmat, its app routes, BedTech, WiLinke and the catalog apps."""
 
 from __future__ import annotations
 
@@ -17,6 +17,7 @@ _VARIANTS = {
     "richmat_prefix55": const.RICHMAT_VARIANT_PREFIX55,
     "richmat_prefixaa": const.RICHMAT_VARIANT_PREFIXAA,
     "hjbed": "hj_bedbjrn",
+    "goodvibe": "selector-0001",
     **{f"richmat_classic_{app}": app for app in RICHMAT_CLASSIC},
 }
 
@@ -44,16 +45,24 @@ FAMILY = CodecFamily(
     profiles={RichmatProfile: FROZEN_FRAMES},
     bed_types=frozenset(
         {
+            "bailey_bed_control",
             "bedtech",
+            "eshine",
+            "goodvibe",
             "hjbed",
+            "leggett_lp_legacy",
             "leggett_wilinke",
             "richmat",
+            "richmat_americanstar",
             "richmat_best_mattress",
             "richmat_blvd_home",
             "richmat_classic_apps",
             "richmat_harmony",
             "richmat_idealbed",
             "richmat_revive",
+            "richmat_tx",
+            "ruf_betten",
+            "wsilver_products",
         }
     ),
     guide=CodecGuide(
@@ -61,7 +70,14 @@ FAMILY = CodecFamily(
         spelled=_spelled,
         frozen=frozenset().union(*FROZEN_FRAMES.values()),
         variant=lambda key, _bed_type: _VARIANTS.get(key),
-        # A layout every classic app ships.
-        entry_data={"richmat_classic_apps": {const.CONF_PRODUCT_TYPE: "6BRM"}},
+        entry_data={
+            # A layout every classic app ships.
+            "richmat_classic_apps": {const.CONF_PRODUCT_TYPE: "6BRM"},
+            "leggett_lp_legacy": {
+                const.CONF_LP_LEGACY_MODEL: "6BRM",
+                const.CONF_LP_LEGACY_MODE: "legacy",
+                const.CONF_LP_LEGACY_WRITE_UUID: "11111111-2222-3333-4444-555555555555",
+            },
+        },
     ),
 )

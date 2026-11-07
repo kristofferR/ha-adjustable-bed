@@ -33,7 +33,6 @@ from custom_components.adjustable_bed.beds.starcode_m1x12 import (
 from custom_components.adjustable_bed.beds.starcode_m1x12_protocol import (
     clock_packet,
     extended_packet,
-    keep_open_packet,
     long_packet,
     normal_packet,
     position_packet,
@@ -41,6 +40,7 @@ from custom_components.adjustable_bed.beds.starcode_m1x12_protocol import (
 )
 from custom_components.adjustable_bed.binary_sensor import _binary_sensor_entities_for
 from custom_components.adjustable_bed.button import _button_entities_for
+from custom_components.adjustable_bed.codec import okin_5a
 from custom_components.adjustable_bed.config_flow import _starcode_m1x12_errors
 from custom_components.adjustable_bed.const import (
     BED_TYPE_STAR_ELEVATE,
@@ -615,7 +615,7 @@ def _expected_main_frame(row: dict[str, Any], dialect: str) -> bytes:
             return normal_packet(int(selected_stop[2], 0), "legacy")
     special_packet = re.search(r"LONG_C\((0x[0-9a-fA-F]+)\)", description)
     if row["action"] == "connection keep-open" or row["action"] == "elevation connection keep-open":
-        return keep_open_packet()
+        return okin_5a.WAKE
     if row["action"] == "query status":
         return query_packet("star" if row["protocol"] in ("P3", "P4") else dialect)
     if row["action"] == "clock correction at connection":
@@ -668,7 +668,7 @@ async def _invoke_row(controller: Any, row: dict[str, Any]) -> bool:
         elif action == "elevation STOP":
             await controller.stop_all()
         elif action == "elevation connection keep-open":
-            await controller.write_command(keep_open_packet())
+            await controller.write_command(okin_5a.WAKE)
         else:
             raise AssertionError(f"Unmapped M1X12 ELEVATE row {row['id']}: {action}")
         return False
@@ -736,7 +736,7 @@ async def _invoke_row(controller: Any, row: dict[str, Any]) -> bool:
     elif action == "query status":
         await controller.query_status()
     elif action == "connection keep-open":
-        await controller.write_command(keep_open_packet())
+        await controller.write_command(okin_5a.WAKE)
     elif action == "internal progress target":
         controller.queue_position_targets(((0, 50),))
         await controller._send_progress_target(
@@ -772,7 +772,7 @@ def _expected_sequence(row: dict[str, Any], dialect: str, profile: str) -> list[
             return [normal_packet(0x0310304F, "star")]
         if action == "elevation STOP":
             return [stop]
-        return [keep_open_packet()]
+        return [okin_5a.WAKE]
 
     stop = normal_packet(0x0310300F, "star") if dialect == "star" else normal_packet(0, "legacy")
     if action in _MOTOR_CONTROLS or action in _MASSAGE_CONTROLS:
@@ -1011,7 +1011,7 @@ async def test_m1x12_startup_keeps_read_subscribe_and_wake_order(
     )
 
     cases = (
-        ("cb25", b"star", [keep_open_packet(), query_packet("star")]),
+        ("cb25", b"star", [okin_5a.WAKE, query_packet("star")]),
         ("cb25", b"other", [query_packet("legacy")]),
         ("f23", b"other", [clock_packet(fixed_time), query_packet("star")]),
     )

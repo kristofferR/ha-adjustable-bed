@@ -2,14 +2,15 @@
 
 Feedback is a delta: callers retain fields from other domains. Short frames are
 ignored safely instead of reproducing the application's out-of-bounds errors.
-Legacy-dialect frames are Okin N-frames (``codec/okin_nframe.py``).
+StarCode-dialect frames come from ``codec/okin_5a.py`` and legacy-dialect frames
+from ``codec/okin_nframe.py``.
 """
 
 from collections.abc import Mapping
 from datetime import datetime
 from typing import Final
 
-from ..codec import okin_nframe
+from ..codec import okin_5a, okin_nframe
 
 type StateValue = str | int | float | bool | None | list[StateValue] | dict[str, StateValue]
 
@@ -37,7 +38,7 @@ def normal_packet(key: int, dialect: str) -> bytes:
     """Preserve the low 32 bits, including negative source integers."""
     if not _is_star(dialect):
         return okin_nframe.frame40(key & 0xFFFFFFFF)
-    return b"\x5a\x01" + (key & 0xFFFFFFFF).to_bytes(4, "big") + b"\xa5"
+    return okin_5a.normal(key & 0xFFFFFFFF)
 
 
 def long_normal_packet(key: int) -> bytes:
@@ -48,20 +49,17 @@ def long_normal_packet(key: int) -> bytes:
 def extended_packet(key: int, value: int, dialect: str) -> bytes:
     if not _is_star(dialect):
         return okin_nframe.extended(key & 0xFF, value & 0xFF)
-    return b"\x5a\xe0\x04" + bytes((key & 0xFF, value & 0xFF, 0, 0)) + b"\xa5"
+    return okin_5a.extended(key & 0xFF, value & 0xFF)
 
 
 def query_packet(dialect: str) -> bytes:
-    return b"\x5a\xb0\x00\xa5" if _is_star(dialect) else okin_nframe.request(0xB0)
+    return okin_5a.request(0xB0) if _is_star(dialect) else okin_nframe.request(0xB0)
 
 
 def clock_packet(local_time: datetime) -> bytes:
     """Encode the supplied local clock, with Dart's Monday=1 weekday convention."""
-    return bytes(
+    return okin_5a.clock(
         (
-            0x5A,
-            0x14,
-            7,
             local_time.year - 2000,
             local_time.month,
             local_time.day,
@@ -69,7 +67,6 @@ def clock_packet(local_time: datetime) -> bytes:
             local_time.minute,
             local_time.second,
             local_time.isoweekday(),
-            0xA5,
         )
     )
 

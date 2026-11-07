@@ -258,6 +258,33 @@ def render_okin_5a_connection() -> str:
     )
 
 
+# Each StarCode encoder: its layout and an example built from frozen vector fields.
+_OKIN_5A_STARCODE: tuple[tuple[str, str, bytes], ...] = (
+    ("Normal", "`5A 01 [32-bit word, big-endian] A5`", okin_5a_codec.normal(0x00000800)),
+    (
+        "Setting",
+        "`5A E0 04 [parameter] [value] [value 2] [value 3] A5`",
+        okin_5a_codec.extended(0x06, 0x03, 0x03),
+    ),
+    ("Position target", "`5A F0 03 [axis] [target] 00 A5`", okin_5a_codec.position_target(2, 50)),
+    ("Request", "`5A [code] 00 A5`", okin_5a_codec.request(0xB0)),
+    (
+        "Clock",
+        "`5A 14 07 [seven field bytes] A5`",
+        okin_5a_codec.clock((26, 7, 16, 13, 45, 30, 4)),
+    ),
+)
+
+
+def render_okin_5a_starcode() -> str:
+    return _block(
+        _table(
+            ("Frame", "Layout", "Example"),
+            ((name, layout, _hex(frame)) for name, layout, frame in _OKIN_5A_STARCODE),
+        )
+    )
+
+
 BLOCKS: list[Block] = [
     (GUIDE, "okin-5a-profiles", render_okin_5a_profiles),
     (GUIDE, "okin-5a-transports", render_okin_5a_transports),
@@ -266,4 +293,5 @@ BLOCKS: list[Block] = [
     (GUIDE, "okin-5a-presets", lambda: _okin_5a_commands("presets")),
     (GUIDE, "okin-5a-massage", lambda: _okin_5a_commands("massage")),
     (GUIDE, "okin-5a-lights", lambda: _okin_5a_commands("lights")),
+    (GUIDE, "okin-5a-starcode", render_okin_5a_starcode),
 ]

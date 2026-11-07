@@ -2,17 +2,30 @@
 
 from __future__ import annotations
 
+import re
+from datetime import datetime, timedelta, timezone
+
 from custom_components.adjustable_bed import cluster018_protocol as classic_frames
 from custom_components.adjustable_bed import const as _const
+from custom_components.adjustable_bed import goodvibe_protocol as goodvibe_frames
 from custom_components.adjustable_bed import hjbed_catalog
 from custom_components.adjustable_bed import hjbed_protocol as hjbed_frames
 from custom_components.adjustable_bed import rmcontrol_protocol as rmcontrol_frames
+from custom_components.adjustable_bed.beds import eshine as eshine_bed
+from custom_components.adjustable_bed.beds import goodvibe as goodvibe_bed
 from custom_components.adjustable_bed.beds import hjbed as hjbed_bed
+from custom_components.adjustable_bed.beds import leggett_lp_legacy as lp_legacy_bed
 from custom_components.adjustable_bed.beds import richmat_mh_protocol as mh_frames
 from custom_components.adjustable_bed.beds import rmcontrol as rmcontrol_bed
 from custom_components.adjustable_bed.beds.hjbed import action_label as hjbed_label
 from custom_components.adjustable_bed.cluster018_profiles import APP_NAMES as CLASSIC_APPS
 from custom_components.adjustable_bed.codec import richmat as richmat_codec
+from custom_components.adjustable_bed.goodvibe_catalog import ACTION_EXPANSIONS
+from custom_components.adjustable_bed.goodvibe_catalog import ACTIONS as GOODVIBE_ACTIONS
+from custom_components.adjustable_bed.lp_legacy_profiles import (
+    LP_LEGACY_PROFILE_CODES,
+    get_lp_legacy_profile,
+)
 from custom_components.adjustable_bed.profiles import richmat as richmat_profiles
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
@@ -26,11 +39,17 @@ _RICHMAT_NAMES = {
     "bedtech": "BedTech",
     "leggett_wilinke": "L&P MlRM",
     "hjbed": "HJBed",
+    "eshine": "Eshine",
+    "goodvibe": "Good Vibe Sleep",
+    "leggett_lp_legacy": "L&P legacy app",
     **{
         profile.key: f"Richmat MH {name}"
         for profile, name in zip(
             richmat_profiles.RICHMAT_MH.values(),
-            ("Revive Control", "Best Mattress", "Blvd Home", "HARMONY", "Idealbed"),
+            (
+                *("Revive Control", "Best Mattress", "Blvd Home", "HARMONY", "Idealbed"),
+                *("RUF Betten", "W.Silver", "AMERICANSTAR", "Bailey", "TX"),
+            ),
             strict=True,
         )
     },
@@ -89,8 +108,11 @@ def _richmat_profiles() -> dict[str, richmat_profiles.RichmatProfile]:
         for profile in (
             *_FIXED_ROUTES,
             richmat_profiles.HJBED,
+            richmat_profiles.ESHINE,
             *richmat_profiles.RICHMAT_MH.values(),
             *richmat_profiles.RICHMAT_CLASSIC.values(),
+            richmat_profiles.GOODVIBE,
+            richmat_profiles.LP_LEGACY,
         )
     }
 
@@ -105,6 +127,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
         "bedtech": (_const.BED_TYPE_BEDTECH,),
         "leggett_wilinke": (_const.BED_TYPE_LEGGETT_WILINKE,),
         "hjbed": (_const.BED_TYPE_HJBED,),
+        "eshine": (_const.BED_TYPE_ESHINE,),
         **{
             profile.key: (mh_types[profile.key.removeprefix("richmat_mh_")],)
             for profile in richmat_profiles.RICHMAT_MH.values()
@@ -113,13 +136,17 @@ def bed_types() -> dict[str, tuple[str, ...]]:
             profile.key: (_const.BED_TYPE_CLUSTER018,)
             for profile in richmat_profiles.RICHMAT_CLASSIC.values()
         },
+        "goodvibe": (_const.BED_TYPE_GOODVIBE,),
+        "leggett_lp_legacy": (_const.BED_TYPE_LEGGETT_LP_LEGACY,),
     }
 
 
 def _catalog_kind(key: str) -> str:
-    if key == "hjbed":
+    if key in ("hjbed", "goodvibe"):
         return "per-product catalog"
-    if key.startswith("richmat_classic_"):
+    if key == "eshine":
+        return "[fixed E6000 table](#eshine-commands)"
+    if key.startswith("richmat_classic_") or key == "leggett_lp_legacy":
         return "per-layout catalog"
     return "per-model catalog"
 
@@ -138,6 +165,9 @@ def _lease(profile: richmat_profiles.RichmatProfile) -> str:
     if profile.key.startswith("richmat_classic_"):
         # The controller scopes its lease to the keep buttons of the selected layout.
         return "renewable lease on keep buttons"
+    if profile.key == "goodvibe":
+        # The controller scopes its lease to the product's sustained-press controls.
+        return "renewable lease on sustained controls"
     return "renewable lease" if profile.execution.hold == "stream" else "no"
 
 
@@ -174,12 +204,13 @@ def render_richmat_profiles() -> str:
             (
                 _RICHMAT_NAMES[key],
                 ", ".join(f"`{bed_type}`" for bed_type in types[key]),
-                ", ".join(transport.upper() for transport in profile.transports),
+                ", ".join(transport.upper() for transport in profile.transports)
+                or "configured characteristics",
                 _catalog_kind(key),
                 _lease(profile),
             )
             for key, profile in _richmat_profiles().items()
-            if profile.codes is None
+            if profile not in _FIXED_ROUTES
         ),
     )
     return _block(
@@ -355,7 +386,8 @@ def render_richmat_functions() -> str:
                 for action, prefix in richmat_codec.FUNCTION_PREFIXES.items()
             ),
         ),
-        "Every other catalog action uses `6E 01 side`. HJBed sends only the first four.",
+        "Every other catalog action uses `6E 01 side`. HJBed sends only the first four, "
+        "Good Vibe Sleep the first three.",
     )
 
 
@@ -548,6 +580,12 @@ def render_richmat_catalog_timing() -> str:
                 ("HJBed", "Menu probes at connect", f"{_ms(hjbed_bed.MENU_PROBE_S)} apart"),
                 ("HJBed", "BJRN preset save", f"waits {hjbed_bed.BJRN_SAVE_WAIT_S} s"),
                 (
+                    "Eshine",
+                    "Held refresh",
+                    f"every {eshine_bed.REFRESH_MS} ms for the entry pulse count, then STOP",
+                ),
+                ("Eshine", "Other buttons and STOP", "one write"),
+                (
                     "Classic apps",
                     "Worker tick",
                     f"{classic_frames.TICK_MS} ms; {classic_frames.FAST_TICK_MS} ms for "
@@ -585,6 +623,43 @@ def render_richmat_catalog_timing() -> str:
                     "Classic apps",
                     "Desk button refresh",
                     f"every {classic_frames.DESK_REFRESH_MS} ms, with no release frame",
+                ),
+                (
+                    "Good Vibe Sleep",
+                    "Sustained press",
+                    f"first write after {goodvibe_bed.TICK_MS} ms, then every "
+                    f"{goodvibe_bed.TICK_MS} ms; STOP once a write was attempted",
+                ),
+                (
+                    "Good Vibe Sleep",
+                    "Long and short-and-long press",
+                    f"long action after {goodvibe_bed.LONG_PRESS_MS} ms",
+                ),
+                (
+                    "Good Vibe Sleep",
+                    "Menu checks at connect",
+                    f"{_ms(goodvibe_bed.MENU_PROBE_S)} apart",
+                ),
+                (
+                    "Good Vibe Sleep",
+                    "Incomplete notification bytes",
+                    f"dropped after {_ms(goodvibe_bed.EXPIRY_S)}",
+                ),
+                ("Good Vibe Sleep", "Live sleep data", f"polled every {goodvibe_bed.POLL_S} s"),
+                (
+                    "L&P legacy app",
+                    "Held press",
+                    f"every {_ms(lp_legacy_bed.TICK_S)} for the entry pulse count, then its release",
+                ),
+                (
+                    "L&P legacy app",
+                    "Long press",
+                    f"one write after {_ms(lp_legacy_bed.TICK_S * lp_legacy_bed.LONG_PRESS_TICKS)}",
+                ),
+                (
+                    "L&P legacy app",
+                    "One-shot press",
+                    f"one write, then one {_ms(lp_legacy_bed.TICK_S)} tick",
                 ),
             ),
         )
@@ -656,6 +731,220 @@ def render_hjbed_startup() -> str:
     )
 
 
+def render_eshine_commands() -> str:
+    labels = {button: label for label, button in eshine_bed.EXTRA_BUTTONS.values()}
+    held = f"refresh {eshine_bed.REFRESH_MS} ms; STOP"
+
+    def row(name: str, code: int, sends: str, action: str = "") -> tuple[str, ...]:
+        bare = richmat_codec.function(code, action=action, single=True)
+        return name, _hex(bare), _hex(richmat_codec.function(code, action=action)), sends
+
+    return _block(
+        _table(
+            ("Command", "Bare (N1)", "Framed", "Sends"),
+            (
+                *(
+                    row(
+                        labels.get(button) or _BUTTON_LABELS[button],
+                        code,
+                        held if button in eshine_bed.HELD else "once",
+                    )
+                    for button, code in eshine_bed.CODES.items()
+                ),
+                row("STOP", richmat_profiles.ESHINE.stop, "once"),
+                row("ExitLimit (setup)", 0, "once after subscribing", eshine_bed.EXIT_LIMIT),
+            ),
+        )
+    )
+
+
+def _goodvibe_row(name: str, code: int) -> tuple[str, ...]:
+    return (
+        name,
+        _code_hex(code),
+        *(_hex(richmat_codec.function(code, side)) for side in (0, 1, 2)),
+    )
+
+
+def render_goodvibe_commands() -> str:
+    menu = (
+        GOODVIBE_ACTIONS[detail] for details in ACTION_EXPANSIONS.values() for detail in details
+    )
+    return _block(
+        _table(
+            ("Command", "Single code", "Side 0", "Side 1", "Side 2"),
+            (
+                _goodvibe_row("Release (STOP)", richmat_profiles.GOODVIBE.stop),
+                _goodvibe_row("Close bed light", goodvibe_frames.LIGHT_OFF),
+                *(
+                    _goodvibe_row(
+                        f"Massage countdown {minutes} min" if minutes else "Massage countdown off",
+                        code,
+                    )
+                    for minutes, code in goodvibe_frames.MASSAGE_TIMER.items()
+                ),
+                *(
+                    _goodvibe_row(
+                        f"Y6RM {goodvibe_bed.label(action)}, "
+                        + re.sub(r"(?=[A-Z])", " ", action.gesture).lower(),
+                        action.short,
+                    )
+                    for action in menu
+                ),
+            ),
+        )
+    )
+
+
+def render_goodvibe_lights() -> str:
+    def seconds(model: str, eight: bool) -> str:
+        return ", ".join(map(str, goodvibe_frames.light_durations(model, eight)))
+
+    return _block(
+        _table(
+            ("Products", "Durations (seconds)"),
+            (
+                ("Full colour", seconds("", False)),
+                ("Eight colours", seconds("", True)),
+                ("RNRN, eight colours", seconds("RNRN", True)),
+            ),
+        ),
+        "The eight colours are "
+        + ", ".join(f"`{color}`" for color in goodvibe_frames.EIGHT_COLORS)
+        + ".",
+    )
+
+
+def render_goodvibe_settings() -> str:
+    def frames(*writes: bytes) -> str:
+        return "; ".join(f"`{write.hex()}`" for write in writes)
+
+    now = datetime.fromtimestamp(1793707200, timezone(timedelta(hours=1)))
+    return _block(
+        _table(
+            ("Operation and example input", "Exact GATT write(s)"),
+            (
+                (
+                    "Single alarm: 4660 minutes, action `05`",
+                    frames(*goodvibe_frames.clock(4660, 5)),
+                ),
+                ("Cancel single alarm", frames(*goodvibe_frames.clock(0, 0))),
+                ("Light duration: 300 seconds", frames(goodvibe_frames.light_duration(300))),
+                ("Light always on: 0 seconds", frames(goodvibe_frames.light_duration(0))),
+                ("Colour: 255, 128, 0; one combined write", frames(richmat_codec.rgb(255, 128, 0))),
+                (
+                    "Repeat alarm: slot 1, 07:30, action `05`, mask `F9`",
+                    frames(goodvibe_frames.repeat_alarm(1, 7, 30, 5, 0xF9)),
+                ),
+                ("Delete repeat alarm: slot 1", frames(goodvibe_frames.delete_alarm(1))),
+                ("Query repeat alarms", frames(goodvibe_frames.QUERIES["alarms"])),
+                ("Query sleep name", frames(goodvibe_frames.QUERIES["sleep_name"])),
+                ("Snore switch: on", frames(goodvibe_frames.snore_switch(True))),
+                ("Snore count: 7", frames(goodvibe_frames.snore_config(True, 7))),
+                ("Snore time: 30", frames(goodvibe_frames.snore_config(False, 30))),
+                (
+                    "Query snore configuration, then switch",
+                    frames(
+                        goodvibe_frames.QUERIES["snore_config"],
+                        goodvibe_frames.QUERIES["snore_switch"],
+                    ),
+                ),
+                (
+                    f"Time sync: {now.isoformat(sep=' ')}",
+                    frames(*goodvibe_frames.sync_time(now)),
+                ),
+            ),
+        )
+    )
+
+
+def render_goodvibe_startup() -> str:
+    def name(action: str) -> str:
+        return re.sub(
+            r"(?<!^)(?=[A-Z])", " ", action.removeprefix("deviceFunctionItem")
+        ).capitalize()
+
+    return _block(
+        _table(
+            ("Step", "When", "Framed", "Single-code"),
+            (
+                *(
+                    (
+                        name(action),
+                        f"{_ms(goodvibe_bed.MENU_PROBE_S)} after the previous step"
+                        if step
+                        else "first",
+                        _hex(richmat_codec.function(code, action=action)),
+                        _hex(richmat_codec.function(code, action=action, single=True)),
+                    )
+                    for step, (action, code) in enumerate(goodvibe_bed.STARTUP)
+                ),
+                (
+                    "Time sync",
+                    "next, when the product has an alarm menu",
+                    "settings records `08 02 01` then `08 03 01`",
+                    "same",
+                ),
+                (
+                    "Sleep name query",
+                    "next, when the product has sleep monitoring",
+                    _hex(goodvibe_frames.QUERIES["sleep_name"]),
+                    "same",
+                ),
+            ),
+        )
+    )
+
+
+def render_lp_legacy_tokens() -> str:
+    controls = [
+        control
+        for code in LP_LEGACY_PROFILE_CODES
+        for control in get_lp_legacy_profile(code).controls
+    ]
+    events = {
+        action.token: action for control in controls for action in (control.press, control.release)
+    }
+    releases = sum(control.release.token == "n006E" for control in controls)
+    notes = {
+        "n006E": f"Release of {releases:,} of the {len(controls):,} catalogued controls",
+        "$0024": "",
+        "40024": "6BRM; the two modes differ",
+        "2": "Single character, Legacy only",
+        "": "Empty token; Legacy writes nothing",
+    }
+
+    def cell(frame: bytes | None) -> str:
+        return "Undefined" if frame is None else _hex(frame) if frame else "Nothing"
+
+    return _block(
+        _table(
+            ("Token", "Legacy", "Framed", "Notes"),
+            (
+                (
+                    f"`{token}`" if token else "(empty)",
+                    cell(events[token].legacy),
+                    cell(events[token].framed),
+                    note,
+                )
+                for token, note in notes.items()
+            ),
+        )
+    )
+
+
+def render_lp_legacy_notifications() -> str:
+    return _block(
+        _table(
+            ("Frame", "Reported effect"),
+            (
+                (_hex(frame), f"`{effect}`")
+                for frame, effect in lp_legacy_bed.NOTIFICATION_EFFECTS.items()
+            ),
+        )
+    )
+
+
 BLOCKS: list[Block] = [
     (GUIDE, "richmat-profiles", render_richmat_profiles),
     (GUIDE, "richmat-transports", render_richmat_transports),
@@ -671,4 +960,11 @@ BLOCKS: list[Block] = [
     (GUIDE, "richmat-catalog-timing", render_richmat_catalog_timing),
     (GUIDE, "rmcontrol-startup", render_rmcontrol_startup),
     (GUIDE, "hjbed-startup", render_hjbed_startup),
+    (GUIDE, "eshine-commands", render_eshine_commands),
+    (GUIDE, "goodvibe-commands", render_goodvibe_commands),
+    (GUIDE, "goodvibe-lights", render_goodvibe_lights),
+    (GUIDE, "goodvibe-settings", render_goodvibe_settings),
+    (GUIDE, "goodvibe-startup", render_goodvibe_startup),
+    (GUIDE, "lp-legacy-tokens", render_lp_legacy_tokens),
+    (GUIDE, "lp-legacy-notifications", render_lp_legacy_notifications),
 ]

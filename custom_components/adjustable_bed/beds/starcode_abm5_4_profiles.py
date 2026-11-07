@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Final
 
+from ..codec import keeson, okin_5a, okin_ore
 from ..codec import okin_nframe as codec
 from ..profiles.okin_nframe import STARCODE_ABM5_4_PROFILES
 
@@ -78,50 +79,49 @@ STATE_KEYS: Final = tuple("raw_" + field for field in FIELDS) + (
 
 # The 40-bit and 64-bit key frames are the ``STARCODE_ABM5_4_PROFILES`` data;
 # these are the selectors' other frames, as the app's builders emit them.
-KEEP_CONNECT: Final = bytes.fromhex("5a0b00a5")
 _BOX25_LIGHT_SWITCHES: Final = {"turnonUnderbedLighting": 1, "turnoffUnderbedLighting": 0}
-FRAMES: Final[dict[str, dict[str, str]]] = {
+FRAMES: Final[dict[str, dict[str, bytes]]] = {
     "none": {},
     "BOX15": {
-        "headUp": "e6fe16010000000004",
-        "headDown": "e6fe16020000000003",
-        "footUp": "e6fe16040000000001",
-        "footDown": "e6fe160800000000fd",
-        "unionUp": "e6fe16050000000000",
-        "unionDown": "e6fe160a00000000fb",
-        "stop": "e6fe16000000000005",
-        "flatPosition": "e6fe160000000800fd",
-        "tv": "e6fe160040000000c5",
-        "lounge": "e6fe160020000000e5",
-        "zeroGravity": "e6fe160010000000f5",
-        "anti": "e6fe16008000000085",
-        "m1": "e6fe16000001000004",
-        "saveM1": "e6fe16000001000004",
-        "saveTv": "e6fe160040000000c5",
-        "saveLounge": "e6fe160020000000e5",
-        "saveZeroGravity": "e6fe160010000000f5",
-        "underbedLighting": "e6fe16000002000003",
+        "headUp": keeson.frame(0x00000001, header=0xE6, side=0),
+        "headDown": keeson.frame(0x00000002, header=0xE6, side=0),
+        "footUp": keeson.frame(0x00000004, header=0xE6, side=0),
+        "footDown": keeson.frame(0x00000008, header=0xE6, side=0),
+        "unionUp": keeson.frame(0x00000005, header=0xE6, side=0),
+        "unionDown": keeson.frame(0x0000000A, header=0xE6, side=0),
+        "stop": keeson.frame(0x00000000, header=0xE6, side=0),
+        "flatPosition": keeson.frame(0x08000000, header=0xE6, side=0),
+        "tv": keeson.frame(0x00004000, header=0xE6, side=0),
+        "lounge": keeson.frame(0x00002000, header=0xE6, side=0),
+        "zeroGravity": keeson.frame(0x00001000, header=0xE6, side=0),
+        "anti": keeson.frame(0x00008000, header=0xE6, side=0),
+        "m1": keeson.frame(0x00010000, header=0xE6, side=0),
+        "saveM1": keeson.frame(0x00010000, header=0xE6, side=0),
+        "saveTv": keeson.frame(0x00004000, header=0xE6, side=0),
+        "saveLounge": keeson.frame(0x00002000, header=0xE6, side=0),
+        "saveZeroGravity": keeson.frame(0x00001000, header=0xE6, side=0),
+        "underbedLighting": keeson.frame(0x00020000, header=0xE6, side=0),
     },
     "BOX24": {},
     "BOX1220": {
-        "headUp": "a55ade00002001",
-        "headDown": "a55add00002002",
-        "footUp": "a55adc00002003",
-        "footDown": "a55adb00002004",
-        "unionUp": "a55adb00002004",
-        "unionDown": "a55adb00002004",
-        "stop": "a55adf00002000",
-        "flatPosition": "a55a7900002066",
-        "tv": "a55a7d00002062",
-        "lounge": "a55a7e00002061",
-        "zeroGravity": "a55a7f00002060",
-        "anti": "a55a7c00002063",
-        "m1": "a55a7b00002064",
-        "saveM1": "a55a7b00002064",
-        "saveTv": "a55a7d00002062",
-        "saveLounge": "a55a7e00002061",
-        "saveZeroGravity": "a55a7f00002060",
-        "underbedLighting": "a55a5f00002080",
+        "headUp": okin_ore.frame(0x2001),
+        "headDown": okin_ore.frame(0x2002),
+        "footUp": okin_ore.frame(0x2003),
+        "footDown": okin_ore.frame(0x2004),
+        "unionUp": okin_ore.frame(0x2004),
+        "unionDown": okin_ore.frame(0x2004),
+        "stop": okin_ore.frame(0x2000),
+        "flatPosition": okin_ore.frame(0x2066),
+        "tv": okin_ore.frame(0x2062),
+        "lounge": okin_ore.frame(0x2061),
+        "zeroGravity": okin_ore.frame(0x2060),
+        "anti": okin_ore.frame(0x2063),
+        "m1": okin_ore.frame(0x2064),
+        "saveM1": okin_ore.frame(0x2064),
+        "saveTv": okin_ore.frame(0x2062),
+        "saveLounge": okin_ore.frame(0x2061),
+        "saveZeroGravity": okin_ore.frame(0x2060),
+        "underbedLighting": okin_ore.frame(0x2080),
     },
     "BOX1221": {},
     "BOX2422": {},
@@ -129,37 +129,37 @@ FRAMES: Final[dict[str, dict[str, str]]] = {
     "BOX3633": {},
     "BOX25": {},
     "BOX25_STAR": {
-        "headUp": "5a0103103000a5",
-        "headDown": "5a0103103001a5",
-        "footUp": "5a0103103002a5",
-        "footDown": "5a0103103003a5",
-        "unionUp": "5a010310300ca5",
-        "unionDown": "5a010310300da5",
-        "stop": "5a010310300fa5",
-        "flatPosition": "5a0103103010a5",
-        "tv": "5a0103103011a5",
-        "lounge": "5a0103103017a5",
-        "zeroGravity": "5a0103103013a5",
-        "anti": "5a0103103016a5",
-        "m1": "5a010310301aa5",
-        "saveM1": "5a0103103094a5",
-        "saveTv": "5a0103103021a5",
-        "saveLounge": "5a0103103027a5",
-        "saveZeroGravity": "5a0103103023a5",
-        "resetMemory": "5a0103103037a5",
-        "massageOnOff": "5a010310305aa5",
-        "headStrengthAdd": "5a0103103060a5",
-        "headStrengthReduce": "5a0103103061a5",
-        "footStrengthAdd": "5a0103103062a5",
-        "footStrengthReduce": "5a0103103063a5",
-        "waveAdd": "5a0103103058a5",
-        "waveReduce": "5a0103103059a5",
-        "underbedLighting": "5a0103103071a5",
-        "turnonUnderbedLighting": "5a0103103073a5",
-        "turnoffUnderbedLighting": "5a0103103074a5",
-        "change2White": "5a0103103079a5",
-        "keepConnect": "5a0b00a5",
-        "queryMassage": "5ab000a5",
+        "headUp": okin_5a.command(0x00),
+        "headDown": okin_5a.command(0x01),
+        "footUp": okin_5a.command(0x02),
+        "footDown": okin_5a.command(0x03),
+        "unionUp": okin_5a.command(0x0C),
+        "unionDown": okin_5a.command(0x0D),
+        "stop": okin_5a.command(0x0F),
+        "flatPosition": okin_5a.command(0x10),
+        "tv": okin_5a.command(0x11),
+        "lounge": okin_5a.command(0x17),
+        "zeroGravity": okin_5a.command(0x13),
+        "anti": okin_5a.command(0x16),
+        "m1": okin_5a.command(0x1A),
+        "saveM1": okin_5a.command(0x94),
+        "saveTv": okin_5a.command(0x21),
+        "saveLounge": okin_5a.command(0x27),
+        "saveZeroGravity": okin_5a.command(0x23),
+        "resetMemory": okin_5a.command(0x37),
+        "massageOnOff": okin_5a.command(0x5A),
+        "headStrengthAdd": okin_5a.command(0x60),
+        "headStrengthReduce": okin_5a.command(0x61),
+        "footStrengthAdd": okin_5a.command(0x62),
+        "footStrengthReduce": okin_5a.command(0x63),
+        "waveAdd": okin_5a.command(0x58),
+        "waveReduce": okin_5a.command(0x59),
+        "underbedLighting": okin_5a.command(0x71),
+        "turnonUnderbedLighting": okin_5a.command(0x73),
+        "turnoffUnderbedLighting": okin_5a.command(0x74),
+        "change2White": okin_5a.command(0x79),
+        "keepConnect": okin_5a.WAKE,
+        "queryMassage": okin_5a.request(0xB0),
     },
 }
 
@@ -235,13 +235,13 @@ def build_frame(selector: str, action: str, value: int = 0) -> bytes:
             raise ValueError("Input is outside the private one-byte builder domain")
         parameter = 7 if action == "changeMassageTime" else 0
         if star:
-            return bytes((0x5A, 0xE0, 4, parameter, value, 0, 0, 0xA5))
+            return okin_5a.extended(parameter, value)
         return codec.extended(parameter, value)
-    if literal := FRAMES[selector].get(action):
-        return bytes.fromhex(literal)
+    if frame := FRAMES[selector].get(action):
+        return frame
     if not star:
         if action == "keepConnect":
-            return KEEP_CONNECT
+            return okin_5a.WAKE
         if action == "queryMassage":
             return codec.request(0xB0)
         if selector == "BOX25" and action in _BOX25_LIGHT_SWITCHES:

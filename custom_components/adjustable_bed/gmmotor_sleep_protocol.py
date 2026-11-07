@@ -1,6 +1,7 @@
-"""GM Control 4.6.6 sleep-module BLE framing (accepted row102 protocol P2).
+"""GM Control 4.6.6 sleep-module requests and receive assembly (accepted row102 protocol P2).
 
-The MM and SXB branches are distinct from the P1 bed transport. Their receive
+The MM and SXB branches are distinct from the P1 bed transport; their frames are
+the sleep-sensor JSON envelope (``codec/sleep_envelope.py``). Their receive
 quirks are preserved; malformed-input errors are safe HA rejections.
 """
 
@@ -11,41 +12,13 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal
 
+from .codec import sleep_envelope
 from .gmmotor_notifications import Value
 from .gmmotor_protocol import MalformedNotification
 
 type SleepCommand = Literal[
     "s_time", "q_time", "q_part", "s_part", "q_realtime", "q_report", "q_report_allow", "q_sens"
 ]
-
-
-def frame(payload: bytes, request_id: int, *, total: int = 1, sequence: int = 0) -> bytes:
-    """Native-masked source header and UTF8 payload; no appended checksum."""
-    if not payload:
-        return b""
-    size = len(payload)
-    return (
-        bytes(
-            v & 255
-            for v in (
-                0,
-                request_id,
-                total,
-                sequence,
-                size + 7,
-                0,
-                0,
-                17,
-                3,
-                67,
-                85,
-                68,
-                size,
-                size >> 8,
-            )
-        )
-        + payload
-    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -117,7 +90,7 @@ class Requests:
         payload = json.dumps(
             {"id": request_id, "cmd": name, "val": value}, separators=(",", ":"), ensure_ascii=False
         ).encode("utf-8")
-        return Request(command, request_id, frame(payload, request_id))
+        return Request(command, request_id, sleep_envelope.frame(payload, request_id))
 
 
 class ReceiveBuffer:
@@ -154,9 +127,9 @@ class ReceiveBuffer:
             return None
         if self.command == "q_report_allow":
             if self.sxb:
-                if len(chunk) < 14:
+                if len(chunk) < sleep_envelope.HEADER_SIZE:
                     raise MalformedNotification("SXB report chunk lacks its 14-byte prefix")
-                chunk = chunk[14:]
+                chunk = chunk[sleep_envelope.HEADER_SIZE :]
             self.pending.extend(chunk)
             if len(self.pending) < self.report_size:
                 return None
@@ -164,18 +137,18 @@ class ReceiveBuffer:
             self.pending.clear()
             return result
         if not self.pending:
-            if len(chunk) < 13:
+            if (size := sleep_envelope.response_size(chunk)) is None:
                 raise MalformedNotification("Sleep response lacks its length byte")
-            self._threshold = chunk[12] + 14
+            self._threshold = size
         self.pending.extend(chunk)
         if len(self.pending) < self._threshold:
             return None
         result = bytes(self.pending)
         self.pending.clear()
         self._threshold = 0
-        if len(result) < 14:
+        if len(result) < sleep_envelope.HEADER_SIZE:
             raise MalformedNotification("Sleep response lacks its payload prefix")
-        return result[14:]
+        return result[sleep_envelope.HEADER_SIZE :]
 
 
 def response_command(text: str, *, sxb: bool, active: str | None) -> str | None:

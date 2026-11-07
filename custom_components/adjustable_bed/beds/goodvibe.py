@@ -16,11 +16,13 @@ from homeassistant.util import dt as dt_util
 
 from .. import goodvibe_protocol as p
 from ..app_session import app_session
+from ..codec import richmat as codec
 from ..command_scheduler import CommandContext, current_command_context
 from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ..goodvibe_catalog import ACTION_EXPANSIONS, ACTIONS, PRODUCTS, Action
 from ..goodvibe_receive import Notifications
-from ..goodvibe_sleep import Realtime, Receiver
+from ..goodvibe_sleep import Realtime, Receiver, sleep_packet
+from ..profiles.richmat import GOODVIBE
 from .base import (
     CONTROLLER_GESTURE_RELEASE,
     BedController,
@@ -41,14 +43,25 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
+# Normal-product service -> (write characteristic, single-byte commands).
 GATT = {
-    "0000fee9-0000-1000-8000-00805f9b34fb": ("d44bc439-abfd-45a2-b575-925416129600", False),
-    "6e400001-b5a3-f393-e0a9-e50e24dcca9e": ("6e400002-b5a3-f393-e0a9-e50e24dcca9e", True),
-    "0000e0ff-3c17-d293-8e48-14fe2e4da212": ("00000002-3c17-d293-8e48-14fe2e4da212", False),
-    "0000fff0-0000-1000-8000-00805f9b34fb": ("0000fff2-0000-1000-8000-00805f9b34fb", False),
-    "0000ffe0-0000-1000-8000-00805f9b34fb": ("0000ffe2-0000-1000-8000-00805f9b34fb", False),
-    "0000fee9-0000-1000-8000-00805f9b34bb": ("d44bc439-abfd-45a2-b575-925416129622", False),
+    transport.service_uuid: (transport.write_uuid, transport.single)
+    for transport in (codec.TRANSPORTS[key] for key in GOODVIBE.transports)
 }
+# Connection startup: exit limit, then the clock and light menu checks.
+STARTUP = (
+    ("deviceFunctionItemExitLimit", 0),
+    ("deviceFunctionItemCheckClock", 1),
+    ("deviceFunctionItemCheckLight", 1),
+)
+MENU_PROBE_S = 0.3
+TICK_MS = 100
+"""A sustained press first sends after one tick, then once per tick."""
+LONG_PRESS_MS = 3000
+POLL_S = 2
+"""Live sleep-data polling interval."""
+EXPIRY_S = 0.5
+"""Incomplete notification bytes are dropped after this long."""
 SLEEP_SERVICES = frozenset(
     ("0000e0ff-3c17-d293-8e48-14fe2e4da212", "2320567c-05cf-6eb4-c341-772851827e1b")
 )
@@ -111,6 +124,10 @@ async def _release(controller: BedController) -> None:
     return
 
 
+def _stop(side: int, link: Link) -> bytes:
+    return codec.function(GOODVIBE.stop, side, single=link.legacy)
+
+
 def label(action: Action) -> str:
     key = action.label.removeprefix("deviceFunctionItem").removeprefix("deviceFunctionSofa")
     return re.sub(r"(?<!^)(?=[A-Z])", " ", key)
@@ -156,7 +173,8 @@ class GoodVibeController(BedController):
         super().__init__(coordinator)
         if profile not in PRODUCTS and profile not in ("sleep_rm", "sleep_hj"):
             raise ValueError("Choose the exact product in Good Vibe Sleep")
-        self.profile = profile
+        self.profile = GOODVIBE
+        self.product_key = profile
         self.kind = 2 if profile == "sleep_rm" else 3 if profile == "sleep_hj" else 1
         self.product = PRODUCTS.get(profile)
 
@@ -243,7 +261,7 @@ class GoodVibeController(BedController):
 
     @property
     def persisted_app_state_key(self) -> str:
-        return "goodvibe:" + self.profile
+        return "goodvibe:" + self.product_key
 
     @property
     def persisted_app_state(self) -> Mapping[str, object]:
@@ -313,7 +331,7 @@ class GoodVibeController(BedController):
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
         return {
-            "profile": self.profile,
+            "profile": self.product_key,
             "hardware_verified": False,
             "events": deepcopy(self.choices.events),
             "rejection": self._rejection,
@@ -376,9 +394,8 @@ class GoodVibeController(BedController):
         if not cleanup and self._coordinator.cancel_command.is_set():
             return False
         async with self._ble_lock:
-            if (
-                release_gesture is not None
-                and (self._gesture is not release_gesture or not release_gesture.release_is_current)
+            if release_gesture is not None and (
+                self._gesture is not release_gesture or not release_gesture.release_is_current
             ):
                 return False
             if self._current_link() is not link:
@@ -430,7 +447,7 @@ class GoodVibeController(BedController):
             if self._expiry is not None:
                 self._expiry.cancel()
             self._expiry = (
-                asyncio.get_running_loop().call_later(0.5, self._normal.clear)
+                asyncio.get_running_loop().call_later(EXPIRY_S, self._normal.clear)
                 if self._normal.buffer
                 else None
             )
@@ -526,14 +543,11 @@ class GoodVibeController(BedController):
         try:
             await client.start_notify(link.rx, partial(self._notification, link))
             if self.kind == 1:
-                await self._send(
-                    p.checksum([110, 2, 1, 0]) if not link.legacy else b"\x00", link=link
-                )
-                for code, operand in ((8, 1), (10, 0)):
-                    await asyncio.sleep(0.3)
+                for step, (action, code) in enumerate(STARTUP):
+                    if step:
+                        await asyncio.sleep(MENU_PROBE_S)
                     await self._send(
-                        p.checksum([110, code, operand, 1]) if not link.legacy else b"\x01",
-                        link=link,
+                        codec.function(code, action=action, single=link.legacy), link=link
                     )
                 if self.product is not None and self.product.alarms:
                     for frame in p.sync_time(dt_util.now(), dt_util.now()):
@@ -594,7 +608,7 @@ class GoodVibeController(BedController):
 
         async def poll() -> None:
             while self.choices.monitoring and self._link is owner:
-                await asyncio.sleep(2)
+                await asyncio.sleep(POLL_S)
 
                 async def query(controller: BedController) -> None:
                     target = selected(controller)
@@ -797,9 +811,9 @@ class GoodVibeController(BedController):
             and action.force_long
         )
         frame = (
-            p.generic(0, side, link.legacy)
+            codec.function(0, side, single=link.legacy)
             if substituted
-            else action.packet(side, link.legacy, long)
+            else p.action_frame(action, side, link.legacy, long)
         )
         attempted = False
         long_callback = False
@@ -833,17 +847,17 @@ class GoodVibeController(BedController):
             try:
                 if gesture == "sustainPress":
                     remaining = duration
-                    while remaining >= 100 and await self._delay(100):
+                    while remaining >= TICK_MS and await self._delay(TICK_MS):
                         await send()
-                        remaining -= 100
+                        remaining -= TICK_MS
                 elif gesture in ("longPress", "shortAndLongPress"):
-                    if duration >= 3000:
-                        if await self._delay(3000):
+                    if duration >= LONG_PRESS_MS:
+                        if await self._delay(LONG_PRESS_MS):
                             long_callback = True
                             frame = (
-                                p.generic(0, side, link.legacy)
+                                codec.function(0, side, single=link.legacy)
                                 if substituted
-                                else action.packet(side, link.legacy, True)
+                                else p.action_frame(action, side, link.legacy, True)
                             )
                             await send()
                     elif await self._delay(duration) and gesture == "shortAndLongPress":
@@ -887,7 +901,7 @@ class GoodVibeController(BedController):
             if self._gesture is gesture_state:
                 self._gesture = None
             if attempted and gesture in ("shortPress", "sustainPress"):
-                await self._send(p.generic(110, side, link.legacy), cleanup=True, link=link)
+                await self._send(_stop(side, link), cleanup=True, link=link)
 
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
@@ -1035,7 +1049,7 @@ class GoodVibeController(BedController):
             self._publish()
             return
         link = self._current_link()
-        await self._send(p.generic(110, self._side(), link.legacy), cleanup=True, link=link)
+        await self._send(_stop(self._side(), link), cleanup=True, link=link)
 
     async def sleep_request(self, operation: str, request: Request | None = None) -> None:
         if self._sleep is None:
@@ -1121,7 +1135,7 @@ class GoodVibeController(BedController):
         else:
             raise ValueError("Unsupported sleep action")
         self.choices.sequence = self.choices.sequence % 254 + 1
-        packet = p.sleep_packet(self.choices.sequence, command, value)
+        packet = sleep_packet(self.choices.sequence, command, value)
         receive_command = (
             "q_report_allow"
             if operation == "report_allow"

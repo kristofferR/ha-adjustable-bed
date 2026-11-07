@@ -82,6 +82,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `serenity` | S stream | U | U | serenity | remaining bitmask restarts a recognized command or is ignored |
 | `tranquil` | S stream | U | U | tranquil | recognized masks only |
 | `adjustable_lumbar` (both routes) | S stream | U | U | lumbar | unsupported chord only stops |
+| `eshine_okin` (E2000, E3000/E3100, E5000) | S stream | U | U | eshine-okin | held keys write at once, refresh every 300 ms with no fixed count, STOP 200 ms after release; hold declared. Single-touch coordination excludes a second movement control; the one multi-touch path, Flat+Zero Gravity, is a fixed frame either release stops. None of its 25 constructors sets a speed |
 | `simmons` (all routes) | S stream | U | U | simmons | one held action |
 | `starcode_abm5_4` | S stream | U | U | abm5_4 | one held action |
 | `starcode_m1x12` | S stream | U | U | m1x12 | no bitmask combination; hold declared |
@@ -134,6 +135,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | **Richmat 6E (R1)** | | | | | |
 | `richmat` (all routes) | S stream | U | U | rmc2 | explicit STOP after the sustain timer; speed rows are massage |
 | `richmat_revive`, `richmat_best_mattress`, `richmat_blvd_home`, `richmat_harmony`, `richmat_idealbed` | S stream | U | U | revive, best, blvd, harmony, ideal, row055 | KEEP rows repeat until removed, STOP after 120 ms; speed rows are massage |
+| `ruf_betten`, `wsilver_products`, `richmat_americanstar`, `bailey_bed_control`, `richmat_tx` | S stream | U | U | ruf, wsilver, rmamericanstar, bailey, tx, row061 | KEEP rows repeat at the model's interval until removed; RUF sends STOP at once, the others STOP after 120 ms |
 | `leggett_wilinke`, `leggett_platt` (`mlrm`) | S stream | U | U | lp2 | framed STOP per mode |
 | `hjbed` | S stream | U | U | row121 | per-action recovered release |
 | `richmat_classic_apps` (Avocado Eco Base, CoasterSleep, Forty Winks, Milemont, Superior) | S stream | U | U | avocado, coaster, fortywinks, milemont, superior, row066 | keep buttons repeat every 150 ms tick (110 ms for TWRM and MLRM names) until UP, then release 50 ms later; hold declared per control, on the held controls that run the keep mode under the current selection (see [per-control scope](#per-control-hold-scope)). Each press replaces the sender's one shared command and the release frame ends it; combined motors are fixed keys; speed keys are massage (`com_msg_speed`) |
@@ -173,7 +175,6 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `vibradorm_app` | S stream | U | U | diamant, werkmeister | STOP on release; speed is mood light; hold declared, including its VMAT profile (vmat) |
 | `vmatbasic` | S stream | U | U | vmatbasic | all-up/all-down are fixed keys; speed is mood light; hold declared |
 | `eshine` | S stream | U | U | eshine | STOP once after a sustained press; hold declared |
-| `eshine_okin` (E2000, E3000/E3100, E5000) | S stream | U | U | eshine-okin | held keys write at once, refresh every 300 ms with no fixed count, STOP 200 ms after release; hold declared. Single-touch coordination excludes a second movement control; the one multi-touch path, Flat+Zero Gravity, is a fixed frame either release stops. None of its 25 constructors sets a speed |
 | `goodvibe` | S stream | U | U | goodvibe | sustained controls refresh every 100 ms, then release `6e`; hold declared per control, on the held controls whose effective gesture is a sustained press (see [per-control scope](#per-control-hold-scope)). Each frame carries one operand and the only release is the side's STOP; all-motor moves are fixed operands; speed rows are massage and music shake |
 | `sleepys_elite_app` | S stream | U | U | sleepy | selector STOP once at release; hold declared |
 | `motosleep` | S stream | B | B | motosleep, powerbob, motosleep-guide | movement repeats every 100 ms while held; release sends `$b` five times (MotoSleep HHC and the Power Bob profiles whose release has it) or the MOTO release frame (zero five times, or `0x9088/0x0001` six times on WR219); other Power Bob profiles stop when the refresh ends. #516 and #591: the guide covers only the commands the integration sends, and the frozen reports that would show composition and the full command inventory are not retained. MotoMotion is another app, with its own row |
@@ -626,6 +627,7 @@ Report workspaces are machine-local under
 | avanti | `com.ore.AvantiBases` | 1.0.5 | COMPLETE | `com.ore.AvantiBases-1.0.5-2026-11-03-bulk061-001/report/` |
 | aviada | `com.okin.bedding.rizeaviada` | 1.0.1 | COMPLETE | `com.okin.bedding.rizeaviada-1.0.1-2026-08-30/report/` |
 | avocado | `com.richmat.avocadoecobase` | 1.0.4 | COMPLETE | `com.richmat.avocadoecobase-1.0.4-2026-11-03-bulk061-clean002/work/report-revision-sol-003/` |
+| bailey | `com.richmat.bailey2` | 2.1.21 | COMPLETE | `com.richmat.bailey2-2.1.21-2026-11-03-bulk061-001/work/report-revision-sol-002/` |
 | bedsense | `com.fenmenbielei.bedsense` | 1.8 | COMPLETE | `com.fenmenbielei.bedsense-1.8-2026-11-03-bulk101-188-001/report/` |
 | bedtech | `com.richmat.bed_tech` | 2.8.3 | PARTIAL | `com.richmat.bed_tech-2.8.3-2026-11-03-bulk061-001/report/` |
 | best | `com.richmat.best_mattress` | 1.1.1 | COMPLETE | `com.richmat.best_mattress-1.1.1-2026-10-02-queue-e0bb6807-20261001-055-005/report/` |
@@ -691,21 +693,23 @@ Report workspaces are machine-local under
 | minghua | `com.okin.minghua.R` | 1.0.1 | COMPLETE | `com.okin.minghua.R-1.0.1-2026-10-02-queue-903926b6-20261002-060-002/report/` |
 | motionflex | `com.sealy.motionflex` | 1.0.3 | COMPLETE | `com.sealy.motionflex-1.0.3-20260830/report/` |
 | motomotion | `com.HHC.MotoMotion` | 3.1.9 | COMPLETE | `com.HHC.MotoMotion-3.1.9-2026-11-03-bulk101-188-002/work/report-repair-sol-003/` |
-| motosleep | `com.HHC.MotoSleep` | 5.1.5 | COMPLETE | Not retained; accepted in #447, `analysis.json` hash in the [MotoSleep guide](../beds/motosleep.md#analysis-provenance) |
+| motosleep | `com.HHC.MotoSleep` | 5.1.5 | COMPLETE | Not retained; accepted in #447, `analysis.json` hash in the [MotoSleep guide](../beds/motomotion.md#analysis-provenance) |
 | nectar | `com.okin.bedding.nectarmotion` | 1.0.1 | COMPLETE | `com.okin.bedding.nectarmotion-1.0.1-2026-10-26-39bdcafa-003/report/` |
 | octo | `de.octoactuators.octosmartcontrolapp` | 1.03.02 | COMPLETE | `de.octoactuators.octosmartcontrolapp-1.03.02-2026-10-26-39bdcafa-repair-001/report/` |
 | omazz | `com.sfd.Omazz` | 1.0.5 | COMPLETE | `com.sfd.Omazz-1.0.5-2026-10-26-39bdcafa-repair-001/report/` |
 | p2 | `com.leggett.prodigy2` | 2.2.0 | COMPLETE | `com.leggett.prodigy2-2.2.0-20260827/report/` |
 | p2l | `com.leggett.prodigy2L` | 1.2 | COMPLETE | `com.leggett.prodigy2L-1.2-20260827/report/` |
 | p4 | `com.leggett.prodigy4` | 1.2.0 | COMPLETE | `com.leggett.prodigy4-1.2.0-20260827/report/final/` |
-| powerbob | `com.HHC.PowerBob` | 2.0.3 | COMPLETE | Not retained; accepted in #447, `analysis.json` hash in the [MotoSleep guide](../beds/motosleep.md#analysis-provenance) |
+| powerbob | `com.HHC.PowerBob` | 2.0.3 | COMPLETE | Not retained; accepted in #447, `analysis.json` hash in the [MotoSleep guide](../beds/motomotion.md#analysis-provenance) |
 | remedy | `com.okin.bedding.customaticremedy` | 1.0.1 | COMPLETE | `com.okin.bedding.customaticremedy-1.0.1-2026-08-30/report/` |
 | resident | `com.okin.bedding.rizeResident` | 1.0.1 | COMPLETE | `com.okin.bedding.rizeResident-1.0.1-2026-08-30/report/` |
 | restonic | `com.keeson.restonicBT` | 1.2.0 | COMPLETE | `com.keeson.restonicBT-1.2.0-2026-10-02-queue-903926b6-20261002-058-002/report/` |
 | reverie | `com.reverie.reverie` | 3.3.3.8 | COMPLETE | `com.reverie.reverie-3.3.3.8-2026-10-27-39bdcafa-amendment-consolidation-001/report/` |
 | revive | `com.richmat.revive3` | 1.0.26 | COMPLETE | `com.richmat.revive3-1.0.26-2026-10-02-queue-e0bb6807-20261001-055-006/report/` |
+| rmamericanstar | `com.richmat.americanstar` | 1.0.0 | COMPLETE | `com.richmat.americanstar-1.0.0-2026-11-03-bulk061-001/work/report-revision-sol-001/` |
 | rmc2 | `com.richmat.rmcontrol2` | 21.3.7 | COMPLETE | `com.richmat.rmcontrol2-21.3.7-20260906-comparison-001/report/` |
 | row | `com.sfd.row` | 2.0 | COMPLETE | `com.sfd.row-2.0-2026-10-26-39bdcafa-repair-001/report/` |
+| ruf | `com.desarketing.ruf_betten_motor2` | 1.1.8 | COMPLETE | `com.desarketing.ruf_betten_motor2-1.1.8-2026-11-03-bulk061-001/work/report-revision-sol-001/` |
 | sanctuary | `com.okin.bedding.rizeSanctuary` | 1.0.1 | COMPLETE | `com.okin.bedding.rizeSanctuary-1.0.1-2026-08-30/report/` |
 | sealy | `com.okin.sealy` | 1.1.3 | PARTIAL | `com.okin.sealy-1.1.3-2026-10-03-extra-four-b-036-repair-004/report/` |
 | serenity | `com.okin.bedding.serenity` | 1.0.1 | COMPLETE | `com.okin.bedding.serenity-1.0.1-2026-09-30-isolated-002/report/` |
@@ -725,12 +729,14 @@ Report workspaces are machine-local under
 | tempur | `com.ore.tempur` | 1.7 | COMPLETE | `com.ore.tempur-1.7-2026-10-26-39bdcafa-repair-001/report/` |
 | tempur_au | `com.sfd.tempur_au` | 1.6 | COMPLETE | `com.sfd.tempur_au-1.6-2026-10-26-39bdcafa-001/report/` |
 | tranquil | `com.okin.bedding.tranquil` | 1.0.2 | COMPLETE | `com.okin.bedding.tranquil-1.0.2-2026-10-01-queue-e0bb6807-20261001-052-002/report/` |
+| tx | `com.richmat.tx` | 1.0.0 | COMPLETE | `com.richmat.tx-1.0.0-2026-11-03-bulk061-001/work/report-revision-sol-001/` |
 | universal | `com.leggett.android.universal` | 2.9.0 | COMPLETE | `com.leggett.android.universal-2.9.0-20260824/report/` |
 | useries | `com.leggett.useries` | 2.1 | COMPLETE | `com.leggett.useries-2.1-20260827/final-report/` |
 | vmat | `de.vibradorm.vmat` | 1.11 | COMPLETE | `de.vibradorm.vmat-1.11-2026-09-30-isolated-001/report/` |
 | vmatbasic | `com.vibradorm.vmatbasic` | 2.4.3 | COMPLETE | `com.vibradorm.vmatbasic-2.4.3-2026-09-30-isolated-001/report/` |
 | werkmeister | `de.vibradorm.werkmeister` | 0.2 | COMPLETE | `de.vibradorm.werkmeister-0.2-2026-09-30-isolated-001/report/` |
 | woosa | `com.sn.woosa` | 1.1.9 | COMPLETE | `com.sn.woosa-1.1.9-20260923/report/` |
+| wsilver | `com.richmat.wsilver2` | 1.1.19 | COMPLETE | `com.richmat.wsilver2-1.1.19-2026-11-03-bulk061-001/work/report-revision-sol-003/` |
 
 Ledgers, guides and issues. An audit ledger is a machine-local record kept with
 its APK Protocol Audit report, named here by its file stem:
@@ -745,13 +751,14 @@ its APK Protocol Audit report, named here by its file stem:
 | jensen-disp | audit ledger `jensen-disposition` |
 | leggett-disp | audit ledger `leggett-app-disposition` |
 | linak-guide | [linak.md](../beds/linak.md) |
-| motosleep-guide | [motosleep.md](../beds/motosleep.md#command-timing) |
+| motosleep-guide | [motomotion.md](../beds/motomotion.md#stop-and-release-behavior) |
 | row023 | audit ledger `row023-malouf-lucid` |
 | row028 | audit ledger `row028-customatic` |
 | row041 | audit ledger `row041-reverie` |
 | row042 | audit ledger `row042-nectar-motion` |
 | row050 | audit ledger `row050-remacro` |
 | row055 | audit ledger `row055-richmat-cluster` |
+| row061 | discovery ledger `implementation-row061-five/DISCOVERY-LEDGER` (PR #928) |
 | row066 | audit ledger `row066-classic-richmat-apps` |
 | row067 | audit ledger `row067-adjustamattress` |
 | row121 | audit ledger `row121-hjbed` |

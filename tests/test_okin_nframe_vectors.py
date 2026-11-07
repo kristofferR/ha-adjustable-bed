@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import fields
+from datetime import datetime
+from pathlib import Path
 
 import pytest
 
+from custom_components.adjustable_bed.beds import eshine_okin_protocol as eshine
 from custom_components.adjustable_bed.beds.okin_uuid import (
     OKIN_UUID_REMOTES,
     OkinUuidComplexCommand,
@@ -18,6 +22,7 @@ from tests.okin_nframe_vectors import (
     FIELD_FRAMES,
     FROZEN_FRAMES,
     GATEWAY_FRAMES,
+    SETTING_FRAMES,
     SETUP_FRAMES,
 )
 
@@ -39,6 +44,7 @@ PROFILES: dict[str, profiles.OkinNFrameProfile] = {
         *profiles.BEDDING_PROFILES.values(),
         *profiles.OKIN_64BIT_PROFILES.values(),
         *profiles.ADJUSTABLE_LUMBAR_PROFILES.values(),
+        *profiles.ESHINE_PROFILES.values(),
     )
 }
 # Routes without a report on disk: their census must equal the pre-v5 frames.
@@ -130,6 +136,68 @@ def test_profile_sends_only_frozen_frames(key):
         assert census == FROZEN_FRAMES[key]
 
 
+def _rebuild(data: bytes) -> bytes | None:
+    """Re-encode a request, word, clock or alarm literal through the codec."""
+    if len(data) == 2 and data[0] == 0:
+        return codec.request(data[1])
+    if data[0] != len(data) - 2:
+        return None
+    if data[1] == 0x02:
+        return codec.frame(int.from_bytes(data[2:], "big"), data[0])
+    if data[1] == 0x04:
+        return codec.clock(data[2:])
+    if data[1] == 0x05:
+        return codec.alarm(data[2:])
+    return None
+
+
+@pytest.mark.parametrize(
+    ("profile", "literal"),
+    [
+        (profile, literal)
+        for profile, frames in SETTING_FRAMES.items()
+        for literal in sorted(frames)
+    ],
+)
+def test_setting_frame_round_trips_through_codec(profile, literal):
+    assert _rebuild(bytes.fromhex(literal)) == bytes.fromhex(literal)
+
+
+@pytest.mark.parametrize("key", sorted(profiles.ESHINE_PROFILES))
+def test_eshine_sends_only_frozen_frames(key):
+    """The app's command table, clock and alarm frames are the profile's frozen literals."""
+    frozen = FROZEN_FRAMES[key] | SETTING_FRAMES[key]
+    now = datetime.fromisoformat("2026-11-03T14:47:09+01:00")
+    sent = {
+        *eshine.COMMANDS.values(),
+        eshine.clock_frame(now),
+        eshine.clock_frame(now.replace(year=1999)),
+        eshine.alarm_frame(now, 16, 30, "zero_g"),
+        eshine.alarm_frame(now, 12, 0, "flat"),
+        eshine.alarm_frame(now.replace(day=7), 12, 0, "massage"),
+    }
+    assert {frame.hex() for frame in sent} == frozen
+
+
+def test_adjustamattress_nframes_round_trip_through_codec():
+    """AdjustaMattress's lifts and P3/P4 frames (row067 fixture) are Okin N-frames.
+
+    Only the P4 anti-snore (``05 0B``) and sleep (``01 B5``) frames have no builder.
+    """
+    rows = json.loads(
+        (Path(__file__).parent / "fixtures/adjustamattress/commands.json").read_text()
+    )
+    literals = {
+        bytes.fromhex(row["expected_bytes"])
+        for row in rows
+        if row["expected_bytes"] != "NO WRITE" and row["expected_bytes"][0] in "0"
+    }
+    rebuilt = {data for data in literals if _rebuild(data) == data}
+    assert {data[:2].hex() for data in literals - rebuilt} == {"050b", "01b5"}
+    shapes = {"0502", "0602", "0704", "0705", "0805", "00b0", "00c0"}
+    assert {data[:2].hex() for data in rebuilt} == shapes
+
+
 def test_gateway_routes_wrap_every_legacy_word():
     words = {
         codec.word_of(bytes.fromhex(f)) for k in ("okimat", "dewertokin") for f in FROZEN_FRAMES[k]
@@ -197,6 +265,7 @@ def test_hold_declarations_follow_the_evidence_matrix():
         *(p.key for p in profiles.SIMMONS_PROFILES.values()),
         *(p.key for p in profiles.STARCODE_ABM5_4_PROFILES.values()),
         *(p.key for p in profiles.ADJUSTABLE_LUMBAR_PROFILES.values()),
+        *profiles.ESHINE_PROFILES,
     }
 
 

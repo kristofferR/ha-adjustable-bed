@@ -18,10 +18,7 @@ from pytest_homeassistant.common import MockConfigEntry
 from custom_components.adjustable_bed import _build_paired_children
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
 from custom_components.adjustable_bed.beds.vibradorm_app import (
-    CBI,
-    COMMAND,
     INFO_FIELDS,
-    RESPONSE,
     VibradormAppController,
     VibradormAppMetadata,
     async_prepare_vibradorm_app_pairing,
@@ -34,6 +31,9 @@ from custom_components.adjustable_bed.bond_verification import (
     BondVerificationStatus,
     build_bond_context,
 )
+from custom_components.adjustable_bed.codec.vibradorm import CBI_CHAR_UUID as CBI
+from custom_components.adjustable_bed.codec.vibradorm import MOTOR_CHAR_UUID as COMMAND
+from custom_components.adjustable_bed.codec.vibradorm import RESPONSE_CHAR_UUID as RESPONSE
 from custom_components.adjustable_bed.const import (
     BED_TYPE_VIBRADORM_APP,
     CONF_BED_TYPE,

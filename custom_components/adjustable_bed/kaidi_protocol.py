@@ -2,10 +2,9 @@
 
 The Rize/Floyd/ISleep Android apps use a proprietary transport layered on top
 of normal BLE GATT characteristics instead of the Bluetooth Mesh SIG profile.
-Home Assistant only needs a subset of that logic:
-- Parse the manufacturer data blob to recover the room/home ID and, when
-  available, the bed's virtual address.
-- Format node addresses reported in ping responses.
+This module parses the manufacturer data blob to recover the room/home ID and,
+when available, the bed's virtual address. The GATT frames are in
+``codec/kaidi.py``.
 """
 
 from __future__ import annotations
@@ -260,13 +259,6 @@ def extract_best_kaidi_advertisement(
         extract_kaidi_advertisement(manufacturer_data)
         for manufacturer_data in manufacturer_data_sets
     )
-
-
-def format_kaidi_node_address(node_bytes: bytes) -> str:
-    """Format a 6-byte Kaidi node address as an upper-case MAC string."""
-    if len(node_bytes) != 6:
-        raise ValueError(f"Kaidi node address must be 6 bytes, got {len(node_bytes)}")
-    return ":".join(f"{byte:02X}" for byte in reversed(node_bytes))
 
 
 def is_floyd_advertisement(advertisement: KaidiAdvertisement | None) -> bool:

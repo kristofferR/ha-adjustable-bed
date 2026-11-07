@@ -1,20 +1,21 @@
 # Richmat
 
-**Status:** ✅ Tested (Richmat and BedTech routes); ❓ the RMControl, Richmat MH, HJBed and classic app profiles are APK-verified with hardware unverified
+**Status:** ✅ Tested (Richmat and BedTech routes); ❓ the RMControl, Richmat MH, HJBed, Eshine, classic app, Good Vibe Sleep and L&P legacy app profiles are APK-verified with hardware unverified
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), getrav, [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt) and [Josh Pearce](https://github.com/joshpearce) (L&P MlRM)
 
 One wire codec (`6E` frames ending in an additive `sum8`, over seven GATT
 transports) serves the Richmat remote routes, BedTech, Leggett & Platt MlRM
-beds and four families of catalog apps. This guide covers the codec first, then
-one section per profile. See [Protocol codecs and app profiles](../design/protocol-codecs.md)
-for the architecture.
+beds, five families of catalog apps, the Eshine app and the legacy L&P app. This
+guide covers the codec first, then one section per profile. See
+[Protocol codecs and app profiles](../design/protocol-codecs.md) for the architecture.
 
 ## Known Models
 
 Brands using Richmat actuators:
 
-- L&P Adjustable Base (Leggett & Platt), including MlRM bases
+- L&P Adjustable Base (Leggett & Platt), including MlRM bases and the legacy
+  app's [122 remote layouts](#lp-legacy-app)
 - SVEN & SON
 - Casper Base
 - Galaxy (e.g., Galaxy 26W-N)
@@ -30,7 +31,7 @@ Brands using Richmat actuators:
 - FLEXX MOTION
 - Likimio
 - Lunio Smart+
-- [Good Vibe Sleep](goodvibe.md) (dedicated app profiles and independent sleep sensors)
+- [Good Vibe Sleep](#good-vibe-sleep) (dedicated app profiles and independent sleep sensors)
 - Best Mattress Power Base
 - Easy Rest
 - Coaster Sleep
@@ -44,10 +45,11 @@ Brands using Richmat actuators:
 - Saatva
 - Lucid L300
 - Classic Brands
+- Eshine (E6000)
 
 The catalog apps name their layouts themselves: an RMControl product code, a
 Richmat MH model (the first four characters of the Bluetooth name), an HJBed
-product or a classic app's four-character layout. Shared services and Bluetooth names do not identify a layout, so each
+or Good Vibe Sleep product or a classic app's four-character layout. Shared services and Bluetooth names do not identify a layout, so each
 is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 
 ## Apps
@@ -58,7 +60,7 @@ is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 | ✅ | [BedTech](https://play.google.com/store/apps/details?id=com.bedtech) | `com.bedtech` | [BedTech](#bedtech) |
 | ✅ | [SleepFunction Bed Control](https://play.google.com/store/apps/details?id=com.richmat.sleepfunction) | `com.richmat.sleepfunction` | [Richmat remotes](#richmat-remotes) |
 | ✅ | [L&P Adjustable Base](https://play.google.com/store/apps/details?id=com.richmat.lp2) 2.3.25 | `com.richmat.lp2` | [L&P MlRM](#lp-mlrm), [Richmat remotes](#richmat-remotes) (QRRM) |
-| ✅ | L&P Adjustable Base 2.2.1 (legacy) | `com.richmat.lp` | [Leggett & Platt](leggett-platt.md) |
+| ✅ | [L&P Adjustable Base](https://play.google.com/store/apps/details?id=com.richmat.lp) 2.2.1 (13), legacy | `com.richmat.lp` | [L&P legacy app](#lp-legacy-app) |
 | ✅ | [LP Control](https://play.google.com/store/apps/details?id=com.leggett.android.universal) 2.9.0 | `com.leggett.android.universal` | [Leggett & Platt](leggett-platt.md) |
 | ✅ | [SVEN & SON](https://play.google.com/store/apps/details?id=com.richmat.svenson) | `com.richmat.svenson` | [Richmat remotes](#richmat-remotes) |
 | ✅ | [Revive Control](https://play.google.com/store/apps/details?id=com.richmat.revive3) 1.0.26 | `com.richmat.revive3` | [Richmat MH](#richmat-mh-apps), bed type `richmat_revive` |
@@ -66,37 +68,44 @@ is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 | ✅ | [Blvd Home](https://play.google.com/store/apps/details?id=com.richmat.blvd_home) 1.0.1 | `com.richmat.blvd_home` | [Richmat MH](#richmat-mh-apps), bed type `richmat_blvd_home` |
 | ✅ | [HARMONY](https://play.google.com/store/apps/details?id=com.richmat.harmony) 1.0.0 | `com.richmat.harmony` | [Richmat MH](#richmat-mh-apps), bed type `richmat_harmony` |
 | ✅ | [Idealbed](https://play.google.com/store/apps/details?id=com.richmat.idealbed) 2.4.2 | `com.richmat.idealbed` | [Richmat MH](#richmat-mh-apps), bed type `richmat_idealbed` |
+| ✅ | [RUF \| Betten Motor 2](https://play.google.com/store/apps/details?id=com.desarketing.ruf_betten_motor2) 1.1.8 | `com.desarketing.ruf_betten_motor2` | Own guide, [RUF and Richmat app profiles](ruf-richmat-apps.md): Richmat MH frames, bed type `ruf_betten` |
+| ✅ | [W.Silver Products](https://play.google.com/store/apps/details?id=com.richmat.wsilver2) 1.1.19 | `com.richmat.wsilver2` | Own guide, [RUF and Richmat app profiles](ruf-richmat-apps.md): Richmat MH frames, bed type `wsilver_products` |
+| ✅ | [AMERICANSTAR](https://play.google.com/store/apps/details?id=com.richmat.americanstar) 1.0.0 | `com.richmat.americanstar` | Own guide, [RUF and Richmat app profiles](ruf-richmat-apps.md): Richmat MH frames, bed type `richmat_americanstar` |
+| ✅ | [Bailey's Bed Control](https://play.google.com/store/apps/details?id=com.richmat.bailey2) 2.1.21 | `com.richmat.bailey2` | Own guide, [RUF and Richmat app profiles](ruf-richmat-apps.md): Richmat MH frames, bed type `bailey_bed_control` |
+| ✅ | [TX](https://play.google.com/store/apps/details?id=com.richmat.tx) 1.0.0 | `com.richmat.tx` | Own guide, [RUF and Richmat app profiles](ruf-richmat-apps.md): Richmat MH frames, bed type `richmat_tx` |
 | ✅ | [HJBed](https://play.google.com/store/apps/details?id=com.richmat.hjbed) 2.1.2 (code 21200) | `com.richmat.hjbed` | [HJBed](#hjbed) |
+| ✅ | [Eshine](https://play.google.com/store/apps/details?id=com.richmat.eshinesleep) 1.0.1 (code 10100) | `com.richmat.eshinesleep` | [Eshine](#eshine) |
 | ✅ | [Avocado Eco Base](https://play.google.com/store/apps/details?id=com.richmat.avocadoecobase) 1.0.4 (5) | `com.richmat.avocadoecobase` | [Classic apps](#classic-richmat-apps) |
 | ✅ | [CoasterSleep](https://play.google.com/store/apps/details?id=com.richmat.coastersleep) 1.0.10 (10) | `com.richmat.coastersleep` | [Classic apps](#classic-richmat-apps) |
 | ✅ | [Forty Winks](https://play.google.com/store/apps/details?id=com.richmat.fortywinks) 1.0.1 | `com.richmat.fortywinks` | [Classic apps](#classic-richmat-apps) |
 | ✅ | [Milemont](https://play.google.com/store/apps/details?id=com.richmat.milemont) 1.0.4 | `com.richmat.milemont` | [Classic apps](#classic-richmat-apps) |
 | ✅ | [Superior](https://play.google.com/store/apps/details?id=com.richmat.superior) 1.0.9 | `com.richmat.superior` | [Classic apps](#classic-richmat-apps) |
-| ✅ | [Good Vibe Sleep](https://play.google.com/store/apps/details?id=com.richmat.goodvibesleep) 2.0.1 (20103) | `com.richmat.goodvibesleep` | Own guide, [Good Vibe Sleep](goodvibe.md): its command frames match this codec, but its settings records put `20` before the length byte |
+| ✅ | [Good Vibe Sleep](https://play.google.com/store/apps/details?id=com.richmat.goodvibesleep) 2.0.1 (20103) | `com.richmat.goodvibesleep` | [Good Vibe Sleep](#good-vibe-sleep) |
 
 ## Features
 
-| Feature | Richmat remotes | BedTech | L&P MlRM | RMControl | Richmat MH | HJBed | Classic apps |
-|---------|-----------------|---------|----------|-----------|------------|-------|------------|
-| Motor Control | ✅ (up to 7 motors) | ✅ Head, Foot, Leg/Pillow | ✅ Head, Feet | ✅ Catalog movement with cancellable repeats and release cleanup | ✅ Two motors; the model decides which exist (KEEP then STOP) | ✅ Selected head, foot, combined, pillow, lumbar, tilt, foot-box and sofa routes, depending on product | ✅ Exact app-labelled controls per selected layout |
-| Hold Until Release | ✅ ([renewable hold](../SERVICES.md#renewable-holds)) | ❌ (report PARTIAL) | ✅ | ✅ Products whose motor controls are sustain presses; short-press products keep finite moves | ✅ (KEEP until the lease ends, then STOP 120 ms later) | ✅ (sustained actions) | ✅ Keep buttons, including the Hold presets ([renewable hold](../SERVICES.md#renewable-holds), release 50 ms after it ends); short, long and armed presses keep their gestures |
-| [Estimated Positions](../ESTIMATED_POSITIONS.md) | ✅ Opt-in head and feet | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Position Feedback | ❌ | ❌ | ❌ | ❌ (numbered motor reports are not relabeled as physical axes) | ⚠️ VER1 angle replies update the angle numbers; **Reached position** reports memory arrival | Raw observed travel, angle and height data; no inferred position seeking or units | ❌ No inferred angle or general command acknowledgement; desk height, range, unit and error callbacks |
-| Memory Presets | ✅ (1-5 slots, varies by model) | ✅ (2 slots) | ✅ (2 slots, held recall) | ✅ Where the selected catalog supports them | ✅ Memory slots from the model's catalog | ✅ Product-specific named recall/save buttons, including memory 1–4 where selected | ✅ Per-node short and long gestures, memory-arm and Hold/Release gates |
-| Presets | ✅ Zero-G / Anti-Snore / TV / Lounge; Yoga / Read on some models | ✅ Zero-G / Anti-Snore / TV / Lounge | ✅ Zero-G / Anti-Snore / TV / Lounge | ✅ Where the catalog has them | ✅ Standard presets from the model's catalog | ✅ Product-specific | ✅ Where the layout has them |
-| Massage | ✅ | ✅ (5 modes, timer) | ✅ Discrete head/foot up and down, timers | ✅ Including head/foot intensity up/down where both directions exist | ✅ App-labelled buttons; VER1 head/foot intensity numbers | ✅ Product-specific mode, intensity and timer buttons | ✅ Bound levels, patterns, timers and popup choices |
-| Under-bed Lights | ✅ (toggle; RGB color picker + timer on select models) | ✅ (toggle and off) | ✅ (toggle) | ⚠️ RGB, **Always On** or **1 through 15 minutes** timer; gated on the light acknowledgment and strip flag | ✅ RGB light or colour action, light timeout, button-light page | ✅ Selected lamp buttons; advanced timeout/RGB require product flag and acknowledgement | ✅ Bound controls, capability-gated RGB and timer settings |
-| Split-King Sync | ✅ (controller-level on/off; assumed state) | ❌ | ❌ | ✅ Where the catalog has it | ❌ | ✅ Sync buttons where selected | ✅ Where the layout has it |
-| Alarms | ❌ | ❌ | ❌ | ⚠️ `adjustable_bed.rmcontrol_alarm`, product-gated | ✅ Actions and entities where the model's pages exist | ✅ Single or repeat alarms where the product flag and clock acknowledgement permit | ✅ One selected layout action at the next requested wall-clock time |
-| Other | | | | ✅ Disabled-by-default catalog buttons; ⚠️ `adjustable_bed.rmcontrol_anti_snore` on six products | ✅ Smart set lock, snore intervention, detection, aroma, waist mattress | ✅ Music, clock synchronization, local layout, single-address paired sides | ✅ Aroma (no reliable setting acknowledgements); desk target, unit, three recall buttons and fourth/reset button |
+| Feature | Richmat remotes | BedTech | L&P MlRM | RMControl | Richmat MH | HJBed | Classic apps | Eshine | Good Vibe Sleep | L&P legacy app |
+|---------|-----------------|---------|----------|-----------|------------|-------|------------|--------|-----------------|----------------|
+| Motor Control | ✅ (up to 7 motors) | ✅ Head, Foot, Leg/Pillow | ✅ Head, Feet | ✅ Catalog movement with cancellable repeats and release cleanup | ✅ Two motors; the model decides which exist (KEEP then STOP) | ✅ Selected head, foot, combined, pillow, lumbar, tilt, foot-box and sofa routes, depending on product | ✅ Exact app-labelled controls per selected layout | ✅ Head, feet, lumbar and pillow; global STOP | ✅ Exact app-labelled actions, with each product's gesture and operand | ⚠️ Layout-specific app buttons; no generic head, foot or lumbar axes |
+| Hold Until Release | ✅ ([renewable hold](../SERVICES.md#renewable-holds)) | ❌ (report PARTIAL) | ✅ | ✅ Products whose motor controls are sustain presses; short-press products keep finite moves | ✅ (KEEP until the lease ends, then STOP 120 ms later) | ✅ (sustained actions) | ✅ Keep buttons, including the Hold presets ([renewable hold](../SERVICES.md#renewable-holds), release 50 ms after it ends); short, long and armed presses keep their gestures | ✅ ([renewable hold](../SERVICES.md#renewable-holds) and `hold_control`, then STOP) | ✅ Sustained-press controls only ([renewable hold](../SERVICES.md#renewable-holds)); short, long and short-and-long presses, and memory-mode controls while memory mode is on, keep their own gestures | ❌ Button gestures only |
+| [Estimated Positions](../ESTIMATED_POSITIONS.md) | ✅ Opt-in head and feet | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Position Feedback | ❌ | ❌ | ❌ | ❌ (numbered motor reports are not relabeled as physical axes) | ⚠️ VER1 angle replies update the angle numbers; **Reached position** reports memory arrival | Raw observed travel, angle and height data; no inferred position seeking or units | ❌ No inferred angle or general command acknowledgement; desk height, range, unit and error callbacks | ❌ (motor reports never populate position feedback or sliders) | ❌ No calibrated position controls; raw typed events remain visible | ❌ |
+| Memory Presets | ✅ (1-5 slots, varies by model) | ✅ (2 slots) | ✅ (2 slots, held recall) | ✅ Where the selected catalog supports them | ✅ Memory slots from the model's catalog | ✅ Product-specific named recall/save buttons, including memory 1–4 where selected | ✅ Per-node short and long gestures, memory-arm and Hold/Release gates | ❌ (named preset saves instead) | ✅ Product-specific short/long gestures and local memory mode | ⚠️ Only as the selected layout's named app buttons |
+| Presets | ✅ Zero-G / Anti-Snore / TV / Lounge; Yoga / Read on some models | ✅ Zero-G / Anti-Snore / TV / Lounge | ✅ Zero-G / Anti-Snore / TV / Lounge | ✅ Where the catalog has them | ✅ Standard presets from the model's catalog | ✅ Product-specific | ✅ Where the layout has them | ✅ Flat / Zero-G / Anti-Snore; saves Zero-G and Anti-Snore | ✅ Zero gravity, anti-snoring, TV and lounge actions where the product has them | ⚠️ Only as the selected layout's named app buttons |
+| Massage | ✅ | ✅ (5 modes, timer) | ✅ Discrete head/foot up and down, timers | ✅ Including head/foot intensity up/down where both directions exist | ✅ App-labelled buttons; VER1 head/foot intensity numbers | ✅ Product-specific mode, intensity and timer buttons | ✅ Bound levels, patterns, timers and popup choices | ✅ Head and foot strength, mode, off, 10/20/30-minute buttons | ✅ Exact controls in the selected app layout; bottom massage countdown | ⚠️ Only as the selected layout's named app buttons |
+| Under-bed Lights | ✅ (toggle; RGB color picker + timer on select models) | ✅ (toggle and off) | ✅ (toggle) | ⚠️ RGB, **Always On** or **1 through 15 minutes** timer; gated on the light acknowledgment and strip flag | ✅ RGB light or colour action, light timeout, button-light page | ✅ Selected lamp buttons; advanced timeout/RGB require product flag and acknowledgement | ✅ Bound controls, capability-gated RGB and timer settings | ✅ (toggle) | ✅ Product-gated actions, RGB settings and duration choices | ⚠️ Only as the selected layout's named app buttons; no RGB |
+| Split-King Sync | ✅ (controller-level on/off; assumed state) | ❌ | ❌ | ✅ Where the catalog has it | ❌ | ✅ Sync buttons where selected | ✅ Where the layout has it | ❌ | ✅ Sync on/off actions where the product has them | ❌ |
+| Alarms | ❌ | ❌ | ❌ | ⚠️ `adjustable_bed.rmcontrol_alarm`, product-gated | ✅ Actions and entities where the model's pages exist | ✅ Single or repeat alarms where the product flag and clock acknowledgement permit | ✅ One selected layout action at the next requested wall-clock time | ❌ | ✅ Product-gated single and repeat alarms, slots 1–7 | ❌ |
+| Other | | | | ✅ Disabled-by-default catalog buttons; ⚠️ `adjustable_bed.rmcontrol_anti_snore` on six products | ✅ Smart set lock, snore intervention, detection, aroma, waist mattress | ✅ Music, clock synchronization, local layout, single-address paired sides | ✅ Aroma (no reliable setting acknowledgements); desk target, unit, three recall buttons and fourth/reset button | ⚠️ Eleven read-only diagnostic sensors | ✅ Snore settings where the normal product's settings menu admits them; independent type 1/type 2 sleep sensors with live values and direct BLE reports; only the product's listed sides. ❌ Firmware, Wi-Fi and cloud are outside the direct BLE bed boundary | ⚠️ Disabled-by-default app-response diagnostic; Stop cancels and releases the active action only (no emergency-stop command) |
 
 ## Choosing a profile
 
 Detection suggests the [Richmat remotes](#richmat-remotes) route for Richmat
 services and names, and [BedTech](#bedtech) or [L&P MlRM](#lp-mlrm) where their
 signals are present. The catalog apps are opt-in: choose RMControl with its
-product code, a Richmat MH app with its model, HJBed with its product, or a
-classic app with its layout.
+product code, a Richmat MH app with its model, HJBed or Good Vibe Sleep with
+its product, a classic app with its layout, the Eshine app, or the
+[L&P legacy app](#lp-legacy-app) with its remote code and packet mode.
 
 ### Home Assistant setup
 
@@ -150,16 +159,24 @@ sends STOP.
 | Profile | Bed type | Transport order | Commands | Hold until release |
 |---|---|---|---|---|
 | HJBed | `hjbed` | W1, N1, W5, W4, W3, W2 | per-product catalog | renewable lease |
+| Eshine | `eshine` | N1, W1, W2, W3, W4, W5 | [fixed E6000 table](#eshine-commands) | renewable lease |
 | Richmat MH Revive Control | `richmat_revive` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
 | Richmat MH Best Mattress | `richmat_best_mattress` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
 | Richmat MH Blvd Home | `richmat_blvd_home` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
 | Richmat MH HARMONY | `richmat_harmony` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
 | Richmat MH Idealbed | `richmat_idealbed` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
+| Richmat MH RUF Betten | `ruf_betten` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
+| Richmat MH W.Silver | `wsilver_products` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
+| Richmat MH AMERICANSTAR | `richmat_americanstar` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
+| Richmat MH Bailey | `bailey_bed_control` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
+| Richmat MH TX | `richmat_tx` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
 | Classic Avocado Eco Base | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic CoasterSleep | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic Forty Winks | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic Milemont | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic Superior | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
+| Good Vibe Sleep | `goodvibe` | W1, N1, W5, W4, W3, W2 | per-product catalog | renewable lease on sustained controls |
+| L&P legacy app | `leggett_lp_legacy` | configured characteristics | per-layout catalog | no |
 <!-- /generated -->
 
 ### Catalog app timing
@@ -182,6 +199,8 @@ sends STOP.
 | HJBed | Write spacing | at least 100 ms between attempts |
 | HJBed | Menu probes at connect | 300 ms apart |
 | HJBed | BJRN preset save | waits 3 s |
+| Eshine | Held refresh | every 100 ms for the entry pulse count, then STOP |
+| Eshine | Other buttons and STOP | one write |
 | Classic apps | Worker tick | 150 ms; 110 ms for TWRM and MLRM names |
 | Classic apps | Release after a held control | 50 ms |
 | Classic apps | Once or short press | payload, then release 150 ms later |
@@ -191,6 +210,14 @@ sends STOP.
 | Classic apps | Settings queries | 500 ms apart |
 | Classic apps | Aroma frames, RGB busy interval | 150 ms |
 | Classic apps | Desk button refresh | every 200 ms, with no release frame |
+| Good Vibe Sleep | Sustained press | first write after 100 ms, then every 100 ms; STOP once a write was attempted |
+| Good Vibe Sleep | Long and short-and-long press | long action after 3000 ms |
+| Good Vibe Sleep | Menu checks at connect | 300 ms apart |
+| Good Vibe Sleep | Incomplete notification bytes | dropped after 500 ms |
+| Good Vibe Sleep | Live sleep data | polled every 2 s |
+| L&P legacy app | Held press | every 100 ms for the entry pulse count, then its release |
+| L&P legacy app | Long press | one write after 3100 ms |
+| L&P legacy app | One-shot press | one write, then one 100 ms tick |
 <!-- /generated -->
 
 ### Aliases
@@ -215,13 +242,13 @@ and timing.
 
 | Key | Service | Write | Notify | Commands | Profiles |
 |---|---|---|---|---|---|
-| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior |
+| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep |
 | W0 | `8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA |
-| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech, L&P MlRM, HJBed, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior |
-| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior |
-| W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed |
-| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior |
-| W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed |
+| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech, L&P MlRM, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep |
+| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep |
+| W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Good Vibe Sleep |
+| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep |
+| W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Good Vibe Sleep |
 
 W0 is the legacy custom service, W4 and W5 are name-guarded (see the Richmat
 profile's Setup). The Richmat routes try W0 to W5, then N1, then fall back to W1.
@@ -250,7 +277,8 @@ profile's Setup). The Richmat routes try W0 to W5, then N1, then fall back to W1
 <!-- /generated -->
 
 - **Extended records** are `6E len 20 domain command operation data sum8`, where
-  `len` counts the whole frame. Notifications place the length after `20`.
+  `len` counts the whole frame. Notifications, and Good Vibe Sleep's settings
+  records, place the length after `20`: `6E 20 len domain command operation data sum8`.
 - Richmat MH **mattress** frames use the `5E` header with the same checksum and
   no side byte.
 
@@ -369,7 +397,8 @@ The catalog apps send a few actions behind their own prefix instead of
 | `VersionOneCurrentMassageMode` | `6E 9A A0` |
 | `VersionOneCurrentBedLightStatus` | `6E 9A B0` |
 
-Every other catalog action uses `6E 01 side`. HJBed sends only the first four.
+Every other catalog action uses `6E 01 side`. HJBed sends only the first four,
+Good Vibe Sleep the first three.
 <!-- /generated -->
 
 #### Variable frames
@@ -385,12 +414,18 @@ Every other catalog action uses `6E 01 side`. HJBed sends only the first four.
 | Control mode (HJBed) | Extended `0B 02 00` (query) and `0B 02 01` (set) |
 | RGB strip (QRRM family) | `04 len command 01 00 payload 00 00 sum8` |
 
+Good Vibe Sleep sends its repeating-alarm, snore and time-sync records with the
+length after `20` (see [its settings](#alarms-and-snore-settings)).
+
 ### Responses
 
 The fixed-table routes read no responses. Each catalog app keeps its own
 parser: RMControl's `NotificationBuffer`, the Richmat MH `Classifier` (two app
-groups) and HJBed's stream splitter. All check the additive checksum. See each
-profile's Notifications.
+groups), HJBed's stream splitter and Good Vibe Sleep's `Notifications` buffer.
+The first three check the additive checksum; Good Vibe Sleep checks it on `6E 20`
+records and matches acknowledgements exactly. Eshine's `NotificationStream`
+checks it on extended frames only. The L&P legacy app matches three exact frames.
+See each profile's Notifications.
 
 ### STOP and release behavior
 
@@ -400,7 +435,8 @@ profile's Notifications.
   hold still releases the motors. The BedTech route reports a failed STOP; the
   others log it and keep the original error.
 - The catalog apps release per catalog entry: some actions are followed by STOP,
-  others are not (see each profile's Controls).
+  others are not (see each profile's Controls). The L&P legacy app has no global
+  STOP; each control sends its own release.
 - A [renewable hold](../SERVICES.md#renewable-holds) keeps the held code
   refreshing at the profile's own interval (the entry's pulse delay on the
   fixed-table routes, the app's KEEP or sustain cadence on the catalog apps)
@@ -410,10 +446,12 @@ profile's Notifications.
 ### Vectors
 
 `tests/richmat_vectors.py` freezes each profile's frames: the accepted reports'
-literals for the catalog apps, and the pre-v5 controllers' frames for the
-fixed-table routes. `tests/test_richmat_vectors.py` checks that every literal
-round-trips through the codec and that each profile sends only frozen frames.
-For the fixed-table routes the two sets are equal.
+literals for the catalog apps (Good Vibe Sleep's from its accepted vectors in
+`tests/fixtures/goodvibe`, the L&P legacy app's in both modes from its catalog),
+and the pre-v5 controllers' frames for the fixed-table routes.
+`tests/test_richmat_vectors.py` checks that every literal round-trips through the
+codec and that each profile sends only frozen frames. For the fixed-table routes
+and the L&P legacy app the two sets are equal.
 
 ## Profiles
 
@@ -930,6 +968,10 @@ row018.
 **Status:** ❓ Needs testing (artifact-verified, hardware unverified)
 
 #### Setup
+
+RUF \| Betten Motor 2, W.Silver Products, AMERICANSTAR, Bailey's Bed Control and
+TX use the same library with their own catalogs, release rules and extra pages;
+see [their guide](ruf-richmat-apps.md).
 
 Revive Control, Best Mattress, Blvd Home, HARMONY and Idealbed share one BLE
 library. Their model catalogs, page gates and a few callbacks differ, so each
@@ -1569,6 +1611,153 @@ HJBed sends only frames frozen from its accepted row121 evidence (artifact set
 effects, ATT behavior and firmware acceptance are for real users to validate after
 a beta or release. Evidence: APK Protocol Audit row121.
 
+### Eshine
+
+**App:** [Eshine](https://play.google.com/store/apps/details?id=com.richmat.eshinesleep) 1.0.1 (code 10100), `com.richmat.eshinesleep`
+
+**Status:** ❓ Needs testing (static verified, hardware unverified)
+
+The `eshine` bed type drives the E6000 (metadata H3RN), the only product the
+app offers, from one fixed table: head, feet, lumbar and pillow motors, presets,
+named preset saves, massage and a light toggle.
+
+#### Setup
+
+- Detection: none. Choose **Eshine app (E6000)** manually. Shared Bluetooth
+  names and services do not identify this app, and existing Richmat entries keep
+  their own behavior.
+- The profile owns the generic motor count, massage, angle and protocol fields,
+  so setup hides them. Only the pulse count remains configurable; the refresh is
+  fixed (see [Catalog app timing](#catalog-app-timing)).
+- A two-address pair keeps this profile per physical bed; single-address side
+  control is unsupported.
+- **Transport:** the bed must expose exactly one complete endpoint among N1 and
+  W1 to W5 (see [Transports](#transports)). N1 takes the bare code; the others
+  take `6E 01 00 code sum8`. Several complete endpoints are rejected rather than
+  combining the first write role with the last service's framing, as the app can.
+- Within that service the controller selects the matching write characteristic
+  and the first notify characteristic, even when its UUID differs from the
+  declared notify UUID.
+- Write is required; write without response alone is insufficient. When both
+  write properties exist, writes use no response; otherwise they use response.
+- After subscribing, setup sends ExitLimit once (see
+  [Eshine commands](#eshine-commands)). The app has no challenge, PIN, cipher,
+  heartbeat, state sync or outbound capability query.
+- Notifications stay enabled with angle sensing disabled. Reconnect clears
+  partial receive data and observed state before repeating setup.
+- HA owns Bluetooth adapters and proxies, timeouts and reconnect policy; it does
+  not reproduce the phone's five-second scan, MTU request, dialog or local
+  SQLite storage.
+
+#### Controls
+
+Head, feet, lumbar and pillow covers share one global STOP and one scheduling
+resource. Flat, Zero-G and Anti-Snore recall are each sent once.
+**Save Zero Gravity** and **Save Anti-Snore** are separate buttons for named
+presets, not numbered memory slots. The phone app's three-second gesture chooses
+save, but the bed does not receive a three-second stream: each save button
+sends its save code once. Strength and mode labels do not establish physical
+cycle levels, persistence or discrete on/off values.
+
+The generic `hold_control` action accepts `head_up`, `head_down`, `feet_up`,
+`feet_down`, `lumbar_up`, `lumbar_down`, `pillow_up` and `pillow_down` for 1 to
+60000 ms. The dashboard card shows motors, presets, lighting, massage and save
+buttons in its existing sections.
+
+##### Eshine commands
+
+<!-- generated:eshine-commands -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Command | Bare (N1) | Framed | Sends |
+|---|---|---|---|
+| Head up | `24` | `6E 01 00 24 93` | refresh 100 ms; STOP |
+| Head down | `25` | `6E 01 00 25 94` | refresh 100 ms; STOP |
+| Feet up | `26` | `6E 01 00 26 95` | refresh 100 ms; STOP |
+| Feet down | `27` | `6E 01 00 27 96` | refresh 100 ms; STOP |
+| Lumbar up | `3F` | `6E 01 00 3F AE` | refresh 100 ms; STOP |
+| Lumbar down | `40` | `6E 01 00 40 AF` | refresh 100 ms; STOP |
+| Pillow up | `41` | `6E 01 00 41 B0` | refresh 100 ms; STOP |
+| Pillow down | `42` | `6E 01 00 42 B1` | refresh 100 ms; STOP |
+| Flat | `31` | `6E 01 00 31 A0` | once |
+| Zero-G | `45` | `6E 01 00 45 B4` | once |
+| Anti-Snore | `46` | `6E 01 00 46 B5` | once |
+| Save Zero Gravity | `66` | `6E 01 00 66 D5` | once |
+| Save Anti-Snore | `69` | `6E 01 00 69 D8` | once |
+| Light toggle | `3C` | `6E 01 00 3C AB` | once |
+| Head massage strength | `4C` | `6E 01 00 4C BB` | once |
+| Foot massage strength | `4E` | `6E 01 00 4E BD` | once |
+| Massage mode step | `48` | `6E 01 00 48 B7` | once |
+| Massage off | `5E` | `6E 01 00 5E CD` | once |
+| Massage 10 minutes | `5F` | `6E 01 00 5F CE` | once |
+| Massage 20 minutes | `63` | `6E 01 00 63 D2` | once |
+| Massage 30 minutes | `61` | `6E 01 00 61 D0` | once |
+| STOP | `6E` | `6E 01 00 6E DD` | once |
+| ExitLimit (setup) | `00` | `6E 02 01 00 71` | once after subscribing |
+<!-- /generated -->
+
+#### Timing
+
+See [Catalog app timing](#catalog-app-timing).
+
+- Movement sends a global STOP on completion, cancellation or failure, with a
+  fresh cancel event.
+- The pulse count bounds an HA movement and is not a hardware limit. A
+  [renewable hold](../SERVICES.md#renewable-holds) refreshes until the lease
+  ends, then sends STOP.
+- HA actions start on invocation. Flutter pointer recognition, arena arbitration
+  and the first eligible refresh callback are phone UI behavior, not a
+  requirement for HA to wait for a physical touch.
+- HA serializes commands, avoiding the app's queued stale movements and FIFO
+  STOP backlog. No physical STOP delivery or latency guarantee is inferred.
+
+#### Notifications
+
+Eleven diagnostic sensors expose the most recent event name and a dictionary of
+observed values: capabilities, motors, massage, light, RGB, alarm, anti-snore,
+lock, music, mode and component checks.
+
+- Attributes keep independent numbered motors and component check frames.
+- They stay unknown until notifications arrive and are cleared on a new
+  connection.
+- Event-only acknowledgements are recorded as `true`, meaning observed, not a
+  new writable capability.
+- No parsed reply enables new commands: the app's E6000 layout is fixed and its
+  own UI has no subscribers for these parsed states.
+- Motor reports keep the artifact's numeric motor/type, status, angle, height
+  and monitor-height fields. Their mapping to physical head, feet, lumbar and
+  pillow axes is unproven, so they never populate position feedback or sliders.
+- Alarm reports contain six ordered opaque integers. Sleep advertisement names
+  stay byte lists.
+- Received side modes never enable single-address pairing or send a side
+  selector.
+- RGB, alarm, anti-snore configuration, lock and music state is read-only; no
+  outbound builder is inferred from a receive branch.
+
+`beds/eshine_protocol.py` parses the stream:
+
+- Type `20` frames accumulate across notifications and need an exact length and
+  the additive checksum.
+- Common frames keep the app's delimiter and notification-boundary behavior,
+  including loss of partial common frames and splitting at an embedded `6e`;
+  they have no generic checksum rule.
+- Malformed lengths and short fields are rejected safely. The accepted audit
+  corrections show that `6e2007060302a0`, `6e2007060303a1`, `6e200806050200a3`
+  and `6e200806050300a4` cannot emit parsed anti-snore state; HA drops them
+  rather than reproducing Dart range errors.
+- The receive buffer has a 65535-byte safety bound; that is not a bed
+  packet-size claim.
+
+#### Evidence
+
+Eshine sends only frames frozen from its accepted row106 evidence, framed and
+bare. Desk data, firmware maintenance and OTA, empty pruned blanket and
+diagnostic models, unused enums and unrelated phone infrastructure are excluded;
+no bed Wi-Fi, provisioning, cloud or account path was found. Firmware
+acceptance, physical axis semantics, massage and light cycles and STOP behavior
+are for real users to validate after a beta or release, with full GATT and
+notification captures. Evidence: APK Protocol Audit row106.
+
 ### Classic Richmat apps
 
 **App:** Avocado Eco Base 1.0.4 (5), CoasterSleep 1.0.10 (10), Forty Winks 1.0.1, Milemont 1.0.4 and Superior 1.0.9 (see [Apps](#apps))
@@ -1937,6 +2126,446 @@ validation.
 Coaster's indivisible accepted aggregate and its historical six-cache-file FAIL
 remain explicit there. Static acceptance is not hardware confirmation.
 
+### Good Vibe Sleep
+
+**App:** [Good Vibe Sleep](https://play.google.com/store/apps/details?id=com.richmat.goodvibesleep) 2.0.1 (20103), `com.richmat.goodvibesleep`
+
+**Status:** ❓ Needs testing (static app evidence only)
+
+A per-product catalog app over this codec, plus independent sleep sensors that
+speak their own JSON envelope. Its product catalog stays controller data; the
+[Good Vibe Sleep catalog](../../custom_components/adjustable_bed/goodvibe_catalog.py)
+lists every product, alias and action.
+
+#### Setup
+
+- Choose the exact product or remote shown in Good Vibe Sleep. Shared Bluetooth
+  services do not identify a model. Detection: the app's own name filter
+  ([`goodvibe_discovery.py`](../../custom_components/adjustable_bed/goodvibe_discovery.py))
+  offers Good Vibe Sleep and suggests a product (step 1); it never chooses one.
+- The catalog supplies 848 admitted normal-product/configuration choices and 27
+  remote/image aliases. The row116 audit retains every accepted selector,
+  including excluded selectors.
+- Independent sleep sensors use case-sensitive `RM-` (type 1) or `HJ-` (type 2)
+  name prefixes. Add the sensor's own Bluetooth address with the corresponding
+  sleep profile.
+- FWRM and WFRM are desk products and are excluded.
+
+1. Choose the **Good Vibe Sleep app** row, then search its product question for
+   the exact app product/configuration or remote alias. A product the app's own
+   name rule reads from the Bluetooth name is suggested, never chosen for you.
+   Name matches offer app hints and do not replace another identified receiver.
+2. Choose the Home Assistant Bluetooth adapter or proxy that reaches that
+   physical address.
+3. Add each independent sleep device separately, selecting type 1 or type 2. A
+   normal product's `sleep_advertisement_name` status attribute can identify the
+   app's requested sensor name.
+
+Single-address pairs expose only the selected product's admitted sides. A
+combined command uses native side 2 when the product offers it; products
+offering only sides 0 and 1 receive left then right commands on the same BLE link.
+
+The source app has no app-owned PIN, challenge, encryption or bond request. This
+does not establish that firmware never requires OS bonding. Home Assistant
+retains its normal adapter, proxy and setup infrastructure.
+
+##### Normal-product GATT
+
+A normal product accepts the W1, N1, W5, W4, W3 and W2 services of the
+[transport table](#transports); N1 takes single-byte commands, the others framed
+ones. The first exact TX with the `write` property is retained. RX is the first
+`notify` characteristic in an accepted service, without nominal RX equality. The
+last accepted service sets framed/single-byte mode even when TX/RX came from an
+earlier service. Missing usable TX/RX fails setup. Writes prefer
+without-response when TX supports it.
+
+##### Sleep GATT
+
+Both sleep types accept `0000e0ff-3c17-d293-8e48-14fe2e4da212` and `2320567c-05cf-6eb4-c341-772851827e1b`.
+
+| Profile | TX selection | RX selection | Writes |
+|---------|--------------|--------------|--------|
+| Type 1 / `RM-` | First write-without-response property | First notify property | Without response |
+| Type 2 / `HJ-` | `00000002-3c17-d293-8e48-14fe2e4da212` with write | `00000003-3c17-d293-8e48-14fe2e4da212` with notify | With response |
+
+The additional service is live BLE support. Its enum name does not turn it into
+excluded network provisioning. Nominal `26f66991-68ee-c2be-444d-b95c3f2dc38a`
+characteristic fields are not used for selection.
+
+#### Controls
+
+Normal generic frames are [commands](#framing-and-checksum), `6e 01 side operand sum8`,
+except the startup [function selectors](#function-selectors). The legacy service
+emits only the operand. Short, long and legacy-short operands are distinct per
+descriptor; each is listed in the catalog.
+
+The row116 audit's command table contains every accepted command ID, exact
+framed/legacy alternatives, source owner and implementation disposition. The
+catalog contains 1,393 current layout/alarm action definitions and five
+controls constructed inside the Y6RM menu. Controls retain their app labels
+without assigning a physical motor to a name alone.
+
+| Command | Bytes | Description |
+|---------|-------|-------------|
+| Generic short action | `6e 01 S C sum8` or `C` | `C` is the exact selected descriptor's short/legacy-short operand |
+| Generic long action | `6e 01 S L sum8` or `L` | `L` is the exact descriptor's reachable long operand |
+| Release / STOP | `6e 01 S 6e sum8` or `6e` | Sent by gestures that define release; no inferred firmware guarantee |
+
+The five-model memory predicate applies only to E3RM, GXRM, JDRM, JFRM and JGRM,
+with the GXRM/TV exception. The app's memory control sends its ordinary operand
+before changing local mode. Forced-long details and local release/hold choices
+remain separate from physical state.
+
+The fixed commands below, including the Y6RM menu controls, use the common
+frame on each side, or the single code on the legacy service:
+
+<!-- generated:goodvibe-commands -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Command | Single code | Side 0 | Side 1 | Side 2 |
+|---|---|---|---|---|
+| Release (STOP) | `6E` | `6E 01 00 6E DD` | `6E 01 01 6E DE` | `6E 01 02 6E DF` |
+| Close bed light | `75` | `6E 01 00 75 E4` | `6E 01 01 75 E5` | `6E 01 02 75 E6` |
+| Massage countdown off | `5E` | `6E 01 00 5E CD` | `6E 01 01 5E CE` | `6E 01 02 5E CF` |
+| Massage countdown 10 min | `5F` | `6E 01 00 5F CE` | `6E 01 01 5F CF` | `6E 01 02 5F D0` |
+| Massage countdown 20 min | `63` | `6E 01 00 63 D2` | `6E 01 01 63 D3` | `6E 01 02 63 D4` |
+| Massage countdown 30 min | `61` | `6E 01 00 61 D0` | `6E 01 01 61 D1` | `6E 01 02 61 D2` |
+| Y6RM Head Up, sustain press | `24` | `6E 01 00 24 93` | `6E 01 01 24 94` | `6E 01 02 24 95` |
+| Y6RM Foot Up, sustain press | `26` | `6E 01 00 26 95` | `6E 01 01 26 96` | `6E 01 02 26 97` |
+| Y6RM Head Down, sustain press | `25` | `6E 01 00 25 94` | `6E 01 01 25 95` | `6E 01 02 25 96` |
+| Y6RM Foot Down, sustain press | `27` | `6E 01 00 27 96` | `6E 01 01 27 97` | `6E 01 02 27 98` |
+| Y6RM Motor Reset, short press | `31` | `6E 01 00 31 A0` | `6E 01 01 31 A1` | `6E 01 02 31 A2` |
+<!-- /generated -->
+
+The Y6RM sustained controls refresh like any sustained press; a released control
+sends STOP through the same common builder. These labels do not establish
+physical axes for an untested bed.
+
+##### Lights
+
+| Command | Bytes | Description |
+|---------|-------|-------------|
+| Duration | `6e 0b HH LL sum8` | Seconds, big-endian; zero maps to `ff ff` |
+| Color | `6e 0c ff R sum8 6e 0d G B sum8` | Both records in one write buffer |
+
+Close bed light (above) is a dedicated close action, with no extra release.
+Each product offers these durations and colours:
+
+<!-- generated:goodvibe-lights -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Products | Durations (seconds) |
+|---|---|
+| Full colour | 0, 60, 120, 180, 240, 300, 360, 420, 480, 540, 600, 660, 720, 780, 840, 900 |
+| Eight colours | 0, 300, 600, 900 |
+| RNRN, eight colours | 0, 1800, 3600, 14400, 28800 |
+
+The eight colours are `(255, 255, 0)`, `(0, 255, 0)`, `(0, 127, 255)`,
+`(0, 0, 255)`, `(139, 0, 255)`, `(255, 255, 255)`, `(255, 0, 0)`, `(255, 165, 0)`.
+<!-- /generated -->
+
+##### Massage countdown
+
+Products with the bottom massage countdown offer off, 10, 20 and 30 minutes (see
+the table above). The dedicated slider callback sends once without a release frame.
+
+#### Timing
+
+See [Catalog app timing](#catalog-app-timing).
+
+- Short actions send once and release on completion/cancellation. Long and
+  short-and-long gestures do not acquire an invented release frame. Releasing a
+  short-and-long card control before the long threshold sends its short action;
+  explicit STOP and aborted operations do not.
+- A renewable hold (`hold_control` with `hold_owner` and `hold_generation`,
+  which the card uses for press-and-hold) is offered only on controls whose
+  effective gesture is a sustained press. It keeps the sustained refresh while
+  renewals arrive, up to 30 seconds in total, and sends the release once when
+  the lease ends. Other controls refuse a lease, as beds without renewable holds
+  do, and keep their finite gesture. While memory mode is on, its eligible
+  controls refuse a lease too.
+- Source normal queue timing is a 100 ms backlog scheduler, not a universal
+  minimum write gap. Home Assistant serializes commands and owns finite
+  cancellation and release cleanup.
+- Sleep writes await each chunk. Monitoring retains its user intent through an
+  unexpected disconnect. Manual disconnect, unload and explicit stop end that
+  intent and cancel owned resources.
+- The app's unretained 100 ms timer and active split futures are not firmware
+  guarantees. Home Assistant stops unsent chunks on cancellation and does not
+  recreate the app's timer or callback ownership leaks.
+
+##### Good Vibe Sleep startup
+
+<!-- generated:goodvibe-startup -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Step | When | Framed | Single-code |
+|---|---|---|---|
+| Exit limit | first | `6E 02 01 00 71` | `00` |
+| Check clock | 300 ms after the previous step | `6E 08 01 01 78` | `01` |
+| Check light | 300 ms after the previous step | `6E 0A 00 01 79` | `01` |
+| Time sync | next, when the product has an alarm menu | settings records `08 02 01` then `08 03 01` | same |
+| Sleep name query | next, when the product has sleep monitoring | `6E 20 08 06 03 00 00 9F` | same |
+<!-- /generated -->
+
+#### Notifications
+
+- Normal frames retain the shipped checksum/framing and event order: `6E 20`
+  records must carry a valid `sum8`, acknowledgements match their exact frames,
+  and `6E 21` and `6E 40` records are framed but have no bed-state consumer.
+  Incomplete normal data expires (see [Catalog app timing](#catalog-app-timing)).
+  Malformed bounds and zero-length records are rejected without fabricating state.
+- Sleep ordinary assembly uses byte 12 and strips one 14-byte header. Type 1
+  routes by the retained request; type 2 uses the artifact's ordered
+  text-contains routing. Incoming bytewise text is separate from outbound UTF-8.
+- Report continuation preserves the type-specific whole-chunk versus
+  per-chunk-header rule, then bounded GZip decoding and typed day/month schemas.
+  Type 2 day schema selection retains the algorithm-version comparison and
+  first-component-1 exception.
+- Live values preserve separate L/R occupancy, heart, respiration, movement and
+  snore fields. Type 2 invalid markers retain earlier values; malformed new
+  updates do not partially replace one side.
+- Full typed event and report records remain in status attributes. The
+  integration does not claim medical or physical validation of these values.
+
+#### Services
+
+Use `adjustable_bed.goodvibe` for these settings and queries. The action
+validates every target before writing. The dashboard card includes app
+controls, local side selection, light durations, snore numbers and sleep state.
+
+##### Alarms and snore settings
+
+Settings records put the length after `20`:
+`6e 20 len domain command operation data sum8`, where `len` counts the whole
+frame (`codec.record_20_len`). The domains and commands match the
+[variable frames](#variable-frames).
+
+| Command | Bytes | Description |
+|---------|-------|-------------|
+| Single alarm low | `6e 05 minuteLow 00 sum8` | First write |
+| Single alarm high | `6e 06 minuteHigh action sum8` | Second write |
+| Repeat alarm | `6e 20 0d 05 01 01 slot 00 hour minute action mask sum8` | Monday bit 7 through Sunday bit 1; enabled bit 0 |
+| Delete repeat alarm | `6e 20 08 05 02 01 slot sum8` | Slots 1–7 |
+| Snore switch | `6e 20 09 06 01 01 00 enabled sum8` | Normal settings menu |
+| Snore configuration | `6e 20 0a 06 05 01 selector 00 value sum8` | Selector 1: count 1–30; selector 2: time 5–30 in steps of five |
+| Time sync | `6e 20 0c 08 02 01 epochBE32 offsetHours sum8`, then `6e 20 0d 08 03 01 yearMinus1970 month day hour minute second sum8` | Startup and the `sync` operation |
+
+The repeat-alarm query retains returned records, the sleep-name query reads the
+normal product's independent sensor name, and the snore queries read the count,
+time and switch. These are exact examples from the shipped builders; fields vary
+with the requested values:
+
+<!-- generated:goodvibe-settings -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Operation and example input | Exact GATT write(s) |
+|---|---|
+| Single alarm: 4660 minutes, action `05` | `6e053400a7`; `6e0612058b` |
+| Cancel single alarm | `6e05000073`; `6e06000074` |
+| Light duration: 300 seconds | `6e0b012ca6` |
+| Light always on: 0 seconds | `6e0bffff77` |
+| Colour: 255, 128, 0; one combined write | `6e0cffff786e0d8000fb` |
+| Repeat alarm: slot 1, 07:30, action `05`, mask `F9` | `6e200d0501010100071e05f9c6` |
+| Delete repeat alarm: slot 1 | `6e2008050201019f` |
+| Query repeat alarms | `6e2008050100009c` |
+| Query sleep name | `6e2008060300009f` |
+| Snore switch: on | `6e20090601010001a0` |
+| Snore count: 7 | `6e200a060501010007ac` |
+| Snore time: 30 | `6e200a06050102001ec4` |
+| Query snore configuration, then switch | `6e20090605000000a2`; `6e2008060100009d` |
+| Time sync: 2026-11-03 13:00:00+01:00 | `6e200c0802016ae9ccc00185`; `6e200d080301380b030d0000fa` |
+<!-- /generated -->
+
+Single-alarm date and current time are truncated to minutes. A nonpositive
+difference adds one day once. A single-alarm preference is saved only on its
+ACK. Repeat alarms use an explicit slot or the smallest unoccupied slot in the
+observed list. Automatic slots are checked and retained for all targets before
+any target writes. The normal snore menu excludes HNRN, HQRN, HSRN, HURN, M7RN
+and MJRN.
+
+##### Sleep controls and reports
+
+Sleep JSON uses insertion-ordered `id`, `cmd`, `val` and UTF-8 encoding. It is
+not a Richmat frame but the sleep-sensor envelope of
+[`codec/sleep_envelope.py`](../../custom_components/adjustable_bed/codec/sleep_envelope.py):
+
+```text
+00 seq 01 00 ((n+7)&ff) 00 00 11 03 43 55 44 lenLo lenHi JSON
+```
+
+`n` is the JSON byte length. Ordinary IDs cycle 1–254. There is no ordinary
+sleep checksum or CRC. Each packet is chunked using the current link's MTU
+minus three, bounded by 512 bytes.
+
+| Action | Type 1 JSON command/value | Type 2 JSON command/value |
+|--------|---------------------------|---------------------------|
+| Set time | `s_time:{ts,tz}` | `s_time:{ts,utc}` |
+| Query time | No packet | `q_time:null` |
+| Query part | `s_part:null` with retained query selector | `q_part:null` |
+| Set part | `s_part:part` | `s_part:part` |
+| Live query | `q_realtime:{type:0,time:1}` | Same |
+| Report metadata | `q_report:{part,type,y,m,d}` | Same |
+| Report continuation | `q_report:{part,type,y,m,d,allow:1}` | `q_report:{allow:1}` |
+| Query sensitivity | No setter/query packet admitted | `q_sens:null`; removed setter has no packet |
+| Query anti-snore | No packet | `q_antiSnore:null` |
+| Set anti-snore | No packet | `s_antiSnore:{L:[enabled,8,4],R:[enabled,8,4]}` |
+
+A report action automatically requests metadata and continuation, then waits
+for the typed result. Day is type 1 and month is type 2; report parts are 1 or
+2. Setting a type 1 sleep part accepts 1 or 2; type 2 accepts 11, 12 or 13.
+Type 2 startup selects the shipped default 12. Report operations replace live
+monitoring to protect the shared response selector.
+
+#### Evidence
+
+Good Vibe Sleep sends only frames frozen from its accepted row116 vectors
+(`tests/fixtures/goodvibe`). Hardware, ATT delivery, firmware acceptance and
+physiological interpretation remain unverified. Real users may validate them
+after beta/release; maintainer hardware acquisition is not required.
+APK Protocol Audit row116 records the source bindings, hashes, exclusions and
+audit limits.
+
+### L&P legacy app
+
+**App:** [L&P Adjustable Base](https://play.google.com/store/apps/details?id=com.richmat.lp) 2.2.1 (13), `com.richmat.lp`
+
+**Status:** ❓ Needs testing (static verified, hardware unverified)
+
+The `leggett_lp_legacy` bed type follows the legacy app's 122 remote layouts,
+each selected by the four-character code used in that app's manual or QR setup
+(for example `A2RM`, `B1RM`, `ZR00`); the full list is `LP_LEGACY_PROFILE_CODES`
+in `lp_legacy_profiles.py`. I0RM has no proven bed commands in this app and
+therefore exposes no remote action buttons. It does not change existing Richmat
+or L&P QRRM configurations.
+
+#### Setup
+
+- Detection: none. Choose the **L&P Adjustable Base (legacy app)** row, or
+  answer **L&P Adjustable Base legacy app (2.2.1)** in the
+  [L&P question](leggett-platt.md#home-assistant-setup), then select the exact
+  remote code and packet mode. An existing legacy entry reaches the other L&P
+  routes through the same question in **Reconfigure**; **Configure** still
+  changes its own settings.
+- **Transport:** none of the codec's [transports](#transports). The app selects
+  its characteristics at runtime, and its accepted report contains no fixed
+  service or characteristic UUID that can safely be applied to every layout.
+  Configure the bed's write characteristic UUID and, when known, its response
+  characteristic UUID. These must come from the device's GATT information or a
+  capture of the working app.
+- The configured characteristic must be writable. Writes use write-with-response
+  when it has the `write` property, otherwise write-without-response.
+- BLE pairing is not required.
+- Neither a name prefix nor a remote code proves the packet mode.
+- Choosing a different layout changes the available controls.
+- For paired beds with separate addresses, each side's stored profile provides
+  its remote buttons even when that side is unavailable during startup.
+- Profile, packet mode and GATT UUIDs stay specific to each side and are not
+  shown in the pair's shared settings. To change them, unpair the beds, update
+  the individual entries, then pair them again.
+- Changing the layout or packet mode creates distinct action entities. Update
+  automations to use those new entities; old actions remain unavailable instead
+  of being silently reassigned to different commands.
+
+#### Controls
+
+Home Assistant exposes the selected layout's actions as named buttons, including
+separate long-press actions where the app defines them. They also appear in the
+adjustable bed card's utility section. Automations can call the ordinary
+`button.press` action on these entities.
+
+The app's labels describe the available actions. Some are pictograms with
+uncertain physical meaning, so the integration keeps those descriptions instead
+of assigning guessed head, foot or lumbar axes. Memory, massage and lights exist
+only as the selected layout's named buttons; there is no RGB control.
+
+##### Packet modes
+
+Every control event has a command token: one character, optionally followed by
+four hex digits (for example `n006E`). The catalog stores the tokens; the codec
+builds the packet for the entry's mode.
+
+| Mode | Packet |
+|---|---|
+| **Legacy** | The first character of the token as one byte, as Nordic framing sends a bare code |
+| **Framed** | `6E 01 hi lo sum8`: the token's four hex digits as two bytes, the codec's command with `hi` in the side byte |
+
+- Only controls with a proven encoding for the selected mode are exposed.
+  Single-character tokens have no framed encoding.
+- The two modes can send different bytes for the same token, as 6BRM's `40024`
+  below shows.
+
+<!-- generated:lp-legacy-tokens -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Token | Legacy | Framed | Notes |
+|---|---|---|---|
+| `n006E` | `6E` | `6E 01 00 6E DD` | Release of 1,372 of the 1,715 catalogued controls |
+| `$0024` | `24` | `6E 01 00 24 93` |  |
+| `40024` | `34` | `6E 01 00 24 93` | 6BRM; the two modes differ |
+| `2` | `32` | Undefined | Single character, Legacy only |
+| (empty) | Nothing | `6E 01 00 00 6F` | Empty token; Legacy writes nothing |
+<!-- /generated -->
+
+The complete per-layout catalog is `lp_legacy_profiles.json`.
+
+##### Event states
+
+Each app button has a press event and a release (completion) event. Their
+state decides how the integration sends them:
+
+| State | Event | Integration behavior |
+|---|---|---|
+| 1 | Held press | Writes immediately, then repeats for the configured motor pulse count |
+| 2 | Release | Always written after the press, even when the action is cancelled |
+| 3 | Long press | **(long press)** button: waits the long-press time, then writes once |
+| 4 | Short-press completion | Written after a completed press of 3 s or less that was not cancelled; on long-press controls it is the plain button |
+| 5 | One-shot press | Writes once, then waits one tick |
+
+#### Timing
+
+See [Catalog app timing](#catalog-app-timing).
+
+- Held controls repeat at the app's proven cadence. The configured motor pulse
+  count determines how long a button invocation holds the control. The wait
+  between writes accounts for time spent awaiting the Bluetooth write.
+- The integration preserves each control's own release behavior and sends its
+  release even when a running action is cancelled.
+- One-shot controls do not inherit a movement repeat loop.
+- The Stop button cancels the active action and performs its release cleanup.
+  It cannot stop movement started outside this integration: the artifact
+  defines no separate global emergency-stop command.
+
+#### Notifications
+
+The optional app-response diagnostic reports only the three exact patterns the
+app recognizes. Their physical meaning is not established. They are not motor
+positions, battery readings, a capability query or proof that an alarm is set.
+
+<!-- generated:lp-legacy-notifications -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Frame | Reported effect |
+|---|---|
+| `6E 09 01 00 78` | `app_status_5` |
+| `6E 07 01 01 77` | `alarm_routine_1` |
+| `6E 07 01 02 78` | `alarm_routine_2` |
+<!-- /generated -->
+
+- The response characteristic is subscribed when it notifies or indicates, or
+  read once when it is only readable.
+- The diagnostic sensor is disabled by default.
+- There is no invented position feedback, pairing requirement or RGB capability.
+
+#### Evidence
+
+The L&P legacy app sends only the packets of its accepted row019 catalog, in
+both modes. APK Protocol Audit row019 records the catalog coverage, excluded
+application-only behavior and the frozen evidence identity. Raw APKs and
+analysis remain machine-local. Physical confirmation is deferred to users with
+the corresponding bed after a beta or release; it is separate from static
+protocol verification.
+
 ## Notes
 
 ### Analysis provenance
@@ -1944,6 +2573,9 @@ remain explicit there. Static acceptance is not hardware confirmation.
 - RMControl: APK Protocol Audit row018.
 - Richmat MH: row055.
 - HJBed: row121.
+- Eshine: row106.
 - Classic apps: row066.
+- Good Vibe Sleep: row116.
+- L&P legacy app: row019.
 - The Richmat remotes, BedTech and L&P MlRM routes have no accepted report of
   their own; their frames are the pre-v5 controllers'.

@@ -8,8 +8,8 @@ import pytest
 from homeassistant.core import HomeAssistant
 
 from custom_components.adjustable_bed.beds.gmmotor_sleep import GmmotorSleepController
+from custom_components.adjustable_bed.codec.sleep_envelope import frame
 from custom_components.adjustable_bed.gmmotor_requests import Request
-from custom_components.adjustable_bed.gmmotor_sleep_protocol import frame
 from custom_components.adjustable_bed.gmmotor_sleep_state import (
     ClockUpdate,
     Followup,

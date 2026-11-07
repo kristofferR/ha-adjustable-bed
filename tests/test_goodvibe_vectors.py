@@ -5,8 +5,10 @@ from pathlib import Path
 
 import pytest
 
+from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.goodvibe_catalog import ACTIONS
 from custom_components.adjustable_bed.goodvibe_discovery import name_product
+from custom_components.adjustable_bed.goodvibe_protocol import action_frame
 from custom_components.adjustable_bed.goodvibe_receive import common, extended
 from custom_components.adjustable_bed.goodvibe_schemas import SCHEMAS, parse_schema
 from custom_components.adjustable_bed.goodvibe_sleep import Realtime
@@ -21,7 +23,12 @@ def fixture(name):
 def test_all_current_action_byte_alternatives():
     seen = set()
     for key, side, legacy, long, expected in fixture("actions"):
-        assert ACTIONS[key].packet(side, legacy, long).hex() == expected, (key, side, legacy, long)
+        assert action_frame(ACTIONS[key], side, legacy, long).hex() == expected, (
+            key,
+            side,
+            legacy,
+            long,
+        )
         seen.add(key)
     assert seen == set(ACTIONS)
 
@@ -107,7 +114,7 @@ def test_dedicated_builders_and_independent_time_vectors():
         if address == "0x806ebc":
             actual = p.light_duration(args[0])
         elif address == "0x808980":
-            actual = p.color(*(math.floor(x * 255 + 0.5) for x in args[0]))
+            actual = codec.rgb(*(math.floor(x * 255 + 0.5) for x in args[0]))
         elif address == "0x7fb7f4":
             actual = p.clock(args[0], args[1])[1]
         elif address == "0x7fb948":

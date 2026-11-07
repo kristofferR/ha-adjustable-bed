@@ -56,6 +56,8 @@ Optional manufacturer is `00002a29-…`.
 | Extended value | `04 e0 key value 00 00` | `5a e0 04 key value 00 00 a5` |
 | Query | `00 b0` | `5a b0 00 a5` |
 
+- Star frames come from the [Okin 5A codec](okin-5a.md#starcode-frames) and
+  legacy frames from the [Okin N-frame codec](okin-nframe.md#wire-codec).
 - Legacy light on/off uses `08 02 00 00 00 00 BE32(key)`, with keys `40` and
   `80`.
 - Star bedding keys have high bytes `03 10 30`.
