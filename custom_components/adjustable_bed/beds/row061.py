@@ -30,6 +30,8 @@ from .richmat_mh_protocol import (
     INIT_VER0,
     INIT_VER1,
     MOTOR_MODE_BITS,
+    RX_ALARM,
+    RX_ALARM_MULTI,
     TX_DETECTION,
     TX_EXIT_ONE_MIN,
     TX_MOTOR_MODE,
@@ -135,6 +137,11 @@ class AppClassifier(Classifier):
                 if version:
                     self.buffer = ""
                     return [Event("version", version)]
+            # The app's 0002 init never sets INIT, so it keeps this reply buffered and
+            # misses every extended reply behind it. Consume it as an init reply.
+            if self.rx_type == "NONE" and buf in (RX_ALARM, RX_ALARM_MULTI):
+                self.buffer = ""
+                return [Event("init", buf)]
         if buf.startswith("6e90b") or (self.music and buf.startswith("6e90d")):
             self.music = True
             self.buffer = ""
