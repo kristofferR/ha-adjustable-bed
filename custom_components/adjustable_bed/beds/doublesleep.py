@@ -147,10 +147,6 @@ class DoubleSleepController(BedController):
         return True
 
     @property
-    def requires_persistent_connection(self) -> bool:
-        return True  # Realtime sensor reports and report continuation use the live RX stream.
-
-    @property
     def supports_single_address_pairing(self) -> bool:
         return False  # Sides are sensor/report fields, not independently routed motor writes.
 

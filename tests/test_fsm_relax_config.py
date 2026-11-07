@@ -10,6 +10,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.bed_traits import bed_traits
 from custom_components.adjustable_bed.beds.fsm_relax import FsmRelaxController
 from custom_components.adjustable_bed.beds.limoss import LimossController
 from custom_components.adjustable_bed.config_flow import (
@@ -89,8 +90,8 @@ def test_profile_fields_schema_and_exact_options_validation():
     assert result[const.CONF_FSM_RELAX_MEMORY_NAMES][0] == "Sleep"
     assert _fsm_relax_errors(data()) == {}
     assert _fsm_relax_errors({**data(), const.CONF_REVERSE_MOTORS[0]: "yes"})
-    assert const.BED_TYPE_FSM_RELAX not in const.BEDS_WITH_POSITION_FEEDBACK
-    assert const.BED_TYPE_FSM_RELAX in const.BEDS_WITHOUT_ANGLE_FEEDBACK
+    assert not bed_traits(const.BED_TYPE_FSM_RELAX).position_feedback
+    assert bed_traits(const.BED_TYPE_FSM_RELAX).no_angle_feedback
     # The Limoss / Stawett row names the app; its question offers it.
     rows = {option["value"]: option["label"] for option in get_bed_type_options()}
     assert "FSM Relax" in rows[const.BED_TYPE_LIMOSS]

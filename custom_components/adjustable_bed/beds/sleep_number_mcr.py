@@ -261,11 +261,6 @@ class SleepNumberMcrController(BedController):
         return True
 
     @property
-    def requires_persistent_connection(self) -> bool:
-        """MCR beds are kept connected for the entry's lifetime."""
-        return True
-
-    @property
     def supports_motor_control(self) -> bool:
         """Expose motor controls after foundation discovery."""
         return self._foundation_features is not None
@@ -701,11 +696,7 @@ class SleepNumberMcrController(BedController):
 
     @property
     def supports_position_feedback(self) -> bool:
-        return self._foundation_features is not None
-
-    @property
-    def reports_percentage_position(self) -> bool:
-        return True
+        return super().supports_position_feedback and self._foundation_features is not None
 
     @property
     def supports_direct_position_control(self) -> bool:

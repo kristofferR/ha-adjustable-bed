@@ -437,7 +437,7 @@ class VibradormController(BedController):
     @property
     def supports_position_feedback(self) -> bool:
         """Return True for VMAT variants where the OEM app uses position feedback."""
-        return not self._uses_app_strict_command_path
+        return super().supports_position_feedback and not self._uses_app_strict_command_path
 
     @property
     def allow_position_polling_during_commands(self) -> bool:

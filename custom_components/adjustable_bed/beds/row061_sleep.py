@@ -59,10 +59,6 @@ class Row061SleepController(BedController):
         return True
 
     @property
-    def requires_persistent_connection(self) -> bool:
-        return True
-
-    @property
     def supports_motor_control(self) -> bool:
         return False
 

@@ -223,7 +223,7 @@ class GoodVibeController(BedController):
 
     @property
     def requires_persistent_connection(self) -> bool:
-        return self.choices.monitoring or (
+        return super().requires_persistent_connection or self.choices.monitoring or (
             self._sleep is not None and self._sleep.last in ("q_report", "q_report_allow")
         )
 

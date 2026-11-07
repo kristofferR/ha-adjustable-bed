@@ -22,6 +22,7 @@ import voluptuous as vol
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.helpers.field_visibility import ConditionOperator, FieldCondition
 
+from .bed_traits import bed_type_has_position_feedback
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
@@ -186,7 +187,6 @@ from .const import (
     VIBRADORM_RESTORED_CONTROLS,
     VIBRADORM_WERKMEISTER_CONTROLS,
     VMATBASIC_PROFILES,
-    bed_type_has_position_feedback,
 )
 
 if TYPE_CHECKING:

@@ -36,6 +36,7 @@ from homeassistant.helpers.service import async_get_device_and_config_entry
 from homeassistant.util import dt as dt_util
 
 from .alarm_table import AlarmTableSchedule, OneTimeAlarmRecord, WeeklyAlarmRecord
+from .bed_traits import bed_type_has_position_feedback
 from .command_scheduler import (
     ALL_COMMAND_RESOURCES,
     HoldClaim,
@@ -51,6 +52,7 @@ from .const import (
     BED_TYPE_KEESON,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINAK,
+    BED_TYPE_SBI,
     BED_TYPE_SERTA_MP_REMOTE,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX25,
@@ -67,7 +69,6 @@ from .const import (
     SIDE_LEFT,
     SIDE_RIGHT,
     TIMED_MOVE_MOTOR_OPTIONS,
-    bed_type_has_position_feedback,
 )
 from .execution import HOLD_CEILING_MS
 from .paired_coordinator import (
@@ -931,9 +932,11 @@ async def _set_position_plan(
             controller.reports_percentage_position is True
         )
 
-        if bed_type in (BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_SERTA_MP_REMOTE):
-            # These direct setters own native bounds independently of generic
-            # angle overrides. Validate every axis/target before scheduling.
+        if bed_type in (BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_SBI):
+            # These controllers' position specs own their axes and native bounds,
+            # independently of generic angle overrides (SBI reports back/legs
+            # only, within its pulse tables). Validate every axis/target before
+            # scheduling.
             motor_configs = {
                 spec.position_key: {
                     "position_key": spec.position_key,

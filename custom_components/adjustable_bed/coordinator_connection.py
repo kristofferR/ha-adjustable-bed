@@ -35,6 +35,7 @@ from .adapter import (
     select_adapter,
 )
 from .address_lock import async_get_connect_lock
+from .bed_traits import bed_traits
 from .ble_auth import is_ble_authentication_error as _is_ble_authentication_error
 from .bluetooth_diagnostics import connection_reachability
 from .bluetooth_transport import async_connection_paths, async_path_for_source, client_source
@@ -232,9 +233,9 @@ class CoordinatorConnectionMixin:
            ``_on_disconnect`` clears the controller *before* the reconnect
            decision runs, so an Okin/MlRM bed must still be recognised as
            non-persistent and get its reconnect timer.
-        3. A pre-first-connect bed-type heuristic. Only ``auto``/``gen2``
-           ``leggett_platt`` entries are assumed persistent here; ``okin`` and
-           ``mlrm`` are not (they reconnect normally).
+        3. Before the first connect, the bed type's static ``persistent_connection``
+           trait. ``auto``/``gen2`` ``leggett_platt`` entries assume Gen2;
+           ``okin`` and ``mlrm`` do not (they reconnect normally).
 
         An idle timeout of 0 opts any bed into the same lifecycle unless
         Disconnect After Command is on (issue #700). Like persistent
@@ -255,11 +256,7 @@ class CoordinatorConnectionMixin:
             return self._persistent_connection_resolved or (
                 self._reconnect_stalled and self._holds_link_after_stall_resolved
             )
-        if self._bed_type in (BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_LEGGETT_GEN2):
-            return True
-        if self._bed_type == BED_TYPE_LEGGETT_PLATT:
-            return self._protocol_variant in (VARIANT_AUTO, LEGGETT_VARIANT_GEN2)
-        return False
+        return bed_traits(self._bed_type, self._protocol_variant).persistent_connection
 
     def _cache_persistent_connection_policy(self: AdjustableBedCoordinator) -> None:
         """Cache the live controller's persistence for decisions after a drop."""

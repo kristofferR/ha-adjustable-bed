@@ -260,12 +260,15 @@ A new app is normally a profile plus its vectors, not a new controller.
    ```
 
    Pass `position_key=` when the firmware reports an axis under a different name.
-   Also add the bed type to `BEDS_WITH_POSITION_FEEDBACK` in `const.py`, and to
-   `BEDS_WITH_PERCENTAGE_POSITIONS` if it reports 0-100 percentages rather than
-   degrees. A bed that reports no position data at all belongs in neither, or in
-   `BEDS_WITHOUT_ANGLE_FEEDBACK` if angle sensing would otherwise create degree
-   sensors stuck at "unknown". Note that `position_number_specs` requires a live
-   controller, so these entities only appear once the bed has connected.
+   Also give the bed type `position_feedback=True` in its `bed_traits.py` record,
+   plus `percentage_positions=True` if it reports 0-100 percentages rather than
+   degrees. A bed that reports no position data at all needs neither, or
+   `no_angle_feedback=True` if angle sensing would otherwise create degree
+   sensors stuck at "unknown". The same record declares a persistent connection
+   and connection-scoped state. The factory stamps it on the controller, whose
+   properties override it only to refine it at runtime. Note that
+   `position_number_specs` requires a live controller, so these entities only
+   appear once the bed has connected.
 
 11. **Create documentation** using the [bed guide format](docs/BED_GUIDE_FORMAT.md).
     A profile over an existing codec adds a profile section, with the format's

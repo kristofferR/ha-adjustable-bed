@@ -182,10 +182,6 @@ class LimossRemoteController(BedController):
         return True
 
     @property
-    def supports_position_feedback(self) -> bool:
-        return False
-
-    @property
     def position_number_specs(self) -> tuple:
         return ()
 

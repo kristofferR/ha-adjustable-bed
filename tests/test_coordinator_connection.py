@@ -1730,6 +1730,7 @@ class TestCoordinatorConnection:
         """Passive reconciliation should not fire often enough to pin the BLE session open."""
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         coordinator._disable_angle_sensing = False
+        coordinator._disconnect_after_command = False
         coordinator._idle_disconnect_seconds = 180
 
         assert coordinator._resolve_passive_position_reconciliation_interval(120.0) == 195.0

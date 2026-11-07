@@ -295,16 +295,6 @@ class JensenController(BedController):
         return True
 
     @property
-    def supports_position_feedback(self) -> bool:
-        """Return True - Jensen beds report position via notifications."""
-        return True
-
-    @property
-    def reports_percentage_position(self) -> bool:
-        """Return True because Jensen normalizes reported positions to percentages."""
-        return True
-
-    @property
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
         """Expose back and legs as percentage sliders."""
         return (

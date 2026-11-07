@@ -11,6 +11,7 @@ import pytest
 from bleak.exc import BleakError
 
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
+from custom_components.adjustable_bed.bed_traits import bed_traits
 from custom_components.adjustable_bed.beds.eshine_okin import EshineOkinController
 from custom_components.adjustable_bed.beds.eshine_okin_protocol import (
     COMMANDS,
@@ -24,7 +25,6 @@ from custom_components.adjustable_bed.beds.eshine_okin_protocol import (
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_ESHINE_OKIN,
-    BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
@@ -133,7 +133,7 @@ def test_explicit_profiles_and_entity_contracts(profile):
     options = get_bed_type_options()
     assert any("eShine" in name and "E2000" in name for name in (o["label"] for o in options))
     assert get_variants_for_bed_type(BED_TYPE_ESHINE_OKIN) == ESHINE_OKIN_PROFILES
-    assert BED_TYPE_ESHINE_OKIN in BEDS_WITHOUT_ANGLE_FEEDBACK
+    assert bed_traits(BED_TYPE_ESHINE_OKIN).no_angle_feedback
     assert {s.key for s in ctrl.motor_control_specs} == (
         {"head", "feet", "pillow"} if profile == "eshine_e5000" else {"head", "feet"}
     )

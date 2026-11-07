@@ -16,8 +16,9 @@ from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.core import callback
 
+from .bed_traits import bed_type_has_position_feedback
 from .command_scheduler import CommandKind, current_command_context
-from .const import BED_TYPE_LINAK, POSITION_FEEDBACK_TIMEOUT, bed_type_has_position_feedback
+from .const import BED_TYPE_LINAK, POSITION_FEEDBACK_TIMEOUT
 from .position_seek import (
     PositionFeedbackError,
     PositionSeekPolicy,

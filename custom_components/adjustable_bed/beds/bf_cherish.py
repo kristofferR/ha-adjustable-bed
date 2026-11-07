@@ -181,10 +181,6 @@ class BfCherishController(BedController):
         return True
 
     @property
-    def supports_position_feedback(self) -> bool:
-        return False
-
-    @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
         axes = ("back", "legs") if self.cherish else ("back", "legs", "head")
         return tuple(

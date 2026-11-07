@@ -194,14 +194,6 @@ class StarcodeM5X5Controller(BedController):
         return True
 
     @property
-    def supports_position_feedback(self) -> bool:
-        return True
-
-    @property
-    def reports_percentage_position(self) -> bool:
-        return True
-
-    @property
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
         return tuple(
             build_position_number_spec(axis, max_value=100, unit=POSITION_UNIT_PERCENT)

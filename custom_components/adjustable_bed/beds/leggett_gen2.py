@@ -204,11 +204,6 @@ class LeggettGen2Controller(BedController):
         return LEGGETT_GEN2_WRITE_CHAR_UUID
 
     @property
-    def requires_persistent_connection(self) -> bool:
-        """Keep the Gen2 link open pending hardware confirmation of reconnects."""
-        return True
-
-    @property
     def manual_disconnect_strands_connection(self) -> bool:
         """Hide manual disconnect until bonded reconnects are hardware-confirmed."""
         return True

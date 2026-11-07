@@ -268,15 +268,6 @@ class SleepysBox25Controller(BedController):
         return 6
 
     @property
-    def supports_position_feedback(self) -> bool:
-        return True
-
-    @property
-    def reports_percentage_position(self) -> bool:
-        """Return True because BOX25 reports percentage positions."""
-        return True
-
-    @property
     def supports_direct_position_control(self) -> bool:
         return True
 
