@@ -23,7 +23,7 @@ FAMILY = CodecFamily(
     guide=CodecGuide(
         path="docs/beds/kaidi.md",
         # Complete session and control frames; templates and opcodes are not frames.
-        spelled=spelled_frames(r"`((?:01 16 01|01 03|03)(?: [0-9A-Fa-f]{2}){9,})`"),
+        spelled=spelled_frames(r"`((?:01 16 01|01 03|03)(?: [0-9A-Fa-f]{2}){7,})`"),
         frozen=frozenset(frame for _, _, frame in SESSION_FRAMES),
         variant=lambda key, bed_type: key if bed_type == const.BED_TYPE_KAIDI else None,
         entry_data={

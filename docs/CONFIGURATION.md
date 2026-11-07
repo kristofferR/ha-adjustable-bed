@@ -639,7 +639,7 @@ that side, then combine them again.
 | Ergomotion 4.0 | [Exact product, or another catalog product by name and feature keys](beds/keeson.md#ergomotion-40-home-assistant-setup). |
 | BF / Cherish | [The exact app](beds/keeson.md#bf-and-cherish); it fixes the layout and movement refresh. |
 | Eshine | [Explicit app profile](beds/eshine.md#home-assistant-setup) with a fixed head, feet, lumbar, pillow, massage and light layout. |
-| Kaidi | [ISleep](beds/isleep.md#home-assistant-setup): product, room ID and actuator descriptor. [Floyd Home](beds/floyd.md#home-assistant-setup): product 139. |
+| Kaidi | [ISleep](beds/kaidi.md#isleep): product, room ID and actuator descriptor. [Floyd Home](beds/kaidi.md#floyd-home): product 139. |
 | BedSense | [Layout, or the Bluetooth-name layout rule](beds/ff_frame.md#bedsense). |
 | Casper Base | [PRO/MAX product](beds/casper-base.md#home-assistant-setup); sleep sensors and the RCRM handset are separate entries. |
 | HJBed | [The exact app product](beds/richmat.md#hjbed). |

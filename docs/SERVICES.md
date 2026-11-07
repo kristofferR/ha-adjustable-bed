@@ -633,7 +633,7 @@ phone scheduler. See [packet behavior and limits](beds/keeson.md#clock-and-alarm
 `save_anti_snore`, unassigned BLE `assign_room` / `confirm_add`, and preset
 recall with explicit conditional `internal_side` selection. All controls use
 normal `device_id` and paired physical `side` routing. See the
-[Floyd action table](beds/floyd.md#movement-and-presets) before programming a
+[Floyd action table](beds/kaidi.md#floyd-action) before programming a
 preset or assigning membership. Combined movement uses `hold_control` with
 `head_feet_up` or `head_feet_down` and a duration up to 30 seconds. HA automations
 schedule these presets; the app's phone alarms are not on-bed alarm storage.
