@@ -41,7 +41,7 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
-from .keeson import KeesonCommands, KeesonController
+from .keeson.controller import KeesonCommands, KeesonController
 
 _LOGGER = logging.getLogger(__name__)
 

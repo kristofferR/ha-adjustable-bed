@@ -8,7 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-from .motion_bed_state import MotionBedContext, MotionBedState
+from .state import MotionBedContext, MotionBedState
 
 ActionKind = Literal["press", "held", "stop", "query", "program", "persistent"]
 

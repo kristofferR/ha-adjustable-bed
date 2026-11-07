@@ -2,15 +2,15 @@
 
 Commands and STOP are ``codec.function``, colour is ``codec.rgb``. Settings
 records put ``len`` after ``20`` (``codec.record_20_len``). The sleep sensors'
-JSON envelope is in ``goodvibe_sleep``.
+JSON envelope is in ``sleep.py``.
 """
 
 from __future__ import annotations
 
 from datetime import datetime
 
-from .codec import richmat as codec
-from .goodvibe_catalog import Action
+from ...codec import richmat as codec
+from .catalog import Action
 
 LIGHT_OFF = 0x75
 """The dedicated close-bed-light command."""

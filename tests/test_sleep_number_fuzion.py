@@ -8,13 +8,13 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from bleak.exc import BleakError
 
-from custom_components.adjustable_bed.beds.sleep_number import SleepNumberController
-from custom_components.adjustable_bed.beds.sleep_number_commands import (
+from custom_components.adjustable_bed.beds.sleep_number.commands import (
     COMMANDS,
     format_command,
     parse_response,
     validate_temperature_program,
 )
+from custom_components.adjustable_bed.beds.sleep_number.controller import SleepNumberController
 from custom_components.adjustable_bed.const import (
     SLEEP_NUMBER_AUTH_CHAR_UUID,
     SLEEP_NUMBER_BAMKEY_CHAR_UUID,

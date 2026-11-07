@@ -7,7 +7,7 @@ from collections.abc import Callable
 
 from ..profiles.okin_nframe import RF_ECO_BT, RF_ECO_BT_REFRESH_MS
 from .base import MotorControlSpec
-from .okin_uuid import OkinUuidController
+from .okin_uuid.controller import OkinUuidController
 
 _LOGGER = logging.getLogger(__name__)
 

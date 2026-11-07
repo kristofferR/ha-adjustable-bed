@@ -17,22 +17,22 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
-from ..card import CARD_MASSAGE_TIMER
-from ..codec import keeson as codec
-from ..const import GLIDEAWAY_MOTION_MODELS
-from ..controller_state import StateKey
-from ..profiles import keeson as keeson_profiles
-from .base import (
+from ...card import CARD_MASSAGE_TIMER
+from ...codec import keeson as codec
+from ...const import GLIDEAWAY_MOTION_MODELS
+from ...controller_state import StateKey
+from ...profiles import keeson as keeson_profiles
+from ..base import (
     BedController,
     ControllerButtonSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
 )
-from .builder import BuildContext
+from ..builder import BuildContext
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 WRITE_SERVICE: Final = "0000ffe5-0000-1000-8000-00805f9b34fb"
 WRITE_CHAR: Final = "0000ffe9-0000-1000-8000-00805f9b34fb"

@@ -11,18 +11,9 @@ from typing import TYPE_CHECKING, ClassVar, Final, Protocol
 
 from homeassistant.util import dt as dt_util
 
-from ..casper_base_protocol import (
-    RGB_TIMERS,
-    CasperBaseActions,
-    Event,
-    MainReceive,
-    Request,
-    alarm_countdown,
-    decode_main,
-)
-from ..codec import richmat as codec
-from ..controller_state import StateKey
-from ..profiles.casper import (
+from ...codec import richmat as codec
+from ...controller_state import StateKey
+from ...profiles.casper import (
     ACTIONS,
     ANTI_SNORE,
     LIGHT_OFF,
@@ -34,18 +25,27 @@ from ..profiles.casper import (
     ProductRow,
     light_duration,
 )
-from .base import (
+from ..base import (
     BedController,
     ControllerButtonSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
-from .builder import BuildContext
+from ..builder import BuildContext
+from .protocol import (
+    RGB_TIMERS,
+    CasperBaseActions,
+    Event,
+    MainReceive,
+    Request,
+    alarm_countdown,
+    decode_main,
+)
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 

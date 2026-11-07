@@ -9,9 +9,9 @@ from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
 
-from .const import DOMAIN
-from .richmat_classic_requests import Operation, Request
-from .services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
+from ...const import DOMAIN
+from ...services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
+from .requests import Operation, Request
 
 OPERATIONS = (
     "query", "alarm", "cancel_alarm", "rgb", "lamp_slider", "lamp_save", "aroma",
@@ -36,7 +36,7 @@ FIELDS.update(SIDE_FIELD.items())
 
 
 async def handle_richmat_classic(call: ServiceCall) -> None:
-    from .beds.richmat_classic import RichmatClassicController
+    from .controller import RichmatClassicController
 
     request = Request(
         operation=cast(Operation, call.data["operation"]), action=call.data.get("action"),

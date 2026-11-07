@@ -12,7 +12,10 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.logicdata_app import LogicdataAppController
+from custom_components.adjustable_bed.beds.logicdata.app import LogicdataAppController
+from custom_components.adjustable_bed.beds.logicdata.app_services import (
+    SERVICE_LOGICDATA_HOLD_PRESET,
+)
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LOGICDATA_AIR_PUMP,
@@ -31,7 +34,6 @@ from custom_components.adjustable_bed.const import (
     SIDE_BOTH,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.logicdata_app_services import SERVICE_LOGICDATA_HOLD_PRESET
 from custom_components.adjustable_bed.services import (
     SERVICE_LOGICDATA_RENAME,
     async_register_services,

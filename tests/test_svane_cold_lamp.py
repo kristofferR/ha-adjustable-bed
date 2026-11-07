@@ -9,7 +9,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME, STATE_OFF, STATE_ON, ST
 from homeassistant.helpers.entity_component import EntityComponent
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.svane import SvaneController
+from custom_components.adjustable_bed.beds.svane.controller import SvaneController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SVANE,
     CONF_BED_TYPE,

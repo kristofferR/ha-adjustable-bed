@@ -77,7 +77,7 @@ Each 3-byte command therefore becomes `C0`, length `0A`, 8 encrypted bytes,
 > [!NOTE]
 > Earlier versions of this guide described the key as `LogicLink_BT_Key`. That is
 > not the key material: the ASCII text differs from the bytes above. The bytes in
-> `beds/logicdata.py` match the key an independent clean-room analysis recovered
+> `beds/logicdata/controller.py` match the key an independent clean-room analysis recovered
 > from the related LOGICDATA SimplicityFrame app's native library.
 
 ### CRC-CCITT

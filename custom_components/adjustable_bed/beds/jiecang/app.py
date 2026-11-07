@@ -15,9 +15,9 @@ from typing import TYPE_CHECKING, Any, Final, cast
 
 from homeassistant.util import dt as dt_util
 
-from ..codec import jiecang as codec
-from ..codec.jiecang import Notification, TransportKey, Wake
-from ..const import (
+from ...codec import jiecang as codec
+from ...codec.jiecang import Notification, TransportKey, Wake
+from ...const import (
     BED_TYPE_JIECANG_APP,
     CONF_HAS_LIGHT,
     CONF_JIECANG_APP_LAYOUT,
@@ -25,8 +25,8 @@ from ..const import (
     CONF_JIECANG_APP_TRANSPORT,
     HAS_LIGHT_DEFAULTS,
 )
-from ..controller_state import StateKey, StateUpdate
-from ..profiles.jiecang import (
+from ...controller_state import StateKey, StateUpdate
+from ...profiles.jiecang import (
     APP_LAYOUT_AXES,
     APP_PROFILES,
     COMFORT_MOTION,
@@ -41,7 +41,7 @@ from ..profiles.jiecang import (
     massage_zones,
     wake_schedule,
 )
-from ..state_keys import (
+from ...state_keys import (
     AUTOMATIC_LIGHT,
     LIGHT_LEVEL,
     LIGHT_TIMER_OPTION,
@@ -49,16 +49,16 @@ from ..state_keys import (
     UNDER_BED_LIGHTS_RGB,
     massage_intensity,
 )
-from .base import BedController
-from .builder import BuildContext
-from .jiecang import JiecangProfileController
+from ..base import BedController
+from ..builder import BuildContext
+from .controller import JiecangProfileController
 
 if TYPE_CHECKING:
     from bleak import BleakClient
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..codec.jiecang import MassageZone
-    from ..coordinator import AdjustableBedCoordinator
+    from ...codec.jiecang import MassageZone
+    from ...coordinator import AdjustableBedCoordinator
 
 _ZONES: dict[str, MassageZone] = {"head": "back", "foot": "legs", "right": "right"}
 CAPABILITIES_KNOWN: Final = StateKey[bool]("jiecang_capabilities_known")
@@ -746,7 +746,7 @@ def require_app_transport(client: BleakClient, data: Mapping[str, Any]) -> None:
     A guided change checks a candidate link with the controller's own transport
     selection, so the check is exactly what the runtime will require.
     """
-    from ..const import (
+    from ...const import (
         CONF_JIECANG_APP_LAYOUT,
         CONF_JIECANG_APP_PROFILE,
         CONF_JIECANG_APP_TRANSPORT,
@@ -766,7 +766,7 @@ def require_app_transport(client: BleakClient, data: Mapping[str, Any]) -> None:
     transport = data.get(CONF_JIECANG_APP_TRANSPORT, "auto")
     controller: JiecangProfileController
     if profile == COMFORT_MOTION.key:
-        from .comfort_motion import ComfortMotionController
+        from ..comfort_motion import ComfortMotionController
 
         controller = ComfortMotionController(link, layout=layout, transport=transport)
     else:
@@ -779,7 +779,7 @@ async def build_controller(ctx: BuildContext) -> BedController:
     data = ctx.data
     if data[CONF_JIECANG_APP_PROFILE] == "comfort_motion":
         await ctx.preload("comfort_motion")
-        from .comfort_motion import ComfortMotionController
+        from ..comfort_motion import ComfortMotionController
 
         return ComfortMotionController(
             ctx.coordinator,

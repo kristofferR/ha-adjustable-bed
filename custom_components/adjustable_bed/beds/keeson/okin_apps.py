@@ -32,10 +32,10 @@ from typing import Any, Final
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
-from ..app_session import app_session
-from ..card import CARD_MASSAGE, CARD_PRESETS
-from ..command_scheduler import current_command_context
-from ..const import (
+from ...app_session import app_session
+from ...card import CARD_MASSAGE, CARD_PRESETS
+from ...command_scheduler import current_command_context
+from ...const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
@@ -43,9 +43,9 @@ from ..const import (
     KEESON_VARIANT_SIMON_LI,
     OKIN_APP_VARIANTS,
 )
-from ..controller_state import StateKey, StateUpdate
-from ..state_keys import MASSAGE_TIMER_MINUTES
-from .base import (
+from ...controller_state import StateKey, StateUpdate
+from ...state_keys import MASSAGE_TIMER_MINUTES
+from ..base import (
     BedController,
     ControllerButtonSpec,
     ControllerNumberSpec,
@@ -53,7 +53,7 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
-from .keeson import KeesonController
+from .controller import KeesonController
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -26,7 +26,7 @@ async def test_public_lamp_hold_persists_final_intent_once(hass, runtime, monkey
     clock = [0.0]
     local_asyncio = SimpleNamespace(**vars(asyncio))
     local_asyncio.get_running_loop = lambda: SimpleNamespace(time=lambda: clock[0])
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.svane.asyncio", local_asyncio)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.svane.controller.asyncio", local_asyncio)
     blocked = asyncio.Event()
     steps = []
 

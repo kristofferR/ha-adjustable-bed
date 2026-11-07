@@ -17,7 +17,7 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from homeassistant.const import CONF_ADDRESS
 
-from ..const import (
+from ...const import (
     CONF_PAIRLINK_HOME_ID,
     CONF_PAIRLINK_PASSWORD_HEX,
     CONF_PAIRLINK_PASSWORD_TEXT,
@@ -25,7 +25,7 @@ from ..const import (
     PAIRLINK_ROLE_CENTRAL,
     PAIRLINK_ROLE_PERIPHERAL,
 )
-from .reverie_pairlink_protocol import (
+from .pairlink_protocol import (
     PAIRLINK_BROADCAST_ADDRESS,
     PairlinkSignGate,
     _encrypt_padded_aes_ecb,
@@ -37,7 +37,7 @@ from .reverie_pairlink_protocol import (
     encrypt_login_block,
     normalize_mac,
 )
-from .reverie_pairlink_transport import (
+from .pairlink_transport import (
     PairlinkHostAdapterInventoryEntry,
     PairlinkPeerIdentity,
     PairlinkPeerLifecycleCallback,
@@ -49,7 +49,7 @@ from .reverie_pairlink_transport import (
 )
 
 if TYPE_CHECKING:
-    from .reverie_pairlink_sdk_storage import PairlinkSdkState
+    from .pairlink_sdk_storage import PairlinkSdkState
 
 DEFAULT_PAIRLINK_PASSWORD_TEXT = "1122"
 DEFAULT_PAIRLINK_HOME_ID = 5566
@@ -152,7 +152,7 @@ def create_pairlink_runtime_for_entry(
     manufacturer_data: dict[int, bytes] | None,
 ) -> PairlinkRuntime:
     """Create one runtime from explicit entry policy and accepted advertisement fields."""
-    from .reverie_pairlink_profile import (
+    from .pairlink_profile import (
         generate_pairlink_local_join_bt_mac,
     )
 
@@ -177,7 +177,7 @@ def _resolve_pairlink_entry_configuration(
     previous_credentials: PairlinkCredentials | None = None,
 ) -> tuple[PairlinkRole, str | None, PairlinkCredentials]:
     """Resolve current inputs without replacing an accepted ad value with missing data."""
-    from .reverie_pairlink_profile import parse_pairlink_manufacturer_data
+    from .pairlink_profile import parse_pairlink_manufacturer_data
 
     data = {**entry_data, **entry_options}
     role_value = data.get(CONF_PAIRLINK_ROLE, PAIRLINK_ROLE_CENTRAL)

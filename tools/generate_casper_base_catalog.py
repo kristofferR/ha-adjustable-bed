@@ -47,4 +47,4 @@ for p in catalog["products"]:
     flags = tuple(bool(f.get(k)) for k in ("38", "3c", "40", "44", "48", "4c"))
     lines.append(f"    {key!r}: {(f['14'], *groups, *flags)!r},")
 lines += ["}", ""]
-Path("custom_components/adjustable_bed/casper_base_catalog.py").write_text("\n".join(lines))
+Path("custom_components/adjustable_bed/beds/casper_base/catalog.py").write_text("\n".join(lines))

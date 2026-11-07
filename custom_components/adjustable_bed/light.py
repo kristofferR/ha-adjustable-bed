@@ -24,6 +24,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.restore_state import RestoreEntity
 
+from .beds.octo.runtime import octo_controller
 from .card import CARD_LIGHTING
 from .const import DOMAIN
 from .controller_state import ControllerState
@@ -31,7 +32,6 @@ from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
 from .entity_sweep import PlatformEntities, records_entities
-from .octo_runtime import octo_controller
 from .paired_coordinator import entity_runtimes
 from .state_keys import (
     LIGHT_INTENSITY,
@@ -44,7 +44,7 @@ from .state_keys import (
 
 if TYPE_CHECKING:
     from .beds.base import BedController
-    from .beds.octo import OctoController
+    from .beds.octo.controller import OctoController
 
 _LOGGER = logging.getLogger(__name__)
 

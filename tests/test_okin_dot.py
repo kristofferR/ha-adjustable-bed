@@ -11,7 +11,7 @@ from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.okin_dot import OkinDotController
-from custom_components.adjustable_bed.beds.okin_uuid import (
+from custom_components.adjustable_bed.beds.okin_uuid.controller import (
     OKIN_UUID_REMOTES,
     OkinUuidComplexCommand,
     OkinUuidController,

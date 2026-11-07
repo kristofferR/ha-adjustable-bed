@@ -9,7 +9,7 @@ Outputs (single source for all so labels always agree):
                              sync into const.py
 
 Codes present in the pinned FurniMove production catalog
-(``custom_components/adjustable_bed/furnimove_profiles.py``) keep their labels
+(``custom_components/adjustable_bed/beds/furnimove/profiles.py``) keep their labels
 here, but their keycodes come only from that catalog: ``okin_uuid.py`` derives
 them at import, so they are left out of ``OKIN_UUID_REMOTE_DATA``.
 """
@@ -23,7 +23,7 @@ master = json.load(open("master.json"))
 
 _spec = importlib.util.spec_from_file_location(
     "furnimove_profiles",
-    Path(__file__).resolve().parents[2] / "custom_components/adjustable_bed/furnimove_profiles.py",
+    Path(__file__).resolve().parents[2] / "custom_components/adjustable_bed/beds/furnimove/profiles.py",
 )
 assert _spec is not None and _spec.loader is not None
 _furnimove = importlib.util.module_from_spec(_spec)
@@ -148,7 +148,7 @@ Source of truth: the DewertOkin FurniMove handset backend
 serves. Regenerate with ``tools/okin_remotes/gen_module.py`` (see the README
 there for the full pipeline).
 
-Codes in the pinned FurniMove production catalog (``furnimove_profiles.py``)
+Codes in the pinned FurniMove production catalog (``beds/furnimove/profiles.py``)
 are labelled here but have no data row: ``okin_uuid.py`` derives their
 keycodes from that catalog, the single source for those handsets.
 

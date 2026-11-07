@@ -5,13 +5,13 @@ from pathlib import Path
 
 import pytest
 
+from custom_components.adjustable_bed.beds.goodvibe.catalog import ACTIONS
+from custom_components.adjustable_bed.beds.goodvibe.discovery import name_product
+from custom_components.adjustable_bed.beds.goodvibe.protocol import action_frame
+from custom_components.adjustable_bed.beds.goodvibe.receive import common, extended
+from custom_components.adjustable_bed.beds.goodvibe.schemas import SCHEMAS, parse_schema
+from custom_components.adjustable_bed.beds.goodvibe.sleep import Realtime
 from custom_components.adjustable_bed.codec import richmat as codec
-from custom_components.adjustable_bed.goodvibe_catalog import ACTIONS
-from custom_components.adjustable_bed.goodvibe_discovery import name_product
-from custom_components.adjustable_bed.goodvibe_protocol import action_frame
-from custom_components.adjustable_bed.goodvibe_receive import common, extended
-from custom_components.adjustable_bed.goodvibe_schemas import SCHEMAS, parse_schema
-from custom_components.adjustable_bed.goodvibe_sleep import Realtime
 
 FIXTURES = Path(__file__).parent / "fixtures/goodvibe"
 
@@ -94,7 +94,7 @@ def test_all_advertisement_alias_vectors():
 def test_all_product_current_getter_contracts():
     from dataclasses import asdict
 
-    from custom_components.adjustable_bed.goodvibe_catalog import PRODUCTS
+    from custom_components.adjustable_bed.beds.goodvibe.catalog import PRODUCTS
 
     seen = set()
     for key, expected in fixture("products"):
@@ -107,7 +107,7 @@ def test_dedicated_builders_and_independent_time_vectors():
     import math
     from datetime import datetime, timedelta, timezone
 
-    from custom_components.adjustable_bed import goodvibe_protocol as p
+    from custom_components.adjustable_bed.beds.goodvibe import protocol as p
 
     for row in fixture("advanced"):
         address, args = row["function"], row["args"]

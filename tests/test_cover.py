@@ -10,9 +10,9 @@ from custom_components.adjustable_bed.beds.base import (
     ControllerMotorHoldSpec,
     MotorControlSpec,
 )
-from custom_components.adjustable_bed.beds.octo import OctoController
-from custom_components.adjustable_bed.beds.reverie_pairlink import ReveriePairlinkController
-from custom_components.adjustable_bed.beds.reverie_pairlink_runtime import (
+from custom_components.adjustable_bed.beds.octo.controller import OctoController
+from custom_components.adjustable_bed.beds.reverie.pairlink import ReveriePairlinkController
+from custom_components.adjustable_bed.beds.reverie.pairlink_runtime import (
     PairlinkCredentials,
     PairlinkHomeIdOrigin,
     PairlinkRole,

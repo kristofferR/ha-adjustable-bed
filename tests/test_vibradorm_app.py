@@ -8,13 +8,17 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed.beds.vibradorm_app import (
+from custom_components.adjustable_bed.beds.vibradorm.app import (
     INFO_FIELDS,
     VibradormAppController,
     async_prepare_vibradorm_app_pairing,
     decode_standard_info,
     parse_article,
     parse_sync,
+)
+from custom_components.adjustable_bed.beds.vibradorm.app_state import (
+    VibradormAppFloorIntent,
+    VibradormAppTimerIntent,
 )
 from custom_components.adjustable_bed.codec.vibradorm import CBI_CHAR_UUID as CBI
 from custom_components.adjustable_bed.codec.vibradorm import LIGHT_CHAR_UUID as LIGHT
@@ -25,10 +29,6 @@ from custom_components.adjustable_bed.light import (
     AdjustableBedOnOffLight,
 )
 from custom_components.adjustable_bed.profiles.vibradorm import validate_vibradorm_app_profile
-from custom_components.adjustable_bed.vibradorm_app_state import (
-    VibradormAppFloorIntent,
-    VibradormAppTimerIntent,
-)
 from tests.hold_lease_wire import virtual_clock
 
 

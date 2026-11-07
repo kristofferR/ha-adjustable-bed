@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.jiecang_app import JiecangAppController
+from custom_components.adjustable_bed.beds.jiecang.app import JiecangAppController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,

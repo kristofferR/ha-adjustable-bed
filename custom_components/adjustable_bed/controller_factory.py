@@ -196,7 +196,7 @@ def require_sleepys_route(client: BleakClient, data: Mapping[str, Any]) -> None:
     """
     bed_type = data[CONF_BED_TYPE]
     if bed_type == BED_TYPE_SLEEPYS_ELITE_APP:
-        from .beds.sleepys_app import require_selector_route
+        from .beds.sleepys.app import require_selector_route
 
         require_selector_route(client, data[CONF_SLEEPYS_ELITE_SELECTOR])
         return
@@ -209,7 +209,7 @@ def require_logicdata_route(client: BleakClient, data: Mapping[str, Any]) -> Non
     SimplicityFrame writes its one characteristic; an app needs its own transport.
     """
     if data[CONF_BED_TYPE] == BED_TYPE_LOGICDATA_APP:
-        from .beds.logicdata_app import require_app_transport
+        from .beds.logicdata.app import require_app_transport
 
         require_app_transport(client, data)
         return
@@ -241,81 +241,81 @@ class _BuilderSpec:
 # Bed types whose construction is "import this class and pass the coordinator
 # plus fixed kwargs".
 _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
-    BED_TYPE_BF: _ControllerSpec("bf_cherish", "BfCherishController"),
-    BED_TYPE_CHERISH: _ControllerSpec("bf_cherish", "BfCherishController", MappingProxyType({"cherish": True})),
-    BED_TYPE_ESHINE: _ControllerSpec("eshine", "EshineController"),
+    BED_TYPE_BF: _ControllerSpec("bf_cherish.controller", "BfCherishController"),
+    BED_TYPE_CHERISH: _ControllerSpec("bf_cherish.controller", "BfCherishController", MappingProxyType({"cherish": True})),
+    BED_TYPE_ESHINE: _ControllerSpec("eshine.controller", "EshineController"),
     BED_TYPE_GMMOTOR_SLEEP_MM: _ControllerSpec(
-        "gmmotor_sleep", "GmmotorSleepController", MappingProxyType({"sxb": False})
+        "gmmotor.sleep", "GmmotorSleepController", MappingProxyType({"sxb": False})
     ),
     BED_TYPE_GMMOTOR_SLEEP_SXB: _ControllerSpec(
-        "gmmotor_sleep", "GmmotorSleepController", MappingProxyType({"sxb": True})
+        "gmmotor.sleep", "GmmotorSleepController", MappingProxyType({"sxb": True})
     ),
-    "hush_remote": _ControllerSpec("hush_sleep", "HushRemoteController"),
+    "hush_remote": _ControllerSpec("hush_sleep.controller", "HushRemoteController"),
     "hush_sleep_mm": _ControllerSpec(
-        "hush_sleep", "HushSleepController", MappingProxyType({"kind": "mm"})
+        "hush_sleep.controller", "HushSleepController", MappingProxyType({"kind": "mm"})
     ),
     "hush_sleep_sxb": _ControllerSpec(
-        "hush_sleep", "HushSleepController", MappingProxyType({"kind": "sxb"})
+        "hush_sleep.controller", "HushSleepController", MappingProxyType({"kind": "sxb"})
     ),
     BED_TYPE_ISLEEP: _ControllerSpec("isleep", "IsleepController"),
-    "casper_remote": _ControllerSpec("casper_sleep", "CasperRemoteController"),
+    "casper_remote": _ControllerSpec("casper_sleep.controller", "CasperRemoteController"),
     "casper_sleep_mm": _ControllerSpec(
-        "casper_sleep", "CasperSleepController", MappingProxyType({"kind": "mm"})
+        "casper_sleep.controller", "CasperSleepController", MappingProxyType({"kind": "mm"})
     ),
     "casper_sleep_sxb": _ControllerSpec(
-        "casper_sleep", "CasperSleepController", MappingProxyType({"kind": "sxb"})
+        "casper_sleep.controller", "CasperSleepController", MappingProxyType({"kind": "sxb"})
     ),
-    BED_TYPE_SERENITY: _ControllerSpec("serenity", "SerenityController"),
-    BED_TYPE_TRANQUIL: _ControllerSpec("serenity", "TranquilController"),
+    BED_TYPE_SERENITY: _ControllerSpec("serenity.controller", "SerenityController"),
+    BED_TYPE_TRANQUIL: _ControllerSpec("serenity.controller", "TranquilController"),
     BED_TYPE_CUSTOMATIC_CLARITY: _ControllerSpec(
-        "customatic", "CustomaticController", MappingProxyType({"profile": "clarity"})
+        "customatic.controller", "CustomaticController", MappingProxyType({"profile": "clarity"})
     ),
     BED_TYPE_CUSTOMATIC_JEROMES: _ControllerSpec(
-        "customatic", "CustomaticController", MappingProxyType({"profile": "jeromes"})
+        "customatic.controller", "CustomaticController", MappingProxyType({"profile": "jeromes"})
     ),
     BED_TYPE_CUSTOMATIC_REMEDY: _ControllerSpec(
-        "customatic", "CustomaticController", MappingProxyType({"profile": "remedy"})
+        "customatic.controller", "CustomaticController", MappingProxyType({"profile": "remedy"})
     ),
     BED_TYPE_OKIN_RF_ECO_BT: _ControllerSpec("okin_rf_eco_bt", "OkinRfEcoBtController"),
     BED_TYPE_OKIN_7BYTE: _ControllerSpec("okin_7byte", "Okin7ByteController"),
     BED_TYPE_OKIN_NORDIC: _ControllerSpec("okin_nordic", "OkinNordicController"),
     BED_TYPE_OKIN_CB35: _ControllerSpec("okin_cb35", "OkinCB35Controller"),
     BED_TYPE_OKIN_ORE: _ControllerSpec("okin_ore", "OkinOreController"),
-    BED_TYPE_MALOUF_NEW_OKIN: _ControllerSpec("malouf", "MaloufNewOkinController"),
-    BED_TYPE_MALOUF_LEGACY_OKIN: _ControllerSpec("malouf", "MaloufLegacyOkinController"),
-    BED_TYPE_LEGGETT_WILINKE: _ControllerSpec("leggett_wilinke", "LeggettWilinkeController"),
+    BED_TYPE_MALOUF_NEW_OKIN: _ControllerSpec("malouf.controller", "MaloufNewOkinController"),
+    BED_TYPE_MALOUF_LEGACY_OKIN: _ControllerSpec("malouf.controller", "MaloufLegacyOkinController"),
+    BED_TYPE_LEGGETT_WILINKE: _ControllerSpec("leggett.wilinke", "LeggettWilinkeController"),
     # OKIN FFE uses the Keeson protocol with an 0xE6 prefix.
     BED_TYPE_OKIN_FFE: _ControllerSpec(
-        "keeson", "KeesonController", MappingProxyType({"variant": KEESON_VARIANT_OKIN})
+        "keeson.controller", "KeesonController", MappingProxyType({"variant": KEESON_VARIANT_OKIN})
     ),
     BED_TYPE_SUTA: _ControllerSpec("suta", "SutaController"),
     BED_TYPE_TIMOTION_AHF: _ControllerSpec("timotion_ahf", "TiMOTIONAhfController"),
     BED_TYPE_BEDJET_POWERLAYER: _ControllerSpec(
         "bedjet_powerlayer", "BedJetPowerLayerController"
     ),
-    BED_TYPE_COMFORT_MOTION: _ControllerSpec("jiecang", "JiecangController"),
+    BED_TYPE_COMFORT_MOTION: _ControllerSpec("jiecang.controller", "JiecangController"),
     # Ergomotion is the Keeson protocol with position feedback; Serta Motion
     # Perfect is the same protocol with its own variant.
     BED_TYPE_ERGOMOTION: _ControllerSpec(
-        "keeson", "KeesonController", MappingProxyType({"variant": KEESON_VARIANT_ERGOMOTION})
+        "keeson.controller", "KeesonController", MappingProxyType({"variant": KEESON_VARIANT_ERGOMOTION})
     ),
-    BED_TYPE_ERGOMOTION_4: _ControllerSpec("ergomotion4", "Ergomotion4Controller"),
+    BED_TYPE_ERGOMOTION_4: _ControllerSpec("ergomotion4.controller", "Ergomotion4Controller"),
     BED_TYPE_SERTA: _ControllerSpec(
-        "keeson", "KeesonController", MappingProxyType({"variant": KEESON_VARIANT_SERTA})
+        "keeson.controller", "KeesonController", MappingProxyType({"variant": KEESON_VARIANT_SERTA})
     ),
-    BED_TYPE_JIECANG: _ControllerSpec("jiecang", "JiecangController"),
-    BED_TYPE_LIMOSS: _ControllerSpec("limoss", "LimossController"),
-    BED_TYPE_LOGICDATA: _ControllerSpec("logicdata", "LogicdataController"),
+    BED_TYPE_JIECANG: _ControllerSpec("jiecang.controller", "JiecangController"),
+    BED_TYPE_LIMOSS: _ControllerSpec("limoss.controller", "LimossController"),
+    BED_TYPE_LOGICDATA: _ControllerSpec("logicdata.controller", "LogicdataController"),
     BED_TYPE_LOGICDATA_AIR_PUMP: _ControllerSpec(
-        "logicdata_air_pump", "LogicdataAirPumpController"
+        "logicdata.air_pump", "LogicdataAirPumpController"
     ),
     BED_TYPE_MATTRESSFIRM: _ControllerSpec("okin_nordic", "OkinNordicController"),
     BED_TYPE_NECTAR: _ControllerSpec("okin_7byte", "Okin7ByteController"),
     BED_TYPE_DIAGNOSTIC: _ControllerSpec("diagnostic", "DiagnosticBedController"),
     BED_TYPE_BEDTECH: _ControllerSpec("bedtech", "BedTechController"),
-    BED_TYPE_SLEEPYS_BOX15: _ControllerSpec("sleepys", "SleepysBox15Controller"),
-    BED_TYPE_SLEEPYS_BOX24: _ControllerSpec("sleepys", "SleepysBox24Controller"),
-    BED_TYPE_VIBRADORM: _ControllerSpec("vibradorm", "VibradormController"),
+    BED_TYPE_SLEEPYS_BOX15: _ControllerSpec("sleepys.controller", "SleepysBox15Controller"),
+    BED_TYPE_SLEEPYS_BOX24: _ControllerSpec("sleepys.controller", "SleepysBox24Controller"),
+    BED_TYPE_VIBRADORM: _ControllerSpec("vibradorm.controller", "VibradormController"),
     BED_TYPE_SCOTT_LIVING: _ControllerSpec("scott_living", "ScottLivingController"),
 }
 
@@ -323,71 +323,71 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
 # Bed types whose controller needs the variant, entry data, the advertisement
 # or the live GATT table. Each builder lives in its bed module.
 _BUILDERS: Final[dict[str, _BuilderSpec]] = {
-    **dict.fromkeys(RICHMAT_MH_APPS, _BuilderSpec("richmat_mh")),
+    **dict.fromkeys(RICHMAT_MH_APPS, _BuilderSpec("richmat_mh.controller")),
     BED_TYPE_ADJUSTABLE_LUMBAR: _BuilderSpec("adjustable_lumbar"),
-    BED_TYPE_ADJUSTAMATTRESS: _BuilderSpec("adjustamattress"),
+    BED_TYPE_ADJUSTAMATTRESS: _BuilderSpec("adjustamattress.controller"),
     BED_TYPE_BEDSENSE: _BuilderSpec("bedsense"),
-    BED_TYPE_CASPER_BASE: _BuilderSpec("casper_base"),
-    BED_TYPE_RICHMAT_CLASSIC_APPS: _BuilderSpec("richmat_classic"),
-    BED_TYPE_COMFORT_ENHANCEMENTS: _BuilderSpec("comfort_enhancements"),
+    BED_TYPE_CASPER_BASE: _BuilderSpec("casper_base.controller"),
+    BED_TYPE_RICHMAT_CLASSIC_APPS: _BuilderSpec("richmat_classic.controller"),
+    BED_TYPE_COMFORT_ENHANCEMENTS: _BuilderSpec("comfort_enhancements.controller"),
     BED_TYPE_COOLBASE: _BuilderSpec("coolbase"),
     BED_TYPE_DEWERTOKIN: _BuilderSpec("okin_handle"),
-    BED_TYPE_DOUBLESLEEP: _BuilderSpec("doublesleep"),
-    BED_TYPE_ESHINE_OKIN: _BuilderSpec("eshine_okin"),
-    BED_TYPE_FSM_RELAX: _BuilderSpec("fsm_relax"),
-    BED_TYPE_FURNIMOVE: _BuilderSpec("furnimove"),
-    BED_TYPE_GLIDEAWAY_MOTION: _BuilderSpec("glideaway_motion"),
-    BED_TYPE_GMMOTOR: _BuilderSpec("gmmotor"),
-    BED_TYPE_GOODVIBE: _BuilderSpec("goodvibe"),
-    BED_TYPE_HJBED: _BuilderSpec("hjbed"),
-    "hush_base": _BuilderSpec("hush_base"),
-    BED_TYPE_JENSEN: _BuilderSpec("jensen"),
-    BED_TYPE_JIECANG_APP: _BuilderSpec("jiecang_app"),
-    BED_TYPE_KAIDI: _BuilderSpec("kaidi"),
-    BED_TYPE_KEESON: _BuilderSpec("keeson"),
-    BED_TYPE_LEGGETT_GEN2: _BuilderSpec("leggett_gen2"),
-    BED_TYPE_LEGGETT_LP_LEGACY: _BuilderSpec("leggett_lp_legacy"),
-    BED_TYPE_LEGGETT_OKIN: _BuilderSpec("leggett_okin"),
-    BED_TYPE_LEGGETT_PLATT: _BuilderSpec("leggett_gen2", "build_leggett_platt"),
-    BED_TYPE_LIMOSS_REMOTE: _BuilderSpec("limoss_remote"),
-    BED_TYPE_LINAK: _BuilderSpec("linak"),
-    BED_TYPE_LOGICDATA_APP: _BuilderSpec("logicdata_app"),
-    BED_TYPE_MALOUF_APP: _BuilderSpec("malouf_app"),
-    BED_TYPE_MOTION_BED: _BuilderSpec("motion_bed"),
-    BED_TYPE_MOTOMOTION: _BuilderSpec("motomotion"),
+    BED_TYPE_DOUBLESLEEP: _BuilderSpec("doublesleep.controller"),
+    BED_TYPE_ESHINE_OKIN: _BuilderSpec("eshine_okin.controller"),
+    BED_TYPE_FSM_RELAX: _BuilderSpec("fsm_relax.controller"),
+    BED_TYPE_FURNIMOVE: _BuilderSpec("furnimove.controller"),
+    BED_TYPE_GLIDEAWAY_MOTION: _BuilderSpec("glideaway_motion.controller"),
+    BED_TYPE_GMMOTOR: _BuilderSpec("gmmotor.controller"),
+    BED_TYPE_GOODVIBE: _BuilderSpec("goodvibe.controller"),
+    BED_TYPE_HJBED: _BuilderSpec("hjbed.controller"),
+    "hush_base": _BuilderSpec("hush_base.controller"),
+    BED_TYPE_JENSEN: _BuilderSpec("jensen.controller"),
+    BED_TYPE_JIECANG_APP: _BuilderSpec("jiecang.app"),
+    BED_TYPE_KAIDI: _BuilderSpec("kaidi.controller"),
+    BED_TYPE_KEESON: _BuilderSpec("keeson.controller"),
+    BED_TYPE_LEGGETT_GEN2: _BuilderSpec("leggett.gen2"),
+    BED_TYPE_LEGGETT_LP_LEGACY: _BuilderSpec("leggett.lp_legacy"),
+    BED_TYPE_LEGGETT_OKIN: _BuilderSpec("leggett.okin"),
+    BED_TYPE_LEGGETT_PLATT: _BuilderSpec("leggett.gen2", "build_leggett_platt"),
+    BED_TYPE_LIMOSS_REMOTE: _BuilderSpec("limoss.remote"),
+    BED_TYPE_LINAK: _BuilderSpec("linak.controller"),
+    BED_TYPE_LOGICDATA_APP: _BuilderSpec("logicdata.app"),
+    BED_TYPE_MALOUF_APP: _BuilderSpec("malouf.app"),
+    BED_TYPE_MOTION_BED: _BuilderSpec("motion_bed.controller"),
+    BED_TYPE_MOTOMOTION: _BuilderSpec("motomotion.controller"),
     BED_TYPE_MOTOSLEEP: _BuilderSpec("motosleep"),
-    BED_TYPE_OCTO: _BuilderSpec("octo"),
-    BED_TYPE_OKIMAT: _BuilderSpec("okin_uuid"),
+    BED_TYPE_OCTO: _BuilderSpec("octo.controller"),
+    BED_TYPE_OKIMAT: _BuilderSpec("okin_uuid.controller"),
     BED_TYPE_OKIN_64BIT: _BuilderSpec("okin_64bit"),
     BED_TYPE_OKIN_CB24: _BuilderSpec("okin_cb24"),
     BED_TYPE_OKIN_CST: _BuilderSpec("okin_cst"),
     BED_TYPE_OKIN_DOT: _BuilderSpec("okin_dot"),
     BED_TYPE_OKIN_HANDLE: _BuilderSpec("okin_handle"),
-    BED_TYPE_OKIN_UUID: _BuilderSpec("okin_uuid"),
-    BED_TYPE_REMACRO: _BuilderSpec("remacro"),
-    BED_TYPE_REVERIE: _BuilderSpec("reverie"),
-    BED_TYPE_REVERIE_NIGHTSTAND: _BuilderSpec("reverie_nightstand"),
-    BED_TYPE_REVERIE_PAIRLINK: _BuilderSpec("reverie_pairlink"),
-    BED_TYPE_RICHMAT: _BuilderSpec("richmat"),
-    "richmat_sleep_receiver": _BuilderSpec("ruf_richmat_sleep"),
+    BED_TYPE_OKIN_UUID: _BuilderSpec("okin_uuid.controller"),
+    BED_TYPE_REMACRO: _BuilderSpec("remacro.controller"),
+    BED_TYPE_REVERIE: _BuilderSpec("reverie.controller"),
+    BED_TYPE_REVERIE_NIGHTSTAND: _BuilderSpec("reverie.nightstand"),
+    BED_TYPE_REVERIE_PAIRLINK: _BuilderSpec("reverie.pairlink"),
+    BED_TYPE_RICHMAT: _BuilderSpec("richmat.controller"),
+    "richmat_sleep_receiver": _BuilderSpec("ruf_richmat.sleep"),
     BED_TYPE_RONDURE: _BuilderSpec("rondure"),
     BED_TYPE_SBI: _BuilderSpec("sbi"),
-    BED_TYPE_SIMMONS: _BuilderSpec("simmons"),
-    BED_TYPE_SLEEP_NUMBER: _BuilderSpec("sleep_number"),
-    BED_TYPE_SLEEP_NUMBER_MCR: _BuilderSpec("sleep_number_mcr"),
+    BED_TYPE_SIMMONS: _BuilderSpec("simmons.controller"),
+    BED_TYPE_SLEEP_NUMBER: _BuilderSpec("sleep_number.controller"),
+    BED_TYPE_SLEEP_NUMBER_MCR: _BuilderSpec("sleep_number.mcr"),
     BED_TYPE_SLEEPSTAR: _BuilderSpec("sleepstar"),
-    BED_TYPE_SLEEPTRACKER: _BuilderSpec("sleeptracker"),
-    BED_TYPE_SLEEPYS_BOX25: _BuilderSpec("sleepys_box25"),
-    BED_TYPE_SLEEPYS_ELITE_APP: _BuilderSpec("sleepys_app"),
-    BED_TYPE_SOLACE: _BuilderSpec("solace"),
-    BED_TYPE_STAR_ELEVATE: _BuilderSpec("star_elevate"),
-    BED_TYPE_STARCODE_ABM5_4: _BuilderSpec("starcode_abm5_4"),
-    BED_TYPE_STARCODE_M1X12: _BuilderSpec("starcode_m1x12"),
-    BED_TYPE_STARCODE_M5X5: _BuilderSpec("starcode_m5x5"),
-    BED_TYPE_SVANE: _BuilderSpec("svane"),
-    BED_TYPE_VIBRADORM_APP: _BuilderSpec("vibradorm_app"),
-    BED_TYPE_VMATBASIC: _BuilderSpec("vmatbasic"),
-    BED_TYPE_ZSERIES: _BuilderSpec("serenity", "build_zseries"),
+    BED_TYPE_SLEEPTRACKER: _BuilderSpec("sleeptracker.controller"),
+    BED_TYPE_SLEEPYS_BOX25: _BuilderSpec("sleepys.box25"),
+    BED_TYPE_SLEEPYS_ELITE_APP: _BuilderSpec("sleepys.app"),
+    BED_TYPE_SOLACE: _BuilderSpec("solace.controller"),
+    BED_TYPE_STAR_ELEVATE: _BuilderSpec("starcode.star_elevate"),
+    BED_TYPE_STARCODE_ABM5_4: _BuilderSpec("starcode.abm5_4"),
+    BED_TYPE_STARCODE_M1X12: _BuilderSpec("starcode.m1x12"),
+    BED_TYPE_STARCODE_M5X5: _BuilderSpec("starcode.m5x5"),
+    BED_TYPE_SVANE: _BuilderSpec("svane.controller"),
+    BED_TYPE_VIBRADORM_APP: _BuilderSpec("vibradorm.app"),
+    BED_TYPE_VMATBASIC: _BuilderSpec("vmatbasic.controller"),
+    BED_TYPE_ZSERIES: _BuilderSpec("serenity.controller", "build_zseries"),
     # Keeson layout app profiles.
     "ergo_slim": _BuilderSpec("ergo_slim"),
     "ergomotion_app": _BuilderSpec("ergomotion_app"),

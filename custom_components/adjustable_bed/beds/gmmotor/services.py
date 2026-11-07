@@ -9,8 +9,8 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .const import DOMAIN
-from .gmmotor_requests import GmmotorActions, Operation, Request
+from ...const import DOMAIN
+from .requests import GmmotorActions, Operation, Request
 
 if TYPE_CHECKING:
     from homeassistant.helpers.typing import VolSchemaType
@@ -27,7 +27,7 @@ def _integer(value: object) -> int:
 
 
 async def handle(call: ServiceCall) -> None:
-    from .services import _call_targets, _preflight_and_execute
+    from ...services import _call_targets, _preflight_and_execute
 
     data = call.data
     try:
@@ -63,7 +63,7 @@ async def handle(call: ServiceCall) -> None:
 
 
 def async_register_gmmotor_services(hass: HomeAssistant) -> None:
-    from .services import DEVICE_IDS, SIDE_FIELD
+    from ...services import DEVICE_IDS, SIDE_FIELD
 
     def integer(maximum: int) -> vol.All:
         return vol.All(_integer, vol.Range(min=0, max=maximum))

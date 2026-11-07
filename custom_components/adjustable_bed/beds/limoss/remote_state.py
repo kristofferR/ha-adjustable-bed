@@ -6,8 +6,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Final, TypedDict
 
-from .app_session import app_session
-from .controller_state import StateKey
+from ...app_session import app_session
+from ...controller_state import StateKey
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -120,7 +120,7 @@ class LimossRemotePersistedState(TypedDict, total=False):
 
 def validate_limoss_remote_state(raw: object) -> LimossRemotePersistedState:
     """Validate the entry's capability record before restoring or updating it."""
-    from .beds.limoss_remote_protocol import LimossRemoteCapabilities
+    from .remote_protocol import LimossRemoteCapabilities
 
     if not isinstance(raw, Mapping) or set(raw) - {"capabilities"}:
         raise ValueError("Invalid Limoss Remote state fields")

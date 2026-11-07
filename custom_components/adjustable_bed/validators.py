@@ -8,7 +8,11 @@ from typing import Any
 
 from homeassistant.core import HomeAssistant
 
-from .beds.reverie_profiles import REVERIE_MODEL_CHOICES
+from .beds.goodvibe.catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
+from .beds.hjbed.catalog import PROFILE_CHOICES as HJBED_PROFILES
+from .beds.reverie.profiles import REVERIE_MODEL_CHOICES
+from .beds.richmat_classic.profiles import APP_NAMES as RICHMAT_CLASSIC_APPS
+from .beds.richmat_mh.models import RICHMAT_MH_VARIANTS_BY_APP
 from .const import (
     ADAPTER_AUTO,
     ADJUSTABLE_LUMBAR_VARIANTS,
@@ -81,12 +85,8 @@ from .const import (
     VARIANT_REQUIRED_BED_TYPES,
     ZSERIES_VARIANTS,
 )
-from .goodvibe_catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
-from .hjbed_catalog import PROFILE_CHOICES as HJBED_PROFILES
 from .profiles.casper import CASPER_BASE_VARIANTS
 from .profiles.hush import HUSH_BASE_VARIANTS
-from .richmat_classic_profiles import APP_NAMES as RICHMAT_CLASSIC_APPS
-from .richmat_mh_models import RICHMAT_MH_VARIANTS_BY_APP
 
 _LOGGER = logging.getLogger(__name__)
 

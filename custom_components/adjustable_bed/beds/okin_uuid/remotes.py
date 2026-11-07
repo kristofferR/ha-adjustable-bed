@@ -6,7 +6,7 @@ Source of truth: the DewertOkin FurniMove handset backend
 serves. Regenerate with ``tools/okin_remotes/gen_module.py`` (see the README
 there for the full pipeline).
 
-Codes in the pinned FurniMove production catalog (``furnimove_profiles.py``)
+Codes in the pinned FurniMove production catalog (``beds/furnimove/profiles.py``)
 are labelled here but have no data row: ``okin_uuid.py`` derives their
 keycodes from that catalog, the single source for those handsets.
 

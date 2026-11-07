@@ -8,8 +8,8 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .const import DOMAIN
-from .services import (
+from ...const import DOMAIN
+from ...services import (
     ATTR_CONFIRM_CUSTOM_MODE,
     ATTR_ENABLED,
     ATTR_MODE,
@@ -31,7 +31,7 @@ SERVICE_SIMMONS_SET_ALARM = "simmons_set_alarm"
 
 async def handle_simmons_set_alarm(call: ServiceCall) -> None:
     """Program or disable one of the two SIMMONS alarms through the command queue."""
-    from .beds.simmons import SimmonsController
+    from .controller import SimmonsController
 
     alarm_time = call.data[ATTR_TIME]
     if alarm_time.second or alarm_time.microsecond:

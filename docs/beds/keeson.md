@@ -1359,7 +1359,7 @@ durations, and the actual write type.
 
 ### Keeson layout app family
 
-Eight apps share one controller (`beds/keeson_layout_app.py`) and the profile type
+Eight apps share one controller (`beds/keeson/layout_app.py`) and the profile type
 `AppProfile`. Each app is its own bed type, chosen by hand with the layout its
 app shows; nothing in an advertisement selects one. Each accepted report proves
 its own key table: a repeated mask is a separate package receipt, not an inferred
@@ -2794,7 +2794,7 @@ select either app automatically. Each physical address keeps its own profile.
 #### Commands
 
 All frames below are exact `control_frame()` output from
-[`beds/bf_cherish.py`](../../custom_components/adjustable_bed/beds/bf_cherish.py).
+[`beds/bf_cherish/controller.py`](../../custom_components/adjustable_bed/beds/bf_cherish/controller.py).
 
 ##### Motor Control
 
@@ -4138,7 +4138,7 @@ the raw Bluetooth name and GATT:
 ##### AdjustaMattress commands
 
 Frames are `frame()` output from
-[`adjustamattress_protocol.py`](../../custom_components/adjustable_bed/beds/adjustamattress_protocol.py),
+[`adjustamattress_protocol.py`](../../custom_components/adjustable_bed/beds/adjustamattress/protocol.py),
 which builds the P1 and P2 frames through this codec and the lift, P3 and P4
 frames through the [Okin N-frame codec](okin-nframe.md#framing-and-checksum).
 Concrete tests cover all 180 accepted command/vector rows, including dormant

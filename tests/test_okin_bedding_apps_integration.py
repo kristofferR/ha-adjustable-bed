@@ -232,7 +232,7 @@ async def test_alarm_service_requires_zseries_and_manufacturer_enabled_page(
         ),
         patch("asyncio.sleep", new=AsyncMock()),
         patch(
-            "custom_components.adjustable_bed.beds.serenity.dt_util.now",
+            "custom_components.adjustable_bed.beds.serenity.controller.dt_util.now",
             return_value=datetime(2026, 10, 1, 13, 47, 59),
         ),
     ):
@@ -398,7 +398,7 @@ async def test_enabling_alarm_requires_time_and_clearing_does_not(hass):
         ),
         patch("asyncio.sleep", new=AsyncMock()),
         patch(
-            "custom_components.adjustable_bed.beds.serenity.dt_util.now",
+            "custom_components.adjustable_bed.beds.serenity.controller.dt_util.now",
             return_value=datetime(2026, 10, 1, 13, 47, 59),
         ),
     ):
@@ -440,7 +440,7 @@ async def _set_alarm(hass, controller):
         ),
         patch("asyncio.sleep", new=AsyncMock()),
         patch(
-            "custom_components.adjustable_bed.beds.serenity.dt_util.now",
+            "custom_components.adjustable_bed.beds.serenity.controller.dt_util.now",
             return_value=datetime(2026, 10, 1, 13, 47, 59),
         ),
     ):
@@ -678,7 +678,7 @@ async def test_capability_probe_releases_each_link_on_a_one_slot_path(hass, pair
             else [coordinator],
         ) as command_targets,
         patch(
-            "custom_components.adjustable_bed.serenity_services._command_targets",
+            "custom_components.adjustable_bed.beds.serenity.services._command_targets",
             new=command_targets,
         ),
     ):

@@ -14,20 +14,30 @@ from typing import TYPE_CHECKING, Final
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
-from ..card import CARD_UTILITY
-from ..command_scheduler import current_command_context
-from ..const import (
+from ...card import CARD_UTILITY
+from ...command_scheduler import current_command_context
+from ...const import (
     CONF_MOTOR_PULSE_COUNT,
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_CLASSIC_THIRD_SERVICE,
 )
-from ..controller_state import StateKey
-from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
-from ..profiles.richmat import RICHMAT_CLASSIC
-from ..richmat_classic_caller import RETAIN, Selection, effective_status, transition
-from ..richmat_classic_profiles import Control, controls, load_catalog
-from ..richmat_classic_protocol import (
+from ...controller_state import StateKey
+from ...execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
+from ...profiles.richmat import RICHMAT_CLASSIC
+from ..base import (
+    CONTROLLER_GESTURE_RELEASE,
+    BedController,
+    ControllerButtonSpec,
+    ControllerHoldSpec,
+    ControllerSelectSpec,
+    ControllerStateSensorSpec,
+    MotorControlSpec,
+)
+from ..builder import BuildContext
+from .caller import RETAIN, Selection, effective_status, transition
+from .profiles import Control, controls, load_catalog
+from .protocol import (
     ALARM_QUERY,
     ALARM_SPACING_MS,
     AROMA_QUERY,
@@ -58,22 +68,12 @@ from ..richmat_classic_protocol import (
     rgb,
     worker_interval,
 )
-from ..richmat_classic_receive import MalformedFrame, ReceiveState
-from ..richmat_classic_requests import Request
-from ..richmat_classic_transport import Transport, select
-from .base import (
-    CONTROLLER_GESTURE_RELEASE,
-    BedController,
-    ControllerButtonSpec,
-    ControllerHoldSpec,
-    ControllerSelectSpec,
-    ControllerStateSensorSpec,
-    MotorControlSpec,
-)
-from .builder import BuildContext
+from .receive import MalformedFrame, ReceiveState
+from .requests import Request
+from .transport import Transport, select
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 
 def _node(control: str) -> int:
@@ -761,7 +761,7 @@ class RichmatClassicController(BedController):
 
 async def build_controller(ctx: BuildContext) -> RichmatClassicController:
     """Build the controller after loading the app's gzip catalog off the event loop."""
-    from ..richmat_classic_profiles import load_catalog
+    from .profiles import load_catalog
 
     await ctx.coordinator.hass.async_add_executor_job(load_catalog, ctx.variant)
     return RichmatClassicController(ctx.coordinator, app=ctx.variant, device_name=ctx.device_name)

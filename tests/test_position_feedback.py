@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.core import HomeAssistant
 
-from custom_components.adjustable_bed.beds.keeson import KeesonController
+from custom_components.adjustable_bed.beds.keeson.controller import KeesonController
 from custom_components.adjustable_bed.command_scheduler import CommandOutcome
 from custom_components.adjustable_bed.const import (
     BED_TYPE_KEESON,

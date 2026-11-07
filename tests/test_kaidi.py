@@ -9,7 +9,15 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds.kaidi import KaidiController
+from custom_components.adjustable_bed.beds.kaidi.controller import KaidiController
+from custom_components.adjustable_bed.beds.kaidi.protocol import (
+    KAIDI_ADV_TYPE_BROADCAST,
+    KAIDI_ADV_TYPE_SINGLE,
+    extract_best_kaidi_advertisement,
+    extract_kaidi_advertisement,
+    kaidi_advertisement_to_dict,
+    parse_kaidi_manufacturer_payload,
+)
 from custom_components.adjustable_bed.codec import kaidi as codec
 from custom_components.adjustable_bed.const import (
     CONF_KAIDI_ROOM_ID,
@@ -23,14 +31,6 @@ from custom_components.adjustable_bed.const import (
     VARIANT_AUTO,
 )
 from custom_components.adjustable_bed.controller_state import ControllerState
-from custom_components.adjustable_bed.kaidi_protocol import (
-    KAIDI_ADV_TYPE_BROADCAST,
-    KAIDI_ADV_TYPE_SINGLE,
-    extract_best_kaidi_advertisement,
-    extract_kaidi_advertisement,
-    kaidi_advertisement_to_dict,
-    parse_kaidi_manufacturer_payload,
-)
 from custom_components.adjustable_bed.profiles.kaidi import (
     SEAT_1,
     SEAT_PROFILES,

@@ -29,6 +29,7 @@ from custom_components.adjustable_bed.beds.base import (
     ControllerStateSensorSpec,
     build_position_number_spec,
 )
+from custom_components.adjustable_bed.beds.rmcontrol.protocol import Notification
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
     BED_TYPE_MOTION_BED,
@@ -57,7 +58,6 @@ from custom_components.adjustable_bed.paired_coordinator import (
     SingleAddressPairedCoordinator,
 )
 from custom_components.adjustable_bed.paired_devices import async_register_children
-from custom_components.adjustable_bed.rmcontrol_protocol import Notification
 from tests.conftest import make_controller_mock
 from tests.test_paired_setup import LEFT_ADDR, PAIR_ID, RIGHT_ADDR, _paired_entry
 
@@ -600,8 +600,8 @@ async def test_rows_a_controller_still_expects_are_kept(hass: HomeAssistant) -> 
 
 async def test_motion_bed_hub_expects_every_module_control(hass: HomeAssistant) -> None:
     """Replaces the button helper's hub allowance: modules report after connecting."""
-    from custom_components.adjustable_bed.beds.motion_bed import MotionBedController
-    from custom_components.adjustable_bed.motion_bed_models import select_motion_bed
+    from custom_components.adjustable_bed.beds.motion_bed.controller import MotionBedController
+    from custom_components.adjustable_bed.beds.motion_bed.models import select_motion_bed
 
     entry = _entry(hass, **{CONF_BED_TYPE: BED_TYPE_MOTION_BED})
     coordinator = AdjustableBedCoordinator(hass, entry)

@@ -128,7 +128,7 @@ def test_pairlink_company_key_reaches_host_matcher_without_claiming_protocol() -
 
 
 def test_eshine_uart_advertisements_reach_discovery_without_product_inference() -> None:
-    from custom_components.adjustable_bed.beds.eshine_okin_protocol import SERVICE_UUID
+    from custom_components.adjustable_bed.beds.eshine_okin.protocol import SERVICE_UUID
     from custom_components.adjustable_bed.const import BED_TYPE_ESHINE_OKIN, DOMAIN
     from custom_components.adjustable_bed.detection import detect_bed_type_detailed
     from tests.test_detection import _make_service_info

@@ -18,19 +18,19 @@ from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
-from ..codec import okin_5a as codec
+from ...codec import okin_5a as codec
 
 # starcode_m1x12 imports the RX characteristic from here.
-from ..const import NORDIC_UART_READ_CHAR_UUID as NORDIC_UART_READ_CHAR_UUID
-from ..const import STAR_ELEVATE_VARIANT_M1X12
-from ..profiles.okin_5a import ELEVATE
-from .base import BedController, MotorControlSpec
-from .builder import BuildContext
+from ...const import NORDIC_UART_READ_CHAR_UUID as NORDIC_UART_READ_CHAR_UUID
+from ...const import STAR_ELEVATE_VARIANT_M1X12
+from ...profiles.okin_5a import ELEVATE
+from ..base import BedController, MotorControlSpec
+from ..builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -193,7 +193,7 @@ class StarElevateController(BedController):
 
     async def _interrupt_group(self) -> None:
         """As a lift or main, ordinary motion interrupts the other group members."""
-        from ..starcode_accessory_group import interrupt_conflicting_group
+        from .accessory_group import interrupt_conflicting_group
 
         await interrupt_conflicting_group(self._coordinator)
 
@@ -255,7 +255,7 @@ class StarElevateController(BedController):
         await self._move_with_stop(self.profile.frame("both_down"))
 
     async def stop_all(self) -> None:
-        from ..starcode_accessory_group import cancel_group_operations
+        from .accessory_group import cancel_group_operations
 
         cancel_group_operations(self._coordinator.hass, self._coordinator.entry.entry_id)
         await self._send_stop()
@@ -294,8 +294,8 @@ async def _move_elevate_both_down(controller: BedController) -> None:
 async def build_controller(ctx: BuildContext) -> BedController:
     """Build the Star Elevate controller, or the M1X12 one for its variant."""
     if ctx.variant == STAR_ELEVATE_VARIANT_M1X12:
-        await ctx.preload("starcode_m1x12")
-        from .starcode_m1x12 import StarElevateM1X12Controller
+        await ctx.preload("starcode.m1x12")
+        from .m1x12 import StarElevateM1X12Controller
 
         return StarElevateM1X12Controller(ctx.coordinator)
     return StarElevateController(ctx.coordinator)

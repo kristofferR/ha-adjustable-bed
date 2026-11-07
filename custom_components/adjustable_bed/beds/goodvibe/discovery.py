@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from .goodvibe_catalog import PRODUCTS
+from .catalog import PRODUCTS
 
 KEYWORDS = (
     "QRRM",

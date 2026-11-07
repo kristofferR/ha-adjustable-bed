@@ -1,6 +1,6 @@
 """Explicit app identities for the RUF, W.Silver, AMERICANSTAR, Bailey and TX remotes.
 
-Each app's catalog is ``ruf_richmat_data/<app>.json.gz``, generated outside this
+Each app's catalog is ``data/<app>.json.gz``, generated outside this
 repository from its accepted APK Protocol Audit report; no generator is checked in.
 """
 
@@ -8,10 +8,13 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from functools import cache
-from typing import TypedDict
+from pathlib import Path
+from typing import Final, TypedDict
 
-from .catalog_json import JsonValue, Node, load
-from .const import RUF_RICHMAT_APPS
+from ...catalog_json import JsonValue, Node, load
+from ...const import RUF_RICHMAT_APPS
+
+DATA_DIR: Final = Path(__file__).with_name("data")
 
 DISPLAY_NAMES = {
     "ruf_betten": "RUF | Betten (Motor 2)",
@@ -83,7 +86,7 @@ def profiles(app: str) -> dict[str, Profile]:
     """Load and validate only the explicitly selected app's catalog, off the event loop."""
     if app not in RUF_RICHMAT_APPS.values():
         raise ValueError(f"Unknown app: {app}")
-    return {model: _profile(node) for model, node in load("ruf_richmat_data", app).entries().items()}
+    return {model: _profile(node) for model, node in load(DATA_DIR, app).entries().items()}
 
 
 def fields(app: str, model: str) -> dict[str, Field]:

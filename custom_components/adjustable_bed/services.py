@@ -93,8 +93,8 @@ from .position_estimate import (
 
 if TYPE_CHECKING:
     from .beds.base import ControllerMotorHoldSpec
-    from .beds.limoss_remote import LimossRemoteController
-    from .beds.svane import SvaneHoldAdmission
+    from .beds.limoss.remote import LimossRemoteController
+    from .beds.svane.controller import SvaneHoldAdmission
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -654,7 +654,7 @@ def _timed_move_resource(target: BedChild, motor: str) -> str:
 
 async def handle_goto_preset(call: ServiceCall) -> None:
     """Handle goto_preset service call with sided all-target preflight."""
-    from .limoss_remote_services import (
+    from .beds.limoss.remote_services import (
         _limoss_remote_reload_transaction,
         _preflight_live_limoss_remote,
     )
@@ -746,7 +746,7 @@ async def handle_goto_preset(call: ServiceCall) -> None:
 
 async def handle_save_preset(call: ServiceCall) -> None:
     """Handle save_preset service call with sided all-target preflight."""
-    from .limoss_remote_services import (
+    from .beds.limoss.remote_services import (
         _limoss_remote_reload_transaction,
         _preflight_live_limoss_remote,
     )
@@ -1197,8 +1197,8 @@ async def _timed_move_plan(
         except ValueError as err:
             raise ServiceValidationError(str(err)) from err
 
-        from .beds.svane import SvaneController
-        from .svane_services import _preflight_live_svane
+        from .beds.svane.controller import SvaneController
+        from .beds.svane.services import _preflight_live_svane
 
         if coordinator.bed_type == BED_TYPE_SVANE and isinstance(controller, SvaneController):
             svane_admission = svane_admission or controller.prepare_svane_hold_admission()
@@ -1497,7 +1497,7 @@ async def _async_timed_move(
             coordinator, side, physical_resources
         )
 
-    from .beds.svane import SvaneController
+    from .beds.svane.controller import SvaneController
 
     svane_admissions = {
         _plan_key(target): controller.prepare_svane_hold_admission()
@@ -1808,8 +1808,8 @@ def _profile_route(
 
 async def handle_rename(call: ServiceCall) -> None:
     """Write a new Bluetooth name to every targeted controller that supports it."""
-    from .furnimove_services import _rename_furnimove
-    from .vmatbasic_services import _rename_vmatbasic
+    from .beds.furnimove.services import _rename_furnimove
+    from .beds.vmatbasic.services import _rename_vmatbasic
 
     name = call.data[ATTR_NAME]
     targets = _call_targets(call)
@@ -1881,10 +1881,10 @@ def _hold_seconds(value: object) -> Decimal:
 
 async def handle_hold_control(call: ServiceCall) -> None:
     """Hold one controller-declared control, then run its protocol release."""
-    from .limoss_remote_services import _hold_limoss_remote
-    from .richmat_classic_profiles import current_control_name
-    from .svane_services import _hold_svane
-    from .vmatbasic_services import _hold_vmatbasic_floor
+    from .beds.limoss.remote_services import _hold_limoss_remote
+    from .beds.richmat_classic.profiles import current_control_name
+    from .beds.svane.services import _hold_svane
+    from .beds.vmatbasic.services import _hold_vmatbasic_floor
 
     control = current_control_name(call.data[ATTR_CONTROL])
     duration_ms = int(call.data[ATTR_DURATION] * 1000)
@@ -2043,7 +2043,7 @@ async def handle_configure_alarm_schedule(call: ServiceCall) -> None:
         dispatch=call.data["dispatch"],
         reference_time=dt_util.now(),
     )
-    from .beds.keeson_layout_app import AppController
+    from .beds.keeson.layout_app import AppController
 
     targets = _call_targets(call)
     # A table call cannot connect merely to discover whether it is valid:
@@ -2072,7 +2072,7 @@ async def handle_configure_alarm_schedule(call: ServiceCall) -> None:
 
 async def handle_sync_clock(call: ServiceCall) -> None:
     """Synchronize each targeted device clock to Home Assistant's local time."""
-    from .serenity_services import _execute_zseries_alarm
+    from .beds.serenity.services import _execute_zseries_alarm
 
     targets = _call_targets(call)
 
@@ -2364,40 +2364,40 @@ async def async_register_services(hass: HomeAssistant) -> None:
     if hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET):
         return  # Services already registered
 
-    from .bf_cherish_services import register_services as register_bf_cherish_services
-    from .casper_base_services import async_register_casper_base_services
-    from .comfort_enhancements_services import async_register_comfort_enhancements_services
-    from .customatic_services import async_register_customatic_services
-    from .doublesleep_services import async_register_doublesleep_services
-    from .eshine_okin_services import async_register_eshine_okin_services
-    from .floyd_services import async_register_floyd_services
-    from .fsm_relax_services import async_register_fsm_relax_services
-    from .furnimove_services import async_register_furnimove_services
-    from .glideaway_motion_services import async_register_glideaway_motion_services
-    from .gmmotor_services import async_register_gmmotor_services
-    from .goodvibe_services import async_register_goodvibe_services
-    from .hjbed_services import async_register_hjbed_services
-    from .jiecang_app_services import async_register_jiecang_app_services
-    from .leggett_okin_services import async_register_leggett_okin_services
-    from .limoss_remote_services import async_register_limoss_remote_services
-    from .linak_services import async_register_linak_services
-    from .logicdata_app_services import async_register_logicdata_app_services
-    from .malouf_app_services import async_register_malouf_app_services
-    from .motion_bed_services import async_register_motion_bed_services
-    from .motomotion_services import async_register_motomotion_services
-    from .octo_services import async_register_octo_services
+    from .beds.bf_cherish.services import register_services as register_bf_cherish_services
+    from .beds.casper_base.services import async_register_casper_base_services
+    from .beds.comfort_enhancements.services import async_register_comfort_enhancements_services
+    from .beds.customatic.services import async_register_customatic_services
+    from .beds.doublesleep.services import async_register_doublesleep_services
+    from .beds.eshine_okin.services import async_register_eshine_okin_services
+    from .beds.fsm_relax.services import async_register_fsm_relax_services
+    from .beds.furnimove.services import async_register_furnimove_services
+    from .beds.glideaway_motion.services import async_register_glideaway_motion_services
+    from .beds.gmmotor.services import async_register_gmmotor_services
+    from .beds.goodvibe.services import async_register_goodvibe_services
+    from .beds.hjbed.services import async_register_hjbed_services
+    from .beds.jiecang.app_services import async_register_jiecang_app_services
+    from .beds.kaidi.floyd_services import async_register_floyd_services
+    from .beds.leggett.okin_services import async_register_leggett_okin_services
+    from .beds.limoss.remote_services import async_register_limoss_remote_services
+    from .beds.linak.services import async_register_linak_services
+    from .beds.logicdata.app_services import async_register_logicdata_app_services
+    from .beds.malouf.app_services import async_register_malouf_app_services
+    from .beds.motion_bed.services import async_register_motion_bed_services
+    from .beds.motomotion.services import async_register_motomotion_services
+    from .beds.octo.services import async_register_octo_services
+    from .beds.reverie.services import async_register_reverie_services
+    from .beds.richmat_classic.services import async_register_richmat_classic_services
+    from .beds.richmat_mh.services import async_register_richmat_mh_services
+    from .beds.rmcontrol.services import async_register_rmcontrol_services
+    from .beds.ruf_richmat.services import async_register_ruf_richmat_services
+    from .beds.serenity.services import async_register_serenity_services
+    from .beds.simmons.services import async_register_simmons_services
+    from .beds.sleep_number.services import async_register_sleep_number_services
+    from .beds.sleeptracker.services import async_register_sleeptracker_services
+    from .beds.solace.services import async_register_solace_services
+    from .beds.svane.services import async_register_svane_services
     from .position_estimate_services import async_register_position_estimate_services
-    from .reverie_services import async_register_reverie_services
-    from .richmat_classic_services import async_register_richmat_classic_services
-    from .richmat_mh_services import async_register_richmat_mh_services
-    from .rmcontrol_services import async_register_rmcontrol_services
-    from .ruf_richmat_services import async_register_ruf_richmat_services
-    from .serenity_services import async_register_serenity_services
-    from .simmons_services import async_register_simmons_services
-    from .sleep_number_services import async_register_sleep_number_services
-    from .sleeptracker_services import async_register_sleeptracker_services
-    from .solace_services import async_register_solace_services
-    from .svane_services import async_register_svane_services
 
     register_bf_cherish_services(hass)
     async_register_motion_bed_services(hass)
@@ -2434,7 +2434,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
     async_register_jiecang_app_services(hass)
     async_register_svane_services(hass)
 
-    from .starcode_accessory_group import register_group_services
+    from .beds.starcode.accessory_group import register_group_services
 
     register_group_services(hass)
     hass.services.async_register(

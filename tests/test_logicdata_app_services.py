@@ -7,7 +7,11 @@ import voluptuous as vol
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.adjustable_bed.beds.logicdata_app import LogicdataAppController
+from custom_components.adjustable_bed.beds.logicdata.app import LogicdataAppController
+from custom_components.adjustable_bed.beds.logicdata.app_services import (
+    SERVICE_LOGICDATA_HOLD_PRESET,
+    SERVICE_LOGICDATA_SET_ALARM,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LOGICDATA_APP,
     DOMAIN,
@@ -15,10 +19,6 @@ from custom_components.adjustable_bed.const import (
     SIDE_RIGHT,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.logicdata_app_services import (
-    SERVICE_LOGICDATA_HOLD_PRESET,
-    SERVICE_LOGICDATA_SET_ALARM,
-)
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.services import (
     SERVICE_LOGICDATA_RENAME,

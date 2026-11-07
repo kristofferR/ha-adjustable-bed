@@ -14,8 +14,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Final, Literal
 
-from ..codec import keeson, okin_nframe
-from ..profiles.okin_nframe import SIMMONS_PROFILES
+from ...codec import keeson, okin_nframe
+from ...profiles.okin_nframe import SIMMONS_PROFILES
 
 Protocol = Literal["okin", "smartbed"]
 AlarmMode = Literal["custom_mode", "flat", "anti_snore"]

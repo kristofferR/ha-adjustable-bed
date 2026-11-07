@@ -20,7 +20,7 @@ from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 
-from .const import (
+from ...const import (
     BED_TYPE_REVERIE_PAIRLINK,
     CONF_BED_TYPE,
     CONF_PAIRLINK_HOST_SOURCE,
@@ -29,14 +29,14 @@ from .const import (
     DOMAIN,
     PAIRLINK_ROLE_PERIPHERAL,
 )
-from .controller_factory import create_controller
-from .coordinator import AdjustableBedCoordinator
-from .pairing import KEY_ABSORBED_ENTRY_ID, get_child, is_paired
+from ...controller_factory import create_controller
+from ...coordinator import AdjustableBedCoordinator
+from ...pairing import KEY_ABSORBED_ENTRY_ID, get_child, is_paired
 
 if TYPE_CHECKING:
-    from .beds.reverie_pairlink_runtime import PairlinkRuntime
-    from .beds.reverie_pairlink_transport import PairlinkHostAdapterInventoryEntry
-    from .paired_coordinator import PairedBedCoordinator
+    from ...paired_coordinator import PairedBedCoordinator
+    from .pairlink_runtime import PairlinkRuntime
+    from .pairlink_transport import PairlinkHostAdapterInventoryEntry
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -197,8 +197,8 @@ async def async_setup_pairlink_local_entry(
     peripheral role. ``finish`` completes the entry setup once the local
     profile runs; its failure releases the profile like any other.
     """
-    from .beds.reverie_pairlink import ReveriePairlinkController
-    from .beds.reverie_pairlink_profile import pairlink_host_adapter_inventory
+    from .pairlink import ReveriePairlinkController
+    from .pairlink_profile import pairlink_host_adapter_inventory
 
     data = {**entry.data, **entry.options}
     if data.get(CONF_PAIRLINK_ROLE) != PAIRLINK_ROLE_PERIPHERAL:
@@ -299,7 +299,7 @@ def preflight_paired_pairlink_local_roles(
     list[PairlinkLocalLeaseTransfer],
 ]:
     """Validate every source and conflict before reserving any selected adapter."""
-    from .beds.reverie_pairlink_profile import pairlink_host_adapter_inventory
+    from .pairlink_profile import pairlink_host_adapter_inventory
 
     inventory = pairlink_host_adapter_inventory(hass)
     selected: list[tuple[str, AdjustableBedCoordinator, str, str, str]] = []
@@ -388,7 +388,7 @@ async def async_start_paired_pairlink_local_child(
     adapter_inventory: tuple[PairlinkHostAdapterInventoryEntry, ...],
 ) -> None:
     """Start one prevalidated child-owned local Pairlink backend."""
-    from .beds.reverie_pairlink import ReveriePairlinkController
+    from .pairlink import ReveriePairlinkController
 
     address = child.entry.data.get(CONF_ADDRESS)
     if not isinstance(address, str):

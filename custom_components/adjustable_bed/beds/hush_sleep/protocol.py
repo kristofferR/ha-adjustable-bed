@@ -6,10 +6,10 @@ import json
 import math
 import zlib
 
-from .casper_base_protocol import Request, SensorKind
-from .casper_sleep_protocol import Json, Receive, command, envelope, mapping
-from .codec import sleep_envelope
-from .hush_sleep_schema import SCHEMAS
+from ...codec import sleep_envelope
+from ..casper_base.protocol import Request, SensorKind
+from ..casper_sleep.protocol import Json, Receive, command, envelope, mapping
+from .schema import SCHEMAS
 
 
 def integer(value: Json) -> int:

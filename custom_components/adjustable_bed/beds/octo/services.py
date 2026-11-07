@@ -11,10 +11,9 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .const import BED_TYPE_OCTO, CONF_OCTO_PIN, DOMAIN
-from .octo_runtime import octo_controller
-from .paired_coordinator import BedChild
-from .services import (
+from ...const import BED_TYPE_OCTO, CONF_OCTO_PIN, DOMAIN
+from ...paired_coordinator import BedChild
+from ...services import (
     DEVICE_IDS,
     SIDE_FIELD,
     BedTarget,
@@ -23,10 +22,11 @@ from .services import (
     _execute_sided,
     _get_controller_for_service,
 )
+from .runtime import octo_controller
 
 if TYPE_CHECKING:
-    from .beds.base import BedController
-    from .beds.octo import OctoController
+    from ..base import BedController
+    from .controller import OctoController
 
 
 SERVICE_OCTO_ENROLL_PIN = "octo_enroll_pin"
@@ -104,7 +104,7 @@ async def handle_octo_enroll_pin(call: ServiceCall) -> None:
     if isinstance(entry, ConfigEntry):
         call.hass.config_entries.async_update_entry(entry, data=data)
     else:
-        from .coordinator import ChildEntryView
+        from ...coordinator import ChildEntryView
 
         if not isinstance(entry, ChildEntryView):
             raise ServiceValidationError("Could not persist the OCTO PIN for this receiver")

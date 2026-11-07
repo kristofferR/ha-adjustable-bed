@@ -6,7 +6,7 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from custom_components.adjustable_bed.lp_legacy_profiles import (
+from custom_components.adjustable_bed.beds.leggett.lp_legacy_profiles import (
     LP_LEGACY_PROFILE_CODES,
     LpLegacyControl,
     get_lp_legacy_profile,

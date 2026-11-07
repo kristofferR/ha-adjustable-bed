@@ -10,6 +10,11 @@ import voluptuous as vol
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 
+from custom_components.adjustable_bed.beds.customatic.services import (
+    CUSTOMATIC_MEMORY_ACTIONS,
+    SERVICE_CUSTOMATIC_HOLD_MEMORY,
+    SERVICE_CUSTOMATIC_MOVE_SIMULTANEOUSLY,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
@@ -19,11 +24,6 @@ from custom_components.adjustable_bed.const import (
     SIDE_BOTH,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.customatic_services import (
-    CUSTOMATIC_MEMORY_ACTIONS,
-    SERVICE_CUSTOMATIC_HOLD_MEMORY,
-    SERVICE_CUSTOMATIC_MOVE_SIMULTANEOUSLY,
-)
 from custom_components.adjustable_bed.services import async_register_services
 
 MEMORY_SELECTIONS = [list(selection) for size in range(1, 6)

@@ -9,7 +9,7 @@ from homeassistant.helpers import device_registry as dr
 
 import custom_components.adjustable_bed as integration
 from custom_components.adjustable_bed import async_unload_entry
-from custom_components.adjustable_bed.beds.reverie_pairlink_runtime import PairlinkRole
+from custom_components.adjustable_bed.beds.reverie.pairlink_runtime import PairlinkRole
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.services import async_register_services
 from tests.test_reverie_pairlink_production import (

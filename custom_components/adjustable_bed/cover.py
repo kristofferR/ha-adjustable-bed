@@ -20,6 +20,7 @@ from homeassistant.core import HomeAssistant
 
 from .bed_traits import bed_traits
 from .beds.base import ControllerMotorHoldSpec
+from .beds.octo.runtime import octo_controller
 from .card import motor_card
 from .const import (
     DOMAIN,
@@ -28,7 +29,6 @@ from .entity import AdjustableBedEntity, hold_lease_attributes
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
 from .entity_sweep import PlatformEntities, records_entities
-from .octo_runtime import octo_controller
 from .paired_coordinator import entity_runtimes
 from .position_estimate import track_motor_command
 

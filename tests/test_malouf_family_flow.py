@@ -9,7 +9,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
-from custom_components.adjustable_bed.beds.malouf_app import require_app_transport
+from custom_components.adjustable_bed.beds.malouf.app import require_app_transport
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,

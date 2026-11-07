@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING, Any, Final
 from bleak.exc import BleakError
 from homeassistant.exceptions import HomeAssistantError
 
-from ..codec.okin_nframe import (
+from ...codec.okin_nframe import (
     REVISION_SELECTOR_UUID,
     SERVICE_UUID,
     SETTINGS_INIT,
@@ -37,9 +37,9 @@ from ..codec.okin_nframe import (
     parse_receipt,
     parse_status,
 )
-from ..const import CONF_LEGGETT_APP_PROFILE, DEVICE_INFO_READ_TIMEOUT, LEGGETT_APP_DEFAULT_PROFILE
-from ..controller_state import StateKey
-from ..profiles.okin_nframe import (
+from ...const import CONF_LEGGETT_APP_PROFILE, DEVICE_INFO_READ_TIMEOUT, LEGGETT_APP_DEFAULT_PROFILE
+from ...controller_state import StateKey
+from ...profiles.okin_nframe import (
     LEGGETT_FLAT_HOLD_MS,
     LEGGETT_PROFILES,
     LEGGETT_REFRESH_MS,
@@ -48,18 +48,18 @@ from ..profiles.okin_nframe import (
     leggett_alarm,
     leggett_sleep_timer,
 )
-from ..state_keys import UNDER_BED_LIGHTS_ON
-from .base import (
+from ...state_keys import UNDER_BED_LIGHTS_ON
+from ..base import (
     BedController,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
-from .builder import BuildContext
+from ..builder import BuildContext
 
 if TYPE_CHECKING:
-    from ..command_scheduler import StreamMember
-    from ..coordinator import AdjustableBedCoordinator
+    from ...command_scheduler import StreamMember
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 

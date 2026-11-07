@@ -1,0 +1,1 @@
+"""furnimove bed family."""

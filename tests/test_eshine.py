@@ -16,8 +16,12 @@ from bleak.exc import BleakError
 
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
 from custom_components.adjustable_bed.bed_traits import bed_traits
-from custom_components.adjustable_bed.beds.eshine import CODES, STATE_GROUPS, EshineController
-from custom_components.adjustable_bed.beds.eshine_protocol import NotificationStream
+from custom_components.adjustable_bed.beds.eshine.controller import (
+    CODES,
+    STATE_GROUPS,
+    EshineController,
+)
+from custom_components.adjustable_bed.beds.eshine.protocol import NotificationStream
 from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.const import (
     BED_TYPE_ESHINE,

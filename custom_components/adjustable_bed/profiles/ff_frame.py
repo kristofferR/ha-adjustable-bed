@@ -5,7 +5,7 @@ HomeKobo 1.4, Sealy MotionFlex 1.0.3 and Sweet Night 1.0.6 routes, the explicit
 Woosa Sleep 1.1.9 variant, and two routes without a report (the user-confirmed
 S4-Y layout and unidentified manual entries). ``BEDSENSE`` is BedSense 1.8
 (row108) and ``MOTION_BED`` is Motion Bed 1.24 (row032), whose callsite table
-and typed builders live in ``motion_bed_protocol.py``.
+and typed builders live in ``beds/motion_bed/protocol.py``.
 """
 
 from __future__ import annotations
@@ -15,11 +15,11 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Final, Literal
 
+from ..beds.motion_bed.protocol import SOURCE_COMMANDS
 from ..codec import ff_frame as codec
 from ..codec.ff_frame import control, query, summed
 from ..const import SOLACE_NAME_PATTERNS
 from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
-from ..motion_bed_protocol import SOURCE_COMMANDS
 
 Axis = Literal["back", "legs", "head", "hip", "lumbar", "bed_height", "tilt"]
 QueryFamily = Literal["q1", "q2", "home_k2", "woosa"]

@@ -9,7 +9,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from custom_components.adjustable_bed.beds.jiecang_app import DreamHDLightControls
+from custom_components.adjustable_bed.beds.jiecang.app import DreamHDLightControls
 from custom_components.adjustable_bed.codec import jiecang as codec
 from custom_components.adjustable_bed.codec.jiecang import TRANSPORTS
 from custom_components.adjustable_bed.profiles.jiecang import (

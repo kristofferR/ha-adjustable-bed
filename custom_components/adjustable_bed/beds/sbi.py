@@ -48,7 +48,7 @@ from .base import (
     build_position_number_spec,
 )
 from .builder import BuildContext
-from .keeson_layout_app import AppController
+from .keeson.layout_app import AppController
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator

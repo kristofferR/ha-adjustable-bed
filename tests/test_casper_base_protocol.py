@@ -8,8 +8,8 @@ from pathlib import Path
 
 import pytest
 
-from custom_components.adjustable_bed import casper_base_protocol as bed
-from custom_components.adjustable_bed import casper_sleep_protocol as sleep
+from custom_components.adjustable_bed.beds.casper_base import protocol as bed
+from custom_components.adjustable_bed.beds.casper_sleep import protocol as sleep
 from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.profiles import casper as library
 

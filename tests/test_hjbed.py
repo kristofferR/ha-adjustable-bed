@@ -12,9 +12,9 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from custom_components.adjustable_bed.beds import hjbed as bed
-from custom_components.adjustable_bed.hjbed_catalog import ACTIONS, MUSIC_ACTIONS, PRODUCTS
-from custom_components.adjustable_bed.hjbed_protocol import (
+from custom_components.adjustable_bed.beds.hjbed import controller as bed
+from custom_components.adjustable_bed.beds.hjbed.catalog import ACTIONS, MUSIC_ACTIONS, PRODUCTS
+from custom_components.adjustable_bed.beds.hjbed.protocol import (
     Alarm,
     add_alarm,
     clock,
@@ -26,9 +26,9 @@ from custom_components.adjustable_bed.hjbed_protocol import (
     query_alarms,
     sync_time,
 )
-from custom_components.adjustable_bed.hjbed_receive import parse_frame
-from custom_components.adjustable_bed.hjbed_requests import Request
-from custom_components.adjustable_bed.hjbed_state import NonProgressFrame, State, Stream
+from custom_components.adjustable_bed.beds.hjbed.receive import parse_frame
+from custom_components.adjustable_bed.beds.hjbed.requests import Request
+from custom_components.adjustable_bed.beds.hjbed.state import NonProgressFrame, State, Stream
 from tests.state_helpers import state_writer
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -635,8 +635,8 @@ async def test_ha_service_preflights_all_targets(hass, coordinator, instant):
 
     from homeassistant.exceptions import ServiceValidationError
 
+    from custom_components.adjustable_bed.beds.hjbed.services import async_register_hjbed_services
     from custom_components.adjustable_bed.const import DOMAIN
-    from custom_components.adjustable_bed.hjbed_services import async_register_hjbed_services
 
     good = controller(coordinator, "98fcd1")
     good._state.features.add("light")

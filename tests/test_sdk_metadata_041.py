@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 
 import pytest
 
-from custom_components.adjustable_bed.beds.reverie_pairlink_sdk_metadata import (
+from custom_components.adjustable_bed.beds.reverie.pairlink_sdk_metadata import (
     PairlinkSdkMetadata,
     SdkAttributeRecord,
     SdkAttributeUnit,

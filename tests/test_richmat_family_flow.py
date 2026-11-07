@@ -361,7 +361,7 @@ async def test_an_mh_app_from_the_app_question_reaches_its_model_question(
 
 
 async def test_configure_switches_a_remote_entry_to_a_classic_app(hass):
-    from custom_components.adjustable_bed.richmat_classic_models import MODEL_CHOICES
+    from custom_components.adjustable_bed.beds.richmat_classic.models import MODEL_CHOICES
 
     entry = entry_for(hass, **{const.CONF_RMCONTROL_PRODUCT: ""})
     flow = AdjustableBedOptionsFlow(entry)

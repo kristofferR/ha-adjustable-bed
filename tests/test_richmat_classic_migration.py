@@ -10,6 +10,10 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import async_migrate_entry, migrate_v5_4_data
 from custom_components.adjustable_bed.app_state_store import app_state_storage_key
+from custom_components.adjustable_bed.beds.richmat_classic.profiles import (
+    LEGACY_KEY_PREFIX,
+    current_control_name,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_RICHMAT_CLASSIC_APPS,
     CONF_BED_TYPE,
@@ -22,10 +26,6 @@ from custom_components.adjustable_bed.const import (
     PAIR_MODE_SEPARATE_ADDRESS,
 )
 from custom_components.adjustable_bed.pairing import KEY_ORIGIN_DATA, KEY_ORIGIN_OPTIONS
-from custom_components.adjustable_bed.richmat_classic_profiles import (
-    LEGACY_KEY_PREFIX,
-    current_control_name,
-)
 
 LEGACY_THIRD_SERVICE = f"{LEGACY_KEY_PREFIX}third_service"
 LEFT, RIGHT = "AA:BB:CC:DD:EE:41", "AA:BB:CC:DD:EE:42"

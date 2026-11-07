@@ -10,8 +10,8 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .const import DOMAIN
-from .services import (
+from ...const import DOMAIN
+from ...services import (
     ATTR_DURATION,
     ATTR_ENABLED,
     ATTR_FOOT_LEVEL,
@@ -34,7 +34,7 @@ LOGICDATA_HOLD_PRESETS = ("flat", "zero_g", "anti_snore", "memory_1", "memory_2"
 
 async def handle_logicdata_set_alarm(call: ServiceCall) -> None:
     """Configure the Logicdata app controller's recurring clock alarm."""
-    from .beds.logicdata_app import LogicdataAppController
+    from .app import LogicdataAppController
 
     alarm_time = call.data[ATTR_TIME]
     weekdays = tuple(SOLACE_WEEKDAY_OPTIONS.index(day) for day in call.data[ATTR_WEEKDAYS])
@@ -75,7 +75,7 @@ def _preset_hold_duration_seconds(value: object) -> Decimal:
 
 async def handle_logicdata_hold_preset(call: ServiceCall) -> None:
     """Hold a MOTIONrelax P2 or Sleep Smart preset through the cancellable command queue."""
-    from .beds.logicdata_app import LogicdataAppController
+    from .app import LogicdataAppController
 
     duration_ms = int(call.data[ATTR_DURATION] * 1000)
     preset = call.data[ATTR_PRESET]

@@ -9,7 +9,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.exceptions import HomeAssistantError
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.svane import SvaneController
+from custom_components.adjustable_bed.beds.svane.controller import SvaneController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SVANE,
     CONF_BED_TYPE,
@@ -39,7 +39,7 @@ async def sequential_pair(hass, request, monkeypatch):
     clock = [0.0]
     local_asyncio = SimpleNamespace(**vars(asyncio))
     local_asyncio.get_running_loop = lambda: SimpleNamespace(time=lambda: clock[0])
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.svane.asyncio", local_asyncio)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.svane.controller.asyncio", local_asyncio)
 
     async def advance(seconds):
         clock[0] += seconds

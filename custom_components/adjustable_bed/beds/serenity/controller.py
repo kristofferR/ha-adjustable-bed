@@ -20,15 +20,15 @@ from typing import TYPE_CHECKING, Final, cast
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
-from ..codec import okin_nframe as codec
-from ..const import (
+from ...codec import okin_nframe as codec
+from ...const import (
     CONF_BLE_BOND_ESTABLISHED,
     CONF_ZSERIES_ALARM_AVAILABLE,
     ZSERIES_PULSE_COUNT_RANGE,
     ZSERIES_VARIANTS,
 )
-from ..controller_state import StateKey
-from ..profiles.okin_nframe import (
+from ...controller_state import StateKey
+from ...profiles.okin_nframe import (
     BEDDING_HOLD,
     BEDDING_PROFILES,
     BEDDING_SAVE_HOLD_MS,
@@ -40,20 +40,20 @@ from ..profiles.okin_nframe import (
     ZSERIES_Z280_ACTIONS,
     OkinNFrameProfile,
 )
-from .base import (
+from ..base import (
     BedController,
     ControllerButtonSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
 )
-from .builder import BuildContext
-from .okin_cst import OkinCstController, _product
+from ..builder import BuildContext
+from ..okin_cst import OkinCstController, _product
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _SERVICE = "62741523-52f9-8864-b1ab-3b3a8d65950b"
 _NOTIFY = "62741625-52f9-8864-b1ab-3b3a8d65950b"

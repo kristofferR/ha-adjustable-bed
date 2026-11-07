@@ -13,12 +13,12 @@ from typing import TYPE_CHECKING, Final, cast
 
 from homeassistant.util import dt as dt_util
 
-from ..alarm_table import AlarmTableSchedule, AlarmTableScheduleSpec
-from ..card import CARD_MASSAGE_TIMER
-from ..codec import keeson as codec
-from ..controller_state import StateKey
-from ..profiles.keeson import AppAction, AppProfile
-from .base import (
+from ...alarm_table import AlarmTableSchedule, AlarmTableScheduleSpec
+from ...card import CARD_MASSAGE_TIMER
+from ...codec import keeson as codec
+from ...controller_state import StateKey
+from ...profiles.keeson import AppAction, AppProfile
+from ..base import (
     BedController,
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -30,7 +30,7 @@ from .base import (
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 FFE4 = "0000ffe4-0000-1000-8000-00805f9b34fb"
 FFE9 = "0000ffe9-0000-1000-8000-00805f9b34fb"

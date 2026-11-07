@@ -12,9 +12,12 @@ from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import _build_paired_children, const
-from custom_components.adjustable_bed.beds.vibradorm_app import (
+from custom_components.adjustable_bed.beds.vibradorm.app import (
     VibradormAppController,
     VibradormAppMetadata,
+)
+from custom_components.adjustable_bed.beds.vibradorm.app_state import (
+    clear_vibradorm_app_session_intent,
 )
 from custom_components.adjustable_bed.bluetooth_bond import (
     BluezReadStatus,
@@ -44,7 +47,6 @@ from custom_components.adjustable_bed.pairing import (
 )
 from custom_components.adjustable_bed.setup_operation import OperationOutcome, OperationResult
 from custom_components.adjustable_bed.switch import _switch_entities_for
-from custom_components.adjustable_bed.vibradorm_app_state import clear_vibradorm_app_session_intent
 from tests.form_helpers import finish_new_bed, start_new_bed
 from tests.hold_lease_wire import virtual_clock
 
@@ -381,7 +383,7 @@ async def test_information_precedes_native_pair_and_shares_connection_deadline(h
         patch(PREFIX + "async_path_for_source", return_value=path),
         patch(PREFIX + "async_verify_native_bond", new=AsyncMock(side_effect=results)),
         patch(PREFIX + "async_verify_authenticated_access", new=AsyncMock()) as auth,
-        patch("custom_components.adjustable_bed.beds.vibradorm_app.async_prepare_vibradorm_app_pairing", side_effect=info),
+        patch("custom_components.adjustable_bed.beds.vibradorm.app.async_prepare_vibradorm_app_pairing", side_effect=info),
         patch(PREFIX + "VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS", 0.04 if failure == "deadline" else 10.0),
         # The 40 ms deadline falls inside the native pair on virtual time, never
         # earlier because the loop was busy.
@@ -448,7 +450,7 @@ async def test_setup_native_post_pair_observation_controls_result_and_marker(
         patch(PREFIX + "async_path_for_source", return_value=path),
         patch("custom_components.adjustable_bed.bond_verification.async_read_local_bonds", new=read),
         patch(
-            "custom_components.adjustable_bed.beds.vibradorm_app.async_prepare_vibradorm_app_pairing",
+            "custom_components.adjustable_bed.beds.vibradorm.app.async_prepare_vibradorm_app_pairing",
             new=AsyncMock(return_value=VibradormAppMetadata("model", "firmware", "software", "article")),
         ) as information,
     ):
@@ -830,7 +832,7 @@ async def test_exact_native_bond_skips_first_information_and_pair_rpc(hass):
         patch(PREFIX + "client_source", return_value=SOURCE),
         patch(PREFIX + "async_path_for_source", return_value=path),
         patch(PREFIX + "async_verify_native_bond", new=AsyncMock(return_value=native)),
-        patch("custom_components.adjustable_bed.beds.vibradorm_app.async_prepare_vibradorm_app_pairing", new=AsyncMock()) as info,
+        patch("custom_components.adjustable_bed.beds.vibradorm.app.async_prepare_vibradorm_app_pairing", new=AsyncMock()) as info,
         patch(PREFIX + "async_verify_authenticated_access", new=AsyncMock()) as authenticated,
     ):
         result = await flow._attempt_pairing_with_capture(ADDRESS, request_bond=True, track_for_flow_cleanup=False, device=BLEDevice(ADDRESS, "Bed", {}), preferred_adapter="auto")

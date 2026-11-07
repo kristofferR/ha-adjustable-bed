@@ -16,13 +16,13 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
-from ..app_session import app_session
-from ..card import CARD_MASSAGE, CardRole, motor_card
-from ..codec import keeson as codec
-from ..controller_state import StateKey
-from ..profiles import keeson as keeson_profiles
-from ..state_keys import MASSAGE_TIMER_MINUTES
-from .base import (
+from ...app_session import app_session
+from ...card import CARD_MASSAGE, CardRole, motor_card
+from ...codec import keeson as codec
+from ...controller_state import StateKey
+from ...profiles import keeson as keeson_profiles
+from ...state_keys import MASSAGE_TIMER_MINUTES
+from ..base import (
     BedController,
     ControllerButtonSpec,
     ControllerNumberSpec,

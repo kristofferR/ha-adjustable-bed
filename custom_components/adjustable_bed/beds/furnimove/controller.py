@@ -14,14 +14,13 @@ import unicodedata
 from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING
 
-from ..card import CARD_HIDDEN, CARD_LIGHTING
-from ..codec import keeson as codec
-from ..const import CONF_FURNIMOVE_REMOTE
-from ..controller_state import StateKey, StateUpdate
-from ..execution import ExecutionCapabilities
-from ..furnimove_profiles import FurniMoveAction, get_furnimove_profile
-from ..state_keys import massage_intensity
-from .base import (
+from ...card import CARD_HIDDEN, CARD_LIGHTING
+from ...codec import keeson as codec
+from ...const import CONF_FURNIMOVE_REMOTE
+from ...controller_state import StateKey, StateUpdate
+from ...execution import ExecutionCapabilities
+from ...state_keys import massage_intensity
+from ..base import (
     POSITION_AXIS_COMMANDS,
     BedController,
     ControllerActionSpec,
@@ -32,12 +31,13 @@ from .base import (
     MotorControlSpec,
     require_controller,
 )
-from .builder import BuildContext
+from ..builder import BuildContext
+from .profiles import FurniMoveAction, get_furnimove_profile
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 

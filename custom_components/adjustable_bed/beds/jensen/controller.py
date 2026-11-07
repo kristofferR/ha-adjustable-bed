@@ -23,29 +23,29 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 from homeassistant.helpers.storage import Store
 
-from ..codec import jmc
-from ..const import CONF_JENSEN_PIN, DOMAIN
-from ..execution import ExecutionCapabilities
-from ..profiles.jmc import JENSEN, JmcProfile
-from ..state_keys import (
+from ...codec import jmc
+from ...const import CONF_JENSEN_PIN, DOMAIN
+from ...execution import ExecutionCapabilities
+from ...profiles.jmc import JENSEN, JmcProfile
+from ...state_keys import (
     FAN_LEVEL,
     LIGHT_LEVEL,
     UNDER_BED_LIGHTS_ON,
     massage_active,
     massage_intensity,
 )
-from .base import (
+from ..base import (
     POSITION_UNIT_PERCENT,
     BedController,
     PositionNumberSpec,
     build_position_number_spec,
 )
-from .builder import BuildContext
-from .lifecycle import CapabilitySnapshotPolicy
+from ..builder import BuildContext
+from ..lifecycle import CapabilitySnapshotPolicy
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
-    from .lifecycle import ControllerSession
+    from ...coordinator import AdjustableBedCoordinator
+    from ..lifecycle import ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 

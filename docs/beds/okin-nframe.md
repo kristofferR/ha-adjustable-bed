@@ -1078,7 +1078,7 @@ longer serves, keycodes are inherited from a live code with the identical
 `handsetlist.csv` capability signature when one exists (`csv-inherit:<code>`).
 When no live sibling exists they are rebuilt from the universal and modal
 keycode maps according to the CSV flags (`csv-reconstruct`); these entries have
-lower assurance, and Flat may be approximate. `beds/okin_uuid_remotes.py` tags
+lower assurance, and Flat may be approximate. `beds/okin_uuid/remotes.py` tags
 each entry `backend`, `csv-inherit:<code>` or `csv-reconstruct`;
 `tools/okin_remotes/` regenerates it.
 
@@ -2459,8 +2459,8 @@ angle, battery or current is inferred.
 ##### Commands
 
 Tables are taken from
-[`DoubleSleepController`](../../custom_components/adjustable_bed/beds/doublesleep.py)
-and its [`protocol builders`](../../custom_components/adjustable_bed/doublesleep_protocol.py).
+[`DoubleSleepController`](../../custom_components/adjustable_bed/beds/doublesleep/controller.py)
+and its [`protocol builders`](../../custom_components/adjustable_bed/beds/doublesleep/protocol.py).
 Indices identify builders, not a raw-packet service. UI model, child-lock and
 reported capability gates still apply.
 

@@ -10,11 +10,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
-from custom_components.adjustable_bed.beds.starcode_m5x5 import StarcodeM5X5Controller
+from custom_components.adjustable_bed.beds.starcode.accessory_group import _tasks
+from custom_components.adjustable_bed.beds.starcode.m5x5 import StarcodeM5X5Controller
 from custom_components.adjustable_bed.const import CONF_STARCODE_M5X5_PROFILE, DOMAIN
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.services import async_register_services
-from custom_components.adjustable_bed.starcode_accessory_group import _tasks
 from tests.test_starcode_accessory_group import flat_frame, group
 from tests.test_starcode_m5x5 import make_controller
 
@@ -160,7 +160,7 @@ async def test_public_individual_motion_cancels_actual_retained_group(
     old = None
     try:
         with patch(
-            "custom_components.adjustable_bed.starcode_accessory_group.asyncio.sleep", delay
+            "custom_components.adjustable_bed.beds.starcode.accessory_group.asyncio.sleep", delay
         ):
             old = asyncio.create_task(
                 hass.services.async_call(
@@ -267,7 +267,7 @@ async def test_pending_individual_admission_preserves_cleanup_and_stop(
     yield_to_loop = asyncio.sleep
     try:
         with patch(
-            "custom_components.adjustable_bed.starcode_accessory_group.asyncio.sleep", delay
+            "custom_components.adjustable_bed.beds.starcode.accessory_group.asyncio.sleep", delay
         ):
             async with asyncio.timeout(3):
                 old = asyncio.create_task(
@@ -304,7 +304,7 @@ async def test_pending_individual_admission_preserves_cleanup_and_stop(
                     while source._cancel_counter == counter:
                         await yield_to_loop(0)
                 elif boundary == "unload":
-                    from custom_components.adjustable_bed.starcode_accessory_group import (
+                    from custom_components.adjustable_bed.beds.starcode.accessory_group import (
                         cancel_group_operations,
                     )
 

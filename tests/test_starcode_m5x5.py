@@ -13,7 +13,7 @@ import pytest
 from bleak.exc import BleakError
 from homeassistant.core import HomeAssistant
 
-from custom_components.adjustable_bed.beds.starcode_m5x5 import (
+from custom_components.adjustable_bed.beds.starcode.m5x5 import (
     DEVICE_INFORMATION,
     FIRMWARE,
     MANUFACTURER,
@@ -23,7 +23,7 @@ from custom_components.adjustable_bed.beds.starcode_m5x5 import (
     StarcodeM5X5Controller,
     profile_from_name,
 )
-from custom_components.adjustable_bed.beds.starcode_m5x5_protocol import clock_packet
+from custom_components.adjustable_bed.beds.starcode.m5x5_protocol import clock_packet
 
 # ELEVATE (P3) rows are verified against the star_elevate controller instead.
 VECTORS = [
@@ -101,7 +101,7 @@ async def test_all_command_vectors(hass: HomeAssistant, case: dict[str, object])
             await controller.light_mode()
         elif action.startswith("initialize"):
             with patch(
-                "custom_components.adjustable_bed.beds.starcode_m5x5.dt_util.now", return_value=NOW
+                "custom_components.adjustable_bed.beds.starcode.m5x5.dt_util.now", return_value=NOW
             ):
                 await controller.start_notify()
         else:
@@ -170,7 +170,7 @@ async def test_required_roles_and_without_response(hass: HomeAssistant, profile:
     c.client.start_notify.side_effect = subscribe
     with (
         patch.object(c, "_write_gatt_with_retry", side_effect=write),
-        patch("custom_components.adjustable_bed.beds.starcode_m5x5.asyncio.sleep", AsyncMock()),
+        patch("custom_components.adjustable_bed.beds.starcode.m5x5.asyncio.sleep", AsyncMock()),
     ):
         await c.start_notify()
     assert events[0] == ("subscribe", NOTIFY)
@@ -316,7 +316,7 @@ async def test_init_tick_cannot_write_through_replacement_client(hass: HomeAssis
         await resume.wait()
 
     with patch(
-        "custom_components.adjustable_bed.beds.starcode_m5x5.asyncio.sleep",
+        "custom_components.adjustable_bed.beds.starcode.m5x5.asyncio.sleep",
         side_effect=pause_tick,
     ):
         starting = asyncio.create_task(c.start_notify())
@@ -342,7 +342,7 @@ async def test_queued_ble_lane_rechecks_owned_writer_session(
     queued = asyncio.Event()
     c._coordinator.record_command_trace.side_effect = lambda **kwargs: queued.set()
     await c.ble_lock.acquire()
-    with patch("custom_components.adjustable_bed.beds.starcode_m5x5.asyncio.sleep", AsyncMock()):
+    with patch("custom_components.adjustable_bed.beds.starcode.m5x5.asyncio.sleep", AsyncMock()):
         writing = asyncio.create_task(c.write_command(bytes.fromhex("5a0b00a5")))
         await queued.wait()
         if change == "client":
@@ -394,7 +394,7 @@ async def test_sender_tick_cancel_and_failed_delivery(hass: HomeAssistant) -> No
     c._next_tick = tick
     with (
         patch(
-            "custom_components.adjustable_bed.beds.starcode_m5x5.asyncio.sleep", AsyncMock()
+            "custom_components.adjustable_bed.beds.starcode.m5x5.asyncio.sleep", AsyncMock()
         ) as sleep,
         patch.object(c, "_write_gatt_with_retry", AsyncMock()) as write,
     ):
@@ -408,7 +408,7 @@ async def test_sender_tick_cancel_and_failed_delivery(hass: HomeAssistant) -> No
     write.assert_not_awaited()
     c._coordinator.cancel_command.clear()
     with (
-        patch("custom_components.adjustable_bed.beds.starcode_m5x5.asyncio.sleep", AsyncMock()),
+        patch("custom_components.adjustable_bed.beds.starcode.m5x5.asyncio.sleep", AsyncMock()),
         patch.object(
             c, "_write_gatt_with_retry", AsyncMock(side_effect=BleakError("delivery failed"))
         ),
@@ -456,11 +456,11 @@ EXISTING_LEAVES = json.loads(
 
 @pytest.mark.parametrize("case", EXISTING_LEAVES, ids=lambda case: case["id"])
 def test_all_frozen_existing_leaf_proofs(case: dict[str, object]) -> None:
-    from custom_components.adjustable_bed.beds.star_elevate import _elevate_command
-    from custom_components.adjustable_bed.beds.starcode_dialect import (
+    from custom_components.adjustable_bed.beds.starcode.dialect import (
         extended_packet,
         normal_packet,
     )
+    from custom_components.adjustable_bed.beds.starcode.star_elevate import _elevate_command
     from custom_components.adjustable_bed.codec import okin_5a, okin_nframe
 
     raw_arguments = case["arguments"]

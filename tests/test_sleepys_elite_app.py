@@ -17,8 +17,8 @@ from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant
 
 from custom_components.adjustable_bed.app_profiles import per_side_profile
-from custom_components.adjustable_bed.beds.sleepys_app import SleepysEliteAppController
-from custom_components.adjustable_bed.beds.sleepys_app_routes import (
+from custom_components.adjustable_bed.beds.sleepys.app import SleepysEliteAppController
+from custom_components.adjustable_bed.beds.sleepys.app_routes import (
     CANONICAL_ROUTE_SHA256,
     ROUTES,
 )

@@ -23,12 +23,12 @@ from unittest.mock import MagicMock
 
 from homeassistant.helpers.entity import Entity
 
-from custom_components.adjustable_bed import sleeptracker_protocol
 from custom_components.adjustable_bed.beds.base import (
     BedController,
     MotorControlSpec,
     ProductButtonSpec,
 )
+from custom_components.adjustable_bed.beds.sleeptracker import protocol as sleeptracker_protocol
 from custom_components.adjustable_bed.binary_sensor import (
     BINARY_SENSOR_DESCRIPTIONS,
     AdjustableBedConnectionSensor,
@@ -149,18 +149,18 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     Some controls exist only for a reported model, layout or page, which no
     offline configuration reaches.
     """
-    from custom_components.adjustable_bed.beds.ruf_richmat import RufRichmatController
-    from custom_components.adjustable_bed.beds.sleeptracker import SleeptrackerController
-    from custom_components.adjustable_bed.beds.sleepys_app import (
+    from custom_components.adjustable_bed.beds.ruf_richmat.controller import RufRichmatController
+    from custom_components.adjustable_bed.beds.sleeptracker.controller import SleeptrackerController
+    from custom_components.adjustable_bed.beds.sleepys.app import (
         _APP_STATE_FIELDS_BY_SELECTOR,
         SleepysEliteAppController,
     )
-    from custom_components.adjustable_bed.beds.starcode_abm5_4 import (
+    from custom_components.adjustable_bed.beds.starcode.abm5_4 import (
         _POSITIVE_SELECTORS,
         StarcodeAbm5_4Controller,
     )
-    from custom_components.adjustable_bed.beds.vibradorm_app import VibradormAppController
-    from custom_components.adjustable_bed.beds.vmatbasic import VMatBasicController
+    from custom_components.adjustable_bed.beds.vibradorm.app import VibradormAppController
+    from custom_components.adjustable_bed.beds.vmatbasic.controller import VMatBasicController
     from custom_components.adjustable_bed.profiles import vmatbasic as vmat_profiles
 
     def variant(controller: BedController, **attributes: object) -> BedController:

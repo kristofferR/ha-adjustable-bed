@@ -20,6 +20,7 @@ from bleak.exc import BleakError
 from homeassistant.components import bluetooth
 
 from .address_lock import async_get_connect_lock
+from .beds.vibradorm.app_state import ControlType
 from .ble_auth import is_ble_authentication_error as _is_ble_authentication_error
 from .ble_auth import is_ble_pairing_auth_failure
 from .bluetooth_transport import TransportClass, async_clear_proxy_gatt_cache
@@ -60,7 +61,6 @@ from .const import (
 )
 from .profiles.vibradorm import vibradorm_app_metadata_key
 from .unsupported import create_pairing_required_issue, delete_pairing_required_issue
-from .vibradorm_app_state import ControlType
 
 if TYPE_CHECKING:
     from .coordinator import AdjustableBedCoordinator
@@ -574,7 +574,7 @@ class CoordinatorBondsMixin:
                 raise
             finally:
                 if self.entry.data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat" and pairing_details.get("vmat_setup_started"):
-                    from .vibradorm_vmat_setup import async_close_vmat_setup
+                    from .beds.vibradorm.vmat_setup import async_close_vmat_setup
 
                     self._intentional_disconnect = True
                     disconnected = not client.is_connected
@@ -712,7 +712,7 @@ class CoordinatorBondsMixin:
         metadata_progress: dict[str, str],
     ) -> bool:
         """Run first-bond information and native pairing in one absolute budget."""
-        from .beds.vibradorm_app import (
+        from .beds.vibradorm.app import (
             VibradormAppMetadataProgress,
             async_prepare_vibradorm_app_pairing,
         )
@@ -992,7 +992,7 @@ class CoordinatorBondsMixin:
         probe_uuid = DEVICE_INFO_CHARS["model_number"]
         try:
             if self._bed_type == BED_TYPE_SLEEP_NUMBER:
-                from .sleep_number_auth import async_read_sleep_number_session
+                from .beds.sleep_number.auth import async_read_sleep_number_session
 
                 await async_read_sleep_number_session(client)
             else:

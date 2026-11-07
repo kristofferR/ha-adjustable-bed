@@ -22,12 +22,12 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 
 from bleak.exc import BleakError
 
-from ..app_session import app_session
-from ..card import CARD_LIGHT_LEVEL, CARD_LIGHTING, CardPlacement, CardSection
-from ..const import CONF_REMACRO_MODEL, REMACRO_READ_CHAR_UUID, REMACRO_WRITE_CHAR_UUID
-from ..controller_state import StateKey, StateUpdate
-from ..execution import ExecutionCapabilities
-from .base import (
+from ...app_session import app_session
+from ...card import CARD_LIGHT_LEVEL, CARD_LIGHTING, CardPlacement, CardSection
+from ...const import CONF_REMACRO_MODEL, REMACRO_READ_CHAR_UUID, REMACRO_WRITE_CHAR_UUID
+from ...controller_state import StateKey, StateUpdate
+from ...execution import ExecutionCapabilities
+from ..base import (
     BedController,
     ControllerButtonSpec,
     ControllerNumberSpec,
@@ -35,8 +35,8 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
-from .builder import BuildContext
-from .remacro_protocol import (
+from ..builder import BuildContext
+from .protocol import (
     APP_JEROMES,
     APP_LED_SETTINGS_MODEL_IDS,
     APP_SLUMBERLAND,
@@ -64,7 +64,7 @@ from .remacro_protocol import (
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -735,7 +735,7 @@ async def build_controller(ctx: BuildContext) -> RemacroController:
     The live advertisement wins, as in the apps; the stored selector only
     covers offline capability minting and missing history.
     """
-    from .remacro_protocol import app_for_variant, remacro_led_level, resolve_model
+    from .protocol import app_for_variant, remacro_led_level, resolve_model
 
     coordinator = ctx.coordinator
     app = app_for_variant(ctx.variant)

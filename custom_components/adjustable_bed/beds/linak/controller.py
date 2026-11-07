@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any, Final
 
 from bleak.exc import BleakError
 
-from ..const import (
+from ...const import (
     LINAK_BACK_MAX_POSITION,
     LINAK_CONFIG_CHAR_UUID,
     LINAK_CONTROL_CHAR_UUID,
@@ -35,11 +35,11 @@ from ..const import (
     LINAK_TIMER_SERVICE_UUID,
     LINAK_VARIANT_PERFORMANCE,
 )
-from ..controller_state import AnyStateKey, StateKey
-from ..execution import ExecutionCapabilities
-from ..position_seek import PositionSeekPolicy, SeekSample
-from ..state_keys import LINAK_AUTOMATIC_DRIVE, LINAK_MODEL_VARIANT
-from .base import (
+from ...controller_state import AnyStateKey, StateKey
+from ...execution import ExecutionCapabilities
+from ...position_seek import PositionSeekPolicy, SeekSample
+from ...state_keys import LINAK_AUTOMATIC_DRIVE, LINAK_MODEL_VARIANT
+from ..base import (
     POSITION_AXIS_COMMANDS,
     POSITION_UNIT_DEGREES,
     BedController,
@@ -49,9 +49,9 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
-from .builder import BuildContext
-from .lifecycle import CapabilitySnapshotPolicy
-from .linak_protocol import (
+from ..builder import BuildContext
+from ..lifecycle import CapabilitySnapshotPolicy
+from .protocol import (
     LINAK_AXIS_MASKS,
     LinakAlarmStep,
     LinakCapabilitySnapshot,
@@ -68,8 +68,8 @@ from .linak_protocol import (
 )
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
-    from .lifecycle import ControllerSession
+    from ...coordinator import AdjustableBedCoordinator
+    from ..lifecycle import ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 

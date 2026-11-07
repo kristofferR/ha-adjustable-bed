@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ..codec import keeson, okin_5a, okin_nframe, okin_ore
+from ...codec import keeson, okin_5a, okin_nframe, okin_ore
 
 CANONICAL_ROUTE_SHA256 = "d5cc166ef68ca07d81b9112f16f4143d0851409ed2fe5086ff2fe10b0a7db138"
 

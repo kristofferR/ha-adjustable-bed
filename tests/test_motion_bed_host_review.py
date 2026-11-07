@@ -8,8 +8,9 @@ from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.motion_bed import MotionBedController
-from custom_components.adjustable_bed.beds.solace import SolaceController
+from custom_components.adjustable_bed.beds.motion_bed.controller import MotionBedController
+from custom_components.adjustable_bed.beds.motion_bed.models import select_motion_bed
+from custom_components.adjustable_bed.beds.solace.controller import SolaceController
 from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.const import (
@@ -23,7 +24,6 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.detection import detect_bed_type_detailed
-from custom_components.adjustable_bed.motion_bed_models import select_motion_bed
 from tests.form_helpers import finish_new_bed
 from tests.test_detection import _make_service_info
 from tests.test_entity_sweep import async_setup_platforms_and_sweep

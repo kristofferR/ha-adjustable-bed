@@ -10,13 +10,12 @@ from collections.abc import Callable
 from time import monotonic
 from typing import TYPE_CHECKING, Final, TypedDict, cast
 
-from ..card import CARD_MASSAGE_TIMER
-from ..codec import keeson as codec
-from ..controller_state import StateKey, StateUpdate
-from ..ergomotion4_profiles import ACTIONS, PRODUCTS, Action, Product, Step
-from ..profiles.keeson import ergomotion_4_profile
-from ..state_keys import UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
-from .base import (
+from ...card import CARD_MASSAGE_TIMER
+from ...codec import keeson as codec
+from ...controller_state import StateKey, StateUpdate
+from ...profiles.keeson import ergomotion_4_profile
+from ...state_keys import UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
+from ..base import (
     BedController,
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -24,12 +23,13 @@ from .base import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
-from .keeson_layout_app import APP_TIMER_STATUS, AppController
+from ..keeson.layout_app import APP_TIMER_STATUS, AppController
+from .profiles import ACTIONS, PRODUCTS, Action, Product, Step
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 TX_UUIDS = frozenset(
     (

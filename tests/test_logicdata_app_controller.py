@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed.beds.logicdata_app import LogicdataAppController
+from custom_components.adjustable_bed.beds.logicdata.app import LogicdataAppController
 from custom_components.adjustable_bed.codec import jiecang as codec
 from custom_components.adjustable_bed.profiles import logicdata as profiles
 from custom_components.adjustable_bed.profiles.logicdata import APP_PROFILES, PHONE
@@ -353,7 +353,7 @@ async def test_scheduled_writes_absorb_ble_latency(coordinator, operation):
     coordinator.client.write_gatt_char.side_effect = slow_write
     with (
         patch(
-            "custom_components.adjustable_bed.beds.logicdata_app.asyncio.get_running_loop",
+            "custom_components.adjustable_bed.beds.logicdata.app.asyncio.get_running_loop",
             return_value=clock,
         ),
         patch.object(bed, "_pause", side_effect=pause),
@@ -461,7 +461,7 @@ async def test_timed_motion_releases_at_planned_endpoint(
     coordinator.client.write_gatt_char.side_effect = write
     with (
         patch(
-            "custom_components.adjustable_bed.beds.logicdata_app.asyncio.get_running_loop",
+            "custom_components.adjustable_bed.beds.logicdata.app.asyncio.get_running_loop",
             return_value=clock,
         ),
         patch.object(bed, "_pause", side_effect=pause),

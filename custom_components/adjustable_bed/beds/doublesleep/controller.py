@@ -11,14 +11,12 @@ from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
-from .. import doublesleep_protocol as p
-from ..app_session import app_session
-from ..card import CARD_LIGHTING, CARD_MASSAGE, CARD_UTILITY
-from ..const import CONF_BLE_DEVICE_NAME, CONF_PRODUCT_TYPE
-from ..controller_state import StateKey
-from ..doublesleep_state import Notifications, Report, report_records
-from ..profiles.okin_nframe import DOUBLESLEEP
-from .base import (
+from ...app_session import app_session
+from ...card import CARD_LIGHTING, CARD_MASSAGE, CARD_UTILITY
+from ...const import CONF_BLE_DEVICE_NAME, CONF_PRODUCT_TYPE
+from ...controller_state import StateKey
+from ...profiles.okin_nframe import DOUBLESLEEP
+from ..base import (
     BedController,
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -30,14 +28,16 @@ from .base import (
     MotorControlSpec,
     PositionNumberSpec,
 )
-from .builder import BuildContext
+from ..builder import BuildContext
+from . import protocol as p
+from .state import Notifications, Report, report_records
 
 if TYPE_CHECKING:
     from bleak import BleakClient
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..coordinator import AdjustableBedCoordinator
-    from ..doublesleep_services import Request
+    from ...coordinator import AdjustableBedCoordinator
+    from .services import Request
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -1228,7 +1228,7 @@ class DoubleSleepController(BedController):
 
 async def build_controller(ctx: BuildContext) -> DoubleSleepController:
     """Build the controller for the driver the advertisement or variant selects."""
-    from ..doublesleep_protocol import real_mac, select_model, select_protocol
+    from .protocol import real_mac, select_model, select_protocol
 
     variant = ctx.variant
     manufacturer_data = ctx.manufacturer_data

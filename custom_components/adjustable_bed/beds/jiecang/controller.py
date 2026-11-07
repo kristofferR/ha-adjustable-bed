@@ -12,9 +12,9 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING
 
-from ..codec import jiecang as codec
-from ..const import JIECANG_CHAR_UUID
-from ..profiles.jiecang import (
+from ...codec import jiecang as codec
+from ...const import JIECANG_CHAR_UUID
+from ...profiles.jiecang import (
     LEGACY,
     JiecangProfile,
     Layout,
@@ -26,11 +26,11 @@ from ..profiles.jiecang import (
     motion_command,
     preset_command,
 )
-from .base import BedController, MotorControlSpec
+from ..base import BedController, MotorControlSpec
 
 if TYPE_CHECKING:
-    from ..codec.jiecang import Axis, Preset
-    from ..coordinator import AdjustableBedCoordinator
+    from ...codec.jiecang import Axis, Preset
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 

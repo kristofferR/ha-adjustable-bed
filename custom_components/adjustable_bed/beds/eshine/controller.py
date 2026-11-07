@@ -6,23 +6,23 @@ import asyncio
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Final, Literal
 
-from ..card import CARD_MASSAGE, CARD_UTILITY
-from ..codec import richmat as codec
-from ..controller_state import StateKey
-from ..profiles.richmat import ESHINE, Button
-from .base import (
+from ...card import CARD_MASSAGE, CARD_UTILITY
+from ...codec import richmat as codec
+from ...controller_state import StateKey
+from ...profiles.richmat import ESHINE, Button
+from ..base import (
     BedController,
     ControllerButtonSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
 )
-from .eshine_protocol import NotificationStream, Value
+from .protocol import NotificationStream, Value
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 REFRESH_MS: Final = 100
 CODES: Final[Mapping[Button, int]] = ESHINE.codes or {}

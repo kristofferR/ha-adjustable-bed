@@ -15,23 +15,16 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .beds.base import BedController, controller_as, require_controller
-from .beds.reverie_comfort import (
-    PairlinkComfortActions,
-    ReverieComfortActions,
-    ReverieComfortRequest,
-    RoutineSteps,
-)
-from .command_scheduler import CommandHandle, PreparedCommandInvalidated
-from .const import (
+from ...command_scheduler import CommandHandle, PreparedCommandInvalidated
+from ...const import (
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_PAIRLINK,
     DOMAIN,
     PAIR_CONNECTION_MODE_SEQUENTIAL,
     SIDE_BOTH,
 )
-from .paired_coordinator import BedChild, PairedBedCoordinator, PairedSideError
-from .services import (
+from ...paired_coordinator import BedChild, PairedBedCoordinator, PairedSideError
+from ...services import (
     ATTR_SIDE,
     SIDE_FIELD,
     BedTarget,
@@ -46,10 +39,17 @@ from .services import (
     _target_stop_epoch,
     _validation_controller,
 )
+from ..base import BedController, controller_as, require_controller
+from .comfort import (
+    PairlinkComfortActions,
+    ReverieComfortActions,
+    ReverieComfortRequest,
+    RoutineSteps,
+)
 
 if TYPE_CHECKING:
-    from .beds.base import BedController
-    from .beds.reverie_pairlink_runtime import PairlinkComfortPlan
+    from ..base import BedController
+    from .pairlink_runtime import PairlinkComfortPlan
 
 
 SERVICE_REVERIE_SET_COMFORT = "reverie_set_comfort"

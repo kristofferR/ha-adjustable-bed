@@ -6,7 +6,7 @@ import itertools
 
 import pytest
 
-from custom_components.adjustable_bed.beds.linak_protocol import (
+from custom_components.adjustable_bed.beds.linak.protocol import (
     LINAK_ERROR_NAMES,
     LinakAlarmAction,
     LinakAlarmStep,

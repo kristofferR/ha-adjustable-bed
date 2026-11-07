@@ -10,6 +10,13 @@ from homeassistant.helpers.entity import Entity
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.base import BedController, ProductButtonSpec
+from custom_components.adjustable_bed.beds.rmcontrol.protocol import Notification
+from custom_components.adjustable_bed.beds.rmcontrol.services import (
+    ALARM_SCHEMA,
+    ANTI_SNORE_SCHEMA,
+    handle_rmcontrol_alarm,
+    handle_rmcontrol_anti_snore,
+)
 from custom_components.adjustable_bed.button import AdjustableBedProductButton
 from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
 from custom_components.adjustable_bed.const import (
@@ -23,13 +30,6 @@ from custom_components.adjustable_bed.controller_factory import create_controlle
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.entity_discovery import async_setup_dynamic_entities
 from custom_components.adjustable_bed.entity_sweep import EntityLedger, PlatformEntities
-from custom_components.adjustable_bed.rmcontrol_protocol import Notification
-from custom_components.adjustable_bed.rmcontrol_services import (
-    ALARM_SCHEMA,
-    ANTI_SNORE_SCHEMA,
-    handle_rmcontrol_alarm,
-    handle_rmcontrol_anti_snore,
-)
 from custom_components.adjustable_bed.setup_questions import setup_profile
 
 
@@ -122,7 +122,7 @@ async def test_alarm_required_fields_fail_before_connect(
         hass, DOMAIN, "rmcontrol_alarm", {"device_id": ["bed"], "operation": operation}
     )
     with patch(
-        "custom_components.adjustable_bed.rmcontrol_services._execute", new_callable=AsyncMock
+        "custom_components.adjustable_bed.beds.rmcontrol.services._execute", new_callable=AsyncMock
     ) as execute:
         with pytest.raises(ServiceValidationError, match="requires"):
             await handle_rmcontrol_alarm(call)
@@ -139,7 +139,7 @@ _RMCONTROL_GATES = (
 
 def _rmcontrol_with(gate: str) -> MagicMock:
     """A product controller offering exactly one RMControl gate."""
-    from custom_components.adjustable_bed.beds.rmcontrol import RmcontrolController
+    from custom_components.adjustable_bed.beds.rmcontrol.controller import RmcontrolController
 
     controller = MagicMock(spec=RmcontrolController)
     for name in _RMCONTROL_GATES:
@@ -166,7 +166,7 @@ async def test_repeat_alarm_names_are_converted_once(hass: HomeAssistant) -> Non
             "action": "Memory1",
         }
     )
-    with patch("custom_components.adjustable_bed.rmcontrol_services._execute", side_effect=execute):
+    with patch("custom_components.adjustable_bed.beds.rmcontrol.services._execute", side_effect=execute):
         await handle_rmcontrol_alarm(ServiceCall(hass, DOMAIN, "rmcontrol_alarm", data))
     controller.rmcontrol_repeat_alarm.assert_awaited_once_with(2, 7, 35, (0, 6), "Memory1")
 
@@ -191,7 +191,7 @@ async def test_alarm_operations_require_their_specific_capability(
 ) -> None:
     data = ALARM_SCHEMA({"device_id": "bed", "operation": operation, **fields})
     with patch(
-        "custom_components.adjustable_bed.rmcontrol_services._execute", new_callable=AsyncMock
+        "custom_components.adjustable_bed.beds.rmcontrol.services._execute", new_callable=AsyncMock
     ) as execute:
         await handle_rmcontrol_alarm(ServiceCall(hass, DOMAIN, "rmcontrol_alarm", data))
     expected = (
@@ -223,7 +223,7 @@ async def test_snore_configuration_is_not_enable_switch(hass: HomeAssistant) -> 
             "value": 3,
         }
     )
-    with patch("custom_components.adjustable_bed.rmcontrol_services._execute", side_effect=execute):
+    with patch("custom_components.adjustable_bed.beds.rmcontrol.services._execute", side_effect=execute):
         await handle_rmcontrol_anti_snore(ServiceCall(hass, DOMAIN, "rmcontrol_anti_snore", data))
     controller.rmcontrol_anti_snore_config.assert_awaited_once_with("count", 3)
     controller.rmcontrol_anti_snore_switch.assert_not_awaited()
@@ -266,8 +266,8 @@ def test_static_controller_does_not_gain_a_discovery_listener(hass) -> None:
 
 
 async def test_factory_uses_opt_in_product_and_preserves_legacy_without_it(hass) -> None:
-    from custom_components.adjustable_bed.beds.richmat import RichmatController
-    from custom_components.adjustable_bed.beds.rmcontrol import RmcontrolController
+    from custom_components.adjustable_bed.beds.richmat.controller import RichmatController
+    from custom_components.adjustable_bed.beds.rmcontrol.controller import RmcontrolController
 
     coordinator = MagicMock(hass=hass)
     coordinator.name = "Test bed"
@@ -275,7 +275,7 @@ async def test_factory_uses_opt_in_product_and_preserves_legacy_without_it(hass)
     client = MagicMock()
     client.is_connected = True
     with patch(
-        "custom_components.adjustable_bed.beds.rmcontrol.detect_rmcontrol_transport",
+        "custom_components.adjustable_bed.beds.rmcontrol.controller.detect_rmcontrol_transport",
         new_callable=AsyncMock,
         return_value=(False, "6e400002-b5a3-f393-e0a9-e50e24dcca9e", False),
     ):
@@ -338,8 +338,8 @@ async def test_dynamic_light_select_survives_reconnect_discovery(hass: HomeAssis
     from homeassistant.helpers import entity_registry as er
     from pytest_homeassistant.common import MockConfigEntry
 
-    from custom_components.adjustable_bed.beds.rmcontrol import RmcontrolController
-    from custom_components.adjustable_bed.rmcontrol_protocol import Notification
+    from custom_components.adjustable_bed.beds.rmcontrol.controller import RmcontrolController
+    from custom_components.adjustable_bed.beds.rmcontrol.protocol import Notification
     from custom_components.adjustable_bed.select import _select_entities_for
 
     coordinator = _runtime()
@@ -378,7 +378,7 @@ async def test_light_registry_retains_only_possible_profile_capabilities(
     from homeassistant.helpers import entity_registry as er
     from pytest_homeassistant.common import MockConfigEntry
 
-    from custom_components.adjustable_bed.beds.rmcontrol import RmcontrolController
+    from custom_components.adjustable_bed.beds.rmcontrol.controller import RmcontrolController
     from custom_components.adjustable_bed.light import _light_entities_for
     from custom_components.adjustable_bed.select import _select_entities_for
 
@@ -504,7 +504,7 @@ async def test_rmcontrol_restart_retains_event_driven_registry_rows(hass, domain
     from homeassistant.helpers import entity_registry as er
     from pytest_homeassistant.common import MockConfigEntry
 
-    from custom_components.adjustable_bed.beds.rmcontrol import RmcontrolController
+    from custom_components.adjustable_bed.beds.rmcontrol.controller import RmcontrolController
 
     entry = MockConfigEntry(domain=DOMAIN)
     entry.add_to_hass(hass)
@@ -523,7 +523,7 @@ async def test_rmcontrol_restart_retains_event_driven_registry_rows(hass, domain
 @pytest.mark.parametrize("operation", ["single", "repeat"])
 @pytest.mark.parametrize("paired", [False, True])
 async def test_alarm_validates_every_product_before_writing(hass, operation, paired) -> None:
-    from custom_components.adjustable_bed.beds.rmcontrol import RmcontrolController
+    from custom_components.adjustable_bed.beds.rmcontrol.controller import RmcontrolController
 
     first = MagicMock()
     second = MagicMock()

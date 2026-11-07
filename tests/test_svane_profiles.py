@@ -9,8 +9,9 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.bed_traits import bed_type_has_position_feedback
-from custom_components.adjustable_bed.beds.jensen_linon import JensenLinonController
-from custom_components.adjustable_bed.beds.svane import HEAD, POSITION, SvaneController
+from custom_components.adjustable_bed.beds.jensen.linon import JensenLinonController
+from custom_components.adjustable_bed.beds.svane.controller import HEAD, POSITION, SvaneController
+from custom_components.adjustable_bed.beds.svane.state import get_svane_session
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
@@ -40,7 +41,6 @@ from custom_components.adjustable_bed.detection import detect_bed_type
 from custom_components.adjustable_bed.light import _light_entities_for
 from custom_components.adjustable_bed.number import _number_entities_for
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
-from custom_components.adjustable_bed.svane_state import get_svane_session
 from custom_components.adjustable_bed.switch import _switch_entities_for
 from tests.app_state_helpers import stored_app_state
 from tests.form_helpers import (
@@ -426,7 +426,7 @@ async def test_every_setup_route_suggests_by_the_same_name_rule(hass, route):
     ],
 )
 def test_source_exact_scan_allowlist_independent_of_known_address_selection(name, expected):
-    from custom_components.adjustable_bed.svane_state import is_svane_discovery_name
+    from custom_components.adjustable_bed.beds.svane.state import is_svane_discovery_name
 
     assert is_svane_discovery_name(name) is expected
 

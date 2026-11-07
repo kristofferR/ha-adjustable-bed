@@ -20,8 +20,8 @@ from typing import TYPE_CHECKING, Any
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakCharacteristicNotFoundError, BleakError
 
-from ..codec import vibradorm as codec
-from ..const import (
+from ...codec import vibradorm as codec
+from ...const import (
     VIBRADORM_CBI_CHAR_UUID,
     VIBRADORM_COMMAND_CHAR_UUID,
     VIBRADORM_LIGHT_CHAR_UUID,
@@ -31,12 +31,12 @@ from ..const import (
     VIBRADORM_SECONDARY_SERVICE_UUID,
     VIBRADORM_SERVICE_UUID,
 )
-from ..profiles.vibradorm import LEGACY
-from .base import BedController
+from ...profiles.vibradorm import LEGACY
+from ..base import BedController
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
-    from .lifecycle import ControllerSession
+    from ...coordinator import AdjustableBedCoordinator
+    from ..lifecycle import ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -23,7 +23,7 @@ REPORT_SHA256 = "3038c935d219550968b21a2a5c8f363d17aac4ef38f668fb5f58a3e4d9bc745
 SCALARS_SHA256 = "6d5b25829da86dfbcbd9e2e8e504ed91b0e8591fc21f9af36b29ec1afd9a0517"
 SCALAR_REPORT_SHA256 = "80522a5e45182f611985aa15d0a3fc22e430be6896b095de38b8b2c92d7552c4"
 TARGET = (
-    Path(__file__).resolve().parents[1] / "custom_components/adjustable_bed/richmat_profiles.py"
+    Path(__file__).resolve().parents[1] / "custom_components/adjustable_bed/beds/rmcontrol/profiles.py"
 )
 BEGIN = "# BEGIN GENERATED CATALOG"
 END = "# END GENERATED CATALOG"

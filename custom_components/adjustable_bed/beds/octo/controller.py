@@ -27,8 +27,8 @@ from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
-from ..card import CARD_HIDDEN, memory_card
-from ..const import (
+from ...card import CARD_HIDDEN, memory_card
+from ...const import (
     CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     CONF_OCTO_PIN,
     DEFAULT_OCTO_PIN,
@@ -40,9 +40,9 @@ from ..const import (
     OCTO_VARIANT_STAR2,
     VARIANT_AUTO,
 )
-from ..controller_state import StateKey
-from ..execution import ExecutionCapabilities
-from ..state_keys import (
+from ...controller_state import StateKey
+from ...execution import ExecutionCapabilities
+from ...state_keys import (
     AUTOMATIC_LIGHT,
     LIGHT_INTENSITY,
     OCTO_LIGHT_DURATION,
@@ -52,7 +52,7 @@ from ..state_keys import (
     UNDER_BED_LIGHTS_RGB,
     UNDER_BED_LIGHTS_RGBW,
 )
-from .base import (
+from ..base import (
     BedController,
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -61,12 +61,12 @@ from .base import (
     ControllerSelectSpec,
     MotorControlSpec,
 )
-from .builder import BuildContext
-from .lifecycle import CapabilitySnapshotPolicy
+from ..builder import BuildContext
+from ..lifecycle import CapabilitySnapshotPolicy
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
-    from .lifecycle import ControllerSession
+    from ...coordinator import AdjustableBedCoordinator
+    from ..lifecycle import ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -539,7 +539,7 @@ class OctoController(BedController, OctoPacketCodec):
 
     async def async_on_connect(self, session: ControllerSession) -> None:
         """Subscribe, discover, persist the snapshot, then PIN and keepalive, in order."""
-        from ..unsupported import update_octo_pin_required_issue
+        from ...unsupported import update_octo_pin_required_issue
 
         await session.async_start_notify()
         # Standard Octo Smart Control declares this ordered session handshake

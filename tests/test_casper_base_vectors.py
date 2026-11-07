@@ -109,7 +109,7 @@ def test_the_snapshot_route_sends_only_its_products_frames():
 
 
 def test_the_controller_builds_no_frame_of_its_own():
-    source = (ROOT / "custom_components/adjustable_bed/beds/casper_base.py").read_text()
+    source = (ROOT / "custom_components/adjustable_bed/beds/casper_base/controller.py").read_text()
     assert not re.search(r"""b["']\\x6e|bytes\(\(0x6E""", source, re.I)
 
 

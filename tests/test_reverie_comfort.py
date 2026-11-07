@@ -9,13 +9,13 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds.reverie import ReverieController
-from custom_components.adjustable_bed.beds.reverie_comfort import (
+from custom_components.adjustable_bed.beds.reverie.comfort import (
     ReverieComfortRequest,
     build_p1_composer_payload,
     build_stk_composer_payload,
     validate_comfort_request,
 )
+from custom_components.adjustable_bed.beds.reverie.controller import ReverieController
 
 
 class _Clock:

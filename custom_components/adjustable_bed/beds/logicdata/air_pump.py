@@ -14,9 +14,9 @@ import unicodedata
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Final, cast
 
-from ..card import CARD_FIRMNESS
-from ..controller_state import StateKey
-from .base import (
+from ...card import CARD_FIRMNESS
+from ...controller_state import StateKey
+from ..base import (
     BedController,
     ControllerButtonSpec,
     ControllerStateSensorSpec,
@@ -27,7 +27,7 @@ from .base import (
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 

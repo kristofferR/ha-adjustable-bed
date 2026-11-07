@@ -7,6 +7,13 @@ from homeassistant.const import CONF_ADDRESS
 from homeassistant.helpers import issue_registry as ir
 from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.beds.furnimove.repair import (
+    CONF_FURNIMOVE_ROUTE_KEPT,
+    CONF_OKIMAT_MODEL_ON_CST,
+    CONF_OKIN_CST_KEPT,
+    FurniMoveLayoutRepairFlow,
+    async_refresh_furnimove_layout_issues,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_FURNIMOVE,
     BED_TYPE_OKIMAT,
@@ -28,13 +35,6 @@ from custom_components.adjustable_bed.const import (
     PAIR_MODE_SEPARATE_ADDRESS,
     SIDE_LEFT,
     SIDE_RIGHT,
-)
-from custom_components.adjustable_bed.furnimove_repair import (
-    CONF_FURNIMOVE_ROUTE_KEPT,
-    CONF_OKIMAT_MODEL_ON_CST,
-    CONF_OKIN_CST_KEPT,
-    FurniMoveLayoutRepairFlow,
-    async_refresh_furnimove_layout_issues,
 )
 from custom_components.adjustable_bed.pairing import effective_child_data
 from custom_components.adjustable_bed.repairs import async_create_fix_flow
@@ -184,7 +184,7 @@ async def test_one_motor_does_not_prove_that_a_legacy_entry_is_a_staircase(hass)
 
 async def test_handset_repair_accepts_the_exact_furnimove_app_82417(hass):
     """Repair must offer the captured layout shown in the user's FurniMove app."""
-    from custom_components.adjustable_bed.furnimove_profiles import FURNIMOVE_PROFILES
+    from custom_components.adjustable_bed.beds.furnimove.profiles import FURNIMOVE_PROFILES
     entry = _legacy(hass)
     flow = FurniMoveLayoutRepairFlow(entry.entry_id, None)
     flow.hass = hass

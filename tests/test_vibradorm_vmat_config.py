@@ -9,13 +9,15 @@ from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.beds.vibradorm.app_state import (
+    get_vibradorm_app_session_intent,
+)
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     _vibradorm_app_data,
     _vibradorm_app_errors,
 )
 from custom_components.adjustable_bed.profiles.vibradorm import VMAT_REMOTES
-from custom_components.adjustable_bed.vibradorm_app_state import get_vibradorm_app_session_intent
 from tests.test_vibradorm_vmat import make_vmat
 
 
@@ -642,7 +644,9 @@ async def test_actual_entity_factories_follow_remote_gates(hass, remote):
 async def test_selected_vmat_entry_discards_previous_app_selection_intent(hass, restored):
     from homeassistant.data_entry_flow import FlowResultType
 
-    from custom_components.adjustable_bed.vibradorm_app_state import mark_vibradorm_app_selection
+    from custom_components.adjustable_bed.beds.vibradorm.app_state import (
+        mark_vibradorm_app_selection,
+    )
 
     address = "11:22:33:44:55:66"
     old = mark_vibradorm_app_selection(

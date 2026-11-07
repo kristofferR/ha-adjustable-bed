@@ -22,7 +22,7 @@ from ..profiles.jiecang import (
     preset_command,
 )
 from ..state_keys import UNDER_BED_LIGHTS_ON, massage_intensity
-from .jiecang import JiecangProfileController
+from .jiecang.controller import JiecangProfileController
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic

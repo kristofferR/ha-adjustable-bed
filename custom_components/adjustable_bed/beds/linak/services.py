@@ -8,11 +8,9 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .beds.base import BedController
-from .beds.linak_protocol import LinakAlarmAction, LinakAlarmStep
-from .const import DOMAIN
-from .paired_coordinator import BedChild
-from .services import (
+from ...const import DOMAIN
+from ...paired_coordinator import BedChild
+from ...services import (
     ATTR_ACTION,
     ATTR_ACTIONS,
     ATTR_DURATION_MS,
@@ -33,6 +31,8 @@ from .services import (
     _preflight_and_execute,
     _preflight_each,
 )
+from ..base import BedController
+from .protocol import LinakAlarmAction, LinakAlarmStep
 
 SERVICE_LINAK_MOVE_SIMULTANEOUS = "linak_move_simultaneously"
 SERVICE_LINAK_SET_ALARM = "linak_set_alarm"
@@ -93,7 +93,7 @@ async def handle_linak_move_simultaneously(call: ServiceCall) -> None:
 
 async def handle_linak_set_alarm(call: ServiceCall) -> None:
     """Program a Linak alarm using event, recurrence, and commit writes."""
-    from .beds.linak import LinakController
+    from .controller import LinakController
 
     steps = tuple(
         LinakAlarmStep(

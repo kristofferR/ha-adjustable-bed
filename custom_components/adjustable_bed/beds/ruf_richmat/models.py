@@ -1,6 +1,6 @@
 """Model selectors from each accepted app catalog, kept separate from BLE discovery.
 
-The model keys of each ``ruf_richmat_data`` catalog, listed here so selector
+The model keys of each ``beds/ruf_richmat/data`` catalog, listed here so selector
 validation reads no file. Edited by hand alongside the data; a test checks they match.
 """
 

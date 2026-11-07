@@ -5,13 +5,13 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING
 
-from ..gmmotor_protocol import Material, desk_packet, stop_packet
-from ..gmmotor_requests import Request
-from .base import ControllerButtonSpec, ControllerHoldSpec
-from .gmmotor import GmmotorController
+from ..base import ControllerButtonSpec, ControllerHoldSpec
+from .controller import GmmotorController
+from .protocol import Material, desk_packet, stop_packet
+from .requests import Request
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _DESK_ACTIONS = {
     "desk_up": Material("deviceFunctionItemDeskUp", 1),

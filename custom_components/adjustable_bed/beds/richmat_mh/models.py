@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import Final
 
-from . import richmat_mh_catalog as _catalog
-from .const import VARIANT_AUTO
-from .ruf_richmat_models import MODEL_IDS as _RUF_MODEL_IDS
+from ...const import VARIANT_AUTO
+from ..ruf_richmat.models import MODEL_IDS as _RUF_MODEL_IDS
+from . import catalog as _catalog
 
 
 # Richmat MH app model choices, from the generated catalog: each app's picker dialog

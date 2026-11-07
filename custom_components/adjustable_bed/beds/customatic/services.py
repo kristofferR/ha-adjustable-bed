@@ -9,13 +9,13 @@ from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 
-from .const import (
+from ...const import (
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
     DOMAIN,
 )
-from .services import (
+from ...services import (
     ATTR_ACTIONS,
     ATTR_DURATION,
     DEVICE_IDS,

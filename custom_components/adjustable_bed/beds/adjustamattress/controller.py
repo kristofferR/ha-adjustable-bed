@@ -11,13 +11,26 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
-from ..app_session import app_session
-from ..card import CARD_LIGHTING, CARD_MASSAGE, CARD_PRESETS, CARD_UTILITY, CardPlacement
-from ..const import CONF_BLE_DEVICE_NAME
-from ..controller_state import StateKey
-from ..detection import is_mac_like_name
-from ..profiles import keeson as keeson_profiles
-from .adjustamattress_protocol import (
+from ...app_session import app_session
+from ...card import CARD_LIGHTING, CARD_MASSAGE, CARD_PRESETS, CARD_UTILITY, CardPlacement
+from ...const import CONF_BLE_DEVICE_NAME
+from ...controller_state import StateKey
+from ...detection import is_mac_like_name
+from ...profiles import keeson as keeson_profiles
+from ..base import (
+    BedController,
+    ControllerButtonSpec,
+    ControllerHoldSpec,
+    ControllerMotorHoldSpec,
+    ControllerNumberSpec,
+    ControllerSelectSpec,
+    ControllerStateBinarySensorSpec,
+    ControllerStateSensorSpec,
+    MotorCommandCallable,
+    MotorControlSpec,
+)
+from ..builder import BuildContext
+from .protocol import (
     BASE_ACTIONS,
     CYCLIC,
     DEDICATED,
@@ -35,22 +48,9 @@ from .adjustamattress_protocol import (
     model_from_name,
     parse,
 )
-from .base import (
-    BedController,
-    ControllerButtonSpec,
-    ControllerHoldSpec,
-    ControllerMotorHoldSpec,
-    ControllerNumberSpec,
-    ControllerSelectSpec,
-    ControllerStateBinarySensorSpec,
-    ControllerStateSensorSpec,
-    MotorCommandCallable,
-    MotorControlSpec,
-)
-from .builder import BuildContext
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 NUS_SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
 NUS_WRITE = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"

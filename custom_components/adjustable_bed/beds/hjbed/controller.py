@@ -13,11 +13,23 @@ from typing import TYPE_CHECKING, Final, cast
 
 from homeassistant.util import dt as dt_util
 
-from ..card import CARD_HIDDEN
-from ..codec import richmat as codec
-from ..controller_state import StateKey
-from ..hjbed_catalog import ACTIONS, MUSIC_ACTIONS, PRODUCTS, Action
-from ..hjbed_protocol import (
+from ...card import CARD_HIDDEN
+from ...codec import richmat as codec
+from ...controller_state import StateKey
+from ...profiles.richmat import HJBED
+from ..base import (
+    BedController,
+    ControllerButtonSpec,
+    ControllerHoldSpec,
+    ControllerMotorHoldSpec,
+    ControllerSelectSpec,
+    ControllerStateSensorSpec,
+    MotorControlSpec,
+    require_controller,
+)
+from ..builder import BuildContext
+from .catalog import ACTIONS, MUSIC_ACTIONS, PRODUCTS, Action
+from .protocol import (
     Alarm,
     add_alarm,
     clock,
@@ -29,27 +41,15 @@ from ..hjbed_protocol import (
     query_alarms,
     sync_time,
 )
-from ..hjbed_receive import Value
-from ..hjbed_requests import Request
-from ..hjbed_state import GESTURE_RELEASE, NonProgressFrame, State, Stream
-from ..profiles.richmat import HJBED
-from .base import (
-    BedController,
-    ControllerButtonSpec,
-    ControllerHoldSpec,
-    ControllerMotorHoldSpec,
-    ControllerSelectSpec,
-    ControllerStateSensorSpec,
-    MotorControlSpec,
-    require_controller,
-)
-from .builder import BuildContext
+from .receive import Value
+from .requests import Request
+from .state import GESTURE_RELEASE, NonProgressFrame, State, Stream
 
 if TYPE_CHECKING:
     from bleak import BleakClient
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 # The app's refresh tick and minimum write spacing, menu-probe spacing and BJRN save wait.
 TICK_MS = 100

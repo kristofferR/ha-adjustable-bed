@@ -14,6 +14,8 @@ from typing import Any
 
 import pytest
 
+from custom_components.adjustable_bed.beds.motion_bed.actions import MOTION_BED_ACTIONS
+from custom_components.adjustable_bed.beds.motion_bed.protocol import SOURCE_COMMANDS
 from custom_components.adjustable_bed.codec import ff_frame
 from custom_components.adjustable_bed.const import (
     BED_TYPE_ISLEEP,
@@ -30,8 +32,6 @@ from custom_components.adjustable_bed.execution import (
     STREAM_HOLD,
     ExecutionCapabilities,
 )
-from custom_components.adjustable_bed.motion_bed_actions import MOTION_BED_ACTIONS
-from custom_components.adjustable_bed.motion_bed_protocol import SOURCE_COMMANDS
 from custom_components.adjustable_bed.profiles.ff_frame import (
     BEDSENSE,
     BEDSENSE_ACTIONS,

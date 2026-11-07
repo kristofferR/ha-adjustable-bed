@@ -5,10 +5,10 @@ from pathlib import Path
 
 import pytest
 
+from custom_components.adjustable_bed.beds.ruf_richmat.models import MODEL_IDS
+from custom_components.adjustable_bed.beds.ruf_richmat.profiles import profiles
 from custom_components.adjustable_bed.catalog_json import CatalogError, Node
 from custom_components.adjustable_bed.const import RUF_RICHMAT_APPS
-from custom_components.adjustable_bed.ruf_richmat_models import MODEL_IDS
-from custom_components.adjustable_bed.ruf_richmat_profiles import profiles
 
 
 @pytest.mark.parametrize(

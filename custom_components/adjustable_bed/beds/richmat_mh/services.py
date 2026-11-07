@@ -9,10 +9,10 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
-from .beds.richmat_mh import ALARM_OPTION_CODES, RichmatMhController
-from .beds.richmat_mh_protocol import WAIST_ALARM_REPEAT, WAIST_SIDES, alarm_countdown_minutes
-from .const import DOMAIN
-from .services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
+from ...const import DOMAIN
+from ...services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
+from .controller import ALARM_OPTION_CODES, RichmatMhController
+from .protocol import WAIST_ALARM_REPEAT, WAIST_SIDES, alarm_countdown_minutes
 
 SERVICE_RICHMAT_MH_ALARM = "richmat_mh_alarm"
 SERVICE_RICHMAT_MH_AROMA = "richmat_mh_aroma"

@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING, Any, Final
 
 from homeassistant.const import CONF_ADDRESS
 
+from .beds.richmat_classic.profiles import APP_NAMES as RICHMAT_CLASSIC_APP_NAMES
 from .const import (
     BED_TYPE_BEDSENSE,
     BED_TYPE_COMFORT_MOTION,
@@ -166,7 +167,6 @@ from .const import (
     grants_one_connection_per_pairing_window,
     requires_pairing,
 )
-from .richmat_classic_profiles import APP_NAMES as RICHMAT_CLASSIC_APP_NAMES
 from .setup_questions import Question, SetupProfile
 
 if TYPE_CHECKING:
@@ -430,11 +430,11 @@ def _vibradorm_roles(
     """The staged app's or V-MAT Basic product's GATT roles; pairing proves the legacy bond."""
     bed_type = data[CONF_BED_TYPE]
     if bed_type == BED_TYPE_VMATBASIC:
-        from .beds.vmatbasic import validate_profile_roles
+        from .beds.vmatbasic.controller import validate_profile_roles
 
         validate_profile_roles(client, data[CONF_VMATBASIC_PROFILE])
     elif bed_type == BED_TYPE_VIBRADORM_APP:
-        from .beds.vibradorm_app import validate_profile_roles as validate_app_roles
+        from .beds.vibradorm.app import validate_profile_roles as validate_app_roles
         from .profiles.vibradorm import validate_vibradorm_app_profile
 
         control = data[CONF_VIBRADORM_CONTROL_TYPE]
@@ -457,7 +457,7 @@ def _vibradorm_roles(
 def _jiecang_transport(
     _hass: HomeAssistant, client: BleakClient, data: Mapping[str, Any]
 ) -> Mapping[str, Any]:
-    from .beds.jiecang_app import require_app_transport
+    from .beds.jiecang.app import require_app_transport
 
     require_app_transport(client, data)
     return {}
@@ -489,14 +489,14 @@ def _app_roles(
     """The staged Customatic or Jordan's app's own command endpoint or roles."""
     bed_type = data[CONF_BED_TYPE]
     if bed_type in (BED_TYPE_ZSERIES, *JORDANS_FAMILY.managed):
-        from .beds.serenity import require_app_roles
+        from .beds.serenity.controller import require_app_roles
 
         require_app_roles(
             client,
             f"zseries_{data[CONF_PROTOCOL_VARIANT]}" if bed_type == BED_TYPE_ZSERIES else bed_type,
         )
     elif bed_type in CUSTOMATIC_FAMILY.managed:
-        from .beds.customatic import require_command_endpoint
+        from .beds.customatic.controller import require_command_endpoint
 
         require_command_endpoint(client, bed_type.removeprefix("customatic_"))
     return {}
@@ -510,7 +510,7 @@ def _malouf_transport(
         return {}
     from homeassistant.components import bluetooth
 
-    from .beds.malouf_app import require_app_transport
+    from .beds.malouf.app import require_app_transport
 
     advertised = bluetooth.async_last_service_info(hass, data[CONF_ADDRESS], connectable=False)
     # The entry keeps the user's choice, which may stay automatic.
@@ -534,7 +534,7 @@ def _limoss_remote_route(
     _hass: HomeAssistant, client: BleakClient, data: Mapping[str, Any]
 ) -> Mapping[str, Any]:
     if data[CONF_BED_TYPE] == BED_TYPE_LIMOSS_REMOTE:
-        from .beds.limoss_remote import require_app_route
+        from .beds.limoss.remote import require_app_route
 
         require_app_route(client)
     return {}
@@ -1103,8 +1103,8 @@ def _jensen_suggestion(bed_type: str, variant: str, name: str | None) -> str:
     the Jensen app its LinOn profile for "Adjustable Bed" or "Jensen Bed".
     Every setup route suggests the same answer; the user confirms it.
     """
+    from .beds.svane.state import svane_profile_for_selected_name
     from .detection import is_jensen_linon_name
-    from .svane_state import svane_profile_for_selected_name
 
     for answer, route in JENSEN_FAMILY.answers.items():
         if (route.bed_type, route.variant) == (bed_type, variant) and variant != VARIANT_AUTO:
@@ -1444,8 +1444,8 @@ _REMACRO_APPS: Final = {
 
 
 def _remacro_model(visit: Visit) -> int | None:
-    from .beds.remacro_protocol import advertised_model_id
-    from .remacro_discovery import remacro_manufacturer_data
+    from .beds.remacro.discovery import remacro_manufacturer_data
+    from .beds.remacro.protocol import advertised_model_id
 
     return advertised_model_id(
         remacro_manufacturer_data(
@@ -1462,7 +1462,7 @@ def _remacro_answers(visit: Visit) -> Mapping[str, Answer]:
     The bed type stays; only the app changes, so the form's settings stay. The
     advertised model is remembered.
     """
-    from .beds.remacro_protocol import app_for_variant, apps_listing
+    from .beds.remacro.protocol import app_for_variant, apps_listing
 
     model_id = _remacro_model(visit)
     listing = apps_listing(model_id)
@@ -1475,7 +1475,7 @@ def _remacro_answers(visit: Visit) -> Mapping[str, Answer]:
 
 
 def _remacro_placeholders(visit: Visit) -> dict[str, str]:
-    from .beds.remacro_protocol import MODELS
+    from .beds.remacro.protocol import MODELS
 
     model_id = _remacro_model(visit)
     return {

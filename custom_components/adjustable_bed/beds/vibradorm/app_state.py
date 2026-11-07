@@ -6,7 +6,7 @@ import re
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Literal
 
-from .app_session import app_session, drop_app_sessions
+from ...app_session import app_session, drop_app_sessions
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -147,7 +147,7 @@ def _key(
     if app_profile not in ("caresse", "werkmeister", "vmat"):
         raise ValueError("Unknown app profile")
     if app_profile == "vmat":
-        from .profiles.vibradorm import get_vmat_remote
+        from ...profiles.vibradorm import get_vmat_remote
 
         if control_type != get_vmat_remote(remote).control_type or isinstance(control_type, bool):
             raise ValueError("VMAT control type must match its exact remote")

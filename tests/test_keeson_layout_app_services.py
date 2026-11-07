@@ -9,7 +9,7 @@ from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
 from custom_components.adjustable_bed.beds.base import BedController
-from custom_components.adjustable_bed.beds.keeson_layout_app import AppController
+from custom_components.adjustable_bed.beds.keeson.layout_app import AppController
 from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.const import DOMAIN, SIDE_BOTH
 from custom_components.adjustable_bed.controller_factory import create_controller

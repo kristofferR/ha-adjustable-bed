@@ -10,8 +10,8 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Final
 
-from ..codec import okin_nframe
-from ..profiles.okin_nframe import ESHINE_KEYS
+from ...codec import okin_nframe
+from ...profiles.okin_nframe import ESHINE_KEYS
 
 SERVICE_UUID: Final = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
 WRITE_UUID: Final = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"

@@ -47,7 +47,7 @@ def generate(report: Path) -> None:
             '"""',
             "from typing import Final",
             "",
-            "from .gmmotor_notifications import Value",
+            "from .notifications import Value",
             "",
             "# fmt: off",
             "LAYOUTS: Final[dict[str, Value]] = " + pformat(models, width=110),
@@ -55,7 +55,7 @@ def generate(report: Path) -> None:
             "",
         ]
     )
-    (ROOT / "custom_components/adjustable_bed/gmmotor_sleep_layouts.py").write_text(output)
+    (ROOT / "custom_components/adjustable_bed/beds/gmmotor/sleep_layouts.py").write_text(output)
     print(json.dumps({"layouts": len(models), "null_branches": len(nulls), "bytes": len(output)}))
 
 

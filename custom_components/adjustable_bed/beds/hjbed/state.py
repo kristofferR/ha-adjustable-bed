@@ -6,7 +6,7 @@ from collections.abc import Callable, Sequence
 from contextvars import ContextVar
 from copy import deepcopy
 
-from .hjbed_receive import EventSink, Value, be, parse_frame
+from .receive import EventSink, Value, be, parse_frame
 
 GESTURE_RELEASE: ContextVar[bool] = ContextVar("hjbed_gesture_release", default=False)
 

@@ -6,7 +6,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Literal
 
-from .reverie_pairlink_sdk import PairlinkSdkMessage, sdk_mac
+from .pairlink_sdk import PairlinkSdkMessage, sdk_mac
 
 
 class PairlinkSdkReadError(ValueError):

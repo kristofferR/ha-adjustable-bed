@@ -14,13 +14,21 @@ from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
-from ..card import CARD_UTILITY
-from ..const import CONF_GMMOTOR_SIDE, CONF_PRODUCT_TYPE
-from ..controller_state import StateKey
-from ..gmmotor_catalog_types import Phase
-from ..gmmotor_notifications import Event, Value, common, desk21, extra
-from ..gmmotor_profiles import Action, load_profile
-from ..gmmotor_protocol import (
+from ...card import CARD_UTILITY
+from ...const import CONF_GMMOTOR_SIDE, CONF_PRODUCT_TYPE
+from ...controller_state import StateKey
+from ..base import (
+    BedController,
+    ControllerButtonSpec,
+    ControllerHoldSpec,
+    ControllerStateSensorSpec,
+    MotorControlSpec,
+)
+from ..builder import BuildContext
+from .catalog_types import Phase
+from .notifications import Event, Value, common, desk21, extra
+from .profiles import Action, load_profile
+from .protocol import (
     FrameBuffer,
     MalformedNotification,
     Material,
@@ -38,22 +46,14 @@ from ..gmmotor_protocol import (
     snore_enabled,
     stop_packet,
 )
-from ..gmmotor_requests import GmmotorActions, Request
-from ..gmmotor_sessions import product_ui_states
-from ..gmmotor_transport import Transport, native_write_lock, select_p1
-from .base import (
-    BedController,
-    ControllerButtonSpec,
-    ControllerHoldSpec,
-    ControllerStateSensorSpec,
-    MotorControlSpec,
-)
-from .builder import BuildContext
+from .requests import GmmotorActions, Request
+from .sessions import product_ui_states
+from .transport import Transport, native_write_lock, select_p1
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 _WRITE_INTERVAL = 0.1
@@ -467,7 +467,7 @@ class GmmotorController(BedController, GmmotorActions):
         if op == "light_timeout" and request.value > 900:
             raise ValueError("Light timeout is outside the source's 0 to 900 second slider")
         if op == "light_color" and self.profile.eight_colors:
-            from ..gmmotor_profiles import EIGHT_COLORS
+            from .profiles import EIGHT_COLORS
 
             if request.rgb not in EIGHT_COLORS:
                 raise ValueError("Choose a color from this product's eight-color palette")
@@ -597,14 +597,14 @@ class GmmotorController(BedController, GmmotorActions):
 
 async def build_controller(ctx: BuildContext) -> BedController:
     """Build the bed or desk controller for the stored GMmotor profile."""
-    from ..gmmotor_profiles import profile_choices
+    from .profiles import profile_choices
 
     profile = ctx.data.get(CONF_PRODUCT_TYPE, "")
     if profile not in profile_choices():
         profile = ""  # Source factory's unsupported-selector fallback.
     if profile in ("FWRM", "WFRM"):
-        await ctx.preload("gmmotor_desk")
-        from .gmmotor_desk import GmmotorDeskController
+        await ctx.preload("gmmotor.desk")
+        from .desk import GmmotorDeskController
 
         return GmmotorDeskController(ctx.coordinator, profile=profile)
     return GmmotorController(

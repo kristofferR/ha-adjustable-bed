@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, tzinfo
 from typing import cast
 
-from .doublesleep_protocol import Cache, Json, Protocol, UIState
+from .protocol import Cache, Json, Protocol, UIState
 
 MAX_REPORT_BYTES = 4 * 1024 * 1024
 

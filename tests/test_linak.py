@@ -10,11 +10,11 @@ import pytest
 from bleak.exc import BleakError
 from homeassistant.core import HomeAssistant
 
-from custom_components.adjustable_bed.beds.linak import (
+from custom_components.adjustable_bed.beds.linak.controller import (
     LinakCommands,
     LinakPositionSeekPolicy,
 )
-from custom_components.adjustable_bed.beds.linak_protocol import (
+from custom_components.adjustable_bed.beds.linak.protocol import (
     LinakCapabilitySnapshot,
     LinakModelVariant,
     LinakProfile,
@@ -236,7 +236,7 @@ class TestLinakController:
         ]
 
         with patch(
-            "custom_components.adjustable_bed.beds.linak.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.linak.controller.asyncio.sleep",
             new=AsyncMock(),
         ) as mock_sleep:
             await coordinator.controller.write_command(
@@ -309,8 +309,8 @@ class TestLinakController:
             BleakError("Insufficient authentication"), None, None,
         ]
         with (
-            patch("custom_components.adjustable_bed.beds.linak.monotonic", return_value=100),
-            patch("custom_components.adjustable_bed.beds.linak.asyncio.sleep", new=AsyncMock()),
+            patch("custom_components.adjustable_bed.beds.linak.controller.monotonic", return_value=100),
+            patch("custom_components.adjustable_bed.beds.linak.controller.asyncio.sleep", new=AsyncMock()),
         ):
             await controller.stop_all()
 
@@ -338,8 +338,8 @@ class TestLinakController:
 
         mock_bleak_client.write_gatt_char.side_effect = write
         with (
-            patch("custom_components.adjustable_bed.beds.linak.monotonic", side_effect=lambda: clock),
-            patch("custom_components.adjustable_bed.beds.linak.asyncio.sleep", side_effect=advance),
+            patch("custom_components.adjustable_bed.beds.linak.controller.monotonic", side_effect=lambda: clock),
+            patch("custom_components.adjustable_bed.beds.linak.controller.asyncio.sleep", side_effect=advance),
         ):
             if ready_after is None:
                 with pytest.raises(BleakError, match="Insufficient authentication"):
@@ -922,7 +922,7 @@ class TestLinakController:
         mock_bleak_client.read_gatt_char.side_effect = stalled_read
         handler = MagicMock()
         with patch(
-            "custom_components.adjustable_bed.beds.linak.LINAK_PROTOCOL_READ_TIMEOUT_S",
+            "custom_components.adjustable_bed.beds.linak.controller.LINAK_PROTOCOL_READ_TIMEOUT_S",
             0.001,
         ):
             await coordinator.controller._read_protocol_characteristic(
@@ -1041,7 +1041,7 @@ class TestLinakCorpusProfiles:
     ) -> None:
         """A mask read that never answers (#714) is bounded and keeps 3.x features."""
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.linak.LINAK_CAPABILITY_MASK_READ_TIMEOUT_S",
+            "custom_components.adjustable_bed.beds.linak.controller.LINAK_CAPABILITY_MASK_READ_TIMEOUT_S",
             0,
         )
         original_read = mock_bleak_client.read_gatt_char.side_effect
@@ -1504,7 +1504,7 @@ class TestLinakPresets:
 
         mock_bleak_client.write_gatt_char.side_effect = write
         with (
-            patch("custom_components.adjustable_bed.beds.linak.LINAK_MEMORY_RECALL_DURATION_S", .02),
+            patch("custom_components.adjustable_bed.beds.linak.controller.LINAK_MEMORY_RECALL_DURATION_S", .02),
             patch.object(controller, "_await_control_ready", side_effect=readiness),
         ):
             async with asyncio.timeout(.5):
@@ -1697,7 +1697,7 @@ class TestLinakMassage:
         _mark_session_ready(coordinator)
 
         with patch(
-            "custom_components.adjustable_bed.beds.linak.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.linak.controller.asyncio.sleep",
             new=AsyncMock(),
         ):
             await coordinator.controller.massage_toggle()
@@ -1798,7 +1798,7 @@ class TestLinakPositionData:
                 new=AsyncMock(),
             ) as mock_ensure_notifications,
             patch(
-                "custom_components.adjustable_bed.beds.linak.asyncio.sleep",
+                "custom_components.adjustable_bed.beds.linak.controller.asyncio.sleep",
                 new=AsyncMock(),
             ) as mock_sleep,
         ):
@@ -1828,7 +1828,7 @@ class TestLinakPositionData:
                 new=AsyncMock(return_value={"back"}),
             ) as mock_read_positions_once,
             patch(
-                "custom_components.adjustable_bed.beds.linak.asyncio.sleep",
+                "custom_components.adjustable_bed.beds.linak.controller.asyncio.sleep",
                 new=AsyncMock(),
             ) as mock_sleep,
         ):

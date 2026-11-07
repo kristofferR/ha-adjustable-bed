@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from .sleep_number_auth import InvalidSleepNumberSession
+from .beds.sleep_number.auth import InvalidSleepNumberSession
 
 _BLE_AUTHENTICATION_ERROR_MARKERS: tuple[str, ...] = (
     "insufficient authentication",

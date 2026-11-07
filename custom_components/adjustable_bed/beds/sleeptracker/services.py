@@ -10,8 +10,8 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .const import DOMAIN
-from .sleeptracker_protocol import FREQUENCIES, PRESETS, FanSide, Request
+from ...const import DOMAIN
+from .protocol import FREQUENCIES, PRESETS, FanSide, Request
 
 if TYPE_CHECKING:
     from homeassistant.helpers.typing import VolSchemaType
@@ -64,8 +64,8 @@ def build_request(service: str, data: Mapping[str, object]) -> Request:
 
 
 async def handle_sleeptracker(call: ServiceCall) -> None:
-    from .beds.sleeptracker import SleeptrackerController
-    from .services import _call_targets, _preflight_and_execute
+    from ...services import _call_targets, _preflight_and_execute
+    from .controller import SleeptrackerController
 
     try:
         request = build_request(call.service, call.data)
@@ -96,7 +96,7 @@ def _frequency(value: object) -> int:
 
 
 def async_register_sleeptracker_services(hass: HomeAssistant) -> None:
-    from .services import CONF_DEVICE_ID, SIDE_FIELD
+    from ...services import CONF_DEVICE_ID, SIDE_FIELD
 
     common = {vol.Required(CONF_DEVICE_ID): cv.ensure_list, **SIDE_FIELD}
     schemas = {

@@ -12,16 +12,16 @@ from typing import TYPE_CHECKING, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
-from ..codec import kaidi as codec
-from ..const import CONF_KAIDI_ROOM_ID
-from ..controller_state import StateKey
-from ..kaidi_protocol import extract_kaidi_advertisement, is_floyd_advertisement
-from ..profiles.kaidi import FLOYD, KaidiProductFamily
-from .base import ControllerStateBinarySensorSpec, MotorControlSpec
-from .kaidi import KaidiController
+from ...codec import kaidi as codec
+from ...const import CONF_KAIDI_ROOM_ID
+from ...controller_state import StateKey
+from ...profiles.kaidi import FLOYD, KaidiProductFamily
+from ..base import ControllerStateBinarySensorSpec, MotorControlSpec
+from .controller import KaidiController
+from .protocol import extract_kaidi_advertisement, is_floyd_advertisement
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 
 BATTERY_MODE: Final = StateKey[bool | None]("floyd_battery_mode")

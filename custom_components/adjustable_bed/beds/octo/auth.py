@@ -10,7 +10,15 @@ from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
-from .beds.octo import (
+from ...const import (
+    OCTO_CHAR_UUID,
+    OCTO_STAR2_CHAR_UUID,
+    OCTO_STAR2_SERVICE_UUID,
+    OCTO_VARIANT_STAR2,
+    VARIANT_AUTO,
+)
+from ...validators import is_valid_octo_pin
+from .controller import (
     OCTO_FEATURE_END,
     OCTO_FEATURE_PIN,
     OCTO_FEATURE_TIMEOUT,
@@ -22,14 +30,6 @@ from .beds.octo import (
     OCTO_SYSTEM_PING,
     OctoPacketCodec,
 )
-from .const import (
-    OCTO_CHAR_UUID,
-    OCTO_STAR2_CHAR_UUID,
-    OCTO_STAR2_SERVICE_UUID,
-    OCTO_VARIANT_STAR2,
-    VARIANT_AUTO,
-)
-from .validators import is_valid_octo_pin
 
 # Setup bounds, not firmware timing guarantees.
 PIN_VERIFICATION_TIMEOUT = 10.0

@@ -176,7 +176,7 @@ that range is a protocol limit. The builder does not clamp or cycle the value.
 #### Characteristic commands
 
 UUIDs below share suffix `-f324-29c3-38d1-85c0c2e86885`.
-Values come from [`reverie_nightstand.py`](../../custom_components/adjustable_bed/beds/reverie_nightstand.py).
+Values come from [`reverie_nightstand.py`](../../custom_components/adjustable_bed/beds/reverie/nightstand.py).
 Model capability gates apply to every row.
 
 | Command | Characteristic prefix | Value / bytes |
@@ -264,7 +264,7 @@ The central GATT profiles are:
 #### Dashboard and setting payloads
 
 Values below come from `dashboard_payload()` / `a7_payload()` and
-[`reverie_pairlink.py`](../../custom_components/adjustable_bed/beds/reverie_pairlink.py).
+[`reverie_pairlink.py`](../../custom_components/adjustable_bed/beds/reverie/pairlink.py).
 Dashboard payloads are `01 command value 00`; settings are
 `01 A7 selector value`. Command numbers are hexadecimal; `value` is one byte.
 These four-byte application payloads are inside the authenticated Pairlink
@@ -356,7 +356,7 @@ for the writer, without following a replacement primary or changed authenticatio
 
 The separate local peripheral role is an explicit setup choice that makes this
 Home Assistant host join the Pairlink network. It uses the integration-owned
-Linux BlueZ D-Bus backend at `beds/reverie_pairlink_transport.py`. It is outside
+Linux BlueZ D-Bus backend at `beds/reverie/pairlink_transport.py`. It is outside
 Home Assistant's public server-transport API and never substitutes a central
 write for a local write. Setup selects one active local HA scanner source and
 binds only to its uniquely verified `/org/bluez/hciN` adapter. The integration

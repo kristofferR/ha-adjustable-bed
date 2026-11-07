@@ -11,7 +11,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.beds.starcode_abm5_4 import StarcodeAbm5_4Controller
+from custom_components.adjustable_bed.beds.starcode.abm5_4 import StarcodeAbm5_4Controller
 from custom_components.adjustable_bed.bluetooth_transport import TransportClass
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.controller_factory import create_controller
@@ -257,7 +257,7 @@ async def test_unrelated_unique_receiver_still_reaches_normal_confirm(
 async def test_runtime_selected_app_connects_without_bond_support(
     hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client
 ) -> None:
-    from custom_components.adjustable_bed.beds.starcode_abm5_4_profiles import TRANSPORTS
+    from custom_components.adjustable_bed.beds.starcode.abm5_4_profiles import TRANSPORTS
 
     role = TRANSPORTS["BOX3633"]
     mock_bleak_client.services = [

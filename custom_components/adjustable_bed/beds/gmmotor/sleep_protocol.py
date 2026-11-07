@@ -12,9 +12,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal
 
-from .codec import sleep_envelope
-from .gmmotor_notifications import Value
-from .gmmotor_protocol import MalformedNotification
+from ...codec import sleep_envelope
+from .notifications import Value
+from .protocol import MalformedNotification
 
 type SleepCommand = Literal[
     "s_time", "q_time", "q_part", "s_part", "q_realtime", "q_report", "q_report_allow", "q_sens"

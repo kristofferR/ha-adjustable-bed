@@ -9,8 +9,8 @@ import voluptuous as vol
 from homeassistant.core import ServiceCall, SupportsResponse
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.adjustable_bed import sleep_number_services as services
-from custom_components.adjustable_bed.beds.sleep_number_commands import SleepNumberActions
+from custom_components.adjustable_bed.beds.sleep_number import services
+from custom_components.adjustable_bed.beds.sleep_number.commands import SleepNumberActions
 
 
 def controller(side=None):
@@ -162,7 +162,7 @@ def test_json_response_rejects_non_serializable_values(value):
 
 @pytest.mark.parametrize("selected_side", ["right", "both"])
 async def test_two_address_pair_rejects_cross_side_parameters_before_writes(hass, selected_side):
-    from custom_components.adjustable_bed.beds.sleep_number import SleepNumberController
+    from custom_components.adjustable_bed.beds.sleep_number.controller import SleepNumberController
     from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 
     children = {side: MagicMock(address=address, name=side) for side, address in (
@@ -186,7 +186,7 @@ async def test_two_address_pair_rejects_cross_side_parameters_before_writes(hass
 
 
 async def test_two_address_execution_revalidates_the_physical_side(hass):
-    from custom_components.adjustable_bed.beds.sleep_number import SleepNumberController
+    from custom_components.adjustable_bed.beds.sleep_number.controller import SleepNumberController
     from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 
     child = MagicMock(address="AA:02", name="right")

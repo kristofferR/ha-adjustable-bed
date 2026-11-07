@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from bleak.exc import BleakError
 
-from custom_components.adjustable_bed.beds.leggett_okin import LeggettOkinController
+from custom_components.adjustable_bed.beds.leggett.okin import LeggettOkinController
 from custom_components.adjustable_bed.const import (
     LEGGETT_OKIN_CHAR_UUID,
     LEGGETT_OKIN_NOTIFY_CHAR_UUID,
@@ -437,7 +437,7 @@ async def test_device_information_timeout_continues_to_next_field():
 
     controller.client.read_gatt_char.side_effect = read
     with patch(
-        "custom_components.adjustable_bed.beds.leggett_okin.DEVICE_INFO_READ_TIMEOUT",
+        "custom_components.adjustable_bed.beds.leggett.okin.DEVICE_INFO_READ_TIMEOUT",
         0.01,
     ):
         await controller._read_device_information(frozenset({manufacturer, model}))
@@ -573,7 +573,7 @@ async def test_unknown_or_unconfirmed_light_state_never_causes_a_retry_toggle():
     report_cu170(controller, 0)
     controller._tap_keycode = AsyncMock()
     with (
-        patch("custom_components.adjustable_bed.beds.leggett_okin.LIGHT_STATE_TIMEOUT_S", 0),
+        patch("custom_components.adjustable_bed.beds.leggett.okin.LIGHT_STATE_TIMEOUT_S", 0),
         pytest.raises(HomeAssistantError, match="did not confirm"),
     ):
         await controller.lights_on()

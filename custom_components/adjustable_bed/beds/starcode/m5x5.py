@@ -1,7 +1,7 @@
 """The explicitly selected AdjustableM5X5 app's bed profiles.
 
 ELEVATE lifts use the released ``star_elevate`` bed type and join these beds'
-groups through ``starcode_accessory_group``.
+groups through ``accessory_group.py``.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
-from ..card import (
+from ...card import (
     CARD_LIGHT_LEVEL,
     CARD_LIGHT_MOOD,
     CARD_UTILITY,
@@ -22,12 +22,12 @@ from ..card import (
     CardRole,
     CardSection,
 )
-from ..codec import okin_5a
-from ..const import CONF_BLE_DEVICE_NAME, CONF_STARCODE_M5X5_PROFILE
-from ..controller_state import StateUpdate
-from ..execution import ExecutionCapabilities
-from ..state_keys import UNDER_BED_LIGHTS_ON
-from .base import (
+from ...codec import okin_5a
+from ...const import CONF_BLE_DEVICE_NAME, CONF_STARCODE_M5X5_PROFILE
+from ...controller_state import StateUpdate
+from ...execution import ExecutionCapabilities
+from ...state_keys import UNDER_BED_LIGHTS_ON
+from ..base import (
     POSITION_UNIT_PERCENT,
     BedController,
     ControllerButtonSpec,
@@ -39,20 +39,20 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
-from .builder import BuildContext
-from .starcode_dialect import (
+from ..builder import BuildContext
+from .dialect import (
     extended_packet,
     long_packet,
     manufacturer_dialect,
     normal_packet,
     query_packet,
 )
-from .starcode_m5x5_protocol import (
+from .m5x5_protocol import (
     StateValue,
     clock_packet,
     parse_notification,
 )
-from .starcode_state import (
+from .state import (
     FIRMWARE_VERSION,
     LIGHT_BRIGHTNESS,
     LIGHT_COLOR_OPTION,
@@ -65,7 +65,7 @@ if TYPE_CHECKING:
     from bleak import BleakClient
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 SERVICE: Final = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
 DEVICE_INFORMATION: Final = "0000180a-0000-1000-8000-00805f9b34fb"
@@ -694,7 +694,7 @@ class StarcodeM5X5Controller(BedController):
         await self.write_command(normal_packet(key, self.dialect), cancel_event=asyncio.Event())
 
     async def stop_all(self) -> None:
-        from ..starcode_accessory_group import cancel_group_operations
+        from .accessory_group import cancel_group_operations
 
         cancel_group_operations(self._coordinator.hass, self._coordinator.entry.entry_id)
         await self._send_stop()
@@ -730,7 +730,7 @@ class StarcodeM5X5Controller(BedController):
             "memory_1",
             "memory_2",
         ):
-            from ..starcode_accessory_group import interrupt_conflicting_group
+            from .accessory_group import interrupt_conflicting_group
 
             await interrupt_conflicting_group(self._coordinator)
         count = (

@@ -16,7 +16,7 @@ from bleak.exc import BleakError
 from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
-from custom_components.adjustable_bed.beds.bf_cherish import (
+from custom_components.adjustable_bed.beds.bf_cherish.controller import (
     NOTIFY_UUID,
     WRITE_UUID,
     BfCherishController,
@@ -24,7 +24,7 @@ from custom_components.adjustable_bed.beds.bf_cherish import (
     control_frame,
     query_frame,
 )
-from custom_components.adjustable_bed.bf_cherish_services import register_services
+from custom_components.adjustable_bed.beds.bf_cherish.services import register_services
 from custom_components.adjustable_bed.codec import keeson as codec
 from custom_components.adjustable_bed.const import (
     BED_TYPE_BF,
@@ -226,7 +226,7 @@ async def test_notification_length_prefix_selector_and_member_gates(hass):
     ctrl._notification(sender, bytearray.fromhex("E2FE163C180000000088"))
     assert ctrl.state.alarm_enabled is True  # Preserve the artifact's AND and hour>24 boundary.
     assert ctrl.state.alarm_memory == "memory_1"  # unknown selector retains previous choice
-    with patch("custom_components.adjustable_bed.beds.bf_cherish.dt_util.now", return_value=NOW):
+    with patch("custom_components.adjustable_bed.beds.bf_cherish.controller.dt_util.now", return_value=NOW):
         ctrl._notification(sender, bytearray.fromhex("E2FE16FFFF00000000FF"))
     assert (ctrl.state.alarm_enabled, ctrl.state.alarm_hour, ctrl.state.alarm_minute) == (
         False,
@@ -260,7 +260,7 @@ def test_alarm_artifact_vectors(cherish, enabled, memory, hour, minute, expected
 @pytest.mark.parametrize("cherish", [False, True])
 async def test_disable_sequence_retains_schedule_and_resamples_clock(hass, cherish):
     ctrl, _, client = make_controller(hass, cherish)
-    with patch("custom_components.adjustable_bed.beds.bf_cherish.dt_util.now", return_value=NOW):
+    with patch("custom_components.adjustable_bed.beds.bf_cherish.controller.dt_util.now", return_value=NOW):
         await ctrl.configure_clock_alarm(enabled=True, hour=8, minute=30, preset="memory_2")
         first = frames(client)[0]
         await ctrl.configure_clock_alarm(enabled=False, hour=0, minute=0, preset="none")
@@ -297,7 +297,7 @@ def test_alarm_weekday_rollover_and_equal_minute():
 async def test_cherish_massage_sequences_bounds_and_timer_only_behavior(hass):
     ctrl, _, client = make_controller(hass, True)
     with patch(
-        "custom_components.adjustable_bed.beds.bf_cherish.asyncio.sleep", new=AsyncMock()
+        "custom_components.adjustable_bed.beds.bf_cherish.controller.asyncio.sleep", new=AsyncMock()
     ) as sleep:
         await ctrl.massage_on()
         assert frames(client) == ["E5FE1610000030C6", "E5FE1610000021D5", "E5FE1610000011E5"]
@@ -325,7 +325,7 @@ async def test_massage_cancellation_does_not_leave_delayed_start(hass):
     async def sleep(seconds):
         owner.cancel_command.set()
 
-    with patch("custom_components.adjustable_bed.beds.bf_cherish.asyncio.sleep", side_effect=sleep):
+    with patch("custom_components.adjustable_bed.beds.bf_cherish.controller.asyncio.sleep", side_effect=sleep):
         await ctrl.massage_on()
     assert frames(client) == ["E5FE1610000030C6", "E5FE1610000010E6", "E5FE1610000020D6"]
     assert not ctrl.state.massage_on
@@ -457,7 +457,7 @@ async def test_alarm_service_validates_all_profiles_before_serialized_write(hass
             "custom_components.adjustable_bed.services._preflight_capability", side_effect=preflight
         ),
         patch("custom_components.adjustable_bed.services._execute_sided", side_effect=execute),
-        patch("custom_components.adjustable_bed.beds.bf_cherish.dt_util.now", return_value=NOW),
+        patch("custom_components.adjustable_bed.beds.bf_cherish.controller.dt_util.now", return_value=NOW),
     ):
         register_services(hass)
         await hass.services.async_call(
@@ -561,7 +561,7 @@ async def test_actual_cherish_timer_select_retains_commanded_selection_when_disc
     runtime.controller = None
     assert select.current_option == "20 min"
     runtime.controller = ctrl
-    with patch("custom_components.adjustable_bed.beds.bf_cherish.asyncio.sleep", new=AsyncMock()):
+    with patch("custom_components.adjustable_bed.beds.bf_cherish.controller.asyncio.sleep", new=AsyncMock()):
         await ctrl.massage_on()
         assert select.current_option == "20 min"
         await ctrl.massage_off()

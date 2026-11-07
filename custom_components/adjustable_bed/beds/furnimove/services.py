@@ -12,9 +12,9 @@ from homeassistant.const import CONF_DEVICE_ID, CONF_NAME
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 
-from .const import BED_TYPE_FURNIMOVE, DOMAIN
-from .pairing import iter_children
-from .services import (
+from ...const import BED_TYPE_FURNIMOVE, DOMAIN
+from ...pairing import iter_children
+from ...services import (
     ATTR_DURATION,
     ATTR_DURATION_MS,
     ATTR_FIRST_DIRECTION,
@@ -33,7 +33,7 @@ from .services import (
 )
 
 if TYPE_CHECKING:
-    from .beds.furnimove import FurniMoveController
+    from .controller import FurniMoveController
 
 
 SERVICE_FURNIMOVE_ACTION = "furnimove_action"
@@ -47,7 +47,7 @@ async def _execute_furnimove(
     validate: Callable[[FurniMoveController], None],
     operation: Callable[[FurniMoveController], Awaitable[None]],
 ) -> None:
-    from .beds.furnimove import FurniMoveController
+    from .controller import FurniMoveController
 
     # Every consumer uses one mutable write role and global release.
     await _preflight_and_execute(
@@ -93,7 +93,7 @@ async def _rename_furnimove(
     call: ServiceCall, targets: list[tuple[BedTarget, str]], name: str
 ) -> None:
     """Write the original validated name to this app's discovered rename role."""
-    from .beds.furnimove import validate_furnimove_name
+    from .controller import validate_furnimove_name
 
     try:
         validate_furnimove_name(name)
@@ -134,7 +134,7 @@ async def _rename_furnimove(
     if isinstance(entry, ConfigEntry):
         call.hass.config_entries.async_update_entry(entry, title=name.strip(), data=data)
     else:
-        from .coordinator import ChildEntryView
+        from ...coordinator import ChildEntryView
 
         if isinstance(entry, ChildEntryView):
             entry.persist_data(data, keys=(CONF_NAME,))
@@ -155,7 +155,7 @@ async def handle_furnimove_massage_program(call: ServiceCall) -> None:
 
 async def handle_furnimove_massage_duration(call: ServiceCall) -> None:
     """Store the app's advisory duration without programming a hardware timer."""
-    from .coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
     minutes = call.data["minutes"]
     physical_targets: list[AdjustableBedCoordinator] = []

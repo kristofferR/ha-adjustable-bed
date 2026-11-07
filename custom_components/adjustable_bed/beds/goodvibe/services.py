@@ -13,14 +13,14 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
-from . import goodvibe_protocol as p
-from .codec import richmat as codec
-from .const import DOMAIN
-from .goodvibe_catalog import ACTIONS
-from .services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
+from ...codec import richmat as codec
+from ...const import DOMAIN
+from ...services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
+from . import protocol as p
+from .catalog import ACTIONS
 
 if TYPE_CHECKING:
-    from .beds.goodvibe import GoodVibeController
+    from .controller import GoodVibeController
 
 OPERATIONS = (
     "single",
@@ -251,7 +251,7 @@ SCHEMA = vol.Schema(FIELDS)
 
 
 async def handle_goodvibe(call: ServiceCall) -> None:
-    from .beds.goodvibe import GoodVibeController
+    from .controller import GoodVibeController
 
     request = Request(
         operation=call.data["operation"],

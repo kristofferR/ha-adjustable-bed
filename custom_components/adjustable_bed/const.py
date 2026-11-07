@@ -544,7 +544,7 @@ BED_TYPE_RICHMAT_BEST_MATTRESS: Final = "richmat_best_mattress"  # com.richmat.b
 BED_TYPE_RICHMAT_BLVD_HOME: Final = "richmat_blvd_home"  # com.richmat.blvd_home
 BED_TYPE_RICHMAT_HARMONY: Final = "richmat_harmony"  # com.richmat.harmony
 BED_TYPE_RICHMAT_IDEALBED: Final = "richmat_idealbed"  # com.richmat.idealbed
-# The RUF and Richmat app profiles, each with its catalog in ``ruf_richmat_data``.
+# The RUF and Richmat app profiles, each with its catalog in ``beds/ruf_richmat/data``.
 RUF_RICHMAT_APPS: Final[dict[str, str]] = {
     "ruf_betten": "ruf",
     "wsilver_products": "wsilver2",
@@ -2400,7 +2400,7 @@ def get_richmat_features(remote_code: str) -> RichmatFeatures:
         enabled if the code is not found (safe fallback).
     """
     # Import here to avoid circular dependency
-    from .richmat_features import RICHMAT_REMOTE_FEATURES_GENERATED
+    from .beds.richmat.features import RICHMAT_REMOTE_FEATURES_GENERATED
 
     # Normalize to lowercase for lookup
     code_lower = remote_code.lower() if remote_code else ""
@@ -2473,7 +2473,7 @@ RICHMAT_PROTOCOL_PREFIXAA: Final = "prefixaa"  # [0xAA, 1, 0, cmd, (cmd+0xAB)&0x
 # Okimat remote code variants (generated; keyed by the printed remote code).
 # Source of truth: DewertOkin FurniMove handset backend + bundled
 # handsetlist.csv capability flags. Drives OKIN_UUID_REMOTES in
-# beds/okin_uuid.py; regenerate via tools/okin_remotes/.
+# beds/okin_uuid/controller.py; regenerate via tools/okin_remotes/.
 OKIMAT_VARIANTS: Final = {
     VARIANT_AUTO: "Auto-detect (try 82417 first)",
     "62211": "62211 - RF (Head/Back/Legs, 4 Mem)",

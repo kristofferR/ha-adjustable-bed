@@ -12,8 +12,8 @@ from typing import TYPE_CHECKING
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
-from ..codec import limoss as codec
-from ..const import (
+from ...codec import limoss as codec
+from ...const import (
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_LIMOSS_REMOTE_STATE,
@@ -23,27 +23,27 @@ from ..const import (
     LIMOSS_CHAR_UUID,
     LIMOSS_SERVICE_UUID,
 )
-from ..controller_state import StateKey
-from ..limoss_remote_state import LIMOSS_REMOTE_MEMORY_NAMES, LimossRemoteSession
-from ..profiles.limoss import LIMOSS_REMOTE, REMOTE_CHANNELS, REMOTE_THEMES
-from .base import (
+from ...controller_state import StateKey
+from ...profiles.limoss import LIMOSS_REMOTE, REMOTE_CHANNELS, REMOTE_THEMES
+from ..base import (
     BedController,
     ControllerButtonSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
 )
-from .builder import BuildContext
-from .limoss_remote_protocol import (
+from ..builder import BuildContext
+from .remote_protocol import (
     APP_SEQUENCE,
     LimossRemoteCapabilities,
     LimossRemoteSequence,
     Product,
     integer,
 )
+from .remote_state import LIMOSS_REMOTE_MEMORY_NAMES, LimossRemoteSession
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -943,7 +943,7 @@ def require_app_route(client: BleakClient) -> None:
 
 async def build_controller(ctx: BuildContext) -> LimossRemoteController:
     """Build the controller from the stored setup and cached capabilities."""
-    from ..limoss_remote_state import get_limoss_remote_session, validate_limoss_remote_state
+    from .remote_state import get_limoss_remote_session, validate_limoss_remote_state
 
     coordinator = ctx.coordinator
     data = ctx.data

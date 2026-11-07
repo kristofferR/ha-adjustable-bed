@@ -5,9 +5,8 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from custom_components.adjustable_bed.codec.sleep_envelope import frame
-from custom_components.adjustable_bed.gmmotor_protocol import MalformedNotification
-from custom_components.adjustable_bed.gmmotor_sleep_protocol import (
+from custom_components.adjustable_bed.beds.gmmotor.protocol import MalformedNotification
+from custom_components.adjustable_bed.beds.gmmotor.sleep_protocol import (
     LiveState,
     ReceiveBuffer,
     Requests,
@@ -16,6 +15,7 @@ from custom_components.adjustable_bed.gmmotor_sleep_protocol import (
     response_command,
     sxb_live,
 )
+from custom_components.adjustable_bed.codec.sleep_envelope import frame
 
 
 def test_requests_preserve_nulls_order_and_mode_quirks() -> None:

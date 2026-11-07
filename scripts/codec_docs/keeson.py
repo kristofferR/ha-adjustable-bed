@@ -7,13 +7,13 @@ from collections.abc import Iterable, Mapping
 from typing import Any, cast
 
 from custom_components.adjustable_bed import controller_factory
-from custom_components.adjustable_bed.beds import glideaway_motion as glideaway_module
 from custom_components.adjustable_bed.beds import innova as innova_module
-from custom_components.adjustable_bed.beds import keeson_layout_app as keeson_layout_app_module
-from custom_components.adjustable_bed.beds import keeson_okin_apps as okin_apps_module
 from custom_components.adjustable_bed.beds import ore_comfort_bed as ore_module
 from custom_components.adjustable_bed.beds import scott_living as scott_living_module
 from custom_components.adjustable_bed.beds import serta_mp_remote as serta_mp_module
+from custom_components.adjustable_bed.beds.glideaway_motion import controller as glideaway_module
+from custom_components.adjustable_bed.beds.keeson import layout_app as keeson_layout_app_module
+from custom_components.adjustable_bed.beds.keeson import okin_apps as okin_apps_module
 from custom_components.adjustable_bed.beds.ore_comfort_bed import ORE_COMFORT_BED_APPS
 from custom_components.adjustable_bed.codec import keeson as keeson_codec
 from custom_components.adjustable_bed.profiles import keeson as keeson_profiles
@@ -129,7 +129,7 @@ def keeson_aliases() -> dict[str, tuple[str, ...]]:
     """Alias bed types per profile, from the factory registry."""
     aliases: dict[str, tuple[str, ...]] = {}
     for bed_type, spec in controller_factory._SIMPLE_CONTROLLERS.items():
-        if (spec.module, spec.class_name) == ("keeson", "KeesonController"):
+        if (spec.module, spec.class_name) == ("keeson.controller", "KeesonController"):
             variant = spec.kwargs["variant"]
             aliases[variant] = (*aliases.get(variant, ()), bed_type)
     return aliases

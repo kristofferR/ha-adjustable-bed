@@ -11,11 +11,11 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
-from custom_components.adjustable_bed.beds.starcode_m5x5 import StarcodeM5X5Controller
+from custom_components.adjustable_bed.beds.starcode.accessory_group import _tasks
+from custom_components.adjustable_bed.beds.starcode.m5x5 import StarcodeM5X5Controller
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.services import async_register_services
-from custom_components.adjustable_bed.starcode_accessory_group import _tasks
 from tests.test_starcode_accessory_group import group, target
 from tests.test_starcode_m5x5 import VECTORS, make_controller
 

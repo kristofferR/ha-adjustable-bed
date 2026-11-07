@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-from .motion_bed_state import MotionBedContext
+from .state import MotionBedContext
 
 RequestName = Literal[
     "alarm", "clock", "sleep_angles", "calibration", "sleep_timer", "sleep_report",

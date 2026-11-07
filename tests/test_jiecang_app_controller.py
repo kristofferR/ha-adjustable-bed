@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed.beds.jiecang_app import JiecangAppController
+from custom_components.adjustable_bed.beds.jiecang.app import JiecangAppController
 from custom_components.adjustable_bed.codec import jiecang as codec
 from custom_components.adjustable_bed.codec.jiecang import TRANSPORTS
 from custom_components.adjustable_bed.profiles.jiecang import (
@@ -213,7 +213,7 @@ async def test_absolute_schedule_accounts_for_ble_latency(make_controller):
     controller._pause = pause
     controller.write_command = write
     with patch(
-        "custom_components.adjustable_bed.beds.jiecang_app.asyncio.get_running_loop",
+        "custom_components.adjustable_bed.beds.jiecang.app.asyncio.get_running_loop",
         return_value=SimpleNamespace(time=lambda: now[0]),
     ):
         await controller._schedule(((0, b"a"), (30, b"b"), (60, b"c")))
@@ -365,7 +365,7 @@ async def test_light_toggle_and_partial_changes_preserve_reported_fields(make_co
 async def test_missing_light_state_does_not_invent_settings(make_controller):
     controller, _, client = make_controller()
     with patch(
-        "custom_components.adjustable_bed.beds.jiecang_app.asyncio.wait_for",
+        "custom_components.adjustable_bed.beds.jiecang.app.asyncio.wait_for",
         side_effect=TimeoutError,
     ):
         # Avoid creating an unawaited Event.wait coroutine in the deliberately failing mock.

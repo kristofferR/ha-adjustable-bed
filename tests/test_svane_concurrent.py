@@ -14,7 +14,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from custom_components.adjustable_bed import position_estimate as pe
-from custom_components.adjustable_bed.beds.svane import FEET, HEAD, OLD, SvaneController
+from custom_components.adjustable_bed.beds.svane.controller import FEET, HEAD, OLD, SvaneController
 from custom_components.adjustable_bed.command_scheduler import CommandKind
 from custom_components.adjustable_bed.const import DOMAIN, SIDE_BOTH
 from tests.hold_lease_wire import virtual_clock

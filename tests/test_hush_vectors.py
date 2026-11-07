@@ -8,9 +8,9 @@ from pathlib import Path
 import pytest
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.beds.hush_base.catalog import ACTIONS as CATALOG_ACTIONS
 from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.controller_factory import create_controller
-from custom_components.adjustable_bed.hush_catalog import ACTIONS as CATALOG_ACTIONS
 from custom_components.adjustable_bed.profiles.hush import ACTIONS, CURRENT, PROFILES, HushProfile
 from tests.casper_frames import rebuild
 from tests.hush_vectors import FROZEN_FRAMES, SHARED_FRAMES

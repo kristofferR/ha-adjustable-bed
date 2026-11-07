@@ -159,8 +159,8 @@ def _shorten_unanswered_probe_timeouts(monkeypatch: pytest.MonkeyPatch) -> None:
 
     Tests that deliver replies, or need a specific deadline, patch these again.
     """
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.octo.OCTO_FEATURE_TIMEOUT", 0.01)
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.rmcontrol._CAPABILITY_TIMEOUT", 0.01)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.octo.controller.OCTO_FEATURE_TIMEOUT", 0.01)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.rmcontrol.controller._CAPABILITY_TIMEOUT", 0.01)
 
 
 @pytest.fixture(autouse=True)
@@ -899,7 +899,7 @@ def mock_octo_ready_transport(
 ) -> None:
     """Provide an authoritative, already-ready Standard Octo transport session."""
     del mock_coordinator_connected
-    from custom_components.adjustable_bed.beds.octo import OctoController
+    from custom_components.adjustable_bed.beds.octo.controller import OctoController
 
     async def discover(controller: OctoController) -> bool:
         controller._session_ready = True

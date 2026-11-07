@@ -5,8 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import lru_cache
 
-from .gmmotor_catalog_types import Phase, ProfileRow, TransitionRow
-from .gmmotor_protocol import Material, stop_packet
+from .catalog_types import Phase, ProfileRow, TransitionRow
+from .protocol import Material, stop_packet
 
 # Ordered RGB values of the eight-color page (0x781e84..0x781ee0).
 EIGHT_COLORS = (
@@ -24,7 +24,7 @@ EIGHT_COLORS = (
 @lru_cache(maxsize=512)
 def material(index: int) -> Material:
     """Resolve a compact runtime material without importing unrelated controllers."""
-    from .gmmotor_catalog import MATERIALS
+    from .catalog import MATERIALS
 
     return Material(*MATERIALS[index][:6])
 
@@ -37,19 +37,19 @@ class Action:
 
     @property
     def material(self) -> Material:
-        from .gmmotor_catalog import ACTIONS
+        from .catalog import ACTIONS
 
         return material(ACTIONS[self.index][0])
 
     @property
     def gesture(self) -> int:
-        from .gmmotor_catalog import ACTIONS, MATERIALS
+        from .catalog import ACTIONS, MATERIALS
 
         return MATERIALS[ACTIONS[self.index][0]][6]
 
     @property
     def transitions(self) -> tuple[TransitionRow, ...]:
-        from .gmmotor_catalog import ACTIONS
+        from .catalog import ACTIONS
 
         return ACTIONS[self.index][1]
 
@@ -122,7 +122,7 @@ class Profile:
 
 def load_profile(key: str) -> Profile:
     """Require an exact admitted primary product/configuration."""
-    from .gmmotor_catalog import PROFILES
+    from .catalog import PROFILES
 
     if key in ("FWRM", "WFRM"):
         # These routes bypass detailsPageDisplayList for the dedicated desk UI.
@@ -134,7 +134,7 @@ def load_profile(key: str) -> Profile:
 
 def profile_choices() -> dict[str, str]:
     """Explicit products keep shared BLE names from overriding existing profiles."""
-    from .gmmotor_catalog import PROFILES
+    from .catalog import PROFILES
 
     choices = {
         key: (

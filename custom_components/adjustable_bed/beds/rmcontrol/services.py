@@ -12,11 +12,11 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN
-from .services import SIDE_FIELD, _call_targets, _preflight_and_execute
+from ...const import DOMAIN
+from ...services import SIDE_FIELD, _call_targets, _preflight_and_execute
 
 if TYPE_CHECKING:
-    from .beds.rmcontrol import RmcontrolController
+    from .controller import RmcontrolController
 
 WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 _ALARM_FIELDS: dict[vol.Marker, object] = {
@@ -49,7 +49,7 @@ async def _execute(
     command: Callable[[RmcontrolController], Awaitable[None]],
     validate: Callable[[RmcontrolController], None] | None = None,
 ) -> None:
-    from .beds.rmcontrol import RmcontrolController
+    from .controller import RmcontrolController
 
     await _preflight_and_execute(
         _call_targets(call),

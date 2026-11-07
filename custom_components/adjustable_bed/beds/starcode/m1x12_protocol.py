@@ -11,8 +11,8 @@ from collections.abc import Mapping
 from datetime import datetime
 from typing import Final
 
-from ..codec import okin_5a
-from .starcode_dialect import is_star
+from ...codec import okin_5a
+from .dialect import is_star
 
 type StateValue = str | int | float | bool | None | list[StateValue] | dict[str, StateValue]
 

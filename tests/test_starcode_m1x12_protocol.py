@@ -9,7 +9,7 @@ from typing import TypedDict, cast
 
 import pytest
 
-from custom_components.adjustable_bed.beds.starcode_dialect import (
+from custom_components.adjustable_bed.beds.starcode.dialect import (
     extended_packet,
     long_packet,
     manufacturer_dialect,
@@ -17,7 +17,7 @@ from custom_components.adjustable_bed.beds.starcode_dialect import (
     position_packet,
     query_packet,
 )
-from custom_components.adjustable_bed.beds.starcode_m1x12_protocol import (
+from custom_components.adjustable_bed.beds.starcode.m1x12_protocol import (
     StateValue,
     clock_packet,
     parse_notification,

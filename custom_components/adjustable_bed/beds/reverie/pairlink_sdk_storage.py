@@ -15,14 +15,14 @@ from weakref import WeakValueDictionary
 
 from homeassistant.helpers.storage import Store
 
-from .reverie_pairlink_sdk_metadata import (
+from .pairlink_sdk_metadata import (
     PairlinkSdkMetadata,
     SdkAttributeRecord,
     SdkAttributeUnit,
     SdkFingerprintRecord,
     SdkMetadataEffect,
 )
-from .reverie_pairlink_sdk_models import (
+from .pairlink_sdk_models import (
     PairlinkSdkCtl,
     PairlinkSdkDevice,
     PairlinkSdkHsl,
@@ -32,7 +32,7 @@ from .reverie_pairlink_sdk_models import (
 )
 
 if TYPE_CHECKING:
-    from .reverie_pairlink_transport import PairlinkPeerIdentity
+    from .pairlink_transport import PairlinkPeerIdentity
 
 type JsonValue = None | bool | int | str | list[JsonValue] | dict[str, JsonValue]
 type _Model = (

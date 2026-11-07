@@ -349,7 +349,7 @@ The complete public action index is [Actions and Automations](docs/SERVICES.md).
 `services.yaml` defines the UI fields. `services.py` holds the generic actions,
 target resolution and preflight admission, and calls each family module's
 register function; a family's own actions live in its `<family>_services.py`
-(for example `reverie_services.py` or `sleep_number_services.py`). Memory actions accept slots
+(for example `beds/reverie/services.py` or `beds/sleep_number/services.py`). Memory actions accept slots
 1–6 subject to controller capabilities. `set_positions` validates all requested
 targets before executing the ordered movement. Control actions support paired
 side routing; support capture requires one physical target.

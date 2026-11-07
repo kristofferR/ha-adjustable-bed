@@ -11,11 +11,9 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.util.json import JsonValueType
 
-from .beds.base import BedController, controller_as
-from .beds.sleep_number_commands import SleepNumberActions
-from .const import DOMAIN
-from .paired_coordinator import PairedBedCoordinator
-from .services import (
+from ...const import DOMAIN
+from ...paired_coordinator import PairedBedCoordinator
+from ...services import (
     ATTR_SIDE,
     SIDE_FIELD,
     PreflightedSides,
@@ -26,6 +24,8 @@ from .services import (
     _resolve_sided_targets,
     _validation_controller,
 )
+from ..base import BedController, controller_as
+from .commands import SleepNumberActions
 
 SERVICE_SLEEP_NUMBER_COMMAND = "sleep_number_command"
 MOTION_COMMANDS = frozenset(

@@ -1,6 +1,6 @@
 """Package-local product catalogs for the accepted five older Richmat apps.
 
-Each app's catalog is ``richmat_classic_data/<app>.json.gz``, generated outside this
+Each app's catalog is ``data/<app>.json.gz``, generated outside this
 repository from its accepted APK Protocol Audit report; no generator is checked in.
 """
 
@@ -8,9 +8,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import lru_cache
+from pathlib import Path
 from typing import Final
 
-from .catalog_json import Node, load
+from ...catalog_json import Node, load
+
+DATA_DIR: Final = Path(__file__).with_name("data")
 
 # Entity keys and held controls start with KEY_PREFIX; 4.4 shipped them under
 # LEGACY_KEY_PREFIX, which the schema 5.4 migration and hold_control still read.
@@ -138,7 +141,7 @@ def load_catalog(app: str) -> Catalog:
     """Load and validate on an executor before constructing a controller."""
     if app not in APP_NAMES:
         raise ValueError("Choose one of the five supported apps")
-    data = load("richmat_classic_data", app).record("models", "fields", "alarm_allowlist")
+    data = load(DATA_DIR, app).record("models", "fields", "alarm_allowlist")
     if tuple(column.text() for column in data["fields"].items()) != _COLUMNS:
         data["fields"].fail(f"the control columns {_COLUMNS}")
     return Catalog(

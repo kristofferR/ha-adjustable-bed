@@ -14,7 +14,7 @@ import pytest
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.reverie_pairlink import ReveriePairlinkController
+from custom_components.adjustable_bed.beds.reverie.pairlink import ReveriePairlinkController
 from custom_components.adjustable_bed.const import DOMAIN, SIDE_BOTH, SIDE_LEFT, SIDE_RIGHT
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator

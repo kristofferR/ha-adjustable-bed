@@ -11,11 +11,17 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.star_elevate import (
+from custom_components.adjustable_bed.beds.starcode.accessory_group import (
+    cancel_group_operations,
+    interrupt_conflicting_group,
+    run_group,
+    validate_lift_entries,
+)
+from custom_components.adjustable_bed.beds.starcode.m5x5 import StarcodeM5X5Controller
+from custom_components.adjustable_bed.beds.starcode.star_elevate import (
     StarElevateCommands,
     StarElevateController,
 )
-from custom_components.adjustable_bed.beds.starcode_m5x5 import StarcodeM5X5Controller
 from custom_components.adjustable_bed.const import (
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_M1X12,
@@ -31,12 +37,6 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.setup_questions import SETUP_PROFILES, FlowContext
-from custom_components.adjustable_bed.starcode_accessory_group import (
-    cancel_group_operations,
-    interrupt_conflicting_group,
-    run_group,
-    validate_lift_entries,
-)
 
 
 def target(hass: HomeAssistant, index: int, profile: str) -> AdjustableBedCoordinator:
@@ -267,7 +267,7 @@ async def test_flat_orders_main_then_exact_delay_then_lifts_without_extra_stop(
         events.append(("delay", seconds))
 
     with patch(
-        "custom_components.adjustable_bed.starcode_accessory_group.asyncio.sleep", side_effect=delay
+        "custom_components.adjustable_bed.beds.starcode.accessory_group.asyncio.sleep", side_effect=delay
     ):
         await run_group(main, "flat")
     delay_index = events.index(("delay", 1.6))
@@ -297,7 +297,7 @@ async def test_owned_delay_is_cancelled_and_all_admitted_targets_stop(
         await wait.wait()
 
     with patch(
-        "custom_components.adjustable_bed.starcode_accessory_group.asyncio.sleep", side_effect=delay
+        "custom_components.adjustable_bed.beds.starcode.accessory_group.asyncio.sleep", side_effect=delay
     ):
         running = asyncio.create_task(run_group(main, "flat"))
         await entered.wait()
@@ -451,7 +451,7 @@ async def test_delayed_flat_aborts_after_any_retained_session_changes(
 
     with (
         patch(
-            "custom_components.adjustable_bed.starcode_accessory_group.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.starcode.accessory_group.asyncio.sleep",
             side_effect=delay,
         ),
         pytest.raises(asyncio.CancelledError),

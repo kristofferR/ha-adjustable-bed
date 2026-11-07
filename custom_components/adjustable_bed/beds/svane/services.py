@@ -10,10 +10,9 @@ from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 
-from .beds.base import BedController, controller_as
-from .const import BED_TYPE_SVANE, DOMAIN
-from .paired_coordinator import BedChild, PairedBedCoordinator
-from .services import (
+from ...const import BED_TYPE_SVANE, DOMAIN
+from ...paired_coordinator import BedChild, PairedBedCoordinator
+from ...services import (
     ATTR_MOTOR,
     DEVICE_IDS,
     SIDE_FIELD,
@@ -26,9 +25,10 @@ from .services import (
     _release_preflighted,
     _require_held_control,
 )
+from ..base import BedController, controller_as
 
 if TYPE_CHECKING:
-    from .beds.svane import SvaneHoldAdmission
+    from .controller import SvaneHoldAdmission
 
 
 SERVICE_SVANE_RELEASE_AXIS = "svane_release_axis"
@@ -42,7 +42,7 @@ async def _preflight_live_svane(
     duration_ms: int,
 ) -> None:
     """Validate the live role through the pair's guarded connection lane."""
-    from .beds.svane import SvaneController
+    from .controller import SvaneController
 
     validated = False
 
@@ -80,7 +80,7 @@ async def _svane_live_targets(
     duration_ms: int,
 ) -> tuple[list[tuple[BedTarget, str]], PreflightedSides, dict[int, SvaneHoldAdmission]]:
     """Capture all release boundaries, then validate each guarded live link."""
-    from .beds.svane import SvaneController
+    from .controller import SvaneController
 
     targets = _call_targets(call)
     admissions: dict[int, SvaneHoldAdmission] = {}
@@ -125,7 +125,7 @@ async def _hold_svane(call: ServiceCall, control: str, duration_ms: int) -> None
     try:
 
         async def hold(controller: BedController) -> None:
-            from .beds.svane import SvaneController
+            from .controller import SvaneController
 
             if not isinstance(controller, SvaneController):
                 raise ValueError("Svane controller changed before held command admission")
@@ -146,7 +146,7 @@ async def _hold_svane(call: ServiceCall, control: str, duration_ms: int) -> None
 
 async def handle_svane_release_axis(call: ServiceCall) -> None:
     """Signal only the active writer, allowing the other held axis to continue."""
-    from .beds.svane import SvaneController
+    from .controller import SvaneController
 
     targets = _call_targets(call)
     controllers: list[SvaneController] = []
@@ -164,7 +164,7 @@ async def handle_svane_release_axis(call: ServiceCall) -> None:
     for controller in controllers:
         controller.request_svane_axis_release(call.data[ATTR_MOTOR])
     # A streamed timed move (#516) on that axis ends alone; the other keeps going.
-    from .coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
     resource = "motor:back" if call.data[ATTR_MOTOR] == "head" else "motor:legs"
     for parent, side in targets:

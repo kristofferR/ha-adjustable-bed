@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from bleak.exc import BleakError
 
-from custom_components.adjustable_bed.beds.logicdata_app import LogicdataAppController
+from custom_components.adjustable_bed.beds.logicdata.app import LogicdataAppController
 from custom_components.adjustable_bed.codec import jiecang as codec
 from custom_components.adjustable_bed.profiles import logicdata as profiles
 from custom_components.adjustable_bed.profiles.logicdata import SLEEP_SMART
@@ -436,7 +436,7 @@ async def test_notifications_publish_state_and_answer_clock_requests(coordinator
     }
     send = coordinator.async_execute_controller_command.await_args.args[0]
     with patch(
-        "custom_components.adjustable_bed.beds.logicdata_app.dt_util.now",
+        "custom_components.adjustable_bed.beds.logicdata.app.dt_util.now",
         return_value=datetime(2026, 10, 1, 12, 34, 56),
     ):
         await send(controller)

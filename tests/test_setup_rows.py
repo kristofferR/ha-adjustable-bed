@@ -81,7 +81,7 @@ def test_protocol_routes_are_off_the_list_but_reachable():
 
 async def test_the_good_vibe_row_asks_its_product_searchably(hass, mock_bluetooth_service_info):
     """One row, then a searchable product question the app's name rule suggests."""
-    from custom_components.adjustable_bed.goodvibe_catalog import (
+    from custom_components.adjustable_bed.beds.goodvibe.catalog import (
         PROFILE_CHOICES as GOODVIBE_PROFILES,
     )
 

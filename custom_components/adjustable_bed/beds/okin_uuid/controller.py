@@ -39,8 +39,8 @@ from typing import TYPE_CHECKING, Any, ClassVar, Final
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
-from ..codec import okin_nframe as codec
-from ..const import (
+from ...codec import okin_nframe as codec
+from ...const import (
     NORDIC_UART_SERVICE_UUID,
     NORDIC_UART_WRITE_CHAR_UUID,
     OKIMAT_SERVICE_UUID,
@@ -51,12 +51,12 @@ from ..const import (
     OKIN_HEAD_MAX_RAW,
     VARIANT_AUTO,
 )
-from ..furnimove_profiles import FURNIMOVE_PRODUCTION_IDS, FurniMoveProfile, get_furnimove_profile
-from ..profiles.okin_nframe import OKIMAT, OkinNFrameProfile, Tap
-from .base import BedController, MotorControlSpec
-from .builder import BuildContext
-from .okin_nframe import OkinNFrameController
-from .okin_uuid_remotes import (
+from ...profiles.okin_nframe import OKIMAT, OkinNFrameProfile, Tap
+from ..base import BedController, MotorControlSpec
+from ..builder import BuildContext
+from ..furnimove.profiles import FURNIMOVE_PRODUCTION_IDS, FurniMoveProfile, get_furnimove_profile
+from ..okin_nframe import OkinNFrameController
+from .remotes import (
     DEFAULT_OKIN_UUID_REMOTE,
     OKIN_DOT_VARIANT_LABELS,
     OKIN_UUID_REMOTE_DATA,
@@ -64,7 +64,7 @@ from .okin_uuid_remotes import (
 )
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -782,7 +782,7 @@ async def build_controller(ctx: BuildContext) -> BedController:
     """Build the Okin UUID controller, or the receiver the live link turns out to be."""
     variant = ctx.variant or "auto"
     await ctx.preload("dewertokin_rf_gateway")
-    from .dewertokin_rf_gateway import DewertOkinUuidRfGatewayController, is_rf_gateway
+    from ..dewertokin_rf_gateway import DewertOkinUuidRfGatewayController, is_rf_gateway
 
     if is_rf_gateway(ctx):
         _LOGGER.info(
@@ -800,7 +800,7 @@ async def build_controller(ctx: BuildContext) -> BedController:
         NORDIC_UART_SERVICE_UUID, NORDIC_UART_WRITE_CHAR_UUID
     ) and not ctx.has_characteristic(OKIMAT_SERVICE_UUID, OKIMAT_WRITE_CHAR_UUID):
         await ctx.preload("okin_dot")
-        from .okin_dot import OkinDotController
+        from ..okin_dot import OkinDotController
 
         _LOGGER.info(
             "Auto-detected DewertOkin DOT PROTOCOL box for %s "

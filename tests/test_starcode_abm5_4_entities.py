@@ -105,7 +105,7 @@ async def test_real_two_address_entity_views_keep_feedback_and_setters_on_their_
     assert timers["left"].current_option == "10"
     assert levels["left"].native_value == 4
     with patch(
-        "custom_components.adjustable_bed.beds.starcode_abm5_4.asyncio.sleep",
+        "custom_components.adjustable_bed.beds.starcode.abm5_4.asyncio.sleep",
         new_callable=AsyncMock,
     ):
         await timers["right"].async_select_option("10")

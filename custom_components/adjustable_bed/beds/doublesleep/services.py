@@ -13,8 +13,8 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN
-from .doublesleep_protocol import ALARM_PRESETS, PRESETS, SAVE, alarm_days
+from ...const import DOMAIN
+from .protocol import ALARM_PRESETS, PRESETS, SAVE, alarm_days
 
 type Action = Literal[
     "alarm",
@@ -122,8 +122,8 @@ def build_request(data: Mapping[str, object]) -> Request:
 
 
 async def handle_doublesleep(call: ServiceCall) -> None:
-    from .beds.doublesleep import DoubleSleepController
-    from .services import _call_targets, _preflight_and_execute
+    from ...services import _call_targets, _preflight_and_execute
+    from .controller import DoubleSleepController
 
     try:
         request = build_request(call.data)
@@ -141,7 +141,7 @@ async def handle_doublesleep(call: ServiceCall) -> None:
 
 
 def async_register_doublesleep_services(hass: HomeAssistant) -> None:
-    from .services import CONF_DEVICE_ID, SIDE_FIELD
+    from ...services import CONF_DEVICE_ID, SIDE_FIELD
 
     fields = (
         "hour",

@@ -10,8 +10,8 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .casper_base_protocol import ALARM_MODES, CasperBaseActions, Request
-from .const import DOMAIN
+from ...const import DOMAIN
+from .protocol import ALARM_MODES, CasperBaseActions, Request
 
 if TYPE_CHECKING:
     from homeassistant.helpers.typing import VolSchemaType
@@ -64,7 +64,7 @@ def weekday(value: object) -> int:
 
 
 async def handle(call: ServiceCall, *, hush: bool = False) -> None:
-    from .services import _call_targets, _preflight_and_execute
+    from ...services import _call_targets, _preflight_and_execute
 
     data = call.data
     request = Request(
@@ -108,7 +108,7 @@ async def handle(call: ServiceCall, *, hush: bool = False) -> None:
 def async_register_casper_base_services(hass: HomeAssistant) -> None:
     from functools import partial
 
-    from .services import DEVICE_IDS, SIDE_FIELD
+    from ...services import DEVICE_IDS, SIDE_FIELD
 
     schema = vol.Schema(
         {

@@ -10,9 +10,9 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from custom_components.adjustable_bed.beds.reverie_comfort import ReverieComfortRequest
-from custom_components.adjustable_bed.beds.reverie_pairlink import ReveriePairlinkController
-from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import (
+from custom_components.adjustable_bed.beds.reverie.comfort import ReverieComfortRequest
+from custom_components.adjustable_bed.beds.reverie.pairlink import ReveriePairlinkController
+from custom_components.adjustable_bed.beds.reverie.pairlink_protocol import (
     PAIRLINK_WRITE_UUID,
     a7_payload,
     build_user_frame,
@@ -22,7 +22,7 @@ from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import (
     state_query_payloads,
     status_sync_payloads,
 )
-from custom_components.adjustable_bed.beds.reverie_pairlink_runtime import (
+from custom_components.adjustable_bed.beds.reverie.pairlink_runtime import (
     PairlinkCredentials,
     PairlinkHomeIdOrigin,
     PairlinkRole,
@@ -701,7 +701,7 @@ async def test_pairlink_held_axis_has_one_press_and_same_axis_release(
     await _join_central(controller, client, runtime, tasks)
     controller.async_send_payload = AsyncMock()
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.reverie_pairlink.asyncio.sleep",
+        "custom_components.adjustable_bed.beds.reverie.pairlink.asyncio.sleep",
         AsyncMock(),
     )
 

@@ -10,8 +10,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Literal
 
-from .richmat_classic_profiles import Control
-from .richmat_classic_protocol import Wire, decode_resource
+from .profiles import Control
+from .protocol import Wire, decode_resource
 
 
 class Retain(Enum):

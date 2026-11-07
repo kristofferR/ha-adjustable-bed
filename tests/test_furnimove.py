@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, call
 
 import pytest
 
-from custom_components.adjustable_bed.beds.furnimove import (
+from custom_components.adjustable_bed.beds.furnimove.controller import (
     CSS_FEEDBACK,
     DOT_FEEDBACK,
     DOT_WRITE,
@@ -23,8 +23,8 @@ from custom_components.adjustable_bed.beds.furnimove import (
     combine_furnimove_commands,
     validate_furnimove_name,
 )
+from custom_components.adjustable_bed.beds.furnimove.profiles import FurniMoveAction as Action
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.furnimove_profiles import FurniMoveAction as Action
 from tests.hold_lease_wire import virtual_clock
 from tests.state_helpers import massage_levels, state_writer
 

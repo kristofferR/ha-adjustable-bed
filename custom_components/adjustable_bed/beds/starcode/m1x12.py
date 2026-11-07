@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Final
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
-from ..card import (
+from ...card import (
     CARD_LIGHT_LEVEL,
     CARD_LIGHTING,
     CARD_MASSAGE,
@@ -26,12 +26,12 @@ from ..card import (
     CardRole,
     motor_card,
 )
-from ..codec import okin_5a
-from ..const import CONF_BLE_DEVICE_NAME, CONF_STARCODE_M1X12_PROFILE
-from ..controller_state import StateUpdate
-from ..execution import ExecutionCapabilities
-from ..state_keys import UNDER_BED_LIGHTS_ON
-from .base import (
+from ...codec import okin_5a
+from ...const import CONF_BLE_DEVICE_NAME, CONF_STARCODE_M1X12_PROFILE
+from ...controller_state import StateUpdate
+from ...execution import ExecutionCapabilities
+from ...state_keys import UNDER_BED_LIGHTS_ON
+from ..base import (
     POSITION_UNIT_PERCENT,
     BedController,
     ControllerButtonSpec,
@@ -42,13 +42,8 @@ from .base import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
-from .builder import BuildContext
-from .star_elevate import (
-    NORDIC_UART_READ_CHAR_UUID,
-    StarElevateCommands,
-    StarElevateController,
-)
-from .starcode_dialect import (
+from ..builder import BuildContext
+from .dialect import (
     extended_packet,
     long_packet,
     manufacturer_dialect,
@@ -56,13 +51,18 @@ from .starcode_dialect import (
     position_packet,
     query_packet,
 )
-from .starcode_m1x12_protocol import (
+from .m1x12_protocol import (
     PROFILES,
     StateValue,
     clock_packet,
     parse_notification,
 )
-from .starcode_state import (
+from .star_elevate import (
+    NORDIC_UART_READ_CHAR_UUID,
+    StarElevateCommands,
+    StarElevateController,
+)
+from .state import (
     FIRMWARE_VERSION,
     LIGHT_BRIGHTNESS,
     field_key,
@@ -74,7 +74,7 @@ if TYPE_CHECKING:
     from bleak import BleakClient
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -760,7 +760,7 @@ class StarcodeM1X12Controller(BedController):
         await self.write_command(self._normal("stop") or b"", cancel_event=asyncio.Event())
 
     async def stop_all(self) -> None:
-        from ..starcode_accessory_group import cancel_group_operations
+        from .accessory_group import cancel_group_operations
 
         cancel_group_operations(self._coordinator.hass, self._coordinator.entry.entry_id)
         self._clear_progress_queue()
@@ -771,7 +771,7 @@ class StarcodeM1X12Controller(BedController):
         await self.write_command(self._normal("interrupt") or b"", cancel_event=asyncio.Event())
 
     async def _interrupt_group(self) -> None:
-        from ..starcode_accessory_group import interrupt_conflicting_group
+        from .accessory_group import interrupt_conflicting_group
 
         await interrupt_conflicting_group(self._coordinator)
 
@@ -1362,7 +1362,7 @@ class StarElevateM1X12Controller(StarElevateController):
             "both_up": StarElevateCommands.BOTH_UP,
             "both_down": StarElevateCommands.BOTH_DOWN,
         }[control]
-        from ..starcode_accessory_group import interrupt_conflicting_group
+        from .accessory_group import interrupt_conflicting_group
 
         await interrupt_conflicting_group(self._coordinator)
         cancel = self._coordinator.cancel_command

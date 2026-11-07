@@ -6,9 +6,9 @@ import json
 from dataclasses import dataclass, field
 from typing import Literal, cast
 
-from .casper_base_protocol import Request, SensorKind
-from .casper_sleep_schema import SCHEMAS
-from .codec import sleep_envelope
+from ...codec import sleep_envelope
+from ..casper_base.protocol import Request, SensorKind
+from .schema import SCHEMAS
 
 type Json = None | bool | int | float | str | list[Json] | dict[str, Json]
 type Display = None | bool | str

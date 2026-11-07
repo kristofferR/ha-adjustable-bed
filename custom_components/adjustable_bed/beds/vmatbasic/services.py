@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from homeassistant.exceptions import ServiceValidationError
 
-from .services import BedTarget, _command_targets, _preflight_and_execute
+from ...services import BedTarget, _command_targets, _preflight_and_execute
 
 
 def _single_receiver(targets: list[tuple[BedTarget, str]], message: str) -> None:
@@ -20,7 +20,7 @@ async def _hold_vmatbasic_floor(
     targets: list[tuple[BedTarget, str]], control: str, duration_ms: int
 ) -> None:
     """Refresh the XT floor light; it belongs to one physical receiver, never mirrored."""
-    from .beds.vmatbasic import VMatBasicController
+    from .controller import VMatBasicController
 
     _single_receiver(targets, "Target one physical V-MAT Basic receiver for floor refresh")
 
@@ -42,9 +42,9 @@ async def _hold_vmatbasic_floor(
 
 async def _rename_vmatbasic(targets: list[tuple[BedTarget, str]], name: str) -> None:
     """Rename exactly one selected primary receiver, retaining the old name on failure."""
-    from .beds.vmatbasic import VMatBasicController
-    from .coordinator import AdjustableBedCoordinator
-    from .profiles.vmatbasic import rename
+    from ...coordinator import AdjustableBedCoordinator
+    from ...profiles.vmatbasic import rename
+    from .controller import VMatBasicController
 
     try:
         packet = rename(name)

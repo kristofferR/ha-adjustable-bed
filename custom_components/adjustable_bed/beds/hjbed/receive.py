@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from typing import cast
 
-from .codec import richmat as codec
+from ...codec import richmat as codec
 
 type Value = str | int | float | bool | None | list[Value] | dict[str, Value]
 type Event = tuple[str, Value]

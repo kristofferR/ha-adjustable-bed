@@ -9,7 +9,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant
 
-from .const import (
+from ...const import (
     BED_TYPE_BEDTECH,
     BED_TYPE_RICHMAT,
     BEDTECH_MANUFACTURER_ID,

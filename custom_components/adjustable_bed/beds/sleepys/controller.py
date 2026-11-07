@@ -17,12 +17,12 @@ from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
-from ..const import KEESON_BASE_WRITE_CHAR_UUID, SLEEPYS_BOX24_WRITE_CHAR_UUID
-from ..profiles import keeson as keeson_profiles
-from .base import BedController
+from ...const import KEESON_BASE_WRITE_CHAR_UUID, SLEEPYS_BOX24_WRITE_CHAR_UUID
+from ...profiles import keeson as keeson_profiles
+from ..base import BedController
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 

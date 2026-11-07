@@ -6,18 +6,16 @@ import asyncio
 import re
 from typing import TYPE_CHECKING, Final
 
-from ..card import CARD_MASSAGE, CARD_UTILITY, CardPlacement, CardRole, CardSection
-from ..codec import richmat as codec
-from ..controller_state import StateKey, StateUpdate
-from ..ruf_richmat_profiles import Field, fields, profiles
-from ..ruf_richmat_protocol import AlarmRequest
-from .base import (
+from ...card import CARD_MASSAGE, CARD_UTILITY, CardPlacement, CardRole, CardSection
+from ...codec import richmat as codec
+from ...controller_state import StateKey, StateUpdate
+from ..base import (
     ControllerNumberSpec,
     ControllerSelectSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
-from .richmat_mh import (
+from ..richmat_mh.controller import (
     ANGLE_KEYS,
     INTENSITY_KEYS,
     LIGHT_TIMER_KEY,
@@ -31,7 +29,7 @@ from .richmat_mh import (
     SessionFlags,
     _invoke,
 )
-from .richmat_mh_protocol import (
+from ..richmat_mh.protocol import (
     INIT_VER0,
     INIT_VER1,
     MOTOR_MODE_BITS,
@@ -53,9 +51,11 @@ from .richmat_mh_protocol import (
     mattress_frame,
     motor_mode_frame,
 )
+from .profiles import Field, fields, profiles
+from .protocol import AlarmRequest
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 VER2 = "0002"
 MUSIC_QUERY = codec.function(1, action="deviceFunctionItemCheckMusic")
@@ -381,7 +381,7 @@ class RufRichmatController(RichmatMhController):
         return "btn_led" if f.btn_led and self._dev.get("led") else None
 
     def _snore_options(self) -> tuple[str, ...]:
-        from .richmat_mh import SNORE_OPTIONS
+        from ..richmat_mh.controller import SNORE_OPTIONS
 
         f = self._features
         if self.route != "L" or not f or not f.snore or not self.model:
@@ -447,13 +447,13 @@ class RufRichmatController(RichmatMhController):
         try:
             await asyncio.sleep(0.1)
         finally:
-            from .richmat_mh_protocol import stop_frame
+            from ..richmat_mh.protocol import stop_frame
 
             await self.write_command(stop_frame(), cancel_event=asyncio.Event())
 
     async def _release(self) -> None:
         if self._app == "ruf":
-            from .richmat_mh_protocol import stop_frame
+            from ..richmat_mh.protocol import stop_frame
 
             await self.write_command(stop_frame(), cancel_event=asyncio.Event())
         else:
@@ -515,7 +515,7 @@ class RufRichmatController(RichmatMhController):
                 self._pending.waist = True
             self._apply_waist(waist_init(event.data))
             # Alarm begins at byte24: command, repeat, side, intensity, hour, minute.
-            from .richmat_mh_protocol import parse_waist_piece
+            from ..richmat_mh.protocol import parse_waist_piece
 
             alarm = finalize(bytes.fromhex("5e03" + event.data[48:60] + "00"))
             self._apply_waist(parse_waist_piece(alarm.hex()))
@@ -667,7 +667,7 @@ class RufRichmatController(RichmatMhController):
         self._publish_normal()
 
     def _publish_normal(self) -> None:
-        from ..ruf_richmat_protocol import NORMAL_SETTINGS
+        from .protocol import NORMAL_SETTINGS
 
         values: list[StateUpdate] = []
         for side, side_no in (("left", 1), ("right", 2)):
@@ -715,7 +715,7 @@ class RufRichmatController(RichmatMhController):
 
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        from ..ruf_richmat_protocol import NORMAL_SETTINGS
+        from .protocol import NORMAL_SETTINGS
 
         specs = list(super().controller_select_specs)
         if self._normal_ready:
@@ -755,7 +755,7 @@ class RufRichmatController(RichmatMhController):
         )
 
     async def normal_setting(self, side: str, setting: str, option: str) -> None:
-        from ..ruf_richmat_protocol import NORMAL_SETTINGS
+        from .protocol import NORMAL_SETTINGS
 
         spec = NORMAL_SETTINGS.get(setting)
         if (
@@ -819,7 +819,7 @@ class RufRichmatController(RichmatMhController):
     async def ruf_richmat_alarm(self, request: AlarmRequest) -> None:
         from homeassistant.util import dt as dt_util
 
-        from ..ruf_richmat_protocol import alarm_frame, calendar_clock
+        from .protocol import alarm_frame, calendar_clock
 
         self.validate_ruf_richmat_alarm(request)
         now = dt_util.now()

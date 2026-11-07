@@ -39,7 +39,7 @@ from ..state_keys import (
     massage_intensity,
 )
 from .base import BedController, ControllerButtonSpec
-from .solace import (
+from .solace.controller import (
     ALARM_ENABLED,
     ALARM_MASSAGE,
     ALARM_MODE,

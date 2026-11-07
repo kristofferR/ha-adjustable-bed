@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from bleak.exc import BleakError
 
-from custom_components.adjustable_bed.beds.svane import (
+from custom_components.adjustable_bed.beds.svane.controller import (
     DIS,
     DOWN,
     FEET,
@@ -25,8 +25,8 @@ from custom_components.adjustable_bed.beds.svane import (
     SvaneController,
     uuid,
 )
+from custom_components.adjustable_bed.beds.svane.state import SvaneSession, get_svane_session
 from custom_components.adjustable_bed.codec import jmc
-from custom_components.adjustable_bed.svane_state import SvaneSession, get_svane_session
 from tests.state_helpers import published
 
 
@@ -620,7 +620,7 @@ async def test_saved_p1_memory_is_persisted_and_survives_a_restart():
     [{"3": ["81", "82"]}, {"1": ["81"]}, {"1": ["", "82"]}, {"1": ["8", "82"]}, ["81", "82"]],
 )
 def test_invalid_persisted_p1_memory_is_rejected(multi_slots):
-    from custom_components.adjustable_bed.svane_state import svane_preferences
+    from custom_components.adjustable_bed.beds.svane.state import svane_preferences
 
     with pytest.raises(ValueError):
         svane_preferences({"intensity": 90, "multi_slots": multi_slots})

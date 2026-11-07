@@ -8,17 +8,17 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds.limoss_remote import LimossRemoteController
-from custom_components.adjustable_bed.beds.limoss_remote_protocol import (
+from custom_components.adjustable_bed.beds.limoss.remote import LimossRemoteController
+from custom_components.adjustable_bed.beds.limoss.remote_protocol import (
     LimossRemoteCapabilities,
     LimossRemoteSequence,
 )
-from custom_components.adjustable_bed.codec import limoss as codec
-from custom_components.adjustable_bed.const import LIMOSS_CHAR_UUID, LIMOSS_SERVICE_UUID
-from custom_components.adjustable_bed.limoss_remote_state import (
+from custom_components.adjustable_bed.beds.limoss.remote_state import (
     LimossRemoteMemoryStore,
     LimossRemoteSession,
 )
+from custom_components.adjustable_bed.codec import limoss as codec
+from custom_components.adjustable_bed.const import LIMOSS_CHAR_UUID, LIMOSS_SERVICE_UUID
 from custom_components.adjustable_bed.profiles.limoss import REMOTE_CHANNELS as HELD_COMMANDS
 from tests.limoss_vectors import REMOTE_LAYOUTS as RENDERED_LAYOUTS
 from tests.limoss_vectors import WIRE_FRAMES
@@ -434,7 +434,7 @@ async def test_preexisting_cancel_or_invalid_command_does_not_consume_counter():
 
 
 async def test_sparse_signed_memory_recall_literal_packets_and300ms_batches():
-    from custom_components.adjustable_bed.limoss_remote_state import LimossRemoteMemory
+    from custom_components.adjustable_bed.beds.limoss.remote_state import LimossRemoteMemory
 
     c = make_controller(system=0x14)
     c.memories.slots[8] = LimossRemoteMemory("Sparse", ((0, -2147483648), (2, -1)))
@@ -599,7 +599,7 @@ async def test_every_reachable_held_opcode_and_native_stop_through_live_caller(
 
 @pytest.mark.parametrize("slot", range(1, 9))
 async def test_all_eight_local_slots_have_real_recall_and_release(slot):
-    from custom_components.adjustable_bed.limoss_remote_state import LimossRemoteMemory
+    from custom_components.adjustable_bed.beds.limoss.remote_state import LimossRemoteMemory
 
     c = make_controller(system=0x11)
     c.memories.slots[slot] = LimossRemoteMemory(f"Slot {slot}", ((0, -slot),))
@@ -639,7 +639,7 @@ async def test_rename_preserves_valid_local_capacity_even_when_capture_motor_dom
 
 
 async def test_changed_motor_layout_rejects_stale_memory_before_any_write():
-    from custom_components.adjustable_bed.limoss_remote_state import LimossRemoteMemory
+    from custom_components.adjustable_bed.beds.limoss.remote_state import LimossRemoteMemory
 
     c = make_controller(system=0x12)
     c.memories.slots[8] = LimossRemoteMemory("Old four-motor layout", ((0, -1), (3, 1)))

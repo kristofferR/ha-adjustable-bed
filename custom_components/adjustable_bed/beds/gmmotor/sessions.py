@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from homeassistant.core import HomeAssistant
 
-from .app_session import app_session
+from ...app_session import app_session
 
 
 def product_ui_states(hass: HomeAssistant, address: str, profile: str) -> dict[int, int]:

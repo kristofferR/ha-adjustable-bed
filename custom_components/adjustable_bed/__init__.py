@@ -20,6 +20,23 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.typing import ConfigType
 
+from .beds.furnimove.repair import async_refresh_furnimove_layout_issues
+from .beds.linak.services import SERVICE_LINAK_MOVE_SIMULTANEOUS, SERVICE_LINAK_SET_ALARM
+from .beds.remacro.discovery import (
+    async_refresh_remacro_issues,
+    async_watch_remacro_fallback,
+    cache_paired_remacro_models,
+)
+from .beds.reverie.pairlink_local_setup import (
+    PAIRLINK_LOCAL_PROFILE_LEASES_KEY,
+    PairlinkLocalLeaseTransfer,
+    async_restore_pairlink_local_transfers,
+    async_start_paired_pairlink_local_child,
+    preflight_paired_pairlink_local_roles,
+    release_pairlink_local_profile_lease,
+    release_pairlink_local_reservations,
+)
+from .beds.solace.services import SERVICE_SOLACE_AUDIO, SERVICE_SOLACE_SET_ALARM
 from .beta_feedback import async_setup_beta_feedback
 from .combine_suggestion import async_load_dismissal
 from .const import (
@@ -62,8 +79,6 @@ from .coordinator_connection import PairingOnlyConnectionActiveError
 from .entity_runtime import EntityRuntime
 from .entity_sweep import async_sweep_after_setup
 from .entry_hooks import ENTRY_PREPARE_STEPS, entry_hooks
-from .furnimove_repair import async_refresh_furnimove_layout_issues
-from .linak_services import SERVICE_LINAK_MOVE_SIMULTANEOUS, SERVICE_LINAK_SET_ALARM
 from .paired_coordinator import PairedBedCoordinator, SingleAddressPairedCoordinator
 from .paired_devices import async_register_children
 from .paired_registry import (
@@ -86,15 +101,6 @@ from .pairing import (
     side_owned_profile_fields,
     with_updated_child,
 )
-from .pairlink_local_setup import (
-    PAIRLINK_LOCAL_PROFILE_LEASES_KEY,
-    PairlinkLocalLeaseTransfer,
-    async_restore_pairlink_local_transfers,
-    async_start_paired_pairlink_local_child,
-    preflight_paired_pairlink_local_roles,
-    release_pairlink_local_profile_lease,
-    release_pairlink_local_reservations,
-)
 from .position_estimate import (
     async_remove_position_estimates,
     async_setup_position_estimates,
@@ -106,11 +112,6 @@ from .profile_review import (
     async_refresh_profile_review_issue,
     profile_review_mark,
     v5_profile_review_mark,
-)
-from .remacro_discovery import (
-    async_refresh_remacro_issues,
-    async_watch_remacro_fallback,
-    cache_paired_remacro_models,
 )
 from .repairs import (
     async_refresh_combine_beds_issue,
@@ -156,7 +157,6 @@ from .services import (
     TIMED_MOVE_MOTOR_OPTIONS,
     async_register_services,
 )
-from .solace_services import SERVICE_SOLACE_AUDIO, SERVICE_SOLACE_SET_ALARM
 from .unsupported import (
     async_clear_unsupported_device_issues,
     create_pairing_required_issue,
@@ -575,7 +575,7 @@ def migrate_v5_4_data(data: Mapping[str, Any]) -> dict[str, Any]:
     4.4 stored the third-service fallback under the audit-tracker name. Paired
     sides and the original entries they restore on unpair are migrated too.
     """
-    from .richmat_classic_profiles import KEY_PREFIX, LEGACY_KEY_PREFIX
+    from .beds.richmat_classic.profiles import KEY_PREFIX, LEGACY_KEY_PREFIX
 
     legacy_key = LEGACY_KEY_PREFIX + CONF_RICHMAT_CLASSIC_THIRD_SERVICE.removeprefix(KEY_PREFIX)
     migrated = dict(data)
@@ -595,7 +595,7 @@ def migrate_v5_4_data(data: Mapping[str, Any]) -> dict[str, Any]:
 async def _async_migrate_v5_4_ids(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Give the classic Richmat entities and stored app state their current names."""
     from .app_state_store import app_state_slot, app_state_store
-    from .richmat_classic_profiles import (
+    from .beds.richmat_classic.profiles import (
         KEY_PREFIX,
         LEGACY_APP_STATE_KEY_PREFIX,
         LEGACY_KEY_PREFIX,

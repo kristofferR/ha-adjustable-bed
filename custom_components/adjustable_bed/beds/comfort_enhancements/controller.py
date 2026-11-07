@@ -13,22 +13,22 @@ from typing import TYPE_CHECKING, cast
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
-from ..card import CARD_MASSAGE, CARD_PRESETS, CardPlacement
-from ..codec import keeson as codec
-from ..const import (
+from ...card import CARD_MASSAGE, CARD_PRESETS, CardPlacement
+from ...codec import keeson as codec
+from ...const import (
     COMFORT_ENHANCEMENTS_VARIANTS,
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
 )
-from ..profiles import keeson as keeson_profiles
-from ..state_keys import MASSAGE_TIMER_MINUTES, massage_intensity
-from .base import BedController, ControllerButtonSpec, MotorCommandCallable, MotorControlSpec
-from .builder import BuildContext
+from ...profiles import keeson as keeson_profiles
+from ...state_keys import MASSAGE_TIMER_MINUTES, massage_intensity
+from ..base import BedController, ControllerButtonSpec, MotorCommandCallable, MotorControlSpec
+from ..builder import BuildContext
 
 if TYPE_CHECKING:
     from datetime import datetime
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 HOLD_INTERVAL_MS = 200
 RELEASE_DELAY_S = 0.1

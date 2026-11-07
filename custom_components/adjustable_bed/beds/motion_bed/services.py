@@ -9,8 +9,8 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .const import DOMAIN
-from .motion_bed_protocol import (
+from ...const import DOMAIN
+from .protocol import (
     AirMode,
     AirTimer,
     AlarmMode,
@@ -38,7 +38,7 @@ from .motion_bed_protocol import (
     build_thermal_clock,
     build_thermal_schedule,
 )
-from .motion_bed_requests import MotionBedWrite
+from .requests import MotionBedWrite
 
 
 def _integer(data: Mapping[str, object], key: str) -> int:
@@ -146,8 +146,8 @@ def build_motion_bed_request(service: str, data: Mapping[str, object]) -> Motion
 
 async def _execute(call: ServiceCall, request: MotionBedWrite | None = None) -> None:
     # Shared targeting includes paired child routing and preflights every receiver.
-    from .beds.motion_bed import MotionBedController
-    from .services import _call_targets, _preflight_and_execute
+    from ...services import _call_targets, _preflight_and_execute
+    from .controller import MotionBedController
 
     def validate(controller: MotionBedController) -> None:
         if request is not None:
@@ -193,7 +193,7 @@ def _reject_boolean(value: object) -> object:
 
 
 def async_register_motion_bed_services(hass: HomeAssistant) -> None:
-    from .services import CONF_DEVICE_ID, SIDE_FIELD
+    from ...services import CONF_DEVICE_ID, SIDE_FIELD
     common = {vol.Required(CONF_DEVICE_ID): cv.ensure_list, **SIDE_FIELD,
               vol.Optional("confirmed", default=False): bool}
     required = vol.Required

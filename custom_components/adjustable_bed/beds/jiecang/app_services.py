@@ -8,10 +8,9 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .beds.base import BedController, controller_as
-from .const import DOMAIN
-from .paired_coordinator import BedChild
-from .services import (
+from ...const import DOMAIN
+from ...paired_coordinator import BedChild
+from ...services import (
     ATTR_ENABLED,
     ATTR_FOOT_LEVEL,
     ATTR_HEAD_LEVEL,
@@ -27,6 +26,7 @@ from .services import (
     _preflight_and_execute,
     _preflight_each,
 )
+from ..base import BedController, controller_as
 
 SERVICE_JIECANG_SET_ALARM = "jiecang_set_alarm"
 SERVICE_JIECANG_WAKE = "jiecang_wake"
@@ -37,7 +37,7 @@ JIECANG_ALARM_PRESETS = (*JIECANG_WAKE_PRESETS, "yoga")
 
 async def handle_jiecang_set_alarm(call: ServiceCall) -> None:
     """Configure the Jiecang app controller's recurring clock alarm."""
-    from .beds.jiecang import JiecangProfileController
+    from .controller import JiecangProfileController
 
     alarm_time = call.data[ATTR_TIME]
     weekdays = tuple(SOLACE_WEEKDAY_OPTIONS.index(day) for day in call.data[ATTR_WEEKDAYS])
@@ -70,7 +70,7 @@ async def handle_jiecang_set_alarm(call: ServiceCall) -> None:
 
 async def handle_jiecang_wake(call: ServiceCall) -> None:
     """Start the app's wake routine with its preset and massage levels."""
-    from .beds.jiecang import JiecangProfileController
+    from .controller import JiecangProfileController
 
     async def wake(controller: JiecangProfileController) -> None:
         await controller.execute_wake_routine(
@@ -92,7 +92,7 @@ async def handle_jiecang_wake(call: ServiceCall) -> None:
 
 async def handle_jiecang_stop_wake(call: ServiceCall) -> None:
     """Stop active wake massage without changing the stored clock alarm."""
-    from .beds.jiecang import JiecangProfileController
+    from .controller import JiecangProfileController
 
     await _preflight_and_execute(
         _call_targets(call),

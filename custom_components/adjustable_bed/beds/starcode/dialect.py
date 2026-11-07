@@ -7,7 +7,7 @@ frames come from ``codec/okin_5a.py`` and legacy-dialect frames from
 
 from __future__ import annotations
 
-from ..codec import okin_5a, okin_nframe
+from ...codec import okin_5a, okin_nframe
 
 
 def is_star(dialect: str) -> bool:

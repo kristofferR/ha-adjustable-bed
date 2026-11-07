@@ -7,10 +7,9 @@ from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 
-from .beds.base import BedController, controller_as
-from .const import DOMAIN
-from .paired_coordinator import BedChild
-from .services import (
+from ...const import DOMAIN
+from ...paired_coordinator import BedChild
+from ...services import (
     ATTR_ACTION,
     ATTR_MINUTES,
     ATTR_PRESET,
@@ -22,6 +21,7 @@ from .services import (
     _leggett_integer,
     _preflight_each,
 )
+from ..base import BedController, controller_as
 
 SERVICE_LEGGETT_SLEEP_TIMER = "leggett_sleep_timer"
 SERVICE_LEGGETT_ALARM_TIMER = "leggett_alarm_timer"
@@ -29,7 +29,7 @@ SERVICE_LEGGETT_ALARM_TIMER = "leggett_alarm_timer"
 
 async def _handle_leggett_timer(call: ServiceCall, *, alarm: bool) -> None:
     """Validate all timer targets, then program or cancel each through its queue."""
-    from .beds.leggett_okin import LeggettOkinController
+    from .okin import LeggettOkinController
 
     start = call.data[ATTR_ACTION] == "start"
     minutes = call.data.get(ATTR_MINUTES)

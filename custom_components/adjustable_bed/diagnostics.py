@@ -12,6 +12,10 @@ from homeassistant.core import HomeAssistant
 from homeassistant.loader import async_get_integration
 
 from .adapter import find_service_info_by_address
+from .beds.kaidi.protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
+from .beds.vibradorm.app_discovery import manufacturer_discovery_diagnostics
+from .beds.vibradorm.vmat_discovery import vmat_manufacturer_diagnostics
+from .beds.vmatbasic.discovery import manufacturer_diagnostics as vmatbasic_manufacturer_diagnostics
 from .bluetooth_diagnostics import connection_reachability
 from .const import (
     BED_TYPE_VIBRADORM_APP,
@@ -39,14 +43,10 @@ from .coordinator import AdjustableBedCoordinator
 from .diagnostics_utils import get_gatt_summary
 from .discovery_log import async_get_discovery_log
 from .discovery_settings import async_is_discovery_disabled
-from .kaidi_protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
 from .paired_coordinator import PairedBedCoordinator
 from .pairing import get_child
 from .profile_decisions import async_profile_decision_history
 from .redaction import redact_data
-from .vibradorm_app_discovery import manufacturer_discovery_diagnostics
-from .vibradorm_vmat_discovery import vmat_manufacturer_diagnostics
-from .vmatbasic_discovery import manufacturer_diagnostics as vmatbasic_manufacturer_diagnostics
 
 
 def _normalize_ble_address(value: Any) -> str | None:

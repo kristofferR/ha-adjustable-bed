@@ -12,11 +12,11 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.leggett_gen2 import (
+from custom_components.adjustable_bed.beds.leggett.gen2 import (
     LeggettGen2Commands,
     LeggettGen2Controller,
 )
-from custom_components.adjustable_bed.beds.leggett_okin import (
+from custom_components.adjustable_bed.beds.leggett.okin import (
     LeggettOkinController,
 )
 from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS, _should_add_button
@@ -989,7 +989,7 @@ class TestLeggettMovement:
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
         await coordinator.async_connect()
 
-        with patch("custom_components.adjustable_bed.beds.leggett_gen2.asyncio.sleep"):
+        with patch("custom_components.adjustable_bed.beds.leggett.gen2.asyncio.sleep"):
             await coordinator.controller.move_head_up()
 
         # _move_with_stop sends the head-up command then the per-actuator stop
@@ -1050,7 +1050,7 @@ class TestLeggettPresets:
         await coordinator.async_connect()
         mock_bleak_client.write_gatt_char.reset_mock()  # ignore the GET STATE on connect
 
-        with patch("custom_components.adjustable_bed.beds.leggett_gen2.asyncio.sleep"):
+        with patch("custom_components.adjustable_bed.beds.leggett.gen2.asyncio.sleep"):
             await coordinator.controller.preset_flat()
 
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
@@ -1068,7 +1068,7 @@ class TestLeggettPresets:
         await coordinator.async_connect()
         mock_bleak_client.write_gatt_char.reset_mock()  # ignore the GET STATE on connect
 
-        with patch("custom_components.adjustable_bed.beds.leggett_gen2.asyncio.sleep"):
+        with patch("custom_components.adjustable_bed.beds.leggett.gen2.asyncio.sleep"):
             await coordinator.controller.preset_anti_snore()
 
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
@@ -1097,7 +1097,7 @@ class TestLeggettPresets:
         await coordinator.async_connect()
         mock_bleak_client.write_gatt_char.reset_mock()  # ignore the GET STATE on connect
 
-        with patch("custom_components.adjustable_bed.beds.leggett_gen2.asyncio.sleep"):
+        with patch("custom_components.adjustable_bed.beds.leggett.gen2.asyncio.sleep"):
             await coordinator.controller.preset_memory(memory_num)
 
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]

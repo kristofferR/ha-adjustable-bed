@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
-from .reverie_pairlink_sdk_models import (
+from .pairlink_sdk_models import (
     PairlinkModelBoundsError,
     PairlinkModelNegativeLengthError,
     PairlinkModelNullError,

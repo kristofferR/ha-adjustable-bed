@@ -15,7 +15,7 @@ from enum import IntEnum, StrEnum
 from types import MappingProxyType
 from typing import Final
 
-from .codec.ff_frame import HEADER, alarm, bcd, clock, control, query, summed, with_crc, with_sum
+from ...codec.ff_frame import HEADER, alarm, bcd, clock, control, query, summed, with_crc, with_sum
 
 
 class AlarmMode(IntEnum):

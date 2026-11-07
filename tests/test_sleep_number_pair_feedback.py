@@ -9,7 +9,7 @@ import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.sleep_number import SleepNumberController
+from custom_components.adjustable_bed.beds.sleep_number.controller import SleepNumberController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEP_NUMBER,
     CONF_BED_TYPE,
@@ -137,7 +137,7 @@ async def test_movement_after_reconnect_refreshes_selected_side(
         patch.object(SleepNumberController, "query_config", AsyncMock()),
         patch.object(SleepNumberController, "_send_bamkey_command", send),
         patch(
-            "custom_components.adjustable_bed.beds.sleep_number._MOVEMENT_POLL_INTERVAL_SECONDS",
+            "custom_components.adjustable_bed.beds.sleep_number.controller._MOVEMENT_POLL_INTERVAL_SECONDS",
             0.001,
         ),
         patch.object(inner, "_async_record_verified_bond", AsyncMock(return_value=True)),
@@ -208,11 +208,11 @@ async def test_standalone_preset_feedback_lifecycle(outcome, monkeypatch):
 
     controller._send_bamkey_command = AsyncMock(side_effect=send)
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.sleep_number._MOVEMENT_POLL_INTERVAL_SECONDS",
+        "custom_components.adjustable_bed.beds.sleep_number.controller._MOVEMENT_POLL_INTERVAL_SECONDS",
         0.001,
     )
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.sleep_number._MOVEMENT_FEEDBACK_TIMEOUT_SECONDS",
+        "custom_components.adjustable_bed.beds.sleep_number.controller._MOVEMENT_FEEDBACK_TIMEOUT_SECONDS",
         0.05,
     )
     if outcome == "cancel":
@@ -284,7 +284,7 @@ async def test_held_motion_cleanup_precedes_replacement(
         return []
 
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.sleep_number._MOVEMENT_POLL_INTERVAL_SECONDS", 0.001
+        "custom_components.adjustable_bed.beds.sleep_number.controller._MOVEMENT_POLL_INTERVAL_SECONDS", 0.001
     )
     with (
         patch.object(SleepNumberController, "start_notify", start_notify),
@@ -347,7 +347,7 @@ async def test_homing_tracks_status_and_refreshes_both_sides(final_state, monkey
 
     controller._send_bamkey_command = AsyncMock(side_effect=send)
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.sleep_number._MOVEMENT_POLL_INTERVAL_SECONDS", 0.001
+        "custom_components.adjustable_bed.beds.sleep_number.controller._MOVEMENT_POLL_INTERVAL_SECONDS", 0.001
     )
     if final_state == "done":
         await controller.async_execute_sleep_number_command("starts_actuator_homing", {})
@@ -389,7 +389,7 @@ async def test_unbound_service_does_not_publish_other_side_as_default(monkeypatc
 
     controller._send_bamkey_command = AsyncMock(side_effect=send)
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.sleep_number._MOVEMENT_POLL_INTERVAL_SECONDS", 0.001
+        "custom_components.adjustable_bed.beds.sleep_number.controller._MOVEMENT_POLL_INTERVAL_SECONDS", 0.001
     )
     await controller.async_execute_sleep_number_command(
         "set_actuator_target_position",

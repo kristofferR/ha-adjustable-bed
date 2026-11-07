@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Final
 
-from ..codec import richmat as codec
+from ...codec import richmat as codec
 
 type Value = bool | int | float | str | None | list[int] | dict[str, int | float]
 type Event = tuple[str, Value]

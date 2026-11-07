@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal
 
-from .codec import richmat as codec
+from ...codec import richmat as codec
 
 
 @dataclass(frozen=True, slots=True)

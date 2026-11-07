@@ -16,6 +16,9 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import UndefinedType
 
 from .beds.base import CONTROLLER_GESTURE_RELEASE, ProductButtonSpec
+from .beds.limoss.remote_state import LIMOSS_REMOTE_MEMORY_NAMES
+from .beds.octo.runtime import octo_controller
+from .beds.remacro.discovery import remacro_side_lacks_global_stop
 from .card import (
     CARD_HIDDEN,
     CARD_LIGHT_TOGGLE,
@@ -43,8 +46,6 @@ from .entity import AdjustableBedEntity, PlacedInCard, RenamesInPlace, hold_leas
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime, controller_side_scope
 from .entity_sweep import PlatformEntities, records_entities
-from .limoss_remote_state import LIMOSS_REMOTE_MEMORY_NAMES
-from .octo_runtime import octo_controller
 from .paired_coordinator import (
     PairedBedCoordinator,
     SingleAddressPairedCoordinator,
@@ -55,7 +56,6 @@ from .position_estimate import (
     track_motor_command,
 )
 from .position_estimate_entities import async_setup_estimate_buttons
-from .remacro_discovery import remacro_side_lacks_global_stop
 
 if TYPE_CHECKING:
     from .beds.base import (
@@ -1381,7 +1381,7 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
                 CONTROLLER_GESTURE_RELEASE.reset(token)
             return
         if self._spec.key == "hjbed_release":
-            from .hjbed_state import GESTURE_RELEASE
+            from .beds.hjbed.state import GESTURE_RELEASE
 
             # STOP admission also invalidates a hold still awaiting Bluetooth
             # preflight. Only its action cleanup may send a release packet.

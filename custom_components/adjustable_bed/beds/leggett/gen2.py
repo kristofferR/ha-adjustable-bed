@@ -38,18 +38,18 @@ import contextlib
 import logging
 from typing import TYPE_CHECKING, Any
 
-from ..const import (
+from ...const import (
     LEGGETT_GEN2_READ_CHAR_UUID,
     LEGGETT_GEN2_WRITE_CHAR_UUID,
     LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
 )
-from ..controller_state import StateUpdate
-from ..execution import ExecutionCapabilities
-from ..state_keys import UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
-from .base import BedController
-from .builder import BuildContext
-from .leggett_gen2_profiles import (
+from ...controller_state import StateUpdate
+from ...execution import ExecutionCapabilities
+from ...state_keys import UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
+from ..base import BedController
+from ..builder import BuildContext
+from .gen2_profiles import (
     Gen2Capabilities,
     capabilities_for_product,
     compute_product_id,
@@ -58,7 +58,7 @@ from .leggett_gen2_profiles import (
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -690,14 +690,14 @@ async def build_controller(ctx: BuildContext) -> LeggettGen2Controller:
 async def build_leggett_platt(ctx: BuildContext) -> BedController:
     """Build the controller for a Leggett & Platt variant the factory resolved."""
     if ctx.variant == LEGGETT_VARIANT_MLRM:
-        await ctx.preload("leggett_wilinke")
-        from .leggett_wilinke import LeggettWilinkeController
+        await ctx.preload("leggett.wilinke")
+        from .wilinke import LeggettWilinkeController
 
         _LOGGER.debug("Using MlRM Leggett & Platt variant")
         return LeggettWilinkeController(ctx.coordinator)
     if ctx.variant == LEGGETT_VARIANT_OKIN:
-        await ctx.preload("leggett_okin")
-        from .leggett_okin import build_controller as build_okin
+        await ctx.preload("leggett.okin")
+        from .okin import build_controller as build_okin
 
         _LOGGER.debug("Using Okin Leggett & Platt variant (configured)")
         return await build_okin(ctx)

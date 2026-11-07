@@ -10,7 +10,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.okin_uuid import (
+from custom_components.adjustable_bed.beds.okin_uuid.controller import (
     OKIN_UUID_REMOTES,
     OkinUuidComplexCommand,
     OkinUuidController,
@@ -938,11 +938,11 @@ class TestOkinUuidFurniMoveCatalog:
     V4_0_2_KEYCODE_DIGEST = "9b8ddfb7583fc1d66847977fb4c20928dd2f77edb81552fb4ee6d515fdccad70"
 
     def test_catalog_handsets_have_no_generated_row(self) -> None:
-        from custom_components.adjustable_bed.beds.okin_uuid_remotes import (
-            OKIN_UUID_REMOTE_DATA,
-        )
-        from custom_components.adjustable_bed.furnimove_profiles import (
+        from custom_components.adjustable_bed.beds.furnimove.profiles import (
             FURNIMOVE_PRODUCTION_IDS,
+        )
+        from custom_components.adjustable_bed.beds.okin_uuid.remotes import (
+            OKIN_UUID_REMOTE_DATA,
         )
 
         assert FURNIMOVE_PRODUCTION_IDS.isdisjoint(OKIN_UUID_REMOTE_DATA)

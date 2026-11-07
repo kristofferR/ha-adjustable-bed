@@ -16,8 +16,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Final, Literal
 
-from ..codec import richmat as codec
-from ..profiles.richmat import RICHMAT_MH
+from ...codec import richmat as codec
+from ...profiles.richmat import RICHMAT_MH
 
 HEADER_BED: Final = codec.BED
 HEADER_MATTRESS: Final = codec.MATTRESS

@@ -15,7 +15,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.jensen import (
+from custom_components.adjustable_bed.beds.jensen.controller import (
     FOOT_POS_FLAT,
     FOOT_POS_MAX,
     HEAD_POS_FLAT,
@@ -41,7 +41,7 @@ from tests.state_helpers import published
 
 from .conftest import make_controller_mock
 
-JENSEN_MODULE = "custom_components.adjustable_bed.beds.jensen"
+JENSEN_MODULE = "custom_components.adjustable_bed.beds.jensen.controller"
 READ_POSITION = jmc.command(jmc.POSITION_QUERY)
 STOP = jmc.command(jmc.STOP)
 FLAT = jmc.command(jmc.FLAT)

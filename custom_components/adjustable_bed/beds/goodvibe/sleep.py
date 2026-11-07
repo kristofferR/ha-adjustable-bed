@@ -11,8 +11,8 @@ import zlib
 from dataclasses import dataclass, field
 from typing import Never
 
-from .codec import sleep_envelope
-from .goodvibe_schemas import parse_schema
+from ...codec import sleep_envelope
+from .schemas import parse_schema
 
 
 def sleep_packet(sequence: int, command: str, value: object) -> bytes:

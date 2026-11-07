@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal
 
-from .beds.richmat_mh_protocol import mattress_frame
-from .codec import richmat as codec
+from ...codec import richmat as codec
+from ..richmat_mh.protocol import mattress_frame
 
 NORMAL_SETTINGS = {
     "pressure": (1, {"low": 1, "medium": 2, "high": 3}),

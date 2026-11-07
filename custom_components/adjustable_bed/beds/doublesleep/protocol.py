@@ -12,8 +12,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Literal
 
-from .codec import okin_nframe
-from .profiles.okin_nframe import DOUBLESLEEP
+from ...codec import okin_nframe
+from ...profiles.okin_nframe import DOUBLESLEEP
 
 type Json = None | bool | int | float | str | Sequence[Json] | Mapping[str, Json]
 type Protocol = Literal["p1", "p2", "p3"]

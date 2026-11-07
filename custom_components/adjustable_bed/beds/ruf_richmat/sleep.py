@@ -9,16 +9,16 @@ from collections.abc import Callable
 from datetime import datetime
 from typing import TYPE_CHECKING, Final
 
-from ..card import CARD_UTILITY
-from ..controller_state import StateKey, StateUpdate
-from ..ruf_richmat_protocol import crc8, sleep_frame
-from .base import BedController, ControllerSelectSpec, ControllerStateSensorSpec
-from .builder import BuildContext
+from ...card import CARD_UTILITY
+from ...controller_state import StateKey, StateUpdate
+from ..base import BedController, ControllerSelectSpec, ControllerStateSensorSpec
+from ..builder import BuildContext
+from .protocol import crc8, sleep_frame
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 SERVICE = "2320567c-05cf-6eb4-c341-772851827e1b"

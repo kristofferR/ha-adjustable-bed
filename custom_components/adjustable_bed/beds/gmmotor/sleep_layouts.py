@@ -7,7 +7,7 @@ Input SHA-256: REPORT.SHA256 2251d01a96c95b4d5c15c369fe67202f2e8c7d513c91db88fc8
 
 from typing import Final
 
-from .gmmotor_notifications import Value
+from .notifications import Value
 
 # fmt: off
 LAYOUTS: Final[dict[str, Value]] = {'0x6da74c': {'class': 'SxbSleepAntiSnoreBean',

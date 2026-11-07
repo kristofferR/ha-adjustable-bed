@@ -14,18 +14,14 @@ from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
-from .. import goodvibe_protocol as p
-from ..app_session import app_session
-from ..card import CARD_HIDDEN, CARD_UTILITY, CardPlacement, CardSection
-from ..codec import richmat as codec
-from ..command_scheduler import CommandContext, current_command_context
-from ..controller_state import StateKey
-from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
-from ..goodvibe_catalog import ACTION_EXPANSIONS, ACTIONS, PRODUCTS, Action
-from ..goodvibe_receive import Notifications
-from ..goodvibe_sleep import Realtime, Receiver, sleep_packet
-from ..profiles.richmat import GOODVIBE
-from .base import (
+from ...app_session import app_session
+from ...card import CARD_HIDDEN, CARD_UTILITY, CardPlacement, CardSection
+from ...codec import richmat as codec
+from ...command_scheduler import CommandContext, current_command_context
+from ...controller_state import StateKey
+from ...execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
+from ...profiles.richmat import GOODVIBE
+from ..base import (
     CONTROLLER_GESTURE_RELEASE,
     BedController,
     ControllerButtonSpec,
@@ -34,14 +30,18 @@ from .base import (
     ControllerSelectSpec,
     ControllerStateSensorSpec,
 )
-from .builder import BuildContext
+from ..builder import BuildContext
+from . import protocol as p
+from .catalog import ACTION_EXPANSIONS, ACTIONS, PRODUCTS, Action
+from .receive import Notifications
+from .sleep import Realtime, Receiver, sleep_packet
 
 if TYPE_CHECKING:
     from bleak import BleakClient
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..coordinator import AdjustableBedCoordinator
-    from ..goodvibe_services import Request
+    from ...coordinator import AdjustableBedCoordinator
+    from .services import Request
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -574,7 +574,7 @@ class GoodVibeController(BedController):
             else:
                 await asyncio.sleep(0.00015)
                 if self.kind == 3:
-                    from ..goodvibe_services import Request
+                    from .services import Request
 
                     await self.sleep_request("part", Request("part", part=12))
                 await self.sleep_request("sync")
@@ -694,7 +694,7 @@ class GoodVibeController(BedController):
         if self.product.light:
 
             async def light_off(controller: BedController) -> None:
-                from ..goodvibe_services import Request
+                from .services import Request
 
                 await selected(controller).async_execute_goodvibe_request(Request("light_off"))
 
@@ -929,7 +929,7 @@ class GoodVibeController(BedController):
         if self.product.massage_timer:
 
             async def massage_timer(controller: BedController, value: str) -> None:
-                from ..goodvibe_services import Request
+                from .services import Request
 
                 await selected(controller).async_execute_goodvibe_request(
                     Request("massage_timer", value=int(value))
@@ -963,7 +963,7 @@ class GoodVibeController(BedController):
         if self.product.light:
 
             async def duration(controller: BedController, value: str) -> None:
-                from ..goodvibe_services import Request
+                from .services import Request
 
                 await selected(controller).async_execute_goodvibe_request(
                     Request("light_duration", seconds=int(value))
@@ -992,7 +992,7 @@ class GoodVibeController(BedController):
             return ()
 
         async def count(controller: BedController, value: float) -> None:
-            from ..goodvibe_services import Request
+            from .services import Request
 
             if value != int(value):
                 raise ValueError("Snore count must be an integer")
@@ -1001,7 +1001,7 @@ class GoodVibeController(BedController):
             )
 
         async def time(controller: BedController, value: float) -> None:
-            from ..goodvibe_services import Request
+            from .services import Request
 
             if value != int(value):
                 raise ValueError("Snore time must be an integer")

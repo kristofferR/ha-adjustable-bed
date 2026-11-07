@@ -11,7 +11,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant
 
-from .const import (
+from ...const import (
     BED_TYPE_KAIDI,
     CONF_BED_TYPE,
     CONF_KAIDI_ADV_TYPE,
@@ -22,8 +22,8 @@ from .const import (
     CONF_KAIDI_TARGET_VADDR,
     CONF_KAIDI_VARIANT_SOURCE,
 )
-from .kaidi_protocol import KaidiAdvertisement, extract_best_kaidi_advertisement
-from .profiles.kaidi import resolve_kaidi_variant_from_entry_data
+from ...profiles.kaidi import resolve_kaidi_variant_from_entry_data
+from .protocol import KaidiAdvertisement, extract_best_kaidi_advertisement
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -12,7 +12,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.keeson import (
+from custom_components.adjustable_bed.beds.keeson.controller import (
     KeesonCommands,
     KeesonController,
     SinoCommands,
@@ -1305,7 +1305,7 @@ class TestPurpleSmartBaseProtocol:
         controller.write_command = AsyncMock(side_effect=[RuntimeError("write failed"), None])
         sleep = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             sleep,
         )
 
@@ -1336,7 +1336,7 @@ class TestPurpleSmartBaseProtocol:
         controller.write_command = AsyncMock()
         sleep = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             sleep,
         )
 
@@ -1392,7 +1392,7 @@ class TestSleepHarmonyProtocol:
         controller.write_command = AsyncMock()
         sleep = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             sleep,
         )
 
@@ -1426,7 +1426,7 @@ class TestSleepHarmonyProtocol:
         controller.write_command = AsyncMock()
         sleep = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             sleep,
         )
 
@@ -1460,7 +1460,7 @@ class TestSleepHarmonyProtocol:
         controller.write_command = AsyncMock()
         sleep = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             sleep,
         )
 
@@ -1492,7 +1492,7 @@ class TestSleepHarmonyProtocol:
         controller.write_command = AsyncMock()
         sleep = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             sleep,
         )
 
@@ -1508,7 +1508,7 @@ class TestKsbt03cMotorLayout:
 
     def test_is_ksbt03c_name(self):
         """Test KSBT03C name detection."""
-        from custom_components.adjustable_bed.beds.keeson import is_ksbt03c_name
+        from custom_components.adjustable_bed.beds.keeson.controller import is_ksbt03c_name
 
         assert is_ksbt03c_name("KSBT03C300039050")
         assert is_ksbt03c_name("ksbt03c123")
@@ -1805,7 +1805,7 @@ class TestKsbt03cMotorLayout:
         controller = KeesonController(coordinator, variant="ksbt", device_name="KSBT03C300039050")
         controller.write_command = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             AsyncMock(),
         )
 
@@ -1851,7 +1851,7 @@ class TestKsbt03cMotorLayout:
         controller.write_command = AsyncMock()
         sleep = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             sleep,
         )
 
@@ -1964,7 +1964,7 @@ class TestKsbt03cMotorLayout:
         controller.write_command = AsyncMock()
         sleep = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             sleep,
         )
 

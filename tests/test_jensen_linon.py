@@ -16,12 +16,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.jensen_linon import (
+from custom_components.adjustable_bed.beds.jensen.linon import (
     HOLD_INTERVAL_MS,
     JensenLinonCommands,
     JensenLinonController,
 )
-from custom_components.adjustable_bed.beds.svane import SvaneController
+from custom_components.adjustable_bed.beds.svane.controller import SvaneController
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
@@ -81,7 +81,7 @@ def written(controller: JensenLinonController) -> list[tuple[str, str, str]]:
 def _no_sleep(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
     """Skip the 800 ms hold interval (this patches ``asyncio.sleep`` itself)."""
     sleep = AsyncMock()
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.jensen_linon.asyncio.sleep", sleep)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.jensen.linon.asyncio.sleep", sleep)
     return sleep
 
 

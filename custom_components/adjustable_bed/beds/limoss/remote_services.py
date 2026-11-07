@@ -13,11 +13,11 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .command_scheduler import HoldLease
-from .const import BED_TYPE_LIMOSS_REMOTE, DOMAIN
-from .paired_coordinator import BedChild, PairedBedCoordinator
-from .position_estimate import track_held_control
-from .services import (
+from ...command_scheduler import HoldLease
+from ...const import BED_TYPE_LIMOSS_REMOTE, DOMAIN
+from ...paired_coordinator import BedChild, PairedBedCoordinator
+from ...position_estimate import track_held_control
+from ...services import (
     ATTR_DURATION,
     ATTR_NAME,
     ATTR_PRESET,
@@ -34,8 +34,8 @@ from .services import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController
-    from .beds.limoss_remote import LimossRemoteController
+    from ..base import BedController
+    from .remote import LimossRemoteController
 
 
 SERVICE_LIMOSS_REMOTE_RENAME_MEMORY = "limoss_remote_rename_memory"
@@ -83,7 +83,7 @@ async def _hold_limoss_remote(
 def _limoss_remote_controller(
     controller: BedController,
 ) -> LimossRemoteController:
-    from .beds.limoss_remote import LimossRemoteController
+    from .remote import LimossRemoteController
 
     if isinstance(controller, LimossRemoteController):
         return controller
@@ -95,7 +95,7 @@ async def _limoss_remote_reload_transaction(
     targets: list[tuple[BedTarget, str]],
 ) -> AsyncIterator[None]:
     """Defer selected receivers' entity reloads through all service phases."""
-    from .coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
     async with contextlib.AsyncExitStack() as stack:
         physical: dict[int, BedChild] = {}
@@ -174,7 +174,7 @@ async def _execute_limoss_remote(
     targets: list[tuple[BedTarget, str]] | None = None,
     lease: HoldLease | None = None,
 ) -> None:
-    from .beds.limoss_remote import LimossRemoteController
+    from .remote import LimossRemoteController
 
     targets = _limoss_remote_targets(call) if targets is None else targets
 

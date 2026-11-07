@@ -1,6 +1,6 @@
 """Explicit control surfaces from the frozen legacy L&P 2.2.1 app report.
 
-The surfaces live in ``lp_legacy_catalog.py``, loaded on first use.
+The surfaces live in ``beds/leggett/lp_legacy_catalog.py``, loaded on first use.
 
 Labels describe the app's controls, not verified physical motor semantics.
 The catalog deliberately does not share newer Richmat remote-code mappings.
@@ -14,7 +14,7 @@ from functools import cache
 from types import MappingProxyType
 from typing import Literal
 
-from .codec import richmat as codec
+from ...codec import richmat as codec
 
 LpLegacyState = Literal[1, 2, 3, 4, 5]
 LpLegacyConfidence = Literal["INFERRED", "TENTATIVE", "UNKNOWN"]

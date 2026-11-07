@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import time
 
-from .casper_base_protocol import Event, MainReceive, decode_main
-from .codec.richmat import is_valid, is_valid_crc
+from ...codec.richmat import is_valid, is_valid_crc
+from ..casper_base.protocol import Event, MainReceive, decode_main
 
 
 class HushMainReceive(MainReceive):

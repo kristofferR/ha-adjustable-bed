@@ -8,8 +8,8 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .const import DOMAIN
-from .services import (
+from ...const import DOMAIN
+from ...services import (
     ATTR_ENABLED,
     ATTR_PRESET,
     ATTR_TIME,
@@ -27,7 +27,7 @@ MALOUF_ALARM_PRESETS = ("zero_g", "lounge", "tv", "anti_snore", "memory_1", "mem
 
 async def handle_malouf_set_alarm(call: ServiceCall) -> None:
     """Set or clear the app profile's clock alarm through its command lock."""
-    from .beds.malouf_app import MaloufAppController
+    from .app import MaloufAppController
 
     alarm_time = call.data[ATTR_TIME]
     if alarm_time.second or alarm_time.microsecond:

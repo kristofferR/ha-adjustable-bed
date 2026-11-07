@@ -18,7 +18,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any, Final, Literal
 
-from ..const import CONF_REMACRO_LED_LEVEL, CONF_REMACRO_MODEL
+from ...const import CONF_REMACRO_LED_LEVEL, CONF_REMACRO_MODEL
 
 APP_SLUMBERLAND: Final = "slumberland"
 APP_THE_BRICK: Final = "the_brick"

@@ -22,7 +22,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from custom_components.adjustable_bed import paired_topology
 from custom_components.adjustable_bed.beds.okin_cb24 import OkinCB24Controller
 from custom_components.adjustable_bed.beds.sbi import SBIController
-from custom_components.adjustable_bed.beds.sleep_number import SleepNumberController
+from custom_components.adjustable_bed.beds.sleep_number.controller import SleepNumberController
 from custom_components.adjustable_bed.command_scheduler import (
     CommandContext,
     CommandHandle,

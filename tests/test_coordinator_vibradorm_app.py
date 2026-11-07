@@ -17,11 +17,16 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import _build_paired_children
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
-from custom_components.adjustable_bed.beds.vibradorm_app import (
+from custom_components.adjustable_bed.beds.vibradorm.app import (
     INFO_FIELDS,
     VibradormAppController,
     VibradormAppMetadata,
     async_prepare_vibradorm_app_pairing,
+)
+from custom_components.adjustable_bed.beds.vibradorm.app_state import (
+    clear_vibradorm_app_session_intent,
+    get_vibradorm_app_session_intent,
+    mark_vibradorm_app_selection,
 )
 from custom_components.adjustable_bed.bluetooth_transport import ConnectionPath, TransportClass
 from custom_components.adjustable_bed.bond_verification import (
@@ -58,11 +63,6 @@ from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinato
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.pairing import get_child
 from custom_components.adjustable_bed.profiles.vibradorm import vibradorm_app_metadata_key
-from custom_components.adjustable_bed.vibradorm_app_state import (
-    clear_vibradorm_app_session_intent,
-    get_vibradorm_app_session_intent,
-    mark_vibradorm_app_selection,
-)
 from tests.coordinator_patches import patch_coordinator_global
 from tests.hold_lease_wire import virtual_clock
 
@@ -74,7 +74,7 @@ _METADATA = VibradormAppMetadata("model", "firmware", "software", "article")
 _MODULE = "custom_components.adjustable_bed.coordinator"
 _CONNECTION = "custom_components.adjustable_bed.coordinator_connection"
 _BONDS = "custom_components.adjustable_bed.coordinator_bonds"
-_HELPER = "custom_components.adjustable_bed.beds.vibradorm_app.async_prepare_vibradorm_app_pairing"
+_HELPER = "custom_components.adjustable_bed.beds.vibradorm.app.async_prepare_vibradorm_app_pairing"
 
 
 def _evidence(path: ConnectionPath, positive: bool = False) -> BondEvidence:

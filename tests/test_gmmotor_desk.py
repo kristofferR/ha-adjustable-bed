@@ -5,8 +5,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds.gmmotor_desk import GmmotorDeskController
-from custom_components.adjustable_bed.gmmotor_requests import Request
+from custom_components.adjustable_bed.beds.gmmotor.desk import GmmotorDeskController
+from custom_components.adjustable_bed.beds.gmmotor.requests import Request
 
 
 def controller(profile: str = "FWRM") -> GmmotorDeskController:

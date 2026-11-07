@@ -14,26 +14,15 @@ from typing import TYPE_CHECKING, Final
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
-from ..const import (
+from ...const import (
     CONF_BLE_DEVICE_NAME,
     CONF_MOTION_BED_MOVEMENT,
     CONF_MOTION_BED_PRESET,
     CONF_MOTION_BED_RESTORED,
 )
-from ..controller_state import StateKey
-from ..motion_bed_actions import ACTION_BY_KEY, MOTION_BED_ACTIONS, MotionBedAction
-from ..motion_bed_models import MotionBedSelection
-from ..motion_bed_protocol import SOURCE_COMMANDS, build_clock, build_thermal_clock
-from ..motion_bed_requests import MotionBedWrite
-from ..motion_bed_state import (
-    MotionBedContext,
-    MotionBedFollowup,
-    MotionBedState,
-    ScalarState,
-    parse_motion_bed_notification,
-)
-from ..profiles.ff_frame import MOTION_BED, MotionBedProfile
-from .base import (
+from ...controller_state import StateKey
+from ...profiles.ff_frame import MOTION_BED, MotionBedProfile
+from ..base import (
     BedController,
     ControllerButtonSpec,
     ControllerSelectSpec,
@@ -43,13 +32,24 @@ from .base import (
     MotorControlSpec,
     require_controller,
 )
-from .builder import BuildContext
+from ..builder import BuildContext
+from .actions import ACTION_BY_KEY, MOTION_BED_ACTIONS, MotionBedAction
+from .models import MotionBedSelection
+from .protocol import SOURCE_COMMANDS, build_clock, build_thermal_clock
+from .requests import MotionBedWrite
+from .state import (
+    MotionBedContext,
+    MotionBedFollowup,
+    MotionBedState,
+    ScalarState,
+    parse_motion_bed_notification,
+)
 
 if TYPE_CHECKING:
     from bleak import BleakClient
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 STOP = MOTION_BED.stop
 
@@ -935,7 +935,7 @@ class MotionBedController(BedController):
         if surface == "air":
             await self.write_command(SOURCE_COMMANDS["QinangFragment:302"], cancel_event=asyncio.Event())
         elif surface == "thermal":
-            from ..motion_bed_protocol import build_thermal_gear
+            from .protocol import build_thermal_gear
             await self.write_command(build_thermal_gear(4), cancel_event=asyncio.Event())
         else:
             await self._send_stop()
@@ -967,7 +967,7 @@ async def build_controller(ctx: BuildContext) -> MotionBedController:
     """Build the controller for the stored or name-selected model."""
     from homeassistant.const import CONF_NAME
 
-    from ..motion_bed_models import select_motion_bed
+    from .models import select_motion_bed
 
     data = ctx.data
     selection = select_motion_bed(

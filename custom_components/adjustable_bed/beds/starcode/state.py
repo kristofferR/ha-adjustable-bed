@@ -9,8 +9,8 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Final
 
-from ..controller_state import AnyStateKey, StateKey, StateUpdate
-from ..state_keys import UNDER_BED_LIGHTS_ON
+from ...controller_state import AnyStateKey, StateKey, StateUpdate
+from ...state_keys import UNDER_BED_LIGHTS_ON
 
 FIRMWARE_VERSION: Final = StateKey[str | None]("firmware")
 LIGHT_BRIGHTNESS: Final = StateKey[int | None]("light_brightness")

@@ -14,17 +14,17 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.star_elevate import StarElevateCommands
-from custom_components.adjustable_bed.beds.starcode_dialect import (
+from custom_components.adjustable_bed.beds.starcode.dialect import (
     normal_packet,
 )
-from custom_components.adjustable_bed.beds.starcode_m1x12 import (
+from custom_components.adjustable_bed.beds.starcode.m1x12 import (
     StarcodeM1X12Controller,
     StarElevateM1X12Controller,
 )
-from custom_components.adjustable_bed.beds.starcode_m1x12_protocol import (
+from custom_components.adjustable_bed.beds.starcode.m1x12_protocol import (
     parse_notification,
 )
+from custom_components.adjustable_bed.beds.starcode.star_elevate import StarElevateCommands
 from custom_components.adjustable_bed.button import _combined_motor_buttons_for
 from custom_components.adjustable_bed.const import (
     BED_TYPE_STAR_ELEVATE,
@@ -62,7 +62,7 @@ async def _patch_protocol_sleeps(monkeypatch: pytest.MonkeyPatch) -> None:
         await real_sleep(0)
 
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.starcode_m1x12.asyncio.sleep", yield_only
+        "custom_components.adjustable_bed.beds.starcode.m1x12.asyncio.sleep", yield_only
     )
 
 
@@ -493,7 +493,7 @@ async def test_m1x12_elevate_hold_skips_sender_ticks_elapsed_during_slow_write(
     hass: HomeAssistant,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from custom_components.adjustable_bed.beds import starcode_m1x12 as module
+    from custom_components.adjustable_bed.beds.starcode import m1x12 as module
 
     source, _entry = _controller_target(
         hass,

@@ -21,11 +21,11 @@ import logging
 import struct
 from typing import TYPE_CHECKING
 
-from ..const import LOGICDATA_CHAR_UUID
-from .base import BedController
+from ...const import LOGICDATA_CHAR_UUID
+from ..base import BedController
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -29,6 +29,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import ChildDeviceInfo, DeviceInfo
 
 from .beds.base import CONTROLLER_GESTURE_RELEASE, BedController
+from .beds.remacro.discovery import remacro_side_lacks_global_stop
 from .command_scheduler import (
     CommandHandle,
     CommandKind,
@@ -73,7 +74,6 @@ from .paired_topology import (
     linked_readiness_required,
 )
 from .position_seek import SeekOutcome, SeekResult
-from .remacro_discovery import remacro_side_lacks_global_stop
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -1070,13 +1070,13 @@ class SingleAddressPairedCoordinator(PairedBedCoordinator):
         self._single_inner = inner
         self._single_native_both = entry.data.get(CONF_BED_TYPE) not in {BED_TYPE_SLEEP_NUMBER, BED_TYPE_MOTOMOTION}
         if entry.data.get(CONF_BED_TYPE) == BED_TYPE_GMMOTOR:
-            from .gmmotor_profiles import load_profile
+            from .beds.gmmotor.profiles import load_profile
 
             # Some exact products admit left/right but no native Both choice.
             # The parent then runs the two admitted side frames on one link.
             self._single_native_both = 2 in load_profile(entry.data.get(CONF_PRODUCT_TYPE, "")).sides
         if entry.data.get(CONF_BED_TYPE) == BED_TYPE_GOODVIBE:
-            from .goodvibe_catalog import PRODUCTS
+            from .beds.goodvibe.catalog import PRODUCTS
 
             product = PRODUCTS.get(entry.data.get(CONF_PROTOCOL_VARIANT, ""))
             self._single_native_both = product is not None and 2 in product.sides

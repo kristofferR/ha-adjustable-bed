@@ -1202,7 +1202,9 @@ def default_scenario(bed_type: str) -> Scenario:
         data[const.CONF_RICHMAT_REMOTE] = "qrrm"
         kwargs = {"device_name": "Casper QRRM Bed"}
     if bed_type == const.BED_TYPE_LEGGETT_LP_LEGACY:
-        from custom_components.adjustable_bed.lp_legacy_profiles import LP_LEGACY_PROFILE_CODES
+        from custom_components.adjustable_bed.beds.leggett.lp_legacy_profiles import (
+            LP_LEGACY_PROFILE_CODES,
+        )
 
         data.update(
             {
@@ -1320,7 +1322,7 @@ def route_scenarios() -> list[Scenario]:
                 )
             )
     # Richmat app family: the picker model selects the byte table within one controller.
-    from custom_components.adjustable_bed.beds.richmat_mh import (
+    from custom_components.adjustable_bed.beds.richmat_mh.controller import (
         MODEL_VARIANT_PREFIX,
         selectable_models,
     )
@@ -1597,7 +1599,7 @@ def deterministic_process_state() -> Iterator[None]:
     import secrets
     from unittest.mock import patch
 
-    from custom_components.adjustable_bed.beds.limoss_remote_protocol import APP_SEQUENCE
+    from custom_components.adjustable_bed.beds.limoss.remote_protocol import APP_SEQUENCE
 
     rng = random.Random(0)
     random.seed(0)
@@ -1769,7 +1771,7 @@ async def _capture(
     info: dict[str, Any] = {
         "bed_type": scenario.bed_type,
         "controller": type(controller).__name__,
-        "module": type(controller).__module__.rsplit(".", 1)[-1],
+        "module": type(controller).__module__.removeprefix("custom_components.adjustable_bed.beds."),
         "pulse": [
             controller._coordinator.motor_pulse_count,
             controller._coordinator.motor_pulse_delay_ms,

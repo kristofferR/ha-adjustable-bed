@@ -20,7 +20,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.leggett_okin import LeggettOkinController
+from custom_components.adjustable_bed.beds.leggett.okin import LeggettOkinController
 from custom_components.adjustable_bed.codec import okin_nframe as codec
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_OKIN,

@@ -40,7 +40,6 @@ from ..const import (
 )
 from ..controller_state import StateKey
 from ..detection import is_okimat_bed_model
-from ..furnimove_repair import CONF_OKIMAT_MODEL_ON_CST, async_refresh_furnimove_layout_issues
 from ..profiles.okin_nframe import (
     CST_PROFILES,
     CstFields,
@@ -52,6 +51,7 @@ from ..profiles.okin_nframe import (
 )
 from .base import BedController, ControllerStateBinarySensorSpec, MotorControlSpec
 from .builder import BuildContext
+from .furnimove.repair import CONF_OKIMAT_MODEL_ON_CST, async_refresh_furnimove_layout_issues
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator

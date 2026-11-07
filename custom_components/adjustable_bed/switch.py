@@ -14,6 +14,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 
+from .beds.octo.runtime import octo_controller
 from .card import CARD_LIGHTING, CARD_UTILITY, CardPlacement, CardSection
 from .const import (
     BED_TYPE_REMACRO,
@@ -26,7 +27,6 @@ from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
 from .entity_sweep import PlatformEntities, records_entities
-from .octo_runtime import octo_controller
 from .paired_coordinator import entity_runtimes
 from .state_keys import (
     AUTOMATIC_LIGHT,
@@ -40,7 +40,7 @@ from .state_keys import (
 
 if TYPE_CHECKING:
     from .beds.base import BedController
-    from .beds.octo import OctoController
+    from .beds.octo.controller import OctoController
 
 _LOGGER = logging.getLogger(__name__)
 

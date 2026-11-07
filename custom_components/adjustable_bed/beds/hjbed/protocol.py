@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
-from .codec import richmat as codec
+from ...codec import richmat as codec
 
 
 def function(enum: str, code: int, side: int, single: bool) -> bytes:

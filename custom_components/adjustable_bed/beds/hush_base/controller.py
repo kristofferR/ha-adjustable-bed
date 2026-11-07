@@ -10,19 +10,19 @@ from typing import TYPE_CHECKING
 
 from homeassistant.util import dt as dt_util
 
-from ..casper_base_protocol import RGB_TIMERS, Request, alarm_countdown
-from ..codec import richmat as codec
-from ..hush_protocol import HushMainReceive, decode
-from ..profiles.casper import MUSIC_BLUETOOTH
-from ..profiles.hush import ACTIONS, PROFILES
-from .base import ControllerButtonSpec
-from .builder import BuildContext
-from .casper_base import CASPER_BASE_ERROR, CasperBaseController
+from ...codec import richmat as codec
+from ...profiles.casper import MUSIC_BLUETOOTH
+from ...profiles.hush import ACTIONS, PROFILES
+from ..base import ControllerButtonSpec
+from ..builder import BuildContext
+from ..casper_base.controller import CASPER_BASE_ERROR, CasperBaseController
+from ..casper_base.protocol import RGB_TIMERS, Request, alarm_countdown
+from .protocol import HushMainReceive, decode
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 TICK_S = 0.1
 """Every write waits one tick."""

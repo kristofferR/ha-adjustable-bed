@@ -20,10 +20,11 @@ from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.bed_traits import bed_type_has_position_feedback
-from custom_components.adjustable_bed.beds.solace import (
+from custom_components.adjustable_bed.beds.solace.controller import (
     SolaceController,
     build_solace_clock_command,
 )
+from custom_components.adjustable_bed.beds.solace.services import handle_solace_set_alarm
 from custom_components.adjustable_bed.beds.woosa import MASSAGE_MODE, WoosaController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SOLACE,
@@ -44,7 +45,6 @@ from custom_components.adjustable_bed.select import (
     MASSAGE_TIMER_DESCRIPTION,
     AdjustableBedMassageTimerSelect,
 )
-from custom_components.adjustable_bed.solace_services import handle_solace_set_alarm
 from tests.state_helpers import state_writer
 
 

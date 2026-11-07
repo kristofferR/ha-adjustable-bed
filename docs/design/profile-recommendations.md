@@ -239,7 +239,7 @@ hardware capability is inferred and no packet, timing or controller is changed.
   Covered by `tests/test_profile_recommendations.py`.
 - `ALREADY_IMPLEMENTED`: current-profile table/manufacturer selection and controls,
   `beds/adjustable_lumbar.py`, `tests/test_adjustable_lumbar.py`; target-profile
-  numbered memories, `beds/sleepys_box25.py`, `tests/test_sleepys.py`.
+  numbered memories, `beds/sleepys/box25.py`, `tests/test_sleepys.py`.
 - `EXCLUDED`: none of the requested notification behavior. Other model identities
   remain unsupported by this rule because there is no equivalent matching evidence;
   they are not declared incompatible or queued for guessed protocol changes.

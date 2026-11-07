@@ -23,11 +23,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.service import async_get_device_and_config_entry
 
-from .beds.base import BedController
-from .beds.star_elevate import StarElevateController
-from .beds.starcode_m1x12 import StarcodeM1X12Controller
-from .beds.starcode_m5x5 import PROFILES, StarcodeM5X5Controller
-from .const import (
+from ...const import (
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_M1X12,
     BED_TYPE_STARCODE_M5X5,
@@ -40,8 +36,12 @@ from .const import (
     STAR_ELEVATE_VARIANT_M1X12,
     STARCODE_GROUP_BED_TYPES,
 )
-from .coordinator import AdjustableBedCoordinator
-from .pairing import is_paired
+from ...coordinator import AdjustableBedCoordinator
+from ...pairing import is_paired
+from ..base import BedController
+from .m1x12 import StarcodeM1X12Controller
+from .m5x5 import PROFILES, StarcodeM5X5Controller
+from .star_elevate import StarElevateController
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -9,14 +9,14 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from custom_components.adjustable_bed.beds.starcode_dialect import (
+from custom_components.adjustable_bed.beds.starcode.dialect import (
     extended_packet,
     long_packet,
     manufacturer_dialect,
     normal_packet,
     query_packet,
 )
-from custom_components.adjustable_bed.beds.starcode_m5x5_protocol import (
+from custom_components.adjustable_bed.beds.starcode.m5x5_protocol import (
     StateValue,
     clock_packet,
     parse_notification,

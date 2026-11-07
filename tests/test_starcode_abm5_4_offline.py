@@ -11,8 +11,8 @@ from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.beds.starcode_abm5_4 import StarcodeAbm5_4Controller
-from custom_components.adjustable_bed.beds.starcode_abm5_4_profiles import SELECTORS
+from custom_components.adjustable_bed.beds.starcode.abm5_4 import StarcodeAbm5_4Controller
+from custom_components.adjustable_bed.beds.starcode.abm5_4_profiles import SELECTORS
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from tests.test_starcode_abm5_4 import make_controller

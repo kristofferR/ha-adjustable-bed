@@ -11,9 +11,8 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .beds.base import controller_as
-from .const import DOMAIN
-from .services import (
+from ...const import DOMAIN
+from ...services import (
     ATTR_ENABLED,
     ATTR_TIME,
     ATTR_WAKE_MODE,
@@ -27,9 +26,10 @@ from .services import (
     _preflight_capability,
     _release_preflighted,
 )
+from ..base import controller_as
 
 if TYPE_CHECKING:
-    from .beds.serenity import ZSeriesController
+    from .controller import ZSeriesController
 
 
 SERVICE_ZSERIES_SET_ALARM = "zseries_set_alarm"
@@ -41,7 +41,7 @@ async def _execute_zseries_alarm(
     command: Callable[[ZSeriesController], Awaitable[None]],
 ) -> None:
     """Preflight every physical Z-Series target before any alarm or clock write."""
-    from .beds.serenity import ZSeriesController
+    from .controller import ZSeriesController
 
     targets = _call_targets(call)
     # The alarm page exists only after an exact CST13/CST14 manufacturer read.

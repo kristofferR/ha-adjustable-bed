@@ -18,16 +18,7 @@ from homeassistant.helpers.issue_registry import (
     async_delete_issue,
 )
 
-from .beds.remacro_protocol import (
-    APP_LABELS,
-    ModelProblem,
-    RemacroApp,
-    add_remacro_model,
-    app_for_variant,
-    apps_listing,
-    model_problem,
-)
-from .const import (
+from ...const import (
     BED_TYPE_REMACRO,
     CONF_BED_TYPE,
     CONF_PAIR_CHILDREN,
@@ -36,11 +27,20 @@ from .const import (
     DOMAIN,
     PAIR_SIDES,
 )
-from .entity_runtime import EntityRuntime
-from .pairing import effective_child_data, get_child, is_paired, with_updated_child
+from ...entity_runtime import EntityRuntime
+from ...pairing import effective_child_data, get_child, is_paired, with_updated_child
+from .protocol import (
+    APP_LABELS,
+    ModelProblem,
+    RemacroApp,
+    add_remacro_model,
+    app_for_variant,
+    apps_listing,
+    model_problem,
+)
 
 if TYPE_CHECKING:
-    from .coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -141,7 +141,7 @@ def async_watch_remacro_fallback(
         if coordinator.bed_type != BED_TYPE_REMACRO:
             continue
         # A Remacro controller exists, so its lazily imported module is loaded.
-        from .beds.remacro import RemacroController
+        from .controller import RemacroController
 
         controller = coordinator.capability_controller
         if not isinstance(controller, RemacroController) or controller.model.recognized:

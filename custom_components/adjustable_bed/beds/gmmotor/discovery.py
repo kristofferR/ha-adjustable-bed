@@ -5,7 +5,7 @@ from __future__ import annotations
 
 def scan_name_matches(name: str) -> bool:
     """Source case-sensitive substring filter; service UUID alone is insufficient."""
-    from .discovery_hints.gmmotor import SCAN
+    from ...discovery_hints.gmmotor import SCAN
 
     return SCAN.matches_name(name)
 
@@ -16,7 +16,7 @@ def selector_from_name(name: str, *, russian: bool = False) -> str:
     The app's range access can fail on a short name. HA returns its empty base
     selector instead, requiring the user to choose an admitted product.
     """
-    from .gmmotor_catalog import NAME_ALIASES
+    from .catalog import NAME_ALIASES
 
     if len(name) < 4:
         return ""
@@ -32,7 +32,7 @@ def selector_from_name(name: str, *, russian: bool = False) -> str:
 
 def resolve_selection(selector: str, choice: str | None = None) -> str:
     """Keep remote pickers explicit; never choose the first physical variant."""
-    from .gmmotor_catalog import REMOTE_TARGETS, ROUTES
+    from .catalog import REMOTE_TARGETS, ROUTES
 
     if selector not in ROUTES:
         return ""  # The source's unknown/unsupported selector fallback.

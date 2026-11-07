@@ -17,12 +17,21 @@ from typing import TYPE_CHECKING, Final, Literal, cast
 from bleak import BleakClient
 from homeassistant.util import dt as dt_util
 
-from ..codec import richmat as codec
-from ..const import RICHMAT_PROTOCOL_SINGLE, RICHMAT_PROTOCOL_WILINKE, RichmatFeatures
-from ..controller_state import StateKey
-from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
-from ..richmat_profiles import RichmatAction, get_product_profile
-from ..rmcontrol_protocol import (
+from ...codec import richmat as codec
+from ...const import RICHMAT_PROTOCOL_SINGLE, RICHMAT_PROTOCOL_WILINKE, RichmatFeatures
+from ...controller_state import StateKey
+from ...execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
+from ...state_keys import LIGHT_TIMER_OPTION, UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
+from ..base import (
+    BedController,
+    ControllerStateBinarySensorSpec,
+    ControllerStateSensorSpec,
+    MotorControlSpec,
+    ProductButtonSpec,
+)
+from ..richmat.controller import RichmatController
+from .profiles import RichmatAction, get_product_profile
+from .protocol import (
     Notification,
     NotificationBuffer,
     RepeatAlarm,
@@ -41,18 +50,9 @@ from ..rmcontrol_protocol import (
     query_repeat_alarms,
     query_sleep_advertisement,
 )
-from ..state_keys import LIGHT_TIMER_OPTION, UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
-from .base import (
-    BedController,
-    ControllerStateBinarySensorSpec,
-    ControllerStateSensorSpec,
-    MotorControlSpec,
-    ProductButtonSpec,
-)
-from .richmat import RichmatController
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 # Integration readiness budget, not an on-wire protocol interval.

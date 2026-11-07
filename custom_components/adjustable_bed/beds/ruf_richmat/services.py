@@ -7,8 +7,8 @@ from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
 
-from .ruf_richmat_protocol import AlarmRequest
-from .services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
+from ...services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
+from .protocol import AlarmRequest
 
 SERVICE = "richmat_app_alarm"
 _FIELDS: dict[vol.Marker, object] = {
@@ -31,7 +31,7 @@ SCHEMA = vol.Schema(_FIELDS)
 
 
 async def handle_alarm(call: ServiceCall) -> None:
-    from .beds.ruf_richmat import RufRichmatController
+    from .controller import RufRichmatController
 
     data = call.data
     when = data["time"]

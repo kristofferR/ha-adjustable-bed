@@ -8,9 +8,9 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .beds.fsm_relax import FsmRelaxController
-from .const import DOMAIN
-from .services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
+from ...const import DOMAIN
+from ...services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
+from .controller import FsmRelaxController
 
 SERVICE_FSM_RELAX_CALIBRATE = "fsm_relax_calibrate"
 

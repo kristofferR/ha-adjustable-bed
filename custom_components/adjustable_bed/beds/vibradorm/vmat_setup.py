@@ -11,14 +11,14 @@ from typing import cast
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
-from .beds.vibradorm_app import (
+from ...codec import vibradorm as codec
+from ...profiles.vibradorm import VMAT_CLOSE, VMAT_QUERY_STAGES
+from .app import (
     VibradormAppMetadata,
     VibradormAppMetadataProgress,
     _cancellable,
     _shield_cleanup,
 )
-from .codec import vibradorm as codec
-from .profiles.vibradorm import VMAT_CLOSE, VMAT_QUERY_STAGES
 
 _LOGGER = logging.getLogger(__name__)
 

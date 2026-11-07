@@ -6,13 +6,13 @@ import random
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from ..discovery_hints.reverie import PAIRLINK_MANUFACTURER_IDS, PAIRLINK_MANUFACTURER_PREFIX
-from .reverie_pairlink_protocol import (
+from ...discovery_hints.reverie import PAIRLINK_MANUFACTURER_IDS, PAIRLINK_MANUFACTURER_PREFIX
+from .pairlink_protocol import (
     PAIRLINK_LOW_POWER_NOTIFY_UUID,
     PAIRLINK_LOW_POWER_SERVICE_UUID,
     PAIRLINK_LOW_POWER_WRITE_UUID,
 )
-from .reverie_pairlink_transport import (
+from .pairlink_transport import (
     AdapterTransport,
     PairlinkAdvertisementProfile,
     PairlinkGattFlag,
@@ -121,7 +121,7 @@ def pairlink_host_adapter_inventory(
     """Snapshot active HA scanners with their existing transport classification."""
     from homeassistant.components import bluetooth
 
-    from ..bluetooth_transport import TransportClass, classify_scanner
+    from ...bluetooth_transport import TransportClass, classify_scanner
 
     try:
         scanners = bluetooth.async_current_scanners(hass)

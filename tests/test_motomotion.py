@@ -8,21 +8,21 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds import motomotion as bed
+from custom_components.adjustable_bed.beds.motomotion import controller as bed
+from custom_components.adjustable_bed.beds.motomotion.protocol import (
+    decimal,
+    light_cycle,
+    posture,
+    rgb_total,
+)
+from custom_components.adjustable_bed.beds.motomotion.requests import Request
+from custom_components.adjustable_bed.beds.motomotion.state import State
 from custom_components.adjustable_bed.codec.motomotion import (
     Position,
     ascii_command,
     binary_command,
     music_command,
 )
-from custom_components.adjustable_bed.motomotion_protocol import (
-    decimal,
-    light_cycle,
-    posture,
-    rgb_total,
-)
-from custom_components.adjustable_bed.motomotion_requests import Request
-from custom_components.adjustable_bed.motomotion_state import State
 from custom_components.adjustable_bed.profiles.motomotion import Profile, eligible
 from tests.state_helpers import state_writer
 
@@ -557,7 +557,7 @@ async def test_held_movement_cadence_and_fresh_cleanup(coordinator, monkeypatch)
 
 
 async def test_right_child_level_consumes_right_delivered_state(coordinator, instant):
-    from custom_components.adjustable_bed.motomotion_state import Comfort
+    from custom_components.adjustable_bed.beds.motomotion.state import Comfort
 
     c = controller(coordinator, "SOFA000001S000M")
     c._local_lr = (Comfort(heat=0), Comfort(heat=2))

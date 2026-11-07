@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 from custom_components.adjustable_bed import controller_factory
-from custom_components.adjustable_bed.beds.jiecang_app import LIGHT_TIMEOUTS
+from custom_components.adjustable_bed.beds.jiecang.app import LIGHT_TIMEOUTS
 from custom_components.adjustable_bed.codec import jiecang as jiecang_codec
 from custom_components.adjustable_bed.const import (
     BED_TYPE_JIECANG_APP,
@@ -80,7 +80,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
     legacy = tuple(
         bed_type
         for bed_type, spec in controller_factory._SIMPLE_CONTROLLERS.items()
-        if (spec.module, spec.class_name) == ("jiecang", "JiecangController")
+        if (spec.module, spec.class_name) == ("jiecang.controller", "JiecangController")
     )
     return {
         "legacy": legacy,

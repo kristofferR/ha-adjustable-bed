@@ -20,8 +20,8 @@ from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
-from ..codec import malouf as malouf_codec
-from ..const import (
+from ...codec import malouf as malouf_codec
+from ...const import (
     CONF_MALOUF_LAYOUT,
     CONF_MALOUF_MEMORY_SLOTS,
     MALOUF_LAYOUT_AUTO,
@@ -33,12 +33,12 @@ from ..const import (
     MALOUF_LEGACY_OKIN_WRITE_CHAR_UUID,
     MALOUF_MEMORY_SLOTS_AUTO,
 )
-from ..profiles import keeson as keeson_profiles
-from ..profiles.malouf import NEW_OKIN
-from .base import BedController, MotorControlSpec
+from ...profiles import keeson as keeson_profiles
+from ...profiles.malouf import NEW_OKIN
+from ..base import BedController, MotorControlSpec
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 

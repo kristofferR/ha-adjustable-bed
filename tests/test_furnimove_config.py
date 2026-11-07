@@ -7,6 +7,7 @@ import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.beds.furnimove.profiles import FURNIMOVE_PROFILES
 from custom_components.adjustable_bed.bluetooth_freshness import FreshnessStatus
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
@@ -32,7 +33,6 @@ from custom_components.adjustable_bed.detection import (
     detect_bed_type_detailed,
     refine_okin_shared_uuid_protocol_from_gatt,
 )
-from custom_components.adjustable_bed.furnimove_profiles import FURNIMOVE_PROFILES
 from tests.form_helpers import form_fields
 
 
@@ -123,7 +123,8 @@ async def test_options_change_from_stair_uses_the_guided_change(hass):
 
 async def test_explicit_furnimove_offers_all_captured_handsets_without_a_bond_gate(hass):
     """A shared handset ID must not force the app onto a different bond policy."""
-    from custom_components.adjustable_bed.beds.okin_uuid import (
+    from custom_components.adjustable_bed.beds.furnimove.profiles import FURNIMOVE_PROFILES
+    from custom_components.adjustable_bed.beds.okin_uuid.controller import (
         FURNIMOVE_DOT_HANDSETS,
         FURNIMOVE_STANDARD_HANDSETS,
     )
@@ -133,7 +134,6 @@ async def test_explicit_furnimove_offers_all_captured_handsets_without_a_bond_ga
         OKIMAT_VARIANTS,
         OKIN_DOT_FURNIMOVE_VARIANTS,
     )
-    from custom_components.adjustable_bed.furnimove_profiles import FURNIMOVE_PROFILES
 
     flow = AdjustableBedConfigFlow()
     flow.hass = hass

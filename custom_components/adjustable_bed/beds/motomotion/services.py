@@ -9,10 +9,10 @@ from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
 
-from .codec.motomotion import Position
-from .const import DOMAIN
-from .motomotion_requests import Request
-from .services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
+from ...codec.motomotion import Position
+from ...const import DOMAIN
+from ...services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
+from .requests import Request
 
 
 def finite(value: object) -> float:
@@ -57,7 +57,7 @@ SCHEMA = vol.Schema(FIELDS)
 
 
 async def handle(call: ServiceCall) -> None:
-    from .beds.motomotion import MotoMotionController
+    from .controller import MotoMotionController
 
     request = Request(
         operation=call.data["operation"],

@@ -8,7 +8,7 @@ import pytest
 
 from custom_components.adjustable_bed.actuator_groups import actuator_group_for
 from custom_components.adjustable_bed.bed_traits import bed_traits
-from custom_components.adjustable_bed.beds import richmat_mh_protocol as protocol
+from custom_components.adjustable_bed.beds.richmat_mh import protocol
 from custom_components.adjustable_bed.binary_sensor import _binary_sensor_entities_for
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.config_flow import (
@@ -160,7 +160,7 @@ def test_every_entity_translation_and_select_state_exists() -> None:
     import json
     from pathlib import Path
 
-    from custom_components.adjustable_bed import richmat_mh_catalog as catalog
+    from custom_components.adjustable_bed.beds.richmat_mh import catalog
 
     root = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
     strings = json.loads((root / "strings.json").read_text())["entity"]

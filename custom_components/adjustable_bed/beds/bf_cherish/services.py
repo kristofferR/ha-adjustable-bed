@@ -7,16 +7,16 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .const import DOMAIN
+from ...const import DOMAIN
 
 
 def register_services(hass: HomeAssistant) -> None:
-    from .services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
+    from ...services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
 
     async def set_alarm(call: ServiceCall) -> None:
         from homeassistant.util import dt as dt_util
 
-        from .beds.bf_cherish import BfCherishController, alarm_frame
+        from .controller import BfCherishController, alarm_frame
 
         enabled = call.data["enabled"]
         time = call.data.get("time")

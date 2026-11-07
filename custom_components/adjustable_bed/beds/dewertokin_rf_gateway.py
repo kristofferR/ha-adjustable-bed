@@ -21,7 +21,7 @@ from ..const import (
 from .builder import BuildContext
 from .okin_handle import OkinHandleController
 from .okin_nframe import OkinNFrameController
-from .okin_uuid import OkinUuidController
+from .okin_uuid.controller import OkinUuidController
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator

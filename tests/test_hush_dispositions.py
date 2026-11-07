@@ -4,7 +4,7 @@ import json
 from collections import Counter
 from pathlib import Path
 
-from custom_components.adjustable_bed.hush_catalog import PRODUCTS
+from custom_components.adjustable_bed.beds.hush_base.catalog import PRODUCTS
 
 ROOT = Path(__file__).parents[1]
 LEDGER = ROOT / "tests/fixtures/hush_ledger.json"

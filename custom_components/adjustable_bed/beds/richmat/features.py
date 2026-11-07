@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from typing import Final
 
-from .const import RichmatFeatures
+from ...const import RichmatFeatures
 
 _F = RichmatFeatures  # Shorthand for readability
 

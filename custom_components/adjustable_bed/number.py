@@ -21,6 +21,7 @@ from homeassistant.exceptions import ServiceValidationError
 
 from .bed_traits import bed_type_has_position_feedback
 from .beds.base import ControllerNumberSpec, PositionNumberSpec
+from .beds.octo.runtime import octo_controller
 from .card import (
     CARD_CLIMATE,
     CARD_FIRMNESS,
@@ -41,7 +42,6 @@ from .entity import AdjustableBedEntity, PlacedInCard, RenamesInPlace
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime, controller_side_scope, own_sides
 from .entity_sweep import PlatformEntities, records_entities
-from .octo_runtime import octo_controller
 from .paired_coordinator import (
     PairedBedCoordinator,
     SingleAddressPairedCoordinator,

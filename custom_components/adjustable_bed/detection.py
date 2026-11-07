@@ -15,6 +15,13 @@ if TYPE_CHECKING:
 from bleak.exc import BleakError
 
 from .app_families import FAMILY_STEP_ROUTES, family_row_label
+from .beds.fsm_relax.discovery import matches_fsm_relax_candidate
+from .beds.goodvibe.catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
+from .beds.hjbed.catalog import PROFILE_CHOICES as HJBED_PROFILES
+from .beds.kaidi.protocol import extract_kaidi_advertisement, is_floyd_advertisement
+from .beds.richmat_classic.discovery import matching_apps as richmat_classic_matching_apps
+from .beds.richmat_classic.profiles import APP_NAMES as RICHMAT_CLASSIC_APPS
+from .beds.svane.state import is_svane_discovery_name
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
@@ -264,13 +271,6 @@ from .discovery_hints import (
     FirstPass,
     first_pass,
 )
-from .fsm_relax_discovery import matches_fsm_relax_candidate
-from .goodvibe_catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
-from .hjbed_catalog import PROFILE_CHOICES as HJBED_PROFILES
-from .kaidi_protocol import extract_kaidi_advertisement, is_floyd_advertisement
-from .richmat_classic_discovery import matching_apps as richmat_classic_matching_apps
-from .richmat_classic_profiles import APP_NAMES as RICHMAT_CLASSIC_APPS
-from .svane_state import is_svane_discovery_name
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -1253,8 +1253,8 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     # The first pass matches the declared discovery hints, as the manifest does.
     first = first_pass(service_info)
     result = _detect_bed_type_with_app_candidates(service_info, first)
-    from .goodvibe_discovery import scan_matches as goodvibe_scan_matches
-    from .goodvibe_discovery import suggested_profile as goodvibe_suggested_profile
+    from .beds.goodvibe.discovery import scan_matches as goodvibe_scan_matches
+    from .beds.goodvibe.discovery import suggested_profile as goodvibe_suggested_profile
 
     # The app's scan filter is wider than the manifest gate, so it refines
     # advertisements another matcher admitted; it declares no hint of its own.
@@ -1276,7 +1276,7 @@ def _detect_bed_type_with_app_candidates(
     service_info: BluetoothServiceInfoBleak, first: FirstPass
 ) -> DetectionResult:
     """Keep existing receiver detection while offering an explicit app candidate."""
-    from .beds.starcode_abm5_4_profiles import TRANSPORTS
+    from .beds.starcode.abm5_4_profiles import TRANSPORTS
 
     result = _detect_bed_type_detailed(service_info, first=first)
     if first.name(BED_TYPE_GMMOTOR) and not any(
@@ -1649,7 +1649,7 @@ def _detect_bed_type_detailed(
             signals=signals,
         )
 
-    from .doublesleep_protocol import discover as discover_doublesleep
+    from .beds.doublesleep.protocol import discover as discover_doublesleep
 
     if discover_doublesleep(
         getattr(getattr(service_info, "device", None), "name", None) or "",
@@ -2352,7 +2352,7 @@ def _detect_bed_type_detailed(
         )
         return DetectionResult(bed_type=BED_TYPE_OCTO, confidence=0.9, signals=signals)
 
-    from .motion_bed_models import accepts_motion_bed_name
+    from .beds.motion_bed.models import accepts_motion_bed_name
 
     motion_name = accepts_motion_bed_name(service_info.name or "")
 

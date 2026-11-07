@@ -23,9 +23,9 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.customatic import CustomaticController
-from custom_components.adjustable_bed.beds.leggett_okin import LeggettOkinController
-from custom_components.adjustable_bed.beds.svane import FEET, HEAD, OLD
+from custom_components.adjustable_bed.beds.customatic.controller import CustomaticController
+from custom_components.adjustable_bed.beds.leggett.okin import LeggettOkinController
+from custom_components.adjustable_bed.beds.svane.controller import FEET, HEAD, OLD
 from custom_components.adjustable_bed.codec import okin_nframe as codec
 from custom_components.adjustable_bed.const import (
     BED_TYPE_CUSTOMATIC_CLARITY,

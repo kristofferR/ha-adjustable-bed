@@ -52,7 +52,7 @@ async def test_toggle_light_is_opt_in_and_preserves_button(
         data={**mock_config_entry.data, CONF_BED_TYPE: BED_TYPE_KEESON},
     )
     with patch(
-        "custom_components.adjustable_bed.beds.keeson.KeesonController.lights_toggle",
+        "custom_components.adjustable_bed.beds.keeson.controller.KeesonController.lights_toggle",
         new=AsyncMock(),
     ) as toggle:
         assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
@@ -100,7 +100,7 @@ async def test_enabled_light_restores_estimate_without_toggling(
             new=AsyncMock(return_value=MagicMock(state=restored) if restored else None),
         ),
         patch(
-            "custom_components.adjustable_bed.beds.keeson.KeesonController.lights_toggle",
+            "custom_components.adjustable_bed.beds.keeson.controller.KeesonController.lights_toggle",
             new=AsyncMock(),
         ) as toggle,
     ):

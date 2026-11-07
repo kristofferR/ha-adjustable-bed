@@ -11,9 +11,9 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Literal
 
-from ..codec import keeson as keeson_codec
-from ..codec import okin_nframe
-from ..profiles import keeson as keeson_profiles
+from ...codec import keeson as keeson_codec
+from ...codec import okin_nframe
+from ...profiles import keeson as keeson_profiles
 
 Model = Literal["P1", "P2", "P3", "P4"]
 MODELS: tuple[Model, ...] = ("P1", "P2", "P3", "P4")

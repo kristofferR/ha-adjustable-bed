@@ -7,6 +7,9 @@ import voluptuous as vol
 import yaml
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
+from custom_components.adjustable_bed.beds.motion_bed.services import (
+    async_register_motion_bed_services,
+)
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTION_BED,
@@ -14,7 +17,6 @@ from custom_components.adjustable_bed.const import (
     CONF_BLE_DEVICE_NAME,
     DOMAIN,
 )
-from custom_components.adjustable_bed.motion_bed_services import async_register_motion_bed_services
 from tests.test_detection import _make_service_info
 
 resources = yaml.safe_load(

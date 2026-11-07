@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .reverie_pairlink_runtime import PairlinkComfortPlan
+    from .pairlink_runtime import PairlinkComfortPlan
 
 
 @dataclass(frozen=True, slots=True)

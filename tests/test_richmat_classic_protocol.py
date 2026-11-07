@@ -6,9 +6,13 @@ import gzip
 import json
 from pathlib import Path
 
-from custom_components.adjustable_bed.richmat_classic_caller import Retain, Selection, transition
-from custom_components.adjustable_bed.richmat_classic_profiles import Control
-from custom_components.adjustable_bed.richmat_classic_protocol import (
+from custom_components.adjustable_bed.beds.richmat_classic.caller import (
+    Retain,
+    Selection,
+    transition,
+)
+from custom_components.adjustable_bed.beds.richmat_classic.profiles import Control
+from custom_components.adjustable_bed.beds.richmat_classic.protocol import (
     Worker,
     alarm,
     control,
@@ -19,7 +23,10 @@ from custom_components.adjustable_bed.richmat_classic_protocol import (
     rgb,
     worker_interval,
 )
-from custom_components.adjustable_bed.richmat_classic_receive import MalformedFrame, ReceiveState
+from custom_components.adjustable_bed.beds.richmat_classic.receive import (
+    MalformedFrame,
+    ReceiveState,
+)
 
 FIXTURES = Path(__file__).parent / "fixtures" / "richmat_classic"
 
@@ -59,7 +66,7 @@ def test_accepted_selected_material_contracts() -> None:
 def test_every_member_navigation_predicate_matches_its_actual_source_method():
     from dataclasses import replace
 
-    from custom_components.adjustable_bed.richmat_classic_profiles import controls
+    from custom_components.adjustable_bed.beds.richmat_classic.profiles import controls
 
     members = json.loads((FIXTURES / "navigation_predicates.json").read_text())
     tags = {tag for member in members for tag in member["tags"]} | {"unmatched"}
@@ -114,7 +121,10 @@ def test_accepted_builders_and_parser_vectors() -> None:
 def test_all_byte_pairs_match_frozen_independent_jvm_height_results() -> None:
     import struct
 
-    from custom_components.adjustable_bed.richmat_classic_protocol import new_height, old_height
+    from custom_components.adjustable_bed.beds.richmat_classic.protocol import (
+        new_height,
+        old_height,
+    )
 
     with gzip.open(FIXTURES / "height_vectors.bin.gz", "rb") as source:
         expected = source.read()
@@ -195,7 +205,7 @@ def test_count_setter_preserves_other_worker_state_and_uses_the_current_tick() -
 def test_accepted_quick_release_and_memory_sequences() -> None:
     from dataclasses import replace
 
-    from custom_components.adjustable_bed.richmat_classic_profiles import controls
+    from custom_components.adjustable_bed.beds.richmat_classic.profiles import controls
 
     for case in json.loads((FIXTURES / "sequences.json").read_text()):
         inputs = case["input"]
@@ -241,7 +251,7 @@ def test_accepted_parser_binding_reset_and_visibility_sequences() -> None:
             assert (state.old_pack or "null") == expected["oldPack"]
             assert state.modern_controls == expected["visible"], case
             assert state.modern_controls == expected["scrollable"], case
-            from custom_components.adjustable_bed.richmat_classic_protocol import float32
+            from custom_components.adjustable_bed.beds.richmat_classic.protocol import float32
             def numeric(value):
                 if isinstance(value, dict):
                     return {k:numeric(v) for k,v in value.items()}
@@ -252,8 +262,8 @@ def test_accepted_parser_binding_reset_and_visibility_sequences() -> None:
 
 
 def test_all_member_caller_vectors_preserve_declared_library_modes() -> None:
-    from custom_components.adjustable_bed.richmat_classic_profiles import controls
-    from custom_components.adjustable_bed.richmat_classic_protocol import float32, rounded
+    from custom_components.adjustable_bed.beds.richmat_classic.profiles import controls
+    from custom_components.adjustable_bed.beds.richmat_classic.protocol import float32, rounded
 
     for case in json.loads((FIXTURES / 'caller_vectors.json').read_text()):
         inputs = case['input']

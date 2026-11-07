@@ -9,7 +9,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.malouf import (
+from custom_components.adjustable_bed.beds.malouf.controller import (
     MaloufCommands,
     _save_memory_command,
 )
@@ -270,7 +270,7 @@ class TestMaloufMemoryProgramming:
         mock_bleak_client.write_gatt_char.reset_mock()
 
         with patch(
-            "custom_components.adjustable_bed.beds.malouf.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.malouf.controller.asyncio.sleep",
             new_callable=AsyncMock,
         ):
             await coordinator.controller.program_memory(1)
@@ -304,7 +304,7 @@ class TestMaloufMemoryProgramming:
         mock_bleak_client.write_gatt_char.reset_mock()
 
         with patch(
-            "custom_components.adjustable_bed.beds.malouf.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.malouf.controller.asyncio.sleep",
             new_callable=AsyncMock,
         ):
             await coordinator.controller.program_memory(1)

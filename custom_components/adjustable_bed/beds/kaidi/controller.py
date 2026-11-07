@@ -20,8 +20,8 @@ from typing import TYPE_CHECKING
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
-from ..codec import kaidi as codec
-from ..const import (
+from ...codec import kaidi as codec
+from ...const import (
     CONF_KAIDI_PRODUCT_ID,
     CONF_KAIDI_ROOM_ID,
     CONF_KAIDI_SOFA_ACU_NO,
@@ -35,9 +35,8 @@ from ..const import (
     SIDE_RIGHT,
     VARIANT_AUTO,
 )
-from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
-from ..kaidi_protocol import extract_kaidi_advertisement
-from ..profiles.kaidi import (
+from ...execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
+from ...profiles.kaidi import (
     DEFAULT_PRODUCT_FAMILY,
     KAIDI_PRODUCT_FAMILIES,
     SEAT_1,
@@ -47,17 +46,18 @@ from ..profiles.kaidi import (
     KaidiCommandProfile,
     KaidiProductFamily,
 )
-from ..state_keys import MASSAGE_TIMER_MINUTES
-from .base import (
+from ...state_keys import MASSAGE_TIMER_MINUTES
+from ..base import (
     POSITION_UNIT_PERCENT,
     BedController,
     PositionNumberSpec,
     build_position_number_spec,
 )
-from .builder import BuildContext
+from ..builder import BuildContext
+from .protocol import extract_kaidi_advertisement
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -420,7 +420,7 @@ class KaidiController(BedController):
         if hass is None:
             return
         try:
-            from ..kaidi_metadata import resolve_kaidi_advertisement
+            from .metadata import resolve_kaidi_advertisement
             advertisement = resolve_kaidi_advertisement(
                 hass,
                 self._coordinator.address,
@@ -952,8 +952,8 @@ class KaidiController(BedController):
 
 async def build_controller(ctx: BuildContext) -> BedController:
     """Build the controller for the command family the product metadata selects."""
-    from ..kaidi_protocol import extract_kaidi_advertisement
-    from ..profiles.kaidi import resolve_kaidi_variant
+    from ...profiles.kaidi import resolve_kaidi_variant
+    from .protocol import extract_kaidi_advertisement
 
     advertisement = extract_kaidi_advertisement(ctx.manufacturer_data)
     resolution = resolve_kaidi_variant(
@@ -975,7 +975,7 @@ async def build_controller(ctx: BuildContext) -> BedController:
             "Select a Kaidi protocol variant manually in options."
         )
     if resolution.variant == KAIDI_VARIANT_FLOYD:
-        await ctx.preload("floyd")
+        await ctx.preload("kaidi.floyd")
         from .floyd import FloydController
 
         return FloydController(

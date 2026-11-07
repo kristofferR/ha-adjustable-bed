@@ -9,8 +9,7 @@ from contextlib import suppress
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final, Literal
 
-from .. import sleeptracker_protocol as p
-from ..card import (
+from ...card import (
     CARD_CLIMATE,
     CARD_LIGHT_TOGGLE,
     CARD_LIGHTING,
@@ -18,7 +17,7 @@ from ..card import (
     CARD_UTILITY,
     CardPlacement,
 )
-from ..const import (
+from ...const import (
     CONF_PRODUCT_TYPE,
     CONF_SLEEPTRACKER_FOUNDATION,
     CONF_SLEEPTRACKER_PROCESSOR_TYPE,
@@ -26,8 +25,8 @@ from ..const import (
     CONF_SLEEPTRACKER_SNAPSHOT_SIDE,
     CONF_SLEEPTRACKER_UNIT,
 )
-from ..controller_state import StateKey, StateUpdate
-from .base import (
+from ...controller_state import StateKey, StateUpdate
+from ..base import (
     BedController,
     ControllerButtonSpec,
     ControllerNumberSpec,
@@ -38,13 +37,14 @@ from .base import (
     MotorControlSpec,
     PositionNumberSpec,
 )
-from .builder import BuildContext
+from ..builder import BuildContext
+from . import protocol as p
 
 if TYPE_CHECKING:
     from bleak import BleakClient
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -1254,7 +1254,7 @@ class SleeptrackerController(BedController):
 
 async def build_controller(ctx: BuildContext) -> SleeptrackerController:
     """Build the controller for the stored foundation settings."""
-    from ..app_session import app_session
+    from ...app_session import app_session
 
     coordinator = ctx.coordinator
     data = ctx.data

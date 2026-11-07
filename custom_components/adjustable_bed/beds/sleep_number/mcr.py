@@ -19,13 +19,13 @@ from typing import TYPE_CHECKING, Final
 
 from bleak.exc import BleakError
 
-from ..const import (
+from ...const import (
     CONF_SLEEP_NUMBER_MCR_CLIENT_ID,
     SLEEP_NUMBER_MCR_RX_CHAR_UUID,
     SLEEP_NUMBER_MCR_TX_CHAR_UUID,
 )
-from ..controller_state import StateKey, StateUpdate, sided
-from ..state_keys import (
+from ...controller_state import StateKey, StateUpdate, sided
+from ...state_keys import (
     FOOTWARMING_HVAC_MODE,
     FOOTWARMING_LEVEL,
     FOOTWARMING_PRESET,
@@ -34,16 +34,16 @@ from ..state_keys import (
     SLEEP_NUMBER,
     UNDER_BED_LIGHTS_ON,
 )
-from .base import (
+from ..base import (
     POSITION_UNIT_PERCENT,
     BedController,
     MotorCommandCallable,
     MotorControlSpec,
     PositionNumberSpec,
 )
-from .builder import BuildContext
-from .sleep_number_commands import SleepNumberActions
-from .sleep_number_mcr_protocol import (
+from ..builder import BuildContext
+from .commands import SleepNumberActions
+from .mcr_protocol import (
     FoundationFeatures,
     classify_smartpump,
     decode_foundation,
@@ -54,8 +54,8 @@ from .sleep_number_mcr_protocol import (
 )
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
-    from .lifecycle import ControllerSession
+    from ...coordinator import AdjustableBedCoordinator
+    from ..lifecycle import ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 

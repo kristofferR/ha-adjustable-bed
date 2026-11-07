@@ -22,11 +22,11 @@ from typing import TYPE_CHECKING, Any, ClassVar, Final
 
 from bleak.exc import BleakError
 
-from ..const import REVERIE_BACK_MAX_ANGLE, REVERIE_CHAR_UUID
-from ..controller_state import StateKey
-from ..execution import ExecutionCapabilities
-from ..state_keys import massage_intensity
-from .base import (
+from ...const import REVERIE_BACK_MAX_ANGLE, REVERIE_CHAR_UUID
+from ...controller_state import StateKey
+from ...execution import ExecutionCapabilities
+from ...state_keys import massage_intensity
+from ..base import (
     POSITION_UNIT_DEGREES,
     BedController,
     ControllerMotorHoldSpec,
@@ -34,21 +34,21 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
-from .builder import BuildContext
-from .reverie_comfort import (
+from ..builder import BuildContext
+from .comfort import (
     ReverieComfortActions,
     ReverieComfortRequest,
     RoutineSteps,
     validate_comfort_request,
 )
-from .reverie_profiles import (
+from .profiles import (
     REVERIE_MODEL_FALLBACK,
     ReverieModelProfile,
     resolve_reverie_model,
 )
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 

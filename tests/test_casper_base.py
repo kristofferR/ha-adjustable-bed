@@ -11,11 +11,16 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
-from custom_components.adjustable_bed.beds.casper_base import CasperBaseController
-from custom_components.adjustable_bed.beds.casper_sleep import CasperSleepController
-from custom_components.adjustable_bed.casper_base_catalog import ACTIONS, PRODUCTS
-from custom_components.adjustable_bed.casper_base_protocol import Event, Request
-from custom_components.adjustable_bed.casper_sleep_protocol import NOTIFY, SERVICES, WRITE, envelope
+from custom_components.adjustable_bed.beds.casper_base.catalog import ACTIONS, PRODUCTS
+from custom_components.adjustable_bed.beds.casper_base.controller import CasperBaseController
+from custom_components.adjustable_bed.beds.casper_base.protocol import Event, Request
+from custom_components.adjustable_bed.beds.casper_sleep.controller import CasperSleepController
+from custom_components.adjustable_bed.beds.casper_sleep.protocol import (
+    NOTIFY,
+    SERVICES,
+    WRITE,
+    envelope,
+)
 from custom_components.adjustable_bed.codec.richmat import TRANSPORTS
 from custom_components.adjustable_bed.detection import BED_TYPE_DISPLAY_NAMES
 from custom_components.adjustable_bed.profiles.casper import TRANSPORTS as PROFILE_TRANSPORTS
@@ -356,7 +361,7 @@ async def test_sensor_live_replacement_and_local_stop(hass, monkeypatch):
 
 
 async def test_remote_finder_sends_no_bed_setup_or_locator_command():
-    from custom_components.adjustable_bed.beds.casper_sleep import CasperRemoteController
+    from custom_components.adjustable_bed.beds.casper_sleep.controller import CasperRemoteController
 
     _, c = make()
     c.client.services = []

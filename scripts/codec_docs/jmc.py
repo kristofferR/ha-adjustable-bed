@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from custom_components.adjustable_bed.beds.svane.state import svane_preferences
 from custom_components.adjustable_bed.codec import jmc
 from custom_components.adjustable_bed.const import (
     BED_TYPE_JENSEN,
@@ -9,7 +10,6 @@ from custom_components.adjustable_bed.const import (
     SVANE_VARIANT_JMC,
 )
 from custom_components.adjustable_bed.profiles.jmc import PROFILES
-from custom_components.adjustable_bed.svane_state import svane_preferences
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
 GUIDE = "docs/beds/jmc.md"

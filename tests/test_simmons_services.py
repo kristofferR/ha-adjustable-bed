@@ -155,7 +155,7 @@ def test_entity_translations_cover_every_layout():
 
 
 def _real_target(name: str, records):
-    from custom_components.adjustable_bed.beds.simmons_protocol import AlarmSlot
+    from custom_components.adjustable_bed.beds.simmons.protocol import AlarmSlot
 
     controller = make_controller(name="OKIN-1")
     controller._write_char = controller.client.services[0].characteristics[0]
@@ -197,7 +197,7 @@ async def test_multi_bed_alarm_validates_every_bed_before_any_write(hass, second
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(first, SIDE_BOTH), (second, SIDE_BOTH)], []),
         ),
-        patch("custom_components.adjustable_bed.beds.simmons.ALARM_REPLY_TIMEOUT_S", 0),
+        patch("custom_components.adjustable_bed.beds.simmons.controller.ALARM_REPLY_TIMEOUT_S", 0),
         pytest.raises(ServiceValidationError, match=error),
     ):
         await hass.services.async_call(
@@ -250,11 +250,11 @@ async def test_cancelled_alarm_call_releases_every_preflighted_bed(hass):
     with (
         _targets(coordinator),
         patch(
-            "custom_components.adjustable_bed.simmons_services._preflight_capability",
+            "custom_components.adjustable_bed.beds.simmons.services._preflight_capability",
             new=AsyncMock(return_value=preflighted),
         ),
         patch(
-            "custom_components.adjustable_bed.simmons_services._release_preflighted", new=AsyncMock()
+            "custom_components.adjustable_bed.beds.simmons.services._release_preflighted", new=AsyncMock()
         ) as release,
         pytest.raises(asyncio.CancelledError),
     ):

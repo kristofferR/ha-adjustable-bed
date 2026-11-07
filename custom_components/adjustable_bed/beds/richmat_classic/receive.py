@@ -8,8 +8,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .codec import richmat as codec
-from .richmat_classic_protocol import float32, new_height, old_height, rounded
+from ...codec import richmat as codec
+from .protocol import float32, new_height, old_height, rounded
 
 PREFIXES = (
     "6e90", "6e08", "6e94", "6e92", "6e97", "6e070101", "6e070102",

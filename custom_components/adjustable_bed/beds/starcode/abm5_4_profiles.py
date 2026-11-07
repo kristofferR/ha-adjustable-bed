@@ -9,9 +9,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Final
 
-from ..codec import keeson, okin_5a, okin_ore
-from ..codec import okin_nframe as codec
-from ..profiles.okin_nframe import STARCODE_ABM5_4_PROFILES
+from ...codec import keeson, okin_5a, okin_ore
+from ...codec import okin_nframe as codec
+from ...profiles.okin_nframe import STARCODE_ABM5_4_PROFILES
 
 
 @dataclass(frozen=True, slots=True)
@@ -177,7 +177,7 @@ def constructor_selector(name: str) -> str:
 
 
 def scan_matches(name: str | None) -> bool:
-    from ..discovery_hints.starcode import SCAN
+    from ...discovery_hints.starcode import SCAN
 
     return bool(name) and SCAN.matches_name(name)
 

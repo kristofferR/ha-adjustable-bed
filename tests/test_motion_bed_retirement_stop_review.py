@@ -5,10 +5,10 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed.beds.motion_bed import STOP
+from custom_components.adjustable_bed.beds.motion_bed.controller import STOP
+from custom_components.adjustable_bed.beds.motion_bed.protocol import SOURCE_COMMANDS
 from custom_components.adjustable_bed.const import BED_TYPE_MOTION_BED, DOMAIN, SIDE_BOTH
 from custom_components.adjustable_bed.controller_factory import create_controller
-from custom_components.adjustable_bed.motion_bed_protocol import SOURCE_COMMANDS
 from custom_components.adjustable_bed.services import async_register_services
 from tests.test_motion_bed_controller import characteristic, client_for
 from tests.test_motion_bed_lifecycle import real_coordinator
@@ -104,7 +104,7 @@ async def test_telemetry_retirement_preserves_active_customization_and_other_run
     from homeassistant.helpers import entity_registry as er
     from pytest_homeassistant.common import MockConfigEntry
 
-    from custom_components.adjustable_bed.beds.solace import SolaceController
+    from custom_components.adjustable_bed.beds.solace.controller import SolaceController
     from custom_components.adjustable_bed.const import CONF_PAIR_MODE, PAIR_MODE_SINGLE_ADDRESS
     from custom_components.adjustable_bed.paired_coordinator import SingleAddressPairedCoordinator
     from tests.test_entity_sweep import async_setup_platforms_and_sweep
@@ -174,8 +174,8 @@ async def test_telemetry_retirement_preserves_active_customization_and_other_run
 async def test_hub_stop_rejects_unvalidated_route_without_any_fallback_write(hass, change):
     from dataclasses import replace
 
-    from custom_components.adjustable_bed.beds.motion_bed import MotionBedController
-    from custom_components.adjustable_bed.motion_bed_models import select_motion_bed
+    from custom_components.adjustable_bed.beds.motion_bed.controller import MotionBedController
+    from custom_components.adjustable_bed.beds.motion_bed.models import select_motion_bed
 
     coord = await real_coordinator(hass, "TL-Q")
     old = coord.controller
@@ -211,7 +211,7 @@ async def test_hub_stop_rejects_unvalidated_route_without_any_fallback_write(has
 async def test_registered_thermal_stop_keeps_same_physical_choice_after_reconnect(
     hass, fresh_inventory
 ):
-    from custom_components.adjustable_bed.motion_bed_protocol import build_thermal_gear
+    from custom_components.adjustable_bed.beds.motion_bed.protocol import build_thermal_gear
 
     coord = await real_coordinator(hass, "TL-Q")
     old = coord.controller

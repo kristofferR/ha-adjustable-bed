@@ -11,12 +11,16 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from custom_components.adjustable_bed.beds import goodvibe as bed
+from custom_components.adjustable_bed.beds.goodvibe import controller as bed
+from custom_components.adjustable_bed.beds.goodvibe.catalog import (
+    ACTIONS,
+    PRODUCTS,
+    PROFILE_CHOICES,
+)
+from custom_components.adjustable_bed.beds.goodvibe.protocol import action_frame, clock
+from custom_components.adjustable_bed.beds.goodvibe.services import Request
+from custom_components.adjustable_bed.beds.goodvibe.sleep import sleep_packet
 from custom_components.adjustable_bed.codec import richmat as codec
-from custom_components.adjustable_bed.goodvibe_catalog import ACTIONS, PRODUCTS, PROFILE_CHOICES
-from custom_components.adjustable_bed.goodvibe_protocol import action_frame, clock
-from custom_components.adjustable_bed.goodvibe_services import Request
-from custom_components.adjustable_bed.goodvibe_sleep import sleep_packet
 from custom_components.adjustable_bed.profiles.richmat import GOODVIBE
 from tests.state_helpers import state_writer
 
@@ -418,7 +422,7 @@ async def test_light_menu_ranges_are_exact_profile_choices(coordinator, model):
 
 
 async def test_alias_choices_resolve_exact_accepted_endpoints(coordinator):
-    from custom_components.adjustable_bed.goodvibe_catalog import ALIAS_TARGETS
+    from custom_components.adjustable_bed.beds.goodvibe.catalog import ALIAS_TARGETS
 
     assert len(ALIAS_TARGETS) == 27
     for alias, target in ALIAS_TARGETS.items():

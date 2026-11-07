@@ -16,26 +16,26 @@ from typing import TYPE_CHECKING, Final
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
-from ..codec import ff_frame as codec
-from ..const import SOLACE_CHAR_UUID, SOLACE_VARIANT_WOOSA
-from ..controller_state import StateKey, StateUpdate
-from ..profiles.ff_frame import (
+from ...codec import ff_frame as codec
+from ...const import SOLACE_CHAR_UUID, SOLACE_VARIANT_WOOSA
+from ...controller_state import StateKey, StateUpdate
+from ...profiles.ff_frame import (
     SolaceCommands,
     SolaceProfile,
     resolve_solace_profile,
     solace_query_family,
 )
-from ..state_keys import LIGHT_LEVEL
-from .base import (
+from ...state_keys import LIGHT_LEVEL
+from ..base import (
     BedController,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
-from .builder import BuildContext
+from ..builder import BuildContext
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -874,7 +874,7 @@ async def build_controller(ctx: BuildContext) -> BedController:
     """Build the Solace controller, or Woosa's for its app profile."""
     if ctx.variant == SOLACE_VARIANT_WOOSA:
         await ctx.preload("woosa")
-        from .woosa import WoosaController
+        from ..woosa import WoosaController
 
         return WoosaController(ctx.coordinator)
     return SolaceController(ctx.coordinator)

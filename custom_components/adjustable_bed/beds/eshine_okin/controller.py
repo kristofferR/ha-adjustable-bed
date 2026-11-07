@@ -9,12 +9,12 @@ from typing import TYPE_CHECKING
 
 from homeassistant.util import dt as dt_util
 
-from ..card import CARD_MASSAGE, CARD_UTILITY
-from ..controller_state import StateKey
-from ..execution import ExecutionCapabilities
-from ..profiles.okin_nframe import ESHINE_PROFILES, ESHINE_REFRESH_MS
-from ..state_keys import UNDER_BED_LIGHTS_ON
-from .base import (
+from ...card import CARD_MASSAGE, CARD_UTILITY
+from ...controller_state import StateKey
+from ...execution import ExecutionCapabilities
+from ...profiles.okin_nframe import ESHINE_PROFILES, ESHINE_REFRESH_MS
+from ...state_keys import UNDER_BED_LIGHTS_ON
+from ..base import (
     BedController,
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -23,8 +23,8 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
-from .builder import BuildContext
-from .eshine_okin_protocol import (
+from ..builder import BuildContext
+from .protocol import (
     ALARM_TYPES,
     COMMANDS,
     HELD,
@@ -41,7 +41,7 @@ if TYPE_CHECKING:
     from bleak import BleakClient
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 
 @dataclass(frozen=True, slots=True)

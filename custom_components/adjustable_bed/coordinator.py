@@ -34,6 +34,11 @@ from .bed_traits import (
     disconnect_after_command_default_enabled,
     passive_position_reconciliation_default_enabled,
 )
+from .beds.vibradorm.app_state import (
+    ControlType,
+    VibradormAppSessionIntent,
+    get_vibradorm_app_session_intent,
+)
 from .ble_auth import is_ble_authentication_error
 from .bluetooth_transport import (
     ConnectionPath,
@@ -198,16 +203,11 @@ from .state_keys import (
     LINAK_MODEL_VARIANT,
     UNDER_BED_LIGHTS_ON,
 )
-from .vibradorm_app_state import (
-    ControlType,
-    VibradormAppSessionIntent,
-    get_vibradorm_app_session_intent,
-)
 
 if TYPE_CHECKING:
     from .beds.base import BedController
-    from .beds.reverie_pairlink_runtime import PairlinkRuntime
-    from .beds.starcode_abm5_4_profiles import RetainedAppState
+    from .beds.reverie.pairlink_runtime import PairlinkRuntime
+    from .beds.starcode.abm5_4_profiles import RetainedAppState
 
 T = TypeVar("T")
 _LOGGER = logging.getLogger(__name__)
@@ -724,8 +724,8 @@ class AdjustableBedCoordinator(
             owns_loaded_child = callable(child_for_side) and child_for_side(side) is self
         if loaded is not self and not owns_loaded_child:
             return
-        from .beds.starcode_abm5_4 import StarcodeAbm5_4Controller
-        from .beds.starcode_abm5_4_profiles import RetainedAppState
+        from .beds.starcode.abm5_4 import StarcodeAbm5_4Controller
+        from .beds.starcode.abm5_4_profiles import RetainedAppState
 
         retained_states = {
             (child.entry.entry_id, child.address): child.starcode_app_retained_state
@@ -1425,7 +1425,7 @@ class AdjustableBedCoordinator(
 
     def remember_limoss_remote_capabilities(self, capabilities: Mapping[str, int]) -> None:
         """Persist the reported capability record, which decides the entity layout."""
-        from .limoss_remote_state import validate_limoss_remote_state
+        from .beds.limoss.remote_state import validate_limoss_remote_state
 
         if self._bed_type != BED_TYPE_LIMOSS_REMOTE:
             raise ValueError("Invalid Limoss Remote local data")
@@ -1449,7 +1449,7 @@ class AdjustableBedCoordinator(
             return
         self._begin_internal_entry_update(self._ble_bond_established)
         self._offline_controller = self._controller or self._offline_controller
-        from .beds.limoss_remote import LimossRemoteController
+        from .beds.limoss.remote import LimossRemoteController
 
         if isinstance(self._offline_controller, LimossRemoteController):
             self._offline_controller.underbed_light = light
@@ -1933,7 +1933,7 @@ class AdjustableBedCoordinator(
         _LOGGER.info("Stop requested - cancelling current command")
 
         if self._bed_type in STARCODE_GROUP_BED_TYPES:
-            from .starcode_accessory_group import cancel_group_operations
+            from .beds.starcode.accessory_group import cancel_group_operations
 
             # Fence public STOP before the wire wait; retained cleanup has its
             # own scope and must not invalidate the replacing individual move.
@@ -2061,7 +2061,7 @@ class AdjustableBedCoordinator(
             )
         await self._async_refresh_controller_auth()
         if self._bed_type == BED_TYPE_OCTO:
-            from .octo_runtime import octo_controller
+            from .beds.octo.runtime import octo_controller
 
             octo = octo_controller(controller)
             if octo is not None:
@@ -2485,7 +2485,7 @@ class AdjustableBedCoordinator(
         if stream_member and self.stop_stream_member(resource):
             return
         if self._bed_type in STARCODE_GROUP_BED_TYPES:
-            from .starcode_accessory_group import cancel_group_operations
+            from .beds.starcode.accessory_group import cancel_group_operations
 
             cancel_group_operations(self.hass, self.entry.entry_id)
         # Keep preemptible non-scheduler work responsive, as every STOP does.
@@ -2655,7 +2655,7 @@ class AdjustableBedCoordinator(
             return
 
         if self._bed_type in STARCODE_GROUP_BED_TYPES:
-            from .starcode_accessory_group import prepare_individual_command
+            from .beds.starcode.accessory_group import prepare_individual_command
 
             settled_group = await prepare_individual_command(self, controller_command)
             if settled_group and expected_stop_epoch is not None:

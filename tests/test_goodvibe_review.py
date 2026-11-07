@@ -10,13 +10,13 @@ from zoneinfo import ZoneInfo
 import pytest
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.adjustable_bed import goodvibe_services as configuration
 from custom_components.adjustable_bed import services
+from custom_components.adjustable_bed.beds.goodvibe import services as configuration
+from custom_components.adjustable_bed.beds.goodvibe.catalog import ACTIONS, PRODUCTS
+from custom_components.adjustable_bed.beds.goodvibe.protocol import action_frame
 from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.command_scheduler import CommandOutcome
 from custom_components.adjustable_bed.const import DOMAIN
-from custom_components.adjustable_bed.goodvibe_catalog import ACTIONS, PRODUCTS
-from custom_components.adjustable_bed.goodvibe_protocol import action_frame
 from tests.test_goodvibe_ha import runtime
 
 

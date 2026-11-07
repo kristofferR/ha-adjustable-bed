@@ -29,22 +29,22 @@ from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
-from ..codec import okin_5a as star
-from ..codec import okin_nframe as codec
-from ..const import (
+from ...codec import okin_5a as star
+from ...codec import okin_nframe as codec
+from ...const import (
     NORDIC_UART_WRITE_CHAR_UUID,
     SLEEPYS_BOX25_FIXED_STAR_NAME_PREFIXES,
     SLEEPYS_BOX25_VARIANT_LEGACY,
     SLEEPYS_BOX25_VARIANT_STAR,
     VARIANT_AUTO,
 )
-from ..execution import STREAM_HOLD, ExecutionCapabilities
-from ..profiles.okin_nframe import (
+from ...execution import STREAM_HOLD, ExecutionCapabilities
+from ...profiles.okin_nframe import (
     SLEEPYS_BOX25_LEGACY,
     SLEEPYS_BOX25_RECALL,
     SLEEPYS_BOX25_STORE,
 )
-from ..state_keys import (
+from ...state_keys import (
     LIGHT_LEVEL,
     MASSAGE_ACTIVE,
     MASSAGE_TIMER_MINUTES,
@@ -52,19 +52,19 @@ from ..state_keys import (
     UNDER_BED_LIGHTS_RGB,
     massage_intensity,
 )
-from .base import (
+from ..base import (
     POSITION_UNIT_PERCENT,
     BedController,
     MotorControlSpec,
     PositionNumberSpec,
     build_position_number_spec,
 )
-from .builder import BuildContext
+from ..builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -450,7 +450,7 @@ class SleepysBox25Controller(BedController):
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         """Start listening for position notifications via Nordic UART RX."""
-        from ..const import NORDIC_UART_READ_CHAR_UUID
+        from ...const import NORDIC_UART_READ_CHAR_UUID
 
         self._notify_callback = callback
         client = self.client
@@ -467,7 +467,7 @@ class SleepysBox25Controller(BedController):
 
     async def stop_notify(self) -> None:
         """Stop listening for notifications."""
-        from ..const import NORDIC_UART_READ_CHAR_UUID
+        from ...const import NORDIC_UART_READ_CHAR_UUID
 
         self._notify_callback = None
         client = self.client

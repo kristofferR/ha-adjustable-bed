@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
-from .const import SLEEP_NUMBER_AUTH_CHAR_UUID
+from ...const import SLEEP_NUMBER_AUTH_CHAR_UUID
 
 _LOGGER = logging.getLogger(__name__)
 

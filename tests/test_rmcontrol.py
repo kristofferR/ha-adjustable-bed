@@ -8,11 +8,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed.beds.rmcontrol import (
+from custom_components.adjustable_bed.beds.rmcontrol.controller import (
     RmcontrolController,
     detect_rmcontrol_transport,
 )
-from custom_components.adjustable_bed.rmcontrol_protocol import Notification
+from custom_components.adjustable_bed.beds.rmcontrol.protocol import Notification
 from tests.state_helpers import published, state_writer
 
 
@@ -440,7 +440,7 @@ async def test_alarm_time_sync_startup_does_not_require_repeat_or_reply() -> Non
     client.services.get_characteristic.return_value.properties = ["notify"]
     ctrl.write_command = AsyncMock()
     with patch(
-        "custom_components.adjustable_bed.beds.rmcontrol.dt_util.now",
+        "custom_components.adjustable_bed.beds.rmcontrol.controller.dt_util.now",
         return_value=datetime(1970, 1, 1, tzinfo=UTC),
     ):
         await ctrl.start_notify()
@@ -518,7 +518,7 @@ async def test_reconnect_waits_for_delayed_menu_capabilities() -> None:
     client.start_notify = AsyncMock()
     client.services.get_characteristic.return_value.properties = ["notify"]
     ctrl.write_command = AsyncMock()
-    with patch("custom_components.adjustable_bed.beds.rmcontrol._CAPABILITY_TIMEOUT", 1):
+    with patch("custom_components.adjustable_bed.beds.rmcontrol.controller._CAPABILITY_TIMEOUT", 1):
         setup = asyncio.create_task(ctrl.start_notify())
         await asyncio.sleep(0)
         assert not setup.done()
@@ -543,7 +543,7 @@ async def test_missing_capability_reply_times_out_and_late_reply_still_enables()
     client.start_notify = AsyncMock()
     client.services.get_characteristic.return_value.properties = ["notify"]
     ctrl.write_command = AsyncMock()
-    with patch("custom_components.adjustable_bed.beds.rmcontrol._CAPABILITY_TIMEOUT", 0):
+    with patch("custom_components.adjustable_bed.beds.rmcontrol.controller._CAPABILITY_TIMEOUT", 0):
         await ctrl.start_notify()
     assert not ctrl.supports_light_color_control
     assert not ctrl.controller_entity_discovery_complete

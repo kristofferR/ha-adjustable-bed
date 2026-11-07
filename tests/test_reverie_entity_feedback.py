@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from custom_components.adjustable_bed.beds.reverie import ReverieController
-from custom_components.adjustable_bed.beds.reverie_nightstand import ReverieNightstandController
+from custom_components.adjustable_bed.beds.reverie.controller import ReverieController
+from custom_components.adjustable_bed.beds.reverie.nightstand import ReverieNightstandController
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.const import (
     REVERIE_NIGHTSTAND_HEAD_WAVE_UUID,

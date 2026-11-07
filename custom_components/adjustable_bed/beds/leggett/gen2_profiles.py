@@ -28,7 +28,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Final, Literal
 
-from ..const import MANUFACTURER_ID_LEGGETT_GEN2
+from ...const import MANUFACTURER_ID_LEGGETT_GEN2
 
 # Under-bed light style declared by the profile's ``lightConfig.colorPallet`` +
 # ``ublEnabled``: no light, a plain on/off toggle, a single (non-RGB) colour, or

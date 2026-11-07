@@ -9,10 +9,10 @@ import zlib
 from dataclasses import dataclass
 from datetime import date
 
-from .gmmotor_notifications import Value
-from .gmmotor_protocol import MalformedNotification
-from .gmmotor_sleep_dto import parse
-from .gmmotor_sleep_protocol import new_day_layout
+from .notifications import Value
+from .protocol import MalformedNotification
+from .sleep_dto import parse
+from .sleep_protocol import new_day_layout
 
 # HA resource policy, not an artifact-defined report-size limit.
 MAX_REPORT_BYTES = 8 * 1024 * 1024

@@ -9,10 +9,10 @@ from pathlib import Path
 import pytest
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.beds.jensen import JensenController
+from custom_components.adjustable_bed.beds.jensen.controller import JensenController
+from custom_components.adjustable_bed.beds.svane.state import svane_preferences
 from custom_components.adjustable_bed.codec import jmc
 from custom_components.adjustable_bed.profiles.jmc import JENSEN, PROFILES, SVANE_REMOTE, JmcProfile
-from custom_components.adjustable_bed.svane_state import svane_preferences
 from tests.jmc_vectors import FROZEN_FRAMES, FROZEN_REPORTS
 from tests.test_controller_contract import _create_controller_for_bed_type
 

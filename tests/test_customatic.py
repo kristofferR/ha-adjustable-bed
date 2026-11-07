@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from bleak.exc import BleakError
 
-from custom_components.adjustable_bed.beds.customatic import (
+from custom_components.adjustable_bed.beds.customatic.controller import (
     DEVICE_INFO_FIELDS,
     DEVICE_INFO_SERVICE,
     CustomaticController,

@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from decimal import ROUND_HALF_EVEN, Decimal
 from typing import Final, Literal
 
-from .codec import richmat as codec
+from ...codec import richmat as codec
 
 Wire = Literal["RAW", "FRAMED"]
 

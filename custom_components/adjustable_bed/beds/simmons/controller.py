@@ -20,8 +20,8 @@ from bleak.exc import BleakError
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.util import dt as dt_util
 
-from ..card import CARD_PRESETS
-from ..const import (
+from ...card import CARD_PRESETS
+from ...const import (
     CONF_BLE_DEVICE_NAME,
     DOMAIN,
     SIMMONS_VARIANT_INCLINED,
@@ -30,23 +30,23 @@ from ..const import (
     SIMMONS_VARIANT_OKIN,
     SIMMONS_VARIANT_SMARTBED,
 )
-from ..controller_state import StateKey, StateUpdate
-from ..detection import is_mac_like_name
-from ..profiles.okin_nframe import (
+from ...controller_state import StateKey, StateUpdate
+from ...detection import is_mac_like_name
+from ...profiles.okin_nframe import (
     SIMMONS_PROFILES,
     SIMMONS_REFRESH_MS,
     SIMMONS_SAVE_HOLD_MS,
     OkinNFrameProfile,
 )
-from .base import (
+from ..base import (
     BedController,
     ControllerButtonSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
 )
-from .builder import BuildContext
-from .simmons_protocol import (
+from ..builder import BuildContext
+from .protocol import (
     ALARM_MODES,
     FFE0_SERVICE,
     FFE4_NOTIFY,
@@ -81,7 +81,7 @@ from .simmons_protocol import (
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 

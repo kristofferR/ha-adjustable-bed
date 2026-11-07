@@ -13,15 +13,15 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.sleepys import (
-    SleepysBox15Commands,
-    SleepysBox24Commands,
-)
-from custom_components.adjustable_bed.beds.sleepys_box25 import (
+from custom_components.adjustable_bed.beds.sleepys.box25 import (
     Box25Commands,
     SleepysBox25Controller,
     SleepysBox25LegacyController,
     _translate_star_to_legacy,
+)
+from custom_components.adjustable_bed.beds.sleepys.controller import (
+    SleepysBox15Commands,
+    SleepysBox24Commands,
 )
 from custom_components.adjustable_bed.codec import keeson as codec
 from custom_components.adjustable_bed.const import (
@@ -1066,7 +1066,7 @@ class TestSleepysBox25Controller:
         cancel_event.set()
 
         with patch(
-            "custom_components.adjustable_bed.beds.sleepys_box25.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.sleepys.box25.asyncio.sleep",
             new=AsyncMock(),
         ):
             await controller.write_command(Box25Commands.HEAD_UP, cancel_event=cancel_event)
@@ -1399,7 +1399,7 @@ class TestSleepysBox25Controller:
 
         with (
             patch.object(controller, "write_command", AsyncMock()) as mock_write,
-            patch("custom_components.adjustable_bed.beds.sleepys_box25.asyncio.sleep", AsyncMock()),
+            patch("custom_components.adjustable_bed.beds.sleepys.box25.asyncio.sleep", AsyncMock()),
         ):
             await controller.preset_flat()
 
@@ -1443,7 +1443,7 @@ class TestSleepysBox25Controller:
             with (
                 patch.object(controller, "write_command", AsyncMock()) as mock_write,
                 patch(
-                    "custom_components.adjustable_bed.beds.sleepys_box25.asyncio.sleep",
+                    "custom_components.adjustable_bed.beds.sleepys.box25.asyncio.sleep",
                     AsyncMock(),
                 ),
             ):

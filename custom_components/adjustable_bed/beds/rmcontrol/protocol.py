@@ -10,7 +10,7 @@ from datetime import datetime
 from time import monotonic
 from typing import Literal
 
-from .codec import richmat as codec
+from ...codec import richmat as codec
 
 
 def _integer(value: int, name: str, maximum: int = 255, minimum: int = 0) -> int:

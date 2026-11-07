@@ -1,0 +1,1 @@
+"""logicdata bed family."""

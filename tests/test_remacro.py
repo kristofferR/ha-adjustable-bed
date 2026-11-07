@@ -18,8 +18,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds import remacro_protocol as protocol
-from custom_components.adjustable_bed.beds.remacro import RemacroController
+from custom_components.adjustable_bed.beds.remacro import protocol
+from custom_components.adjustable_bed.beds.remacro.controller import RemacroController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_REMACRO,
     BEDS_REQUIRING_PAIRING,
@@ -848,7 +848,7 @@ def watchers():
     callbacks: dict = {}
 
     def register(_hass, seen, matcher, _mode):
-        if seen.__module__ != "custom_components.adjustable_bed.remacro_discovery":
+        if seen.__module__ != "custom_components.adjustable_bed.beds.remacro.discovery":
             return lambda: None
         callbacks[matcher["address"]] = seen
 
@@ -1085,8 +1085,8 @@ async def test_options_reject_an_app_that_does_not_list_the_model(hass: HomeAssi
 
 
 async def test_paired_sides_cache_their_own_model(hass: HomeAssistant) -> None:
+    from custom_components.adjustable_bed.beds.remacro.discovery import cache_paired_remacro_models
     from custom_components.adjustable_bed.const import CONF_PAIR_CHILDREN
-    from custom_components.adjustable_bed.remacro_discovery import cache_paired_remacro_models
 
     left, right = "AA:BB:CC:DD:EE:66", "AA:BB:CC:DD:EE:67"
     entry = MockConfigEntry(
@@ -1350,7 +1350,7 @@ async def test_removing_an_entry_clears_its_remacro_issues(
 ) -> None:
     from homeassistant.helpers import issue_registry as ir
 
-    from custom_components.adjustable_bed.remacro_discovery import update_remacro_model_issue
+    from custom_components.adjustable_bed.beds.remacro.discovery import update_remacro_model_issue
 
     pair, _children = _remacro_pair(hass, 50, 50)
     standalone = _remacro_entry(hass, "AA:BB:CC:DD:EE:73")
@@ -1389,7 +1389,7 @@ async def test_removing_a_failed_combine_hands_the_remacro_issue_back(
     """A combine that never absorbed its beds must not take their warnings along."""
     from homeassistant.helpers import issue_registry as ir
 
-    from custom_components.adjustable_bed.remacro_discovery import (
+    from custom_components.adjustable_bed.beds.remacro.discovery import (
         async_prepare_remacro_entry,
         cache_paired_remacro_models,
     )
@@ -1505,12 +1505,12 @@ async def test_pair_without_a_recognized_side_still_loads(
 async def test_leaving_remacro_clears_its_model_issues(hass: HomeAssistant) -> None:
     from homeassistant.helpers import issue_registry as ir
 
-    from custom_components.adjustable_bed.const import CONF_PAIR_CHILDREN, CONF_PAIR_ID
-    from custom_components.adjustable_bed.remacro_discovery import (
+    from custom_components.adjustable_bed.beds.remacro.discovery import (
         async_prepare_remacro_entry,
         cache_paired_remacro_models,
         update_remacro_model_issue,
     )
+    from custom_components.adjustable_bed.const import CONF_PAIR_CHILDREN, CONF_PAIR_ID
 
     placeholders = {"company_id": "13", "app": "Slumberland"}
     standalone = _remacro_entry(hass, "AA:BB:CC:DD:EE:80", **{CONF_BED_TYPE: "linak"})

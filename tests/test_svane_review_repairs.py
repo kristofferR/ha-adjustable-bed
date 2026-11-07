@@ -9,7 +9,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.svane import FEET, HEAD, OLD, OLD_CHAR, UP
+from custom_components.adjustable_bed.beds.svane.controller import FEET, HEAD, OLD, OLD_CHAR, UP
 from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SVANE,
@@ -275,7 +275,7 @@ async def test_first_feet_frame_after_source_delay_for_accepted_hold(hass, monke
     clock = [0.0]
     local_asyncio = SimpleNamespace(**vars(asyncio))
     local_asyncio.get_running_loop = lambda: SimpleNamespace(time=lambda: clock[0])
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.svane.asyncio", local_asyncio)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.svane.controller.asyncio", local_asyncio)
 
     async def advance(seconds):
         clock[0] += seconds
@@ -302,9 +302,9 @@ async def test_first_feet_frame_after_source_delay_for_accepted_hold(hass, monke
 
 @pytest.mark.parametrize("representative", [SVANE_VARIANT_MULTI, SVANE_VARIANT_JMC])
 async def test_shared_common_option_and_rendered_profile_keep_mixed_routes(hass, representative):
+    from custom_components.adjustable_bed.beds.svane.state import get_svane_session
     from custom_components.adjustable_bed.const import CONF_IDLE_DISCONNECT_SECONDS
     from custom_components.adjustable_bed.pairing import get_child
-    from custom_components.adjustable_bed.svane_state import get_svane_session
 
     opposite = SVANE_VARIANT_JMC if representative == SVANE_VARIANT_MULTI else SVANE_VARIANT_MULTI
     first = {CONF_ADDRESS: "AA:BB:CC:DD:EE:01", CONF_BED_TYPE: BED_TYPE_SVANE,

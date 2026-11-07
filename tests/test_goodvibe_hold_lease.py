@@ -21,9 +21,14 @@ import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.adjustable_bed import goodvibe_protocol as p
 from custom_components.adjustable_bed import services
-from custom_components.adjustable_bed.beds.goodvibe import GoodVibeController
+from custom_components.adjustable_bed.beds.goodvibe import protocol as p
+from custom_components.adjustable_bed.beds.goodvibe.catalog import (
+    ACTION_EXPANSIONS,
+    ACTIONS,
+    PRODUCTS,
+)
+from custom_components.adjustable_bed.beds.goodvibe.controller import GoodVibeController
 from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.command_scheduler import CommandKind, CommandOutcome
 from custom_components.adjustable_bed.const import DOMAIN
@@ -32,7 +37,6 @@ from custom_components.adjustable_bed.execution import (
     HOLD_CEILING_MS,
     NO_EXECUTION_CAPABILITIES,
 )
-from custom_components.adjustable_bed.goodvibe_catalog import ACTION_EXPANSIONS, ACTIONS, PRODUCTS
 from tests.hold_lease_wire import intervals, leased_hold, virtual_clock
 from tests.test_controller_contract import _FactoryCoordinator
 from tests.test_goodvibe_ha import runtime as goodvibe_runtime

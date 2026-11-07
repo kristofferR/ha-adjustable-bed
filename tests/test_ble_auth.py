@@ -5,11 +5,11 @@ from __future__ import annotations
 import pytest
 from bleak.exc import BleakError
 
+from custom_components.adjustable_bed.beds.sleep_number.auth import validate_sleep_number_session
 from custom_components.adjustable_bed.ble_auth import (
     is_ble_authentication_error,
     is_ble_pairing_auth_failure,
 )
-from custom_components.adjustable_bed.sleep_number_auth import validate_sleep_number_session
 
 
 @pytest.mark.parametrize(

@@ -22,9 +22,9 @@ from typing import TYPE_CHECKING, cast
 from bleak import BleakClient
 from bleak.exc import BleakError
 
-from ..card import CARD_MASSAGE, CARD_UTILITY
-from ..codec import richmat as codec
-from ..const import (
+from ...card import CARD_MASSAGE, CARD_UTILITY
+from ...codec import richmat as codec
+from ...const import (
     CONF_RICHMAT_REMOTE,
     CONF_RMCONTROL_PRODUCT,
     CONF_RMCONTROL_SIDE,
@@ -46,13 +46,13 @@ from ..const import (
     resolve_richmat_remote_code,
     richmat_remote_has_combined_head_feet,
 )
-from ..position_estimate import notify_release_failed
-from ..profiles.richmat import GGRM_ACTIONS, RICHMAT, Button, RichmatProfile
-from .base import BedController, ControllerButtonSpec, MotorControlSpec
-from .builder import BuildContext
+from ...position_estimate import notify_release_failed
+from ...profiles.richmat import GGRM_ACTIONS, RICHMAT, Button, RichmatProfile
+from ..base import BedController, ControllerButtonSpec, MotorControlSpec
+from ..builder import BuildContext
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -932,7 +932,7 @@ def _remote_code(ctx: BuildContext) -> str:
     An Auto remote is inferred from the BLE name at connect time, which keeps
     entries created before the code was stored working.
     """
-    from ..detection import detect_richmat_remote_from_name
+    from ...detection import detect_richmat_remote_from_name
 
     coordinator = ctx.coordinator
     remote = resolve_richmat_remote_code(
@@ -980,8 +980,8 @@ async def build_controller(ctx: BuildContext) -> BedController:
 
     rmcontrol_product = ctx.data.get(CONF_RMCONTROL_PRODUCT, "")
     if rmcontrol_product:
-        await ctx.preload("rmcontrol")
-        from .rmcontrol import RmcontrolController, detect_rmcontrol_transport
+        await ctx.preload("rmcontrol.controller")
+        from ..rmcontrol.controller import RmcontrolController, detect_rmcontrol_transport
 
         if variant in {RICHMAT_VARIANT_PREFIX55, RICHMAT_VARIANT_PREFIXAA}:
             raise ValueError("RMControl app profiles require Nordic or WiLinke transport")

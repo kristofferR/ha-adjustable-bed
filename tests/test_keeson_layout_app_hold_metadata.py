@@ -11,7 +11,7 @@ from custom_components.adjustable_bed.beds.base import (
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
 )
-from custom_components.adjustable_bed.beds.keeson_layout_app import AppController
+from custom_components.adjustable_bed.beds.keeson.layout_app import AppController
 from custom_components.adjustable_bed.beds.serta_mp_remote import SertaMPRemoteController
 from custom_components.adjustable_bed.button import (
     ControllerActionButton,

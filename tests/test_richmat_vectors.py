@@ -4,20 +4,20 @@ from __future__ import annotations
 
 import pytest
 
-from custom_components.adjustable_bed import goodvibe_protocol as goodvibe
-from custom_components.adjustable_bed import hjbed_protocol as hj
-from custom_components.adjustable_bed import richmat_classic_protocol as classic
-from custom_components.adjustable_bed.beds import goodvibe as goodvibe_bed
-from custom_components.adjustable_bed.beds import richmat_mh as mh_bed
-from custom_components.adjustable_bed.beds import richmat_mh_protocol as mh
-from custom_components.adjustable_bed.beds import ruf_richmat
-from custom_components.adjustable_bed.codec import richmat as codec
-from custom_components.adjustable_bed.goodvibe_catalog import ACTIONS as GOODVIBE_ACTIONS
-from custom_components.adjustable_bed.hjbed_catalog import ACTIONS
-from custom_components.adjustable_bed.lp_legacy_profiles import (
+from custom_components.adjustable_bed.beds.goodvibe import controller as goodvibe_bed
+from custom_components.adjustable_bed.beds.goodvibe import protocol as goodvibe
+from custom_components.adjustable_bed.beds.goodvibe.catalog import ACTIONS as GOODVIBE_ACTIONS
+from custom_components.adjustable_bed.beds.hjbed import protocol as hj
+from custom_components.adjustable_bed.beds.hjbed.catalog import ACTIONS
+from custom_components.adjustable_bed.beds.leggett.lp_legacy_profiles import (
     LP_LEGACY_PROFILE_CODES,
     get_lp_legacy_profile,
 )
+from custom_components.adjustable_bed.beds.richmat_classic import protocol as classic
+from custom_components.adjustable_bed.beds.richmat_mh import controller as mh_bed
+from custom_components.adjustable_bed.beds.richmat_mh import protocol as mh
+from custom_components.adjustable_bed.beds.ruf_richmat import controller as ruf_richmat
+from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.profiles import richmat as profiles
 from tests.richmat_vectors import FROZEN_FRAMES
 

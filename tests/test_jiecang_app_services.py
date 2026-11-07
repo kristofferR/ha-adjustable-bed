@@ -7,7 +7,12 @@ import voluptuous as vol
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.adjustable_bed.beds.jiecang_app import JiecangAppController
+from custom_components.adjustable_bed.beds.jiecang.app import JiecangAppController
+from custom_components.adjustable_bed.beds.jiecang.app_services import (
+    SERVICE_JIECANG_SET_ALARM,
+    SERVICE_JIECANG_STOP_WAKE,
+    SERVICE_JIECANG_WAKE,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_JIECANG_APP,
     DOMAIN,
@@ -15,11 +20,6 @@ from custom_components.adjustable_bed.const import (
     SIDE_RIGHT,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.jiecang_app_services import (
-    SERVICE_JIECANG_SET_ALARM,
-    SERVICE_JIECANG_STOP_WAKE,
-    SERVICE_JIECANG_WAKE,
-)
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.services import (
     SERVICE_JIECANG_RENAME,

@@ -13,12 +13,12 @@ from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import _async_ensure_paired_device_registry, button, cover
-from custom_components.adjustable_bed.beds.casper_base import CasperBaseController
-from custom_components.adjustable_bed.beds.casper_sleep import (
+from custom_components.adjustable_bed.beds.casper_base.controller import CasperBaseController
+from custom_components.adjustable_bed.beds.casper_base.protocol import Request
+from custom_components.adjustable_bed.beds.casper_sleep.controller import (
     CasperRemoteController,
     CasperSleepController,
 )
-from custom_components.adjustable_bed.casper_base_protocol import Request
 from custom_components.adjustable_bed.codec.richmat import record_20_len
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator

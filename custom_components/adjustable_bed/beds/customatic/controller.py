@@ -10,17 +10,17 @@ from typing import TYPE_CHECKING, Final, cast
 
 from bleak.exc import BleakError
 
-from ..codec import okin_nframe as codec
-from ..codec.okin_nframe import SERVICE_UUID, WRITE_UUID
-from ..controller_state import StateKey
-from ..profiles.okin_nframe import (
+from ...codec import okin_nframe as codec
+from ...codec.okin_nframe import SERVICE_UUID, WRITE_UUID
+from ...controller_state import StateKey
+from ...profiles.okin_nframe import (
     CUSTOMATIC_APP_HOLD_MS,
     CUSTOMATIC_MEMORY_KEYS,
     CUSTOMATIC_MOTOR_KEYS,
     CUSTOMATIC_PROFILES,
     CUSTOMATIC_REFRESH_MS,
 )
-from .base import (
+from ..base import (
     POSITION_AXIS_COMMANDS,
     BedController,
     ControllerButtonSpec,
@@ -30,8 +30,8 @@ from .base import (
 )
 
 if TYPE_CHECKING:
-    from ..command_scheduler import StreamMember
-    from ..coordinator import AdjustableBedCoordinator
+    from ...command_scheduler import StreamMember
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 DEVICE_INFO_SERVICE: Final = "0000180a-0000-1000-8000-00805f9b34fb"

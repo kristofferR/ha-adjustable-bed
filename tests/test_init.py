@@ -805,7 +805,7 @@ class TestIntegrationSetup:
         enable_custom_integrations,
     ):
         """A protocol without a side selector cannot expose sides on any retry."""
-        from custom_components.adjustable_bed.beds.linak import LinakController
+        from custom_components.adjustable_bed.beds.linak.controller import LinakController
 
         entry = MockConfigEntry(
             domain=DOMAIN,

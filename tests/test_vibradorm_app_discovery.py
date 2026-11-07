@@ -7,6 +7,13 @@ import pytest
 from homeassistant.const import CONF_ADDRESS
 from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.beds.vibradorm.app_discovery import (
+    ManufacturerRecord,
+    manufacturer_discovery_diagnostics,
+    parse_manufacturer_record,
+    public_filter_verdict,
+    sdk_first_manufacturer,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_VIBRADORM_APP,
     CONF_BED_TYPE,
@@ -16,13 +23,6 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.diagnostics import async_get_config_entry_diagnostics
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
-from custom_components.adjustable_bed.vibradorm_app_discovery import (
-    ManufacturerRecord,
-    manufacturer_discovery_diagnostics,
-    parse_manufacturer_record,
-    public_filter_verdict,
-    sdk_first_manufacturer,
-)
 
 
 @pytest.mark.parametrize(

@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-from .motion_bed_state import MotionBedContext, MotionBedRoute, PresetVariant
+from .state import MotionBedContext, MotionBedRoute, PresetVariant
 
 MotionBedSurface = Literal["home", "motor", "air", "thermal", "hub"]
 MovementLayout = Literal[

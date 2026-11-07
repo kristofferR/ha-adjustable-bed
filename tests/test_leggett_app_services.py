@@ -9,7 +9,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed.beds.base import BedController
-from custom_components.adjustable_bed.beds.leggett_okin import LeggettOkinController
+from custom_components.adjustable_bed.beds.leggett.okin import LeggettOkinController
+from custom_components.adjustable_bed.beds.leggett.okin_services import (
+    SERVICE_LEGGETT_ALARM_TIMER,
+    SERVICE_LEGGETT_SLEEP_TIMER,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
@@ -23,10 +27,6 @@ from custom_components.adjustable_bed.const import (
     SIDE_RIGHT,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.leggett_okin_services import (
-    SERVICE_LEGGETT_ALARM_TIMER,
-    SERVICE_LEGGETT_SLEEP_TIMER,
-)
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.services import (
     LEGGETT_HELD_CONTROLS,

@@ -17,7 +17,7 @@ from custom_components.adjustable_bed.alarm_table import (
     OneTimeAlarmRecord,
     WeeklyAlarmRecord,
 )
-from custom_components.adjustable_bed.beds.keeson_layout_app import (
+from custom_components.adjustable_bed.beds.keeson.layout_app import (
     FFE4,
     FFE9,
     NUS_RX,
@@ -536,7 +536,7 @@ async def test_initialization_source_frames_and_gates(app, expected, waits):
     coord = coordinator()
     ctrl = AppController(coord, app_profile(app))
     ctrl._wait = AsyncMock(return_value=False)
-    with patch("custom_components.adjustable_bed.beds.keeson_layout_app.dt_util.now", return_value=NOW):
+    with patch("custom_components.adjustable_bed.beds.keeson.layout_app.dt_util.now", return_value=NOW):
         await ctrl.start_notify()
     assert [p.hex() for p in packets(coord)] == expected
     assert [c.args[0] for c in ctrl._wait.await_args_list] == waits
@@ -556,7 +556,7 @@ async def test_initialization_source_frames_and_gates(app, expected, waits):
 async def test_clock_uses_exact_local_calendar_fields(app):
     ctrl, coord = await ready(app)
     ctrl._wait.reset_mock()
-    with patch("custom_components.adjustable_bed.beds.keeson_layout_app.dt_util.now", return_value=NOW):
+    with patch("custom_components.adjustable_bed.beds.keeson.layout_app.dt_util.now", return_value=NOW):
         await ctrl.sync_clock()
     assert packets(coord) == [bytes.fromhex("e780017e091b0a0000eb")]
     ctrl._wait.assert_awaited_once_with(500)

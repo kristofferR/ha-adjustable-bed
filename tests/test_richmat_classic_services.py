@@ -7,7 +7,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.adjustable_bed.beds.richmat_classic import RichmatClassicController
+from custom_components.adjustable_bed.beds.richmat_classic.controller import (
+    RichmatClassicController,
+)
 from custom_components.adjustable_bed.command_scheduler import CommandIntent, DeviceCommandScheduler
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.services import async_register_services

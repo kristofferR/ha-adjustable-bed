@@ -172,7 +172,7 @@ async def test_factory_passes_explicit_settings_without_affecting_legacy(hass):
         ),
     )
     with patch(
-        "custom_components.adjustable_bed.beds.jiecang_app.JiecangAppController"
+        "custom_components.adjustable_bed.beds.jiecang.app.JiecangAppController"
     ) as controller:
         await create_controller(coordinator, BED_TYPE_JIECANG_APP, None, None)
     controller.assert_called_once_with(
@@ -287,7 +287,7 @@ async def test_dreamhd_setup_and_factory_keep_explicit_profile(hass, layout):
     assert data[CONF_JIECANG_APP_PROFILE] == "dreamhd"
     coordinator = SimpleNamespace(hass=hass, entry=SimpleNamespace(data=data))
     with patch(
-        "custom_components.adjustable_bed.beds.jiecang_app.JiecangAppController"
+        "custom_components.adjustable_bed.beds.jiecang.app.JiecangAppController"
     ) as controller:
         await create_controller(coordinator, BED_TYPE_JIECANG_APP, None, None)
     assert controller.call_args.kwargs == {

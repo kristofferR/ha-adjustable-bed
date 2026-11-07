@@ -9,8 +9,10 @@ from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
-from ..casper_base_protocol import CasperBaseActions, Request, SensorKind
-from ..casper_sleep_protocol import (
+from ...controller_state import StateKey, StateUpdate
+from ..base import BedController, ControllerStateSensorSpec
+from ..casper_base.protocol import CasperBaseActions, Request, SensorKind
+from .protocol import (
     NOTIFY,
     SERVICES,
     WRITE,
@@ -22,13 +24,11 @@ from ..casper_sleep_protocol import (
     mapping,
     wire_command,
 )
-from ..controller_state import StateKey, StateUpdate
-from .base import BedController, ControllerStateSensorSpec
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 

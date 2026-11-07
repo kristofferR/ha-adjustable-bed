@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import pytest
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.adjustable_bed.beds.svane import FEET, HEAD, UP
+from custom_components.adjustable_bed.beds.svane.controller import FEET, HEAD, UP
 from custom_components.adjustable_bed.const import DOMAIN, SIDE_BOTH
 from custom_components.adjustable_bed.services import async_register_services
 from tests.service_patches import patch_with_family
@@ -27,7 +27,7 @@ async def test_registered_hold_reports_incomplete_delivery_and_preserves_normal_
     clock = [0.0]
     local_asyncio = SimpleNamespace(**vars(asyncio))
     local_asyncio.get_running_loop = lambda: SimpleNamespace(time=lambda: clock[0])
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.svane.asyncio", local_asyncio)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.svane.controller.asyncio", local_asyncio)
     head = controller._role(HEAD, UP)
     feet = controller._role(FEET, UP)
     observed = []

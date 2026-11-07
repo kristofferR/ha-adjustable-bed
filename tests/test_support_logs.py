@@ -255,7 +255,7 @@ async def test_pairing_logs_survive_the_general_log_ring_and_restore_debug(hass,
     """One later bundle can see the entire pairing result after noisy activity."""
     client, _, _ = proxy
     address = "AA:BB:CC:DD:EE:FF"
-    logger = logging.getLogger("custom_components.adjustable_bed.sleep_number_auth")
+    logger = logging.getLogger("custom_components.adjustable_bed.beds.sleep_number.auth")
     previous_level = logger.getEffectiveLevel()
     buffer = async_setup_support_logs(hass)
     async with capture_proxy_logs(hass, address, retain=True):
@@ -277,7 +277,7 @@ async def test_pairing_logs_survive_the_general_log_ring_and_restore_debug(hass,
 def test_pairing_log_limit_is_reported_and_new_attempt_replaces_old(hass):
     """The retained evidence has a fixed size and reflects the last attempt."""
     buffer = async_setup_support_logs(hass)
-    logger = logging.getLogger("custom_components.adjustable_bed.sleep_number_auth")
+    logger = logging.getLogger("custom_components.adjustable_bed.beds.sleep_number.auth")
     address = "AA:BB:CC:DD:EE:FF"
     with buffer.capture_pairing(address):
         for index in range(MAX_PAIRING_LOG_ENTRIES + 1):
@@ -297,7 +297,7 @@ def test_target_auth_survives_unrelated_bluetooth_log_churn(hass):
     """A noisy overlapping bed cannot evict this attempt's Auth result."""
     buffer = async_setup_support_logs(hass)
     address = "AA:BB:CC:DD:EE:FF"
-    auth_logger = logging.getLogger("custom_components.adjustable_bed.sleep_number_auth")
+    auth_logger = logging.getLogger("custom_components.adjustable_bed.beds.sleep_number.auth")
     bluetooth_logger = logging.getLogger("bleak")
     with buffer.capture_pairing(address):
         auth_logger.warning("Sleep Number Auth rejected: bytes=0")

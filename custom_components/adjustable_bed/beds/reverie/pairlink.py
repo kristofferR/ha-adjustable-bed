@@ -21,17 +21,17 @@ from typing import TYPE_CHECKING, Any, Final
 from bleak.exc import BleakError
 from homeassistant.helpers.storage import Store
 
-from ..card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_UTILITY
-from ..const import CONF_SIDE
-from ..controller_state import StateKey, StateUpdate
-from ..state_keys import (
+from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_UTILITY
+from ...const import CONF_SIDE
+from ...controller_state import StateKey, StateUpdate
+from ...state_keys import (
     LIGHT_LEVEL,
     UNDER_BED_LIGHTS_ON,
     UNDER_BED_LIGHTS_RGB,
     massage_intensity,
     rgb_triple,
 )
-from .base import (
+from ..base import (
     POSITION_UNIT_PERCENT,
     BedController,
     ControllerMotorHoldSpec,
@@ -43,21 +43,21 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
-from .builder import BuildContext
-from .reverie_comfort import (
+from ..builder import BuildContext
+from .comfort import (
     PairlinkComfortActions,
     ReverieComfortRequest,
     RoutineSteps,
     validate_comfort_request,
 )
-from .reverie_pairlink_profile import (
+from .pairlink_profile import (
     PAIRLINK_BED_TYPES,
     PairlinkAdvertisement,
     build_pairlink_peripheral_profile,
     parse_pairlink_manufacturer_data,
     resolve_pairlink_model,
 )
-from .reverie_pairlink_protocol import (
+from .pairlink_protocol import (
     PAIRLINK_BROADCAST_ADDRESS,
     PAIRLINK_EXIT_COMMAND,
     PAIRLINK_LOW_POWER_NOTIFY_UUID,
@@ -78,7 +78,7 @@ from .reverie_pairlink_protocol import (
     state_query_payloads,
     status_sync_payloads,
 )
-from .reverie_pairlink_runtime import (
+from .pairlink_runtime import (
     PairlinkClockResponse,
     PairlinkComfortPlan,
     PairlinkEffect,
@@ -96,7 +96,7 @@ from .reverie_pairlink_runtime import (
     PairlinkWelcome,
     create_pairlink_runtime_for_entry,
 )
-from .reverie_pairlink_sdk import (
+from .pairlink_sdk import (
     PairlinkSdkMessage,
     calendar_payload,
     calendar_profile_frame,
@@ -105,12 +105,12 @@ from .reverie_pairlink_sdk import (
     sdk_mac,
     sdk_ping_device,
 )
-from .reverie_pairlink_sdk_dispatch import (
+from .pairlink_sdk_dispatch import (
     PairlinkSdkCallbackEvent,
     PairlinkSdkReadError,
     decode_sdk_dispatch,
 )
-from .reverie_pairlink_sdk_metadata import (
+from .pairlink_sdk_metadata import (
     SdkCompositionQuery,
     SdkFingerprintQuery,
     SdkFingerprintStatus,
@@ -118,18 +118,18 @@ from .reverie_pairlink_sdk_metadata import (
     SdkMetadataStatus,
     SdkMetadataTimer,
 )
-from .reverie_pairlink_sdk_models import (
+from .pairlink_sdk_models import (
     PairlinkSdkDevice,
     replace_ping_device,
 )
-from .reverie_pairlink_sdk_storage import PairlinkSdkState
-from .reverie_pairlink_transport import (
+from .pairlink_sdk_storage import PairlinkSdkState
+from .pairlink_transport import (
     PairlinkHostAdapterInventoryEntry,
     PairlinkPeerIdentity,
 )
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 

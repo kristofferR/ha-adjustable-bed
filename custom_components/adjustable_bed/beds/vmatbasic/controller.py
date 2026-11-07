@@ -10,8 +10,8 @@ from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final, cast
 
-from ..app_session import app_session
-from ..card import (
+from ...app_session import app_session
+from ...card import (
     CARD_LIGHT_LEVEL,
     CARD_LIGHT_MOOD,
     CARD_LIGHT_TOGGLE,
@@ -21,12 +21,16 @@ from ..card import (
     CardRole,
     CardSection,
 )
-from ..codec import vibradorm as codec
-from ..const import CONF_VMATBASIC_FLOOR_LEVEL, CONF_VMATBASIC_FLOOR_MINUTES, CONF_VMATBASIC_PROFILE
-from ..controller_state import StateKey
-from ..execution import ExecutionCapabilities
-from ..profiles import vmatbasic as vmat_profiles
-from .base import (
+from ...codec import vibradorm as codec
+from ...const import (
+    CONF_VMATBASIC_FLOOR_LEVEL,
+    CONF_VMATBASIC_FLOOR_MINUTES,
+    CONF_VMATBASIC_PROFILE,
+)
+from ...controller_state import StateKey
+from ...execution import ExecutionCapabilities
+from ...profiles import vmatbasic as vmat_profiles
+from ..base import (
     BedController,
     ControllerButtonSpec,
     ControllerNumberSpec,
@@ -36,14 +40,14 @@ from .base import (
     MotorControlSpec,
     require_controller,
 )
-from .builder import BuildContext
+from ..builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak import BleakClient
     from bleak.backends.characteristic import BleakGATTCharacteristic
     from homeassistant.core import HomeAssistant
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 

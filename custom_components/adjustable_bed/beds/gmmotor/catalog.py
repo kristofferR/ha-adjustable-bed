@@ -6,7 +6,7 @@ Input SHA-256: REPORT.SHA256 2251d01a96c95b4d5c15c369fe67202f2e8c7d513c91db88fc8
 """
 from typing import Final
 
-from .gmmotor_catalog_types import ActionRow, MaterialRow, ProfileRow, RouteRow
+from .catalog_types import ActionRow, MaterialRow, ProfileRow, RouteRow
 
 # fmt: off
 MATERIALS: Final[tuple[MaterialRow, ...]] = (('deviceFunctionItemNone', 0, None, None, None, None, 0),

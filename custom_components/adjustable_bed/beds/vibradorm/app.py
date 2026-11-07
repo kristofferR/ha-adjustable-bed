@@ -17,9 +17,16 @@ from typing import TYPE_CHECKING, Any, Final, Literal, TypedDict
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
-from ..card import CARD_LIGHT_MOOD, CARD_MASSAGE, CARD_UTILITY, CardPlacement, CardRole, CardSection
-from ..codec import vibradorm as codec
-from ..const import (
+from ...card import (
+    CARD_LIGHT_MOOD,
+    CARD_MASSAGE,
+    CARD_UTILITY,
+    CardPlacement,
+    CardRole,
+    CardSection,
+)
+from ...codec import vibradorm as codec
+from ...const import (
     CONF_HAS_MASSAGE,
     CONF_VIBRADORM_APP_PROFILE,
     CONF_VIBRADORM_CONTROL_TYPE,
@@ -30,9 +37,9 @@ from ..const import (
     CONF_VIBRADORM_RGB,
     CONF_VIBRADORM_VMAT_REMOTE,
 )
-from ..controller_state import StateKey, StateUpdate
-from ..execution import ExecutionCapabilities
-from ..profiles.vibradorm import (
+from ...controller_state import StateKey, StateUpdate
+from ...execution import ExecutionCapabilities
+from ...profiles.vibradorm import (
     ARTICLE_REQUEST,
     EXTENSION,
     FLOOR,
@@ -56,13 +63,8 @@ from ..profiles.vibradorm import (
     validate_vibradorm_app_profile,
     vibradorm_app_metadata_key,
 )
-from ..state_keys import LIGHT_LEVEL, LIGHT_TIMER_OPTION
-from ..vibradorm_app_state import (
-    VibradormAppFloorIntent,
-    VibradormAppMassageIntent,
-    VibradormAppTimerIntent,
-)
-from .base import (
+from ...state_keys import LIGHT_LEVEL, LIGHT_TIMER_OPTION
+from ..base import (
     POSITION_AXIS_COMMANDS,
     BedController,
     ControllerButtonSpec,
@@ -74,10 +76,15 @@ from .base import (
     PositionNumberSpec,
     require_controller,
 )
-from .builder import BuildContext
+from ..builder import BuildContext
+from .app_state import (
+    VibradormAppFloorIntent,
+    VibradormAppMassageIntent,
+    VibradormAppTimerIntent,
+)
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -168,7 +175,7 @@ def _characteristic(client: BleakClient, uuid: str, operation: str) -> BleakGATT
 def validate_profile_roles(client: BleakClient, profile: VibradormAppProfile) -> None:
     """Validate the same selected GATT roles during setup and runtime."""
     if profile.app_profile == "vmat":
-        from ..vibradorm_vmat_setup import validate_vmat_roles
+        from .vmat_setup import validate_vmat_roles
 
         validate_vmat_roles(client, basic=profile.basic)
         return
@@ -232,7 +239,7 @@ async def _information_transaction(
     article: str | None = None
     async with asyncio.timeout_at(deadline):
         if profile.app_profile == "vmat":
-            from ..vibradorm_vmat_setup import async_read_vmat_dis
+            from .vmat_setup import async_read_vmat_dis
 
             return await async_read_vmat_dis(client, cancel_event, metadata_progress)
         for field, uuid in INFO_FIELDS:
@@ -279,7 +286,7 @@ async def async_prepare_vibradorm_app_pairing(
 ) -> VibradormAppMetadata:
     """Read app information before native pairing; the caller owns native proof."""
     if app_profile == "vmat":
-        from ..vibradorm_vmat_setup import async_prepare_vmat_pairing
+        from .vmat_setup import async_prepare_vmat_pairing
 
         selected = get_vmat_remote(remote)
         if isinstance(control_type, bool) or control_type != selected.control_type:
@@ -812,7 +819,7 @@ class VibradormAppController(BedController):
             if client is None or not client.is_connected:
                 raise ConnectionError("Not connected")
             if self.profile.app_profile == "vmat":
-                from ..vibradorm_vmat_setup import vmat_characteristic
+                from .vmat_setup import vmat_characteristic
 
                 response = uuid != codec.CBI_CHAR_UUID
                 char = vmat_characteristic(client, uuid, "write" if response else "write-without-response")
@@ -893,7 +900,7 @@ class VibradormAppController(BedController):
         if client is None:
             raise ConnectionError("Not connected")
         if self.profile.app_profile == "vmat":
-            from ..vibradorm_vmat_setup import vmat_characteristic
+            from .vmat_setup import vmat_characteristic
 
             await _cancellable(asyncio.sleep(0.5), self._coordinator.cancel_command)
             char = vmat_characteristic(client, codec.RESPONSE_CHAR_UUID, "notify")
@@ -1419,7 +1426,7 @@ def _integer(value: float, minimum: int, maximum: int, label: str) -> int:
 
 async def build_controller(ctx: BuildContext) -> VibradormAppController:
     """Build the controller for the stored app profile and session intent."""
-    from ..vibradorm_app_state import get_vibradorm_app_session_intent
+    from .app_state import get_vibradorm_app_session_intent
 
     coordinator = ctx.coordinator
     data = ctx.data

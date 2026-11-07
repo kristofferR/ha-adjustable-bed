@@ -15,7 +15,7 @@ from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
-from custom_components.adjustable_bed.beds.comfort_enhancements import (
+from custom_components.adjustable_bed.beds.comfort_enhancements.controller import (
     ComfortEnhancementsController,
     alarm_frame,
     clock_frame,
@@ -134,7 +134,7 @@ def written(client: MagicMock) -> list[str]:
 @pytest.fixture(autouse=True)
 def no_protocol_waits(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.comfort_enhancements.RELEASE_DELAY_S", 0
+        "custom_components.adjustable_bed.beds.comfort_enhancements.controller.RELEASE_DELAY_S", 0
     )
     monkeypatch.setattr(ComfortEnhancementsController, "_delay", AsyncMock())
 
@@ -396,7 +396,7 @@ async def test_ha_entities_and_alarm_service(
     assert exists("select", "massage_timer") == (layout != "mc3")
     dev = next(x.device_id for x in registry.entities.values() if x.config_entry_id == e.entry_id)
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.comfort_enhancements.dt_util.now",
+        "custom_components.adjustable_bed.beds.comfort_enhancements.controller.dt_util.now",
         lambda: datetime(2026, 11, 3, 20, 15, 30),
     )
     mock_bleak_client.write_gatt_char.reset_mock()
@@ -437,7 +437,7 @@ async def test_normal_release_uses_100ms_wait_and_cleanup_errors_surface(
     hass, mock_coordinator_connected, mock_bleak_client, monkeypatch
 ) -> None:
     c = await controller(hass, mock_bleak_client)
-    from custom_components.adjustable_bed.beds import comfort_enhancements as module
+    from custom_components.adjustable_bed.beds.comfort_enhancements import controller as module
 
     original_timeout = asyncio.timeout
     waits: list[float] = []

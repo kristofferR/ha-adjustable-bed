@@ -7,7 +7,8 @@ from homeassistant.config_entries import SOURCE_RECONFIGURE
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.svane import SvaneController
+from custom_components.adjustable_bed.beds.svane.controller import SvaneController
+from custom_components.adjustable_bed.beds.svane.state import get_svane_session
 from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SVANE,
@@ -22,7 +23,6 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.svane_state import get_svane_session
 from tests.app_state_helpers import stored_app_state, write_app_state
 from tests.test_svane import make_controller, written
 

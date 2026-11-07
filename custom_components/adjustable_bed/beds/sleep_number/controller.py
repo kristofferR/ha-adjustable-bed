@@ -20,15 +20,14 @@ from typing import TYPE_CHECKING, Any, Final, cast
 
 from bleak.exc import BleakError
 
-from ..const import (
+from ...const import (
     SLEEP_NUMBER_BAMKEY_CHAR_UUID,
     SLEEP_NUMBER_VARIANT_LEFT,
     SLEEP_NUMBER_VARIANT_RIGHT,
     VARIANT_AUTO,
 )
-from ..controller_state import StateKey, StateUpdate, sided, sided_updates
-from ..sleep_number_auth import async_read_sleep_number_session
-from ..state_keys import (
+from ...controller_state import StateKey, StateUpdate, sided, sided_updates
+from ...state_keys import (
     BED_PRESENCE,
     BED_PRESENCE_SIDE,
     FOOTWARMING_HVAC_MODE,
@@ -55,15 +54,16 @@ from ..state_keys import (
     THERMAL_TIMER_OPTION,
     UNDER_BED_LIGHTS_ON,
 )
-from .base import (
+from ..base import (
     POSITION_UNIT_PERCENT,
     BedController,
     MotorControlSpec,
     PositionNumberSpec,
     build_position_number_spec,
 )
-from .builder import BuildContext
-from .sleep_number_commands import (
+from ..builder import BuildContext
+from .auth import async_read_sleep_number_session
+from .commands import (
     COMMANDS,
     SleepNumberActions,
     combine_temperature_programs,
@@ -72,8 +72,8 @@ from .sleep_number_commands import (
 )
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
-    from .lifecycle import ControllerSession
+    from ...coordinator import AdjustableBedCoordinator
+    from ..lifecycle import ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 

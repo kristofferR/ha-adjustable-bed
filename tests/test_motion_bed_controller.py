@@ -11,16 +11,16 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from custom_components.adjustable_bed.beds.base import BedController
-from custom_components.adjustable_bed.beds.motion_bed import (
+from custom_components.adjustable_bed.beds.motion_bed.actions import ACTION_BY_KEY
+from custom_components.adjustable_bed.beds.motion_bed.controller import (
     CHARACTERISTIC,
     STOP,
     MotionBedController,
 )
-from custom_components.adjustable_bed.motion_bed_actions import ACTION_BY_KEY
-from custom_components.adjustable_bed.motion_bed_models import select_motion_bed
-from custom_components.adjustable_bed.motion_bed_protocol import SOURCE_COMMANDS
-from custom_components.adjustable_bed.motion_bed_requests import MotionBedWrite
-from custom_components.adjustable_bed.motion_bed_state import MotionBedFollowup
+from custom_components.adjustable_bed.beds.motion_bed.models import select_motion_bed
+from custom_components.adjustable_bed.beds.motion_bed.protocol import SOURCE_COMMANDS
+from custom_components.adjustable_bed.beds.motion_bed.requests import MotionBedWrite
+from custom_components.adjustable_bed.beds.motion_bed.state import MotionBedFollowup
 
 
 def characteristic(handle: int, *, properties: tuple[str, ...] = ("write", "notify")) -> MagicMock:
@@ -365,7 +365,7 @@ async def test_present_hub_thermal_starts_owned_polling_once(monkeypatch) -> Non
     rig = rig_for("TL-Q")
     await rig.controller.async_discover_capabilities()
     rig.controller._spawn = MagicMock()
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", AsyncMock())
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.sleep", AsyncMock())
     status = bytes.fromhex("FFFFFFFF01002714000000000000000C")
     rig.controller._handle_notification(status)
     await rig.controller._start_present_modules()
@@ -403,7 +403,7 @@ async def test_thermal_poll_intervals_and_disconnect_cancellation(
         else:
             await real_sleep(0)
 
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", sleep)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.sleep", sleep)
     rig.controller._spawn(rig.controller._thermal_poll)
     await real_sleep(0)
     assert delays == [2]
@@ -476,7 +476,7 @@ async def test_followup_packet_and_delay_match_source(
     rig = rig_for()
     await rig.controller.async_discover_capabilities()
     sleep = AsyncMock()
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", sleep)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.sleep", sleep)
     await rig.controller._followup(effect)
     sleep.assert_awaited_once_with(effect.delay_ms / 1000)
     assert rig.writes == [SOURCE_COMMANDS[source]]
@@ -512,7 +512,7 @@ async def test_sleep_adjust_release_stops_then_queries_after_100ms(
     rig = rig_for()
     await rig.controller.async_discover_capabilities()
     sleep = AsyncMock()
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", sleep)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.sleep", sleep)
     await rig.controller.async_execute_motion_bed_action(
         "sleep_adjust_activity_adjust_back_up", duration=0.001
     )
@@ -604,9 +604,9 @@ async def test_home_startup_preserves_source_clock_sync_and_fragment_event_delay
     delays = []
     async def sleep(delay):
         delays.append(delay)
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", sleep)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.sleep", sleep)
     clock = bytes.fromhex("FFFFFFFF010203")
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.build_clock", lambda timestamp: clock)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.build_clock", lambda timestamp: clock)
     await rig.controller.async_discover_capabilities()
     await rig.controller.start_notify()
     assert rig.writes[:3] == [SOURCE_COMMANDS["HomeActivity:321"], clock, SOURCE_COMMANDS["HomeActivity:311"]]
@@ -626,7 +626,7 @@ async def test_module_removed_during_startup_delay_never_receives_following_cloc
         count += 1
         if count == 2:
             rig.controller._state = replace(rig.controller._state, thermal_module_present=False)
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", sleep)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.sleep", sleep)
     await rig.controller._module_startup("thermal")
     assert rig.writes == [SOURCE_COMMANDS["LengnuanFragment:183"]]
     await rig.controller.stop_notify()
@@ -642,7 +642,7 @@ async def test_calibration_debug_has_ten_two_second_samples_or_cancels_before_fi
         intervals.append(timeout)
         if not cancelled:
             raise TimeoutError
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.wait_for", wait_for)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.wait_for", wait_for)
     key = "sleep_data_entry_activity_capture_debug"
     await rig.controller.async_execute_motion_bed_action(key)
     selected = ACTION_BY_KEY[key].select(rig.controller._state, False)
@@ -654,7 +654,7 @@ async def test_calibration_debug_has_ten_two_second_samples_or_cancels_before_fi
 
 @pytest.mark.parametrize("cancelled", [False, True])
 async def test_pressure_live_quiet_delay_is_bound_to_request_and_cancelled_before_io(monkeypatch, cancelled):
-    from custom_components.adjustable_bed.motion_bed_protocol import build_pressure_live
+    from custom_components.adjustable_bed.beds.motion_bed.protocol import build_pressure_live
     rig = rig_for("TL-A")
     await rig.controller.async_discover_capabilities()
     intervals = []
@@ -663,7 +663,7 @@ async def test_pressure_live_quiet_delay_is_bound_to_request_and_cancelled_befor
         intervals.append(timeout)
         if not cancelled:
             raise TimeoutError
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.wait_for", wait_for)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.wait_for", wait_for)
     frame = build_pressure_live(11,9)
     request = MotionBedWrite("pressure", (frame,), "pressure_settings", initial_delay_ms=2500)
     await rig.controller.async_execute_motion_bed_write(request)

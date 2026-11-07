@@ -18,6 +18,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.loader import async_get_integration
 
 from .adapter import find_service_info_by_address
+from .beds.kaidi.protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
 from .bluetooth_diagnostics import connection_reachability
 from .const import (
     CONF_BED_TYPE,
@@ -40,7 +41,6 @@ from .const import (
     requires_pairing,
 )
 from .diagnostics_utils import get_gatt_summary
-from .kaidi_protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
 from .profile_decisions import async_profile_decision_history
 from .redaction import redact_data, redact_pins_only
 from .support_logs import DATA_SUPPORT_LOGS

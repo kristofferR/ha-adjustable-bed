@@ -31,6 +31,10 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.address_lock import async_get_connect_lock
 from custom_components.adjustable_bed.bed_traits import bed_traits
+from custom_components.adjustable_bed.beds.kaidi.protocol import (
+    KAIDI_ADV_TYPE_BROADCAST,
+    KaidiAdvertisement,
+)
 from custom_components.adjustable_bed.bluetooth_bond import (
     BluezReadStatus,
     BondRemovalResult,
@@ -163,10 +167,6 @@ from custom_components.adjustable_bed.detection import (
 from custom_components.adjustable_bed.discovery_settings import (
     async_is_discovery_disabled,
     async_set_discovery_disabled,
-)
-from custom_components.adjustable_bed.kaidi_protocol import (
-    KAIDI_ADV_TYPE_BROADCAST,
-    KaidiAdvertisement,
 )
 from custom_components.adjustable_bed.pairing import get_child
 from custom_components.adjustable_bed.setup_operation import (
@@ -1619,7 +1619,7 @@ class TestBluetoothDiscoveryFlow:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """The real Octo setup path keeps RTV's historical count as Auto fallback."""
-        from custom_components.adjustable_bed.beds.octo import OctoController
+        from custom_components.adjustable_bed.beds.octo.controller import OctoController
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
         mock_bluetooth_service_info_octo_rc2.name = "RTV Lift"
@@ -7291,8 +7291,8 @@ async def test_octo_discovery_checks_pin_before_saving_and_can_retry(
     enable_custom_integrations,
 ) -> None:
     """The real flow manager cannot turn a rejected PIN into a saved entry."""
+    from custom_components.adjustable_bed.beds.octo.auth import OctoPinStatus
     from custom_components.adjustable_bed.config_flow import CapabilityReport
-    from custom_components.adjustable_bed.octo_auth import OctoPinStatus
 
     with patch.object(
         AdjustableBedConfigFlow,
@@ -7347,7 +7347,7 @@ async def test_octo_probe_authenticates_on_owned_connection_and_disconnects(
     cancel: bool,
 ) -> None:
     """PIN verification uses the chosen setup connection and releases it on cancellation."""
-    from custom_components.adjustable_bed.octo_auth import OctoPinStatus
+    from custom_components.adjustable_bed.beds.octo.auth import OctoPinStatus
 
     flow = AdjustableBedConfigFlow()
     flow.hass = hass

@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Final, Literal
 
-from .codec.richmat import is_valid
+from ...codec.richmat import is_valid
 
 RGB_TIMERS: Final = (5, 8, 10, 13, 15, 18, 21, 24, 27, 30, 120, 210, 300, 390, 480)
 ALARM_MODES: Final = {

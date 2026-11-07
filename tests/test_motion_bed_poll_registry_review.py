@@ -7,11 +7,11 @@ from bleak.exc import BleakError
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.motion_bed import MotionBedController
-from custom_components.adjustable_bed.beds.solace import SolaceController
+from custom_components.adjustable_bed.beds.motion_bed.controller import MotionBedController
+from custom_components.adjustable_bed.beds.motion_bed.models import select_motion_bed
+from custom_components.adjustable_bed.beds.motion_bed.protocol import SOURCE_COMMANDS
+from custom_components.adjustable_bed.beds.solace.controller import SolaceController
 from custom_components.adjustable_bed.const import DOMAIN
-from custom_components.adjustable_bed.motion_bed_models import select_motion_bed
-from custom_components.adjustable_bed.motion_bed_protocol import SOURCE_COMMANDS
 from tests.test_entity_sweep import async_setup_platforms_and_sweep
 from tests.test_motion_bed_lifecycle import real_coordinator
 
@@ -67,7 +67,7 @@ async def test_thermal_poll_retries_only_at_existing_cadence_after_query_interru
         else:
             await real_sleep(0)
 
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", sleep)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.sleep", sleep)
     if failure == "preemption":
         await coord._command_lock.acquire()
     else:
@@ -117,7 +117,7 @@ async def test_thermal_poll_terminal_owner_loss_does_not_retry(hass, monkeypatch
     async def sleep(delay):
         delays.append(delay)
         await real_sleep(0)
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", sleep)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.sleep", sleep)
     await coord._command_lock.acquire()
     poll = asyncio.create_task(controller._thermal_poll())
     for _ in range(20):

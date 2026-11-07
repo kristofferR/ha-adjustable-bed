@@ -19,15 +19,14 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.star_elevate import StarElevateCommands
-from custom_components.adjustable_bed.beds.starcode_dialect import (
+from custom_components.adjustable_bed.beds.starcode.dialect import (
     extended_packet,
     long_packet,
     normal_packet,
     position_packet,
     query_packet,
 )
-from custom_components.adjustable_bed.beds.starcode_m1x12 import (
+from custom_components.adjustable_bed.beds.starcode.m1x12 import (
     DEVICE_INFORMATION,
     FIRMWARE,
     MANUFACTURER,
@@ -37,9 +36,10 @@ from custom_components.adjustable_bed.beds.starcode_m1x12 import (
     StarcodeM1X12Controller,
     StarElevateM1X12Controller,
 )
-from custom_components.adjustable_bed.beds.starcode_m1x12_protocol import (
+from custom_components.adjustable_bed.beds.starcode.m1x12_protocol import (
     clock_packet,
 )
+from custom_components.adjustable_bed.beds.starcode.star_elevate import StarElevateCommands
 from custom_components.adjustable_bed.binary_sensor import _binary_sensor_entities_for
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.codec import okin_5a
@@ -558,7 +558,7 @@ async def test_m1x12_sender_first_tick_cadence_and_busy_tick_skip(
         sleep=advance_clock,
     )
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.starcode_m1x12.asyncio", fake_asyncio
+        "custom_components.adjustable_bed.beds.starcode.m1x12.asyncio", fake_asyncio
     )
 
     controller._next_tick = clock.now + 0.1
@@ -930,7 +930,7 @@ async def test_accepted_command_rows_run_through_the_m1x12_controller(
         return None
 
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.starcode_m1x12.asyncio.sleep", no_protocol_wait
+        "custom_components.adjustable_bed.beds.starcode.m1x12.asyncio.sleep", no_protocol_wait
     )
 
     await _invoke_row(controller, row)
@@ -952,7 +952,7 @@ async def test_elevate_defaults_keep_the_legacy_controller(
     controller = await create_controller(
         coordinator, BED_TYPE_STAR_ELEVATE, variant, None, device_name="ELEVATE123456"
     )
-    from custom_components.adjustable_bed.beds.star_elevate import StarElevateController
+    from custom_components.adjustable_bed.beds.starcode.star_elevate import StarElevateController
 
     assert type(controller) is StarElevateController
 
@@ -1006,10 +1006,10 @@ async def test_m1x12_startup_keeps_read_subscribe_and_wake_order(
         return None
 
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.starcode_m1x12.asyncio.sleep", no_wait
+        "custom_components.adjustable_bed.beds.starcode.m1x12.asyncio.sleep", no_wait
     )
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.starcode_m1x12.dt_util.now", lambda: fixed_time
+        "custom_components.adjustable_bed.beds.starcode.m1x12.dt_util.now", lambda: fixed_time
     )
 
     cases = (
@@ -1062,10 +1062,10 @@ async def test_m1x12_firmware_read_failure_leaves_version_unknown_but_session_re
         return None
 
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.starcode_m1x12.asyncio.sleep", no_wait
+        "custom_components.adjustable_bed.beds.starcode.m1x12.asyncio.sleep", no_wait
     )
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.starcode_m1x12.asyncio.wait_for", record_timeout
+        "custom_components.adjustable_bed.beds.starcode.m1x12.asyncio.wait_for", record_timeout
     )
     client = _GattClient(reads={FIRMWARE: firmware, MANUFACTURER: b"star"})
     _coordinator, controller = await _create_controller(hass, client=client)
@@ -1168,7 +1168,7 @@ async def test_m1x12_elevate_read_failure_keeps_version_unknown_and_session_read
         return await original_wait_for(awaitable, timeout)
 
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.starcode_m1x12.asyncio.wait_for",
+        "custom_components.adjustable_bed.beds.starcode.m1x12.asyncio.wait_for",
         record_timeout,
     )
     client = _GattClient(reads={FIRMWARE: firmware, MANUFACTURER: b"star"})

@@ -21,9 +21,9 @@ from typing import TYPE_CHECKING, Any, Final, cast
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
-from ..card import CARD_LIGHTING
-from ..codec import keeson as codec
-from ..const import (
+from ...card import CARD_LIGHTING
+from ...codec import keeson as codec
+from ...const import (
     BED_MOTOR_PULSE_DEFAULTS,
     BED_TYPE_KEESON,
     CB1322_MANUFACTURER_MARKERS,
@@ -51,28 +51,28 @@ from ..const import (
     ORE_COMFORT_BED_VARIANTS,
     VARIANT_AUTO,
 )
-from ..controller_state import StateKey, StateUpdate
-from ..profiles import keeson as profiles
-from ..profiles.keeson import (
+from ...controller_state import StateKey, StateUpdate
+from ...profiles import keeson as profiles
+from ...profiles.keeson import (
     RESTONIC_A_CONTROLS as RESTONIC_A_CONTROLS,
 )
-from ..profiles.keeson import (
+from ...profiles.keeson import (
     RESTONIC_B_CONTROLS as RESTONIC_B_CONTROLS,
 )
-from ..profiles.keeson import (
+from ...profiles.keeson import (
     KeesonCommands as KeesonCommands,
 )
-from ..profiles.keeson import (
+from ...profiles.keeson import (
     KeesonProfile,
 )
-from ..profiles.keeson import (
+from ...profiles.keeson import (
     SinoCommands as SinoCommands,
 )
-from ..profiles.keeson import (
+from ...profiles.keeson import (
     is_ksbt03c_name as is_ksbt03c_name,
 )
-from ..state_keys import MASSAGE_TIMER_MINUTES, massage_intensity
-from .base import (
+from ...state_keys import MASSAGE_TIMER_MINUTES, massage_intensity
+from ..base import (
     POSITION_UNIT_PERCENT,
     BedController,
     ControllerButtonSpec,
@@ -82,10 +82,10 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
-from .builder import BuildContext
+from ..builder import BuildContext
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -1262,7 +1262,7 @@ async def build_controller(ctx: BuildContext) -> BedController:
     if variant in ORE_COMFORT_BED_VARIANTS:
         # Explicit app profile with its own controller; Auto never selects it.
         await ctx.preload("ore_comfort_bed")
-        from .ore_comfort_bed import OreComfortBedController
+        from ..ore_comfort_bed import OreComfortBedController
 
         return OreComfortBedController(coordinator, app=variant)
 
@@ -1312,7 +1312,7 @@ async def build_controller(ctx: BuildContext) -> BedController:
                     betterliving_presets = True
 
     if variant in (None, "", VARIANT_AUTO):
-        from ..detection import keeson_variant_from_device_name
+        from ...detection import keeson_variant_from_device_name
 
         variant = keeson_variant_from_device_name(device_name)
         if variant == KEESON_VARIANT_KSBT_CR:
@@ -1330,15 +1330,15 @@ async def build_controller(ctx: BuildContext) -> BedController:
 
     if variant in (KEESON_VARIANT_SIMON_LI, KEESON_VARIANT_HEAL_EVERY_NIGHT, KEESON_VARIANT_OKIN_SEATING):
         _LOGGER.debug("Using explicit Okin app profile %s", variant)
-        await ctx.preload("keeson_okin_apps")
-        from .keeson_okin_apps import OkinAppKeesonController
+        await ctx.preload("keeson.okin_apps")
+        from .okin_apps import OkinAppKeesonController
 
         return OkinAppKeesonController(coordinator, variant=variant)
     if variant == KEESON_VARIANT_INNOVA:
         # Explicit only: the INNOVA app scans without any name or service rule.
         _LOGGER.debug("Using explicit INNOVA app profile")
         await ctx.preload("innova")
-        from .innova import InnovaController
+        from ..innova import InnovaController
 
         return InnovaController(coordinator)
 

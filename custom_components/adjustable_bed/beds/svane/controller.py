@@ -19,15 +19,14 @@ from typing import TYPE_CHECKING, Final
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
-from ..codec import jmc
-from ..command_scheduler import current_command_context
-from ..const import SVANE_VARIANT_JENSEN_LINON, SVANE_VARIANT_JMC, SVANE_VARIANT_MULTI
-from ..controller_state import StateKey
-from ..execution import ExecutionCapabilities
-from ..profiles.jmc import SVANE_REMOTE
-from ..state_keys import LIGHT_LEVEL, UNDER_BED_LIGHTS_ON
-from ..svane_state import SvaneProfile, SvaneSession, integer
-from .base import (
+from ...codec import jmc
+from ...command_scheduler import current_command_context
+from ...const import SVANE_VARIANT_JENSEN_LINON, SVANE_VARIANT_JMC, SVANE_VARIANT_MULTI
+from ...controller_state import StateKey
+from ...execution import ExecutionCapabilities
+from ...profiles.jmc import SVANE_REMOTE
+from ...state_keys import LIGHT_LEVEL, UNDER_BED_LIGHTS_ON
+from ..base import (
     BedController,
     ControllerButtonSpec,
     ControllerStateSensorSpec,
@@ -35,11 +34,12 @@ from .base import (
     MotorControlSpec,
     PositionNumberSpec,
 )
-from .builder import BuildContext
+from ..builder import BuildContext
+from .state import SvaneProfile, SvaneSession, integer
 
 if TYPE_CHECKING:
-    from ..command_scheduler import StreamMember
-    from ..coordinator import AdjustableBedCoordinator
+    from ...command_scheduler import StreamMember
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -1065,11 +1065,11 @@ class SvaneController(BedController):
 async def build_controller(ctx: BuildContext) -> BedController:
     """Build the Svane Remote controller, or Jensen Linon's for its profile."""
     if ctx.variant == SVANE_VARIANT_JENSEN_LINON:
-        await ctx.preload("jensen_linon")
-        from .jensen_linon import JensenLinonController
+        await ctx.preload("jensen.linon")
+        from ..jensen.linon import JensenLinonController
 
         return JensenLinonController(ctx.coordinator)
-    from ..svane_state import get_svane_session
+    from .state import get_svane_session
 
     if ctx.variant not in (None, SVANE_VARIANT_MULTI, SVANE_VARIANT_JMC):
         raise ValueError("Unknown Svane Remote profile")

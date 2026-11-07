@@ -13,13 +13,13 @@ from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
-from ..const import LEGGETT_RICHMAT_CHAR_UUID
-from ..profiles.richmat import LEGGETT_WILINKE, Button
-from ..state_keys import MASSAGE_TIMER_MINUTES
-from .richmat import RichmatProfileController
+from ...const import LEGGETT_RICHMAT_CHAR_UUID
+from ...profiles.richmat import LEGGETT_WILINKE, Button
+from ...state_keys import MASSAGE_TIMER_MINUTES
+from ..richmat.controller import RichmatProfileController
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 _TIMERS: dict[int, Button] = {

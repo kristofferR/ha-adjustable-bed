@@ -104,7 +104,7 @@ class SupportLogBuffer(logging.Handler):
             pairing.append(entry)
             self._pairing_counts[address] += 1
         target = _PAIRING_TARGET.get()
-        if target in self._active_pairing_auth and record.name == "custom_components.adjustable_bed.sleep_number_auth":
+        if target in self._active_pairing_auth and record.name == "custom_components.adjustable_bed.beds.sleep_number.auth":
             self._active_pairing_auth[target].append(entry)
 
     def snapshot(self) -> list[dict[str, str]]:

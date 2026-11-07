@@ -8,8 +8,8 @@ from pathlib import Path
 
 import pytest
 
+from custom_components.adjustable_bed.beds.hush_base.protocol import HushMainReceive, decode
 from custom_components.adjustable_bed.codec.richmat import record_20_len
-from custom_components.adjustable_bed.hush_protocol import HushMainReceive, decode
 
 VECTORS = json.loads((Path(__file__).parent / "fixtures/hush_notifications.json").read_text())
 

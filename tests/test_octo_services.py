@@ -20,7 +20,7 @@ from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.base import ControllerHoldSpec
-from custom_components.adjustable_bed.beds.octo import (
+from custom_components.adjustable_bed.beds.octo.controller import (
     OCTO_FEATURE_MEMCOUNT,
     OCTO_MOTOR_HEAD,
     OCTO_PROTOCOL_HOLD_INTERVAL_MS,
@@ -566,7 +566,7 @@ async def test_octo_enroll_pin_requires_matching_four_ascii_digits(
     controller._write_octo_command = write
 
     with patch(
-        "custom_components.adjustable_bed.octo_services._call_targets",
+        "custom_components.adjustable_bed.beds.octo.services._call_targets",
         return_value=[(coordinator, SIDE_BOTH)],
     ):
         with pytest.raises(ServiceValidationError, match="do not match"):
@@ -606,7 +606,7 @@ async def test_octo_enroll_pin_sends_and_persists_one_physical_receiver(
     controller._write_octo_command = write
 
     with patch(
-        "custom_components.adjustable_bed.octo_services._call_targets",
+        "custom_components.adjustable_bed.beds.octo.services._call_targets",
         return_value=[(coordinator, SIDE_BOTH)],
     ):
         await hass.services.async_call(
@@ -645,7 +645,7 @@ async def test_octo_enroll_pin_from_single_address_side_updates_physical_owner(
     controller._write_octo_command = write
 
     with patch(
-        "custom_components.adjustable_bed.octo_services._call_targets",
+        "custom_components.adjustable_bed.beds.octo.services._call_targets",
         return_value=[(paired, SIDE_LEFT)],
     ):
         await hass.services.async_call(
@@ -676,7 +676,7 @@ async def test_octo_enroll_pin_is_not_persisted_when_scheduler_skips_callback(
 
     with (
         patch(
-            "custom_components.adjustable_bed.octo_services._call_targets",
+            "custom_components.adjustable_bed.beds.octo.services._call_targets",
             return_value=[(coordinator, SIDE_BOTH)],
         ),
         pytest.raises(ServiceValidationError, match="cancelled before the PIN was sent"),
@@ -847,7 +847,7 @@ async def test_octo_enroll_pin_rejects_multiple_selected_receivers(
 
     with (
         patch(
-            "custom_components.adjustable_bed.octo_services._call_targets",
+            "custom_components.adjustable_bed.beds.octo.services._call_targets",
             return_value=[(coordinator, SIDE_BOTH), (coordinator, SIDE_BOTH)],
         ),
         pytest.raises(ServiceValidationError, match="exactly one"),
@@ -1053,7 +1053,7 @@ async def test_octo_reset_requires_true_confirmation_and_routes_once(
     controller.reset_defaults = AsyncMock()
 
     with patch(
-        "custom_components.adjustable_bed.octo_services._call_targets",
+        "custom_components.adjustable_bed.beds.octo.services._call_targets",
         return_value=[(coordinator, SIDE_BOTH)],
     ):
         with pytest.raises(vol.Invalid):

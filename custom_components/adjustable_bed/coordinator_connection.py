@@ -88,7 +88,7 @@ from .unsupported import delete_pairing_required_issue
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
-    from .beds.reverie_pairlink_runtime import PairlinkRuntime
+    from .beds.reverie.pairlink_runtime import PairlinkRuntime
     from .coordinator import AdjustableBedCoordinator
 
 # Log under the coordinator's own logger, as before the split.
@@ -2115,7 +2115,7 @@ class CoordinatorConnectionMixin:
         deadlock on the public ``async_disconnect`` re-acquiring the lock.
         """
         if self._bed_type in (BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB):
-            from .gmmotor_sessions import sleep_intent
+            from .beds.gmmotor.sessions import sleep_intent
 
             # An explicit release also stops monitoring when a prior BLE drop
             # already discarded the live controller and client.

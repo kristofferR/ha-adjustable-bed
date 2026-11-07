@@ -3,11 +3,14 @@ from dataclasses import replace
 
 import pytest
 
-from custom_components.adjustable_bed.motion_bed_actions import ACTION_BY_KEY
-from custom_components.adjustable_bed.motion_bed_models import select_motion_bed
-from custom_components.adjustable_bed.motion_bed_protocol import build_alarm, build_audio_volume
-from custom_components.adjustable_bed.motion_bed_requests import MotionBedWrite
-from custom_components.adjustable_bed.motion_bed_state import (
+from custom_components.adjustable_bed.beds.motion_bed.actions import ACTION_BY_KEY
+from custom_components.adjustable_bed.beds.motion_bed.models import select_motion_bed
+from custom_components.adjustable_bed.beds.motion_bed.protocol import (
+    build_alarm,
+    build_audio_volume,
+)
+from custom_components.adjustable_bed.beds.motion_bed.requests import MotionBedWrite
+from custom_components.adjustable_bed.beds.motion_bed.state import (
     MotionBedRoute,
     MotionBedState,
     parse_motion_bed_notification,

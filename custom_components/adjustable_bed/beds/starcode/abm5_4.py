@@ -11,23 +11,23 @@ from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
-from ..card import CARD_LIGHT_LEVEL, CARD_LIGHTING, CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_UTILITY
-from ..command_scheduler import copy_context_without_command
-from ..const import (
+from ...card import CARD_LIGHT_LEVEL, CARD_LIGHTING, CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_UTILITY
+from ...command_scheduler import copy_context_without_command
+from ...const import (
     CONF_BLE_DEVICE_NAME,
     CONF_STARCODE_COMMAND_SELECTOR,
     CONF_STARCODE_TRANSPORT_SELECTOR,
     CONF_STARCODE_UI_SELECTOR,
 )
-from ..controller_state import AnyStateKey, StateKey
-from ..profiles.okin_nframe import (
+from ...controller_state import AnyStateKey, StateKey
+from ...profiles.okin_nframe import (
     STARCODE_ABM5_4_FLAT_HOLD_MS,
     STARCODE_ABM5_4_PROFILES,
     STARCODE_ABM5_4_REFRESH_MS,
     STARCODE_ABM5_4_SAVE_HOLD_MS,
     OkinNFrameProfile,
 )
-from .base import (
+from ..base import (
     BedController,
     ControllerButtonSpec,
     ControllerNumberSpec,
@@ -36,8 +36,8 @@ from .base import (
     MotorControlSpec,
     PositionNumberSpec,
 )
-from .builder import BuildContext
-from .starcode_abm5_4_profiles import (
+from ..builder import BuildContext
+from .abm5_4_profiles import (
     FIRMWARE_UUID,
     MANUFACTURER_UUID,
     STATE_KEYS,
@@ -52,7 +52,7 @@ from .starcode_abm5_4_profiles import (
 )
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 _POSITIVE_SELECTORS = frozenset(("BOX1220", "BOX3633", "BOX25", "BOX25_STAR"))
@@ -1022,7 +1022,7 @@ class StarcodeAbm5_4Controller(BedController):
         data["starcode_abm5_4_ui_selector"] = self.ui_selector
         if data == dict(self._coordinator.entry.data):
             return
-        from ..const import (
+        from ...const import (
             CONF_BLE_BOND_ESTABLISHED,
             CONF_STARCODE_COMMAND_SELECTOR,
             CONF_STARCODE_UI_SELECTOR,

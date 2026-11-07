@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.adjustable_bed.beds.svane import SvaneController
+from custom_components.adjustable_bed.beds.svane.controller import SvaneController
 from custom_components.adjustable_bed.const import DOMAIN, SIDE_BOTH
 from custom_components.adjustable_bed.services import _get_controller_for_service
 from tests.service_patches import patch_with_family
@@ -93,7 +93,7 @@ async def test_release_during_later_target_preflight_suppresses_only_selected_ax
     with (
         patch_with_family("svane_services", "custom_components.adjustable_bed.services._resolve_sided_targets", resolve),
         patch_with_family("svane_services", "custom_components.adjustable_bed.services._get_controller_for_service", live),
-        patch("custom_components.adjustable_bed.beds.svane.asyncio", local_asyncio),
+        patch("custom_components.adjustable_bed.beds.svane.controller.asyncio", local_asyncio),
     ):
         task = asyncio.create_task(hass.services.async_call(DOMAIN, "hold_control", {
             "device_id": ["first", "second"], "control": "head_up_feet_down", "duration": 0.2,
@@ -109,7 +109,7 @@ async def test_release_during_later_target_preflight_suppresses_only_selected_ax
             assert packets
             assert all(p != "100100000000" and p != "102100000000" for _, _, p in packets)
             if profile == "multi":
-                from custom_components.adjustable_bed.beds.svane import FEET
+                from custom_components.adjustable_bed.beds.svane.controller import FEET
                 assert all(service == FEET for service, _, _ in packets)
             else:
                 assert packets[0][2] == "102000000000"
@@ -177,7 +177,7 @@ async def test_later_timed_live_role_failure_prevents_every_target_motion(hass, 
     second, two = target("jmc")
     one._coordinator.motor_pulse_count = two._coordinator.motor_pulse_count = 10
     one._coordinator.motor_pulse_delay_ms = two._coordinator.motor_pulse_delay_ms = 100
-    from custom_components.adjustable_bed.beds.svane import OLD
+    from custom_components.adjustable_bed.beds.svane.controller import OLD
     service = next(s for s in two.client.services if s.uuid == OLD)
     if failure == "missing":
         service.characteristics = []

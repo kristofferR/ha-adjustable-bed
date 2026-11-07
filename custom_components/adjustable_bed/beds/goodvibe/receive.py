@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from .codec import richmat as codec
+from ...codec import richmat as codec
 
 Event = tuple[str, object]
 

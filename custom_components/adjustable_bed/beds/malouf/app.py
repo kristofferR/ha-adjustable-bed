@@ -15,30 +15,30 @@ from typing import TYPE_CHECKING, Any, Final, Literal, cast
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
-from ..codec import malouf as codec
-from ..codec.malouf import TRANSPORTS, TransportKey
-from ..const import (
+from ...codec import malouf as codec
+from ...codec.malouf import TRANSPORTS, TransportKey
+from ...const import (
     CONF_MALOUF_APP_MODEL,
     CONF_MALOUF_APP_PRIMARY,
     CONF_MALOUF_APP_PROFILE,
     CONF_MALOUF_APP_TRANSPORT,
 )
-from ..controller_state import StateKey, StateUpdate
-from ..profiles.malouf import APP_PROFILES, MALOUF_APP_MODELS, Route
-from ..state_keys import UNDER_BED_LIGHTS_ON
-from .base import (
+from ...controller_state import StateKey, StateUpdate
+from ...profiles.malouf import APP_PROFILES, MALOUF_APP_MODELS, Route
+from ...state_keys import UNDER_BED_LIGHTS_ON
+from ..base import (
     BedController,
     ControllerButtonSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
 )
-from .builder import BuildContext
+from ..builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak import BleakClient
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 
 def _app_callback(action: str) -> MotorCommandCallable:
@@ -834,7 +834,7 @@ def require_app_transport(
     A guided change checks a candidate link with the controller's own transport
     selection, so the check is exactly what the runtime will require.
     """
-    from ..const import (
+    from ...const import (
         CONF_MALOUF_APP_MODEL,
         CONF_MALOUF_APP_PRIMARY,
         CONF_MALOUF_APP_PROFILE,

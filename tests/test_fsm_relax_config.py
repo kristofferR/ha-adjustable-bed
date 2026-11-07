@@ -11,8 +11,8 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.bed_traits import bed_traits
-from custom_components.adjustable_bed.beds.fsm_relax import FsmRelaxController
-from custom_components.adjustable_bed.beds.limoss import LimossController
+from custom_components.adjustable_bed.beds.fsm_relax.controller import FsmRelaxController
+from custom_components.adjustable_bed.beds.limoss.controller import LimossController
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     _profile_question_schema,
@@ -111,7 +111,9 @@ async def test_profile_fields_schema_and_exact_options_validation(hass):
     ],
 )
 def test_exact_source_candidate_predicate_and_raw_record_limit(name, raw, expected):
-    from custom_components.adjustable_bed.fsm_relax_discovery import matches_fsm_relax_candidate
+    from custom_components.adjustable_bed.beds.fsm_relax.discovery import (
+        matches_fsm_relax_candidate,
+    )
 
     assert matches_fsm_relax_candidate(name, raw) is expected
 

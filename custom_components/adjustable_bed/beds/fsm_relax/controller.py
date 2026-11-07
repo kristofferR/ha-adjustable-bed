@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING, Any, Literal
 from bleak.exc import BleakError
 from homeassistant.config_entries import ConfigEntryState
 
-from ..codec import limoss as codec
-from ..const import (
+from ...codec import limoss as codec
+from ...const import (
     CONF_FSM_RELAX_MEMORY_NAMES,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
@@ -20,27 +20,27 @@ from ..const import (
     LIMOSS_CHAR_UUID,
     LIMOSS_SERVICE_UUID,
 )
-from ..controller_state import StateKey
-from ..fsm_relax_state import (
-    FsmRelaxSession,
-    validate_capability_body,
-    validate_names,
-    validate_positions,
-)
-from ..profiles.limoss import FSM_LABELS, FSM_RELAX, Burst, fsm_relax_layout
-from .base import (
+from ...controller_state import StateKey
+from ...profiles.limoss import FSM_LABELS, FSM_RELAX, Burst, fsm_relax_layout
+from ..base import (
     BedController,
     ControllerButtonSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
     PositionNumberSpec,
 )
-from .builder import BuildContext
+from ..builder import BuildContext
+from .state import (
+    FsmRelaxSession,
+    validate_capability_body,
+    validate_names,
+    validate_positions,
+)
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 
 def _state_key(field: str) -> StateKey[object]:
@@ -721,8 +721,8 @@ class FsmRelaxController(BedController):
 
 async def build_controller(ctx: BuildContext) -> FsmRelaxController:
     """Build the controller from the stored setup, options taking precedence."""
-    from ..app_session import app_session
-    from ..fsm_relax_state import FsmRelaxSession, validate_names
+    from ...app_session import app_session
+    from .state import FsmRelaxSession, validate_names
 
     coordinator = ctx.coordinator
     data = {**ctx.data, **coordinator.entry.options}

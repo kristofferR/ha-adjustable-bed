@@ -11,16 +11,16 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds.hush_sleep import HushSleepController
-from custom_components.adjustable_bed.casper_base_protocol import Request
-from custom_components.adjustable_bed.hush_sleep_protocol import (
+from custom_components.adjustable_bed.beds.casper_base.protocol import Request
+from custom_components.adjustable_bed.beds.hush_sleep.controller import HushSleepController
+from custom_components.adjustable_bed.beds.hush_sleep.protocol import (
     HushReceive,
     build,
     new_day_layout,
     parse,
     report,
 )
-from custom_components.adjustable_bed.hush_sleep_schema import SCHEMAS
+from custom_components.adjustable_bed.beds.hush_sleep.schema import SCHEMAS
 from tests.test_hush_base import hush
 
 VECTORS = json.loads((Path(__file__).parent / "fixtures/hush_sleep_commands.json").read_text())

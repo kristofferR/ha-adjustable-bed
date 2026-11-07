@@ -1,6 +1,6 @@
 """Exact package-local selectable layouts; no hardware compatibility claim.
 
-Generated outside this repository with ``richmat_classic_data``; no generator is checked in, so edits are by hand.
+Generated outside this repository with ``beds/richmat_classic/data``; no generator is checked in, so edits are by hand.
 """
 
 # These source screens select another layout and have no ordinary bed controls.

@@ -7,7 +7,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Literal
 
-from .app_session import app_session
+from ...app_session import app_session
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant

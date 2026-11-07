@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .gmmotor_protocol import MalformedNotification
+from .protocol import MalformedNotification
 
 type Value = None | bool | int | float | str | list[Value] | dict[str, Value]
 

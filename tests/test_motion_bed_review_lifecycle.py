@@ -7,7 +7,14 @@ import pytest
 from homeassistant.const import CONF_ADDRESS
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.motion_bed import STOP, MotionBedController
+from custom_components.adjustable_bed.beds.motion_bed.controller import STOP, MotionBedController
+from custom_components.adjustable_bed.beds.motion_bed.models import select_motion_bed
+from custom_components.adjustable_bed.beds.motion_bed.protocol import (
+    SOURCE_COMMANDS,
+    build_thermal_gear,
+)
+from custom_components.adjustable_bed.beds.motion_bed.requests import MotionBedWrite
+from custom_components.adjustable_bed.beds.motion_bed.services import build_motion_bed_request
 from custom_components.adjustable_bed.button import (
     ControllerActionButton,
     _async_follow_motion_bed_module_actions,
@@ -20,10 +27,6 @@ from custom_components.adjustable_bed.const import (
     SIDE_BOTH,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.motion_bed_models import select_motion_bed
-from custom_components.adjustable_bed.motion_bed_protocol import SOURCE_COMMANDS, build_thermal_gear
-from custom_components.adjustable_bed.motion_bed_requests import MotionBedWrite
-from custom_components.adjustable_bed.motion_bed_services import build_motion_bed_request
 from custom_components.adjustable_bed.services import async_register_services
 from tests.test_motion_bed_controller import rig_for
 from tests.test_motion_bed_lifecycle import real_coordinator
@@ -33,7 +36,7 @@ async def test_module_startup_failure_can_retry_same_connected_module(monkeypatc
     rig = rig_for("TL-Q")
     await rig.controller.async_discover_capabilities()
     rig.controller._state = replace(rig.controller._state, motor_module_present=True)
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", AsyncMock())
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.sleep", AsyncMock())
     rig.client.write_gatt_char.side_effect = [ConnectionError("one failed write"), None, None]
     with pytest.raises(ConnectionError):
         await rig.controller._start_present_modules()
@@ -73,7 +76,7 @@ async def test_public_module_delete_reply_refreshes_remaining_inventory(monkeypa
     rig.controller._state = replace(rig.controller._state, motor_module_present=True, air_module_present=True)
     await rig.controller.async_execute_motion_bed_write(build_motion_bed_request("motion_bed_module", {"operation": "delete", "module_type": 11, "confirmed": True}))
     rig.callback(rig.last, bytearray.fromhex("FFFFFFFF0100281400"))
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", AsyncMock())
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.sleep", AsyncMock())
     for operation in queued:
         await operation()
     assert rig.writes[-1] == SOURCE_COMMANDS["MainMcuActivity:182"]
@@ -109,7 +112,7 @@ async def test_switch_away_back_retires_old_thermal_poll(monkeypatch):
             event = asyncio.Event()
             pending.append(event)
             await event.wait()
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", sleep)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.sleep", sleep)
     await rig.controller._module_startup("thermal")
     await real_sleep(0)
     old_poll, = rig.controller._tasks
@@ -147,7 +150,7 @@ async def test_superseded_query_is_rejected_after_real_scheduler_lock(hass, monk
     real_sleep = asyncio.sleep
     async def sleep(delay):
         await real_sleep(0)
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", sleep)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.sleep", sleep)
     controller._spawn = MagicMock()
     controller._state = replace(controller._state, thermal_module_present=True, motor_module_present=True)
     controller._active_module = "thermal"
@@ -189,7 +192,7 @@ async def test_inventory_churn_during_final_clock_cannot_start_replacement_poll(
             poll_tick.clear()
         else:
             await real_sleep(0)
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", sleep)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.sleep", sleep)
     attempts = []
     async def write(selected, frame, **kwargs):
         attempts.append(bytes(frame))
@@ -264,7 +267,7 @@ async def test_idle_hub_inventory_preflight_and_replacement_dispatch(hass, monke
         await replacement.start_notify()
         return True
     coord.async_ensure_connected = AsyncMock(side_effect=reconnect)
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", AsyncMock())
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.sleep", AsyncMock())
     await async_register_services(hass)
     try:
         with patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=([(coord, SIDE_BOTH)], [])):

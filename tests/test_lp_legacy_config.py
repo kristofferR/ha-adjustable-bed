@@ -9,6 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.beds.leggett.lp_legacy_profiles import LP_LEGACY_PROFILE_CODES
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
@@ -28,7 +29,6 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.detection import get_bed_type_options
-from custom_components.adjustable_bed.lp_legacy_profiles import LP_LEGACY_PROFILE_CODES
 from custom_components.adjustable_bed.pairing import build_pair_entry_data
 from custom_components.adjustable_bed.setup_questions import SETUP_PROFILES
 
@@ -134,7 +134,7 @@ async def test_factory_uses_explicit_config_without_inspecting_advertisements(
 ) -> None:
     coordinator = SimpleNamespace(hass=hass, entry=SimpleNamespace(data=_settings()))
     with patch(
-        "custom_components.adjustable_bed.beds.leggett_lp_legacy.LeggettLpLegacyController"
+        "custom_components.adjustable_bed.beds.leggett.lp_legacy.LeggettLpLegacyController"
     ) as constructor:
         await create_controller(
             coordinator,

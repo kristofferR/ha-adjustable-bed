@@ -5,10 +5,10 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
-from .gmmotor_notifications import Value
-from .gmmotor_protocol import MalformedNotification
-from .gmmotor_sleep_dto import parse
-from .gmmotor_sleep_protocol import SleepCommand, response_command
+from .notifications import Value
+from .protocol import MalformedNotification
+from .sleep_dto import parse
+from .sleep_protocol import SleepCommand, response_command
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,7 +61,7 @@ def dispatch(
     OTA publications are outside the integration boundary. Their selectors keep
     their precedence so a shadowed supported branch is never falsely credited.
     Ordinary parse failures are safe HA callback errors; report parsing has its
-    separate outer catch boundary in gmmotor_sleep_reports.py.
+    separate outer catch boundary in beds/gmmotor/sleep_reports.py.
     """
     try:
         text = payload.decode("latin-1")

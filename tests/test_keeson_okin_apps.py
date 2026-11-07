@@ -28,8 +28,8 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.app_session import app_session, drop_app_sessions
 from custom_components.adjustable_bed.app_state_store import app_state_store
-from custom_components.adjustable_bed.beds.keeson import KeesonController
-from custom_components.adjustable_bed.beds.keeson_okin_apps import (
+from custom_components.adjustable_bed.beds.keeson.controller import KeesonController
+from custom_components.adjustable_bed.beds.keeson.okin_apps import (
     HealSession,
     OkinAppKeesonController,
     heal_movement_key,
@@ -285,7 +285,7 @@ async def test_simon_memory_save_holds_the_memory_key_2100_ms(
         raise TimeoutError
 
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.keeson_okin_apps.asyncio.wait_for", fake_wait_for
+        "custom_components.adjustable_bed.beds.keeson.okin_apps.asyncio.wait_for", fake_wait_for
     )
     await _ctrl(coordinator, KEESON_VARIANT_SIMON_LI).program_memory(2)
     # Writes at 0..2000 ms, the hold lasts to 2100 ms, then the release.
@@ -922,7 +922,7 @@ async def test_simon_memory_recall_is_bounded_by_elapsed_time(
     The limit is scaled down from 2000 ms so the test runs on a short real clock.
     """
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.keeson_okin_apps.SIMON_MEMORY_RECALL_MAX_MS",
+        "custom_components.adjustable_bed.beds.keeson.okin_apps.SIMON_MEMORY_RECALL_MAX_MS",
         limit_ms,
     )
     loop = asyncio.get_running_loop()

@@ -17,7 +17,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.keeson import KeesonController
+from custom_components.adjustable_bed.beds.keeson.controller import KeesonController
 from custom_components.adjustable_bed.beds.ore_comfort_bed import (
     STATE_LEVEL,
     STATE_TIMER,

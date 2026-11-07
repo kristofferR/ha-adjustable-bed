@@ -29,7 +29,7 @@ from homeassistant.helpers.issue_registry import (
     async_refresh_issues,
 )
 
-from .const import (
+from ...const import (
     BED_TYPE_FURNIMOVE,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CST,
@@ -47,16 +47,16 @@ from .const import (
     PAIR_SIDES,
     RUNTIME_BOND_KEYS,
 )
-from .furnimove_profiles import (
+from ...pairing import effective_child_data, get_child, is_paired, with_updated_child
+from ...unsupported import delete_pairing_required_issue
+from .profiles import (
     FURNIMOVE_PROFILES,
     furnimove_handset_choices,
     get_furnimove_profile,
 )
-from .pairing import effective_child_data, get_child, is_paired, with_updated_child
-from .unsupported import delete_pairing_required_issue
 
 if TYPE_CHECKING:
-    from .coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 

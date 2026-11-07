@@ -10,9 +10,9 @@ import voluptuous as vol
 from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.casper_base import CasperBaseController
-from custom_components.adjustable_bed.casper_base_protocol import Event, Request
-from custom_components.adjustable_bed.casper_base_services import (
+from custom_components.adjustable_bed.beds.casper_base.controller import CasperBaseController
+from custom_components.adjustable_bed.beds.casper_base.protocol import Event, Request
+from custom_components.adjustable_bed.beds.casper_base.services import (
     async_register_casper_base_services,
 )
 from custom_components.adjustable_bed.const import DOMAIN

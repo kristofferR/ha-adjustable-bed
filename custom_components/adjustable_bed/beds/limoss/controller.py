@@ -16,14 +16,14 @@ from typing import TYPE_CHECKING
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
-from ..codec import limoss as codec
-from ..const import LIMOSS_CHAR_UUID, LIMOSS_SERVICE_UUID
-from ..profiles.limoss import LEGACY
-from .base import BedController
+from ...codec import limoss as codec
+from ...const import LIMOSS_CHAR_UUID, LIMOSS_SERVICE_UUID
+from ...profiles.limoss import LEGACY
+from ..base import BedController
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
-    from .lifecycle import ControllerSession
+    from ...coordinator import AdjustableBedCoordinator
+    from ..lifecycle import ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 

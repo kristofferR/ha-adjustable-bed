@@ -11,13 +11,13 @@ import pytest
 from homeassistant.const import CONF_ADDRESS
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.reverie import ReverieController
-from custom_components.adjustable_bed.beds.reverie_comfort import ReverieComfortRequest
-from custom_components.adjustable_bed.beds.reverie_nightstand import (
+from custom_components.adjustable_bed.beds.reverie.comfort import ReverieComfortRequest
+from custom_components.adjustable_bed.beds.reverie.controller import ReverieController
+from custom_components.adjustable_bed.beds.reverie.nightstand import (
     ReverieNightstandController,
 )
-from custom_components.adjustable_bed.beds.reverie_pairlink import ReveriePairlinkController
-from custom_components.adjustable_bed.beds.reverie_pairlink_runtime import (
+from custom_components.adjustable_bed.beds.reverie.pairlink import ReveriePairlinkController
+from custom_components.adjustable_bed.beds.reverie.pairlink_runtime import (
     PairlinkCredentials,
     PairlinkHomeIdOrigin,
     PairlinkRole,

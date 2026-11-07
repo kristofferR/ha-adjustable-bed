@@ -9,9 +9,9 @@ from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
 
-from .const import DOMAIN
-from .hjbed_requests import Operation, Request
-from .services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
+from ...const import DOMAIN
+from ...services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
+from .requests import Operation, Request
 
 WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 OPERATIONS = (
@@ -45,7 +45,7 @@ SCHEMA = vol.Schema(FIELDS)
 
 
 async def handle_hjbed(call: ServiceCall) -> None:
-    from .beds.hjbed import HJBedController
+    from .controller import HJBedController
 
     request = Request(
         operation=cast(Operation, call.data["operation"]),

@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.adjustable_bed.beds.floyd import FloydController
+from custom_components.adjustable_bed.beds.kaidi.floyd import FloydController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_KAIDI,
     CONF_KAIDI_PRODUCT_ID,
@@ -223,8 +223,8 @@ def test_malformed_notifications_are_ignored(floyd: FloydController, packet: str
 
 async def test_queue_spacing(floyd: FloydController) -> None:
     floyd._next_write_at = 100.04
-    with patch("custom_components.adjustable_bed.beds.floyd.time.monotonic", return_value=100), patch(
-        "custom_components.adjustable_bed.beds.floyd.asyncio.sleep", new_callable=AsyncMock,
+    with patch("custom_components.adjustable_bed.beds.kaidi.floyd.time.monotonic", return_value=100), patch(
+        "custom_components.adjustable_bed.beds.kaidi.floyd.asyncio.sleep", new_callable=AsyncMock,
     ) as sleep:
         await FloydController._send(floyd, b"\x00")
     assert sleep.call_args.args[0] == pytest.approx(0.04)
@@ -267,7 +267,7 @@ async def test_release_uses_started_target_after_topology_change(floyd: FloydCon
     ("c0ff0900000000000000000000008b0100", False),
 ])
 def test_floyd_exact_admission_vectors(payload: str, expected: bool) -> None:
-    from custom_components.adjustable_bed.kaidi_protocol import (
+    from custom_components.adjustable_bed.beds.kaidi.protocol import (
         is_floyd_advertisement,
         parse_kaidi_manufacturer_payload,
     )
@@ -451,7 +451,7 @@ def test_retained_parameter_survives_controller_renewal(floyd: FloydController) 
 
 
 def test_extended_advertisement_and_short_boundary() -> None:
-    from custom_components.adjustable_bed.kaidi_protocol import (
+    from custom_components.adjustable_bed.beds.kaidi.protocol import (
         is_floyd_advertisement,
         parse_kaidi_manufacturer_payload,
     )

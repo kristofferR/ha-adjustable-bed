@@ -14,13 +14,20 @@ from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
-from ..card import CARD_UTILITY
-from ..controller_state import StateKey, StateUpdate
-from ..gmmotor_notifications import Value
-from ..gmmotor_protocol import MalformedNotification
-from ..gmmotor_requests import GmmotorActions, Operation, Request
-from ..gmmotor_sessions import sleep_intent
-from ..gmmotor_sleep_protocol import (
+from ...card import CARD_UTILITY
+from ...controller_state import StateKey, StateUpdate
+from ..base import (
+    BedController,
+    ControllerButtonSpec,
+    ControllerStateSensorSpec,
+    MotorControlSpec,
+    require_controller,
+)
+from .notifications import Value
+from .protocol import MalformedNotification
+from .requests import GmmotorActions, Operation, Request
+from .sessions import sleep_intent
+from .sleep_protocol import (
     LiveState,
     ReceiveBuffer,
     Requests,
@@ -28,21 +35,14 @@ from ..gmmotor_sleep_protocol import (
     normal_live,
     sxb_live,
 )
-from ..gmmotor_sleep_reports import decode_report
-from ..gmmotor_sleep_state import ClockUpdate, Followup, ReportSize, Stream, dispatch, fields
-from ..gmmotor_transport import Transport, native_write_lock, select_sleep
-from .base import (
-    BedController,
-    ControllerButtonSpec,
-    ControllerStateSensorSpec,
-    MotorControlSpec,
-    require_controller,
-)
+from .sleep_reports import decode_report
+from .sleep_state import ClockUpdate, Followup, ReportSize, Stream, dispatch, fields
+from .transport import Transport, native_write_lock, select_sleep
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 _QUEUE_TICK = 0.1

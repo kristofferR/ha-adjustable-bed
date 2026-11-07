@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 from homeassistant.util import dt as dt_util
 
-from ..card import (
+from ...card import (
     CARD_MASSAGE,
     CARD_PRESETS,
     CARD_UTILITY,
@@ -31,13 +31,11 @@ from ..card import (
     CardSection,
     motor_card,
 )
-from ..const import CONF_BLE_DEVICE_NAME, RICHMAT_MH_APPS, RUF_RICHMAT_APPS, VARIANT_AUTO
-from ..controller_state import StateKey, StateUpdate
-from ..detection import is_mac_like_name
-from ..profiles.richmat import RICHMAT_MH
-from ..richmat_mh_models import RICHMAT_MH_MODEL_CHOICES
-from ..ruf_richmat_models import MODEL_IDS as RUF_RICHMAT_MODEL_IDS
-from .base import (
+from ...const import CONF_BLE_DEVICE_NAME, RICHMAT_MH_APPS, RUF_RICHMAT_APPS, VARIANT_AUTO
+from ...controller_state import StateKey, StateUpdate
+from ...detection import is_mac_like_name
+from ...profiles.richmat import RICHMAT_MH
+from ..base import (
     BedController,
     ControllerButtonSpec,
     ControllerNumberSpec,
@@ -47,8 +45,10 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
-from .builder import BuildContext
-from .richmat_mh_protocol import (
+from ..builder import BuildContext
+from ..ruf_richmat.models import MODEL_IDS as RUF_RICHMAT_MODEL_IDS
+from .models import RICHMAT_MH_MODEL_CHOICES
+from .protocol import (
     ALARM_MASSAGE_CODES,
     ALARM_TASK_SLEEP_S,
     ANGLE_SEND_DELAY_S,
@@ -118,7 +118,7 @@ from .richmat_mh_protocol import (
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -251,7 +251,7 @@ class Model:
 
 
 def _catalog() -> Any:
-    from .. import richmat_mh_catalog
+    from . import catalog as richmat_mh_catalog
 
     return richmat_mh_catalog
 
@@ -259,7 +259,7 @@ def _catalog() -> Any:
 def load_model(app: str, model_id: str) -> Model | None:
     """Return a catalog model, or None when the app has no such live model."""
     if app in ("ruf", "wsilver2", "americanstar", "bailey2", "tx"):
-        from .ruf_richmat import load_app_model
+        from ..ruf_richmat.controller import load_app_model
 
         return load_app_model(app, model_id)
     catalog = _catalog()
@@ -1784,9 +1784,9 @@ async def build_controller(ctx: BuildContext) -> RichmatMhController:
     """
     controller_class = RichmatMhController
     if ctx.bed_type in RUF_RICHMAT_APPS:
-        await ctx.preload("ruf_richmat")
-        from ..ruf_richmat_profiles import profiles
-        from .ruf_richmat import RufRichmatController
+        await ctx.preload("ruf_richmat.controller")
+        from ..ruf_richmat.controller import RufRichmatController
+        from ..ruf_richmat.profiles import profiles
 
         await ctx.coordinator.hass.async_add_executor_job(profiles, RUF_RICHMAT_APPS[ctx.bed_type])
         controller_class = RufRichmatController

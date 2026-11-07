@@ -37,6 +37,7 @@ from datetime import UTC, datetime
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
+from .beds.sleep_number.auth import async_read_sleep_number_session
 from .ble_auth import is_ble_authentication_error
 from .bluetooth_bond import BondSelectionStatus, async_read_local_bonds, select_local_bond
 from .bluetooth_transport import ConnectionPath, TransportClass, async_clear_proxy_gatt_cache
@@ -48,7 +49,6 @@ from .const import (
     DEVICE_INFO_CHARS,
     DEVICE_INFO_READ_TIMEOUT,
 )
-from .sleep_number_auth import async_read_sleep_number_session
 
 if TYPE_CHECKING:
     from bleak import BleakClient

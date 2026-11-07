@@ -17,9 +17,9 @@ from typing import TYPE_CHECKING, Any, Final, cast
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
-from ..card import CARD_LIGHTING, CARD_MASSAGE
-from ..codec import jiecang as codec
-from ..const import (
+from ...card import CARD_LIGHTING, CARD_MASSAGE
+from ...codec import jiecang as codec
+from ...const import (
     BED_TYPE_LOGICDATA_APP,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
@@ -29,9 +29,9 @@ from ..const import (
     CONF_LOGICDATA_APP_TRANSPORT,
     HAS_LIGHT_DEFAULTS,
 )
-from ..controller_state import StateKey, StateUpdate
-from ..profiles import logicdata as profiles
-from ..profiles.logicdata import (
+from ...controller_state import StateKey, StateUpdate
+from ...profiles import logicdata as profiles
+from ...profiles.logicdata import (
     APP_PROFILES,
     TRANSPORTS,
     WIRE_MASSAGE_LEVELS,
@@ -41,8 +41,8 @@ from ..profiles.logicdata import (
     MassageMode,
     TransportChoice,
 )
-from ..state_keys import UNDER_BED_LIGHTS_ON, massage_intensity
-from .base import (
+from ...state_keys import UNDER_BED_LIGHTS_ON, massage_intensity
+from ..base import (
     BedController,
     ControllerButtonSpec,
     ControllerStateBinarySensorSpec,
@@ -50,14 +50,14 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
-from .builder import BuildContext
+from ..builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak import BleakClient
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..codec.jiecang import Axis, MassageZone, Transport
-    from ..coordinator import AdjustableBedCoordinator
+    from ...codec.jiecang import Axis, MassageZone, Transport
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -871,7 +871,7 @@ class TestSleepNumberMcrCoordinatorLifecycle:
             raise TimeoutError
 
         with patch(
-            "custom_components.adjustable_bed.beds.sleep_number_mcr."
+            "custom_components.adjustable_bed.beds.sleep_number.mcr."
             "SleepNumberMcrController.query_config",
             new=_disconnect_during_query,
         ):
@@ -918,7 +918,7 @@ class TestSleepNumberMcrCoordinatorLifecycle:
             coordinator._on_disconnect(mock_bleak_client)
 
         with patch(
-            "custom_components.adjustable_bed.beds.sleep_number_mcr."
+            "custom_components.adjustable_bed.beds.sleep_number.mcr."
             "SleepNumberMcrController.query_config",
             new=_disconnect_during_query_without_exception,
         ):

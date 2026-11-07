@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING, Any
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
-from ..const import (
+from ...const import (
     SVANE_CHAR_DOWN_UUID,
     SVANE_CHAR_MEMORY_UUID,
     SVANE_CHAR_POSITION_UUID,
@@ -29,12 +29,12 @@ from ..const import (
     SVANE_LIGHT_ON_OFF_UUID,
     SVANE_LIGHT_SERVICE_UUID,
 )
-from ..execution import ExecutionCapabilities
-from ..state_keys import UNDER_BED_LIGHTS_ON
-from .base import BedController
+from ...execution import ExecutionCapabilities
+from ...state_keys import UNDER_BED_LIGHTS_ON
+from ..base import BedController
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -8,17 +8,17 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 
-from .const import (
+from ...const import (
     BED_TYPE_OCTO,
     CONF_BED_TYPE,
     CONF_OCTO_PIN,
     CONF_PROTOCOL_VARIANT,
     OCTO_VARIANT_STAR2,
 )
-from .unsupported import clear_octo_pin_required_issue, link_octo_pin_required_issue
+from ...unsupported import clear_octo_pin_required_issue, link_octo_pin_required_issue
 
 if TYPE_CHECKING:
-    from .beds.octo import OctoController
+    from .controller import OctoController
 
 
 def octo_controller(controller: object | None) -> OctoController | None:
@@ -29,7 +29,7 @@ def octo_controller(controller: object | None) -> OctoController | None:
     # Keep the protocol module lazy for integrations that do not use Standard
     # OCTO. The marker only selects the candidate; isinstance establishes its
     # actual runtime type before exposing OCTO-specific attributes.
-    from .beds.octo import OctoController
+    from .controller import OctoController
 
     return controller if isinstance(controller, OctoController) else None
 

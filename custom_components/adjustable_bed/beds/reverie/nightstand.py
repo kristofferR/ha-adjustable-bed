@@ -20,8 +20,8 @@ from typing import TYPE_CHECKING, Any, Final
 
 from bleak.exc import BleakError
 
-from ..card import CARD_MASSAGE, motor_card
-from ..const import (
+from ...card import CARD_MASSAGE, motor_card
+from ...const import (
     REVERIE_BACK_MAX_ANGLE,
     REVERIE_NIGHTSTAND_FOOT_POSITION_UUID,
     REVERIE_NIGHTSTAND_FOOT_WAVE_UUID,
@@ -38,14 +38,14 @@ from ..const import (
     REVERIE_STK_SIDE_DATA_UUID,
     REVERIE_STK_SIDE_NO_DATA_UUID,
 )
-from ..controller_state import StateKey, StateUpdate
-from ..state_keys import (
+from ...controller_state import StateKey, StateUpdate
+from ...state_keys import (
     LIGHT_LEVEL,
     UNDER_BED_LIGHTS_ON,
     UNDER_BED_LIGHTS_RGB,
     massage_intensity,
 )
-from .base import (
+from ..base import (
     POSITION_UNIT_PERCENT,
     BedController,
     ControllerMotorHoldSpec,
@@ -56,8 +56,8 @@ from .base import (
     PositionNumberSpec,
     build_position_number_spec,
 )
-from .builder import BuildContext
-from .reverie_comfort import (
+from ..builder import BuildContext
+from .comfort import (
     ReverieComfortActions,
     ReverieComfortRequest,
     RoutineSteps,
@@ -65,14 +65,14 @@ from .reverie_comfort import (
     build_stk_composer_payload,
     validate_comfort_request,
 )
-from .reverie_profiles import (
+from .profiles import (
     REVERIE_MODEL_FALLBACK,
     ReverieModelProfile,
     resolve_reverie_model,
 )
 
 if TYPE_CHECKING:
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 

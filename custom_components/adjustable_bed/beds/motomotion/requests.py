@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from typing import Literal
 
-from .codec.motomotion import Position
+from ...codec.motomotion import Position
 
 
 @dataclass(frozen=True)

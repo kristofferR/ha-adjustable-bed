@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from math import ceil, floor, isnan
 
-from .codec.motomotion import Position, u16
+from ...codec.motomotion import Position, u16
 
 
 def decimal(token: str) -> int:

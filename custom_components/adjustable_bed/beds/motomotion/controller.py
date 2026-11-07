@@ -11,16 +11,13 @@ from math import isfinite
 from time import monotonic
 from typing import TYPE_CHECKING
 
-from ..card import CARD_UTILITY
-from ..codec import motomotion as codec
-from ..codec.motomotion import Position, ascii_command, binary_command, music_command
-from ..const import CONF_BLE_DEVICE_NAME
-from ..controller_state import StateKey
-from ..motomotion_protocol import color_parameters, decimal, light_cycle, posture, rgb_total
-from ..motomotion_requests import Request
-from ..motomotion_state import Comfort, State
-from ..profiles.motomotion import Profile
-from .base import (
+from ...card import CARD_UTILITY
+from ...codec import motomotion as codec
+from ...codec.motomotion import Position, ascii_command, binary_command, music_command
+from ...const import CONF_BLE_DEVICE_NAME
+from ...controller_state import StateKey
+from ...profiles.motomotion import Profile
+from ..base import (
     CONTROLLER_GESTURE_RELEASE,
     BedController,
     ControllerButtonSpec,
@@ -30,13 +27,16 @@ from .base import (
     ControllerStateSensorSpec,
     require_controller,
 )
-from .builder import BuildContext
+from ..builder import BuildContext
+from .protocol import color_parameters, decimal, light_cycle, posture, rgb_total
+from .requests import Request
+from .state import Comfort, State
 
 if TYPE_CHECKING:
     from bleak import BleakClient
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from ..coordinator import AdjustableBedCoordinator
+    from ...coordinator import AdjustableBedCoordinator
 
 MUSIC = {
     "custom": (8, 2, 2, 7),

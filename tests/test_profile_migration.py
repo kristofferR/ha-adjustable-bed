@@ -240,7 +240,7 @@ async def test_configure_offers_one_generic_change_item(hass):
 
 
 async def test_preview_never_touches_the_live_app_session(hass, enable_custom_integrations):
-    from custom_components.adjustable_bed.vibradorm_app_state import (
+    from custom_components.adjustable_bed.beds.vibradorm.app_state import (
         get_vibradorm_app_session_intent,
     )
 
