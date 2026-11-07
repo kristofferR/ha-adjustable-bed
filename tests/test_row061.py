@@ -121,6 +121,17 @@ def test_every_model_exposes_unique_real_entities(app):
                 assert len(keys) == len(set(keys)), (app, model, version, keys)
 
 
+@pytest.mark.parametrize("app", MODEL_IDS)
+def test_every_motor_cover_has_a_translated_name(app):
+    """An untranslated cover key names the cover after its device alone (#711)."""
+    strings = Path(__file__).parents[1] / "custom_components/adjustable_bed/strings.json"
+    covers = json.loads(strings.read_text())["entity"]["cover"]
+    for model in MODEL_IDS[app]:
+        for version in ("0000", "0001", "0002"):
+            for spec in make(app, model, version).motor_control_specs:
+                assert spec.translation_key in covers, (app, model, version, spec.key)
+
+
 @pytest.mark.parametrize(
     "app,model,interval,release",
     [
