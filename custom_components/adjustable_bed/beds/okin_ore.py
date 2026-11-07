@@ -8,8 +8,7 @@ such as ORE/OKIN beds with service UUID 00001000-0000-1000-8000-00805f9b34fb.
 The current Dynasty Bases and INNOVA apps use the E5 FE 16 Keeson frame instead;
 see beds/ore_comfort_bed.py and beds/innova.py.
 
-Packet format: [0xA5, 0x5A, checksum, 0x00, param_length, cmd_hi, cmd_lo, ...params]
-Checksum: ~(SUM of bytes from index 3) & 0xFF
+Frames come from ``codec/okin_ore.py``.
 """
 
 from __future__ import annotations
@@ -20,6 +19,7 @@ from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
+from ..codec import okin_ore as codec
 from ..const import OKIN_ORE_WRITE_CHAR_UUID
 from .base import BedController
 
@@ -100,32 +100,6 @@ class OkinOreController(BedController):
     def control_characteristic_uuid(self) -> str:
         """Return the UUID of the control characteristic."""
         return OKIN_ORE_WRITE_CHAR_UUID
-
-    def _build_command(self, cmd_value: int, params: bytes = b"") -> bytes:
-        """Build an A5 5A format command packet.
-
-        Packet format: [0xA5, 0x5A, checksum, 0x00, param_length, cmd_hi, cmd_lo, ...params]
-        Checksum: ~(SUM of bytes from index 3) & 0xFF
-
-        Args:
-            cmd_value: 16-bit command value (e.g., 0x2000 for STOP)
-            params: Optional parameter bytes to append after command
-
-        Returns:
-            Complete packet bytes ready to send
-        """
-        cmd_hi = (cmd_value >> 8) & 0xFF
-        cmd_lo = cmd_value & 0xFF
-        param_length = len(params)
-
-        # Build payload (bytes 3 onwards for checksum calculation)
-        payload = bytes([0x00, param_length, cmd_hi, cmd_lo]) + params
-
-        # Calculate checksum: ~(sum of payload bytes) & 0xFF
-        checksum = (~sum(payload)) & 0xFF
-
-        # Build complete packet
-        return bytes([0xA5, 0x5A, checksum]) + payload
 
     # Capability properties
     @property
@@ -210,14 +184,14 @@ class OkinOreController(BedController):
             pulse_count = self._coordinator.motor_pulse_count
             pulse_delay = self._coordinator.motor_pulse_delay_ms
             await self.write_command(
-                self._build_command(cmd_value),
+                codec.frame(cmd_value),
                 repeat_count=pulse_count,
                 repeat_delay_ms=pulse_delay,
             )
         finally:
             try:
                 await self.write_command(
-                    self._build_command(OkinOreCommands.CMD_STOP),
+                    codec.frame(OkinOreCommands.CMD_STOP),
                     cancel_event=asyncio.Event(),
                 )
             except BleakError:
@@ -236,7 +210,7 @@ class OkinOreController(BedController):
         finally:
             try:
                 await self.write_command(
-                    self._build_command(OkinOreCommands.CMD_STOP),
+                    codec.frame(OkinOreCommands.CMD_STOP),
                     cancel_event=asyncio.Event(),
                 )
             except BleakError:
@@ -254,7 +228,7 @@ class OkinOreController(BedController):
     async def move_head_stop(self) -> None:
         """Stop head movement."""
         await self.write_command(
-            self._build_command(OkinOreCommands.CMD_STOP), cancel_event=asyncio.Event()
+            codec.frame(OkinOreCommands.CMD_STOP), cancel_event=asyncio.Event()
         )
 
     async def move_feet_up(self) -> None:
@@ -268,7 +242,7 @@ class OkinOreController(BedController):
     async def move_feet_stop(self) -> None:
         """Stop feet movement."""
         await self.write_command(
-            self._build_command(OkinOreCommands.CMD_STOP), cancel_event=asyncio.Event()
+            codec.frame(OkinOreCommands.CMD_STOP), cancel_event=asyncio.Event()
         )
 
     async def move_back_up(self) -> None:
@@ -282,7 +256,7 @@ class OkinOreController(BedController):
     async def move_back_stop(self) -> None:
         """Stop back movement."""
         await self.write_command(
-            self._build_command(OkinOreCommands.CMD_STOP), cancel_event=asyncio.Event()
+            codec.frame(OkinOreCommands.CMD_STOP), cancel_event=asyncio.Event()
         )
 
     async def move_legs_up(self) -> None:
@@ -308,42 +282,42 @@ class OkinOreController(BedController):
     async def move_lumbar_stop(self) -> None:
         """Stop lumbar movement."""
         await self.write_command(
-            self._build_command(OkinOreCommands.CMD_STOP), cancel_event=asyncio.Event()
+            codec.frame(OkinOreCommands.CMD_STOP), cancel_event=asyncio.Event()
         )
 
     async def stop_all(self) -> None:
         """Stop all movement."""
         await self.write_command(
-            self._build_command(OkinOreCommands.CMD_STOP), cancel_event=asyncio.Event()
+            codec.frame(OkinOreCommands.CMD_STOP), cancel_event=asyncio.Event()
         )
 
     # Preset positions
     async def preset_flat(self) -> None:
         """Go to flat position."""
-        await self._preset_with_stop(self._build_command(OkinOreCommands.CMD_FLAT))
+        await self._preset_with_stop(codec.frame(OkinOreCommands.CMD_FLAT))
 
     async def preset_zero_g(self) -> None:
         """Go to zero-G position."""
-        await self._preset_with_stop(self._build_command(OkinOreCommands.CMD_ZERO_G))
+        await self._preset_with_stop(codec.frame(OkinOreCommands.CMD_ZERO_G))
 
     async def preset_anti_snore(self) -> None:
         """Go to anti-snore position."""
-        await self._preset_with_stop(self._build_command(OkinOreCommands.CMD_ANTI_SNORE))
+        await self._preset_with_stop(codec.frame(OkinOreCommands.CMD_ANTI_SNORE))
 
     async def preset_lounge(self) -> None:
         """Go to lounge position."""
-        await self._preset_with_stop(self._build_command(OkinOreCommands.CMD_LOUNGE))
+        await self._preset_with_stop(codec.frame(OkinOreCommands.CMD_LOUNGE))
 
     async def preset_tv(self) -> None:
         """Go to TV position."""
-        await self._preset_with_stop(self._build_command(OkinOreCommands.CMD_TV))
+        await self._preset_with_stop(codec.frame(OkinOreCommands.CMD_TV))
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory position."""
         if memory_num == 1:
-            await self._preset_with_stop(self._build_command(OkinOreCommands.CMD_MEMORY_1))
+            await self._preset_with_stop(codec.frame(OkinOreCommands.CMD_MEMORY_1))
         elif memory_num == 2:
-            await self._preset_with_stop(self._build_command(OkinOreCommands.CMD_MEMORY_2))
+            await self._preset_with_stop(codec.frame(OkinOreCommands.CMD_MEMORY_2))
         else:
             _LOGGER.warning(
                 "OKIN ORE beds only support Memory 1 and Memory 2 (requested: %d)",
@@ -368,12 +342,12 @@ class OkinOreController(BedController):
 
     async def lights_toggle(self) -> None:
         """Toggle under-bed lights."""
-        await self.write_command(self._build_command(OkinOreCommands.CMD_LIGHT_TOGGLE))
+        await self.write_command(codec.frame(OkinOreCommands.CMD_LIGHT_TOGGLE))
 
     # Massage controls
     async def massage_toggle(self) -> None:
         """Toggle massage on/off."""
-        await self.write_command(self._build_command(OkinOreCommands.CMD_MASSAGE_ON_OFF))
+        await self.write_command(codec.frame(OkinOreCommands.CMD_MASSAGE_ON_OFF))
 
     async def massage_on(self) -> None:
         """Turn massage on."""
@@ -385,47 +359,47 @@ class OkinOreController(BedController):
 
     async def massage_head_up(self) -> None:
         """Increase head massage intensity."""
-        await self.write_command(self._build_command(OkinOreCommands.CMD_HEAD_MASSAGE_UP))
+        await self.write_command(codec.frame(OkinOreCommands.CMD_HEAD_MASSAGE_UP))
         self._head_massage = min(10, self._head_massage + 1)
 
     async def massage_head_down(self) -> None:
         """Decrease head massage intensity."""
-        await self.write_command(self._build_command(OkinOreCommands.CMD_HEAD_MASSAGE_DOWN))
+        await self.write_command(codec.frame(OkinOreCommands.CMD_HEAD_MASSAGE_DOWN))
         self._head_massage = max(0, self._head_massage - 1)
 
     async def massage_foot_up(self) -> None:
         """Increase foot massage intensity."""
-        await self.write_command(self._build_command(OkinOreCommands.CMD_FOOT_MASSAGE_UP))
+        await self.write_command(codec.frame(OkinOreCommands.CMD_FOOT_MASSAGE_UP))
         self._foot_massage = min(10, self._foot_massage + 1)
 
     async def massage_foot_down(self) -> None:
         """Decrease foot massage intensity."""
-        await self.write_command(self._build_command(OkinOreCommands.CMD_FOOT_MASSAGE_DOWN))
+        await self.write_command(codec.frame(OkinOreCommands.CMD_FOOT_MASSAGE_DOWN))
         self._foot_massage = max(0, self._foot_massage - 1)
 
     async def massage_intensity_up(self) -> None:
         """Increase overall massage intensity."""
-        await self.write_command(self._build_command(OkinOreCommands.CMD_INTENSITY_PLUS))
+        await self.write_command(codec.frame(OkinOreCommands.CMD_INTENSITY_PLUS))
 
     async def massage_intensity_down(self) -> None:
         """Decrease overall massage intensity."""
-        await self.write_command(self._build_command(OkinOreCommands.CMD_INTENSITY_MINUS))
+        await self.write_command(codec.frame(OkinOreCommands.CMD_INTENSITY_MINUS))
 
     async def massage_mode_step(self) -> None:
         """Step through massage timer options."""
-        await self.write_command(self._build_command(OkinOreCommands.CMD_MASSAGE_TIMER))
+        await self.write_command(codec.frame(OkinOreCommands.CMD_MASSAGE_TIMER))
 
     async def massage_wave_toggle(self) -> None:
         """Cycle through wave massage patterns."""
-        await self.write_command(self._build_command(OkinOreCommands.CMD_WAVE))
+        await self.write_command(codec.frame(OkinOreCommands.CMD_WAVE))
 
     async def massage_wave_speed_up(self) -> None:
         """Increase wave massage speed."""
-        await self.write_command(self._build_command(OkinOreCommands.CMD_WAVE_PLUS))
+        await self.write_command(codec.frame(OkinOreCommands.CMD_WAVE_PLUS))
 
     async def massage_wave_speed_down(self) -> None:
         """Decrease wave massage speed."""
-        await self.write_command(self._build_command(OkinOreCommands.CMD_WAVE_MINUS))
+        await self.write_command(codec.frame(OkinOreCommands.CMD_WAVE_MINUS))
 
     async def massage_head_toggle(self) -> None:
         """Toggle head massage."""

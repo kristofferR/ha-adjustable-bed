@@ -36,7 +36,8 @@ STANDALONE: dict[str, str] = {
     "logicdata_air_pump": "own wire format",
     "motosleep": "own wire format",
     "octo": "own wire format",
-    "okin_ore": "own wire format",
+    "okin_ore": "one fixed command table over codec/okin_ore.py, which the BOX1220 routes of"
+    " sleepys_elite_app and starcode_abm5_4 also send; no app profile",
     "remacro": "own wire format",
     "reverie": "own wire format",
     "reverie_nightstand": "own wire format",
@@ -49,8 +50,8 @@ STANDALONE: dict[str, str] = {
     "sleeptracker": "own wire format",
     "sleepys_box24": "own wire format",
     "sleepys_elite_app": "a frozen per-selector route table whose payloads codec/okin_nframe.py,"
-    " codec/okin_5a.py and codec/keeson.py build, except BOX1220's Okin ORE A5 5A frames,"
-    " which no codec builds",
+    " codec/okin_5a.py, codec/okin_ore.py and codec/keeson.py build, so no one family's"
+    " profile class fits it",
     "starcode_m1x12": "each connection picks codec/okin_5a.py StarCode or codec/okin_nframe.py"
     " legacy frames from the Device Information manufacturer; the app's key catalog, sender"
     " session and notification parsers stay controller code",

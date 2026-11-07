@@ -1,16 +1,15 @@
 """Canonical v2 Sleepy's Elite selector route data used by production.
 
-Payloads come from ``codec/okin_nframe.py``, ``codec/okin_5a.py`` and
-``codec/keeson.py`` (BOX15's nine-byte E6 frames, whose eighth byte the codec
-calls the side byte). BOX1220's ``A5 5A`` payloads stay literal: no codec builds
-that frame.
+Payloads come from ``codec/okin_nframe.py``, ``codec/okin_5a.py``,
+``codec/okin_ore.py`` (BOX1220) and ``codec/keeson.py`` (BOX15's nine-byte E6
+frames, whose eighth byte the codec calls the side byte).
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ..codec import keeson, okin_5a, okin_nframe
+from ..codec import keeson, okin_5a, okin_nframe, okin_ore
 
 CANONICAL_ROUTE_SHA256 = "d5cc166ef68ca07d81b9112f16f4143d0851409ed2fe5086ff2fe10b0a7db138"
 
@@ -838,7 +837,7 @@ ROUTES: dict[tuple[str, str], SleepysAppRoute] = {
         builder="underbedLighting",
         selector="BOX1220",
         logical_values=(165, 90, 95, 0, 0, 32, 128),
-        payload=bytes.fromhex("A5 5A 5F 00 00 20 80"),
+        payload=okin_ore.frame(0x2080),
         write_service="1000",
         write_characteristic="1001",
         notify_target="1000/1002",
@@ -2708,7 +2707,7 @@ ROUTES: dict[tuple[str, str], SleepysAppRoute] = {
         builder="saveZeroGravity",
         selector="BOX1220",
         logical_values=(165, 90, 127, 0, 0, 32, 96),
-        payload=bytes.fromhex("A5 5A 7F 00 00 20 60"),
+        payload=okin_ore.frame(0x2060),
         write_service="1000",
         write_characteristic="1001",
         notify_target="1000/1002",
@@ -2818,7 +2817,7 @@ ROUTES: dict[tuple[str, str], SleepysAppRoute] = {
         builder="saveLounge",
         selector="BOX1220",
         logical_values=(165, 90, 126, 0, 0, 32, 97),
-        payload=bytes.fromhex("A5 5A 7E 00 00 20 61"),
+        payload=okin_ore.frame(0x2061),
         write_service="1000",
         write_characteristic="1001",
         notify_target="1000/1002",
@@ -2928,7 +2927,7 @@ ROUTES: dict[tuple[str, str], SleepysAppRoute] = {
         builder="saveTv",
         selector="BOX1220",
         logical_values=(165, 90, 125, 0, 0, 32, 98),
-        payload=bytes.fromhex("A5 5A 7D 00 00 20 62"),
+        payload=okin_ore.frame(0x2062),
         write_service="1000",
         write_characteristic="1001",
         notify_target="1000/1002",
@@ -3038,7 +3037,7 @@ ROUTES: dict[tuple[str, str], SleepysAppRoute] = {
         builder="m2",
         selector="BOX1220",
         logical_values=(165, 90, 122, 0, 0, 32, 101),
-        payload=bytes.fromhex("A5 5A 7A 00 00 20 65"),
+        payload=okin_ore.frame(0x2065),
         write_service="1000",
         write_characteristic="1001",
         notify_target="1000/1002",
@@ -3148,7 +3147,7 @@ ROUTES: dict[tuple[str, str], SleepysAppRoute] = {
         builder="m1",
         selector="BOX1220",
         logical_values=(165, 90, 123, 0, 0, 32, 100),
-        payload=bytes.fromhex("A5 5A 7B 00 00 20 64"),
+        payload=okin_ore.frame(0x2064),
         write_service="1000",
         write_characteristic="1001",
         notify_target="1000/1002",
@@ -3368,7 +3367,7 @@ ROUTES: dict[tuple[str, str], SleepysAppRoute] = {
         builder="voiceStop",
         selector="BOX1220",
         logical_values=(165, 90, 223, 0, 0, 32, 0),
-        payload=bytes.fromhex("A5 5A DF 00 00 20 00"),
+        payload=okin_ore.frame(0x2000),
         write_service="1000",
         write_characteristic="1001",
         notify_target="1000/1002",
@@ -3698,7 +3697,7 @@ ROUTES: dict[tuple[str, str], SleepysAppRoute] = {
         builder="flatPosition",
         selector="BOX1220",
         logical_values=(165, 90, 121, 0, 0, 32, 102),
-        payload=bytes.fromhex("A5 5A 79 00 00 20 66"),
+        payload=okin_ore.frame(0x2066),
         write_service="1000",
         write_characteristic="1001",
         notify_target="1000/1002",
@@ -3808,7 +3807,7 @@ ROUTES: dict[tuple[str, str], SleepysAppRoute] = {
         builder="anti",
         selector="BOX1220",
         logical_values=(165, 90, 124, 0, 0, 32, 99),
-        payload=bytes.fromhex("A5 5A 7C 00 00 20 63"),
+        payload=okin_ore.frame(0x2063),
         write_service="1000",
         write_characteristic="1001",
         notify_target="1000/1002",
@@ -3918,7 +3917,7 @@ ROUTES: dict[tuple[str, str], SleepysAppRoute] = {
         builder="zeroGravity",
         selector="BOX1220",
         logical_values=(165, 90, 127, 0, 0, 32, 96),
-        payload=bytes.fromhex("A5 5A 7F 00 00 20 60"),
+        payload=okin_ore.frame(0x2060),
         write_service="1000",
         write_characteristic="1001",
         notify_target="1000/1002",
@@ -4028,7 +4027,7 @@ ROUTES: dict[tuple[str, str], SleepysAppRoute] = {
         builder="lounge",
         selector="BOX1220",
         logical_values=(165, 90, 126, 0, 0, 32, 97),
-        payload=bytes.fromhex("A5 5A 7E 00 00 20 61"),
+        payload=okin_ore.frame(0x2061),
         write_service="1000",
         write_characteristic="1001",
         notify_target="1000/1002",
@@ -4138,7 +4137,7 @@ ROUTES: dict[tuple[str, str], SleepysAppRoute] = {
         builder="tv",
         selector="BOX1220",
         logical_values=(165, 90, 125, 0, 0, 32, 98),
-        payload=bytes.fromhex("A5 5A 7D 00 00 20 62"),
+        payload=okin_ore.frame(0x2062),
         write_service="1000",
         write_characteristic="1001",
         notify_target="1000/1002",
@@ -4248,7 +4247,7 @@ ROUTES: dict[tuple[str, str], SleepysAppRoute] = {
         builder="stop",
         selector="BOX1220",
         logical_values=(165, 90, 223, 0, 0, 32, 0),
-        payload=bytes.fromhex("A5 5A DF 00 00 20 00"),
+        payload=okin_ore.frame(0x2000),
         write_service="1000",
         write_characteristic="1001",
         notify_target="1000/1002",
@@ -4578,7 +4577,7 @@ ROUTES: dict[tuple[str, str], SleepysAppRoute] = {
         builder="footDown",
         selector="BOX1220",
         logical_values=(165, 90, 219, 0, 0, 32, 4),
-        payload=bytes.fromhex("A5 5A DB 00 00 20 04"),
+        payload=okin_ore.frame(0x2004),
         write_service="1000",
         write_characteristic="1001",
         notify_target="1000/1002",
@@ -4688,7 +4687,7 @@ ROUTES: dict[tuple[str, str], SleepysAppRoute] = {
         builder="footUp",
         selector="BOX1220",
         logical_values=(165, 90, 220, 0, 0, 32, 3),
-        payload=bytes.fromhex("A5 5A DC 00 00 20 03"),
+        payload=okin_ore.frame(0x2003),
         write_service="1000",
         write_characteristic="1001",
         notify_target="1000/1002",
@@ -4798,7 +4797,7 @@ ROUTES: dict[tuple[str, str], SleepysAppRoute] = {
         builder="headDown",
         selector="BOX1220",
         logical_values=(165, 90, 221, 0, 0, 32, 2),
-        payload=bytes.fromhex("A5 5A DD 00 00 20 02"),
+        payload=okin_ore.frame(0x2002),
         write_service="1000",
         write_characteristic="1001",
         notify_target="1000/1002",
@@ -4908,7 +4907,7 @@ ROUTES: dict[tuple[str, str], SleepysAppRoute] = {
         builder="headUp",
         selector="BOX1220",
         logical_values=(165, 90, 222, 0, 0, 32, 1),
-        payload=bytes.fromhex("A5 5A DE 00 00 20 01"),
+        payload=okin_ore.frame(0x2001),
         write_service="1000",
         write_characteristic="1001",
         notify_target="1000/1002",

@@ -13,6 +13,7 @@ from pytest_homeassistant.common import MockConfigEntry
 from custom_components.adjustable_bed.beds.okin_ore import (
     OkinOreCommands,
 )
+from custom_components.adjustable_bed.codec import okin_ore
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIN_ORE,
     CONF_BED_TYPE,
@@ -87,7 +88,7 @@ class TestOkinOreController:
         cancel_event = asyncio.Event()
         cancel_event.set()
         await coordinator.controller.write_command(
-            coordinator.controller._build_command(OkinOreCommands.CMD_STOP),
+            okin_ore.frame(OkinOreCommands.CMD_STOP),
             cancel_event=cancel_event,
         )
 
@@ -108,8 +109,8 @@ class TestOkinOreController:
         await coordinator.controller.preset_flat()
 
         calls = mock_bleak_client.write_gatt_char.call_args_list
-        expected_preset = coordinator.controller._build_command(OkinOreCommands.CMD_FLAT)
-        expected_stop = coordinator.controller._build_command(OkinOreCommands.CMD_STOP)
+        expected_preset = okin_ore.frame(OkinOreCommands.CMD_FLAT)
+        expected_stop = okin_ore.frame(OkinOreCommands.CMD_STOP)
         assert len(calls) == coordinator.motor_pulse_count + 1
         assert [call[0][0] for call in calls] == [OKIN_ORE_WRITE_CHAR_UUID] * len(calls)
         assert [call[0][1] for call in calls[:-1]] == [expected_preset] * coordinator.motor_pulse_count
@@ -139,8 +140,8 @@ class TestOkinOreController:
         await coordinator.controller.preset_memory(memory_num)
 
         calls = mock_bleak_client.write_gatt_char.call_args_list
-        expected_preset = coordinator.controller._build_command(expected_command)
-        expected_stop = coordinator.controller._build_command(OkinOreCommands.CMD_STOP)
+        expected_preset = okin_ore.frame(expected_command)
+        expected_stop = okin_ore.frame(OkinOreCommands.CMD_STOP)
         assert len(calls) == coordinator.motor_pulse_count + 1
         assert [call[0][1] for call in calls[:-1]] == [expected_preset] * coordinator.motor_pulse_count
         assert calls[-1][0][1] == expected_stop
@@ -171,7 +172,7 @@ class TestOkinOreController:
         await getattr(coordinator.controller, toggle_method)()
 
         assert getattr(coordinator.controller, state_attr) == 0
-        expected_down = coordinator.controller._build_command(down_command)
+        expected_down = okin_ore.frame(down_command)
         assert [call[0][1] for call in mock_bleak_client.write_gatt_char.call_args_list] == [
             expected_down,
             expected_down,
