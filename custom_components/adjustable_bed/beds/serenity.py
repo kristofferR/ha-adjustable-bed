@@ -96,10 +96,9 @@ def alarm_repeat_bit(now: datetime, hour: int, minute: int) -> int:
 
 def clock_frame(now: datetime) -> bytes:
     """Build the app's binary local-clock frame (DecimaltoBcd is the identity)."""
-    return bytes(
+    return codec.record(
+        0x06,
         (
-            0x07,
-            0x06,
             (now.year - 2000) & 0xFF,
             now.month,
             now.day,
@@ -107,7 +106,7 @@ def clock_frame(now: datetime) -> bytes:
             now.hour,
             now.minute,
             now.second,
-        )
+        ),
     )
 
 
