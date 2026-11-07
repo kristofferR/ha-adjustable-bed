@@ -1051,6 +1051,7 @@ class Coordinator:
     remember_limoss_remote_capabilities = remember_limoss_remote_features = _ignore
     remember_fsm_relax_capabilities = remember_vibradorm_app_metadata = _ignore
     remember_vibradorm_app_floor_default = remember_remacro_led_level = _ignore
+    _ble_bond_established = False
     remember_vmatbasic_settings = _begin_internal_entry_update = _ignore
     _async_persist_config = _schedule_pending_capability_reload = _ignore
 
@@ -1167,7 +1168,8 @@ def default_scenario(bed_type: str) -> Scenario:
     if bed_type == const.BED_TYPE_SLEEPYS_ELITE_APP:
         data[const.CONF_SLEEPYS_ELITE_SELECTOR] = "BOX24"
     if bed_type == const.BED_TYPE_RICHMAT:
-        kwargs = {"device_name": "Casper QRRM Bed", "richmat_remote": "qrrm"}
+        data[const.CONF_RICHMAT_REMOTE] = "qrrm"
+        kwargs = {"device_name": "Casper QRRM Bed"}
     if bed_type == const.BED_TYPE_LEGGETT_LP_LEGACY:
         from custom_components.adjustable_bed.lp_legacy_profiles import LP_LEGACY_PROFILE_CODES
 
@@ -1246,8 +1248,11 @@ VARIANT_ROUTES: dict[str, str] = {
     "kaidi": "KAIDI_VARIANTS",
     "adjustamattress": "ADJUSTAMATTRESS_VARIANTS",
 }
+ROUTE_ENTRY_DATA: dict[str, dict[str, Any]] = {
+    "richmat": {"richmat_remote": "auto"},
+}
 ROUTE_KWARGS: dict[str, dict[str, Any]] = {
-    "richmat": {"richmat_remote": "auto", "device_name": "Richmat"},
+    "richmat": {"device_name": "Richmat"},
     # Floyd Home is advertised as product 139.
     "kaidi:floyd": {"manufacturer_data": {0xFFFF: bytes.fromhex(KAIDI_BROADCAST % "8b")}},
 }
@@ -1277,6 +1282,7 @@ def route_scenarios() -> list[Scenario]:
                     base,
                     id=f"{bed_type}:{variant}",
                     protocol_variant=variant,
+                    entry_data={**base.entry_data, **ROUTE_ENTRY_DATA.get(bed_type, {})},
                     factory_kwargs=ROUTE_KWARGS.get(f"{bed_type}:{variant}")
                     or ROUTE_KWARGS.get(bed_type, base.factory_kwargs),
                     replies={**base.replies, **ROUTE_REPLIES.get(f"{bed_type}:{variant}", {})},

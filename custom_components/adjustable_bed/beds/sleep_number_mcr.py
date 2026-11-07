@@ -199,18 +199,14 @@ class SleepNumberMcrController(BedController):
         self,
         coordinator: AdjustableBedCoordinator,
         *,
+        client_identifier: int,
         manufacturer_data: Mapping[int, bytes] | None = None,
     ) -> None:
         """Initialize the controller."""
         super().__init__(coordinator)
         self._bed_address = 0
         self._client_address = 0
-        identifier = coordinator.entry.data.get(CONF_SLEEP_NUMBER_MCR_CLIENT_ID)
-        self._client_identifier: int = (
-            identifier
-            if isinstance(identifier, int) and 0 < identifier < 1 << 64
-            else (secrets.randbits(64) or 1)
-        )
+        self._client_identifier = client_identifier
         self._foundation_features: FoundationFeatures | None = None
         self._nodes: set[int] = set()
         self._chambers: dict[str, int] = {}
@@ -1918,15 +1914,24 @@ class SleepNumberMcrController(BedController):
 
 
 async def build_controller(ctx: BuildContext) -> SleepNumberMcrController:
-    """Build the controller, first persisting the app's client identity on a live link."""
+    """Build the controller with the app's persisted client identity.
+
+    The app persists a random client identity; it is not the bed's MAC address
+    or the assigned session address. A live link stores a new one; an offline
+    controller only borrows one.
+    """
     coordinator = ctx.coordinator
-    client_id = ctx.data.get(CONF_SLEEP_NUMBER_MCR_CLIENT_ID)
-    if ctx.client is not None and (type(client_id) is not int or not 0 < client_id < 2**64):
-        # The app persists a random client identity; it is not the bed's MAC
-        # address or the assigned session address.
-        coordinator._begin_internal_entry_update(coordinator._ble_bond_established)
-        coordinator._async_persist_config(
-            {**ctx.data, CONF_SLEEP_NUMBER_MCR_CLIENT_ID: secrets.randbits(64) or 1},
-            keys={CONF_SLEEP_NUMBER_MCR_CLIENT_ID},
-        )
-    return SleepNumberMcrController(coordinator, manufacturer_data=ctx.manufacturer_data)
+    stored = ctx.data.get(CONF_SLEEP_NUMBER_MCR_CLIENT_ID)
+    if type(stored) is int and 0 < stored < 1 << 64:
+        identifier = stored
+    else:
+        identifier = secrets.randbits(64) or 1
+        if ctx.client is not None:
+            coordinator._begin_internal_entry_update(coordinator._ble_bond_established)
+            coordinator._async_persist_config(
+                {**ctx.data, CONF_SLEEP_NUMBER_MCR_CLIENT_ID: identifier},
+                keys={CONF_SLEEP_NUMBER_MCR_CLIENT_ID},
+            )
+    return SleepNumberMcrController(
+        coordinator, client_identifier=identifier, manufacturer_data=ctx.manufacturer_data
+    )

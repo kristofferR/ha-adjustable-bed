@@ -77,7 +77,7 @@ def controller():
     coordinator.motor_pulse_delay_ms = 1
     coordinator.client.mtu_size = 23
     coordinator.client.services.get_characteristic.return_value.properties = ["write"]
-    result = SleepNumberMcrController(coordinator)
+    result = SleepNumberMcrController(coordinator, client_identifier=0x0102030405060708)
     result._initialized = True
     result._foundation_features = FoundationFeatures(2, True, True, True, True, "360", "FF3")
     result._nodes = {1, 0x31, 0x41, 0x51}
@@ -1083,7 +1083,9 @@ def test_unrelated_manufacturer_block_does_not_erase_model(controller, reverse):
     blocks = [(1, b"\x12\x06\x00\x00\x00"), (2, b"unrelated")]
     if reverse:
         blocks.reverse()
-    actual = SleepNumberMcrController(controller._coordinator, manufacturer_data=dict(blocks))
+    actual = SleepNumberMcrController(
+        controller._coordinator, client_identifier=1, manufacturer_data=dict(blocks)
+    )
     assert actual._pump_model == "360"
 
 
