@@ -145,15 +145,24 @@ A new bed is set up in one order (#676 direction A):
 3. **The final settings** (`finish_settings`), drawn for the one route the
    journey staged: the name, the Bluetooth adapter and disconnect after each
    command; the generic fields the profile neither sets nor asks, and that no
-   family step set itself (`_journey_set`); a bed type's own settings (Octo PIN
-   and motor count, CB24 side); the route's labelled routes, when it has
-   several, in a collapsed Advanced section; and the pulse count and delay and
-   the idle timeout, collapsed under "Advanced connection and timing". A
-   client that submits a field the form does not show cannot set it.
+   family step set itself (`_journey_set`); the declared questions of a route
+   without an app step, such as the Octo PIN and motor layout or the CB24
+   side; the route's labelled routes, when it has several, in a collapsed
+   Advanced section; and the pulse count and delay and the idle timeout,
+   collapsed under "Advanced connection and timing". A client that submits a
+   field the form does not show cannot set it.
 4. Pairing, then the connection check.
 
 Defaults are the staged route's own: a family answer that changed the route
 gave it Configure's defaults, and the final settings start from them.
+
+The final settings, Configure and each paired receiver's settings build their
+generic fields with one builder (`_settings_fields`) and check the pulse count,
+pulse delay and angle limits with one parser (`_parse_settings`): a blank value
+takes the route's default, anything else must be a whole number of at least 1
+(an angle more than 0 and at most 180), and an error names its field. Each
+field defaults to the saved value, else the route's own default, including the
+per-bed disconnect-after-command default.
 
 **Disable angle sensing** shows only where a route of the staged bed type
 reports positions, and starts off (positions are read): every such route's own
@@ -257,6 +266,8 @@ These steps serve every bed type or route, so no profile owns them.
 | `vibradorm` | The legacy setup's motor count, massage motors and angle sensing: a form drawn for a detected app or V-MAT Basic sets these itself. |
 | `jensen` | The JMC400 box's PIN (free text; empty uses the default), motor count, massage motors and angle sensing: the family row's form is drawn for Svane, which sets these itself. |
 | `svane:jensen_linon` | Motor count. |
+| `octo` | The PIN (free text; empty when the bed has none) and the motor layout: the advertised count or an explicit 1 to 4. Octo has no app step, so setup asks them in the final settings. Owns the motor count. |
+| `okin_cb24` | The native CB24 side: both, A or B. Asked in the final settings. |
 | `limoss_remote` | Bed or chair, light, massage, the four reversals and the optional artwork theme; the connected device supplies its key layout. |
 
 The other profiles declare only the generic fields they own, converted from the

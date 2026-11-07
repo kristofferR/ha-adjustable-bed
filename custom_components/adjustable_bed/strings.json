@@ -331,7 +331,10 @@
           "reverse_motor_2": "Reverse motor channel 2",
           "reverse_motor_3": "Reverse motor channel 3",
           "reverse_motor_4": "Reverse motor channel 4",
-          "limoss_remote_theme": "App artwork theme"
+          "limoss_remote_theme": "App artwork theme",
+          "octo_pin": "Octo PIN",
+          "octo_motor_count_override": "OCTO motor count",
+          "cb24_bed_selection": "CB24 bed side"
         },
         "data_description": {
           "jiecang_app_layout": "Select the layout configured in the app. The device name and motor count do not identify the layout.",
@@ -378,7 +381,10 @@
           "rmcontrol_product": "The exact product code RMControl shows for this bed. A similar-looking code doesn't unlock its controls. Choose None to use the Richmat remote controls instead.",
           "rmcontrol_side": "The side selected in RMControl. It picks the side the app's commands address, not a paired bed's left or right in Home Assistant.",
           "richmat_remote": "The Richmat remote code, which picks the remote's buttons, presets and lights. A code the Bluetooth name carries is preselected; use Auto if you don't know it.",
-          "limoss_remote_theme": "Optional: the artwork theme chosen in the Limoss Remote app, kept as a local preference. It changes no controls."
+          "limoss_remote_theme": "Optional: the artwork theme chosen in the Limoss Remote app, kept as a local preference. It changes no controls.",
+          "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
+          "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
+          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector."
         },
         "sections": {
           "advanced": {
@@ -953,7 +959,8 @@
           "ergomotion4_massage_keys": "Other product: massage keys",
           "ergomotion4_rgb": "Other product: RGB lighting",
           "ergomotion4_product_name": "Other product: exact app product name",
-          "cluster018_third_service": "Allow the app’s third-service fallback"
+          "cluster018_third_service": "Allow the app’s third-service fallback",
+          "octo_motor_count_override": "OCTO motor count"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -1020,7 +1027,8 @@
           "sleeptracker_snapshot_side": "App snapshot ordinal: 0 left, 1 right, 2 entire bed, 3 other.",
           "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count.",
           "sleepys_elite_selector": "Choose the selector saved for this physical bed. Paired sides keep their selector independently.",
-          "cluster018_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes."
+          "cluster018_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes.",
+          "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout."
         }
       },
       "remove_bond": {
@@ -1142,7 +1150,10 @@
           "reverse_motor_2": "Reverse motor channel 2",
           "reverse_motor_3": "Reverse motor channel 3",
           "reverse_motor_4": "Reverse motor channel 4",
-          "limoss_remote_theme": "App artwork theme"
+          "limoss_remote_theme": "App artwork theme",
+          "octo_pin": "Octo PIN",
+          "octo_motor_count_override": "OCTO motor count",
+          "cb24_bed_selection": "CB24 bed side"
         },
         "data_description": {
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
@@ -1186,7 +1197,10 @@
           "malouf_app_profile": "Choose the app you use with this bed. Shared Bluetooth identifiers do not identify an app.",
           "rmcontrol_product": "Choose the exact product code used in RMControl, or None to use the Richmat remote controls. Nordic and WiLinke only; hardware unverified.",
           "rmcontrol_side": "Use the side selected in RMControl. This applies only when an RMControl product is selected.",
-          "richmat_remote": "Select the Richmat remote code (use auto if unsure)."
+          "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
+          "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
+          "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
+          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector."
         }
       },
       "right_settings": {
@@ -1254,7 +1268,10 @@
           "reverse_motor_2": "Reverse motor channel 2",
           "reverse_motor_3": "Reverse motor channel 3",
           "reverse_motor_4": "Reverse motor channel 4",
-          "limoss_remote_theme": "App artwork theme"
+          "limoss_remote_theme": "App artwork theme",
+          "octo_pin": "Octo PIN",
+          "octo_motor_count_override": "OCTO motor count",
+          "cb24_bed_selection": "CB24 bed side"
         },
         "data_description": {
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
@@ -1298,7 +1315,10 @@
           "malouf_app_profile": "Choose the app you use with this bed. Shared Bluetooth identifiers do not identify an app.",
           "rmcontrol_product": "Choose the exact product code used in RMControl, or None to use the Richmat remote controls. Nordic and WiLinke only; hardware unverified.",
           "rmcontrol_side": "Use the side selected in RMControl. This applies only when an RMControl product is selected.",
-          "richmat_remote": "Select the Richmat remote code (use auto if unsure)."
+          "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
+          "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
+          "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
+          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector."
         }
       },
       "change_app": {

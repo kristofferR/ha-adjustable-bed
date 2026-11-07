@@ -3356,7 +3356,7 @@ class TestOptionsFlow:
         assert rebuilt["type"] == FlowResultType.FORM
         markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
         assert markers[CONF_PROTOCOL_VARIANT].default() == requested_variant
-        assert markers[CONF_MOTOR_COUNT].default() == str(expected_count)
+        assert markers[CONF_MOTOR_COUNT].default() == expected_count
 
     async def test_richmat_options_can_replace_detected_qrrm_with_lp_profile(
         self,
@@ -3523,7 +3523,7 @@ class TestOptionsFlow:
         initial = await _open_options_form(hass, entry.entry_id)
         markers = {marker.schema: marker for marker in initial["data_schema"].schema}
 
-        assert markers[CONF_MOTOR_COUNT].default() == "4"
+        assert markers[CONF_MOTOR_COUNT].default() == 4
         assert CONF_DISABLE_ANGLE_SENSING not in markers
         assert CONF_POSITION_MODE not in markers
         assert CONF_BACK_MAX_ANGLE not in markers
@@ -3661,7 +3661,7 @@ class TestOptionsFlow:
         )
 
         rebuilt_markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
-        assert rebuilt_markers[CONF_MOTOR_COUNT].default() == "2"
+        assert rebuilt_markers[CONF_MOTOR_COUNT].default() == 2
         assert rebuilt_markers[CONF_DISABLE_ANGLE_SENSING].default() is False
         assert rebuilt_markers[CONF_PROTOCOL_VARIANT].default() == VARIANT_AUTO
         assert CONF_OCTO_PIN not in rebuilt_markers
@@ -3951,7 +3951,7 @@ class TestOptionsFlow:
             step_id="settings",
         )
         markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
-        assert markers[CONF_MOTOR_COUNT].default() == str(expected_count)
+        assert markers[CONF_MOTOR_COUNT].default() == expected_count
         saved = await flow._async_options_form(
             {
                 CONF_BED_TYPE: bed_type,

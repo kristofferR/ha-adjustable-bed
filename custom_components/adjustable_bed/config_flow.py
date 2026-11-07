@@ -143,7 +143,6 @@ from .const import (
     BED_TYPE_MOTOMOTION,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
-    BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_RF_ECO_BT,
@@ -176,9 +175,6 @@ from .const import (
     BED_TYPE_ZSERIES,
     BEDS_WITH_PERCENTAGE_POSITIONS,
     BEDS_WITH_POSITION_FEEDBACK,
-    CB24_BED_SELECTION_A,
-    CB24_BED_SELECTION_B,
-    CB24_BED_SELECTION_DEFAULT,
     CLUSTER033_BED_TYPES,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
@@ -186,7 +182,6 @@ from .const import (
     CONF_BLE_BOND_ESTABLISHED,
     CONF_BLE_BOND_MARKER_UNRELIABLE,
     CONF_BLE_DEVICE_NAME,
-    CONF_CB24_BED_SELECTION,
     CONF_CONNECTION_PROFILE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISABLE_DISCOVERY,
@@ -258,12 +253,10 @@ from .const import (
     DEFAULT_BACK_MAX_ANGLE,
     DEFAULT_CONNECTION_PROFILE,
     DEFAULT_DISABLE_ANGLE_SENSING,
-    DEFAULT_DISCONNECT_AFTER_COMMAND,
     DEFAULT_HAS_MASSAGE,
     DEFAULT_IDLE_DISCONNECT_SECONDS,
     DEFAULT_LEGS_MAX_ANGLE,
     DEFAULT_MOTOR_COUNT,
-    DEFAULT_OCTO_PIN,
     DEFAULT_POSITION_MODE,
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
@@ -432,7 +425,13 @@ from .setup_operation import (
     OperationResult,
     SetupAction,
 )
-from .setup_questions import GENERIC_FIELDS, Question, SetupProfile, setup_profile_for
+from .setup_questions import (
+    GENERIC_FIELDS,
+    Question,
+    SetupProfile,
+    setup_profile,
+    setup_profile_for,
+)
 from .unsupported import (
     PROXY_PAIRING_RECOVERY_URL,
     build_misidentified_issue_url,
@@ -1138,15 +1137,6 @@ def _bed_type_field(
     return marker(CONF_BED_TYPE, default=selector.shown(default)), selector
 
 
-_OCTO_MOTOR_OVERRIDES: Final[dict[str, str]] = {
-    "auto": "Use advertised motor count",
-    "1": "1 motor",
-    "2": "2 motors",
-    "3": "3 motors",
-    "4": "4 motors",
-}
-
-
 def _rows_where(
     rows: Mapping[str, tuple[str | None, str]],
     test: Callable[[str | None, str], bool],
@@ -1217,30 +1207,6 @@ def _condition_owned_generic_fields(
         owners = _rows_where(rows, owns, "not_in", field)
         if owners is not None:
             schema.update(_shown_for({marker: schema.pop(marker)}, owners))
-
-
-def _bed_specific_errors(user_input: Mapping[str, Any], bed_type: str | None) -> dict[str, str]:
-    """Check the selected bed type's own answers."""
-    if bed_type == BED_TYPE_OCTO and not is_valid_octo_pin(
-        normalize_octo_pin(user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN))
-    ):
-        return {CONF_OCTO_PIN: "invalid_pin"}
-    return {}
-
-
-def _add_bed_specific_entry_data(
-    entry_data: dict[str, Any],
-    user_input: Mapping[str, Any],
-    bed_type: str | None,
-) -> None:
-    """Save the selected bed type's own answers from the one setup form."""
-    if bed_type == BED_TYPE_OCTO:
-        entry_data[CONF_OCTO_PIN] = normalize_octo_pin(
-            user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN)
-        )
-        entry_data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] = str(
-            user_input.get(CONF_OCTO_MOTOR_COUNT_OVERRIDE, "auto")
-        )
 
 
 def _hide_owned_generic_fields(
@@ -2473,25 +2439,114 @@ def _profile_answers(
     return answers
 
 
-def _add_cb24_side_schema_field(schema: dict[vol.Marker, Any]) -> None:
-    """Expose the legacy CB24 native A/B selector when the type is known."""
-    schema[vol.Optional(CONF_CB24_BED_SELECTION, default=CB24_BED_SELECTION_DEFAULT)] = vol.In(
-        {
-            CB24_BED_SELECTION_DEFAULT: "Both sides",
-            CB24_BED_SELECTION_A: "Side A / Left",
-            CB24_BED_SELECTION_B: "Side B / Right",
-        }
-    )
+_PULSE_FIELDS: Final = (CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS)
+_ANGLE_LIMITS: Final[dict[str, float]] = {
+    CONF_BACK_MAX_ANGLE: DEFAULT_BACK_MAX_ANGLE,
+    CONF_LEGS_MAX_ANGLE: DEFAULT_LEGS_MAX_ANGLE,
+}
+_POSITION_MODES: Final = {
+    POSITION_MODE_SPEED: "Speed (recommended)",
+    POSITION_MODE_ACCURACY: "Accuracy",
+}
+_TEXT: Final = TextSelector(TextSelectorConfig())
 
 
-def _add_cb24_entry_data(
-    entry_data: dict[str, Any], user_input: dict[str, Any], bed_type: str | None
-) -> None:
-    """Persist the native CB24 A/B selector when it was collected."""
-    if bed_type == BED_TYPE_OKIN_CB24:
-        entry_data[CONF_CB24_BED_SELECTION] = int(
-            user_input.get(CONF_CB24_BED_SELECTION, CB24_BED_SELECTION_DEFAULT)
-        )
+def _settings_fields(
+    hass: HomeAssistant,
+    data: Mapping[str, Any],
+    bed_type: str,
+    variant: str,
+    keys: Iterable[str],
+    defaults: Mapping[str, Any] | None = None,
+) -> dict[vol.Marker, Any]:
+    """Return the generic settings fields ``keys`` for a route, in that order.
+
+    Each shows its saved value, else the caller's default, else the route's own:
+    its pulse timing, its disconnect-after-command default and so on.
+    """
+    adapters = get_available_adapters(hass)
+    route_defaults: dict[str, Any] = {
+        CONF_NAME: "Adjustable Bed",
+        CONF_MOTOR_COUNT: DEFAULT_MOTOR_COUNT,
+        CONF_HAS_MASSAGE: DEFAULT_HAS_MASSAGE,
+        CONF_DISABLE_ANGLE_SENSING: DEFAULT_DISABLE_ANGLE_SENSING,
+        CONF_POSITION_MODE: DEFAULT_POSITION_MODE,
+        CONF_PASSIVE_POSITION_RECONCILIATION: passive_position_reconciliation_default_enabled(
+            bed_type
+        ),
+        CONF_PREFERRED_ADAPTER: ADAPTER_AUTO,
+        CONF_CONNECTION_PROFILE: DEFAULT_CONNECTION_PROFILE,
+        **dict(zip(_PULSE_FIELDS, get_motor_pulse_defaults(bed_type, variant), strict=True)),
+        CONF_DISCONNECT_AFTER_COMMAND: disconnect_after_command_default_enabled(bed_type, variant),
+        CONF_IDLE_DISCONNECT_SECONDS: DEFAULT_IDLE_DISCONNECT_SECONDS,
+        **_ANGLE_LIMITS,
+        **(defaults or {}),
+    }
+    validators: dict[str, Any] = {
+        CONF_NAME: str,
+        CONF_MOTOR_COUNT: vol.All(vol.Coerce(int), vol.In(_motor_count_options(bed_type, variant))),
+        CONF_POSITION_MODE: vol.In(_POSITION_MODES),
+        CONF_PREFERRED_ADAPTER: vol.In(adapters),
+        CONF_CONNECTION_PROFILE: vol.In(CONNECTION_PROFILE_OPTIONS),
+        CONF_IDLE_DISCONNECT_SECONDS: vol.All(
+            vol.Coerce(int), vol.Range(min=IDLE_DISCONNECT_KEEP_CONNECTED, max=300)
+        ),
+        **dict.fromkeys((*_PULSE_FIELDS, *_ANGLE_LIMITS), _TEXT),
+    }
+    fields: dict[vol.Marker, Any] = {}
+    for key in keys:
+        default = data.get(key, route_defaults[key])
+        if key == CONF_PREFERRED_ADAPTER and default not in adapters:
+            # A stored adapter that has gone falls back to automatic.
+            default = ADAPTER_AUTO
+        elif key in _PULSE_FIELDS or key in _ANGLE_LIMITS:
+            default = str(default)
+        fields[vol.Optional(key, default=default)] = validators.get(key, bool)
+    return fields
+
+
+def _parse_settings(
+    submitted: Mapping[str, Any], bed_type: str, pulse_defaults: tuple[int, int]
+) -> tuple[dict[str, Any], dict[str, str]]:
+    """Return the submitted pulse timing and angle limits as numbers, and errors by field.
+
+    A blank field takes its default. Only the fields submitted are returned.
+    """
+    values: dict[str, Any] = {}
+    errors: dict[str, str] = {}
+    for key, default in zip(_PULSE_FIELDS, pulse_defaults, strict=True):
+        if key not in submitted:
+            continue
+        try:
+            values[key] = int(submitted[key] or default)
+        except ValueError, TypeError:
+            errors[key] = "invalid_number"
+            continue
+        if values[key] < 1:
+            errors[key] = "invalid_number"
+    if not errors and _invalid_pulse_count(
+        bed_type, values.get(CONF_MOTOR_PULSE_COUNT, pulse_defaults[0])
+    ):
+        errors[CONF_MOTOR_PULSE_COUNT] = "invalid_pulse_count_range"
+    for key, default in _ANGLE_LIMITS.items():
+        if key not in submitted:
+            continue
+        try:
+            values[key] = float(submitted[key] or default)
+        except ValueError, TypeError:
+            errors[key] = "invalid_angle"
+            continue
+        if not 0 < values[key] <= 180:
+            errors[key] = "invalid_angle"
+    return values, errors
+
+
+def _final_settings_questions(bed_type: str, variant: str | None) -> SetupProfile | None:
+    """Return the declared questions a route without an app step asks in its final settings."""
+    if bed_type in _APP_SETUP_STEPS:
+        return None
+    profile = setup_profile(bed_type, variant)
+    return profile if profile is not None and profile.questions else None
 
 
 # Short, single-attempt timeout for the optional setup-time connection probe.
@@ -5359,77 +5414,27 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """Return the final settings form for the staged route."""
         assert self._manual_data is not None
         data = self._manual_data
-        adapters = get_available_adapters(self.hass)
-        adapter = data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
-        pulse_count, pulse_delay = get_motor_pulse_defaults(bed_type, variant, signals)
-        schema: dict[vol.Marker, Any] = {
-            vol.Optional(CONF_NAME, default=data.get(CONF_NAME, "Adjustable Bed")): str,
-        }
-        if CONF_MOTOR_COUNT not in hidden:
-            schema[
-                vol.Optional(
-                    CONF_MOTOR_COUNT,
-                    default=data.get(CONF_MOTOR_COUNT, self._new_bed_motor_count(bed_type)),
-                )
-            ] = vol.All(vol.Coerce(int), vol.In(_motor_count_options(bed_type, variant)))
-        if CONF_HAS_MASSAGE not in hidden:
-            schema[
-                vol.Optional(CONF_HAS_MASSAGE, default=data.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE))
-            ] = bool
-        if CONF_DISABLE_ANGLE_SENSING not in hidden and any(
-            bed_type_has_position_feedback(bed_type, route) for route in (variant, *routes)
-        ):
+        defaults = {
+            CONF_MOTOR_COUNT: self._new_bed_motor_count(bed_type),
             # Positions are read unless the user turns them off.
-            schema[
-                vol.Optional(
-                    CONF_DISABLE_ANGLE_SENSING, default=data.get(CONF_DISABLE_ANGLE_SENSING, False)
-                )
-            ] = bool
-        if bed_type == BED_TYPE_OCTO:
-            schema[vol.Optional(CONF_OCTO_PIN, default=DEFAULT_OCTO_PIN)] = TextSelector(
-                TextSelectorConfig()
+            CONF_DISABLE_ANGLE_SENSING: False,
+            **dict(zip(_PULSE_FIELDS, get_motor_pulse_defaults(bed_type, variant, signals), strict=True)),
+        }
+
+        def fields(*keys: str) -> dict[vol.Marker, Any]:
+            return _settings_fields(
+                self.hass, data, bed_type, variant, [k for k in keys if k not in hidden], defaults
             )
-            schema[vol.Optional(CONF_OCTO_MOTOR_COUNT_OVERRIDE, default="auto")] = vol.In(
-                _OCTO_MOTOR_OVERRIDES
-            )
-        if bed_type == BED_TYPE_OKIN_CB24:
-            _add_cb24_side_schema_field(schema)
-        schema[
-            vol.Optional(
-                CONF_PREFERRED_ADAPTER, default=adapter if adapter in adapters else ADAPTER_AUTO
-            )
-        ] = vol.In(adapters)
-        schema[
-            vol.Optional(
-                CONF_DISCONNECT_AFTER_COMMAND,
-                default=data.get(
-                    CONF_DISCONNECT_AFTER_COMMAND,
-                    disconnect_after_command_default_enabled(bed_type, variant),
-                ),
-            )
-        ] = bool
+
+        schema = fields(CONF_NAME, CONF_MOTOR_COUNT, CONF_HAS_MASSAGE)
+        if any(bed_type_has_position_feedback(bed_type, route) for route in (variant, *routes)):
+            schema.update(fields(CONF_DISABLE_ANGLE_SENSING))
+        if (questions := _final_settings_questions(bed_type, variant)) is not None:
+            schema.update(_profile_question_schema(questions, data, advanced_section=False))
+        schema.update(fields(CONF_PREFERRED_ADAPTER, CONF_DISCONNECT_AFTER_COMMAND))
         if len(routes) >= 2 and (advanced := _route_section(bed_type, variant)) is not None:
             schema[vol.Optional("advanced")] = advanced
-        timing: dict[vol.Marker, Any] = {}
-        if CONF_MOTOR_PULSE_COUNT not in hidden:
-            timing[
-                vol.Optional(
-                    CONF_MOTOR_PULSE_COUNT, default=str(data.get(CONF_MOTOR_PULSE_COUNT, pulse_count))
-                )
-            ] = TextSelector(TextSelectorConfig())
-        if CONF_MOTOR_PULSE_DELAY_MS not in hidden:
-            timing[
-                vol.Optional(
-                    CONF_MOTOR_PULSE_DELAY_MS,
-                    default=str(data.get(CONF_MOTOR_PULSE_DELAY_MS, pulse_delay)),
-                )
-            ] = TextSelector(TextSelectorConfig())
-        timing[
-            vol.Optional(
-                CONF_IDLE_DISCONNECT_SECONDS,
-                default=data.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
-            )
-        ] = vol.All(vol.Coerce(int), vol.Range(min=IDLE_DISCONNECT_KEEP_CONNECTED, max=300))
+        timing = fields(*_PULSE_FIELDS, CONF_IDLE_DISCONNECT_SECONDS)
         schema[vol.Optional("timing")] = section(vol.Schema(timing), {"collapsed": True})
         return schema
 
@@ -5464,29 +5469,21 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         assert self._manual_data is not None
         data = self._manual_data
         bed_type: str = data[CONF_BED_TYPE]
-        errors: dict[str, str] = {}
         # A client that ignores the form cannot answer what the route sets itself.
         submitted = {key: value for key, value in submitted.items() if key not in hidden}
-        keys = (CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS)
-        pulse = dict(zip(keys, get_motor_pulse_defaults(bed_type, variant, signals), strict=True))
-        drawn = dict(
-            zip(keys, get_motor_pulse_defaults(bed_type, drawn_variant, signals), strict=True)
+        pulse_defaults = get_motor_pulse_defaults(bed_type, variant, signals)
+        drawn = get_motor_pulse_defaults(bed_type, drawn_variant, signals)
+        shown = {key: data.get(key, value) for key, value in zip(_PULSE_FIELDS, drawn, strict=True)}
+        # Left as drawn: the staged value, or the chosen route's own default.
+        answered = {
+            key: submitted[key]
+            for key in _PULSE_FIELDS
+            if submitted.get(key) not in (None, "") and str(submitted[key]) != str(shown[key])
+        }
+        pulse, errors = _parse_settings(
+            {**(shown if variant == drawn_variant else {}), **answered}, bed_type, pulse_defaults
         )
-        changed = False
-        for key in keys:
-            shown = data.get(key, drawn[key])
-            value = submitted.get(key)
-            if value in (None, "") or str(value) == str(shown):
-                # Left as drawn: the staged value, or the chosen route's own default.
-                pulse[key] = int(shown) if variant == drawn_variant else pulse[key]
-                continue
-            changed = True
-            try:
-                pulse[key] = int(value)
-            except ValueError, TypeError:
-                errors[key] = "invalid_number"
-        if not errors and _invalid_pulse_count(bed_type, pulse[CONF_MOTOR_PULSE_COUNT]):
-            errors[CONF_MOTOR_PULSE_COUNT] = "invalid_pulse_count_range"
+        pulse = {**dict(zip(_PULSE_FIELDS, pulse_defaults, strict=True)), **pulse}
         # A count the form did not show is the route's to set; the app or its
         # name may still settle it at runtime, as for an Octo RTV.
         shown_count = (
@@ -5507,7 +5504,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             bed_type, variant, data[CONF_ADDRESS], manufacturer_data
         ):
             errors[CONF_PROTOCOL_VARIANT] = variant_error
-        errors.update(_bed_specific_errors(submitted, bed_type))
         entry: dict[str, Any] = {
             **data,
             CONF_NAME: submitted.get(CONF_NAME) or data.get(CONF_NAME, "Adjustable Bed"),
@@ -5529,7 +5525,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             # The user saw these, so a protocol migration must not treat them as
             # generated defaults, unless a route the app chose set them. Timing
             # the user changed is theirs.
-            CONF_MOTOR_PULSE_USER_SET: changed or data.get(CONF_MOTOR_PULSE_USER_SET, True),
+            CONF_MOTOR_PULSE_USER_SET: bool(answered) or data.get(CONF_MOTOR_PULSE_USER_SET, True),
             CONF_DISCONNECT_AFTER_COMMAND: bool(
                 submitted.get(
                     CONF_DISCONNECT_AFTER_COMMAND,
@@ -5546,8 +5542,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         }
         if CONF_PROTOCOL_VARIANT in data or variant != data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO):
             entry[CONF_PROTOCOL_VARIANT] = variant
-        _add_cb24_entry_data(entry, dict(submitted), bed_type)
-        _add_bed_specific_entry_data(entry, submitted, bed_type)
+        if (questions := _final_settings_questions(bed_type, variant)) is not None:
+            entry = questions.staged(entry, _profile_answers(questions, submitted, entry))
+            if questions.validate:
+                errors.update(questions.validate(entry))
+            entry.update(questions.settled(entry))
         entry = self._maybe_add_advertisement_metadata(entry, manufacturer_data=manufacturer_data)
         _LOGGER.info(
             "New bed: address=%s, type=%s, variant=%s, motors=%s, adapter=%s",
@@ -8703,35 +8702,19 @@ class AdjustableBedOptionsFlow(
         variant = current.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
         pulse_defaults = get_motor_pulse_defaults(bed_type, variant)
         adapters = get_available_adapters(self.hass)
-        adapter = current.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
-        if adapter not in adapters:
-            adapter = ADAPTER_AUTO
-        schema: dict[vol.Marker, Any] = {
-            vol.Optional(CONF_PREFERRED_ADAPTER, default=adapter): vol.In(adapters),
-            vol.Optional(
+        schema = _settings_fields(
+            self.hass,
+            current,
+            bed_type,
+            variant,
+            (
+                CONF_PREFERRED_ADAPTER,
                 CONF_CONNECTION_PROFILE,
-                default=current.get(CONF_CONNECTION_PROFILE, DEFAULT_CONNECTION_PROFILE),
-            ): vol.In(CONNECTION_PROFILE_OPTIONS),
-            vol.Optional(
-                CONF_MOTOR_PULSE_COUNT,
-                default=str(current.get(CONF_MOTOR_PULSE_COUNT, pulse_defaults[0])),
-            ): TextSelector(TextSelectorConfig()),
-            vol.Optional(
-                CONF_MOTOR_PULSE_DELAY_MS,
-                default=str(current.get(CONF_MOTOR_PULSE_DELAY_MS, pulse_defaults[1])),
-            ): TextSelector(TextSelectorConfig()),
-            vol.Optional(
+                *_PULSE_FIELDS,
                 CONF_DISCONNECT_AFTER_COMMAND,
-                default=current.get(
-                    CONF_DISCONNECT_AFTER_COMMAND,
-                    disconnect_after_command_default_enabled(bed_type, variant),
-                ),
-            ): bool,
-            vol.Optional(
                 CONF_IDLE_DISCONNECT_SECONDS,
-                default=current.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
-            ): vol.All(vol.Coerce(int), vol.Range(min=IDLE_DISCONNECT_KEEP_CONNECTED, max=300)),
-        }
+            ),
+        )
         if bed_type == BED_TYPE_REVERIE_PAIRLINK:
             schema.update(_pairlink_settings_schema(self.hass, current))
         _hide_owned_generic_fields(schema, bed_type, variant)
@@ -8753,21 +8736,9 @@ class AdjustableBedOptionsFlow(
                         changes,
                     )
                 )
-            for field, default in zip(
-                (CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS), pulse_defaults, strict=True
-            ):
-                if field not in changes:
-                    continue
-                try:
-                    changes[field] = int(changes[field] or default)
-                    if changes[field] < 1:
-                        errors[field] = "invalid_number"
-                except ValueError, TypeError:
-                    errors[field] = "invalid_number"
-            if not errors and _invalid_pulse_count(
-                bed_type, changes.get(CONF_MOTOR_PULSE_COUNT, pulse_defaults[0])
-            ):
-                errors[CONF_MOTOR_PULSE_COUNT] = "invalid_pulse_count_range"
+            parsed, pulse_errors = _parse_settings(changes, bed_type, pulse_defaults)
+            changes.update(parsed)
+            errors.update(pulse_errors)
             if not errors:
                 shown = _shown_option_values(schema)
                 for field in (CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS):
@@ -8778,7 +8749,8 @@ class AdjustableBedOptionsFlow(
                     CONF_PREFERRED_ADAPTER in user_input
                     and current.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO) not in adapters
                 ):
-                    changes[CONF_PREFERRED_ADAPTER] = adapter
+                    # A gone adapter showed as automatic; save that, not the stale one.
+                    changes[CONF_PREFERRED_ADAPTER] = user_input[CONF_PREFERRED_ADAPTER]
                 if changes.keys() & {CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS}:
                     changes[CONF_MOTOR_PULSE_USER_SET] = True
                 if questions is not None:
@@ -9073,9 +9045,7 @@ class AdjustableBedOptionsFlow(
             for key in VMATBASIC_CONFIG_KEYS - {CONF_VMATBASIC_PROFILE}:
                 current_data.pop(key, None)
         current_data = {**current_data, **self._pending_data}
-        bed_type = current_data.get(CONF_BED_TYPE)
-        if bed_type is None:
-            bed_type = BED_TYPE_DIAGNOSTIC
+        bed_type: str = current_data.get(CONF_BED_TYPE) or BED_TYPE_DIAGNOSTIC
 
         variants = get_variants_for_bed_type(bed_type)
         form_variant = self._variant_for_bed_type(bed_type, current_data)
@@ -9083,7 +9053,6 @@ class AdjustableBedOptionsFlow(
         if user_input is not None:
             _apply_bed_type_choice(user_input, shown_choice)
         has_position_feedback = bed_type_has_position_feedback(bed_type, form_variant)
-        form_pulse_defaults = get_motor_pulse_defaults(bed_type, form_variant)
         motor_count_options = _motor_count_options(bed_type, form_variant)
         try:
             form_motor_count = int(current_data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT))
@@ -9097,13 +9066,7 @@ class AdjustableBedOptionsFlow(
             if form_motor_count not in motor_count_options:
                 form_motor_count = motor_count_options[0]
 
-        # Get available Bluetooth adapters
         adapters = get_available_adapters(self.hass)
-
-        # Get current adapter, falling back to auto if stored adapter no longer exists
-        current_adapter = current_data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
-        if current_adapter not in adapters:
-            current_adapter = ADAPTER_AUTO
 
         # Global discovery toggle (shared across all beds, not stored per-entry)
         discovery_disabled = self._pending_data.get(
@@ -9111,105 +9074,32 @@ class AdjustableBedOptionsFlow(
             await async_is_discovery_disabled(self.hass),
         )
 
-        # Build schema
+        def fields(*keys: str) -> dict[vol.Marker, Any]:
+            return _settings_fields(
+                self.hass,
+                {**current_data, CONF_MOTOR_COUNT: form_motor_count},
+                bed_type,
+                form_variant,
+                keys,
+            )
+
         schema_dict: dict[vol.Marker, Any] = {
             **dict([_bed_type_field(vol.Optional, shown_choice, show_saved_id=True)]),
-            vol.Optional(
+            **fields(
                 CONF_HAS_MASSAGE,
-                default=current_data.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
-            ): bool,
-            vol.Optional(
                 CONF_PREFERRED_ADAPTER,
-                default=current_adapter,
-            ): vol.In(adapters),
-            vol.Optional(
                 CONF_CONNECTION_PROFILE,
-                default=current_data.get(CONF_CONNECTION_PROFILE, DEFAULT_CONNECTION_PROFILE),
-            ): vol.In(CONNECTION_PROFILE_OPTIONS),
-            vol.Optional(
-                CONF_MOTOR_PULSE_COUNT,
-                default=str(current_data.get(CONF_MOTOR_PULSE_COUNT, form_pulse_defaults[0])),
-            ): TextSelector(TextSelectorConfig()),
-            vol.Optional(
-                CONF_MOTOR_PULSE_DELAY_MS,
-                default=str(current_data.get(CONF_MOTOR_PULSE_DELAY_MS, form_pulse_defaults[1])),
-            ): TextSelector(TextSelectorConfig()),
-            vol.Optional(
+                *_PULSE_FIELDS,
                 CONF_DISCONNECT_AFTER_COMMAND,
-                default=current_data.get(
-                    CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND
-                ),
-            ): bool,
-            vol.Optional(
                 CONF_IDLE_DISCONNECT_SECONDS,
-                default=current_data.get(
-                    CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
-                ),
-            ): vol.All(vol.Coerce(int), vol.Range(min=IDLE_DISCONNECT_KEEP_CONNECTED, max=300)),
-            vol.Optional(
-                CONF_DISABLE_DISCOVERY,
-                default=discovery_disabled,
-            ): bool,
+            ),
+            vol.Optional(CONF_DISABLE_DISCOVERY, default=discovery_disabled): bool,
+            **fields(CONF_MOTOR_COUNT),
         }
-
-        if bed_type == BED_TYPE_OCTO:
-            schema_dict[
-                vol.Optional(
-                    CONF_OCTO_MOTOR_COUNT_OVERRIDE,
-                    default=str(current_data.get(CONF_OCTO_MOTOR_COUNT_OVERRIDE, "auto")),
-                )
-            ] = vol.In(
-                {
-                    "auto": "Use advertised motor count",
-                    "1": "1 motor",
-                    "2": "2 motors",
-                    "3": "3 motors",
-                    "4": "4 motors",
-                }
-            )
-        else:
-            schema_dict[
-                vol.Optional(
-                    CONF_MOTOR_COUNT,
-                    default=str(form_motor_count),
-                )
-            ] = vol.All(
-                vol.Coerce(str),
-                vol.In([str(count) for count in motor_count_options]),
-            )
-
         if has_position_feedback:
-            schema_dict[
-                vol.Optional(
-                    CONF_DISABLE_ANGLE_SENSING,
-                    default=current_data.get(
-                        CONF_DISABLE_ANGLE_SENSING,
-                        DEFAULT_DISABLE_ANGLE_SENSING,
-                    ),
-                )
-            ] = bool
-            schema_dict[
-                vol.Optional(
-                    CONF_POSITION_MODE,
-                    default=current_data.get(CONF_POSITION_MODE, DEFAULT_POSITION_MODE),
-                )
-            ] = vol.In(
-                {
-                    POSITION_MODE_SPEED: "Speed (recommended)",
-                    POSITION_MODE_ACCURACY: "Accuracy",
-                }
-            )
-
+            schema_dict.update(fields(CONF_DISABLE_ANGLE_SENSING, CONF_POSITION_MODE))
         if supports_passive_position_reconciliation(bed_type):
-            schema_dict[
-                vol.Optional(
-                    CONF_PASSIVE_POSITION_RECONCILIATION,
-                    default=current_data.get(
-                        CONF_PASSIVE_POSITION_RECONCILIATION,
-                        passive_position_reconciliation_default_enabled(bed_type),
-                    ),
-                )
-            ] = bool
+            schema_dict.update(fields(CONF_PASSIVE_POSITION_RECONCILIATION))
 
         # Add variant selection if the bed type has variants. Handsets that moved
         # to the FurniMove app profile stay selectable only for an entry using one.
@@ -9229,15 +9119,6 @@ class AdjustableBedOptionsFlow(
 
         if bed_type == BED_TYPE_REVERIE_PAIRLINK and not separate_address_pair:
             schema_dict.update(_pairlink_settings_schema(self.hass, current_data))
-
-        # Add PIN field for Octo beds
-        if bed_type == BED_TYPE_OCTO:
-            schema_dict[
-                vol.Optional(
-                    CONF_OCTO_PIN,
-                    default=current_data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN),
-                )
-            ] = TextSelector(TextSelectorConfig())
 
         # Each route's own fields are on the form, shown only for that route.
         route_rows = {
@@ -9299,36 +9180,9 @@ class AdjustableBedOptionsFlow(
             keep=asked,
         )
 
-        if bed_type == BED_TYPE_OKIN_CB24:
-            schema_dict[
-                vol.Optional(
-                    CONF_CB24_BED_SELECTION,
-                    default=current_data.get(CONF_CB24_BED_SELECTION, CB24_BED_SELECTION_DEFAULT),
-                )
-            ] = vol.In(
-                {
-                    CB24_BED_SELECTION_DEFAULT: "Both sides",
-                    CB24_BED_SELECTION_A: "Side A / Left",
-                    CB24_BED_SELECTION_B: "Side B / Right",
-                }
-            )
-
-        # Add angle limit fields for beds that use angle-based positions
-        # (not percentage-based beds like Keeson/Ergomotion/Serta/Jensen)
-        # Only show for beds that actually support position feedback
-        if bed_type and bed_type not in BEDS_WITH_PERCENTAGE_POSITIONS and has_position_feedback:
-            schema_dict[
-                vol.Optional(
-                    CONF_BACK_MAX_ANGLE,
-                    default=str(current_data.get(CONF_BACK_MAX_ANGLE, DEFAULT_BACK_MAX_ANGLE)),
-                )
-            ] = TextSelector(TextSelectorConfig())
-            schema_dict[
-                vol.Optional(
-                    CONF_LEGS_MAX_ANGLE,
-                    default=str(current_data.get(CONF_LEGS_MAX_ANGLE, DEFAULT_LEGS_MAX_ANGLE)),
-                )
-            ] = TextSelector(TextSelectorConfig())
+        # Angle limits apply to beds that report angles, not percentages.
+        if bed_type not in BEDS_WITH_PERCENTAGE_POSITIONS and has_position_feedback:
+            schema_dict.update(fields(*_ANGLE_LIMITS))
 
         if user_input is not None:
             # HA's select control uses string values; keep persisted counts numeric.
@@ -9778,15 +9632,6 @@ class AdjustableBedOptionsFlow(
                             CONF_MOTOR_PULSE_USER_SET: False,
                         }
                     )
-            if bed_type == BED_TYPE_OCTO and CONF_OCTO_PIN in user_input:
-                octo_pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN))
-                if not is_valid_octo_pin(octo_pin):
-                    return self.async_show_form(
-                        step_id=step_id,
-                        data_schema=vol.Schema(schema_dict),
-                        errors={CONF_OCTO_PIN: "invalid_pin"},
-                    )
-                user_input[CONF_OCTO_PIN] = octo_pin
             if self.config_entry.data.get(
                 CONF_PAIR_MODE
             ) == PAIR_MODE_SINGLE_ADDRESS and not supports_single_address_pairing(
@@ -9804,68 +9649,14 @@ class AdjustableBedOptionsFlow(
                     data_schema=vol.Schema(schema_dict),
                     errors={"base": "single_address_pairing_unsupported"},
                 )
-            # Get bed-specific defaults for motor pulse settings
-            pulse_defaults = get_motor_pulse_defaults(
-                bed_type,
-                requested_variant,
+            parsed, setting_errors = _parse_settings(
+                user_input, bed_type, get_motor_pulse_defaults(bed_type, requested_variant)
             )
-            # Convert text values to integers
-            try:
-                if CONF_MOTOR_PULSE_COUNT in user_input:
-                    user_input[CONF_MOTOR_PULSE_COUNT] = int(
-                        user_input[CONF_MOTOR_PULSE_COUNT] or pulse_defaults[0]
-                    )
-                if CONF_MOTOR_PULSE_DELAY_MS in user_input:
-                    user_input[CONF_MOTOR_PULSE_DELAY_MS] = int(
-                        user_input[CONF_MOTOR_PULSE_DELAY_MS] or pulse_defaults[1]
-                    )
-            except ValueError, TypeError:
+            if setting_errors:
                 return self.async_show_form(
-                    step_id=step_id,
-                    data_schema=vol.Schema(schema_dict),
-                    errors={"base": "invalid_number"},
+                    step_id=step_id, data_schema=vol.Schema(schema_dict), errors=setting_errors
                 )
-            if _invalid_pulse_count(
-                bed_type, user_input.get(CONF_MOTOR_PULSE_COUNT, pulse_defaults[0])
-            ):
-                return self.async_show_form(
-                    step_id=step_id,
-                    data_schema=vol.Schema(schema_dict),
-                    errors={CONF_MOTOR_PULSE_COUNT: "invalid_pulse_count_range"},
-                )
-            # Convert angle limit values to floats with field-specific error handling
-            if CONF_BACK_MAX_ANGLE in user_input:
-                try:
-                    value = float(user_input[CONF_BACK_MAX_ANGLE] or DEFAULT_BACK_MAX_ANGLE)
-                    if value <= 0 or value > 180:
-                        return self.async_show_form(
-                            step_id=step_id,
-                            data_schema=vol.Schema(schema_dict),
-                            errors={CONF_BACK_MAX_ANGLE: "invalid_angle"},
-                        )
-                    user_input[CONF_BACK_MAX_ANGLE] = value
-                except ValueError, TypeError:
-                    return self.async_show_form(
-                        step_id=step_id,
-                        data_schema=vol.Schema(schema_dict),
-                        errors={CONF_BACK_MAX_ANGLE: "invalid_angle"},
-                    )
-            if CONF_LEGS_MAX_ANGLE in user_input:
-                try:
-                    value = float(user_input[CONF_LEGS_MAX_ANGLE] or DEFAULT_LEGS_MAX_ANGLE)
-                    if value <= 0 or value > 180:
-                        return self.async_show_form(
-                            step_id=step_id,
-                            data_schema=vol.Schema(schema_dict),
-                            errors={CONF_LEGS_MAX_ANGLE: "invalid_angle"},
-                        )
-                    user_input[CONF_LEGS_MAX_ANGLE] = value
-                except ValueError, TypeError:
-                    return self.async_show_form(
-                        step_id=step_id,
-                        data_schema=vol.Schema(schema_dict),
-                        errors={CONF_LEGS_MAX_ANGLE: "invalid_angle"},
-                    )
+            user_input.update(parsed)
 
             async def commit_global_settings() -> ConfigFlowResult | None:
                 """Apply global and hardware changes before confirming the review."""

@@ -102,13 +102,13 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `malouf_app_primary` | User | `malouf_app` profile questions, Configure | `controller_factory.py` |
 | `malouf_layout` | User | Malouf receiver profile questions, Configure | `coordinator.py` |
 | `malouf_memory_slots` | User | Malouf receiver profile questions, Configure | `coordinator.py` |
-| `octo_pin` | User | Octo setup fields, `verify_octo_pin`, Configure, the Octo PIN action | `coordinator.py`, `octo_services.py` |
-| `octo_motor_count_override` | User | Octo setup fields, Configure; written by [schema 5.5](#octo-motor-layout-in-schema-55) where an Octo setup lacks it | `beds/octo.py`, `config_flow.py` |
+| `octo_pin` | User | A question of `octo`, `verify_octo_pin`, the Octo PIN action | `coordinator.py`, `octo_services.py` |
+| `octo_motor_count_override` | User | A question of `octo`; written by [schema 5.5](#octo-motor-layout-in-schema-55) where an Octo setup lacks it | `beds/octo.py`, `config_flow.py` |
 | `jensen_pin` | User | A question of `jensen`, Configure | `coordinator.py` |
 | `richmat_remote` | Profile | A question of `richmat` without an RMControl product; the Richmat question stages the code the Bluetooth name carries | `coordinator.py`, `profile_recommendations.py` |
 | `rmcontrol_product` | Profile | A question of `richmat`; the Richmat question's RMControl answer requires one | `coordinator.py`, `coordinator_connection.py` |
 | `rmcontrol_side` | Profile | A question of `richmat` with an RMControl product | `coordinator.py`, `coordinator_connection.py` |
-| `cb24_bed_selection` | User | Configure, for CB24 | `coordinator.py` |
+| `cb24_bed_selection` | User | A question of `okin_cb24` | `coordinator.py` |
 | `gmmotor_side` | Profile | A question of `gmmotor` | `controller_factory.py` |
 | `starcode_abm5_4_command_selector` | User | `starcode_app` step, Configure | `controller_factory.py` |
 | `starcode_abm5_4_ui_selector` | Internal | `starcode_app` copies the command selector | `controller_factory.py` |

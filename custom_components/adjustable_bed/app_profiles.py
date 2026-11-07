@@ -50,8 +50,6 @@ from .const import (
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
-    BED_TYPE_OCTO,
-    BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CST,
     BED_TYPE_REMACRO,
     BED_TYPE_REVERIE,
@@ -71,7 +69,6 @@ from .const import (
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
     CONF_BLE_DEVICE_NAME,
-    CONF_CB24_BED_SELECTION,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_FSM_RELAX_MEMORY_NAMES,
     CONF_HAS_LIGHT,
@@ -85,8 +82,6 @@ from .const import (
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
-    CONF_OCTO_MOTOR_COUNT_OVERRIDE,
-    CONF_OCTO_PIN,
     CONF_PAIRLINK_HOME_ID,
     CONF_PAIRLINK_HOST_SOURCE,
     CONF_PAIRLINK_PASSWORD_HEX,
@@ -313,8 +308,6 @@ def _declared_questions(bed_type: str, variant: str | None) -> frozenset[str]:
 # Settings a bed type saves that no declared question asks and no side profile
 # lists: repair markers, app metadata and its own settings outside a profile.
 _STORED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
-    BED_TYPE_OCTO: frozenset({CONF_OCTO_PIN, CONF_OCTO_MOTOR_COUNT_OVERRIDE}),
-    BED_TYPE_OKIN_CB24: frozenset({CONF_CB24_BED_SELECTION}),
     BED_TYPE_OKIN_CST: frozenset({"okimat_model_on_cst", "okin_cst_kept"}),
     BED_TYPE_STAR_ELEVATE: frozenset({CONF_STARCODE_LIFT_ENTRIES}),
     BED_TYPE_VIBRADORM_APP: frozenset({CONF_VIBRADORM_APP_METADATA}),

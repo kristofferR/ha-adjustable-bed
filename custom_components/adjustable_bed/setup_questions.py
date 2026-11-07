@@ -57,6 +57,7 @@ from .const import (
     BED_TYPE_MOTOMOTION,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_UUID,
@@ -83,9 +84,13 @@ from .const import (
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
+    CB24_BED_SELECTION_A,
+    CB24_BED_SELECTION_B,
+    CB24_BED_SELECTION_DEFAULT,
     CLUSTER033_BED_TYPES,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
+    CONF_CB24_BED_SELECTION,
     CONF_CLUSTER018_THIRD_SERVICE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_FURNIMOVE_REMOTE,
@@ -120,6 +125,8 @@ from .const import (
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_MOTOR_PULSE_USER_SET,
+    CONF_OCTO_MOTOR_COUNT_OVERRIDE,
+    CONF_OCTO_PIN,
     CONF_PAIR_MODE,
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
@@ -145,6 +152,7 @@ from .const import (
     CONF_VMATBASIC_FLOOR_LEVEL,
     CONF_VMATBASIC_FLOOR_MINUTES,
     CONF_VMATBASIC_PROFILE,
+    DEFAULT_OCTO_PIN,
     GOODVIBE_PROFILES,
     HAS_LIGHT_DEFAULTS,
     HJBED_PROFILES,
@@ -1304,6 +1312,40 @@ def _hush_products(_data: Mapping[str, Any]) -> Mapping[Any, str]:
     }
 
 
+_OCTO_MOTOR_OVERRIDES: Final[Mapping[Any, str]] = {
+    "auto": "Use advertised motor count",
+    "1": "1 motor",
+    "2": "2 motors",
+    "3": "3 motors",
+    "4": "4 motors",
+}
+
+
+def _octo_normalize(previous: Mapping[str, Any], answers: Mapping[str, Any]) -> dict[str, Any]:
+    from .validators import normalize_octo_pin
+
+    data = {**previous, **answers}
+    if CONF_OCTO_PIN in answers:
+        data[CONF_OCTO_PIN] = normalize_octo_pin(answers[CONF_OCTO_PIN])
+    return data
+
+
+def _octo_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .validators import is_valid_octo_pin
+
+    if not is_valid_octo_pin(data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN)):
+        return {CONF_OCTO_PIN: "invalid_pin"}
+    return {}
+
+
+# The native CB24 A/B selector; Both uses the broadcast selector.
+_CB24_SIDES: Final[Mapping[Any, str]] = {
+    CB24_BED_SELECTION_DEFAULT: "Both sides",
+    CB24_BED_SELECTION_A: "Side A / Left",
+    CB24_BED_SELECTION_B: "Side B / Right",
+}
+
+
 def _asking(key: str, **declared: Any) -> SetupProfile:
     """Add questions and rules to a profile's owned-field declaration."""
     return replace(_BASE.get(key, SetupProfile()), **declared)
@@ -1779,6 +1821,23 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         validate=_motion_bed_errors,
         derive=lambda _data: _NO_PULSE_CHOICE,
         seed=_motion_bed_seed,
+    ),
+    # Standard OCTO Smart Control's PIN, and an explicit motor layout over the
+    # advertised one. A route without an app step asks these in its final settings.
+    BED_TYPE_OCTO: _asking(
+        BED_TYPE_OCTO,
+        questions=(
+            Question(CONF_OCTO_PIN, default=DEFAULT_OCTO_PIN, text=True),
+            Question(CONF_OCTO_MOTOR_COUNT_OVERRIDE, _OCTO_MOTOR_OVERRIDES, "auto"),
+        ),
+        normalize=_octo_normalize,
+        validate=_octo_errors,
+    ),
+    BED_TYPE_OKIN_CB24: _asking(
+        BED_TYPE_OKIN_CB24,
+        questions=(
+            Question(CONF_CB24_BED_SELECTION, _CB24_SIDES, CB24_BED_SELECTION_DEFAULT),
+        ),
     ),
     # The exact Bluetooth name selects MotoMotion's panel and its independent
     # feature flags; the app's own controls replace massage and angle sensing.
