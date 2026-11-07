@@ -8,7 +8,6 @@ import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
-from homeassistant.helpers import config_validation as cv
 
 from .const import (
     BED_TYPE_CUSTOMATIC_CLARITY,
@@ -19,6 +18,7 @@ from .const import (
 from .services import (
     ATTR_ACTIONS,
     ATTR_DURATION,
+    DEVICE_IDS,
     SIDE_FIELD,
     _call_targets,
     _command_targets,
@@ -101,7 +101,7 @@ def async_register_customatic_services(hass: HomeAssistant) -> None:
         handle_customatic_hold_memory,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required(ATTR_ACTIONS): _customatic_memory_actions,
                 vol.Required(ATTR_DURATION): _hold_seconds,
                 **SIDE_FIELD,
@@ -114,7 +114,7 @@ def async_register_customatic_services(hass: HomeAssistant) -> None:
         handle_customatic_move_simultaneously,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required(ATTR_ACTIONS): _customatic_movement_actions,
                 vol.Required(ATTR_DURATION): _hold_seconds,
                 **SIDE_FIELD,

@@ -42,6 +42,7 @@ from .base import (
     PositionNumberSpec,
 )
 from .builder import BuildContext
+from .sleep_number_commands import SleepNumberActions
 from .sleep_number_mcr_protocol import (
     FoundationFeatures,
     classify_smartpump,
@@ -212,7 +213,7 @@ def _motor_command(side: str, axis: str, direction: str) -> MotorCommandCallable
     return execute
 
 
-class SleepNumberMcrController(BedController):
+class SleepNumberMcrController(BedController, SleepNumberActions):
     """Controller for older Sleep Number BAM / MCR beds."""
 
     def __init__(
@@ -296,10 +297,6 @@ class SleepNumberMcrController(BedController):
     @property
     def exposes_discrete_light_as_light(self) -> bool:
         return True
-
-    @property
-    def position_number_pruning(self) -> frozenset[str] | None:
-        return frozenset()
 
     @property
     def supports_discrete_light_control(self) -> bool:

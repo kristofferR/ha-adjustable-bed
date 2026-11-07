@@ -353,19 +353,6 @@ class LeggettGen2Controller(BedController):
             spec for spec in super().motor_control_specs if present.get(spec.key, False)
         )
 
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Remove covers for actuators not in this profile.
-
-        Covers absent profile actuators plus the duplicate ``head``/``feet`` keys,
-        so cover.py cleans up covers left over from the old always-full feature set
-        (including no-actuator profiles).
-        """
-        present = self._present_specs()
-        stale = {key for key, is_present in present.items() if not is_present}
-        stale.update({"head", "feet"})
-        return frozenset(stale)
-
     # Motor control methods - Gen2 re-sends the move command every 200 ms while
     # held and sends an explicit per-actuator stop on release (matching the app).
     async def _move_with_stop(

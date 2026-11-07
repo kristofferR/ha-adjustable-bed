@@ -34,6 +34,7 @@ from .base import (
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
+    require_controller,
 )
 from .builder import BuildContext
 
@@ -195,10 +196,6 @@ class VMatBasicController(BedController):
     @property
     def supports_preset_flat(self) -> bool:
         return False
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset({"head", "feet", "lumbar", "tilt", "bed_height"})
 
     @property
     def memory_slot_count(self) -> int:
@@ -732,7 +729,7 @@ class VMatBasicController(BedController):
                 _PREFIX + "mood_palette",
                 MOOD_PALETTE,
                 vmat_profiles.PALETTE_OPTIONS,
-                lambda ctrl, value: ctrl.set_mood_palette(value),
+                lambda ctrl, value: require_controller(ctrl, VMatBasicController).set_mood_palette(value),
                 card=CARD_LIGHT_MOOD,
             ),
             ControllerSelectSpec(
@@ -740,7 +737,7 @@ class VMatBasicController(BedController):
                 _PREFIX + "mood_effect",
                 MOOD_EFFECT,
                 ("e1", "e2", "e3"),
-                lambda ctrl, value: ctrl.set_mood_effect(value),
+                lambda ctrl, value: require_controller(ctrl, VMatBasicController).set_mood_effect(value),
                 card=CARD_LIGHT_MOOD,
             ),
         )
@@ -790,7 +787,7 @@ class VMatBasicController(BedController):
                     0,
                     255,
                     1,
-                    lambda ctrl, value: ctrl.set_mood_speed(value),
+                    lambda ctrl, value: require_controller(ctrl, VMatBasicController).set_mood_speed(value),
                     card=CARD_LIGHT_MOOD,
                 ),
             ]

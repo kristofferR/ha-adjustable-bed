@@ -15,12 +15,11 @@ from homeassistant.components.number import (
     NumberMode,
 )
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ServiceValidationError
-from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .bed_traits import bed_traits, bed_type_has_position_feedback
+from .bed_traits import bed_type_has_position_feedback
 from .beds.base import ControllerNumberSpec, PositionNumberSpec
 from .card import (
     CARD_CLIMATE,
@@ -31,7 +30,6 @@ from .card import (
     motor_card,
 )
 from .const import (
-    BED_TYPE_SLEEPSTAR,
     CONF_BED_TYPE,
     CONF_HAS_MASSAGE,
     CONF_PROTOCOL_VARIANT,
@@ -42,6 +40,7 @@ from .controller_state import ControllerState, StateKey, sided
 from .entity import AdjustableBedEntity, PlacedInCard, RenamesInPlace
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime, controller_side_scope, own_sides
+from .entity_sweep import PlatformEntities, records_entities
 from .octo_runtime import octo_controller
 from .paired_coordinator import (
     PairedBedCoordinator,
@@ -155,12 +154,6 @@ NUMBER_DESCRIPTIONS: tuple[AdjustableBedNumberEntityDescription, ...] = (
         max_angle=45.0,
         min_motors=4,
     ),
-)
-
-
-_POSITION_ENTITY_KEYS = frozenset(
-    [description.key for description in NUMBER_DESCRIPTIONS]
-    + [f"{axis}_position_{side}" for axis in ("back", "legs") for side in ("left", "right")]
 )
 
 
@@ -333,10 +326,11 @@ def _build_position_description(
     )
 
 
+@records_entities(Platform.NUMBER)
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed number entities."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
@@ -344,15 +338,14 @@ async def async_setup_entry(
     async_setup_estimate_numbers(hass, entry, async_add_entities)
     for runtime in entity_runtimes(coordinator):
         async_setup_dynamic_entities(
-            hass, entry, runtime, async_add_entities, partial(_number_entities_for, hass, runtime)
+            entry, runtime, async_add_entities, partial(_number_entities_for, hass, runtime)
         )
     if isinstance(coordinator, PairedBedCoordinator):
-        paired_entities: list[NumberEntity] = []
-        children = list(coordinator.children.values())
         # Combined sliders on the parent device drive both sides to one target.
         # They read the raw children's positions and seek via the parent (side=both).
-        paired_entities.extend(_combined_position_entities_for(coordinator, children))
-        _async_remove_stale_combined_number_entities(hass, coordinator, children, paired_entities)
+        paired_entities = _combined_position_entities_for(
+            coordinator, list(coordinator.children.values())
+        )
         if paired_entities:
             async_add_entities(paired_entities)
 
@@ -369,32 +362,6 @@ def _number_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
         has_massage = True
 
     entities: list[NumberEntity] = []
-
-    # Beds with no angle/position feedback may have registered position sliders
-    # under an earlier version or a previously selected profile. Remove any so
-    # existing installs do not keep dead orphaned numbers (#322, #344).
-    if bed_traits(bed_type).no_angle_feedback:
-        _async_remove_stale_position_entities(hass, coordinator)
-    elif (
-        controller is not None
-        and (extra_position_keys := controller.position_number_pruning) is not None
-        # Until capabilities resolve, the controller reports no axes; removing
-        # sliders then would delete working entities (#714).
-        and controller.controller_entity_discovery_complete
-    ):
-        supported_keys = {spec.key for spec in controller.position_number_specs}
-        position_keys = _POSITION_ENTITY_KEYS | extra_position_keys
-        _async_remove_stale_position_entities(
-            hass,
-            coordinator,
-            stale_keys=frozenset(key for key in position_keys if key not in supported_keys),
-        )
-    elif bed_type == BED_TYPE_SLEEPSTAR:
-        _async_remove_stale_position_entities(
-            hass,
-            coordinator,
-            stale_keys=frozenset({"back_position", "legs_position"}),
-        )
 
     # Set up position number entities (only for beds with position feedback)
     if not coordinator.disable_angle_sensing:
@@ -419,28 +386,6 @@ def _number_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                 bed_type,
                 entry.data.get(CONF_PROTOCOL_VARIANT),
             )
-
-    if controller is not None:
-        supported_zones = (
-            controller.massage_intensity_zones
-            if has_massage and controller.supports_massage_intensity_control
-            else []
-        )
-        registry = er.async_get(hass)
-        for description in MASSAGE_NUMBER_DESCRIPTIONS:
-            # The right-side control can remain after switching away from MOTIONrelax.
-            if (
-                not controller.prunes_stale_massage_numbers
-                and description.key != "massage_right_intensity"
-            ):
-                continue
-            if description.massage_zone in supported_zones:
-                continue
-            entity_id = registry.async_get_entity_id(
-                "number", DOMAIN, coordinator.entity_unique_id(description.key)
-            )
-            if entity_id is not None:
-                registry.async_remove(entity_id)
 
     # Set up massage intensity number entities (only for beds with massage and direct intensity control)
     if has_massage and controller is not None:
@@ -469,14 +414,6 @@ def _number_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                     )
                     entities.append(AdjustableBedMassageNumber(coordinator, massage_adjusted))
 
-    if controller is not None:
-        active_zones = (
-            set(controller.massage_intensity_zones)
-            if has_massage and controller.supports_massage_intensity_control
-            else set()
-        )
-        _async_remove_stale_massage_entities(hass, coordinator, active_zones)
-
     # Set up light level number entity (only for beds that support it)
     if controller is not None and controller.supports_light_level_control:
         max_level = controller.light_level_max
@@ -495,8 +432,6 @@ def _number_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                 ),
             )
         )
-    elif controller is not None and controller.prunes_stale_light_level:
-        _async_remove_stale_level_entity(hass, coordinator, LIGHT_LEVEL_DESCRIPTION)
 
     if controller is not None and controller.supports_fan_level_control:
         entities.append(
@@ -505,9 +440,6 @@ def _number_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                 replace(FAN_LEVEL_DESCRIPTION, native_max_value=controller.fan_level_max),
             )
         )
-    elif controller is not None and controller.prunes_stale_fan_level:
-        # A corrected config report can take away a fan the fallback assumed.
-        _async_remove_stale_level_entity(hass, coordinator, FAN_LEVEL_DESCRIPTION)
 
     sleep_number_sides = (
         own_sides(coordinator, controller.sleep_number_setting_sides) if controller else ()
@@ -518,7 +450,6 @@ def _number_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
             coordinator.name,
             sleep_number_sides,
         )
-        _async_remove_stale_sleep_number_entity(hass, coordinator)
         for side_description in (
             SLEEP_NUMBER_SETTING_LEFT_DESCRIPTION,
             SLEEP_NUMBER_SETTING_RIGHT_DESCRIPTION,
@@ -561,8 +492,6 @@ def _number_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
 
     if controller is not None:
         specs = _controller_number_specs_for_entities(controller)
-        if controller.controller_entity_discovery_complete:
-            _async_remove_stale_controller_numbers(hass, coordinator, specs)
         entities.extend(AdjustableBedControllerNumber(coordinator, spec) for spec in specs)
 
     return entities
@@ -589,27 +518,6 @@ def _valid_controller_number_value(spec: ControllerNumberSpec, value: float) -> 
         return False
     steps = (value - spec.native_min_value) / spec.native_step
     return isfinite(steps) and isclose(steps, round(steps), rel_tol=0, abs_tol=1e-8)
-
-
-def _async_remove_stale_controller_numbers(
-    hass: HomeAssistant, coordinator: EntityRuntime, specs: tuple[ControllerNumberSpec, ...]
-) -> None:
-    """Remove only this runtime's retired controller-declared numbers."""
-    desired = {coordinator.entity_unique_id(f"controller_number_{spec.key}") for spec in specs}
-    prefix, suffix = coordinator.entity_unique_id("controller_number_").split(
-        "controller_number_", 1
-    )
-    prefix += "controller_number_"
-    registry = er.async_get(hass)
-    for row in list(er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)):
-        if (
-            row.domain == "number"
-            and row.platform == DOMAIN
-            and row.unique_id.startswith(prefix)
-            and row.unique_id.endswith(suffix)
-            and row.unique_id not in desired
-        ):
-            registry.async_remove(row.entity_id)
 
 
 class AdjustableBedControllerNumber(AdjustableBedEntity, NumberEntity):
@@ -736,106 +644,6 @@ def _combined_position_entities_for(
             PairedBedCombinedPositionNumber(coordinator, _build_position_description(reconciled))
         )
     return entities
-
-
-def _async_remove_stale_combined_number_entities(
-    hass: HomeAssistant,
-    coordinator: PairedBedCoordinator,
-    children: Sequence[EntityRuntime],
-    entities: list[NumberEntity],
-) -> None:
-    """Remove pair-level sliders no longer supported by both known sides."""
-    if any(child.capability_controller is None for child in children):
-        return
-    desired_unique_ids = {
-        unique_id
-        for entity in entities
-        if (unique_id := entity.unique_id) is not None and unique_id.endswith("_both")
-    }
-    candidate_keys = {description.key for description in NUMBER_DESCRIPTIONS}
-    candidate_keys.update(spec.key for child in children for spec in _position_number_specs(child))
-    candidate_unique_ids = {coordinator.entity_unique_id(f"{key}_both") for key in candidate_keys}
-    registry = er.async_get(hass)
-    for row in list(er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)):
-        translation_key = (row.translation_key or "").removesuffix("_both")
-        if (
-            row.domain == "number"
-            and (
-                row.unique_id in candidate_unique_ids
-                or (row.unique_id.endswith("_both") and translation_key.endswith("_position"))
-            )
-            and row.unique_id not in desired_unique_ids
-        ):
-            registry.async_remove(row.entity_id)
-
-
-def _async_remove_stale_sleep_number_entity(
-    hass: HomeAssistant,
-    coordinator: EntityRuntime,
-) -> None:
-    """Remove the legacy single-side Sleep Number entity when side controls exist."""
-    registry = er.async_get(hass)
-    entity_id = registry.async_get_entity_id(
-        "number",
-        DOMAIN,
-        coordinator.entity_unique_id(SLEEP_NUMBER_SETTING_DESCRIPTION.key),
-    )
-    if entity_id is not None:
-        registry.async_remove(entity_id)
-
-
-def _async_remove_stale_level_entity(
-    hass: HomeAssistant,
-    coordinator: EntityRuntime,
-    description: AdjustableBedLevelNumberEntityDescription,
-) -> None:
-    """Remove a level slider the current profile no longer exposes."""
-    registry = er.async_get(hass)
-    entity_id = registry.async_get_entity_id(
-        "number",
-        DOMAIN,
-        coordinator.entity_unique_id(description.key),
-    )
-    if entity_id is not None:
-        registry.async_remove(entity_id)
-
-
-def _async_remove_stale_massage_entities(
-    hass: HomeAssistant,
-    coordinator: EntityRuntime,
-    active_zones: set[str],
-) -> None:
-    """Remove intensity numbers no longer supported by the selected controller."""
-    registry = er.async_get(hass)
-    for description in MASSAGE_NUMBER_DESCRIPTIONS:
-        if description.massage_zone in active_zones:
-            continue
-        entity_id = registry.async_get_entity_id(
-            "number", DOMAIN, coordinator.entity_unique_id(description.key)
-        )
-        if entity_id is not None:
-            registry.async_remove(entity_id)
-
-
-def _async_remove_stale_position_entities(
-    hass: HomeAssistant,
-    coordinator: EntityRuntime,
-    *,
-    stale_keys: frozenset[str] | None = None,
-) -> None:
-    """Remove position number entities the integration no longer creates.
-
-    Beds whose traits declare no_angle_feedback have no position feedback, but an earlier
-    version or profile may have registered *_back_position/*_legs_position sliders
-    that now linger as dead orphaned numbers (#322, #344).
-    """
-    registry = er.async_get(hass)
-    for key in _POSITION_ENTITY_KEYS if stale_keys is None else stale_keys:
-        entity_id = registry.async_get_entity_id(
-            "number", DOMAIN, coordinator.entity_unique_id(key)
-        )
-        if entity_id is not None:
-            registry.async_remove(entity_id)
 
 
 class AdjustableBedPositionNumber(AdjustableBedEntity, NumberEntity):

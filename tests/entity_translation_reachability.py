@@ -29,7 +29,10 @@ from pathlib import Path
 from homeassistant.helpers.entity import EntityDescription
 
 from custom_components.adjustable_bed.beds.base import BedController
-from custom_components.adjustable_bed.binary_sensor import BINARY_SENSOR_DESCRIPTIONS
+from custom_components.adjustable_bed.binary_sensor import (
+    BINARY_SENSOR_DESCRIPTIONS,
+    _build_side_presence_description,
+)
 from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS
 from custom_components.adjustable_bed.climate import (
     FOOTWARMING_CLIMATE_DESCRIPTION,
@@ -259,9 +262,9 @@ def required_keys(
         "number": _description_keys((*NUMBER_DESCRIPTIONS, *MASSAGE_NUMBER_DESCRIPTIONS)),
         "switch": _description_keys(SWITCH_DESCRIPTIONS),
         "sensor": _description_keys((*SENSOR_DESCRIPTIONS, *MASSAGE_SENSOR_DESCRIPTIONS)),
-        # A bed that reports presence per side gets a sensor for each side.
-        "binary_sensor": _description_keys(BINARY_SENSOR_DESCRIPTIONS)
-        | {f"bed_presence_{side}" for side in sides},
+        "binary_sensor": _description_keys(
+            (*BINARY_SENSOR_DESCRIPTIONS, *map(_build_side_presence_description, sides))
+        ),
     }
     for platform, keys in descriptions.items():
         required.setdefault(platform, set()).update(keys)

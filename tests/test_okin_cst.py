@@ -127,7 +127,6 @@ class TestOkinCstCapabilities:
             "feet",
             "lumbar",
         ]
-        assert okin_cst_controller.stale_motor_entity_keys == frozenset({"back", "legs", "tilt"})
 
     def test_command_values_match_reachable_cst_protocol(self) -> None:
         """Only command values reachable from the shipped app are declared."""

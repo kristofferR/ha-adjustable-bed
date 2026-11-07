@@ -2,7 +2,6 @@
 
 import json
 from pathlib import Path
-from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -10,6 +9,7 @@ from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
 from custom_components.adjustable_bed.beds.base import BedController
+from custom_components.adjustable_bed.beds.keeson_layout_app import AppController
 from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.const import DOMAIN, SIDE_BOTH
 from custom_components.adjustable_bed.controller_factory import create_controller
@@ -30,10 +30,10 @@ async def services(hass):
 
 
 def target(spec):
-    ctrl = SimpleNamespace(
+    ctrl = MagicMock(
+        spec=AppController,
         alarm_table_schedule_spec=spec,
         configure_alarm_table_schedule=AsyncMock(),
-        supports_alarm=True,
     )
     coord = MagicMock(spec=AdjustableBedCoordinator)
     coord.name = "App bed"
@@ -212,6 +212,4 @@ def test_service_entity_strings_and_yaml_are_consistent():
     assert strings == json.loads((root / "translations/en.json").read_text())
     service = yaml.safe_load((root / "services.yaml").read_text())["configure_alarm_schedule"]
     assert set(service["fields"]) == set(strings["services"]["configure_alarm_schedule"]["fields"])
-    getter = BedController.alarm_table_schedule_spec.fget
-    assert getter is not None
-    assert getter(MagicMock()) is None
+    assert not hasattr(BedController, "alarm_table_schedule_spec")

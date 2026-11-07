@@ -378,11 +378,6 @@ class KeesonController(BedController):
         return tuple(specs)
 
     @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Optional covers that may no longer apply; active keys are skipped."""
-        return frozenset({"tilt", "lumbar", "back_legs"})
-
-    @property
     def auto_enable_massage(self) -> bool:
         """Expose massage without opt-in when the Adjustable Lite KSBT03C remote shows it."""
         return self.profile.massage == "zone_steps"
@@ -593,12 +588,6 @@ class KeesonController(BedController):
         )
 
     @property
-    def stale_controller_state_binary_sensor_entity_keys(self) -> frozenset[str]:
-        if self.profile.status_poll_ms:
-            return frozenset()
-        return frozenset({"adjustable_lite_light"})
-
-    @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         """The KSBT03C remote's 10/20/30 minute massage timer indicator."""
         if not self.profile.status_timer:
@@ -613,12 +602,6 @@ class KeesonController(BedController):
                 attribute_keys=(STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW,),
             ),
         )
-
-    @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        if self.profile.status_timer:
-            return frozenset()
-        return frozenset({"adjustable_lite_massage_timer"})
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         """Start position (Ergomotion) or status (Adjustable Lite) notifications."""

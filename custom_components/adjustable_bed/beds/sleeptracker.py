@@ -69,7 +69,7 @@ def _request_button(
     key: str, name: str, request: p.Request, card: CardPlacement = CARD_UTILITY
 ) -> ControllerButtonSpec:
     async def press(controller: BedController) -> None:
-        await controller.async_execute_sleeptracker_request(request)
+        await _controller(controller).async_execute_sleeptracker_request(request)
 
     return ControllerButtonSpec(key, name, press, translation_key=key, card=card)
 
@@ -184,10 +184,6 @@ class SleeptrackerController(BedController):
 
     @property
     def requires_notification_channel(self) -> bool:
-        return True
-
-    @property
-    def supports_sleeptracker_controls(self) -> bool:
         return True
 
     @property

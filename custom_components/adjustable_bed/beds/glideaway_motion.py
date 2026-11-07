@@ -239,10 +239,6 @@ class GlideawayMotionController(BedController):
             for axis in LAYOUTS[self.model]
         )
 
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset(AXES)
-
     async def move_back_up(self) -> None:
         await self._move_axis("back", True)
 
@@ -571,13 +567,6 @@ class GlideawayMotionController(BedController):
             card=CARD_MASSAGE_TIMER,
         )
         return (alarm, timer) if self.supports_massage else (alarm,)
-
-    @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        return frozenset({"glideaway_motion_massage_timer", "glideaway_motion_alarm"}) - {
-            s.key for s in self.controller_state_sensor_specs
-        }
-
 
 def _axis_action(axis: str, up: bool) -> MotorCommandCallable:
     async def move(controller: BedController) -> None:

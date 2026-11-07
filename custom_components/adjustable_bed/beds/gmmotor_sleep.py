@@ -18,7 +18,7 @@ from ..card import CARD_UTILITY
 from ..controller_state import StateKey, StateUpdate
 from ..gmmotor_notifications import Value
 from ..gmmotor_protocol import MalformedNotification
-from ..gmmotor_requests import Operation, Request
+from ..gmmotor_requests import GmmotorActions, Operation, Request
 from ..gmmotor_sessions import sleep_intent
 from ..gmmotor_sleep_protocol import (
     LiveState,
@@ -31,7 +31,13 @@ from ..gmmotor_sleep_protocol import (
 from ..gmmotor_sleep_reports import decode_report
 from ..gmmotor_sleep_state import ClockUpdate, Followup, ReportSize, Stream, dispatch, fields
 from ..gmmotor_transport import Transport, native_write_lock, select_sleep
-from .base import BedController, ControllerButtonSpec, ControllerStateSensorSpec, MotorControlSpec
+from .base import (
+    BedController,
+    ControllerButtonSpec,
+    ControllerStateSensorSpec,
+    MotorControlSpec,
+    require_controller,
+)
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -75,7 +81,7 @@ def _live_key(side: str) -> StateKey[dict[str, object]]:
     return StateKey[dict[str, object]]("gmmotor_sleep_" + side)
 
 
-class GmmotorSleepController(BedController):
+class GmmotorSleepController(BedController, GmmotorActions):
     """One explicitly selected GM Control sleep module, independent of the bed."""
 
     def __init__(self, coordinator: AdjustableBedCoordinator, *, sxb: bool) -> None:
@@ -144,10 +150,6 @@ class GmmotorSleepController(BedController):
         return True
 
     @property
-    def supports_gmmotor_controls(self) -> bool:
-        return True
-
-    @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         operations: tuple[tuple[str, Operation], ...] = (
             ("Time", "sensor_time"),
@@ -159,7 +161,9 @@ class GmmotorSleepController(BedController):
             ControllerButtonSpec(
                 key="gmmotor_" + operation,
                 name=name,
-                press_fn=lambda ctrl, op=operation: ctrl.async_execute_gmmotor_request(Request(op)),
+                press_fn=lambda ctrl, op=operation: require_controller(
+                    ctrl, GmmotorSleepController
+                ).async_execute_gmmotor_request(Request(op)),
                 cancel_movement=False,
             )
             for name, operation in operations

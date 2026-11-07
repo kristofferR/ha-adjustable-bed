@@ -10,10 +10,12 @@ from homeassistant.core import ServiceCall, SupportsResponse
 from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed import sleep_number_services as services
+from custom_components.adjustable_bed.beds.sleep_number_commands import SleepNumberActions
 
 
 def controller(side=None):
-    result = SimpleNamespace(
+    result = MagicMock(
+        spec=SleepNumberActions,
         sleep_number_command_names=("query",),
         validate_sleep_number_command=MagicMock(),
         async_execute_sleep_number_command=AsyncMock(return_value={"level": 42}),

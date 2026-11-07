@@ -648,7 +648,7 @@ async def test_ha_service_preflights_all_targets(hass, coordinator, instant):
     async_register_hjbed_services(hass)
     with (
         patch(
-            "custom_components.adjustable_bed.hjbed_services._resolve_sided_targets",
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=(targets, []),
         ),
         pytest.raises(ServiceValidationError),

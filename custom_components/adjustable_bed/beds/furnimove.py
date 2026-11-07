@@ -29,6 +29,7 @@ from .base import (
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
+    require_controller,
 )
 from .builder import BuildContext
 
@@ -142,7 +143,9 @@ def validate_furnimove_name(name: str) -> None:
 
 def _action_callback(row_index: int) -> MotorCommandCallable:
     async def invoke(controller: BedController) -> None:
-        await controller.async_execute_furnimove_action(row_index)
+        await require_controller(controller, FurniMoveController).async_execute_furnimove_action(
+            row_index
+        )
 
     return invoke
 
@@ -602,10 +605,6 @@ class FurniMoveController(BedController):
     @property
     def supports_motor_control(self) -> bool:
         return bool(self.motor_control_specs)
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset({"stair"})
 
     @property
     def supports_simultaneous_movement(self) -> bool:

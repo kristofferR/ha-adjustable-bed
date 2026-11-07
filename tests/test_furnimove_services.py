@@ -35,7 +35,7 @@ async def invoke(hass, targets, service, data):
     with (
         patch("custom_components.adjustable_bed.services._resolve_sided_targets",
               return_value=([(value, SIDE_BOTH) for value in targets], [])) as resolve,
-        patch("custom_components.adjustable_bed.furnimove_services._resolve_sided_targets",
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets",
               new=resolve),
     ):
         await hass.services.async_call(DOMAIN, service, {"device_id": "bed", **data}, blocking=True)

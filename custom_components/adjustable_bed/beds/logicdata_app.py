@@ -180,10 +180,6 @@ class LogicdataAppController(BedController):
         return self.profile.factory_reset
 
     @property
-    def prunes_stale_massage_numbers(self) -> bool:
-        return True
-
-    @property
     def supports_massage(self) -> bool:
         return self._has_massage
 
@@ -261,24 +257,8 @@ class LogicdataAppController(BedController):
         )
 
     @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return profiles.ALL_AXES - set(self._axes)
-
-    @property
     def _reports_massage_mode(self) -> bool:
         return self.profile.massage_mode_reply and self.supports_massage
-
-    @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        stale = set()
-        if not self.supports_clock_alarm:
-            stale.add("logicdata_app_alarm")
-        if not self.profile.family_reply:
-            # Sleep Smart never sends the MOTIONrelax family selector.
-            stale.add("logicdata_app_family_match")
-        if not self._reports_massage_mode:
-            stale.add("logicdata_app_massage_mode")
-        return frozenset(stale)
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
@@ -309,10 +289,6 @@ class LogicdataAppController(BedController):
                 card=CARD_LIGHTING,
             ),
         )
-
-    @property
-    def stale_controller_state_binary_sensor_entity_keys(self) -> frozenset[str]:
-        return frozenset() if self.supports_lights else frozenset({"under_bed_lights"})
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:

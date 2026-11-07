@@ -243,9 +243,6 @@ APP_PROFILES: Final[dict[str, JiecangProfile]] = {
     "dreamotion": DREAMOTION,
     "dreamhd": DREAMHD,
 }
-ALL_AXES: Final = frozenset(
-    axis for profile in APP_PROFILES.values() for axes in profile.layouts.values() for axis in axes
-)
 
 
 def automatic_light_on(profile: JiecangProfile, value: int) -> bool:

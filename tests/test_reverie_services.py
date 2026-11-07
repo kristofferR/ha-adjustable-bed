@@ -9,7 +9,11 @@ import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.adjustable_bed.beds.reverie_comfort import ReverieComfortRequest
+from custom_components.adjustable_bed.beds.reverie_comfort import (
+    PairlinkComfortActions,
+    ReverieComfortActions,
+    ReverieComfortRequest,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
@@ -27,7 +31,12 @@ from custom_components.adjustable_bed.services import async_register_services
 def _target(*, invalid: bool = False, bed_type: str = BED_TYPE_REVERIE_NIGHTSTAND):
     runtime_identity = object()
     plan = object()
-    controller = SimpleNamespace(
+    interface = (
+        PairlinkComfortActions if bed_type == BED_TYPE_REVERIE_PAIRLINK else ReverieComfortActions
+    )
+    controller = MagicMock(
+        spec=interface,
+        requires_disconnected_transport=False,
         validate_comfort_request=MagicMock(
             side_effect=ValueError("unsupported selected model field") if invalid else None
         ),
@@ -38,6 +47,8 @@ def _target(*, invalid: bool = False, bed_type: str = BED_TYPE_REVERIE_NIGHTSTAN
         async_start_diagnostic=AsyncMock(),
     )
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
+    # A lightweight double: no scheduler reservation API, so no prepared dispatch.
+    del coordinator.async_prepare_command_operation
     coordinator.name = "Reverie bed"
     coordinator.bed_type = bed_type
     coordinator.entry = SimpleNamespace(data={})

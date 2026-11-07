@@ -148,10 +148,6 @@ class DoubleSleepController(BedController):
         return p.TX_UUID
 
     @property
-    def supports_doublesleep_controls(self) -> bool:
-        return True
-
-    @property
     def requires_notification_channel(self) -> bool:
         return True
 

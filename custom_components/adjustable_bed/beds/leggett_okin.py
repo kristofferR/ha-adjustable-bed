@@ -407,11 +407,6 @@ class LeggettOkinController(BedController):
             and (spec.key != "lumbar" or self.has_lumbar_support)
         )
 
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Remove duplicate aliases and the former tilt label."""
-        return frozenset({"back", "legs", "tilt", "pillow", "lumbar"})
-
     def _available_characteristic_uuids(self) -> frozenset[str] | None:
         """Return discovered characteristic UUIDs, or None before discovery."""
         client = self.client

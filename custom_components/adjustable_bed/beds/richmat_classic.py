@@ -168,10 +168,6 @@ class RichmatClassicController(BedController):
         return False
 
     @property
-    def supports_richmat_classic(self) -> bool:
-        return True
-
-    @property
     def persisted_app_state_key(self) -> str:
         return f"{self.app}:{self.layout}"
 

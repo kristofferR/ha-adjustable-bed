@@ -156,14 +156,6 @@ LINAK_MAX_DOWNWARD_STOP_LEAD_DEGREES = 1.5
 LINAK_LOWER_ENDPOINT_MAX_ANGLE_DEGREES = 1.1
 LINAK_LOWER_ENDPOINT_STALL_CONFIRMATIONS = 2
 LINAK_MIN_OBSERVED_EXTENSION_COUNT = -3
-LINAK_CONTROLLER_STATE_SENSOR_ENTITY_KEYS = frozenset(
-    {
-        "linak_protocol_error",
-        "linak_alarm_status",
-        *(f"linak_{axis}_reported_speed" for axis in ("base", "feet", "head", "legs", "back")),
-    }
-)
-LINAK_CONTROLLER_STATE_BINARY_SENSOR_ENTITY_KEYS = frozenset({"linak_position_feedback_fault"})
 LINAK_MEMORY_RECALL_DURATION_S = 30
 LINAK_PERFORMANCE_HOLD_INTERVAL_MS = 300
 LINAK_BED_CONTROL_HOLD_INTERVAL_MS = 100
@@ -420,10 +412,6 @@ class LinakController(BedController):
     @property
     def light_state_starts_off(self) -> bool:
         return True
-
-    @property
-    def position_number_pruning(self) -> frozenset[str] | None:
-        return frozenset()
 
     @property
     def supports_discrete_light_control(self) -> bool:
@@ -868,18 +856,6 @@ class LinakController(BedController):
         )
 
     @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        """Remove diagnostics omitted by the current profile and capability mask."""
-        active = {spec.key for spec in self.controller_state_sensor_specs}
-        return LINAK_CONTROLLER_STATE_SENSOR_ENTITY_KEYS - active
-
-    @property
-    def stale_controller_state_binary_sensor_entity_keys(self) -> frozenset[str]:
-        """Remove the aggregate feedback fault when no reference axes remain."""
-        active = {spec.key for spec in self.controller_state_binary_sensor_specs}
-        return LINAK_CONTROLLER_STATE_BINARY_SENSOR_ENTITY_KEYS - active
-
-    @property
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
         """Return sliders only for reference-output axes with calibrated angles."""
         return tuple(
@@ -923,11 +899,6 @@ class LinakController(BedController):
                 )
             )
         return tuple(specs)
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Clean up covers omitted by the current Linak actuator mask or profile."""
-        return frozenset({"back", "legs", "head", "feet", "bed_height"})
 
     @property
     def control_characteristic_uuid(self) -> str:

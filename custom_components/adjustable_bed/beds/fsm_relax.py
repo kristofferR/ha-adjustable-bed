@@ -197,10 +197,6 @@ class FsmRelaxController(BedController):
         return False
 
     @property
-    def supports_confirmed_calibration(self) -> bool:
-        return True
-
-    @property
     def supports_memory_programming(self) -> bool:
         return self.memory_slot_count > 0
 

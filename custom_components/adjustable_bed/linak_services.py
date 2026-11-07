@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
+from .beds.base import BedController
 from .beds.linak_protocol import LinakAlarmAction, LinakAlarmStep
 from .const import DOMAIN
+from .paired_coordinator import BedChild
 from .services import (
     ATTR_ACTION,
     ATTR_ACTIONS,
@@ -25,22 +25,14 @@ from .services import (
     ATTR_SECOND_DIRECTION,
     ATTR_SECOND_MOTOR,
     ATTR_SECONDS,
-    ATTR_SIDE,
     MAX_TIMED_MOVE_DURATION_MS,
     MIN_TIMED_MOVE_DURATION_MS,
     SIDE_FIELD,
-    _command_targets,
-    _execute_sided,
-    _missing_device_error,
-    _preflight_capability,
-    _release_preflighted,
-    _resolve_sided_targets,
-    _validation_controller,
+    _call_targets,
+    _execute_preflighted,
+    _preflight_and_execute,
+    _preflight_each,
 )
-
-if TYPE_CHECKING:
-    from .beds.base import BedController
-
 
 SERVICE_LINAK_MOVE_SIMULTANEOUS = "linak_move_simultaneously"
 SERVICE_LINAK_SET_ALARM = "linak_set_alarm"
@@ -57,47 +49,23 @@ LINAK_ALARM_ACTION_SCHEMA = vol.Schema(
 
 async def handle_linak_move_simultaneously(call: ServiceCall) -> None:
     """Drive two sections with one native combined-motion command."""
-    hass = call.hass
     first_motor = call.data[ATTR_FIRST_MOTOR]
     second_motor = call.data[ATTR_SECOND_MOTOR]
     first_up = call.data[ATTR_FIRST_DIRECTION] == "up"
     second_up = call.data[ATTR_SECOND_DIRECTION] == "up"
     duration_ms = call.data[ATTR_DURATION_MS]
-    explicit_side = call.data.get(ATTR_SIDE)
     if first_motor == second_motor:
         raise ServiceValidationError("Select two different motors")
 
-    targets, missing = _resolve_sided_targets(
-        hass,
-        call.data.get(CONF_DEVICE_ID, []),
-        explicit_side,
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    preflighted = await _preflight_capability(
-        targets,
-        "supports_simultaneous_movement",
-        "simultaneous movement",
-    )
-    try:
-        for coordinator, side in targets:
-            for target in _command_targets(coordinator, side):
-                controller = await _validation_controller(
-                    coordinator,
-                    target,
-                    preflighted,
-                )
-                unavailable = {first_motor, second_motor} - set(
-                    controller.simultaneous_movement_axes
-                )
-                if unavailable:
-                    axes = ", ".join(sorted(unavailable))
-                    raise ServiceValidationError(
-                        f"Device '{target.name}' cannot combine motor: {axes}",
-                    )
-    except ServiceValidationError:
-        await _release_preflighted(preflighted)
-        raise
+    def check(target: BedChild, controller: BedController) -> None:
+        if not controller.supports_simultaneous_movement:
+            raise ServiceValidationError(
+                f"Device '{target.name}' does not support simultaneous movement"
+            )
+        unavailable = {first_motor, second_motor} - set(controller.simultaneous_movement_axes)
+        if unavailable:
+            axes = ", ".join(sorted(unavailable))
+            raise ServiceValidationError(f"Device '{target.name}' cannot combine motor: {axes}")
 
     async def move(controller: BedController) -> None:
         await controller.move_simultaneously(
@@ -108,21 +76,25 @@ async def handle_linak_move_simultaneously(call: ServiceCall) -> None:
             duration_ms,
         )
 
-    try:
-        resources = tuple(
+    targets = _call_targets(call)
+    preflighted = await _preflight_each(targets, check)
+    await _execute_preflighted(
+        targets,
+        preflighted,
+        move,
+        cancel_running=True,
+        resource=None,
+        resources=tuple(
             f"motor:{'bed_height' if motor == 'base' else motor}"
             for motor in (first_motor, second_motor)
-        )
-        for coordinator, side in targets:
-            await _execute_sided(coordinator, side, move, resources=resources)
-    except Exception:
-        await _release_preflighted(preflighted)
-        raise
+        ),
+    )
 
 
 async def handle_linak_set_alarm(call: ServiceCall) -> None:
     """Program a Linak alarm using event, recurrence, and commit writes."""
-    hass = call.hass
+    from .beds.linak import LinakController
+
     steps = tuple(
         LinakAlarmStep(
             action=LinakAlarmAction(item[ATTR_ACTION]),
@@ -131,21 +103,8 @@ async def handle_linak_set_alarm(call: ServiceCall) -> None:
         )
         for item in call.data[ATTR_ACTIONS]
     )
-    explicit_side = call.data.get(ATTR_SIDE)
-    targets, missing = _resolve_sided_targets(
-        hass,
-        call.data.get(CONF_DEVICE_ID, []),
-        explicit_side,
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    preflighted = await _preflight_capability(
-        targets,
-        "supports_alarm",
-        "Linak alarm programming",
-    )
 
-    async def program(controller: BedController) -> None:
+    async def program(controller: LinakController) -> None:
         await controller.program_alarm(
             call.data[ATTR_SECONDS],
             steps,
@@ -153,18 +112,13 @@ async def handle_linak_set_alarm(call: ServiceCall) -> None:
             call.data[ATTR_RECURRENCE_MINUTES],
         )
 
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(
-                coordinator,
-                side,
-                program,
-                cancel_running=False,
-                resource="configuration",
-            )
-    except Exception:
-        await _release_preflighted(preflighted)
-        raise
+    await _preflight_and_execute(
+        _call_targets(call),
+        LinakController,
+        "Linak alarm programming",
+        program,
+        supported=lambda controller: controller.supports_alarm,
+    )
 
 
 def async_register_linak_services(hass: HomeAssistant) -> None:

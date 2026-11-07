@@ -10,13 +10,11 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .casper_base_protocol import ALARM_MODES, Request
+from .casper_base_protocol import ALARM_MODES, CasperBaseActions, Request
 from .const import DOMAIN
 
 if TYPE_CHECKING:
     from homeassistant.helpers.typing import VolSchemaType
-
-    from .beds.base import BedController
 
 OPERATIONS = (
     "remote_find",
@@ -66,13 +64,7 @@ def weekday(value: object) -> int:
 
 
 async def handle(call: ServiceCall, *, hush: bool = False) -> None:
-    from .services import (
-        _execute_sided,
-        _missing_device_error,
-        _preflight_capability,
-        _release_preflighted,
-        _resolve_sided_targets,
-    )
+    from .services import _call_targets, _preflight_and_execute
 
     data = call.data
     request = Request(
@@ -97,48 +89,30 @@ async def handle(call: ServiceCall, *, hush: bool = False) -> None:
             date(request.year, request.month, request.day)
         except ValueError as err:
             raise ServiceValidationError(str(err)) from err
-    targets, missing = _resolve_sided_targets(call.hass, data["device_id"], data.get("side"))
-    if missing:
-        raise _missing_device_error(missing[0])
-
-    def validate(controller: BedController) -> None:
-        controller.validate_casper_base_request(request)
-
-    async def execute(controller: BedController) -> None:
-        await controller.async_execute_casper_base_request(request)
-
-    try:
-        preflighted = await _preflight_capability(
-            targets,
-            "supports_hush_base_controls" if hush else "supports_casper_base_controls",
-            "Hush Base controls" if hush else "Casper Base controls",
-            validate,
-        )
-    except ValueError as err:
-        raise ServiceValidationError(str(err)) from err
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(
-                coordinator,
-                side,
-                execute,
-                cancel_running=request.operation == "sensor_stop"
-                or (request.operation in ("sensor_live", "snore_detector") and not request.enabled),
-                resource="configuration",
-            )
-    except BaseException:
-        await _release_preflighted(preflighted)
-        raise
+    await _preflight_and_execute(
+        _call_targets(call),
+        CasperBaseActions,
+        "Hush Base controls" if hush else "Casper Base controls",
+        lambda controller: controller.async_execute_casper_base_request(request),
+        supported=lambda controller: (
+            controller.supports_hush_base_controls
+            if hush
+            else controller.supports_casper_base_controls
+        ),
+        validate=lambda controller: controller.validate_casper_base_request(request),
+        cancel_running=request.operation == "sensor_stop"
+        or (request.operation in ("sensor_live", "snore_detector") and not request.enabled),
+    )
 
 
 def async_register_casper_base_services(hass: HomeAssistant) -> None:
     from functools import partial
 
-    from .services import SIDE_FIELD
+    from .services import DEVICE_IDS, SIDE_FIELD
 
     schema = vol.Schema(
         {
-            vol.Required("device_id"): vol.All(cv.ensure_list, vol.Length(min=1)),
+            vol.Required("device_id"): DEVICE_IDS,
             **SIDE_FIELD,
             vol.Required("operation"): vol.In(OPERATIONS),
             vol.Optional("value", default=0): vol.All(integer, vol.Range(min=0, max=65535)),

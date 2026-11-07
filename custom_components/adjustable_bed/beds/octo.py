@@ -1261,11 +1261,6 @@ class OctoController(BedController, OctoPacketCodec):
         }
 
     @property
-    def _is_one_motor_lift(self) -> bool:
-        """Return whether this controller represents an OCTO one-motor lift."""
-        return self.effective_motor_count == 1
-
-    @property
     def effective_motor_count(self) -> int | None:
         """Return the explicit override or a valid discovered layout.
 
@@ -2337,22 +2332,6 @@ class OctoController(BedController, OctoPacketCodec):
         count = self.effective_motor_count
         return count is not None and count >= 3
 
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Return entity keys belonging to the other OCTO actuator layout."""
-        if self.effective_motor_count is None:
-            return frozenset({"tv_lift", "back", "legs", "back_legs", "head", "feet", "head_feet"})
-        if self._is_one_motor_lift:
-            return frozenset({"back", "legs", "back_legs", "head", "feet", "head_feet"})
-        stale = {"tv_lift"}
-        if self.effective_motor_count != 2:
-            stale.add("back_legs")
-        if self.effective_motor_count < 4:
-            # Reconfiguring 4 motors down to 2 or 3 drops the combined step, and
-            # without this it lingers in the registry as an unavailable ghost.
-            stale.add("head_feet")
-        return frozenset(stale)
-
     # Preset methods
     async def preset_both_up(self) -> None:
         """Move both head and legs up simultaneously."""
@@ -2795,11 +2774,6 @@ class OctoStar2Controller(BedController):
         super().__init__(coordinator)
         self._notify_callback: Callable[[str, float], None] | None = None
         _LOGGER.debug("OctoStar2Controller initialized")
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Return stale OCTO motor entities to remove for Star2."""
-        return frozenset({"tv_lift", "head", "feet", "head_feet"})
 
     @property
     def auto_stops_on_idle(self) -> bool:

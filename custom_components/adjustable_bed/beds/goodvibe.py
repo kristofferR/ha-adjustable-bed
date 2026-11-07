@@ -227,10 +227,6 @@ class GoodVibeController(BedController):
         self._rejection: str | None = None
 
     @property
-    def supports_goodvibe(self) -> bool:
-        return True
-
-    @property
     def control_characteristic_uuid(self) -> str:
         return self._link.tx.uuid if self._link else "00000002-3c17-d293-8e48-14fe2e4da212"
 
@@ -700,7 +696,7 @@ class GoodVibeController(BedController):
             async def light_off(controller: BedController) -> None:
                 from ..goodvibe_services import Request
 
-                await controller.async_execute_goodvibe_request(Request("light_off"))
+                await selected(controller).async_execute_goodvibe_request(Request("light_off"))
 
             buttons.append(
                 ControllerButtonSpec(
@@ -935,7 +931,7 @@ class GoodVibeController(BedController):
             async def massage_timer(controller: BedController, value: str) -> None:
                 from ..goodvibe_services import Request
 
-                await controller.async_execute_goodvibe_request(
+                await selected(controller).async_execute_goodvibe_request(
                     Request("massage_timer", value=int(value))
                 )
 
@@ -969,7 +965,7 @@ class GoodVibeController(BedController):
             async def duration(controller: BedController, value: str) -> None:
                 from ..goodvibe_services import Request
 
-                await controller.async_execute_goodvibe_request(
+                await selected(controller).async_execute_goodvibe_request(
                     Request("light_duration", seconds=int(value))
                 )
 
@@ -1000,7 +996,7 @@ class GoodVibeController(BedController):
 
             if value != int(value):
                 raise ValueError("Snore count must be an integer")
-            await controller.async_execute_goodvibe_request(
+            await selected(controller).async_execute_goodvibe_request(
                 Request("snore_count", value=int(value))
             )
 
@@ -1009,7 +1005,7 @@ class GoodVibeController(BedController):
 
             if value != int(value):
                 raise ValueError("Snore time must be an integer")
-            await controller.async_execute_goodvibe_request(Request("snore_time", value=int(value)))
+            await selected(controller).async_execute_goodvibe_request(Request("snore_time", value=int(value)))
 
         return (
             ControllerNumberSpec(

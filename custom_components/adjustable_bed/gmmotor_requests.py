@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import date
 from typing import Literal
@@ -83,3 +84,15 @@ class Request:
             raise ValueError("Invalid desk height")
         if self.unit not in ("cm", "inch"):
             raise ValueError("Select centimetres or inches")
+
+
+class GmmotorActions(ABC):
+    """GM Control direct BLE actions, shared by the control and sleep routes."""
+
+    @abstractmethod
+    def validate_gmmotor_request(self, request: Request) -> None:
+        """Validate a model/session request before any selected target writes."""
+
+    @abstractmethod
+    async def async_execute_gmmotor_request(self, request: Request) -> None:
+        """Execute one admitted GM Control direct BLE action."""

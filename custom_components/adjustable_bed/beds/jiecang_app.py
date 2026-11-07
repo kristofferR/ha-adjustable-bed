@@ -208,10 +208,6 @@ class JiecangAppController(JiecangProfileController):
         return True
 
     @property
-    def prunes_stale_light_level(self) -> bool:
-        return True
-
-    @property
     def has_dynamic_controller_entities(self) -> bool:
         return self.dreamhd
 

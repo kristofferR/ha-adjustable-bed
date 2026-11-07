@@ -445,13 +445,6 @@ class MaloufAppController(BedController):
         return tuple(specs)
 
     @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset(
-            {"head", "feet", "tilt", "lumbar", "bed_height", "malouf_tilt_head", "malouf_full_tilt"}
-            - {spec.key for spec in self.motor_control_specs}
-        )
-
-    @property
     def has_tilt_support(self) -> bool:
         return "tilt" in self._model.manual
 
@@ -788,11 +781,6 @@ class MaloufAppController(BedController):
                 ),
             )
         return ()
-
-    @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        active_keys = {spec.key for spec in self.controller_state_sensor_specs}
-        return frozenset({"malouf_massage_remaining"} - active_keys)
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         self._notify_callback = callback

@@ -72,6 +72,7 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
     PositionNumberSpec,
+    require_controller,
 )
 from .builder import BuildContext
 
@@ -573,10 +574,6 @@ class VibradormAppController(BedController):
         return self.supports_lights
 
     @property
-    def prunes_stale_light_level(self) -> bool:
-        return True
-
-    @property
     def light_switch_follows_level_intent(self) -> bool:
         return True
 
@@ -684,7 +681,7 @@ class VibradormAppController(BedController):
                     "vibradorm_app_mood_palette",
                     MOOD_PALETTE_OPTION,
                     tuple(self.mood_palette),
-                    lambda c, v: c.set_mood_palette(v),
+                    lambda c, v: require_controller(c, VibradormAppController).set_mood_palette(v),
                     card=CARD_LIGHT_MOOD,
                 ),
                 ControllerSelectSpec(
@@ -692,7 +689,7 @@ class VibradormAppController(BedController):
                     "vibradorm_app_mood_effect",
                     MOOD_EFFECT_OPTION,
                     MOOD_EFFECTS,
-                    lambda c, v: c.set_mood_effect(v),
+                    lambda c, v: require_controller(c, VibradormAppController).set_mood_effect(v),
                     card=CARD_LIGHT_MOOD,
                 ),
             ]
@@ -703,7 +700,7 @@ class VibradormAppController(BedController):
                     "vibradorm_app_massage_wave",
                     MASSAGE_WAVE,
                     MASSAGE_WAVES,
-                    lambda c, v: c.set_massage_wave(v),
+                    lambda c, v: require_controller(c, VibradormAppController).set_massage_wave(v),
                     card=CARD_MASSAGE,
                 )
             ]
@@ -735,7 +732,7 @@ class VibradormAppController(BedController):
                     0,
                     8,
                     1,
-                    lambda c, v: c.set_mood_speed(v),
+                    lambda c, v: require_controller(c, VibradormAppController).set_mood_speed(v),
                     card=CARD_LIGHT_MOOD,
                 )
             ]
@@ -748,7 +745,7 @@ class VibradormAppController(BedController):
                     1,
                     5,
                     1,
-                    lambda c, v: c.set_massage_speed(v),
+                    lambda c, v: require_controller(c, VibradormAppController).set_massage_speed(v),
                     card=CARD_MASSAGE,
                 )
             ]

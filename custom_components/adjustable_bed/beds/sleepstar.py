@@ -480,11 +480,6 @@ class SleepStarController(BedController):
             ),
         )
 
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Return obsolete generic entity aliases to remove."""
-        return frozenset({"back", "legs"})
-
     def _track_task(self, coroutine: Any, *, name: str) -> asyncio.Task[Any]:
         """Create and retain a session-owned background task."""
         task = asyncio.create_task(coroutine, name=name)

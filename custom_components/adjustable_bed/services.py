@@ -20,6 +20,7 @@ from collections.abc import (
     Collection,
     Coroutine,
     Mapping,
+    Sequence,
 )
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
@@ -37,6 +38,12 @@ from homeassistant.util import dt as dt_util
 
 from .alarm_table import AlarmTableSchedule, OneTimeAlarmRecord, WeeklyAlarmRecord
 from .bed_traits import bed_type_has_position_feedback
+from .beds.base import (
+    POSITION_UNIT_DEGREES,
+    POSITION_UNIT_PERCENT,
+    BedController,
+    controller_as,
+)
 from .command_scheduler import (
     ALL_COMMAND_RESOURCES,
     HoldClaim,
@@ -48,14 +55,12 @@ from .command_scheduler import (
 from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_FURNIMOVE,
-    BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINAK,
     BED_TYPE_SBI,
     BED_TYPE_SERTA_MP_REMOTE,
     BED_TYPE_SLEEP_NUMBER_MCR,
-    BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SVANE,
     BED_TYPE_VMATBASIC,
@@ -87,7 +92,7 @@ from .position_estimate import (
 )
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, ControllerMotorHoldSpec
+    from .beds.base import ControllerMotorHoldSpec
     from .beds.limoss_remote import LimossRemoteController
     from .beds.svane import SvaneHoldAdmission
 
@@ -272,6 +277,8 @@ HOLD_LEASE_FIELDS = {
 # that targets one side's child device acts on just that side, otherwise it falls
 # back to 'both' - so single-bed automations are unchanged.
 SIDE_FIELD = {vol.Optional(ATTR_SIDE): vol.In([SIDE_LEFT, SIDE_RIGHT, SIDE_BOTH])}
+# One or more target devices, for actions that act on every selected bed.
+DEVICE_IDS = vol.All(cv.ensure_list, vol.Length(min=1))
 
 
 def _resolve_sided_target(
@@ -568,19 +575,6 @@ async def _execute_sided(
         expected_stop_epochs = admission.expected_stop_epochs
         expected_stop_epoch = admission.expected_stop_epochs.get(SIDE_BOTH)
     if isinstance(coordinator, PairedBedCoordinator):
-        if lease is not None:
-            await coordinator.async_execute_controller_command(
-                command_fn,
-                side=side,
-                cancel_running=cancel_running,
-                skip_disconnect=skip_disconnect,
-                resource=resource,
-                resources=resources,
-                expected_pair_generations=expected_pair_generations,
-                expected_stop_epochs=expected_stop_epochs,
-                lease=lease,
-            )
-            return
         await coordinator.async_execute_controller_command(
             command_fn,
             side=side,
@@ -590,8 +584,9 @@ async def _execute_sided(
             resources=resources,
             expected_pair_generations=expected_pair_generations,
             expected_stop_epochs=expected_stop_epochs,
+            lease=lease,
         )
-    elif lease is not None:
+    else:
         await coordinator.async_execute_controller_command(
             command_fn,
             cancel_running=cancel_running,
@@ -601,24 +596,6 @@ async def _execute_sided(
             expected_stop_epoch=expected_stop_epoch,
             lease=lease,
         )
-    else:
-        if expected_stop_epoch is None:
-            await coordinator.async_execute_controller_command(
-                command_fn,
-                cancel_running=cancel_running,
-                skip_disconnect=skip_disconnect,
-                resource=resource,
-                resources=resources,
-            )
-        else:
-            await coordinator.async_execute_controller_command(
-                command_fn,
-                cancel_running=cancel_running,
-                skip_disconnect=skip_disconnect,
-                resource=resource,
-                resources=resources,
-                expected_stop_epoch=expected_stop_epoch,
-            )
 
 
 async def _release_preflighted(preflighted: PreflightedSides) -> None:
@@ -926,25 +903,21 @@ async def _set_position_plan(
             )
 
         # Define motor configurations.
+        # Direct setters with percentage sliders (Kaidi, BOX25 and others) and
+        # setters with their own native bounds target their position sliders.
         # For Keeson/Ergomotion: only head and feet are valid, they map to back/legs keys.
-        # For BOX25: head, feet, and lumbar are valid, using direct percentage positions.
-        # For Kaidi: direct position writes expose back/legs percentage targets.
         # For standard beds: based on motor_count (2=back/legs, 3=+head, 4=+feet).
-        uses_percentage_positions = bed_type in (
-            BED_TYPE_KEESON,
-            BED_TYPE_ERGOMOTION,
-            BED_TYPE_SLEEPYS_BOX25,
-            BED_TYPE_SVANE,
-            BED_TYPE_SLEEP_NUMBER_MCR,
-        ) or (bed_type == BED_TYPE_KAIDI and supports_direct_position_control) or (
-            controller.reports_percentage_position is True
+        specs = controller.position_number_specs
+        # A percentage bed with no sliders (for example articulation disabled)
+        # keeps an empty axis set rather than falling back to generic motors.
+        percentage_targets = controller.reports_percentage_position is True or (
+            bool(specs)
+            and all(spec.native_unit_of_measurement == POSITION_UNIT_PERCENT for spec in specs)
         )
-
-        if bed_type in (BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_SBI):
-            # These controllers' position specs own their axes and native bounds,
-            # independently of generic angle overrides (SBI reports back/legs
-            # only, within its pulse tables). Validate every axis/target before
-            # scheduling.
+        # SBI reports back/legs only, within its pulse tables.
+        if bed_type in (BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_SBI) or (
+            supports_direct_position_control and percentage_targets
+        ):
             motor_configs = {
                 spec.position_key: {
                     "position_key": spec.position_key,
@@ -952,38 +925,9 @@ async def _set_position_plan(
                     "move_down_fn": spec.close_fn,
                     "move_stop_fn": spec.stop_fn,
                     "max_value": spec.native_max_value,
+                    "unit": spec.native_unit_of_measurement,
                 }
-                for spec in controller.position_number_specs
-            }
-            valid_motors = set(motor_configs)
-        elif bed_type == BED_TYPE_KAIDI and supports_direct_position_control:
-            valid_motors = {"back", "legs"}
-            motor_configs = {
-                "back": {
-                    "position_key": "back",
-                    "move_up_fn": lambda ctrl: ctrl.move_back_up(),
-                    "move_down_fn": lambda ctrl: ctrl.move_back_down(),
-                    "move_stop_fn": lambda ctrl: ctrl.move_back_stop(),
-                    "max_value": 100.0,
-                },
-                "legs": {
-                    "position_key": "legs",
-                    "move_up_fn": lambda ctrl: ctrl.move_legs_up(),
-                    "move_down_fn": lambda ctrl: ctrl.move_legs_down(),
-                    "move_stop_fn": lambda ctrl: ctrl.move_legs_stop(),
-                    "max_value": 100.0,
-                },
-            }
-        elif supports_direct_position_control and controller.reports_percentage_position is True:
-            motor_configs = {
-                spec.position_key: {
-                    "position_key": spec.position_key,
-                    "move_up_fn": spec.open_fn,
-                    "move_down_fn": spec.close_fn,
-                    "move_stop_fn": spec.stop_fn,
-                    "max_value": spec.native_max_value,
-                }
-                for spec in controller.position_number_specs
+                for spec in specs
             }
             valid_motors = set(motor_configs)
         elif bed_type in (BED_TYPE_KEESON, BED_TYPE_ERGOMOTION):
@@ -1003,31 +947,6 @@ async def _set_position_plan(
                     "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
                     "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
                     "max_value": 100.0,  # Percentage
-                },
-            }
-        elif bed_type == BED_TYPE_SLEEPYS_BOX25:
-            valid_motors = {"head", "feet", "lumbar"}
-            motor_configs = {
-                "head": {
-                    "position_key": "head",
-                    "move_up_fn": lambda ctrl: ctrl.move_head_up(),
-                    "move_down_fn": lambda ctrl: ctrl.move_head_down(),
-                    "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
-                    "max_value": 100.0,
-                },
-                "feet": {
-                    "position_key": "feet",
-                    "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
-                    "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
-                    "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
-                    "max_value": 100.0,
-                },
-                "lumbar": {
-                    "position_key": "lumbar",
-                    "move_up_fn": lambda ctrl: ctrl.move_lumbar_up(),
-                    "move_down_fn": lambda ctrl: ctrl.move_lumbar_down(),
-                    "move_stop_fn": lambda ctrl: ctrl.move_lumbar_stop(),
-                    "max_value": 100.0,
                 },
             }
         else:
@@ -1095,7 +1014,11 @@ async def _set_position_plan(
 
         # Validate position is in range
         if position < 0 or position > max_value:
-            unit = "%" if uses_percentage_positions else "°"
+            unit = config.get("unit") or (
+                POSITION_UNIT_PERCENT
+                if controller.reports_percentage_position is True
+                else POSITION_UNIT_DEGREES
+            )
             raise ServiceValidationError(
                 f"Position {position} is out of range for motor '{motor}'. "
                 f"Valid range: 0-{max_value}{unit}",
@@ -1737,21 +1660,117 @@ async def _preflight_each(
     return preflighted
 
 
-async def _preflight_capability(
+async def _preflight_capability[T](
     targets: list[tuple[BedTarget, str]],
-    capability: str,
+    interface: type[T],
     label: str,
-    validate: Callable[[BedController], None] | None = None,
+    supported: Callable[[T], bool] | None = None,
+    validate: Callable[[T], None] | None = None,
 ) -> PreflightedSides:
-    """Validate a capability on every physical target before any write."""
+    """Validate a family capability on every physical target before any write.
+
+    A target supports the action when its controller implements ``interface``
+    and, if given, ``supported`` accepts it.
+    """
 
     def check(target: BedChild, controller: BedController) -> None:
-        if not getattr(controller, capability, False):
+        family = controller_as(controller, interface)
+        if family is None or (supported is not None and not supported(family)):
             raise ServiceValidationError(f"Device '{target.name}' does not support {label}")
         if validate is not None:
-            validate(controller)
+            validate(family)
 
     return await _preflight_each(targets, check)
+
+
+def _family_command[T](
+    interface: type[T], label: str, command: Callable[[T], Awaitable[None]]
+) -> Callable[[BedController], Coroutine[Any, Any, None]]:
+    """Adapt a family command to the scheduler; a ``ValueError`` is a validation error."""
+
+    async def execute(controller: BedController) -> None:
+        family = controller_as(controller, interface)
+        if family is None:
+            raise ServiceValidationError(f"This bed does not support {label}")
+        try:
+            await command(family)
+        except ValueError as err:
+            raise ServiceValidationError(str(err)) from err
+
+    return execute
+
+
+async def _preflight_and_execute[T](
+    targets: list[tuple[BedTarget, str]],
+    interface: type[T],
+    label: str,
+    command: Callable[[T], Awaitable[None]],
+    *,
+    supported: Callable[[T], bool] | None = None,
+    validate: Callable[[T], None] | None = None,
+    cancel_running: bool = False,
+    skip_disconnect: bool = False,
+    resource: str | None = "configuration",
+    admit: bool = False,
+) -> None:
+    """Preflight every physical target, then run ``command`` on each in turn.
+
+    A ``ValueError`` from validation or the command becomes a
+    ``ServiceValidationError``. Any failure or cancellation hands the links
+    opened only for validation back to their idle timer. ``admit`` lets a STOP
+    pressed during the preflight cancel the command.
+    """
+    admissions = [
+        _capture_command_admission(
+            coordinator, side, ALL_COMMAND_RESOURCES if resource is None else (resource,)
+        )
+        if admit
+        else None
+        for coordinator, side in targets
+    ]
+    preflighted = await _preflight_capability(targets, interface, label, supported, validate)
+    await _execute_preflighted(
+        targets,
+        preflighted,
+        _family_command(interface, label, command),
+        cancel_running=cancel_running,
+        skip_disconnect=skip_disconnect,
+        resource=resource,
+        admissions=admissions,
+    )
+
+
+async def _execute_preflighted(
+    targets: list[tuple[BedTarget, str]],
+    preflighted: PreflightedSides,
+    command_fn: Callable[[BedController], Coroutine[Any, Any, None]],
+    *,
+    cancel_running: bool = False,
+    skip_disconnect: bool = False,
+    resource: str | None = "configuration",
+    resources: Collection[str] | None = None,
+    admissions: Sequence[_CommandAdmission | None] | None = None,
+) -> None:
+    """Run a preflighted command on each target in turn.
+
+    Any failure or cancellation hands the links opened only for validation
+    back to their idle timer.
+    """
+    try:
+        for index, (coordinator, side) in enumerate(targets):
+            await _execute_sided(
+                coordinator,
+                side,
+                command_fn,
+                cancel_running=cancel_running,
+                skip_disconnect=skip_disconnect,
+                resource=resource,
+                resources=resources,
+                admission=None if admissions is None else admissions[index],
+            )
+    except BaseException:
+        await _release_preflighted(preflighted)
+        raise
 
 
 def _call_targets(call: ServiceCall) -> list[tuple[BedTarget, str]]:
@@ -1979,19 +1998,14 @@ async def _hold_targets(
 ) -> None:
     """Preflight the whole selection before starting any held write sequence."""
 
-    # A STOP during any per-side capability/connect wait owns the event that
-    # was current when the user pressed. Capture before _preflight_each awaits.
-    admissions = [
-        (coordinator, side, _capture_command_admission(coordinator, side))
-        for coordinator, side in targets
-    ]
-
     def check(target: BedChild, controller: BedController) -> None:
         _require_held_control(target, controller, control)
         if lease is not None:
             _require_hold_execution(target, controller, control)
         controller.validate_hold_control(control, duration_ms)
 
+    # A STOP during any per-side capability/connect wait owns the event that
+    # was current when the user pressed. Capture before _preflight_each awaits.
     admissions = [_hold_admission(coordinator, side) for coordinator, side in targets]
     preflighted = await _preflight_each(targets, check)
 
@@ -2029,33 +2043,31 @@ async def handle_configure_alarm_schedule(call: ServiceCall) -> None:
         dispatch=call.data["dispatch"],
         reference_time=dt_util.now(),
     )
+    from .beds.keeson_layout_app import AppController
+
     targets = _call_targets(call)
     # A table call cannot connect merely to discover whether it is valid:
     # initialization can write clock/zero/query frames. These static profiles
     # are offline-mintable, and all other controllers lack this contract.
     for coordinator, side in targets:
         for target in _command_targets(coordinator, side):
-            controller = target.capability_controller
+            controller = controller_as(target.capability_controller, AppController)
             if controller is None or controller.alarm_table_schedule_spec is None:
                 raise ServiceValidationError(f"Device '{target.name}' has no available alarm-table contract")
 
-    def check(target: BedChild, controller: BedController) -> None:
+    def validate(controller: AppController) -> None:
         spec = controller.alarm_table_schedule_spec
         if spec is None:
-            raise ServiceValidationError(f"Device '{target.name}' has no alarm-table contract")
+            raise ServiceValidationError("This bed has no alarm-table contract")
         spec.validate(schedule)
 
-    preflighted = await _preflight_each(targets, check)
-
-    async def configure(controller: BedController) -> None:
-        await controller.configure_alarm_table_schedule(schedule)
-
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(coordinator, side, configure, cancel_running=False, resource="configuration")
-    except BaseException:
-        await _release_preflighted(preflighted)
-        raise
+    await _preflight_and_execute(
+        targets,
+        AppController,
+        "alarm tables",
+        lambda controller: controller.configure_alarm_table_schedule(schedule),
+        validate=validate,
+    )
 
 
 async def handle_sync_clock(call: ServiceCall) -> None:
@@ -2521,7 +2533,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_rename,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 # Each target's controller applies its app's own name rule.
                 vol.Required(ATTR_NAME): cv.string,
                 **SIDE_FIELD,
@@ -2533,12 +2545,12 @@ async def async_register_services(hass: HomeAssistant) -> None:
         (SERVICE_LINAK_RENAME, cv.ensure_list, vol.Length(min=1, max=17)),
         (
             SERVICE_LOGICDATA_RENAME,
-            vol.All(cv.ensure_list, vol.Length(min=1)),
+            DEVICE_IDS,
             vol.Match(r"\A[\x20-\x7eäöüÄÖÜß]{1,255}\Z"),
         ),
         (
             SERVICE_JIECANG_RENAME,
-            vol.All(cv.ensure_list, vol.Length(min=1)),
+            DEVICE_IDS,
             vol.Match(r"\A[A-Za-z0-9]{1,20}\Z"),
         ),
     ):
@@ -2555,7 +2567,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
             ),
         )
     hold_fields = {
-        vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+        vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
         vol.Required(ATTR_DURATION): _hold_seconds,
         **SIDE_FIELD,
     }
@@ -2591,7 +2603,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         SERVICE_CONFIGURE_ALARM_SCHEDULE,
         handle_configure_alarm_schedule,
         schema=vol.Schema({
-            vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+            vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
             vol.Required("weekly"): [vol.Schema({**alarm_fields, vol.Optional("weekdays", default=[]): [vol.All(int, vol.Range(min=0, max=6))]})],
             vol.Required("one_time"): [vol.Schema(alarm_fields)],
             vol.Required("dispatch"): vol.In(("both", "weekly", "one_time")),
@@ -2605,7 +2617,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
             handle_sync_clock,
             schema=vol.Schema(
                 {
-                    vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                    vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                     **SIDE_FIELD,
                 }
             ),

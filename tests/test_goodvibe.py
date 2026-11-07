@@ -236,7 +236,6 @@ async def test_buttons_expose_only_exact_product_actions(coordinator):
     }
     assert not obj.supports_motor_control
     assert obj.memory_slot_count == 0
-    assert obj.supports_goodvibe
     with pytest.raises(ValueError):
         await obj.press("not-this-product", 1000)
 

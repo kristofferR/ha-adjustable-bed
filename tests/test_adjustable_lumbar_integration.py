@@ -9,7 +9,6 @@ import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.exceptions import ServiceValidationError
-from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.actuator_groups import actuator_group_for
@@ -131,13 +130,12 @@ async def test_buttons_expose_the_app_surface(hass):
 
 
 @pytest.mark.parametrize("retain", [True, False])
-async def test_app_buttons_retire_with_the_profile(hass, retain):
+async def test_app_buttons_follow_the_profile(hass, retain):
     controller = (
         make_controller("OKIN-1")
         if retain
         else make_controller_mock(
             controller_state_sensor_specs=(),
-            stale_controller_state_sensor_entity_keys=frozenset(),
             controller_button_specs=(),
             position_number_specs=(),
         )
@@ -145,12 +143,8 @@ async def test_app_buttons_retire_with_the_profile(hass, retain):
     runtime = configure_entity_runtime(
         hass, controller, BED_TYPE_ADJUSTABLE_LUMBAR if retain else BED_TYPE_DIAGNOSTIC
     )
-    registry = er.async_get(hass)
-    old = registry.async_get_or_create(
-        "button", DOMAIN, "bed_adjustable_lumbar_save_incline_left", config_entry=runtime.entry
-    )
-    _button_entities_for(hass, runtime)
-    assert (registry.async_get(old.entity_id) is not None) is retain
+    buttons = {entity.unique_id for entity in _button_entities_for(hass, runtime)}
+    assert ("bed_adjustable_lumbar_save_incline_left" in buttons) is retain
 
 
 def _service_target(profile=BED_TYPE_ADJUSTABLE_LUMBAR):

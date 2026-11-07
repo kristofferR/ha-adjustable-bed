@@ -107,7 +107,7 @@ async def public_call(hass, target, service, data, side=None):
             return_value=([(target, side or const.SIDE_BOTH)], []),
         ) as resolve,
         patch(
-            "custom_components.adjustable_bed.limoss_remote_services._resolve_sided_targets",
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
             new=resolve,
         ),
     ):

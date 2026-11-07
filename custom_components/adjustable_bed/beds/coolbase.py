@@ -255,15 +255,6 @@ class CoolBaseController(BedController):
         )
 
     @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        """Drop Cool Base state sensors if the entry resolves to the DewertOKIN profile."""
-        if not self._dewert_okin_profile:
-            return frozenset()
-        return frozenset(
-            {"coolbase_left_fan_level", "coolbase_right_fan_level", "coolbase_massage_mode"}
-        )
-
-    @property
     def requires_notification_channel(self) -> bool:
         """Status replies to the app query arrive as notifications, even without angles."""
         return not self._dewert_okin_profile

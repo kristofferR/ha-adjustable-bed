@@ -15,6 +15,7 @@ from .const import BED_TYPE_OCTO, CONF_OCTO_PIN, DOMAIN
 from .octo_runtime import octo_controller
 from .paired_coordinator import BedChild
 from .services import (
+    DEVICE_IDS,
     SIDE_FIELD,
     BedTarget,
     _call_targets,
@@ -139,7 +140,7 @@ async def handle_octo_reset_defaults(call: ServiceCall) -> None:
 def async_register_octo_services(hass: HomeAssistant) -> None:
     """Register the Octo PIN enrollment and factory reset actions."""
     octo_target_fields = {
-        vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+        vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
         **SIDE_FIELD,
     }
     hass.services.async_register(

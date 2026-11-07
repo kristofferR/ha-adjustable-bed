@@ -58,7 +58,9 @@ from .base import (
 )
 from .builder import BuildContext
 from .reverie_comfort import (
+    ReverieComfortActions,
     ReverieComfortRequest,
+    RoutineSteps,
     build_p1_composer_payload,
     build_stk_composer_payload,
     validate_comfort_request,
@@ -130,7 +132,7 @@ class ReverieNightstandCommands:
         return memory_num + 83
 
 
-class ReverieNightstandController(BedController):
+class ReverieNightstandController(BedController, ReverieComfortActions):
     """Controller for Reverie Nightstand beds (Protocol 110).
 
     This protocol uses direct writes to specific characteristics rather than
@@ -164,7 +166,7 @@ class ReverieNightstandController(BedController):
         self._diagnostic_timer: asyncio.TimerHandle | None = None
         self._diagnostic_connection_release: Callable[[], None] | None = None
         self._routine_timer: asyncio.TimerHandle | None = None
-        self._routine_steps: list[tuple[ReverieComfortRequest | None, int]] = []
+        self._routine_steps: list[tuple[ReverieComfortRequest, int]] = []
         self._routine_generation = 0
         self._routine_connection_release: Callable[[], None] | None = None
         self._active_notify_characteristics: list[str] = []
@@ -754,7 +756,7 @@ class ReverieNightstandController(BedController):
         await self._write_bytes_to_char(REVERIE_NIGHTSTAND_PRESETS_UUID, payload)
 
     def validate_routine(
-        self, steps: list[tuple[ReverieComfortRequest | None, int]]
+        self, steps: RoutineSteps
     ) -> None:
         if not self.model.routines:
             raise ValueError(f"Model {self.model_id} has no Composer routines")
@@ -804,7 +806,7 @@ class ReverieNightstandController(BedController):
         await self._write_bytes_to_char(REVERIE_NIGHTSTAND_PRESETS_UUID, payload)
 
     async def async_start_routine(
-        self, steps: list[tuple[ReverieComfortRequest | None, int]]
+        self, steps: RoutineSteps
     ) -> None:
         """Replace this physical address's Composer queue and start its first step."""
         self.validate_routine(steps)
@@ -812,11 +814,13 @@ class ReverieNightstandController(BedController):
             return
         self._cancel_routine()
         stopped_on_missing = False
-        for step in steps:
-            if step[0] is None:
+        for request, duration in steps:
+            if request is None:
                 stopped_on_missing = True
                 break
-            self._routine_steps.append(step)
+            if duration is None:  # validate_routine already rejects this
+                raise ValueError("Routine step duration must be an integer number of minutes")
+            self._routine_steps.append((request, duration))
         if stopped_on_missing or not self._routine_steps:
             return
         self._hold_routine_connection()

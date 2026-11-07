@@ -44,7 +44,12 @@ from .base import (
     build_position_number_spec,
 )
 from .builder import BuildContext
-from .reverie_comfort import ReverieComfortRequest, validate_comfort_request
+from .reverie_comfort import (
+    PairlinkComfortActions,
+    ReverieComfortRequest,
+    RoutineSteps,
+    validate_comfort_request,
+)
 from .reverie_pairlink_profile import (
     PAIRLINK_BED_TYPES,
     PairlinkAdvertisement,
@@ -193,7 +198,7 @@ class _TracedCentralWriter:
         await self._client.write_gatt_char(char_specifier, data, response=response)
 
 
-class ReveriePairlinkController(BedController):
+class ReveriePairlinkController(BedController, PairlinkComfortActions):
     """Controller for the app's R510L/Harmoniq Pairlink profiles."""
 
     def __init__(
@@ -2715,7 +2720,7 @@ class ReveriePairlinkController(BedController):
         return current
 
     def validate_routine(
-        self, steps: list[tuple[ReverieComfortRequest | None, int | None]]
+        self, steps: RoutineSteps
     ) -> None:
         if not self._has_supported_model:
             raise ValueError("Pairlink routines are unavailable for the selected model")
@@ -2731,7 +2736,7 @@ class ReveriePairlinkController(BedController):
             self.validate_comfort_request(request)
 
     async def async_start_routine(
-        self, steps: list[tuple[ReverieComfortRequest | None, int | None]]
+        self, steps: RoutineSteps
     ) -> None:
         """Replace settings and times independently, then run the first setting."""
         self.validate_routine(steps)

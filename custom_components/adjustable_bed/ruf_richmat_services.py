@@ -7,13 +7,12 @@ from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
 
-from .richmat_mh_services import _execute
 from .ruf_richmat_protocol import AlarmRequest
-from .services import SIDE_FIELD
+from .services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
 
 SERVICE = "richmat_app_alarm"
 _FIELDS: dict[vol.Marker, object] = {
-    vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+    vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
     vol.Required("family"): vol.In(("mattress", "calendar")),
     vol.Optional("enabled", default=True): cv.boolean,
     vol.Optional("delete", default=False): cv.boolean,
@@ -32,6 +31,8 @@ SCHEMA = vol.Schema(_FIELDS)
 
 
 async def handle_alarm(call: ServiceCall) -> None:
+    from .beds.ruf_richmat import RufRichmatController
+
     data = call.data
     when = data["time"]
     request = AlarmRequest(
@@ -47,12 +48,13 @@ async def handle_alarm(call: ServiceCall) -> None:
         mode=data["mode"],
         weekdays=tuple(data["weekdays"]),
     )
-    await _execute(
-        call,
-        "supports_ruf_richmat_alarms",
+    await _preflight_and_execute(
+        _call_targets(call),
+        RufRichmatController,
         "Richmat app alarms",
         lambda ctrl: ctrl.ruf_richmat_alarm(request),
-        lambda ctrl: ctrl.validate_ruf_richmat_alarm(request),
+        supported=lambda ctrl: ctrl.supports_ruf_richmat_alarms,
+        validate=lambda ctrl: ctrl.validate_ruf_richmat_alarm(request),
     )
 
 

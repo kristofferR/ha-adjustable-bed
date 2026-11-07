@@ -198,11 +198,6 @@ class OkinCB35Controller(Okin7ByteController):
             ),
         )
 
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Remove standard back/legs entities replaced by motor_control_specs."""
-        return frozenset({"back", "legs"})
-
     # ─── Neck motor ────────────────────────────────────────────────────
 
     async def move_neck_up(self) -> None:

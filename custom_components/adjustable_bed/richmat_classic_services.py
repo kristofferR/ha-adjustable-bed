@@ -7,28 +7,18 @@ from typing import cast
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .beds.base import BedController
 from .const import DOMAIN
 from .richmat_classic_requests import Operation, Request
-from .services import (
-    SIDE_FIELD,
-    _capture_command_admission,
-    _execute_sided,
-    _missing_device_error,
-    _preflight_capability,
-    _release_preflighted,
-    _resolve_sided_targets,
-)
+from .services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
 
 OPERATIONS = (
     "query", "alarm", "cancel_alarm", "rgb", "lamp_slider", "lamp_save", "aroma",
     "massage_timer", "massage_popup", "desk_target", "desk_unit", "desk_recall", "desk_reset",
 )
 FIELDS: dict[vol.Marker, object] = {
-    vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+    vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
     vol.Required("operation"): vol.In(OPERATIONS),
     vol.Optional("action"): cv.string,
     vol.Optional("time"): cv.time,
@@ -46,6 +36,8 @@ FIELDS.update(SIDE_FIELD.items())
 
 
 async def handle_richmat_classic(call: ServiceCall) -> None:
+    from .beds.richmat_classic import RichmatClassicController
+
     request = Request(
         operation=cast(Operation, call.data["operation"]), action=call.data.get("action"),
         when=call.data.get("time"), minutes=call.data.get("minutes"),
@@ -53,33 +45,17 @@ async def handle_richmat_classic(call: ServiceCall) -> None:
         progress=call.data.get("progress"), height=call.data.get("height"),
         unit=call.data.get("unit"), slot=call.data.get("slot"), duration_ms=call.data["duration_ms"], popup=call.data.get("popup"),
     )
-    targets, missing = _resolve_sided_targets(call.hass, call.data[CONF_DEVICE_ID], call.data.get("side"))
-    if missing:
-        raise _missing_device_error(missing[0])
-
     resource = "movement" if request.operation in ("desk_recall", "desk_target", "desk_reset") else "configuration"
-    admissions = {
-        (id(coordinator), side): _capture_command_admission(coordinator, side, (resource,))
-        for coordinator, side in targets
-    }
-
-    def validate(controller: BedController) -> None:
-        controller.validate_richmat_classic_request(request)
-
-    preflighted = await _preflight_capability(targets, "supports_richmat_classic", "Selected app settings", validate)
-
-    async def execute(controller: BedController) -> None:
-        try:
-            await controller.async_execute_richmat_classic_request(request)
-        except ValueError as err:
-            raise ServiceValidationError(str(err)) from err
-
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(coordinator, side, execute, cancel_running=resource == "movement", resource=resource, admission=admissions[(id(coordinator), side)])
-    except BaseException:
-        await _release_preflighted(preflighted)
-        raise
+    await _preflight_and_execute(
+        _call_targets(call),
+        RichmatClassicController,
+        "Selected app settings",
+        lambda controller: controller.async_execute_richmat_classic_request(request),
+        validate=lambda controller: controller.validate_richmat_classic_request(request),
+        cancel_running=resource == "movement",
+        resource=resource,
+        admit=True,
+    )
 
 
 def async_register_richmat_classic_services(hass: HomeAssistant) -> None:

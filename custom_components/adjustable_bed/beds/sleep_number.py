@@ -65,6 +65,7 @@ from .base import (
 from .builder import BuildContext
 from .sleep_number_commands import (
     COMMANDS,
+    SleepNumberActions,
     combine_temperature_programs,
     format_command,
     parse_response,
@@ -282,7 +283,7 @@ class SleepNumberPresets:
     TV = "watch_tv"
 
 
-class SleepNumberController(BedController):
+class SleepNumberController(BedController, SleepNumberActions):
     """Controller for Sleep Number Climate 360 / FlexFit bases."""
 
     def __init__(

@@ -41,7 +41,7 @@ async def service_target(hass):
             return_value=([(coordinator, SIDE_BOTH)], []),
         ) as resolve,
         patch(
-            "custom_components.adjustable_bed.limoss_remote_services._resolve_sided_targets",
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
             new=resolve,
         ),
     ):

@@ -2360,8 +2360,8 @@ class TestServices:
         coordinator.entry = entry
         coordinator.controller = MagicMock()
         coordinator.controller.position_number_specs = (
-            SimpleNamespace(position_key="back"),
-            SimpleNamespace(position_key="legs"),
+            SimpleNamespace(position_key="back", native_unit_of_measurement="°"),
+            SimpleNamespace(position_key="legs", native_unit_of_measurement="°"),
         )
         coordinator.capability_controller = coordinator.controller
         coordinator.name = entry.title
@@ -2472,8 +2472,8 @@ class TestServices:
         coordinator.entry = entry
         coordinator.controller = MagicMock()
         coordinator.controller.position_number_specs = (
-            SimpleNamespace(position_key="back"),
-            SimpleNamespace(position_key="legs"),
+            SimpleNamespace(position_key="back", native_unit_of_measurement="°"),
+            SimpleNamespace(position_key="legs", native_unit_of_measurement="°"),
         )
         coordinator.capability_controller = coordinator.controller
         coordinator.name = entry.title

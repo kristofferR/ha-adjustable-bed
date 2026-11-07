@@ -879,7 +879,6 @@ def test_metadata_preserves_optional_sensor_count_rule_and_firmware_ui_gates() -
     assert metadata["layout_id"] == 21
     assert metadata["app_firmware_threshold"] == 113
     assert metadata["app_firmware_below_threshold"] is True
-    assert target.bed.supports_sleeptracker_controls
 
 
 async def test_late_read_cannot_restore_disconnected_state() -> None:

@@ -201,10 +201,6 @@ class SvaneController(BedController):
         )
 
     @property
-    def prunes_stale_light_level(self) -> bool:
-        return True
-
-    @property
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
         return ()
 

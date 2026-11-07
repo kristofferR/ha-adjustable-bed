@@ -117,6 +117,32 @@ def _state_key(name: str) -> StateKey[StateValue | None]:
     return StateKey[StateValue | None](name)
 
 
+# (entity key, reported state field, unit) of telemetry sensors.
+_TELEMETRY_SENSORS: Final = (
+    ("protocol_version", "protocol_version", None),
+    ("bed_mode", "bed_mode_mode", None),
+    ("light_timer", "light_timer_seconds", "s"),
+    ("massage_head_strength", "massage_head_strength", None),
+    ("massage_foot_strength", "massage_foot_strength", None),
+    ("massage_mode", "massage_mode", None),
+    ("massage_frequency", "massage_frequency", None),
+    ("music_volume", "music_volume", None),
+    ("fan_gear", "fan_gear", None),
+    ("aroma_timer", "aroma_timer_value", None),
+    ("heating_temperature", "heating_temperature", None),
+    ("anti_snore_count", "anti_snore_intervention_count", None),
+    ("anti_snore_time", "anti_snore_intervention_time", None),
+    ("alarm_record", "repeat_alarm_alarm_id", None),
+)
+# (entity key, reported state field) of telemetry binary sensors.
+_TELEMETRY_FLAGS: Final = (
+    ("anti_snore_enabled", "anti_snore_enabled"),
+    ("music_playing", "music_playing"),
+    ("lock", "lock_locked"),
+    ("rgb_motion", "rgb_motion_enabled"),
+)
+
+
 class RmcontrolController(RichmatController):
     """Artifact-derived opt-in app profile without changing legacy controllers."""
 
@@ -785,23 +811,19 @@ class RmcontrolController(RichmatController):
         }
 
     @property
+    def retained_entity_keys(self) -> frozenset[tuple[str, str]]:
+        # Telemetry appears once the bed first reports it; the light and its
+        # timer once the light probe answers.
+        keys = {("sensor", "rmcontrol_" + key) for key, _field, _unit in _TELEMETRY_SENSORS}
+        keys.update(("binary_sensor", "rmcontrol_" + key) for key, _field in _TELEMETRY_FLAGS)
+        if self.light_timer_pending:
+            keys.add(("select", "light_timer"))
+        if self.light_color_control_pending:
+            keys.add(("light", "under_bed_lights"))
+        return frozenset(keys)
+
+    @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        fields = (
-            ("protocol_version", "protocol_version", None),
-            ("bed_mode", "bed_mode_mode", None),
-            ("light_timer", "light_timer_seconds", "s"),
-            ("massage_head_strength", "massage_head_strength", None),
-            ("massage_foot_strength", "massage_foot_strength", None),
-            ("massage_mode", "massage_mode", None),
-            ("massage_frequency", "massage_frequency", None),
-            ("music_volume", "music_volume", None),
-            ("fan_gear", "fan_gear", None),
-            ("aroma_timer", "aroma_timer_value", None),
-            ("heating_temperature", "heating_temperature", None),
-            ("anti_snore_count", "anti_snore_intervention_count", None),
-            ("anti_snore_time", "anti_snore_intervention_time", None),
-            ("alarm_record", "repeat_alarm_alarm_id", None),
-        )
         return tuple(
             ControllerStateSensorSpec(
                 key="rmcontrol_" + key,
@@ -822,18 +844,12 @@ class RmcontrolController(RichmatController):
                 if key == "alarm_record"
                 else (),
             )
-            for key, field, unit in fields
+            for key, field, unit in _TELEMETRY_SENSORS
             if "rmcontrol_" + field in self._reported_state
         )
 
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
-        fields = (
-            ("anti_snore_enabled", "anti_snore_enabled"),
-            ("music_playing", "music_playing"),
-            ("lock", "lock_locked"),
-            ("rgb_motion", "rgb_motion_enabled"),
-        )
         return tuple(
             ControllerStateBinarySensorSpec(
                 key="rmcontrol_" + key,
@@ -841,7 +857,7 @@ class RmcontrolController(RichmatController):
                 state_key=_state_key("rmcontrol_" + field),
                 icon="mdi:information-outline",
             )
-            for key, field in fields
+            for key, field in _TELEMETRY_FLAGS
             if "rmcontrol_" + field in self._reported_state
         )
 

@@ -275,14 +275,6 @@ class JensenController(BedController):
         return bool(self._features & _LIGHT_FLAGS)
 
     @property
-    def prunes_stale_light_level(self) -> bool:
-        return True
-
-    @property
-    def prunes_stale_fan_level(self) -> bool:
-        return True
-
-    @property
     def supports_discrete_light_control(self) -> bool:
         """Return True if bed has discrete on/off light commands."""
         return self.supports_lights

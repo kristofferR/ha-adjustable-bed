@@ -1,11 +1,10 @@
-"""Serenity profile reloads preserve other sides and retire obsolete app entities."""
+"""Serenity profile entities follow the selected profile."""
 
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS
-from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.button import _button_entities_for
@@ -26,13 +25,12 @@ from tests.test_serenity import make_controller, written
 
 
 @pytest.mark.parametrize("retain", [True, False])
-async def test_status_sensor_reload_reconciles_only_the_current_side(hass, retain):
+async def test_status_sensors_follow_the_profile(hass, retain):
     controller = (
         make_controller()
         if retain
         else make_controller_mock(
             controller_state_sensor_specs=(),
-            stale_controller_state_sensor_entity_keys=frozenset(),
             position_number_specs=(),
         )
     )
@@ -47,65 +45,30 @@ async def test_status_sensor_reload_reconciles_only_the_current_side(hass, retai
         "serenity_save_event_code",
         "serenity_alarm_type",
     }
-    registry = er.async_get(hass)
-    old = [
-        registry.async_get_or_create(
-            "sensor", DOMAIN, f"bed_{key}_left", config_entry=runtime.entry
-        )
-        for key in keys
-    ]
-    other = registry.async_get_or_create(
-        "sensor", DOMAIN, "bed_serenity_status_code_right", config_entry=runtime.entry
-    )
-    unrelated = registry.async_get_or_create(
-        "sensor", DOMAIN, "bed_unrelated_left", config_entry=runtime.entry
-    )
     entities = _sensor_entities_for(hass, runtime)
-    assert all((registry.async_get(row.entity_id) is not None) is retain for row in old)
-    assert registry.async_get(other.entity_id) is not None
-    assert registry.async_get(unrelated.entity_id) is not None
+    # The entry's stale sweep retires whatever the builder no longer creates.
     assert {entity.unique_id for entity in entities if "serenity_" in entity.unique_id} == (
         {f"bed_{key}_left" for key in keys} if retain else set()
     )
 
 
 @pytest.mark.parametrize("retain", [True, False])
-async def test_literal_app_buttons_reload_reconciles_only_current_side(hass, retain):
+async def test_literal_app_buttons_follow_the_profile(hass, retain):
     controller = make_controller() if retain else make_controller_mock(controller_button_specs=())
     runtime = configure_entity_runtime(
         hass, controller, BED_TYPE_SERENITY if retain else BED_TYPE_DIAGNOSTIC
     )
-    registry = er.async_get(hass)
-    old = registry.async_get_or_create(
-        "button", DOMAIN, "bed_serenity_selector_4_up_left", config_entry=runtime.entry
-    )
-    other = registry.async_get_or_create(
-        "button", DOMAIN, "bed_serenity_selector_4_up_right", config_entry=runtime.entry
-    )
-    unrelated = registry.async_get_or_create(
-        "button", DOMAIN, "bed_other_action_left", config_entry=runtime.entry
-    )
     entities = _button_entities_for(hass, runtime)
-    assert (registry.async_get(old.entity_id) is not None) is retain
-    assert registry.async_get(other.entity_id) is not None
-    assert registry.async_get(unrelated.entity_id) is not None
-    assert any(entity.unique_id == old.unique_id for entity in entities) is retain
+    assert (
+        any(entity.unique_id == "bed_serenity_selector_4_up_left" for entity in entities) is retain
+    )
 
 
-async def test_profile_retires_old_lumbar_cover_without_guessing_auxiliary_axes(hass):
+async def test_profile_covers_skip_lumbar_without_guessing_auxiliary_axes(hass):
     controller = make_controller()
     runtime = configure_entity_runtime(hass, controller, BED_TYPE_SERENITY)
-    registry = er.async_get(hass)
-    old = registry.async_get_or_create(
-        "cover", DOMAIN, "bed_lumbar_left", config_entry=runtime.entry
-    )
-    other = registry.async_get_or_create(
-        "cover", DOMAIN, "bed_lumbar_right", config_entry=runtime.entry
-    )
     covers = _cover_entities_for(hass, runtime)
     assert {cover.entity_description.key for cover in covers} == {"head", "feet"}
-    assert registry.async_get(old.entity_id) is None
-    assert registry.async_get(other.entity_id) is not None
     actions = {button.unique_id for button in _button_entities_for(hass, runtime)}
     assert {
         f"bed_serenity_selector_{selector}_{direction}_left"

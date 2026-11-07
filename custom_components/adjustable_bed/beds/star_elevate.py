@@ -110,10 +110,6 @@ class StarElevateController(BedController):
             ),
         )
 
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset({"back", "legs", "head", "feet"})
-
     def _effective_cancel_event(self, cancel_event: asyncio.Event | None) -> asyncio.Event | None:
         return cancel_event if cancel_event is not None else self._coordinator.cancel_command
 
