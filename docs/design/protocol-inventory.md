@@ -603,8 +603,8 @@ objects (`async_execute_*_request`, `async_execute_*_action`,
 `configure_alarm_table_schedule`, `program_alarm`, `program_solace_alarm`,
 `floyd_action`, `richmat_mh_*` alarms and aroma, `rmcontrol_repeat_alarm`,
 `set_motion_bed_surface`, `async_execute_sleep_number_command`) and
-`seek_position_step`. Most of those products expose the same frames through the
-controller-declared buttons above.
+seek-policy steps (`PositionSeekPolicy.async_issue_step`). Most of those
+products expose the same frames through the controller-declared buttons above.
 
 Each event records the characteristic, kind (the write `response` flag, or
 `notify`, `unnotify`, `read`, `pair`), bytes, order and virtual time offset. All
