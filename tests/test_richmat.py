@@ -14,6 +14,7 @@ from custom_components.adjustable_bed.beds.richmat.controller import (
     RICHMAT_LEGACY_RGB_LIGHT_TIMER_OPTIONS,
     RichmatController,
 )
+from custom_components.adjustable_bed.beds.richmat.features import get_richmat_features
 from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS, _should_add_button
 from custom_components.adjustable_bed.const import (
     BED_TYPE_RICHMAT,
@@ -29,7 +30,6 @@ from custom_components.adjustable_bed.const import (
     RICHMAT_REMOTE_GGRM,
     RICHMAT_REMOTE_LP_QRRM,
     RICHMAT_VARIANT_NORDIC,
-    get_richmat_features,
     get_richmat_motor_count,
     resolve_richmat_remote_code,
 )

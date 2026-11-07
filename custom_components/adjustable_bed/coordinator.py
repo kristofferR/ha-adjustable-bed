@@ -171,7 +171,6 @@ from .const import (
     SOLACE_VARIANT_WOOSA,
     STARCODE_GROUP_BED_TYPES,
     get_motor_pulse_defaults,
-    get_richmat_features,
     get_richmat_motor_count,
     resolve_explicit_bed_type,
     resolve_richmat_remote_code,
@@ -343,6 +342,8 @@ class AdjustableBedCoordinator(
         self._furnimove_bond_task: asyncio.Task[None] | None = None
         self._furnimove_bond_request: dict[str, object] = {"status": "not_requested"}
         if self._bed_type == BED_TYPE_RICHMAT:
+            from .beds.richmat.features import get_richmat_features
+
             # Entities need the motor count before the first connection, so it
             # comes from the stored remote code, as the Richmat builder resolves it.
             richmat_remote = resolve_richmat_remote_code(

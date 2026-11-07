@@ -306,7 +306,6 @@ from .const import (
     ZSERIES_PULSE_COUNT_RANGE,
     DetectionResult,
     get_motor_pulse_defaults,
-    get_richmat_features,
     get_richmat_motor_count,
     grants_one_connection_per_pairing_window,
     requires_pairing,
@@ -3798,6 +3797,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     def _new_bed_motor_count(self, bed_type: str) -> int:
         """Return a new bed's default motor count, from its remote where it shows one."""
         if bed_type == BED_TYPE_RICHMAT and (remote := self._detected_richmat_remote()):
+            from .beds.richmat.features import get_richmat_features
+
             return get_richmat_motor_count(get_richmat_features(remote))
         name = self._discovery_info.name if self._discovery_info is not None else None
         return _default_motor_count(bed_type, name)

@@ -42,7 +42,6 @@ from ...const import (
     RICHMAT_VARIANT_WILINKE,
     RICHMAT_WILINKE_STOP_COMPAT_REMOTE_CODES,
     RichmatFeatures,
-    get_richmat_features,
     resolve_richmat_remote_code,
     richmat_remote_has_combined_head_feet,
 )
@@ -51,6 +50,7 @@ from ...profiles.richmat import GGRM_ACTIONS, RICHMAT, Button, RichmatProfile
 from ..base import BedController
 from ..builder import BuildContext
 from ..entity_specs import ControllerButtonSpec, MotorControlSpec
+from .features import get_richmat_features
 
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator

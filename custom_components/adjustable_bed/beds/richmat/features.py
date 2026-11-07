@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from typing import Final
 
-from ...const import RichmatFeatures
+from ...const import RICHMAT_REMOTE_AUTO, RICHMAT_REMOTE_FEATURES, RichmatFeatures
 
 _F = RichmatFeatures  # Shorthand for readability
 
@@ -529,3 +529,38 @@ RICHMAT_REMOTE_FEATURES_GENERATED: Final[dict[str, RichmatFeatures]] = {
     "zzrm": _F.PRESET_FLAT | _F.MOTOR_HEAD | _F.MOTOR_FEET,
 }
 # fmt: on
+
+
+def get_richmat_features(remote_code: str) -> RichmatFeatures:
+    """Get features for a Richmat remote code.
+
+    Looks up features from both manually-defined overrides and the
+    comprehensive auto-generated mapping (492 product codes extracted
+    from Richmat apps).
+
+    Args:
+        remote_code: The remote code (e.g., "VIRM", "qrrm", "i7rm")
+                    Case-insensitive, will be normalized to lowercase.
+
+    Returns:
+        RichmatFeatures flags for the remote code, or all features
+        enabled if the code is not found (safe fallback).
+    """
+    # Normalize to lowercase for lookup
+    code_lower = remote_code.lower() if remote_code else ""
+
+    # Special case: "auto" returns all features
+    if code_lower == "auto" or not code_lower:
+        return RICHMAT_REMOTE_FEATURES[RICHMAT_REMOTE_AUTO]
+
+    # First check manually-defined features (uppercase keys)
+    code_upper = remote_code.upper()
+    if code_upper in RICHMAT_REMOTE_FEATURES:
+        return RICHMAT_REMOTE_FEATURES[code_upper]
+
+    # Then check generated features (lowercase keys)
+    if code_lower in RICHMAT_REMOTE_FEATURES_GENERATED:
+        return RICHMAT_REMOTE_FEATURES_GENERATED[code_lower]
+
+    # Fallback: return all features enabled
+    return RICHMAT_REMOTE_FEATURES[RICHMAT_REMOTE_AUTO]
