@@ -7,9 +7,16 @@ from unittest.mock import AsyncMock
 import pytest
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant
+from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
+from custom_components.adjustable_bed.app_families import FAMILY_STEP_ROUTES
+from custom_components.adjustable_bed.app_profiles import (
+    _every_profile_setting,
+    hidden_generic_fields,
+    per_side_profile,
+    profile_settings,
+)
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
@@ -19,11 +26,13 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_KEESON,
+    BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LINAK,
     BED_TYPE_OKIN_CST,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
+    BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M1X12,
@@ -31,7 +40,10 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_ZSERIES,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
+    CONF_FSM_RELAX_MEMORY_NAMES,
+    CONF_GMMOTOR_SIDE,
     CONF_HAS_MASSAGE,
+    CONF_LEGGETT_APP_PROFILE,
     CONF_MOTOR_COUNT,
     CONF_PAIRLINK_HOME_ID,
     CONF_PAIRLINK_HOST_SOURCE,
@@ -40,6 +52,7 @@ from custom_components.adjustable_bed.const import (
     CONF_PAIRLINK_ROLE,
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
+    CONF_RICHMAT_CLASSIC_THIRD_SERVICE,
     CONF_STARCODE_LIFT_ENTRIES,
     CONF_STARCODE_M1X12_PROFILE,
     DOMAIN,
@@ -50,17 +63,18 @@ from custom_components.adjustable_bed.const import (
     OKIN_CST_VARIANT_NECTAR_MOVE,
     OKIN_CST_VARIANT_SANCTUARY,
     STAR_ELEVATE_VARIANT_M1X12,
+    SUPPORTED_BED_TYPES,
     SVANE_VARIANT_JENSEN_LINON,
     VARIANT_AUTO,
     ZSERIES_VARIANT_Z280,
 )
 from custom_components.adjustable_bed.detection import (
-    FAMILY_STEP_ROUTES,
     HIDDEN_APP_CHOICES,
     bed_type_choice,
     get_bed_type_options,
     resolve_bed_type_choice,
 )
+from custom_components.adjustable_bed.setup_questions import CONF_SERTA_MP_MEMORIES
 from tests.form_helpers import finish_new_bed, shown_markers, start_new_bed
 
 
@@ -303,3 +317,62 @@ def test_americanstar_profile_owns_massage_and_per_side_layout() -> None:
     assert _per_side_refusal(sides[0], sides, {CONF_MOTOR_COUNT: 3}) == (
         CONF_MOTOR_COUNT, "AMERICANSTAR"
     )
+
+
+@pytest.mark.parametrize("bed_type", SUPPORTED_BED_TYPES)
+def test_a_bed_type_change_leaves_no_other_profiles_settings(bed_type: str) -> None:
+    """Every setting another bed type's profiles own leaves; its own stay."""
+    every = _every_profile_setting()
+    data = {CONF_BED_TYPE: bed_type, **dict.fromkeys(every, "stale")}
+
+    AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(data, bed_type)
+
+    # The L&P app profile stays only on the Okin route, which this data names.
+    expected = profile_settings(bed_type) - (
+        set() if bed_type == BED_TYPE_LEGGETT_OKIN else {CONF_LEGGETT_APP_PROFILE}
+    )
+    assert set(data) & every == expected
+
+
+@pytest.mark.parametrize(
+    ("bed_type", "settings"),
+    [
+        ("gmmotor", {CONF_GMMOTOR_SIDE: "both"}),
+        (
+            BED_TYPE_RICHMAT_CLASSIC_APPS,
+            {
+                CONF_PROTOCOL_VARIANT: "avocadoecobase",
+                CONF_PRODUCT_TYPE: "6BRM",
+                CONF_RICHMAT_CLASSIC_THIRD_SERVICE: True,
+            },
+        ),
+        (BED_TYPE_FSM_RELAX, {CONF_FSM_RELAX_MEMORY_NAMES: ["Read"] * 8}),
+        ("serta_mp_remote", dict.fromkeys(CONF_SERTA_MP_MEMORIES, 20)),
+    ],
+)
+async def test_configure_drops_the_old_apps_settings_with_its_bed_type(
+    hass: HomeAssistant, enable_custom_integrations, bed_type: str, settings: dict
+) -> None:
+    """Settings a question or an action saved for one app leave with it."""
+    del enable_custom_integrations
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_ADDRESS: "AA:BB:CC:DD:EE:31", CONF_BED_TYPE: bed_type, **settings},
+        unique_id="AA:BB:CC:DD:EE:31",
+    )
+    entry.add_to_hass(hass)
+    menu = await hass.config_entries.options.async_init(entry.entry_id)
+    form = await hass.config_entries.options.async_configure(
+        menu["flow_id"], user_input={"next_step_id": "settings"}
+    )
+    rebuilt = await hass.config_entries.options.async_configure(
+        form["flow_id"], user_input={CONF_BED_TYPE: BED_TYPE_LINAK}
+    )
+
+    saved = await hass.config_entries.options.async_configure(
+        rebuilt["flow_id"], user_input={CONF_BED_TYPE: BED_TYPE_LINAK}
+    )
+
+    assert saved["type"] == FlowResultType.CREATE_ENTRY
+    assert entry.data[CONF_BED_TYPE] == BED_TYPE_LINAK
+    assert not (settings.keys() - {CONF_PROTOCOL_VARIANT}) & entry.data.keys()

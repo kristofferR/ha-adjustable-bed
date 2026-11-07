@@ -23,6 +23,7 @@ from .base import BedController
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
+    from .lifecycle import ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -79,11 +80,16 @@ class LimossController(BedController):
         """Return reported memory slot count (fallback: 0)."""
         return self._memory_slot_count if self._memory_slot_count > 0 else 0
 
+    async def async_on_connect(self, session: ControllerSession) -> None:
+        """Start each connection with fresh normalization state."""
+        self.reset_max_raw_estimate()
+        await session.async_start_notify()
+
     def reset_max_raw_estimate(self) -> None:
         """Reset raw-position normalization estimates.
 
-        Called by the coordinator on connection/reconnection to avoid carrying
-        stale calibration state across sessions.
+        Called on every connection to avoid carrying stale calibration state
+        across sessions.
         """
         self._max_raw_estimate = _DEFAULT_MAX_RAW_ESTIMATE.copy()
         self._low_sample_streak = dict.fromkeys(_DEFAULT_MAX_RAW_ESTIMATE, 0)

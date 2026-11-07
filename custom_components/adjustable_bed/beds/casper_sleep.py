@@ -75,7 +75,7 @@ class CasperSleepController(BedController, CasperBaseActions):
 
     @property
     def requires_persistent_connection(self) -> bool:
-        return self._poll is not None
+        return super().requires_persistent_connection or self._poll is not None
 
     @property
     def motor_control_specs(self) -> tuple:

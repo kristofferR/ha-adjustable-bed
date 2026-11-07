@@ -28,6 +28,7 @@ from .base import (
     ControllerStateSensorSpec,
     require_controller,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -1254,3 +1255,12 @@ class MotoMotionController(BedController):
             )
         self._coordinator.save_app_state(self)
         self._publish()
+
+
+async def build_controller(ctx: BuildContext) -> MotoMotionController:
+    """Build the controller from the live name and advertisement."""
+    return MotoMotionController(
+        ctx.coordinator,
+        device_name=ctx.live_device_name,
+        manufacturer_data=ctx.manufacturer_data,
+    )

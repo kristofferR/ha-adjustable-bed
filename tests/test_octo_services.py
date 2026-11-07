@@ -624,7 +624,6 @@ async def test_octo_enroll_pin_sends_and_persists_one_physical_receiver(
     assert write.await_args.args == ([0x20, 0x41], [0, 3, 6, 9])
     assert isinstance(write.await_args.kwargs["cancel_event"], asyncio.Event)
     assert entry.data[CONF_OCTO_PIN] == "0369"
-    assert coordinator._octo_pin == "0369"
     assert controller._pin == "0369"
     command_kwargs = coordinator.async_execute_controller_command.await_args.kwargs
     assert command_kwargs["cancel_running"] is False
@@ -662,7 +661,7 @@ async def test_octo_enroll_pin_from_single_address_side_updates_physical_owner(
 
     write.assert_awaited_once()
     assert entry.data[CONF_OCTO_PIN] == "0420"
-    assert inner._octo_pin == "0420"
+    assert inner.entry.data[CONF_OCTO_PIN] == "0420"
     assert controller._pin == "0420"
 
 
@@ -695,7 +694,6 @@ async def test_octo_enroll_pin_is_not_persisted_when_scheduler_skips_callback(
 
     controller._write_octo_command.assert_not_awaited()
     assert entry.data[CONF_OCTO_PIN] == ""
-    assert coordinator._octo_pin == ""
     assert controller._pin == ""
 
 
@@ -738,7 +736,7 @@ async def test_octo_memory_action_specs_publish_card_metadata_for_standalone_and
     left = paired.children[SIDE_LEFT]
     side_button = ControllerActionButton(left, recall_spec)
     assert side_button.unique_id.endswith("_preset_memory_9_left")
-    assert side_button.translation_key == "preset_memory_9_left"
+    assert side_button.translation_key == "preset_memory_9"
     assert {
         key: side_button.extra_state_attributes[key] for key in standalone.extra_state_attributes
     } == standalone.extra_state_attributes

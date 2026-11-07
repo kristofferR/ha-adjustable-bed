@@ -20,17 +20,16 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .bed_traits import bed_traits, bed_type_has_position_feedback
 from .beds.base import ControllerNumberSpec, PositionNumberSpec
 from .const import (
     BED_TYPE_ISLEEP,
     BED_TYPE_SLEEPSTAR,
-    BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_BED_TYPE,
     CONF_HAS_MASSAGE,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
     SIDE_BOTH,
-    bed_type_has_position_feedback,
 )
 from .entity import AdjustableBedEntity, RenamesInPlace
 from .entity_discovery import async_setup_dynamic_entities
@@ -348,7 +347,7 @@ def _number_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
     # Beds with no angle/position feedback may have registered position sliders
     # under an earlier version or a previously selected profile. Remove any so
     # existing installs do not keep dead orphaned numbers (#322, #344).
-    if bed_type in BEDS_WITHOUT_ANGLE_FEEDBACK:
+    if bed_traits(bed_type).no_angle_feedback:
         _async_remove_stale_position_entities(hass, coordinator)
     elif (
         controller is not None
@@ -603,7 +602,7 @@ class AdjustableBedControllerNumber(AdjustableBedEntity, NumberEntity):
             mode=NumberMode.SLIDER,
         )
         self._attr_unique_id = coordinator.entity_unique_id(self.entity_description.key)
-        self._set_sided_translation_key(spec.translation_key, spec.key)
+        self._attr_translation_key = spec.translation_key
         self._unregister_callback: Callable[[], None] | None = None
 
     @property
@@ -800,7 +799,7 @@ def _async_remove_stale_position_entities(
 ) -> None:
     """Remove position number entities the integration no longer creates.
 
-    Beds in BEDS_WITHOUT_ANGLE_FEEDBACK have no position feedback, but an earlier
+    Beds whose traits declare no_angle_feedback have no position feedback, but an earlier
     version or profile may have registered *_back_position/*_legs_position sliders
     that now linger as dead orphaned numbers (#322, #344).
     """
@@ -826,7 +825,7 @@ class AdjustableBedPositionNumber(AdjustableBedEntity, NumberEntity):
         """Initialize the number entity."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._unregister_callback: Callable[[], None] | None = None
 
@@ -902,12 +901,9 @@ class PairedBedCombinedPositionNumber(RenamesInPlace, NumberEntity):
         self.entity_description = description
         self._attr_unique_id = coordinator.entity_unique_id(f"{description.key}_both")
         self._attr_device_info = coordinator.device_info
-        translation_key = description.translation_key or description.key
+        self._attr_translation_key = description.translation_key or description.key
         if isinstance(coordinator, SingleAddressPairedCoordinator):
-            self._attr_translation_key = f"{translation_key}_both"
             self._attr_extra_state_attributes = {"bed_side": SIDE_BOTH}
-        else:
-            self._attr_translation_key = translation_key
         self._unregister_callbacks: list[Callable[[], None]] = []
 
     @property
@@ -982,7 +978,7 @@ class AdjustableBedMassageNumber(AdjustableBedEntity, NumberEntity):
         """Initialize the massage number entity."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._unregister_callback: Callable[[], None] | None = None
 
@@ -1081,7 +1077,7 @@ class AdjustableBedLevelNumber(AdjustableBedEntity, NumberEntity):
         """Initialize the level number entity."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._unregister_callback: Callable[[], None] | None = None
 
@@ -1185,7 +1181,7 @@ class AdjustableBedSleepNumberSettingNumber(AdjustableBedEntity, NumberEntity):
         """Initialize the Sleep Number setting entity."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._unregister_callback: Callable[[], None] | None = None
 
@@ -1254,7 +1250,7 @@ class AdjustableBedSideStateNumber(AdjustableBedEntity, NumberEntity):
         """Initialize the side-specific number entity."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._unregister_callback: Callable[[], None] | None = None
 

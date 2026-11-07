@@ -117,7 +117,6 @@ def runtime_for(hass, controller, side=None, entry=None):
     runtime.capability_controller = controller
     runtime.controller_state = {}
     runtime.entity_unique_id.side_effect = lambda key: f"bed_{key}" + (f"_{side}" if side else "")
-    runtime.entity_translation_key.side_effect = lambda key: key
     lock = asyncio.Lock()
 
     async def execute(command, **kwargs):

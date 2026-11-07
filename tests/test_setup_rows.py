@@ -6,16 +6,18 @@ import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.app_families import (
+    APP_FAMILIES,
+    answer_family,
+    question_family,
+)
 from custom_components.adjustable_bed.config_flow import (
-    _APP_QUESTION_STEPS,
-    _APP_SETUP_STEPS,
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
     _bed_type_selector,
     _family_rows,
 )
 from custom_components.adjustable_bed.detection import (
-    FAMILY_ROWS,
     PROTOCOL_ROUTES,
     bed_type_label,
     get_bed_type_options,
@@ -28,9 +30,11 @@ ADDRESS = "11:22:33:44:55:66"
 
 
 def test_every_family_question_has_one_family_row():
-    steps = [_APP_SETUP_STEPS[bed_type] for bed_type in FAMILY_ROWS]
-    assert len(steps) == len(set(steps))
-    assert set(steps) == _APP_QUESTION_STEPS
+    rows = [family.row for family in APP_FAMILIES]
+    steps = [family.step for family in APP_FAMILIES]
+    assert len(set(rows)) == len(set(steps)) == len(APP_FAMILIES)
+    # Each row opens its own family's question.
+    assert all(question_family(family.row) is family for family in APP_FAMILIES)
 
 
 @pytest.mark.parametrize("show_saved_id", [False, True], ids=["setup", "configure"])
@@ -40,14 +44,11 @@ def test_a_rows_family_is_the_family_its_journey_asks(show_saved_id):
     Configure lists more rows by name, such as the Richmat apps, and they follow
     the same rule.
     """
-    from custom_components.adjustable_bed.config_flow import _ANSWER_STEPS
-
-    names = {_APP_SETUP_STEPS[bed_type]: family for bed_type, (family, _apps) in FAMILY_ROWS.items()}
     rows = _bed_type_selector(const.BED_TYPE_LINAK, show_saved_id=show_saved_id).rows()
     for label, choice in rows.items():
         bed_type, variant = resolve_bed_type_choice(choice)
-        step = _ANSWER_STEPS.get((bed_type, variant)) or _APP_SETUP_STEPS.get(bed_type, "")
-        family = names.get(step)
+        declared = answer_family(bed_type, variant) or question_family(bed_type)
+        family = declared.name if declared is not None else None
         if family is None:
             assert " · " not in label, label
         else:
@@ -80,7 +81,9 @@ def test_protocol_routes_are_off_the_list_but_reachable():
 
 async def test_the_good_vibe_row_asks_its_product_searchably(hass, mock_bluetooth_service_info):
     """One row, then a searchable product question the app's name rule suggests."""
-    from custom_components.adjustable_bed.const import GOODVIBE_PROFILES
+    from custom_components.adjustable_bed.goodvibe_catalog import (
+        PROFILE_CHOICES as GOODVIBE_PROFILES,
+    )
 
     rows = {option["value"] for option in get_bed_type_options()}
     assert const.BED_TYPE_GOODVIBE in rows

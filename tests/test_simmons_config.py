@@ -5,14 +5,13 @@ from unittest.mock import MagicMock
 import pytest
 
 from custom_components.adjustable_bed.actuator_groups import actuator_group_for
+from custom_components.adjustable_bed.bed_traits import bed_traits, bed_type_has_position_feedback
 from custom_components.adjustable_bed.config_flow import _motor_count_options
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SIMMONS,
-    BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_BLE_DEVICE_NAME,
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
     SIMMONS_VARIANTS,
-    bed_type_has_position_feedback,
     get_motor_pulse_defaults,
     requires_pairing,
 )
@@ -55,7 +54,7 @@ async def test_factory_resolves_protocol_and_layout_offline(variant, name, proto
 
 def test_profile_constants_and_setup_options():
     assert BED_TYPE_SIMMONS in OFFLINE_CAPABILITY_SAFE_BED_TYPES
-    assert BED_TYPE_SIMMONS in BEDS_WITHOUT_ANGLE_FEEDBACK
+    assert bed_traits(BED_TYPE_SIMMONS).no_angle_feedback
     assert not bed_type_has_position_feedback(BED_TYPE_SIMMONS, "auto")
     assert not requires_pairing(BED_TYPE_SIMMONS)
     assert get_motor_pulse_defaults(BED_TYPE_SIMMONS) == (4, 300)

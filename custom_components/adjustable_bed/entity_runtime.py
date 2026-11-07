@@ -34,8 +34,6 @@ class EntityRuntime(Protocol):
 
     def entity_unique_id(self, key: str) -> str: ...
 
-    def entity_translation_key(self, key: str) -> str: ...
-
     @property
     def name(self) -> str: ...
 
@@ -190,9 +188,6 @@ class EntityRuntimeView(ABC):
 
     def entity_unique_id(self, key: str) -> str:
         return self._entity_source.entity_unique_id(key)
-
-    def entity_translation_key(self, key: str) -> str:
-        return self._entity_source.entity_translation_key(key)
 
     @property
     def name(self) -> str:

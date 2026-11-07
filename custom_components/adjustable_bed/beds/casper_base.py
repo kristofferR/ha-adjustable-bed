@@ -39,6 +39,7 @@ from .base import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -156,7 +157,7 @@ class CasperBaseController(BedController, CasperBaseActions):
 
     @property
     def requires_persistent_connection(self) -> bool:
-        return self._snore_poll is not None
+        return super().requires_persistent_connection or self._snore_poll is not None
 
     def controller_button_available(self, key: str) -> bool:
         return not key.startswith("casper_music_page_") or "music_available" in self.events
@@ -571,3 +572,8 @@ class CasperBaseController(BedController, CasperBaseActions):
 
     async def program_memory(self, memory_num: int) -> None:
         await self.async_perform_casper_base_action(f"MemoryPosition{memory_num}", save=True)
+
+
+async def build_controller(ctx: BuildContext) -> CasperBaseController:
+    """Build the controller for the selected Casper base product."""
+    return CasperBaseController(ctx.coordinator, product=ctx.variant or "")

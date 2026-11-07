@@ -137,10 +137,6 @@ class GmmotorSleepController(BedController, GmmotorActions):
         return True
 
     @property
-    def requires_persistent_connection(self) -> bool:
-        return True
-
-    @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         operations: tuple[tuple[str, Operation], ...] = (
             ("Time", "sensor_time"),

@@ -40,16 +40,12 @@ from ..alarm_table import (
 from ..alarm_table import (
     WeeklyAlarmRecord as WeeklyAlarmRecord,
 )
+from ..bed_traits import BedTraits
 from ..command_scheduler import current_command_context
-from ..const import (
-    POSITION_CHECK_INTERVAL,
-    POSITION_STALL_COUNT,
-    POSITION_STALL_THRESHOLD,
-    POSITION_TOLERANCE,
-)
 from ..diagnostic_payloads import format_payload
 from ..execution import HOLD_CEILING_MS, NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ..position_seek import PositionSeekPolicy
+from .lifecycle import CapabilitySnapshotPolicy, ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -349,6 +345,8 @@ class BedController(ABC):
             coordinator: The AdjustableBedCoordinator managing the BLE connection
         """
         self._coordinator = coordinator
+        # The controller factory stamps the bed type's record here; see bed_traits.
+        self.static_traits = BedTraits()
         self._notify_callback: Callable[[str, float], None] | None = None
         self._raw_notify_callback: Callable[[str, bytes], None] | None = None
         self._ble_lock = asyncio.Lock()
@@ -522,14 +520,14 @@ class BedController(ABC):
     def requires_persistent_connection(self) -> bool:
         """Return True if the BLE link must be held open for the entry's lifetime.
 
-        Controllers that must or should conservatively retain the link (e.g.
-        Leggett & Platt Gen2 / LP Comfort Connect pending bonded-reconnect hardware
-        confirmation) override this to return True so the coordinator never
-        idle-disconnects them. Because this is a property of the resolved controller,
-        it is authoritative even when the bed type/variant resolves to different
-        protocols at connect time.
+        Defaults to the bed type's ``persistent_connection`` trait (e.g. Leggett &
+        Platt Gen2 / LP Comfort Connect pending bonded-reconnect hardware
+        confirmation), so the coordinator never idle-disconnects them. Controllers
+        override this only to refine it at runtime. Because this is a property of
+        the resolved controller, it is authoritative even when the bed
+        type/variant resolves to different protocols at connect time.
         """
-        return False
+        return self.static_traits.persistent_connection
 
     @property
     def requires_disconnected_transport(self) -> bool:
@@ -570,80 +568,12 @@ class BedController(ABC):
         return False
 
     @property
-    def reverses_position_seek_on_overshoot(self) -> bool:
-        """Return True if position seeking should reverse after overshooting.
-
-        The coordinator's generic seek loop assumes movement commands can be
-        trimmed or corrected mid-flight. Pulse-driven controllers like Linak
-        complete a whole movement burst before fresh feedback is available, so
-        reversing on overshoot causes hunting. Those controllers should
-        override this to return False and let the seek stop on the first target
-        crossing instead.
-        """
-        return True
-
-    @property
-    def uses_custom_position_seek_steps(self) -> bool:
-        """Return True if seeking should use controller-specific move steps.
-
-        Most controllers can reuse their normal move-up/move-down helpers during
-        incremental seeking. Pulse-driven controllers may need shorter seek
-        steps than their manual-control button presses to avoid overshoot.
-        """
-        return False
-
-    @property
-    def position_seek_tolerance(self) -> float:
-        """Return the acceptable error band for feedback-driven seeking.
-
-        The generic coordinator tolerance is intentionally broad because some
-        beds report coarse or noisy position feedback. Controllers with cleaner
-        feedback and smaller target steps can override this to finish closer to
-        the requested position.
-        """
-        return POSITION_TOLERANCE
-
-    @property
-    def position_seek_stall_count(self) -> int:
-        """Return how many stagnant reads are required before reissuing motion."""
-        return POSITION_STALL_COUNT
-
-    @property
-    def position_seek_check_interval(self) -> float:
-        """Return the interval between feedback polls during position seeking."""
-        return POSITION_CHECK_INTERVAL
-
-    @property
-    def position_seek_stall_threshold(self) -> float:
-        """Return the minimum delta that still counts as active movement."""
-        return POSITION_STALL_THRESHOLD
-
-    @property
-    def chains_position_seek_steps_while_moving(self) -> bool:
-        """Return True to reissue seek bursts before movement fully stalls.
-
-        The default seek loop waits for a stagnant feedback read before it
-        sends another movement burst. Controllers whose motors auto-stop
-        shortly after writes cease can override this to chain the next burst
-        while feedback still shows active movement, reducing visible stop/start
-        behavior during long seeks.
-        """
-        return False
-
-    @property
-    def position_seek_chain_min_remaining_distance(self) -> float:
-        """Return the minimum remaining error that still allows burst chaining."""
-        return POSITION_TOLERANCE
-
-    @property
     def position_seek_policy(self) -> PositionSeekPolicy:
         """Return the protocol movement policy for feedback-driven seeking.
 
-        The default policy delegates to the tuning properties above, so
-        existing per-controller overrides keep working unchanged. Controller
-        families with protocol evidence for smarter seek behavior (coast
-        compensation, endpoint completion, reversal transitions) override this
-        to return a policy subclass.
+        Controller families with protocol evidence for other seek tuning or
+        behavior (coast compensation, endpoint completion, held-command steps)
+        override this to return a policy subclass.
         """
         return PositionSeekPolicy(self)
 
@@ -1070,33 +1000,6 @@ class BedController(ABC):
         some motors support notifications and others don't.
         """
 
-    async def seek_position_step(
-        self,
-        position_key: str,
-        moving_up: bool,
-        remaining_distance: float | None = None,
-    ) -> None:
-        """Execute one incremental move step during feedback-based seeking.
-
-        Controllers with `uses_custom_position_seek_steps` should override this
-        to emit shorter or otherwise specialized seek pulses. The default
-        implementation falls back to the normal movement helpers.
-        """
-        del remaining_distance  # Default implementations do not use distance-based tuning.
-        if position_key == "back":
-            await (self.move_back_up() if moving_up else self.move_back_down())
-            return
-        if position_key == "legs":
-            await (self.move_legs_up() if moving_up else self.move_legs_down())
-            return
-        if position_key == "head":
-            await (self.move_head_up() if moving_up else self.move_head_down())
-            return
-        if position_key == "feet":
-            await (self.move_feet_up() if moving_up else self.move_feet_down())
-            return
-        raise ValueError(f"Unsupported position key for seek step: {position_key}")
-
     async def prepare_for_position_read(self) -> None:  # noqa: B027 - optional hook, not abstract
         """Do controller-specific setup before an initial or passive position read."""
 
@@ -1482,13 +1385,17 @@ class BedController(ABC):
 
     @property
     def supports_position_feedback(self) -> bool:
-        """Return True if bed reports position feedback."""
-        return False
+        """Return True if bed reports position feedback.
+
+        Defaults to the bed type's ``position_feedback`` trait. Controllers
+        override this only to narrow it at runtime, for example after discovery.
+        """
+        return self.static_traits.position_feedback
 
     @property
     def reports_percentage_position(self) -> bool:
         """Return whether reported motor positions use a 0-100 percentage scale."""
-        return False
+        return self.static_traits.percentage_positions
 
     @property
     def requires_notification_channel(self) -> bool:
@@ -2142,7 +2049,7 @@ class BedController(ABC):
         from the axis its firmware reports.
 
         Only consulted for beds that report position feedback -- see
-        ``bed_type_has_position_feedback()``. Deliberately not derived from
+        ``BedTraits.position_feedback``. Deliberately not derived from
         ``motor_control_specs``: that describes every axis the remote can drive,
         which is a broader set than the axes the bed reports a position for.
         """
@@ -3144,6 +3051,48 @@ class BedController(ABC):
             NotImplementedError: If the bed doesn't support circulation massage
         """
         raise NotImplementedError("Circulation massage not supported on this bed")
+
+    # --- Connection lifecycle ---------------------------------------------
+    # The coordinator calls these, in this order, on every connection once the
+    # controller exists and ``async_discover_capabilities()`` has run.
+
+    async def async_on_connect(self, session: ControllerSession) -> None:
+        """Run protocol startup; the default starts notifications.
+
+        Overrides own their startup order, so they call
+        ``session.async_start_notify()`` where their protocol needs it.
+        """
+        await session.async_start_notify()
+
+    async def async_after_connect(self, session: ControllerSession) -> None:  # noqa: B027
+        """Hydrate connect-time state after background schedules are refreshed."""
+
+    async def async_read_device_info(self, session: ControllerSession) -> bool:
+        """Read Device Information the protocol's app reads itself.
+
+        Only called for bed types that defer Device Information until after
+        startup. Return False to use the coordinator's generic read.
+        """
+        return False
+
+    async def async_refresh_auth(self) -> None:  # noqa: B027
+        """Re-authenticate a reused link before a command."""
+
+    async def async_resume_session(self) -> None:  # noqa: B027
+        """Re-arm authentication and keepalive on a link that stayed connected."""
+
+    async def stop_keepalive(self) -> None:  # noqa: B027
+        """Stop session-owned keepalive work before the link is released."""
+
+    @property
+    def reads_light_state_on_connect(self) -> bool:
+        """Whether ``async_on_connect`` already reads readable light state."""
+        return False
+
+    @property
+    def capability_snapshot_policy(self) -> CapabilitySnapshotPolicy | None:
+        """How ``capability_snapshot()`` persists; None keeps it session-only."""
+        return None
 
 
 def controller_as[T](controller: BedController | None, interface: type[T]) -> T | None:

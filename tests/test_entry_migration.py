@@ -1,4 +1,4 @@
-"""Config entry migration of values released in v4.0.2, through schema 5.3."""
+"""Config entry migration of values released in v4.0.2, through schema 5.5."""
 
 from __future__ import annotations
 
@@ -19,12 +19,15 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_KEESON,
     BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA_APP,
+    BED_TYPE_OCTO,
     BED_TYPE_SLEEPYS_ELITE_APP,
     CONF_BED_TYPE,
     CONF_DISABLE_DISCOVERY,
     CONF_FURNIMOVE_REMOTE,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
+    CONF_MOTOR_COUNT,
+    CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     CONF_PAIR_CHILDREN,
     CONF_PAIR_ID,
     CONF_PROFILE_ID,
@@ -69,7 +72,7 @@ async def test_ore_alias_becomes_sino(hass: HomeAssistant) -> None:
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 3)
+    assert (entry.version, entry.minor_version) == (5, 5)
     assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_SINO
     assert entry.data[CONF_PROFILE_ID] == "keeson:sino"
 
@@ -125,7 +128,7 @@ async def test_other_entries_are_unchanged(hass: HomeAssistant) -> None:
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 3)
+    assert (entry.version, entry.minor_version) == (5, 5)
     migrated = dict(entry.data)
     assert migrated.pop(CONF_PROFILE_ID) == BED_TYPE_LINAK
     assert migrated.pop(CONF_PROFILE_MIGRATION)["fields"] == {
@@ -165,7 +168,7 @@ async def test_a_4x_pair_drops_obsolete_keys_on_its_way_to_5_2(hass: HomeAssista
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 3)
+    assert (entry.version, entry.minor_version) == (5, 5)
     assert "pair_schema_version" not in entry.data
     assert dict(entry.options) == {"later_key": 3}
     migrated_left, migrated_right = entry.data[CONF_PAIR_CHILDREN]
@@ -198,7 +201,7 @@ async def test_a_5_1_entry_without_obsolete_keys_only_moves_to_the_current_schem
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 3)
+    assert (entry.version, entry.minor_version) == (5, 5)
     assert dict(entry.data) == data
     assert dict(entry.options) == {"later_key": 2}
 
@@ -262,7 +265,7 @@ async def test_schema_5_3_turns_massage_off_without_a_massage_page(
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 3)
+    assert (entry.version, entry.minor_version) == (5, 5)
     assert entry.data[CONF_HAS_MASSAGE] is False
     assert entry.data[CONF_PROFILE_MIGRATION] == {
         "from_version": 5,
@@ -286,7 +289,7 @@ async def test_schema_5_3_leaves_a_layout_with_massage_alone(
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 3)
+    assert (entry.version, entry.minor_version) == (5, 5)
     assert dict(entry.data) == data
 
 
@@ -393,7 +396,7 @@ async def test_a_4x_entry_turns_massage_off_on_its_way_to_5_3(hass: HomeAssistan
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 3)
+    assert (entry.version, entry.minor_version) == (5, 5)
     assert entry.data[CONF_HAS_MASSAGE] is False
     record = entry.data[CONF_PROFILE_MIGRATION]
     assert (record["from_version"], record["from_minor_version"]) == (4, 1)
@@ -476,3 +479,98 @@ async def test_a_paired_sides_dead_massage_buttons_leave_the_registry(hass: Home
     assert registry.async_get(rows["pair_4_massage_all_toggle_both"].entity_id) is None
     # The side with massage keeps its buttons.
     assert registry.async_get(rows[f"{right_address}_massage_all_toggle"].entity_id) is not None
+
+
+@pytest.mark.parametrize(
+    ("stored", "expected"),
+    [
+        # A count other than the default was the user's layout before the selector.
+        ({CONF_MOTOR_COUNT: 1}, "1"),
+        ({CONF_MOTOR_COUNT: 4}, "4"),
+        # The default count, or none, followed the advertised layout.
+        ({CONF_MOTOR_COUNT: 2}, "auto"),
+        ({}, "auto"),
+    ],
+)
+async def test_schema_5_5_stores_an_octo_layout_as_its_override(
+    hass: HomeAssistant, stored: dict, expected: str
+) -> None:
+    entry = _entry(
+        hass,
+        {CONF_ADDRESS: "AA:BB:CC:DD:EE:20", CONF_BED_TYPE: BED_TYPE_OCTO, **stored},
+        version=5,
+        minor_version=3,
+    )
+
+    await async_migrate_entry(hass, entry)
+
+    assert (entry.version, entry.minor_version) == (5, 5)
+    assert entry.data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] == expected
+    assert entry.data[CONF_PROFILE_MIGRATION]["octo_motor_count_override"] == ["data"]
+
+
+async def test_schema_5_5_keeps_a_chosen_override_and_other_beds(hass: HomeAssistant) -> None:
+    octo = _entry(
+        hass,
+        {
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:21",
+            CONF_BED_TYPE: BED_TYPE_OCTO,
+            CONF_MOTOR_COUNT: 1,
+            CONF_OCTO_MOTOR_COUNT_OVERRIDE: "auto",
+        },
+        version=5,
+        minor_version=3,
+    )
+    other = _entry(
+        hass,
+        {CONF_ADDRESS: "AA:BB:CC:DD:EE:22", CONF_BED_TYPE: BED_TYPE_LINAK, CONF_MOTOR_COUNT: 3},
+        version=5,
+        minor_version=3,
+    )
+
+    await async_migrate_entry(hass, octo)
+    await async_migrate_entry(hass, other)
+
+    assert octo.data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] == "auto"
+    assert CONF_OCTO_MOTOR_COUNT_OVERRIDE not in other.data
+    assert CONF_PROFILE_MIGRATION not in octo.data
+    assert CONF_PROFILE_MIGRATION not in other.data
+
+
+async def test_schema_5_5_writes_each_octo_side_and_its_original(hass: HomeAssistant) -> None:
+    # The left side inherits the pair's one-motor count; the right side has its own.
+    left = {
+        CONF_SIDE: "left",
+        CONF_ADDRESS: "AA:BB:CC:DD:EE:23",
+        CONF_BED_TYPE: BED_TYPE_OCTO,
+        KEY_ORIGIN_DATA: {CONF_BED_TYPE: BED_TYPE_OCTO, CONF_MOTOR_COUNT: 3},
+    }
+    right = {
+        CONF_SIDE: "right",
+        CONF_ADDRESS: "AA:BB:CC:DD:EE:24",
+        CONF_BED_TYPE: BED_TYPE_OCTO,
+        CONF_MOTOR_COUNT: 2,
+    }
+    entry = _entry(
+        hass,
+        {
+            CONF_PAIR_ID: "pair_5",
+            CONF_BED_TYPE: BED_TYPE_OCTO,
+            CONF_MOTOR_COUNT: 1,
+            CONF_PAIR_CHILDREN: [left, right],
+        },
+        version=5,
+        minor_version=3,
+    )
+
+    await async_migrate_entry(hass, entry)
+
+    migrated_left, migrated_right = entry.data[CONF_PAIR_CHILDREN]
+    assert migrated_left[CONF_OCTO_MOTOR_COUNT_OVERRIDE] == "1"
+    assert migrated_left[KEY_ORIGIN_DATA][CONF_OCTO_MOTOR_COUNT_OVERRIDE] == "3"
+    assert migrated_right[CONF_OCTO_MOTOR_COUNT_OVERRIDE] == "auto"
+    assert entry.data[CONF_PROFILE_MIGRATION]["octo_motor_count_override"] == [
+        "data.left",
+        "data.left.origin_data",
+        "data.right",
+    ]

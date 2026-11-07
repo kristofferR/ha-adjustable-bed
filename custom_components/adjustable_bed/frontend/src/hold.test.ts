@@ -220,14 +220,12 @@ test("button hold metadata uses the bounded side-scoped service", async () => {
 for (const scheme of ["single-address", "two-address", "standalone"] as const) {
   test(`HJBed ${scheme} holds resolve and retain their own release button`, () => {
     const side = scheme === "standalone" ? undefined : "right";
-    const suffix = scheme === "single-address" ? "_right" : "";
     const entityId = "button.memory";
     const hass = {
       entities: {
-        [entityId]: { entity_id: entityId, device_id: "child", translation_key: `hjbed_action${suffix}` },
-        "button.peer_release": { entity_id: "button.peer_release", device_id: "peer", translation_key: `hjbed_release${suffix}` },
-        "button.other_side": { entity_id: "button.other_side", device_id: "child", translation_key: "hjbed_release_left" },
-        "button.release": { entity_id: "button.release", device_id: "child", translation_key: `hjbed_release${suffix}` },
+        [entityId]: { entity_id: entityId, device_id: "child", translation_key: "hjbed_action" },
+        "button.peer_release": { entity_id: "button.peer_release", device_id: "peer", translation_key: "hjbed_release" },
+        "button.release": { entity_id: "button.release", device_id: "child", translation_key: "hjbed_release" },
       },
       states: { [entityId]: { attributes: {
         ...(side ? { bed_side: side } : {}),
@@ -1222,23 +1220,24 @@ for (const topology of ["missing-parent", "missing-graph"] as const) {
   });
 }
 
-test("a sided Stop translation key names its side when state attributes are missing", () => {
+test("the combined Stop key names Both when state attributes are missing", () => {
   const hass = {
     entities: {
-      "button.stop_left": {
-        entity_id: "button.stop_left",
+      "button.stop_both": {
+        entity_id: "button.stop_both",
         device_id: "bed",
         platform: "adjustable_bed",
-        translation_key: "stop_left",
+        translation_key: "stop_both",
       },
     },
     states: {},
     devices: { bed: { id: "bed" } },
   } as unknown as HomeAssistant;
-  expect(holdTargetForEntity(hass, "button.stop_left")).toEqual({
+  expect(holdTargetForEntity(hass, "button.stop_both")).toEqual({
     deviceId: "bed",
-    side: "left",
+    side: "both",
     physicalDeviceId: "bed",
+    physicalChildIds: [],
   });
 });
 
@@ -1321,11 +1320,9 @@ for (const phase of ["active", "pending-release"] as const) {
   });
 }
 
-// Single-address pairs give each native child a side-suffixed Stop key.
+// Single-address pairs publish each native child's side as a state attribute.
 function singleAddressCoverHass(): HomeAssistant {
   const hass = twoAddressCoverHass();
-  hass.entities["button.left_stop"].translation_key = "stop_left";
-  hass.entities["button.right_stop"].translation_key = "stop_right";
   for (const [entityId, side] of [
     ["button.left_stop", "left"],
     ["button.right_stop", "right"],
@@ -1341,7 +1338,7 @@ function singleAddressCoverHass(): HomeAssistant {
 }
 
 for (const phase of ["active", "pending-release"] as const) {
-  test(`a single-address side cover stop also stops the suffixed peer Stop (${phase})`, () => {
+  test(`a single-address side cover stop also stops the sided peer Stop (${phase})`, () => {
     const hass = singleAddressCoverHass();
     const events: string[] = [];
     const timers = new FakeTimers();

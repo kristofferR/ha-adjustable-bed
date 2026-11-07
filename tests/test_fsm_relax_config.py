@@ -10,15 +10,16 @@ from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.bed_traits import bed_traits
 from custom_components.adjustable_bed.beds.fsm_relax import FsmRelaxController
 from custom_components.adjustable_bed.beds.limoss import LimossController
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
-    _add_fsm_relax_schema_fields,
-    _fsm_relax_errors,
+    _profile_question_schema,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.detection import get_bed_type_options
+from custom_components.adjustable_bed.setup_questions import SETUP_PROFILES, FlowContext
 from tests.form_helpers import answer_app, suggested
 
 
@@ -65,9 +66,9 @@ async def test_explicit_profile_step_validates_and_persists_all_values(hass):
     flow.hass = hass
     flow._manual_data = {const.CONF_BED_TYPE: const.BED_TYPE_FSM_RELAX}
     flow._finish_with_verify = AsyncMock(return_value={"type": FlowResultType.CREATE_ENTRY})
-    form = await flow.async_step_fsm_relax()
-    assert form["step_id"] == "fsm_relax"
-    await flow.async_step_fsm_relax(data())
+    form = await flow.async_step_profile_questions()
+    assert form["step_id"] == "profile_questions"
+    await flow.async_step_profile_questions(data())
     assert flow._manual_data[const.CONF_PRODUCT_TYPE] == "bed"
     assert flow._manual_data[const.CONF_FSM_RELAX_MEMORY_NAMES][0] == "Sleep"
     assert flow._manual_data[const.CONF_DISABLE_ANGLE_SENSING] is True
@@ -75,22 +76,22 @@ async def test_explicit_profile_step_validates_and_persists_all_values(hass):
     assert flow._manual_data[const.CONF_HAS_MASSAGE] is True
     flow._finish_with_verify.assert_awaited_once_with(flow._manual_data, "Adjustable Bed")
     flow._finish_with_verify.reset_mock()
-    form = await flow.async_step_fsm_relax({const.CONF_FSM_RELAX_MEMORY_NAMES: [""] * 7})
+    form = await flow.async_step_profile_questions({const.CONF_FSM_RELAX_MEMORY_NAMES: [""] * 7})
     assert form["errors"] == {"base": "fsm_relax_invalid"}
     flow._finish_with_verify.assert_not_called()
 
 
-def test_profile_fields_schema_and_exact_options_validation():
-    schema = {}
-    _add_fsm_relax_schema_fields(schema, data())
-    result = vol.Schema(schema)({})
+async def test_profile_fields_schema_and_exact_options_validation(hass):
+    profile = SETUP_PROFILES[const.BED_TYPE_FSM_RELAX]
+    result = vol.Schema(_profile_question_schema(profile, data(), FlowContext(hass)))({})
     assert isinstance(result, dict)
     assert result[const.CONF_PRODUCT_TYPE] == "bed"
     assert result[const.CONF_FSM_RELAX_MEMORY_NAMES][0] == "Sleep"
-    assert _fsm_relax_errors(data()) == {}
-    assert _fsm_relax_errors({**data(), const.CONF_REVERSE_MOTORS[0]: "yes"})
-    assert const.BED_TYPE_FSM_RELAX not in const.BEDS_WITH_POSITION_FEEDBACK
-    assert const.BED_TYPE_FSM_RELAX in const.BEDS_WITHOUT_ANGLE_FEEDBACK
+    assert profile.validate is not None
+    assert profile.validate(data()) == {}
+    assert profile.validate({**data(), const.CONF_REVERSE_MOTORS[0]: "yes"})
+    assert not bed_traits(const.BED_TYPE_FSM_RELAX).position_feedback
+    assert bed_traits(const.BED_TYPE_FSM_RELAX).no_angle_feedback
     # The Limoss / Stawett row names the app; its question offers it.
     rows = {option["value"]: option["label"] for option in get_bed_type_options()}
     assert "FSM Relax" in rows[const.BED_TYPE_LIMOSS]
@@ -242,7 +243,7 @@ async def test_public_explicit_profile_finishes_without_pairing_backend(
                 result["flow_id"],
                 user_input={const.CONF_BED_TYPE: suggested(result, const.CONF_BED_TYPE)},
             )
-        assert result["step_id"] == "fsm_relax"
+        assert result["step_id"] == "profile_questions"
         result = await hass.config_entries.flow.async_configure(result["flow_id"], user_input={
             key: value for key, value in data().items() if key != const.CONF_BED_TYPE
         })
@@ -277,7 +278,7 @@ async def test_profile_keeps_normal_verification_when_transport_available(hass):
         patch.object(flow, "async_step_setup_progress", AsyncMock(return_value={"type": FlowResultType.FORM, "step_id": "setup_progress"})) as progress,
         patch.object(flow, "async_step_manual_pairing", AsyncMock(side_effect=AssertionError("unexpected pairing"))) as pairing,
     ):
-        result = await flow.async_step_fsm_relax({})
+        result = await flow.async_step_profile_questions({})
     assert result["step_id"] == "setup_progress"
     assert flow._pending_entry is not None
     assert flow._pending_entry[const.CONF_BED_TYPE] == const.BED_TYPE_FSM_RELAX

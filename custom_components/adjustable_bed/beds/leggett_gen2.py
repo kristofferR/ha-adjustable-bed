@@ -38,9 +38,15 @@ import contextlib
 import logging
 from typing import TYPE_CHECKING, Any
 
-from ..const import LEGGETT_GEN2_READ_CHAR_UUID, LEGGETT_GEN2_WRITE_CHAR_UUID
+from ..const import (
+    LEGGETT_GEN2_READ_CHAR_UUID,
+    LEGGETT_GEN2_WRITE_CHAR_UUID,
+    LEGGETT_VARIANT_MLRM,
+    LEGGETT_VARIANT_OKIN,
+)
 from ..execution import ExecutionCapabilities
 from .base import BedController
+from .builder import BuildContext
 from .leggett_gen2_profiles import (
     Gen2Capabilities,
     capabilities_for_product,
@@ -202,11 +208,6 @@ class LeggettGen2Controller(BedController):
     def control_characteristic_uuid(self) -> str:
         """Return the UUID of the control characteristic."""
         return LEGGETT_GEN2_WRITE_CHAR_UUID
-
-    @property
-    def requires_persistent_connection(self) -> bool:
-        """Keep the Gen2 link open pending hardware confirmation of reconnects."""
-        return True
 
     @property
     def manual_disconnect_strands_connection(self) -> bool:
@@ -690,3 +691,26 @@ class LeggettGen2Controller(BedController):
         modes = self._massage_modes()
         self._massage_mode_idx = (self._massage_mode_idx + 1) % len(modes)
         await self.write_command(LeggettGen2Commands.massage_mode(modes[self._massage_mode_idx]))
+
+
+async def build_controller(ctx: BuildContext) -> LeggettGen2Controller:
+    """Build the controller with the advertised product data."""
+    return LeggettGen2Controller(ctx.coordinator, manufacturer_data=ctx.manufacturer_data)
+
+
+async def build_leggett_platt(ctx: BuildContext) -> BedController:
+    """Build the controller for a Leggett & Platt variant the factory resolved."""
+    if ctx.variant == LEGGETT_VARIANT_MLRM:
+        await ctx.preload("leggett_wilinke")
+        from .leggett_wilinke import LeggettWilinkeController
+
+        _LOGGER.debug("Using MlRM Leggett & Platt variant")
+        return LeggettWilinkeController(ctx.coordinator)
+    if ctx.variant == LEGGETT_VARIANT_OKIN:
+        await ctx.preload("leggett_okin")
+        from .leggett_okin import build_controller as build_okin
+
+        _LOGGER.debug("Using Okin Leggett & Platt variant (configured)")
+        return await build_okin(ctx)
+    _LOGGER.debug("Using Gen2 Leggett & Platt variant")
+    return await build_controller(ctx)

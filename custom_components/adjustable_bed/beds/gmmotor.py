@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING
 
 from homeassistant.util import dt as dt_util
 
+from ..const import CONF_GMMOTOR_SIDE, CONF_PRODUCT_TYPE
 from ..gmmotor_catalog_types import Phase
 from ..gmmotor_notifications import Event, Value, common, desk21, extra
 from ..gmmotor_profiles import Action, load_profile
@@ -45,6 +46,7 @@ from .base import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -587,3 +589,20 @@ class GmmotorController(BedController, GmmotorActions):
 
     async def program_memory(self, memory_num: int) -> None:
         raise NotImplementedError("Use this product's named GM Control long-press action")
+
+
+async def build_controller(ctx: BuildContext) -> BedController:
+    """Build the bed or desk controller for the stored GMmotor profile."""
+    from ..gmmotor_profiles import profile_choices
+
+    profile = ctx.data.get(CONF_PRODUCT_TYPE, "")
+    if profile not in profile_choices():
+        profile = ""  # Source factory's unsupported-selector fallback.
+    if profile in ("FWRM", "WFRM"):
+        await ctx.preload("gmmotor_desk")
+        from .gmmotor_desk import GmmotorDeskController
+
+        return GmmotorDeskController(ctx.coordinator, profile=profile)
+    return GmmotorController(
+        ctx.coordinator, profile=profile, side=ctx.data.get(CONF_GMMOTOR_SIDE, "left")
+    )

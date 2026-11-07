@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from bleak.exc import BleakError
 
 from ..app_session import app_session
-from ..const import REMACRO_READ_CHAR_UUID, REMACRO_WRITE_CHAR_UUID
+from ..const import CONF_REMACRO_MODEL, REMACRO_READ_CHAR_UUID, REMACRO_WRITE_CHAR_UUID
 from ..execution import ExecutionCapabilities
 from .base import (
     BedController,
@@ -33,6 +33,7 @@ from .base import (
     MotorCommandCallable,
     MotorControlSpec,
 )
+from .builder import BuildContext
 from .remacro_protocol import (
     APP_JEROMES,
     APP_LED_SETTINGS_MODEL_IDS,
@@ -112,6 +113,9 @@ def remacro_session(
 
 class RemacroController(BedController):
     """One Remacro bed as shown by one app's model-specific control screen."""
+
+    # Every app writes WRITE_TYPE_NO_RESPONSE.
+    _write_with_response = False
 
     def __init__(
         self,
@@ -384,23 +388,6 @@ class RemacroController(BedController):
         if self._app == APP_JEROMES:
             return self._serial.tap(code, parameter)
         return self._serial.hold(code, parameter)
-
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        # Every app writes WRITE_TYPE_NO_RESPONSE.
-        await self._write_gatt_with_retry(
-            REMACRO_WRITE_CHAR_UUID,
-            command,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            cancel_event=cancel_event,
-            response=False,
-        )
 
     async def _sleep(self, seconds: float) -> None:
         if seconds > 0:
@@ -739,3 +726,23 @@ class RemacroController(BedController):
 
 
 __all__ = ["APP_JEROMES", "APP_SLUMBERLAND", "APP_THE_BRICK", "RemacroController"]
+
+
+async def build_controller(ctx: BuildContext) -> RemacroController:
+    """Build the controller for the advertised model.
+
+    The live advertisement wins, as in the apps; the stored selector only
+    covers offline capability minting and missing history.
+    """
+    from .remacro_protocol import app_for_variant, remacro_led_level, resolve_model
+
+    coordinator = ctx.coordinator
+    app = app_for_variant(ctx.variant)
+    model = resolve_model(app, ctx.manufacturer_data, ctx.data.get(CONF_REMACRO_MODEL))
+    return RemacroController(
+        coordinator,
+        app=app,
+        model=model,
+        session=remacro_session(coordinator.hass, coordinator.address, app, model.model_id),
+        led_level=remacro_led_level(ctx.data, model.model_id),
+    )
