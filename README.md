@@ -109,7 +109,7 @@ Each linked guide has a Status line with the details.
 | [eShine](docs/beds/okin-nframe.md#eshine) | [eShine app: E2000, E3000 / E3100 and E5000](docs/beds/okin-nframe.md#eshine) 🧪 | eShine |
 | [Eshine E6000](docs/beds/richmat.md#eshine) | [Eshine app: E6000](docs/beds/richmat.md#eshine) 🧪 | Eshine |
 | [GM Control](docs/beds/gmmotor.md) | [GM Control app](docs/beds/gmmotor.md) 🧪, [GM Control sleep module, MM or SXB](docs/beds/gmmotor.md#sleep-modules) 🧪 | GM Control |
-| [Good Vibe Sleep](docs/beds/goodvibe.md) | [Good Vibe Sleep app](docs/beds/goodvibe.md) 🧪, [Good Vibe Sleep sleep sensor, RM- or HJ-](docs/beds/goodvibe.md#sleep-controls-and-reports) 🧪 | Good Vibe Sleep |
+| [Good Vibe Sleep](docs/beds/richmat.md#good-vibe-sleep) | [Good Vibe Sleep app](docs/beds/richmat.md#good-vibe-sleep) 🧪, [Good Vibe Sleep sleep sensor, RM- or HJ-](docs/beds/richmat.md#sleep-controls-and-reports) 🧪 | Good Vibe Sleep |
 | [HJBed](docs/beds/richmat.md#hjbed) | [HJBed app](docs/beds/richmat.md#hjbed) 🧪 | HJBed |
 | [Hush Base](docs/beds/hush-base.md) | [Hush Base app](docs/beds/hush-base.md) 🧪, [Hush Base sleep sensor, MM or SXB](docs/beds/hush-base.md#sleep-transport) 🧪, [Hush Base remote finder (RCRM handset)](docs/beds/hush-base.md#commands) 🧪 | Hush (L200 to L500, S175 to S575 and SH split-head models) |
 | [Jensen / Svane](docs/beds/jensen.md) | [Jensen Adjustable Sleep app, JMC400 bed](docs/beds/jensen.md) ✅, [Jensen Adjustable Sleep app, LinOn bed](docs/beds/jensen.md) 🧪, [Svane Remote app](docs/beds/svane.md) ⚠️ | Jensen (JMC400, LinON Entry, LinOn), Svane |

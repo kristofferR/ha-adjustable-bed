@@ -515,6 +515,7 @@ return 404.
 | `beds/ergomotion-4.md` | [Keeson: Ergomotion 4.0](beds/keeson.md#ergomotion-40) |
 | `beds/fsm_relax.md` | [Limoss: FSM Relax](beds/limoss.md#fsm-relax) |
 | `beds/glideaway-motion.md` | [Keeson: Glideaway Motion](beds/keeson.md#glideaway-motion) |
+| `beds/goodvibe.md` | [Richmat: Good Vibe Sleep](beds/richmat.md#good-vibe-sleep) |
 | `beds/hjbed.md` | [Richmat: HJBed](beds/richmat.md#hjbed) |
 | `beds/jiecang-app.md` | [Jiecang: Dream app family](beds/jiecang.md#dream-app-family) |
 | `beds/leggett-okin.md` | [Okin N-frame: Leggett Okin family](beds/okin-nframe.md#leggett-okin-family) |

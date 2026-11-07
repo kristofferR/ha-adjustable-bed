@@ -1,4 +1,4 @@
-"""R1 Richmat 6E: Richmat, its app routes, BedTech, WiLinke, HJBed and the classic apps."""
+"""R1 Richmat 6E: Richmat, its app routes, BedTech, WiLinke, HJBed, the classic apps and Good Vibe."""
 
 from __future__ import annotations
 
@@ -17,6 +17,7 @@ _VARIANTS = {
     "richmat_prefix55": const.RICHMAT_VARIANT_PREFIX55,
     "richmat_prefixaa": const.RICHMAT_VARIANT_PREFIXAA,
     "hjbed": "hj_bedbjrn",
+    "goodvibe": "selector-0001",
     **{f"richmat_classic_{app}": app for app in RICHMAT_CLASSIC},
 }
 
@@ -46,6 +47,7 @@ FAMILY = CodecFamily(
         {
             "bedtech",
             "eshine",
+            "goodvibe",
             "hjbed",
             "leggett_wilinke",
             "richmat",

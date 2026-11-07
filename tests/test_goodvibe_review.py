@@ -16,6 +16,7 @@ from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.command_scheduler import CommandOutcome
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.goodvibe_catalog import ACTIONS, PRODUCTS
+from custom_components.adjustable_bed.goodvibe_protocol import action_frame
 from tests.test_goodvibe_ha import runtime
 
 
@@ -341,7 +342,7 @@ async def test_single_address_paired_card_release_keeps_its_short_callback_and_s
         await button.async_press()
         await asyncio.wait_for(task, 1)
     assert [x.args[1] for x in c._client.write_gatt_char.await_args_list] == [
-        ACTIONS[detail].packet(1, False)
+        action_frame(ACTIONS[detail], 1, False)
     ]
     c._client.write_gatt_char.reset_mock()
     with patch.object(c, "async_ensure_connected", AsyncMock(return_value=True)):
@@ -404,7 +405,7 @@ async def test_combined_pair_uses_only_sides_admitted_by_the_product(hass, nativ
         frame
         for side in sides
         for frame in (
-            ACTIONS[detail].packet(side, False),
+            action_frame(ACTIONS[detail], side, False),
             bytes([110, 1, side, 110, (221 + side) & 255]),
         )
     ]
@@ -627,7 +628,7 @@ async def test_other_side_button_does_not_revoke_active_right_release(hass):
             await button.async_press()
             await asyncio.wait_for(asyncio.gather(task, other), 1)
     frames = [x.args[1] for x in c._client.write_gatt_char.await_args_list]
-    expected = [ACTIONS[detail].packet(1, False), ACTIONS[detail].packet(0, False)]
+    expected = [action_frame(ACTIONS[detail], 1, False), action_frame(ACTIONS[detail], 0, False)]
     c._client.is_connected = False
     await pair.async_shutdown()
     assert frames == expected
@@ -720,7 +721,7 @@ async def test_public_release_and_other_side_button_concurrently(hass):
         other = asyncio.create_task(other_button.async_press())
         await asyncio.wait_for(asyncio.gather(task, release, other), 3)
     frames = [x.args[1] for x in c._client.write_gatt_char.await_args_list]
-    expected = [ACTIONS[detail].packet(1, False), ACTIONS[detail].packet(0, False)]
+    expected = [action_frame(ACTIONS[detail], 1, False), action_frame(ACTIONS[detail], 0, False)]
     c._client.is_connected = False
     await pair.async_shutdown()
     assert frames == expected
@@ -838,7 +839,7 @@ async def test_other_side_button_after_release_waits_for_short_wire(hass):
             obj._ble_lock.release()
             await asyncio.wait_for(asyncio.gather(task, release, other), 1)
     frames = [x.args[1] for x in c._client.write_gatt_char.await_args_list]
-    expected = [ACTIONS[detail].packet(1, False), ACTIONS[detail].packet(0, False)]
+    expected = [action_frame(ACTIONS[detail], 1, False), action_frame(ACTIONS[detail], 0, False)]
     c._client.is_connected = False
     await pair.async_shutdown()
     assert frames == expected
