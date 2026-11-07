@@ -33,6 +33,7 @@ if TYPE_CHECKING:
     from ..hjbed_requests import Request as HJBedRequest
     from ..motion_bed_requests import MotionBedWrite
     from ..motomotion_requests import Request as MotoMotionRequest
+    from ..row061_protocol import AlarmRequest
     from ..sleeptracker_protocol import Request as SleeptrackerRequest
 
 from ..alarm_table import (
@@ -1765,6 +1766,17 @@ class BedController(ABC):
 
     async def rmcontrol_query_anti_snore(self) -> None:
         raise NotImplementedError("RMControl snore intervention is not supported")
+
+    @property
+    def supports_row061_alarms(self) -> bool:
+        """Whether the explicitly selected app/model has a mattress or calendar alarm."""
+        return False
+
+    def validate_row061_alarm(self, request: AlarmRequest) -> None:
+        raise NotImplementedError("This bed has no supported app alarm")
+
+    async def row061_alarm(self, request: AlarmRequest) -> None:
+        raise NotImplementedError("This bed has no supported app alarm")
 
     @property
     def supports_richmat_mh_alarm(self) -> bool:

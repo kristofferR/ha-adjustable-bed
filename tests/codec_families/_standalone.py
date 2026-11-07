@@ -39,6 +39,7 @@ STANDALONE: dict[str, str] = {
     "octo": "own wire format",
     "okin_ore": "own wire format",
     "remacro": "own wire format",
+    "richmat_sleep_receiver": "sleep receiver without bed commands; own FA crc8 frames",
     "reverie": "own wire format",
     "reverie_nightstand": "own wire format",
     "reverie_pairlink": "own wire format behind a Pairlink session",

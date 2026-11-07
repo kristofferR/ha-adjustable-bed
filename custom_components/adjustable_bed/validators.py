@@ -143,6 +143,8 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_ADJUSTABLE_LUMBAR: ADJUSTABLE_LUMBAR_VARIANTS,
     BED_TYPE_COMFORT_ENHANCEMENTS: COMFORT_ENHANCEMENTS_VARIANTS,
     **{bed_type: RICHMAT_MH_VARIANTS_BY_APP[app] for bed_type, app in RICHMAT_MH_APPS.items()},
+    "richmat_sleep_receiver": {"wsilver2": "W.Silver Products", "americanstar": "AMERICANSTAR",
+                               "bailey2": "Bailey's Bed Control", "tx": "TX"},
     BED_TYPE_SOLACE: SOLACE_VARIANTS,
     BED_TYPE_REVERIE_NIGHTSTAND: REVERIE_MODEL_CHOICES,
     BED_TYPE_REVERIE: REVERIE_MODEL_CHOICES,
