@@ -135,6 +135,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | **Richmat 6E (R1)** | | | | | |
 | `richmat` (all routes) | S stream | U | U | rmc2 | explicit STOP after the sustain timer; speed rows are massage |
 | `richmat_revive`, `richmat_best_mattress`, `richmat_blvd_home`, `richmat_harmony`, `richmat_idealbed` | S stream | U | U | revive, best, blvd, harmony, ideal, row055 | KEEP rows repeat until removed, STOP after 120 ms; speed rows are massage |
+| `ruf_betten`, `wsilver_products`, `richmat_americanstar`, `bailey_bed_control`, `richmat_tx` | S stream | U | U | ruf, wsilver, rmamericanstar, bailey, tx, row061 | KEEP rows repeat at the model's interval until removed; RUF sends STOP at once, the others STOP after 120 ms |
 | `leggett_wilinke`, `leggett_platt` (`mlrm`) | S stream | U | U | lp2 | framed STOP per mode |
 | `hjbed` | S stream | U | U | row121 | per-action recovered release |
 | `richmat_classic_apps` (Avocado Eco Base, CoasterSleep, Forty Winks, Milemont, Superior) | S stream | U | U | avocado, coaster, fortywinks, milemont, superior, row066 | keep buttons repeat every 150 ms tick (110 ms for TWRM and MLRM names) until UP, then release 50 ms later; hold declared per control, on the held controls that run the keep mode under the current selection (see [per-control scope](#per-control-hold-scope)). Each press replaces the sender's one shared command and the release frame ends it; combined motors are fixed keys; speed keys are massage (`com_msg_speed`) |
@@ -626,6 +627,7 @@ Report workspaces are machine-local under
 | avanti | `com.ore.AvantiBases` | 1.0.5 | COMPLETE | `com.ore.AvantiBases-1.0.5-2026-11-03-bulk061-001/report/` |
 | aviada | `com.okin.bedding.rizeaviada` | 1.0.1 | COMPLETE | `com.okin.bedding.rizeaviada-1.0.1-2026-08-30/report/` |
 | avocado | `com.richmat.avocadoecobase` | 1.0.4 | COMPLETE | `com.richmat.avocadoecobase-1.0.4-2026-11-03-bulk061-clean002/work/report-revision-sol-003/` |
+| bailey | `com.richmat.bailey2` | 2.1.21 | COMPLETE | `com.richmat.bailey2-2.1.21-2026-11-03-bulk061-001/work/report-revision-sol-002/` |
 | bedsense | `com.fenmenbielei.bedsense` | 1.8 | COMPLETE | `com.fenmenbielei.bedsense-1.8-2026-11-03-bulk101-188-001/report/` |
 | bedtech | `com.richmat.bed_tech` | 2.8.3 | PARTIAL | `com.richmat.bed_tech-2.8.3-2026-11-03-bulk061-001/report/` |
 | best | `com.richmat.best_mattress` | 1.1.1 | COMPLETE | `com.richmat.best_mattress-1.1.1-2026-10-02-queue-e0bb6807-20261001-055-005/report/` |
@@ -704,8 +706,10 @@ Report workspaces are machine-local under
 | restonic | `com.keeson.restonicBT` | 1.2.0 | COMPLETE | `com.keeson.restonicBT-1.2.0-2026-10-02-queue-903926b6-20261002-058-002/report/` |
 | reverie | `com.reverie.reverie` | 3.3.3.8 | COMPLETE | `com.reverie.reverie-3.3.3.8-2026-10-27-39bdcafa-amendment-consolidation-001/report/` |
 | revive | `com.richmat.revive3` | 1.0.26 | COMPLETE | `com.richmat.revive3-1.0.26-2026-10-02-queue-e0bb6807-20261001-055-006/report/` |
+| rmamericanstar | `com.richmat.americanstar` | 1.0.0 | COMPLETE | `com.richmat.americanstar-1.0.0-2026-11-03-bulk061-001/work/report-revision-sol-001/` |
 | rmc2 | `com.richmat.rmcontrol2` | 21.3.7 | COMPLETE | `com.richmat.rmcontrol2-21.3.7-20260906-comparison-001/report/` |
 | row | `com.sfd.row` | 2.0 | COMPLETE | `com.sfd.row-2.0-2026-10-26-39bdcafa-repair-001/report/` |
+| ruf | `com.desarketing.ruf_betten_motor2` | 1.1.8 | COMPLETE | `com.desarketing.ruf_betten_motor2-1.1.8-2026-11-03-bulk061-001/work/report-revision-sol-001/` |
 | sanctuary | `com.okin.bedding.rizeSanctuary` | 1.0.1 | COMPLETE | `com.okin.bedding.rizeSanctuary-1.0.1-2026-08-30/report/` |
 | sealy | `com.okin.sealy` | 1.1.3 | PARTIAL | `com.okin.sealy-1.1.3-2026-10-03-extra-four-b-036-repair-004/report/` |
 | serenity | `com.okin.bedding.serenity` | 1.0.1 | COMPLETE | `com.okin.bedding.serenity-1.0.1-2026-09-30-isolated-002/report/` |
@@ -725,12 +729,14 @@ Report workspaces are machine-local under
 | tempur | `com.ore.tempur` | 1.7 | COMPLETE | `com.ore.tempur-1.7-2026-10-26-39bdcafa-repair-001/report/` |
 | tempur_au | `com.sfd.tempur_au` | 1.6 | COMPLETE | `com.sfd.tempur_au-1.6-2026-10-26-39bdcafa-001/report/` |
 | tranquil | `com.okin.bedding.tranquil` | 1.0.2 | COMPLETE | `com.okin.bedding.tranquil-1.0.2-2026-10-01-queue-e0bb6807-20261001-052-002/report/` |
+| tx | `com.richmat.tx` | 1.0.0 | COMPLETE | `com.richmat.tx-1.0.0-2026-11-03-bulk061-001/work/report-revision-sol-001/` |
 | universal | `com.leggett.android.universal` | 2.9.0 | COMPLETE | `com.leggett.android.universal-2.9.0-20260824/report/` |
 | useries | `com.leggett.useries` | 2.1 | COMPLETE | `com.leggett.useries-2.1-20260827/final-report/` |
 | vmat | `de.vibradorm.vmat` | 1.11 | COMPLETE | `de.vibradorm.vmat-1.11-2026-09-30-isolated-001/report/` |
 | vmatbasic | `com.vibradorm.vmatbasic` | 2.4.3 | COMPLETE | `com.vibradorm.vmatbasic-2.4.3-2026-09-30-isolated-001/report/` |
 | werkmeister | `de.vibradorm.werkmeister` | 0.2 | COMPLETE | `de.vibradorm.werkmeister-0.2-2026-09-30-isolated-001/report/` |
 | woosa | `com.sn.woosa` | 1.1.9 | COMPLETE | `com.sn.woosa-1.1.9-20260923/report/` |
+| wsilver | `com.richmat.wsilver2` | 1.1.19 | COMPLETE | `com.richmat.wsilver2-1.1.19-2026-11-03-bulk061-001/work/report-revision-sol-003/` |
 
 Ledgers, guides and issues. An audit ledger is a machine-local record kept with
 its APK Protocol Audit report, named here by its file stem:
@@ -752,6 +758,7 @@ its APK Protocol Audit report, named here by its file stem:
 | row042 | audit ledger `row042-nectar-motion` |
 | row050 | audit ledger `row050-remacro` |
 | row055 | audit ledger `row055-richmat-cluster` |
+| row061 | discovery ledger `implementation-row061-five/DISCOVERY-LEDGER` (PR #928) |
 | row066 | audit ledger `row066-classic-richmat-apps` |
 | row067 | audit ledger `row067-adjustamattress` |
 | row121 | audit ledger `row121-hjbed` |

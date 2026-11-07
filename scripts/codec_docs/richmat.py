@@ -40,7 +40,10 @@ _RICHMAT_NAMES = {
         profile.key: f"Richmat MH {name}"
         for profile, name in zip(
             richmat_profiles.RICHMAT_MH.values(),
-            ("Revive Control", "Best Mattress", "Blvd Home", "HARMONY", "Idealbed"),
+            (
+                *("Revive Control", "Best Mattress", "Blvd Home", "HARMONY", "Idealbed"),
+                *("RUF Betten", "W.Silver", "AMERICANSTAR", "Bailey", "TX"),
+            ),
             strict=True,
         )
     },
