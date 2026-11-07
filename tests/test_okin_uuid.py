@@ -977,3 +977,15 @@ class TestOkinUuidFurniMoveCatalog:
         dot = OKIN_UUID_REMOTES["93558"]
         assert dot.dot is True
         assert (dot.flat, dot.anti_snore, dot.zero_gravity) == (0x08000000, 0x4000, 0x1000)
+
+
+def test_remote_table_records_its_generator_input() -> None:
+    """The generated table names the master.json it was built from."""
+    import hashlib
+    from pathlib import Path
+
+    from custom_components.adjustable_bed.beds import okin_uuid_remotes
+
+    master = Path(__file__).parents[1] / "tools/okin_remotes/master.json"
+    digest = hashlib.sha256(master.read_bytes()).hexdigest()
+    assert f"tools/okin_remotes/master.json {digest}" in (okin_uuid_remotes.__doc__ or "")

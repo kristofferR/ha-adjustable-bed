@@ -13,13 +13,15 @@ Codes present in the pinned FurniMove production catalog
 here, but their keycodes come only from that catalog: ``okin_uuid.py`` derives
 them at import, so they are left out of ``OKIN_UUID_REMOTE_DATA``.
 """
+import hashlib
 import importlib.util
 import json
 import re
 import sys
 from pathlib import Path
 
-master = json.load(open("master.json"))
+MASTER_BYTES = Path("master.json").read_bytes()
+master = json.loads(MASTER_BYTES)
 
 _spec = importlib.util.spec_from_file_location(
     "furnimove_profiles",
@@ -147,6 +149,7 @@ Source of truth: the DewertOkin FurniMove handset backend
 ``handsetlist.csv`` capability flags for remote codes the backend no longer
 serves. Regenerate with ``tools/okin_remotes/gen_module.py`` (see the README
 there for the full pipeline).
+Input SHA-256: tools/okin_remotes/master.json @MASTER_SHA256@
 
 Codes in the pinned FurniMove production catalog (``furnimove_profiles.py``)
 are labelled here but have no data row: ``okin_uuid.py`` derives their
@@ -191,6 +194,7 @@ DEFAULT_OKIN_DOT_REMOTE = "97450"
 OKIN_UUID_VARIANT_LABELS: dict[str, str] = {
 '''
 
+hdr = hdr.replace("@MASTER_SHA256@", hashlib.sha256(MASTER_BYTES).hexdigest())
 lines = [hdr.rstrip("\n")]
 for c in std_codes:
     lines.append(f'    "{c}": "{label_of(c)}",')

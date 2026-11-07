@@ -5,6 +5,7 @@ Source of truth: the DewertOkin FurniMove handset backend
 ``handsetlist.csv`` capability flags for remote codes the backend no longer
 serves. Regenerate with ``tools/okin_remotes/gen_module.py`` (see the README
 there for the full pipeline).
+Input SHA-256: tools/okin_remotes/master.json 70e23817bb7791c7027aa12e102003190ecfb44d2796d6d1b6f6fca9e3b41154
 
 Codes in the pinned FurniMove production catalog (``furnimove_profiles.py``)
 are labelled here but have no data row: ``okin_uuid.py`` derives their
