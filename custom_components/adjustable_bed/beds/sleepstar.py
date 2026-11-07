@@ -24,6 +24,7 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ..codec import okin_5a as star
+from ..codec.ff_frame import with_crc
 from ..const import (
     NORDIC_UART_READ_CHAR_UUID,
     NORDIC_UART_WRITE_CHAR_UUID,
@@ -167,30 +168,14 @@ def build_daily_report_query(*, side: int, year: int, month: int, day: int) -> b
     return bytes([0x2A, 0, 0, 7, 0x84 if side == 0 else 0x85, 3, year - 2000, month, day])
 
 
-def crc16_modbus(data: bytes) -> int:
-    """Return the CRC-16/MODBUS used only by the inner environment protocol."""
-    crc = 0xFFFF
-    for value in data:
-        crc ^= value
-        for _ in range(8):
-            crc = ((crc >> 1) ^ 0xA001) if crc & 1 else crc >> 1
-    return crc & 0xFFFF
-
-
-def _with_modbus_crc(data: bytes) -> bytes:
-    """Append a low-byte-first MODBUS CRC to an environment payload."""
-    crc = crc16_modbus(data)
-    return data + bytes([crc & 0xFF, crc >> 8])
-
-
 def build_environment_address_query() -> bytes:
     """Build the broadcast query for the environment-sensor MODBUS address."""
-    return wrap_environment(_with_modbus_crc(bytes.fromhex("000200000001")))
+    return wrap_environment(with_crc(bytes.fromhex("000200000001")))
 
 
 def build_environment_register_query(address: int) -> bytes:
     """Build the seven-register environment query for a discovered address."""
-    return wrap_environment(_with_modbus_crc(bytes([address & 0xFF, 3, 0, 2, 0, 7])))
+    return wrap_environment(with_crc(bytes([address & 0xFF, 3, 0, 2, 0, 7])))
 
 
 def resolve_sleepstar_variant(manufacturer_data: dict[int, bytes] | None) -> str:

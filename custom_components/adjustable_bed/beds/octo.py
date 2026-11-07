@@ -44,9 +44,11 @@ from .base import (
     ControllerSelectSpec,
     MotorControlSpec,
 )
+from .lifecycle import CapabilitySnapshotPolicy
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
+    from .lifecycle import ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -511,6 +513,40 @@ class OctoController(BedController, OctoPacketCodec):
     def execution(self) -> ExecutionCapabilities:
         """The app streams held motion until release, then sends STOP (#483)."""
         return ExecutionCapabilities(hold="stream")
+
+    async def async_on_connect(self, session: ControllerSession) -> None:
+        """Subscribe, discover, persist the snapshot, then PIN and keepalive, in order."""
+        from ..unsupported import update_octo_pin_required_issue
+
+        await session.async_start_notify()
+        # Standard Octo Smart Control declares this ordered session handshake
+        # as required; a session that did not complete fails the connection.
+        discovery_complete = await self.discover_features()
+        if self.requires_ordered_discovery and discovery_complete is False:
+            raise ConnectionError("Octo Smart Control session discovery did not complete")
+        # Persist this paired side's freshly-discovered capabilities so the
+        # OFFLINE side / a reload mints correct entities.
+        session.persist_capability_snapshot()
+        # Send initial PIN if the authoritative capability state requires it.
+        await self.send_pin()
+        await self.start_keepalive()
+        # Surface the missing credential when this receiver reports an active
+        # PIN lock and no local PIN is configured.
+        update_octo_pin_required_issue(
+            session.hass,
+            session.address,
+            session.name,
+            self.pin_locked_without_pin,
+            entry_id=session.entry_id,
+        )
+
+    async def async_resume_session(self) -> None:
+        await self.send_pin()
+        await self.start_keepalive()
+
+    @property
+    def capability_snapshot_policy(self) -> CapabilitySnapshotPolicy:
+        return CapabilitySnapshotPolicy(paired_side_only=True)
 
     def capability_snapshot(self) -> dict[str, Any] | None:
         """Return discovered capabilities as a JSON-serialisable snapshot to
@@ -1190,6 +1226,7 @@ class OctoController(BedController, OctoPacketCodec):
             "discovered_motor_count": self._discovered_motor_count,
             "motor_count_invalid": self._motor_count_invalid,
             "has_synchro": self._has_synchro,
+            "supports_synchro": self.supports_synchro,
             "synchro_active": self._synchro_active,
             "remote_lock_active": self._remote_lock_active,
             "light_duration_minutes": self._light_duration_minutes,

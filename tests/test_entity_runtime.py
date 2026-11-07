@@ -103,10 +103,8 @@ async def test_every_platform_uses_typed_runtime_without_identity_changes(
         if topology == "single_address":
             side = (SIDE_LEFT, SIDE_RIGHT)[index]
             assert runtime.entity_unique_id("back") == f"{LEFT_ADDR}_back_{side}"
-            assert runtime.entity_translation_key("back") == f"back_{side}"
         else:
             assert runtime.entity_unique_id("back") == f"{runtime.address}_back"
-            assert runtime.entity_translation_key("back") == "back"
     await owner.async_shutdown()
 
 

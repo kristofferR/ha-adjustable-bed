@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from custom_components.adjustable_bed import cluster018_protocol as classic
 from custom_components.adjustable_bed import goodvibe_protocol as goodvibe
 from custom_components.adjustable_bed import hjbed_protocol as hj
+from custom_components.adjustable_bed import richmat_classic_protocol as classic
 from custom_components.adjustable_bed.beds import goodvibe as goodvibe_bed
 from custom_components.adjustable_bed.beds import richmat_mh as mh_bed
 from custom_components.adjustable_bed.beds import richmat_mh_protocol as mh
-from custom_components.adjustable_bed.beds import row061
+from custom_components.adjustable_bed.beds import ruf_richmat
 from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.goodvibe_catalog import ACTIONS as GOODVIBE_ACTIONS
 from custom_components.adjustable_bed.hjbed_catalog import ACTIONS
@@ -67,21 +67,21 @@ def _fixed_census(profile: profiles.RichmatProfile) -> set[str]:
     return frames
 
 
-# Row061 session frames beyond the MH queries: the VER2 init, the music query
-# and the calendar alarm query, per app as Row061Controller sends them.
+# RUF and Richmat session frames beyond the MH queries: the VER2 init, the music query
+# and the calendar alarm query, per app as RufRichmatController sends them.
 _CALENDAR_QUERY = bytes.fromhex("6e2008050100009c")
-_ROW061_QUERIES: dict[str, set[bytes]] = {
-    "ruf": {*row061.INIT_VER2, row061.MUSIC_QUERY},
-    "wsilver2": {row061.MUSIC_QUERY, _CALENDAR_QUERY},
-    "americanstar": {*row061.INIT_VER2, row061.MUSIC_QUERY, _CALENDAR_QUERY},
-    "bailey2": {*row061.INIT_VER2, row061.MUSIC_QUERY, _CALENDAR_QUERY},
+_RUF_RICHMAT_QUERIES: dict[str, set[bytes]] = {
+    "ruf": {*ruf_richmat.INIT_VER2, ruf_richmat.MUSIC_QUERY},
+    "wsilver2": {ruf_richmat.MUSIC_QUERY, _CALENDAR_QUERY},
+    "americanstar": {*ruf_richmat.INIT_VER2, ruf_richmat.MUSIC_QUERY, _CALENDAR_QUERY},
+    "bailey2": {*ruf_richmat.INIT_VER2, ruf_richmat.MUSIC_QUERY, _CALENDAR_QUERY},
     "tx": {_CALENDAR_QUERY},
 }
 
 
 def _mh_census(app: str) -> set[str]:
     queries = {*mh.INIT_VER0, *mh.INIT_VER1, mh.TX_VERSION, mh.TX_SPEECH, *mh.TX_ALARM_CANCEL}
-    queries |= _ROW061_QUERIES.get(app, set())
+    queries |= _RUF_RICHMAT_QUERIES.get(app, set())
     queries |= {mh.TX_START_DETECTION, mh.TX_STOP_DETECTION}
     codes = {
         mh.BTN_LED_OFF_CODE,

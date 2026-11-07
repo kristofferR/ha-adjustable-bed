@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import inspect
 import logging
 import random
 import secrets
@@ -17,7 +16,7 @@ import time
 import traceback
 from collections.abc import AsyncIterator, Callable, Coroutine, Iterator, Mapping
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from bleak import BleakClient
 from bleak.backends.device import BLEDevice
@@ -51,7 +50,6 @@ from .const import (
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
-    BED_TYPE_LIMOSS,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINAK,
     BED_TYPE_OCTO,
@@ -64,14 +62,17 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SLEEPYS_ELITE_APP,
-    BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
+    CONF_CB24_BED_SELECTION,
+    CONF_JENSEN_PIN,
+    CONF_OCTO_PIN,
     CONF_PAIRLINK_ROLE,
     CONF_RMCONTROL_PRODUCT,
     CONF_RMCONTROL_SIDE,
     CONF_SLEEP_NUMBER_MCR_CLIENT_ID,
     CONF_VIBRADORM_APP_PROFILE,
+    DEFAULT_OCTO_PIN,
     IDLE_DISCONNECT_KEEP_CONNECTED,
     LEGGETT_VARIANT_GEN2,
     OKIMAT_SERVICE_UUID,
@@ -96,9 +97,11 @@ from .detection import (
 )
 from .diagnostic_payloads import new_connection_attempt_details
 from .position_estimate import notify_connection_lost as notify_position_estimate_connection_lost
-from .unsupported import delete_pairing_required_issue, update_octo_pin_required_issue
+from .unsupported import delete_pairing_required_issue
 
 if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
+
     from .beds.reverie_pairlink_runtime import PairlinkRuntime
     from .coordinator import AdjustableBedCoordinator
 
@@ -112,6 +115,74 @@ _PAIRING_RELEASE_RESTORE_TIMEOUT = 5.0
 
 class PairingOnlyConnectionActiveError(RuntimeError):
     """Raised when pair takeover would consume a receiver's one-use link."""
+
+
+class _ConnectSession:
+    """The ``ControllerSession`` one controller startup runs with."""
+
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        client: BleakClient | None,
+        attempt_details: dict[str, Any],
+        generation: int,
+    ) -> None:
+        self._coordinator = coordinator
+        self._client = client
+        self._attempt_details = attempt_details
+        self._generation = generation
+
+    @property
+    def hass(self) -> HomeAssistant:
+        return self._coordinator.hass
+
+    @property
+    def entry_id(self) -> str:
+        return self._coordinator.entry.entry_id
+
+    @property
+    def address(self) -> str:
+        return self._coordinator._address
+
+    @property
+    def name(self) -> str:
+        return self._coordinator._name
+
+    @property
+    def model(self) -> str:
+        return self._coordinator._ble_model or self._coordinator._get_model()
+
+    @property
+    def client(self) -> BleakClient | None:
+        return self._client
+
+    @property
+    def angle_sensing_disabled(self) -> bool:
+        return self._coordinator._disable_angle_sensing
+
+    def disable_angle_sensing(self) -> None:
+        self._coordinator._disable_angle_sensing = True
+
+    def is_current(self) -> bool:
+        client = self._client
+        return (
+            client is not None
+            and self._coordinator._client is client
+            and client.is_connected
+            and self._coordinator._position_connection_generation == self._generation
+        )
+
+    async def async_start_notify(self) -> None:
+        await self._coordinator.async_start_notify()
+
+    async def async_record_verified_bond(self) -> None:
+        await self._coordinator._async_record_verified_bond(self._attempt_details)
+
+    def persist_capability_snapshot(self) -> None:
+        self._coordinator._persist_capability_snapshot()
+
+    def store_device_info(self, manufacturer: str | None, model: str | None) -> None:
+        self._coordinator._store_ble_device_info(manufacturer, model)
 
 
 class CoordinatorConnectionMixin:
@@ -1399,12 +1470,12 @@ class CoordinatorConnectionMixin:
                     protocol_variant=self._protocol_variant,
                     client=self._client,
                     device_name=device.name,
-                    octo_pin=self._octo_pin,
+                    octo_pin=self.entry.data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN),
                     richmat_remote=richmat_remote,
                     rmcontrol_product=self.entry.data.get(CONF_RMCONTROL_PRODUCT, ""),
                     rmcontrol_side=self.entry.data.get(CONF_RMCONTROL_SIDE, "left"),
-                    jensen_pin=self._jensen_pin,
-                    cb24_bed_selection=self._cb24_bed_selection,
+                    jensen_pin=self.entry.data.get(CONF_JENSEN_PIN, ""),
+                    cb24_bed_selection=self.entry.data.get(CONF_CB24_BED_SELECTION, 0x00),
                     ble_manufacturer=ble_manufacturer,
                     ble_model=ble_model,
                     manufacturer_data=manufacturer_data,
@@ -1417,9 +1488,7 @@ class CoordinatorConnectionMixin:
                         self._pending_capability_reload = True
                     self._box25_dialect = dialect
                 await self._async_restore_app_state(self._controller)
-                discovery_result = cast(Any, self._controller).async_discover_capabilities()
-                if inspect.isawaitable(discovery_result):
-                    await discovery_result
+                await self._controller.async_discover_capabilities()
                 self._controller_state_refresh_retry_count = 0
                 self._controller_state_refresh_completed = False
                 # Position values retained across disconnects are last-known
@@ -1433,77 +1502,11 @@ class CoordinatorConnectionMixin:
                 self._cache_persistent_connection_policy()
                 _LOGGER.debug("Controller created successfully")
 
-                if self._bed_type == BED_TYPE_SLEEP_NUMBER_MCR:
-                    # Older BAM/MCR firmware is sensitive to idle time between
-                    # the BLE connect, notify subscribe, and init/query frames.
-                    await self.async_start_notify()
-                    if hasattr(self._controller, "query_config"):
-                        await cast(Any, self._controller).query_config()
-
-                if (
-                    self._bed_type == BED_TYPE_VIBRADORM
-                    and not self._disable_angle_sensing
-                    and not self._controller.supports_position_feedback
-                ):
-                    self._disable_angle_sensing = True
-                    _LOGGER.info(
-                        "Disabling angle sensing for %s: BLE model %s uses the OEM app's "
-                        "write-only VMAT control path without position feedback",
-                        self._address,
-                        self._ble_model or self._get_model(),
-                    )
-
-                if self._bed_type == BED_TYPE_LIMOSS and hasattr(
-                    self._controller, "reset_max_raw_estimate"
-                ):
-                    # Reset Limoss normalization state on each connection.
-                    cast(Any, self._controller).reset_max_raw_estimate()
-
-                # Start position notifications (no-op if angle sensing disabled).
-                # Sleep Number MCR performs its notify+init startup earlier.
-                if self._bed_type != BED_TYPE_SLEEP_NUMBER_MCR:
-                    await self.async_start_notify()
-                    if self._bed_type == BED_TYPE_SLEEP_NUMBER:
-                        # Its notification startup first validates the Auth
-                        # session. Reuse that proof instead of reading Auth
-                        # again after subscriptions have been established.
-                        await self._async_record_verified_bond(attempt_details)
-
-                if self._bed_type == BED_TYPE_LINAK:
-                    self._backfill_linak_snapshot()
-
-                # For Octo beds: discover features and handle PIN if needed
-                if self._bed_type == BED_TYPE_OCTO:
-                    # Standard Octo Smart Control declares this ordered session
-                    # handshake as required. Star2 and legacy optional discovery
-                    # controllers retain their existing startup behavior.
-                    if getattr(self._controller, "requires_ordered_discovery", False):
-                        discovery_complete = await cast(Any, self._controller).discover_features()
-                        if discovery_complete is False:
-                            raise ConnectionError(
-                                "Octo Smart Control session discovery did not complete"
-                            )
-                    elif hasattr(self._controller, "discover_features"):
-                        await cast(Any, self._controller).discover_features()
-                    # Persist this paired side's freshly-discovered capabilities so
-                    # the OFFLINE side / a reload mints correct entities (no-op for
-                    # a single bed or if nothing was discovered).
-                    self._backfill_octo_snapshot()
-                    # Send initial PIN if the authoritative capability state requires it.
-                    if hasattr(self._controller, "send_pin"):
-                        await cast(Any, self._controller).send_pin()
-                    if hasattr(self._controller, "start_keepalive"):
-                        await cast(Any, self._controller).start_keepalive()
-                    # Surface the missing credential when this receiver reports
-                    # an active PIN lock and no local PIN is configured.
-                    if hasattr(self._controller, "pin_locked_without_pin"):
-                        update_octo_pin_required_issue(
-                            self.hass,
-                            self._address,
-                            self._name,
-                            cast(Any, self._controller).pin_locked_without_pin,
-                            entry_id=self.entry.entry_id,
-                        )
+                controller = self._controller
+                session = _ConnectSession(
+                    self, self._client, attempt_details, controller_session_generation
+                )
+                await controller.async_on_connect(session)
 
                 # Startup discovery can change which work is safe to schedule.
                 # In particular, an Octo Smart Control session that did not
@@ -1512,22 +1515,17 @@ class CoordinatorConnectionMixin:
                 self._refresh_diagnostic_polling_schedule()
 
                 # Beds with connect-time feature discovery/state hydration.
-                if self._bed_type in {BED_TYPE_JENSEN, BED_TYPE_SLEEP_NUMBER} and hasattr(
-                    self._controller, "query_config"
-                ):
-                    await cast(Any, self._controller).query_config()
-                    if self._bed_type == BED_TYPE_JENSEN:
-                        self._backfill_jensen_snapshot()
+                await controller.async_after_connect(session)
 
                 # Read deferred BLE Device Information now that the
                 # notification channel and protocol handshake are done.
-                if _defer_device_info and self._client is not None and self._client.is_connected:
-                    if self._bed_type == BED_TYPE_SLEEPYS_ELITE_APP:
-                        await self._async_read_sleepys_app_device_info(
-                            self._client,
-                            controller_session_generation,
-                        )
-                    elif self._device_info_read_done:
+                if (
+                    _defer_device_info
+                    and self._client is not None
+                    and self._client.is_connected
+                    and not await controller.async_read_device_info(session)
+                ):
+                    if self._device_info_read_done:
                         ble_manufacturer = self._ble_manufacturer
                         ble_model = self._ble_model
                         _LOGGER.debug(
@@ -1543,7 +1541,7 @@ class CoordinatorConnectionMixin:
                         self._store_ble_device_info(ble_manufacturer, ble_model)
 
                 if (
-                    self._bed_type != BED_TYPE_SLEEP_NUMBER_MCR
+                    not controller.reads_light_state_on_connect
                     and self._should_refresh_readable_light_state(force=True)
                 ):
                     await self._async_refresh_readable_light_state()
@@ -1827,10 +1825,10 @@ class CoordinatorConnectionMixin:
             self._last_disconnect_reason = "unexpected"
 
         # Stop keepalive task before clearing controller to prevent task leak
-        if controller is not None and hasattr(controller, "stop_keepalive"):
+        if controller is not None:
             self._stop_keepalive_task = self.entry.async_create_background_task(
                 self.hass,
-                cast(Any, controller).stop_keepalive(),
+                controller.stop_keepalive(),
                 name=f"adjustable_bed_stop_keepalive_{self._address}",
             )
 
@@ -2077,10 +2075,7 @@ class CoordinatorConnectionMixin:
         try:
             async with asyncio.timeout(_PAIRING_RELEASE_RESTORE_TIMEOUT):
                 await self.async_start_notify()
-                if hasattr(controller, "send_pin"):
-                    await cast(Any, controller).send_pin()
-                if hasattr(controller, "start_keepalive"):
-                    await cast(Any, controller).start_keepalive()
+                await controller.async_resume_session()
                 self._reset_disconnect_timer()
         except TimeoutError:
             _LOGGER.warning(
@@ -2225,13 +2220,10 @@ class CoordinatorConnectionMixin:
             try:
                 # Stop keep-alive and notifications before disconnecting
                 if controller is not None:
-                    # Stop Octo keep-alive if running
-                    if hasattr(controller, "stop_keepalive"):
-                        try:
-                            # Cast to Any to avoid mypy error about BedController not having stop_keepalive
-                            await cast(Any, controller).stop_keepalive()
-                        except Exception as err:
-                            _LOGGER.debug("Error stopping keep-alive: %s", err)
+                    try:
+                        await controller.stop_keepalive()
+                    except Exception as err:
+                        _LOGGER.debug("Error stopping keep-alive: %s", err)
                     try:
                         await controller.stop_notify()
                     except Exception as err:

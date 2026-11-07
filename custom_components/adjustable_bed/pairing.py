@@ -23,10 +23,17 @@ from typing import Any, Final, TypedDict, cast
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
 from .const import (
+    ADJUSTAMATTRESS_VARIANTS,
+    BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_CASPER_BASE,
+    BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_ERGOMOTION_4,
+    BED_TYPE_ESHINE_OKIN,
+    BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_GMMOTOR,
+    BED_TYPE_GOODVIBE,
+    BED_TYPE_HJBED,
     BED_TYPE_ISLEEP,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
@@ -36,9 +43,9 @@ from .const import (
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
     BED_TYPE_SLEEP_NUMBER,
-    CASPER_BASE_SIDE_VARIANTS,
     CB24_BED_SELECTION_A,
     CB24_BED_SELECTION_B,
+    COMFORT_ENHANCEMENTS_VARIANTS,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
     CONF_CB24_BED_SELECTION,
@@ -62,11 +69,13 @@ from .const import (
     CONF_PROTOCOL_VARIANT,
     CONF_REVERSE_MOTORS,
     CONF_SIDE,
-    HUSH_BASE_SIDE_VARIANTS,
+    ESHINE_OKIN_PROFILES,
+    GLIDEAWAY_MOTION_MODELS,
     KAIDI_VARIANT_SEAT_1,
     KAIDI_VARIANT_SEAT_1_2,
     KAIDI_VARIANT_SEAT_2,
     LIMOSS_REMOTE_CONFIG_KEYS,
+    OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS,
     OKIN_CB24_VARIANT_CB27NEW,
     OKIN_CB24_VARIANT_NEW,
     PAIR_MODE_SEPARATE_ADDRESS,
@@ -84,6 +93,23 @@ from .const import (
     VARIANT_AUTO,
     VMATBASIC_CONFIG_KEYS,
 )
+from .goodvibe_catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
+from .hjbed_catalog import PROFILE_CHOICES as HJBED_PROFILES
+
+# Explicit protocol variants whose entity-gating capabilities depend only on stored
+# config, for bed types that are not offline-safe as a whole (a Keeson "auto" entry
+# detects its variant live). A paired side on one of these variants can be minted
+# offline. Each bed type contributes its own frozenset, so profiles extend this
+# independently; every member must build its controller without a client.
+OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
+    BED_TYPE_ADJUSTAMATTRESS: frozenset(v for v in ADJUSTAMATTRESS_VARIANTS if v != VARIANT_AUTO),
+    BED_TYPE_COMFORT_ENHANCEMENTS: frozenset(COMFORT_ENHANCEMENTS_VARIANTS),
+    BED_TYPE_GOODVIBE: frozenset(GOODVIBE_PROFILES),
+    BED_TYPE_HJBED: frozenset(HJBED_PROFILES),
+    BED_TYPE_ESHINE_OKIN: frozenset(ESHINE_OKIN_PROFILES),
+    BED_TYPE_GLIDEAWAY_MOTION: frozenset(GLIDEAWAY_MOTION_MODELS),
+    BED_TYPE_KEESON: OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS,
+}
 
 
 class ChildDescriptor(TypedDict, total=False):
@@ -201,8 +227,12 @@ def supports_single_address_pairing(
         except ValueError:
             return False
     if bed_type == "hush_base":
+        from .profiles.hush import HUSH_BASE_SIDE_VARIANTS
+
         return protocol_variant in HUSH_BASE_SIDE_VARIANTS
     if bed_type == BED_TYPE_CASPER_BASE:
+        from .profiles.casper import CASPER_BASE_SIDE_VARIANTS
+
         return protocol_variant in CASPER_BASE_SIDE_VARIANTS
     if bed_type == BED_TYPE_KAIDI:
         effective_variant = (

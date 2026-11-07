@@ -116,7 +116,6 @@ async def floor_runtime(hass, app="caresse", control=2, *, floor=True, extension
     runtime.disable_angle_sensing = True
     runtime.controller_state = {}
     runtime.entity_unique_id.side_effect = lambda key: f"{runtime.entry.entry_id}_{key}"
-    runtime.entity_translation_key.side_effect = lambda key: key
     callbacks = []
 
     def register(callback):
@@ -311,7 +310,6 @@ async def test_actual_paired_floor_entities_use_each_physical_profile_and_callba
             self.has_massage = False
             self.disable_angle_sensing = True
             self.entity_unique_id = runtime.entity_unique_id
-            self.entity_translation_key = runtime.entity_translation_key
             self.register_controller_state_callback = runtime.register_controller_state_callback
 
         async def async_execute_controller_command(

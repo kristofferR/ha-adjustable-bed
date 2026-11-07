@@ -615,7 +615,7 @@ transport failure may leave one table sent and the other unsent. There is no
 wire rollback. Phone alarm schedulers, local audio, permissions and snooze UI
 storage are outside this BLE action. Normalize any automation's hour/minute
 arithmetic first, reject cross-date results, and preserve its intended weekly
-or one-time dispatch. See each [app guide](beds/keeson.md#cluster033-app-family)
+or one-time dispatch. See each [app guide](beds/keeson.md#keeson-layout-app-family)
 for exact weekday-marker, wake-byte, notification and release differences.
 
 ## Comfort Enhancements alarm

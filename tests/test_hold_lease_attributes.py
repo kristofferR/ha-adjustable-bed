@@ -52,7 +52,6 @@ def test_cover_advertises_its_controller_hold_and_timed_motor():
         capability_controller=STREAM,
         entity_side=SIDE_LEFT,
         device_info={},
-        entity_translation_key=lambda key: key,
         entity_unique_id=lambda key: key,
     )
     cover = AdjustableBedCover(runtime, _build_cover_description(_spec()))

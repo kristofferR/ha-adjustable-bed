@@ -229,6 +229,7 @@ class TestCoordinatorControllerStateCallbacks:
                 "light_timer_option": "15 min",
             }
         )
+        controller.async_refresh_auth = AsyncMock()
         coordinator._controller = controller
         coordinator._controller_state.clear()
 

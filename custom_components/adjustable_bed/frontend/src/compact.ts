@@ -1,6 +1,6 @@
 // Compact layouts use the same entity buckets and commands as the full card.
 import { SECTION_ORDER, bedEntitiesForDevice, isSingleAddressPairedDevice,
-  pairedChildDeviceIds, resolvePairedParentId, splitSide } from "./discovery";
+  pairedChildDeviceIds, resolvePairedParentId } from "./discovery";
 import { localize } from "./localize";
 import { deviceName } from "./names";
 import type { AdjustableBedCardConfig, BedEntities, HomeAssistant } from "./types";
@@ -68,8 +68,8 @@ export interface CompactAction {
 export function compactActionOptions(hass: HomeAssistant, bed: BedEntities): CompactAction[] {
   return [...bed.presets, ...bed.memory.flatMap((slot) => slot.goto ? [slot.goto] : [])]
     .flatMap((entityId) => {
-      const rawKey = hass.entities[entityId]?.translation_key;
-      return rawKey ? [{ key: splitSide(rawKey).key, entityId }] : [];
+      const key = hass.entities[entityId]?.translation_key;
+      return key ? [{ key, entityId }] : [];
     });
 }
 

@@ -52,9 +52,9 @@ original data and options keep them under `origin_data` and `origin_options`.
 |---|---|---|---|
 | `motor_count` | User | Setup and Configure; a question of the Keeson ORE apps and INNOVA, the Okin remotes and Sleepy's BOX15 and BOX24; owned by the declarations that fix it | `coordinator.py`, controllers, entity platforms |
 | `has_massage` | User | Setup and Configure; a question of `vibradorm_app@caresse` and `sleepys_box25`; owned by the declarations that fix or derive it; turned off by [schema 5.3](#massage-off-in-schema-53) where the profile has no massage | Controllers, entity platforms |
-| `has_light` | User | The chair-and-bed app steps, `cluster033_app` and Configure; a question of `jiecang_app` and `logicdata_app` | `controller_factory.py`, `coordinator.py` |
+| `has_light` | User | The chair-and-bed app steps, `keeson_layout_app` and Configure; a question of `jiecang_app` and `logicdata_app` | `controller_factory.py`, `coordinator.py` |
 | `disable_angle_sensing` | User | Setup and Configure; owned by the declarations that fix it | `coordinator.py` |
-| `motor_pulse_count` | User | Setup and Configure; owned by the declarations that fix it | `coordinator.py`, `beds/cluster018.py` |
+| `motor_pulse_count` | User | Setup and Configure; owned by the declarations that fix it | `coordinator.py`, `beds/richmat_classic.py` |
 | `motor_pulse_delay_ms` | User | Setup and Configure; owned by the declarations that fix it | `coordinator.py` |
 | `motor_pulse_user_set` | Internal | Setup and Configure record whether the user changed the pulse fields | `coordinator.py` (a profile default applies otherwise) |
 | `product_type` | User | App steps (Limoss Remote, FSM Relax, Ergomotion 4 apps), Configure; a question of `richmat_classic_apps`, `gmmotor`, `isleep`, `doublesleep` and `sleeptracker` | `controller_factory.py`, `pairing.py` |
@@ -81,7 +81,7 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `lp_legacy_mode` | Profile | A question of `leggett_lp_legacy` | `controller_factory.py` |
 | `lp_legacy_write_uuid` | Profile | A question of `leggett_lp_legacy` | `controller_factory.py` |
 | `lp_legacy_read_uuid` | Profile | A question of `leggett_lp_legacy` | `controller_factory.py` |
-| `cluster018_third_service` | Profile | An Advanced question of `richmat_classic_apps` | `beds/cluster018.py` |
+| `richmat_classic_third_service` | Profile | An Advanced question of `richmat_classic_apps` | `beds/richmat_classic.py` |
 | `sleepys_elite_selector` | Profile | A question of `sleepys_elite_app` | `controller_factory.py` |
 | `vibradorm_control_type` | Profile | A question of `vibradorm_app@werkmeister` and `vibradorm_app@caresse`; derived for `vibradorm_app@vmat` | `controller_factory.py`, `coordinator_bonds.py` |
 | `vibradorm_vmat_remote` | Profile | A question of `vibradorm_app@vmat` | `controller_factory.py`, `coordinator_bonds.py` |
@@ -100,15 +100,15 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `malouf_app_model` | User | `malouf_app` profile questions, Configure | `controller_factory.py` |
 | `malouf_app_transport` | User | `malouf_app` profile questions, Configure | `controller_factory.py` |
 | `malouf_app_primary` | User | `malouf_app` profile questions, Configure | `controller_factory.py` |
-| `malouf_layout` | User | Malouf receiver profile questions, Configure | `coordinator.py` |
-| `malouf_memory_slots` | User | Malouf receiver profile questions, Configure | `coordinator.py` |
-| `octo_pin` | User | Octo setup fields, `verify_octo_pin`, Configure, the Octo PIN action | `coordinator.py`, `octo_services.py` |
+| `malouf_layout` | User | Malouf receiver profile questions, Configure | `beds/malouf.py` |
+| `malouf_memory_slots` | User | Malouf receiver profile questions, Configure | `beds/malouf.py` |
+| `octo_pin` | User | Octo setup fields, `verify_octo_pin`, Configure, the Octo PIN action | `coordinator.py`, `coordinator_connection.py`, `octo_runtime.py`, `octo_services.py` |
 | `octo_motor_count_override` | User | Configure, for Octo | `beds/octo.py` |
-| `jensen_pin` | User | A question of `jensen`, Configure | `coordinator.py` |
+| `jensen_pin` | User | A question of `jensen`, Configure | `coordinator.py`, `coordinator_connection.py` |
 | `richmat_remote` | Profile | A question of `richmat` without an RMControl product; the Richmat question stages the code the Bluetooth name carries | `coordinator.py`, `profile_recommendations.py` |
 | `rmcontrol_product` | Profile | A question of `richmat`; the Richmat question's RMControl answer requires one | `coordinator.py`, `coordinator_connection.py` |
 | `rmcontrol_side` | Profile | A question of `richmat` with an RMControl product | `coordinator.py`, `coordinator_connection.py` |
-| `cb24_bed_selection` | User | Configure, for CB24 | `coordinator.py` |
+| `cb24_bed_selection` | User | Configure, for CB24 | `coordinator.py`, `coordinator_connection.py` |
 | `gmmotor_side` | Profile | A question of `gmmotor` | `controller_factory.py` |
 | `starcode_abm5_4_command_selector` | User | `starcode_app` step, Configure | `controller_factory.py` |
 | `starcode_abm5_4_ui_selector` | Internal | `starcode_app` copies the command selector | `controller_factory.py` |
@@ -127,10 +127,10 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `limoss_remote_theme` | User | `limoss_remote` step, Configure | `controller_factory.py` |
 | `limoss_remote_state` | Internal | `coordinator.py` keeps the remote's state | `controller_factory.py` |
 | `fsm_relax_memory_names` | User | `fsm_relax` step, Configure | `controller_factory.py` |
-| `ergomotion4_model_keys` | User | `cluster033_app` step for a custom product, Configure | `beds/ergomotion4.py` |
-| `ergomotion4_massage_keys` | User | `cluster033_app` step for a custom product, Configure | `beds/ergomotion4.py` |
-| `ergomotion4_product_name` | User | `cluster033_app` step for a custom product, Configure | `beds/ergomotion4.py` |
-| `ergomotion4_rgb` | User | `cluster033_app` step for a custom product, Configure | `beds/ergomotion4.py` |
+| `ergomotion4_model_keys` | User | `keeson_layout_app` step for a custom product, Configure | `beds/ergomotion4.py` |
+| `ergomotion4_massage_keys` | User | `keeson_layout_app` step for a custom product, Configure | `beds/ergomotion4.py` |
+| `ergomotion4_product_name` | User | `keeson_layout_app` step for a custom product, Configure | `beds/ergomotion4.py` |
+| `ergomotion4_rgb` | User | `keeson_layout_app` step for a custom product, Configure | `beds/ergomotion4.py` |
 | `pairlink_role` | User | Configure, for Reverie Pairlink | `beds/reverie_pairlink_runtime.py`, `coordinator_connection.py` |
 | `pairlink_host_source` | User | Configure, for Reverie Pairlink | `__init__.py` |
 | `pairlink_home_id` | User | Configure, for Reverie Pairlink | `beds/reverie_pairlink_runtime.py` |

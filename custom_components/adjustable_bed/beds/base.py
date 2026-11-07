@@ -25,7 +25,6 @@ if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
     from ..casper_base_protocol import Request as CasperBaseRequest
-    from ..cluster018_requests import Request as Cluster018Request
     from ..command_scheduler import StreamMember
     from ..coordinator import AdjustableBedCoordinator
     from ..gmmotor_requests import Request as GmmotorRequest
@@ -33,7 +32,8 @@ if TYPE_CHECKING:
     from ..hjbed_requests import Request as HJBedRequest
     from ..motion_bed_requests import MotionBedWrite
     from ..motomotion_requests import Request as MotoMotionRequest
-    from ..row061_protocol import AlarmRequest
+    from ..richmat_classic_requests import Request as RichmatClassicRequest
+    from ..ruf_richmat_protocol import AlarmRequest
     from ..sleeptracker_protocol import Request as SleeptrackerRequest
 
 from ..alarm_table import (
@@ -48,15 +48,10 @@ from ..alarm_table import (
 )
 from ..bed_traits import BedTraits
 from ..command_scheduler import current_command_context
-from ..const import (
-    POSITION_CHECK_INTERVAL,
-    POSITION_STALL_COUNT,
-    POSITION_STALL_THRESHOLD,
-    POSITION_TOLERANCE,
-)
 from ..diagnostic_payloads import format_payload
 from ..execution import HOLD_CEILING_MS, NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ..position_seek import PositionSeekPolicy
+from .lifecycle import CapabilitySnapshotPolicy, ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -608,80 +603,12 @@ class BedController(ABC):
         return False
 
     @property
-    def reverses_position_seek_on_overshoot(self) -> bool:
-        """Return True if position seeking should reverse after overshooting.
-
-        The coordinator's generic seek loop assumes movement commands can be
-        trimmed or corrected mid-flight. Pulse-driven controllers like Linak
-        complete a whole movement burst before fresh feedback is available, so
-        reversing on overshoot causes hunting. Those controllers should
-        override this to return False and let the seek stop on the first target
-        crossing instead.
-        """
-        return True
-
-    @property
-    def uses_custom_position_seek_steps(self) -> bool:
-        """Return True if seeking should use controller-specific move steps.
-
-        Most controllers can reuse their normal move-up/move-down helpers during
-        incremental seeking. Pulse-driven controllers may need shorter seek
-        steps than their manual-control button presses to avoid overshoot.
-        """
-        return False
-
-    @property
-    def position_seek_tolerance(self) -> float:
-        """Return the acceptable error band for feedback-driven seeking.
-
-        The generic coordinator tolerance is intentionally broad because some
-        beds report coarse or noisy position feedback. Controllers with cleaner
-        feedback and smaller target steps can override this to finish closer to
-        the requested position.
-        """
-        return POSITION_TOLERANCE
-
-    @property
-    def position_seek_stall_count(self) -> int:
-        """Return how many stagnant reads are required before reissuing motion."""
-        return POSITION_STALL_COUNT
-
-    @property
-    def position_seek_check_interval(self) -> float:
-        """Return the interval between feedback polls during position seeking."""
-        return POSITION_CHECK_INTERVAL
-
-    @property
-    def position_seek_stall_threshold(self) -> float:
-        """Return the minimum delta that still counts as active movement."""
-        return POSITION_STALL_THRESHOLD
-
-    @property
-    def chains_position_seek_steps_while_moving(self) -> bool:
-        """Return True to reissue seek bursts before movement fully stalls.
-
-        The default seek loop waits for a stagnant feedback read before it
-        sends another movement burst. Controllers whose motors auto-stop
-        shortly after writes cease can override this to chain the next burst
-        while feedback still shows active movement, reducing visible stop/start
-        behavior during long seeks.
-        """
-        return False
-
-    @property
-    def position_seek_chain_min_remaining_distance(self) -> float:
-        """Return the minimum remaining error that still allows burst chaining."""
-        return POSITION_TOLERANCE
-
-    @property
     def position_seek_policy(self) -> PositionSeekPolicy:
         """Return the protocol movement policy for feedback-driven seeking.
 
-        The default policy delegates to the tuning properties above, so
-        existing per-controller overrides keep working unchanged. Controller
-        families with protocol evidence for smarter seek behavior (coast
-        compensation, endpoint completion, reversal transitions) override this
-        to return a policy subclass.
+        Controller families with protocol evidence for other seek tuning or
+        behavior (coast compensation, endpoint completion, held-command steps)
+        override this to return a policy subclass.
         """
         return PositionSeekPolicy(self)
 
@@ -1107,33 +1034,6 @@ class BedController(ABC):
         Default implementation does nothing. Override in subclasses where
         some motors support notifications and others don't.
         """
-
-    async def seek_position_step(
-        self,
-        position_key: str,
-        moving_up: bool,
-        remaining_distance: float | None = None,
-    ) -> None:
-        """Execute one incremental move step during feedback-based seeking.
-
-        Controllers with `uses_custom_position_seek_steps` should override this
-        to emit shorter or otherwise specialized seek pulses. The default
-        implementation falls back to the normal movement helpers.
-        """
-        del remaining_distance  # Default implementations do not use distance-based tuning.
-        if position_key == "back":
-            await (self.move_back_up() if moving_up else self.move_back_down())
-            return
-        if position_key == "legs":
-            await (self.move_legs_up() if moving_up else self.move_legs_down())
-            return
-        if position_key == "head":
-            await (self.move_head_up() if moving_up else self.move_head_down())
-            return
-        if position_key == "feet":
-            await (self.move_feet_up() if moving_up else self.move_feet_down())
-            return
-        raise ValueError(f"Unsupported position key for seek step: {position_key}")
 
     async def prepare_for_position_read(self) -> None:  # noqa: B027 - optional hook, not abstract
         """Do controller-specific setup before an initial or passive position read."""
@@ -1575,13 +1475,13 @@ class BedController(ABC):
         return {}
 
     @property
-    def supports_cluster018(self) -> bool:
+    def supports_richmat_classic(self) -> bool:
         return False
 
-    def validate_cluster018_request(self, request: Cluster018Request) -> None:
+    def validate_richmat_classic_request(self, request: RichmatClassicRequest) -> None:
         raise NotImplementedError("This controller does not support these app settings")
 
-    async def async_execute_cluster018_request(self, request: Cluster018Request) -> None:
+    async def async_execute_richmat_classic_request(self, request: RichmatClassicRequest) -> None:
         raise NotImplementedError("This controller does not support these app settings")
 
     @property
@@ -1775,14 +1675,14 @@ class BedController(ABC):
         raise NotImplementedError("RMControl snore intervention is not supported")
 
     @property
-    def supports_row061_alarms(self) -> bool:
+    def supports_ruf_richmat_alarms(self) -> bool:
         """Whether the explicitly selected app/model has a mattress or calendar alarm."""
         return False
 
-    def validate_row061_alarm(self, request: AlarmRequest) -> None:
+    def validate_ruf_richmat_alarm(self, request: AlarmRequest) -> None:
         raise NotImplementedError("This bed has no supported app alarm")
 
-    async def row061_alarm(self, request: AlarmRequest) -> None:
+    async def ruf_richmat_alarm(self, request: AlarmRequest) -> None:
         raise NotImplementedError("This bed has no supported app alarm")
 
     @property
@@ -3498,3 +3398,45 @@ class BedController(ABC):
             NotImplementedError: If the bed doesn't support circulation massage
         """
         raise NotImplementedError("Circulation massage not supported on this bed")
+
+    # --- Connection lifecycle ---------------------------------------------
+    # The coordinator calls these, in this order, on every connection once the
+    # controller exists and ``async_discover_capabilities()`` has run.
+
+    async def async_on_connect(self, session: ControllerSession) -> None:
+        """Run protocol startup; the default starts notifications.
+
+        Overrides own their startup order, so they call
+        ``session.async_start_notify()`` where their protocol needs it.
+        """
+        await session.async_start_notify()
+
+    async def async_after_connect(self, session: ControllerSession) -> None:  # noqa: B027
+        """Hydrate connect-time state after background schedules are refreshed."""
+
+    async def async_read_device_info(self, session: ControllerSession) -> bool:
+        """Read Device Information the protocol's app reads itself.
+
+        Only called for bed types that defer Device Information until after
+        startup. Return False to use the coordinator's generic read.
+        """
+        return False
+
+    async def async_refresh_auth(self) -> None:  # noqa: B027
+        """Re-authenticate a reused link before a command."""
+
+    async def async_resume_session(self) -> None:  # noqa: B027
+        """Re-arm authentication and keepalive on a link that stayed connected."""
+
+    async def stop_keepalive(self) -> None:  # noqa: B027
+        """Stop session-owned keepalive work before the link is released."""
+
+    @property
+    def reads_light_state_on_connect(self) -> bool:
+        """Whether ``async_on_connect`` already reads readable light state."""
+        return False
+
+    @property
+    def capability_snapshot_policy(self) -> CapabilitySnapshotPolicy | None:
+        """How ``capability_snapshot()`` persists; None keeps it session-only."""
+        return None

@@ -211,6 +211,11 @@ A new app is normally a profile plus its vectors, not a new controller.
      Entity platforms read these directly, so a typo is a type error rather than a
      silently-wrong default. Do not invent a new capability by setting an
      undeclared attribute — add it to the base class first.
+   - Put connect-time startup in the controller's lifecycle hooks
+     (`async_on_connect`, `async_after_connect`, `capability_snapshot_policy`
+     and the others at the end of `beds/base.py`), never in the coordinator.
+     Entry setup a family needs before or instead of the first connection is
+     registered in `entry_hooks.py`.
    - Held and concurrent execution (#483, #516) is the profile's `execution`
      field, or an `execution` override on a standalone controller. Each
      declaration needs an evidence row in `tests/test_execution_capabilities.py`

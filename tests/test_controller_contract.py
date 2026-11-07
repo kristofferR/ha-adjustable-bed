@@ -198,7 +198,7 @@ async def _create_controller_for_bed_type(
     client = _make_connected_client()
     if bed_type == const.BED_TYPE_ERGOMOTION_4:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "H"
-    if bed_type in const.CLUSTER033_BED_TYPES:
+    if bed_type in const.KEESON_LAYOUT_APP_BED_TYPES:
         from custom_components.adjustable_bed.profiles.keeson import DEFAULT_LAYOUTS
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = DEFAULT_LAYOUTS[bed_type]
     if bed_type == const.BED_TYPE_ISLEEP:
@@ -253,7 +253,7 @@ async def _create_controller_for_bed_type(
         return await create_controller(coordinator, bed_type, variant or "selector-0001", client)
     if bed_type == const.BED_TYPE_ESHINE_OKIN:
         return await create_controller(coordinator, bed_type, variant or "eshine_e5000", client)
-    if bed_type == const.BED_TYPE_CLUSTER018:
+    if bed_type == const.BED_TYPE_RICHMAT_CLASSIC_APPS:
         variant = variant or "avocadoecobase"
         coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "6BRM", const.CONF_PROTOCOL_VARIANT: variant})
         return await create_controller(coordinator, bed_type, variant, client)

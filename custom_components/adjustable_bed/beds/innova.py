@@ -576,4 +576,4 @@ class InnovaController(KeesonController):
 
     @property
     def protocol_diagnostics(self) -> dict[str, Any]:
-        return {"app": "INNOVA", "app_package": "com.ore.sfm 2.0 (3)", "layout": f"{self._layout}M"}
+        return {**super().protocol_diagnostics, "app": "INNOVA", "app_package": "com.ore.sfm 2.0 (3)", "layout": f"{self._layout}M"}
