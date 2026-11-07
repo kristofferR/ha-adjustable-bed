@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING
 from ..codec import motomotion as codec
 from ..codec.motomotion import Position, ascii_command, binary_command, music_command
 from ..const import CONF_BLE_DEVICE_NAME
+from ..controller_state import StateKey
 from ..motomotion_protocol import color_parameters, decimal, light_cycle, posture, rgb_total
 from ..motomotion_requests import Request
 from ..motomotion_state import Comfort, State
@@ -42,6 +43,19 @@ MUSIC = {
 }
 BINARY_EXTRA = {"custom": (7, 7), "wide": (5, 7), "electric": (7, 7), "live": (8, 8)}
 FINE_LIMITS = {"head": 863, "base": 3174, "back": 1454, "lumbar": 874, "tilt": 629}
+
+
+def _field_key(field: str) -> StateKey[object]:
+    """Diagnostic fields with mixed value types."""
+    return StateKey[object]("motomotion_" + field)
+
+
+def _option_key(field: str) -> StateKey[str | None]:
+    return StateKey[str | None]("motomotion_" + field)
+
+
+def _number_key(field: str) -> StateKey[float | None]:
+    return StateKey[float | None]("motomotion_" + field)
 
 
 def select_transport(
@@ -364,53 +378,38 @@ class MotoMotionController(BedController):
     def _publish(self) -> None:
         comfort = self._comfort()
         values: dict[str, object] = {
-            "motomotion_status": self._rejection or "ready",
-            "motomotion_panel": self.profile.panel,
-            "motomotion_tokens": self._state.token_count,
-            "motomotion_panel_heat": self._panel_heat,
-            "motomotion_lift_status": self._panel_lift,
-            "motomotion_user": self._user,
-            "motomotion_users": list(self._users),
-            "motomotion_received": {
+            "status": self._rejection or "ready",
+            "panel": self.profile.panel,
+            "tokens": self._state.token_count,
+            "panel_heat": self._panel_heat,
+            "lift_status": self._panel_lift,
+            "user": self._user,
+            "users": list(self._users),
+            "received": {
                 "rgb": self._state.rgb,
                 "d": self._state.d,
                 "cm": asdict(self._state.cm) if self._state.cm else None,
                 "hsw": self._state.hsw,
             },
-            "motomotion_heat": comfort.heat if comfort else None,
-            "motomotion_massage": comfort.massage if comfort else None,
-            "motomotion_side": self._side,
-            "motomotion_music_mode": self._music_mode,
-            "motomotion_posture": self._posture,
-            "motomotion_timer": self._timer,
+            "heat": comfort.heat if comfort else None,
+            "massage": comfort.massage if comfort else None,
         }
-        values.update(
-            {
-                "motomotion_" + key: value
-                for key, value in zip(
-                    ("volume", "treble", "bass", "vibration"), self._eq, strict=True
-                )
-            }
-        )
-        values.update(
-            {
-                "motomotion_" + key: value
-                for key, value in zip(("red", "green", "blue"), self._rgb, strict=True)
-            }
-        )
-        values.update(
-            {
-                "motomotion_" + key: self._dimensions.get(key)
-                for key in ("height", "buttocks", "knee")
-            }
-        )
-        values.update(
-            {"motomotion_target_" + key: getattr(self._targets, key, None) for key in FINE_LIMITS}
-        )
         for side, comfort_state in zip(("left", "right"), self._local_lr, strict=True):
-            values[f"motomotion_heat_{side}"] = comfort_state.heat if comfort_state else None
-            values[f"motomotion_massage_{side}"] = comfort_state.massage if comfort_state else None
-        self.forward_controller_state_updates(values)
+            values[f"heat_{side}"] = comfort_state.heat if comfort_state else None
+            values[f"massage_{side}"] = comfort_state.massage if comfort_state else None
+        options = {"side": self._side, "music_mode": self._music_mode, "posture": self._posture}
+        numbers: dict[str, float | None] = {
+            "timer": self._timer,
+            **dict(zip(("volume", "treble", "bass", "vibration"), self._eq, strict=True)),
+            **dict(zip(("red", "green", "blue"), self._rgb, strict=True)),
+            **{key: self._dimensions.get(key) for key in ("height", "buttocks", "knee")},
+            **{"target_" + key: getattr(self._targets, key, None) for key in FINE_LIMITS},
+        }
+        self.forward_controller_state_updates(
+            *(_field_key(key)(value) for key, value in values.items()),
+            *(_option_key(key)(value) for key, value in options.items()),
+            *(_number_key(key)(value) for key, value in numbers.items()),
+        )
 
     def _comfort(self) -> Comfort | None:
         if self.profile.sides:
@@ -1007,7 +1006,7 @@ class MotoMotionController(BedController):
             ControllerSelectSpec(
                 "motomotion_" + key,
                 "motomotion_" + key,
-                "motomotion_" + key,
+                _option_key(key),
                 values,
                 partial(select, key=key),
             )
@@ -1074,7 +1073,7 @@ class MotoMotionController(BedController):
             ControllerNumberSpec(
                 "motomotion_" + key,
                 "motomotion_" + key,
-                "motomotion_" + key,
+                _number_key(key),
                 low,
                 high,
                 1,
@@ -1133,18 +1132,21 @@ class MotoMotionController(BedController):
             ControllerStateSensorSpec(
                 "motomotion_status",
                 "motomotion_status",
-                "motomotion_status",
+                _field_key("status"),
                 "mdi:bed",
-                attribute_keys=(
-                    "motomotion_user",
-                    "motomotion_users",
-                    "motomotion_panel_heat",
-                    "motomotion_lift_status",
-                    "motomotion_panel",
-                    "motomotion_tokens",
-                    "motomotion_received",
-                    "motomotion_heat",
-                    "motomotion_massage",
+                attribute_keys=tuple(
+                    _field_key(field)
+                    for field in (
+                        "user",
+                        "users",
+                        "panel_heat",
+                        "lift_status",
+                        "panel",
+                        "tokens",
+                        "received",
+                        "heat",
+                        "massage",
+                    )
                 ),
             ),
         )
@@ -1158,7 +1160,7 @@ class MotoMotionController(BedController):
             ControllerStateSensorSpec(
                 f"motomotion_{kind}_{side}",
                 f"motomotion_{kind}_{side}",
-                f"motomotion_{kind}_{side}",
+                _field_key(f"{kind}_{side}"),
                 "mdi:seat",
             )
             for side in sides

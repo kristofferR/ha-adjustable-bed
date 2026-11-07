@@ -29,6 +29,7 @@ from custom_components.adjustable_bed.beds.reverie_pairlink_runtime import (
     PairlinkRuntime,
     PairlinkRuntimeNotReadyError,
 )
+from tests.state_helpers import published
 
 _ADDRESS = "AA:BB:CC:DD:EE:FF"
 _HOME_ID = 5566
@@ -379,9 +380,10 @@ async def test_registered_channel20_updates_state_without_sdk_fallthrough() -> N
 
     assert controller._state["back_position"] == 55
     assert forwarded == [(0x20, bytes.fromhex("1122334402A70137"), True)]
-    assert controller._coordinator.handle_controller_state_update.call_args_list == [
-        (("back_position", 55),)
-    ]
+    assert [
+        published(*call.args)
+        for call in controller._coordinator.handle_controller_state_updates.call_args_list
+    ] == [{"back_position": 55}]
 
 
 async def test_raw_registered_selector_accepts_six_through_nine_bytes_before_sdk() -> None:

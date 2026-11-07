@@ -42,6 +42,7 @@ from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinato
 from custom_components.adjustable_bed.detection import get_bed_type_options
 from custom_components.adjustable_bed.validators import is_valid_variant_for_bed_type
 from tests.form_helpers import finish_new_bed, start_new_bed
+from tests.state_helpers import state_writer
 
 ZERO = bytes.fromhex("e6fe16000000000005")
 # C01..C25, accepted command-table.md. Sustained saves share recall frames.
@@ -100,7 +101,7 @@ def coordinator():
         gm.NOTIFY_SERVICE: notify_service,
     }.get
     coordinator.controller_state = {}
-    coordinator.handle_controller_state_updates.side_effect = coordinator.controller_state.update
+    coordinator.handle_controller_state_updates.side_effect = state_writer(coordinator.controller_state)
     return coordinator
 
 

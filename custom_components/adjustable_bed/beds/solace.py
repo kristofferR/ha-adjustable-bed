@@ -11,19 +11,21 @@ import asyncio
 import logging
 from collections.abc import Callable, Collection
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ..codec import ff_frame as codec
 from ..const import SOLACE_CHAR_UUID
+from ..controller_state import StateKey, StateUpdate
 from ..profiles.ff_frame import (
     SolaceCommands,
     SolaceProfile,
     resolve_solace_profile,
     solace_query_family,
 )
+from ..state_keys import LIGHT_LEVEL
 from .base import (
     BedController,
     ControllerStateBinarySensorSpec,
@@ -35,6 +37,21 @@ if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+AUDIO_VOLUME: Final = StateKey[int]("solace_audio_volume")
+AUDIO_AVAILABLE: Final = StateKey[bool]("solace_audio_available")
+ALARM_ENABLED: Final = StateKey[bool]("solace_alarm_enabled")
+ALARM_TIME: Final = StateKey[str]("solace_alarm_time")
+ALARM_WEEKDAYS: Final = StateKey[str]("solace_alarm_weekdays")
+ALARM_MODE: Final = StateKey[str]("solace_alarm_mode")
+ALARM_MASSAGE: Final = StateKey[bool]("solace_alarm_massage")
+ALARM_SOUND: Final = StateKey[str]("solace_alarm_sound")
+
+
+def preset_selected(key: str) -> StateKey[bool]:
+    """Whether the app last proved preset ``key`` selected."""
+    return StateKey[bool](f"solace_{key}_selected")
+
 
 _SOLACE_ALARM_MODES = {"zero_g": 0x01, "memory_1": 0x02, "no_action": 0x03}
 _SOLACE_ALARM_SOUNDS = {
@@ -121,7 +138,7 @@ class SolaceController(BedController):
             ControllerStateSensorSpec(
                 key="solace_audio_volume",
                 translation_key="solace_audio_volume",
-                state_key="solace_audio_volume",
+                state_key=AUDIO_VOLUME,
                 icon="mdi:volume-high",
             ),
         )
@@ -137,15 +154,15 @@ class SolaceController(BedController):
             ControllerStateBinarySensorSpec(
                 key="solace_alarm_enabled",
                 translation_key="solace_alarm_enabled",
-                state_key="solace_alarm_enabled",
+                state_key=ALARM_ENABLED,
                 icon="mdi:alarm",
                 attribute_keys=(
-                    "solace_alarm_time",
-                    "solace_alarm_weekdays",
-                    "solace_alarm_mode",
-                    "solace_alarm_massage",
-                    "solace_alarm_sound",
-                    "solace_audio_available",
+                    ALARM_TIME,
+                    ALARM_WEEKDAYS,
+                    ALARM_MODE,
+                    ALARM_MASSAGE,
+                    ALARM_SOUND,
+                    AUDIO_AVAILABLE,
                 ),
             ),
         )
@@ -208,10 +225,10 @@ class SolaceController(BedController):
         if self._coordinator.controller is not self:
             return
         self.forward_controller_state_updates(
-            {
-                f"solace_{key}_selected": False
+            *(
+                preset_selected(key)(False)
                 for key in ("tv", "zero_g", "memory_1", "memory_2", "anti_snore")
-            }
+            )
         )
         queries = SolaceCommands.QUERY_Q1 if query_family == "q1" else SolaceCommands.QUERY_Q2
 
@@ -270,7 +287,7 @@ class SolaceController(BedController):
 
     def _parse_notification(self, data: bytes) -> None:
         """Update selected preset flags from Q1/Q2 replies and command echoes."""
-        updates: dict[str, bool | int | str] = {}
+        updates: list[StateUpdate] = []
         selectors = {
             0x05: "tv",
             0x09: "zero_g",
@@ -281,7 +298,7 @@ class SolaceController(BedController):
         prefix = bytes.fromhex("FF FF FF FF 03 06 00")
         for selector, key in selectors.items():
             if prefix + bytes([selector]) in data:
-                updates[f"solace_{key}_selected"] = True
+                updates.append(preset_selected(key)(True))
 
         state_frames = {
             SolaceCommands.PROGRAM_MEMORY_1: ("memory_1", True),
@@ -297,28 +314,26 @@ class SolaceController(BedController):
         }
         for frame, (key, selected) in state_frames.items():
             if frame in data:
-                updates[f"solace_{key}_selected"] = selected
+                updates.append(preset_selected(key)(selected))
 
         volume_prefix = bytes.fromhex("FF FF FF FF 01 00 15 0B")
         if (volume_index := data.find(volume_prefix)) >= 0 and len(data) > volume_index + 8:
-            updates["solace_audio_volume"] = data[volume_index + 8] & 0x0F
+            updates.append(AUDIO_VOLUME(data[volume_index + 8] & 0x0F))
 
         light_prefix = bytes.fromhex("FF FF FF FF 05 00 01")
         if (light_index := data.find(light_prefix)) >= 0 and len(data) > light_index + 7:
             light_level = data[light_index + 7]
             if 0 <= light_level <= self.light_level_max:
-                updates["light_level"] = light_level
+                updates.append(LIGHT_LEVEL(light_level))
 
         alarm_none_prefix = bytes.fromhex("FF FF FF FF 01 00 03 0B")
         if (alarm_none_index := data.find(alarm_none_prefix)) >= 0 and len(
             data
         ) > alarm_none_index + 8:
-            updates.update(
-                {
-                    "solace_alarm_enabled": False,
-                    "solace_audio_available": data[alarm_none_index + 8] != 0,
-                }
-            )
+            updates += [
+                ALARM_ENABLED(False),
+                AUDIO_AVAILABLE(data[alarm_none_index + 8] != 0),
+            ]
 
         alarm_prefix = bytes.fromhex("FF FF FF FF 01 00 04 13")
         if (alarm_index := data.find(alarm_prefix)) >= 0 and len(data) >= alarm_index + 17:
@@ -331,18 +346,16 @@ class SolaceController(BedController):
             sound = {value: key for key, value in _SOLACE_ALARM_SOUNDS.items()}.get(
                 payload[8], f"unknown_{payload[8]:02x}"
             )
-            updates.update(
-                {
-                    "solace_alarm_enabled": enabled,
-                    "solace_alarm_time": f"{payload[1]:02x}:{payload[2]:02x}",
-                    "solace_alarm_weekdays": ",".join(weekdays),
-                    "solace_alarm_mode": mode,
-                    "solace_alarm_massage": payload[7] == 1,
-                    "solace_alarm_sound": sound,
-                }
-            )
+            updates += [
+                ALARM_ENABLED(enabled),
+                ALARM_TIME(f"{payload[1]:02x}:{payload[2]:02x}"),
+                ALARM_WEEKDAYS(",".join(weekdays)),
+                ALARM_MODE(mode),
+                ALARM_MASSAGE(payload[7] == 1),
+                ALARM_SOUND(sound),
+            ]
         if updates:
-            self.forward_controller_state_updates(updates)
+            self.forward_controller_state_updates(*updates)
 
     # Capability properties
     @property
@@ -592,7 +605,7 @@ class SolaceController(BedController):
     async def solace_set_audio_volume(self, level: int) -> None:
         """Set the MotionFlex audio volume to an app-supported level (1-5)."""
         await self.write_command(codec.summed(0x01, 0x14, bytes((level,))), cancel_event=asyncio.Event())
-        self.forward_controller_state_updates({"solace_audio_volume": level})
+        self.forward_controller_state_updates(AUDIO_VOLUME(level))
 
     async def solace_query_audio_volume(self) -> None:
         """Request the MotionFlex audio volume notification."""
@@ -626,21 +639,17 @@ class SolaceController(BedController):
             cancel_event=asyncio.Event(),
         )
         self.forward_controller_state_updates(
-            {
-                "solace_alarm_enabled": enabled,
-                "solace_alarm_time": f"{hour:02d}:{minute:02d}",
-                "solace_alarm_weekdays": ",".join(
-                    str(day) for day in sorted(set(weekdays))
-                ),
-                "solace_alarm_mode": mode,
-                "solace_alarm_massage": massage,
-                "solace_alarm_sound": sound,
-            }
+            ALARM_ENABLED(enabled),
+            ALARM_TIME(f"{hour:02d}:{minute:02d}"),
+            ALARM_WEEKDAYS(",".join(str(day) for day in sorted(set(weekdays)))),
+            ALARM_MODE(mode),
+            ALARM_MASSAGE(massage),
+            ALARM_SOUND(sound),
         )
 
     def _preset_is_selected(self, key: str) -> bool:
         """Return the last state proven by a query response or command echo."""
-        return bool(self._coordinator.controller_state.get(f"solace_{key}_selected", False))
+        return bool(self._coordinator.controller_state.get(preset_selected(key), False))
 
     # Massage methods
     @property
@@ -771,12 +780,12 @@ class SolaceController(BedController):
     async def lights_on(self) -> None:
         """Turn lights on (set to max brightness)."""
         await self.write_command(SolaceCommands.LIGHT_LEVELS[10])
-        self.forward_controller_state_update("light_level", 10)
+        self.forward_controller_state_update(LIGHT_LEVEL, 10)
 
     async def lights_off(self) -> None:
         """Turn lights off."""
         await self.write_command(SolaceCommands.LIGHT_LEVELS[0])
-        self.forward_controller_state_update("light_level", 0)
+        self.forward_controller_state_update(LIGHT_LEVEL, 0)
 
     @property
     def prunes_stale_light_level(self) -> bool:
@@ -796,7 +805,7 @@ class SolaceController(BedController):
         """Set light level (0-10)."""
         if 0 <= level <= 10:
             await self.write_command(SolaceCommands.LIGHT_LEVELS[level])
-            self.forward_controller_state_update("light_level", level)
+            self.forward_controller_state_update(LIGHT_LEVEL, level)
         else:
             _LOGGER.warning("Invalid light level: %d (valid: 0-10)", level)
 

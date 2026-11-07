@@ -28,6 +28,7 @@ from custom_components.adjustable_bed.const import (
     CONF_LP_LEGACY_WRITE_UUID,
     DOMAIN,
 )
+from tests.state_helpers import published
 
 from .conftest import make_controller_mock
 
@@ -99,9 +100,9 @@ async def test_controller_action_availability_refreshes_and_unsubscribes(hass):
     client = SimpleNamespace(is_connected=True)
     controller_runtime.client = client
 
-    def publish(state):
+    def publish(*updates):
         for callback_fn in tuple(callbacks):
-            callback_fn(state)
+            callback_fn(published(*updates))
 
     controller_runtime.handle_controller_state_updates.side_effect = publish
     controller = TiMOTIONAhfController(controller_runtime)

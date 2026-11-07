@@ -43,6 +43,7 @@ from custom_components.adjustable_bed.const import (
     TIMOTION_AHF_SERVICE_UUID,
     TIMOTION_AHF_WRITE_CHAR_UUID,
 )
+from custom_components.adjustable_bed.controller_state import StateUpdate
 from custom_components.adjustable_bed.cover import _cover_entities_for
 from custom_components.adjustable_bed.light import _light_entities_for
 from custom_components.adjustable_bed.pairing import supports_single_address_pairing
@@ -87,8 +88,8 @@ class _Coordinator:
         self.tasks.append(task)
         return task
 
-    def handle_controller_state_updates(self, updates: dict[str, object]) -> None:
-        self.state.update(updates)
+    def handle_controller_state_updates(self, *updates: StateUpdate) -> None:
+        self.state.update((update.key, update.value) for update in updates)
         for callback_fn in tuple(self.state_callbacks):
             callback_fn(self.state)
 

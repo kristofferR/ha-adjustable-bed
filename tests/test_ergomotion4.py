@@ -34,6 +34,7 @@ from custom_components.adjustable_bed.beds.keeson import KeesonController
 from custom_components.adjustable_bed.codec import keeson as codec
 from custom_components.adjustable_bed.ergomotion4_profiles import ACTIONS, PRODUCTS
 from custom_components.adjustable_bed.pairing import supports_single_address_pairing
+from tests.state_helpers import published, state_writer
 
 FIXTURES = Path(__file__).parent / "fixtures/ergomotion4"
 VECTORS = json.loads((FIXTURES / "test-vectors.json").read_text())
@@ -63,7 +64,7 @@ def coordinator(product="H", **data):
     result.motor_pulse_count = 1
     result.observed_ble_device_name = "KSBT03CP123"
     result.controller_state = {}
-    result.handle_controller_state_updates.side_effect = result.controller_state.update
+    result.handle_controller_state_updates.side_effect = state_writer(result.controller_state)
     rx = MagicMock(uuid="0000ffe4-0000-1000-8000-00805f9b34fb", properties=["notify"])
     tx = MagicMock(uuid="0000ffe9-0000-1000-8000-00805f9b34fb", properties=["write"])
     service = MagicMock(characteristics=[rx, tx])
@@ -699,7 +700,8 @@ def _rgb_entity(ctrl, coord):
     entity = AdjustableBedLight(coord, LIGHT_DESCRIPTION)
     entity.async_write_ha_state = MagicMock()
 
-    def update(values):
+    def update(*updates):
+        values = published(*updates)
         coord.controller_state.update(values)
         entity._handle_light_state(values)
 

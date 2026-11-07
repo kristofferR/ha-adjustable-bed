@@ -34,6 +34,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.detection import BED_TYPE_DISPLAY_NAMES
+from tests.state_helpers import published
 
 FIXTURES = Path(__file__).parent / "fixtures"
 _ROUTE_FIXTURE = FIXTURES / "sleepys_elite_routes_v2.tsv"
@@ -716,7 +717,7 @@ def test_non_timer_layouts_keep_field_0b_out_of_the_timer_select(
 
     controller._handle_notification(characteristic, bytearray(frame))
 
-    updates = controller._coordinator.handle_controller_state_updates.call_args.args[0]
+    updates = published(*controller._coordinator.handle_controller_state_updates.call_args.args)
     assert "sleepys_app_field_0x0b" in updates
     assert "sleepys_app_massage_timer_code" not in updates
 
@@ -731,7 +732,7 @@ def test_unknown_timer_code_does_not_enter_the_declared_select_domain() -> None:
 
     controller._handle_notification(characteristic, raw)
 
-    updates = controller._coordinator.handle_controller_state_updates.call_args.args[0]
+    updates = published(*controller._coordinator.handle_controller_state_updates.call_args.args)
     assert updates["sleepys_app_field_0x0b"] == 0
     assert "sleepys_app_massage_timer_code" not in updates
 

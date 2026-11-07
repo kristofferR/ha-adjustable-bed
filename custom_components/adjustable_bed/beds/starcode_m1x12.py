@@ -18,7 +18,9 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ..codec import okin_5a
+from ..controller_state import StateUpdate
 from ..execution import ExecutionCapabilities
+from ..state_keys import UNDER_BED_LIGHTS_ON
 from .base import (
     POSITION_UNIT_PERCENT,
     BedController,
@@ -46,6 +48,13 @@ from .starcode_m1x12_protocol import (
     parse_notification,
     position_packet,
     query_packet,
+)
+from .starcode_state import (
+    FIRMWARE_VERSION,
+    LIGHT_BRIGHTNESS,
+    field_key,
+    spec_key,
+    state_updates,
 )
 
 if TYPE_CHECKING:
@@ -420,7 +429,7 @@ class StarcodeM1X12Controller(BedController):
             ControllerNumberSpec(
                 key="starcode_m1x12_brightness",
                 translation_key="starcode_m1x12_brightness",
-                state_key="light_brightness",
+                state_key=LIGHT_BRIGHTNESS,
                 native_min_value=1,
                 native_max_value=6,
                 native_step=1,
@@ -466,14 +475,14 @@ class StarcodeM1X12Controller(BedController):
             ControllerStateSensorSpec(
                 key=f"starcode_m1x12_{key}",
                 translation_key=f"starcode_m1x12_{key}",
-                state_key=key,
+                state_key=spec_key(key),
                 icon="mdi:information-outline",
                 native_unit_of_measurement=POSITION_UNIT_PERCENT
                 if key.endswith("_position")
                 else None,
-                attribute_keys=("light_rgb", "light_rgb_mode")
+                attribute_keys=(field_key("light_rgb"), field_key("light_rgb_mode"))
                 if key == "light_color_index"
-                else ((key + "_details",) if key.startswith("alarm_") else ()),
+                else ((field_key(key + "_details"),) if key.startswith("alarm_") else ()),
             )
             for key in keys
         )
@@ -494,7 +503,7 @@ class StarcodeM1X12Controller(BedController):
             ControllerStateBinarySensorSpec(
                 key=f"starcode_m1x12_{key}",
                 translation_key=f"starcode_m1x12_{key}",
-                state_key=key,
+                state_key=spec_key(key),
                 icon="mdi:information-outline",
             )
             for key in keys
@@ -594,7 +603,7 @@ class StarcodeM1X12Controller(BedController):
             if firmware:
                 self._firmware = firmware
                 self._state["firmware"] = firmware
-                self.forward_controller_state_update("firmware", firmware)
+                self.forward_controller_state_update(FIRMWARE_VERSION, firmware)
 
             await client.start_notify(NOTIFY, receive)
             if generation != self._generation:
@@ -658,7 +667,7 @@ class StarcodeM1X12Controller(BedController):
         )
         self._state.update(updates)
         if updates:
-            self.forward_controller_state_updates(dict(updates))
+            self.forward_controller_state_updates(*state_updates(updates))
         if updates.get("motor_stopped") is True and self._progress_queue:
             axis, target = self._progress_queue.pop(0)
             asyncio.create_task(
@@ -689,9 +698,9 @@ class StarcodeM1X12Controller(BedController):
                 _LOGGER.debug("Could not release M1X12 on session teardown", exc_info=True)
         self._ready = False
         if self._state:
-            cleared_keys = dict.fromkeys(self._state)
+            cleared = state_updates(dict.fromkeys(self._state))
             self._state.clear()
-            self.forward_controller_state_updates(cleared_keys)
+            self.forward_controller_state_updates(*cleared)
         self._firmware = None
         try:
             if self._subscribed and client is not None and client.is_connected:
@@ -1148,9 +1157,10 @@ class StarcodeM1X12Controller(BedController):
     async def massage_both_intensity_down(self) -> None:
         await self.app_action("massage_both_down")
 
-    async def read_light_state(self) -> dict[str, object]:
+    async def read_light_state(self) -> tuple[StateUpdate, ...]:
         await self.query_status()
-        return self.get_light_state()
+        light_on = self._state.get("light_on")
+        return (UNDER_BED_LIGHTS_ON(light_on if isinstance(light_on, bool) else None),)
 
     def get_light_state(self) -> dict[str, object]:
         """Return the latest parsed light telemetry for the HA light entity."""
@@ -1170,7 +1180,7 @@ class StarElevateM1X12Controller(StarElevateController):
         self._generation += 1
         self._initialized = False
         if self._firmware is not None:
-            self.forward_controller_state_update("firmware", None)
+            self.forward_controller_state_update(FIRMWARE_VERSION, None)
         self._firmware = None
         self._firmware_client = None
 
@@ -1230,7 +1240,7 @@ class StarElevateM1X12Controller(StarElevateController):
             ControllerStateSensorSpec(
                 "starcode_m1x12_elevate_firmware",
                 "starcode_m1x12_elevate_firmware",
-                "firmware",
+                FIRMWARE_VERSION,
                 "mdi:information-outline",
             ),
         )
@@ -1260,7 +1270,7 @@ class StarElevateM1X12Controller(StarElevateController):
             raise asyncio.CancelledError("M1X12 ELEVATE firmware read belongs to an old session")
         if firmware:
             self._firmware = firmware
-            self.forward_controller_state_update("firmware", firmware)
+            self.forward_controller_state_update(FIRMWARE_VERSION, firmware)
         # The target app requires 2A28 and recognizes 2A29 without reading it.
         manufacturer_present = client.services.get_characteristic(MANUFACTURER) is not None
         _LOGGER.debug(
@@ -1312,7 +1322,7 @@ class StarElevateM1X12Controller(StarElevateController):
         self._generation += 1
         self._initialized = False
         if self._firmware is not None:
-            self.forward_controller_state_update("firmware", None)
+            self.forward_controller_state_update(FIRMWARE_VERSION, None)
         self._firmware = None
         self._firmware_client = None
 

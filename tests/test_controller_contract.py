@@ -50,6 +50,7 @@ from custom_components.adjustable_bed.controller_factory import (
     _create_from_registry,
     create_controller,
 )
+from custom_components.adjustable_bed.controller_state import StateKey, StateUpdate
 
 SHARED_CAPABILITY_FLAGS: tuple[str, ...] = (
     "supports_memory_presets",
@@ -149,11 +150,11 @@ class _FactoryCoordinator(SimpleNamespace):
         """Return the integration's default calibration for a position axis."""
         return 45.0 if position_key in {"legs", "feet"} else 68.0
 
-    def handle_controller_state_updates(self, updates: dict[str, Any]) -> None:
+    def handle_controller_state_updates(self, *updates: StateUpdate) -> None:
         """Accept controller-published diagnostic state during construction."""
         del updates
 
-    def handle_controller_state_update(self, key: str, value: Any) -> None:
+    def handle_controller_state_update(self, key: StateKey[Any], value: Any) -> None:
         """Accept one controller-published state value during construction."""
         del key, value
 

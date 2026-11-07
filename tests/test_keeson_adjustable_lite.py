@@ -217,12 +217,12 @@ def test_parser_branch_vectors(length, raw, light_byte, light, indicator):
         assert ksbt01c is None
         assert ksbt03c is None
         return
-    assert ksbt01c == {STATE_ADJUSTABLE_LITE_LIGHT: light}
-    assert ksbt03c == {
-        STATE_ADJUSTABLE_LITE_LIGHT: light,
-        STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW: raw,
-        STATE_ADJUSTABLE_LITE_MASSAGE_TIMER: indicator,
-    }
+    assert ksbt01c == [STATE_ADJUSTABLE_LITE_LIGHT(light)]
+    assert ksbt03c == [
+        STATE_ADJUSTABLE_LITE_LIGHT(light),
+        STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW(raw),
+        STATE_ADJUSTABLE_LITE_MASSAGE_TIMER(indicator),
+    ]
 
 
 async def test_notifications_publish_state_and_session_end_clears_it(

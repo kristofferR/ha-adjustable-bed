@@ -18,7 +18,9 @@ from homeassistant.util import dt as dt_util
 
 from ..app_session import app_session
 from ..codec import keeson as codec
+from ..controller_state import StateKey
 from ..profiles import keeson as keeson_profiles
+from ..state_keys import MASSAGE_TIMER_MINUTES
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -30,6 +32,15 @@ from .base import (
 
 WRITE_UUID: Final = "0000ffe9-0000-1000-8000-00805f9b34fb"
 NOTIFY_UUID: Final = "0000ffe4-0000-1000-8000-00805f9b34fb"
+_LEVEL_KEYS: Final = {
+    field: StateKey[int | None](f"bf_cherish_{field}") for field in ("intensity", "wave")
+}
+ALARM: Final = StateKey[str]("bf_cherish_alarm")
+ALARM_HOUR: Final = StateKey[int]("bf_cherish_alarm_hour")
+ALARM_MINUTE: Final = StateKey[int]("bf_cherish_alarm_minute")
+ALARM_MEMORY: Final = StateKey[str]("bf_cherish_alarm_memory")
+ALARM_RAW_SELECTOR: Final = StateKey[int | None]("bf_cherish_alarm_raw_selector")
+ALARM_SOURCE: Final = StateKey[str]("bf_cherish_alarm_source")
 MOVE_KEYS: Final = {
     "back_up": 1,
     "back_down": 2,
@@ -614,7 +625,7 @@ class BfCherishController(BedController):
             return ControllerNumberSpec(
                 "bf_cherish_" + field,
                 "bf_cherish_" + field,
-                "bf_cherish_" + field,
+                _LEVEL_KEYS[field],
                 1,
                 3,
                 1,
@@ -740,21 +751,21 @@ class BfCherishController(BedController):
     def _publish(self) -> None:
         state = self.state
         self.forward_controller_state_updates(
-            {
-                "bf_cherish_massage_timer": state.timer_selected,
-                "bf_cherish_intensity": state.intensity or None,
-                "bf_cherish_wave": state.wave or None,
-                "bf_cherish_alarm": "unknown"
+            MASSAGE_TIMER_MINUTES(state.timer_selected),
+            _LEVEL_KEYS["intensity"](state.intensity or None),
+            _LEVEL_KEYS["wave"](state.wave or None),
+            ALARM(
+                "unknown"
                 if state.alarm_enabled is None
                 else "enabled"
                 if state.alarm_enabled
-                else "disabled",
-                "bf_cherish_alarm_hour": state.alarm_hour,
-                "bf_cherish_alarm_minute": state.alarm_minute,
-                "bf_cherish_alarm_memory": state.alarm_memory,
-                "bf_cherish_alarm_raw_selector": state.alarm_raw_selector,
-                "bf_cherish_alarm_source": state.alarm_source,
-            }
+                else "disabled"
+            ),
+            ALARM_HOUR(state.alarm_hour),
+            ALARM_MINUTE(state.alarm_minute),
+            ALARM_MEMORY(state.alarm_memory),
+            ALARM_RAW_SELECTOR(state.alarm_raw_selector),
+            ALARM_SOURCE(state.alarm_source),
         )
 
     @property
@@ -763,14 +774,14 @@ class BfCherishController(BedController):
             ControllerStateSensorSpec(
                 "bf_cherish_alarm",
                 "bf_cherish_alarm",
-                "bf_cherish_alarm",
+                ALARM,
                 "mdi:alarm",
                 attribute_keys=(
-                    "bf_cherish_alarm_hour",
-                    "bf_cherish_alarm_minute",
-                    "bf_cherish_alarm_memory",
-                    "bf_cherish_alarm_raw_selector",
-                    "bf_cherish_alarm_source",
+                    ALARM_HOUR,
+                    ALARM_MINUTE,
+                    ALARM_MEMORY,
+                    ALARM_RAW_SELECTOR,
+                    ALARM_SOURCE,
                 ),
             ),
         )

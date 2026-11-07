@@ -21,8 +21,10 @@ from bleak.exc import BleakError
 
 from ..codec import jmc
 from ..command_scheduler import current_command_context
+from ..controller_state import StateKey
 from ..execution import ExecutionCapabilities
 from ..profiles.jmc import SVANE_REMOTE
+from ..state_keys import LIGHT_LEVEL, UNDER_BED_LIGHTS_ON
 from ..svane_state import SvaneProfile, SvaneSession, integer
 from .base import (
     BedController,
@@ -71,6 +73,18 @@ STREAM_TICK_S: Final = 0.1
 """The app's 100 ms pass, and the 100 ms between head and feet within one."""
 _STREAM_SLACK_S: Final = 0.005
 """Event-loop wakeups land a little early; a write that close to due is due."""
+
+
+INTENSITY: Final = StateKey[int]("svane_intensity")
+LIGHT_INTENT: Final = StateKey[bool]("svane_light_intent")
+PROFILE: Final = StateKey[str]("svane_profile")
+INITIALIZATION: Final = StateKey[str]("svane_initialization")
+LAST_READ_ERROR: Final = StateKey[str]("svane_last_read_error")
+
+
+def _observation_key(name: str) -> StateKey[str]:
+    """A target-local observation record field, retained in the session."""
+    return StateKey[str](name)
 
 
 class SvaneCommands:
@@ -157,7 +171,9 @@ class SvaneController(BedController):
         self._reset_stream()
         self._device_info_task: asyncio.Task[None] | None = None
         self._publish_intent()
-        self.forward_controller_state_updates(dict(self.session.observations))
+        self.forward_controller_state_updates(
+            *(_observation_key(name)(value) for name, value in self.session.observations.items())
+        )
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -274,15 +290,15 @@ class SvaneController(BedController):
             ControllerStateSensorSpec(
                 f"svane_{key}",
                 f"svane_{key}",
-                f"svane_{key}",
+                _observation_key(f"svane_{key}"),
                 "mdi:bluetooth",
                 attribute_keys=(
-                    f"svane_{key}_observed_at",
-                    f"svane_{key}_service",
-                    f"svane_{key}_characteristic",
-                    f"svane_{key}_target_address",
-                    "svane_profile",
-                    "svane_initialization",
+                    *(
+                        _observation_key(f"svane_{key}_{field}")
+                        for field in ("observed_at", "service", "characteristic", "target_address")
+                    ),
+                    PROFILE,
+                    INITIALIZATION,
                 ),
             )
             for key in (
@@ -296,15 +312,17 @@ class SvaneController(BedController):
         )
 
     def _publish_intent(self) -> None:
-        state = {
-            "svane_intensity": self.session.intensity,
-            "svane_light_intent": self.session.light_on,
-            "svane_profile": self.profile,
-        }
+        state = [
+            INTENSITY(self.session.intensity),
+            LIGHT_INTENT(self.session.light_on),
+            PROFILE(self.profile),
+        ]
         if self.session.light_intent_known:
-            state["under_bed_lights_on"] = self.session.light_on
-            state["light_level"] = self.session.intensity if self.session.light_on else 0
-        self.forward_controller_state_updates(state)
+            state += [
+                UNDER_BED_LIGHTS_ON(self.session.light_on),
+                LIGHT_LEVEL(self.session.intensity if self.session.light_on else 0),
+            ]
+        self.forward_controller_state_updates(*state)
 
     @property
     def persisted_app_state_key(self) -> str:
@@ -375,7 +393,9 @@ class SvaneController(BedController):
             f"{key}_target_address": self._coordinator.address,
         }
         self.session.observations.update(updates)
-        self.forward_controller_state_updates(updates)
+        self.forward_controller_state_updates(
+            *(_observation_key(name)(value) for name, value in updates.items())
+        )
 
     def accept_response(self, service: str, char: str, data: bytes) -> bool:
         """Guard origin/length around the source's opaque projections."""
@@ -468,7 +488,7 @@ class SvaneController(BedController):
                 try:
                     await self._read(service, char, fresh=fresh)
                 except BleakError as error:
-                    self.forward_controller_state_update("svane_last_read_error", str(error))
+                    self.forward_controller_state_update(LAST_READ_ERROR, str(error))
 
     async def read_positions(self, motor_count: int = 2) -> None:
         del motor_count
@@ -502,7 +522,7 @@ class SvaneController(BedController):
             except BleakError as err:
                 _LOGGER.debug("Svane status subscription failed: %s", err)
                 status = "old_notify_failed"
-            self.forward_controller_state_update("svane_initialization", status)
+            self.forward_controller_state_update(INITIALIZATION, status)
             self._initialized = True
             # The app's device-information reads wait a second after each one;
             # serialize them as an idle query after the pending command.

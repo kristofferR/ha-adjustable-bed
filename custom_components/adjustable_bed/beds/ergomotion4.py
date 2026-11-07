@@ -8,11 +8,13 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable
 from time import monotonic
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Final, TypedDict, cast
 
 from ..codec import keeson as codec
+from ..controller_state import StateKey, StateUpdate
 from ..ergomotion4_profiles import ACTIONS, PRODUCTS, Action, Product, Step
 from ..profiles.keeson import ergomotion_4_profile
+from ..state_keys import UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -21,7 +23,7 @@ from .base import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
-from .cluster033 import AppController
+from .cluster033 import APP_TIMER_STATUS, AppController
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -87,6 +89,14 @@ MODEL_KEYS = ("k1", "k2", "k3", "o1", "o2", "o3", "o4", "o5")
 MASSAGE_KEYS = tuple(f"m{i}" for i in range(1, 11))
 CONF_MODEL_KEYS = "ergomotion4_model_keys"
 CONF_MASSAGE_KEYS = "ergomotion4_massage_keys"
+LIGHT: Final = StateKey[bool | None]("ergomotion4_light")
+
+
+def _side_key[T](key: StateKey[T], side: str | None) -> StateKey[T]:
+    """Each side's copy carries a ``left_``/``right_`` prefix."""
+    return StateKey[T](f"{side}_{key}") if side in ("left", "right") else key
+
+
 CONF_RGB = "ergomotion4_rgb"
 CONF_PRODUCT_NAME = "ergomotion4_product_name"
 # Host-side bound for confirming a requested toggle, not a firmware timing value.
@@ -148,9 +158,17 @@ def custom_product(
     )
 
 
+class Status(TypedDict, total=False):
+    """Fields one status notification reports."""
+
+    timer: int
+    light: bool
+    rgb: tuple[int, int, int]
+
+
 def parse_status(
     data: bytes, style: str, *, dynamic: bool = False, side: str = "both"
-) -> dict[str, object]:
+) -> Status:
     """Dispatch complete notifications only; discarded locals are not positions."""
 
     def timer(seconds: int) -> int:
@@ -166,7 +184,7 @@ def parse_status(
         if data[:3] == b"\xa5\x0b\x0d":
             if style == "M10":
                 return {"timer": signed(5)}
-            result: dict[str, object] = {"timer": timer(int.from_bytes(data[3:5], "big"))}
+            result: Status = {"timer": timer(int.from_bytes(data[3:5], "big"))}
             if style in ("M16", "M19") or dynamic:
                 result["light"] = bool(data[12])
             return result
@@ -178,7 +196,7 @@ def parse_status(
             return {
                 "timer": timer(int.from_bytes(data[3:5], "big")),
                 "light": bool(data[12]),
-                "rgb": tuple(data[15:18]),
+                "rgb": (data[15], data[16], data[17]),
             }
         bits = data[16] & 3
         if bits and ((bits & 2 and side != "right") or (not bits & 2 and side == "right")):
@@ -193,7 +211,7 @@ def parse_status(
             return {
                 "timer": timer(int.from_bytes(data[3:5], "big")),
                 "light": bool(data[10]),
-                "rgb": tuple(data[11:14]),
+                "rgb": (data[11], data[12], data[13]),
             }
         return {"timer": timer(int.from_bytes(data[2:4], "big"))}
     return {}
@@ -381,16 +399,16 @@ class Ergomotion4Controller(AppController):
         self._light = None
         self._rgb_seeded = False
         self.forward_controller_state_updates(
-            {
-                prefix + key: None
-                for prefix in ("", "left_", "right_")
-                for key in (
-                    "app_timer_status",
-                    "ergomotion4_light",
-                    "under_bed_lights_on",
-                    "under_bed_lights_rgb",
+            *(
+                update
+                for side in ("both", "left", "right")
+                for update in (
+                    _side_key(APP_TIMER_STATUS, side)(None),
+                    _side_key(LIGHT, side)(None),
+                    _side_key(UNDER_BED_LIGHTS_ON, side)(None),
+                    _side_key(UNDER_BED_LIGHTS_RGB, side)(None),
                 )
-            }
+            )
         )
 
     async def _steps(self, steps: tuple[Step, ...], *, cleanup: bool = False) -> None:
@@ -620,24 +638,22 @@ class Ergomotion4Controller(AppController):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        prefix = f"{self.command_side}_" if self.command_side in ("left", "right") else ""
         return (
             ControllerStateSensorSpec(
                 "app_timer_status",
                 "app_timer_status",
-                prefix + "app_timer_status",
+                _side_key(APP_TIMER_STATUS, self.command_side),
                 "mdi:timer-outline",
             ),
         )
 
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
-        prefix = f"{self.command_side}_" if self.command_side in ("left", "right") else ""
         return (
             ControllerStateBinarySensorSpec(
                 "ergomotion4_light",
                 "ergomotion4_light",
-                prefix + "ergomotion4_light",
+                _side_key(LIGHT, self.command_side),
                 "mdi:lightbulb-outline",
             ),
         )
@@ -645,17 +661,16 @@ class Ergomotion4Controller(AppController):
     def _parse_notification(self, data: bytes | None) -> None:
         if not data:
             return
-        updates: dict[str, object] = {}
+        updates: list[StateUpdate] = []
         for side in ("both", "left", "right"):
             parsed = parse_status(data, self.product.style, dynamic=self._dynamic, side=side)
-            prefix = "" if side == "both" else f"{side}_"
             if "timer" in parsed:
-                updates[prefix + "app_timer_status"] = parsed["timer"]
+                updates.append(_side_key(APP_TIMER_STATUS, side)(parsed["timer"]))
             if "light" in parsed:
-                updates[prefix + "ergomotion4_light"] = parsed["light"]
-                updates[prefix + "under_bed_lights_on"] = parsed["light"]
+                updates.append(_side_key(LIGHT, side)(parsed["light"]))
+                updates.append(_side_key(UNDER_BED_LIGHTS_ON, side)(parsed["light"]))
             if "rgb" in parsed:
-                updates[prefix + "under_bed_lights_rgb"] = parsed["rgb"]
+                updates.append(_side_key(UNDER_BED_LIGHTS_RGB, side)(parsed["rgb"]))
             if side == "both":
                 if "light" in parsed:
                     self._light = bool(parsed["light"])
@@ -665,7 +680,7 @@ class Ergomotion4Controller(AppController):
                     and not self._rgb_seeded
                     and (self.product.style == "M19" or self._dynamic)
                 ):
-                    self._rgb = cast(tuple[int, int, int], parsed["rgb"])
+                    self._rgb = parsed["rgb"]
                     self._rgb_seeded = True
         if updates:
-            self.forward_controller_state_updates(updates)
+            self.forward_controller_state_updates(*updates)

@@ -31,6 +31,7 @@ from custom_components.adjustable_bed.select import _select_entities_for
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
 from custom_components.adjustable_bed.switch import _switch_entities_for
 from tests.conftest import make_controller_mock
+from tests.state_helpers import published
 from tests.test_malouf_app_entities import configure_entity_runtime
 from tests.test_paired_coordinator import RecordingChild
 from tests.test_vibradorm_app import make_controller, written
@@ -123,14 +124,15 @@ async def floor_runtime(hass, app="caresse", control=2, *, floor=True, extension
         callbacks.append(callback)
         return lambda: callbacks.remove(callback)
 
-    def publish(updates):
-        runtime.controller_state.update(updates)
+    def publish(*updates):
+        values = published(*updates)
+        runtime.controller_state.update(values)
         for callback in tuple(callbacks):
-            callback(updates)
+            callback(values)
 
     runtime.register_controller_state_callback.side_effect = register
     runtime.handle_controller_state_updates.side_effect = publish
-    runtime.handle_controller_state_update.side_effect = lambda key, value: publish({key: value})
+    runtime.handle_controller_state_update.side_effect = lambda key, value: publish(key(value))
     lock = asyncio.Lock()
 
     async def execute(command, **kwargs):

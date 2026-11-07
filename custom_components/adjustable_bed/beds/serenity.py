@@ -26,6 +26,7 @@ from ..const import (
     CONF_ZSERIES_ALARM_AVAILABLE,
     ZSERIES_PULSE_COUNT_RANGE,
 )
+from ..controller_state import StateKey
 from ..profiles.okin_nframe import (
     BEDDING_HOLD,
     BEDDING_PROFILES,
@@ -234,6 +235,9 @@ class OkinBeddingAppController(OkinCstController):
     def _key(self, name: str) -> str:
         return f"{self._app.prefix}_{name}"
 
+    def _state_key(self, name: str) -> StateKey[object]:
+        return StateKey[object](self._key(name))
+
     @property
     def requires_notification_channel(self) -> bool:
         return True
@@ -274,8 +278,10 @@ class OkinBeddingAppController(OkinCstController):
         return {**super().protocol_diagnostics, **self._state, "save_pending_code": self._save_code}
 
     def _publish(self, updates: dict[str, object]) -> None:
-        self._state.update(updates)
-        self.forward_controller_state_updates(updates)
+        """Publish fields named without the app prefix."""
+        values = [self._state_key(name)(value) for name, value in updates.items()]
+        self._state.update((update.key, update.value) for update in values)
+        self.forward_controller_state_updates(*values)
 
     def _write_response(self) -> bool:
         client = self.client
@@ -367,7 +373,7 @@ class OkinBeddingAppController(OkinCstController):
         except BleakError, OSError, TimeoutError:
             return  # Missing diagnostic information does not block control.
         self._manufacturer_read(manufacturer)
-        self._publish({self._key("manufacturer"): manufacturer})
+        self._publish({"manufacturer": manufacturer})
 
     def _manufacturer_read(self, manufacturer: str) -> None:
         """Hook for apps whose manufacturer string gates a page."""
@@ -386,11 +392,11 @@ class OkinBeddingAppController(OkinCstController):
             )
             self._publish(
                 {
-                    self._key("alarm_type"): self._alarm_type,
-                    self._key("alarm_repeat"): signed(data[4]),
-                    self._key("alarm_hour"): signed(data[6]),
-                    self._key("alarm_minute"): signed(data[7]),
-                    self._key("alarm_on"): data[9] == 1,
+                    "alarm_type": self._alarm_type,
+                    "alarm_repeat": signed(data[4]),
+                    "alarm_hour": signed(data[6]),
+                    "alarm_minute": signed(data[7]),
+                    "alarm_on": data[9] == 1,
                 }
             )
             return
@@ -398,18 +404,18 @@ class OkinBeddingAppController(OkinCstController):
         if code == self._status_code:
             return
         self._status_code = code
-        updates: dict[str, object] = {self._key("status_code"): code}
+        updates: dict[str, object] = {"status_code": code}
         # HA supplies the active callback equivalent. The source treats any
         # status change during save as a local success, not a hardware ACK.
         if self._save_code:
-            updates[self._key("save_event_code")] = self._save_code
+            updates["save_event_code"] = self._save_code
             self._save_code = 0
         elif code != self._timer_code:
             self._timer_code = code
             updates.update(
                 {
-                    self._key("massage_timer_code"): code,
-                    self._key("massage_timer_minutes"): {1: 10, 2: 20, 3: 30}.get(code),
+                    "massage_timer_code": code,
+                    "massage_timer_minutes": {1: 10, 2: 20, 3: 30}.get(code),
                 }
             )
         self._publish(updates)
@@ -429,11 +435,11 @@ class OkinBeddingAppController(OkinCstController):
                 key=self._key(key),
                 # The apps share one parser, so their sensors share names.
                 translation_key=f"okin_bedding_app_{key}",
-                state_key=self._key(key),
+                state_key=self._state_key(key),
                 icon="mdi:information-outline",
                 native_unit_of_measurement="min" if key == "massage_timer_minutes" else None,
                 attribute_keys=tuple(
-                    self._key(name)
+                    self._state_key(name)
                     for name in ("alarm_repeat", "alarm_hour", "alarm_minute", "alarm_on")
                 )
                 if key == "alarm_type"

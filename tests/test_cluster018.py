@@ -14,6 +14,7 @@ from custom_components.adjustable_bed.beds import cluster018 as bed
 from custom_components.adjustable_bed.cluster018_profiles import APP_NAMES
 from custom_components.adjustable_bed.cluster018_requests import Request
 from custom_components.adjustable_bed.cluster018_transport import Transport
+from tests.state_helpers import published
 
 
 def controller(app="avocadoecobase", layout="GXRM", wire="FRAMED"):
@@ -472,7 +473,7 @@ def test_unexpected_disconnect_invalidates_session_and_publishes_status():
     ctrl.on_disconnect()
     assert ctrl._session is None
     assert ctrl._worker.mode == -1
-    assert coord.handle_controller_state_updates.call_args.args[0]["cluster018_status"] == "disconnected"
+    assert published(*coord.handle_controller_state_updates.call_args.args)["cluster018_status"] == "disconnected"
     ctrl._notification(old, old.notify, bytearray.fromhex("6e0e00037f"))
     assert not ctrl._receive.light_capable
 

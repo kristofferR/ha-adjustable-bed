@@ -13,6 +13,7 @@ from custom_components.adjustable_bed.beds.rmcontrol import (
     detect_rmcontrol_transport,
 )
 from custom_components.adjustable_bed.rmcontrol_protocol import Notification
+from tests.state_helpers import published, state_writer
 
 
 def controller(
@@ -210,9 +211,7 @@ async def test_notify_exact_role_probes_buffer_and_state_forwarding() -> None:
     assert not ctrl.supports_rmcontrol_alarm
     callback(None, bytearray.fromhex("0078"))
     assert not ctrl.supports_rmcontrol_alarm  # This exact product has no alarmList.
-    ctrl._coordinator.handle_controller_state_updates.assert_called_with(
-        {"rmcontrol_capability_alarm": True}
-    )
+    assert published(*ctrl._coordinator.handle_controller_state_updates.call_args.args) == {"rmcontrol_capability_alarm": True}
     await ctrl.stop_notify()
     client.stop_notify.assert_awaited_once_with(notify_uuid)
 
@@ -326,7 +325,7 @@ def test_reported_state_precedes_entity_discovery_callback_and_retains_alarm_rec
     ctrl = controller()
     assert ctrl.controller_state_sensor_specs == ()
     snapshots = []
-    ctrl._coordinator.handle_controller_state_updates.side_effect = lambda _: snapshots.append(
+    ctrl._coordinator.handle_controller_state_updates.side_effect = lambda *_: snapshots.append(
         {spec.key for spec in ctrl.controller_state_sensor_specs}
     )
     ctrl._accept_notification(Notification("light_timer", {"seconds": 120}))
@@ -362,7 +361,7 @@ async def test_reconnect_clears_previously_forwarded_telemetry() -> None:
     client.services.get_characteristic.return_value.properties = ["notify"]
     ctrl.write_command = AsyncMock()
     await ctrl.start_notify()
-    cleared = ctrl._coordinator.handle_controller_state_updates.call_args.args[0]
+    cleared = published(*ctrl._coordinator.handle_controller_state_updates.call_args.args)
     assert cleared["under_bed_lights_rgb"] is None
     assert cleared["under_bed_lights_on"] is None
     assert cleared["rmcontrol_light_timer_seconds"] is None
@@ -377,7 +376,7 @@ async def test_alarm_query_invalidates_previous_observations_without_claiming_de
     ctrl._accept_notification(Notification("repeat_alarm", {"alarm_id": 1, "hour": 7}))
     await ctrl.rmcontrol_query_alarms()
     assert ctrl.protocol_diagnostics["last_received_alarm_records"] == {}
-    assert ctrl._coordinator.handle_controller_state_updates.call_args.args[0] == {
+    assert published(*ctrl._coordinator.handle_controller_state_updates.call_args.args) == {
         "rmcontrol_repeat_alarm_alarm_id": None,
         "rmcontrol_repeat_alarm_hour": None,
     }
@@ -395,10 +394,11 @@ async def test_alarm_delete_invalidates_only_the_displayed_slot(deleted_id: int)
     assert set(ctrl.protocol_diagnostics["last_received_alarm_records"]) == {3 - deleted_id}
     if deleted_id == 2:
         assert "rmcontrol_repeat_alarm_alarm_id" not in ctrl._reported_state
-        ctrl._coordinator.handle_controller_state_updates.assert_called_once_with({
+        assert ctrl._coordinator.handle_controller_state_updates.call_count == 1
+        assert published(*ctrl._coordinator.handle_controller_state_updates.call_args.args) == {
             "rmcontrol_repeat_alarm_alarm_id": None,
             "rmcontrol_repeat_alarm_hour": None,
-        })
+        }
     else:
         assert ctrl._reported_state["rmcontrol_repeat_alarm_alarm_id"] == 2
         ctrl._coordinator.handle_controller_state_updates.assert_not_called()
@@ -507,7 +507,7 @@ async def test_parn_enforces_exact_source_eight_color_palette() -> None:
 def test_timer_report_updates_select_and_diagnostic(seconds: int, option: str | None) -> None:
     ctrl = controller()
     ctrl._accept_notification(Notification("light_timer", {"seconds": seconds}))
-    updates = ctrl._coordinator.handle_controller_state_updates.call_args.args[0]
+    updates = published(*ctrl._coordinator.handle_controller_state_updates.call_args.args)
     assert updates["light_timer_option"] == option
     assert updates["rmcontrol_light_timer_seconds"] == seconds
 
@@ -575,7 +575,7 @@ async def test_replacement_controller_clears_coordinator_session_state() -> None
     ctrl = controller(nordic=True)
     state = {"unrelated": 42}
     ctrl._coordinator.controller_state = state
-    ctrl._coordinator.handle_controller_state_updates.side_effect = state.update
+    ctrl._coordinator.handle_controller_state_updates.side_effect = state_writer(state)
     ctrl._accept_notification(Notification("music", {"playing": True}))
     ctrl._accept_notification(Notification("lock", {"locked": True}))
     ctrl._accept_notification(Notification("massage", {"head_strength": 3}))

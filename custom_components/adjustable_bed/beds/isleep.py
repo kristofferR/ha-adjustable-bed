@@ -15,8 +15,10 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 
 from ..codec import kaidi as codec
 from ..const import SIDE_LEFT, SIDE_RIGHT
+from ..controller_state import StateUpdate, sided
 from ..execution import ExecutionCapabilities
 from ..profiles.kaidi import isleep_advertisement, validate_isleep_profile
+from ..state_keys import MASSAGE_TIMER_MINUTES, massage_intensity
 from .base import BedController, ControllerButtonSpec, MotorControlSpec
 
 if TYPE_CHECKING:
@@ -260,12 +262,16 @@ class IsleepController(BedController):
         self._publish_intent()
 
     def _publish_intent(self) -> None:
-        self.forward_controller_state_updates(
-            {
-                f"isleep_massage_{side}": self._massage_state(lane if self.profile.split else 0)
-                for side, lane in (("left", 0), ("right", 1), ("both", 2))
-            }
-        )
+        """Publish each side's intent for display between connections."""
+        updates: list[StateUpdate] = []
+        for side, lane in (("left", 0), ("right", 1), ("both", 2)):
+            index = lane if self.profile.split else 0
+            updates.append(sided(MASSAGE_TIMER_MINUTES, side)(self._timers[index]))
+            updates += [
+                sided(massage_intensity(zone), side)(self._strengths[index][zone])
+                for zone in ("head", "foot")
+            ]
+        self.forward_controller_state_updates(*updates)
 
     def _save_intent(self) -> None:
         if self.profile.split:

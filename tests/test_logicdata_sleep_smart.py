@@ -13,6 +13,7 @@ from custom_components.adjustable_bed.beds.logicdata_app import LogicdataAppCont
 from custom_components.adjustable_bed.codec import jiecang as codec
 from custom_components.adjustable_bed.profiles import logicdata as profiles
 from custom_components.adjustable_bed.profiles.logicdata import SLEEP_SMART
+from tests.state_helpers import published
 
 T1, T2, T3 = (profiles.TRANSPORTS[key] for key in ("t1", "t2", "t3"))
 
@@ -415,7 +416,7 @@ async def test_t2_alone_has_no_name_role(coordinator):
 async def test_notifications_publish_state_and_answer_clock_requests(coordinator):
     controller = bed(coordinator, layout="split_series")
     updates = []
-    controller.forward_controller_state_updates = updates.append
+    controller.forward_controller_state_updates = lambda *values: updates.append(published(*values))
     sender = MagicMock(uuid=T3.notify_uuid)
     controller._notification_handler(sender, bytearray.fromhex("f2f206050300040040"))
     controller._notification_handler(sender, bytearray.fromhex("f2f20d0103"))

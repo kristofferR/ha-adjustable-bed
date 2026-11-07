@@ -12,6 +12,7 @@ from homeassistant.config_entries import ConfigEntryState
 
 from ..codec import limoss as codec
 from ..const import LIMOSS_CHAR_UUID, LIMOSS_SERVICE_UUID
+from ..controller_state import StateKey
 from ..fsm_relax_state import (
     FsmRelaxSession,
     validate_capability_body,
@@ -31,6 +32,12 @@ if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
     from ..coordinator import AdjustableBedCoordinator
+
+
+def _state_key(field: str) -> StateKey[object]:
+    """Diagnostic fields carry mixed value types."""
+    return StateKey[object](f"fsm_relax_{field}")
+
 
 @dataclass(frozen=True, slots=True)
 class FsmRelaxSetup:
@@ -250,7 +257,7 @@ class FsmRelaxController(BedController):
             ControllerStateSensorSpec(
                 f"fsm_relax_{key}",
                 f"fsm_relax_{key}",
-                f"fsm_relax_{key}",
+                _state_key(key),
                 "mdi:information-outline",
             )
             for key in fields
@@ -282,9 +289,9 @@ class FsmRelaxController(BedController):
         }
 
     def _publish(self, updates: dict[str, object]) -> None:
-        values = {f"fsm_relax_{key}": value for key, value in updates.items()}
-        self._state.update(values)
-        self.forward_controller_state_updates(values)
+        values = [_state_key(key)(value) for key, value in updates.items()]
+        self._state.update((update.key, update.value) for update in values)
+        self.forward_controller_state_updates(*values)
 
     def _role(self) -> BleakGATTCharacteristic:
         client = self.client

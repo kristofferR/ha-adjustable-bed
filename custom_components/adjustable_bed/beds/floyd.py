@@ -8,12 +8,13 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
 from ..codec import kaidi as codec
 from ..const import CONF_KAIDI_ROOM_ID
+from ..controller_state import StateKey
 from ..kaidi_protocol import extract_kaidi_advertisement, is_floyd_advertisement
 from ..profiles.kaidi import FLOYD, KaidiProductFamily
 from .base import ControllerStateBinarySensorSpec, MotorControlSpec
@@ -21,6 +22,11 @@ from .kaidi import KaidiController
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
+
+
+BATTERY_MODE: Final = StateKey[bool | None]("floyd_battery_mode")
+# Survives the per-connection controller.
+RETAINED_PARAMETER: Final = StateKey[int]("floyd_retained_parameter")
 
 
 class FloydController(KaidiController):
@@ -43,7 +49,7 @@ class FloydController(KaidiController):
         self._own_vaddr = 0
         # Stored zero is offline. Only a matching live ping may authorize zero.
         self._target_vaddr = None
-        parameter = getattr(coordinator, "controller_state", {}).get("floyd_retained_parameter")
+        parameter = coordinator.controller_state.get(RETAINED_PARAMETER)
         self._parameter = parameter if isinstance(parameter, int) and 0 <= parameter <= 255 else 0
         self._battery_mode: bool | None = None
         self._assignment_event = asyncio.Event()
@@ -88,7 +94,7 @@ class FloydController(KaidiController):
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
         return (ControllerStateBinarySensorSpec(
             key="floyd_battery_mode", translation_key="floyd_battery_mode",
-            state_key="floyd_battery_mode", icon="mdi:battery",
+            state_key=BATTERY_MODE, icon="mdi:battery",
         ),)
 
     def on_disconnect(self) -> None:
@@ -99,7 +105,7 @@ class FloydController(KaidiController):
         self._join_event.clear()
         self._target_vaddr_event.clear()
         self._battery_mode = None
-        self.forward_controller_state_update("floyd_battery_mode", None)
+        self.forward_controller_state_update(BATTERY_MODE, None)
 
     def _handle_notification(self, sender: BleakGATTCharacteristic, data: bytearray) -> None:
         payload = bytes(data)
@@ -126,7 +132,7 @@ class FloydController(KaidiController):
                 self._target_vaddr_event.set()
             case codec.ControlReply(command, value) if command == FLOYD.battery_event:
                 self._battery_mode = value == 1
-                self.forward_controller_state_update("floyd_battery_mode", self._battery_mode)
+                self.forward_controller_state_update(BATTERY_MODE, self._battery_mode)
         # Other incoming routes have no bed-state consumer. Raw diagnostics retain
         # them, without interpreting SDK product/group fields as capabilities.
 
@@ -179,7 +185,7 @@ class FloydController(KaidiController):
         await self._ensure_session_ready()
         if param is not None:
             self._parameter = param
-            self.forward_controller_state_update("floyd_retained_parameter", param)
+            self.forward_controller_state_update(RETAINED_PARAMETER, param)
         await self._send(self._build_control_packet(command_id), cancel_event)
 
     async def prepare_for_movement(self) -> None:

@@ -10,10 +10,11 @@ import asyncio
 import logging
 from collections.abc import Callable
 from dataclasses import asdict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
+from ..controller_state import StateKey, StateUpdate
 from ..gmmotor_notifications import Value
 from ..gmmotor_protocol import MalformedNotification
 from ..gmmotor_requests import Operation, Request
@@ -60,6 +61,17 @@ _STREAM_NAMES = {
     "0x5f": "sensitivity",
     "0x63": "anti_snore",
 }
+
+
+EVENT: Final = StateKey[str]("gmmotor_sleep_event")
+STREAMS: Final = StateKey[dict[str, Value]]("gmmotor_sleep_streams")
+CLOCK: Final = StateKey[dict[str, Value]]("gmmotor_sleep_clock")
+REPORTS: Final = StateKey[dict[str, Value]]("gmmotor_sleep_reports")
+INVALID: Final = StateKey[int]("gmmotor_sleep_invalid")
+
+
+def _live_key(side: str) -> StateKey[dict[str, object]]:
+    return StateKey[dict[str, object]]("gmmotor_sleep_" + side)
 
 
 class GmmotorSleepController(BedController):
@@ -162,15 +174,15 @@ class GmmotorSleepController(BedController):
             ControllerStateSensorSpec(
                 key="gmmotor_sleep_state",
                 translation_key="gmmotor_sleep_state",
-                state_key="gmmotor_sleep_event",
+                state_key=EVENT,
                 icon="mdi:sleep",
                 attribute_keys=(
-                    "gmmotor_sleep_streams",
-                    "gmmotor_sleep_clock",
-                    "gmmotor_sleep_reports",
-                    "gmmotor_sleep_left",
-                    "gmmotor_sleep_right",
-                    "gmmotor_sleep_invalid",
+                    STREAMS,
+                    CLOCK,
+                    REPORTS,
+                    _live_key("left"),
+                    _live_key("right"),
+                    INVALID,
                 ),
             ),
         )
@@ -274,16 +286,16 @@ class GmmotorSleepController(BedController):
         if not self._sxb or not self._live_enabled or self._transport is None:
             return
         if self._receive_buffer.command not in ("q_report", "q_report_allow"):
-            updates: dict[str, Value] = {}
+            updates: list[StateUpdate] = []
             for side, seen in self._live_seen.items():
                 if seen:
                     self._live_seen[side] = 0
                 else:
-                    updates["gmmotor_sleep_" + side] = asdict(
-                        LiveState(None, None, None, None, None, False)
+                    updates.append(
+                        _live_key(side)(asdict(LiveState(None, None, None, None, None, False)))
                     )
             if updates:
-                self.forward_controller_state_updates(updates)
+                self.forward_controller_state_updates(*updates)
         self._stale_timer = asyncio.get_running_loop().call_later(_STALE_INTERVAL, self._stale_tick)
 
     def _cancel_live_timers(self) -> None:
@@ -303,11 +315,7 @@ class GmmotorSleepController(BedController):
     def _publish(self, stream: Stream) -> None:
         name = _STREAM_NAMES[stream.field]
         self._streams[name] = stream.value
-        updates: dict[str, Value] = {
-            "gmmotor_sleep_event": name,
-            "gmmotor_sleep_streams": dict(self._streams),
-            "gmmotor_sleep_clock": dict(self._clock),
-        }
+        updates = [EVENT(name), STREAMS(dict(self._streams)), CLOCK(dict(self._clock))]
         if name == "part":
             self._reported_part = fields(stream.value)["0x13"]
         if name == "realtime":
@@ -330,8 +338,8 @@ class GmmotorSleepController(BedController):
                 if state is not None:
                     if self._sxb:
                         self._live_seen[side] += 1
-                    updates["gmmotor_sleep_" + side] = asdict(state)
-        self.forward_controller_state_updates(updates)
+                    updates.append(_live_key(side)(asdict(state)))
+        self.forward_controller_state_updates(*updates)
 
     def _receive(self, sender: BleakGATTCharacteristic, data: bytearray) -> None:
         if self._transport is None or self._coordinator.controller is not self:
@@ -355,7 +363,7 @@ class GmmotorSleepController(BedController):
                 if report is not None:
                     if report.cache_key is not None:
                         self._cache[report.cache_key] = report.wrapper
-                    self.forward_controller_state_update("gmmotor_sleep_reports", dict(self._cache))
+                    self.forward_controller_state_update(REPORTS, dict(self._cache))
                     self._publish(Stream(report.stream, report.wrapper))
                 # HA owns one finite transfer and may resume an earlier live
                 # intent. The source leaves this command active for its page.
@@ -372,7 +380,7 @@ class GmmotorSleepController(BedController):
             ):
                 if isinstance(effect, ClockUpdate):
                     self._clock.update(effect.fields)
-                    self.forward_controller_state_update("gmmotor_sleep_clock", dict(self._clock))
+                    self.forward_controller_state_update(CLOCK, dict(self._clock))
                 elif isinstance(effect, ReportSize):
                     if effect.size > _REPORT_BUDGET:
                         raise MalformedNotification("Sleep report exceeds the HA receive budget")
@@ -387,7 +395,7 @@ class GmmotorSleepController(BedController):
         except (MalformedNotification, ValueError, TypeError) as err:
             self._invalid += 1
             self._receive_buffer.pending.clear()
-            self.forward_controller_state_update("gmmotor_sleep_invalid", self._invalid)
+            self.forward_controller_state_update(INVALID, self._invalid)
             _LOGGER.debug("Rejected GM Control sleep response: %s", err)
 
     def validate_gmmotor_request(self, request: Request) -> None:

@@ -12,7 +12,7 @@ import logging
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Final, cast
 
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
@@ -24,6 +24,7 @@ from ..const import (
     CONF_LOGICDATA_APP_PROFILE,
     CONF_LOGICDATA_APP_TRANSPORT,
 )
+from ..controller_state import StateKey, StateUpdate
 from ..profiles import logicdata as profiles
 from ..profiles.logicdata import (
     APP_PROFILES,
@@ -32,8 +33,10 @@ from ..profiles.logicdata import (
     Family,
     HeldPreset,
     Layout,
+    MassageMode,
     TransportChoice,
 )
+from ..state_keys import UNDER_BED_LIGHTS_ON, massage_intensity
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -60,6 +63,12 @@ def _motor_callback(axis: str, up: bool) -> MotorCommandCallable:
         await controller.move_axis(axis, up)
 
     return move
+
+
+FAMILY_MATCH: Final = StateKey[bool]("logicdata_app_family_match")
+MASSAGE_MODE: Final = StateKey[MassageMode | None]("logicdata_app_massage_mode")
+ALARM: Final = StateKey[bool]("logicdata_app_alarm")
+ALARM_CONFIG: Final = StateKey[dict[str, object]]("logicdata_app_alarm_config")
 
 
 class LogicdataAppController(BedController):
@@ -288,7 +297,7 @@ class LogicdataAppController(BedController):
             ControllerStateBinarySensorSpec(
                 key="under_bed_lights",
                 translation_key="under_bed_lights",
-                state_key="under_bed_lights_on",
+                state_key=UNDER_BED_LIGHTS_ON,
                 icon="mdi:lightbulb",
             ),
         )
@@ -305,7 +314,7 @@ class LogicdataAppController(BedController):
                 ControllerStateSensorSpec(
                     key="logicdata_app_family_match",
                     translation_key="logicdata_app_family_match",
-                    state_key="logicdata_app_family_match",
+                    state_key=FAMILY_MATCH,
                     icon="mdi:bed",
                     entity_registry_enabled_default=False,
                 )
@@ -315,7 +324,7 @@ class LogicdataAppController(BedController):
                 ControllerStateSensorSpec(
                     key="logicdata_app_massage_mode",
                     translation_key="logicdata_app_massage_mode",
-                    state_key="logicdata_app_massage_mode",
+                    state_key=MASSAGE_MODE,
                     icon="mdi:sine-wave",
                 )
             )
@@ -324,9 +333,9 @@ class LogicdataAppController(BedController):
                 ControllerStateSensorSpec(
                     key="logicdata_app_alarm",
                     translation_key="logicdata_app_alarm",
-                    state_key="logicdata_app_alarm",
+                    state_key=ALARM,
                     icon="mdi:alarm",
-                    attribute_keys=("logicdata_app_alarm_config",),
+                    attribute_keys=(ALARM_CONFIG,),
                 )
             )
         return tuple(specs)
@@ -756,13 +765,13 @@ class LogicdataAppController(BedController):
         notification = profiles.parse_notification(self.profile, bytes(data))
         if notification is None:
             return
-        updates: dict[str, object] = {}
+        updates: list[StateUpdate] = []
         if notification.middle is not None:
             self._family_matches = notification.middle == (self._family == "p2")
-            updates["logicdata_app_family_match"] = self._family_matches
+            updates.append(FAMILY_MATCH(self._family_matches))
         if notification.light_on is not None and self.supports_lights:
             self._light_state["under_bed_lights_on"] = notification.light_on
-            updates.update(self._light_state)
+            updates.append(UNDER_BED_LIGHTS_ON(notification.light_on))
         if self.supports_massage:
             for zone, raw_level in (
                 ("head", notification.massage_back),
@@ -771,14 +780,16 @@ class LogicdataAppController(BedController):
                 if raw_level is not None and raw_level in WIRE_MASSAGE_LEVELS:
                     level = WIRE_MASSAGE_LEVELS.index(raw_level)
                     self._massage_state[f"{zone}_intensity"] = level
-                    updates[f"{zone}_intensity"] = level
+                    updates.append(massage_intensity(zone)(level))
         if notification.massage_mode_reported and self._reports_massage_mode:
-            updates["logicdata_app_massage_mode"] = notification.massage_mode
+            updates.append(MASSAGE_MODE(notification.massage_mode))
         if notification.alarm is not None and self.supports_clock_alarm:
-            updates["logicdata_app_alarm"] = notification.alarm.enabled
-            updates["logicdata_app_alarm_config"] = asdict(notification.alarm)
+            updates += [
+                ALARM(notification.alarm.enabled),
+                ALARM_CONFIG(asdict(notification.alarm)),
+            ]
         if updates:
-            self.forward_controller_state_updates(updates)
+            self.forward_controller_state_updates(*updates)
         if notification.clock_requested:
             idle = self._clock_task is None or self._clock_task.done()
             # Sleep Smart answers every request; MOTIONrelax drops one that

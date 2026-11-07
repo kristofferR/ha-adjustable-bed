@@ -15,6 +15,7 @@ from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING
 
 from ..codec import keeson as codec
+from ..controller_state import StateKey
 from ..execution import ExecutionCapabilities
 from ..furnimove_profiles import FurniMoveAction, get_furnimove_profile
 from .base import (
@@ -143,6 +144,11 @@ def _action_callback(row_index: int) -> MotorCommandCallable:
     return invoke
 
 
+def _state_key(name: str) -> StateKey[object]:
+    """FurniMove's published fields mirror its mixed-type local state."""
+    return StateKey[object](name)
+
+
 class FurniMoveController(BedController):
     """A complete app profile without cloud credentials or transport guesses."""
 
@@ -183,15 +189,14 @@ class FurniMoveController(BedController):
             "furnimove_massage_timer_minutes": 15,
             "furnimove_function_result": "idle",
         }
-        retained = getattr(coordinator, "controller_state", None)
-        if isinstance(retained, Mapping):
-            for key in ("furnimove_ubl", "furnimove_sync", "furnimove_child_lock"):
-                value = retained.get(key)
-                if type(value) is bool:
-                    self._state[key] = value
-            program = retained.get("furnimove_massage_program")
-            if type(program) is int and 0 <= program <= 4:
-                self._state["furnimove_massage_program"] = program
+        retained = coordinator.controller_state
+        for key in ("furnimove_ubl", "furnimove_sync", "furnimove_child_lock"):
+            value = retained.get(_state_key(key))
+            if type(value) is bool:
+                self._state[key] = value
+        program = retained.get(_state_key("furnimove_massage_program"))
+        if type(program) is int and 0 <= program <= 4:
+            self._state["furnimove_massage_program"] = program
 
     @property
     def execution(self) -> ExecutionCapabilities:
@@ -248,7 +253,7 @@ class FurniMoveController(BedController):
 
     def _publish(self, key: str, value: object) -> None:
         self._state[key] = value
-        self.forward_controller_state_update(key, value)
+        self.forward_controller_state_update(_state_key(key), value)
 
     def _clear_session(self) -> None:
         self._write_characteristic = self._feedback_characteristic = None
@@ -430,7 +435,7 @@ class FurniMoveController(BedController):
                     value = data[2] == 6
             if value is not None and (
                 value != self._state[state_key]
-                or type(self._coordinator.controller_state.get(state_key)) is not bool
+                or type(self._coordinator.controller_state.get(_state_key(state_key))) is not bool
             ):
                 self._publish(state_key, value)
 
@@ -438,7 +443,7 @@ class FurniMoveController(BedController):
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
         return tuple(
             ControllerStateBinarySensorSpec(
-                key, "under_bed_lights" if key == "furnimove_ubl" else key, key, icon
+                key, "under_bed_lights" if key == "furnimove_ubl" else key, _state_key(key), icon
             )
             for key, icon in (
                 ("furnimove_ubl", "mdi:led-strip-variant"),
@@ -455,7 +460,7 @@ class FurniMoveController(BedController):
             ControllerStateSensorSpec(
                 "furnimove_" + key,
                 "furnimove_" + key,
-                "furnimove_" + key,
+                _state_key("furnimove_" + key),
                 "mdi:information-outline",
             )
             for key in (

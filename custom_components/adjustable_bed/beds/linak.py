@@ -11,7 +11,7 @@ import logging
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from time import monotonic
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from bleak.exc import BleakError
 
@@ -34,8 +34,10 @@ from ..const import (
     LINAK_TIMER_CHAR_UUID,
     LINAK_TIMER_SERVICE_UUID,
 )
+from ..controller_state import AnyStateKey, StateKey
 from ..execution import ExecutionCapabilities
 from ..position_seek import PositionSeekPolicy, SeekSample
+from ..state_keys import LINAK_AUTOMATIC_DRIVE, LINAK_MODEL_VARIANT
 from .base import (
     POSITION_AXIS_COMMANDS,
     POSITION_UNIT_DEGREES,
@@ -66,6 +68,69 @@ if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+PROFILE: Final = StateKey[str]("linak_profile")
+ACTUATOR_MASK: Final = StateKey[int | None]("linak_actuator_mask")
+POSITION_AXES: Final = StateKey[list[str]]("linak_position_axes")
+ALARM_SUPPORTED: Final = StateKey[bool]("linak_alarm_supported")
+PROTOCOL_ERROR: Final = StateKey[str]("linak_protocol_error")
+PROTOCOL_ERROR_CODE: Final = StateKey[int]("linak_protocol_error_code")
+PROTOCOL_ERROR_PAYLOAD: Final = StateKey[str]("linak_protocol_error_payload")
+ALARM_STATUS: Final = StateKey[str]("linak_alarm_status")
+ALARM_TIMER_INDEX: Final = StateKey[int | None]("linak_alarm_timer_index")
+ALARM_ENABLED: Final = StateKey[bool | None]("linak_alarm_enabled")
+ALARM_SECONDS: Final = StateKey[int | None]("linak_alarm_seconds")
+ALARM_FIRST_ACTION: Final = StateKey[str | None]("linak_alarm_first_action")
+ALARM_LIFETIME: Final = StateKey[int | None]("linak_alarm_lifetime")
+ALARM_PAUSE: Final = StateKey[int | None]("linak_alarm_pause")
+ALARM_ERROR_CODE: Final = StateKey[int | None]("linak_alarm_error_code")
+POSITION_FEEDBACK_FAULT: Final = StateKey[bool]("linak_position_feedback_fault")
+FAULT_AXES: Final = StateKey[list[str]]("linak_fault_axes")
+
+
+@dataclass(frozen=True, slots=True)
+class _AxisKeys:
+    """Controller-state keys of one axis's reference output."""
+
+    reported_speed: StateKey[float]
+    raw_speed: StateKey[int]
+    speed_direction: StateKey[str]
+    extension: StateKey[float]
+    status_flags: StateKey[int]
+    sls: StateKey[bool]
+    end_position_up: StateKey[bool]
+    end_position_down: StateKey[bool]
+    position_lost: StateKey[bool]
+
+    @classmethod
+    def of(cls, axis: str) -> _AxisKeys:
+        prefix = f"linak_{axis}"
+        return cls(
+            StateKey[float](f"{prefix}_reported_speed"),
+            StateKey[int](f"{prefix}_raw_speed"),
+            StateKey[str](f"{prefix}_speed_direction"),
+            StateKey[float](f"{prefix}_extension"),
+            StateKey[int](f"{prefix}_status_flags"),
+            StateKey[bool](f"{prefix}_sls"),
+            StateKey[bool](f"{prefix}_end_position_up"),
+            StateKey[bool](f"{prefix}_end_position_down"),
+            StateKey[bool](f"{prefix}_position_lost"),
+        )
+
+    @property
+    def attributes(self) -> tuple[AnyStateKey, ...]:
+        """The speed sensor's attributes."""
+        return (
+            self.raw_speed,
+            self.speed_direction,
+            self.extension,
+            self.status_flags,
+            self.sls,
+            self.end_position_up,
+            self.end_position_down,
+            self.position_lost,
+        )
+
 
 # Live proxy connections can need more than six seconds before accepting writes.
 LINAK_CONTROL_READY_TIMEOUT_S = 15.0
@@ -586,17 +651,15 @@ class LinakController(BedController):
     def _publish_capability_state(self) -> None:
         """Publish capability state used by diagnostics entities."""
         self.forward_controller_state_updates(
-            {
-                "linak_profile": self._profile.value,
-                "linak_model_variant": (
-                    self._profile.value
-                    if self._profile is LinakProfile.PERFORMANCE
-                    else self._capabilities.model_variant.value
-                ),
-                "linak_actuator_mask": self._capabilities.actuator_mask,
-                "linak_position_axes": list(self._capabilities.position_axes),
-                "linak_alarm_supported": self._capabilities.timer_supported,
-            }
+            PROFILE(self._profile.value),
+            LINAK_MODEL_VARIANT(
+                self._profile.value
+                if self._profile is LinakProfile.PERFORMANCE
+                else self._capabilities.model_variant.value
+            ),
+            ACTUATOR_MASK(self._capabilities.actuator_mask),
+            POSITION_AXES(list(self._capabilities.position_axes)),
+            ALARM_SUPPORTED(self._capabilities.timer_supported),
         )
 
     def _has_service(self, uuid: str) -> bool:
@@ -741,11 +804,11 @@ class LinakController(BedController):
                 ControllerStateSensorSpec(
                     key="linak_protocol_error",
                     translation_key="linak_protocol_error",
-                    state_key="linak_protocol_error",
+                    state_key=PROTOCOL_ERROR,
                     icon="mdi:alert-circle-outline",
                     attribute_keys=(
-                        "linak_protocol_error_code",
-                        "linak_protocol_error_payload",
+                        PROTOCOL_ERROR_CODE,
+                        PROTOCOL_ERROR_PAYLOAD,
                     ),
                 )
             )
@@ -754,18 +817,9 @@ class LinakController(BedController):
                 ControllerStateSensorSpec(
                     key=f"linak_{axis}_reported_speed",
                     translation_key=f"linak_{axis}_reported_speed",
-                    state_key=f"linak_{axis}_reported_speed",
+                    state_key=_AxisKeys.of(axis).reported_speed,
                     icon="mdi:speedometer",
-                    attribute_keys=(
-                        f"linak_{axis}_raw_speed",
-                        f"linak_{axis}_speed_direction",
-                        f"linak_{axis}_extension",
-                        f"linak_{axis}_status_flags",
-                        f"linak_{axis}_sls",
-                        f"linak_{axis}_end_position_up",
-                        f"linak_{axis}_end_position_down",
-                        f"linak_{axis}_position_lost",
-                    ),
+                    attribute_keys=_AxisKeys.of(axis).attributes,
                     suggested_display_precision=3,
                 )
             )
@@ -774,16 +828,16 @@ class LinakController(BedController):
                 ControllerStateSensorSpec(
                     key="linak_alarm_status",
                     translation_key="linak_alarm_status",
-                    state_key="linak_alarm_status",
+                    state_key=ALARM_STATUS,
                     icon="mdi:alarm",
                     attribute_keys=(
-                        "linak_alarm_timer_index",
-                        "linak_alarm_enabled",
-                        "linak_alarm_seconds",
-                        "linak_alarm_first_action",
-                        "linak_alarm_lifetime",
-                        "linak_alarm_pause",
-                        "linak_alarm_error_code",
+                        ALARM_TIMER_INDEX,
+                        ALARM_ENABLED,
+                        ALARM_SECONDS,
+                        ALARM_FIRST_ACTION,
+                        ALARM_LIFETIME,
+                        ALARM_PAUSE,
+                        ALARM_ERROR_CODE,
                     ),
                 )
             )
@@ -800,9 +854,9 @@ class LinakController(BedController):
             ControllerStateBinarySensorSpec(
                 key="linak_position_feedback_fault",
                 translation_key="linak_position_feedback_fault",
-                state_key="linak_position_feedback_fault",
+                state_key=POSITION_FEEDBACK_FAULT,
                 icon="mdi:alert",
-                attribute_keys=("linak_fault_axes",),
+                attribute_keys=(FAULT_AXES,),
             ),
         )
 
@@ -914,19 +968,15 @@ class LinakController(BedController):
             return
         if error is None:
             self.forward_controller_state_updates(
-                {
-                    "linak_protocol_error": "none",
-                    "linak_protocol_error_code": 0,
-                    "linak_protocol_error_payload": "",
-                }
+                PROTOCOL_ERROR("none"),
+                PROTOCOL_ERROR_CODE(0),
+                PROTOCOL_ERROR_PAYLOAD(""),
             )
             return
         self.forward_controller_state_updates(
-            {
-                "linak_protocol_error": error.name,
-                "linak_protocol_error_code": error.code,
-                "linak_protocol_error_payload": error.payload.hex(),
-            }
+            PROTOCOL_ERROR(error.name),
+            PROTOCOL_ERROR_CODE(error.code),
+            PROTOCOL_ERROR_PAYLOAD(error.payload.hex()),
         )
 
     def _make_error_handler(self) -> Callable[[Any, bytearray], None]:
@@ -963,20 +1013,14 @@ class LinakController(BedController):
             return
         first_action = timer.first_action
         self.forward_controller_state_updates(
-            {
-                "linak_alarm_status": timer.status,
-                "linak_alarm_timer_index": timer.timer_index,
-                "linak_alarm_enabled": timer.enabled,
-                "linak_alarm_seconds": timer.seconds,
-                "linak_alarm_first_action": (
-                    first_action.action.value if first_action is not None else None
-                ),
-                "linak_alarm_lifetime": (
-                    first_action.lifetime if first_action is not None else None
-                ),
-                "linak_alarm_pause": first_action.pause if first_action is not None else None,
-                "linak_alarm_error_code": timer.error_code,
-            }
+            ALARM_STATUS(timer.status),
+            ALARM_TIMER_INDEX(timer.timer_index),
+            ALARM_ENABLED(timer.enabled),
+            ALARM_SECONDS(timer.seconds),
+            ALARM_FIRST_ACTION(first_action.action.value if first_action is not None else None),
+            ALARM_LIFETIME(first_action.lifetime if first_action is not None else None),
+            ALARM_PAUSE(first_action.pause if first_action is not None else None),
+            ALARM_ERROR_CODE(timer.error_code),
         )
 
     def _make_timer_handler(self) -> Callable[[Any, bytearray], None]:
@@ -1165,7 +1209,7 @@ class LinakController(BedController):
         spec = specs.get(position_key)
         if spec is None or spec.max_position <= 0:
             return None
-        raw_speed = self._coordinator.controller_state.get(f"linak_{spec.source_name}_raw_speed")
+        raw_speed = self._coordinator.controller_state.get(_AxisKeys.of(spec.source_name).raw_speed)
         if isinstance(raw_speed, bool) or not isinstance(raw_speed, (int, float)):
             return None
         if raw_speed >= 0:
@@ -1608,18 +1652,7 @@ class LinakController(BedController):
         reference: LinakReferenceState,
     ) -> None:
         """Publish the complete reference-output state without guessing units."""
-        prefix = f"linak_{source_name}"
-        updates: dict[str, Any] = {
-            f"{prefix}_reported_speed": reference.speed,
-            f"{prefix}_raw_speed": reference.raw_speed,
-            f"{prefix}_speed_direction": reference.speed_direction,
-            f"{prefix}_extension": reference.extension,
-            f"{prefix}_status_flags": reference.status_flags,
-            f"{prefix}_sls": reference.sls,
-            f"{prefix}_end_position_up": reference.end_position_up,
-            f"{prefix}_end_position_down": reference.end_position_down,
-            f"{prefix}_position_lost": reference.position_lost,
-        }
+        keys = _AxisKeys.of(source_name)
         current = self._coordinator.controller_state
         fault_axes = [
             axis
@@ -1627,12 +1660,22 @@ class LinakController(BedController):
             if (
                 reference.position_lost
                 if axis == source_name
-                else current.get(f"linak_{axis}_position_lost") is True
+                else current.get(_AxisKeys.of(axis).position_lost) is True
             )
         ]
-        updates["linak_position_feedback_fault"] = bool(fault_axes)
-        updates["linak_fault_axes"] = fault_axes
-        self.forward_controller_state_updates(updates)
+        self.forward_controller_state_updates(
+            keys.reported_speed(reference.speed),
+            keys.raw_speed(reference.raw_speed),
+            keys.speed_direction(reference.speed_direction),
+            keys.extension(reference.extension),
+            keys.status_flags(reference.status_flags),
+            keys.sls(reference.sls),
+            keys.end_position_up(reference.end_position_up),
+            keys.end_position_down(reference.end_position_down),
+            keys.position_lost(reference.position_lost),
+            POSITION_FEEDBACK_FAULT(bool(fault_axes)),
+            FAULT_AXES(fault_axes),
+        )
 
     def _handle_position_data(
         self,
@@ -2090,7 +2133,7 @@ class LinakController(BedController):
             LINAK_CONFIG_CHAR_UUID,
             build_automatic_drive(enabled),
         )
-        self.forward_controller_state_updates({"linak_automatic_drive": enabled})
+        self.forward_controller_state_updates(LINAK_AUTOMATIC_DRIVE(enabled))
 
     async def rename_device(self, name: str) -> None:
         """Write the modern app's raw Generic Access device name."""

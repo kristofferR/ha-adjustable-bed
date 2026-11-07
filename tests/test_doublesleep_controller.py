@@ -12,6 +12,7 @@ from custom_components.adjustable_bed import doublesleep_protocol as p
 from custom_components.adjustable_bed.beds.doublesleep import DoubleSleepController, Session
 from custom_components.adjustable_bed.doublesleep_services import Request
 from custom_components.adjustable_bed.doublesleep_state import Report
+from tests.state_helpers import state_writer
 from tests.test_doublesleep_protocol import NOW, json_notification
 
 
@@ -50,7 +51,7 @@ class Bed:
             cancel_command=asyncio.Event(),
             hass=SimpleNamespace(data={}, async_create_task=lambda coro: asyncio.create_task(coro)),
             record_command_trace=MagicMock(),
-            handle_controller_state_updates=self.states.update,
+            handle_controller_state_updates=state_writer(self.states),
         )
         self.bed = DoubleSleepController(
             self.coordinator, protocol=driver, model=model, session=Session()

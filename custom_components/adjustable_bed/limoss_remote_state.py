@@ -4,12 +4,16 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING, Final, TypedDict
 
 from .app_session import app_session
+from .controller_state import StateKey
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
+
+# Memory buttons rename when the controller publishes new slot names.
+LIMOSS_REMOTE_MEMORY_NAMES: Final = StateKey[tuple[str | None, ...]]("limoss_remote_memory_names")
 
 
 @dataclass(frozen=True, slots=True)

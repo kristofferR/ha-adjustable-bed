@@ -35,6 +35,7 @@ from custom_components.adjustable_bed.const import (
     KEESON_BASE_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from tests.state_helpers import published
 
 # -----------------------------------------------------------------------------
 # Test Fixtures
@@ -492,14 +493,12 @@ class TestCoolBaseAppVectors:
             expected["left"],
             expected["right"],
         )
-        controller._coordinator.handle_controller_state_updates.assert_called_with(
-            {
+        assert published(*controller._coordinator.handle_controller_state_updates.call_args.args) == {
                 STATE_LEFT_FAN: expected["left"],
                 STATE_RIGHT_FAN: expected["right"],
                 STATE_MASSAGE_MODE: expected["mode"],
                 STATE_LIGHT: expected["light"],
             }
-        )
 
     def test_out_of_range_values_keep_previous_state(self) -> None:
         controller = _controller()
@@ -593,9 +592,7 @@ class TestCoolBaseAppVectors:
         controller._parse_notification(_status(64, 1, 2, 3))
         controller.invalidate_diagnostics()
         assert controller.get_light_state() == {"is_on": None}
-        controller._coordinator.handle_controller_state_updates.assert_called_with(
-            {STATE_LEFT_FAN: None, STATE_RIGHT_FAN: None, STATE_MASSAGE_MODE: None, STATE_LIGHT: None}
-        )
+        assert published(*controller._coordinator.handle_controller_state_updates.call_args.args) == {STATE_LEFT_FAN: None, STATE_RIGHT_FAN: None, STATE_MASSAGE_MODE: None, STATE_LIGHT: None}
 
     @pytest.mark.parametrize(
         ("reported", "requested", "toggles"),

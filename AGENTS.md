@@ -211,6 +211,12 @@ A new app is normally a profile plus its vectors, not a new controller.
      Entity platforms read these directly, so a typo is a type error rather than a
      silently-wrong default. Do not invent a new capability by setting an
      undeclared attribute — add it to the base class first.
+   - Publish non-position state through declared keys, never raw strings:
+     `KEY: Final = StateKey[T]("name")` next to the controller, or in
+     `state_keys.py` when a platform or the coordinator reads it. Write with
+     `self.forward_controller_state_updates(KEY(value), ...)` and give specs the
+     same key. `tests/test_controller_state_keys.py` fails when a read key has
+     no writer.
    - Held and concurrent execution (#483, #516) is the profile's `execution`
      field, or an `execution` override on a standalone controller. Each
      declaration needs an evidence row in `tests/test_execution_capabilities.py`

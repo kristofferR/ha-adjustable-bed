@@ -16,6 +16,7 @@ from custom_components.adjustable_bed.codec.malouf import (
     parse_notification,
 )
 from custom_components.adjustable_bed.profiles.malouf import APP_PROFILES, MALOUF_APP_MODELS
+from tests.state_helpers import published
 
 
 def gatt_services(*transports: str) -> list[MagicMock]:
@@ -513,9 +514,8 @@ async def test_notification_subscription_raw_forward_state_dedup_and_no_clock_on
     ctrl._notification_handler(sender, payload)
     ctrl._notification_handler(sender, payload)
     assert raw.call_count == 2
-    ctrl._coordinator.handle_controller_state_updates.assert_called_once_with(
-        {"massage_remaining_minutes": 20, "underbed_light_on": True}
-    )
+    assert ctrl._coordinator.handle_controller_state_updates.call_count == 1
+    assert published(*ctrl._coordinator.handle_controller_state_updates.call_args.args) == {"massage_remaining_minutes": 20, "underbed_light_on": True}
     assert ctrl.get_light_state() == {"is_on": True}
     assert ctrl.get_massage_state() == {"remaining_minutes": 20}
     assert ctrl.controller_state_sensor_specs[0].state_key == "massage_remaining_minutes"
@@ -528,9 +528,8 @@ async def test_custom_notifications_do_not_claim_light_feedback() -> None:
     await ctrl.start_notify()
     sender = MagicMock(uuid=TRANSPORTS["okin_custom"].notify_characteristic)
     ctrl._notification_handler(sender, bytearray.fromhex("0000000000000000000002"))
-    ctrl._coordinator.handle_controller_state_updates.assert_called_once_with(
-        {"massage_remaining_minutes": 20}
-    )
+    assert ctrl._coordinator.handle_controller_state_updates.call_count == 1
+    assert published(*ctrl._coordinator.handle_controller_state_updates.call_args.args) == {"massage_remaining_minutes": 20}
     assert not ctrl.supports_light_state_feedback
     assert ctrl.get_light_state() == {}
 
@@ -886,7 +885,7 @@ def test_legacy_light_boolean_matches_artifact_ui_nonzero_selection(
     assert ctrl.get_light_state() == {"is_on": is_on}
     assert ctrl.protocol_diagnostics["underbed_light_status"] == raw
     assert (
-        ctrl._coordinator.handle_controller_state_updates.call_args.args[0]["underbed_light_on"]
+        published(*ctrl._coordinator.handle_controller_state_updates.call_args.args)["underbed_light_on"]
         is is_on
     )
 

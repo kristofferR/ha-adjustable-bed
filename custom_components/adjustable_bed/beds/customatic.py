@@ -12,6 +12,7 @@ from bleak.exc import BleakError
 
 from ..codec import okin_nframe as codec
 from ..codec.okin_nframe import SERVICE_UUID, WRITE_UUID
+from ..controller_state import StateKey
 from ..profiles.okin_nframe import (
     CUSTOMATIC_APP_HOLD_MS,
     CUSTOMATIC_MEMORY_KEYS,
@@ -34,6 +35,12 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 DEVICE_INFO_SERVICE: Final = "0000180a-0000-1000-8000-00805f9b34fb"
+
+
+def _info_key(field: str) -> StateKey[str]:
+    return StateKey[str](f"customatic_{field}")
+
+
 DEVICE_INFO_FIELDS: Final = (
     ("manufacturer", "00002a29-0000-1000-8000-00805f9b34fb"),
     ("hardware_revision", "00002a27-0000-1000-8000-00805f9b34fb"),
@@ -41,6 +48,8 @@ DEVICE_INFO_FIELDS: Final = (
     ("firmware_revision", "00002a26-0000-1000-8000-00805f9b34fb"),
     ("model", "00002a24-0000-1000-8000-00805f9b34fb"),
 )
+
+
 def _button_callback(action: str) -> MotorCommandCallable:
     async def invoke(controller: BedController) -> None:
         if not isinstance(controller, CustomaticController):
@@ -152,7 +161,7 @@ class CustomaticController(BedController):
                     _LOGGER.debug("Could not read Customatic %s", field, exc_info=True)
                     continue
                 self._device_info[field] = value
-                self.forward_controller_state_update(f"customatic_{field}", value)
+                self.forward_controller_state_update(_info_key(field), value)
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
@@ -160,7 +169,7 @@ class CustomaticController(BedController):
             ControllerStateSensorSpec(
                 key=f"customatic_{field}",
                 translation_key=f"customatic_{field}",
-                state_key=f"customatic_{field}",
+                state_key=_info_key(field),
                 icon="mdi:information-outline",
             )
             for field, _ in DEVICE_INFO_FIELDS

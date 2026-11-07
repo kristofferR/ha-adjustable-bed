@@ -9,8 +9,10 @@ from typing import TYPE_CHECKING
 
 from homeassistant.util import dt as dt_util
 
+from ..controller_state import StateKey
 from ..execution import ExecutionCapabilities
 from ..profiles.okin_nframe import ESHINE_PROFILES, ESHINE_REFRESH_MS
+from ..state_keys import UNDER_BED_LIGHTS_ON
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -56,6 +58,14 @@ def _action(action: str) -> MotorCommandCallable:
         await target.execute_action(action)
 
     return invoke
+
+
+def _group_key(group: str) -> StateKey[str | None]:
+    return StateKey[str | None](f"eshine_okin_{group}")
+
+
+def _group_data_key(group: str) -> StateKey[dict[str, StateValue] | None]:
+    return StateKey[dict[str, StateValue] | None](f"eshine_okin_{group}_data")
 
 
 class EshineOkinController(BedController):
@@ -237,9 +247,9 @@ class EshineOkinController(BedController):
             ControllerStateSensorSpec(
                 f"eshine_okin_{group}",
                 f"eshine_okin_{group}",
-                f"eshine_okin_{group}",
+                _group_key(group),
                 "mdi:alarm" if group == "alarm" else "mdi:vibrate",
-                attribute_keys=(f"eshine_okin_{group}_data",),
+                attribute_keys=(_group_data_key(group),),
             )
             for group in (("massage", "alarm") if self.supports_massage else ("alarm",))
         )
@@ -251,15 +261,11 @@ class EshineOkinController(BedController):
     def invalidate_diagnostics(self) -> None:
         self._observed.clear()
         self.forward_controller_state_updates(
-            dict.fromkeys(
-                (
-                    "eshine_okin_massage",
-                    "eshine_okin_massage_data",
-                    "eshine_okin_alarm",
-                    "eshine_okin_alarm_data",
-                    "under_bed_lights_on",
-                )
-            )
+            _group_key("massage")(None),
+            _group_data_key("massage")(None),
+            _group_key("alarm")(None),
+            _group_data_key("alarm")(None),
+            UNDER_BED_LIGHTS_ON(None),
         )
 
     def on_disconnect(self) -> None:
@@ -356,13 +362,13 @@ class EshineOkinController(BedController):
                 return
             group, state = result
             self._observed[group] = state
-            updates: dict[str, object] = {
-                f"eshine_okin_{group}": "on" if state["enabled"] else "off",
-                f"eshine_okin_{group}_data": dict(state),
-            }
+            updates = [
+                _group_key(group)("on" if state["enabled"] else "off"),
+                _group_data_key(group)(dict(state)),
+            ]
             if group == "massage" and self.supports_lights:
-                updates["under_bed_lights_on"] = state["light"]
-            self.forward_controller_state_updates(updates)
+                updates.append(UNDER_BED_LIGHTS_ON(state["light"] is True))
+            self.forward_controller_state_updates(*updates)
 
         try:
             async with self._ble_lock:

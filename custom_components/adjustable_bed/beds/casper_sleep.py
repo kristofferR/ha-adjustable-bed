@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
@@ -22,6 +22,7 @@ from ..casper_sleep_protocol import (
     mapping,
     wire_command,
 )
+from ..controller_state import StateKey, StateUpdate
 from .base import BedController, ControllerStateSensorSpec
 
 if TYPE_CHECKING:
@@ -30,6 +31,19 @@ if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+
+STATUS: Final = StateKey[str]("casper_sleep_status")
+INFO: Final = StateKey[dict[str, Json]]("casper_sleep_info")
+REPORT: Final = StateKey[Json]("casper_sleep_report")
+PART: Final = StateKey[Json]("casper_sleep_part")
+ERROR: Final = StateKey[str]("casper_sleep_error")
+REMOTE_STATUS: Final = StateKey[str]("casper_remote_status")
+
+
+def live_key(side: str, field: str) -> StateKey[object]:
+    """One side's live sensor field."""
+    return StateKey[object](f"casper_sleep_{side}_{field}")
 
 
 class CasperSleepController(BedController):
@@ -95,13 +109,13 @@ class CasperSleepController(BedController):
             ControllerStateSensorSpec(
                 "casper_sleep",
                 "casper_sleep",
-                "casper_sleep_status",
+                STATUS,
                 "mdi:sleep",
                 attribute_keys=(
-                    "casper_sleep_info",
-                    "casper_sleep_report",
-                    "casper_sleep_part",
-                    "casper_sleep_error",
+                    INFO,
+                    REPORT,
+                    PART,
+                    ERROR,
                 ),
             )
         ]
@@ -111,9 +125,9 @@ class CasperSleepController(BedController):
                     ControllerStateSensorSpec(
                         f"casper_sleep_{side}_{field}",
                         f"casper_sleep_{side.lower()}_{field}",
-                        f"casper_sleep_{side}_{field}",
+                        live_key(side, field),
                         "mdi:sleep",
-                        attribute_keys=(f"casper_sleep_{side}_valid",),
+                        attribute_keys=(live_key(side, "valid"),),
                     )
                 )
         return tuple(specs)
@@ -143,7 +157,7 @@ class CasperSleepController(BedController):
             raise ValueError("Sensor requires a supported service with write and notify")
         await self.client.start_notify(self._notify_char, self._on_notification)
         await self._send("s_time", Request("sensor_time"))
-        self.forward_controller_state_update("casper_sleep_status", "connected")
+        self.forward_controller_state_update(STATUS, "connected")
 
     async def stop_notify(self) -> None:
         if self.client and self.client.is_connected and self._notify_char:
@@ -223,7 +237,7 @@ class CasperSleepController(BedController):
             if self._pending is not None and not self._pending.done():
                 self._pending.set_result(data)
         except (ValueError, IndexError, OverflowError) as err:
-            self.forward_controller_state_update("casper_sleep_error", str(err))
+            self.forward_controller_state_update(ERROR, str(err))
             self._publish_live()
             if self._pending is not None and not self._pending.done():
                 self._pending.set_exception(err)
@@ -246,7 +260,7 @@ class CasperSleepController(BedController):
                 + f"-{r.part}"
             )
             self.forward_controller_state_update(
-                "casper_sleep_report", {"key": key, "data": report}
+                REPORT, {"key": key, "data": report}
             )
             return
         names = {
@@ -268,9 +282,9 @@ class CasperSleepController(BedController):
             for key in ("type", "ver"):
                 if info.get(key) is not None:
                     self._info[key] = info[key]
-            self.forward_controller_state_update("casper_sleep_info", dict(self._info))
+            self.forward_controller_state_update(INFO, dict(self._info))
         elif action in ("q_part", "s_part"):
-            self.forward_controller_state_update("casper_sleep_part", val)
+            self.forward_controller_state_update(PART, val)
         elif action == "q_realtime" and val is not None:
             self._live.feed(val)
             self._publish_live()
@@ -281,12 +295,11 @@ class CasperSleepController(BedController):
             self._receive.report_size = size if isinstance(size, int) else 0
 
     def _publish_live(self) -> None:
-        updates: dict[str, object] = {}
+        updates: list[StateUpdate] = []
         for side, state in self._live.state.items():
-            for key, value in state.items():
-                updates[f"casper_sleep_{side}_{key}"] = value
-            updates[f"casper_sleep_{side}_valid"] = self._live.valid[side]
-        self.forward_controller_state_updates(updates)
+            updates += [live_key(side, key)(value) for key, value in state.items()]
+            updates.append(live_key(side, "valid")(self._live.valid[side]))
+        self.forward_controller_state_updates(*updates)
 
     def validate_casper_base_request(self, request: Request) -> None:
         r = request
@@ -334,7 +347,7 @@ class CasperSleepController(BedController):
                 if generation == self._generation:
                     await self._query("q_report_allow", r)
             else:
-                self.forward_controller_state_update("casper_sleep_report", {})
+                self.forward_controller_state_update(REPORT, {})
         elif r.operation == "sensor_info":
             await self._query("s_time", r)
             await asyncio.sleep(0.1)
@@ -407,12 +420,12 @@ class CasperRemoteController(CasperSleepController):
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (
             ControllerStateSensorSpec(
-                "casper_remote", "casper_remote", "casper_remote_status", "mdi:remote"
+                "casper_remote", "casper_remote", REMOTE_STATUS, "mdi:remote"
             ),
         )
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
-        self.forward_controller_state_update("casper_remote_status", "connected")
+        self.forward_controller_state_update(REMOTE_STATUS, "connected")
 
     def validate_casper_base_request(self, request: Request) -> None:
         if request.operation != "remote_find":
@@ -420,4 +433,4 @@ class CasperRemoteController(CasperSleepController):
 
     async def async_execute_casper_base_request(self, request: Request) -> None:
         self.validate_casper_base_request(request)
-        self.forward_controller_state_update("casper_remote_status", "connected")
+        self.forward_controller_state_update(REMOTE_STATUS, "connected")

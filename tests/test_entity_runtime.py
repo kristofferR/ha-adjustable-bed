@@ -25,6 +25,7 @@ from custom_components.adjustable_bed.const import (
     SIDE_LEFT,
     SIDE_RIGHT,
 )
+from custom_components.adjustable_bed.controller_state import StateKey
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator, ChildEntryView
 from custom_components.adjustable_bed.entity import AdjustableBedEntity
 from custom_components.adjustable_bed.entity_runtime import EntityRuntime
@@ -122,7 +123,7 @@ async def test_view_state_subscriptions_and_connection_operations_follow_child(
     positions = []
     unsubscribe_state = runtime.register_controller_state_callback(states.append)
     unsubscribe_position = runtime.register_position_callback(positions.append)
-    child.handle_controller_state_update("test", 7)
+    child.handle_controller_state_update(StateKey[int]("test"), 7)
     child._handle_position_update("back", 12.0)
     assert runtime.controller_state["test"] == 7
     assert runtime.position_data["back"] == 12.0

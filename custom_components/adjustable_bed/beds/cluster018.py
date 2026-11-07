@@ -9,7 +9,7 @@ import math
 from collections.abc import Callable, Mapping
 from dataclasses import asdict, replace
 from functools import partial
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
@@ -57,6 +57,7 @@ from ..const import (
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
 )
+from ..controller_state import StateKey
 from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ..profiles.richmat import RICHMAT_CLASSIC
 from .base import (
@@ -86,6 +87,18 @@ async def _press(controller: BedController, node: int, long: bool = False) -> No
     if not isinstance(controller, Cluster018Controller):
         raise TypeError("This action requires the selected app controller")
     await controller.execute_action(node, long=long)
+
+
+STATUS: Final = StateKey[str]("cluster018_status")
+APP: Final = StateKey[str]("cluster018_app")
+LAYOUT: Final = StateKey[str]("cluster018_layout")
+STATE: Final = StateKey[dict[str, object]]("cluster018_state")
+PREFERENCES: Final = StateKey[dict[str, object]]("cluster018_preferences")
+REJECTION: Final = StateKey[str | None]("cluster018_rejection")
+
+
+def _selection_key(kind: str) -> StateKey[str | None]:
+    return StateKey[str | None]("cluster018_" + kind)
 
 
 class Cluster018Controller(BedController):
@@ -202,18 +215,18 @@ class Cluster018Controller(BedController):
     def _publish(self) -> None:
         state = asdict(self._receive)
         state["menu"] = sorted(self._receive.menu)
-        self.forward_controller_state_updates({
-            "cluster018_status": "ready" if self._session else "disconnected",
-            "cluster018_app": self.app,
-            "cluster018_layout": self.layout,
-            "cluster018_state": state,
-            "cluster018_preferences": dict(self._preferences),
-            "cluster018_rejection": self._rejection,
-            "cluster018_mode": str(self._mode),
-            "cluster018_program": "armed" if self._selection.armed else "recall",
-            "cluster018_hold": "hold" if self._selection.hold else "release",
-            "cluster018_head_foot": "head" if self._selection.head else "foot",
-        })
+        self.forward_controller_state_updates(
+            STATUS("ready" if self._session else "disconnected"),
+            APP(self.app),
+            LAYOUT(self.layout),
+            STATE(state),
+            PREFERENCES(dict(self._preferences)),
+            REJECTION(self._rejection),
+            _selection_key("mode")(str(self._mode)),
+            _selection_key("program")("armed" if self._selection.armed else "recall"),
+            _selection_key("hold")("hold" if self._selection.hold else "release"),
+            _selection_key("head_foot")("head" if self._selection.head else "foot"),
+        )
 
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
@@ -231,8 +244,8 @@ class Cluster018Controller(BedController):
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (ControllerStateSensorSpec(
-            "cluster018_status", "cluster018_status", "cluster018_status", "mdi:bed",
-            attribute_keys=("cluster018_app", "cluster018_layout", "cluster018_state", "cluster018_preferences", "cluster018_rejection"),
+            "cluster018_status", "cluster018_status", STATUS, "mdi:bed",
+            attribute_keys=(APP, LAYOUT, STATE, PREFERENCES, REJECTION),
         ),)
 
     def _notification(self, session: Transport, _sender: BleakGATTCharacteristic, data: bytearray) -> None:
@@ -598,7 +611,7 @@ class Cluster018Controller(BedController):
             async def selected(_controller: BedController, value: str, *, key: str = kind) -> None:
                 self._select(key, value)
 
-            specs.append(ControllerSelectSpec("cluster018_" + kind, "cluster018_" + kind, "cluster018_" + kind, options, selected, local_select_fn=local))
+            specs.append(ControllerSelectSpec("cluster018_" + kind, "cluster018_" + kind, _selection_key(kind), options, selected, local_select_fn=local))
         return tuple(specs)
 
     def _alarm_actions(self) -> dict[str, int]:

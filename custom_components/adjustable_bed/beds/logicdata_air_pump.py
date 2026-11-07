@@ -12,8 +12,9 @@ import asyncio
 import logging
 import unicodedata
 from collections.abc import Callable
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Final, cast
 
+from ..controller_state import StateKey
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -65,7 +66,7 @@ RENAME_OFFSETS_MS = (0, 50, 100)
 NAME_ALPHABET = frozenset("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZäöüÄÖÜß")
 NAME_MAX_CHARS = 20
 NAME_MAX_BYTES = 40
-PRESSURE_STATE = "logicdata_air_pump_pressure"
+PRESSURE_STATE: Final = StateKey[int | None]("logicdata_air_pump_pressure")
 _PREFIX = "logicdata_air_pump_"
 
 
@@ -187,8 +188,8 @@ class LogicdataAirPumpController(BedController):
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (
             ControllerStateSensorSpec(
-                key=PRESSURE_STATE,
-                translation_key=PRESSURE_STATE,
+                key="logicdata_air_pump_pressure",
+                translation_key="logicdata_air_pump_pressure",
                 state_key=PRESSURE_STATE,
                 icon="mdi:gauge",
             ),
@@ -310,13 +311,13 @@ class LogicdataAirPumpController(BedController):
         # The coordinator also calls this when it (re)schedules polling right
         # after start_notify, so keep the 800 ms anchor; stop_notify clears it.
         self._last_click = None
-        self.forward_controller_state_updates({PRESSURE_STATE: None})
+        self.forward_controller_state_updates(PRESSURE_STATE(None))
 
     def _notification_handler(self, sender: BleakGATTCharacteristic, data: bytearray) -> None:
         self.forward_raw_notification(sender.uuid, bytes(data))
         pressure = parse_pressure(bytes(data))
         if pressure is not None:
-            self.forward_controller_state_updates({PRESSURE_STATE: pressure})
+            self.forward_controller_state_updates(PRESSURE_STATE(pressure))
 
     def validate_device_rename(self, name: str) -> None:
         rename_frames(name)

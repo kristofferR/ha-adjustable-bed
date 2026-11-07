@@ -21,7 +21,7 @@ import contextlib
 import logging
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Final, cast
 
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -34,7 +34,18 @@ from ..const import (
     OCTO_PIN_KEEPALIVE_INTERVAL,
     OCTO_STAR2_CHAR_UUID,
 )
+from ..controller_state import StateKey
 from ..execution import ExecutionCapabilities
+from ..state_keys import (
+    AUTOMATIC_LIGHT,
+    LIGHT_INTENSITY,
+    OCTO_LIGHT_DURATION,
+    REMOTE_CONTROL_LOCK,
+    SYNCHRO_MODE,
+    UNDER_BED_LIGHTS_ON,
+    UNDER_BED_LIGHTS_RGB,
+    UNDER_BED_LIGHTS_RGBW,
+)
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -74,6 +85,11 @@ _CAPABILITY_SNAPSHOT_KEYS: tuple[str, ...] = (
     "capability_records",
     "device_info",
 )
+
+LIGHT_SENSITIVITY: Final = StateKey[str | None]("octo_light_sensitivity")
+PIN_FEATURE_ACTIVE: Final = StateKey[bool | None]("octo_pin_feature_active")
+PIN_SET: Final = StateKey[bool | None]("octo_pin_set")
+PIN_LOCKED: Final = StateKey[bool | None]("octo_pin_locked")
 
 # SYSTEM packet bytes for the PIN state machine (command[0] for a from-device
 # SYSTEM packet is 0x21 = SYSTEM 0x20 | from-device).
@@ -804,19 +820,17 @@ class OctoController(BedController, OctoPacketCodec):
             else None
         )
         self.forward_controller_state_updates(
-            {
-                "automatic_light": self._automatic_light_active,
-                "synchro_mode": self._synchro_active,
-                "remote_control_lock": self._remote_lock_active,
-                "octo_light_duration": self._light_duration_minutes,
-                "octo_light_sensitivity": (
-                    str(self._light_sensitivity) if self._light_sensitivity is not None else None
-                ),
-                "under_bed_lights_on": light_on,
-                "under_bed_lights_rgb": self._rgb_value(),
-                "under_bed_lights_rgbw": self._rgbw_value(),
-                "light_intensity": self._rgbwi_intensity(),
-            }
+            AUTOMATIC_LIGHT(self._automatic_light_active),
+            SYNCHRO_MODE(self._synchro_active),
+            REMOTE_CONTROL_LOCK(self._remote_lock_active),
+            OCTO_LIGHT_DURATION(self._light_duration_minutes),
+            LIGHT_SENSITIVITY(
+                str(self._light_sensitivity) if self._light_sensitivity is not None else None
+            ),
+            UNDER_BED_LIGHTS_ON(light_on),
+            UNDER_BED_LIGHTS_RGB(self._rgb_value()),
+            UNDER_BED_LIGHTS_RGBW(self._rgbw_value()),
+            LIGHT_INTENSITY(self._rgbwi_intensity()),
         )
 
     def _rgb_value(self) -> tuple[int, int, int] | None:
@@ -984,11 +998,9 @@ class OctoController(BedController, OctoPacketCodec):
 
     def _publish_pin_state(self) -> None:
         self.forward_controller_state_updates(
-            {
-                "octo_pin_feature_active": self._pin_feature_active,
-                "octo_pin_set": self._has_pin,
-                "octo_pin_locked": self._pin_locked,
-            }
+            PIN_FEATURE_ACTIVE(self._pin_feature_active),
+            PIN_SET(self._has_pin),
+            PIN_LOCKED(self._pin_locked),
         )
 
     async def _retry_pin_after_lock(self, generation: int) -> None:
@@ -1338,7 +1350,7 @@ class OctoController(BedController, OctoPacketCodec):
     def on_light_auto_off(self) -> None:
         """Publish the expected light expiry without sending a bed command."""
         if self.legacy_light_fallback:
-            self.forward_controller_state_updates({"under_bed_lights_on": False})
+            self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(False))
             return
         if not self.controller_entity_discovery_complete:
             return
@@ -1705,7 +1717,7 @@ class OctoController(BedController, OctoPacketCodec):
             ControllerSelectSpec(
                 key="octo_light_sensitivity",
                 translation_key="octo_light_sensitivity",
-                state_key="octo_light_sensitivity",
+                state_key=LIGHT_SENSITIVITY,
                 options=("6", "35", "85"),
                 select_fn=lambda ctrl, value: cast(OctoController, ctrl).set_light_sensitivity(
                     int(value)
@@ -1722,7 +1734,7 @@ class OctoController(BedController, OctoPacketCodec):
             ControllerNumberSpec(
                 key="octo_light_duration",
                 translation_key="octo_light_duration",
-                state_key="octo_light_duration",
+                state_key=OCTO_LIGHT_DURATION,
                 native_min_value=0,
                 native_max_value=60,
                 native_step=1,

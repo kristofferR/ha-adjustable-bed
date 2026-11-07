@@ -76,11 +76,13 @@ from custom_components.adjustable_bed.light import (
     AdjustableBedLight,
     _light_entities_for,
 )
+from custom_components.adjustable_bed.state_keys import AUTOMATIC_LIGHT
 from custom_components.adjustable_bed.switch import (
     SWITCH_DESCRIPTIONS,
     AdjustableBedSwitch,
     _switch_entities_for,
 )
+from tests.state_helpers import published
 
 _REAL_OCTO_DISCOVER_FEATURES = OctoController.discover_features
 
@@ -2924,7 +2926,7 @@ class TestOctoCapabilityControls:
         assert controller._light_duration_minutes == 0
         assert controller.light_auto_off_seconds is None
         assert (
-            coordinator.handle_controller_state_updates.call_args.args[0]["octo_light_duration"]
+            published(*coordinator.handle_controller_state_updates.call_args.args)["octo_light_duration"]
             == 0
         )
 
@@ -3303,7 +3305,7 @@ class TestOctoCapabilityControls:
                 assert len(timers) == 1 and timers[0][0] == 300
 
                 controller._publish_capability_state()
-                controller.forward_controller_state_updates({"automatic_light": True})
+                controller.forward_controller_state_updates(AUTOMATIC_LIGHT(True))
                 assert len(timers) == 1
                 assert timers[0][2].cancel.called is False
 
@@ -3475,7 +3477,7 @@ class TestCapabilitySnapshot:
         return SimpleNamespace(
             motor_count=2,
             entry=SimpleNamespace(data={}),
-            handle_controller_state_updates=lambda _updates: None,
+            handle_controller_state_updates=lambda *_updates: None,
         )
 
     def test_snapshot_roundtrip_restores_entity_gating(self):

@@ -34,6 +34,7 @@ from custom_components.adjustable_bed.redaction import (
 )
 from custom_components.adjustable_bed.services import async_register_services
 from tests.form_helpers import NEW_BED_ROUTES, finish_new_bed, start_new_bed
+from tests.state_helpers import state_writer
 
 
 @pytest.mark.parametrize("route", NEW_BED_ROUTES)
@@ -523,7 +524,7 @@ async def test_platform_entities_route_actions_and_show_only_published_state(has
     runtime.controller_state = {}
     runtime.entity_unique_id.side_effect = lambda key: "processor_" + key
     runtime.entity_translation_key.side_effect = lambda key: key
-    runtime.handle_controller_state_updates.side_effect = runtime.controller_state.update
+    runtime.handle_controller_state_updates.side_effect = state_writer(runtime.controller_state)
     selects = {e.translation_key: e for e in _select_entities_for(hass, runtime)}
     numbers = {e.translation_key: e for e in _number_entities_for(hass, runtime)}
     assert set(selects) >= {

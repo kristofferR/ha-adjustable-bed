@@ -19,6 +19,7 @@ from homeassistant.util import dt as dt_util
 
 from ..codec import keeson as codec
 from ..const import GLIDEAWAY_MOTION_MODELS
+from ..controller_state import StateKey
 from ..profiles import keeson as keeson_profiles
 from .base import (
     BedController,
@@ -37,8 +38,12 @@ NOTIFY_SERVICE: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
 NOTIFY_CHAR: Final = "0000ffe4-0000-1000-8000-00805f9b34fb"
 HOLD_INTERVAL: Final = 0.3
 MEMORY_HOLD_SECONDS: Final = 5.2
-STATE_TIMER: Final = "glideaway_motion_massage_timer"
-STATE_ALARM: Final = "glideaway_motion_alarm"
+STATE_TIMER: Final = StateKey[int | None]("glideaway_motion_massage_timer")
+STATE_TIMER_RAW: Final = StateKey[int | None]("glideaway_motion_massage_timer_raw")
+STATE_ALARM: Final = StateKey[str | None]("glideaway_motion_alarm")
+STATE_ALARM_HOUR: Final = StateKey[int | None]("glideaway_motion_alarm_hour")
+STATE_ALARM_MINUTE: Final = StateKey[int | None]("glideaway_motion_alarm_minute")
+STATE_ALARM_WAKE: Final = StateKey[str | None]("glideaway_motion_alarm_wake")
 WAKE_MODES: Final = {"none": 0x00, "memory_1": 0x11, "memory_2": 0x13}
 
 # Names follow the live model handlers and remote guide, not unused constants.
@@ -489,7 +494,7 @@ class GlideawayMotionController(BedController):
         elif self._timer_display != raw:
             self._timer_display = raw * 10
         self.forward_controller_state_updates(
-            {STATE_TIMER: self._timer_display, "glideaway_motion_massage_timer_raw": raw}
+            STATE_TIMER(self._timer_display), STATE_TIMER_RAW(raw)
         )
 
     def _on_notification(self, _sender: BleakGATTCharacteristic, data: bytearray) -> None:
@@ -515,14 +520,10 @@ class GlideawayMotionController(BedController):
             signed_hour = hour if hour < 128 else hour - 256
             signed_minute = minute if minute < 128 else minute - 256
             self.forward_controller_state_updates(
-                {
-                    STATE_ALARM: "on" if any((hour, minute, day, wake)) else "off",
-                    "glideaway_motion_alarm_hour": signed_hour,
-                    "glideaway_motion_alarm_minute": signed_minute,
-                    "glideaway_motion_alarm_wake": next(
-                        (k for k, v in WAKE_MODES.items() if v == wake), "none"
-                    ),
-                }
+                STATE_ALARM("on" if any((hour, minute, day, wake)) else "off"),
+                STATE_ALARM_HOUR(signed_hour),
+                STATE_ALARM_MINUTE(signed_minute),
+                STATE_ALARM_WAKE(next((k for k, v in WAKE_MODES.items() if v == wake), "none")),
             )
         elif prefix == b"\xf4\xfe" and len(packet) > 20:
             self._fragment = b""
@@ -541,44 +542,36 @@ class GlideawayMotionController(BedController):
         self._fragment = b""
         self._timer_display = 0
         self.forward_controller_state_updates(
-            dict.fromkeys(
-                (
-                    STATE_TIMER,
-                    "glideaway_motion_massage_timer_raw",
-                    STATE_ALARM,
-                    "glideaway_motion_alarm_hour",
-                    "glideaway_motion_alarm_minute",
-                    "glideaway_motion_alarm_wake",
-                )
-            )
+            STATE_TIMER(None),
+            STATE_TIMER_RAW(None),
+            STATE_ALARM(None),
+            STATE_ALARM_HOUR(None),
+            STATE_ALARM_MINUTE(None),
+            STATE_ALARM_WAKE(None),
         )
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         alarm = ControllerStateSensorSpec(
-            STATE_ALARM,
-            STATE_ALARM,
+            "glideaway_motion_alarm",
+            "glideaway_motion_alarm",
             STATE_ALARM,
             "mdi:alarm",
-            attribute_keys=(
-                "glideaway_motion_alarm_hour",
-                "glideaway_motion_alarm_minute",
-                "glideaway_motion_alarm_wake",
-            ),
+            attribute_keys=(STATE_ALARM_HOUR, STATE_ALARM_MINUTE, STATE_ALARM_WAKE),
         )
         timer = ControllerStateSensorSpec(
-            STATE_TIMER,
-            STATE_TIMER,
+            "glideaway_motion_massage_timer",
+            "glideaway_motion_massage_timer",
             STATE_TIMER,
             "mdi:timer-outline",
             "min",
-            attribute_keys=("glideaway_motion_massage_timer_raw",),
+            attribute_keys=(STATE_TIMER_RAW,),
         )
         return (alarm, timer) if self.supports_massage else (alarm,)
 
     @property
     def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        return frozenset({STATE_TIMER, STATE_ALARM}) - {
+        return frozenset({"glideaway_motion_massage_timer", "glideaway_motion_alarm"}) - {
             s.key for s in self.controller_state_sensor_specs
         }
 

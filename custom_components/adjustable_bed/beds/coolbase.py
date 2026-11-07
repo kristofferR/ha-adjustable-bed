@@ -23,7 +23,7 @@ import asyncio
 import contextlib
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Final, cast
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
@@ -34,6 +34,7 @@ from ..const import (
     KEESON_BASE_SERVICE_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
 )
+from ..controller_state import StateKey
 from ..profiles import keeson as keeson_profiles
 from .base import BedController, ControllerButtonSpec, ControllerStateSensorSpec
 
@@ -52,10 +53,10 @@ STATUS_REPLY_LENGTH = 28
 # How long an on/off light request waits for a reply to its own status query.
 _LIGHT_STATE_WAIT = 1.0
 
-STATE_LEFT_FAN = "coolbase_left_fan_level"
-STATE_RIGHT_FAN = "coolbase_right_fan_level"
-STATE_MASSAGE_MODE = "coolbase_massage_mode"
-STATE_LIGHT = "coolbase_light_on"
+STATE_LEFT_FAN: Final = StateKey[int | None]("coolbase_left_fan_level")
+STATE_RIGHT_FAN: Final = StateKey[int | None]("coolbase_right_fan_level")
+STATE_MASSAGE_MODE: Final = StateKey[int | None]("coolbase_massage_mode")
+STATE_LIGHT: Final = StateKey[bool | None]("coolbase_light_on")
 
 
 class CoolBaseCommands:
@@ -239,10 +240,14 @@ class CoolBaseController(BedController):
         if self._dewert_okin_profile:
             return ()
         return (
-            ControllerStateSensorSpec(STATE_LEFT_FAN, STATE_LEFT_FAN, STATE_LEFT_FAN, "mdi:fan"),
-            ControllerStateSensorSpec(STATE_RIGHT_FAN, STATE_RIGHT_FAN, STATE_RIGHT_FAN, "mdi:fan"),
             ControllerStateSensorSpec(
-                STATE_MASSAGE_MODE, STATE_MASSAGE_MODE, STATE_MASSAGE_MODE, "mdi:sine-wave"
+                "coolbase_left_fan_level", "coolbase_left_fan_level", STATE_LEFT_FAN, "mdi:fan"
+            ),
+            ControllerStateSensorSpec(
+                "coolbase_right_fan_level", "coolbase_right_fan_level", STATE_RIGHT_FAN, "mdi:fan"
+            ),
+            ControllerStateSensorSpec(
+                "coolbase_massage_mode", "coolbase_massage_mode", STATE_MASSAGE_MODE, "mdi:sine-wave"
             ),
         )
 
@@ -251,7 +256,9 @@ class CoolBaseController(BedController):
         """Drop Cool Base state sensors if the entry resolves to the DewertOKIN profile."""
         if not self._dewert_okin_profile:
             return frozenset()
-        return frozenset({STATE_LEFT_FAN, STATE_RIGHT_FAN, STATE_MASSAGE_MODE})
+        return frozenset(
+            {"coolbase_left_fan_level", "coolbase_right_fan_level", "coolbase_massage_mode"}
+        )
 
     @property
     def requires_notification_channel(self) -> bool:
@@ -276,7 +283,7 @@ class CoolBaseController(BedController):
         self._status_received.clear()
         if not self._dewert_okin_profile:
             self.forward_controller_state_updates(
-                {STATE_LEFT_FAN: None, STATE_RIGHT_FAN: None, STATE_MASSAGE_MODE: None, STATE_LIGHT: None}
+                STATE_LEFT_FAN(None), STATE_RIGHT_FAN(None), STATE_MASSAGE_MODE(None), STATE_LIGHT(None)
             )
 
     def _build_command(self, cmd0: int = 0, cmd1: int = 0, cmd2: int = 0, cmd3: int = 0) -> bytes:
@@ -407,12 +414,10 @@ class CoolBaseController(BedController):
         self._status_received.set()
         if not self._dewert_okin_profile:
             self.forward_controller_state_updates(
-                {
-                    STATE_LEFT_FAN: self._left_fan_level,
-                    STATE_RIGHT_FAN: self._right_fan_level,
-                    STATE_MASSAGE_MODE: self._massage_level,
-                    STATE_LIGHT: self._light_on,
-                }
+                STATE_LEFT_FAN(self._left_fan_level),
+                STATE_RIGHT_FAN(self._right_fan_level),
+                STATE_MASSAGE_MODE(self._massage_level),
+                STATE_LIGHT(self._light_on),
             )
 
         _LOGGER.debug(

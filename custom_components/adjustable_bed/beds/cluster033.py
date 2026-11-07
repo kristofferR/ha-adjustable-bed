@@ -9,12 +9,13 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Final, cast
 
 from homeassistant.util import dt as dt_util
 
 from ..alarm_table import AlarmTableSchedule, AlarmTableScheduleSpec
 from ..codec import keeson as codec
+from ..controller_state import StateKey
 from ..profiles.keeson import AppAction, AppProfile
 from .base import (
     BedController,
@@ -53,6 +54,9 @@ def name_frame(name: str, *, max_units: int = 15) -> bytes:
     if not name or units > min(max_units, 15):
         raise ValueError(f"Use a nonempty device name of at most {min(max_units, 15)} UTF-16 units")
     return codec.rename(name.encode("utf-8")[:units])
+
+
+APP_TIMER_STATUS: Final = StateKey[int | None]("app_timer_status")
 
 
 class AppController(BedController):
@@ -207,7 +211,7 @@ class AppController(BedController):
             return ()
         return (
             ControllerStateSensorSpec(
-                "app_timer_status", "app_timer_status", "app_timer_status", "mdi:timer-outline"
+                "app_timer_status", "app_timer_status", APP_TIMER_STATUS, "mdi:timer-outline"
             ),
         )
 
@@ -579,4 +583,4 @@ class AppController(BedController):
         status = self._timer_byte(data)
         if status in (255, 1, 2, 3):
             self._timer_status = -1 if status == 255 else status
-            self.forward_controller_state_updates({"app_timer_status": self._timer_status})
+            self.forward_controller_state_updates(APP_TIMER_STATUS(self._timer_status))

@@ -22,6 +22,7 @@ from custom_components.adjustable_bed.const import (
     disconnect_after_command_default_enabled,
 )
 from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+from tests.state_helpers import published
 
 # All ten P4 command rows, in report order.
 ROWS = [
@@ -163,7 +164,7 @@ async def test_rename_sends_three_phases_at_0_50_100_ms(coordinator, waits):
 async def test_pressure_polls_after_800_ms_then_every_500_ms(coordinator):
     controller = LogicdataAirPumpController(coordinator)
     updates: list[dict] = []
-    controller.forward_controller_state_updates = updates.append
+    controller.forward_controller_state_updates = lambda *values: updates.append(published(*values))
     sleeps: list[float] = []
 
     async def sleep(seconds):

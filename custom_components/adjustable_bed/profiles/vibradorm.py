@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from typing import ClassVar, Final, Literal
 
 from ..codec import vibradorm as codec
+from ..controller_state import StateKey
 from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 
 # ---------------------------------------------------------------------------
@@ -142,6 +143,13 @@ VMAT_METADATA_FIELDS: Final = (
     "revision_string",
     "variant",
 )
+
+
+def vibradorm_app_metadata_key(field: str) -> StateKey[str | None]:
+    """Controller-state key of one onboarding metadata field."""
+    return StateKey[str | None](f"vibradorm_app_{field}")
+
+
 # Field, request, reply prefix and reply timeout (s) of each VMAT onboarding stage.
 VMAT_QUERY_STAGES: Final = (
     ("xmc_status", codec.command(0x01B3, b"\x4c\x01"), bytes.fromhex("21b3"), 2.0),

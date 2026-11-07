@@ -10,13 +10,14 @@ import asyncio
 from collections.abc import Callable, Mapping, Sequence
 from datetime import timedelta
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Final, Literal, cast
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
 from ..codec import malouf as codec
 from ..codec.malouf import TRANSPORTS, TransportKey
+from ..controller_state import StateKey, StateUpdate
 from ..profiles.malouf import APP_PROFILES, MALOUF_APP_MODELS, Route
 from .base import (
     BedController,
@@ -41,6 +42,10 @@ def _app_callback(action: str) -> MotorCommandCallable:
         await controller.execute_app_control(action)
 
     return invoke
+
+
+MASSAGE_REMAINING_MINUTES: Final = StateKey[int | None]("massage_remaining_minutes")
+UNDERBED_LIGHT_ON: Final = StateKey[bool]("underbed_light_on")
 
 
 class MaloufAppController(BedController):
@@ -770,7 +775,7 @@ class MaloufAppController(BedController):
                 ControllerStateSensorSpec(
                     "malouf_massage_remaining",
                     "malouf_massage_remaining",
-                    "massage_remaining_minutes",
+                    MASSAGE_REMAINING_MINUTES,
                     "mdi:timer-outline",
                     native_unit_of_measurement="min",
                 ),
@@ -810,17 +815,17 @@ class MaloufAppController(BedController):
         state = codec.parse_notification(self._transport, bytes(data))
         if state is None:
             return
-        updates: dict[str, int | bool] = {}
+        updates: list[StateUpdate] = []
         if state.massage_remaining_minutes != self._massage_remaining:
             self._massage_remaining = state.massage_remaining_minutes
-            updates["massage_remaining_minutes"] = self._massage_remaining
+            updates.append(MASSAGE_REMAINING_MINUTES(self._massage_remaining))
         if self._transport != "okin_custom" and state.light_status != self._light_status:
             self._light_status = state.light_status
             # RemoteFragment.setLightStatus selects the light for every
             # nonzero integer, including signed legacy notification values.
-            updates["underbed_light_on"] = bool(self._light_status)
+            updates.append(UNDERBED_LIGHT_ON(bool(self._light_status)))
         if updates:
-            self.forward_controller_state_updates(updates)
+            self.forward_controller_state_updates(*updates)
 
     def get_massage_state(self) -> dict[str, object]:
         return (

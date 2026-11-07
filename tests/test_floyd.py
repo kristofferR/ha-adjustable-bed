@@ -28,6 +28,7 @@ def floyd(mock_bleak_client: MagicMock) -> FloydController:
         motor_pulse_delay_ms=1, has_massage=True,
         entry=SimpleNamespace(data={CONF_KAIDI_ROOM_ID: 0x12345678, CONF_KAIDI_PRODUCT_ID: 139}),
         record_command_trace=MagicMock(), handle_controller_state_update=MagicMock(),
+        controller_state={},
     )
     controller = FloydController(coordinator)
     controller._session_ready = True

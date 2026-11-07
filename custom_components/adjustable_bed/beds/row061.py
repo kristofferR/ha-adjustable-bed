@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from ..codec import richmat as codec
+from ..controller_state import StateKey, StateUpdate
 from ..row061_profiles import Field, fields, profiles
 from ..row061_protocol import AlarmRequest
 from .base import (
@@ -18,7 +19,9 @@ from .base import (
 from .richmat_mh import (
     ANGLE_KEYS,
     INTENSITY_KEYS,
+    LIGHT_TIMER_KEY,
     LIGHT_TIMER_MINUTES_KEY,
+    MOTOR_MODE_KEY,
     Axis,
     Control,
     Features,
@@ -121,6 +124,20 @@ def load_app_model(app: str, model_id: str) -> Model | None:
         bool(f.get("motorMap")),
     )
     return Model(app, model_id, tuple(Control(*c) for c in row["controls"]), feature)
+
+
+MUSIC_STATUS: Final = StateKey[str]("row061_music_status")
+MUSIC_VALUES: Final = StateKey[dict[str, object]]("row061_music_values")
+CALENDAR_ALARMS: Final = StateKey[dict[int, dict[str, int]]]("row061_calendar_alarms")
+CALENDAR_ALARM_COUNT: Final = StateKey[int]("row061_calendar_alarm_count")
+
+
+def _mattress_alarm_key(side: str) -> StateKey[str]:
+    return StateKey[str](f"row061_mattress_{side}_alarm")
+
+
+def _mattress_setting_key(side: str, setting: str) -> StateKey[str | None]:
+    return StateKey[str | None](f"row061_mattress_{side}_{setting}")
 
 
 class AppClassifier(Classifier):
@@ -393,7 +410,7 @@ class Row061Controller(RichmatMhController):
         specs = super().controller_number_specs
         if self._light_page() != "btn_led":
             return specs
-        return tuple(s for s in specs if s.key != "richmat_mh_light_timer") + (
+        return tuple(s for s in specs if s.key != LIGHT_TIMER_KEY) + (
             ControllerNumberSpec(
                 LIGHT_TIMER_MINUTES_KEY,
                 LIGHT_TIMER_MINUTES_KEY,
@@ -520,9 +537,7 @@ class Row061Controller(RichmatMhController):
                 values["volume" if raw[2] == 0xD1 else "intensity"] = (
                     raw[3] - 256 if raw[3] > 127 else raw[3]
                 )
-            self.forward_controller_state_updates(
-                {"row061_music_status": "reported", "row061_music_values": values}
-            )
+            self.forward_controller_state_updates(MUSIC_STATUS("reported"), MUSIC_VALUES(values))
             return
         if event.kind == "extended":
             self._extended(bytes.fromhex(event.data))
@@ -576,10 +591,8 @@ class Row061Controller(RichmatMhController):
 
     def _publish_calendar_alarms(self) -> None:
         self.forward_controller_state_updates(
-            {
-                "row061_calendar_alarms": dict(self._calendar_alarms),
-                "row061_calendar_alarm_count": len(self._calendar_alarms),
-            }
+            CALENDAR_ALARMS(dict(self._calendar_alarms)),
+            CALENDAR_ALARM_COUNT(len(self._calendar_alarms)),
         )
 
     async def set_angle(self, bits: int, angle: int) -> None:
@@ -606,7 +619,7 @@ class Row061Controller(RichmatMhController):
         )
         await self.write_command(frame)
         self._motor_mode = option
-        self.forward_controller_state_update("richmat_mh_motor_mode", option)
+        self.forward_controller_state_update(MOTOR_MODE_KEY, option)
 
     async def write_massage_intensity(self, zone: str, value: int) -> None:
         spec = next((x for x in self._intensities() if x[0] == zone), None)
@@ -644,23 +657,25 @@ class Row061Controller(RichmatMhController):
             return
         self._normal_values[raw[1], raw[2]] = raw[3]
         if raw[2] == 0x0B:
-            key = f"row061_mattress_{'left' if raw[1] == 1 else 'right'}_alarm"
             self.forward_controller_state_update(
-                key, f"{raw[5]:02d}:{raw[6]:02d}" if len(raw) == 8 and raw[3] else "off"
+                _mattress_alarm_key("left" if raw[1] == 1 else "right"),
+                f"{raw[5]:02d}:{raw[6]:02d}" if len(raw) == 8 and raw[3] else "off",
             )
         self._publish_normal()
 
     def _publish_normal(self) -> None:
         from ..row061_protocol import NORMAL_SETTINGS
 
-        values: dict[str, object] = {}
+        values: list[StateUpdate] = []
         for side, side_no in (("left", 1), ("right", 2)):
             for setting, (code, options) in NORMAL_SETTINGS.items():
                 raw = self._normal_values.get((side_no, code))
-                values[f"row061_mattress_{side}_{setting}"] = next(
-                    (name for name, value in options.items() if value == raw), None
+                values.append(
+                    _mattress_setting_key(side, setting)(
+                        next((name for name, value in options.items() if value == raw), None)
+                    )
                 )
-        self.forward_controller_state_updates(values)
+        self.forward_controller_state_updates(*values)
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
@@ -670,9 +685,9 @@ class Row061Controller(RichmatMhController):
                 ControllerStateSensorSpec(
                     "row061_music_status",
                     "row061_music_status",
-                    "row061_music_status",
+                    MUSIC_STATUS,
                     "mdi:music",
-                    attribute_keys=("row061_music_values",),
+                    attribute_keys=(MUSIC_VALUES,),
                 )
             )
         if self._calendar_page():
@@ -680,14 +695,14 @@ class Row061Controller(RichmatMhController):
                 ControllerStateSensorSpec(
                     "row061_calendar_alarms",
                     "row061_calendar_alarms",
-                    "row061_calendar_alarm_count",
+                    CALENDAR_ALARM_COUNT,
                     "mdi:alarm",
-                    attribute_keys=("row061_calendar_alarms",),
+                    attribute_keys=(CALENDAR_ALARMS,),
                 )
             )
         if self._normal_ready:
             for side in ("left", "right"):
-                key = f"row061_mattress_{side}_alarm"
+                key = _mattress_alarm_key(side)
                 specs.append(ControllerStateSensorSpec(key, key, key, "mdi:alarm"))
         return tuple(specs)
 
@@ -699,7 +714,7 @@ class Row061Controller(RichmatMhController):
         if self._normal_ready:
             for side in ("left", "right"):
                 for setting, (_code, options) in NORMAL_SETTINGS.items():
-                    key = f"row061_mattress_{side}_{setting}"
+                    key = _mattress_setting_key(side, setting)
                     specs.append(
                         ControllerSelectSpec(
                             key,

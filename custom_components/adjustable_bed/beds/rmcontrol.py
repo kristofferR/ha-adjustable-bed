@@ -19,6 +19,7 @@ from homeassistant.util import dt as dt_util
 
 from ..codec import richmat as codec
 from ..const import RICHMAT_PROTOCOL_SINGLE, RICHMAT_PROTOCOL_WILINKE, RichmatFeatures
+from ..controller_state import StateKey
 from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ..richmat_profiles import RichmatAction, get_product_profile
 from ..rmcontrol_protocol import (
@@ -40,6 +41,7 @@ from ..rmcontrol_protocol import (
     query_repeat_alarms,
     query_sleep_advertisement,
 )
+from ..state_keys import LIGHT_TIMER_OPTION, UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
 from .base import (
     BedController,
     ControllerStateBinarySensorSpec,
@@ -108,6 +110,11 @@ def _is_transport_action(action: RichmatAction) -> bool:
     return action.action not in _LOCAL_ACTIONS and not action.action.startswith(
         (_PREFIX + "Title", "deviceFunctionSofa")
     )
+
+
+def _state_key(name: str) -> StateKey[StateValue | None]:
+    """A reported ``rmcontrol_<kind>_<field>`` value; ``None`` clears it."""
+    return StateKey[StateValue | None](name)
 
 
 class RmcontrolController(RichmatController):
@@ -727,11 +734,17 @@ class RmcontrolController(RichmatController):
             for name, value in notification.values.items()
         }
         self._reported_state.update(updates)
-        forwarded: dict[str, StateValue | None] = dict(updates)
+        forwarded = [_state_key(name)(value) for name, value in updates.items()]
         if notification.kind == "rgb" and "rgb" in notification.values:
-            forwarded["under_bed_lights_rgb"] = notification.values["rgb"]
+            rgb = notification.values["rgb"]
+            # The light treats anything but three channels as unknown.
+            forwarded.append(
+                UNDER_BED_LIGHTS_RGB(
+                    (rgb[0], rgb[1], rgb[2]) if isinstance(rgb, tuple) and len(rgb) == 3 else None
+                )
+            )
         if notification.kind in ("rgb", "white_light") and "on" in notification.values:
-            forwarded["under_bed_lights_on"] = notification.values["on"]
+            forwarded.append(UNDER_BED_LIGHTS_ON(bool(notification.values["on"])))
         if notification.kind == "light_timer":
             seconds = notification.values.get("seconds")
             option = None
@@ -739,9 +752,9 @@ class RmcontrolController(RichmatController):
                 option = "Always On"
             elif isinstance(seconds, int) and 60 <= seconds <= 900 and seconds % 60 == 0:
                 option = f"{seconds // 60} min"
-            forwarded["light_timer_option"] = option
-        self._forwarded_state_keys.update(forwarded)
-        self.forward_controller_state_updates(forwarded)
+            forwarded.append(LIGHT_TIMER_OPTION(option))
+        self._forwarded_state_keys.update(updates)
+        self.forward_controller_state_updates(*forwarded)
 
     @property
     def requires_notification_channel(self) -> bool:
@@ -792,11 +805,11 @@ class RmcontrolController(RichmatController):
             ControllerStateSensorSpec(
                 key="rmcontrol_" + key,
                 translation_key="rmcontrol_" + key,
-                state_key="rmcontrol_" + field,
+                state_key=_state_key("rmcontrol_" + field),
                 icon="mdi:information-outline",
                 native_unit_of_measurement=unit,
                 attribute_keys=tuple(
-                    "rmcontrol_repeat_alarm_" + name
+                    _state_key("rmcontrol_repeat_alarm_" + name)
                     for name in (
                         "record_flag",
                         "hour",
@@ -824,7 +837,7 @@ class RmcontrolController(RichmatController):
             ControllerStateBinarySensorSpec(
                 key="rmcontrol_" + key,
                 translation_key="rmcontrol_" + key,
-                state_key="rmcontrol_" + field,
+                state_key=_state_key("rmcontrol_" + field),
                 icon="mdi:information-outline",
             )
             for key, field in fields
@@ -864,9 +877,13 @@ class RmcontrolController(RichmatController):
         previous_keys = self._forwarded_state_keys | {
             key for key in self._coordinator.controller_state if key.startswith("rmcontrol_")
         }
-        previous_keys.update(("under_bed_lights_rgb", "under_bed_lights_on", "light_timer_option"))
         self._forwarded_state_keys = set()
-        self.forward_controller_state_updates(dict.fromkeys(previous_keys))
+        self.forward_controller_state_updates(
+            *(_state_key(name)(None) for name in previous_keys),
+            UNDER_BED_LIGHTS_RGB(None),
+            UNDER_BED_LIGHTS_ON(None),
+            LIGHT_TIMER_OPTION(None),
+        )
         self._notify_callback = callback
 
         def receive(_sender: object, data: bytearray) -> None:
@@ -985,7 +1002,9 @@ class RmcontrolController(RichmatController):
             }
             for key in previous_keys:
                 self._reported_state.pop(key)
-            self.forward_controller_state_updates(dict.fromkeys(previous_keys))
+            self.forward_controller_state_updates(
+                *(_state_key(name)(None) for name in previous_keys)
+            )
         await self.write_command(frame)
 
     async def rmcontrol_query_alarms(self) -> None:
@@ -997,7 +1016,9 @@ class RmcontrolController(RichmatController):
         for key in previous_keys:
             self._reported_state.pop(key)
         if previous_keys:
-            self.forward_controller_state_updates(dict.fromkeys(previous_keys))
+            self.forward_controller_state_updates(
+                *(_state_key(name)(None) for name in previous_keys)
+            )
         await self.write_command(query_repeat_alarms())
 
     async def rmcontrol_sync_alarm_time(self, now: datetime) -> None:

@@ -18,12 +18,14 @@ import contextlib
 import logging
 from collections import deque
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Final
 
 from bleak.exc import BleakError
 
 from ..const import REVERIE_BACK_MAX_ANGLE, REVERIE_CHAR_UUID
+from ..controller_state import StateKey
 from ..execution import ExecutionCapabilities
+from ..state_keys import massage_zone_intensity
 from .base import (
     POSITION_UNIT_DEGREES,
     BedController,
@@ -43,6 +45,13 @@ if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+
+HEAD_POSITION: Final = StateKey[int]("reverie_head_position")
+FOOT_POSITION: Final = StateKey[int]("reverie_foot_position")
+MASSAGE_HEAD_INTENSITY: Final = massage_zone_intensity("head")
+MASSAGE_FOOT_INTENSITY: Final = massage_zone_intensity("foot")
+WAVE_LEVEL: Final = StateKey[int]("reverie_wave_level")
 
 
 class ReverieCommands:
@@ -487,13 +496,11 @@ class ReverieController(BedController):
         self._massage_head_level = head_wave
         self._massage_foot_level = foot_wave
         self.forward_controller_state_updates(
-            {
-                "reverie_head_position": head_position,
-                "reverie_foot_position": foot_position,
-                "massage_head_intensity": head_wave,
-                "massage_foot_intensity": foot_wave,
-                "reverie_wave_level": self._massage_wave_level,
-            }
+            HEAD_POSITION(head_position),
+            FOOT_POSITION(foot_position),
+            MASSAGE_HEAD_INTENSITY(head_wave),
+            MASSAGE_FOOT_INTENSITY(foot_wave),
+            WAVE_LEVEL(self._massage_wave_level),
         )
 
         if self._notify_callback:
@@ -1036,11 +1043,9 @@ class ReverieController(BedController):
         self._massage_foot_level = 0
         self._massage_wave_level = 0
         self.forward_controller_state_updates(
-            {
-                "massage_head_intensity": 0,
-                "massage_foot_intensity": 0,
-                "reverie_wave_level": 0,
-            }
+            MASSAGE_HEAD_INTENSITY(0),
+            MASSAGE_FOOT_INTENSITY(0),
+            WAVE_LEVEL(0),
         )
 
     async def massage_head_up(self) -> None:
@@ -1052,7 +1057,7 @@ class ReverieController(BedController):
             self._build_command(ReverieCommands.massage_head(level))
         )
         self._massage_head_level = level
-        self.forward_controller_state_update("massage_head_intensity", self._massage_head_level)
+        self.forward_controller_state_update(MASSAGE_HEAD_INTENSITY, self._massage_head_level)
 
     async def massage_head_down(self) -> None:
         """Decrease head massage intensity."""
@@ -1063,7 +1068,7 @@ class ReverieController(BedController):
             self._build_command(ReverieCommands.massage_head(level))
         )
         self._massage_head_level = level
-        self.forward_controller_state_update("massage_head_intensity", self._massage_head_level)
+        self.forward_controller_state_update(MASSAGE_HEAD_INTENSITY, self._massage_head_level)
 
     async def massage_foot_up(self) -> None:
         """Increase foot massage intensity."""
@@ -1074,7 +1079,7 @@ class ReverieController(BedController):
             self._build_command(ReverieCommands.massage_foot(level))
         )
         self._massage_foot_level = level
-        self.forward_controller_state_update("massage_foot_intensity", self._massage_foot_level)
+        self.forward_controller_state_update(MASSAGE_FOOT_INTENSITY, self._massage_foot_level)
 
     async def massage_foot_down(self) -> None:
         """Decrease foot massage intensity."""
@@ -1085,7 +1090,7 @@ class ReverieController(BedController):
             self._build_command(ReverieCommands.massage_foot(level))
         )
         self._massage_foot_level = level
-        self.forward_controller_state_update("massage_foot_intensity", self._massage_foot_level)
+        self.forward_controller_state_update(MASSAGE_FOOT_INTENSITY, self._massage_foot_level)
 
     async def massage_mode_step(self) -> None:
         """Send the next wave level without assuming a device cycle or clamp."""
@@ -1095,7 +1100,7 @@ class ReverieController(BedController):
         command = self._build_command(ReverieCommands.massage_wave(next_level))
         await self.write_command(command)
         self._massage_wave_level = next_level
-        self.forward_controller_state_update("reverie_wave_level", next_level)
+        self.forward_controller_state_update(WAVE_LEVEL, next_level)
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position."""
@@ -1125,19 +1130,19 @@ class ReverieController(BedController):
                 raise ValueError("Reverie massage strength must be 0-10")
             await self.write_command(self._build_command(ReverieCommands.massage_head(level)))
             self._massage_head_level = level
-            self.forward_controller_state_update("massage_head_intensity", level)
+            self.forward_controller_state_update(MASSAGE_HEAD_INTENSITY, level)
         elif zone == "foot":
             if not 0 <= level <= 10:
                 raise ValueError("Reverie massage strength must be 0-10")
             await self.write_command(self._build_command(ReverieCommands.massage_foot(level)))
             self._massage_foot_level = level
-            self.forward_controller_state_update("massage_foot_intensity", level)
+            self.forward_controller_state_update(MASSAGE_FOOT_INTENSITY, level)
         elif zone == "wave":
             if isinstance(level, bool) or not isinstance(level, int):
                 raise ValueError("Reverie wave level must be an integer")
             await self.write_command(self._build_command(ReverieCommands.massage_wave(level)))
             self._massage_wave_level = level
-            self.forward_controller_state_update("reverie_wave_level", level)
+            self.forward_controller_state_update(WAVE_LEVEL, level)
         else:
             _LOGGER.warning("Unknown massage zone: %s", zone)
 

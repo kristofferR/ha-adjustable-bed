@@ -7,12 +7,13 @@ import logging
 from collections.abc import Callable, Mapping
 from contextlib import suppress
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
 from .. import doublesleep_protocol as p
 from ..app_session import app_session
+from ..controller_state import StateKey
 from ..doublesleep_state import Notifications, Report, report_records
 from ..profiles.okin_nframe import DOUBLESLEEP
 from .base import (
@@ -70,6 +71,14 @@ def motor(index: int) -> MotorCommandCallable:
 _REFRESH_S = (DOUBLESLEEP.hold.repeat_ms or 0) / 1000
 
 
+CHILD_LOCK: Final = StateKey[str | None]("doublesleep_child_lock")
+
+
+def _field_key(field: str) -> StateKey[object]:
+    """A decoded or app-local field, retained across controller rebuilds."""
+    return StateKey[object]("doublesleep_" + field)
+
+
 class DoubleSleepController(BedController):
     profile = DOUBLESLEEP
 
@@ -95,7 +104,7 @@ class DoubleSleepController(BedController):
         # the logical UI lifetime; a reload creates a cold view while numeric
         # per-device statics remain in app_session.
         self.ui = p.UIState()
-        view = coordinator.controller_state.get("doublesleep_ui")
+        view = coordinator.controller_state.get(_field_key("ui"))
         if isinstance(view, dict) and view.get("profile") == f"{protocol}:{model}":
             if type(view.get("sonic_ui")) is bool:
                 self.ui.sonic_ui = view["sonic_ui"]
@@ -107,7 +116,7 @@ class DoubleSleepController(BedController):
                 self.ui.timer = view["timer"]
         self.parser = Notifications(protocol, model, self.session.cache, ui=self.ui)
         for side in ("left", "right"):
-            history = coordinator.controller_state.get(f"doublesleep_{side}_history")
+            history = coordinator.controller_state.get(_field_key(f"{side}_history"))
             if (
                 isinstance(history, list)
                 and len(history) == 8
@@ -208,7 +217,7 @@ class DoubleSleepController(BedController):
         if set(state) - {"child_lock"} or type(value) is not bool:
             raise ValueError("Invalid SleepEase child-lock preference")
         self.session.child_lock = value
-        self.forward_controller_state_updates({"doublesleep_child_lock": "on" if value else "off"})
+        self.forward_controller_state_updates(CHILD_LOCK("on" if value else "off"))
 
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
@@ -267,7 +276,12 @@ class DoubleSleepController(BedController):
         if isinstance(alarm, dict):
             self.parser.state["alarm_enabled"] = alarm.get("enabled", 0)
         self.forward_controller_state_updates(
-            {"doublesleep_" + k: v for k, v in self.parser.state.items()}
+            *(
+                CHILD_LOCK(value if isinstance(value, str) else None)
+                if field == "child_lock"
+                else _field_key(field)(value)
+                for field, value in self.parser.state.items()
+            )
         )
 
     async def async_discover_capabilities(self) -> None:
@@ -1090,13 +1104,13 @@ class DoubleSleepController(BedController):
             if current is None or selected(current).session is not self.session:
                 raise ValueError("The SleepEase app profile changed")
             self.session.child_lock = option == "on"
-            self.forward_controller_state_updates({"doublesleep_child_lock": option})
+            self.forward_controller_state_updates(CHILD_LOCK(option))
 
         return (
             ControllerSelectSpec(
                 "doublesleep_child_lock",
                 "doublesleep_child_lock",
-                "doublesleep_child_lock",
+                CHILD_LOCK,
                 ("off", "on"),
                 choose,
                 local_select_fn=local,
@@ -1122,7 +1136,7 @@ class DoubleSleepController(BedController):
         )
         specs = [
             ControllerStateSensorSpec(
-                "doublesleep_" + key, "doublesleep_" + key, "doublesleep_" + key, "mdi:bed", unit
+                "doublesleep_" + key, "doublesleep_" + key, _field_key(key), "mdi:bed", unit
             )
             for key, unit in rows
         ]
@@ -1131,12 +1145,10 @@ class DoubleSleepController(BedController):
                 ControllerStateSensorSpec(
                     f"doublesleep_{side}_report",
                     "doublesleep_report",
-                    f"doublesleep_{side}_report_status",
+                    _field_key(f"{side}_report_status"),
                     "mdi:chart-line",
-                    attribute_keys=(
-                        f"doublesleep_{side}_report",
-                        f"doublesleep_{side}_history",
-                        f"doublesleep_{side}_raw",
+                    attribute_keys=tuple(
+                        _field_key(f"{side}_{field}") for field in ("report", "history", "raw")
                     ),
                 )
             )
@@ -1144,9 +1156,9 @@ class DoubleSleepController(BedController):
             ControllerStateSensorSpec(
                 "doublesleep_legacy_report",
                 "doublesleep_legacy_report",
-                "doublesleep_model",
+                _field_key("model"),
                 "mdi:chart-line",
-                attribute_keys=("doublesleep_legacy_report",),
+                attribute_keys=(_field_key("legacy_report"),),
             )
         )
         specs.extend(
@@ -1154,23 +1166,23 @@ class DoubleSleepController(BedController):
                 ControllerStateSensorSpec(
                     "doublesleep_configuration",
                     "doublesleep_configuration",
-                    "doublesleep_model",
+                    _field_key("model"),
                     "mdi:cog",
-                    attribute_keys=("doublesleep_configuration",),
+                    attribute_keys=(_field_key("configuration"),),
                 ),
                 ControllerStateSensorSpec(
                     "doublesleep_alarm",
                     "doublesleep_alarm",
-                    "doublesleep_alarm_enabled",
+                    _field_key("alarm_enabled"),
                     "mdi:alarm",
-                    attribute_keys=("doublesleep_alarm",),
+                    attribute_keys=(_field_key("alarm"),),
                 ),
                 ControllerStateSensorSpec(
                     "doublesleep_light",
                     "doublesleep_light",
-                    "doublesleep_light_on",
+                    _field_key("light_on"),
                     "mdi:lightbulb",
-                    attribute_keys=("doublesleep_light_raw",),
+                    attribute_keys=(_field_key("light_raw"),),
                 ),
             )
         )
@@ -1185,7 +1197,11 @@ class DoubleSleepController(BedController):
                 if domain == "massage" and key == "source":
                     continue
                 name = f"doublesleep_{domain}_{key}"
-                specs.append(ControllerStateSensorSpec(name, name, name, "mdi:vibrate"))
+                specs.append(
+                    ControllerStateSensorSpec(
+                        name, name, _field_key(f"{domain}_{key}"), "mdi:vibrate"
+                    )
+                )
         return tuple(specs)
 
     @property
@@ -1194,7 +1210,7 @@ class DoubleSleepController(BedController):
             ControllerStateBinarySensorSpec(
                 f"doublesleep_{side}_{flag}",
                 f"doublesleep_{side}_{flag}",
-                f"doublesleep_{side}_{flag}",
+                _field_key(f"{side}_{flag}"),
                 "mdi:bed",
             )
             for side in ("left", "right")

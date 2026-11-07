@@ -38,6 +38,7 @@ from ..const import (
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_MAXCOIL_UNA,
 )
+from ..controller_state import StateKey
 from ..profiles import keeson as profiles
 from ..profiles.keeson import KeesonProfile
 from .base import (
@@ -100,8 +101,10 @@ MASSAGE_LEVEL_MAX: Final = 3
 MASSAGE_DEFAULT_LEVEL: Final = 1
 MASSAGE_TIMER: Final = {"10": 0x10000030, "20": 0x10000031, "30": 0x10000032}
 
-STATE_LEVEL: Final = {zone: f"ore_comfort_massage_{zone}_level" for zone in MASSAGE_BASE}
-STATE_TIMER: Final = "ore_comfort_massage_timer"
+STATE_LEVEL: Final = {
+    zone: StateKey[int | None](f"ore_comfort_massage_{zone}_level") for zone in MASSAGE_BASE
+}
+STATE_TIMER: Final = StateKey[str | None]("ore_comfort_massage_timer")
 
 # (cover key, translation key, up word, down word) for each app screen.
 _Axis = tuple[str, str, int, int]
@@ -396,7 +399,7 @@ class OreComfortBedController(BedController):
             raise ValueError(f"Invalid massage level {zone}={level}")
         # Like the app's preference, the level is kept even if the write fails.
         self._levels[zone] = level
-        self.forward_controller_state_updates({STATE_LEVEL[zone]: level})
+        self.forward_controller_state_updates(STATE_LEVEL[zone](level))
         await self._send_single(MASSAGE_BASE[zone] + level)
 
     async def massage_start(self) -> None:
@@ -408,14 +411,14 @@ class OreComfortBedController(BedController):
         """Stop: head then foot level zero; the timer indicator resets locally."""
         await self._send_single(MASSAGE_BASE["head"])
         await self._send_single(MASSAGE_BASE["foot"])
-        self.forward_controller_state_updates({STATE_TIMER: None})
+        self.forward_controller_state_updates(STATE_TIMER(None))
 
     async def set_massage_timer_option(self, option: str) -> None:
         """One of the 10/20/30 minute words the timer button cycles through."""
         if option not in MASSAGE_TIMER:
             raise ValueError(f"Invalid massage timer {option}")
         await self._send_single(MASSAGE_TIMER[option])
-        self.forward_controller_state_updates({STATE_TIMER: option})
+        self.forward_controller_state_updates(STATE_TIMER(option))
 
     @property
     def persisted_app_state(self) -> Mapping[str, Any] | None:
@@ -429,7 +432,7 @@ class OreComfortBedController(BedController):
         if any(type(v) is not int or not 0 <= v <= MASSAGE_LEVEL_MAX for v in levels.values()):
             raise ValueError("Invalid massage level preference")
         self._levels = levels
-        self.forward_controller_state_updates({STATE_LEVEL[z]: v for z, v in levels.items()})
+        self.forward_controller_state_updates(*(STATE_LEVEL[z](v) for z, v in levels.items()))
 
     @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
@@ -450,8 +453,8 @@ class OreComfortBedController(BedController):
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
         return (
             ControllerSelectSpec(
-                key=STATE_TIMER,
-                translation_key=STATE_TIMER,
+                key="ore_comfort_massage_timer",
+                translation_key="ore_comfort_massage_timer",
                 state_key=STATE_TIMER,
                 options=tuple(MASSAGE_TIMER),
                 select_fn=lambda ctrl, option: cast(

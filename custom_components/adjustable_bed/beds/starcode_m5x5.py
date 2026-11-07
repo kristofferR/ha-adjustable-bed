@@ -15,7 +15,9 @@ from typing import TYPE_CHECKING, Final
 from homeassistant.util import dt as dt_util
 
 from ..codec import okin_5a
+from ..controller_state import StateUpdate
 from ..execution import ExecutionCapabilities
+from ..state_keys import UNDER_BED_LIGHTS_ON
 from .base import (
     POSITION_UNIT_PERCENT,
     BedController,
@@ -37,6 +39,14 @@ from .starcode_m5x5_protocol import (
     normal_packet,
     parse_notification,
     query_packet,
+)
+from .starcode_state import (
+    FIRMWARE_VERSION,
+    LIGHT_BRIGHTNESS,
+    LIGHT_COLOR_OPTION,
+    field_key,
+    spec_key,
+    state_updates,
 )
 
 if TYPE_CHECKING:
@@ -419,7 +429,7 @@ class StarcodeM5X5Controller(BedController):
             ControllerNumberSpec(
                 "starcode_brightness",
                 "starcode_brightness",
-                "light_brightness",
+                LIGHT_BRIGHTNESS,
                 1,
                 6,
                 1,
@@ -437,7 +447,7 @@ class StarcodeM5X5Controller(BedController):
             ControllerSelectSpec(
                 "starcode_color",
                 "starcode_color",
-                "light_color_option",
+                LIGHT_COLOR_OPTION,
                 tuple(str(i) for i in range(8)),
                 color,
             ),
@@ -484,11 +494,11 @@ class StarcodeM5X5Controller(BedController):
             ControllerStateSensorSpec(
                 f"starcode_{key}",
                 f"starcode_{key}",
-                key,
+                spec_key(key),
                 "mdi:information-outline",
-                attribute_keys=("light_rgb", "light_rgb_mode")
+                attribute_keys=(field_key("light_rgb"), field_key("light_rgb_mode"))
                 if key == "light_color_index"
-                else (key + "_details",),
+                else (field_key(key + "_details"),),
             )
             for key in keys
         )
@@ -508,7 +518,7 @@ class StarcodeM5X5Controller(BedController):
             keys += ("kneading_on", "kneading_demo")
         return tuple(
             ControllerStateBinarySensorSpec(
-                f"starcode_{key}", f"starcode_{key}", key, "mdi:information-outline"
+                f"starcode_{key}", f"starcode_{key}", spec_key(key), "mdi:information-outline"
             )
             for key in keys
         )
@@ -516,9 +526,10 @@ class StarcodeM5X5Controller(BedController):
     def get_light_state(self) -> dict[str, object]:
         return {"is_on": self._state.get("light_on")}
 
-    async def read_light_state(self) -> dict[str, object]:
+    async def read_light_state(self) -> tuple[StateUpdate, ...]:
         await self.query_status()
-        return self.get_light_state()
+        light_on = self._state.get("light_on")
+        return (UNDER_BED_LIGHTS_ON(light_on if isinstance(light_on, bool) else None),)
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         client = self.client
@@ -579,7 +590,7 @@ class StarcodeM5X5Controller(BedController):
                 if isinstance(value, (int, float)) and self._notify_callback is not None:
                     self._notify_callback(axis, float(value))
             if updates:
-                self.forward_controller_state_updates(dict(updates))
+                self.forward_controller_state_updates(*state_updates(updates))
 
         def receive(characteristic: BleakGATTCharacteristic, data: bytearray) -> None:
             if generation != self._generation or self._coordinator.client is not client:
@@ -626,7 +637,8 @@ class StarcodeM5X5Controller(BedController):
                 apply(payload)
             pending.clear()
             self.forward_controller_state_updates(
-                {"firmware": self._firmware, "firmware_read_ok": self._firmware_read_ok}
+                FIRMWARE_VERSION(self._firmware),
+                field_key("firmware_read_ok")(self._firmware_read_ok),
             )
             if self.dialect == "star":
                 await self.write_command(okin_5a.WAKE)
@@ -650,7 +662,7 @@ class StarcodeM5X5Controller(BedController):
             self._ready = False
             self._notify_callback = None
             if self._state:
-                self.forward_controller_state_updates(dict.fromkeys(self._state))
+                self.forward_controller_state_updates(*state_updates(dict.fromkeys(self._state)))
             self._state.clear()
             try:
                 if (

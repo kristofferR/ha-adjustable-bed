@@ -10,7 +10,7 @@ from collections.abc import Callable, Mapping
 from copy import deepcopy
 from dataclasses import dataclass, field
 from functools import partial
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
@@ -18,6 +18,7 @@ from .. import goodvibe_protocol as p
 from ..app_session import app_session
 from ..codec import richmat as codec
 from ..command_scheduler import CommandContext, current_command_context
+from ..controller_state import StateKey
 from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ..goodvibe_catalog import ACTION_EXPANSIONS, ACTIONS, PRODUCTS, Action
 from ..goodvibe_receive import Notifications
@@ -64,6 +65,23 @@ EXPIRY_S = 0.5
 SLEEP_SERVICES = frozenset(
     ("0000e0ff-3c17-d293-8e48-14fe2e4da212", "2320567c-05cf-6eb4-c341-772851827e1b")
 )
+
+
+STATUS: Final = StateKey[str | None]("goodvibe_status")
+EVENTS: Final = StateKey[dict[str, object]]("goodvibe_events")
+REJECTION: Final = StateKey[str | None]("goodvibe_rejection")
+SIDE: Final = StateKey[str | None]("goodvibe_side")
+MONITORING: Final = StateKey[bool]("goodvibe_monitoring")
+MEMORY: Final = StateKey[bool]("goodvibe_memory")
+LIGHT_DURATION: Final = StateKey[str | None]("goodvibe_light_duration")
+SNORE_COUNT: Final = StateKey[int | None]("goodvibe_snore_count")
+SNORE_TIME: Final = StateKey[int | None]("goodvibe_snore_time")
+MASSAGE_TIMER: Final = StateKey[str | None]("goodvibe_massage_timer")
+
+
+def _live_key(side: str, name: str) -> StateKey[object]:
+    """One realtime sleep-monitoring reading."""
+    return StateKey[object](f"goodvibe_{side}_{name}")
 
 
 @dataclass(frozen=True, slots=True)
@@ -306,24 +324,28 @@ class GoodVibeController(BedController):
         return side
 
     def _publish(self) -> None:
-        values: dict[str, object] = {
-            "goodvibe_status": self._last_event,
-            "goodvibe_events": deepcopy(self.choices.events),
-            "goodvibe_rejection": self._rejection or self._normal.rejection,
-            "goodvibe_side": str(self.choices.side),
-            "goodvibe_monitoring": self.choices.monitoring,
-            "goodvibe_memory": self.choices.memory,
-            "goodvibe_light_duration": str(self.choices.events["light_duration"])
-            if "light_duration" in self.choices.events
-            else None,
-            "goodvibe_snore_count": self.choices.events.get("deviceAntiSnoreConfigCountEvent"),
-            "goodvibe_snore_time": self.choices.events.get("deviceAntiSnoreConfigTimeEvent"),
-            "goodvibe_massage_timer": self.choices.events.get("massage_timer"),
-        }
-        for side, live in self.choices.realtime.items():
-            for name in ("heart", "respiration", "occupancy", "movement", "snore"):
-                values[f"goodvibe_{side}_{name}"] = getattr(live, name)
-        self.forward_controller_state_updates(values)
+        events = self.choices.events
+        timer = events.get("massage_timer")
+        count = events.get("deviceAntiSnoreConfigCountEvent")
+        time = events.get("deviceAntiSnoreConfigTimeEvent")
+        self.forward_controller_state_updates(
+            STATUS(self._last_event),
+            EVENTS(deepcopy(events)),
+            REJECTION(self._rejection or self._normal.rejection),
+            SIDE(str(self.choices.side)),
+            MONITORING(self.choices.monitoring),
+            MEMORY(self.choices.memory),
+            LIGHT_DURATION(str(events["light_duration"]) if "light_duration" in events else None),
+            # The entities only show numbers and option strings.
+            SNORE_COUNT(count if isinstance(count, int) else None),
+            SNORE_TIME(time if isinstance(time, int) else None),
+            MASSAGE_TIMER(timer if isinstance(timer, str) else None),
+            *(
+                _live_key(side, name)(getattr(live, name))
+                for side, live in self.choices.realtime.items()
+                for name in ("heart", "respiration", "occupancy", "movement", "snore")
+            ),
+        )
 
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
@@ -918,7 +940,7 @@ class GoodVibeController(BedController):
                 ControllerSelectSpec(
                     "goodvibe_massage_timer",
                     "goodvibe_massage_timer",
-                    "goodvibe_massage_timer",
+                    MASSAGE_TIMER,
                     ("0", "10", "20", "30"),
                     massage_timer,
                 )
@@ -932,7 +954,7 @@ class GoodVibeController(BedController):
                 ControllerSelectSpec(
                     "goodvibe_side",
                     "goodvibe_side",
-                    "goodvibe_side",
+                    SIDE,
                     tuple(map(str, self.product.sides)),
                     set_side,
                     local_select_fn=self._select_side,
@@ -953,7 +975,7 @@ class GoodVibeController(BedController):
                 ControllerSelectSpec(
                     "goodvibe_light_duration",
                     "goodvibe_light_duration",
-                    "goodvibe_light_duration",
+                    LIGHT_DURATION,
                     options,
                     duration,
                 )
@@ -989,14 +1011,14 @@ class GoodVibeController(BedController):
             ControllerNumberSpec(
                 "goodvibe_snore_count",
                 "goodvibe_snore_count",
-                "goodvibe_snore_count",
+                SNORE_COUNT,
                 1,
                 30,
                 1,
                 count,
             ),
             ControllerNumberSpec(
-                "goodvibe_snore_time", "goodvibe_snore_time", "goodvibe_snore_time", 5, 30, 5, time
+                "goodvibe_snore_time", "goodvibe_snore_time", SNORE_TIME, 5, 30, 5, time
             ),
         )
 
@@ -1013,13 +1035,13 @@ class GoodVibeController(BedController):
             ControllerStateSensorSpec(
                 "goodvibe_status",
                 "goodvibe_status",
-                "goodvibe_status",
+                STATUS,
                 "mdi:bed",
                 attribute_keys=(
-                    "goodvibe_events",
-                    "goodvibe_rejection",
-                    "goodvibe_monitoring",
-                    "goodvibe_memory",
+                    EVENTS,
+                    REJECTION,
+                    MONITORING,
+                    MEMORY,
                 ),
             )
         ]
@@ -1027,7 +1049,11 @@ class GoodVibeController(BedController):
             for side in ("L", "R"):
                 for name in ("heart", "respiration", "occupancy", "movement", "snore"):
                     key = f"goodvibe_{side}_{name}"
-                    specs.append(ControllerStateSensorSpec(key, key.lower(), key, "mdi:bed"))
+                    specs.append(
+                        ControllerStateSensorSpec(
+                            key, key.lower(), _live_key(side, name), "mdi:bed"
+                        )
+                    )
         return tuple(specs)
 
     async def stop_all(self) -> None:

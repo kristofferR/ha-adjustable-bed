@@ -8,6 +8,7 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -33,6 +34,7 @@ from custom_components.adjustable_bed.row061_protocol import (
     sleep_frame,
 )
 from custom_components.adjustable_bed.validators import is_valid_variant_for_bed_type
+from tests.state_helpers import state_writer
 
 
 def coordinator():
@@ -42,7 +44,7 @@ def coordinator():
     c.motor_pulse_count = 2
     c.controller_state = {}
     c.handle_controller_state_update.side_effect = lambda k, v: c.controller_state.update({k: v})
-    c.handle_controller_state_updates.side_effect = c.controller_state.update
+    c.handle_controller_state_updates.side_effect = state_writer(c.controller_state)
     c.client = MagicMock(is_connected=True)
     c.client.write_gatt_char = AsyncMock()
     return c
@@ -311,7 +313,7 @@ async def test_calendar_refresh_removes_deleted_slots_and_keeps_reported_records
     ]
     for record in records:
         c._apply(Event("extended", record.hex()))
-    state = c._coordinator.controller_state
+    state = cast(dict[str, Any], c._coordinator.controller_state)
     assert state["row061_calendar_alarm_count"] == 2
     previous = state["row061_calendar_alarms"]
     original = c.write_command

@@ -11,6 +11,7 @@ import pytest
 
 from custom_components.adjustable_bed import sleeptracker_protocol as p
 from custom_components.adjustable_bed.beds.sleeptracker import SleeptrackerController
+from tests.state_helpers import state_writer
 
 
 class Processor:
@@ -65,7 +66,7 @@ class Processor:
             cancel_command=asyncio.Event(),
             hass=SimpleNamespace(async_create_task=create_task, async_add_executor_job=executor),
             record_command_trace=MagicMock(),
-            handle_controller_state_updates=lambda updates: self.states.update(updates),
+            handle_controller_state_updates=state_writer(self.states),
         )
         self.bed = SleeptrackerController(
             self.coordinator,

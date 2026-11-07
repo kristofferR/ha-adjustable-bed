@@ -29,6 +29,7 @@ from custom_components.adjustable_bed.hjbed_protocol import (
 from custom_components.adjustable_bed.hjbed_receive import parse_frame
 from custom_components.adjustable_bed.hjbed_requests import Request
 from custom_components.adjustable_bed.hjbed_state import NonProgressFrame, State, Stream
+from tests.state_helpers import state_writer
 
 FIXTURES = Path(__file__).parent / "fixtures"
 RX = json.loads((FIXTURES / "hjbed_receive_vectors.json").read_text())
@@ -48,7 +49,7 @@ def coordinator():
     c.client.start_notify = AsyncMock()
     c.client.stop_notify = AsyncMock()
     c.controller_state = {}
-    c.handle_controller_state_updates.side_effect = c.controller_state.update
+    c.handle_controller_state_updates.side_effect = state_writer(c.controller_state)
     return c
 
 

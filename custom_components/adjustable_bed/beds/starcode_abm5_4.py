@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable, Coroutine
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -13,6 +13,7 @@ from bleak.exc import BleakError
 
 from ..command_scheduler import copy_context_without_command
 from ..const import CONF_BLE_DEVICE_NAME
+from ..controller_state import AnyStateKey, StateKey
 from ..profiles.okin_nframe import (
     STARCODE_ABM5_4_FLAT_HOLD_MS,
     STARCODE_ABM5_4_PROFILES,
@@ -103,6 +104,21 @@ async def _timer(controller: BedController, option: str) -> None:
 
 async def _brightness(controller: BedController, value: float) -> None:
     await _controller(controller).set_app_brightness(value)
+
+
+type _Value = str | int | bool | None
+MASSAGE_TIMER: Final = StateKey[str | None]("starcode_abm5_4_massage_timer")
+LIGHT_LEVEL: Final = StateKey[int | None]("starcode_abm5_4_light_level")
+
+
+def _field_key(field: str) -> StateKey[_Value]:
+    return StateKey[_Value]("starcode_abm5_4_" + field)
+
+
+def _state_key(field: str) -> AnyStateKey:
+    return {"massage_timer": MASSAGE_TIMER, "light_level": LIGHT_LEVEL}.get(
+        field, _field_key(field)
+    )
 
 
 class StarcodeAbm5_4Controller(BedController):
@@ -410,7 +426,7 @@ class StarcodeAbm5_4Controller(BedController):
             ControllerSelectSpec(
                 "starcode_abm5_4_massage_timer",
                 "starcode_abm5_4_massage_timer",
-                "starcode_abm5_4_massage_timer",
+                MASSAGE_TIMER,
                 ("10", "20", "30"),
                 _timer,
             ),
@@ -424,7 +440,7 @@ class StarcodeAbm5_4Controller(BedController):
             ControllerNumberSpec(
                 "starcode_abm5_4_light_level",
                 "starcode_abm5_4_light_level",
-                "starcode_abm5_4_light_level",
+                LIGHT_LEVEL,
                 1,
                 6,
                 1,
@@ -438,7 +454,7 @@ class StarcodeAbm5_4Controller(BedController):
             ControllerStateSensorSpec(
                 "starcode_abm5_4_" + key,
                 "starcode_abm5_4_" + key,
-                "starcode_abm5_4_" + key,
+                _state_key(key),
                 "mdi:information-outline",
                 entity_registry_enabled_default=not key.startswith("raw_"),
             )
@@ -874,7 +890,7 @@ class StarcodeAbm5_4Controller(BedController):
         if self._coordinator.address != self._owner_address:
             return
         self._retain_ui_state()
-        values: dict[str, str | int | bool | None] = {
+        values: dict[str, _Value] = {
             "raw_" + k: v if self._parser_state_observed else None
             for k, v in self._raw_fields.items()
         }
@@ -885,8 +901,6 @@ class StarcodeAbm5_4Controller(BedController):
                 "ui_selector": self.ui_selector,
                 "manufacturer": self._manufacturer,
                 "firmware": self._firmware,
-                "massage_timer": str(self._timer_index * 10) if self._timer_index else None,
-                "light_level": self._level,
                 "massage_on": self._massage_on if self._ui_state_observed else None,
                 "light_on": self._light_on if self._ui_state_observed else None,
                 "wave": self._wave,
@@ -896,7 +910,9 @@ class StarcodeAbm5_4Controller(BedController):
             }
         )
         self.forward_controller_state_updates(
-            {"starcode_abm5_4_" + k: v for k, v in values.items()}
+            *(_field_key(k)(v) for k, v in values.items()),
+            MASSAGE_TIMER(str(self._timer_index * 10) if self._timer_index else None),
+            LIGHT_LEVEL(self._level),
         )
 
     def _spawn(self, operation: Callable[[], Coroutine[object, object, None]]) -> None:

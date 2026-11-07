@@ -27,6 +27,7 @@ from custom_components.adjustable_bed.beds.svane import (
 )
 from custom_components.adjustable_bed.codec import jmc
 from custom_components.adjustable_bed.svane_state import SvaneSession, get_svane_session
+from tests.state_helpers import published
 
 
 def make_controller(profile="multi", *, properties=("write", "read", "notify"), session=None):
@@ -372,7 +373,7 @@ async def test_partial_dis_observation_survives_later_failure_and_reconstruction
     assert "svane_hardware" not in session.observations
     rebuilt = make_controller(session=session)
     updates = rebuilt._coordinator.handle_controller_state_updates.call_args_list
-    assert any(call.args[0].get("svane_firmware") == "known fw" for call in updates)
+    assert any(published(*call.args).get("svane_firmware") == "known fw" for call in updates)
     assert not session.position
 
 

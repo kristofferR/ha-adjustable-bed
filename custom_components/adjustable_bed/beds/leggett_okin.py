@@ -19,7 +19,7 @@ import contextlib
 import logging
 from collections.abc import Callable
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from bleak.exc import BleakError
 from homeassistant.exceptions import HomeAssistantError
@@ -38,6 +38,7 @@ from ..codec.okin_nframe import (
     parse_status,
 )
 from ..const import DEVICE_INFO_READ_TIMEOUT
+from ..controller_state import StateKey
 from ..profiles.okin_nframe import (
     LEGGETT_FLAT_HOLD_MS,
     LEGGETT_PROFILES,
@@ -47,6 +48,7 @@ from ..profiles.okin_nframe import (
     leggett_alarm,
     leggett_sleep_timer,
 )
+from ..state_keys import UNDER_BED_LIGHTS_ON
 from .base import (
     BedController,
     ControllerStateBinarySensorSpec,
@@ -66,6 +68,12 @@ CU170_ALARM_MASK = 0x00400000
 CU170_SLEEP_MASK = 0x00800000
 # Integration response timeout, not a firmware timing requirement.
 LIGHT_STATE_TIMEOUT_S = 3.0
+
+
+LED_MASK: Final = StateKey[int]("leggett_led_mask")
+STATUS: Final = StateKey[int | None]("leggett_status")
+ALARM_INDICATOR: Final = StateKey[bool]("leggett_alarm_indicator")
+SLEEP_TIMER_INDICATOR: Final = StateKey[bool]("leggett_sleep_timer_indicator")
 
 
 class MotorDirection(Enum):
@@ -277,13 +285,13 @@ class LeggettOkinController(BedController):
             ControllerStateSensorSpec(
                 key="leggett_led_mask",
                 translation_key="leggett_led_mask",
-                state_key="leggett_led_mask",
+                state_key=LED_MASK,
                 icon="mdi:led-outline",
             ),
             ControllerStateSensorSpec(
                 key="leggett_status",
                 translation_key="leggett_status",
-                state_key="leggett_status",
+                state_key=STATUS,
                 icon="mdi:information-outline",
             ),
         )
@@ -295,13 +303,13 @@ class LeggettOkinController(BedController):
             ControllerStateBinarySensorSpec(
                 key="leggett_alarm_indicator",
                 translation_key="leggett_alarm_indicator",
-                state_key="leggett_alarm_indicator",
+                state_key=ALARM_INDICATOR,
                 icon="mdi:alarm",
             ),
             ControllerStateBinarySensorSpec(
                 key="leggett_sleep_timer_indicator",
                 translation_key="leggett_sleep_timer_indicator",
-                state_key="leggett_sleep_timer_indicator",
+                state_key=SLEEP_TIMER_INDICATOR,
                 icon="mdi:timer-outline",
             ),
         )
@@ -621,13 +629,11 @@ class LeggettOkinController(BedController):
             self._notification_status = None
             self._light_state_changed.set()
             self.forward_controller_state_updates(
-                {
-                    "leggett_led_mask": mask,
-                    "leggett_status": None,
-                    "leggett_alarm_indicator": bool(mask & CU170_ALARM_MASK),
-                    "leggett_sleep_timer_indicator": bool(mask & CU170_SLEEP_MASK),
-                    "under_bed_lights_on": bool(mask & CU170_LIGHT_MASK),
-                }
+                LED_MASK(mask),
+                STATUS(None),
+                ALARM_INDICATOR(bool(mask & CU170_ALARM_MASK)),
+                SLEEP_TIMER_INDICATOR(bool(mask & CU170_SLEEP_MASK)),
+                UNDER_BED_LIGHTS_ON(bool(mask & CU170_LIGHT_MASK)),
             )
             return
         # The optional settings channel must not replace live CU170 status.
@@ -639,12 +645,10 @@ class LeggettOkinController(BedController):
         self._notification_led_mask, self._notification_status = parsed
         display_mask = self._display_led_mask or 0
         self.forward_controller_state_updates(
-            {
-                "leggett_led_mask": parsed[0],
-                "leggett_status": parsed[1],
-                "leggett_alarm_indicator": bool(display_mask & 0x4000),
-                "leggett_sleep_timer_indicator": bool(display_mask & 0x8000),
-            }
+            LED_MASK(parsed[0]),
+            STATUS(parsed[1]),
+            ALARM_INDICATOR(bool(display_mask & 0x4000)),
+            SLEEP_TIMER_INDICATOR(bool(display_mask & 0x8000)),
         )
 
     async def stop_notify(self) -> None:
@@ -674,7 +678,7 @@ class LeggettOkinController(BedController):
             self._notification_led_mask = None
             self._notification_status = None
             if self.supports_light_state_feedback:
-                self.forward_controller_state_update("under_bed_lights_on", None)
+                self.forward_controller_state_update(UNDER_BED_LIGHTS_ON, None)
 
     def motor_pulse_settings(self) -> tuple[int, int]:
         """Keep movement streams at the proven CU170 cadence."""
@@ -1100,11 +1104,11 @@ class LeggettOkinController(BedController):
                     await self._light_state_changed.wait()
         except TimeoutError as err:
             self._light_is_on = None
-            self.forward_controller_state_update("under_bed_lights_on", None)
+            self.forward_controller_state_update(UNDER_BED_LIGHTS_ON, None)
             raise HomeAssistantError("The bed did not confirm the requested light state") from err
         except (asyncio.CancelledError, BleakError, ConnectionError):
             self._light_is_on = None
-            self.forward_controller_state_update("under_bed_lights_on", None)
+            self.forward_controller_state_update(UNDER_BED_LIGHTS_ON, None)
             raise
 
     # Massage methods

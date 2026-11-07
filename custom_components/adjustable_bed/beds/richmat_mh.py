@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 from homeassistant.util import dt as dt_util
 
 from ..const import CONF_BLE_DEVICE_NAME, RICHMAT_MH_MODEL_CHOICES, VARIANT_AUTO
+from ..controller_state import StateKey, StateUpdate
 from ..detection import is_mac_like_name
 from ..profiles.richmat import RICHMAT_MH
 from ..row061_models import MODEL_IDS as ROW061_MODEL_IDS
@@ -150,23 +151,41 @@ ALARM_OPTION_CODES: Final = {name: code for code, name in ALARM_OPTIONS.items()}
 # Snore intervention positions (SnoreFragAdapter) and the clear option.
 SNORE_OFF: Final = "off"
 SNORE_OPTIONS: Final = {0x45: "zero_g", 0x46: "anti_snore"}
-ANGLE_KEYS: Final = {"back": "richmat_mh_back_angle", "foot": "richmat_mh_foot_angle",
-                     "pillow": "richmat_mh_pillow_angle"}
-LIGHT_TIMER_KEY: Final = "richmat_mh_light_timer"
-LIGHT_TIMER_MINUTES_KEY: Final = "richmat_mh_light_timer_minutes"
-INTENSITY_KEYS: Final = {"head": "richmat_mh_head_massage_intensity",
-                         "foot": "richmat_mh_foot_massage_intensity"}
-SNORE_KEY: Final = "richmat_mh_snore"
-MOTOR_MODE_KEY: Final = "richmat_mh_motor_mode"
-DETECTION_KEY: Final = "richmat_mh_detection"
-ALARM_STATUS_KEY: Final = "richmat_mh_alarm"
-MEMORY_ARRIVAL_KEY: Final = "richmat_mh_memory_arrival"
-SMART_SET_LOCK_KEY: Final = "richmat_mh_smart_set_lock"
-SMART_LIGHT_LOCK_KEY: Final = "richmat_mh_smart_light_lock"
-WAIST_MODE_KEY: Final = "richmat_mh_waist_mode"
+# Each controller-state key doubles as its entity key.
+ANGLE_KEYS: Final = {
+    axis: StateKey[int | None](f"richmat_mh_{axis}_angle") for axis in ("back", "foot", "pillow")
+}
+LIGHT_TIMER_KEY: Final = StateKey[int | None]("richmat_mh_light_timer")
+LIGHT_TIMER_MINUTES_KEY: Final = StateKey[int | None]("richmat_mh_light_timer_minutes")
+INTENSITY_KEYS: Final = {
+    zone: StateKey[int | None](f"richmat_mh_{zone}_massage_intensity") for zone in ("head", "foot")
+}
+SNORE_KEY: Final = StateKey[str | None]("richmat_mh_snore")
+MOTOR_MODE_KEY: Final = StateKey[str | None]("richmat_mh_motor_mode")
+DETECTION_KEY: Final = StateKey[str]("richmat_mh_detection")
+DETECTION_RESULTS_KEY: Final = StateKey[dict[str, object]]("richmat_mh_detection_results")
+ALARM_STATUS_KEY: Final = StateKey[str]("richmat_mh_alarm")
+MEMORY_ARRIVAL_KEY: Final = StateKey[str]("richmat_mh_memory_arrival")
+SMART_SET_LOCK_KEY: Final = StateKey[bool]("richmat_mh_smart_set_lock")
+SMART_LIGHT_LOCK_KEY: Final = StateKey[bool]("richmat_mh_smart_light_lock")
+WAIST_MODE_KEY: Final = StateKey[str | None]("richmat_mh_waist_mode")
 # Waist page selects per side and field, with their option lists.
 WAIST_FIELDS: Final = {"heat": WAIST_HEAT, "pressure": WAIST_PRESSURE, "duration": WAIST_DURATION}
-WAIST_ALARM_KEYS: Final = {side: f"richmat_mh_waist_{side}_alarm" for side in WAIST_SIDES}
+WAIST_ALARM_KEYS: Final = {
+    side: StateKey[str](f"richmat_mh_waist_{side}_alarm") for side in WAIST_SIDES
+}
+WAIST_ALARM_REPEAT_KEYS: Final = {
+    side: StateKey[str | None](f"{key}_repeat") for side, key in WAIST_ALARM_KEYS.items()
+}
+WAIST_ALARM_INTENSITY_KEYS: Final = {
+    side: StateKey[int | None](f"{key}_intensity") for side, key in WAIST_ALARM_KEYS.items()
+}
+
+
+def _waist_setting_key(side: str, field: str) -> StateKey[str | None]:
+    return StateKey[str | None](f"richmat_mh_waist_{side}_{field}")
+
+
 _SENSOR_KEYS: Final = frozenset(
     {DETECTION_KEY, ALARM_STATUS_KEY, MEMORY_ARRIVAL_KEY, *WAIST_ALARM_KEYS.values()}
 )
@@ -872,7 +891,7 @@ class RichmatMhController(BedController):
             )
             for side in WAIST_SIDES:
                 for field, options in WAIST_FIELDS.items():
-                    key = f"richmat_mh_waist_{side}_{field}"
+                    key = _waist_setting_key(side, field)
                     specs.append(
                         ControllerSelectSpec(
                             key=key,
@@ -933,7 +952,7 @@ class RichmatMhController(BedController):
             specs.append(
                 ControllerStateSensorSpec(
                     DETECTION_KEY, DETECTION_KEY, DETECTION_KEY, "mdi:stethoscope",
-                    attribute_keys=(f"{DETECTION_KEY}_results",),
+                    attribute_keys=(DETECTION_RESULTS_KEY,),
                 )
             )
         if self._alarm_page():
@@ -947,11 +966,13 @@ class RichmatMhController(BedController):
                 )
             )
         if self._waist:
-            for key in WAIST_ALARM_KEYS.values():
+            for side, key in WAIST_ALARM_KEYS.items():
                 specs.append(
                     ControllerStateSensorSpec(
                         key, key, key, "mdi:alarm",
-                        attribute_keys=(f"{key}_repeat", f"{key}_intensity"),
+                        attribute_keys=(
+                            WAIST_ALARM_REPEAT_KEYS[side], WAIST_ALARM_INTENSITY_KEYS[side]
+                        ),
                     )
                 )
         return tuple(specs)
@@ -1334,7 +1355,7 @@ class RichmatMhController(BedController):
         elif kind == "detection_started":
             self._detection_results = {}
             self.forward_controller_state_updates(
-                {DETECTION_KEY: "running", f"{DETECTION_KEY}_results": {}}
+                DETECTION_KEY("running"), DETECTION_RESULTS_KEY({})
             )
         elif kind == "detection_stopped":
             self.forward_controller_state_update(DETECTION_KEY, "stopped")
@@ -1344,7 +1365,7 @@ class RichmatMhController(BedController):
             if stem is not None:
                 self._detection_results[f"{stem}_{number}"] = DETECTION_STATUS.get(code, code)
                 self.forward_controller_state_update(
-                    f"{DETECTION_KEY}_results", dict(self._detection_results)
+                    DETECTION_RESULTS_KEY, dict(self._detection_results)
                 )
         elif kind == "waist_init":
             if self._pending is not None:
@@ -1447,34 +1468,36 @@ class RichmatMhController(BedController):
                 return
 
     def _apply_intensity(self, values: Mapping[str, int]) -> None:
-        updates: dict[str, Any] = {}
+        updates: list[StateUpdate] = []
         for zone, _name, low, high in self._intensities():
             value = min(max(values[zone], low), high)
             self._intensity[zone] = value
-            updates[INTENSITY_KEYS[zone]] = value
+            updates.append(INTENSITY_KEYS[zone](value))
         if updates:
-            self.forward_controller_state_updates(updates)
+            self.forward_controller_state_updates(*updates)
 
     def _apply_waist(self, values: Mapping[str, Any]) -> None:
         """The waist page's bean: mode, per-side settings and alarms."""
-        updates: dict[str, Any] = {}
+        updates: list[StateUpdate] = []
         for reply_field, value in values.items():
             if reply_field == "mode":
                 if 0 <= value < len(WAIST_MODES):
-                    updates[WAIST_MODE_KEY] = WAIST_MODES[value]
+                    updates.append(WAIST_MODE_KEY(WAIST_MODES[value]))
             elif reply_field.endswith("_alarm"):
-                key = WAIST_ALARM_KEYS[reply_field.removesuffix("_alarm")]
-                updates[key] = value[0] if value else "off"
+                side = reply_field.removesuffix("_alarm")
                 repeat = next((n for n, c in WAIST_ALARM_REPEAT.items() if value and c == value[1]), None)
-                updates[f"{key}_repeat"] = repeat
-                updates[f"{key}_intensity"] = int(value[2], 16) if value else None
+                updates += [
+                    WAIST_ALARM_KEYS[side](value[0] if value else "off"),
+                    WAIST_ALARM_REPEAT_KEYS[side](repeat),
+                    WAIST_ALARM_INTENSITY_KEYS[side](int(value[2], 16) if value else None),
+                ]
             else:
                 side, name = reply_field.split("_", 1)
                 # A value the dialog cannot select (e.g. pressure off) is unknown.
                 option = next((o for o, v in WAIST_FIELDS[name].items() if v == value), None)
-                updates[f"richmat_mh_waist_{side}_{name}"] = option
+                updates.append(_waist_setting_key(side, name)(option))
         if updates:
-            self.forward_controller_state_updates(updates)
+            self.forward_controller_state_updates(*updates)
 
     def _apply_memory_arrival(self, code: str) -> None:
         """MemoryCallFrag announces "has reached the <name> position"."""
@@ -1608,7 +1631,7 @@ class RichmatMhController(BedController):
             raise ValueError(f"Unsupported waist mattress {field}: {option}")
         command = WAIST_SIDES[side][("heat", "pressure", "duration").index(field)]
         await self.write_command(waist_frame(command, options[option]), cancel_event=asyncio.Event())
-        self.forward_controller_state_update(f"richmat_mh_waist_{side}_{field}", option)
+        self.forward_controller_state_update(_waist_setting_key(side, field), option)
 
     async def toggle_smart_set_lock(self) -> None:
         """MotorFrag's smart-set-lock switch: ``6e 01 M 84`` once, no STOP."""

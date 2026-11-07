@@ -20,6 +20,7 @@ from ..const import (
     KEESON_BASE_WRITE_CHAR_UUID,
 )
 from ..profiles import keeson as keeson_profiles
+from ..state_keys import MASSAGE_TIMER_MINUTES, massage_intensity
 from .base import BedController, ControllerButtonSpec, MotorCommandCallable, MotorControlSpec
 
 if TYPE_CHECKING:
@@ -369,10 +370,10 @@ class ComfortEnhancementsController(BedController):
         await self.write_command(control_frame(MASSAGE_BASE[zone] + level), cancel_event=event)
         if not event.is_set():
             self._levels[zone] = level
-            self.forward_controller_state_updates({f"comfort_enhancements_{zone}_level": level})
+            self.forward_controller_state_updates(massage_intensity(zone)(level))
             if zone in ("head", "foot") and self._levels["head"] == self._levels["foot"] == 0:
                 self._timer = 0
-                self.forward_controller_state_updates({"comfort_enhancements_massage_timer": 0})
+                self.forward_controller_state_updates(MASSAGE_TIMER_MINUTES(0))
 
     async def _delay(self, seconds: float) -> None:
         try:
@@ -450,7 +451,7 @@ class ComfortEnhancementsController(BedController):
         await self.write_command(control_frame(0x10000030 + minutes // 10 - 1))
         if not self._coordinator.cancel_command.is_set():
             self._timer = minutes
-            self.forward_controller_state_updates({"comfort_enhancements_massage_timer": minutes})
+            self.forward_controller_state_updates(MASSAGE_TIMER_MINUTES(minutes))
 
     def get_massage_state(self) -> dict[str, int | str]:
         return {

@@ -7,6 +7,7 @@ from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Final, Literal
 
 from ..codec import richmat as codec
+from ..controller_state import StateKey
 from ..profiles.richmat import ESHINE, Button
 from .base import (
     BedController,
@@ -38,6 +39,16 @@ EXIT_LIMIT: Final = "deviceFunctionItemExitLimit"
 TRANSPORTS: Final = {
     codec.TRANSPORTS[key].service_uuid: codec.TRANSPORTS[key] for key in ESHINE.transports
 }
+
+
+def _group_key(group: str) -> StateKey[str | None]:
+    return StateKey[str | None](f"eshine_{group}")
+
+
+def _group_data_key(group: str) -> StateKey[dict[str, object] | None]:
+    return StateKey[dict[str, object] | None](f"eshine_{group}_data")
+
+
 # Read-only observations. Neither capability replies nor generic motor numbers
 # change the fixed E6000 layout or become physical position feedback.
 STATE_GROUPS: Final = {
@@ -216,9 +227,9 @@ class EshineController(BedController):
             ControllerStateSensorSpec(
                 f"eshine_{group}",
                 f"eshine_{group}",
-                f"eshine_{group}",
+                _group_key(group),
                 "mdi:bluetooth",
-                attribute_keys=(f"eshine_{group}_data",),
+                attribute_keys=(_group_data_key(group),),
             )
             for group in STATE_GROUPS
         )
@@ -252,11 +263,11 @@ class EshineController(BedController):
         self._compact = transport.single
         self._observed.clear()
         self.forward_controller_state_updates(
-            {
-                key: None
+            *(
+                update
                 for group in STATE_GROUPS
-                for key in (f"eshine_{group}", f"eshine_{group}_data")
-            }
+                for update in (_group_key(group)(None), _group_data_key(group)(None))
+            )
         )
 
     async def write_command(
@@ -324,7 +335,7 @@ class EshineController(BedController):
             else:
                 observed[event] = value
             self.forward_controller_state_updates(
-                {f"eshine_{group}": event, f"eshine_{group}_data": dict(observed)}
+                _group_key(group)(event), _group_data_key(group)(dict(observed))
             )
 
     def _frame(self, code: int) -> bytes:

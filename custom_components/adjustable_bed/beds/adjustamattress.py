@@ -13,6 +13,7 @@ from homeassistant.util import dt as dt_util
 
 from ..app_session import app_session
 from ..const import CONF_BLE_DEVICE_NAME
+from ..controller_state import StateKey
 from ..detection import is_mac_like_name
 from ..profiles import keeson as keeson_profiles
 from .adjustamattress_protocol import (
@@ -60,6 +61,21 @@ FFF0 = "0000fff0-0000-1000-8000-00805f9b34fb"
 INTERVAL_S = 0.2
 STATUS_TIMEOUT_S = 5.0  # HA readiness guard, not a device protocol timeout.
 NS = "adjustamattress_"
+
+
+def _field_key(field: str) -> StateKey[object]:
+    """A parsed status field; ``None`` clears it."""
+    return StateKey[object](NS + field)
+
+
+def _option_key(field: str) -> StateKey[str | None]:
+    return StateKey[str | None](NS + field)
+
+
+def _number_key(field: str) -> StateKey[int | None]:
+    return StateKey[int | None](NS + field)
+
+
 BUTTON_KEYS = {
     "headStrengthAdd": "head_strength_add",
     "footStrengthAdd": "foot_strength_add",
@@ -432,14 +448,9 @@ class AdjustaMattressController(BedController):
             self._busy_timer = None
         self._write_char = self._notify_char = None
         self.state = State()
-        keys = [
-            s.state_key
-            for s in (
-                *self.controller_state_sensor_specs,
-                *self.controller_state_binary_sensor_specs,
-            )
-        ]
-        self.forward_controller_state_updates(dict.fromkeys(keys))
+        self.forward_controller_state_updates(
+            *(_field_key(key)(None) for key in (*self._sensor_fields, *self._binary_fields))
+        )
 
     def _notification(self, _sender: object, data: bytearray) -> None:
         self.forward_raw_notification(
@@ -457,19 +468,19 @@ class AdjustaMattressController(BedController):
             self._publish_drafts()
         if "alarm_on" in fields:
             self.forward_controller_state_update(
-                NS + "alarm_commit", "on" if self.state.alarm_on else "off"
+                _option_key("alarm_commit"), "on" if self.state.alarm_on else "off"
             )
         if "snore_enabled" in fields:
             self.forward_controller_state_update(
-                NS + "snore_control", "on" if self.state.snore_enabled else "off"
+                _option_key("snore_control"), "on" if self.state.snore_enabled else "off"
             )
         if "strength_index" in fields and not self._preferences.strength_edited:
             self._preferences.strength_index = self.state.strength_index
             self.forward_controller_state_update(
-                NS + "strength_setting", str(self._preferences.strength_index)
+                _option_key("strength_setting"), str(self._preferences.strength_index)
             )
         self.forward_controller_state_updates(
-            {NS + key: getattr(self.state, key) for key in fields}
+            *(_field_key(key)(getattr(self.state, key)) for key in fields)
         )
         if "busy" in fields:
             if self._busy_timer is not None:
@@ -479,18 +490,16 @@ class AdjustaMattressController(BedController):
     def _clear_busy(self) -> None:
         self._busy_timer = None
         self.state.busy = False
-        self.forward_controller_state_update(NS + "busy", False)
+        self.forward_controller_state_update(_field_key("busy"), False)
 
     # Settings are local drafts until the explicit alarm commit control is used.
     def _publish_drafts(self) -> None:
         self.forward_controller_state_updates(
-            {
-                NS + "alarm_draft_hour": self._preferences.alarm_hour,
-                NS + "alarm_draft_minute": self._preferences.alarm_minute,
-                NS + "alarm_draft_type": str(self._preferences.alarm_type),
-                NS + "privacy": "accepted" if self._preferences.privacy else "not_accepted",
-                NS + "strength_setting": str(self._preferences.strength_index),
-            }
+            _number_key("alarm_draft_hour")(self._preferences.alarm_hour),
+            _number_key("alarm_draft_minute")(self._preferences.alarm_minute),
+            _option_key("alarm_draft_type")(str(self._preferences.alarm_type)),
+            _option_key("privacy")("accepted" if self._preferences.privacy else "not_accepted"),
+            _option_key("strength_setting")(str(self._preferences.strength_index)),
         )
 
     def _live_local_setting(self, key: str, option: str) -> None:
@@ -688,7 +697,7 @@ class AdjustaMattressController(BedController):
                         or (key == "wave_selector" and a == "WaveOne")
                     )
                     await target.execute_action(actions[int(option)])
-                    target.forward_controller_state_update(NS + key, option)
+                    target.forward_controller_state_update(_option_key(key), option)
                 else:
                     await target.set_setting(key, option)
 
@@ -696,7 +705,7 @@ class AdjustaMattressController(BedController):
                 ControllerSelectSpec(
                     NS + key,
                     NS + key,
-                    NS + key,
+                    _option_key(key),
                     options,
                     select,
                     local_select_fn=(lambda option, key=key: self._live_local_setting(key, option))
@@ -714,29 +723,22 @@ class AdjustaMattressController(BedController):
             async def set_value(ctrl: BedController, value: float, key: str = key) -> None:
                 await cast(AdjustaMattressController, ctrl).set_number(key, value)
 
-            specs.append(ControllerNumberSpec(NS + key, NS + key, NS + key, 0, high, 1, set_value))
+            specs.append(
+                ControllerNumberSpec(NS + key, NS + key, _number_key(key), 0, high, 1, set_value)
+            )
         return tuple(specs)
 
     @property
-    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
+    def _sensor_fields(self) -> list[str]:
         fields = ["alarm_hour", "alarm_minute", "alarm_type", "alarm_repeat"]
         if self.model != "P2":
             fields += ["massage_time", "head_intensity", "foot_intensity", "wave"]
         if self.model == "P4":
             fields += ["sensitivity", "strength_index"]
-        return tuple(
-            ControllerStateSensorSpec(
-                NS + key,
-                NS + key,
-                NS + key,
-                "mdi:information-outline",
-                native_unit_of_measurement="min" if key == "massage_time" else None,
-            )
-            for key in fields
-        )
+        return fields
 
     @property
-    def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
+    def _binary_fields(self) -> list[str]:
         fields = ["alarm_on"]
         if self.model == "P4":
             fields += [
@@ -746,9 +748,28 @@ class AdjustaMattressController(BedController):
                 "auxiliary_status_bit_1",
                 "busy",
             ]
+        return fields
+
+    @property
+    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return tuple(
-            ControllerStateBinarySensorSpec(NS + key, NS + key, NS + key, "mdi:information-outline")
-            for key in fields
+            ControllerStateSensorSpec(
+                NS + key,
+                NS + key,
+                _field_key(key),
+                "mdi:information-outline",
+                native_unit_of_measurement="min" if key == "massage_time" else None,
+            )
+            for key in self._sensor_fields
+        )
+
+    @property
+    def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
+        return tuple(
+            ControllerStateBinarySensorSpec(
+                NS + key, NS + key, _field_key(key), "mdi:information-outline"
+            )
+            for key in self._binary_fields
         )
 
     def motor_pulse_settings(self) -> tuple[int, int]:

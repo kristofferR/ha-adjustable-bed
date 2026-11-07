@@ -24,6 +24,16 @@ from ..const import (
     SLEEP_NUMBER_MCR_RX_CHAR_UUID,
     SLEEP_NUMBER_MCR_TX_CHAR_UUID,
 )
+from ..controller_state import StateKey, StateUpdate, sided
+from ..state_keys import (
+    FOOTWARMING_HVAC_MODE,
+    FOOTWARMING_LEVEL,
+    FOOTWARMING_PRESET,
+    FOOTWARMING_REMAINING_TIME_MINUTES,
+    FOUNDATION_PRESET,
+    SLEEP_NUMBER,
+    UNDER_BED_LIGHTS_ON,
+)
 from .base import (
     POSITION_UNIT_PERCENT,
     BedController,
@@ -45,6 +55,12 @@ if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _field_key(name: str) -> StateKey[object]:
+    """Decoded MCR diagnostic fields, published under their protocol names."""
+    return StateKey[object](name)
+
 
 _MCR_SYNC: Final = b"\x16\x16"
 
@@ -487,7 +503,7 @@ class SleepNumberMcrController(BedController):
             raise
 
         self._sleep_numbers[side] = normalized
-        self.forward_controller_state_updates({f"sleep_number_{side}": normalized})
+        self.forward_controller_state_updates(sided(SLEEP_NUMBER, side)(normalized))
 
     async def set_foundation_preset_for_side(self, side: str, preset: str) -> None:
         """Trigger a foundation preset for one side."""
@@ -665,10 +681,8 @@ class SleepNumberMcrController(BedController):
             self._sleep_numbers["left"] = frame.payload[1]
             self._sleep_numbers["right"] = frame.payload[2]
             self.forward_controller_state_updates(
-                {
-                    "sleep_number_left": frame.payload[1],
-                    "sleep_number_right": frame.payload[2],
-                }
+                sided(SLEEP_NUMBER, "left")(frame.payload[1]),
+                sided(SLEEP_NUMBER, "right")(frame.payload[2]),
             )
             return
 
@@ -689,7 +703,7 @@ class SleepNumberMcrController(BedController):
             if frame.function_code == _MCR_FUNC_FOUNDATION_LIGHT_READ and len(frame.payload) >= 1:
                 self._under_bed_lights_on = bool(frame.payload[0])
                 self.forward_controller_state_updates(
-                    {"under_bed_lights_on": self._under_bed_lights_on}
+                    UNDER_BED_LIGHTS_ON(self._under_bed_lights_on)
                 )
                 return
 
@@ -709,7 +723,7 @@ class SleepNumberMcrController(BedController):
         )
 
         self._under_bed_lights_on = is_on
-        self.forward_controller_state_updates({"under_bed_lights_on": is_on})
+        self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(is_on))
 
     @property
     def supports_position_feedback(self) -> bool:
@@ -813,6 +827,12 @@ class SleepNumberMcrController(BedController):
         )
 
     def _publish(self, updates: dict[str, object]) -> None:
+        """Publish decoded MCR fields; the entity-facing ones under typed keys."""
+        typed: list[StateUpdate] = []
+        for side in ("left", "right"):
+            preset = updates.get(f"foundation_preset_{side}")
+            if isinstance(preset, str):
+                typed.append(sided(FOUNDATION_PRESET, side)(preset))
         for side in set(self.foundation_preset_sides) | set(self.footwarming_climate_sides):
             for axis, key in (("head", "back"), ("foot", "legs")):
                 value = updates.get(f"foundation_{axis}_{side}")
@@ -820,14 +840,21 @@ class SleepNumberMcrController(BedController):
                     self._notify_callback(f"{side}_{key}", float(value))
             level = updates.get(f"foot_warming_temperature_{side}")
             if isinstance(level, int):
-                updates[f"footwarming_hvac_mode_{side}"] = "heat" if level else "off"
-                updates[f"footwarming_preset_{side}"] = ("off", "low", "medium", "high")[level]
-                updates[f"footwarming_level_{side}"] = level
+                typed += [
+                    sided(FOOTWARMING_HVAC_MODE, side)("heat" if level else "off"),
+                    sided(FOOTWARMING_PRESET, side)(("off", "low", "medium", "high")[level]),
+                    sided(FOOTWARMING_LEVEL, side)(level),
+                ]
                 duration = updates.get(f"foot_warming_timer_{side}")
                 if isinstance(duration, int):
-                    updates[f"footwarming_remaining_time_minutes_{side}"] = duration
+                    typed.append(sided(FOOTWARMING_REMAINING_TIME_MINUTES, side)(duration))
         self._state.update(updates)
-        self.forward_controller_state_updates(updates)
+        self._state.update((update.key, update.value) for update in typed)
+        typed_names = {update.key for update in typed}
+        raw = [
+            _field_key(name)(value) for name, value in updates.items() if name not in typed_names
+        ]
+        self.forward_controller_state_updates(*raw, *typed)
 
     async def _mcr_request(
         self,

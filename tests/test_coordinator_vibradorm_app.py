@@ -57,6 +57,7 @@ from custom_components.adjustable_bed.controller_factory import create_controlle
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.pairing import get_child
+from custom_components.adjustable_bed.profiles.vibradorm import vibradorm_app_metadata_key
 from custom_components.adjustable_bed.vibradorm_app_state import (
     clear_vibradorm_app_session_intent,
     get_vibradorm_app_session_intent,
@@ -903,9 +904,9 @@ async def test_real_information_partial_progress_survives_terminal_failure_in_on
         CONF_BLE_BOND_CONTEXT: historical_context, CONF_VIBRADORM_APP_METADATA: old_metadata,
     })
     coordinator._ble_bond_established = True
-    coordinator.handle_controller_state_updates({
-        f"vibradorm_app_{field}": value for field, value in old_metadata.items()
-    })
+    coordinator.handle_controller_state_updates(*(
+        vibradorm_app_metadata_key(field)(value) for field, value in old_metadata.items()
+    ))
     client = coordinator.client
     characters = {
         uuid: MagicMock(uuid=uuid, handle=index + 1, properties=properties)

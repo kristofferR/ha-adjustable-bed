@@ -13,15 +13,23 @@ from __future__ import annotations
 import asyncio
 import logging
 import math
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import replace
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from bleak.exc import BleakError
 from homeassistant.helpers.storage import Store
 
 from ..const import CONF_SIDE
+from ..controller_state import StateKey, StateUpdate
+from ..state_keys import (
+    LIGHT_LEVEL,
+    UNDER_BED_LIGHTS_ON,
+    UNDER_BED_LIGHTS_RGB,
+    massage_zone_intensity,
+    rgb_triple,
+)
 from .base import (
     POSITION_UNIT_PERCENT,
     BedController,
@@ -117,6 +125,52 @@ if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _field_key(name: str) -> StateKey[object]:
+    """A decoded Pairlink event field."""
+    return StateKey[object](name)
+
+
+MASSAGE_TIMER: Final = StateKey[int | None]("reverie_massage_timer")
+MASSAGE_MODE: Final = _field_key("reverie_massage_mode")
+MASSAGE_MODE_OPTION: Final = StateKey[str | None]("reverie_massage_mode_option")
+MASSAGE_RHYTHM_OPTION: Final = StateKey[str | None]("reverie_massage_rhythm_option")
+LOW_BATTERY: Final = _field_key("pairlink_low_battery")
+
+
+# Decoded fields that entities read, published under their typed keys.
+_INTEGER_KEYS: Final[dict[str, StateKey[int | None]]] = {
+    key: key
+    for key in (
+        LIGHT_LEVEL,
+        MASSAGE_TIMER,
+        massage_zone_intensity("head"),
+        massage_zone_intensity("foot"),
+    )
+}
+_OPTION_KEYS: Final[dict[str, StateKey[str | None]]] = {
+    key: key for key in (MASSAGE_MODE_OPTION, MASSAGE_RHYTHM_OPTION)
+}
+
+
+def _state_update(name: str, value: object) -> StateUpdate:
+    """Publish a decoded field; the ones entities read under their typed keys."""
+    if name == UNDER_BED_LIGHTS_ON:
+        return UNDER_BED_LIGHTS_ON(value if isinstance(value, bool) else None)
+    if name == UNDER_BED_LIGHTS_RGB:
+        return UNDER_BED_LIGHTS_RGB(rgb_triple(value))
+    if (integer_key := _INTEGER_KEYS.get(name)) is not None:
+        integer = value if isinstance(value, int) and not isinstance(value, bool) else None
+        return integer_key(integer)
+    if (option_key := _OPTION_KEYS.get(name)) is not None:
+        return option_key(value if isinstance(value, str) else None)
+    return _field_key(name)(value)
+
+
+def _state_updates(values: Mapping[str, object]) -> list[StateUpdate]:
+    return [_state_update(name, value) for name, value in values.items()]
+
 
 PairlinkMeshEventCallback = Callable[[int, bytes | None, bool], None]
 
@@ -453,13 +507,13 @@ class ReveriePairlinkController(BedController):
             ControllerStateSensorSpec(
                 key="reverie_pairlink_massage_timer",
                 translation_key="reverie_pairlink_massage_timer",
-                state_key="reverie_massage_timer",
+                state_key=MASSAGE_TIMER,
                 icon="mdi:timer-outline",
             ),
             ControllerStateSensorSpec(
                 key="reverie_pairlink_massage_mode",
                 translation_key="reverie_pairlink_massage_mode",
-                state_key="reverie_massage_mode",
+                state_key=MASSAGE_MODE,
                 icon="mdi:waveform",
             ),
         )
@@ -474,7 +528,7 @@ class ReveriePairlinkController(BedController):
             ControllerStateBinarySensorSpec(
                 key="reverie_pairlink_low_battery",
                 translation_key="reverie_pairlink_low_battery",
-                state_key="pairlink_low_battery",
+                state_key=LOW_BATTERY,
                 icon="mdi:battery-low",
             ),
         )
@@ -498,14 +552,14 @@ class ReveriePairlinkController(BedController):
             ControllerSelectSpec(
                 key="reverie_pairlink_massage_mode",
                 translation_key="reverie_pairlink_massage_mode",
-                state_key="reverie_massage_mode_option",
+                state_key=MASSAGE_MODE_OPTION,
                 options=("0", "1", "2", "3", "4"),
                 select_fn=select_mode,
             ),
             ControllerSelectSpec(
                 key="reverie_pairlink_massage_rhythm",
                 translation_key="reverie_pairlink_massage_rhythm",
-                state_key="reverie_massage_rhythm_option",
+                state_key=MASSAGE_RHYTHM_OPTION,
                 options=("off", "on"),
                 select_fn=select_rhythm,
             ),
@@ -519,7 +573,7 @@ class ReveriePairlinkController(BedController):
             ControllerNumberSpec(
                 key="reverie_pairlink_massage_timer",
                 translation_key="reverie_pairlink_massage_timer",
-                state_key="reverie_massage_timer",
+                state_key=MASSAGE_TIMER,
                 native_min_value=0,
                 native_max_value=255,
                 native_step=1,
@@ -1561,7 +1615,7 @@ class ReveriePairlinkController(BedController):
     def _clear_peer_state(self, address: str, *, clear_positions: bool = False) -> None:
         state = self._peer_states.pop(address, {})
         if state and state is self._state:
-            self.forward_controller_state_updates(dict.fromkeys(state))
+            self.forward_controller_state_updates(*_state_updates(dict.fromkeys(state)))
         if clear_positions:
             self._coordinator.clear_position_feedback(("back", "legs"))
 
@@ -1664,7 +1718,7 @@ class ReveriePairlinkController(BedController):
             state[key] = value
             if not is_active_peer:
                 continue
-            self.forward_controller_state_update(key, value)
+            self.forward_controller_state_updates(_state_update(key, value))
             if key == "back_position" and isinstance(value, int):
                 self._notify_position("back", value)
             elif key == "legs_position" and isinstance(value, int):
@@ -1675,7 +1729,7 @@ class ReveriePairlinkController(BedController):
             if all(type(channel) is int for channel in rgb):
                 state["under_bed_lights_rgb"] = rgb
                 if is_active_peer:
-                    self.forward_controller_state_update("under_bed_lights_rgb", rgb)
+                    self.forward_controller_state_update(UNDER_BED_LIGHTS_RGB, rgb_triple(rgb))
 
         if self._event_callback is not None and is_active_peer:
             self._event_callback(event_type, event_data, broadcast_flag)
@@ -1692,10 +1746,10 @@ class ReveriePairlinkController(BedController):
             return
         self._state = selected
         if previous:
-            self.forward_controller_state_updates(dict.fromkeys(previous))
+            self.forward_controller_state_updates(*_state_updates(dict.fromkeys(previous)))
         self._coordinator.clear_position_feedback(("back", "legs"))
         if selected:
-            self.forward_controller_state_updates(dict(selected))
+            self.forward_controller_state_updates(*_state_updates(selected))
             for axis, key in (("back", "back_position"), ("legs", "legs_position")):
                 value = selected.get(key)
                 if isinstance(value, int) and not isinstance(value, bool):
@@ -1946,7 +2000,7 @@ class ReveriePairlinkController(BedController):
             state = self._state
             self._state = {}
             if state:
-                self.forward_controller_state_updates(dict.fromkeys(state))
+                self.forward_controller_state_updates(*_state_updates(dict.fromkeys(state)))
             self._coordinator.clear_position_feedback(("back", "legs"))
         connection_epoch = self._runtime.epoch
         try:
@@ -2430,9 +2484,14 @@ class ReveriePairlinkController(BedController):
             state["rgb_color"] = rgb
         return state
 
-    async def read_light_state(self) -> dict[str, Any]:
+    async def read_light_state(self) -> tuple[StateUpdate, ...]:
         """Return only current event-backed values; no undocumented query is sent."""
-        return self.get_light_state()
+        on = self._state.get(UNDER_BED_LIGHTS_ON)
+        level = self._state.get(LIGHT_LEVEL)
+        return (
+            *((UNDER_BED_LIGHTS_ON(on),) if isinstance(on, bool) else ()),
+            *((LIGHT_LEVEL(level),) if isinstance(level, int) else ()),
+        )
 
     async def set_massage_intensity(self, zone: str, level: int) -> None:
         if not self._has_supported_model:
@@ -2875,7 +2934,7 @@ class ReveriePairlinkController(BedController):
             state = self._state
             self._state = {}
             if state:
-                self.forward_controller_state_updates(dict.fromkeys(state))
+                self.forward_controller_state_updates(*_state_updates(dict.fromkeys(state)))
             self._coordinator.clear_position_feedback(("back", "legs"))
             self._runtime.central_disconnected(self._runtime.target_mac)
         else:

@@ -39,7 +39,9 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from ..const import LEGGETT_GEN2_READ_CHAR_UUID, LEGGETT_GEN2_WRITE_CHAR_UUID
+from ..controller_state import StateUpdate
 from ..execution import ExecutionCapabilities
+from ..state_keys import UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
 from .base import BedController
 from .leggett_gen2_profiles import (
     Gen2Capabilities,
@@ -624,22 +626,22 @@ class LeggettGen2Controller(BedController):
         if len(data) <= 10:
             return
         mode = data[6]
-        updates: dict[str, Any] = {}
+        updates: list[StateUpdate] = []
         if mode == 0x01:
             light_on = True
             rgb = (data[7], data[8], data[9])
             if rgb != self._light_rgb:
                 self._light_rgb = rgb
-                updates["under_bed_lights_rgb"] = rgb
+                updates.append(UNDER_BED_LIGHTS_RGB(rgb))
         elif mode == 0x04:
             light_on = False
         else:
             return
         if light_on != self._light_on:
             self._light_on = light_on
-            updates["under_bed_lights_on"] = light_on
+            updates.append(UNDER_BED_LIGHTS_ON(light_on))
         if updates:
-            self.forward_controller_state_updates(updates)
+            self.forward_controller_state_updates(*updates)
 
     # Massage methods. Gen2 intensity is relative (VII raise/lower), so no level is
     # tracked locally. "Off" sets all four channels to 0 (matching the app's

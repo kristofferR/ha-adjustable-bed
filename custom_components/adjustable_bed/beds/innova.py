@@ -32,6 +32,7 @@ from ..const import (
     KEESON_BASE_WRITE_CHAR_UUID,
     KEESON_VARIANT_INNOVA,
 )
+from ..controller_state import StateKey, StateUpdate
 from .base import (
     ControllerButtonSpec,
     ControllerStateBinarySensorSpec,
@@ -49,8 +50,8 @@ MASSAGE_LEVEL: Final = 0x00000100
 MASSAGE_TIMER: Final = 0x00000200
 RENAME_MAX_UNITS: Final = 14
 
-STATE_LIGHT: Final = "innova_light"
-STATE_MASSAGE_TIMER: Final = "innova_massage_timer"
+STATE_LIGHT: Final = StateKey[bool | None]("innova_light")
+STATE_MASSAGE_TIMER: Final = StateKey[int | None]("innova_massage_timer")
 _TIMER_MINUTES: Final = {-1: 0, 1: 10, 2: 20, 3: 30}
 
 BUTTON_MASSAGE_LEVEL: Final = "innova_massage_level"
@@ -120,7 +121,7 @@ def innova_rename_frame(name: str) -> bytes:
     return codec.rename(trimmed.encode("utf-8")[: _utf16_units(trimmed)])
 
 
-def parse_innova_status(data: bytes) -> dict[str, Any] | None:
+def parse_innova_status(data: bytes) -> list[StateUpdate] | None:
     """Decode a notification exactly as ``GattUpdateReceiver`` does.
 
     Only 16- and 19-byte values are read, with no header or checksum. The flag
@@ -137,10 +138,10 @@ def parse_innova_status(data: bytes) -> dict[str, Any] | None:
         return None
     if (flags >> 5) & 1:
         return None
-    state: dict[str, Any] = {STATE_LIGHT: bool((flags >> 6) & 1)}
+    state = [STATE_LIGHT(bool((flags >> 6) & 1))]
     signed = timer - 256 if timer > 127 else timer
     if signed in _TIMER_MINUTES:
-        state[STATE_MASSAGE_TIMER] = _TIMER_MINUTES[signed]
+        state.append(STATE_MASSAGE_TIMER(_TIMER_MINUTES[signed]))
     return state
 
 
@@ -538,17 +539,17 @@ class InnovaController(KeesonController):
         self.forward_raw_notification(self._notify_char_uuid, bytes(data))
         state = parse_innova_status(bytes(data))
         if state:
-            self.forward_controller_state_updates(state)
+            self.forward_controller_state_updates(*state)
 
     def invalidate_diagnostics(self) -> None:
-        self.forward_controller_state_updates(dict.fromkeys((STATE_LIGHT, STATE_MASSAGE_TIMER)))
+        self.forward_controller_state_updates(STATE_LIGHT(None), STATE_MASSAGE_TIMER(None))
 
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
         return (
             ControllerStateBinarySensorSpec(
-                key=STATE_LIGHT,
-                translation_key=STATE_LIGHT,
+                key="innova_light",
+                translation_key="innova_light",
                 state_key=STATE_LIGHT,
                 icon="mdi:lightbulb",
             ),
@@ -562,8 +563,8 @@ class InnovaController(KeesonController):
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (
             ControllerStateSensorSpec(
-                key=STATE_MASSAGE_TIMER,
-                translation_key=STATE_MASSAGE_TIMER,
+                key="innova_massage_timer",
+                translation_key="innova_massage_timer",
                 state_key=STATE_MASSAGE_TIMER,
                 icon="mdi:timer-outline",
                 native_unit_of_measurement="min",

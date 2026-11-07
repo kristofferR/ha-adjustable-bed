@@ -52,6 +52,7 @@ from custom_components.adjustable_bed.const import (
     KEESON_VARIANT_SIMON_LI,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
+from custom_components.adjustable_bed.controller_state import StateKey
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.profiles.keeson import (
     HEAL_EVERY_NIGHT,
@@ -1043,18 +1044,18 @@ async def test_massage_off_publishes_the_cleared_timer(
 ):
     controller = _ctrl(coordinator, KEESON_VARIANT_HEAL_EVERY_NIGHT)
     await controller.set_massage_timer(20)
-    assert coordinator.controller_state["okin_app_massage_timer"] == 20
+    assert coordinator.controller_state["massage_timer"] == 20
 
     original = mock_bleak_client.write_gatt_char.side_effect
     mock_bleak_client.write_gatt_char.side_effect = BleakError("write failed")
     with pytest.raises(BleakError):
         await controller.massage_off()
-    assert coordinator.controller_state["okin_app_massage_timer"] == 20
+    assert coordinator.controller_state["massage_timer"] == 20
     assert controller.get_massage_state()["timer_mode"] == "20"
 
     mock_bleak_client.write_gatt_char.side_effect = original
     await controller.massage_off()
-    assert coordinator.controller_state["okin_app_massage_timer"] is None
+    assert coordinator.controller_state["massage_timer"] is None
     assert controller.get_massage_state()["timer_mode"] is None
 
 
@@ -1100,7 +1101,7 @@ async def test_timer_start_commits_nothing_until_the_whole_sequence_is_written(
         "wave_intensity": None,
         "timer_mode": None,
     }
-    assert coordinator.controller_state["okin_app_massage_timer"] is None
+    assert coordinator.controller_state["massage_timer"] is None
     assert coordinator.controller_state["okin_app_massage_wave"] is None
     with pytest.raises(ValueError):
         await controller.massage_head_up()  # The page is still disabled.
@@ -1294,7 +1295,7 @@ async def test_timer_select_keeps_the_heal_timer_across_a_disconnect(
     coordinator = hass.data[DOMAIN][entry.entry_id]
     await coordinator.async_disconnect()
     assert coordinator.controller is None
-    coordinator.handle_controller_state_updates({"unrelated": 1})  # Re-render the select.
+    coordinator.handle_controller_state_updates(StateKey[int]("unrelated")(1))  # Re-render the select.
     await hass.async_block_till_done()
     assert hass.states.get(select_id).state == "20 min"
 
@@ -1354,7 +1355,7 @@ async def test_massage_off_sends_both_zones_even_when_one_fails(
         await controller.massage_off()
     assert _written(mock_bleak_client) == HEAL_STOP
     # Not both written: the page stays open and the timer stays published.
-    assert coordinator.controller_state["okin_app_massage_timer"] == 10
+    assert coordinator.controller_state["massage_timer"] == 10
     await controller.massage_head_up()
 
 

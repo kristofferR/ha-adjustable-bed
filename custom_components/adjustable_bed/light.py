@@ -27,11 +27,20 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import DOMAIN
+from .controller_state import ControllerState
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
 from .octo_runtime import octo_controller
 from .paired_coordinator import entity_runtimes
+from .state_keys import (
+    LIGHT_INTENSITY,
+    LIGHT_LEVEL,
+    OCTO_LIGHT_DURATION,
+    UNDER_BED_LIGHTS_ON,
+    UNDER_BED_LIGHTS_RGB,
+    UNDER_BED_LIGHTS_RGBW,
+)
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -322,7 +331,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         self._attr_is_on = False
         current_rgb = controller.current_light_rgb_color if controller is not None else None
         if current_rgb is None:
-            current_rgb = coordinator.controller_state.get("under_bed_lights_rgb")
+            current_rgb = coordinator.controller_state.get(UNDER_BED_LIGHTS_RGB)
         self._attr_rgb_color = _normalize_rgb_color(current_rgb) or self._default_rgb_color
         if ColorMode.RGBW in supported_modes:
             # Keep RGB, RGBW and intensity independent when both records exist.
@@ -330,7 +339,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                 controller.current_light_rgbw_color if controller is not None else None
             )
             if current_rgbw is None:
-                current_rgbw = coordinator.controller_state.get("under_bed_lights_rgbw")
+                current_rgbw = coordinator.controller_state.get(UNDER_BED_LIGHTS_RGBW)
             normalized_rgbw = _normalize_rgbw_color(current_rgbw)
             if normalized_rgbw is not None:
                 self._attr_rgbw_color = normalized_rgbw
@@ -341,7 +350,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                 self._attr_rgbw_color = (255, 255, 255, 255)
             current_intensity = controller.light_intensity if controller is not None else None
             if current_intensity is None:
-                current_intensity = coordinator.controller_state.get("light_intensity")
+                current_intensity = coordinator.controller_state.get(LIGHT_INTENSITY)
             if type(current_intensity) is int and (
                 0 <= current_intensity <= 255 if is_octo else 1 <= current_intensity <= 255
             ):
@@ -410,7 +419,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         await super().async_will_remove_from_hass()
 
     @callback
-    def _handle_light_state(self, state: dict[str, Any]) -> None:
+    def _handle_light_state(self, state: ControllerState) -> None:
         """Update on/off + colour from controller-reported light state.
 
         Only writes HA state when a value actually changes, to avoid event churn
@@ -461,31 +470,31 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             if not active_modes and self._attr_is_on:
                 self._attr_is_on = False
                 changed = True
-        if "under_bed_lights_on" in state:
-            reported_state = state["under_bed_lights_on"]
+        if UNDER_BED_LIGHTS_ON in state:
+            reported_state = state[UNDER_BED_LIGHTS_ON]
             if not (octo is not None and reported_state is None):
                 is_on = bool(reported_state)
                 if is_on != self._attr_is_on:
                     self._attr_is_on = is_on
                     changed = True
         octo_modes = active_modes if octo is not None else {ColorMode.RGB, ColorMode.RGBW}
-        rgb = _normalize_rgb_color(state.get("under_bed_lights_rgb"))
+        rgb = _normalize_rgb_color(state.get(UNDER_BED_LIGHTS_RGB))
         if (
-            "under_bed_lights_rgb" in state
+            UNDER_BED_LIGHTS_RGB in state
             and ColorMode.RGB in octo_modes
             and rgb != self._attr_rgb_color
         ):
             self._attr_rgb_color = rgb
             changed = True
-        rgbw = _normalize_rgbw_color(state.get("under_bed_lights_rgbw"))
+        rgbw = _normalize_rgbw_color(state.get(UNDER_BED_LIGHTS_RGBW))
         if (
-            "under_bed_lights_rgbw" in state
+            UNDER_BED_LIGHTS_RGBW in state
             and ColorMode.RGBW in octo_modes
             and rgbw != self._attr_rgbw_color
         ):
             self._attr_rgbw_color = rgbw
             changed = True
-        intensity = state.get("light_intensity")
+        intensity = state.get(LIGHT_INTENSITY)
         normalized_intensity = (
             intensity
             if type(intensity) is int
@@ -493,7 +502,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             else None
         )
         if (
-            "light_intensity" in state
+            LIGHT_INTENSITY in state
             and (octo is None or ColorMode.RGBW in octo_modes)
             and normalized_intensity != self._attr_brightness
         ):
@@ -506,7 +515,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             if octo.controller_entity_discovery_complete and not octo.supports_lights:
                 self._cancel_light_auto_off_timer()
             else:
-                if "octo_light_duration" in state:
+                if OCTO_LIGHT_DURATION in state:
                     duration = (
                         octo.light_auto_off_seconds
                         if octo.controller_entity_discovery_complete
@@ -519,14 +528,14 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                         else:
                             self._cancel_light_auto_off_timer()
 
-                if "under_bed_lights_on" in state:
-                    reported_state = state["under_bed_lights_on"]
+                if UNDER_BED_LIGHTS_ON in state:
+                    reported_state = state[UNDER_BED_LIGHTS_ON]
                     if reported_state is True:
                         if not was_on or self._light_auto_off_timer is None:
                             self._schedule_light_auto_off_timer()
                     elif reported_state is False:
                         self._cancel_light_auto_off_timer()
-        level = state.get("light_level")
+        level = state.get(LIGHT_LEVEL)
         if self._light_level_max is not None and type(level) is int and level > 0:
             brightness = _level_to_brightness(level, self._light_level_max)
             if brightness != self._attr_brightness:
@@ -791,10 +800,10 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             self._attr_is_on = None
             self.async_write_ha_state()
         else:
-            self._handle_controller_state_update({})
+            self._handle_controller_state_update(ControllerState())
 
     @callback
-    def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
+    def _handle_controller_state_update(self, state: ControllerState) -> None:
         """Update state from controller light telemetry when available."""
         if self._feedback_only:
             controller = self._coordinator.controller
@@ -802,8 +811,8 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                 value = (
                     controller.get_light_state().get("is_on") if controller is not None else None
                 )
-        elif "under_bed_lights_on" in state:
-            value = state["under_bed_lights_on"]
+        elif UNDER_BED_LIGHTS_ON in state:
+            value = state[UNDER_BED_LIGHTS_ON]
         else:
             return
         self._attr_is_on = None if value is None else bool(value)

@@ -14,7 +14,8 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 
 from ..codec import limoss as codec
 from ..const import LIMOSS_CHAR_UUID, LIMOSS_SERVICE_UUID
-from ..limoss_remote_state import LimossRemoteSession
+from ..controller_state import StateKey
+from ..limoss_remote_state import LIMOSS_REMOTE_MEMORY_NAMES, LimossRemoteSession
 from ..profiles.limoss import LIMOSS_REMOTE, REMOTE_CHANNELS, REMOTE_THEMES
 from .base import (
     BedController,
@@ -101,6 +102,11 @@ async def apply_limoss_remote_features(
         await controller.set_optional_features(light, massage, persist=persist)
         return
     raise ValueError("Requires the current Limoss Remote profile")
+
+
+def _field_key(field: str) -> StateKey[str | int]:
+    """Diagnostic fields, each a string or an integer."""
+    return StateKey[str | int](f"limoss_remote_{field}")
 
 
 class _ReplyWaitTimeout(TimeoutError):
@@ -298,7 +304,7 @@ class LimossRemoteController(BedController):
             ControllerStateSensorSpec(
                 f"limoss_remote_{field}",
                 f"limoss_remote_{field}",
-                f"limoss_remote_{field}",
+                _field_key(field),
                 "mdi:information-outline",
             )
             for field in fields
@@ -551,7 +557,7 @@ class LimossRemoteController(BedController):
                 value = codec.version(parameters)
                 self._metadata[field] = value
                 self._coordinator.save_app_state(self)
-                self.forward_controller_state_update(f"limoss_remote_{field}", value)
+                self.forward_controller_state_update(_field_key(field), value)
             elif opcode == codec.QUERY_CAPABILITIES:
                 self.capabilities = LimossRemoteCapabilities.from_parameters(parameters)
                 self._publish_capabilities()
@@ -562,16 +568,16 @@ class LimossRemoteController(BedController):
                     self._coordinator.remember_limoss_remote_capabilities(asdict(self.capabilities))
             elif opcode == codec.CALIBRATE:
                 self.forward_controller_state_update(
-                    "limoss_remote_calibration_result", "reply_received"
+                    _field_key("calibration_result"), "reply_received"
                 )
             elif opcode == codec.SERIAL:
                 value = str(int.from_bytes(parameters, "big", signed=True))
                 self._metadata["serial"] = value
                 self._coordinator.save_app_state(self)
-                self.forward_controller_state_update("limoss_remote_serial", value)
+                self.forward_controller_state_update(_field_key("serial"), value)
             elif opcode in codec.POSITION_OPCODES:
                 self.forward_controller_state_update(
-                    f"limoss_remote_motor_{opcode // 16}_position_raw",
+                    _field_key(f"motor_{opcode // 16}_position_raw"),
                     int.from_bytes(parameters, "big", signed=True),
                 )
             if self._request_reply is not None:
@@ -582,18 +588,16 @@ class LimossRemoteController(BedController):
     def _publish_capabilities(self) -> None:
         if self.capabilities is not None:
             self.forward_controller_state_updates(
-                {
-                    "limoss_remote_key_count": self.capabilities.key_count,
-                    "limoss_remote_motor_count": self.capabilities.system & 15,
-                    "limoss_remote_configuration": self.capabilities.configuration,
-                    "limoss_remote_memory_slots": self.capabilities.memory_count,
-                    "limoss_remote_reported_entry": self.capabilities.reported_product or "unknown",
-                }
+                _field_key("key_count")(self.capabilities.key_count),
+                _field_key("motor_count")(self.capabilities.system & 15),
+                _field_key("configuration")(self.capabilities.configuration),
+                _field_key("memory_slots")(self.capabilities.memory_count),
+                _field_key("reported_entry")(self.capabilities.reported_product or "unknown"),
             )
 
     def _publish_metadata(self) -> None:
         for field, value in self._metadata.items():
-            self.forward_controller_state_update(f"limoss_remote_{field}", value)
+            self.forward_controller_state_update(_field_key(field), value)
 
     async def _reply(self, future: asyncio.Future[bytes], timeout: float) -> bytes:
         event_task = asyncio.create_task(self._coordinator.cancel_command.wait())
@@ -714,7 +718,7 @@ class LimossRemoteController(BedController):
             raise ValueError("Memory name must be a string")
         self.memories.rename(memory_num, name)
         self._coordinator.save_app_state(self)
-        self.forward_controller_state_update("limoss_remote_memory_names", self.memory_slot_names)
+        self.forward_controller_state_update(LIMOSS_REMOTE_MEMORY_NAMES, self.memory_slot_names)
 
     async def _release(self, *, calibration: bool = False) -> None:
         burst = self.profile.stop

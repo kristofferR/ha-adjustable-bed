@@ -13,6 +13,7 @@ from custom_components.adjustable_bed.lp_legacy_profiles import (
     LpLegacyControl,
     get_lp_legacy_profile,
 )
+from tests.state_helpers import published
 
 WRITE_UUID = "00000001-0000-0000-0000-000000000000"
 READ_UUID = "00000002-0000-0000-0000-000000000000"
@@ -213,9 +214,7 @@ async def test_explicit_read_endpoint_and_exact_diagnostic_frames(coordinator):
         ("6E 07 01 02 78", "alarm_routine_2"),
     ]:
         controller._notification_handler(characteristic, bytearray.fromhex(packet))
-        coordinator.handle_controller_state_updates.assert_called_with(
-            {"lp_legacy_notification": packet, "lp_legacy_notification_effect": effect}
-        )
+        assert published(*coordinator.handle_controller_state_updates.call_args.args) == {"lp_legacy_notification": packet, "lp_legacy_notification_effect": effect}
     coordinator.handle_controller_state_updates.reset_mock()
     for packet in ["6E 09 01 00 79", "6E 09 01 00 78 00", "6E 09 01"]:
         controller._notification_handler(characteristic, bytearray.fromhex(packet))

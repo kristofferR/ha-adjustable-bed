@@ -16,7 +16,7 @@ import asyncio
 import contextlib
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Final, cast
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
@@ -28,6 +28,7 @@ from ..const import (
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_PURPLE,
 )
+from ..controller_state import StateKey, StateUpdate
 from ..profiles import keeson as profiles
 from ..profiles.keeson import (
     RESTONIC_A_CONTROLS as RESTONIC_A_CONTROLS,
@@ -64,9 +65,11 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 _ADJUSTABLE_LITE_STATUS_MIN_LENGTH = 13
-STATE_ADJUSTABLE_LITE_LIGHT = "adjustable_lite_light"
-STATE_ADJUSTABLE_LITE_MASSAGE_TIMER = "adjustable_lite_massage_timer"
-STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW = "adjustable_lite_massage_timer_raw"
+STATE_ADJUSTABLE_LITE_LIGHT: Final = StateKey[bool | None]("adjustable_lite_light")
+STATE_ADJUSTABLE_LITE_MASSAGE_TIMER: Final = StateKey[int | None]("adjustable_lite_massage_timer")
+STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW: Final = StateKey[int | None](
+    "adjustable_lite_massage_timer_raw"
+)
 RESTONIC_ZZZ_BUTTON_KEY = "restonic_zzz"
 
 
@@ -78,7 +81,7 @@ async def _wait_unless_cancelled(event: asyncio.Event, seconds: float) -> None:
         await asyncio.wait_for(event.wait(), seconds)
 
 
-def parse_adjustable_lite_status(data: bytes, *, massage_timer: bool) -> dict[str, Any] | None:
+def parse_adjustable_lite_status(data: bytes, *, massage_timer: bool) -> list[StateUpdate] | None:
     """Decode an Adjustable Lite notification exactly as the app does.
 
     Any payload longer than 12 bytes is used, with no header or checksum check.
@@ -88,13 +91,15 @@ def parse_adjustable_lite_status(data: bytes, *, massage_timer: bool) -> dict[st
     """
     if len(data) < _ADJUSTABLE_LITE_STATUS_MIN_LENGTH:
         return None
-    state: dict[str, Any] = {STATE_ADJUSTABLE_LITE_LIGHT: data[12] == 1}
+    state = [STATE_ADJUSTABLE_LITE_LIGHT(data[12] == 1)]
     if massage_timer:
         raw = (data[3] << 8) | data[4]
-        state[STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW] = raw
-        state[STATE_ADJUSTABLE_LITE_MASSAGE_TIMER] = (
-            30 if raw > 1200 else 20 if raw > 600 else 10 if raw > 0 else 0
-        )
+        state += [
+            STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW(raw),
+            STATE_ADJUSTABLE_LITE_MASSAGE_TIMER(
+                30 if raw > 1200 else 20 if raw > 600 else 10 if raw > 0 else 0
+            ),
+        ]
     return state
 
 
@@ -543,13 +548,9 @@ class KeesonController(BedController):
         """Forget reported status when the BLE session ends."""
         if self.profile.status_poll_ms:
             self.forward_controller_state_updates(
-                dict.fromkeys(
-                    (
-                        STATE_ADJUSTABLE_LITE_LIGHT,
-                        STATE_ADJUSTABLE_LITE_MASSAGE_TIMER,
-                        STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW,
-                    )
-                )
+                STATE_ADJUSTABLE_LITE_LIGHT(None),
+                STATE_ADJUSTABLE_LITE_MASSAGE_TIMER(None),
+                STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW(None),
             )
 
     @property
@@ -561,8 +562,8 @@ class KeesonController(BedController):
             return ()
         return (
             ControllerStateBinarySensorSpec(
-                key=STATE_ADJUSTABLE_LITE_LIGHT,
-                translation_key=STATE_ADJUSTABLE_LITE_LIGHT,
+                key="adjustable_lite_light",
+                translation_key="adjustable_lite_light",
                 state_key=STATE_ADJUSTABLE_LITE_LIGHT,
                 icon="mdi:lightbulb",
             ),
@@ -572,7 +573,7 @@ class KeesonController(BedController):
     def stale_controller_state_binary_sensor_entity_keys(self) -> frozenset[str]:
         if self.profile.status_poll_ms:
             return frozenset()
-        return frozenset({STATE_ADJUSTABLE_LITE_LIGHT})
+        return frozenset({"adjustable_lite_light"})
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
@@ -581,8 +582,8 @@ class KeesonController(BedController):
             return ()
         return (
             ControllerStateSensorSpec(
-                key=STATE_ADJUSTABLE_LITE_MASSAGE_TIMER,
-                translation_key=STATE_ADJUSTABLE_LITE_MASSAGE_TIMER,
+                key="adjustable_lite_massage_timer",
+                translation_key="adjustable_lite_massage_timer",
                 state_key=STATE_ADJUSTABLE_LITE_MASSAGE_TIMER,
                 icon="mdi:timer-outline",
                 native_unit_of_measurement="min",
@@ -594,7 +595,7 @@ class KeesonController(BedController):
     def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
         if self.profile.status_timer:
             return frozenset()
-        return frozenset({STATE_ADJUSTABLE_LITE_MASSAGE_TIMER})
+        return frozenset({"adjustable_lite_massage_timer"})
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         """Start position (Ergomotion) or status (Adjustable Lite) notifications."""
@@ -618,7 +619,7 @@ class KeesonController(BedController):
                 bytes(data), massage_timer=self.profile.status_timer
             )
             if state is not None:
-                self.forward_controller_state_updates(state)
+                self.forward_controller_state_updates(*state)
             return
         self._parse_notification(bytes(data))
 

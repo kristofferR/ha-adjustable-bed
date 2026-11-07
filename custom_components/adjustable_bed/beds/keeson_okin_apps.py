@@ -42,6 +42,8 @@ from ..const import (
     KEESON_VARIANT_SIMON_LI,
     OKIN_APP_VARIANTS,
 )
+from ..controller_state import StateKey, StateUpdate
+from ..state_keys import MASSAGE_TIMER_MINUTES
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -120,12 +122,13 @@ HEAL_SETTING_OPTIONS: Final[dict[str, tuple[str, str]]] = {
 }
 
 ACTION_NAMESPACE: Final = "okin_app_"
-STATE_HEAL_MASSAGE: Final[dict[str, str]] = {
-    "head": "okin_app_massage_head",
-    "foot": "okin_app_massage_foot",
-    "wave": "okin_app_massage_wave",
+STATE_HEAL_MASSAGE: Final[dict[str, StateKey[int | None]]] = {
+    zone: StateKey[int | None](f"okin_app_massage_{zone}") for zone in ("head", "foot", "wave")
 }
-STATE_HEAL_TIMER: Final = "okin_app_massage_timer"
+
+
+def _setting_key(setting: str) -> StateKey[str | None]:
+    return StateKey[str | None](f"{ACTION_NAMESPACE}{setting}")
 
 
 async def _run_to_completion(cleanup: Coroutine[Any, Any, None]) -> None:
@@ -231,7 +234,7 @@ class OkinAppKeesonController(KeesonController):
             self._session = app_session(
                 coordinator.hass, str(coordinator.address), ("okin_app", variant), HealSession
             )
-            self.forward_controller_state_updates(self._published_state())
+            self.forward_controller_state_updates(*self._published_state())
 
     # ------------------------------------------------------------- profile
     @property
@@ -265,7 +268,7 @@ class OkinAppKeesonController(KeesonController):
         if set(state) - set(HEAL_SETTING_OPTIONS) or any(type(v) is not bool for v in state.values()):
             raise ValueError("Invalid Heal Every Night settings")
         self._session.settings = {key: state.get(key) is True for key in HEAL_SETTING_OPTIONS}
-        self.forward_controller_state_updates(self._published_state())
+        self.forward_controller_state_updates(*self._published_state())
 
     @property
     def supports_single_address_pairing(self) -> bool:
@@ -857,19 +860,20 @@ class OkinAppKeesonController(KeesonController):
     def massage_timer_options(self) -> list[int]:
         return list(HEAL_TIMER_OPTIONS) if self._is_heal else []
 
-    def _published_state(self) -> dict[str, Any]:
+    def _published_state(self) -> list[StateUpdate]:
         session = self._session
-        state: dict[str, Any] = {
-            STATE_HEAL_MASSAGE["head"]: session.head,
-            STATE_HEAL_MASSAGE["foot"]: session.foot,
-            # Wave levels are 1..4; before the first timer the app has none.
-            STATE_HEAL_MASSAGE["wave"]: session.wave or None,
-            STATE_HEAL_TIMER: session.timer_minutes,
-        }
         settings = self._settings()
-        for setting, options in HEAL_SETTING_OPTIONS.items():
-            state[f"{ACTION_NAMESPACE}{setting}"] = options[settings[setting]]
-        return state
+        return [
+            STATE_HEAL_MASSAGE["head"](session.head),
+            STATE_HEAL_MASSAGE["foot"](session.foot),
+            # Wave levels are 1..4; before the first timer the app has none.
+            STATE_HEAL_MASSAGE["wave"](session.wave or None),
+            MASSAGE_TIMER_MINUTES(session.timer_minutes),
+            *(
+                _setting_key(setting)(options[settings[setting]])
+                for setting, options in HEAL_SETTING_OPTIONS.items()
+            ),
+        ]
 
     def _require_massage_page(self) -> None:
         if not self._is_heal:
@@ -906,7 +910,7 @@ class OkinAppKeesonController(KeesonController):
         session.wave, session.head, session.foot = wave, head, foot
         session.massage_enabled = True
         session.timer_minutes = minutes
-        self.forward_controller_state_updates(self._published_state())
+        self.forward_controller_state_updates(*self._published_state())
 
     async def massage_off(self) -> None:
         """The massage STOP button: both zones off; levels are kept."""
@@ -928,7 +932,7 @@ class OkinAppKeesonController(KeesonController):
             if written == 2:
                 self._session.massage_enabled = False
                 self._session.timer_minutes = None
-                self.forward_controller_state_update(STATE_HEAL_TIMER, None)
+                self.forward_controller_state_update(MASSAGE_TIMER_MINUTES, None)
             if errors:
                 raise errors[0]
 
@@ -1028,7 +1032,7 @@ class OkinAppKeesonController(KeesonController):
             raise ValueError(f"Unsupported Heal Every Night setting {setting}={option}")
         self._session.settings[setting] = option == options[1]
         self._coordinator.save_app_state(self)
-        self.forward_controller_state_update(f"{ACTION_NAMESPACE}{setting}", option)
+        self.forward_controller_state_update(_setting_key(setting), option)
 
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
@@ -1042,7 +1046,7 @@ class OkinAppKeesonController(KeesonController):
             return ControllerSelectSpec(
                 key=f"{ACTION_NAMESPACE}{setting}",
                 translation_key=f"{ACTION_NAMESPACE}{setting}",
-                state_key=f"{ACTION_NAMESPACE}{setting}",
+                state_key=_setting_key(setting),
                 options=HEAL_SETTING_OPTIONS[setting],
                 select_fn=apply,
                 local_select_fn=lambda option: self.select_heal_setting(setting, option),

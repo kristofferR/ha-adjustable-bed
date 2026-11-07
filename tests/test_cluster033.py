@@ -36,6 +36,7 @@ from custom_components.adjustable_bed.profiles.keeson import (
     APP_LAYOUTS,
     app_profile,
 )
+from tests.state_helpers import state_writer
 
 FIXTURES = json.loads((Path(__file__).parent / "fixtures/cluster033/vectors.json").read_text())
 APPS = tuple(APP_LAYOUTS)
@@ -53,7 +54,7 @@ def coordinator():
     result._cancel_command = asyncio.Event()
     result.cancel_command = result._cancel_command
     result.controller_state = {}
-    result.handle_controller_state_updates.side_effect = result.controller_state.update
+    result.handle_controller_state_updates.side_effect = state_writer(result.controller_state)
     rx = MagicMock(uuid=FFE4, properties=["notify"])
     tx = MagicMock(uuid=FFE9, properties=["write"])
     service = MagicMock()

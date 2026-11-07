@@ -18,12 +18,13 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable, Coroutine
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 from bleak.exc import BleakError
 
 from ..app_session import app_session
 from ..const import REMACRO_READ_CHAR_UUID, REMACRO_WRITE_CHAR_UUID
+from ..controller_state import StateKey, StateUpdate
 from ..execution import ExecutionCapabilities
 from .base import (
     BedController,
@@ -66,8 +67,8 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 Side = Literal["left", "right"]
-SIDE_STATE_KEY = "remacro_control_side"
-LED_STATE_KEY = "remacro_led_brightness"
+SIDE_STATE_KEY: Final = StateKey[str | None]("remacro_control_side")
+LED_STATE_KEY: Final = StateKey[int | None]("remacro_led_brightness")
 # OneActivity release schedules, measured from the release moment.
 _ONE_INDIVIDUAL_RELEASE = (0.0, 0.120, 0.240)
 _ONE_COMBINED_RELEASE = (0.0, 0.020, 0.040)
@@ -139,12 +140,12 @@ class RemacroController(BedController):
                 and 0 <= led_level <= 255
                 else LED_DEFAULT_BRIGHTNESS
             )
-        updates: dict[str, Any] = {}
+        updates: list[StateUpdate] = []
         if self._model.screen.split:
-            updates[SIDE_STATE_KEY] = self._session.side
+            updates.append(SIDE_STATE_KEY(self._session.side))
         if self.supports_led_brightness:
-            updates[LED_STATE_KEY] = self._led_level
-        self.forward_controller_state_updates(updates)
+            updates.append(LED_STATE_KEY(self._led_level))
+        self.forward_controller_state_updates(*updates)
 
     # ------------------------------------------------------------------
     # Profile
@@ -336,8 +337,8 @@ class RemacroController(BedController):
             return ()
         return (
             ControllerSelectSpec(
-                key=SIDE_STATE_KEY,
-                translation_key=SIDE_STATE_KEY,
+                key="remacro_control_side",
+                translation_key="remacro_control_side",
                 state_key=SIDE_STATE_KEY,
                 options=("left", "right"),
                 select_fn=_select_side,
@@ -351,7 +352,7 @@ class RemacroController(BedController):
             return ()
         return (
             ControllerNumberSpec(
-                key=LED_STATE_KEY,
+                key="remacro_led_brightness",
                 translation_key="light_level",
                 state_key=LED_STATE_KEY,
                 native_min_value=0,

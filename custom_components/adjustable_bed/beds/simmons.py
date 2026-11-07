@@ -13,7 +13,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Final
 
 from bleak.exc import BleakError
@@ -29,6 +29,7 @@ from ..const import (
     SIMMONS_VARIANT_OKIN,
     SIMMONS_VARIANT_SMARTBED,
 )
+from ..controller_state import StateKey, StateUpdate
 from ..detection import is_mac_like_name
 from ..profiles.okin_nframe import (
     SIMMONS_PROFILES,
@@ -81,6 +82,36 @@ if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True, slots=True)
+class _AlarmKeys:
+    """Controller-state keys of one alarm slot."""
+
+    time: StateKey[str]
+    enabled: StateKey[bool]
+    mode: StateKey[str | None]
+    wire_type: StateKey[int]
+    weekday_mask: StateKey[int]
+    awaiting_reply: StateKey[bool]
+    # The raw record restores the slot on the next per-connection controller.
+    record: StateKey[tuple[int, int, int, int, bool]]
+
+    @classmethod
+    def for_slot(cls, slot: int) -> _AlarmKeys:
+        prefix = f"simmons_alarm_{slot}"
+        return cls(
+            StateKey[str](prefix),
+            StateKey[bool](f"{prefix}_enabled"),
+            StateKey[str | None](f"{prefix}_mode"),
+            StateKey[int](f"{prefix}_wire_type"),
+            StateKey[int](f"{prefix}_weekday_mask"),
+            StateKey[bool](f"{prefix}_awaiting_reply"),
+            StateKey[tuple[int, int, int, int, bool]](f"{prefix}_record"),
+        )
+
+
+_ALARM_KEYS: Final = {slot: _AlarmKeys.for_slot(slot) for slot in (1, 2)}
 
 QUERY_GAP_S: Final = 0.3  # Slot 2 query, and the query after an alarm write.
 PAGE_QUERY_OFFSETS_S: Final = (0.0, 0.3, 0.6)  # Alarm page opening.
@@ -185,12 +216,12 @@ class SimmonsController(BedController):
         self._clock_synced = False  # Per connection: this controller is per session.
         # Alarm records live in coordinator state so they survive the
         # per-connection controller. They are per physical bed, not app-global.
-        state = getattr(coordinator, "controller_state", {})
+        state = coordinator.controller_state
         self._slots: list[AlarmSlot | None] = [self._restore_slot(state, slot) for slot in (1, 2)]
 
     @staticmethod
     def _restore_slot(state: Mapping[str, object], slot: int) -> AlarmSlot | None:
-        record = state.get(f"simmons_alarm_{slot}_record")
+        record = state.get(_ALARM_KEYS[slot].record)
         if (
             isinstance(record, tuple)
             and len(record) == 5
@@ -323,11 +354,14 @@ class SimmonsController(BedController):
             ControllerStateSensorSpec(
                 key=f"simmons_alarm_{slot}",
                 translation_key=f"simmons_alarm_{slot}",
-                state_key=f"simmons_alarm_{slot}",
+                state_key=_ALARM_KEYS[slot].time,
                 icon="mdi:alarm",
-                attribute_keys=tuple(
-                    f"simmons_alarm_{slot}_{field}"
-                    for field in ("enabled", "mode", "wire_type", "weekday_mask", "awaiting_reply")
+                attribute_keys=(
+                    _ALARM_KEYS[slot].enabled,
+                    _ALARM_KEYS[slot].mode,
+                    _ALARM_KEYS[slot].wire_type,
+                    _ALARM_KEYS[slot].weekday_mask,
+                    _ALARM_KEYS[slot].awaiting_reply,
                 ),
             )
             for slot in (1, 2)
@@ -795,26 +829,20 @@ class SimmonsController(BedController):
         self._reply.set()
 
     def _publish_slots(self) -> None:
-        updates: dict[str, object] = {}
+        updates: list[StateUpdate] = []
         for slot, record in enumerate(self._slots, start=1):
             if record is None:
                 continue
-            prefix = f"simmons_alarm_{slot}"
-            updates.update(
-                {
-                    prefix: f"{record.hour:02d}:{record.minute:02d}",
-                    f"{prefix}_enabled": record.enabled,
-                    f"{prefix}_mode": alarm_mode(self._protocol, record.type),
-                    f"{prefix}_wire_type": record.type,
-                    f"{prefix}_weekday_mask": record.weekday,
-                    f"{prefix}_awaiting_reply": self._awaiting[slot - 1],
-                    f"{prefix}_record": (
-                        record.hour,
-                        record.minute,
-                        record.weekday,
-                        record.type,
-                        record.enabled,
-                    ),
-                }
-            )
-        self.forward_controller_state_updates(updates)
+            keys = _ALARM_KEYS[slot]
+            updates += [
+                keys.time(f"{record.hour:02d}:{record.minute:02d}"),
+                keys.enabled(record.enabled),
+                keys.mode(alarm_mode(self._protocol, record.type)),
+                keys.wire_type(record.type),
+                keys.weekday_mask(record.weekday),
+                keys.awaiting_reply(self._awaiting[slot - 1]),
+                keys.record(
+                    (record.hour, record.minute, record.weekday, record.type, record.enabled)
+                ),
+            ]
+        self.forward_controller_state_updates(*updates)

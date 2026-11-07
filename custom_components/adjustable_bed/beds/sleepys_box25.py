@@ -38,6 +38,14 @@ from ..profiles.okin_nframe import (
     SLEEPYS_BOX25_RECALL,
     SLEEPYS_BOX25_STORE,
 )
+from ..state_keys import (
+    LIGHT_LEVEL,
+    MASSAGE_ACTIVE,
+    MASSAGE_LEVEL,
+    MASSAGE_TIMER_MINUTES,
+    UNDER_BED_LIGHTS_ON,
+    UNDER_BED_LIGHTS_RGB,
+)
 from .base import (
     POSITION_UNIT_PERCENT,
     BedController,
@@ -444,10 +452,7 @@ class SleepysBox25Controller(BedController):
             self._massage_timer_minutes = minutes
             self._massage_active = seconds > 0
             self.forward_controller_state_updates(
-                {
-                    "massage_timer": minutes,
-                    "massage_active": self._massage_active,
-                }
+                MASSAGE_TIMER_MINUTES(minutes), MASSAGE_ACTIVE(self._massage_active)
             )
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
@@ -669,12 +674,13 @@ class SleepysBox25Controller(BedController):
         """
         await self._write_massage_light_command(Box25Commands.LIGHT_ON_WHITE)
         self.forward_controller_state_updates(
-            {"under_bed_lights_on": True, "under_bed_lights_rgb": _DEFAULT_LIGHT_RGB}
+            UNDER_BED_LIGHTS_ON(True),
+            UNDER_BED_LIGHTS_RGB(_DEFAULT_LIGHT_RGB),
         )
 
     async def lights_off(self) -> None:
         await self._write_massage_light_command(Box25Commands.LIGHT_OFF)
-        self.forward_controller_state_update("under_bed_lights_on", False)
+        self.forward_controller_state_update(UNDER_BED_LIGHTS_ON, False)
 
     async def lights_toggle(self) -> None:
         await self._write_massage_light_command(Box25Commands.LIGHT_TOGGLE)
@@ -684,7 +690,8 @@ class SleepysBox25Controller(BedController):
         red, green, blue = (max(0, min(255, int(channel))) for channel in rgb_color)
         await self._write_massage_light_command(star.extended(0x02, red, green, blue))
         self.forward_controller_state_updates(
-            {"under_bed_lights_on": True, "under_bed_lights_rgb": (red, green, blue)}
+            UNDER_BED_LIGHTS_ON(True),
+            UNDER_BED_LIGHTS_RGB((red, green, blue)),
         )
 
     async def set_light_level(self, level: int) -> None:
@@ -693,10 +700,8 @@ class SleepysBox25Controller(BedController):
         await self._write_massage_light_command(star.extended(0x00, normalized))
         self._light_level = normalized
         self.forward_controller_state_updates(
-            {
-                "light_level": normalized,
-                "under_bed_lights_on": normalized > 0,
-            }
+            LIGHT_LEVEL(normalized),
+            UNDER_BED_LIGHTS_ON(normalized > 0),
         )
 
     # ─── Massage ─────────────────────────────────────────────────────────
@@ -706,13 +711,13 @@ class SleepysBox25Controller(BedController):
         await self._write_motor_command(Box25Commands.MASSAGE_EXIT)
         self._massage_active = False
         self._massage_timer_minutes = 0
-        self.forward_controller_state_updates({"massage_active": False, "massage_timer": 0})
+        self.forward_controller_state_updates(MASSAGE_ACTIVE(False), MASSAGE_TIMER_MINUTES(0))
 
     async def massage_toggle(self) -> None:
         """Send the OEM's dedicated massage on/off toggle."""
         await self._write_massage_light_command(Box25Commands.MASSAGE_TOGGLE)
         self._massage_active = not self._massage_active
-        self.forward_controller_state_update("massage_active", self._massage_active)
+        self.forward_controller_state_update(MASSAGE_ACTIVE, self._massage_active)
 
     async def massage_intensity_up(self) -> None:
         """Increase massage intensity (both zones)."""
@@ -751,7 +756,7 @@ class SleepysBox25Controller(BedController):
         encoded = normalized + 1 if normalized > 0 else 0
         await self._write_massage_light_command(star.extended(0x06, encoded, encoded))
         self._massage_intensity = normalized
-        self.forward_controller_state_update("massage_intensity", normalized)
+        self.forward_controller_state_update(MASSAGE_LEVEL, normalized)
 
     async def set_massage_timer(self, minutes: int) -> None:
         """Select the OEM massage timer (10/20/30 minutes), or turn it off."""
@@ -767,7 +772,7 @@ class SleepysBox25Controller(BedController):
             ) from err
         await self._write_massage_light_command(star.extended(0x07, encoded))
         self._massage_timer_minutes = int(minutes)
-        self.forward_controller_state_update("massage_timer", int(minutes))
+        self.forward_controller_state_update(MASSAGE_TIMER_MINUTES, int(minutes))
 
     def get_massage_state(self) -> dict[str, object]:
         """Return normalized combined intensity and timer state."""

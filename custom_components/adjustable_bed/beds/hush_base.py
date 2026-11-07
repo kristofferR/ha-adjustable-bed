@@ -16,7 +16,7 @@ from ..hush_protocol import HushMainReceive, decode
 from ..profiles.casper import MUSIC_BLUETOOTH
 from ..profiles.hush import ACTIONS, PROFILES
 from .base import ControllerButtonSpec
-from .casper_base import CasperBaseController
+from .casper_base import CASPER_BASE_ERROR, CasperBaseController
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -150,7 +150,7 @@ class HushBaseController(CasperBaseController):
                 if event := decode(packet):
                     self._consume(event)
         except (ValueError, IndexError) as err:
-            self.forward_controller_state_update("casper_base_error", str(err))
+            self.forward_controller_state_update(CASPER_BASE_ERROR, str(err))
         self._publish()
 
     def validate_casper_base_request(self, request: Request) -> None:

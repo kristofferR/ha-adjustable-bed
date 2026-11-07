@@ -36,6 +36,7 @@ from custom_components.adjustable_bed.const import (
     REMACRO_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
+from tests.state_helpers import state_writer
 
 SLUMBER = protocol.APP_SLUMBERLAND
 BRICK = protocol.APP_THE_BRICK
@@ -284,7 +285,7 @@ def make_controller(
     coordinator.cancel_command = asyncio.Event()
     coordinator.motor_pulse_count, coordinator.motor_pulse_delay_ms = pulse
     coordinator.controller_state = {}
-    coordinator.handle_controller_state_updates.side_effect = coordinator.controller_state.update
+    coordinator.handle_controller_state_updates.side_effect = state_writer(coordinator.controller_state)
     coordinator.handle_controller_state_update.side_effect = lambda key, value: (
         coordinator.controller_state.update({key: value})
     )

@@ -32,6 +32,7 @@ from .const import (
     DOMAIN,
     bed_type_has_position_feedback,
 )
+from .controller_state import ControllerState
 from .entity import AdjustableBedEntity
 from .entity_discovery import (
     async_remove_retired_rmcontrol_telemetry,
@@ -492,7 +493,7 @@ class AdjustableBedControllerStateSensor(AdjustableBedEntity, SensorEntity):
         await super().async_will_remove_from_hass()
 
     @callback
-    def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
+    def _handle_controller_state_update(self, state: ControllerState) -> None:
         """Refresh when this sensor or one of its attributes changed."""
         watched = {self._spec.state_key, *self._spec.attribute_keys}
         if watched.intersection(state):

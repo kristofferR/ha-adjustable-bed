@@ -22,7 +22,6 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .beds.base import ControllerNumberSpec, PositionNumberSpec
 from .const import (
-    BED_TYPE_ISLEEP,
     BED_TYPE_SLEEPSTAR,
     BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_BED_TYPE,
@@ -32,6 +31,7 @@ from .const import (
     SIDE_BOTH,
     bed_type_has_position_feedback,
 )
+from .controller_state import ControllerState, StateKey, sided
 from .entity import AdjustableBedEntity, RenamesInPlace
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime, controller_side_scope, own_sides
@@ -42,6 +42,14 @@ from .paired_coordinator import (
     entity_runtimes,
 )
 from .position_estimate_entities import async_setup_estimate_numbers
+from .state_keys import (
+    FAN_LEVEL,
+    LIGHT_LEVEL,
+    SLEEP_NUMBER,
+    SLEEP_NUMBER_SIDE,
+    massage_intensity,
+    massage_state_side,
+)
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -154,7 +162,7 @@ class AdjustableBedMassageNumberEntityDescription(NumberEntityDescription):
 class AdjustableBedSideStateNumberEntityDescription(NumberEntityDescription):
     """Describes a side-specific number entity backed by controller state."""
 
-    state_key: str
+    state_key: StateKey[int]
     set_fn: Callable[[BedController, str, int], Coroutine[Any, Any, None]]
     side: str
 
@@ -217,7 +225,7 @@ MASSAGE_NUMBER_DESCRIPTIONS: tuple[AdjustableBedMassageNumberEntityDescription, 
 class AdjustableBedLevelNumberEntityDescription(NumberEntityDescription):
     """Describes a level slider backed by controller state."""
 
-    state_key: str
+    state_key: StateKey[int | None]
     set_fn: Callable[[BedController, int], Coroutine[Any, Any, None]]
 
 
@@ -229,7 +237,7 @@ LIGHT_LEVEL_DESCRIPTION = AdjustableBedLevelNumberEntityDescription(
     native_max_value=10,
     native_step=1,
     mode=NumberMode.SLIDER,
-    state_key="light_level",
+    state_key=LIGHT_LEVEL,
     set_fn=lambda ctrl, level: ctrl.set_light_level(level),
 )
 
@@ -241,7 +249,7 @@ FAN_LEVEL_DESCRIPTION = AdjustableBedLevelNumberEntityDescription(
     native_max_value=10,
     native_step=1,
     mode=NumberMode.SLIDER,
-    state_key="fan_level",
+    state_key=FAN_LEVEL,
     set_fn=lambda ctrl, level: ctrl.set_fan_level(level),
 )
 
@@ -263,7 +271,7 @@ SLEEP_NUMBER_SETTING_LEFT_DESCRIPTION = AdjustableBedSideStateNumberEntityDescri
     native_max_value=100,
     native_step=5,
     mode=NumberMode.SLIDER,
-    state_key="sleep_number_left",
+    state_key=sided(SLEEP_NUMBER, "left"),
     set_fn=lambda c, side, value: c.set_sleep_number_setting_for_side(side, value),
     side="left",
 )
@@ -276,7 +284,7 @@ SLEEP_NUMBER_SETTING_RIGHT_DESCRIPTION = AdjustableBedSideStateNumberEntityDescr
     native_max_value=100,
     native_step=5,
     mode=NumberMode.SLIDER,
-    state_key="sleep_number_right",
+    state_key=sided(SLEEP_NUMBER, "right"),
     set_fn=lambda c, side, value: c.set_sleep_number_setting_for_side(side, value),
     side="right",
 )
@@ -625,7 +633,7 @@ class AdjustableBedControllerNumber(AdjustableBedEntity, NumberEntity):
         await super().async_will_remove_from_hass()
 
     @callback
-    def _handle_controller_state_update(self, state: dict[str, object]) -> None:
+    def _handle_controller_state_update(self, state: ControllerState) -> None:
         if self._spec.state_key in state:
             self.async_write_ha_state()
 
@@ -1009,28 +1017,22 @@ class AdjustableBedMassageNumber(AdjustableBedEntity, NumberEntity):
         return super().available and zone_available
 
     @callback
-    def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
+    def _handle_controller_state_update(self, state: ControllerState) -> None:
         self.async_write_ha_state()
 
     @property
     def native_value(self) -> float | None:
         """Return the current massage intensity from controller state."""
         controller = self._coordinator.controller
-        if controller is None and self._coordinator.bed_type == BED_TYPE_ISLEEP:
-            side = self._coordinator.entity_side or "both"
-            state = self._coordinator.controller_state.get(f"isleep_massage_{side}")
-            value = (
-                state.get(f"{self.entity_description.massage_zone}_intensity")
-                if isinstance(state, dict) else None
-            )
-            return float(value) if isinstance(value, (int, float)) else None
         if controller is None:
-            state_key = {
-                "head": "woosa_head_level",
-                "foot": "woosa_foot_level",
-            }.get(self.entity_description.massage_zone)
-            value = self._coordinator.controller_state.get(state_key) if state_key else None
-            return float(value) if isinstance(value, (int, float)) else None
+            # Between connections, the level the profile last published.
+            value = self._coordinator.controller_state.get(
+                sided(
+                    massage_intensity(self.entity_description.massage_zone),
+                    massage_state_side(self._coordinator.bed_type, self._coordinator.entity_side),
+                )
+            )
+            return None if value is None else float(value)
 
         with self._side_scope():
             state = controller.get_massage_state()
@@ -1099,7 +1101,7 @@ class AdjustableBedLevelNumber(AdjustableBedEntity, NumberEntity):
         await super().async_will_remove_from_hass()
 
     @callback
-    def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
+    def _handle_controller_state_update(self, state: ControllerState) -> None:
         """Write state when the controller publishes this level."""
         if self.entity_description.state_key in state:
             self.async_write_ha_state()
@@ -1203,15 +1205,15 @@ class AdjustableBedSleepNumberSettingNumber(AdjustableBedEntity, NumberEntity):
         await super().async_will_remove_from_hass()
 
     @callback
-    def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
+    def _handle_controller_state_update(self, state: ControllerState) -> None:
         """Write state when the controller publishes Sleep Number changes."""
-        if "sleep_number" in state:
+        if SLEEP_NUMBER in state:
             self.async_write_ha_state()
 
     @property
     def native_value(self) -> float | None:
         """Return the current Sleep Number setting."""
-        value = self._coordinator.controller_state.get("sleep_number")
+        value = self._coordinator.controller_state.get(SLEEP_NUMBER)
         if not isinstance(value, (str, int, float)):
             return None
         return float(value)
@@ -1220,7 +1222,7 @@ class AdjustableBedSleepNumberSettingNumber(AdjustableBedEntity, NumberEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return side metadata for the configured Sleep Number setting."""
         attrs: dict[str, Any] = {}
-        side = self._coordinator.controller_state.get("sleep_number_side")
+        side = self._coordinator.controller_state.get(SLEEP_NUMBER_SIDE)
         if side is not None:
             attrs["side"] = side
         return attrs
@@ -1272,7 +1274,7 @@ class AdjustableBedSideStateNumber(AdjustableBedEntity, NumberEntity):
         await super().async_will_remove_from_hass()
 
     @callback
-    def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
+    def _handle_controller_state_update(self, state: ControllerState) -> None:
         """Refresh when the tracked controller-state key changes."""
         if self.entity_description.state_key in state:
             self.async_write_ha_state()

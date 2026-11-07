@@ -7,7 +7,7 @@ import logging
 import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import partial
-from typing import TYPE_CHECKING, ClassVar, Protocol
+from typing import TYPE_CHECKING, ClassVar, Final, Protocol
 
 from homeassistant.util import dt as dt_util
 
@@ -20,6 +20,7 @@ from ..casper_base_protocol import (
     decode_main,
 )
 from ..codec import richmat as codec
+from ..controller_state import StateKey
 from ..profiles.casper import (
     ACTIONS,
     ANTI_SNORE,
@@ -45,6 +46,12 @@ if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+CASPER_BASE_MODEL: Final = StateKey[str]("casper_base_model")
+CASPER_BASE_EVENTS: Final = StateKey[dict[str, object]]("casper_base_events")
+CASPER_BASE_ALARMS: Final = StateKey[list[dict[str, object]]]("casper_base_alarms")
+CASPER_BASE_ERROR: Final = StateKey[str]("casper_base_error")
+CASPER_BASE_MUSIC_BLUETOOTH: Final = StateKey[bool]("casper_base_music_bluetooth")
 # Service -> (write characteristic, bare opcodes), in the library's lookup order.
 GATT = {
     transport.service_uuid: (transport.write_uuid, transport.single)
@@ -301,13 +308,13 @@ class CasperBaseController(BedController):
             ControllerStateSensorSpec(
                 "casper_base",
                 "casper_base",
-                "casper_base_model",
+                CASPER_BASE_MODEL,
                 "mdi:bed",
                 attribute_keys=(
-                    "casper_base_events",
-                    "casper_base_alarms",
-                    "casper_base_error",
-                    "casper_base_music_bluetooth",
+                    CASPER_BASE_EVENTS,
+                    CASPER_BASE_ALARMS,
+                    CASPER_BASE_ERROR,
+                    CASPER_BASE_MUSIC_BLUETOOTH,
                 ),
             ),
         )
@@ -367,7 +374,7 @@ class CasperBaseController(BedController):
                 if event := decode_main(packet):
                     self._consume(event)
         except (ValueError, IndexError) as err:
-            self.forward_controller_state_update("casper_base_error", str(err))
+            self.forward_controller_state_update(CASPER_BASE_ERROR, str(err))
         self._publish()
 
     def _consume(self, event: Event) -> None:
@@ -391,12 +398,10 @@ class CasperBaseController(BedController):
 
     def _publish(self) -> None:
         self.forward_controller_state_updates(
-            {
-                "casper_base_model": self.product[0],
-                "casper_base_events": dict(self.events),
-                "casper_base_alarms": list(self.alarms),
-                "casper_base_music_bluetooth": self._music_bluetooth,
-            }
+            CASPER_BASE_MODEL(self.product[0]),
+            CASPER_BASE_EVENTS(dict(self.events)),
+            CASPER_BASE_ALARMS(list(self.alarms)),
+            CASPER_BASE_MUSIC_BLUETOOTH(self._music_bluetooth),
         )
 
     def validate_casper_base_request(self, request: Request) -> None:

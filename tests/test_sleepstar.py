@@ -33,6 +33,7 @@ from custom_components.adjustable_bed.const import (
     NORDIC_UART_READ_CHAR_UUID,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
+from tests.state_helpers import published
 
 
 @pytest.fixture
@@ -282,7 +283,7 @@ async def test_sonic_intensity_and_timer_use_two_writes_then_stop(
     assert write.await_args_list[2].args[0] == wrap_control_box(star.extended(0x0B, 2))
     assert write.await_args_list[3].args == (SleepStarCommands.STOP,)
     assert controller.get_massage_state()["intensity"] == 6
-    intensity_updates = _coordinator.handle_controller_state_updates.call_args_list[0].args[0]
+    intensity_updates = published(*_coordinator.handle_controller_state_updates.call_args_list[0].args)
     assert intensity_updates["massage_intensity"] == 6
 
 
@@ -343,7 +344,7 @@ async def test_direct_and_wrapped_motor_notifications_are_parsed(
     }
     assert controller._positions == expected
     assert callback.call_count == 10
-    updates = coordinator.handle_controller_state_updates.call_args.args[0]
+    updates = published(*coordinator.handle_controller_state_updates.call_args.args)
     assert updates == {
         "sleepstar_part6_position": 40,
         "sleepstar_positions": {key: int(value) for key, value in expected.items()},
@@ -371,7 +372,7 @@ async def test_config_bitmap_requests_only_missing_pages(
         build_cb37_config_query(2),
         build_cb37_config_query(4),
     ]
-    updates = coordinator.handle_controller_state_updates.call_args.args[0]
+    updates = published(*coordinator.handle_controller_state_updates.call_args.args)
     assert updates["sleepstar_motor_mask"] == 0x1F
     assert updates["sleepstar_config_loaded"] is False
     await controller.stop_keepalive()

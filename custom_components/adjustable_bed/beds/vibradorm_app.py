@@ -18,6 +18,7 @@ from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
 from ..codec import vibradorm as codec
+from ..controller_state import StateKey, StateUpdate
 from ..execution import ExecutionCapabilities
 from ..profiles.vibradorm import (
     ARTICLE_REQUEST,
@@ -41,7 +42,9 @@ from ..profiles.vibradorm import (
     VibradormAppProfile,
     get_vmat_remote,
     validate_vibradorm_app_profile,
+    vibradorm_app_metadata_key,
 )
+from ..state_keys import LIGHT_LEVEL, LIGHT_TIMER_OPTION
 from ..vibradorm_app_state import (
     VibradormAppFloorIntent,
     VibradormAppMassageIntent,
@@ -83,6 +86,27 @@ class VibradormAppMetadata:
     firmware: str
     software: str
     main_firmware_article: str | None = None
+
+
+MOOD_PALETTE_OPTION: Final = StateKey[str | None]("vibradorm_app_mood_palette")
+MOOD_EFFECT_OPTION: Final = StateKey[str | None]("vibradorm_app_mood_effect")
+MOOD_SPEED: Final = StateKey[int | None]("vibradorm_app_mood_speed")
+FLOOR_TIMER_ENABLED: Final = StateKey[bool]("vibradorm_app_floor_timer_enabled")
+FLOOR_TIMER_MINUTES: Final = StateKey[int | None]("vibradorm_app_floor_timer_minutes")
+MASSAGE_WAVE: Final = StateKey[str | None]("vibradorm_app_massage_wave")
+MASSAGE_SPEED: Final = StateKey[int | None]("vibradorm_app_massage_speed")
+MASSAGE_HEAD_LEVEL: Final = StateKey[int]("massage_head_level")
+MASSAGE_FOOT_LEVEL: Final = StateKey[int]("massage_foot_level")
+MASSAGE_AUTOMATIC: Final = StateKey[bool]("vibradorm_app_massage_automatic")
+MASSAGE_INDIVIDUAL: Final = StateKey[bool]("vibradorm_app_massage_individual")
+
+
+def _mood_update(key: str, value: str | int) -> StateUpdate:
+    """Mood intent: the speed slider's number, or a palette or effect option."""
+    if key == "speed":
+        return MOOD_SPEED(value if isinstance(value, int) else None)
+    option = MOOD_PALETTE_OPTION if key == "palette" else MOOD_EFFECT_OPTION
+    return option(value if isinstance(value, str) else None)
 
 
 class VibradormAppMetadataProgress(TypedDict, total=False):
@@ -323,9 +347,6 @@ async def _shield_cleanup(operation: Coroutine[Any, Any, None]) -> None:
         raise asyncio.CancelledError
 
 
-
-
-
 def _button(action: str) -> MotorCommandCallable:
     async def invoke(controller: BedController) -> None:
         if isinstance(controller, VibradormAppController):
@@ -442,8 +463,9 @@ class VibradormAppController(BedController):
             self._publish_floor()
             if self.profile.massage:
                 self._publish_massage()
-            for key, value in self._mood_intent.items():
-                self.forward_controller_state_update(f"vibradorm_app_mood_{key}", value)
+            self.forward_controller_state_updates(
+                *(_mood_update(key, value) for key, value in self._mood_intent.items())
+            )
 
     @property
     def execution(self) -> ExecutionCapabilities:
@@ -642,14 +664,14 @@ class VibradormAppController(BedController):
                 ControllerSelectSpec(
                     "vibradorm_app_mood_palette",
                     "vibradorm_app_mood_palette",
-                    "vibradorm_app_mood_palette",
+                    MOOD_PALETTE_OPTION,
                     tuple(self.mood_palette),
                     lambda c, v: c.set_mood_palette(v),
                 ),
                 ControllerSelectSpec(
                     "vibradorm_app_mood_effect",
                     "vibradorm_app_mood_effect",
-                    "vibradorm_app_mood_effect",
+                    MOOD_EFFECT_OPTION,
                     MOOD_EFFECTS,
                     lambda c, v: c.set_mood_effect(v),
                 ),
@@ -659,7 +681,7 @@ class VibradormAppController(BedController):
                 ControllerSelectSpec(
                     "vibradorm_app_massage_wave",
                     "vibradorm_app_massage_wave",
-                    "vibradorm_app_massage_wave",
+                    MASSAGE_WAVE,
                     MASSAGE_WAVES,
                     lambda c, v: c.set_massage_wave(v),
                 )
@@ -674,7 +696,7 @@ class VibradormAppController(BedController):
                 ControllerNumberSpec(
                     "vibradorm_app_floor_timer_minutes",
                     "vibradorm_app_floor_timer_minutes",
-                    "vibradorm_app_floor_timer_minutes",
+                    FLOOR_TIMER_MINUTES,
                     1,
                     60,
                     1,
@@ -687,7 +709,7 @@ class VibradormAppController(BedController):
                 ControllerNumberSpec(
                     "vibradorm_app_mood_speed",
                     "vibradorm_app_mood_speed",
-                    "vibradorm_app_mood_speed",
+                    MOOD_SPEED,
                     0,
                     8,
                     1,
@@ -699,7 +721,7 @@ class VibradormAppController(BedController):
                 ControllerNumberSpec(
                     "vibradorm_app_massage_speed",
                     "vibradorm_app_massage_speed",
-                    "vibradorm_app_massage_speed",
+                    MASSAGE_SPEED,
                     1,
                     5,
                     1,
@@ -721,7 +743,7 @@ class VibradormAppController(BedController):
             ControllerStateSensorSpec(
                 f"vibradorm_app_{field}",
                 f"vibradorm_app_{field}",
-                f"vibradorm_app_{field}",
+                vibradorm_app_metadata_key(field),
                 "mdi:information-outline",
             )
             for field in fields
@@ -834,7 +856,9 @@ class VibradormAppController(BedController):
         sync = parse_sync(raw) if self.profile.sync else None
         if sync is not None:
             self._sync_observed = sync
-            self.forward_controller_state_update("vibradorm_app_sync_observed", "on" if sync else "off")
+            self.forward_controller_state_update(
+                vibradorm_app_metadata_key("sync_observed"), "on" if sync else "off"
+            )
             if self._sync_reply is not None and not self._sync_reply.done():
                 self._sync_reply.set_result(sync)
 
@@ -934,14 +958,18 @@ class VibradormAppController(BedController):
 
     def _publish_metadata(self) -> None:
         for field, value in self._metadata_values.items():
-            self.forward_controller_state_update(f"vibradorm_app_{field}", value)
+            self.forward_controller_state_update(
+                vibradorm_app_metadata_key(field), value if isinstance(value, str) else None
+            )
 
     def _record_metadata_progress(self, delta: VibradormAppMetadataProgress) -> None:
         self._metadata_values.update(delta)
         if self._metadata_progress_pending is not None:
             self._metadata_progress_pending.update(delta)
         for field, value in delta.items():
-            self.forward_controller_state_update(f"vibradorm_app_{field}", value)
+            self.forward_controller_state_update(
+                vibradorm_app_metadata_key(field), value if isinstance(value, str) else None
+            )
 
     async def _release(self, count: int = 1) -> None:
         async def cleanup() -> None:
@@ -1125,12 +1153,10 @@ class VibradormAppController(BedController):
 
     def _publish_floor(self) -> None:
         self.forward_controller_state_updates(
-            {
-                "light_level": self._floor_level,
-                "light_timer_option": self._effective_timer_option,
-                "vibradorm_app_floor_timer_enabled": self._effective_timer_option != "Off",
-                "vibradorm_app_floor_timer_minutes": self._timer_minutes,
-            }
+            LIGHT_LEVEL(self._floor_level),
+            LIGHT_TIMER_OPTION(self._effective_timer_option),
+            FLOOR_TIMER_ENABLED(self._effective_timer_option != "Off"),
+            FLOOR_TIMER_MINUTES(self._timer_minutes),
         )
 
     def get_light_state(self) -> dict[str, Any]:
@@ -1207,7 +1233,7 @@ class VibradormAppController(BedController):
         word = MOOD if self.profile.basic else MOOD | EXTENSION
         await self._write(codec.CBI_CHAR_UUID, self._header(word, parameters))
         self._mood_intent[key] = value
-        self.forward_controller_state_update(f"vibradorm_app_mood_{key}", value)
+        self.forward_controller_state_updates(_mood_update(key, value))
 
     @property
     def mood_palette(self) -> dict[str, tuple[int, int, int]]:
@@ -1285,14 +1311,12 @@ class VibradormAppController(BedController):
         m = self._massage
         self._committed_massage = replace(m)
         self.forward_controller_state_updates(
-            {
-                "vibradorm_app_massage_wave": str(m.effect) if m.effect else None,
-                "vibradorm_app_massage_speed": m.speed,
-                "massage_head_level": m.zones[0],
-                "massage_foot_level": m.zones[1],
-                "vibradorm_app_massage_automatic": m.automatic == 7,
-                "vibradorm_app_massage_individual": m.individual == 9,
-            }
+            MASSAGE_WAVE(str(m.effect) if m.effect else None),
+            MASSAGE_SPEED(m.speed),
+            MASSAGE_HEAD_LEVEL(m.zones[0]),
+            MASSAGE_FOOT_LEVEL(m.zones[1]),
+            MASSAGE_AUTOMATIC(m.automatic == 7),
+            MASSAGE_INDIVIDUAL(m.individual == 9),
         )
 
     def _plan_massage_mode(self, automatic: bool) -> list[bytes]:

@@ -23,6 +23,7 @@ from custom_components.adjustable_bed.beds.starcode_abm5_4_profiles import (
     scan_matches,
 )
 from tests.starcode_abm5_4_vectors import BUILDER_VECTORS, PARSER_VECTORS
+from tests.state_helpers import published
 
 
 def make_controller(command="BOX25", ui=None, device="BOX25"):
@@ -416,7 +417,7 @@ async def test_changed_U_callback_consumes_exact_fields_and_suppresses_duplicate
     assert c._massage_on and c._light_on and c._level == 2
     assert c.get_light_state()["is_on"] is True
     assert len(pending) == 1
-    values = c._coordinator.handle_controller_state_updates.call_args.args[0]
+    values = published(*c._coordinator.handle_controller_state_updates.call_args.args)
     assert values["starcode_abm5_4_massage_timer"] == "10"
     assert values["starcode_abm5_4_head_intensity"] == 0
     c._notification(c.client, 0, role, frame)
@@ -520,7 +521,7 @@ async def test_same_owner_reconstruction_preserves_gate_time_but_not_parser_base
     assert replacement._raw_fields == initial_fields()
     assert not replacement._parser_state_observed
     replacement._publish()
-    state = c._coordinator.handle_controller_state_updates.call_args.args[0]
+    state = published(*c._coordinator.handle_controller_state_updates.call_args.args)
     assert state["starcode_abm5_4_light_on"] is True
     assert state["starcode_abm5_4_raw_53"] is None
     for key, value in {

@@ -15,6 +15,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 
 from ..codec import ff_frame as codec
 from ..const import CONF_BLE_DEVICE_NAME
+from ..controller_state import StateKey
 from ..detection import is_mac_like_name
 from ..profiles.ff_frame import BEDSENSE, BedSenseProfile, bedsense_layout
 from .base import (
@@ -55,6 +56,11 @@ class BedSenseSession:
     state: dict[str, object] = field(default_factory=dict)
     timer: int = 0
     counts: dict[str, int] = field(default_factory=lambda: {"head": 0, "foot": 0, "wave": 0})
+
+
+def _state_key(name: str) -> StateKey[object]:
+    """BedSense publishes its mixed-type session state under these names."""
+    return StateKey[object](name)
 
 
 class BedSenseController(BedController):
@@ -200,9 +206,9 @@ class BedSenseController(BedController):
             ControllerStateBinarySensorSpec(
                 f"bedsense_m{i}_saved",
                 f"bedsense_m{i}_saved",
-                f"bedsense_m{i}_saved",
+                _state_key(f"bedsense_m{i}_saved"),
                 "mdi:content-save",
-                attribute_keys=("bedsense_state_source",),
+                attribute_keys=(_state_key("bedsense_state_source"),),
             )
             for i in range(1, 6)
         )
@@ -213,9 +219,9 @@ class BedSenseController(BedController):
             ControllerStateSensorSpec(
                 f"bedsense_{key}",
                 f"bedsense_{key}",
-                f"bedsense_{key}",
+                _state_key(f"bedsense_{key}"),
                 "mdi:information-outline",
-                attribute_keys=("bedsense_state_source",),
+                attribute_keys=(_state_key("bedsense_state_source"),),
             )
             for key in (
                 "head_bar",
@@ -265,7 +271,9 @@ class BedSenseController(BedController):
     def _publish(self, source: str) -> None:
         self._state.update({f"bedsense_m{i}_saved": saved for i, saved in self._saved.items()})
         self._state["bedsense_state_source"] = source
-        self.forward_controller_state_updates(dict(self._state))
+        self.forward_controller_state_updates(
+            *(_state_key(name)(value) for name, value in self._state.items())
+        )
 
     def _roles(self) -> list[BleakGATTCharacteristic]:
         if self.client is None or not self.client.is_connected:

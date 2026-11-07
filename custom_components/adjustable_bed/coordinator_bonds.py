@@ -58,6 +58,7 @@ from .const import (
     requires_pairing_after_service_discovery,
     supports_runtime_authentication_recovery,
 )
+from .profiles.vibradorm import vibradorm_app_metadata_key
 from .unsupported import create_pairing_required_issue, delete_pairing_required_issue
 from .vibradorm_app_state import ControlType
 
@@ -721,9 +722,9 @@ class CoordinatorBondsMixin:
             # Entry persistence waits for the terminal bond/attempt observation.
             completed = {field: value for field, value in progress.items() if isinstance(value, str)}
             metadata_progress.update(completed)
-            self.handle_controller_state_updates({
-                f"vibradorm_app_{field}": value for field, value in completed.items()
-            })
+            self.handle_controller_state_updates(*(
+                vibradorm_app_metadata_key(field)(value) for field, value in completed.items()
+            ))
 
         onboarding_timeout = (
             VIBRADORM_VMAT_ONBOARDING_TIMEOUT_SECONDS
@@ -804,9 +805,10 @@ class CoordinatorBondsMixin:
             if isinstance(metadata.main_firmware_article, str):
                 completed_metadata["main_firmware_article"] = metadata.main_firmware_article
             stored_metadata = self._merged_vibradorm_app_metadata(completed_metadata)
-            self.handle_controller_state_updates({
-                f"vibradorm_app_{field}": value for field, value in stored_metadata.items()
-            })
+            self.handle_controller_state_updates(*(
+                vibradorm_app_metadata_key(field)(value)
+                for field, value in stored_metadata.items()
+            ))
             try:
                 pairing_details["requested"] = True
                 pairing_details["ordering"] = "connect_info_then_pair"

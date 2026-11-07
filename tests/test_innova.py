@@ -484,21 +484,21 @@ def _status(length: int, flags: int, timer: int) -> bytes:
 @pytest.mark.parametrize("length", [16, 19])
 def test_parser_branches(length):
     # Report fixtures V-NOTIFY-16 / V-NOTIFY-19: lamp bit set, timer enum 1.
-    assert parse_innova_status(_status(length, 0x40, 0x01)) == {
-        STATE_LIGHT: True,
-        STATE_MASSAGE_TIMER: 10,
-    }
-    assert parse_innova_status(_status(length, 0x00, 0xFF)) == {
-        STATE_LIGHT: False,
-        STATE_MASSAGE_TIMER: 0,
-    }
-    assert parse_innova_status(_status(length, 0x00, 0x03))[STATE_MASSAGE_TIMER] == 30
-    assert parse_innova_status(_status(length, 0x40, 0x07)) == {STATE_LIGHT: True}
+    assert parse_innova_status(_status(length, 0x40, 0x01)) == [
+        STATE_LIGHT(True),
+        STATE_MASSAGE_TIMER(10),
+    ]
+    assert parse_innova_status(_status(length, 0x00, 0xFF)) == [
+        STATE_LIGHT(False),
+        STATE_MASSAGE_TIMER(0),
+    ]
+    assert STATE_MASSAGE_TIMER(30) in parse_innova_status(_status(length, 0x00, 0x03))
+    assert parse_innova_status(_status(length, 0x40, 0x07)) == [STATE_LIGHT(True)]
     assert parse_innova_status(_status(length, 0x60, 0x01)) is None
-    assert parse_innova_status(_status(length, 0x9F, 0x02)) == {
-        STATE_LIGHT: False,
-        STATE_MASSAGE_TIMER: 20,
-    }
+    assert parse_innova_status(_status(length, 0x9F, 0x02)) == [
+        STATE_LIGHT(False),
+        STATE_MASSAGE_TIMER(20),
+    ]
 
 
 @pytest.mark.parametrize("length", [0, 9, 15, 17, 18, 20])

@@ -25,9 +25,11 @@ from .const import (
     PAIR_CONNECTION_MODE_CONCURRENT,
     SIDE_BOTH,
 )
+from .controller_state import ControllerState
 from .entity import AdjustableBedEntity, RenamesInPlace, hold_lease_attributes
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime, controller_side_scope
+from .limoss_remote_state import LIMOSS_REMOTE_MEMORY_NAMES
 from .octo_runtime import octo_controller
 from .paired_coordinator import (
     PairedBedCoordinator,
@@ -803,7 +805,7 @@ def _async_follow_motion_bed_module_actions(
         entity.unique_id: entity for entity in initial if isinstance(entity, ControllerActionButton)
     }
 
-    def add_motion_bed_module_actions(updates: dict[str, object]) -> None:
+    def add_motion_bed_module_actions(updates: ControllerState) -> None:
         additions: list[ButtonEntity] = []
         for runtime in entity_runtimes(coordinator):
             controller = runtime.capability_controller
@@ -1293,8 +1295,8 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
             and self.entity_description.memory_slot is not None
         ):
 
-            def names_changed(state: dict[str, Any]) -> None:
-                if "limoss_remote_memory_names" in state:
+            def names_changed(state: ControllerState) -> None:
+                if LIMOSS_REMOTE_MEMORY_NAMES in state:
                     self.async_write_ha_state()
 
             self.async_on_remove(
@@ -1452,7 +1454,7 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
             )
 
     @callback
-    def _handle_controller_state_update(self, _state: dict[str, Any]) -> None:
+    def _handle_controller_state_update(self, _state: ControllerState) -> None:
         """Re-evaluate controller-declared action availability."""
         self.async_write_ha_state()
 

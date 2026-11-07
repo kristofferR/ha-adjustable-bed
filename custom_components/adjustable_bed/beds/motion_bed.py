@@ -9,11 +9,12 @@ from dataclasses import dataclass, fields, replace
 from functools import lru_cache
 from hashlib import sha256
 from types import MappingProxyType
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ..controller_state import StateKey
 from ..motion_bed_actions import ACTION_BY_KEY, MOTION_BED_ACTIONS, MotionBedAction
 from ..motion_bed_models import MotionBedSelection
 from ..motion_bed_protocol import SOURCE_COMMANDS, build_clock, build_thermal_clock
@@ -22,6 +23,7 @@ from ..motion_bed_state import (
     MotionBedContext,
     MotionBedFollowup,
     MotionBedState,
+    ScalarState,
     parse_motion_bed_notification,
 )
 from ..profiles.ff_frame import MOTION_BED, MotionBedProfile
@@ -121,6 +123,13 @@ class _HeldSession:
     characteristic: BleakGATTCharacteristic
     address: str
     released: bool = False
+
+
+ACTIVE_MODULE: Final = StateKey[str | None]("motion_bed_active_module")
+
+
+def _field_key(name: str) -> StateKey[ScalarState]:
+    return StateKey[ScalarState]("motion_bed_" + name)
 
 
 class MotionBedController(BedController):
@@ -326,7 +335,7 @@ class MotionBedController(BedController):
         async def select(controller: BedController, value: str) -> None:
             await controller.set_motion_bed_surface(value)
         return (ControllerSelectSpec("motion_bed_active_module", "motion_bed_active_module",
-                                     "motion_bed_active_module", ("motor", "air", "thermal"), select),)
+                                     ACTIVE_MODULE, ("motor", "air", "thermal"), select),)
 
     async def set_motion_bed_surface(self, surface: str) -> None:
         if self.selection.surface != "hub" or surface not in ("motor", "air", "thermal"):
@@ -354,7 +363,7 @@ class MotionBedController(BedController):
         return tuple(
             ControllerStateSensorSpec(
                 key="motion_bed_" + item.name, translation_key="motion_bed_" + item.name,
-                state_key="motion_bed_" + item.name, icon="mdi:bed-outline",
+                state_key=_field_key(item.name), icon="mdi:bed-outline",
                 entity_registry_enabled_default=item.name in {
                     "brightness", "upper_massage", "lower_massage", "massage_timer", "thermal_temperature",
                     "thermal_water", "fault", "fault_part", "raw_positions",
@@ -369,16 +378,17 @@ class MotionBedController(BedController):
         return tuple(
             ControllerStateBinarySensorSpec(
                 key="motion_bed_" + item.name, translation_key="motion_bed_" + item.name,
-                state_key="motion_bed_" + item.name, icon="mdi:bed-outline",
+                state_key=_field_key(item.name), icon="mdi:bed-outline",
             )
             for item in fields(self._state)
             if "bool" in str(item.type)
         )
 
     def _publish(self) -> None:
-        updates = {"motion_bed_" + key: value for key, value in self._state.to_updates().items()}
-        updates["motion_bed_active_module"] = self._active_module
-        self.forward_controller_state_updates(updates)
+        self.forward_controller_state_updates(
+            *(_field_key(name)(value) for name, value in self._state.to_updates().items()),
+            ACTIVE_MODULE(self._active_module),
+        )
 
     async def async_discover_capabilities(self) -> None:
         client = self.client
@@ -424,7 +434,6 @@ class MotionBedController(BedController):
                 or not client.is_connected or self._coordinator.address != self._target_address):
             raise ConnectionError("Motion Bed target/session changed")
         return client, characteristic
-
 
     async def write_command(self, command: bytes, repeat_count: int = 1,
                             repeat_delay_ms: int = 100,

@@ -36,6 +36,7 @@ from custom_components.adjustable_bed.const import (
     JENSEN_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from tests.state_helpers import published
 
 from .conftest import make_controller_mock
 
@@ -1161,9 +1162,7 @@ class TestJensenLightsAndFan:
             "130200000032",
             "130204000000",
         ]
-        controller._coordinator.handle_controller_state_updates.assert_called_with(
-            {"light_level": 4, "under_bed_lights_on": True}
-        )
+        assert published(*controller._coordinator.handle_controller_state_updates.call_args.args) == {"light_level": 4, "under_bed_lights_on": True}
         assert controller.get_light_state() == {"is_on": True, "light_level": 4}
 
     async def test_lights_require_feature(self):
@@ -1240,10 +1239,10 @@ class TestJensenMassage:
         publish = controller._coordinator.handle_controller_state_updates
 
         await controller.massage_head_toggle()
-        assert publish.call_args.args[0]["head_intensity"] == 5
+        assert published(*publish.call_args.args)["head_intensity"] == 5
 
         await controller.massage_off()
-        assert publish.call_args.args[0]["head_intensity"] == 0
+        assert published(*publish.call_args.args)["head_intensity"] == 0
 
     async def test_massage_requires_feature(self):
         """Beds without massage raise instead of writing."""

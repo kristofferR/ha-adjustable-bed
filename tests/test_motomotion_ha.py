@@ -19,6 +19,7 @@ from custom_components.adjustable_bed.codec.motomotion import (
     binary_command,
 )
 from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_BLE_DEVICE_NAME, DOMAIN
+from custom_components.adjustable_bed.controller_state import StateKey
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.motomotion_protocol import posture
 
@@ -902,7 +903,7 @@ async def test_side_state_translations_belong_to_real_declared_sensors(hass, sid
     for key, sensor in sensors.items():
         assert sensor.translation_key == key
         assert sensor.unique_id == c.entity_unique_id(key)
-        c.handle_controller_state_update(key, 2)
+        c.handle_controller_state_update(StateKey[int](key), 2)
         assert sensor.native_value == 2
     if sided:
         with ctrl.side_scope("right"):

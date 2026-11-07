@@ -16,7 +16,7 @@ import asyncio
 import logging
 from collections.abc import Callable
 from dataclasses import replace
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from bleak.exc import BleakError
 
@@ -36,6 +36,13 @@ from ..const import (
     REVERIE_NIGHTSTAND_RGB_UUID,
     REVERIE_STK_SIDE_DATA_UUID,
     REVERIE_STK_SIDE_NO_DATA_UUID,
+)
+from ..controller_state import StateKey, StateUpdate
+from ..state_keys import (
+    LIGHT_LEVEL,
+    UNDER_BED_LIGHTS_ON,
+    UNDER_BED_LIGHTS_RGB,
+    massage_zone_intensity,
 )
 from .base import (
     POSITION_UNIT_PERCENT,
@@ -67,6 +74,21 @@ _LOGGER = logging.getLogger(__name__)
 
 STK_SIDE_DATA_UUID = REVERIE_STK_SIDE_DATA_UUID
 STK_SIDE_NO_DATA_UUID = REVERIE_STK_SIDE_NO_DATA_UUID
+
+
+STK_SIDE: Final = StateKey[str | None]("reverie_stk_side")
+MASSAGE_HEAD_INTENSITY: Final = massage_zone_intensity("head")
+MASSAGE_FOOT_INTENSITY: Final = massage_zone_intensity("foot")
+MASSAGE_WAVE: Final = StateKey[int | None]("reverie_massage_wave")
+STK_HEAD_WAVE: Final = StateKey[int | None]("reverie_stk_head_wave")
+STK_GLOBAL_MASSAGE: Final = StateKey[int | None]("reverie_stk_global_massage")
+BODY_TILT: Final = StateKey[float | None]("reverie_body_tilt")
+STK_HEAD_POSITION: Final = StateKey[int]("reverie_stk_head_position")
+STK_HEAD2_POSITION: Final = StateKey[int]("reverie_stk_head2_position")
+
+
+def _position_key(axis: str) -> StateKey[float | None]:
+    return StateKey[float | None](f"reverie_{axis}_position")
 
 
 class ReverieNightstandCommands:
@@ -132,9 +154,7 @@ class ReverieNightstandController(BedController):
         self._light_brightness: int | None = None
         self._last_nonzero_light_brightness: int | None = None
         self._light_rgb: tuple[int, int, int] | None = None
-        retained_side = getattr(coordinator, "controller_state", {}).get(
-            "reverie_stk_side", "1"
-        )
+        retained_side = coordinator.controller_state.get(STK_SIDE, "1")
         self._stk_selected_side = retained_side if retained_side in ("1", "2", "3") else "1"
         self._stk_head_positions: dict[str, int] = {}
         # Release retains its target even when the initial GATT write fails.
@@ -147,7 +167,7 @@ class ReverieNightstandController(BedController):
         self._routine_connection_release: Callable[[], None] | None = None
         self._active_notify_characteristics: list[str] = []
         if self.model.tandem:
-            self.forward_controller_state_update("reverie_stk_side", self._stk_selected_side)
+            self.forward_controller_state_update(STK_SIDE, self._stk_selected_side)
         _LOGGER.debug("ReverieNightstandController initialized")
 
     @property
@@ -348,19 +368,19 @@ class ReverieNightstandController(BedController):
             ControllerStateSensorSpec(
                 key="reverie_head_massage_intensity",
                 translation_key="reverie_head_massage_intensity",
-                state_key="massage_head_intensity",
+                state_key=MASSAGE_HEAD_INTENSITY,
                 icon="mdi:vibrate",
             ),
             ControllerStateSensorSpec(
                 key="reverie_foot_massage_intensity",
                 translation_key="reverie_foot_massage_intensity",
-                state_key="massage_foot_intensity",
+                state_key=MASSAGE_FOOT_INTENSITY,
                 icon="mdi:vibrate",
             ),
             ControllerStateSensorSpec(
                 key="reverie_massage_wave",
                 translation_key="reverie_massage_wave",
-                state_key="reverie_massage_wave",
+                state_key=MASSAGE_WAVE,
                 icon="mdi:vibrate",
             ),
         )
@@ -393,7 +413,7 @@ class ReverieNightstandController(BedController):
             ControllerSelectSpec(
                 key="reverie_stk_side",
                 translation_key="reverie_stk_side",
-                state_key="reverie_stk_side",
+                state_key=STK_SIDE,
                 options=("1", "2", "3"),
                 select_fn=lambda _ctrl, side: self._select_stk_side(side),
                 local_select_fn=self._set_stk_side,
@@ -408,7 +428,7 @@ class ReverieNightstandController(BedController):
                 ControllerNumberSpec(
                     key="reverie_massage_wave",
                     translation_key="reverie_massage_wave",
-                    state_key="reverie_massage_wave",
+                    state_key=MASSAGE_WAVE,
                     native_min_value=0,
                     native_max_value=255,
                     native_step=1,
@@ -423,7 +443,7 @@ class ReverieNightstandController(BedController):
                         ControllerNumberSpec(
                             key="reverie_stk_head_wave",
                             translation_key="reverie_stk_head_wave",
-                            state_key="reverie_stk_head_wave",
+                            state_key=STK_HEAD_WAVE,
                             native_min_value=0,
                             native_max_value=10,
                             native_step=1,
@@ -434,7 +454,7 @@ class ReverieNightstandController(BedController):
                         ControllerNumberSpec(
                             key="reverie_stk_global_massage",
                             translation_key="reverie_stk_global_massage",
-                            state_key="reverie_stk_global_massage",
+                            state_key=STK_GLOBAL_MASSAGE,
                             native_min_value=0,
                             native_max_value=191,
                             native_step=1,
@@ -449,7 +469,7 @@ class ReverieNightstandController(BedController):
                 ControllerNumberSpec(
                     key="reverie_body_tilt",
                     translation_key="reverie_body_tilt",
-                    state_key="reverie_body_tilt",
+                    state_key=BODY_TILT,
                     native_min_value=-100,
                     native_max_value=100,
                     native_step=1,
@@ -593,14 +613,14 @@ class ReverieNightstandController(BedController):
                 if data:
                     self._massage_head_level = data[0] // 4
                     self.forward_controller_state_update(
-                        "massage_head_intensity", self._massage_head_level
+                        MASSAGE_HEAD_INTENSITY, self._massage_head_level
                     )
 
             def foot_wave_handler(_: Any, data: bytearray) -> None:
                 if data:
                     self._massage_foot_level = data[0] // 4
                     self.forward_controller_state_update(
-                        "massage_foot_intensity", self._massage_foot_level
+                        MASSAGE_FOOT_INTENSITY, self._massage_foot_level
                     )
 
             await self.client.start_notify(
@@ -761,11 +781,7 @@ class ReverieNightstandController(BedController):
             self._validate_composer_values(request)
             if self.model.tandem and self._stk_selected_side in ("1", "2"):
                 state = self._coordinator.controller_state
-                key = (
-                    "reverie_stk_head2_position"
-                    if self._stk_selected_side == "1"
-                    else "reverie_stk_head_position"
-                )
+                key = STK_HEAD2_POSITION if self._stk_selected_side == "1" else STK_HEAD_POSITION
                 current = state.get(key)
                 if (
                     isinstance(current, bool)
@@ -784,8 +800,8 @@ class ReverieNightstandController(BedController):
             return
         state = self._coordinator.controller_state
         selected_side = int(self._stk_selected_side)
-        current_head = state.get("reverie_stk_head_position")
-        current_head2 = state.get("reverie_stk_head2_position")
+        current_head = state.get(STK_HEAD_POSITION)
+        current_head2 = state.get(STK_HEAD2_POSITION)
         payload = build_stk_composer_payload(
             request,
             side=selected_side,
@@ -994,18 +1010,18 @@ class ReverieNightstandController(BedController):
         value: float = float(raw_position)
         if self.model.tandem and axis == "back":
             self._stk_head_positions["1"] = raw_position
-            self.forward_controller_state_update("reverie_stk_head_position", raw_position)
+            self.forward_controller_state_update(STK_HEAD_POSITION, raw_position)
             self._publish_stk_head_position()
             return
         elif self.model.tandem and axis == "lumbar":
             # The accepted Protocol 110 profile names this characteristic
             # lumbar/head2. Preserve its raw byte without deriving it from legs.
             self._stk_head_positions["2"] = raw_position
-            self.forward_controller_state_update("reverie_stk_head2_position", raw_position)
+            self.forward_controller_state_update(STK_HEAD2_POSITION, raw_position)
         if axis == "lumbar" and self.model.body_tilt:
             value = self._body_tilt_from_wire(raw_position)
-            self.forward_controller_state_update("reverie_body_tilt", value)
-        self.forward_controller_state_update(f"reverie_{axis}_position", value)
+            self.forward_controller_state_update(BODY_TILT, value)
+        self.forward_controller_state_update(_position_key(axis), value)
         if self._notify_callback is not None:
             self._notify_callback(axis, value)
         if self.model.tandem and axis == "lumbar":
@@ -1017,10 +1033,10 @@ class ReverieNightstandController(BedController):
         values = tuple(self._stk_head_positions.get(side) for side in sides)
         value = values[0]
         if value is None or any(other != value for other in values):
-            self.forward_controller_state_update("reverie_back_position", None)
+            self.forward_controller_state_update(_position_key("back"), None)
             self._coordinator.clear_position_feedback(("back",))
             return
-        self.forward_controller_state_update("reverie_back_position", float(value))
+        self.forward_controller_state_update(_position_key("back"), float(value))
         if self._notify_callback is not None:
             self._notify_callback("back", float(value))
 
@@ -1084,7 +1100,7 @@ class ReverieNightstandController(BedController):
         if side not in ("1", "2", "3"):
             raise ValueError("STK side must be 1, 2, or 3")
         self._stk_selected_side = side
-        self.forward_controller_state_update("reverie_stk_side", side)
+        self.forward_controller_state_update(STK_SIDE, side)
         self._publish_stk_head_position()
 
     async def _select_stk_side(self, side: str) -> None:
@@ -1396,9 +1412,7 @@ class ReverieNightstandController(BedController):
         await self._write_to_char(REVERIE_NIGHTSTAND_LED_UUID, value)
         self._light_brightness = value
         self._last_nonzero_light_brightness = value
-        self.forward_controller_state_updates(
-            {"light_level": value, "under_bed_lights_on": True}
-        )
+        self.forward_controller_state_updates(LIGHT_LEVEL(value), UNDER_BED_LIGHTS_ON(True))
 
     async def lights_off(self) -> None:
         """Turn off under-bed lights."""
@@ -1408,14 +1422,16 @@ class ReverieNightstandController(BedController):
             self._last_nonzero_light_brightness = self._light_brightness
         await self._write_to_char(REVERIE_NIGHTSTAND_LED_UUID, ReverieNightstandCommands.LED_OFF)
         self._light_brightness = 0
-        self.forward_controller_state_updates(
-            {"light_level": 0, "under_bed_lights_on": False}
-        )
+        self.forward_controller_state_updates(LIGHT_LEVEL(0), UNDER_BED_LIGHTS_ON(False))
 
     async def lights_toggle(self) -> None:
         """Toggle the current light state using the app's readable state."""
         state = await self.read_light_state()
-        if state.get("under_bed_lights_on"):
+        lights_on = next(
+            (update.value for update in reversed(state) if update.key == UNDER_BED_LIGHTS_ON),
+            False,
+        )
+        if lights_on:
             await self.lights_off()
         else:
             await self.lights_on()
@@ -1437,9 +1453,7 @@ class ReverieNightstandController(BedController):
         self._light_brightness = level
         if level > 0:
             self._last_nonzero_light_brightness = level
-        self.forward_controller_state_updates(
-            {"light_level": level, "under_bed_lights_on": level > 0}
-        )
+        self.forward_controller_state_updates(LIGHT_LEVEL(level), UNDER_BED_LIGHTS_ON(level > 0))
 
     async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
         """Write an exact RGB color at the last known brightness."""
@@ -1458,11 +1472,9 @@ class ReverieNightstandController(BedController):
         )
         self._light_rgb = rgb_color
         self.forward_controller_state_updates(
-            {
-                "under_bed_lights_rgb": rgb_color,
-                "under_bed_lights_on": brightness > 0,
-                "light_level": brightness,
-            }
+            UNDER_BED_LIGHTS_RGB(rgb_color),
+            UNDER_BED_LIGHTS_ON(brightness > 0),
+            LIGHT_LEVEL(brightness),
         )
 
     def get_light_state(self) -> dict[str, object]:
@@ -1474,14 +1486,14 @@ class ReverieNightstandController(BedController):
             state["under_bed_lights_rgb"] = self._light_rgb
         return state
 
-    async def read_light_state(self) -> dict[str, object]:
+    async def read_light_state(self) -> tuple[StateUpdate, ...]:
         """Read LED, RGB and massage state from their P1 characteristics."""
         if not self.model.nightlight and not self.model.massage:
             raise ValueError(f"Model {self.model_id} has no readable light or massage state")
         if self.client is None or not self.client.is_connected:
             raise ConnectionError("Not connected to bed")
         async with self._ble_lock:
-            state: dict[str, object] = {}
+            state: list[StateUpdate] = []
             if self.model.nightlight:
                 led_data = await self.client.read_gatt_char(REVERIE_NIGHTSTAND_LED_UUID)
                 rgb_data = await self.client.read_gatt_char(REVERIE_NIGHTSTAND_RGB_UUID)
@@ -1490,16 +1502,18 @@ class ReverieNightstandController(BedController):
                     self._light_brightness = brightness
                     if brightness > 0:
                         self._last_nonzero_light_brightness = brightness
-                    state["under_bed_lights_on"] = brightness > 0
+                    state.append(UNDER_BED_LIGHTS_ON(brightness > 0))
                 if len(rgb_data) == 5 and rgb_data[0] == 0x01:
                     brightness = rgb_data[1]
                     self._light_brightness = brightness
                     if brightness > 0:
                         self._last_nonzero_light_brightness = brightness
                     self._light_rgb = (rgb_data[2], rgb_data[3], rgb_data[4])
-                    state["light_level"] = brightness
-                    state["under_bed_lights_rgb"] = self._light_rgb
-                    state["under_bed_lights_on"] = brightness > 0
+                    state += [
+                        LIGHT_LEVEL(brightness),
+                        UNDER_BED_LIGHTS_RGB(self._light_rgb),
+                        UNDER_BED_LIGHTS_ON(brightness > 0),
+                    ]
             if self.model.massage:
                 head_data = await self.client.read_gatt_char(
                     REVERIE_NIGHTSTAND_HEAD_WAVE_UUID
@@ -1516,15 +1530,13 @@ class ReverieNightstandController(BedController):
                     self._massage_foot_level = foot_data[0] // 4
                 if wave_data:
                     self._massage_wave_level = wave_data[0]
-                state.update(
-                    {
-                        "massage_head_intensity": self._massage_head_level,
-                        "massage_foot_intensity": self._massage_foot_level,
-                        "reverie_massage_wave": self._massage_wave_level,
-                    }
-                )
-        self.forward_controller_state_updates(state)
-        return state
+                state += [
+                    MASSAGE_HEAD_INTENSITY(self._massage_head_level),
+                    MASSAGE_FOOT_INTENSITY(self._massage_foot_level),
+                    MASSAGE_WAVE(self._massage_wave_level),
+                ]
+        self.forward_controller_state_updates(*state)
+        return tuple(state)
 
     def get_massage_state(self) -> dict[str, int]:
         return {
@@ -1540,17 +1552,13 @@ class ReverieNightstandController(BedController):
             raise ValueError(f"Model {self.model_id} does not support massage")
         await self._write_to_char(REVERIE_NIGHTSTAND_HEAD_WAVE_UUID, 0)
         self._massage_head_level = 0
-        self.forward_controller_state_update("massage_head_intensity", 0)
+        self.forward_controller_state_update(MASSAGE_HEAD_INTENSITY, 0)
         await self._write_to_char(REVERIE_NIGHTSTAND_FOOT_WAVE_UUID, 0)
         self._massage_foot_level = 0
-        self.forward_controller_state_update("massage_foot_intensity", 0)
+        self.forward_controller_state_update(MASSAGE_FOOT_INTENSITY, 0)
         await self._write_to_char(REVERIE_NIGHTSTAND_MASSAGE_WAVE_UUID, 0)
         self._massage_wave_level = 0
-        self.forward_controller_state_updates(
-            {
-                "reverie_massage_wave": 0,
-            }
-        )
+        self.forward_controller_state_updates(MASSAGE_WAVE(0))
 
     async def massage_head_up(self) -> None:
         """Increase head massage intensity (0-10, written as level * 4)."""
@@ -1569,7 +1577,7 @@ class ReverieNightstandController(BedController):
             REVERIE_NIGHTSTAND_FOOT_WAVE_UUID, level * 4
         )
         self._massage_foot_level = level
-        self.forward_controller_state_update("massage_foot_intensity", self._massage_foot_level)
+        self.forward_controller_state_update(MASSAGE_FOOT_INTENSITY, self._massage_foot_level)
 
     async def massage_foot_down(self) -> None:
         """Decrease foot massage intensity (0-10, written as level * 4)."""
@@ -1580,7 +1588,7 @@ class ReverieNightstandController(BedController):
             REVERIE_NIGHTSTAND_FOOT_WAVE_UUID, level * 4
         )
         self._massage_foot_level = level
-        self.forward_controller_state_update("massage_foot_intensity", self._massage_foot_level)
+        self.forward_controller_state_update(MASSAGE_FOOT_INTENSITY, self._massage_foot_level)
 
     async def set_massage_intensity(self, zone: str, level: int) -> None:
         if not self.model.massage:
@@ -1594,7 +1602,7 @@ class ReverieNightstandController(BedController):
                     bytes((int(self._stk_selected_side), 0x53, level * 4)),
                 )
                 self._massage_head_level = level
-                self.forward_controller_state_update("massage_head_intensity", level)
+                self.forward_controller_state_update(MASSAGE_HEAD_INTENSITY, level)
                 return
             characteristic = (
                 REVERIE_NIGHTSTAND_HEAD_WAVE_UUID
@@ -1606,7 +1614,7 @@ class ReverieNightstandController(BedController):
                 self._massage_head_level = level
             else:
                 self._massage_foot_level = level
-            self.forward_controller_state_update(f"massage_{zone}_intensity", level)
+            self.forward_controller_state_update(massage_zone_intensity(zone), level)
             return
         if zone == "wave":
             if self.model.tandem and self._stk_selected_side != "1":
@@ -1615,7 +1623,7 @@ class ReverieNightstandController(BedController):
                 raise ValueError("Reverie global massage wave must be 0-255")
             await self._write_to_char(REVERIE_NIGHTSTAND_MASSAGE_WAVE_UUID, level)
             self._massage_wave_level = level
-            self.forward_controller_state_update("reverie_massage_wave", level)
+            self.forward_controller_state_update(MASSAGE_WAVE, level)
             return
         if zone == "stk_head_wave":
             if not self.model.tandem or self._stk_selected_side == "1":
@@ -1626,7 +1634,7 @@ class ReverieNightstandController(BedController):
                 STK_SIDE_DATA_UUID,
                 bytes((int(self._stk_selected_side), 0x40, level * 4)),
             )
-            self.forward_controller_state_update("reverie_stk_head_wave", level)
+            self.forward_controller_state_update(STK_HEAD_WAVE, level)
             return
         if zone == "stk_global":
             if not self.model.tandem or self._stk_selected_side == "1":
@@ -1637,6 +1645,6 @@ class ReverieNightstandController(BedController):
                 STK_SIDE_DATA_UUID,
                 bytes((int(self._stk_selected_side), level + 64)),
             )
-            self.forward_controller_state_update("reverie_stk_global_massage", level)
+            self.forward_controller_state_update(STK_GLOBAL_MASSAGE, level)
             return
         raise ValueError(f"Unsupported Reverie massage zone: {zone}")

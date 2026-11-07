@@ -25,6 +25,7 @@ from custom_components.adjustable_bed.const import (
     RICHMAT_MH_MODEL_CHOICES,
     RICHMAT_MH_VARIANTS_BY_APP,
 )
+from tests.state_helpers import state_writer
 
 NUS, W1, W2, W3, W4 = protocol.GATT_MAPS
 
@@ -57,7 +58,7 @@ def make(
     coordinator.handle_controller_state_update.side_effect = lambda key, value: (
         coordinator.controller_state.update({key: value})
     )
-    coordinator.handle_controller_state_updates.side_effect = coordinator.controller_state.update
+    coordinator.handle_controller_state_updates.side_effect = state_writer(coordinator.controller_state)
     data = {"capabilities": {"richmat_mh": snapshot}} if snapshot else {}
     coordinator.entry = SimpleNamespace(data=data)
     coordinator.client = MagicMock(is_connected=True, services=services or _default_services())

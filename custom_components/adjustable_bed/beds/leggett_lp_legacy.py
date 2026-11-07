@@ -11,10 +11,11 @@ import asyncio
 from collections import Counter
 from collections.abc import Callable
 from time import monotonic
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 from uuid import UUID
 
 from ..codec import richmat as codec
+from ..controller_state import StateKey
 from ..lp_legacy_profiles import LpLegacyAction, LpLegacyControl, get_lp_legacy_profile
 from ..profiles.richmat import LP_LEGACY
 from .base import (
@@ -47,6 +48,10 @@ def _button_callback(control_id: str, gesture: str) -> MotorCommandCallable:
         await controller.execute_control(control_id, gesture)
 
     return press
+
+
+NOTIFICATION: Final = StateKey[str]("lp_legacy_notification")
+NOTIFICATION_EFFECT: Final = StateKey[str]("lp_legacy_notification_effect")
 
 
 class LeggettLpLegacyController(BedController):
@@ -130,9 +135,9 @@ class LeggettLpLegacyController(BedController):
             ControllerStateSensorSpec(
                 key="lp_legacy_notification",
                 translation_key="lp_legacy_notification",
-                state_key="lp_legacy_notification",
+                state_key=NOTIFICATION,
                 icon="mdi:bluetooth",
-                attribute_keys=("lp_legacy_notification_effect",),
+                attribute_keys=(NOTIFICATION_EFFECT,),
                 entity_registry_enabled_default=False,
             ),
         )
@@ -247,10 +252,7 @@ class LeggettLpLegacyController(BedController):
         effect = NOTIFICATION_EFFECTS.get(frame)
         if effect is not None:
             self.forward_controller_state_updates(
-                {
-                    "lp_legacy_notification": frame.hex(" ").upper(),
-                    "lp_legacy_notification_effect": effect,
-                }
+                NOTIFICATION(frame.hex(" ").upper()), NOTIFICATION_EFFECT(effect)
             )
 
     async def stop_notify(self) -> None:

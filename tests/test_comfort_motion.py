@@ -34,6 +34,7 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
 )
 from custom_components.adjustable_bed.profiles.jiecang import COMFORT_MOTION
+from tests.state_helpers import state_writer
 
 # Frozen Comfort Motion 2.2.1 literals.
 RELEASE = bytes.fromhex("f1f14e004e7e")
@@ -110,7 +111,7 @@ def make_controller(monkeypatch):
             has_massage=True,
             record_command_trace=MagicMock(),
         )
-        coordinator.handle_controller_state_updates = coordinator.controller_state.update
+        coordinator.handle_controller_state_updates = state_writer(coordinator.controller_state)
         return (
             cm.ComfortMotionController(coordinator, layout=layout, **options),
             coordinator,

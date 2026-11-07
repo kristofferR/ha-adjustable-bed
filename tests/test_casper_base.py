@@ -20,6 +20,7 @@ from custom_components.adjustable_bed.codec.richmat import TRANSPORTS
 from custom_components.adjustable_bed.detection import BED_TYPE_DISPLAY_NAMES
 from custom_components.adjustable_bed.profiles.casper import TRANSPORTS as PROFILE_TRANSPORTS
 from custom_components.adjustable_bed.validators import get_variants_for_bed_type
+from tests.state_helpers import state_writer
 
 
 def char(uuid, *properties):
@@ -33,7 +34,7 @@ def make(model="casperpro", *, transport=1, kind=None):
     c.motor_pulse_count = 3
     c.controller_state = {}
     c.handle_controller_state_update.side_effect = lambda k, v: c.controller_state.update({k: v})
-    c.handle_controller_state_updates.side_effect = c.controller_state.update
+    c.handle_controller_state_updates.side_effect = state_writer(c.controller_state)
     c.client = MagicMock(is_connected=True, mtu_size=23)
     c.client.write_gatt_char = AsyncMock()
     c.client.start_notify = AsyncMock()

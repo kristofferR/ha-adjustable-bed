@@ -30,6 +30,7 @@ from custom_components.adjustable_bed.beds.simmons_protocol import (
     repeat_mask,
     resolve_protocol,
 )
+from tests.state_helpers import state_writer
 
 NUS = (
     "6e400001-b5a3-f393-e0a9-e50e24dcca9e",
@@ -102,7 +103,7 @@ def make_controller(
     coordinator.motor_pulse_count = 3
     coordinator.motor_count = 2
     coordinator.controller_state = {} if state is None else state
-    coordinator.handle_controller_state_updates = coordinator.controller_state.update
+    coordinator.handle_controller_state_updates = state_writer(coordinator.controller_state)
     coordinator.client = MagicMock(
         is_connected=True, services=services if services is not None else [_service(*NUS)]
     )

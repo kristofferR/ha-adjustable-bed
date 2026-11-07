@@ -62,6 +62,11 @@ from ..const import (
     POSITION_STALL_THRESHOLD,
     POSITION_TOLERANCE,
 )
+from ..controller_state import (
+    AnyStateKey,
+    StateKey,
+    StateUpdate,
+)
 from ..diagnostic_payloads import format_payload
 from ..execution import HOLD_CEILING_MS, NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ..position_seek import PositionSeekPolicy
@@ -97,7 +102,7 @@ class ControllerSelectSpec:
 
     key: str
     translation_key: str
-    state_key: str
+    state_key: StateKey[str | None]
     options: tuple[str, ...]
     select_fn: Callable[[BedController, str], Awaitable[None]]
     # An app-local choice that sends no frame: applied without connecting.
@@ -110,7 +115,7 @@ class ControllerNumberSpec:
 
     key: str
     translation_key: str
-    state_key: str
+    state_key: StateKey[int | None] | StateKey[float | None]
     native_min_value: float
     native_max_value: float
     native_step: float
@@ -236,10 +241,10 @@ class ControllerStateSensorSpec:
 
     key: str
     translation_key: str
-    state_key: str
+    state_key: AnyStateKey
     icon: str
     native_unit_of_measurement: str | None = None
-    attribute_keys: tuple[str, ...] = ()
+    attribute_keys: tuple[AnyStateKey, ...] = ()
     entity_registry_enabled_default: bool = True
     suggested_display_precision: int | None = None
 
@@ -250,9 +255,9 @@ class ControllerStateBinarySensorSpec:
 
     key: str
     translation_key: str
-    state_key: str
+    state_key: AnyStateKey
     icon: str
-    attribute_keys: tuple[str, ...] = ()
+    attribute_keys: tuple[AnyStateKey, ...] = ()
     entity_registry_enabled_default: bool = True
 
 
@@ -437,13 +442,13 @@ class BedController(ABC):
             except Exception:
                 _LOGGER.debug("Error in raw notification callback", exc_info=True)
 
-    def forward_controller_state_update(self, key: str, value: Any) -> None:
+    def forward_controller_state_update[T](self, key: StateKey[T], value: T) -> None:
         """Forward non-position controller state to the coordinator."""
         self._coordinator.handle_controller_state_update(key, value)
 
-    def forward_controller_state_updates(self, updates: dict[str, Any]) -> None:
-        """Forward multiple non-position controller state values at once."""
-        self._coordinator.handle_controller_state_updates(updates)
+    def forward_controller_state_updates(self, *updates: StateUpdate) -> None:
+        """Forward several ``KEY(value)`` updates at once."""
+        self._coordinator.handle_controller_state_updates(*updates)
 
     @property
     def client(self) -> BleakClient | None:
@@ -3368,11 +3373,11 @@ class BedController(ABC):
         """
         return {}
 
-    async def read_light_state(self) -> dict[str, Any]:
+    async def read_light_state(self) -> tuple[StateUpdate, ...]:
         """Query current light state from the bed when supported.
 
-        Controllers with readable light state should override this and update any
-        internal caches before returning the latest state dictionary.
+        Controllers with readable light state override this, update any internal
+        caches, and return the light-state updates for the coordinator to publish.
         """
         raise NotImplementedError(
             f"{self.__class__.__name__} does not support readable light state"

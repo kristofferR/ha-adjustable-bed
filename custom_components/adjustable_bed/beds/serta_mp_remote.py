@@ -10,10 +10,11 @@ import asyncio
 import bisect
 from collections.abc import Sequence
 from dataclasses import replace
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from ..codec import keeson as codec
 from ..command_scheduler import CommandKind, CommandOutcome, current_command_context
+from ..controller_state import StateKey
 from ..profiles.keeson import app_profile
 from .base import (
     BedController,
@@ -151,6 +152,14 @@ def pulse_angle(pulse: int, table: tuple[int, ...], threshold: int) -> int:
     if index and pulse - table[index - 1] <= table[index] - pulse:
         return index - 1
     return index
+
+
+MEMORY_REQUEST: Final = StateKey[str]("app_memory_request")
+MEMORY_HEAD_TARGET: Final = StateKey[int]("app_memory_head_target")
+MEMORY_FOOT_TARGET: Final = StateKey[int]("app_memory_foot_target")
+MEMORY_PROGRESS_VISIBLE: Final = StateKey[bool]("app_memory_progress_visible")
+HEAD_FLAG: Final = StateKey[bool]("app_head_flag")
+FOOT_FLAG: Final = StateKey[bool]("app_foot_flag")
 
 
 class SertaMPRemoteController(AppController):
@@ -322,14 +331,14 @@ class SertaMPRemoteController(AppController):
             ControllerStateSensorSpec(
                 "app_memory_request",
                 "app_memory_request",
-                "app_memory_request",
+                MEMORY_REQUEST,
                 "mdi:progress-check",
                 attribute_keys=(
-                    "app_memory_head_target",
-                    "app_memory_foot_target",
-                    "app_memory_progress_visible",
-                    "app_head_flag",
-                    "app_foot_flag",
+                    MEMORY_HEAD_TARGET,
+                    MEMORY_FOOT_TARGET,
+                    MEMORY_PROGRESS_VISIBLE,
+                    HEAD_FLAG,
+                    FOOT_FLAG,
                 ),
             ),
         )
@@ -362,11 +371,9 @@ class SertaMPRemoteController(AppController):
                 latest = self._memory_target
                 assert latest is not None
                 self.forward_controller_state_updates(
-                    {
-                        "app_memory_request": "active",
-                        "app_memory_head_target": latest[0],
-                        "app_memory_foot_target": latest[1],
-                    }
+                    MEMORY_REQUEST("active"),
+                    MEMORY_HEAD_TARGET(latest[0]),
+                    MEMORY_FOOT_TARGET(latest[1]),
                 )
             self._setters.remove(handle)
 
@@ -390,19 +397,14 @@ class SertaMPRemoteController(AppController):
         if self._notify_callback is not None:
             self._notify_callback("back", float(head))
             self._notify_callback("legs", float(foot))
-        updates: dict[str, object] = {
-            "app_head_flag": bool(data[13] & 1),
-            "app_foot_flag": bool(data[13] & 2),
-        }
+        updates = [HEAD_FLAG(bool(data[13] & 1)), FOOT_FLAG(bool(data[13] & 2))]
         if self._memory_active:
             complete = self._angles == self._memory_target or not data[13] & 3
             if complete:
                 self._memory_active = False
-            updates.update(
-                {
-                    "app_memory_request": "inactive" if complete else "active",
-                    "app_memory_progress_visible": not complete,
-                }
-            )
-        self.forward_controller_state_updates(updates)
+            updates += [
+                MEMORY_REQUEST("inactive" if complete else "active"),
+                MEMORY_PROGRESS_VISIBLE(not complete),
+            ]
+        self.forward_controller_state_updates(*updates)
         super()._parse_notification(data)

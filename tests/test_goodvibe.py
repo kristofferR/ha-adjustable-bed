@@ -18,6 +18,7 @@ from custom_components.adjustable_bed.goodvibe_protocol import action_frame, clo
 from custom_components.adjustable_bed.goodvibe_services import Request
 from custom_components.adjustable_bed.goodvibe_sleep import sleep_packet
 from custom_components.adjustable_bed.profiles.richmat import GOODVIBE
+from tests.state_helpers import state_writer
 
 
 @pytest.fixture
@@ -32,7 +33,7 @@ def coordinator(hass):
     c.client.start_notify = AsyncMock()
     c.client.stop_notify = AsyncMock()
     c.controller_state = {}
-    c.handle_controller_state_updates.side_effect = c.controller_state.update
+    c.handle_controller_state_updates.side_effect = state_writer(c.controller_state)
     return c
 
 

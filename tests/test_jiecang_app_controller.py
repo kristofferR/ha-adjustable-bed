@@ -20,6 +20,7 @@ from custom_components.adjustable_bed.profiles.jiecang import (
     motion_command,
     wake_schedule,
 )
+from tests.state_helpers import published
 
 DREAM_APPS = ("dreamask", "dreamotion", "dreamhd")
 
@@ -401,7 +402,7 @@ async def test_auto_light_is_state_guarded_and_idempotent(make_controller):
     assert not packets(client)
     await controller.set_automatic_light(False)
     assert packets(client) == [codec.AUTOMATIC_LIGHT_TOGGLE]
-    assert coordinator.handle_controller_state_updates.call_args.args[0]["automatic_light"] is False
+    assert published(*coordinator.handle_controller_state_updates.call_args.args)["automatic_light"] is False
 
 
 async def test_clock_reply_uses_coordinator_serialization(make_controller):

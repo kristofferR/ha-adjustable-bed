@@ -7,9 +7,10 @@ import logging
 from collections.abc import Callable, Mapping
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Final, Literal
 
 from .. import sleeptracker_protocol as p
+from ..controller_state import StateKey, StateUpdate
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -63,6 +64,40 @@ def _axis_command(axis: p.Axis, action: str) -> MotorCommandCallable:
             await selected._move(axis, action)
 
     return execute
+
+
+# Fields select and number entities read; the rest are diagnostic JSON.
+_OPTION_FIELDS: Final = frozenset(
+    {
+        "wave_frequency",
+        "massage_head_level",
+        "massage_foot_level",
+        "massage_pattern_option",
+        *(side + suffix for side in ("left", "right") for suffix in ("_mode", "_curve")),
+    }
+)
+_NUMBER_FIELDS: Final = frozenset({"wave_minutes", "left_level", "right_level"})
+
+
+def _option_key(field: str) -> StateKey[str | None]:
+    return StateKey[str | None]("sleeptracker_" + field)
+
+
+def _number_key(field: str) -> StateKey[int | None]:
+    return StateKey[int | None]("sleeptracker_" + field)
+
+
+def _field_key(field: str) -> StateKey[p.Json]:
+    return StateKey[p.Json]("sleeptracker_" + field)
+
+
+def _state_update(field: str, value: p.Json) -> StateUpdate:
+    if field in _OPTION_FIELDS:
+        return _option_key(field)(value if isinstance(value, str) else None)
+    if field in _NUMBER_FIELDS:
+        number = value if isinstance(value, int) and not isinstance(value, bool) else None
+        return _number_key(field)(number)
+    return _field_key(field)(value)
 
 
 class SleeptrackerController(BedController):
@@ -198,13 +233,13 @@ class SleeptrackerController(BedController):
             constant = self._state.get(side + "_commanded_constant")
             if constant is not None:
                 self._state[side + "_curve"] = "constant" if constant else "curve"
-        updates: dict[str, p.Json] = {
-            "sleeptracker_" + key: value for key, value in self._state.items()
-        }
+        values = dict(self._state)
         # HA select options are strings; retain the numeric builder setting locally.
-        updates["sleeptracker_wave_frequency"] = str(self._wave_settings.frequency)
-        updates["sleeptracker_wave_minutes"] = self._wave_settings.minutes
-        self.forward_controller_state_updates(updates)
+        values["wave_frequency"] = str(self._wave_settings.frequency)
+        values["wave_minutes"] = self._wave_settings.minutes
+        self.forward_controller_state_updates(
+            *(_state_update(field, value) for field, value in values.items())
+        )
 
     async def async_discover_capabilities(self) -> None:
         client = self.client
@@ -1006,7 +1041,7 @@ class SleeptrackerController(BedController):
                 ControllerSelectSpec(
                     "sleeptracker_wave_frequency",
                     "sleeptracker_wave_frequency",
-                    "sleeptracker_wave_frequency",
+                    _option_key("wave_frequency"),
                     tuple(str(hz) for hz in p.FREQUENCIES),
                     choose_connected,
                     local_select_fn=self._choose_wave_frequency,
@@ -1031,7 +1066,7 @@ class SleeptrackerController(BedController):
                     ControllerSelectSpec(
                         "sleeptracker_" + key,
                         "sleeptracker_" + key,
-                        "sleeptracker_" + key,
+                        _option_key(key),
                         options,
                         step_to,
                     )
@@ -1060,7 +1095,7 @@ class SleeptrackerController(BedController):
                     ControllerSelectSpec(
                         "sleeptracker_" + side + "_mode",
                         "sleeptracker_" + side + "_mode",
-                        "sleeptracker_" + side + "_mode",
+                        _option_key(side + "_mode"),
                         ("off", "cool", "heat"),
                         select_mode,
                     )
@@ -1084,7 +1119,7 @@ class SleeptrackerController(BedController):
                     ControllerSelectSpec(
                         "sleeptracker_" + side + "_curve",
                         "sleeptracker_" + side + "_curve",
-                        "sleeptracker_" + side + "_curve",
+                        _option_key(side + "_curve"),
                         ("constant", "curve"),
                         select_curve,
                     )
@@ -1108,7 +1143,7 @@ class SleeptrackerController(BedController):
                 ControllerNumberSpec(
                     "sleeptracker_wave_minutes",
                     "sleeptracker_wave_minutes",
-                    "sleeptracker_wave_minutes",
+                    _number_key("wave_minutes"),
                     5,
                     105,
                     5,
@@ -1139,7 +1174,7 @@ class SleeptrackerController(BedController):
                     ControllerNumberSpec(
                         "sleeptracker_" + side + "_level",
                         "sleeptracker_" + side + "_level",
-                        "sleeptracker_" + side + "_level",
+                        _number_key(side + "_level"),
                         0,
                         3,
                         1,
@@ -1157,9 +1192,9 @@ class SleeptrackerController(BedController):
             ControllerStateSensorSpec(
                 "sleeptracker_" + key,
                 "sleeptracker_" + key,
-                "sleeptracker_" + key,
+                _field_key(key),
                 "mdi:bed-outline",
-                attribute_keys=("sleeptracker_metadata",) if key == "layout" else (),
+                attribute_keys=(_field_key("metadata"),) if key == "layout" else (),
             )
             for key in keys
         )
@@ -1170,7 +1205,7 @@ class SleeptrackerController(BedController):
             ControllerStateBinarySensorSpec(
                 "sleeptracker_light_on",
                 "sleeptracker_light_on",
-                "sleeptracker_light_on",
+                _field_key("light_on"),
                 "mdi:lightbulb",
             ),
         ) + (
@@ -1178,7 +1213,7 @@ class SleeptrackerController(BedController):
                 ControllerStateBinarySensorSpec(
                     "sleeptracker_wind_down_running",
                     "sleeptracker_wind_down_running",
-                    "sleeptracker_wind_down_running",
+                    _field_key("wind_down_running"),
                     "mdi:bed-clock",
                 ),
             )

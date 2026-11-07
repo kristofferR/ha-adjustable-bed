@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Collection, Coroutine, Iterator, Mapping, Sequence
+from collections.abc import Callable, Collection, Coroutine, Iterator, Sequence
 from contextlib import ExitStack, contextmanager
 from datetime import datetime
 from typing import TYPE_CHECKING, Protocol
@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Protocol
 from homeassistant.helpers.device_registry import ChildDeviceInfo, DeviceInfo
 
 from .beds.base import BedController
+from .controller_state import ControllerState
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
@@ -63,7 +64,7 @@ class EntityRuntime(Protocol):
     def position_data(self) -> dict[str, float]: ...
 
     @property
-    def controller_state(self) -> Mapping[str, object]: ...
+    def controller_state(self) -> ControllerState: ...
 
     @property
     def is_connected(self) -> bool: ...
@@ -109,7 +110,7 @@ class EntityRuntime(Protocol):
     ) -> Callable[[], None]: ...
 
     def register_controller_state_callback(
-        self, callback_fn: Callable[[dict[str, object]], None]
+        self, callback_fn: Callable[[ControllerState], None]
     ) -> Callable[[], None]: ...
 
     def register_connection_state_callback(
@@ -227,7 +228,7 @@ class EntityRuntimeView(ABC):
         return self._entity_source.position_data
 
     @property
-    def controller_state(self) -> Mapping[str, object]:
+    def controller_state(self) -> ControllerState:
         return self._entity_source.controller_state
 
     @property
@@ -290,7 +291,7 @@ class EntityRuntimeView(ABC):
         return self._entity_source.register_position_callback(callback_fn)
 
     def register_controller_state_callback(
-        self, callback_fn: Callable[[dict[str, object]], None]
+        self, callback_fn: Callable[[ControllerState], None]
     ) -> Callable[[], None]:
         return self._entity_source.register_controller_state_callback(callback_fn)
 

@@ -23,7 +23,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from bleak.exc import BleakError
 
@@ -35,6 +35,7 @@ from ..const import (
     OKIN_CST_VARIANT_NECTAR_MOVE,
     VARIANT_AUTO,
 )
+from ..controller_state import StateKey
 from ..profiles.okin_nframe import (
     CST_PROFILES,
     CstFields,
@@ -56,6 +57,9 @@ def _product(profile: OkinNFrameProfile) -> CstProduct:
     if profile.product is None:
         raise TypeError(f"{profile.key} is not a CST product profile")
     return profile.product
+
+
+MEMORY_SAVE_RESPONSE_OBSERVED: Final = StateKey[bool]("memory_save_response_observed")
 
 
 class OkinCstController(BedController):
@@ -80,7 +84,7 @@ class OkinCstController(BedController):
         self._profile = _product(self._nframe_profile)
         self._memory_save_response_callback: Callable[[], None] | None = None
         if self._profile.memory_save_response_feedback:
-            self.forward_controller_state_update("memory_save_response_observed", False)
+            self.forward_controller_state_update(MEMORY_SAVE_RESPONSE_OBSERVED, False)
 
         _LOGGER.debug("OkinCstController initialized with profile %s", self._profile.key)
 
@@ -209,7 +213,7 @@ class OkinCstController(BedController):
             ControllerStateBinarySensorSpec(
                 key="memory_save_response_observed",
                 translation_key="memory_save_response_observed",
-                state_key="memory_save_response_observed",
+                state_key=MEMORY_SAVE_RESPONSE_OBSERVED,
                 icon="mdi:content-save-check-outline",
             ),
         )
@@ -315,13 +319,13 @@ class OkinCstController(BedController):
 
     def _mark_memory_save_response_observed(self) -> None:
         """Publish an observed app response without claiming physical storage."""
-        self.forward_controller_state_update("memory_save_response_observed", True)
+        self.forward_controller_state_update(MEMORY_SAVE_RESPONSE_OBSERVED, True)
 
     def _reset_memory_save_feedback(self) -> None:
         """Clear response tracking at a new save or connection boundary."""
         self._pending_memory_save_code = None
         if self._profile.memory_save_response_feedback:
-            self.forward_controller_state_update("memory_save_response_observed", False)
+            self.forward_controller_state_update(MEMORY_SAVE_RESPONSE_OBSERVED, False)
 
     def on_disconnect(self) -> None:
         """Clear session-local notification and command state when the BLE link drops."""

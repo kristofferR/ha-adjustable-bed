@@ -51,6 +51,7 @@ from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinato
 from custom_components.adjustable_bed.detection import is_jensen_linon_name
 from custom_components.adjustable_bed.pairing import build_pair_entry_data, effective_child_data
 from tests.form_helpers import finish_new_bed
+from tests.state_helpers import published
 
 HEAD = SVANE_HEAD_SERVICE_UUID
 FOOT = SVANE_FEET_SERVICE_UUID
@@ -230,9 +231,7 @@ class TestJensenLinonLights:
         target = (SVANE_LIGHT_SERVICE_UUID, SVANE_LIGHT_ON_OFF_UUID)
         assert written(controller) == [(*target, "010000"), (*target, "000000"), (*target, "010000")]
         assert controller.get_light_state() == {"is_on": True}
-        controller._coordinator.handle_controller_state_updates.assert_called_with(
-            {"under_bed_lights_on": True}
-        )
+        assert published(*controller._coordinator.handle_controller_state_updates.call_args.args) == {"under_bed_lights_on": True}
 
     def test_light_frame_builder(self) -> None:
         assert JensenLinonCommands.light(True).hex() == "010000"

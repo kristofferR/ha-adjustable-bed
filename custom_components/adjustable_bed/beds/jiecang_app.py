@@ -17,6 +17,7 @@ from homeassistant.util import dt as dt_util
 
 from ..codec import jiecang as codec
 from ..codec.jiecang import Notification, TransportKey, Wake
+from ..controller_state import StateKey
 from ..profiles.jiecang import (
     APP_LAYOUT_AXES,
     APP_PROFILES,
@@ -32,6 +33,14 @@ from ..profiles.jiecang import (
     massage_zones,
     wake_schedule,
 )
+from ..state_keys import (
+    AUTOMATIC_LIGHT,
+    LIGHT_LEVEL,
+    LIGHT_TIMER_OPTION,
+    UNDER_BED_LIGHTS_ON,
+    UNDER_BED_LIGHTS_RGB,
+    massage_intensity,
+)
 from .base import BedController
 from .jiecang import JiecangProfileController
 
@@ -43,6 +52,9 @@ if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _ZONES: dict[str, MassageZone] = {"head": "back", "foot": "legs", "right": "right"}
+CAPABILITIES_KNOWN: Final = StateKey[bool]("jiecang_capabilities_known")
+ALARM_VISIBLE: Final = StateKey[bool]("jiecang_alarm_visible")
+ALARM: Final = StateKey[dict[str, object]]("jiecang_alarm")
 _WAKE_PRESETS: tuple[Wake, ...] = (
     "flat",
     "zero_g",
@@ -325,22 +337,28 @@ class JiecangAppController(JiecangProfileController):
         await self._coordinator.async_execute_controller_command(send, cancel_running=False)
 
     def _publish_state(self) -> None:
-        state: dict[str, object] = {
-            "jiecang_capabilities_known": self._capabilities is not None,
-            "jiecang_alarm_visible": self._alarm_visible,
-        }
+        state = [
+            CAPABILITIES_KNOWN(self._capabilities is not None),
+            ALARM_VISIBLE(self._alarm_visible),
+        ]
         if self._automatic_light is not None:
-            state["automatic_light"] = self._automatic_light
+            state.append(AUTOMATIC_LIGHT(self._automatic_light))
         if self._light_on is not None:
-            state["under_bed_lights_on"] = self._light_on
+            state.append(UNDER_BED_LIGHTS_ON(self._light_on))
         if self._rgb is not None:
-            state["under_bed_lights_rgb"] = (self._rgb.red, self._rgb.green, self._rgb.blue)
-            state["light_level"] = self._rgb.brightness
-            state["light_timer_option"] = str(self._rgb.seconds)
+            state += [
+                UNDER_BED_LIGHTS_RGB((self._rgb.red, self._rgb.green, self._rgb.blue)),
+                LIGHT_LEVEL(self._rgb.brightness),
+                LIGHT_TIMER_OPTION(str(self._rgb.seconds)),
+            ]
         if self._alarm is not None:
-            state["jiecang_alarm"] = asdict(self._alarm)
-        state.update(self.get_massage_state())
-        self.forward_controller_state_updates(state)
+            state.append(ALARM(asdict(self._alarm)))
+        state += [
+            massage_intensity(key)(self._massage[value])
+            for key, value in _ZONES.items()
+            if value in self._massage
+        ]
+        self.forward_controller_state_updates(*state)
 
     async def move_lumbar_up(self) -> None:
         await self._move_axis("lumbar", True)

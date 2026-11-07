@@ -11,7 +11,7 @@ import logging
 import math
 from collections.abc import Callable
 from dataclasses import replace
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Final, cast
 
 from bleak.exc import BleakError
 
@@ -21,7 +21,9 @@ from ..const import (
     SLEEPYS_ELITE_NATIVE_ACTION_MS,
     SLEEPYS_ELITE_SELECTORS,
 )
+from ..controller_state import StateKey, StateUpdate
 from ..execution import ExecutionCapabilities
+from ..state_keys import LIGHT_LEVEL
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -175,6 +177,20 @@ def _normalize_uuid(value: str) -> str:
 
 def _same_uuid(left: str, right: str) -> bool:
     return _normalize_uuid(left) == _normalize_uuid(right)
+
+
+COLOR_CODE: Final = StateKey[int | None]("sleepys_app_color_code")
+MASSAGE_TIMER_CODE: Final = StateKey[str | None]("sleepys_app_massage_timer_code")
+MASSAGE_INTENSITY: Final = StateKey[int]("sleepys_massage_intensity")
+
+
+def _field_key(field: str) -> StateKey[int | float]:
+    """A parsed app field; flags publish as 0 or 1."""
+    return StateKey[int | float](f"sleepys_app_{field}")
+
+
+def _target_key(axis: int) -> StateKey[int | None]:
+    return StateKey[int | None](f"sleepys_app_target_axis_{axis}")
 
 
 class SleepysEliteAppController(BedController):
@@ -588,7 +604,7 @@ class SleepysEliteAppController(BedController):
                 self._position_data[axis] = value
                 updates[f"position_{axis}"] = value
         if updates:
-            state_updates: dict[str, int | float | str] = {}
+            state_updates: list[StateUpdate] = []
             for key, value in updates.items():
                 if not isinstance(value, (int, bool, float)):
                     continue
@@ -596,15 +612,15 @@ class SleepysEliteAppController(BedController):
                 self._app_fields[key] = value
                 if isinstance(value, bool):
                     value = int(value)
-                state_updates[f"sleepys_app_{key}"] = value
+                state_updates.append(_field_key(key)(value))
                 if (
                     key == "field_0x0b"
                     and self.supports_massage
                     and timer_code is not None
                     and 1 <= timer_code <= 3
                 ):
-                    state_updates["sleepys_app_massage_timer_code"] = str(timer_code)
-            self.forward_controller_state_updates(state_updates)
+                    state_updates.append(MASSAGE_TIMER_CODE(str(timer_code)))
+            self.forward_controller_state_updates(*state_updates)
 
     def _parse_notification(self, raw: bytes) -> dict[str, _ParsedValue] | None:
         """Decode a complete accepted parser branch without partial state writes."""
@@ -883,7 +899,7 @@ class SleepysEliteAppController(BedController):
                     ControllerNumberSpec(
                         key=key,
                         translation_key=key,
-                        state_key=key,
+                        state_key=_target_key(axis),
                         native_min_value=0,
                         native_max_value=100,
                         native_step=1,
@@ -897,7 +913,7 @@ class SleepysEliteAppController(BedController):
                 ControllerNumberSpec(
                     key="light_level",
                     translation_key="light_level",
-                    state_key="light_level",
+                    state_key=LIGHT_LEVEL,
                     native_min_value=0,
                     native_max_value=6,
                     native_step=1,
@@ -910,7 +926,7 @@ class SleepysEliteAppController(BedController):
                 ControllerNumberSpec(
                     key="sleepys_app_color_code",
                     translation_key="sleepys_app_color_code",
-                    state_key="sleepys_app_color_code",
+                    state_key=COLOR_CODE,
                     native_min_value=1,
                     native_max_value=7,
                     native_step=1,
@@ -930,7 +946,7 @@ class SleepysEliteAppController(BedController):
             ControllerSelectSpec(
                 key="sleepys_app_massage_timer_code",
                 translation_key="sleepys_app_massage_timer_code",
-                state_key="sleepys_app_massage_timer_code",
+                state_key=MASSAGE_TIMER_CODE,
                 options=options,
                 select_fn=lambda ctrl, value: cast(
                     SleepysEliteAppController, ctrl
@@ -1135,7 +1151,7 @@ class SleepysEliteAppController(BedController):
             ControllerStateSensorSpec(
                 key=f"sleepys_app_{field}",
                 translation_key=f"sleepys_app_{field}",
-                state_key=f"sleepys_app_{field}",
+                state_key=_field_key(field),
                 icon="mdi:code-braces",
             )
             for field in sorted(_APP_STATE_FIELDS_BY_SELECTOR.get(self.selector, ()))
@@ -1145,7 +1161,7 @@ class SleepysEliteAppController(BedController):
                 ControllerStateSensorSpec(
                     key=f"sleepys_app_position_axis_{axis}",
                     translation_key=f"sleepys_app_position_axis_{axis}",
-                    state_key=f"sleepys_app_position_axis_{axis}",
+                    state_key=_field_key(f"position_axis_{axis}"),
                     icon="mdi:bed-outline",
                     native_unit_of_measurement="%",
                     suggested_display_precision=0,
@@ -1214,7 +1230,7 @@ class SleepysEliteAppController(BedController):
         route = self._value_route(f"position_axis_{axis}", float(target))
         await self._send_dynamic(route.builder, route.logical_values)
         self._targets[axis] = target
-        self.forward_controller_state_updates({f"sleepys_app_target_axis_{axis}": target})
+        self.forward_controller_state_updates(_target_key(axis)(target))
 
     async def set_light_level(self, level: int) -> None:
         """Send the controller-level brightness value, including voice value zero."""
@@ -1222,7 +1238,7 @@ class SleepysEliteAppController(BedController):
         await self._send_dynamic(route.builder, route.logical_values)
         self._light_level = level
         self._light_level_known = True
-        self.forward_controller_state_updates({"light_level": level})
+        self.forward_controller_state_updates(LIGHT_LEVEL(level))
 
     async def set_light_slider_value(self, level: int) -> None:
         """Adapt the HA slider's zero endpoint to the separate light-off route."""
@@ -1251,7 +1267,7 @@ class SleepysEliteAppController(BedController):
             raise ValueError("Sleepy's light palette requires enabled under-bed lighting")
         await self._send_dynamic(route.builder, route.logical_values)
         self._light_color_code = code
-        self.forward_controller_state_updates({"sleepys_app_color_code": code})
+        self.forward_controller_state_updates(COLOR_CODE(code))
 
     async def set_massage_timer_code(self, code: int) -> None:
         route = self._value_route("massage_timer_code", float(code))
@@ -1263,7 +1279,7 @@ class SleepysEliteAppController(BedController):
         # HA value commits have no app gesture queue to retain or replay.
         await self._send_dynamic(route.builder, route.logical_values)
         self._app_fields["field_0x0b"] = code
-        self.forward_controller_state_updates({"sleepys_app_massage_timer_code": str(code)})
+        self.forward_controller_state_updates(MASSAGE_TIMER_CODE(str(code)))
 
     async def set_massage_intensity(self, zone: str, level: int) -> None:
         if zone != "all":
@@ -1275,7 +1291,7 @@ class SleepysEliteAppController(BedController):
         # axis, transition state, or send a STOP frame.
         await self._send_dynamic(route.builder, route.logical_values)
         self._massage_intensity = level
-        self.forward_controller_state_updates({"sleepys_massage_intensity": level})
+        self.forward_controller_state_updates(MASSAGE_INTENSITY(level))
 
     def _massage_is_active(self) -> bool:
         active = self._app_fields.get("field_0x4b")
@@ -1302,7 +1318,7 @@ class SleepysEliteAppController(BedController):
         await self.send("turnoffUnderbedLighting")
         self._light_level = 0
         self._light_level_known = True
-        self.forward_controller_state_updates({"light_level": 0})
+        self.forward_controller_state_updates(LIGHT_LEVEL(0))
 
     async def massage_on(self) -> None:
         if not self.supports_massage:

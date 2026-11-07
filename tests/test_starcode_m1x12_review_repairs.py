@@ -45,6 +45,7 @@ from custom_components.adjustable_bed.pairing_candidates import (
 )
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
 from custom_components.adjustable_bed.services import async_register_services
+from tests.state_helpers import published
 from tests.test_starcode_m1x12 import (
     _controller_target,
     _create_controller,
@@ -378,7 +379,7 @@ async def test_light_telemetry_getter_updates_actual_light_and_teardown_clears_i
     assert light.is_on is True
 
     controller.query_status = AsyncMock()
-    assert await controller.read_light_state() == {"is_on": True}
+    assert published(*await controller.read_light_state()) == {"under_bed_lights_on": True}
     controller.query_status.assert_awaited_once()
 
     controller._next_tick = asyncio.get_running_loop().time()

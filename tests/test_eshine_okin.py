@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime
 from types import SimpleNamespace
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -34,6 +35,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.detection import get_bed_type_options
 from custom_components.adjustable_bed.validators import get_variants_for_bed_type
+from tests.state_helpers import state_writer
 
 NOW = datetime.fromisoformat("2026-11-03T14:47:09+01:00")
 
@@ -45,7 +47,7 @@ def make(profile="eshine_e5000", *, properties=("notify",)):
     coordinator.motor_pulse_count = 3
     coordinator.motor_pulse_delay_ms = 999
     coordinator.controller_state = {}
-    coordinator.handle_controller_state_updates.side_effect = coordinator.controller_state.update
+    coordinator.handle_controller_state_updates.side_effect = state_writer(coordinator.controller_state)
     write = SimpleNamespace(uuid=WRITE_UUID, properties=["write-without-response"], handle=1)
     notify = SimpleNamespace(uuid=NOTIFY_UUID, properties=list(properties), handle=2)
     coordinator.client = MagicMock(
@@ -333,7 +335,7 @@ async def test_receive_state_entity_attributes_stale_callbacks_and_reconnect(pau
     await ctrl.start_notify()
     notify, receive = ctrl.client.start_notify.call_args.args
     receive(notify, bytearray.fromhex("a50b0e000258010101000000000100"))
-    state = ctrl._coordinator.controller_state
+    state = cast(dict[str, Any], ctrl._coordinator.controller_state)
     assert state["under_bed_lights_on"] is True
     assert state["eshine_okin_massage_data"]["head"] == 1
     receive(notify, bytearray.fromhex("fffe16") + bytearray(17))

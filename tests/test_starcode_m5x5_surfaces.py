@@ -13,6 +13,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.beds.starcode_state import state_updates
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
@@ -158,13 +159,15 @@ async def test_controls_state_and_readonly_domains(hass: HomeAssistant) -> None:
         "starcode_alarm_1",
     } <= sensor_keys
     c.handle_controller_state_updates(
-        {
-            "alarm_0": True,
-            "alarm_0_details": {"repeat_raw": 255, "hour": 23},
-            "light_color_index": 4,
-            "light_color_option": "4",
-            "light_rgb": [255, 255, 0],
-        }
+        *state_updates(
+            {
+                "alarm_0": True,
+                "alarm_0_details": {"repeat_raw": 255, "hour": 23},
+                "light_color_index": 4,
+                "light_color_option": "4",
+                "light_rgb": [255, 255, 0],
+            }
+        )
     )
     alarm = next(s for s in sensors if s.translation_key == "starcode_alarm_0")
     assert alarm.native_value is True

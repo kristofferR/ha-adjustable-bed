@@ -185,6 +185,7 @@ from .const import (
     resolve_richmat_remote_code,
 )
 from .controller_factory import create_controller
+from .controller_state import AnyStateKey, ControllerState, StateKey, StateUpdate
 from .coordinator_bonds import CoordinatorBondsMixin
 from .coordinator_connection import CoordinatorConnectionMixin
 from .coordinator_positions import CoordinatorPositionsMixin
@@ -204,6 +205,13 @@ from .position_seek import (
     SeekMotion,
 )
 from .profile_id import entry_profile_id, profile_route, resolve_profile_id
+from .state_keys import (
+    LIGHT_LEVEL,
+    LIGHT_TIMER_MINUTES,
+    LIGHT_TIMER_OPTION,
+    LINAK_MODEL_VARIANT,
+    UNDER_BED_LIGHTS_ON,
+)
 from .vibradorm_app_state import (
     ControlType,
     VibradormAppSessionIntent,
@@ -478,14 +486,14 @@ class AdjustableBedCoordinator(
         self._position_callbacks: set[Callable[[dict[str, float]], None]] = set()
         # CB35 autonomous presets can outlive the connection-scoped controller.
         self.okin_cb35_preset_started_at: float | None = None
-        self._controller_state: dict[str, Any] = {}
+        self._controller_state = ControllerState()
         self.starcode_app_retained_state: RetainedAppState | None = None
         self.furnimove_widget_state: tuple[bool, bytes | None, bytes | None] = (False, None, None)
         # App-local state (BedController.persisted_app_state), slotted per restored controller.
         self._app_state_store = app_state_store(hass, self._address)
         self._app_state_slots: WeakKeyDictionary[BedController, str] = WeakKeyDictionary()
         self._app_state_restoring = False
-        self._controller_state_callbacks: set[Callable[[dict[str, Any]], None]] = set()
+        self._controller_state_callbacks: set[Callable[[ControllerState], None]] = set()
         self._controller_state_refresh_task: asyncio.Task[None] | None = None
         self._controller_state_refresh_retry_timer: asyncio.TimerHandle | None = None
         self._controller_state_refresh_retry_count = 0
@@ -1260,7 +1268,7 @@ class AdjustableBedCoordinator(
             self._offline_controller = self._controller
 
     @property
-    def controller_state(self) -> dict[str, Any]:
+    def controller_state(self) -> ControllerState:
         """Return non-position controller state."""
         return self._controller_state
 
@@ -1669,8 +1677,8 @@ class AdjustableBedCoordinator(
         if self._bed_type != BED_TYPE_LINAK:
             return None
 
-        raw_variant = self._controller_state.get("linak_model_variant")
-        if not isinstance(raw_variant, str) or raw_variant == "unknown":
+        raw_variant = self._controller_state.get(LINAK_MODEL_VARIANT)
+        if raw_variant is None or raw_variant == "unknown":
             return None
 
         labels = {
@@ -3184,7 +3192,7 @@ class AdjustableBedCoordinator(
             self._controller.set_raw_notify_callback(callback)
 
     def register_controller_state_callback(
-        self, callback_fn: Callable[[dict[str, Any]], None]
+        self, callback_fn: Callable[[ControllerState], None]
     ) -> Callable[[], None]:
         """Register a callback for non-position controller state updates."""
         self._controller_state_callbacks.add(callback_fn)
@@ -3227,19 +3235,19 @@ class AdjustableBedCoordinator(
 
         return not required_keys.issubset(self._controller_state)
 
-    def _readable_light_state_required_keys(self) -> set[str]:
+    def _readable_light_state_required_keys(self) -> set[AnyStateKey]:
         """Return the readable light-state keys expected for the current controller."""
         controller = self._controller
         if controller is None or not controller.supports_under_bed_lights:
             return set()
 
-        required_keys: set[str] = set()
+        required_keys: set[AnyStateKey] = set()
         if controller.supports_discrete_light_control:
-            required_keys.add("under_bed_lights_on")
+            required_keys.add(UNDER_BED_LIGHTS_ON)
         if controller.supports_light_level_control:
-            required_keys.add("light_level")
+            required_keys.add(LIGHT_LEVEL)
         if controller.supports_light_timer:
-            required_keys.update({"light_timer_minutes", "light_timer_option"})
+            required_keys.update({LIGHT_TIMER_MINUTES, LIGHT_TIMER_OPTION})
         return required_keys
 
     @callback
@@ -3270,16 +3278,17 @@ class AdjustableBedCoordinator(
         self._schedule_controller_state_refresh(retry_delay=_READABLE_LIGHT_STATE_RETRY_DELAY)
 
     @callback
-    def _merge_controller_light_state(self, state: dict[str, Any]) -> None:
+    def _merge_controller_light_state(self, state: tuple[StateUpdate, ...]) -> None:
         """Merge readable light-state values into coordinator state."""
-        if "is_on" in state and "under_bed_lights_on" not in state:
-            state = {**state, "under_bed_lights_on": state["is_on"]}
-
-        updates = {
-            key: value for key, value in state.items() if self._controller_state.get(key) != value
-        }
-        if updates:
-            self.handle_controller_state_updates(updates)
+        # The last update of a key wins, as it does when published.
+        latest = {update.key: update for update in state}
+        self.handle_controller_state_updates(
+            *(
+                update
+                for update in latest.values()
+                if self._controller_state.get(update.key) != update.value
+            )
+        )
         if not self._should_refresh_readable_light_state(force=False):
             self._cancel_controller_state_refresh_retry()
 
@@ -3289,7 +3298,7 @@ class AdjustableBedCoordinator(
         if controller is None:
             return
 
-        state: dict[str, Any] | None = None
+        state: tuple[StateUpdate, ...] | None = None
         cancelled_error: asyncio.CancelledError | None = None
         should_retry = False
         try:
@@ -3339,7 +3348,7 @@ class AdjustableBedCoordinator(
         should_retry = False
         try:
 
-            async def _read_light_state(controller: BedController) -> dict[str, Any]:
+            async def _read_light_state(controller: BedController) -> tuple[StateUpdate, ...]:
                 return await controller.read_light_state()
 
             async with asyncio.timeout(_READABLE_LIGHT_STATE_TIMEOUT):
@@ -3430,9 +3439,9 @@ class AdjustableBedCoordinator(
         )
 
     @callback
-    def handle_controller_state_update(self, key: str, value: Any) -> None:
+    def handle_controller_state_update[T](self, key: StateKey[T], value: T) -> None:
         """Store a single controller state value and notify listeners."""
-        self.handle_controller_state_updates({key: value})
+        self.handle_controller_state_updates(key(value))
 
     async def async_set_furnimove_massage_duration(self, minutes: int) -> None:
         """Serialize an app preference without reserving a Bluetooth connection."""
@@ -3492,12 +3501,12 @@ class AdjustableBedCoordinator(
         await self._app_state_store.async_write(slot, state)
 
     @callback
-    def handle_controller_state_updates(self, updates: dict[str, Any]) -> None:
-        """Store controller state values and notify listeners."""
+    def handle_controller_state_updates(self, *updates: StateUpdate) -> None:
+        """Store ``KEY(value)`` updates and notify listeners."""
         if not updates:
             return
 
-        self._controller_state.update(updates)
+        self._controller_state.update((update.key, update.value) for update in updates)
         self.save_app_state()
         for callback_fn in list(self._controller_state_callbacks):
             try:

@@ -4,19 +4,26 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Mapping
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ..casper_base_protocol import Request, SensorKind
 from ..casper_sleep_protocol import Json, mapping
+from ..controller_state import StateKey
 from ..hush_sleep_protocol import HushReceive, build, integer, parse, report
 from .base import ControllerStateSensorSpec
-from .casper_sleep import CasperRemoteController, CasperSleepController
+from .casper_sleep import INFO, PART, REPORT, STATUS, CasperRemoteController, CasperSleepController
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
+
+
+SENSITIVITY: Final = StateKey[dict[str, Json]]("hush_sleep_sensitivity")
+ANTI_SNORE: Final = StateKey[Json]("hush_sleep_anti_snore")
+DEVICE_TIME: Final = StateKey[Json]("hush_sleep_device_time")
+LIVE_REQUESTED: Final = StateKey[bool]("hush_sleep_live_requested")
 
 
 class HushSleepController(CasperSleepController):
@@ -77,7 +84,7 @@ class HushSleepController(CasperSleepController):
     def on_connection_release(self, reason: str) -> None:
         self._live_requested = False
         self.on_disconnect()
-        self.forward_controller_state_update("hush_sleep_live_requested", False)
+        self.forward_controller_state_update(LIVE_REQUESTED, False)
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
@@ -86,13 +93,13 @@ class HushSleepController(CasperSleepController):
             ControllerStateSensorSpec(
                 "hush_sleep_settings",
                 "hush_sleep_settings",
-                "casper_sleep_status",
+                STATUS,
                 "mdi:sleep",
                 attribute_keys=(
-                    "hush_sleep_sensitivity",
-                    "hush_sleep_anti_snore",
-                    "hush_sleep_device_time",
-                    "hush_sleep_live_requested",
+                    SENSITIVITY,
+                    ANTI_SNORE,
+                    DEVICE_TIME,
+                    LIVE_REQUESTED,
                 ),
             ),
         )
@@ -149,7 +156,7 @@ class HushSleepController(CasperSleepController):
             decoded = report(data, kind=self.kind, monthly=request.report_type == 2)
             if decoded is not None:
                 self.forward_controller_state_update(
-                    "casper_sleep_report",
+                    REPORT,
                     {
                         "part": request.part,
                         "year": request.year,
@@ -184,15 +191,15 @@ class HushSleepController(CasperSleepController):
         bean = parse(schemas[self.kind][action], data)
         val = bean.get("val")
         if action == "q_time":
-            self.forward_controller_state_update("hush_sleep_device_time", val)
+            self.forward_controller_state_update(DEVICE_TIME, val)
             self._schedule("q_part")
         elif action == "s_time":
             self._info.update(mapping(val))
-            self.forward_controller_state_update("casper_sleep_info", dict(self._info))
+            self.forward_controller_state_update(INFO, dict(self._info))
             if self.kind == "sxb":
                 self._schedule("q_time")
         elif action in ("q_part", "s_part"):
-            self.forward_controller_state_update("casper_sleep_part", val)
+            self.forward_controller_state_update(PART, val)
         elif action == "q_realtime" and val is not None:
             self._live.feed(val)
             self._publish_live()
@@ -207,9 +214,9 @@ class HushSleepController(CasperSleepController):
                 if not isinstance(values, list) or not values:
                     raise ValueError("Missing sensitivity value")
                 settings[side] = integer(values[0]) - 1
-            self.forward_controller_state_update("hush_sleep_sensitivity", settings)
+            self.forward_controller_state_update(SENSITIVITY, settings)
         elif action in ("q_antiSnore", "s_antiSnore"):
-            self.forward_controller_state_update("hush_sleep_anti_snore", val)
+            self.forward_controller_state_update(ANTI_SNORE, val)
 
     def validate_casper_base_request(self, request: Request) -> None:
         op = request.operation
@@ -245,7 +252,7 @@ class HushSleepController(CasperSleepController):
             return
         if request.operation in ("sensor_live", "sensor_stop"):
             self._live_requested = request.operation == "sensor_live" and request.enabled
-            self.forward_controller_state_update("hush_sleep_live_requested", self._live_requested)
+            self.forward_controller_state_update(LIVE_REQUESTED, self._live_requested)
         await super().async_execute_casper_base_request(request)
 
     async def _poll_live(self) -> None:

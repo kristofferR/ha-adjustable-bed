@@ -18,6 +18,7 @@ from custom_components.adjustable_bed.const import (
     OKIN_SMART_REMOTE_CSS_NOTIFY_CHAR_UUID,
     OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID,
 )
+from tests.state_helpers import published
 
 
 def make_controller(profile: str = "prodigy4", revision: int = 1) -> LeggettOkinController:
@@ -217,14 +218,12 @@ async def test_notify_bootstrap_and_serial_device_information(profile):
     controller._handle_notification(
         LEGGETT_OKIN_NOTIFY_CHAR_UUID, bytearray.fromhex("0600060000017f0002")
     )
-    controller._coordinator.handle_controller_state_updates.assert_called_with(
-        {
+    assert published(*controller._coordinator.handle_controller_state_updates.call_args.args) == {
             "leggett_led_mask": 0x077F0003,
             "leggett_status": 127,
             "leggett_alarm_indicator": False,
             "leggett_sleep_timer_indicator": False,
         }
-    )
 
 
 @pytest.mark.parametrize("duration_ms", [100, 200])
@@ -355,7 +354,7 @@ def test_indicator_mask_obeys_useries_display_filter_without_losing_raw_bits(pro
     controller._handle_notification(
         LEGGETT_OKIN_NOTIFY_CHAR_UUID, bytearray.fromhex("06000000c001000000")
     )
-    updates = controller._coordinator.handle_controller_state_updates.call_args.args[0]
+    updates = published(*controller._coordinator.handle_controller_state_updates.call_args.args)
     assert updates["leggett_led_mask"] == 0xC001
     assert updates["leggett_alarm_indicator"] is (profile == "prodigy4")
     assert updates["leggett_sleep_timer_indicator"] is (profile == "prodigy4")
@@ -363,7 +362,7 @@ def test_indicator_mask_obeys_useries_display_filter_without_losing_raw_bits(pro
     controller._handle_notification(
         LEGGETT_OKIN_NOTIFY_CHAR_UUID, bytearray.fromhex("06000000c000000000")
     )
-    updates = controller._coordinator.handle_controller_state_updates.call_args.args[0]
+    updates = published(*controller._coordinator.handle_controller_state_updates.call_args.args)
     assert updates["leggett_alarm_indicator"] is True
     assert updates["leggett_sleep_timer_indicator"] is True
 
@@ -472,7 +471,7 @@ def test_cu170_receipt_then_spontaneous_status_uses_latest_state():
     report_cu170(controller, 0)
     report_cu170(controller, 0)  # Receipt precedes the effect of the toggle.
     report_cu170(controller, 0xC20000)
-    assert updates.call_args.args[0] == {
+    assert published(*updates.call_args.args) == {
         "leggett_led_mask": 0xC20000,
         "leggett_status": None,
         "leggett_alarm_indicator": True,
@@ -521,7 +520,7 @@ def test_cu170_status_from_massage_wave_mode_log_updates_state():
         mask = int.from_bytes(payload[2:6], "big")
         controller._handle_notification(LEGGETT_OKIN_NOTIFY_CHAR_UUID, payload)
         assert controller.protocol_diagnostics["under_bed_lights_on"] is bool(mask & 0x20000)
-        assert updates.call_args.args[0]["leggett_led_mask"] == mask
+        assert published(*updates.call_args.args)["leggett_led_mask"] == mask
 
 
 @pytest.mark.parametrize("profile", ["prodigy2", "prodigy2l", "useries"])
@@ -530,7 +529,7 @@ def test_cu170_hardware_mapping_does_not_leak_to_other_profiles(profile):
     report_cu170(controller, 0x20000)
     assert not controller.supports_light_state_feedback
     assert "under_bed_lights_on" not in (
-        controller._coordinator.handle_controller_state_updates.call_args.args[0]
+        published(*controller._coordinator.handle_controller_state_updates.call_args.args)
     )
 
 

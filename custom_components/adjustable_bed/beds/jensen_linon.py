@@ -30,6 +30,7 @@ from ..const import (
     SVANE_LIGHT_SERVICE_UUID,
 )
 from ..execution import ExecutionCapabilities
+from ..state_keys import UNDER_BED_LIGHTS_ON
 from .base import BedController
 
 if TYPE_CHECKING:
@@ -443,7 +444,7 @@ class JensenLinonController(BedController):
             SVANE_LIGHT_SERVICE_UUID, SVANE_LIGHT_ON_OFF_UUID, JensenLinonCommands.light(on)
         )
         self._light_on = on
-        self.forward_controller_state_updates({"under_bed_lights_on": on})
+        self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(on))
 
     async def lights_on(self) -> None:
         """Turn the under-bed light on."""

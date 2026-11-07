@@ -30,6 +30,7 @@ from custom_components.adjustable_bed.const import (
     OKIN_SMART_REMOTE_CSS_NOTIFY_CHAR_UUID,
     OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID,
 )
+from custom_components.adjustable_bed.controller_state import StateKey
 
 ADDRESS = "AA:BB:CC:DD:EE:FF"
 
@@ -332,5 +333,5 @@ async def test_cu170_light_uses_live_state_and_removes_redundant_toggle_button(
     # A new connection must not revive the old coordinator telemetry cache.
     coordinator._controller = LeggettOkinController(coordinator)
     coordinator._notify_connection_state_change(True)
-    coordinator.handle_controller_state_updates({"unrelated": 1})
+    coordinator.handle_controller_state_updates(StateKey[int]("unrelated")(1))
     assert hass.states.get(light_id).state == "unknown"

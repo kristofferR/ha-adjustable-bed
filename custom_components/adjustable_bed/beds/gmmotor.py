@@ -10,10 +10,11 @@ import asyncio
 import logging
 import re
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
+from ..controller_state import StateKey
 from ..gmmotor_catalog_types import Phase
 from ..gmmotor_notifications import Event, Value, common, desk21, extra
 from ..gmmotor_profiles import Action, load_profile
@@ -66,6 +67,16 @@ def _label(action: Action) -> str:
     return re.sub(r"(?<=[a-z0-9])(?=[A-Z])", " ", text)
 
 
+PROFILE: Final = StateKey[str]("gmmotor_profile")
+ALARM_CHOICES: Final = StateKey[dict[str, object]]("gmmotor_alarm_choices")
+UI_STATE: Final = StateKey[object]("gmmotor_ui_state")
+EVENT: Final = StateKey[str]("gmmotor_event")
+EVENTS: Final = StateKey[dict[str, Value]]("gmmotor_events")
+ALARMS: Final = StateKey[list[dict[str, Value]]]("gmmotor_alarms")
+SLEEP_NAME: Final = StateKey[str]("gmmotor_sleep_name")
+INVALID_NOTIFICATIONS: Final = StateKey[int]("gmmotor_invalid_notifications")
+
+
 class GmmotorController(BedController):
     """One physical P1 session with an explicitly selected app product."""
 
@@ -91,11 +102,9 @@ class GmmotorController(BedController):
         self._invalid_notifications = 0
         self._write_lock = native_write_lock(coordinator.hass)
         self.forward_controller_state_updates(
-            {
-                "gmmotor_profile": self.profile.key,
-                "gmmotor_alarm_choices": dict(self.profile.alarm_choices),
-                "gmmotor_ui_state": self._ui_state,
-            }
+            PROFILE(self.profile.key),
+            ALARM_CHOICES(dict(self.profile.alarm_choices)),
+            UI_STATE(self._ui_state),
         )
 
     @property
@@ -211,16 +220,16 @@ class GmmotorController(BedController):
             ControllerStateSensorSpec(
                 key="gmmotor_state",
                 translation_key="gmmotor_state",
-                state_key="gmmotor_event",
+                state_key=EVENT,
                 icon="mdi:bed",
                 attribute_keys=(
-                    "gmmotor_events",
-                    "gmmotor_alarms",
-                    "gmmotor_ui_state",
-                    "gmmotor_profile",
-                    "gmmotor_alarm_choices",
-                    "gmmotor_sleep_name",
-                    "gmmotor_invalid_notifications",
+                    EVENTS,
+                    ALARMS,
+                    UI_STATE,
+                    PROFILE,
+                    ALARM_CHOICES,
+                    SLEEP_NAME,
+                    INVALID_NOTIFICATIONS,
                 ),
             ),
         )
@@ -277,7 +286,7 @@ class GmmotorController(BedController):
             self._ui_state, phase, side=self._side_value, single=self._single
         )
         self._ui_state = state
-        self.forward_controller_state_update("gmmotor_ui_state", state)
+        self.forward_controller_state_update(UI_STATE, state)
         if packet:
             await self.write_command(packet, cancel_event=cancel)
 
@@ -340,9 +349,7 @@ class GmmotorController(BedController):
         except MalformedNotification:
             self._invalid_notifications += 1
             self._buffer.clear()
-            self.forward_controller_state_update(
-                "gmmotor_invalid_notifications", self._invalid_notifications
-            )
+            self.forward_controller_state_update(INVALID_NOTIFICATIONS, self._invalid_notifications)
             _LOGGER.debug("Rejected malformed GM Control notification", exc_info=True)
         finally:
             # HA intentionally guarantees cleanup after malformed input, unlike
@@ -363,8 +370,7 @@ class GmmotorController(BedController):
         ):
             # String.fromCharCodes of the source's List<int>, not UTF-8 decode.
             self.forward_controller_state_update(
-                "gmmotor_sleep_name",
-                "".join(chr(value) for value in event.value if isinstance(value, int)),
+                SLEEP_NAME, "".join(chr(value) for value in event.value if isinstance(value, int))
             )
         if event.name == "alarm_list" and isinstance(event.value, dict):
             if event.value not in self._alarms:
@@ -375,11 +381,7 @@ class GmmotorController(BedController):
                     self._alarms[index] = event.value
                     break
         self.forward_controller_state_updates(
-            {
-                "gmmotor_event": event.name,
-                "gmmotor_events": dict(self._events),
-                "gmmotor_alarms": list(self._alarms),
-            }
+            EVENT(event.name), EVENTS(dict(self._events)), ALARMS(list(self._alarms))
         )
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
@@ -541,7 +543,7 @@ class GmmotorController(BedController):
             packets = (delete_alarm(request.slot),)
         elif op == "repeat_query":
             self._alarms.clear()
-            self.forward_controller_state_update("gmmotor_alarms", [])
+            self.forward_controller_state_update(ALARMS, [])
             packets = (query_alarm(),)
         elif op == "light_color":
             packets = (light_color(request.rgb),)

@@ -9,11 +9,12 @@ from copy import deepcopy
 from dataclasses import dataclass
 from functools import partial
 from time import monotonic
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Final, cast
 
 from homeassistant.util import dt as dt_util
 
 from ..codec import richmat as codec
+from ..controller_state import StateKey
 from ..hjbed_catalog import ACTIONS, MUSIC_ACTIONS, PRODUCTS, Action
 from ..hjbed_protocol import (
     Alarm,
@@ -111,6 +112,15 @@ class Session:
     notify: BleakGATTCharacteristic
     single: bool
     address: str
+
+
+STATUS: Final = StateKey[str | None]("hjbed_status")
+LAYOUT: Final = StateKey[str | None]("hjbed_layout")
+EVENTS: Final = StateKey[dict[str, Value]]("hjbed_events")
+ALARMS: Final = StateKey[list[dict[str, Value]]]("hjbed_alarms")
+SAVED_ALARM: Final = StateKey[dict[str, Value] | None]("hjbed_saved_alarm")
+AVAILABLE_ALARM_SLOTS: Final = StateKey[list[int]]("hjbed_available_alarm_slots")
+REJECTION: Final = StateKey[str | None]("hjbed_rejection")
 
 
 class HJBedController(BedController):
@@ -248,15 +258,13 @@ class HJBedController(BedController):
 
     def _publish(self) -> None:
         self.forward_controller_state_updates(
-            {
-                "hjbed_status": self._state.last_event,
-                "hjbed_layout": "Motion" if self._motion else "Normal",
-                "hjbed_events": deepcopy(self._state.values),
-                "hjbed_alarms": deepcopy(self._state.alarms),
-                "hjbed_saved_alarm": deepcopy(self._state.saved_alarm),
-                "hjbed_available_alarm_slots": self._available_alarm_slots(),
-                "hjbed_rejection": self._rejection,
-            }
+            STATUS(self._state.last_event),
+            LAYOUT("Motion" if self._motion else "Normal"),
+            EVENTS(deepcopy(self._state.values)),
+            ALARMS(deepcopy(self._state.alarms)),
+            SAVED_ALARM(deepcopy(self._state.saved_alarm)),
+            AVAILABLE_ALARM_SLOTS(self._available_alarm_slots()),
+            REJECTION(self._rejection),
         )
 
     def _event(self, event: str, value: Value) -> None:
@@ -276,15 +284,9 @@ class HJBedController(BedController):
             ControllerStateSensorSpec(
                 "hjbed_status",
                 "hjbed_status",
-                "hjbed_status",
+                STATUS,
                 "mdi:bed",
-                attribute_keys=(
-                    "hjbed_events",
-                    "hjbed_alarms",
-                    "hjbed_saved_alarm",
-                    "hjbed_available_alarm_slots",
-                    "hjbed_rejection",
-                ),
+                attribute_keys=(EVENTS, ALARMS, SAVED_ALARM, AVAILABLE_ALARM_SLOTS, REJECTION),
             ),
         )
 
@@ -769,7 +771,7 @@ class HJBedController(BedController):
             ControllerSelectSpec(
                 "hjbed_layout",
                 "hjbed_layout",
-                "hjbed_layout",
+                LAYOUT,
                 ("Normal", "Motion"),
                 select,
                 local_select_fn=self._layout,

@@ -8,10 +8,11 @@ import re
 import sys
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Final, cast
 
 from ..app_session import app_session
 from ..codec import vibradorm as codec
+from ..controller_state import StateKey
 from ..execution import ExecutionCapabilities
 from ..profiles import vmatbasic as vmat_profiles
 from .base import (
@@ -53,7 +54,30 @@ def get_vmatbasic_session_intent(
     if profile not in vmat_profiles.PROFILES:
         raise ValueError("Unknown V-MAT Basic profile")
     return app_session(hass, address, ("vmatbasic", profile), VMatBasicSessionIntent)
+
+
 _PREFIX = "vmatbasic_"
+MOOD_PALETTE: Final = StateKey[str | None](_PREFIX + "mood_palette")
+MOOD_EFFECT: Final = StateKey[str | None](_PREFIX + "mood_effect")
+MOOD_BRIGHTNESS: Final = StateKey[int | None](_PREFIX + "mood_brightness")
+MOOD_SPEED: Final = StateKey[int | None](_PREFIX + "mood_speed")
+FLOOR_LEVEL_REQUESTED: Final = StateKey[int | None](_PREFIX + "floor_level_requested")
+FLOOR_MINUTES_REQUESTED: Final = StateKey[int | None](_PREFIX + "floor_minutes_requested")
+FLOOR_LEVEL_OBSERVED: Final = StateKey[int | None](_PREFIX + "floor_level_observed")
+FLOOR_MINUTES_OBSERVED: Final = StateKey[int | None](_PREFIX + "floor_minutes_observed")
+FLOOR_PERCENT_OBSERVED: Final = StateKey[float | None](_PREFIX + "floor_percent_observed")
+_FLOOR_OBSERVED: Final = (FLOOR_LEVEL_OBSERVED, FLOOR_MINUTES_OBSERVED, FLOOR_PERCENT_OBSERVED)
+DEVICE_NAME: Final = StateKey[str](_PREFIX + "device_name")
+RSSI: Final = StateKey[int | None](_PREFIX + "rssi")
+RSSI_SOURCE: Final = StateKey[str | None](_PREFIX + "rssi_source")
+RSSI_SEEN_AT: Final = StateKey[float | None](_PREFIX + "rssi_seen_at")
+RSSI_REPRESENTATION: Final = StateKey[str | None](_PREFIX + "rssi_representation")
+_RSSI: Final = (RSSI, RSSI_SOURCE, RSSI_SEEN_AT, RSSI_REPRESENTATION)
+
+
+def _read_key(role: str) -> StateKey[object]:
+    """The decoded value of one read role, or ``None`` after a failed read."""
+    return StateKey[object](_PREFIX + role)
 
 
 def _profile_characteristic(client: BleakClient, service_uuid: str, uuid: str, operation: str) -> BleakGATTCharacteristic:
@@ -207,19 +231,14 @@ class VMatBasicController(BedController):
             },
             "hardware_acknowledgment": False,
             "observed": {
-                key: self._coordinator.controller_state.get(_PREFIX + key)
+                key.removeprefix(_PREFIX): self._coordinator.controller_state.get(key)
                 for key in (
-                    "model",
-                    "firmware",
-                    "temperature",
-                    "floor_level_observed",
-                    "floor_minutes_observed",
-                    "floor_percent_observed",
-                    "ed",
-                    "rssi",
-                    "rssi_source",
-                    "rssi_seen_at",
-                    "rssi_representation",
+                    _read_key("model"),
+                    _read_key("firmware"),
+                    _read_key("temperature"),
+                    *_FLOOR_OBSERVED,
+                    _read_key("ed"),
+                    *_RSSI,
                 )
             },
         }
@@ -232,13 +251,10 @@ class VMatBasicController(BedController):
         self, rssi: int | None, source: str | None, seen_at: float | None
     ) -> None:
         self.forward_controller_state_updates(
-            {
-                _PREFIX + "rssi": rssi,
-                _PREFIX + "rssi_source": source,
-                _PREFIX + "rssi_seen_at": seen_at,
-                _PREFIX
-                + "rssi_representation": "HA advertisement history; remote RSSI read unavailable",
-            }
+            RSSI(rssi),
+            RSSI_SOURCE(source),
+            RSSI_SEEN_AT(seen_at),
+            RSSI_REPRESENTATION("HA advertisement history; remote RSSI read unavailable"),
         )
 
     def _client(self) -> BleakClient:
@@ -482,10 +498,7 @@ class VMatBasicController(BedController):
             self.profile.floor(level, self._floor_minutes),
         )
         self.forward_controller_state_updates(
-            {
-                _PREFIX + "floor_level_requested": level,
-                _PREFIX + "floor_minutes_requested": self._floor_minutes,
-            }
+            FLOOR_LEVEL_REQUESTED(level), FLOOR_MINUTES_REQUESTED(self._floor_minutes)
         )
 
     async def set_floor_level(self, value: float) -> None:
@@ -533,7 +546,7 @@ class VMatBasicController(BedController):
             self._intent.brightness,
         )
         await self._write(codec.SERVICE_UUID, codec.CBI_CHAR_UUID, packet)
-        self.forward_controller_state_update(_PREFIX + "mood_palette", option)
+        self.forward_controller_state_update(MOOD_PALETTE, option)
 
     async def set_mood_brightness(self, value: float) -> None:
         self._require("xtbox")
@@ -546,7 +559,7 @@ class VMatBasicController(BedController):
             brightness,
         )
         await self._write(codec.SERVICE_UUID, codec.CBI_CHAR_UUID, packet)
-        self.forward_controller_state_update(_PREFIX + "mood_brightness", brightness)
+        self.forward_controller_state_update(MOOD_BRIGHTNESS, brightness)
 
     async def set_mood_effect(self, option: str) -> None:
         self._require("xtbox")
@@ -556,14 +569,14 @@ class VMatBasicController(BedController):
             codec.SERVICE_UUID, codec.CBI_CHAR_UUID, vmat_profiles.effect(int(option[1]))
         )
         self._intent.effect = option
-        self.forward_controller_state_update(_PREFIX + "mood_effect", option)
+        self.forward_controller_state_update(MOOD_EFFECT, option)
 
     async def set_mood_speed(self, value: float) -> None:
         self._require("xtbox")
         progress = vmat_profiles.integer(value, 0, 255)
         await self._write(codec.SERVICE_UUID, codec.CBI_CHAR_UUID, vmat_profiles.speed(progress))
         self._intent.speed = progress
-        self.forward_controller_state_update(_PREFIX + "mood_speed", progress)
+        self.forward_controller_state_update(MOOD_SPEED, progress)
 
     async def mood_toggle(self) -> None:
         self._require("xtbox")
@@ -591,24 +604,20 @@ class VMatBasicController(BedController):
         if len(packet) > 20:
             raise ValueError("Encoded device name exceeds the safe twenty-byte write payload")
         await self._write(vmat_profiles.GAP_SERVICE, vmat_profiles.NAME_CHAR, packet)
-        self.forward_controller_state_update(_PREFIX + "device_name", packet.decode("utf-8"))
+        self.forward_controller_state_update(DEVICE_NAME, packet.decode("utf-8"))
 
     def _publish_floor(self, status: vmat_profiles.FloorStatus) -> None:
         self.forward_controller_state_updates(
-            {
-                _PREFIX + "floor_level_observed": status.level,
-                _PREFIX + "floor_minutes_observed": status.timer_minutes,
-                _PREFIX + "floor_percent_observed": status.display_percent,
-            }
+            FLOOR_LEVEL_OBSERVED(status.level),
+            FLOOR_MINUTES_OBSERVED(status.timer_minutes),
+            FLOOR_PERCENT_OBSERVED(status.display_percent),
         )
 
     def _clear_read(self, key: str) -> None:
-        keys = (
-            ("floor_level_observed", "floor_minutes_observed", "floor_percent_observed")
-            if key == "floor"
-            else (key,)
-        )
-        self.forward_controller_state_updates({_PREFIX + item: None for item in keys})
+        if key == "floor":
+            self.forward_controller_state_updates(*(item(None) for item in _FLOOR_OBSERVED))
+        else:
+            self.forward_controller_state_updates(_read_key(key)(None))
 
     async def async_refresh_diagnostics(self) -> None:
         for key, service, uuid in vmat_profiles.READ_ROLES:
@@ -624,7 +633,7 @@ class VMatBasicController(BedController):
                         if key == "ed"
                         else codec.decode_text(raw)
                     )
-                    self.forward_controller_state_update(_PREFIX + key, value)
+                    self.forward_controller_state_update(_read_key(key), value)
             except asyncio.CancelledError:
                 self._clear_read(key)
                 raise
@@ -636,12 +645,7 @@ class VMatBasicController(BedController):
         for key, _, _ in vmat_profiles.READ_ROLES:
             self._clear_read(key)
         self.forward_controller_state_updates(
-            {
-                _PREFIX + "rssi": None,
-                _PREFIX + "rssi_source": None,
-                _PREFIX + "rssi_seen_at": None,
-                _PREFIX + "rssi_representation": None,
-            }
+            RSSI(None), RSSI_SOURCE(None), RSSI_SEEN_AT(None), RSSI_REPRESENTATION(None)
         )
 
     @property
@@ -703,14 +707,14 @@ class VMatBasicController(BedController):
             ControllerSelectSpec(
                 _PREFIX + "mood_palette",
                 _PREFIX + "mood_palette",
-                _PREFIX + "mood_palette",
+                MOOD_PALETTE,
                 vmat_profiles.PALETTE_OPTIONS,
                 lambda ctrl, value: ctrl.set_mood_palette(value),
             ),
             ControllerSelectSpec(
                 _PREFIX + "mood_effect",
                 _PREFIX + "mood_effect",
-                _PREFIX + "mood_effect",
+                MOOD_EFFECT,
                 ("e1", "e2", "e3"),
                 lambda ctrl, value: ctrl.set_mood_effect(value),
             ),
@@ -724,7 +728,7 @@ class VMatBasicController(BedController):
                 ControllerNumberSpec(
                     _PREFIX + "floor_level",
                     _PREFIX + "floor_level",
-                    _PREFIX + "floor_level_requested",
+                    FLOOR_LEVEL_REQUESTED,
                     *self.profile.floor_levels,
                     1,
                     lambda ctrl, value: cast(VMatBasicController, ctrl).set_floor_level(value),
@@ -732,7 +736,7 @@ class VMatBasicController(BedController):
                 ControllerNumberSpec(
                     _PREFIX + "floor_minutes",
                     _PREFIX + "floor_minutes",
-                    _PREFIX + "floor_minutes_requested",
+                    FLOOR_MINUTES_REQUESTED,
                     *self.profile.floor_minutes,
                     1,
                     lambda ctrl, value: cast(VMatBasicController, ctrl).set_floor_minutes(value),
@@ -744,7 +748,7 @@ class VMatBasicController(BedController):
                 ControllerNumberSpec(
                     _PREFIX + "mood_brightness",
                     _PREFIX + "mood_brightness",
-                    _PREFIX + "mood_brightness",
+                    MOOD_BRIGHTNESS,
                     0,
                     100,
                     1,
@@ -754,7 +758,7 @@ class VMatBasicController(BedController):
                 ControllerNumberSpec(
                     _PREFIX + "mood_speed",
                     _PREFIX + "mood_speed",
-                    _PREFIX + "mood_speed",
+                    MOOD_SPEED,
                     0,
                     255,
                     1,
@@ -768,30 +772,28 @@ class VMatBasicController(BedController):
         return (
             *tuple(
                 ControllerStateSensorSpec(
-                    _PREFIX + key,
-                    _PREFIX + key,
-                    _PREFIX + key,
+                    state_key,
+                    state_key,
+                    state_key,
                     "mdi:information-outline",
                     native_unit_of_measurement=unit,
                 )
-                for key, unit in (
-                    ("model", None),
-                    ("firmware", None),
-                    ("temperature", "°C"),
-                    ("floor_level_observed", None),
-                    ("floor_minutes_observed", "min"),
-                    ("floor_percent_observed", "%"),
+                for state_key, unit in (
+                    (_read_key("model"), None),
+                    (_read_key("firmware"), None),
+                    (_read_key("temperature"), "°C"),
+                    (FLOOR_LEVEL_OBSERVED, None),
+                    (FLOOR_MINUTES_OBSERVED, "min"),
+                    (FLOOR_PERCENT_OBSERVED, "%"),
                 )
             ),
             ControllerStateSensorSpec(
                 _PREFIX + "rssi",
                 _PREFIX + "rssi",
-                _PREFIX + "rssi",
+                RSSI,
                 "mdi:signal",
                 "dBm",
-                attribute_keys=tuple(
-                    _PREFIX + key for key in ("rssi_source", "rssi_seen_at", "rssi_representation")
-                ),
+                attribute_keys=(RSSI_SOURCE, RSSI_SEEN_AT, RSSI_REPRESENTATION),
             ),
         )
 
@@ -799,6 +801,6 @@ class VMatBasicController(BedController):
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
         return (
             ControllerStateBinarySensorSpec(
-                _PREFIX + "ed", _PREFIX + "ed", _PREFIX + "ed", "mdi:information-outline"
+                _PREFIX + "ed", _PREFIX + "ed", _read_key("ed"), "mdi:information-outline"
             ),
         )

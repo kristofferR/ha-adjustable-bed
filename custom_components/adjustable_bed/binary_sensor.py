@@ -22,6 +22,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
+from .controller_state import ControllerState, StateKey, sided
 from .entity import AdjustableBedEntity
 from .entity_discovery import (
     async_remove_retired_rmcontrol_telemetry,
@@ -29,6 +30,7 @@ from .entity_discovery import (
 )
 from .entity_runtime import EntityRuntime, own_sides
 from .paired_coordinator import entity_runtimes
+from .state_keys import BED_PRESENCE, BED_PRESENCE_SIDE
 
 if TYPE_CHECKING:
     from .beds.base import BedController, ControllerStateBinarySensorSpec
@@ -40,7 +42,7 @@ _LOGGER = logging.getLogger(__name__)
 class AdjustableBedBinarySensorEntityDescription(BinarySensorEntityDescription):
     """Describes an Adjustable Bed binary sensor entity."""
 
-    state_key: str | None = None
+    state_key: StateKey[str] | None = None
     side: str | None = None
 
 
@@ -56,7 +58,7 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[AdjustableBedBinarySensorEntityDescription, ..
         translation_key="bed_presence",
         device_class=BinarySensorDeviceClass.OCCUPANCY,
         entity_registry_enabled_default=False,
-        state_key="bed_presence",
+        state_key=BED_PRESENCE,
     ),
 )
 
@@ -103,7 +105,7 @@ def _binary_sensor_entities_for(
                             translation_key=f"bed_presence_{side}",
                             device_class=BinarySensorDeviceClass.OCCUPANCY,
                             entity_registry_enabled_default=False,
-                            state_key=f"bed_presence_{side}",
+                            state_key=sided(BED_PRESENCE, side),
                             side=side,
                         ),
                     )
@@ -306,7 +308,7 @@ class AdjustableBedControllerStateBinarySensor(AdjustableBedEntity, BinarySensor
         await super().async_will_remove_from_hass()
 
     @callback
-    def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
+    def _handle_controller_state_update(self, state: ControllerState) -> None:
         """Refresh when this sensor or one of its attributes changed."""
         watched = {self._spec.state_key, *self._spec.attribute_keys}
         if watched.intersection(state):
@@ -342,6 +344,7 @@ class AdjustableBedPresenceSensor(AdjustableBedEntity, BinarySensorEntity):
         self.entity_description = description
         self._set_sided_translation_key(description.translation_key, description.key)
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
+        self._presence_key = description.state_key or BED_PRESENCE
         self._unregister_callback: Callable[[], None] | None = None
 
     async def async_added_to_hass(self) -> None:
@@ -358,17 +361,15 @@ class AdjustableBedPresenceSensor(AdjustableBedEntity, BinarySensorEntity):
         await super().async_will_remove_from_hass()
 
     @callback
-    def _handle_controller_state_change(self, state: dict[str, Any]) -> None:
+    def _handle_controller_state_change(self, state: ControllerState) -> None:
         """Write state when the controller publishes a presence update."""
-        state_key = self.entity_description.state_key or self.entity_description.key
-        if state_key in state:
+        if self._presence_key in state:
             self.async_write_ha_state()
 
     @property
     def is_on(self) -> bool | None:
         """Return True when the configured side is occupied."""
-        state_key = self.entity_description.state_key or self.entity_description.key
-        presence = self._coordinator.controller_state.get(state_key)
+        presence = self._coordinator.controller_state.get(self._presence_key)
         if presence == "in":
             return True
         if presence == "out":
@@ -380,12 +381,11 @@ class AdjustableBedPresenceSensor(AdjustableBedEntity, BinarySensorEntity):
         """Return additional presence metadata."""
         attrs: dict[str, Any] = {}
         side = self.entity_description.side or self._coordinator.controller_state.get(
-            "bed_presence_side"
+            BED_PRESENCE_SIDE
         )
         if side is not None:
             attrs["side"] = side
-        state_key = self.entity_description.state_key or self.entity_description.key
-        presence = self._coordinator.controller_state.get(state_key)
+        presence = self._coordinator.controller_state.get(self._presence_key)
         if presence is not None:
             attrs["presence_state"] = presence
         return attrs

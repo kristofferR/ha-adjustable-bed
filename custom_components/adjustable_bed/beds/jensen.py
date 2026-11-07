@@ -27,6 +27,13 @@ from ..codec import jmc
 from ..const import DOMAIN
 from ..execution import ExecutionCapabilities
 from ..profiles.jmc import JENSEN, JmcProfile
+from ..state_keys import (
+    FAN_LEVEL,
+    LIGHT_LEVEL,
+    UNDER_BED_LIGHTS_ON,
+    massage_active,
+    massage_intensity,
+)
 from .base import (
     POSITION_UNIT_PERCENT,
     BedController,
@@ -848,9 +855,7 @@ class JensenController(BedController):
         self._light_level = level
         if level:
             self._last_light_level = level
-        self.forward_controller_state_updates(
-            {"light_level": level, "under_bed_lights_on": level > 0}
-        )
+        self.forward_controller_state_updates(LIGHT_LEVEL(level), UNDER_BED_LIGHTS_ON(level > 0))
 
     async def lights_on(self) -> None:
         """Turn the light on at its last level."""
@@ -876,20 +881,28 @@ class JensenController(BedController):
         level = max(0, min(_LEVEL_MAX, level))
         await self.write_command(jmc.fan(level, self.profile.fan))
         self._fan_level = level
-        self.forward_controller_state_updates({"fan_level": level})
+        self.forward_controller_state_updates(FAN_LEVEL(level))
 
     # Massage
     async def _send_massage(self, **levels: int) -> None:
         updated = {**self._massage_levels, **levels}
         await self.write_command(jmc.massage(updated["head"], updated["foot"], updated["wave"]))
         self._massage_levels = updated
-        self.forward_controller_state_updates(self.get_massage_state())
+        self._publish_massage()
 
     async def massage_off(self) -> None:
         """Turn off all massage."""
         await self.write_command(jmc.massage(0, 0, 0))
         self._massage_levels = {"head": 0, "foot": 0, "wave": 0}
-        self.forward_controller_state_updates(self.get_massage_state())
+        self._publish_massage()
+
+    def _publish_massage(self) -> None:
+        levels = self._massage_levels
+        self.forward_controller_state_updates(
+            *(massage_intensity(zone)(levels[zone]) for zone in ("head", "foot", "wave")),
+            massage_active("head")(levels["head"] > 0),
+            massage_active("foot")(levels["foot"] > 0),
+        )
 
     async def _toggle_zone(self, zone: str) -> None:
         await self._send_massage(**{zone: 0 if self._massage_levels[zone] else 5})

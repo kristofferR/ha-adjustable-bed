@@ -16,6 +16,7 @@ from custom_components.adjustable_bed.const import (
     CONF_FURNIMOVE_REMOTE,
     DOMAIN,
 )
+from custom_components.adjustable_bed.controller_state import StateKey
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from tests.app_state_helpers import restart_app_state, stored_app_state
 
@@ -231,11 +232,11 @@ async def test_feedback_does_not_rearm_local_preference_save(hass):
     await ctrl._async_restore_app_state(ctrl._controller)
     store = ctrl._app_state_store
     store._schedule_save = MagicMock(wraps=store._schedule_save)
-    ctrl.handle_controller_state_update("furnimove_sync", True)
+    ctrl.handle_controller_state_update(StateKey[bool]("furnimove_sync"), True)
     store._schedule_save.assert_not_called()
     await ctrl._controller.set_massage_timer(20)
     store._schedule_save.assert_called_once()
-    ctrl.handle_controller_state_update("furnimove_sync", False)
+    ctrl.handle_controller_state_update(StateKey[bool]("furnimove_sync"), False)
     store._schedule_save.assert_called_once()
 
 

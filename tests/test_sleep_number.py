@@ -32,6 +32,7 @@ from custom_components.adjustable_bed.const import (
     requires_pairing,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from tests.state_helpers import published
 
 
 def _build_sleep_number_blob(payload: str) -> bytes:
@@ -860,8 +861,8 @@ class TestSleepNumberController:
 
         state = await coordinator.controller.read_light_state()
 
-        assert state == {
-            "is_on": True,
+        assert published(*state) == {
+            "under_bed_lights_on": True,
             "light_level": 3,
             "light_timer_minutes": 15,
             "light_timer_option": "15 min",
