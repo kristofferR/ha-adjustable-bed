@@ -876,7 +876,10 @@ class TestBothFailureContract:
         task = asyncio.ensure_future(
             coord.async_execute_controller_command(_noop, side=SIDE_BOTH)
         )
-        await asyncio.sleep(0.01)  # both children dispatched and blocking
+        # Cancel only once both children are blocking; earlier, nothing is moving.
+        async with asyncio.timeout(1):
+            while not {(SIDE_LEFT, "command"), (SIDE_RIGHT, "command")} <= set(log):
+                await asyncio.sleep(0)
         task.cancel()
         with pytest.raises(asyncio.CancelledError):
             await task
