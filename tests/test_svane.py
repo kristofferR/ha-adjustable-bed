@@ -233,7 +233,7 @@ async def test_started_roles_cleanup_after_cancellation_or_write_failure(profile
 
 async def test_cleanup_attempts_all_p1_directions_when_one_stop_fails():
     controller = make_controller()
-    controller._started = {(HEAD, UP), (FEET, DOWN)}
+    controller._started = dict.fromkeys(((HEAD, UP), (FEET, DOWN)))
 
     async def write(role, data, **kwargs):
         if role.uuid == UP:
@@ -519,13 +519,13 @@ def test_bad_stored_preferences_are_rejected_before_changing_the_session(hass, p
 async def test_notify_lifecycle_cleanup_unsubscribes_even_failed_motor_release():
     controller = make_controller()
     await controller._subscribe(OLD, OLD_CHAR)
-    controller._started = {(HEAD, UP)}
+    controller._started = dict.fromkeys(((HEAD, UP),))
     controller.client.write_gatt_char.side_effect = BleakError("release failed")
     with pytest.raises(BleakError):
         await controller.stop_notify()
     controller.client.stop_notify.assert_awaited_once()
     assert not controller._subscriptions
-    assert controller._started == {(HEAD, UP)}
+    assert list(controller._started) == [(HEAD, UP)]
     controller.client.write_gatt_char.side_effect = None
     await controller.stop_all()
     assert not controller._started
