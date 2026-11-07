@@ -20,10 +20,6 @@ STANDALONE: dict[str, str] = {
     " service selection and its menu session stay controller code",
     "gmmotor_sleep_mm": "sleep sensor without bed commands",
     "gmmotor_sleep_sxb": "sleep sensor without bed commands",
-    "goodvibe": "command, light, colour and countdown frames match codec/richmat.py;"
-    " its settings records send 6E 20 len, which codec/richmat.py's record() does not"
-    " build, and its sleep sensors send a JSON envelope; the product catalog stays"
-    " controller code",
     "hush_remote": "remote without bed commands",
     "hush_sleep_mm": "sleep sensor without bed commands",
     "hush_sleep_sxb": "sleep sensor without bed commands",

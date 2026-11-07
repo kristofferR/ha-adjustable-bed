@@ -5,10 +5,13 @@ from __future__ import annotations
 import pytest
 
 from custom_components.adjustable_bed import cluster018_protocol as classic
+from custom_components.adjustable_bed import goodvibe_protocol as goodvibe
 from custom_components.adjustable_bed import hjbed_protocol as hj
+from custom_components.adjustable_bed.beds import goodvibe as goodvibe_bed
 from custom_components.adjustable_bed.beds import richmat_mh as mh_bed
 from custom_components.adjustable_bed.beds import richmat_mh_protocol as mh
 from custom_components.adjustable_bed.codec import richmat as codec
+from custom_components.adjustable_bed.goodvibe_catalog import ACTIONS as GOODVIBE_ACTIONS
 from custom_components.adjustable_bed.hjbed_catalog import ACTIONS
 from custom_components.adjustable_bed.profiles import richmat as profiles
 from tests.richmat_vectors import FROZEN_FRAMES
@@ -21,6 +24,7 @@ FIXED_ROUTES = {
 PROFILES = {
     **FIXED_ROUTES,
     "hjbed": profiles.HJBED,
+    "goodvibe": profiles.GOODVIBE,
     **{profile.key: profile for profile in profiles.RICHMAT_MH.values()},
     **{profile.key: profile for profile in profiles.RICHMAT_CLASSIC.values()},
 }
@@ -36,6 +40,8 @@ def _decode(data: bytes) -> bytes:
         return codec.command(data[3], data[2], header=data[0])
     if data[0] == codec.BED and data[1] == len(data) and data[2] == 0x20:
         return codec.record(data[3], data[4], data[5], data[6:-1])
+    if len(data) >= 7 and data[0] == codec.BED and data[1] == 0x20 and data[2] == len(data):
+        return codec.record_20_len(data[3], data[4], data[5], data[6:-1])
     return codec.frame(*data[:-1])
 
 
@@ -89,6 +95,37 @@ def _hjbed_census() -> set[str]:
     return frames
 
 
+def _goodvibe_census() -> set[str]:
+    """Every fixed frame on both framings: startup, catalog actions, STOP, the
+    substituted and light-off commands, massage countdowns and settings queries.
+
+    Light durations, colours, alarms, snore values and time sync are parameterized.
+    """
+    frames = {*goodvibe.QUERIES.values(), *goodvibe.clock(0, 0)}
+    frames |= {goodvibe.snore_switch(enabled) for enabled in (False, True)}
+    for single in (False, True):
+        frames |= {
+            codec.function(code, action=action, single=single)
+            for action, code in goodvibe_bed.STARTUP
+        }
+        for side in (0, 1, 2):
+            frames |= {
+                codec.function(code, side, single=single)
+                for code in (
+                    profiles.GOODVIBE.stop,
+                    0,
+                    goodvibe.LIGHT_OFF,
+                    *goodvibe.MASSAGE_TIMER.values(),
+                )
+            }
+            frames |= {
+                goodvibe.action_frame(action, side, single, long)
+                for action in GOODVIBE_ACTIONS.values()
+                for long in (False, True)
+            }
+    return {frame.hex() for frame in frames}
+
+
 def _classic_census() -> set[str]:
     """The classic apps' fixed frames, in mode 0.
 
@@ -119,6 +156,8 @@ def _classic_census() -> set[str]:
 def _census(key: str) -> set[str]:
     if key == "hjbed":
         return _hjbed_census()
+    if key == "goodvibe":
+        return _goodvibe_census()
     if key.startswith("richmat_classic_"):
         return _classic_census()
     if key.startswith("richmat_mh_"):

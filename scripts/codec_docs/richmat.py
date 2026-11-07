@@ -2,17 +2,24 @@
 
 from __future__ import annotations
 
+import re
+from datetime import datetime, timedelta, timezone
+
 from custom_components.adjustable_bed import cluster018_protocol as classic_frames
 from custom_components.adjustable_bed import const as _const
+from custom_components.adjustable_bed import goodvibe_protocol as goodvibe_frames
 from custom_components.adjustable_bed import hjbed_catalog
 from custom_components.adjustable_bed import hjbed_protocol as hjbed_frames
 from custom_components.adjustable_bed import rmcontrol_protocol as rmcontrol_frames
+from custom_components.adjustable_bed.beds import goodvibe as goodvibe_bed
 from custom_components.adjustable_bed.beds import hjbed as hjbed_bed
 from custom_components.adjustable_bed.beds import richmat_mh_protocol as mh_frames
 from custom_components.adjustable_bed.beds import rmcontrol as rmcontrol_bed
 from custom_components.adjustable_bed.beds.hjbed import action_label as hjbed_label
 from custom_components.adjustable_bed.cluster018_profiles import APP_NAMES as CLASSIC_APPS
 from custom_components.adjustable_bed.codec import richmat as richmat_codec
+from custom_components.adjustable_bed.goodvibe_catalog import ACTION_EXPANSIONS
+from custom_components.adjustable_bed.goodvibe_catalog import ACTIONS as GOODVIBE_ACTIONS
 from custom_components.adjustable_bed.profiles import richmat as richmat_profiles
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
@@ -26,6 +33,7 @@ _RICHMAT_NAMES = {
     "bedtech": "BedTech",
     "leggett_wilinke": "L&P MlRM",
     "hjbed": "HJBed",
+    "goodvibe": "Good Vibe Sleep",
     **{
         profile.key: f"Richmat MH {name}"
         for profile, name in zip(
@@ -91,6 +99,7 @@ def _richmat_profiles() -> dict[str, richmat_profiles.RichmatProfile]:
             richmat_profiles.HJBED,
             *richmat_profiles.RICHMAT_MH.values(),
             *richmat_profiles.RICHMAT_CLASSIC.values(),
+            richmat_profiles.GOODVIBE,
         )
     }
 
@@ -113,11 +122,12 @@ def bed_types() -> dict[str, tuple[str, ...]]:
             profile.key: (_const.BED_TYPE_CLUSTER018,)
             for profile in richmat_profiles.RICHMAT_CLASSIC.values()
         },
+        "goodvibe": (_const.BED_TYPE_GOODVIBE,),
     }
 
 
 def _catalog_kind(key: str) -> str:
-    if key == "hjbed":
+    if key in ("hjbed", "goodvibe"):
         return "per-product catalog"
     if key.startswith("richmat_classic_"):
         return "per-layout catalog"
@@ -138,6 +148,9 @@ def _lease(profile: richmat_profiles.RichmatProfile) -> str:
     if profile.key.startswith("richmat_classic_"):
         # The controller scopes its lease to the keep buttons of the selected layout.
         return "renewable lease on keep buttons"
+    if profile.key == "goodvibe":
+        # The controller scopes its lease to the product's sustained-press controls.
+        return "renewable lease on sustained controls"
     return "renewable lease" if profile.execution.hold == "stream" else "no"
 
 
@@ -355,7 +368,8 @@ def render_richmat_functions() -> str:
                 for action, prefix in richmat_codec.FUNCTION_PREFIXES.items()
             ),
         ),
-        "Every other catalog action uses `6E 01 side`. HJBed sends only the first four.",
+        "Every other catalog action uses `6E 01 side`. HJBed sends only the first four, "
+        "Good Vibe Sleep the first three.",
     )
 
 
@@ -586,6 +600,28 @@ def render_richmat_catalog_timing() -> str:
                     "Desk button refresh",
                     f"every {classic_frames.DESK_REFRESH_MS} ms, with no release frame",
                 ),
+                (
+                    "Good Vibe Sleep",
+                    "Sustained press",
+                    f"first write after {goodvibe_bed.TICK_MS} ms, then every "
+                    f"{goodvibe_bed.TICK_MS} ms; STOP once a write was attempted",
+                ),
+                (
+                    "Good Vibe Sleep",
+                    "Long and short-and-long press",
+                    f"long action after {goodvibe_bed.LONG_PRESS_MS} ms",
+                ),
+                (
+                    "Good Vibe Sleep",
+                    "Menu checks at connect",
+                    f"{_ms(goodvibe_bed.MENU_PROBE_S)} apart",
+                ),
+                (
+                    "Good Vibe Sleep",
+                    "Incomplete notification bytes",
+                    f"dropped after {_ms(goodvibe_bed.EXPIRY_S)}",
+                ),
+                ("Good Vibe Sleep", "Live sleep data", f"polled every {goodvibe_bed.POLL_S} s"),
             ),
         )
     )
@@ -656,6 +692,144 @@ def render_hjbed_startup() -> str:
     )
 
 
+def _goodvibe_row(name: str, code: int) -> tuple[str, ...]:
+    return (
+        name,
+        _code_hex(code),
+        *(_hex(richmat_codec.function(code, side)) for side in (0, 1, 2)),
+    )
+
+
+def render_goodvibe_commands() -> str:
+    menu = (
+        GOODVIBE_ACTIONS[detail] for details in ACTION_EXPANSIONS.values() for detail in details
+    )
+    return _block(
+        _table(
+            ("Command", "Single code", "Side 0", "Side 1", "Side 2"),
+            (
+                _goodvibe_row("Release (STOP)", richmat_profiles.GOODVIBE.stop),
+                _goodvibe_row("Close bed light", goodvibe_frames.LIGHT_OFF),
+                *(
+                    _goodvibe_row(
+                        f"Massage countdown {minutes} min" if minutes else "Massage countdown off",
+                        code,
+                    )
+                    for minutes, code in goodvibe_frames.MASSAGE_TIMER.items()
+                ),
+                *(
+                    _goodvibe_row(
+                        f"Y6RM {goodvibe_bed.label(action)}, "
+                        + re.sub(r"(?=[A-Z])", " ", action.gesture).lower(),
+                        action.short,
+                    )
+                    for action in menu
+                ),
+            ),
+        )
+    )
+
+
+def render_goodvibe_lights() -> str:
+    def seconds(model: str, eight: bool) -> str:
+        return ", ".join(map(str, goodvibe_frames.light_durations(model, eight)))
+
+    return _block(
+        _table(
+            ("Products", "Durations (seconds)"),
+            (
+                ("Full colour", seconds("", False)),
+                ("Eight colours", seconds("", True)),
+                ("RNRN, eight colours", seconds("RNRN", True)),
+            ),
+        ),
+        "The eight colours are "
+        + ", ".join(f"`{color}`" for color in goodvibe_frames.EIGHT_COLORS)
+        + ".",
+    )
+
+
+def render_goodvibe_settings() -> str:
+    def frames(*writes: bytes) -> str:
+        return "; ".join(f"`{write.hex()}`" for write in writes)
+
+    now = datetime.fromtimestamp(1793707200, timezone(timedelta(hours=1)))
+    return _block(
+        _table(
+            ("Operation and example input", "Exact GATT write(s)"),
+            (
+                (
+                    "Single alarm: 4660 minutes, action `05`",
+                    frames(*goodvibe_frames.clock(4660, 5)),
+                ),
+                ("Cancel single alarm", frames(*goodvibe_frames.clock(0, 0))),
+                ("Light duration: 300 seconds", frames(goodvibe_frames.light_duration(300))),
+                ("Light always on: 0 seconds", frames(goodvibe_frames.light_duration(0))),
+                ("Colour: 255, 128, 0; one combined write", frames(richmat_codec.rgb(255, 128, 0))),
+                (
+                    "Repeat alarm: slot 1, 07:30, action `05`, mask `F9`",
+                    frames(goodvibe_frames.repeat_alarm(1, 7, 30, 5, 0xF9)),
+                ),
+                ("Delete repeat alarm: slot 1", frames(goodvibe_frames.delete_alarm(1))),
+                ("Query repeat alarms", frames(goodvibe_frames.QUERIES["alarms"])),
+                ("Query sleep name", frames(goodvibe_frames.QUERIES["sleep_name"])),
+                ("Snore switch: on", frames(goodvibe_frames.snore_switch(True))),
+                ("Snore count: 7", frames(goodvibe_frames.snore_config(True, 7))),
+                ("Snore time: 30", frames(goodvibe_frames.snore_config(False, 30))),
+                (
+                    "Query snore configuration, then switch",
+                    frames(
+                        goodvibe_frames.QUERIES["snore_config"],
+                        goodvibe_frames.QUERIES["snore_switch"],
+                    ),
+                ),
+                (
+                    f"Time sync: {now.isoformat(sep=' ')}",
+                    frames(*goodvibe_frames.sync_time(now)),
+                ),
+            ),
+        )
+    )
+
+
+def render_goodvibe_startup() -> str:
+    def name(action: str) -> str:
+        return re.sub(
+            r"(?<!^)(?=[A-Z])", " ", action.removeprefix("deviceFunctionItem")
+        ).capitalize()
+
+    return _block(
+        _table(
+            ("Step", "When", "Framed", "Single-code"),
+            (
+                *(
+                    (
+                        name(action),
+                        f"{_ms(goodvibe_bed.MENU_PROBE_S)} after the previous step"
+                        if step
+                        else "first",
+                        _hex(richmat_codec.function(code, action=action)),
+                        _hex(richmat_codec.function(code, action=action, single=True)),
+                    )
+                    for step, (action, code) in enumerate(goodvibe_bed.STARTUP)
+                ),
+                (
+                    "Time sync",
+                    "next, when the product has an alarm menu",
+                    "settings records `08 02 01` then `08 03 01`",
+                    "same",
+                ),
+                (
+                    "Sleep name query",
+                    "next, when the product has sleep monitoring",
+                    _hex(goodvibe_frames.QUERIES["sleep_name"]),
+                    "same",
+                ),
+            ),
+        )
+    )
+
+
 BLOCKS: list[Block] = [
     (GUIDE, "richmat-profiles", render_richmat_profiles),
     (GUIDE, "richmat-transports", render_richmat_transports),
@@ -671,4 +845,8 @@ BLOCKS: list[Block] = [
     (GUIDE, "richmat-catalog-timing", render_richmat_catalog_timing),
     (GUIDE, "rmcontrol-startup", render_rmcontrol_startup),
     (GUIDE, "hjbed-startup", render_hjbed_startup),
+    (GUIDE, "goodvibe-commands", render_goodvibe_commands),
+    (GUIDE, "goodvibe-lights", render_goodvibe_lights),
+    (GUIDE, "goodvibe-settings", render_goodvibe_settings),
+    (GUIDE, "goodvibe-startup", render_goodvibe_startup),
 ]

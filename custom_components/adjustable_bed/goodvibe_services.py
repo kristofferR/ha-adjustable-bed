@@ -15,6 +15,7 @@ from homeassistant.util import dt as dt_util
 
 from . import goodvibe_protocol as p
 from .beds.base import BedController, SideBoundController
+from .codec import richmat as codec
 from .const import DOMAIN
 from .goodvibe_catalog import ACTIONS
 from .services import (
@@ -191,16 +192,19 @@ class Request:
             return p.sync_time(dt_util.now(), dt_util.now())
         if op == "light_color":
             assert self.rgb is not None
-            return (p.color(*self.rgb),)
+            return (codec.rgb(*self.rgb),)
         if op == "light_duration":
             assert self.seconds is not None
             return (p.light_duration(self.seconds),)
-        if op == "light_off":
-            return (p.generic(117, controller._side(), controller._current_link().legacy),)
-        if op == "massage_timer":
-            assert self.value is not None
-            code = {0: 94, 10: 95, 20: 99, 30: 97}[self.value]
-            return (p.generic(code, controller._side(), controller._current_link().legacy),)
+        if op in ("light_off", "massage_timer"):
+            if op == "light_off":
+                code = p.LIGHT_OFF
+            else:
+                assert self.value is not None
+                code = p.MASSAGE_TIMER[self.value]
+            return (
+                codec.function(code, controller._side(), single=controller._current_link().legacy),
+            )
         if op == "snore_switch":
             return (p.snore_switch(bool(self.enabled)),)
         if op in ("snore_count", "snore_time"):
@@ -216,7 +220,7 @@ class Request:
         if op == "cancel_single":
             return p.clock(0, 0)
         assert self.when is not None and self.action is not None
-        code = ACTIONS[self.action].packet(0, False)[3]
+        code = ACTIONS[self.action].short
         if op == "single":
             now = dt_util.now().replace(second=0, microsecond=0)
             minutes = int(
@@ -281,7 +285,7 @@ async def handle_goodvibe(call: ServiceCall) -> None:
 
     def validate(controller: BedController | SideBoundController) -> None:
         target = selected(controller)
-        plans[(target._address.upper(), target.profile)] = request.plan(target)
+        plans[(target._address.upper(), target.product_key)] = request.plan(target)
 
     preflighted = await _preflight_capability(
         targets, "supports_goodvibe", "Good Vibe Sleep configuration", validate
@@ -289,7 +293,7 @@ async def handle_goodvibe(call: ServiceCall) -> None:
 
     async def execute(controller: BedController) -> None:
         target = selected(controller)
-        plan = plans.get((target._address.upper(), target.profile))
+        plan = plans.get((target._address.upper(), target.product_key))
         if plan is None:
             raise ServiceValidationError("The Good Vibe Sleep target changed after validation")
         try:

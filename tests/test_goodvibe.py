@@ -12,9 +12,12 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from custom_components.adjustable_bed.beds import goodvibe as bed
+from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.goodvibe_catalog import ACTIONS, PRODUCTS, PROFILE_CHOICES
-from custom_components.adjustable_bed.goodvibe_protocol import sleep_packet
+from custom_components.adjustable_bed.goodvibe_protocol import action_frame, clock
 from custom_components.adjustable_bed.goodvibe_services import Request
+from custom_components.adjustable_bed.goodvibe_sleep import sleep_packet
+from custom_components.adjustable_bed.profiles.richmat import GOODVIBE
 
 
 @pytest.fixture
@@ -67,7 +70,9 @@ async def test_all_profile_factory_and_setup_contracts(hass, coordinator):
     # One row asks the product, searchable by label; each product keeps its app entry.
     choices = {x["value"]: x["label"] for x in get_bed_type_options()}
     assert BED_TYPE_GOODVIBE in choices
-    assert not any(bed_type_choice(BED_TYPE_GOODVIBE, profile) in choices for profile in PROFILE_CHOICES)
+    assert not any(
+        bed_type_choice(BED_TYPE_GOODVIBE, profile) in choices for profile in PROFILE_CHOICES
+    )
     profile_spec = setup_profile(BED_TYPE_GOODVIBE)
     assert profile_spec is not None
     (product,) = profile_spec.questions
@@ -79,11 +84,17 @@ async def test_all_profile_factory_and_setup_contracts(hass, coordinator):
         assert per_side_profile(BED_TYPE_GOODVIBE, profile).variant_owned
         obj = await create_controller(coordinator, BED_TYPE_GOODVIBE, profile, None)
         assert isinstance(obj, bed.GoodVibeController)
-        assert obj.profile == profile
+        assert obj.profile is GOODVIBE and obj.product_key == profile
         assert disconnect_after_command_default_enabled(BED_TYPE_GOODVIBE, profile) == (
             profile not in ("sleep_rm", "sleep_hj")
         )
     assert not is_valid_variant_for_bed_type(BED_TYPE_GOODVIBE, "auto")
+
+
+def test_past_single_alarm_countdown_truncates_its_high_byte():
+    # Over a day in the past the countdown is negative; -5.6 truncates to -5, not -6.
+    assert clock(-1440, 5) == (bytes.fromhex("6e056000d3"), bytes.fromhex("6e06fb0574"))
+    assert clock(-1440, 5)[1] != codec.countdown(-1440, 5)[1]
 
 
 @pytest.mark.parametrize("kind", (1, 2, 3))
@@ -254,12 +265,16 @@ async def test_action_gesture_write_and_release_contract(coordinator, monkeypatc
     duration = 3100 if gesture in ("longPress", "shortAndLongPress") else 300
     await obj.press(detail, duration)
     side = obj._side()
-    primary = ACTIONS[detail].packet(side, legacy, gesture in ("longPress", "shortAndLongPress"))
+    primary = action_frame(
+        ACTIONS[detail], side, legacy, gesture in ("longPress", "shortAndLongPress")
+    )
     if gesture == "sustainPress":
-        assert writes(coordinator) == [primary] * 3 + [bed.p.generic(110, side, legacy)]
+        assert writes(coordinator) == [primary] * 3 + [
+            codec.function(codec.STOP, side, single=legacy)
+        ]
         assert delays == [100, 100, 100]
     elif gesture == "shortPress":
-        assert writes(coordinator) == [primary, bed.p.generic(110, side, legacy)]
+        assert writes(coordinator) == [primary, codec.function(codec.STOP, side, single=legacy)]
     else:
         assert writes(coordinator) == [primary]
         assert delays == [3000]
@@ -285,13 +300,13 @@ async def test_cancellation_and_async_failure_run_fresh_release(coordinator, mon
     monkeypatch.setattr(obj, "_delay", delay)
     with pytest.raises(asyncio.CancelledError):
         await obj.press(detail, 300)
-    assert writes(coordinator)[-1] == bed.p.generic(110, obj._side(), False)
+    assert writes(coordinator)[-1] == codec.function(codec.STOP, obj._side(), single=False)
     coordinator.client.write_gatt_char.reset_mock()
     coordinator.client.write_gatt_char.side_effect = [ConnectionError("in flight failure"), None]
     monkeypatch.setattr(obj, "_delay", AsyncMock(return_value=True))
     with pytest.raises(ConnectionError):
         await obj.press(detail, 300)
-    assert writes(coordinator)[-1] == bed.p.generic(110, obj._side(), False)
+    assert writes(coordinator)[-1] == codec.function(codec.STOP, obj._side(), single=False)
 
 
 async def test_sleep_stop_between_chunks_prevents_later_send(coordinator):
@@ -582,7 +597,10 @@ async def test_bound_side_is_scoped_and_release_keeps_original_side(coordinator,
     monkeypatch.setattr(obj, "_delay", AsyncMock(return_value=True))
     spec = next(s for s in obj.controller_button_specs if s.key == "goodvibe_" + detail)
     await spec.press_fn(SideBoundController(obj, "right"))
-    assert writes(coordinator) == [ACTIONS[detail].packet(1, False), bytes.fromhex("6e01016ede")]
+    assert writes(coordinator) == [
+        action_frame(ACTIONS[detail], 1, False),
+        bytes.fromhex("6e01016ede"),
+    ]
     assert obj.command_side is None and obj.choices.side == 0
 
 

@@ -1,4 +1,8 @@
-"""Good Vibe Sleep type 1/type 2 receive state and report assembly."""
+"""Good Vibe Sleep type 1/type 2 sleep-sensor envelope, receive state and report assembly.
+
+The envelope is UTF-8 JSON behind a fixed header, with no ``6E`` header and no
+``sum8``: not a Richmat frame, so it lives with its receiver, not in the codec.
+"""
 
 from __future__ import annotations
 
@@ -8,6 +12,41 @@ from dataclasses import dataclass, field
 from typing import Never
 
 from .goodvibe_schemas import parse_schema
+
+
+def sleep_packet(sequence: int, command: str, value: object) -> bytes:
+    """The ordinary UTF-8 JSON envelope, without a checksum or CRC."""
+    if not 1 <= sequence <= 254:
+        raise ValueError("Sequence must be 1–254")
+    body = json.dumps(
+        {"id": sequence, "cmd": command, "val": value},
+        ensure_ascii=False,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode()
+    if len(body) > 65535:
+        raise ValueError("Sleep payload exceeds the supported ordinary frame length")
+    return (
+        bytes(
+            (
+                0,
+                sequence,
+                1,
+                0,
+                (len(body) + 7) & 255,
+                0,
+                0,
+                17,
+                3,
+                67,
+                85,
+                68,
+                len(body) & 255,
+                len(body) >> 8,
+            )
+        )
+        + body
+    )
 
 
 def _invalid_constant(value: str) -> Never:

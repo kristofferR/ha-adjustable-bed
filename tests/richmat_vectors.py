@@ -7,6 +7,34 @@ captured with every remote code, framing and light family. Parameterized colour
 frames are left out of those captures.
 """
 
+import json
+from pathlib import Path
+
+
+def _goodvibe() -> frozenset[str]:
+    """Good Vibe Sleep 2.0.1 (row116): the accepted report's vectors in ``fixtures/goodvibe``.
+
+    Every catalog action alternative, the inline startup, release and timer
+    frames, and the settings, alarm and time-sync builders, plus the cancelled
+    countdown the pre-v5 controller sent, which no fixture lists.
+    """
+    fixtures = Path(__file__).parent / "fixtures" / "goodvibe"
+
+    def rows(name: str) -> list:
+        return json.loads((fixtures / f"{name}.json").read_text())
+
+    writes = [bytes.fromhex(row[4]) for name in ("actions", "inline") for row in rows(name)]
+    writes += [bytes(row["expected"]) for row in rows("advanced")]
+    writes += [bytes(row["expected_bytes"]) for row in rows("alarms")]
+    writes += [bytes(frame) for row in rows("time_sync") for frame in row["frames"]]
+    frames = {"6e05000073", "6e06000074"}
+    for data in writes:
+        # The colour write carries two 5-byte frames.
+        size = 5 if data[:2] == b"\x6e\x0c" else len(data)
+        frames |= {data[i : i + size].hex() for i in range(0, len(data), size)}
+    return frozenset(frames)
+
+
 # Richmat MH row055 (cluster-020): the five apps share one BLE library and their
 # reconciled builders are identical, so every app freezes the union of the five
 # accepted reports: revive3 1.0.26 (-055-006), best_mattress 1.1.1 (-055-005),
@@ -1427,4 +1455,5 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
     "richmat_classic_fortywinks": _RICHMAT_CLASSIC,
     "richmat_classic_milemont": _RICHMAT_CLASSIC,
     "richmat_classic_superior": _RICHMAT_CLASSIC,
+    "goodvibe": _goodvibe(),
 }
