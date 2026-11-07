@@ -3709,6 +3709,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         data = self._manual_data
         bed_type: str = data[CONF_BED_TYPE]
         variant: str = data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
+        from .coordinator import AdjustableBedCoordinator
+
+        # The motor count default reads the route's tables.
+        await AdjustableBedCoordinator.async_import_tables(self.hass, data)
         info = self._discovery_info
         signals = detect_bed_type_detailed(info).signals if info is not None else None
         hidden = {*hidden_generic_fields(bed_type, variant), *self._journey_set}
