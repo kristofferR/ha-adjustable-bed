@@ -12,36 +12,21 @@ from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
 from .beds.vibradorm_app import (
-    CBI,
-    COMMAND,
-    LIGHT,
-    RESPONSE,
     VibradormAppMetadata,
     VibradormAppMetadataProgress,
     _cancellable,
-    _decode_java_utf8,
     _shield_cleanup,
 )
+from .codec import vibradorm as codec
+from .profiles.vibradorm import VMAT_CLOSE, VMAT_QUERY_STAGES
 
 _LOGGER = logging.getLogger(__name__)
 
-SERVICE = "00001525-9f03-0de5-96c5-b8f4f3081186"
 DIS = "0000180a-0000-1000-8000-00805f9b34fb"
-MANAGEMENT_SERVICE = "00001527-9f03-0de5-96c5-b8f4f3081186"
-MANAGEMENT = "00001533-9f03-0de5-96c5-b8f4f3081186"
 DIS_FIELDS = (
     ("model", "00002a24-0000-1000-8000-00805f9b34fb"),
     ("firmware", "00002a26-0000-1000-8000-00805f9b34fb"),
     ("software", "00002a28-0000-1000-8000-00805f9b34fb"),
-)
-QUERY_STAGES = (
-    ("xmc_status", bytes.fromhex("01b34c01"), bytes.fromhex("21b3"), 2.0),
-    ("opmode", bytes.fromhex("01b3f401"), bytes.fromhex("21b3"), 1.0),
-    ("main_firmware_article", bytes.fromhex("01a0c8"), bytes.fromhex("21a0c8"), 1.0),
-    ("device_name", bytes.fromhex("01a0c9"), bytes.fromhex("21a0c9"), 1.0),
-    ("revision_id", bytes.fromhex("01a0ca00"), bytes.fromhex("21a0ca"), 1.0),
-    ("revision_string", bytes.fromhex("01a0ca"), bytes.fromhex("21a0ca"), 1.0),
-    ("variant", bytes.fromhex("01a0cc"), bytes.fromhex("21a0cc"), 1.0),
 )
 
 
@@ -52,7 +37,7 @@ def vmat_characteristic(
     if not client.is_connected or not client.services:
         raise ConnectionError("VMAT requires a live discovered GATT connection")
     service_uuid = DIS if uuid in {item[1] for item in DIS_FIELDS} else (
-        MANAGEMENT_SERVICE if uuid == MANAGEMENT else SERVICE
+        codec.STATUS_SERVICE_UUID if uuid == codec.MANAGEMENT_CHAR_UUID else codec.SERVICE_UUID
     )
     selected = next((
         characteristic
@@ -65,15 +50,15 @@ def vmat_characteristic(
 
 
 def validate_vmat_roles(client: BleakClient, *, basic: bool, onboarding: bool = False) -> None:
-    vmat_characteristic(client, CBI, "write-without-response")
-    vmat_characteristic(client, RESPONSE, "notify")
+    vmat_characteristic(client, codec.CBI_CHAR_UUID, "write-without-response")
+    vmat_characteristic(client, codec.RESPONSE_CHAR_UUID, "notify")
     for _, uuid in DIS_FIELDS:
         vmat_characteristic(client, uuid, "read")
     if basic:
-        vmat_characteristic(client, COMMAND, "write")
-        vmat_characteristic(client, LIGHT, "write")
+        vmat_characteristic(client, codec.MOTOR_CHAR_UUID, "write")
+        vmat_characteristic(client, codec.LIGHT_CHAR_UUID, "write")
     if onboarding:
-        vmat_characteristic(client, MANAGEMENT, None)
+        vmat_characteristic(client, codec.MANAGEMENT_CHAR_UUID, None)
     # Every shipped frame fits the mandatory BLE MTU of 23. Bleak owns MTU
     # negotiation; there is no portable request_mtu API to invent here.
     if client.mtu_size < 23:
@@ -90,7 +75,7 @@ def parse_stage_response(field: str, prefix: bytes, raw: bytes) -> str | None:
         return str(value - 256 if field == "opmode" and value >= 128 else value)
     if field == "main_firmware_article" and len(raw) <= len(prefix):
         return None
-    return _decode_java_utf8(raw[len(prefix):])
+    return codec.decode_text(raw[len(prefix):])
 
 
 async def async_read_vmat_dis(
@@ -100,7 +85,7 @@ async def async_read_vmat_dis(
     values: dict[str, str] = {}
     for field, uuid in DIS_FIELDS:
         raw = await _cancellable(client.read_gatt_char(vmat_characteristic(client, uuid, "read")), cancel_event)
-        values[field] = _decode_java_utf8(bytes(raw))
+        values[field] = codec.decode_text(bytes(raw))
         if progress is not None:
             progress(cast(VibradormAppMetadataProgress, {field: values[field]}))
     return VibradormAppMetadata(values["model"], values["firmware"], values["software"])
@@ -113,7 +98,7 @@ async def async_prepare_vmat_pairing(
 ) -> VibradormAppMetadata:
     """Read three DIS values and seven bounded stages before native pairing."""
     validate_vmat_roles(client, basic=basic, onboarding=True)
-    notify = vmat_characteristic(client, RESPONSE, "notify")
+    notify = vmat_characteristic(client, codec.RESPONSE_CHAR_UUID, "notify")
     current: tuple[str, bytes, asyncio.Future[str]] | None = None
 
     def callback(_sender: BleakGATTCharacteristic, data: bytearray) -> None:
@@ -132,12 +117,12 @@ async def async_prepare_vmat_pairing(
             subscribed = True
             metadata = await async_read_vmat_dis(client, cancel_event, metadata_progress)
             article: str | None = None
-            for field, packet, prefix, timeout in QUERY_STAGES:
+            for field, packet, prefix, timeout in VMAT_QUERY_STAGES:
                 reply: asyncio.Future[str] = asyncio.get_running_loop().create_future()
                 current = (field, prefix, reply)
                 try:
                     await _cancellable(client.write_gatt_char(
-                        vmat_characteristic(client, CBI, "write-without-response"),
+                        vmat_characteristic(client, codec.CBI_CHAR_UUID, "write-without-response"),
                         packet, response=False,
                     ), cancel_event)
 
@@ -179,6 +164,6 @@ async def async_close_vmat_setup(client: BleakClient) -> None:
     """Bounded close before the caller disconnects its setup-owned connection."""
     async with asyncio.timeout(2):
         await client.write_gatt_char(
-            vmat_characteristic(client, CBI, "write-without-response"),
-            bytes.fromhex("01a7"), response=False,
+            vmat_characteristic(client, codec.CBI_CHAR_UUID, "write-without-response"),
+            VMAT_CLOSE, response=False,
         )

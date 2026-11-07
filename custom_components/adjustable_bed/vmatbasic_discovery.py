@@ -3,7 +3,7 @@
 from collections.abc import Mapping
 from typing import TypedDict
 
-from .beds.vmatbasic_protocol import manufacturer_payload_matches
+from .profiles.vmatbasic import manufacturer_payload_matches
 
 
 class ConditionalManufacturerRecord(TypedDict):

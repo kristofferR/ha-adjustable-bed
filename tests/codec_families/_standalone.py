@@ -53,7 +53,4 @@ STANDALONE: dict[str, str] = {
     "suta": "own wire format",
     "svane": "own wire format",
     "timotion_ahf": "own wire format",
-    "vibradorm": "own wire format",
-    "vibradorm_app": "own wire format",
-    "vmatbasic": "own wire format",
 }

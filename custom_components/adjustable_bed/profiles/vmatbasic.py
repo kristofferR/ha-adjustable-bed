@@ -1,36 +1,33 @@
-"""Pure V-MAT Basic app packet construction and diagnostic decoding.
+"""V-MAT Basic profiles over the Vibradorm VMAT codec.
 
-Values are derived from com.vibradorm.vmatbasic 2.4.3 (14). No hardware
-acknowledgement, model inference or legacy Vibradorm packet fallback is implied.
+``VMatBasicProfile`` serves the ``vmatbasic`` bed type: the Basic, CBI and
+XT-Box products of VIBRADORM Remote for Beds, ``com.vibradorm.vmatbasic``
+2.4.3 (14). No hardware acknowledgement, model inference or generic Vibradorm
+packet fallback is implied. Command words, palette, value conversions and
+timing are this app's own.
 """
 
 from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Final
+from typing import ClassVar, Final
 
-PROFILES: Final = ("basic", "cbi", "xtbox")
-VENDOR_SUFFIX: Final = "-9f03-0de5-96c5-b8f4f3081186"
-CONTROL_SERVICE: Final = "00001525" + VENDOR_SUFFIX
-STATUS_SERVICE: Final = "00001527" + VENDOR_SUFFIX
+from ..codec import vibradorm as codec
+from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
+
 GAP_SERVICE: Final = "00001800-0000-1000-8000-00805f9b34fb"
 INFO_SERVICE: Final = "0000180a-0000-1000-8000-00805f9b34fb"
-MOTOR_CHAR: Final = "00001526" + VENDOR_SUFFIX
-FLOOR_CHAR: Final = "00001529" + VENDOR_SUFFIX
-XT_CHAR: Final = "00001550" + VENDOR_SUFFIX
-TEMPERATURE_CHAR: Final = "00001532" + VENDOR_SUFFIX
-ED_CHAR: Final = "00001531" + VENDOR_SUFFIX
 NAME_CHAR: Final = "00002a00-0000-1000-8000-00805f9b34fb"
 MODEL_CHAR: Final = "00002a24-0000-1000-8000-00805f9b34fb"
 FIRMWARE_CHAR: Final = "00002a26-0000-1000-8000-00805f9b34fb"
-REQUIRED_SERVICES: Final = (CONTROL_SERVICE, STATUS_SERVICE, GAP_SERVICE)
+REQUIRED_SERVICES: Final = (codec.SERVICE_UUID, codec.STATUS_SERVICE_UUID, GAP_SERVICE)
 READ_ROLES: Final = (
     ("model", INFO_SERVICE, MODEL_CHAR),
-    ("temperature", STATUS_SERVICE, TEMPERATURE_CHAR),
-    ("floor", CONTROL_SERVICE, FLOOR_CHAR),
+    ("temperature", codec.STATUS_SERVICE_UUID, codec.TEMPERATURE_CHAR_UUID),
+    ("floor", codec.SERVICE_UUID, codec.LIGHT_CHAR_UUID),
     ("firmware", INFO_SERVICE, FIRMWARE_CHAR),
-    ("ed", STATUS_SERVICE, ED_CHAR),
+    ("ed", codec.STATUS_SERVICE_UUID, codec.ED_CHAR_UUID),
 )
 MOTOR_ACTIONS: Final = {
     "all_up": 0x10,
@@ -48,6 +45,9 @@ MASSAGE_ACTIONS: Final = {
     "program_2": 0x28,
     "program_3": 0x29,
 }
+FLOOR: Final = 0x11
+MOOD: Final = 0x77
+HOLD_INTERVAL_S: Final = 0.03
 PALETTE: Final = (
     0xFFA4C400,
     0xFF60A917,
@@ -84,24 +84,24 @@ def integer(value: object, minimum: int, maximum: int) -> int:
 
 def floor(level: int, minutes: int) -> bytes:
     """Raw CBI builder; public controls validate their narrower UI bounds."""
-    return bytes((level & 255, (minutes & 0xFF00) >> 8, minutes & 255))
+    return codec.light(level & 255, minutes & 0xFFFF)
 
 
 def xt_floor(level: int, minutes: int) -> bytes:
     """Raw XT builder, retaining the shipped upper clamp and byte conversion."""
-    return bytes((0, 0x11, min(level, 6) & 255, min(minutes, 255) & 255))
+    return codec.command(FLOOR, bytes((min(level, 6) & 255, min(minutes, 255) & 255)))
 
 
 def rgb(color: int) -> bytes:
-    return bytes((0, 0x77, 1, 0, (color >> 16) & 255, (color >> 8) & 255, color & 255))
+    return codec.command(MOOD, bytes((1, 0, (color >> 16) & 255, (color >> 8) & 255, color & 255)))
 
 
 def effect(number: int) -> bytes:
-    return bytes((0, 0x77, 8, number & 255))
+    return codec.command(MOOD, bytes((8, number & 255)))
 
 
 def speed(progress: int) -> bytes:
-    return bytes((0, 0x77, 9, (progress + 1) & 255))
+    return codec.command(MOOD, bytes((9, (progress + 1) & 255)))
 
 
 def color_action(color: int, brightness: int) -> bytes:
@@ -149,6 +149,29 @@ def rename(name: str) -> bytes:
 
 
 @dataclass(frozen=True, slots=True)
+class VMatBasicProfile:
+    """One V-MAT Basic product and its floor-light route."""
+
+    execution: ClassVar[ExecutionCapabilities] = NO_EXECUTION_CAPABILITIES
+    """The controller declares its own (#483)."""
+    key: str
+    floor_char: str | None
+    """Where floor settings go; the Basic product has none."""
+    floor_levels: tuple[int, int]
+    floor_minutes: tuple[int, int]
+
+    def floor(self, level: int, minutes: int) -> bytes:
+        return xt_floor(level, minutes) if self.key == "xtbox" else floor(level, minutes)
+
+
+PROFILES: Final = {
+    "basic": VMatBasicProfile("basic", None, (0, 255), (0, 1439)),
+    "cbi": VMatBasicProfile("cbi", codec.LIGHT_CHAR_UUID, (0, 255), (0, 1439)),
+    "xtbox": VMatBasicProfile("xtbox", codec.CBI_CHAR_UUID, (1, 6), (0, 255)),
+}
+
+
+@dataclass(frozen=True, slots=True)
 class FloorStatus:
     level: int
     timer_minutes: int
@@ -159,9 +182,7 @@ class FloorStatus:
 
 
 def light_status(data: bytes) -> FloorStatus:
-    if len(data) < 3:
-        raise ValueError("Floor status requires three bytes")
-    return FloorStatus(data[0], (data[1] << 8) + data[2])
+    return FloorStatus(*codec.parse_light(data))
 
 
 def temperature(data: bytes) -> float:
@@ -174,32 +195,6 @@ def motor_status(data: bytes) -> bool:
     if not data:
         raise ValueError("ED status requires one byte")
     return bool(data[0] & 1)
-
-
-def decode_string(data: bytes) -> str:
-    """Android UTF-8 replacement, preserving whitespace and embedded zeros."""
-    parts: list[str] = []
-    offset = 0
-    while offset < len(data):
-        remaining = data[offset:]
-        try:
-            parts.append(remaining.decode("utf-8"))
-            break
-        except UnicodeDecodeError as error:
-            parts.append(remaining[: error.start].decode("utf-8"))
-            consumed = error.end
-            start = error.start
-            if (
-                remaining[start] == 0xED
-                and start + 1 < len(remaining)
-                and 0xA0 <= remaining[start + 1] <= 0xBF
-            ):
-                consumed = start + 2
-                if consumed < len(remaining) and 0x80 <= remaining[consumed] <= 0xBF:
-                    consumed += 1
-            parts.append("\ufffd")
-            offset += consumed
-    return "".join(parts)
 
 
 def manufacturer_payload_matches(payload: bytes) -> bool:

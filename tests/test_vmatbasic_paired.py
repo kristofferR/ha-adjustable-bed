@@ -7,11 +7,11 @@ import pytest
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.beds import vmatbasic_protocol as protocol
 from custom_components.adjustable_bed.paired_coordinator import (
     PairedBedCoordinator,
     PairedSideError,
 )
+from custom_components.adjustable_bed.profiles import vmatbasic as vmat_profiles
 from tests.test_vmatbasic import written
 from tests.test_vmatbasic_public import close, target
 
@@ -58,7 +58,7 @@ async def test_actual_pair_readiness_precedes_both_generic_controller_routes(has
         await close(right)
 
 
-@pytest.mark.parametrize("missing", protocol.REQUIRED_SERVICES)
+@pytest.mark.parametrize("missing", vmat_profiles.REQUIRED_SERVICES)
 async def test_actual_right_service_failure_prevents_every_left_movement(hass, missing):
     pair, left, right = await make_pair(hass)
     right.client.services = [

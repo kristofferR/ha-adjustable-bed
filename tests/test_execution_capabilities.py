@@ -36,6 +36,7 @@ from custom_components.adjustable_bed.execution import (
     ExecutionCapabilities,
 )
 from custom_components.adjustable_bed.profiles import keeson as keeson_profiles
+from custom_components.adjustable_bed.profiles import vibradorm as vibradorm_profiles
 from tests.codec_families import families
 from tests.test_controller_contract import (
     _create_controller_for_bed_type,
@@ -424,6 +425,11 @@ async def _family_profiles() -> dict[str, ExecutionCapabilities]:
         for layout in layouts
     )
     profiles.extend(keeson_profiles.ergomotion_4_profile(style) for style in ERGOMOTION_4_STYLES)
+    # Werkmeister and VMAT layouts are validated from entry data at runtime.
+    profiles += [
+        vibradorm_profiles.validate_vibradorm_app_profile("werkmeister", 5),
+        vibradorm_profiles.validate_vibradorm_app_profile("vmat", 2, floor_light=False, remote="00"),
+    ]
     for bed_type, (config_key, choices) in APP_ROUTES.items():
         for choice in choices:
             coordinator = _FactoryCoordinator()
