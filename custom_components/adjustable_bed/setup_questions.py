@@ -742,7 +742,7 @@ def _vibradorm_errors(data: Mapping[str, Any]) -> dict[str, str]:
 
 def _vibradorm_profile(data: Mapping[str, Any]) -> Mapping[str, Any]:
     """The validated app profile sets the motor groups and massage."""
-    from .beds.vibradorm_app import validate_vibradorm_app_profile
+    from .profiles.vibradorm import validate_vibradorm_app_profile
 
     control = data[CONF_VIBRADORM_CONTROL_TYPE]
     profile = validate_vibradorm_app_profile(
@@ -764,7 +764,7 @@ def _vibradorm_profile(data: Mapping[str, Any]) -> Mapping[str, Any]:
 
 
 def _vmat_remotes(_data: Mapping[str, Any]) -> Mapping[Any, str]:
-    from .vibradorm_vmat_profiles import VMAT_REMOTES
+    from .profiles.vibradorm import VMAT_REMOTES
 
     return {remote: f"Remote {remote} ({profile.asset})" for remote, profile in VMAT_REMOTES.items()}
 

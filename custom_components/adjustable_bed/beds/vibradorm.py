@@ -1,10 +1,10 @@
-"""Vibradorm bed controller implementation.
+"""Vibradorm generic controller: the ``LEGACY`` profile over the VMAT codec.
 
 Protocol reverse-engineered from de.vibradorm.vra and com.vibradorm.vmatbasic APKs.
-
-Vibradorm beds (VMAT series) use a simple single-byte command format for motor control.
-Some variants expose additional CBI/notification characteristics, but the
-VMAT-BASIC-RF-CBI app flow still drives motor movement through 0x1526.
+Frames come from ``codec/vibradorm.py``; command bytes and timing from
+``profiles/vibradorm.py``. Some variants expose additional CBI/notification
+characteristics, but the VMAT-BASIC-RF-CBI app flow still drives motor movement
+through 0x1526.
 
 Device name pattern: "VMAT*" (e.g., "VMATMEM047")
 Manufacturer ID: 944 (0x03B0)
@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Any
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakCharacteristicNotFoundError, BleakError
 
+from ..codec import vibradorm as codec
 from ..const import (
     VIBRADORM_CBI_CHAR_UUID,
     VIBRADORM_COMMAND_CHAR_UUID,
@@ -30,6 +31,7 @@ from ..const import (
     VIBRADORM_SECONDARY_SERVICE_UUID,
     VIBRADORM_SERVICE_UUID,
 )
+from ..profiles.vibradorm import LEGACY
 from .base import BedController
 
 if TYPE_CHECKING:
@@ -48,7 +50,6 @@ VIBRADORM_COMMAND_UUID_CANDIDATES = (
     VIBRADORM_SECONDARY_ALT_COMMAND_CHAR_UUID,
 )
 
-_VIBRADORM_VENDOR_UUID_SUFFIX = "-9f03-0de5-96c5-b8f4f3081186"
 _BLUETOOTH_BASE_UUID_SUFFIX = "-0000-1000-8000-00805f9b34fb"
 _GATT_SERVICE_CHANGED_CHAR_UUID = "00002a05-0000-1000-8000-00805f9b34fb"
 _VMAT_BASIC_RF_CBI_MODEL = "vmat-basic-rf-cbi"
@@ -72,57 +73,6 @@ _DEFAULT_MAX_RAW_ESTIMATE: dict[str, int] = {
 }
 
 
-class VibradormCommands:
-    """Vibradorm single-byte command constants.
-
-    Motor naming (German origin):
-    - K = Kopf (head/back)
-    - OS = Oberschenkel (thigh/legs)
-    - F = Fuß (foot - for 4-motor beds)
-    - N = Nacken (neck - for 4-motor beds)
-    - A = All motors
-    - H = Hoch (up)
-    - R = Runter (down)
-    """
-
-    # Stop command
-    STOP: int = 0xFF  # 255
-
-    # 2-motor bed commands (standard configuration)
-    # Head/back motor
-    HEAD_UP: int = 0x0B  # 11 = KH
-    HEAD_DOWN: int = 0x0A  # 10 = KR
-
-    # Legs/thigh motor
-    LEGS_UP: int = 0x09  # 9 = OSH
-    LEGS_DOWN: int = 0x08  # 8 = OSR
-
-    # 4-motor bed commands (additional motors)
-    # Foot motor
-    FOOT_UP: int = 0x05  # 5 = FH
-    FOOT_DOWN: int = 0x04  # 4 = FR
-
-    # Neck motor
-    NECK_UP: int = 0x03  # 3 = NH
-    NECK_DOWN: int = 0x02  # 2 = NR
-
-    # All motors
-    ALL_UP: int = 0x10  # 16 = AH
-    ALL_DOWN: int = 0x00  # 0 = AR (also used as flat preset)
-
-    # Memory presets
-    MEMORY_1: int = 0x0E  # 14
-    MEMORY_2: int = 0x0F  # 15
-    MEMORY_3: int = 0x0C  # 12
-    MEMORY_4: int = 0x1A  # 26
-    MEMORY_5: int = 0x1B  # 27
-    MEMORY_6: int = 0x1C  # 28
-    STORE: int = 0x0D  # 13 (save current position to active memory slot)
-
-    # Vibration/massage commands (via CBI characteristic)
-    VRT_ON_OFF: int = 0x34  # Toggle vibration on/off
-
-
 class VibradormController(BedController):
     """Controller for Vibradorm beds (VMAT series).
 
@@ -137,6 +87,7 @@ class VibradormController(BedController):
             coordinator: The coordinator managing this controller.
         """
         super().__init__(coordinator)
+        self.profile = LEGACY
         self._notify_callback: Callable[[str, float], None] | None = None
         self._lights_on: bool = False
         self._write_with_response: bool = False
@@ -171,10 +122,10 @@ class VibradormController(BedController):
             return {normalized_uuid}
 
         aliases = {normalized_uuid}
-        if normalized_uuid.endswith(_VIBRADORM_VENDOR_UUID_SUFFIX):
+        if normalized_uuid.endswith(codec.VENDOR_SUFFIX):
             aliases.add(f"{uuid_head}{_BLUETOOTH_BASE_UUID_SUFFIX}")
         elif normalized_uuid.endswith(_BLUETOOTH_BASE_UUID_SUFFIX):
-            aliases.add(f"{uuid_head}{_VIBRADORM_VENDOR_UUID_SUFFIX}")
+            aliases.add(f"{uuid_head}{codec.VENDOR_SUFFIX}")
         return aliases
 
     @classmethod
@@ -221,7 +172,7 @@ class VibradormController(BedController):
     @staticmethod
     def _is_vibradorm_vendor_uuid(char_uuid: str) -> bool:
         """Return True for vendor UUIDs in the Vibradorm VMAT namespace."""
-        return char_uuid.lower().endswith(_VIBRADORM_VENDOR_UUID_SUFFIX)
+        return char_uuid.lower().endswith(codec.VENDOR_SUFFIX)
 
     @classmethod
     def _uuid_alias_set(cls, uuids: tuple[str, ...] | list[str] | set[str]) -> set[str]:
@@ -596,7 +547,7 @@ class VibradormController(BedController):
             repeat_delay_ms = self._coordinator.motor_pulse_delay_ms
 
         await self.write_command(
-            bytes([cmd]),
+            codec.motor(cmd),
             repeat_count=repeat_count,
             repeat_delay_ms=repeat_delay_ms,
             cancel_event=cancel_event,
@@ -613,12 +564,10 @@ class VibradormController(BedController):
             extra_bytes: Additional bytes appended after the 2-byte header
                 (e.g., on/off byte for VRT, RGB values for mood light)
         """
-        toggle = 0x8000 if self._cbi_toggle else 0x0000
-        value = toggle | cmd
-        data = value.to_bytes(2, byteorder="big") + extra_bytes
+        data = codec.command(cmd, extra_bytes, codec.TOGGLE if self._cbi_toggle else 0)
         _LOGGER.debug(
-            "Writing CBI command: 0x%04X (cmd=0x%02X, toggle=%s, extra=%s)",
-            value,
+            "Writing CBI command: %s (cmd=0x%02X, toggle=%s, extra=%s)",
+            data[:2].hex(),
             cmd,
             self._cbi_toggle,
             extra_bytes.hex() if extra_bytes else "none",
@@ -659,9 +608,9 @@ class VibradormController(BedController):
             )
             return
 
-        toggle = 0x8000 if self._cbi_toggle else 0x0000
-        value = toggle | 0x3D
-        data = bytes([(value >> 8) & 0xFF, value & 0xFF, 0x3F])
+        data = codec.command(
+            *self.profile.status_request, codec.TOGGLE if self._cbi_toggle else 0
+        )
         _LOGGER.debug(
             "Requesting position update: CmdGetStatusMotMon %s (toggle=%s)",
             data.hex(),
@@ -718,60 +667,20 @@ class VibradormController(BedController):
         """
         self.forward_raw_notification(self._notify_char_uuid, bytes(data))
 
-        if len(data) < 2:
-            _LOGGER.debug("Vibradorm notification too short (%d bytes): %s", len(data), data.hex())
+        reply = codec.status_reply(bytes(data))
+        if reply is None or len(reply[1]) < 4:
+            _LOGGER.debug("Vibradorm non-position or short notification: %s", data.hex())
             return
 
-        payload_offset: int
-        if data[0] == 0x20:
-            if data[1] != 0x3F:
-                _LOGGER.debug(
-                    "Vibradorm non-position notification: %s (type=0x%02X)",
-                    data.hex(),
-                    data[1],
-                )
-                return
-            if len(data) < 7:
-                _LOGGER.debug(
-                    "Vibradorm position notification too short (%d bytes): %s",
-                    len(data),
-                    data.hex(),
-                )
-                return
-            payload_offset = 3
-        elif data[0] == 0x3F:
-            if len(data) < 6:
-                _LOGGER.debug(
-                    "Vibradorm short position notification too short (%d bytes): %s",
-                    len(data),
-                    data.hex(),
-                )
-                return
-            payload_offset = 2
-        else:
-            _LOGGER.debug(
-                "Vibradorm unknown notification: %s (header=0x%02X)",
-                data.hex(),
-                data[0],
-            )
-            return
-
-        # Parse motor positions as big-endian uint16 values.
-        back_raw = int.from_bytes(data[payload_offset : payload_offset + 2], byteorder="big")
-        legs_raw = int.from_bytes(
-            data[payload_offset + 2 : payload_offset + 4], byteorder="big"
-        )
-
-        position_updates: dict[str, int] = {"back": back_raw, "legs": legs_raw}
-
-        if self._coordinator.motor_count >= 3 and len(data) >= payload_offset + 6:
-            position_updates["head"] = int.from_bytes(
-                data[payload_offset + 4 : payload_offset + 6], byteorder="big"
-            )
-        if self._coordinator.motor_count >= 4 and len(data) >= payload_offset + 8:
-            position_updates["feet"] = int.from_bytes(
-                data[payload_offset + 6 : payload_offset + 8], byteorder="big"
-            )
+        counts = reply[1]
+        position_updates: dict[str, int] = {
+            "back": int.from_bytes(counts[0:2], byteorder="big"),
+            "legs": int.from_bytes(counts[2:4], byteorder="big"),
+        }
+        if self._coordinator.motor_count >= 3 and len(counts) >= 6:
+            position_updates["head"] = int.from_bytes(counts[4:6], byteorder="big")
+        if self._coordinator.motor_count >= 4 and len(counts) >= 8:
+            position_updates["feet"] = int.from_bytes(counts[6:8], byteorder="big")
 
         _LOGGER.debug(
             "Vibradorm position updates=%s raw=%s",
@@ -898,7 +807,7 @@ class VibradormController(BedController):
         finally:
             try:
                 await self._write_motor_command(
-                    VibradormCommands.STOP,
+                    codec.STOP,
                     repeat_count=1,
                     cancel_event=asyncio.Event(),
                 )
@@ -913,9 +822,9 @@ class VibradormController(BedController):
         On 2-motor beds, head maps to KH/KR (shared back/head actuator).
         """
         if self._coordinator.motor_count >= 3:
-            await self._motor_move_with_stop(VibradormCommands.NECK_UP)
+            await self._motor_move_with_stop(self.profile.head_up)
         else:
-            await self._motor_move_with_stop(VibradormCommands.HEAD_UP)
+            await self._motor_move_with_stop(self.profile.back_up)
 
     async def move_head_down(self) -> None:
         """Move head down.
@@ -924,25 +833,25 @@ class VibradormController(BedController):
         On 2-motor beds, head maps to KH/KR (shared back/head actuator).
         """
         if self._coordinator.motor_count >= 3:
-            await self._motor_move_with_stop(VibradormCommands.NECK_DOWN)
+            await self._motor_move_with_stop(self.profile.head_down)
         else:
-            await self._motor_move_with_stop(VibradormCommands.HEAD_DOWN)
+            await self._motor_move_with_stop(self.profile.back_down)
 
     async def move_head_stop(self) -> None:
         """Stop head motor."""
         await self._write_motor_command(
-            VibradormCommands.STOP,
+            codec.STOP,
             repeat_count=1,
             cancel_event=asyncio.Event(),
         )
 
     async def move_back_up(self) -> None:
         """Move back up using KH command."""
-        await self._motor_move_with_stop(VibradormCommands.HEAD_UP)
+        await self._motor_move_with_stop(self.profile.back_up)
 
     async def move_back_down(self) -> None:
         """Move back down using KR command."""
-        await self._motor_move_with_stop(VibradormCommands.HEAD_DOWN)
+        await self._motor_move_with_stop(self.profile.back_down)
 
     async def move_back_stop(self) -> None:
         """Stop back motor (same as head for Vibradorm)."""
@@ -950,16 +859,16 @@ class VibradormController(BedController):
 
     async def move_legs_up(self) -> None:
         """Move legs up."""
-        await self._motor_move_with_stop(VibradormCommands.LEGS_UP)
+        await self._motor_move_with_stop(self.profile.legs_up)
 
     async def move_legs_down(self) -> None:
         """Move legs down."""
-        await self._motor_move_with_stop(VibradormCommands.LEGS_DOWN)
+        await self._motor_move_with_stop(self.profile.legs_down)
 
     async def move_legs_stop(self) -> None:
         """Stop legs motor."""
         await self._write_motor_command(
-            VibradormCommands.STOP,
+            codec.STOP,
             repeat_count=1,
             cancel_event=asyncio.Event(),
         )
@@ -971,7 +880,7 @@ class VibradormController(BedController):
         On 2/3-motor beds, falls back to legs motor.
         """
         if self._coordinator.motor_count >= 4:
-            await self._motor_move_with_stop(VibradormCommands.FOOT_UP)
+            await self._motor_move_with_stop(self.profile.feet_up)
         else:
             await self.move_legs_up()
 
@@ -982,7 +891,7 @@ class VibradormController(BedController):
         On 2/3-motor beds, falls back to legs motor.
         """
         if self._coordinator.motor_count >= 4:
-            await self._motor_move_with_stop(VibradormCommands.FOOT_DOWN)
+            await self._motor_move_with_stop(self.profile.feet_down)
         else:
             await self.move_legs_down()
 
@@ -990,7 +899,7 @@ class VibradormController(BedController):
         """Stop feet motor."""
         # STOP command stops all motors, works for both dedicated foot and legs
         await self._write_motor_command(
-            VibradormCommands.STOP,
+            codec.STOP,
             repeat_count=1,
             cancel_event=asyncio.Event(),
         )
@@ -998,7 +907,7 @@ class VibradormController(BedController):
     async def stop_all(self) -> None:
         """Stop all motors."""
         await self._write_motor_command(
-            VibradormCommands.STOP,
+            codec.STOP,
             repeat_count=1,
             cancel_event=asyncio.Event(),
         )
@@ -1011,7 +920,7 @@ class VibradormController(BedController):
         sent and stops when STOP arrives. We send for up to 20 seconds;
         the cancel event or the bed reaching position will end it early.
         """
-        await self._preset_move(VibradormCommands.ALL_DOWN)
+        await self._preset_move(self.profile.flat)
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset position.
@@ -1024,38 +933,29 @@ class VibradormController(BedController):
         Args:
             memory_num: Memory slot number (1-6)
         """
-        memory_commands = {
-            1: VibradormCommands.MEMORY_1,
-            2: VibradormCommands.MEMORY_2,
-            3: VibradormCommands.MEMORY_3,
-            4: VibradormCommands.MEMORY_4,
-            5: VibradormCommands.MEMORY_5,
-            6: VibradormCommands.MEMORY_6,
-        }
-        if memory_num not in memory_commands:
+        if memory_num not in self.profile.memory:
             _LOGGER.warning("Invalid memory preset number: %d (supported: 1-6)", memory_num)
             return
-        await self._preset_move(memory_commands[memory_num])
+        await self._preset_move(self.profile.memory[memory_num])
 
     async def _preset_move(self, cmd: int) -> None:
         """Send a preset command with long repeat for hold-to-run behavior.
 
         Vibradorm presets (flat, memory recall) require the command to be
         sent continuously - the bed moves only while it receives the command.
-        We use a repeat count of 200 (200 x 100ms = 20s) which provides
-        enough headroom for the slowest motors (~14s full travel).
-        The cancel event allows early stop.
+        The profile repeats it 200 times at 100 ms (20 s), enough headroom for
+        the slowest motors (~14s full travel). The cancel event allows early stop.
         """
         try:
             await self._write_motor_command(
                 cmd,
-                repeat_count=200,
-                repeat_delay_ms=100,
+                repeat_count=self.profile.preset_repeats,
+                repeat_delay_ms=self.profile.preset_delay_ms,
             )
         finally:
             try:
                 await self._write_motor_command(
-                    VibradormCommands.STOP,
+                    codec.STOP,
                     repeat_count=1,
                     cancel_event=asyncio.Event(),
                 )
@@ -1073,29 +973,21 @@ class VibradormController(BedController):
         Args:
             memory_num: Memory slot number (1-6)
         """
-        memory_commands = {
-            1: VibradormCommands.MEMORY_1,
-            2: VibradormCommands.MEMORY_2,
-            3: VibradormCommands.MEMORY_3,
-            4: VibradormCommands.MEMORY_4,
-            5: VibradormCommands.MEMORY_5,
-            6: VibradormCommands.MEMORY_6,
-        }
-        if memory_num not in memory_commands:
+        if memory_num not in self.profile.memory:
             _LOGGER.warning("Invalid memory program number: %d (supported: 1-6)", memory_num)
             return
 
         # Step 1: Send STORE ×4 to CBI
-        for _ in range(4):
-            await self._write_cbi_command(VibradormCommands.STORE)
+        for _ in range(self.profile.store_repeats):
+            await self._write_cbi_command(self.profile.store)
 
         # Step 2: Send memory slot command to CBI
-        await self._write_cbi_command(memory_commands[memory_num])
+        await self._write_cbi_command(self.profile.memory[memory_num])
 
         # Step 3: Send STOP ×4
-        for _ in range(4):
+        for _ in range(self.profile.release_repeats):
             await self._write_motor_command(
-                VibradormCommands.STOP,
+                codec.STOP,
                 repeat_count=1,
                 cancel_event=asyncio.Event(),
             )
@@ -1114,7 +1006,7 @@ class VibradormController(BedController):
         try:
             await self._write_gatt_with_retry(
                 self._light_char_uuid,
-                bytes([0xFF, 0x00, 0x00]),  # Full brightness, no timer
+                codec.light(self.profile.light_on, 0),  # Full brightness, no timer
                 response=self._write_with_response,
             )
             self._lights_on = True
@@ -1132,7 +1024,7 @@ class VibradormController(BedController):
         try:
             await self._write_gatt_with_retry(
                 self._light_char_uuid,
-                bytes([0x00, 0x00, 0x00]),  # Off
+                codec.light(0, 0),  # Off
                 response=self._write_with_response,
             )
             self._lights_on = False
@@ -1160,4 +1052,4 @@ class VibradormController(BedController):
 
         self._massage_on = not getattr(self, "_massage_on", False)
         on_off = b"\x01" if self._massage_on else b"\x00"
-        await self._write_cbi_command(VibradormCommands.VRT_ON_OFF, extra_bytes=on_off)
+        await self._write_cbi_command(self.profile.vibration, extra_bytes=on_off)

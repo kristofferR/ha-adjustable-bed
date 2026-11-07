@@ -6,11 +6,11 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from custom_components.adjustable_bed.beds.vibradorm_app import (
-    CBI,
     async_prepare_vibradorm_app_pairing,
 )
+from custom_components.adjustable_bed.codec.vibradorm import CBI_CHAR_UUID as CBI
+from custom_components.adjustable_bed.profiles.vibradorm import VMAT_QUERY_STAGES as QUERY_STAGES
 from custom_components.adjustable_bed.vibradorm_vmat_setup import (
-    QUERY_STAGES,
     async_close_vmat_setup,
     parse_stage_response,
 )
@@ -173,7 +173,7 @@ async def test_missing_responses_advance_without_claimed_ack():
     c = make_vmat("00")
     progress = []
     fast = tuple((field, packet, prefix, 0.01) for field, packet, prefix, _ in QUERY_STAGES)
-    with patch("custom_components.adjustable_bed.vibradorm_vmat_setup.QUERY_STAGES", fast):
+    with patch("custom_components.adjustable_bed.vibradorm_vmat_setup.VMAT_QUERY_STAGES", fast):
         await async_prepare_vibradorm_app_pairing(
             c.client, "vmat", 2, remote="00", deadline=asyncio.get_running_loop().time() + 10,
             metadata_progress=progress.append,

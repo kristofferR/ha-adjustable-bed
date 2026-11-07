@@ -34,7 +34,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [Adjustable Comfort M1X12 app](beds/starcode-m1x12.md) | Explicit CB25/F23/kneading profile, opaque Part selectors with state feedback, and up to two separately configured M1X12 ELEVATE entries |
 | [SleepSpa S9000AI](beds/sleepstar.md) | CB37 sleep monitor, five app-addressable actuators, position feedback, sonic massage, RGB lighting |
 | [Svane](beds/svane.md) | Svane Remote multi-service / JMC400 profiles, opaque software memories, local lamp preference; separate Jensen LinOn |
-| [Vibradorm](beds/vibradorm.md) | Position feedback, memory and lights; [Caresse / Werkmeister](beds/vibradorm_app.md), [VMAT](beds/vmat.md) and [V-MAT Basic](beds/vmatbasic.md) remote-specific controls |
+| [Vibradorm](beds/vibradorm.md) | Position feedback, memory and lights; [Caresse / Werkmeister](beds/vibradorm.md#caresse-and-werkmeister), [VMAT](beds/vibradorm.md#vmat) and [V-MAT Basic](beds/vibradorm.md#v-mat-basic) remote-specific controls |
 | [SUTA Smart Home](beds/suta.md) | AT command protocol, 4 memory slots, discrete lights |
 | [TiMOTION AHF](beds/timotion-ahf.md) | Fixed app-labelled controls, raw lock/lamp diagnostics, AHF name detection; physical behavior unverified |
 | [BedJet PowerLayer](beds/bedjet-powerlayer.md) | Head/foot movement, 4 presets, 3 memory recalls, calibrated degree feedback (frame only, not the BedJet climate unit) |

@@ -6,7 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from custom_components.adjustable_bed.beds import vmatbasic_protocol as protocol
+from custom_components.adjustable_bed.codec import vibradorm as codec
+from custom_components.adjustable_bed.profiles import vmatbasic as vmat_profiles
 
 FIXTURES = json.loads((Path(__file__).parent / "fixtures/vmatbasic-vectors.json").read_text())
 
@@ -20,19 +21,19 @@ def test_all_93_frozen_packet_vectors(vector):
         case "literal":
             actual = bytes(args)
         case "floor":
-            actual = protocol.floor(*args)
+            actual = vmat_profiles.floor(*args)
         case "xt_floor":
-            actual = protocol.xt_floor(*args)
+            actual = vmat_profiles.xt_floor(*args)
         case "rgb":
-            actual = protocol.rgb(*args)
+            actual = vmat_profiles.rgb(*args)
         case "effect":
-            actual = protocol.effect(*args)
+            actual = vmat_profiles.effect(*args)
         case "speed":
-            actual = protocol.speed(*args)
+            actual = vmat_profiles.speed(*args)
         case "color_action":
-            actual = protocol.color_action(*args)
+            actual = vmat_profiles.color_action(*args)
         case "rename":
-            actual = protocol.rename(*args)
+            actual = vmat_profiles.rename(*args)
         case _:
             pytest.fail("Unknown frozen vector builder")
     assert actual.hex() == vector["expected"]
@@ -40,8 +41,8 @@ def test_all_93_frozen_packet_vectors(vector):
 
 def test_all_2020_palette_brightness_cases_match_independent_dalvik_oracle():
     packets = b"".join(
-        protocol.color_action(color, brightness)
-        for color in protocol.PALETTE
+        vmat_profiles.color_action(color, brightness)
+        for color in vmat_profiles.PALETTE
         for brightness in range(101)
     )
     assert len(packets) == 2020 * 7
@@ -63,24 +64,24 @@ def test_all_2020_palette_brightness_cases_match_independent_dalvik_oracle():
     ],
 )
 def test_raw_first_ad_predicate_and_safe_short_input(data, accepted):
-    assert protocol.first_manufacturer_matches(bytes.fromhex(data)) is accepted
+    assert vmat_profiles.first_manufacturer_matches(bytes.fromhex(data)) is accepted
 
 
 def test_five_frozen_response_vectors():
-    assert protocol.temperature(bytes.fromhex("80000000")) == 25.0
-    assert protocol.temperature(bytes.fromhex("f0ffffff")) == -11.0
-    status = protocol.light_status(bytes.fromhex("ff059f"))
+    assert vmat_profiles.temperature(bytes.fromhex("80000000")) == 25.0
+    assert vmat_profiles.temperature(bytes.fromhex("f0ffffff")) == -11.0
+    status = vmat_profiles.light_status(bytes.fromhex("ff059f"))
     assert (status.level, status.timer_minutes, status.display_percent) == (255, 1439, 100.0)
-    assert protocol.motor_status(b"\x03") is True
-    assert protocol.motor_status(b"\x02") is False
+    assert vmat_profiles.motor_status(b"\x03") is True
+    assert vmat_profiles.motor_status(b"\x02") is False
 
 
 @pytest.mark.parametrize(
     "parser,maximum",
     [
-        (protocol.temperature, 4),
-        (protocol.light_status, 3),
-        (protocol.motor_status, 1),
+        (vmat_profiles.temperature, 4),
+        (vmat_profiles.light_status, 3),
+        (vmat_profiles.motor_status, 1),
     ],
 )
 def test_short_response_never_becomes_observed_feedback(parser, maximum):
@@ -92,16 +93,16 @@ def test_short_response_never_becomes_observed_feedback(parser, maximum):
 @pytest.mark.parametrize("value", [True, False, -1, 256, 1.5, float("nan"), float("inf"), "1"])
 def test_public_integer_domain_rejects_wrapping_and_nonintegers(value):
     with pytest.raises(ValueError):
-        protocol.integer(value, 0, 255)
+        vmat_profiles.integer(value, 0, 255)
 
 
 def test_rename_java_trim_and_utf16_boundaries():
-    assert protocol.rename("\x00 Bed\x1f ") == b"Bed"
-    assert protocol.rename("   ") == b""
-    assert protocol.rename("\u00a0Bed\u00a0") == "\u00a0Bed\u00a0".encode()
-    assert protocol.rename("\U0001f600" * 5) == ("\U0001f600" * 5).encode()
+    assert vmat_profiles.rename("\x00 Bed\x1f ") == b"Bed"
+    assert vmat_profiles.rename("   ") == b""
+    assert vmat_profiles.rename("\u00a0Bed\u00a0") == "\u00a0Bed\u00a0".encode()
+    assert vmat_profiles.rename("\U0001f600" * 5) == ("\U0001f600" * 5).encode()
     with pytest.raises(ValueError):
-        protocol.rename("\U0001f600" * 5 + "a")
+        vmat_profiles.rename("\U0001f600" * 5 + "a")
 
 
 def test_frozen_exact_gatt_role_catalog_and_diagnostic_order():
@@ -111,15 +112,15 @@ def test_frozen_exact_gatt_role_catalog_and_diagnostic_order():
         "00001525" + suffix,
         "00001527" + suffix,
         "00001800" + standard,
-    ) == protocol.REQUIRED_SERVICES
-    assert "00001526" + suffix == protocol.MOTOR_CHAR
-    assert "00001529" + suffix == protocol.FLOOR_CHAR
-    assert "00001550" + suffix == protocol.XT_CHAR
-    assert "00002a00" + standard == protocol.NAME_CHAR
+    ) == vmat_profiles.REQUIRED_SERVICES
+    assert "00001526" + suffix == codec.MOTOR_CHAR_UUID
+    assert "00001529" + suffix == codec.LIGHT_CHAR_UUID
+    assert "00001550" + suffix == codec.CBI_CHAR_UUID
+    assert "00002a00" + standard == vmat_profiles.NAME_CHAR
     assert (
         ("model", "0000180a" + standard, "00002a24" + standard),
         ("temperature", "00001527" + suffix, "00001532" + suffix),
         ("floor", "00001525" + suffix, "00001529" + suffix),
         ("firmware", "0000180a" + standard, "00002a26" + standard),
         ("ed", "00001527" + suffix, "00001531" + suffix),
-    ) == protocol.READ_ROLES
+    ) == vmat_profiles.READ_ROLES

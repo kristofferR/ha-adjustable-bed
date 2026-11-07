@@ -35,6 +35,7 @@ docstring names its routes and their evidence.
 | Casper 6E: Casper Base and Hush Base | `codec/casper.py` | `profiles/casper.py`, `profiles/hush.py` | [Casper Base](../beds/casper-base.md), [Hush Base](../beds/hush-base.md) | `tests/casper_base_vectors.py`, `tests/hush_vectors.py` |
 | Kaidi mesh: Rize Seat, Floyd Home and ISleep | `codec/kaidi.py` | `profiles/kaidi.py` | [Kaidi](../beds/kaidi.md) | `tests/kaidi_vectors.py` |
 | JMC400: Jensen Adjustable Sleep and Svane Remote | `codec/jmc.py` | `profiles/jmc.py` | [JMC400](../beds/jmc.md) | `tests/jmc_vectors.py` |
+| Vibradorm VMAT: generic route, Caresse, Werkmeister, VMAT and V-MAT Basic | `codec/vibradorm.py` | `profiles/vibradorm.py`, `profiles/vmatbasic.py` | [Vibradorm](../beds/vibradorm.md) | `tests/vibradorm_vectors.py` |
 
 Which bed types each family backs is in its registration module (see
 [Registering a family](#registering-a-family)).

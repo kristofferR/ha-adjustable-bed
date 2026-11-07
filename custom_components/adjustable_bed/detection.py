@@ -1566,7 +1566,7 @@ def _detect_bed_type_detailed(
     # A host-map record is a candidate hint, not proof of the source's first
     # raw manufacturer AD field or an exact one of its three product profiles.
     # The complete payload predicate ignores company ID, even a known family ID.
-    from .beds.vmatbasic_protocol import manufacturer_payload_matches
+    from .profiles.vmatbasic import manufacturer_payload_matches
 
     if not _vmatbasic_checked and len(service_info.manufacturer_data or {}) == 1:
         company, payload = next(iter(service_info.manufacturer_data.items()))

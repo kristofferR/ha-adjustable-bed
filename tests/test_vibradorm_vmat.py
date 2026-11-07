@@ -10,23 +10,25 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed.beds.vibradorm_app import (
-    CBI,
-    COMMAND,
-    LIGHT,
+from custom_components.adjustable_bed.beds.vibradorm_app import VibradormAppController
+from custom_components.adjustable_bed.codec.vibradorm import CBI_CHAR_UUID as CBI
+from custom_components.adjustable_bed.codec.vibradorm import LIGHT_CHAR_UUID as LIGHT
+from custom_components.adjustable_bed.codec.vibradorm import MANAGEMENT_CHAR_UUID as MANAGEMENT
+from custom_components.adjustable_bed.codec.vibradorm import MOTOR_CHAR_UUID as COMMAND
+from custom_components.adjustable_bed.codec.vibradorm import RESPONSE_CHAR_UUID as RESPONSE
+from custom_components.adjustable_bed.codec.vibradorm import SERVICE_UUID as SERVICE
+from custom_components.adjustable_bed.codec.vibradorm import (
+    STATUS_SERVICE_UUID as MANAGEMENT_SERVICE,
+)
+from custom_components.adjustable_bed.profiles.vibradorm import (
     MEMORY,
     MOTORS,
-    RESPONSE,
-    VibradormAppController,
+    VMAT_REMOTES,
     validate_vibradorm_app_profile,
 )
-from custom_components.adjustable_bed.vibradorm_vmat_profiles import VMAT_REMOTES
 from custom_components.adjustable_bed.vibradorm_vmat_setup import (
     DIS,
     DIS_FIELDS,
-    MANAGEMENT,
-    MANAGEMENT_SERVICE,
-    SERVICE,
     validate_vmat_roles,
 )
 

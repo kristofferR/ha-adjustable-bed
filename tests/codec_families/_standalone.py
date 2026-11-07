@@ -52,7 +52,4 @@ STANDALONE: dict[str, str] = {
     " jensen_linon route the Jensen app's one-byte frames; the JMC400 route and the lamp"
     " frames are built by codec/jmc.py from the SVANE_REMOTE profile",
     "timotion_ahf": "own wire format",
-    "vibradorm": "own wire format",
-    "vibradorm_app": "own wire format",
-    "vmatbasic": "own wire format",
 }

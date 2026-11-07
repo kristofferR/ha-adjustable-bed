@@ -44,6 +44,7 @@ Each codec has one guide, with a section per profile:
 | [HHC `$#` frames](beds/motomotion.md) | MotoMotion, MotoSleep and Power Bob |
 | [JMC400](beds/jmc.md) | Jensen JMC400 and the Svane Remote app's JMC400 route |
 | [Kaidi](beds/kaidi.md) | Rize Seat, Floyd Home and ISleep |
+| [Vibradorm](beds/vibradorm.md) | Vibradorm, Caresse, Werkmeister, VMAT and V-MAT Basic |
 | [Casper Base](beds/casper-base.md), [Hush Base](beds/hush-base.md) | Casper Base and Hush Base |
 | [BedJet PowerLayer](beds/bedjet-powerlayer.md) | BedJet PowerLayer |
 

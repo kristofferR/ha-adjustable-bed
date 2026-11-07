@@ -138,7 +138,7 @@ Each linked guide has a Status line with the details.
 | [SUTA Smart Home](docs/beds/suta.md) | [SUTA Smart Home](docs/beds/suta.md) ✅ | SUTA |
 | [Tempur Sleeptracker-AI](docs/beds/sleeptracker.md) | [Tempur Sleeptracker-AI processor](docs/beds/sleeptracker.md) ⚠️ | Tempur ProSmart / ProSmart Air, ActiveBreeze |
 | [TiMOTION AHF](docs/beds/timotion-ahf.md) | [TiMOTION AHF](docs/beds/timotion-ahf.md) 🧪 | TiMOTION |
-| [Vibradorm](docs/beds/vibradorm.md) | [Vibradorm remotes](docs/beds/vibradorm.md) ✅, [VMAT](docs/beds/vmat.md) 🧪, [Caresse Diamant and Werkmeister](docs/beds/vibradorm_app.md) 🧪, [V-MAT Basic (CBI / XT-Box)](docs/beds/vmatbasic.md) 🧪 | Vibradorm, Caresse, Werkmeister |
+| [Vibradorm](docs/beds/vibradorm.md) | [Vibradorm remotes](docs/beds/vibradorm.md) ✅, [VMAT](docs/beds/vibradorm.md#vmat) 🧪, [Caresse Diamant and Werkmeister](docs/beds/vibradorm.md#caresse-and-werkmeister) 🧪, [V-MAT Basic (CBI / XT-Box)](docs/beds/vibradorm.md#v-mat-basic) 🧪 | Vibradorm, Caresse, Werkmeister |
 
 When setup asks for an app, model or remote, choose the one supplied with your
 bed. A family groups apps that setup asks about together; their commands are
