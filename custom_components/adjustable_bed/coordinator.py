@@ -956,10 +956,6 @@ class AdjustableBedCoordinator(
         """Return the stable unique id for one standalone entity key."""
         return f"{self._address}_{key}"
 
-    def entity_translation_key(self, key: str) -> str:
-        """Return the translation key for one standalone entity."""
-        return key
-
     @property
     def name(self) -> str:
         """Return the bed name."""

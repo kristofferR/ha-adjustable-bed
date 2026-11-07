@@ -294,9 +294,14 @@ test("Motion hub module selector is a nonempty utility control", () => {
 
 test("Motion hub selector follows native child and single-address side scoping", () => {
   const hass = hassWith([
-    entry("select.left_module", "motion_bed_active_module_left"),
-    entry("select.right_module", "motion_bed_active_module_right"),
+    entry("select.left_module", "motion_bed_active_module"),
+    entry("select.right_module", "motion_bed_active_module"),
   ]);
+  for (const side of ["left", "right"] as const)
+    hass.states[`select.${side}_module`] = {
+      entity_id: `select.${side}_module`, state: "motor", attributes: { bed_side: side },
+      last_changed: "", last_updated: "",
+    };
   expect(bedEntitiesForDevice(hass, "dev1", "left").utilitySelects).toEqual(["select.left_module"]);
   expect(bedEntitiesForDevice(hass, "dev1", "right").utilitySelects).toEqual(["select.right_module"]);
   hass.devices.dev1 = { id: "dev1", parent_device_id: "parent" };
@@ -541,10 +546,10 @@ test("V-MAT Basic keeps immediate floor settings, mood and literal massage actio
 
 test("two-address profile controls keep independent child state and parent actions", () => {
   const hass = hassWith([
-    entry("select.left_palette", "vibradorm_app_mood_palette_left", "left"),
+    entry("select.left_palette", "vibradorm_app_mood_palette", "left"),
     entry("number.left_speed", "vibradorm_app_mood_speed", "left"),
     entry("button.left_mood", "vibradorm_app_mood_toggle", "left"),
-    entry("select.right_wave", "vibradorm_app_massage_wave_right", "right"),
+    entry("select.right_wave", "vibradorm_app_massage_wave", "right"),
     entry("number.right_timer", "vibradorm_app_floor_timer_minutes", "right"),
     entry("light.right_floor", "under_bed_lights", "right"),
     entry("button.stop", "stop_both", "parent"),
@@ -593,10 +598,6 @@ test("standalone MCR sides keep percentage sliders with their motor covers", () 
     { key: "back_left", cover: "cover.b_back_left", position: "number.b_back_left" },
     { key: "back_right", cover: "cover.b_back_right", position: "number.b_back_right" },
   ]);
-  const left = bedEntitiesForDevice(hass, "dev1", "left");
-  expect(left.motors).toEqual([
-    { key: "back", cover: "cover.b_back_left", position: "number.b_back_left" },
-  ]);
 });
 
 test("paired parent's stop_both maps to the stop slot", () => {
@@ -636,20 +637,19 @@ test("single-address paired entities split by bed_side on one device", () => {
   ]);
 });
 
-test("side-suffixed translation keys remain a supported fallback", () => {
+test("a side word in a key names the control, not the side it is on", () => {
   const hass = hassWith([
-    entry("button.b_head_up_left", "head_up_left"),
-    entry("button.b_head_up_right", "head_up_right"),
+    entry("cover.b_head_left", "head_left"),
+    entry("cover.b_head_right", "head_right"),
     entry("button.b_stop_both", "stop_both"),
   ]);
 
-  expect(bedEntitiesForDevice(hass, "dev1", "left").motors[0].up).toBe(
-    "button.b_head_up_left",
-  );
-  expect(bedEntitiesForDevice(hass, "dev1", "right").motors[0].up).toBe(
-    "button.b_head_up_right",
-  );
-  expect(isSingleAddressPairedDevice(hass, "dev1")).toBe(true);
+  expect(bedEntitiesForDevice(hass, "dev1", "left").motors).toEqual([]);
+  expect(isSingleAddressPairedDevice(hass, "dev1")).toBe(false);
+  expect(bedEntitiesForDevice(hass, "dev1").motors.map((m) => m.key)).toEqual([
+    "head_left",
+    "head_right",
+  ]);
 });
 
 test("Okin utility buttons (sync / child lock) bucket into utility", () => {
@@ -899,18 +899,20 @@ test("resolvePairedParentId resolves a side device up to its parent", () => {
   expect(resolvePairedParentId(hass, "stale")).toBe("stale");
 });
 
-test("native children retain side ordering and normalize single-address entity keys", () => {
+test("native children order by their published side, whatever their names", () => {
   const hass = hassWith([
-    entry("cover.left", "back_left", "left"),
-    entry("cover.right", "back_right", "right"),
-    entry("cover.both", "back_both", "parent"),
-    entry("button.memory_left", "preset_memory_1_left", "left"),
+    entry("cover.left", "back", "left"),
+    entry("cover.right", "back", "right"),
+    entry("cover.both", "back", "parent"),
+    entry("button.memory_left", "preset_memory_1", "left"),
   ]);
   hass.devices = {
     parent: { id: "parent", name: "Bed" },
     left: { id: "left", name_by_user: "Zed", parent_device_id: "parent" },
     right: { id: "right", name_by_user: "Amy", parent_device_id: "parent" },
   };
+  for (const [id, bed_side] of [["cover.left", "left"], ["cover.right", "right"], ["cover.both", "both"]])
+    hass.states[id] = { entity_id: id, state: "open", attributes: { bed_side }, last_changed: "", last_updated: "" };
   expect(pairedChildDeviceIds(hass, "parent")).toEqual(["left", "right"]);
   expect(resolvePairedParentId(hass, "left")).toBe("parent");
   for (const id of ["left", "right", "parent"]) {
@@ -951,17 +953,13 @@ test("separate-address children keep side words that name the control", () => {
   }
 });
 
-test("single-address children strip only their own side suffix", () => {
-  const hass = pairedHass([
-    ["binary_sensor.left_ble", "ble_connection_left", "left", "left"],
-    ["cover.left_back", "back_left", "left", "left"],
-    ["button.left_inclined_left", "simmons_inclined_left", "left", "left"],
-    ["button.left_inclined_right", "simmons_inclined_right_left", "left", "left"],
-    ["binary_sensor.right_ble", "ble_connection_right", "right", "right"],
-    ["cover.right_back", "back_right", "right", "right"],
-    ["button.right_inclined_left", "simmons_inclined_left_right", "right", "right"],
-    ["button.right_inclined_right", "simmons_inclined_right", "right", "right"],
-  ]);
+test("single-address children keep keys verbatim, side words included", () => {
+  const hass = pairedHass(["left", "right"].flatMap((side) => [
+    [`binary_sensor.${side}_ble`, "ble_connection", side, side],
+    [`cover.${side}_back`, "back", side, side],
+    [`button.${side}_inclined_left`, "simmons_inclined_left", side, side],
+    [`button.${side}_inclined_right`, "simmons_inclined_right", side, side],
+  ] as [string, string, string, BedSide][]));
   for (const side of ["left", "right"]) {
     const bed = bedEntitiesForDevice(hass, side);
     expect(bed.motors.map((m) => [m.key, m.cover])).toEqual([["back", `cover.${side}_back`]]);
@@ -1472,9 +1470,9 @@ test("Casper Base product actions stay available in the card utility section", (
 
 test("HJBed gestures release through their same-side cancellation button", () => {
   const hass = hassWith([
-    entry("button.memory", "hjbed_action_right", "right"),
-    entry("button.release", "hjbed_release_right", "right"),
-    entry("button.other_release", "hjbed_release_left", "left"),
+    entry("button.memory", "hjbed_action", "right"),
+    entry("button.release", "hjbed_release", "right"),
+    entry("button.other_release", "hjbed_release", "left"),
   ]);
   hass.states["button.memory"] = {
     entity_id: "button.memory", state: "unknown", last_changed: "", last_updated: "",

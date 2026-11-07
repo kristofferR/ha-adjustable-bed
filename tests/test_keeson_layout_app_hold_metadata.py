@@ -33,7 +33,6 @@ def entity_runtime():
         device_info={},
         name="App left",
         entity_unique_id=lambda key: "left_" + key,
-        entity_translation_key=lambda key: key + "_left",
         async_execute_controller_command=AsyncMock(),
     )
 

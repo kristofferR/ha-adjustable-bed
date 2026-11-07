@@ -137,7 +137,6 @@ async def test_safety_light_uses_app_button_without_an_inferred_assumed_light(
     runtime.entity_side = None
     runtime.has_massage = True
     runtime.entity_unique_id.side_effect = lambda key: "processor_" + key
-    runtime.entity_translation_key.side_effect = lambda key: key
     controller._restricted = restricted
     controller._control = AsyncMock()
     registry = er.async_get(hass)
@@ -165,7 +164,6 @@ async def test_profile_change_retires_sleeptracker_buttons_for_only_the_affected
     runtime.entity_side = "left"
     runtime.has_massage = True
     runtime.entity_unique_id.side_effect = lambda key: f"processor_{key}_left"
-    runtime.entity_translation_key.side_effect = lambda key: key
     old._restricted = True
     registry = er.async_get(hass)
     previous = {
@@ -205,7 +203,6 @@ async def test_profile_change_retires_sleeptracker_state_for_only_the_affected_s
     runtime.device_info = {}
     runtime.entity_side = "left"
     runtime.entity_unique_id.side_effect = lambda key: f"processor_{key}_left"
-    runtime.entity_translation_key.side_effect = lambda key: key
     registry = er.async_get(hass)
     previous = {
         (domain, spec.key): registry.async_get_or_create(
@@ -522,7 +519,6 @@ async def test_platform_entities_route_actions_and_show_only_published_state(has
     runtime.disable_angle_sensing = True
     runtime.controller_state = {}
     runtime.entity_unique_id.side_effect = lambda key: "processor_" + key
-    runtime.entity_translation_key.side_effect = lambda key: key
     runtime.handle_controller_state_updates.side_effect = runtime.controller_state.update
     selects = {e.translation_key: e for e in _select_entities_for(hass, runtime)}
     numbers = {e.translation_key: e for e in _number_entities_for(hass, runtime)}

@@ -60,7 +60,6 @@ def test_profile_removed_only_when_changing_protocol() -> None:
 async def test_extra_product_button_uses_current_controller_and_lock() -> None:
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     coordinator.entity_unique_id.side_effect = lambda key: f"bed_{key}"
-    coordinator.entity_translation_key.side_effect = lambda key: key
     coordinator.async_execute_controller_command = AsyncMock()
     action = AsyncMock()
     button = AdjustableBedProductButton(

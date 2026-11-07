@@ -147,7 +147,6 @@ def test_standard_button_exposes_p1_hold_without_changing_other_buttons():
         capability_controller=bed.bed,
         controller=bed.bed,
         entity_unique_id=lambda key: key,
-        entity_translation_key=lambda key: key,
         device_info={},
         entry=SimpleNamespace(entry_id="entry"),
         side=None,
@@ -167,7 +166,6 @@ def test_motor_covers_expose_the_shared_app_hold_owner(driver):
         capability_controller=None,
         device_info={},
         entity_side=None,
-        entity_translation_key=lambda key: key,
         entity_unique_id=lambda key: key,
     )
     specs = bed.bed.motor_control_specs

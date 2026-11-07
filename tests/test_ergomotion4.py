@@ -485,7 +485,6 @@ async def test_configuration_and_actual_entity_exposure(hass):
     ctrl, coord = await ready("M30")
     coord.controller = coord.capability_controller = ctrl
     coord.entity_unique_id.side_effect = lambda key: key
-    coord.entity_translation_key.side_effect = lambda key: key
     entities = [entity for entity in _button_entities_for(hass, coord) if hasattr(entity, "_spec")]
     assert {entity._spec.key for entity in entities} == {a.key for a in ctrl._actions()} | {
         "dismiss_alarm"
@@ -691,7 +690,6 @@ def _rgb_entity(ctrl, coord):
     coord.controller = coord.capability_controller = ctrl
     coord.entity_side = None
     coord.entity_unique_id.side_effect = lambda key: key
-    coord.entity_translation_key.side_effect = lambda key: key
     entity = AdjustableBedLight(coord, LIGHT_DESCRIPTION)
     entity.async_write_ha_state = MagicMock()
 

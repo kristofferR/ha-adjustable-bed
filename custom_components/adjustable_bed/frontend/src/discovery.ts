@@ -18,17 +18,6 @@ import type {
 export const PLATFORM = "adjustable_bed";
 export type { BedSide } from "./types";
 
-// The trailing side word of a key. Whether it is a paired-side suffix or part
-// of the control's own name (SIMMONS "Inclined left") depends on the device.
-export function splitSide(key: string): { key: string; side?: BedSide } {
-  for (const side of ["left", "right", "both"] as const) {
-    const suffix = `_${side}`;
-    if (key.endsWith(suffix))
-      return { key: key.slice(0, -suffix.length), side };
-  }
-  return { key };
-}
-
 // Default render order of the card's sections (keys without the "show_" prefix).
 export const SECTION_ORDER = [
   "graphic",
@@ -98,6 +87,12 @@ const domainOf = (entityId: string): string => entityId.split(".", 1)[0];
 const keyOf = (entry: EntityRegistryDisplayEntry): string =>
   entry.translation_key ?? "";
 
+// The side an entity controls, as the integration publishes it.
+const entitySide = (hass: HomeAssistant, entityId: string): BedSide | undefined =>
+  (hass.states[entityId]?.attributes.bed_side ?? hass.states[entityId]?.attributes.side) as
+    | BedSide
+    | undefined;
+
 function emptyBed(): BedEntities {
   return {
     motors: [],
@@ -122,16 +117,9 @@ export function bedEntitiesForDevice(
   if (!deviceId || !hass?.entities) return bed;
   const mood = () => bed.lights.mood ??= { selects: [], numbers: [] };
 
-  const nativePair = hass.devices?.[deviceId]?.parent_device_id ||
-    Object.values(hass.devices ?? {}).some((device) => device.parent_device_id === deviceId);
   const deviceEntries = Object.values(hass.entities).filter(
     (entry) => entry.device_id === deviceId && entry.platform === PLATFORM,
   );
-  // Single-address pairs append the logical side to their keys. A separate
-  // address keeps its standalone keys (its connection sensor is unsuffixed),
-  // so a trailing side word there belongs to the control's own name.
-  const sideSuffixed = !!selectedSide || (!!nativePair &&
-    !deviceEntries.some((entry) => entry.translation_key === "ble_connection"));
   const motorMap = new Map<string, MotorEntity>();
   const motor = (key: string): MotorEntity => {
     let m = motorMap.get(key);
@@ -199,20 +187,11 @@ export function bedEntitiesForDevice(
     if (entry.hidden) continue;
     const id = entry.entity_id;
     const domain = domainOf(id);
-    const rawKey = keyOf(entry);
-    if (!rawKey) continue;
-    const split = splitSide(rawKey);
-    const stateSide = (hass.states[id]?.attributes.bed_side ??
-      hass.states[id]?.attributes.side) as
-      | BedSide
-      | undefined;
-    const entitySide = stateSide ?? split.side;
-    if (selectedSide) {
-      if (entitySide !== selectedSide) continue;
-    }
-    // Native child devices already scope a side; strip only the suffix naming
-    // the entity's own side, so left/right controls stay distinct.
-    const key = sideSuffixed && split.side === entitySide ? split.key : rawKey;
+    const key = keyOf(entry);
+    if (!key) continue;
+    // Paired side devices name their side, so keys never carry it; a trailing
+    // side word belongs to the control's own name (Simmons "Inclined left").
+    if (selectedSide && entitySide(hass, id) !== selectedSide) continue;
 
     let match: RegExpMatchArray | null;
 
@@ -329,8 +308,9 @@ export function bedEntitiesForDevice(
         }
         if (key.endsWith("_position")) motor(key.slice(0, -9)).position = id;
         else if (key === "reverie_body_tilt") motor("lumbar").position = id;
-        else if (!selectedSide && split.side && split.key.endsWith("_position"))
-          motor(`${split.key.slice(0, -9)}_${split.side}`).position = id;
+        else if ((match = key.match(/^(.+)_position_(left|right)$/)))
+          // A natively sided motor, such as Sleep Number MCR's back_left.
+          motor(`${match[1]}_${match[2]}`).position = id;
         else if (key.startsWith("massage_") && key.endsWith("_intensity"))
           bed.massage.numbers.push(id);
         else if (
@@ -674,8 +654,7 @@ export function isSingleAddressPairedDevice(
     (entry) =>
       entry.device_id === deviceId &&
       entry.platform === PLATFORM &&
-      (hass.states[entry.entity_id]?.attributes.bed_side === "both" ||
-        splitSide(keyOf(entry)).side === "both"),
+      hass.states[entry.entity_id]?.attributes.bed_side === "both",
   );
 }
 
@@ -693,7 +672,7 @@ export function pairedChildDeviceIds(
   const sideOrder = (id: string): number => {
     for (const entry of Object.values(hass.entities ?? {})) {
       if (entry.device_id !== id || entry.platform !== "adjustable_bed") continue;
-      const side = hass.states[entry.entity_id]?.attributes.bed_side ?? splitSide(keyOf(entry)).side;
+      const side = entitySide(hass, entry.entity_id);
       if (side === "left") return 0;
       if (side === "right") return 1;
     }

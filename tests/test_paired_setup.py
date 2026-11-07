@@ -4012,7 +4012,7 @@ class TestCombinedPositionSliders:
         single = SingleAddressPairedCoordinator.__new__(SingleAddressPairedCoordinator)
         single._single_inner = SimpleNamespace(address="AA:BB:CC:DD:EE:50", device_info={})
         single_entity = PairedBedCombinedPositionNumber(single, _build_position_description(back))
-        assert single_entity.translation_key == "back_position_both"
+        assert single_entity.translation_key == "back_position"
         assert single_entity.extra_state_attributes == {"bed_side": SIDE_BOTH}
 
     async def test_stale_cleanup_only_removes_combined_position_numbers(self, hass: HomeAssistant):
