@@ -82,6 +82,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `serenity` | S stream | U | U | serenity | remaining bitmask restarts a recognized command or is ignored |
 | `tranquil` | S stream | U | U | tranquil | recognized masks only |
 | `adjustable_lumbar` (both routes) | S stream | U | U | lumbar | unsupported chord only stops |
+| `eshine_okin` (E2000, E3000/E3100, E5000) | S stream | U | U | eshine-okin | held keys write at once, refresh every 300 ms with no fixed count, STOP 200 ms after release; hold declared. Single-touch coordination excludes a second movement control; the one multi-touch path, Flat+Zero Gravity, is a fixed frame either release stops. None of its 25 constructors sets a speed |
 | `simmons` (all routes) | S stream | U | U | simmons | one held action |
 | `starcode_abm5_4` | S stream | U | U | abm5_4 | one held action |
 | `starcode_m1x12` | S stream | U | U | m1x12 | no bitmask combination; hold declared |
@@ -174,7 +175,6 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `vibradorm_app` | S stream | U | U | diamant, werkmeister | STOP on release; speed is mood light; hold declared, including its VMAT profile (vmat) |
 | `vmatbasic` | S stream | U | U | vmatbasic | all-up/all-down are fixed keys; speed is mood light; hold declared |
 | `eshine` | S stream | U | U | eshine | STOP once after a sustained press; hold declared |
-| `eshine_okin` (E2000, E3000/E3100, E5000) | S stream | U | U | eshine-okin | held keys write at once, refresh every 300 ms with no fixed count, STOP 200 ms after release; hold declared. Single-touch coordination excludes a second movement control; the one multi-touch path, Flat+Zero Gravity, is a fixed frame either release stops. None of its 25 constructors sets a speed |
 | `goodvibe` | S stream | U | U | goodvibe | sustained controls refresh every 100 ms, then release `6e`; hold declared per control, on the held controls whose effective gesture is a sustained press (see [per-control scope](#per-control-hold-scope)). Each frame carries one operand and the only release is the side's STOP; all-motor moves are fixed operands; speed rows are massage and music shake |
 | `sleepys_elite_app` | S stream | U | U | sleepy | selector STOP once at release; hold declared |
 | `motosleep` | S stream | B | B | motosleep, powerbob, motosleep-guide | movement repeats every 100 ms while held; release sends `$b` five times (MotoSleep HHC and the Power Bob profiles whose release has it) or the MOTO release frame (zero five times, or `0x9088/0x0001` six times on WR219); other Power Bob profiles stop when the refresh ends. #516 and #591: the guide covers only the commands the integration sends, and the frozen reports that would show composition and the full command inventory are not retained. MotoMotion is another app, with its own row |
@@ -693,14 +693,14 @@ Report workspaces are machine-local under
 | minghua | `com.okin.minghua.R` | 1.0.1 | COMPLETE | `com.okin.minghua.R-1.0.1-2026-10-02-queue-903926b6-20261002-060-002/report/` |
 | motionflex | `com.sealy.motionflex` | 1.0.3 | COMPLETE | `com.sealy.motionflex-1.0.3-20260830/report/` |
 | motomotion | `com.HHC.MotoMotion` | 3.1.9 | COMPLETE | `com.HHC.MotoMotion-3.1.9-2026-11-03-bulk101-188-002/work/report-repair-sol-003/` |
-| motosleep | `com.HHC.MotoSleep` | 5.1.5 | COMPLETE | Not retained; accepted in #447, `analysis.json` hash in the [MotoSleep guide](../beds/motosleep.md#analysis-provenance) |
+| motosleep | `com.HHC.MotoSleep` | 5.1.5 | COMPLETE | Not retained; accepted in #447, `analysis.json` hash in the [MotoSleep guide](../beds/motomotion.md#analysis-provenance) |
 | nectar | `com.okin.bedding.nectarmotion` | 1.0.1 | COMPLETE | `com.okin.bedding.nectarmotion-1.0.1-2026-10-26-39bdcafa-003/report/` |
 | octo | `de.octoactuators.octosmartcontrolapp` | 1.03.02 | COMPLETE | `de.octoactuators.octosmartcontrolapp-1.03.02-2026-10-26-39bdcafa-repair-001/report/` |
 | omazz | `com.sfd.Omazz` | 1.0.5 | COMPLETE | `com.sfd.Omazz-1.0.5-2026-10-26-39bdcafa-repair-001/report/` |
 | p2 | `com.leggett.prodigy2` | 2.2.0 | COMPLETE | `com.leggett.prodigy2-2.2.0-20260827/report/` |
 | p2l | `com.leggett.prodigy2L` | 1.2 | COMPLETE | `com.leggett.prodigy2L-1.2-20260827/report/` |
 | p4 | `com.leggett.prodigy4` | 1.2.0 | COMPLETE | `com.leggett.prodigy4-1.2.0-20260827/report/final/` |
-| powerbob | `com.HHC.PowerBob` | 2.0.3 | COMPLETE | Not retained; accepted in #447, `analysis.json` hash in the [MotoSleep guide](../beds/motosleep.md#analysis-provenance) |
+| powerbob | `com.HHC.PowerBob` | 2.0.3 | COMPLETE | Not retained; accepted in #447, `analysis.json` hash in the [MotoSleep guide](../beds/motomotion.md#analysis-provenance) |
 | remedy | `com.okin.bedding.customaticremedy` | 1.0.1 | COMPLETE | `com.okin.bedding.customaticremedy-1.0.1-2026-08-30/report/` |
 | resident | `com.okin.bedding.rizeResident` | 1.0.1 | COMPLETE | `com.okin.bedding.rizeResident-1.0.1-2026-08-30/report/` |
 | restonic | `com.keeson.restonicBT` | 1.2.0 | COMPLETE | `com.keeson.restonicBT-1.2.0-2026-10-02-queue-903926b6-20261002-058-002/report/` |
@@ -751,7 +751,7 @@ its APK Protocol Audit report, named here by its file stem:
 | jensen-disp | audit ledger `jensen-disposition` |
 | leggett-disp | audit ledger `leggett-app-disposition` |
 | linak-guide | [linak.md](../beds/linak.md) |
-| motosleep-guide | [motosleep.md](../beds/motosleep.md#command-timing) |
+| motosleep-guide | [motomotion.md](../beds/motomotion.md#stop-and-release-behavior) |
 | row023 | audit ledger `row023-malouf-lucid` |
 | row028 | audit ledger `row028-customatic` |
 | row041 | audit ledger `row041-reverie` |

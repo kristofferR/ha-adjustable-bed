@@ -17,7 +17,7 @@ from custom_components.adjustable_bed.const import (
     KAIDI_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.detection import get_bed_type_options
-from custom_components.adjustable_bed.kaidi_variants import resolve_kaidi_variant
+from custom_components.adjustable_bed.profiles.kaidi import resolve_kaidi_variant
 
 
 @pytest.fixture

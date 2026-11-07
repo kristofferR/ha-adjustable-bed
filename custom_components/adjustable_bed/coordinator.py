@@ -1352,7 +1352,7 @@ class AdjustableBedCoordinator(
 
     def remember_vmatbasic_settings(self, settings: dict[str, int]) -> None:
         """Persist this physical receiver's requested settings, never measured state."""
-        from .beds.vmatbasic_protocol import integer
+        from .profiles.vmatbasic import integer
 
         profile = self.entry.data.get(CONF_VMATBASIC_PROFILE)
         if self._bed_type != BED_TYPE_VMATBASIC or profile not in {"cbi", "xtbox"}:
@@ -1551,7 +1551,7 @@ class AdjustableBedCoordinator(
             raise ValueError("App metadata requires an explicit Vibradorm app profile")
         fields = {"model", "firmware", "software", "main_firmware_article"}
         if self.entry.data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat":
-            from .vibradorm_vmat_profiles import VMAT_METADATA_FIELDS
+            from .profiles.vibradorm import VMAT_METADATA_FIELDS
 
             fields.update(VMAT_METADATA_FIELDS)
         if any(field not in fields or not isinstance(value, str) for field, value in progress.items()):

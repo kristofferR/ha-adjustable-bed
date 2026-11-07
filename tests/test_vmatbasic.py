@@ -7,8 +7,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds import vmatbasic_protocol as protocol
 from custom_components.adjustable_bed.beds.vmatbasic import VMatBasicController
+from custom_components.adjustable_bed.codec import vibradorm as codec
+from custom_components.adjustable_bed.profiles import vmatbasic as vmat_profiles
 
 
 def make_controller(profile="basic", **kwargs):
@@ -21,19 +22,19 @@ def make_controller(profile="basic", **kwargs):
         coordinator.controller_state.update({key: value})
     )
     roles = {
-        protocol.CONTROL_SERVICE: [
-            (protocol.MOTOR_CHAR, ["write"]),
-            (protocol.FLOOR_CHAR, ["read", "write"]),
-            (protocol.XT_CHAR, ["write"]),
+        codec.SERVICE_UUID: [
+            (codec.MOTOR_CHAR_UUID, ["write"]),
+            (codec.LIGHT_CHAR_UUID, ["read", "write"]),
+            (codec.CBI_CHAR_UUID, ["write"]),
         ],
-        protocol.STATUS_SERVICE: [
-            (protocol.TEMPERATURE_CHAR, ["read"]),
-            (protocol.ED_CHAR, ["read"]),
+        codec.STATUS_SERVICE_UUID: [
+            (codec.TEMPERATURE_CHAR_UUID, ["read"]),
+            (codec.ED_CHAR_UUID, ["read"]),
         ],
-        protocol.GAP_SERVICE: [(protocol.NAME_CHAR, ["read", "write"])],
-        protocol.INFO_SERVICE: [
-            (protocol.MODEL_CHAR, ["read"]),
-            (protocol.FIRMWARE_CHAR, ["read"]),
+        vmat_profiles.GAP_SERVICE: [(vmat_profiles.NAME_CHAR, ["read", "write"])],
+        vmat_profiles.INFO_SERVICE: [
+            (vmat_profiles.MODEL_CHAR, ["read"]),
+            (vmat_profiles.FIRMWARE_CHAR, ["read"]),
         ],
     }
     services = [
@@ -49,11 +50,11 @@ def make_controller(profile="basic", **kwargs):
     coordinator.client = MagicMock(is_connected=True, services=services)
     coordinator.client.write_gatt_char = AsyncMock()
     values = {
-        protocol.MODEL_CHAR: b" model \0",
-        protocol.FIRMWARE_CHAR: b"FW",
-        protocol.FLOOR_CHAR: bytes.fromhex("ff059f"),
-        protocol.ED_CHAR: b"\x03",
-        protocol.TEMPERATURE_CHAR: bytes.fromhex("80000000"),
+        vmat_profiles.MODEL_CHAR: b" model \0",
+        vmat_profiles.FIRMWARE_CHAR: b"FW",
+        codec.LIGHT_CHAR_UUID: bytes.fromhex("ff059f"),
+        codec.ED_CHAR_UUID: b"\x03",
+        codec.TEMPERATURE_CHAR_UUID: bytes.fromhex("80000000"),
     }
     coordinator.client.read_gatt_char = AsyncMock(side_effect=lambda char: values[char.uuid])
     coordinator.client.start_notify = AsyncMock()
@@ -68,7 +69,7 @@ def written(controller):
     ]
 
 
-@pytest.mark.parametrize("profile", protocol.PROFILES)
+@pytest.mark.parametrize("profile", vmat_profiles.PROFILES)
 async def test_exact_service_gate_and_no_notify_position_or_auth(profile):
     controller = make_controller(profile)
     await controller.async_discover_capabilities()
@@ -90,8 +91,8 @@ async def test_exact_service_gate_and_no_notify_position_or_auth(profile):
     assert controller.supports_device_rename
 
 
-@pytest.mark.parametrize("profile", protocol.PROFILES)
-@pytest.mark.parametrize("missing", protocol.REQUIRED_SERVICES)
+@pytest.mark.parametrize("profile", vmat_profiles.PROFILES)
+@pytest.mark.parametrize("missing", vmat_profiles.REQUIRED_SERVICES)
 async def test_each_required_service_absence_fails_before_any_write(profile, missing):
     controller = make_controller(profile)
     controller.client.services = [
@@ -108,7 +109,7 @@ async def test_no_response_downgrade_or_reset_characteristic_fallback(properties
     service = controller.client.services[0]
     service.characteristics[0].properties = properties
     service.characteristics.append(
-        MagicMock(uuid="00001528" + protocol.VENDOR_SUFFIX, properties=["write"])
+        MagicMock(uuid="00001528" + codec.VENDOR_SUFFIX, properties=["write"])
     )
     with pytest.raises(ValueError):
         await controller.async_discover_capabilities()
@@ -118,10 +119,10 @@ async def test_no_response_downgrade_or_reset_characteristic_fallback(properties
 async def test_first_exact_service_and_characteristic_handle_are_authoritative():
     controller = make_controller()
     original = controller.client.services[0].characteristics[0]
-    duplicate = MagicMock(uuid=protocol.MOTOR_CHAR, properties=["write"])
+    duplicate = MagicMock(uuid=codec.MOTOR_CHAR_UUID, properties=["write"])
     controller.client.services[0].characteristics.append(duplicate)
     controller.client.services.append(
-        MagicMock(uuid=protocol.CONTROL_SERVICE, characteristics=[duplicate])
+        MagicMock(uuid=codec.SERVICE_UUID, characteristics=[duplicate])
     )
     await controller.write_command(b"\x0b", 1)
     assert controller.client.write_gatt_char.call_args_list[0].args[0] is original
@@ -131,7 +132,7 @@ async def test_first_exact_service_and_characteristic_handle_are_authoritative()
         await controller.async_discover_capabilities()
 
 
-@pytest.mark.parametrize("profile", protocol.PROFILES)
+@pytest.mark.parametrize("profile", vmat_profiles.PROFILES)
 @pytest.mark.parametrize(
     "action,packet",
     [
@@ -150,8 +151,8 @@ async def test_every_native_held_movement_has_response_and_fresh_ff_release(
     await controller.hold_control(action, 100)
     calls = written(controller)
     assert 3 <= len(calls) - 1 <= 4
-    assert all(call == (protocol.MOTOR_CHAR, bytes((packet,)), True) for call in calls[:-1])
-    assert calls[-1] == (protocol.MOTOR_CHAR, b"\xff", True)
+    assert all(call == (codec.MOTOR_CHAR_UUID, bytes((packet,)), True) for call in calls[:-1])
+    assert calls[-1] == (codec.MOTOR_CHAR_UUID, b"\xff", True)
 
 
 async def test_cancel_during_write_stops_pump_and_release_ignores_set_event():
@@ -195,7 +196,7 @@ async def test_release_survives_repeated_task_cancellation():
     assert not controller.ble_lock.locked()
 
 
-@pytest.mark.parametrize("action", [*protocol.MOTOR_ACTIONS, "floor_hold"])
+@pytest.mark.parametrize("action", [*vmat_profiles.MOTOR_ACTIONS, "floor_hold"])
 async def test_pre_cancelled_hold_has_no_stale_or_accessory_write(action):
     controller = make_controller("xtbox")
     controller._coordinator.cancel_command.set()
@@ -207,7 +208,7 @@ async def test_xt_floor_hold_has_no_invented_release_packet():
     controller = make_controller("xtbox")
     await controller.hold_control("floor_hold", 100)
     assert written(controller)
-    assert all(call == (protocol.XT_CHAR, b"\x00\x11", True) for call in written(controller))
+    assert all(call == (codec.CBI_CHAR_UUID, b"\x00\x11", True) for call in written(controller))
 
 
 async def test_lane_cancel_does_not_leak_lock_or_send_stale_write():
@@ -218,7 +219,7 @@ async def test_lane_cancel_does_not_leak_lock_or_send_stale_write():
     controller._coordinator.cancel_command.set()
     controller.ble_lock.release()
     await task
-    assert written(controller) == [(protocol.MOTOR_CHAR, b"\xff", True)]
+    assert written(controller) == [(codec.MOTOR_CHAR_UUID, b"\xff", True)]
     assert not controller.ble_lock.locked()
 
 
@@ -226,7 +227,7 @@ async def test_read_order_and_all_observed_values_without_selector_inference():
     controller = make_controller()
     await controller.async_refresh_diagnostics()
     assert [call.args[0].uuid for call in controller.client.read_gatt_char.call_args_list] == [
-        uuid for _, _, uuid in protocol.READ_ROLES
+        uuid for _, _, uuid in vmat_profiles.READ_ROLES
     ]
     assert controller._coordinator.controller_state == {
         "vmatbasic_model": " model \0",
@@ -237,7 +238,7 @@ async def test_read_order_and_all_observed_values_without_selector_inference():
         "vmatbasic_firmware": "FW",
         "vmatbasic_ed": True,
     }
-    assert controller.profile == "basic"
+    assert controller.profile.key == "basic"
     controller.invalidate_diagnostics()
     assert all(value is None for value in controller._coordinator.controller_state.values())
 
@@ -245,7 +246,9 @@ async def test_read_order_and_all_observed_values_without_selector_inference():
 async def test_optional_dis_absence_clears_only_strings_and_retains_other_reads():
     controller = make_controller()
     controller.client.services = [
-        service for service in controller.client.services if service.uuid != protocol.INFO_SERVICE
+        service
+        for service in controller.client.services
+        if service.uuid != vmat_profiles.INFO_SERVICE
     ]
     await controller.async_discover_capabilities()
     await controller.async_refresh_diagnostics()
@@ -281,8 +284,8 @@ async def test_cbi_toggle_uses_fresh_q3_and_distinguishes_absent_and_zero(
     controller.client.read_gatt_char.side_effect = None
     controller.client.read_gatt_char.return_value = bytes((level, 0, 0))
     await controller.floor_toggle()
-    assert controller.client.read_gatt_char.call_args.args[0].uuid == protocol.FLOOR_CHAR
-    assert written(controller) == [(protocol.FLOOR_CHAR, bytes.fromhex(expected), True)]
+    assert controller.client.read_gatt_char.call_args.args[0].uuid == codec.LIGHT_CHAR_UUID
+    assert written(controller) == [(codec.LIGHT_CHAR_UUID, bytes.fromhex(expected), True)]
 
 
 @pytest.mark.parametrize(
@@ -316,12 +319,14 @@ async def test_cbi_settings_absent_level_zero_differs_from_toggle_button_default
     assert written(controller)[-1][1] == bytes.fromhex("ff000c")
 
 
-@pytest.mark.parametrize("option", protocol.PALETTE_OPTIONS)
+@pytest.mark.parametrize("option", vmat_profiles.PALETTE_OPTIONS)
 async def test_all_twenty_palette_controls_use_exact_hsv_packet(option):
     controller = make_controller("xtbox")
     await controller.set_mood_palette(option)
-    expected = protocol.color_action(protocol.PALETTE[protocol.PALETTE_OPTIONS.index(option)], 100)
-    assert written(controller) == [(protocol.XT_CHAR, expected, True)]
+    expected = vmat_profiles.color_action(
+        vmat_profiles.PALETTE[vmat_profiles.PALETTE_OPTIONS.index(option)], 100
+    )
+    assert written(controller) == [(codec.CBI_CHAR_UUID, expected, True)]
     assert controller._coordinator.controller_state["vmatbasic_mood_palette"] == option
 
 
@@ -368,7 +373,7 @@ async def test_mood_brightness_defaults_white_and_nightlight_has_only_known_rgb_
 async def test_six_massage_controls_without_motion_stop_or_guessed_state(action, opcode):
     controller = make_controller("xtbox")
     await controller.massage_action(action)
-    assert written(controller) == [(protocol.XT_CHAR, bytes((0, opcode)), True)]
+    assert written(controller) == [(codec.CBI_CHAR_UUID, bytes((0, opcode)), True)]
     assert controller._coordinator.controller_state == {}
 
 
@@ -392,7 +397,7 @@ async def test_non_xt_profiles_refuse_all_xt_public_routes_before_write(profile)
 async def test_rename_primary_gap_role_and_failed_write_does_not_publish_name():
     controller = make_controller()
     await controller.rename_device(" Béd ")
-    assert written(controller) == [(protocol.NAME_CHAR, "Béd".encode(), True)]
+    assert written(controller) == [(vmat_profiles.NAME_CHAR, "Béd".encode(), True)]
     assert controller._coordinator.controller_state["vmatbasic_device_name"] == "Béd"
     controller.client.write_gatt_char.side_effect = RuntimeError("write failed")
     with pytest.raises(RuntimeError):
@@ -479,7 +484,7 @@ async def test_real_read_timeout_clears_only_failed_field_and_continues_ordered_
     original = controller.client.read_gatt_char.side_effect
 
     async def read(char):
-        if char.uuid == protocol.MODEL_CHAR:
+        if char.uuid == vmat_profiles.MODEL_CHAR:
             await asyncio.sleep(10)
         return original(char)
 
@@ -491,7 +496,7 @@ async def test_real_read_timeout_clears_only_failed_field_and_continues_ordered_
     assert controller._coordinator.controller_state["vmatbasic_model"] is None
     assert controller._coordinator.controller_state["vmatbasic_ed"] is True
     assert [call.args[0].uuid for call in controller.client.read_gatt_char.call_args_list] == [
-        uuid for _, _, uuid in protocol.READ_ROLES
+        uuid for _, _, uuid in vmat_profiles.READ_ROLES
     ]
     assert not controller.ble_lock.locked()
 

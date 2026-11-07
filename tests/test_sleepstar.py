@@ -25,12 +25,9 @@ from custom_components.adjustable_bed.beds.sleepstar import (
     build_wrapped_star_time,
     crc16_modbus,
     resolve_sleepstar_variant,
-    star_extended,
-    star_motor_position,
-    star_normal,
-    star_query,
     wrap_control_box,
 )
+from custom_components.adjustable_bed.codec import okin_5a as star
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEPSTAR,
     NORDIC_UART_READ_CHAR_UUID,
@@ -63,10 +60,10 @@ def sleepstar_controller() -> tuple[SleepStarController, MagicMock, MagicMock]:
 @pytest.mark.parametrize(
     ("actual", "expected"),
     [
-        (star_normal(0x03103001), "5A0103103001A5"),
-        (star_extended(13, 9, 1), "5AE0040D090100A5"),
-        (star_motor_position(7, 0), "5AF003070000A5"),
-        (star_query(0xD0), "5AD000A5"),
+        (star.normal(0x03103001), "5A0103103001A5"),
+        (star.extended(13, 9, 1), "5AE0040D090100A5"),
+        (star.position_target(7, 0), "5AF003070000A5"),
+        (star.request(0xD0), "5AD000A5"),
         (SleepStarCommands.STOP, "AA00000902075A010310300FA5"),
         (build_sleep_query_config(), "2A0000078100"),
         (build_sensor_version_query(), "2A0000088100"),
@@ -279,10 +276,10 @@ async def test_sonic_intensity_and_timer_use_two_writes_then_stop(
         await controller.set_massage_intensity("all", 6)
         await controller.set_massage_timer(20)
 
-    assert write.await_args_list[0].args[0] == wrap_control_box(star_extended(0x11, 6, 6))
+    assert write.await_args_list[0].args[0] == wrap_control_box(star.extended(0x11, 6, 6))
     assert write.await_args_list[0].kwargs["repeat_count"] == 2
     assert write.await_args_list[1].args == (SleepStarCommands.STOP,)
-    assert write.await_args_list[2].args[0] == wrap_control_box(star_extended(0x0B, 2))
+    assert write.await_args_list[2].args[0] == wrap_control_box(star.extended(0x0B, 2))
     assert write.await_args_list[3].args == (SleepStarCommands.STOP,)
     assert controller.get_massage_state()["intensity"] == 6
     intensity_updates = _coordinator.handle_controller_state_updates.call_args_list[0].args[0]

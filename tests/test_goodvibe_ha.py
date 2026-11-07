@@ -17,6 +17,7 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.goodvibe_protocol import action_frame
 
 
 def runtime(hass, profile="sleep_hj", handoff=True, address="AA:BB:CC:DD:EE:16"):
@@ -173,7 +174,7 @@ async def test_release_entity_uses_stop_admission_without_an_extra_wire_stop(has
         await release.async_press()
         await task
     frames = [call.args[1] for call in c._client.write_gatt_char.await_args_list]
-    assert frames == [ACTIONS[detail].packet(0, False), bytes.fromhex("6e01006edd")]
+    assert frames == [action_frame(ACTIONS[detail], 0, False), bytes.fromhex("6e01006edd")]
     assert not CONTROLLER_GESTURE_RELEASE.get()
     c._client.is_connected = False
     await c.async_shutdown()

@@ -11,10 +11,10 @@ validation limits; the feature summaries below depend on the selected controller
 | [Linak](beds/linak.md) | Auto-detected models, up to 5 axes, 0/4 memories, speed/status/errors, massage, alarms, lights |
 | [Keeson](beds/keeson.md) | Position feedback (Ergomotion), presets, massage, lights; [Adjustable Lite](beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](beds/keeson.md#innova-profile), [MaxCoil / Dynasty / Bedsense](beds/keeson.md#ore-comfort-bed-profiles), [Restonic BT](beds/keeson.md#restonic-bt-profiles) |
 | [Richmat](beds/richmat.md) | Model-dependent motors, memory, massage, lighting, alarms and reported state; [RMControl](beds/richmat.md#rmcontrol), [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat.md#richmat-mh-apps) |
-| [MotoSleep](beds/motosleep.md) | Model-dependent HHC/MOTO controls, memory, massage and lighting |
+| [MotoSleep](beds/motomotion.md#motosleep-and-power-bob-family) | Model-dependent HHC/MOTO controls, memory, massage and lighting |
 | [OCTO Smart Control](beds/octo.md) | Standard OCTO capability-advertised motor, memory, light and setting controls; separate Star2 variant. Hardware validation is deferred |
 | [Solace](beds/ff_frame.md#solace-name-routes) | Name-based profiles, named presets, optional massage/lights, exact S4-Y lift/tilt; explicit [Woosa Sleep](beds/ff_frame.md#woosa-sleep) profile with one Favourite memory |
-| [Leggett & Platt](beds/leggett-platt.md) | Gen2 motor control and RGB lighting; Okin tilt/lumbar and massage; [Prodigy / U Series](beds/okin-nframe.md#leggett-okin-family) layouts and timers, [L&P legacy](beds/lp-legacy.md) model settings |
+| [Leggett & Platt](beds/leggett-platt.md) | Gen2 motor control and RGB lighting; Okin tilt/lumbar and massage; [Prodigy / U Series](beds/okin-nframe.md#leggett-okin-family) layouts and timers, [L&P legacy](beds/richmat.md#lp-legacy-app) model settings |
 | [Reverie](beds/reverie.md) | Position control (0-100%), 4 presets, wave massage |
 | [Okimat/Okin](beds/okin-nframe.md#okimat) | 4 memory presets, massage, lights (requires pairing) |
 | [Okin 64-Bit](beds/okin-nframe.md#okin-64-bit) | 10-byte Nordic/custom OKIN protocol, lumbar, lights, massage |
@@ -34,7 +34,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [Adjustable Comfort M1X12 app](beds/starcode-m1x12.md) | Explicit CB25/F23/kneading profile, opaque Part selectors with state feedback, and up to two separately configured M1X12 ELEVATE entries |
 | [SleepSpa S9000AI](beds/sleepstar.md) | CB37 sleep monitor, five app-addressable actuators, position feedback, sonic massage, RGB lighting |
 | [Svane](beds/svane.md) | Svane Remote multi-service / JMC400 profiles, opaque software memories, local lamp preference; separate Jensen LinOn |
-| [Vibradorm](beds/vibradorm.md) | Position feedback, memory and lights; [Caresse / Werkmeister](beds/vibradorm_app.md), [VMAT](beds/vmat.md) and [V-MAT Basic](beds/vmatbasic.md) remote-specific controls |
+| [Vibradorm](beds/vibradorm.md) | Position feedback, memory and lights; [Caresse / Werkmeister](beds/vibradorm.md#caresse-and-werkmeister), [VMAT](beds/vibradorm.md#vmat) and [V-MAT Basic](beds/vibradorm.md#v-mat-basic) remote-specific controls |
 | [SUTA Smart Home](beds/suta.md) | AT command protocol, 4 memory slots, discrete lights |
 | [TiMOTION AHF](beds/timotion-ahf.md) | Fixed app-labelled controls, raw lock/lamp diagnostics, AHF name detection; physical behavior unverified |
 | [BedJet PowerLayer](beds/bedjet-powerlayer.md) | Head/foot movement, 4 presets, 3 memory recalls, calibrated degree feedback (frame only, not the BedJet climate unit) |

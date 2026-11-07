@@ -517,16 +517,23 @@ return 404.
 | `beds/ergo-slim.md` | [Keeson: Ergo Slim](beds/keeson.md#ergo-slim) |
 | `beds/ergomotion.md` | [Keeson: Ergomotion app](beds/keeson.md#ergomotion-app) |
 | `beds/ergomotion-4.md` | [Keeson: Ergomotion 4.0](beds/keeson.md#ergomotion-40) |
+| `beds/eshine.md` | [Richmat: Eshine](beds/richmat.md#eshine) |
+| `beds/eshine-okin.md` | [Okin N-frame: eShine](beds/okin-nframe.md#eshine) |
+| `beds/floyd.md` | [Kaidi: Floyd Home](beds/kaidi.md#floyd-home) |
 | `beds/fsm_relax.md` | [Limoss: FSM Relax](beds/limoss.md#fsm-relax) |
 | `beds/glideaway-motion.md` | [Keeson: Glideaway Motion](beds/keeson.md#glideaway-motion) |
+| `beds/goodvibe.md` | [Richmat: Good Vibe Sleep](beds/richmat.md#good-vibe-sleep) |
 | `beds/hjbed.md` | [Richmat: HJBed](beds/richmat.md#hjbed) |
+| `beds/isleep.md` | [Kaidi: ISleep](beds/kaidi.md#isleep) |
 | `beds/jiecang-app.md` | [Jiecang: Dream app family](beds/jiecang.md#dream-app-family) |
 | `beds/leggett-okin.md` | [Okin N-frame: Leggett Okin family](beds/okin-nframe.md#leggett-okin-family) |
 | `beds/limoss-remote.md` | [Limoss: Limoss Remote](beds/limoss.md#limoss-remote) |
+| `beds/lp-legacy.md` | [Richmat: L&P legacy app](beds/richmat.md#lp-legacy-app) |
 | `beds/logicdata-app.md` | [Jiecang: LOGICDATA app family](beds/jiecang.md#logicdata-app-family) |
 | `beds/malouf-app.md` | [Malouf: Malouf Base / Lucid Base family](beds/malouf.md#malouf-base--lucid-base-family) |
 | `beds/mattressfirm.md` | [Okin 5A: Mattress Firm 900 / iFlex](beds/okin-5a.md#mattress-firm-900--iflex) |
 | `beds/motion_bed.md` | [FFFF frame: Motion Bed](beds/ff_frame.md#motion-bed) |
+| `beds/motosleep.md` | [HHC `$#` frames: MotoSleep and Power Bob family](beds/motomotion.md#motosleep-and-power-bob-family) |
 | `beds/nectar.md` | [Okin 5A: Nectar](beds/okin-5a.md#nectar) |
 | `beds/okimat.md` | [Okin N-frame: Okimat](beds/okin-nframe.md#okimat) |
 | `beds/okin-64bit.md` | [Okin N-frame: Okin 64-Bit](beds/okin-nframe.md#okin-64-bit) |
@@ -554,6 +561,9 @@ return 404.
 | `beds/tempur-au.md` | [Keeson: TEMPUR AU](beds/keeson.md#tempur-au) |
 | `beds/tempur-curve.md` | [Keeson: Tempur Curve](beds/keeson.md#tempur-curve) |
 | `beds/tranquil.md` | [Okin N-frame: Jordan's Tranquil](beds/okin-nframe.md#jordans-tranquil) |
+| `beds/vibradorm_app.md` | [Vibradorm: Caresse and Werkmeister](beds/vibradorm.md#caresse-and-werkmeister) |
+| `beds/vmat.md` | [Vibradorm: VMAT](beds/vibradorm.md#vmat) |
+| `beds/vmatbasic.md` | [Vibradorm: V-MAT Basic](beds/vibradorm.md#v-mat-basic) |
 | `beds/woosa.md` | [FFFF frame: Woosa Sleep](beds/ff_frame.md#woosa-sleep) |
 
 ## Still Landing Before 5.0.0

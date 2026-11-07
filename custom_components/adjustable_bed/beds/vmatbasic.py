@@ -11,8 +11,9 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, cast
 
 from ..app_session import app_session
+from ..codec import vibradorm as codec
 from ..execution import ExecutionCapabilities
-from . import vmatbasic_protocol as protocol
+from ..profiles import vmatbasic as vmat_profiles
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -49,7 +50,7 @@ def get_vmatbasic_session_intent(
     """Preserve a same-target session across BLE reconstruction, not a cold HA start."""
     if re.fullmatch(r"(?:[0-9A-F]{2}:){5}[0-9A-F]{2}", address.upper()) is None:
         raise ValueError("V-MAT Basic intent requires an exact physical Bluetooth address")
-    if profile not in ("basic", "cbi", "xtbox"):
+    if profile not in vmat_profiles.PROFILES:
         raise ValueError("Unknown V-MAT Basic profile")
     return app_session(hass, address, ("vmatbasic", profile), VMatBasicSessionIntent)
 _PREFIX = "vmatbasic_"
@@ -70,13 +71,13 @@ def _profile_characteristic(client: BleakClient, service_uuid: str, uuid: str, o
 def validate_profile_roles(client: BleakClient, profile: str) -> None:
     """Validate the selected product using the runtime's exact service roles."""
     services = {item.uuid.lower() for item in client.services}
-    if not set(protocol.REQUIRED_SERVICES) <= services:
+    if not set(vmat_profiles.REQUIRED_SERVICES) <= services:
         raise ValueError("V-MAT Basic requires its control, status and GAP services")
-    _profile_characteristic(client, protocol.CONTROL_SERVICE, protocol.MOTOR_CHAR, "write")
+    _profile_characteristic(client, codec.SERVICE_UUID, codec.MOTOR_CHAR_UUID, "write")
     if profile == "cbi":
-        _profile_characteristic(client, protocol.CONTROL_SERVICE, protocol.FLOOR_CHAR, "write")
+        _profile_characteristic(client, codec.SERVICE_UUID, codec.LIGHT_CHAR_UUID, "write")
     elif profile == "xtbox":
-        _profile_characteristic(client, protocol.CONTROL_SERVICE, protocol.XT_CHAR, "write")
+        _profile_characteristic(client, codec.SERVICE_UUID, codec.CBI_CHAR_UUID, "write")
 
 
 async def _cancellable[T](operation: Coroutine[Any, Any, T], event: asyncio.Event) -> T:
@@ -111,21 +112,19 @@ class VMatBasicController(BedController):
         session_intent: VMatBasicSessionIntent | None = None,
     ) -> None:
         super().__init__(coordinator)
-        if profile not in protocol.PROFILES:
+        if profile not in vmat_profiles.PROFILES:
             raise ValueError("Choose an explicit V-MAT Basic app profile")
+        self.profile = vmat_profiles.PROFILES[profile]
         if floor_level is not None:
-            protocol.integer(
-                floor_level, 1 if profile == "xtbox" else 0, 6 if profile == "xtbox" else 255
-            )
-        protocol.integer(floor_minutes, 0, 255 if profile == "xtbox" else 1439)
-        self.profile = profile
+            vmat_profiles.integer(floor_level, *self.profile.floor_levels)
+        vmat_profiles.integer(floor_minutes, *self.profile.floor_minutes)
         self._floor_level = floor_level
         self._floor_minutes = floor_minutes
         self._remember_settings = remember_settings
         self._intent = session_intent if session_intent is not None else VMatBasicSessionIntent()
-        if self._intent.palette not in protocol.PALETTE_OPTIONS:
+        if self._intent.palette not in vmat_profiles.PALETTE_OPTIONS:
             raise ValueError("Invalid session palette")
-        protocol.integer(self._intent.brightness, 0, 100)
+        vmat_profiles.integer(self._intent.brightness, 0, 100)
 
     @property
     def execution(self) -> ExecutionCapabilities:
@@ -134,7 +133,7 @@ class VMatBasicController(BedController):
 
     @property
     def control_characteristic_uuid(self) -> str:
-        return protocol.MOTOR_CHAR
+        return codec.MOTOR_CHAR_UUID
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
@@ -179,14 +178,17 @@ class VMatBasicController(BedController):
 
     @property
     def held_control_options(self) -> tuple[str, ...]:
-        return (*protocol.MOTOR_ACTIONS, *(("floor_hold",) if self.profile == "xtbox" else ()))
+        return (
+            *vmat_profiles.MOTOR_ACTIONS,
+            *(("floor_hold",) if self.profile.key == "xtbox" else ()),
+        )
 
     @property
     def requires_linked_live_readiness(self) -> bool:
         return True
 
     async def async_validate_linked_readiness(self) -> None:
-        if self.profile == "basic":
+        if self.profile.key == "basic":
             raise ValueError("Linked movement requires CBI or XT-Box receivers")
         await self.async_discover_capabilities()
 
@@ -197,7 +199,7 @@ class VMatBasicController(BedController):
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
         return {
-            "explicit_profile": self.profile,
+            "explicit_profile": self.profile.key,
             "floor_requested": {"level": self._floor_level, "minutes": self._floor_minutes},
             "mood_session_intent": {
                 "palette": self._intent.palette,
@@ -253,7 +255,7 @@ class VMatBasicController(BedController):
 
     async def async_discover_capabilities(self) -> None:
         client = self._client()
-        validate_profile_roles(client, self.profile)
+        validate_profile_roles(client, self.profile.key)
 
     async def _write(
         self,
@@ -272,7 +274,7 @@ class VMatBasicController(BedController):
                 characteristic = self._characteristic(service, uuid, "write")
                 payload = (
                     {"hex": "**REDACTED**", "length": len(packet)}
-                    if uuid == protocol.NAME_CHAR
+                    if uuid == vmat_profiles.NAME_CHAR
                     else self._format_command_trace_payload(packet)
                 )
                 if payload is not None:
@@ -309,7 +311,10 @@ class VMatBasicController(BedController):
         async def release() -> None:
             async with asyncio.timeout(2):
                 await self._write(
-                    protocol.CONTROL_SERVICE, protocol.MOTOR_CHAR, b"\xff", asyncio.Event()
+                    codec.SERVICE_UUID,
+                    codec.MOTOR_CHAR_UUID,
+                    codec.motor(codec.STOP),
+                    asyncio.Event(),
                 )
 
         task = asyncio.create_task(release())
@@ -329,13 +334,17 @@ class VMatBasicController(BedController):
     async def hold_control(self, control: str, duration_ms: int) -> None:
         if control not in self.held_control_options:
             raise ValueError("Control is unavailable for this V-MAT Basic profile")
-        protocol.integer(duration_ms, 100, 60000)
+        vmat_profiles.integer(duration_ms, 100, 60000)
         event = self._coordinator.cancel_command
         if event.is_set():
             return
-        is_motor = control in protocol.MOTOR_ACTIONS
-        packet = bytes((protocol.MOTOR_ACTIONS[control],)) if is_motor else b"\x00\x11"
-        uuid = protocol.MOTOR_CHAR if is_motor else protocol.XT_CHAR
+        is_motor = control in vmat_profiles.MOTOR_ACTIONS
+        packet = (
+            codec.motor(vmat_profiles.MOTOR_ACTIONS[control])
+            if is_motor
+            else codec.command(vmat_profiles.FLOOR)
+        )
+        uuid = codec.MOTOR_CHAR_UUID if is_motor else codec.CBI_CHAR_UUID
         deadline = asyncio.get_running_loop().time() + duration_ms / 1000
         try:
             budget = asyncio.timeout_at(deadline)
@@ -343,9 +352,10 @@ class VMatBasicController(BedController):
                 async with budget:
                     while not event.is_set():
                         started = asyncio.get_running_loop().time()
-                        await self._write(protocol.CONTROL_SERVICE, uuid, packet, event)
+                        await self._write(codec.SERVICE_UUID, uuid, packet, event)
                         # Scheduling attempts, not guaranteed wire cadence.
-                        delay = max(0, 0.03 - (asyncio.get_running_loop().time() - started))
+                        elapsed = asyncio.get_running_loop().time() - started
+                        delay = max(0, vmat_profiles.HOLD_INTERVAL_S - elapsed)
                         await _cancellable(asyncio.sleep(delay), event)
             except TimeoutError:
                 if not budget.expired():
@@ -370,12 +380,12 @@ class VMatBasicController(BedController):
         repeat_delay_ms: int = 30,
         cancel_event: asyncio.Event | None = None,
     ) -> None:
-        if command == b"\xff":
+        if command == codec.motor(codec.STOP):
             await self.stop_all()
             return
-        if len(command) != 1 or command[0] not in protocol.MOTOR_ACTIONS.values():
+        if len(command) != 1 or command[0] not in vmat_profiles.MOTOR_ACTIONS.values():
             raise ValueError("Only the six V-MAT Basic movement bytes are accepted")
-        protocol.integer(repeat_count, 1, 2000)
+        vmat_profiles.integer(repeat_count, 1, 2000)
         event = cancel_event if cancel_event is not None else self._coordinator.cancel_command
         if event.is_set():
             return
@@ -384,11 +394,11 @@ class VMatBasicController(BedController):
                 if event.is_set():
                     break
                 started = asyncio.get_running_loop().time()
-                await self._write(protocol.CONTROL_SERVICE, protocol.MOTOR_CHAR, command, event)
+                await self._write(codec.SERVICE_UUID, codec.MOTOR_CHAR_UUID, command, event)
                 if index + 1 < repeat_count:
+                    elapsed = asyncio.get_running_loop().time() - started
                     await _cancellable(
-                        asyncio.sleep(max(0, 0.03 - (asyncio.get_running_loop().time() - started))),
-                        event,
+                        asyncio.sleep(max(0, vmat_profiles.HOLD_INTERVAL_S - elapsed)), event
                     )
         finally:
             original = sys.exception()
@@ -445,7 +455,7 @@ class VMatBasicController(BedController):
         raise NotImplementedError("The V-MAT Basic app has no memory programming")
 
     def _require(self, profile: str) -> None:
-        if self.profile != profile:
+        if self.profile.key != profile:
             raise ValueError(f"This control requires the {profile} app profile")
 
     def _setting(self, level: int | None = None, minutes: int | None = None) -> None:
@@ -462,23 +472,14 @@ class VMatBasicController(BedController):
             )
 
     async def _send_floor_settings(self) -> None:
-        if self.profile == "basic":
+        if self.profile.floor_char is None:
             raise ValueError("The Basic profile has no floor controls")
         # Settings UI absence means zero; the separate CBI ON button defaults to 255.
-        level = (
-            self._floor_level
-            if self._floor_level is not None
-            else (1 if self.profile == "xtbox" else 0)
-        )
-        packet = (
-            protocol.xt_floor(level, self._floor_minutes)
-            if self.profile == "xtbox"
-            else protocol.floor(level, self._floor_minutes)
-        )
+        level = self._floor_level if self._floor_level is not None else self.profile.floor_levels[0]
         await self._write(
-            protocol.CONTROL_SERVICE,
-            protocol.XT_CHAR if self.profile == "xtbox" else protocol.FLOOR_CHAR,
-            packet,
+            codec.SERVICE_UUID,
+            self.profile.floor_char,
+            self.profile.floor(level, self._floor_minutes),
         )
         self.forward_controller_state_updates(
             {
@@ -488,10 +489,8 @@ class VMatBasicController(BedController):
         )
 
     async def set_floor_level(self, value: float) -> None:
-        level = protocol.integer(
-            value, 1 if self.profile == "xtbox" else 0, 6 if self.profile == "xtbox" else 255
-        )
-        if self.profile == "basic":
+        level = vmat_profiles.integer(value, *self.profile.floor_levels)
+        if self.profile.floor_char is None:
             raise ValueError("The Basic profile has no floor controls")
         if self._coordinator.cancel_command.is_set():
             return
@@ -499,8 +498,8 @@ class VMatBasicController(BedController):
         await self._send_floor_settings()
 
     async def set_floor_minutes(self, value: float) -> None:
-        minutes = protocol.integer(value, 0, 255 if self.profile == "xtbox" else 1439)
-        if self.profile == "basic":
+        minutes = vmat_profiles.integer(value, *self.profile.floor_minutes)
+        if self.profile.floor_char is None:
             raise ValueError("The Basic profile has no floor controls")
         if self._coordinator.cancel_command.is_set():
             return
@@ -509,42 +508,44 @@ class VMatBasicController(BedController):
 
     async def floor_toggle(self) -> None:
         self._require("cbi")
-        status = protocol.light_status(
-            await self._read(protocol.CONTROL_SERVICE, protocol.FLOOR_CHAR)
+        status = vmat_profiles.light_status(
+            await self._read(codec.SERVICE_UUID, codec.LIGHT_CHAR_UUID)
         )
         self._publish_floor(status)
         packet = (
-            protocol.floor(0, 0)
+            vmat_profiles.floor(0, 0)
             if status.level > 0
-            else protocol.floor(
+            else vmat_profiles.floor(
                 255 if self._floor_level is None else self._floor_level, self._floor_minutes
             )
         )
-        await self._write(protocol.CONTROL_SERVICE, protocol.FLOOR_CHAR, packet)
+        await self._write(codec.SERVICE_UUID, codec.LIGHT_CHAR_UUID, packet)
 
     async def set_mood_palette(self, option: str) -> None:
         self._require("xtbox")
-        if option not in protocol.PALETTE_OPTIONS:
+        if option not in vmat_profiles.PALETTE_OPTIONS:
             raise ValueError("Choose one of the twenty shipped palette entries")
         if self._coordinator.cancel_command.is_set():
             return
         self._intent.palette = option
-        packet = protocol.color_action(
-            protocol.PALETTE[protocol.PALETTE_OPTIONS.index(option)], self._intent.brightness
+        packet = vmat_profiles.color_action(
+            vmat_profiles.PALETTE[vmat_profiles.PALETTE_OPTIONS.index(option)],
+            self._intent.brightness,
         )
-        await self._write(protocol.CONTROL_SERVICE, protocol.XT_CHAR, packet)
+        await self._write(codec.SERVICE_UUID, codec.CBI_CHAR_UUID, packet)
         self.forward_controller_state_update(_PREFIX + "mood_palette", option)
 
     async def set_mood_brightness(self, value: float) -> None:
         self._require("xtbox")
-        brightness = protocol.integer(value, 0, 100)
+        brightness = vmat_profiles.integer(value, 0, 100)
         if self._coordinator.cancel_command.is_set():
             return
         self._intent.brightness = brightness
-        packet = protocol.color_action(
-            protocol.PALETTE[protocol.PALETTE_OPTIONS.index(self._intent.palette)], brightness
+        packet = vmat_profiles.color_action(
+            vmat_profiles.PALETTE[vmat_profiles.PALETTE_OPTIONS.index(self._intent.palette)],
+            brightness,
         )
-        await self._write(protocol.CONTROL_SERVICE, protocol.XT_CHAR, packet)
+        await self._write(codec.SERVICE_UUID, codec.CBI_CHAR_UUID, packet)
         self.forward_controller_state_update(_PREFIX + "mood_brightness", brightness)
 
     async def set_mood_effect(self, option: str) -> None:
@@ -552,43 +553,47 @@ class VMatBasicController(BedController):
         if option not in ("e1", "e2", "e3"):
             raise ValueError("Choose effect e1, e2 or e3")
         await self._write(
-            protocol.CONTROL_SERVICE, protocol.XT_CHAR, protocol.effect(int(option[1]))
+            codec.SERVICE_UUID, codec.CBI_CHAR_UUID, vmat_profiles.effect(int(option[1]))
         )
         self._intent.effect = option
         self.forward_controller_state_update(_PREFIX + "mood_effect", option)
 
     async def set_mood_speed(self, value: float) -> None:
         self._require("xtbox")
-        progress = protocol.integer(value, 0, 255)
-        await self._write(protocol.CONTROL_SERVICE, protocol.XT_CHAR, protocol.speed(progress))
+        progress = vmat_profiles.integer(value, 0, 255)
+        await self._write(codec.SERVICE_UUID, codec.CBI_CHAR_UUID, vmat_profiles.speed(progress))
         self._intent.speed = progress
         self.forward_controller_state_update(_PREFIX + "mood_speed", progress)
 
     async def mood_toggle(self) -> None:
         self._require("xtbox")
-        await self._write(protocol.CONTROL_SERVICE, protocol.XT_CHAR, b"\x00\x77")
+        await self._write(
+            codec.SERVICE_UUID, codec.CBI_CHAR_UUID, codec.command(vmat_profiles.MOOD)
+        )
 
     async def mood_nightlight(self) -> None:
         self._require("xtbox")
-        await self._write(protocol.CONTROL_SERVICE, protocol.XT_CHAR, protocol.rgb(0))
+        await self._write(codec.SERVICE_UUID, codec.CBI_CHAR_UUID, vmat_profiles.rgb(0))
 
     async def massage_action(self, action: str) -> None:
         self._require("xtbox")
-        if action not in protocol.MASSAGE_ACTIONS:
+        if action not in vmat_profiles.MASSAGE_ACTIONS:
             raise ValueError("Unknown shipped massage action")
         await self._write(
-            protocol.CONTROL_SERVICE, protocol.XT_CHAR, bytes((0, protocol.MASSAGE_ACTIONS[action]))
+            codec.SERVICE_UUID,
+            codec.CBI_CHAR_UUID,
+            codec.command(vmat_profiles.MASSAGE_ACTIONS[action]),
         )
 
     async def rename_device(self, name: str) -> None:
-        packet = protocol.rename(name)
+        packet = vmat_profiles.rename(name)
         # A single default-MTU ATT write supports twenty bytes; no fragmentation is proven.
         if len(packet) > 20:
             raise ValueError("Encoded device name exceeds the safe twenty-byte write payload")
-        await self._write(protocol.GAP_SERVICE, protocol.NAME_CHAR, packet)
+        await self._write(vmat_profiles.GAP_SERVICE, vmat_profiles.NAME_CHAR, packet)
         self.forward_controller_state_update(_PREFIX + "device_name", packet.decode("utf-8"))
 
-    def _publish_floor(self, status: protocol.FloorStatus) -> None:
+    def _publish_floor(self, status: vmat_profiles.FloorStatus) -> None:
         self.forward_controller_state_updates(
             {
                 _PREFIX + "floor_level_observed": status.level,
@@ -606,18 +611,18 @@ class VMatBasicController(BedController):
         self.forward_controller_state_updates({_PREFIX + item: None for item in keys})
 
     async def async_refresh_diagnostics(self) -> None:
-        for key, service, uuid in protocol.READ_ROLES:
+        for key, service, uuid in vmat_profiles.READ_ROLES:
             try:
                 raw = await self._read(service, uuid)
                 if key == "floor":
-                    self._publish_floor(protocol.light_status(raw))
+                    self._publish_floor(vmat_profiles.light_status(raw))
                 else:
                     value = (
-                        protocol.temperature(raw)
+                        vmat_profiles.temperature(raw)
                         if key == "temperature"
-                        else protocol.motor_status(raw)
+                        else vmat_profiles.motor_status(raw)
                         if key == "ed"
-                        else protocol.decode_string(raw)
+                        else codec.decode_text(raw)
                     )
                     self.forward_controller_state_update(_PREFIX + key, value)
             except asyncio.CancelledError:
@@ -628,7 +633,7 @@ class VMatBasicController(BedController):
                 _LOGGER.debug("V-MAT Basic %s read failed: %s", key, error)
 
     def invalidate_diagnostics(self) -> None:
-        for key, _, _ in protocol.READ_ROLES:
+        for key, _, _ in vmat_profiles.READ_ROLES:
             self._clear_read(key)
         self.forward_controller_state_updates(
             {
@@ -662,11 +667,11 @@ class VMatBasicController(BedController):
                 lambda ctrl: ctrl.async_refresh_diagnostics(),
             ),
         ]
-        if self.profile == "cbi":
+        if self.profile.key == "cbi":
             specs.append(
                 button("floor_toggle", "Floor light toggle", lambda ctrl: ctrl.floor_toggle())
             )
-        elif self.profile == "xtbox":
+        elif self.profile.key == "xtbox":
             specs += [
                 button(
                     "floor_hold",
@@ -680,7 +685,7 @@ class VMatBasicController(BedController):
                     lambda ctrl: ctrl.mood_nightlight(),
                 ),
             ]
-            for action in protocol.MASSAGE_ACTIONS:
+            for action in vmat_profiles.MASSAGE_ACTIONS:
                 specs.append(
                     button(
                         "massage_" + action,
@@ -692,14 +697,14 @@ class VMatBasicController(BedController):
 
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        if self.profile != "xtbox":
+        if self.profile.key != "xtbox":
             return ()
         return (
             ControllerSelectSpec(
                 _PREFIX + "mood_palette",
                 _PREFIX + "mood_palette",
                 _PREFIX + "mood_palette",
-                protocol.PALETTE_OPTIONS,
+                vmat_profiles.PALETTE_OPTIONS,
                 lambda ctrl, value: ctrl.set_mood_palette(value),
             ),
             ControllerSelectSpec(
@@ -714,14 +719,13 @@ class VMatBasicController(BedController):
     @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
         specs: list[ControllerNumberSpec] = []
-        if self.profile != "basic":
+        if self.profile.floor_char is not None:
             specs += [
                 ControllerNumberSpec(
                     _PREFIX + "floor_level",
                     _PREFIX + "floor_level",
                     _PREFIX + "floor_level_requested",
-                    1 if self.profile == "xtbox" else 0,
-                    6 if self.profile == "xtbox" else 255,
+                    *self.profile.floor_levels,
                     1,
                     lambda ctrl, value: cast(VMatBasicController, ctrl).set_floor_level(value),
                 ),
@@ -729,14 +733,13 @@ class VMatBasicController(BedController):
                     _PREFIX + "floor_minutes",
                     _PREFIX + "floor_minutes",
                     _PREFIX + "floor_minutes_requested",
-                    0,
-                    255 if self.profile == "xtbox" else 1439,
+                    *self.profile.floor_minutes,
                     1,
                     lambda ctrl, value: cast(VMatBasicController, ctrl).set_floor_minutes(value),
                     "min",
                 ),
             ]
-        if self.profile == "xtbox":
+        if self.profile.key == "xtbox":
             specs += [
                 ControllerNumberSpec(
                     _PREFIX + "mood_brightness",

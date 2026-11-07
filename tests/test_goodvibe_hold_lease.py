@@ -68,7 +68,7 @@ def _controller(profile: str) -> GoodVibeController:
 
 
 def _packet(control: str, side: int = 0, legacy: bool = False) -> bytes:
-    return ACTIONS[control.removeprefix("goodvibe_")].packet(side, legacy)
+    return p.action_frame(ACTIONS[control.removeprefix("goodvibe_")], side, legacy)
 
 
 def test_every_product_scopes_its_hold_to_its_sustained_controls() -> None:
@@ -299,9 +299,7 @@ def test_buttons_offer_a_lease_only_on_sustained_controls(hass: HomeAssistant) -
         spec.key
         for spec in coordinator._controller.controller_button_specs
         if spec.hold is not None
-        and ControllerActionButton(coordinator, spec).extra_state_attributes.get(
-            "hold_lease_mode"
-        )
+        and ControllerActionButton(coordinator, spec).extra_state_attributes.get("hold_lease_mode")
         == "stream"
     }
     assert offered == _held(MIXED, "sustainPress")

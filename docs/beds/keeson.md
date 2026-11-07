@@ -3972,7 +3972,7 @@ maintainer implementation blocker.
 The `adjustamattress` bed type is a profile of this family. Models P1 and P2
 build their key frames through this codec (see
 [Malouf legacy OKIN, Sleepy's BOX15, AdjustaMattress P1 and P2](#malouf-legacy-okin-sleepys-box15-adjustamattress-p1-and-p2));
-models P3 and P4 send Okin N-frames, described below.
+models P3 and P4 send [Okin N-frames](okin-nframe.md#framing-and-checksum), described below.
 
 #### Setup
 
@@ -4138,7 +4138,9 @@ the raw Bluetooth name and GATT:
 ##### AdjustaMattress commands
 
 Frames are `frame()` output from
-[`adjustamattress_protocol.py`](../../custom_components/adjustable_bed/beds/adjustamattress_protocol.py).
+[`adjustamattress_protocol.py`](../../custom_components/adjustable_bed/beds/adjustamattress_protocol.py),
+which builds the P1 and P2 frames through this codec and the lift, P3 and P4
+frames through the [Okin N-frame codec](okin-nframe.md#framing-and-checksum).
 Concrete tests cover all 180 accepted command/vector rows, including dormant
 branches retained only as evidence.
 

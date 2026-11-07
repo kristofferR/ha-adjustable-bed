@@ -14,13 +14,9 @@ import pytest
 from bleak.exc import BleakError
 
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
-from custom_components.adjustable_bed.beds.eshine import STATE_GROUPS, EshineController
-from custom_components.adjustable_bed.beds.eshine_protocol import (
-    GATT_MAPS,
-    OPCODES,
-    NotificationStream,
-    control_frame,
-)
+from custom_components.adjustable_bed.beds.eshine import CODES, STATE_GROUPS, EshineController
+from custom_components.adjustable_bed.beds.eshine_protocol import NotificationStream
+from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.const import (
     BED_TYPE_ESHINE,
     BEDS_WITHOUT_ANGLE_FEEDBACK,
@@ -29,7 +25,14 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_PULSE_DELAY_MS,
 )
 from custom_components.adjustable_bed.detection import get_bed_type_options
+from custom_components.adjustable_bed.profiles.richmat import ESHINE
 from custom_components.adjustable_bed.sensor import AdjustableBedControllerStateSensor
+
+# Service, write and declared notify, in the app's order; N1 takes bare codes.
+GATT_MAPS = [
+    (transport.service_uuid, transport.write_uuid, transport.notify_uuid)
+    for transport in (codec.TRANSPORTS[key] for key in ESHINE.transports)
+]
 
 
 def service(row=GATT_MAPS[1], *, response=True, notify_uuid=None):
@@ -73,7 +76,8 @@ def sleeps(monkeypatch):
     return delays
 
 
-# Every reachable action in both formats. The literals are the artifact vectors.
+# Every reachable action in both formats, by profile button. The literals are the
+# artifact vectors; setup's ExitLimit (00, 6e02010071) is not a user action.
 COMMANDS = [
     ("head_up", "24", "6e01002493"),
     ("head_down", "25", "6e01002594"),
@@ -84,27 +88,24 @@ COMMANDS = [
     ("pillow_up", "41", "6e010041b0"),
     ("pillow_down", "42", "6e010042b1"),
     ("flat", "31", "6e010031a0"),
-    ("light", "3c", "6e01003cab"),
-    ("massage_head_strength", "4c", "6e01004cbb"),
-    ("massage_foot_strength", "4e", "6e01004ebd"),
+    ("light_toggle", "3c", "6e01003cab"),
+    ("massage_head", "4c", "6e01004cbb"),
+    ("massage_foot", "4e", "6e01004ebd"),
     ("massage_mode", "48", "6e010048b7"),
     ("massage_off", "5e", "6e01005ecd"),
-    ("massage_10_minutes", "5f", "6e01005fce"),
-    ("massage_20_minutes", "63", "6e010063d2"),
-    ("massage_30_minutes", "61", "6e010061d0"),
+    ("massage_timer_10", "5f", "6e01005fce"),
+    ("massage_timer_20", "63", "6e010063d2"),
+    ("massage_timer_30", "61", "6e010061d0"),
     ("anti_snore", "46", "6e010046b5"),
     ("zero_g", "45", "6e010045b4"),
     ("save_anti_snore", "69", "6e010069d8"),
     ("save_zero_g", "66", "6e010066d5"),
     ("stop", "6e", "6e01006edd"),
-    ("exit_limit", "00", "6e02010071"),
 ]
 
 
 @pytest.mark.parametrize(("action", "compact", "framed"), COMMANDS)
 async def test_all_action_vectors(action, compact, framed, sleeps):
-    assert control_frame(action, True).hex() == compact
-    assert control_frame(action, False).hex() == framed
     for row, expected, stop in [
         (GATT_MAPS[0], compact, "6e"),
         (GATT_MAPS[1], framed, "6e01006edd"),
@@ -113,14 +114,10 @@ async def test_all_action_vectors(action, compact, framed, sleeps):
         await ctrl.async_discover_capabilities()
         await ctrl.start_notify()
         ctrl.client.write_gatt_char.reset_mock()
-        if action == "exit_limit":
-            with pytest.raises(ValueError):
-                await ctrl.execute_action(action)
-        else:
-            await ctrl.execute_action(action)
-            assert frames(ctrl) == (
-                [expected] * 3 + [stop] if action in ctrl.held_control_options else [expected]
-            )
+        await ctrl.execute_action(action)
+        assert frames(ctrl) == (
+            [expected] * 3 + [stop] if action in ctrl.held_control_options else [expected]
+        )
 
 
 @pytest.mark.parametrize("row", GATT_MAPS)
@@ -165,7 +162,7 @@ async def test_failed_or_cancelled_movement_releases_with_fresh_event(error):
     await ctrl.async_discover_capabilities()
 
     async def write(*args, **kwargs):
-        if args[1] != control_frame("stop", False):
+        if args[1] != bytes.fromhex("6e01006edd"):
             ctrl._coordinator.cancel_command.set()
             raise error
 
@@ -251,7 +248,7 @@ async def test_buttons_and_generic_actions(sleeps):
         "6e01005ecd",
         "6e010048b7",
     ]
-    assert set(OPCODES) == {action for action, _, _ in COMMANDS}
+    assert {*CODES, "stop"} == {action for action, _, _ in COMMANDS}
 
 
 # Integration projections of every accepted stream vector, including excluded domains.

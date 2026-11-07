@@ -1163,8 +1163,6 @@ KAIDI_NOTIFY_CHAR_UUID: Final = "9e5d1e47-5c13-43a0-8635-82adffc2386f"
 KAIDI_NAME_PATTERNS: Final = ("mouselet",)
 # Known Kaidi OUI prefixes from decompiled app (getBtAddr MAC checks)
 KAIDI_MAC_PREFIXES: Final = ("00:95:69", "F0:AC:D7")
-KAIDI_JOIN_PASSWORD: Final = b"1122"
-KAIDI_BROADCAST_VADDR: Final = 0xFFFFFFFF
 
 # Logicdata SimplicityFrame (SILVERmotion) - LogicLink BLE protocol
 # XXTEA encrypted, CRC16, SLIP framed

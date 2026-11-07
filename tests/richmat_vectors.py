@@ -7,6 +7,34 @@ captured with every remote code, framing and light family. Parameterized colour
 frames are left out of those captures.
 """
 
+import json
+from pathlib import Path
+
+
+def _goodvibe() -> frozenset[str]:
+    """Good Vibe Sleep 2.0.1 (row116): the accepted report's vectors in ``fixtures/goodvibe``.
+
+    Every catalog action alternative, the inline startup, release and timer
+    frames, and the settings, alarm and time-sync builders, plus the cancelled
+    countdown the pre-v5 controller sent, which no fixture lists.
+    """
+    fixtures = Path(__file__).parent / "fixtures" / "goodvibe"
+
+    def rows(name: str) -> list:
+        return json.loads((fixtures / f"{name}.json").read_text())
+
+    writes = [bytes.fromhex(row[4]) for name in ("actions", "inline") for row in rows(name)]
+    writes += [bytes(row["expected"]) for row in rows("advanced")]
+    writes += [bytes(row["expected_bytes"]) for row in rows("alarms")]
+    writes += [bytes(frame) for row in rows("time_sync") for frame in row["frames"]]
+    frames = {"6e05000073", "6e06000074"}
+    for data in writes:
+        # The colour write carries two 5-byte frames.
+        size = 5 if data[:2] == b"\x6e\x0c" else len(data)
+        frames |= {data[i : i + size].hex() for i in range(0, len(data), size)}
+    return frozenset(frames)
+
+
 
 # Row061 (PR #928): RUF, W.Silver, AMERICANSTAR, Bailey and TX run the MH
 # library over their own accepted model catalogs (row061_data). Each app freezes
@@ -1468,6 +1496,125 @@ _RICHMAT_CLASSIC: frozenset[str] = frozenset(
     }
 )
 
+# L&P Adjustable Base 2.2.1 legacy app (row019): every Legacy and Framed packet
+# the accepted catalog stored for its 122 layouts, frozen from
+# ``lp_legacy_profiles.json`` before the catalog kept only the app's tokens.
+_LP_LEGACY: frozenset[str] = frozenset(
+    {
+        "21",
+        "22",
+        "23",
+        "24",
+        "25",
+        "26",
+        "27",
+        "29",
+        "2a",
+        "2b",
+        "2c",
+        "2e",
+        "2f",
+        "30",
+        "31",
+        "32",
+        "33",
+        "34",
+        "35",
+        "36",
+        "37",
+        "38",
+        "39",
+        "3a",
+        "3c",
+        "3f",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46",
+        "47",
+        "48",
+        "49",
+        "4a",
+        "4b",
+        "4c",
+        "4d",
+        "4e",
+        "4f",
+        "50",
+        "58",
+        "59",
+        "5a",
+        "5b",
+        "5c",
+        "5d",
+        "5e",
+        "5f",
+        "61",
+        "62",
+        "63",
+        "67",
+        "68",
+        "6b",
+        "6e",
+        "6f",
+        "70",
+        "71",
+        "72",
+        "73",
+        "74",
+        "6e0100006f",
+        "6e01002493",
+        "6e01002594",
+        "6e01002695",
+        "6e01002796",
+        "6e01002998",
+        "6e01002a99",
+        "6e01002e9d",
+        "6e01002f9e",
+        "6e010031a0",
+        "6e010032a1",
+        "6e010033a2",
+        "6e010034a3",
+        "6e010035a4",
+        "6e010036a5",
+        "6e010037a6",
+        "6e010038a7",
+        "6e010039a8",
+        "6e01003aa9",
+        "6e01003cab",
+        "6e01003fae",
+        "6e010040af",
+        "6e010041b0",
+        "6e010042b1",
+        "6e010043b2",
+        "6e010044b3",
+        "6e010045b4",
+        "6e010046b5",
+        "6e010047b6",
+        "6e010048b7",
+        "6e01004cbb",
+        "6e01004dbc",
+        "6e01004ebd",
+        "6e01004fbe",
+        "6e010053c2",
+        "6e010058c7",
+        "6e010059c8",
+        "6e01005bca",
+        "6e01005ccb",
+        "6e01005dcc",
+        "6e01005ecd",
+        "6e01005fce",
+        "6e010061d0",
+        "6e010062d1",
+        "6e010063d2",
+        "6e01006bda",
+        "6e01006edd",
+    }
+)
+
 FROZEN_FRAMES: dict[str, frozenset[str]] = {
     # pre-v5 RichmatController, WiLinke framing, every remote code (smartbed-mqtt and app catalogs)
     "richmat_wilinke": frozenset(
@@ -1889,6 +2036,58 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "6e90c101c0",
         }
     ),
+    # Eshine 1.0.1 row106: the artifact vectors pinned in tests/test_eshine.py, framed and
+    # bare (N1), including setup's ExitLimit.
+    "eshine": frozenset(
+        {
+            "00",
+            "24",
+            "25",
+            "26",
+            "27",
+            "31",
+            "3c",
+            "3f",
+            "40",
+            "41",
+            "42",
+            "45",
+            "46",
+            "48",
+            "4c",
+            "4e",
+            "5e",
+            "5f",
+            "61",
+            "63",
+            "66",
+            "69",
+            "6e",
+            "6e01002493",
+            "6e01002594",
+            "6e01002695",
+            "6e01002796",
+            "6e010031a0",
+            "6e01003cab",
+            "6e01003fae",
+            "6e010040af",
+            "6e010041b0",
+            "6e010042b1",
+            "6e010045b4",
+            "6e010046b5",
+            "6e010048b7",
+            "6e01004cbb",
+            "6e01004ebd",
+            "6e01005ecd",
+            "6e01005fce",
+            "6e010061d0",
+            "6e010063d2",
+            "6e010066d5",
+            "6e010069d8",
+            "6e01006edd",
+            "6e02010071",
+        }
+    ),
     "richmat_mh_revive": _RICHMAT_MH,
     "richmat_mh_best_mattress": _RICHMAT_MH,
     "richmat_mh_blvd_home": _RICHMAT_MH,
@@ -1900,4 +2099,6 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
     "richmat_classic_fortywinks": _RICHMAT_CLASSIC,
     "richmat_classic_milemont": _RICHMAT_CLASSIC,
     "richmat_classic_superior": _RICHMAT_CLASSIC,
+    "goodvibe": _goodvibe(),
+    "leggett_lp_legacy": _LP_LEGACY,
 }

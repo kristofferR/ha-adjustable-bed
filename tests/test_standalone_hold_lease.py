@@ -17,7 +17,6 @@ from typing import Any
 import pytest
 
 from custom_components.adjustable_bed.const import (
-    BED_TYPE_ESHINE,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_JENSEN,
     BED_TYPE_LEGGETT_GEN2,
@@ -37,7 +36,6 @@ from tests.hold_lease_wire import End, HeldWire, Write, intervals, leased_hold
 from tests.test_controller_contract import _create_controller_for_bed_type
 
 DECLARED = (
-    BED_TYPE_ESHINE,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_JENSEN,
     BED_TYPE_LEGGETT_GEN2,
@@ -109,7 +107,6 @@ def _held_control(control: str, held: str, refresh_ms: int) -> Case:
 CASES: dict[str, Case] = {
     "linak:bed_control": _cover("move_back_up", "0b00", 100),
     "linak:performance_legacy": _cover("move_back_up", "0b00", 300),
-    "eshine": _cover("move_head_up", "24", 100),
     "timotion_ahf": _cover("move_back_up", "ddddff0101000000000000", 100),
     "vibradorm_app": _cover("move_back_up", "0b", 100),
     "vmatbasic": _cover("move_back_up", "0b", 30),

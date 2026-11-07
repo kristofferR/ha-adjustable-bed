@@ -103,7 +103,7 @@ _STAR_KEYS: Final[dict[str, tuple[int, int]]] = {
 # The massage-page query is written raw, without the table prefix or suffix.
 _CHECK_MASSAGE: Final[dict[Table, bytes]] = {
     "25_42_02": bytes.fromhex("0204"),
-    "35_22_01": bytes.fromhex("5ab000a5"),
+    "35_22_01": okin_5a.request(0xB0),
     "36_33_04a": bytes.fromhex("0204"),
 }
 

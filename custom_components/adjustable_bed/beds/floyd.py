@@ -1,7 +1,7 @@
 """Floyd Home 1.0.7, product 139. See the row117 disposition ledger.
 
-Only transport primitives proven equivalent to the accepted report are reused
-from Kaidi. Commands and capabilities come from this app's reachable paths.
+Session glue is shared with the Kaidi Seat controller; commands, capabilities
+and write spacing come from this app's profile (``profiles/kaidi.py``).
 """
 
 from __future__ import annotations
@@ -12,43 +12,15 @@ from typing import TYPE_CHECKING
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
-from ..const import (
-    CONF_KAIDI_ROOM_ID,
-    KAIDI_NOTIFY_CHAR_UUID,
-    KAIDI_VARIANT_FLOYD,
-    KAIDI_WRITE_CHAR_UUID,
-)
+from ..codec import kaidi as codec
+from ..const import CONF_KAIDI_ROOM_ID
 from ..kaidi_protocol import extract_kaidi_advertisement, is_floyd_advertisement
+from ..profiles.kaidi import FLOYD, KaidiProductFamily
 from .base import ControllerStateBinarySensorSpec, MotorControlSpec
-from .kaidi import KaidiCommandProfile, KaidiController, KaidiProductFamily
+from .kaidi import KaidiController
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
-
-FLOYD_VARIANT = KAIDI_VARIANT_FLOYD
-# E7 normal UI, E16 independently reachable exported Android receiver.
-FLOYD_PRESETS = {
-    "first": {"zero_g": 0x62, "flat": 0x1C, "anti_snore": 0x65,
-              "memory_1": 0x29, "memory_2": 0x2A, "memory_3": 0x2B},
-    "both": {"zero_g": 0x64, "flat": 0x1E, "anti_snore": 0x67,
-             "memory_1": 0x39, "memory_2": 0x3A, "memory_3": 0x3B},
-    "second": {"zero_g": 0x63, "flat": 0x1D, "anti_snore": 0x66,
-               "memory_1": 0x31, "memory_2": 0x32, "memory_3": 0x33},
-}
-FLOYD_HOLDS = {
-    "head_up": (1, 3), "head_down": (2, 3),
-    "feet_up": (4, 6), "feet_down": (5, 6),
-    "head_feet_up": (7, 9), "head_feet_down": (8, 9),
-}
-_FLOYD_PROFILE = KaidiCommandProfile(
-    variant=FLOYD_VARIANT,
-    head_up=1, head_down=2, head_stop=3,
-    foot_up=4, foot_down=5, foot_stop=6,
-    stop_all=9, preset_flat=0x1C, preset_zero_g=0x62, preset_anti_snore=0x65,
-    memory_save={1: 0x25, 2: 0x26, 3: 0x27},
-    memory_recall={1: 0x29, 2: 0x2A, 3: 0x2B},
-    light_on=0x5C, light_off=0x5D,
-)
 
 
 class FloydController(KaidiController):
@@ -60,14 +32,14 @@ class FloydController(KaidiController):
         manufacturer_data: dict[int, bytes] | None = None,
     ) -> None:
         super().__init__(coordinator, device_name=device_name, manufacturer_data=manufacturer_data)
-        if self._product_id not in (None, 139):
+        if self._product_id not in (None, FLOYD.product):
             raise ValueError("Floyd Home requires advertised product 139")
         saved_room = coordinator.entry.data.get(CONF_KAIDI_ROOM_ID)
         if not self._room_id and isinstance(saved_room, int) and saved_room:
             # Assignment ACK precedes advertisement refresh on reconnect.
             self._room_id = saved_room
-        self._variant = FLOYD_VARIANT
-        self._configured_command_profile = _FLOYD_PROFILE
+        self._variant = FLOYD.key
+        self.profile = FLOYD
         self._own_vaddr = 0
         # Stored zero is offline. Only a matching live ping may authorize zero.
         self._target_vaddr = None
@@ -81,7 +53,7 @@ class FloydController(KaidiController):
 
     @property
     def _product_family(self) -> KaidiProductFamily:
-        return KaidiProductFamily(bed_ui=2, has_lights=True)
+        return FLOYD.family
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
@@ -106,7 +78,7 @@ class FloydController(KaidiController):
 
     @property
     def held_control_options(self) -> tuple[str, ...]:
-        return tuple(FLOYD_HOLDS)
+        return tuple(FLOYD.holds)
 
     @property
     def supports_floyd_actions(self) -> bool:
@@ -131,37 +103,29 @@ class FloydController(KaidiController):
 
     def _handle_notification(self, sender: BleakGATTCharacteristic, data: bytearray) -> None:
         payload = bytes(data)
-        self.forward_raw_notification(KAIDI_NOTIFY_CHAR_UUID, payload)
-        if len(payload) < 3:
-            return
-        if payload[:2] == b"\x02\x03":
-            self._assignment_status = payload[2]
-            self._assignment_event.set()
-        elif payload[:2] == b"\x02\x16":
-            self._join_status = payload[2]
-            self._join_event.set()
-        elif payload[:2] == b"\x01\x0a" and len(payload) >= 6:
-            own = int.from_bytes(payload[2:6], "little")
-            self._own_vaddr = own or 0xFFFFFFFF
-            if own == 0:
-                self._device_count = 1
-            self._own_vaddr_event.set()
-        elif payload[:2] == b"\x01\x02" and len(payload) >= 10:
-            self._device_count = int.from_bytes(payload[8:10], "little")
-            self._target_vaddr = None
-            self._target_vaddr_event.clear()
-            self._session_ready = False
-        elif payload[0] == 3 and len(payload) >= 6:
-            channel = payload[5]
-            if channel == 0xFF and len(payload) >= 16:
-                from ..kaidi_protocol import format_kaidi_node_address
-
-                if format_kaidi_node_address(payload[6:12]) == self._coordinator.address.upper():
-                    raw = int.from_bytes(payload[12:16], "little", signed=True)
-                    self._target_vaddr = raw if raw else -2
-                    self._target_vaddr_event.set()
-            elif channel == 0x20 and len(payload) >= 14 and payload[11] == 166:
-                self._battery_mode = payload[12] == 1
+        self.forward_raw_notification(codec.NOTIFY_CHAR_UUID, payload)
+        match codec.parse_notification(payload):
+            case codec.EnrollReply(status):
+                self._assignment_status = status
+                self._assignment_event.set()
+            case codec.JoinReply(status) if status is not None:
+                self._join_status = status
+                self._join_event.set()
+            case codec.OwnAddress(own):
+                self._own_vaddr = own or codec.BROADCAST
+                if own == 0:
+                    self._device_count = 1
+                self._own_vaddr_event.set()
+            case codec.RosterChange(count):
+                self._device_count = count
+                self._target_vaddr = None
+                self._target_vaddr_event.clear()
+                self._session_ready = False
+            case codec.PingReply(node) as reply if node == self._coordinator.address.upper():
+                self._target_vaddr = reply.signed_vaddr or -2
+                self._target_vaddr_event.set()
+            case codec.ControlReply(command, value) if command == FLOYD.battery_event:
+                self._battery_mode = value == 1
                 self.forward_controller_state_update("floyd_battery_mode", self._battery_mode)
         # Other incoming routes have no bed-state consumer. Raw diagnostics retain
         # them, without interpreting SDK product/group fields as capabilities.
@@ -172,19 +136,17 @@ class FloydController(KaidiController):
         if delay > 0:
             await asyncio.sleep(delay)
         await self._write_gatt_with_retry(
-            KAIDI_WRITE_CHAR_UUID, packet, response=self._write_with_response,
+            codec.WRITE_CHAR_UUID, packet, response=self._write_with_response,
             cancel_event=cancel_event,
         )
-        self._next_write_at = time.monotonic() + 0.05
+        self._next_write_at = time.monotonic() + FLOYD.write_spacing_ms / 1000
 
     def _build_control_packet(self, command_id: int, param: int | None = None) -> bytes:
         if self._target_vaddr is None or self._target_vaddr == 0:
             raise RuntimeError("Floyd target has not answered a live ping")
         target = 0 if self._target_vaddr == -2 else self._target_vaddr
         parameter = self._parameter if param is None else param
-        return (b"\x03" + (target & 0xFFFFFFFF).to_bytes(4, "little") + b"\x20"
-                + (self._own_vaddr or 0).to_bytes(4, "little")
-                + bytes((1, command_id, parameter, 0)))
+        return codec.control(target, self._own_vaddr or 0, command_id, parameter)
 
     async def _ensure_session_ready(self) -> None:
         if self._session_ready:
@@ -199,7 +161,7 @@ class FloydController(KaidiController):
             await self._ensure_notify_started()
             self._join_event.clear()
             self._join_status = None
-            await self._send(self._build_join_packet(self._room_id))
+            await self._send(codec.join(self._room_id))
             await self._wait_for_event(self._join_event, 5, "authentication")
             if self._join_status != 0:
                 raise ValueError("Floyd BLE room authentication was rejected")
@@ -232,7 +194,7 @@ class FloydController(KaidiController):
         return max(1, (duration_ms + pulse_delay_ms - 1) // pulse_delay_ms)
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
-        if control not in FLOYD_HOLDS or not 1 <= duration_ms <= 30000:
+        if control not in FLOYD.holds or not 1 <= duration_ms <= 30000:
             raise ValueError("Choose a Floyd held control and a duration of 1 to 30000 ms")
         if self._battery_mode and control.endswith("_up"):
             raise ValueError("Floyd reports battery mode; raising is disabled")
@@ -242,7 +204,7 @@ class FloydController(KaidiController):
         await self._ensure_session_ready()
         # Authentication may have delivered a new battery event.
         self.validate_hold_control(control, duration_ms)
-        move, stop = FLOYD_HOLDS[control]
+        move, stop = FLOYD.holds[control]
         release_packet = self._build_control_packet(stop)
         try:
             await self._write_control_command(move)
@@ -255,19 +217,19 @@ class FloydController(KaidiController):
             await self._send(release_packet, cancel_event=asyncio.Event())
 
     async def _move_with_stop_command(self, move_command: int, stop_command: int) -> None:
-        control = next(key for key, pair in FLOYD_HOLDS.items() if pair == (move_command, stop_command))
+        control = next(key for key, pair in FLOYD.holds.items() if pair == (move_command, stop_command))
         count, delay = self.motor_pulse_settings()
         await self.hold_control(control, max(1, min(30000, count * delay)))
 
     def validate_floyd_action(
         self, action: str, internal_side: str, confirm: bool, room_id: int | None,
     ) -> None:
-        if internal_side not in FLOYD_PRESETS:
+        if internal_side not in FLOYD.presets:
             raise ValueError("Unknown Floyd internal preset selector")
         if action in {"save_zero_g", "save_anti_snore", "assign_room", "confirm_add"}:
             if not confirm or internal_side != "first":
                 raise ValueError("Configuration requires confirm: true and internal_side: first")
-        elif action not in FLOYD_PRESETS[internal_side]:
+        elif action not in FLOYD.presets[internal_side]:
             raise ValueError("Unknown Floyd action")
         if action == "assign_room":
             if room_id is None or not 1 <= room_id <= 0xFFFFFFFF:
@@ -292,7 +254,7 @@ class FloydController(KaidiController):
             await self._ensure_notify_started()
             self._assignment_event.clear()
             self._assignment_status = None
-            await self._send(b"\x01\x03" + room_id.to_bytes(4, "little") + b"1122\x00\x00\x00\x00")
+            await self._send(codec.enroll(room_id))
             await self._wait_for_event(self._assignment_event, 5, "room assignment")
             if self._assignment_status != 0:
                 raise ValueError("Floyd BLE room assignment failed")
@@ -302,11 +264,11 @@ class FloydController(KaidiController):
             # The app disconnects after assignment. HA closes through its owner.
             return
         if action == "confirm_add":
-            await self._write_control_command(0x45)
+            await self._write_control_command(FLOYD.confirm_add)
         elif action.startswith("save_"):
-            await self._write_control_command(0xA7, param=1 if action == "save_zero_g" else 4)
+            await self._write_control_command(FLOYD.save_preset, param=FLOYD.save_parameters[action])
         else:
             await self._ensure_session_ready()
             if internal_side != "first" and self._target_vaddr is not None and self._target_vaddr < 0 and self._target_vaddr != -2:
                 raise ValueError("Conditional alarm selectors require a positive target or live zero sentinel")
-            await self._write_control_command(FLOYD_PRESETS[internal_side][action])
+            await self._write_control_command(FLOYD.presets[internal_side][action])

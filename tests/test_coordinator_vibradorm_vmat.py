@@ -21,7 +21,7 @@ from custom_components.adjustable_bed.bond_verification import (
 )
 from custom_components.adjustable_bed.config_flow import _vibradorm_app_data
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.vibradorm_vmat_setup import QUERY_STAGES
+from custom_components.adjustable_bed.profiles.vibradorm import VMAT_QUERY_STAGES as QUERY_STAGES
 from tests.test_vibradorm_vmat import frames, make_vmat
 
 

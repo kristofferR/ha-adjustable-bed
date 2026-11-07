@@ -248,7 +248,7 @@ from .const import (
     ZSERIES_VARIANTS,
 )
 from .kaidi_protocol import extract_kaidi_advertisement
-from .kaidi_variants import resolve_kaidi_variant
+from .profiles.kaidi import resolve_kaidi_variant
 
 if TYPE_CHECKING:
     from bleak import BleakClient

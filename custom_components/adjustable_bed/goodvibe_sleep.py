@@ -1,4 +1,8 @@
-"""Good Vibe Sleep type 1/type 2 receive state and report assembly."""
+"""Good Vibe Sleep type 1/type 2 sleep-sensor requests, receive state and report assembly.
+
+Requests use the sleep-sensor JSON envelope (``codec/sleep_envelope.py``), not a
+Richmat frame.
+"""
 
 from __future__ import annotations
 
@@ -7,7 +11,23 @@ import zlib
 from dataclasses import dataclass, field
 from typing import Never
 
+from .codec import sleep_envelope
 from .goodvibe_schemas import parse_schema
+
+
+def sleep_packet(sequence: int, command: str, value: object) -> bytes:
+    """The ordinary request, with the app's sequence and length limits."""
+    if not 1 <= sequence <= 254:
+        raise ValueError("Sequence must be 1–254")
+    body = json.dumps(
+        {"id": sequence, "cmd": command, "val": value},
+        ensure_ascii=False,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode()
+    if len(body) > 65535:
+        raise ValueError("Sleep payload exceeds the supported ordinary frame length")
+    return sleep_envelope.frame(body, sequence)
 
 
 def _invalid_constant(value: str) -> Never:
@@ -139,9 +159,9 @@ class Receiver:
             return None
         if self.last == "q_report_allow":
             if self.kind == 3:
-                if len(data) < 14:
+                if len(data) < sleep_envelope.HEADER_SIZE:
                     raise ValueError("Short report chunk")
-                data = data[14:]
+                data = data[sleep_envelope.HEADER_SIZE :]
             self.buffer.extend(data)
             if len(self.buffer) < self.report_size:
                 return None
@@ -172,9 +192,9 @@ class Receiver:
                 )
             return "report", parse_schema(schema, obj)
         if not self.buffer:
-            if len(data) < 13:
+            if (size := sleep_envelope.response_size(data)) is None:
                 raise ValueError("Short first sleep notification chunk")
-            self.target = data[12] + 14
+            self.target = size
         self.buffer.extend(data)
         if len(self.buffer) > 2**20:
             raise ValueError("Oversized sleep notification")
@@ -183,9 +203,9 @@ class Receiver:
         raw = bytes(self.buffer)
         self.buffer.clear()
         self.target = 0
-        if len(raw) < 14:
+        if len(raw) < sleep_envelope.HEADER_SIZE:
             raise ValueError("Short assembled sleep notification")
-        text = raw[14:].decode("latin-1")
+        text = raw[sleep_envelope.HEADER_SIZE :].decode("latin-1")
         obj = json.loads(text, parse_constant=_invalid_constant)
         route = (
             next((cmd for cmd in P3_ORDER if cmd in text), None)

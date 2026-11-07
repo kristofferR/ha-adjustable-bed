@@ -12,18 +12,41 @@ import math
 import sys
 from collections.abc import Callable, Coroutine, Mapping
 from dataclasses import asdict, dataclass, replace
-from typing import TYPE_CHECKING, Any, Final, Literal, TypedDict
+from typing import TYPE_CHECKING, Any, Final, TypedDict
 
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
+from ..codec import vibradorm as codec
 from ..execution import ExecutionCapabilities
+from ..profiles.vibradorm import (
+    ARTICLE_REQUEST,
+    EXTENSION,
+    FLOOR,
+    MASSAGE,
+    MASSAGE_OFF,
+    MASSAGE_WAVES,
+    MEMORY,
+    MOOD,
+    MOOD_EFFECTS,
+    MOOD_PALETTE,
+    MOTORS,
+    STORE,
+    SYNC_ACTIVE,
+    SYNC_INACTIVE,
+    SYNC_REQUEST,
+    VMAT_METADATA_FIELDS,
+    VMAT_MOOD_PALETTE,
+    ControlType,
+    VibradormAppProfile,
+    get_vmat_remote,
+    validate_vibradorm_app_profile,
+)
 from ..vibradorm_app_state import (
     VibradormAppFloorIntent,
     VibradormAppMassageIntent,
     VibradormAppTimerIntent,
 )
-from ..vibradorm_vmat_profiles import VMAT_MOOD_PALETTE, get_vmat_remote
 from .base import (
     POSITION_AXIS_COMMANDS,
     BedController,
@@ -42,11 +65,6 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-ControlType = int | Literal["other"]
-COMMAND: Final = "00001526-9f03-0de5-96c5-b8f4f3081186"
-LIGHT: Final = "00001529-9f03-0de5-96c5-b8f4f3081186"
-CBI: Final = "00001550-9f03-0de5-96c5-b8f4f3081186"
-RESPONSE: Final = "00001551-9f03-0de5-96c5-b8f4f3081186"
 INFO_FIELDS: Final = tuple(
     (field, f"0000{uuid}-0000-1000-8000-00805f9b34fb")
     for field, uuid in (
@@ -57,140 +75,7 @@ INFO_FIELDS: Final = tuple(
         ("software", "2a28"),
     )
 )
-MOTORS: Final = {
-    "head_up": 3,
-    "head_down": 2,
-    "back_up": 11,
-    "back_down": 10,
-    "legs_up": 9,
-    "legs_down": 8,
-    "feet_up": 5,
-    "feet_down": 4,
-    "all_up": 16,
-    "all_down": 0,
-}
-MEMORY: Final = (14, 15, 12, 26, 27, 28)
-MOOD_EFFECTS: Final = ("sunrise", "rainbow", "disco")
-MASSAGE_WAVES: Final = ("1", "2", "3", "4")
-# The shipped fixed-100 HSV conversion has truncation, so retain its outputs.
-MOOD_PALETTE: Final = {
-    "#008a00": (0, 138, 0),
-    "#00aba9": (0, 171, 169),
-    "#1ba1e2": (26, 161, 226),
-    "#0050ef": (0, 80, 239),
-    "#6a00ff": (106, 0, 255),
-    "#aa00ff": (170, 0, 255),
-    "#f472d0": (244, 114, 208),
-    "#d80073": (216, 0, 115),
-    "#a20025": (162, 0, 36),
-    "#e51400": (229, 19, 0),
-    "#fa6800": (250, 104, 0),
-    "#f0a30a": (240, 163, 9),
-    "#e3c800": (227, 200, 0),
-    "#825a2c": (130, 90, 44),
-    "#6d8764": (109, 135, 100),
-    "#647687": (100, 118, 135),
-    "#76708a": (118, 112, 138),
-    "#ffffff": (255, 255, 255),
-}
-
-
-@dataclass(frozen=True, slots=True)
-class VibradormAppProfile:
-    app_profile: str
-    control_type: ControlType
-    restored: bool
-    floor_light: bool
-    rgb: bool
-    massage: bool
-    light_extension: bool
-    groups: tuple[str, ...]
-    basic: bool
-    memory_slots: int
-    remote: str | None = None
-
-    @property
-    def article_requests(self) -> bool:
-        return self.control_type in (5, 6, 7)
-
-    @property
-    def sync(self) -> bool:
-        return (
-            self.app_profile == "werkmeister" and self.control_type == 7
-            or self.app_profile == "vmat" and self.control_type in (8, 9)
-        )
-
-
-def validate_vibradorm_app_profile(
-    app_profile: str,
-    control_type: ControlType,
-    *,
-    restored: bool = False,
-    floor_light: bool | None = None,
-    rgb: bool = False,
-    massage: bool = False,
-    light_extension: bool = False,
-    remote: str | None = None,
-) -> VibradormAppProfile:
-    """Validate an explicit app layout without consulting BLE or generic options."""
-    if app_profile == "vmat":
-        selected = get_vmat_remote(remote)
-        if (
-            isinstance(control_type, bool) or control_type != selected.control_type
-            or restored is not False
-            or floor_light is not selected.floor_light
-            or rgb is not selected.rgb or massage is not selected.massage
-            or light_extension is not selected.light_extension
-        ):
-            raise ValueError("VMAT flags and controls must match the selected remote")
-        return VibradormAppProfile(
-            app_profile, selected.control_type, False, selected.floor_light,
-            selected.rgb, selected.massage, selected.light_extension,
-            selected.groups, selected.control_type == 2,
-            0 if selected.control_type == 2 else 6, remote,
-        )
-    if remote is not None:
-        raise ValueError("Remote ordinals belong only to the VMAT app")
-    if app_profile not in ("caresse", "werkmeister"):
-        raise ValueError("App profile must be caresse or werkmeister")
-    if isinstance(control_type, bool) or (
-        control_type != "other"
-        and (not isinstance(control_type, int) or control_type not in (-1, 0, 1, 2, 3, 4, 5, 6, 7))
-    ):
-        raise ValueError("Use an exact control type or the explicit other layout")
-    if any(type(flag) is not bool for flag in (restored, rgb, massage, light_extension)):
-        raise ValueError("Retained feature flags must be booleans")
-    if floor_light is not None and type(floor_light) is not bool:
-        raise ValueError("Floor-light flag must be boolean")
-    floor = app_profile == "werkmeister" if floor_light is None else floor_light
-    if app_profile == "werkmeister":
-        if control_type not in (5, 7) or restored or not floor or rgb or massage or light_extension:
-            raise ValueError("Werkmeister exposes only its two shipped floor-light profiles")
-    elif not restored and (control_type != 2 or floor or rgb or massage or light_extension):
-        raise ValueError("Fresh Caresse is type 2 with all optional features disabled")
-    groups = (
-        ()
-        if control_type == "other"
-        else ("back", "legs")
-        if control_type in (0, 2, 5)
-        else ("head", "back", "legs")
-        if control_type in (3, 4, 6)
-        else ("head", "back", "legs", "feet")
-    )
-    basic = control_type in (2, 3)
-    slots = 0 if control_type == 2 else 3 if control_type == 3 else 6
-    return VibradormAppProfile(
-        app_profile,
-        control_type,
-        restored,
-        floor,
-        rgb,
-        massage,
-        light_extension,
-        groups,
-        basic,
-        slots,
-    )
+_RELEASES: Final = (codec.motor(codec.STOP), codec.command(codec.STOP))
 
 
 @dataclass(frozen=True, slots=True)
@@ -250,9 +135,10 @@ def validate_profile_roles(client: BleakClient, profile: VibradormAppProfile) ->
 
         validate_vmat_roles(client, basic=profile.basic)
         return
-    _characteristic(client, COMMAND if profile.basic else CBI, "write")
+    write = codec.MOTOR_CHAR_UUID if profile.basic else codec.CBI_CHAR_UUID
+    _characteristic(client, write, "write")
     if not profile.basic:
-        _characteristic(client, RESPONSE, "notify")
+        _characteristic(client, codec.RESPONSE_CHAR_UUID, "notify")
 
 
 def _write_response(client: BleakClient, uuid: str) -> bool:
@@ -260,52 +146,19 @@ def _write_response(client: BleakClient, uuid: str) -> bool:
     return "write" in _characteristic(client, uuid, "write").properties
 
 
-def _decode_java_utf8(data: bytes) -> str:
-    """Match Java UTF-8 replacement lengths, including encoded surrogates."""
-    result: list[str] = []
-    offset = 0
-    while offset < len(data):
-        remaining = data[offset:]
-        try:
-            result.append(remaining.decode("utf-8"))
-            break
-        except UnicodeDecodeError as error:
-            result.append(remaining[: error.start].decode("utf-8"))
-            consumed = error.end
-            start = error.start
-            if (
-                remaining[start] == 0xED
-                and start + 1 < len(remaining)
-                and 0xA0 <= remaining[start + 1] <= 0xBF
-            ):
-                # Java's malformed surrogate sequence includes its valid
-                # continuation bytes; CPython instead rejects the lead byte.
-                consumed = start + 2
-                if consumed < len(remaining) and 0x80 <= remaining[consumed] <= 0xBF:
-                    consumed += 1
-            result.append("\ufffd")
-            offset += consumed
-    return "".join(result)
-
-
 def decode_standard_info(data: bytes | bytearray | None) -> str:
     if data is None:
         return ""
-    return _decode_java_utf8(bytes(data)).strip("".join(map(chr, range(33))))
+    return codec.decode_text(bytes(data)).strip("".join(map(chr, range(33))))
 
 
 def parse_article(data: bytes) -> str | None:
-    return _decode_java_utf8(data[3:]) if len(data) > 4 and data[:3] == b"\x21\xa0\xc8" else None
+    return codec.decode_text(data[3:]) if len(data) > 4 and data[:3] == b"\x21\xa0\xc8" else None
 
 
 def parse_sync(data: bytes) -> bool | None:
-    if len(data) < 3:
-        return None
-    if data[:2] == b"\x20\x3f":
-        return bool(data[2] & 0x40)
-    if data[0] == 0x3F:
-        return bool(data[1] & 0x40)
-    return None
+    reply = codec.status_reply(data) if len(data) >= 3 else None
+    return None if reply is None else bool(reply[0] & 0x40)
 
 
 async def _cancellable[T](operation: Coroutine[Any, Any, T], event: asyncio.Event | None) -> T:
@@ -363,9 +216,9 @@ async def _information_transaction(
                 article_reply = prepare_reply()
                 await _cancellable(
                     client.write_gatt_char(
-                        _characteristic(client, CBI, "write"),
-                        b"\x01\xa0\xc8",
-                        response=_write_response(client, CBI),
+                        _characteristic(client, codec.CBI_CHAR_UUID, "write"),
+                        ARTICLE_REQUEST,
+                        response=_write_response(client, codec.CBI_CHAR_UUID),
                     ),
                     cancel_event,
                 )
@@ -426,7 +279,7 @@ async def async_prepare_vibradorm_app_pairing(
     try:
         async with asyncio.timeout_at(deadline):
             if not profile.basic:
-                notify_char = _characteristic(client, RESPONSE, "notify")
+                notify_char = _characteristic(client, codec.RESPONSE_CHAR_UUID, "notify")
                 subscribed = True
                 await _cancellable(client.start_notify(notify_char, callback), cancel_event)
             return await _information_transaction(
@@ -591,8 +444,6 @@ class VibradormAppController(BedController):
         if self.profile.app_profile == "vmat":
             from typing import cast
 
-            from ..vibradorm_vmat_profiles import VMAT_METADATA_FIELDS
-
             if isinstance(cached, Mapping):
                 self._metadata_values.update(cast(VibradormAppMetadataProgress, {
                     field: cached[field] for field in VMAT_METADATA_FIELDS
@@ -646,7 +497,7 @@ class VibradormAppController(BedController):
 
     @property
     def control_characteristic_uuid(self) -> str:
-        return COMMAND if self.profile.basic else CBI
+        return codec.MOTOR_CHAR_UUID if self.profile.basic else codec.CBI_CHAR_UUID
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
@@ -868,8 +719,6 @@ class VibradormAppController(BedController):
             else ()
         ) + (("sync_observed",) if self.profile.sync else ())
         if self.profile.app_profile == "vmat":
-            from ..vibradorm_vmat_profiles import VMAT_METADATA_FIELDS
-
             fields += VMAT_METADATA_FIELDS
         return tuple(
             ControllerStateSensorSpec(
@@ -897,11 +746,11 @@ class VibradormAppController(BedController):
 
     def _consume_toggle(self) -> int:
         current = self._toggle
-        self._toggle ^= 0x8000
+        self._toggle ^= codec.TOGGLE
         return current
 
-    def _header(self, opcode: int) -> bytes:
-        return (opcode | self._consume_toggle()).to_bytes(2, "big")
+    def _header(self, word: int, parameters: bytes = b"") -> bytes:
+        return codec.command(word, parameters, self._consume_toggle())
 
     async def _write(
         self,
@@ -915,7 +764,7 @@ class VibradormAppController(BedController):
         async with self._ble_lock:
             if effective_event.is_set():
                 raise asyncio.CancelledError
-            if self.profile.app_profile == "vmat" and packet not in (b"\xff", b"\x00\xff"):
+            if self.profile.app_profile == "vmat" and packet not in _RELEASES:
                 delay = self._next_write_at - asyncio.get_running_loop().time()
                 if delay > 0:
                     await _cancellable(asyncio.sleep(delay), effective_event)
@@ -925,7 +774,7 @@ class VibradormAppController(BedController):
             if self.profile.app_profile == "vmat":
                 from ..vibradorm_vmat_setup import vmat_characteristic
 
-                response = uuid != CBI
+                response = uuid != codec.CBI_CHAR_UUID
                 char = vmat_characteristic(client, uuid, "write" if response else "write-without-response")
             else:
                 char = _characteristic(client, uuid, "write")
@@ -1005,7 +854,7 @@ class VibradormAppController(BedController):
             from ..vibradorm_vmat_setup import vmat_characteristic
 
             await _cancellable(asyncio.sleep(0.5), self._coordinator.cancel_command)
-            char = vmat_characteristic(client, RESPONSE, "notify")
+            char = vmat_characteristic(client, codec.RESPONSE_CHAR_UUID, "notify")
             self._notify_generation += 1
             generation = self._notify_generation
 
@@ -1023,7 +872,7 @@ class VibradormAppController(BedController):
                 await client.stop_notify(char)
                 return
         else:
-            char = _characteristic(client, RESPONSE, "notify")
+            char = _characteristic(client, codec.RESPONSE_CHAR_UUID, "notify")
             await client.start_notify(char, self._notification)
         self._notify_client = client
         self._notify_characteristic = char
@@ -1107,7 +956,9 @@ class VibradormAppController(BedController):
                     async with asyncio.timeout(2):
                         await self._write(
                             self.control_characteristic_uuid,
-                            b"\xff" if self.profile.basic else b"\x00\xff",
+                            codec.motor(codec.STOP)
+                            if self.profile.basic
+                            else codec.command(codec.STOP),
                             asyncio.Event(),
                         )
                 except Exception as failure:
@@ -1153,7 +1004,7 @@ class VibradormAppController(BedController):
                 async with budget:
                     if control == "sync":
                         self._sync_reply = asyncio.get_running_loop().create_future()
-                        await self._write(CBI, self._header(0x003D) + b"\x3f")
+                        await self._write(codec.CBI_CHAR_UUID, self._header(*SYNC_REQUEST))
 
                         async def receive() -> bool:
                             assert self._sync_reply is not None
@@ -1161,7 +1012,7 @@ class VibradormAppController(BedController):
 
                         active = await _cancellable(receive(), event)
                         self._sync_reply = None
-                        opcode = 0x19 if active else 0x18
+                        opcode = SYNC_ACTIVE if active else SYNC_INACTIVE
                     else:
                         opcode = (
                             MEMORY[int(control[7:]) - 1]
@@ -1170,9 +1021,9 @@ class VibradormAppController(BedController):
                         )
                     toggle = self._consume_toggle()
                     packet = (
-                        bytes([opcode])
+                        codec.motor(opcode)
                         if self.profile.basic
-                        else (opcode | toggle).to_bytes(2, "big")
+                        else codec.command(opcode, toggle=toggle)
                     )
                     while not event.is_set():
                         await self._write(self.control_characteristic_uuid, packet)
@@ -1231,13 +1082,13 @@ class VibradormAppController(BedController):
         _integer(memory_num, 1, self.memory_slot_count, "Memory slot")
         if not self.supports_memory_programming:
             raise ValueError("Basic profiles have no memory programming route")
-        headers = [self._header(0xD) for _ in range(4)]
+        headers = [self._header(STORE) for _ in range(4)]
         self._consume_toggle()  # Source applies the fifth toggle to the wrong receiver.
         try:
-            for packet in (*headers, bytes((0, MEMORY[memory_num - 1]))):
+            for packet in (*headers, codec.command(MEMORY[memory_num - 1])):
                 if self._coordinator.cancel_command.is_set():
                     break
-                await self._write(CBI, packet)
+                await self._write(codec.CBI_CHAR_UUID, packet)
                 await _cancellable(asyncio.sleep(0.1), self._coordinator.cancel_command)
         finally:
             await self._cleanup_preserving_error(4)
@@ -1251,7 +1102,7 @@ class VibradormAppController(BedController):
             self._timer_enabled = not self._timer_enabled
             self._publish_floor()
         elif action == "mood_toggle" and self.profile.rgb:
-            await self._write(CBI, self._header(0x1077))
+            await self._write(codec.CBI_CHAR_UUID, self._header(MOOD | EXTENSION))
         elif action in ("massage_automatic", "massage_individual") and self.profile.massage:
             await self._massage_mode(action == "massage_automatic")
         else:
@@ -1308,14 +1159,13 @@ class VibradormAppController(BedController):
         )
         timer = self._timer_minutes if self._timer_enabled else 0
         if self.profile.basic and not self.profile.light_extension:
-            await self._write(LIGHT, bytes((raw, 0, timer)))
+            await self._write(codec.LIGHT_CHAR_UUID, codec.light(raw, timer))
         else:
-            packet = self._header(
-                0x1011 if not self.profile.basic and self.profile.light_extension else 0x11
-            ) + bytes((raw, timer))
+            extended = not self.profile.basic and self.profile.light_extension
+            packet = self._header(FLOOR | EXTENSION if extended else FLOOR, bytes((raw, timer)))
             if self._coordinator.cancel_command.is_set():
                 return
-            await self._write(CBI, packet, advance_at_execution=True)
+            await self._write(codec.CBI_CHAR_UUID, packet, advance_at_execution=True)
         if self.profile.app_profile == "vmat":
             self._floor_level = level
         self._publish_floor()
@@ -1357,7 +1207,8 @@ class VibradormAppController(BedController):
             raise ValueError("This profile has no mood-light route")
         if self.profile.app_profile != "vmat":
             self._mood_intent[key] = value
-        await self._write(CBI, self._header(0x77 if self.profile.basic else 0x1077) + parameters)
+        word = MOOD if self.profile.basic else MOOD | EXTENSION
+        await self._write(codec.CBI_CHAR_UUID, self._header(word, parameters))
         self._mood_intent[key] = value
         self.forward_controller_state_update(f"vibradorm_app_mood_{key}", value)
 
@@ -1381,9 +1232,10 @@ class VibradormAppController(BedController):
 
     def _massage_packet(self, off: bool = False) -> bytes:
         m = self._massage
-        group = 0 if self.profile.basic else 0x1000
-        return self._header(group | (0x34 if off else 0x30)) + (
-            b"\x00" if off else bytes((m.effect, m.speed, *m.zones, 0, 0, 0, 0))
+        group = 0 if self.profile.basic else EXTENSION
+        return self._header(
+            group | (MASSAGE_OFF if off else MASSAGE),
+            b"\x00" if off else bytes((m.effect, m.speed, *m.zones, 0, 0, 0, 0)),
         )
 
     def _plan_massage_callback(self, code: int) -> bytes:
@@ -1423,7 +1275,7 @@ class VibradormAppController(BedController):
             for index, packet in enumerate(packets):
                 if index:
                     await _cancellable(asyncio.sleep(0.1), self._coordinator.cancel_command)
-                await self._write(CBI, packet)
+                await self._write(codec.CBI_CHAR_UUID, packet)
         except BaseException:
             if self.profile.app_profile == "vmat":
                 # Preserve the shared reconnect holder, including saved flags.

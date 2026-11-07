@@ -14,8 +14,8 @@ from custom_components.adjustable_bed.config_flow import (
     _vibradorm_app_data,
     _vibradorm_app_errors,
 )
+from custom_components.adjustable_bed.profiles.vibradorm import VMAT_REMOTES
 from custom_components.adjustable_bed.vibradorm_app_state import get_vibradorm_app_session_intent
-from custom_components.adjustable_bed.vibradorm_vmat_profiles import VMAT_REMOTES
 from tests.test_vibradorm_vmat import make_vmat
 
 
@@ -45,7 +45,9 @@ async def test_public_progress_worker_retains_failed_setup_across_retry_removal_
         BondVerificationStatus,
     )
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-    from custom_components.adjustable_bed.vibradorm_vmat_setup import QUERY_STAGES
+    from custom_components.adjustable_bed.profiles.vibradorm import (
+        VMAT_QUERY_STAGES as QUERY_STAGES,
+    )
 
     address, source = "11:22:33:44:55:66", "AA:BB:CC:DD:EE:FF"
     path = ConnectionPath(source, transport=TransportClass.LOCAL, adapter="hci0")
@@ -356,7 +358,9 @@ async def test_public_setup_accepts_native_closure_after_disconnect_rpc_error(ha
     c = make_vmat("07")
     c.client.pair = AsyncMock()
     queried = 0
-    from custom_components.adjustable_bed.vibradorm_vmat_setup import QUERY_STAGES
+    from custom_components.adjustable_bed.profiles.vibradorm import (
+        VMAT_QUERY_STAGES as QUERY_STAGES,
+    )
 
     async def write(char, packet, **kwargs):
         nonlocal queried
@@ -432,7 +436,6 @@ async def test_public_prebonded_setup_validates_ordinary_profile_roles(hass, rem
 
     from bleak.backends.device import BLEDevice
 
-    from custom_components.adjustable_bed.beds.vibradorm_app import CBI, COMMAND, LIGHT
     from custom_components.adjustable_bed.bluetooth_transport import (
         ConnectionPath,
         PathPrediction,
@@ -444,6 +447,9 @@ async def test_public_prebonded_setup_validates_ordinary_profile_roles(hass, rem
         BondOwner,
         BondVerificationStatus,
     )
+    from custom_components.adjustable_bed.codec.vibradorm import CBI_CHAR_UUID as CBI
+    from custom_components.adjustable_bed.codec.vibradorm import LIGHT_CHAR_UUID as LIGHT
+    from custom_components.adjustable_bed.codec.vibradorm import MOTOR_CHAR_UUID as COMMAND
 
     address, source = "11:22:33:44:55:66", "AA:BB:CC:DD:EE:FF"
     path = ConnectionPath(source, transport=TransportClass.LOCAL, adapter="hci0")
@@ -500,8 +506,10 @@ async def test_public_setup_transport_write_timeout_never_pairs(hass, mode):
         BondOwner,
         BondVerificationStatus,
     )
+    from custom_components.adjustable_bed.profiles.vibradorm import (
+        VMAT_QUERY_STAGES as QUERY_STAGES,
+    )
     from custom_components.adjustable_bed.setup_operation import OperationOutcome
-    from custom_components.adjustable_bed.vibradorm_vmat_setup import QUERY_STAGES
 
     address, source = "11:22:33:44:55:66", "AA:BB:CC:DD:EE:FF"
     path = ConnectionPath(source, transport=TransportClass.LOCAL, adapter="hci0")
@@ -700,7 +708,9 @@ async def test_real_setup_stages_then_pair_proof_close_disconnect_and_metadata_r
         BondOwner,
         BondVerificationStatus,
     )
-    from custom_components.adjustable_bed.vibradorm_vmat_setup import QUERY_STAGES
+    from custom_components.adjustable_bed.profiles.vibradorm import (
+        VMAT_QUERY_STAGES as QUERY_STAGES,
+    )
 
     address = "11:22:33:44:55:66"
     source = "AA:BB:CC:DD:EE:FF"

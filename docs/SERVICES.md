@@ -385,8 +385,8 @@ they are not exposed through `hold_control`.
 | [INNOVA](beds/keeson.md#innova-profile) | `back_up`, `back_down`, `legs_up`, `legs_down`, `memory_a`, `memory_b`, `memory_timer`, plus `combined_up`/`combined_down` (2M), `lumbar_up`/`lumbar_down` (3M, 4M) and `waist_up`/`waist_down` (4M) | Key every 100 ms, then the zero key 100 ms later |
 | [AdjustableM5X4](beds/okin-nframe.md#adjustablem5x4) | Movement, preset, save and massage controls | Movement and memory refresh every 100 ms with immediate STOP. Flat runs 600 ms; save and reset run the six-second confirmation interval regardless of `duration`. Positive massage controls require observed active state. One physical address only |
 | [Adjustable Comfort M1X12](beds/starcode-m1x12.md) | Parts 1, 2, 4, 8, 16 and union movement, massage wave/intensity, plus explicit ELEVATE actions | 100 ms held refresh, 0.1–60 seconds, fresh STOP on release/cancellation. The native card invokes one bounded service window and routes STOP to the owning side |
-| [Caresse / Werkmeister](beds/vibradorm_app.md) | Profile motor directions, `all_up`, `all_down`, `memory_1` to `memory_6`, Werkmeister `sync` | Completion-gated refresh, then a fresh release. All-down is a held direction, not a flat preset. Save memory uses the Save buttons |
-| [V-MAT Basic](beds/vmatbasic.md) | `all_up`, `all_down`, `back_up`, `back_down`, `legs_up`, `legs_down`, XT-only `floor_hold` | Movement ends with a fresh `ff` release; both sides need two ready receivers. `floor_hold` ends its refresh without a release and targets one physical receiver |
+| [Caresse / Werkmeister](beds/vibradorm.md#caresse-and-werkmeister) | Profile motor directions, `all_up`, `all_down`, `memory_1` to `memory_6`, Werkmeister `sync` | Completion-gated refresh, then a fresh release. All-down is a held direction, not a flat preset. Save memory uses the Save buttons |
+| [V-MAT Basic](beds/vibradorm.md#v-mat-basic) | `all_up`, `all_down`, `back_up`, `back_down`, `legs_up`, `legs_down`, XT-only `floor_hold` | Movement ends with a fresh `ff` release; both sides need two ready receivers. `floor_hold` ends its refresh without a release and targets one physical receiver |
 | [OCTO Smart Control](beds/octo.md) | Advertised motor directions and `memory_1` through the discovered memory count | P1 commands repeat every 350 ms inside each bounded operation, which ends with STOP. The 60-second service maximum is a Home Assistant safety bound; the card starts another bounded call only while the user still holds the control. |
 | [Svane Remote](beds/svane.md) | `head_up`, `head_down`, `feet_up`, `feet_down`, the four `head_*_feet_*` combinations, `light_adjust` | See [Svane Remote held controls](#svane-remote-held-controls) |
 | [Limoss Remote](beds/limoss.md#limoss-remote) | Controls rendered for the receiver's layout | Five-frame release |
@@ -412,7 +412,7 @@ its app's name rule to every target before any write:
 | [Comfort Motion app](beds/jiecang.md#comfort-motion-app) | 1–18 ASCII letters, digits, dots or underscores, discovered G1 name role required |
 | [INNOVA](beds/keeson.md#innova-profile) | At most 14 characters as typed, then trimmed and non-empty |
 | [FurniMove](beds/furnimove.md#controls-and-actions) | One physical receiver; a unique name of at most 18 UTF-16 units after trimming |
-| [V-MAT Basic](beds/vmatbasic.md) | One physical receiver; Java-style trim, at most ten UTF-16 units (empty allowed) and 20 UTF-8 bytes |
+| [V-MAT Basic](beds/vibradorm.md#v-mat-basic) | One physical receiver; Java-style trim, at most ten UTF-16 units (empty allowed) and 20 UTF-8 bytes |
 
 ```yaml
 action: adjustable_bed.rename
@@ -633,7 +633,7 @@ phone scheduler. See [packet behavior and limits](beds/keeson.md#clock-and-alarm
 `save_anti_snore`, unassigned BLE `assign_room` / `confirm_add`, and preset
 recall with explicit conditional `internal_side` selection. All controls use
 normal `device_id` and paired physical `side` routing. See the
-[Floyd action table](beds/floyd.md#movement-and-presets) before programming a
+[Floyd action table](beds/kaidi.md#floyd-action) before programming a
 preset or assigning membership. Combined movement uses `hold_control` with
 `head_feet_up` or `head_feet_down` and a duration up to 30 seconds. HA automations
 schedule these presets; the app's phone alarms are not on-bed alarm storage.
@@ -683,7 +683,7 @@ the distinct wire builders and raw-data limitations.
 
 ### Good Vibe Sleep configuration
 
-`adjustable_bed.goodvibe` exposes product-gated alarm, light and snore settings plus independent sleep-sensor queries. Select an exact alarm action ID from the [command/profile tables](beds/goodvibe.md#alarms-and-snore-settings). Sleep reports use `operation: report`, a date, part and report type (1 day, 2 month); metadata, continuation and typed receipt form one operation. The status sensor retains typed reports and per-side live values. Use the app-labelled buttons for normal controls and the existing bounded `hold_control` action for held gestures. See the [protocol guide](beds/goodvibe.md) for every packet, profile gate and lifecycle limit.
+`adjustable_bed.goodvibe` exposes product-gated alarm, light and snore settings plus independent sleep-sensor queries. Select an exact alarm action ID from the [command/profile tables](beds/richmat.md#alarms-and-snore-settings). Sleep reports use `operation: report`, a date, part and report type (1 day, 2 month); metadata, continuation and typed receipt form one operation. The status sensor retains typed reports and per-side live values. Use the app-labelled buttons for normal controls and the existing bounded `hold_control` action for held gestures. See the [protocol guide](beds/richmat.md#good-vibe-sleep) for every packet, profile gate and lifecycle limit.
 
 ## Ergomotion 4.0
 
@@ -718,7 +718,7 @@ minute-precision `time`. `wake_mode` is `zero_g` (default), `flat`, or `massage`
 Every selected target is validated before any clock or alarm write.
 
 Use `sync_clock`, `hold_control`, and the profile's refresh/strength/timer buttons
-for other controls. See the [protocol guide](beds/eshine-okin.md#clock-and-alarms)
+for other controls. See the [protocol guide](beds/okin-nframe.md#eshine-clock-and-alarms)
 for packet values, timing and hardware-unverified status. This is separate from
 the E6000 app profile.
 

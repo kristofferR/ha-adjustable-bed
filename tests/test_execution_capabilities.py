@@ -24,7 +24,11 @@ from pathlib import Path
 import pytest
 
 from custom_components.adjustable_bed.beds.base import BedController
-from custom_components.adjustable_bed.const import SUPPORTED_BED_TYPES, VARIANT_AUTO
+from custom_components.adjustable_bed.const import (
+    ESHINE_OKIN_PROFILES,
+    SUPPORTED_BED_TYPES,
+    VARIANT_AUTO,
+)
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.ergomotion4_profiles import PRODUCTS as ERGOMOTION_4_PRODUCTS
 from custom_components.adjustable_bed.execution import (
@@ -32,6 +36,7 @@ from custom_components.adjustable_bed.execution import (
     ExecutionCapabilities,
 )
 from custom_components.adjustable_bed.profiles import keeson as keeson_profiles
+from custom_components.adjustable_bed.profiles import vibradorm as vibradorm_profiles
 from tests.codec_families import families
 from tests.test_controller_contract import (
     _create_controller_for_bed_type,
@@ -144,6 +149,9 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "OkinNFrameProfile:cst_resident": {"hold": ("resident",)},
     "OkinNFrameProfile:cst_sanctuary": {"hold": ("sanctuary",)},
     "OkinNFrameProfile:cst_support": {"hold": ("support",)},
+    "OkinNFrameProfile:eshine_e2000": {"hold": ("eshine-okin",)},
+    "OkinNFrameProfile:eshine_e30003100": {"hold": ("eshine-okin",)},
+    "OkinNFrameProfile:eshine_e5000": {"hold": ("eshine-okin",)},
     "OkinNFrameProfile:jeromes": {
         "hold": ("jeromes", "row028"),
         "concurrent": ("jeromes", "row028"),
@@ -178,6 +186,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "OkinNFrameProfile:zseries_z230": {"hold": ("glory",)},
     "OkinNFrameProfile:zseries_z280": {"hold": ("glory",)},
     # Richmat 6E (#483): BedTech, GM Motor and Casper Base are blocked.
+    "RichmatProfile:eshine": {"hold": ("eshine",)},
     "RichmatProfile:hjbed": {"hold": ("row121",)},
     "RichmatProfile:leggett_wilinke": {"hold": ("lp2",)},
     "RichmatProfile:richmat_mh_best_mattress": {"hold": ("best", "row055")},
@@ -207,8 +216,6 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     # and ``leggett_lp_legacy`` is not declared yet (see the design note). Svane
     # Remote declares hold and composition on its controller (#516), and Sleepy's
     # BOX25 declares on the controller for both dialects.
-    "eshine": {"hold": ("eshine",)},
-    "eshine_okin": {"hold": ("eshine-okin",)},
     "furnimove": {"hold": ("fm157",)},
     # Scoped to held controls whose effective gesture is a sustained press:
     # short, long and short-and-long gestures and memory mode keep theirs.
@@ -256,6 +263,7 @@ _CUSTOMATIC = (
     "OkinNFrameProfile:jeromes",
     "OkinNFrameProfile:remedy",
 )
+_ESHINE = tuple(f"OkinNFrameProfile:{key}" for key in ESHINE_OKIN_PROFILES)
 _LEGGETT_STREAM = ("OkinNFrameProfile:prodigy2", "OkinNFrameProfile:prodigy2l")
 _LUMBAR = (
     "OkinNFrameProfile:adjustable_lumbar_okin",
@@ -270,10 +278,7 @@ _SIMMONS = ("OkinNFrameProfile:simmons_okin", "OkinNFrameProfile:simmons_smartbe
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "beds/cluster018.py:<module>.Cluster018Controller": ("richmat_classic_apps",),
     "beds/cluster018.py:<module>.Cluster018Controller.execution": ("richmat_classic_apps",),
-    "beds/eshine.py:<module>.EshineController": ("eshine",),
-    "beds/eshine.py:<module>.EshineController.execution": ("eshine",),
-    "beds/eshine_okin.py:<module>.EshineOkinController": ("eshine_okin",),
-    "beds/eshine_okin.py:<module>.EshineOkinController.execution": ("eshine_okin",),
+    "beds/eshine_okin.py:<module>.EshineOkinController": _ESHINE,
     "beds/furnimove.py:<module>.FurniMoveController": ("furnimove",),
     "beds/furnimove.py:<module>.FurniMoveController.execution": ("furnimove",),
     "beds/goodvibe.py:<module>.GoodVibeController": ("goodvibe",),
@@ -354,6 +359,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/okin_nframe.py:<module>._abm": _ABM,
     "profiles/okin_nframe.py:<module>._cst": _CST,
     "profiles/okin_nframe.py:<module>._customatic": _CUSTOMATIC,
+    "profiles/okin_nframe.py:<module>._eshine": _ESHINE,
     "profiles/okin_nframe.py:<module>._leggett": (
         *_LEGGETT_STREAM,
         "OkinNFrameProfile:prodigy4",
@@ -361,6 +367,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     ),
     "profiles/okin_nframe.py:<module>._lumbar": _LUMBAR,
     "profiles/okin_nframe.py:<module>._simmons": _SIMMONS,
+    "profiles/richmat.py:<module>.ESHINE": ("RichmatProfile:eshine",),
     "profiles/richmat.py:<module>.HJBED": ("RichmatProfile:hjbed",),
     "profiles/richmat.py:<module>.LEGGETT_WILINKE": ("RichmatProfile:leggett_wilinke",),
     "profiles/richmat.py:<module>.RICHMAT": tuple(
@@ -427,6 +434,11 @@ async def _family_profiles() -> dict[str, ExecutionCapabilities]:
         for layout in layouts
     )
     profiles.extend(keeson_profiles.ergomotion_4_profile(style) for style in ERGOMOTION_4_STYLES)
+    # Werkmeister and VMAT layouts are validated from entry data at runtime.
+    profiles += [
+        vibradorm_profiles.validate_vibradorm_app_profile("werkmeister", 5),
+        vibradorm_profiles.validate_vibradorm_app_profile("vmat", 2, floor_light=False, remote="00"),
+    ]
     for bed_type, (config_key, choices) in APP_ROUTES.items():
         for choice in choices:
             coordinator = _FactoryCoordinator()

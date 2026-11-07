@@ -1272,7 +1272,7 @@ def _validate_vibradorm_setup_roles(client: BleakClient, data: dict[str, Any]) -
         validate_profile_roles(client, data[CONF_VMATBASIC_PROFILE])
         return
     from .beds.vibradorm_app import validate_profile_roles as validate_app_roles
-    from .beds.vibradorm_app import validate_vibradorm_app_profile
+    from .profiles.vibradorm import validate_vibradorm_app_profile
 
     control = data[CONF_VIBRADORM_CONTROL_TYPE]
     profile = validate_vibradorm_app_profile(
@@ -1385,7 +1385,7 @@ def _vibradorm_selection_label(data: Mapping[str, Any]) -> str:
     app = data[CONF_VIBRADORM_APP_PROFILE]
     control = data[CONF_VIBRADORM_CONTROL_TYPE]
     if app == "vmat":
-        from .vibradorm_vmat_profiles import VMAT_REMOTES
+        from .profiles.vibradorm import VMAT_REMOTES
 
         remote = data[CONF_VIBRADORM_VMAT_REMOTE]
         detail = f"Remote {remote} ({VMAT_REMOTES[remote].asset})"
@@ -1876,7 +1876,7 @@ def _vibradorm_app_data(
     restored = data.get(CONF_VIBRADORM_RESTORED, False) if app == "caresse" else False
     data[CONF_VIBRADORM_RESTORED] = restored
     if app == "vmat":
-        from .vibradorm_vmat_profiles import VMAT_REMOTES
+        from .profiles.vibradorm import VMAT_REMOTES
 
         remote = data.get(CONF_VIBRADORM_VMAT_REMOTE)
         selected = VMAT_REMOTES.get(remote) if isinstance(remote, str) else None
@@ -1928,7 +1928,7 @@ def _vibradorm_app_data(
 
 def _vibradorm_app_errors(data: Mapping[str, Any]) -> dict[str, str]:
     """Validate the controller's immutable profile before making any BLE request."""
-    from .beds.vibradorm_app import validate_vibradorm_app_profile
+    from .profiles.vibradorm import validate_vibradorm_app_profile
 
     if data.get(CONF_VIBRADORM_APP_PROFILE) not in VIBRADORM_APP_PROFILES:
         return {CONF_VIBRADORM_APP_PROFILE: "vibradorm_app_required"}
@@ -1936,7 +1936,7 @@ def _vibradorm_app_errors(data: Mapping[str, Any]) -> dict[str, str]:
     if isinstance(stored_control, bool) or not isinstance(stored_control, (int, str)):
         return {CONF_VIBRADORM_CONTROL_TYPE: "vibradorm_app_invalid"}
     if data[CONF_VIBRADORM_APP_PROFILE] == "vmat":
-        from .vibradorm_vmat_profiles import VMAT_REMOTES
+        from .profiles.vibradorm import VMAT_REMOTES
 
         if data.get(CONF_VIBRADORM_VMAT_REMOTE) not in VMAT_REMOTES:
             return {CONF_VIBRADORM_VMAT_REMOTE: "vibradorm_app_invalid"}
@@ -1996,7 +1996,7 @@ def _vmatbasic_data(previous: Mapping[str, Any], submitted: Mapping[str, Any]) -
 
 
 def _vmatbasic_errors(data: Mapping[str, Any]) -> dict[str, str]:
-    from .beds.vmatbasic_protocol import integer
+    from .profiles.vmatbasic import integer
 
     profile = data.get(CONF_VMATBASIC_PROFILE)
     if not isinstance(profile, str) or profile not in VMATBASIC_PROFILES:
@@ -7244,7 +7244,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     self._migration_endpoint_check(client, self._manual_data)
                     self._migration_endpoints_checked = True
                 if vmat_profile:
-                    from .vibradorm_vmat_profiles import VMAT_REMOTES
+                    from .profiles.vibradorm import VMAT_REMOTES
                     from .vibradorm_vmat_setup import validate_vmat_roles
 
                     assert self._manual_data is not None

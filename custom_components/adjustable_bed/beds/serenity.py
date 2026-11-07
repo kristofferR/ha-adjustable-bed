@@ -75,13 +75,13 @@ _ALARM_SELECTION: Final = 1  # Persisted bedSelection default; the app never set
 def alarm_frame(*, enabled: bool, hour: int, minute: int, repeat: int, wake: str) -> bytes:
     """Build the app's nine-byte alarm set/off frame."""
     if not enabled:
-        return bytes((0x07, 0x05, 0, 0, 0, 0, 0, 0, _ALARM_SELECTION))
+        return codec.alarm((0, 0, 0, 0, 0, 0, _ALARM_SELECTION))
     if wake not in _ALARM_WAKE:
         raise ValueError("Wake mode must be massage or memory_1")
     if not (0 <= hour <= 23 and 0 <= minute <= 59 and repeat in (1, 2, 4, 8, 16, 32, 64)):
         raise ValueError("Alarm time or repeat day is out of range")
     # Enable is zero only when all four caller fields are zero; wake is never zero here.
-    return bytes((0x07, 0x05, repeat, _ALARM_WAKE[wake][1], hour, minute, 0, 1, _ALARM_SELECTION))
+    return codec.alarm((repeat, _ALARM_WAKE[wake][1], hour, minute, 0, 1, _ALARM_SELECTION))
 
 
 def alarm_repeat_bit(now: datetime, hour: int, minute: int) -> int:

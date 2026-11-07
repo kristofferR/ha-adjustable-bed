@@ -8,6 +8,8 @@ DewertOkin, RF ECO BT, CB24, DOT, Sleepy's legacy CB25, AdjustableM5X4, whose
 report is quarantined) list the frames the pre-v5 controller sent.
 """
 
+ESHINE = ("eshine_e2000", "eshine_e30003100", "eshine_e5000")
+
 FROZEN_FRAMES: dict[str, frozenset[str]] = {
     # pre-v5 OkinUuidController, every handset in OKIN_UUID_REMOTES
     "okimat": frozenset(
@@ -1242,6 +1244,34 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "08020800800000000000",
         }
     ),
+    # com.okin.eshine 1.1.8 report (row122): one command table, every selector
+    **dict.fromkeys(
+        ESHINE,
+        frozenset(
+            {
+                "05020000000000",
+                "05020000000100",
+                "05020000000200",
+                "05020000000400",
+                "05020000000800",
+                "05020000001000",
+                "05020000002000",
+                "05020000010000",
+                "05020000020000",
+                "05020000040000",
+                "05020000080000",
+                "05020000100000",
+                "05020000200000",
+                "05020000400000",
+                "05020000800000",
+                "05020002000000",
+                "05020200000000",
+                "05020800000000",
+                "05020800100000",
+                "05021000000000",
+            }
+        ),
+    ),
 }
 
 # RF-Gateway envelopes the pre-v5 gateway controllers sent for the Okimat and
@@ -1314,3 +1344,21 @@ SETUP_FRAMES: dict[str, frozenset[str]] = {
     "prodigy2": frozenset({"0102"}),
     "prodigy4": frozenset({"0102"}),
 }
+
+# Requests, clock and alarm frames: ``00 <code>``, ``07 04`` and ``07 05``. The
+# row122 vectors set the clock for 2026-11-03 14:47:09 and for 1999.
+SETTING_FRAMES: dict[str, frozenset[str]] = dict.fromkeys(
+    ESHINE,
+    frozenset(
+        {
+            "00b0",
+            "00c0",
+            "070500000000000000",
+            "07041a0b03020e2f09",
+            "0704ff0b03030e2f09",
+            "07050401101e000101",
+            "070508090c00000101",
+            "070501080c00000101",
+        }
+    ),
+)

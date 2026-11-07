@@ -1,7 +1,8 @@
-"""com.okin.eshine 1.1.8 wire values, independent of the E6000 app.
+"""com.okin.eshine 1.1.8 clock, alarm and reply rules, independent of the E6000 app.
 
-Evidence: APK Protocol Audit row 122, with deliberate malformed-input
-corrections.
+Key words and hold timing are the ``ESHINE_PROFILES`` data; every frame is an
+Okin N-frame (``codec/okin_nframe.py``). Evidence: APK Protocol Audit row122,
+with deliberate malformed-input corrections.
 """
 
 from __future__ import annotations
@@ -9,65 +10,31 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Final
 
+from ..codec import okin_nframe
+from ..profiles.okin_nframe import ESHINE_KEYS
+
 SERVICE_UUID: Final = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
 WRITE_UUID: Final = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
 NOTIFY_UUID: Final = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
-REFRESH_MS: Final = 300
-RELEASE_MS: Final = 200
 COMMANDS: Final = {
-    "query_alarm": bytes.fromhex("00 c0"),
-    "query_state": bytes.fromhex("00 b0"),
-    "disable_alarm": bytes.fromhex("07 05 00 00 00 00 00 00 00"),
-    "massage_wave": bytes.fromhex("05 02 10 00 00 00 00"),
-    "stop": bytes.fromhex("05 02 00 00 00 00 00"),
-    "tv": bytes.fromhex("05 02 00 00 40 00 00"),
-    "anti_snore": bytes.fromhex("05 02 00 00 80 00 00"),
-    "zero_g": bytes.fromhex("05 02 00 00 10 00 00"),
-    "feet_down": bytes.fromhex("05 02 00 00 00 08 00"),
-    "feet_up": bytes.fromhex("05 02 00 00 00 04 00"),
-    "head_down": bytes.fromhex("05 02 00 00 00 02 00"),
-    "head_up": bytes.fromhex("05 02 00 00 00 01 00"),
-    "pillow_down": bytes.fromhex("05 02 00 00 00 20 00"),
-    "pillow_up": bytes.fromhex("05 02 00 00 00 10 00"),
-    "light": bytes.fromhex("05 02 00 02 00 00 00"),
-    "flat": bytes.fromhex("05 02 08 00 00 00 00"),
-    "reading": bytes.fromhex("05 02 00 00 20 00 00"),
-    "massage_foot_strength": bytes.fromhex("05 02 00 00 04 00 00"),
-    "massage_head_strength": bytes.fromhex("05 02 00 00 08 00 00"),
-    "massage_timer": bytes.fromhex("05 02 00 00 02 00 00"),
-    "massage_off": bytes.fromhex("05 02 02 00 00 00 00"),
-    "massage_on": bytes.fromhex("05 02 00 00 01 00 00"),
-    "flat_zero_g": bytes.fromhex("05 02 08 00 10 00 00"),
+    "query_alarm": okin_nframe.request(0xC0),
+    "query_state": okin_nframe.request(0xB0),
+    "disable_alarm": okin_nframe.alarm(bytes(7)),
+    **{action: okin_nframe.frame40(word) for action, word in ESHINE_KEYS.items()},
 }
+# Every key but STOP and the massage keys streams while held.
 HELD: Final = frozenset(
-    {
-        "head_up",
-        "head_down",
-        "feet_up",
-        "feet_down",
-        "pillow_up",
-        "pillow_down",
-        "flat",
-        "zero_g",
-        "reading",
-        "tv",
-        "anti_snore",
-        "flat_zero_g",
-        "light",
-    }
+    action for action in ESHINE_KEYS if action != "stop" and not action.startswith("massage_")
 )
 ALARM_TYPES: Final = {"zero_g": 1, "flat": 9, "massage": 8}
 type StateValue = int | bool | str
 
 
 def clock_frame(now: datetime) -> bytes:
-    """Local civil time, Monday=1; low eight bits match the app encoder."""
-    return bytes(
-        v & 255
-        for v in (
-            7,
-            4,
-            now.year - 2000,
+    """Local civil time, Monday=1; the year's low eight bits match the app encoder."""
+    return okin_nframe.clock(
+        (
+            (now.year - 2000) & 255,
             now.month,
             now.day,
             now.isoweekday(),
@@ -84,7 +51,7 @@ def alarm_frame(now: datetime, hour: int, minute: int, action: str) -> bytes:
     day = selected.isoweekday() % 7
     if selected <= now:
         day = (day + 1) % 7
-    return bytes((7, 5, 1 << day, ALARM_TYPES[action], hour, minute, 0, 1, 1))
+    return okin_nframe.alarm((1 << day, ALARM_TYPES[action], hour, minute, 0, 1, 1))
 
 
 def parse_notification(data: bytes, now: datetime) -> tuple[str, dict[str, StateValue]] | None:
