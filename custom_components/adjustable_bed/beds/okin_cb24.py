@@ -139,6 +139,9 @@ class OkinCB24Controller(BedController):
     Supports dual-bed configurations via bed selection byte.
     """
 
+    # The CB24 protocol writes without response.
+    _write_with_response = False
+
     profile = OKIN_CB24
 
     def __init__(
@@ -181,23 +184,6 @@ class OkinCB24Controller(BedController):
     @property
     def control_characteristic_uuid(self) -> str:
         return NORDIC_UART_WRITE_CHAR_UUID
-
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        """Write a command using write-without-response as required by CB24 protocol."""
-        await self._write_gatt_with_retry(
-            self.control_characteristic_uuid,
-            command,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            cancel_event=cancel_event,
-            response=False,
-        )
 
     # Capability properties
     @property

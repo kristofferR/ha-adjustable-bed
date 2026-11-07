@@ -1854,10 +1854,11 @@ def _hold_seconds(value: object) -> Decimal:
 async def handle_hold_control(call: ServiceCall) -> None:
     """Hold one controller-declared control, then run its protocol release."""
     from .limoss_remote_services import _hold_limoss_remote
+    from .richmat_classic_profiles import current_control_name
     from .svane_services import _hold_svane
     from .vmatbasic_services import _hold_vmatbasic_floor
 
-    control = call.data[ATTR_CONTROL]
+    control = current_control_name(call.data[ATTR_CONTROL])
     duration_ms = int(call.data[ATTR_DURATION] * 1000)
     targets = _call_targets(call)
     route = _profile_route(
@@ -2344,7 +2345,6 @@ async def async_register_services(hass: HomeAssistant) -> None:
 
     from .bf_cherish_services import register_services as register_bf_cherish_services
     from .casper_base_services import async_register_casper_base_services
-    from .cluster018_services import async_register_cluster018_services
     from .comfort_enhancements_services import async_register_comfort_enhancements_services
     from .customatic_services import async_register_customatic_services
     from .doublesleep_services import async_register_doublesleep_services
@@ -2367,9 +2367,10 @@ async def async_register_services(hass: HomeAssistant) -> None:
     from .octo_services import async_register_octo_services
     from .position_estimate_services import async_register_position_estimate_services
     from .reverie_services import async_register_reverie_services
+    from .richmat_classic_services import async_register_richmat_classic_services
     from .richmat_mh_services import async_register_richmat_mh_services
     from .rmcontrol_services import async_register_rmcontrol_services
-    from .row061_services import async_register_row061_services
+    from .ruf_richmat_services import async_register_ruf_richmat_services
     from .serenity_services import async_register_serenity_services
     from .simmons_services import async_register_simmons_services
     from .sleep_number_services import async_register_sleep_number_services
@@ -2383,8 +2384,8 @@ async def async_register_services(hass: HomeAssistant) -> None:
     async_register_gmmotor_services(hass)
     async_register_richmat_mh_services(hass)
     async_register_position_estimate_services(hass)
-    async_register_row061_services(hass)
-    async_register_cluster018_services(hass)
+    async_register_ruf_richmat_services(hass)
+    async_register_richmat_classic_services(hass)
     async_register_motomotion_services(hass)
     async_register_hjbed_services(hass)
     async_register_goodvibe_services(hass)

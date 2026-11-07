@@ -22,10 +22,11 @@ from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 from homeassistant.util import dt as dt_util
 
-from ..const import CONF_BLE_DEVICE_NAME, RICHMAT_MH_APPS, RICHMAT_MH_MODEL_CHOICES, VARIANT_AUTO
+from ..const import CONF_BLE_DEVICE_NAME, RICHMAT_MH_APPS, RUF_RICHMAT_APPS, VARIANT_AUTO
 from ..detection import is_mac_like_name
 from ..profiles.richmat import RICHMAT_MH
-from ..row061_models import MODEL_IDS as ROW061_MODEL_IDS
+from ..richmat_mh_models import RICHMAT_MH_MODEL_CHOICES
+from ..ruf_richmat_models import MODEL_IDS as RUF_RICHMAT_MODEL_IDS
 from .base import (
     BedController,
     ControllerButtonSpec,
@@ -230,7 +231,7 @@ def _catalog() -> Any:
 def load_model(app: str, model_id: str) -> Model | None:
     """Return a catalog model, or None when the app has no such live model."""
     if app in ("ruf", "wsilver2", "americanstar", "bailey2", "tx"):
-        from .row061 import load_app_model
+        from .ruf_richmat import load_app_model
 
         return load_app_model(app, model_id)
     catalog = _catalog()
@@ -253,7 +254,7 @@ def selectable_models(app: str) -> tuple[str, ...]:
 
 def _model_is_known(app: str, model: str) -> bool:
     """Validate new app selectors from static IDs without loading a catalog on HA's loop."""
-    if models := ROW061_MODEL_IDS.get(app):
+    if models := RUF_RICHMAT_MODEL_IDS.get(app):
         base = model.removesuffix("_mattress")
         return base in models and (model == base or app in ("wsilver2", "americanstar", "tx"))
     return load_model(app, model) is not None
@@ -1754,16 +1755,14 @@ async def build_controller(ctx: BuildContext) -> RichmatMhController:
     The app's name rule picks the model unless the variant fixes it; offline
     controllers must not read the display name.
     """
-    from ..row061_profiles import APPS as row061_apps
-
     controller_class = RichmatMhController
-    if ctx.bed_type in row061_apps:
-        await ctx.preload("row061")
-        from ..row061_profiles import profiles
-        from .row061 import Row061Controller
+    if ctx.bed_type in RUF_RICHMAT_APPS:
+        await ctx.preload("ruf_richmat")
+        from ..ruf_richmat_profiles import profiles
+        from .ruf_richmat import RufRichmatController
 
-        await ctx.coordinator.hass.async_add_executor_job(profiles, row061_apps[ctx.bed_type])
-        controller_class = Row061Controller
+        await ctx.coordinator.hass.async_add_executor_job(profiles, RUF_RICHMAT_APPS[ctx.bed_type])
+        controller_class = RufRichmatController
     return controller_class(
         ctx.coordinator,
         app=RICHMAT_MH_APPS[ctx.bed_type],

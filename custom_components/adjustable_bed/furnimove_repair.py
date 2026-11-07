@@ -41,6 +41,7 @@ from .const import (
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_PROTOCOL_VARIANT,
+    CONF_STAIRCASE_LAYOUT_CONFIRMED,
     DOMAIN,
     OKIN_DOT_FURNIMOVE_VARIANTS,
     PAIR_SIDES,
@@ -60,7 +61,6 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 ISSUE_PREFIX = "furnimove_layout_"
-CONF_STAIRCASE_LAYOUT_CONFIRMED = "rf_eco_staircase_confirmed"
 CONF_FURNIMOVE_ROUTE_KEPT = "furnimove_route_kept"
 # Device Information model last read from an Okin CST entry's OKIMAT drive.
 CONF_OKIMAT_MODEL_ON_CST = "okimat_model_on_cst"

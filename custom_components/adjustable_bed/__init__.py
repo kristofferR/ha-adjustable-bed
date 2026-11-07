@@ -13,7 +13,7 @@ from homeassistant.config_entries import (
     ConfigEntry,
 )
 from homeassistant.const import CONF_ADDRESS, Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryError, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
@@ -25,6 +25,8 @@ from .combine_suggestion import async_load_dismissal
 from .const import (
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_FURNIMOVE,
+    BED_TYPE_OCTO,
+    BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_VIBRADORM,
@@ -35,13 +37,16 @@ from .const import (
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
+    CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     CONF_PAIR_CHILDREN,
     CONF_PAIR_ID,
     CONF_PAIR_MODE,
     CONF_PROFILE_MIGRATION,
     CONF_PROFILE_REVIEW_PENDING,
     CONF_PROTOCOL_VARIANT,
+    CONF_RICHMAT_CLASSIC_THIRD_SERVICE,
     CONF_SIDE,
+    DEFAULT_MOTOR_COUNT,
     DOMAIN,
     KEESON_VARIANT_SINO,
     PAIR_CONNECTION_MODE_SEQUENTIAL,
@@ -482,6 +487,64 @@ def migrate_v5_3_data(
     return new_data, new_options, turned_off
 
 
+def _octo_motor_override(view: Mapping[str, Any]) -> str | None:
+    """Return the override an Octo setup saved before the selector ran with, or None.
+
+    Before the selector existed, a stored count other than the default was the
+    user's explicit layout; the default count followed the advertised one.
+    """
+    if view.get(CONF_BED_TYPE) != BED_TYPE_OCTO or CONF_OCTO_MOTOR_COUNT_OVERRIDE in view:
+        return None
+    count = view.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
+    return str(count) if type(count) is int and count in (1, 3, 4) else "auto"
+
+
+def migrate_v5_5_data(
+    data: Mapping[str, Any],
+    options: Mapping[str, Any],
+    *,
+    from_version: int,
+    from_minor_version: int,
+) -> dict[str, Any]:
+    """Return entry data with every Octo setup's motor layout stored as its override.
+
+    A paired side is judged by the settings it runs with, and the original entry
+    it restores on unpair is written too. The migration record lists each place
+    under ``octo_motor_count_override``.
+    """
+    new_data = dict(data)
+    written: list[str] = []
+    if not is_paired(data):
+        if (override := _octo_motor_override(data)) is not None:
+            new_data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] = override
+            written.append("data")
+    elif isinstance(children := data.get(CONF_PAIR_CHILDREN), list):
+        updated: list[Any] = []
+        for child in children:
+            side = child.get(CONF_SIDE) if isinstance(child, Mapping) else None
+            if side not in PAIR_SIDES:
+                updated.append(child)
+                continue
+            child = dict(child)
+            if (override := _octo_motor_override(effective_child_data(data, side, options))):
+                child[CONF_OCTO_MOTOR_COUNT_OVERRIDE] = override
+                written.append(f"data.{side}")
+            origin = child.get(KEY_ORIGIN_DATA)
+            if isinstance(origin, Mapping) and (override := _octo_motor_override(origin)):
+                child[KEY_ORIGIN_DATA] = {**origin, CONF_OCTO_MOTOR_COUNT_OVERRIDE: override}
+                written.append(f"data.{side}.{KEY_ORIGIN_DATA}")
+            updated.append(child)
+        new_data[CONF_PAIR_CHILDREN] = updated
+    if written:
+        _with_migration_record(
+            new_data,
+            from_version=from_version,
+            from_minor_version=from_minor_version,
+            octo_motor_count_override=written,
+        )
+    return new_data
+
+
 def _massage_button_unique_ids(data: Mapping[str, Any], turned_off: list[str]) -> set[str]:
     """Return the unique ids of the massage buttons Massage on gave these runtimes."""
     from .button import BUTTON_DESCRIPTIONS
@@ -503,6 +566,61 @@ def _massage_button_unique_ids(data: Mapping[str, Any], turned_off: list[str]) -
         # A combined control needs both sides, so it goes with either one.
         unique_ids.update(f"{data[CONF_PAIR_ID]}_{key}_both" for key in keys)
     return unique_ids
+
+
+def migrate_v5_4_data(data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return entry data or options with the classic Richmat key's current name.
+
+    4.4 stored the third-service fallback under the audit-tracker name. Paired
+    sides and the original entries they restore on unpair are migrated too.
+    """
+    from .richmat_classic_profiles import KEY_PREFIX, LEGACY_KEY_PREFIX
+
+    legacy_key = LEGACY_KEY_PREFIX + CONF_RICHMAT_CLASSIC_THIRD_SERVICE.removeprefix(KEY_PREFIX)
+    migrated = dict(data)
+    if legacy_key in migrated:
+        migrated.setdefault(CONF_RICHMAT_CLASSIC_THIRD_SERVICE, migrated.pop(legacy_key))
+    for key in (KEY_ORIGIN_DATA, KEY_ORIGIN_OPTIONS):
+        if isinstance(nested := migrated.get(key), Mapping):
+            migrated[key] = migrate_v5_4_data(nested)
+    if isinstance(children := migrated.get(CONF_PAIR_CHILDREN), list):
+        migrated[CONF_PAIR_CHILDREN] = [
+            migrate_v5_4_data(child) if isinstance(child, Mapping) else child
+            for child in children
+        ]
+    return migrated
+
+
+async def _async_migrate_v5_4_ids(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Give the classic Richmat entities and stored app state their current names."""
+    from .app_state_store import app_state_slot, app_state_store
+    from .richmat_classic_profiles import (
+        KEY_PREFIX,
+        LEGACY_APP_STATE_KEY_PREFIX,
+        LEGACY_KEY_PREFIX,
+    )
+
+    registry = er.async_get(hass)
+    # Unique ids are ``<address or pair id>_<key>[_<side>]``.
+    legacy, current = f"_{LEGACY_KEY_PREFIX}", f"_{KEY_PREFIX}"
+
+    @callback
+    def rename(entity: er.RegistryEntry) -> dict[str, Any] | None:
+        if legacy not in entity.unique_id:
+            return None
+        unique_id = entity.unique_id.replace(legacy, current, 1)
+        if registry.async_get_entity_id(entity.domain, DOMAIN, unique_id) is not None:
+            return None
+        return {"new_unique_id": unique_id}
+
+    await er.async_migrate_entries(hass, entry.entry_id, rename)
+    old_slots = app_state_slot(BED_TYPE_RICHMAT_CLASSIC_APPS, None, LEGACY_APP_STATE_KEY_PREFIX)
+    new_slots = old_slots.removesuffix(LEGACY_APP_STATE_KEY_PREFIX)
+    for address in _entry_addresses(entry):
+        try:
+            await app_state_store(hass, address).async_rename_slots(old_slots, new_slots)
+        except OSError:
+            _LOGGER.warning("Could not rename stored app preferences for %s", address, exc_info=True)
 
 
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -615,6 +733,28 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         hass.config_entries.async_update_entry(
             entry, data=data, options=options, minor_version=3
         )
+
+    if entry.version == 5 and entry.minor_version < 4:
+        # v5.3 -> v5.4: the classic Richmat apps' config key, entity unique ids
+        # and stored app state leave the audit-tracker name 4.4 shipped them with.
+        await _async_migrate_v5_4_ids(hass, entry)
+        hass.config_entries.async_update_entry(
+            entry,
+            data=migrate_v5_4_data(entry.data),
+            options=migrate_v5_4_data(entry.options),
+            minor_version=4,
+        )
+
+    if entry.version == 5 and entry.minor_version < 5:
+        # v5.4 -> v5.5: an Octo setup stores its motor layout as the override,
+        # so nothing reads the count saved before the selector existed.
+        data = migrate_v5_5_data(
+            entry.data,
+            entry.options,
+            from_version=original_version[0],
+            from_minor_version=original_version[1],
+        )
+        hass.config_entries.async_update_entry(entry, data=data, minor_version=5)
 
     _LOGGER.debug(
         "Migration complete for config entry %s (%s), now at version %s",

@@ -37,17 +37,19 @@ from .star_elevate import (
     StarElevateCommands,
     StarElevateController,
 )
-from .starcode_m1x12_protocol import (
-    PROFILES,
-    StateValue,
-    clock_packet,
+from .starcode_dialect import (
     extended_packet,
     long_packet,
     manufacturer_dialect,
     normal_packet,
-    parse_notification,
     position_packet,
     query_packet,
+)
+from .starcode_m1x12_protocol import (
+    PROFILES,
+    StateValue,
+    clock_packet,
+    parse_notification,
 )
 
 if TYPE_CHECKING:

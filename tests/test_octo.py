@@ -4248,7 +4248,11 @@ class TestOctoPinLockDiagnostics:
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Octo Test Bed",
-            data={**mock_octo_config_entry_data, CONF_MOTOR_COUNT: motor_count},
+            data={
+                **mock_octo_config_entry_data,
+                CONF_MOTOR_COUNT: motor_count,
+                CONF_OCTO_MOTOR_COUNT_OVERRIDE: str(motor_count),
+            },
             unique_id="AA:BB:CC:DD:EE:FF",
             entry_id=f"octo_flat_{motor_count}",
         )
@@ -4398,7 +4402,11 @@ class TestOctoMemoryInfoAndCombinedStep:
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Octo Test Bed",
-            data={**mock_octo_config_entry_data, CONF_MOTOR_COUNT: 4},
+            data={
+                **mock_octo_config_entry_data,
+                CONF_MOTOR_COUNT: 4,
+                CONF_OCTO_MOTOR_COUNT_OVERRIDE: "4",
+            },
             unique_id="AA:BB:CC:DD:EE:FF",
             entry_id="octo_m34",
         )

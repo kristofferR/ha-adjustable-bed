@@ -20,6 +20,13 @@ from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.star_elevate import StarElevateCommands
+from custom_components.adjustable_bed.beds.starcode_dialect import (
+    extended_packet,
+    long_packet,
+    normal_packet,
+    position_packet,
+    query_packet,
+)
 from custom_components.adjustable_bed.beds.starcode_m1x12 import (
     DEVICE_INFORMATION,
     FIRMWARE,
@@ -32,16 +39,10 @@ from custom_components.adjustable_bed.beds.starcode_m1x12 import (
 )
 from custom_components.adjustable_bed.beds.starcode_m1x12_protocol import (
     clock_packet,
-    extended_packet,
-    long_packet,
-    normal_packet,
-    position_packet,
-    query_packet,
 )
 from custom_components.adjustable_bed.binary_sensor import _binary_sensor_entities_for
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.codec import okin_5a
-from custom_components.adjustable_bed.config_flow import _starcode_m1x12_errors
 from custom_components.adjustable_bed.const import (
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_M1X12,
@@ -66,6 +67,7 @@ from custom_components.adjustable_bed.number import _number_entities_for
 from custom_components.adjustable_bed.select import _select_entities_for
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
 from custom_components.adjustable_bed.services import async_register_services
+from custom_components.adjustable_bed.setup_questions import SETUP_PROFILES, FlowContext
 
 _FIXTURE_DIR = Path(__file__).parent / "fixtures"
 COMMAND_ROWS = json.loads((_FIXTURE_DIR / "starcode_m1x12_command_rows.json").read_text())
@@ -442,7 +444,7 @@ async def test_m1x12_setup_requires_explicit_matching_app_name_and_profile(
         CONF_BLE_DEVICE_NAME: name,
         CONF_STARCODE_M1X12_PROFILE: profile,
     }
-    errors = _starcode_m1x12_errors(hass, data)
+    errors = SETUP_PROFILES[BED_TYPE_STARCODE_M1X12].errors(data, FlowContext(hass))
     assert (not errors) is valid
     if not valid:
         assert errors == {CONF_STARCODE_M1X12_PROFILE: "starcode_m1x12_profile_mismatch"}

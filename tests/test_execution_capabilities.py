@@ -82,7 +82,7 @@ KEESON_STREAM: dict[str, tuple[str, ...]] = {
     "adjustamattress": ("row067",),
     "adjustamattress_p2": ("row067",),
 }
-# Keeson cluster033 app layouts, and Ergomotion 4.0 per catalog product style.
+# Keeson layout app layouts, and Ergomotion 4.0 per catalog product style.
 KEESON_APP_STREAM: dict[str, tuple[str, ...]] = {
     "tempur_curve": ("tempur",),
     "qplus_app": ("costco",),
@@ -98,7 +98,7 @@ ERGOMOTION_4_STYLES = frozenset(product.style for product in ERGOMOTION_4_PRODUC
 # Declaration -> declared field -> evidence keys from the design document.
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     # Rows sort by identity, so parallel declarations merge cleanly.
-    # Keeson cluster033 apps and Ergomotion 4.0 (#483) stream a held key.
+    # Keeson layout apps and Ergomotion 4.0 (#483) stream a held key.
     **{
         f"AppProfile:{app}@{layout}": {"hold": KEESON_APP_STREAM[app]}
         for app, layouts in keeson_profiles.APP_LAYOUTS.items()
@@ -194,7 +194,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "RichmatProfile:richmat_mh_harmony": {"hold": ("harmony", "row055")},
     "RichmatProfile:richmat_mh_idealbed": {"hold": ("ideal", "row055")},
     "RichmatProfile:richmat_mh_revive": {"hold": ("revive", "row055")},
-    # Row061 apps reuse the MH library's KEEP stream and app-specific release.
+    # The RUF and Richmat apps reuse the MH library's KEEP stream and app-specific release.
     "RichmatProfile:richmat_mh_americanstar": {"hold": ("rmamericanstar", "row061")},
     "RichmatProfile:richmat_mh_bailey2": {"hold": ("bailey", "row061")},
     "RichmatProfile:richmat_mh_ruf": {"hold": ("ruf", "row061")},
@@ -276,8 +276,8 @@ _SIMMONS = ("OkinNFrameProfile:simmons_okin", "OkinNFrameProfile:simmons_smartbe
 # enumeration cannot reach every variant, layout or product, so every place
 # that can declare a capability must be listed and reviewed here.
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
-    "beds/cluster018.py:<module>.Cluster018Controller": ("richmat_classic_apps",),
-    "beds/cluster018.py:<module>.Cluster018Controller.execution": ("richmat_classic_apps",),
+    "beds/richmat_classic.py:<module>.RichmatClassicController": ("richmat_classic_apps",),
+    "beds/richmat_classic.py:<module>.RichmatClassicController.execution": ("richmat_classic_apps",),
     "beds/eshine_okin.py:<module>.EshineOkinController": _ESHINE,
     "beds/furnimove.py:<module>.FurniMoveController": ("furnimove",),
     "beds/furnimove.py:<module>.FurniMoveController.execution": ("furnimove",),

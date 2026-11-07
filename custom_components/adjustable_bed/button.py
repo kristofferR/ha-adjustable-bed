@@ -1288,7 +1288,7 @@ class AdjustableBedProductButton(AdjustableBedEntity, ButtonEntity):
         super().__init__(coordinator)
         self._spec = spec
         self._attr_unique_id = coordinator.entity_unique_id(f"product_action_{spec.key}")
-        self._attr_translation_key = coordinator.entity_translation_key("product_action")
+        self._attr_translation_key = "product_action"
         self._attr_translation_placeholders = {"action": spec.name}
         self._attr_icon = spec.icon
         self._attr_entity_registry_enabled_default = spec.entity_registry_enabled_default
@@ -1360,7 +1360,7 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
             description,
             (coordinator.capability_controller,),
         )
-        self._attr_translation_key = coordinator.entity_translation_key(translation_key)
+        self._attr_translation_key = translation_key
 
         # Beds that name their memory slots (Octo CAP_MEMINFO reports e.g.
         # Zero-G or Anti-Snore) are far more useful with that name than with
@@ -1459,7 +1459,7 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
         ):
             self._attr_name = spec.name
         if spec.translation_key is not None:
-            self._attr_translation_key = coordinator.entity_translation_key(spec.translation_key)
+            self._attr_translation_key = spec.translation_key
             if spec.translation_placeholders is not None:
                 self._attr_translation_placeholders = dict(spec.translation_placeholders)
 
@@ -1605,14 +1605,9 @@ class PairedBedCombinedButton(RenamesInPlace, ButtonEntity):
         """Initialize the combined button."""
         self._coordinator = coordinator
         self.entity_description = description
-        base_translation_key = _button_translation_key(
+        self._attr_translation_key = _button_translation_key(
             description,
             (child.capability_controller for child in coordinator.children.values()),
-        )
-        self._attr_translation_key = (
-            f"{base_translation_key}_both"
-            if isinstance(coordinator, SingleAddressPairedCoordinator)
-            else base_translation_key
         )
         self._attr_unique_id = _paired_entity_unique_id(coordinator, f"{description.key}_both")
         self._attr_device_info = coordinator.device_info
@@ -1727,12 +1722,7 @@ class PairedBedCombinedMotorButton(RenamesInPlace, ButtonEntity):
         self._resource = spec.scheduler_resource or f"motor:{spec.position_key or spec.key}"
         # Translation key from spec.translation_key (preserves controller-specific
         # label overrides); unique_id stays on the stable spec.key.
-        base_translation_key = f"{spec.translation_key}_{direction}"
-        self._attr_translation_key = (
-            f"{base_translation_key}_both"
-            if isinstance(coordinator, SingleAddressPairedCoordinator)
-            else base_translation_key
-        )
+        self._attr_translation_key = f"{spec.translation_key}_{direction}"
         self._attr_unique_id = _paired_entity_unique_id(coordinator, f"{spec.key}_{direction}_both")
         self._attr_device_info = coordinator.device_info
         self._attr_extra_state_attributes = (

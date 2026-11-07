@@ -21,7 +21,7 @@ _ADJUSTAMATTRESS = frozenset(
 )
 
 FAMILY = CodecFamily(
-    # The cluster033 apps: one AppProfile per layout, vectors per app.
+    # The Keeson layout apps: one AppProfile per layout, vectors per app.
     profiles={KeesonProfile: FROZEN_FRAMES, AppProfile: FROZEN_FRAMES},
     bed_types=frozenset(
         {

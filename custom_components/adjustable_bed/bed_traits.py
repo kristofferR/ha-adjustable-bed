@@ -22,7 +22,6 @@ from .const import (
     BED_TYPE_CASPER_SLEEP_MM,
     BED_TYPE_CASPER_SLEEP_SXB,
     BED_TYPE_CHERISH,
-    BED_TYPE_CLUSTER018,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_CUSTOMATIC_CLARITY,
@@ -73,6 +72,7 @@ from .const import (
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
+    BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_SBI,
     BED_TYPE_SERENITY,
     BED_TYPE_SERTA,
@@ -94,8 +94,8 @@ from .const import (
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
-    CLUSTER033_BED_TYPES,
     DEFAULT_DISCONNECT_AFTER_COMMAND,
+    KEESON_LAYOUT_APP_BED_TYPES,
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_SINO,
     ORE_COMFORT_BED_VARIANTS,
@@ -155,8 +155,8 @@ _ANGLE_FEEDBACK_SCOPED: Final = BedTraits(
 # a bed type with variants describes its automatic route; bed_traits() refines it.
 _BED_TRAITS: Final[dict[str, BedTraits]] = {
     **dict.fromkeys(RICHMAT_MH_BED_TYPES, _NO_ANGLES),
-    # Serta MP Remote is the one Cluster033 app with position feedback.
-    **dict.fromkeys(CLUSTER033_BED_TYPES - {BED_TYPE_SERTA_MP_REMOTE}, _NO_ANGLES),
+    # Serta MP Remote is the one Keeson layout app with position feedback.
+    **dict.fromkeys(KEESON_LAYOUT_APP_BED_TYPES - {BED_TYPE_SERTA_MP_REMOTE}, _NO_ANGLES),
     BED_TYPE_ADJUSTABLE_LUMBAR: _NO_ANGLES,
     BED_TYPE_ADJUSTAMATTRESS: _NO_ANGLES,
     BED_TYPE_BEDJET_POWERLAYER: BedTraits(position_feedback=True),
@@ -167,7 +167,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_CASPER_SLEEP_MM: _NO_ANGLES,
     BED_TYPE_CASPER_SLEEP_SXB: _NO_ANGLES,
     BED_TYPE_CHERISH: _NO_ANGLES,
-    BED_TYPE_CLUSTER018: _NO_ANGLES,
+    BED_TYPE_RICHMAT_CLASSIC_APPS: _NO_ANGLES,
     # Preset repeat-tap and massage cycles depend on connection-local state.
     BED_TYPE_COMFORT_ENHANCEMENTS: _NO_ANGLES_SCOPED,
     BED_TYPE_COMFORT_MOTION: _SCOPED,

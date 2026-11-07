@@ -19,13 +19,13 @@ from homeassistant.const import CONF_ADDRESS
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.app_families import APP_FAMILIES, GUIDED_FAMILIES
 from custom_components.adjustable_bed.bed_traits import (
     bed_type_has_position_feedback,
     disconnect_after_command_default_enabled,
 )
 from custom_components.adjustable_bed.config_flow import (
     _APP_SETUP_STEPS,
-    _FAMILY_STEPS,
     _SETUP_ROUTE_EXCLUSIONS,
     AdjustableBedConfigFlow,
     _bed_type_selector,
@@ -41,10 +41,7 @@ from custom_components.adjustable_bed.detection import (
     resolve_bed_type_choice,
 )
 from custom_components.adjustable_bed.profile_id import app_profile_key, resolve_profile_id
-from custom_components.adjustable_bed.profile_migration import (
-    MANAGED_FAMILIES,
-    reconfigure_family,
-)
+from custom_components.adjustable_bed.profile_migration import reconfigure_family
 from custom_components.adjustable_bed.setup_questions import setup_profile_for
 from custom_components.adjustable_bed.validators import (
     get_variants_for_bed_type,
@@ -57,14 +54,23 @@ from tests.form_helpers import options_of as _options
 from tests.test_controller_contract import _FactoryCoordinator, _make_connected_client
 
 ADDRESS = "11:22:33:44:55:66"
-# Steps that pick the route, by the field that picks it. The family steps ask
-# "choice", except Vibradorm's.
+# Steps that pick the route, by the field that picks it.
 _ROUTE_STEPS = {
-    **dict.fromkeys(_FAMILY_STEPS | {"logicdata_family", "starcode_family", "keeson_app"}, "choice"),
-    "vibradorm": "app",
-    "keeson_restonic": const.CONF_PROTOCOL_VARIANT,
-    "keeson_route": const.CONF_PROTOCOL_VARIANT,
+    **{family.step: family.field for family in APP_FAMILIES},
+    "keeson_app": "choice",
 }
+
+
+def _route_field(flow: AdjustableBedConfigFlow, step: str) -> str | None:
+    """The field that picks the route on this step, if it picks one.
+
+    A family answer's own questions that ask the route, such as the Restonic BT
+    style, pick it on the generic step.
+    """
+    if step == "profile_questions" and flow._asking is not None:
+        asked = {question.key for question in flow._asking[0].questions}
+        return const.CONF_PROTOCOL_VARIANT if const.CONF_PROTOCOL_VARIANT in asked else None
+    return _ROUTE_STEPS.get(step)
 _FIELDS = (const.CONF_MOTOR_COUNT, const.CONF_HAS_MASSAGE, const.CONF_DISABLE_ANGLE_SENSING)
 
 
@@ -156,7 +162,7 @@ async def _run(
                     )
                     if change_disconnect is not None:
                         answers[const.CONF_DISCONNECT_AFTER_COMMAND] = drawn != change_disconnect
-                elif (key := _ROUTE_STEPS.get(step)) is not None:
+                elif (key := _route_field(flow, step)) is not None:
                     if answered == len(path):
                         marker = next(m for m in fields if m.schema == key)
                         return {"choices": _options(fields[marker])}
@@ -304,11 +310,11 @@ async def _family_routes(hass, row: str) -> dict[str, dict[str, Any]]:
 
 def _configure_routes(data: dict[str, Any]) -> set[str]:
     """The routes Configure lists by name, outside the entry's guided family."""
-    family = next((f for f in MANAGED_FAMILIES if data[const.CONF_BED_TYPE] in f.bed_types), None)
+    family = next((f for f in GUIDED_FAMILIES if data[const.CONF_BED_TYPE] in f.managed), None)
     routes = set()
     for choice in _bed_type_selector(_route(data), show_saved_id=True).rows().values():
         bed_type, variant = resolve_bed_type_choice(choice)
-        if family is not None and bed_type in family.bed_types:
+        if family is not None and bed_type in family.managed:
             # Configure sends a change within a guided family to Reconfigure.
             continue
         variants = [variant] if variant else [None, *(get_variants_for_bed_type(bed_type) or {})]
@@ -335,7 +341,7 @@ async def _reconfigure_routes(hass, entry: MockConfigEntry) -> set[str]:
                 # A note, such as Woosa Sleep's, stages its route when submitted.
                 result = await getattr(flow, f"async_step_{result['step_id']}")({})
                 continue
-            key = _ROUTE_STEPS.get(result.get("step_id", "")) if result["type"] == "form" else None
+            key = _route_field(flow, result.get("step_id", "")) if result["type"] == "form" else None
             if key is None:
                 if result["type"] != "abort":
                     routes.add(_route(flow._manual_data or {}))
@@ -431,7 +437,7 @@ async def test_an_app_row_is_not_asked_its_family_question_again(hass, choice):
         result = await flow.async_step_manual_entry({CONF_ADDRESS: ADDRESS})
         for attempt in range(4):
             fields = {m.schema for m in _fields(result["data_schema"])}
-            assert result["step_id"] not in _ROUTE_STEPS, result["step_id"]
+            assert _route_field(flow, result["step_id"]) is None, result["step_id"]
             assert const.CONF_PROTOCOL_VARIANT not in fields, result["step_id"]
             result = await getattr(flow, f"async_step_{result['step_id']}")(
                 _answers(result, attempt)
@@ -566,7 +572,7 @@ async def test_an_untouched_setup_leaves_a_quiet_route_unread(hass, bed_type, va
                         answers.update({const.CONF_PROTOCOL_VARIANT: variant})
                         if "advanced" in answers:
                             answers["advanced"][const.CONF_PROTOCOL_VARIANT] = variant
-                    if (key := _ROUTE_STEPS.get(result["step_id"])) is not None:
+                    if (key := _route_field(flow, result["step_id"])) is not None:
                         marker = next(m for m in _fields(result["data_schema"]) if m.schema == key)
                         options = _options(_fields(result["data_schema"])[marker])
                         if answered == len(path):

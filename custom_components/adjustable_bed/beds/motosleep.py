@@ -35,6 +35,7 @@ class MotoSleepController(BedController):
         super().__init__(coordinator)
         self._device_name = device_name or getattr(coordinator, "ble_device_name", None)
         self.profile: MotoSleepProfile = resolve_motosleep_profile(self._device_name)
+        self._write_with_response = self.profile.write_with_response
         self._light_rgb = (255, 255, 255)
         _LOGGER.info(
             "MotoSleep local name %r resolved to profile %s",
@@ -238,23 +239,6 @@ class MotoSleepController(BedController):
             self.profile.transport is MotoSleepTransport.HHC_ASCII and not self.profile.raw_hhc
         )
         return letter_command(action, wrapped=wrapped)
-
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        """Write with the response mode selected by the OEM app."""
-        await self._write_gatt_with_retry(
-            self.control_characteristic_uuid,
-            command,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            cancel_event=cancel_event,
-            response=self.profile.write_with_response,
-        )
 
     async def _send_action(
         self,

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from ..const import CONF_PRODUCT_TYPE
 from ..profiles.keeson import app_profile
 from .builder import BuildContext
-from .cluster033 import AppController
+from .keeson_layout_app import AppController
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator

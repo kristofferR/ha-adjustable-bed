@@ -57,7 +57,47 @@ from .adapter import (
     read_ble_device_info,
 )
 from .address_lock import async_get_connect_lock
-from .app_profiles import hidden_generic_fields, is_per_side_variant, per_side_profile
+from .app_families import (
+    APP_FAMILIES,
+    CUSTOMATIC_FAMILY,
+    FAMILY_ROW_SEPARATOR,
+    FAMILY_STEP_ROUTES,
+    GUIDED_FAMILIES,
+    JENSEN_FAMILY,
+    JIECANG_FAMILY,
+    JORDANS_FAMILY,
+    KEESON_FAMILY,
+    LEGGETT_FAMILY,
+    LIMOSS_FAMILY,
+    LOGICDATA_FAMILY,
+    MALOUF_FAMILY,
+    OKIN_FAMILY,
+    REMACRO_FAMILY,
+    REMOVED,
+    REVERIE_FAMILY,
+    RICHMAT_FAMILY,
+    SLEEP_NUMBER_FAMILY,
+    SLEEPYS_FAMILY,
+    SOLACE_FAMILY,
+    STARCODE_FAMILY,
+    VIBRADORM_FAMILY,
+    Answer,
+    AppFamily,
+    Form,
+    Then,
+    Visit,
+    answer_family,
+    family_row_label,
+    question_family,
+    row_family,
+    shown_row,
+)
+from .app_profiles import (
+    foreign_settings,
+    hidden_generic_fields,
+    is_per_side_variant,
+    per_side_profile,
+)
 from .bed_traits import (
     bed_traits,
     bed_type_has_position_feedback,
@@ -101,21 +141,15 @@ from .bond_verification import (
     bond_owner_from_entry,
     build_bond_context,
 )
-from .cluster018_profiles import APP_NAMES as CLUSTER018_APP_NAMES
 from .const import (
     ADAPTER_AUTO,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_BEDSENSE,
-    BED_TYPE_CLUSTER018,
-    BED_TYPE_COMFORT_MOTION,
-    BED_TYPE_COOLBASE,
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_DOUBLESLEEP,
-    BED_TYPE_ERGOMOTION_4,
-    BED_TYPE_ERGOMOTION_APP,
     BED_TYPE_ESHINE_OKIN,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
@@ -124,20 +158,13 @@ from .const import (
     BED_TYPE_HJBED,
     BED_TYPE_ISLEEP,
     BED_TYPE_JENSEN,
-    BED_TYPE_JIECANG,
-    BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
-    BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
-    BED_TYPE_LEGGETT_WILINKE,
-    BED_TYPE_LIMOSS,
     BED_TYPE_LIMOSS_REMOTE,
-    BED_TYPE_LOGICDATA,
     BED_TYPE_LOGICDATA_AIR_PUMP,
-    BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
@@ -145,80 +172,43 @@ from .const import (
     BED_TYPE_MOTOMOTION,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
-    BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REMACRO,
-    BED_TYPE_REVERIE,
-    BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
-    BED_TYPE_SERENITY,
-    BED_TYPE_SERTA_MP_REMOTE,
+    BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
-    BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPTRACKER,
-    BED_TYPE_SLEEPYS_BOX15,
-    BED_TYPE_SLEEPYS_BOX24,
-    BED_TYPE_SLEEPYS_BOX25,
-    BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SOLACE,
-    BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
-    BED_TYPE_STARCODE_M1X12,
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_SVANE,
-    BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
-    CB24_BED_SELECTION_A,
-    CB24_BED_SELECTION_B,
-    CB24_BED_SELECTION_DEFAULT,
-    CHAIR_AND_BED_APP_BED_TYPES,
-    CLUSTER033_BED_TYPES,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ATTEMPTED_SOURCE,
     CONF_BLE_BOND_ESTABLISHED,
     CONF_BLE_BOND_MARKER_UNRELIABLE,
     CONF_BLE_DEVICE_NAME,
-    CONF_CB24_BED_SELECTION,
     CONF_CONNECTION_PROFILE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISABLE_DISCOVERY,
     CONF_DISCONNECT_AFTER_COMMAND,
-    CONF_FSM_RELAX_MEMORY_NAMES,
     CONF_FURNIMOVE_REMOTE,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
-    CONF_JENSEN_PIN,
-    CONF_JIECANG_APP_LAYOUT,
-    CONF_JIECANG_APP_PROFILE,
-    CONF_JIECANG_APP_TRANSPORT,
     CONF_KAIDI_RESOLVED_VARIANT,
     CONF_LEGGETT_APP_PROFILE,
     CONF_LEGS_MAX_ANGLE,
     CONF_LIMOSS_REMOTE_THEME,
-    CONF_LOGICDATA_APP_FAMILY,
-    CONF_LOGICDATA_APP_LAYOUT,
-    CONF_LOGICDATA_APP_PROFILE,
-    CONF_LOGICDATA_APP_TRANSPORT,
-    CONF_LP_LEGACY_MODE,
-    CONF_LP_LEGACY_MODEL,
-    CONF_LP_LEGACY_READ_UUID,
-    CONF_LP_LEGACY_WRITE_UUID,
-    CONF_MALOUF_APP_MODEL,
-    CONF_MALOUF_APP_PRIMARY,
-    CONF_MALOUF_APP_PROFILE,
-    CONF_MALOUF_APP_TRANSPORT,
-    CONF_MALOUF_LAYOUT,
-    CONF_MALOUF_MEMORY_SLOTS,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
@@ -239,16 +229,11 @@ from .const import (
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
     CONF_REVERSE_MOTORS,
-    CONF_RICHMAT_REMOTE,
     CONF_RMCONTROL_PRODUCT,
-    CONF_RMCONTROL_SIDE,
-    CONF_SLEEPYS_ELITE_SELECTOR,
-    CONF_STARCODE_COMMAND_SELECTOR,
     CONF_STARCODE_LIFT_ENTRIES,
     CONF_STARCODE_M1X12_PROFILE,
     CONF_STARCODE_M5X5_PROFILE,
     CONF_STARCODE_TRANSPORT_SELECTOR,
-    CONF_STARCODE_UI_SELECTOR,
     CONF_VIBRADORM_APP_METADATA,
     CONF_VIBRADORM_APP_PROFILE,
     CONF_VIBRADORM_CONTROL_TYPE,
@@ -267,48 +252,23 @@ from .const import (
     DEFAULT_BACK_MAX_ANGLE,
     DEFAULT_CONNECTION_PROFILE,
     DEFAULT_DISABLE_ANGLE_SENSING,
-    DEFAULT_DISCONNECT_AFTER_COMMAND,
     DEFAULT_HAS_MASSAGE,
     DEFAULT_IDLE_DISCONNECT_SECONDS,
     DEFAULT_LEGS_MAX_ANGLE,
     DEFAULT_MOTOR_COUNT,
-    DEFAULT_OCTO_PIN,
     DEFAULT_POSITION_MODE,
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
-    HAS_LIGHT_DEFAULTS,
     IDLE_DISCONNECT_KEEP_CONNECTED,
-    JIECANG_APP_PROFILES,
-    KEESON_VARIANT_ADJUSTABLE_LITE,
-    KEESON_VARIANT_AMERICANSTAR,
-    KEESON_VARIANT_AVANTI_BASES,
-    KEESON_VARIANT_BASE,
-    KEESON_VARIANT_BEDSENSE_BASES,
-    KEESON_VARIANT_DYNASTY_BASES,
-    KEESON_VARIANT_HEAL_EVERY_NIGHT,
-    KEESON_VARIANT_INNOVA,
-    KEESON_VARIANT_JSON,
-    KEESON_VARIANT_MAXCOIL_UNA,
-    KEESON_VARIANT_OKIN_SEATING,
-    KEESON_VARIANT_PURPLE,
-    KEESON_VARIANT_RESTONIC_A,
-    KEESON_VARIANT_RESTONIC_B,
-    KEESON_VARIANT_SIMON_LI,
-    KEESON_VARIANT_SLEEP_HARMONY,
+    KEESON_LAYOUT_APP_BED_TYPES,
     LEGGETT_APP_DEFAULT_PROFILE,
     LEGGETT_APP_MOTOR_COUNTS,
     LEGGETT_APP_PROFILES,
     LEGGETT_VARIANT_GEN2,
-    LEGGETT_VARIANT_MLRM,
-    LEGGETT_VARIANT_OKIN,
-    MALOUF_APP_MODELS,
-    MALOUF_APP_PROFILES,
-    MOTION_BED_CONFIG_KEYS,
     NAME_RULE_VARIANTS_BY_BED_TYPE,
     OCTO_VARIANT_STAR2,
     OKIN_BEDDING_APP_BED_TYPES,
     OKIN_CST_THREE_MOTOR_VARIANTS,
-    OKIN_CST_VARIANTS,
     OKIN_DOT_FURNIMOVE_VARIANTS,
     PAIR_MODE_SEPARATE_ADDRESS,
     PAIR_MODE_SINGLE_ADDRESS,
@@ -318,29 +278,16 @@ from .const import (
     POSITION_MODE_ACCURACY,
     POSITION_MODE_SPEED,
     PRODUCT_TYPES,
-    REMACRO_VARIANT_JEROMES,
-    REMACRO_VARIANT_THE_BRICK,
-    REVERIE_NIGHTSTAND_SERVICE_UUID,
-    REVERIE_SERVICE_UUID,
     RICHMAT_MH_APPS,
     RICHMAT_MH_BED_TYPES,
-    RICHMAT_REMOTE_AUTO,
-    RICHMAT_REMOTE_LP_QRRM,
-    RICHMAT_REMOTES,
     RICHMAT_VARIANT_NORDIC,
     RICHMAT_VARIANT_WILINKE,
     RUNTIME_BOND_KEYS,
     SIDE_LEFT,
     SIDE_RIGHT,
-    SLEEP_NUMBER_MCR_SERVICE_UUID,
-    SLEEP_NUMBER_SERVICE_UUID,
-    SLEEPTRACKER_CONFIG_KEYS,
     SOLACE_VARIANT_WOOSA,
-    STARCODE_APP_CONFIG_KEYS,
     STARCODE_APP_CONNECTION_TIMEOUT_SECONDS,
-    STARCODE_GROUP_BED_TYPES,
     SVANE_VARIANT_JENSEN_LINON,
-    SVANE_VARIANT_JMC,
     SVANE_VARIANTS,
     VARIANT_AUTO,
     VARIANT_REQUIRED_BED_TYPES,
@@ -353,8 +300,6 @@ from .const import (
     VMATBASIC_CONFIG_KEYS,
     VMATBASIC_PROFILES,
     ZSERIES_PULSE_COUNT_RANGE,
-    ZSERIES_VARIANT_Z230,
-    ZSERIES_VARIANT_Z280,
     DetectionResult,
     get_motor_pulse_defaults,
     get_richmat_features,
@@ -366,9 +311,6 @@ from .const import (
 )
 from .detection import (
     APP_VARIANT_CHOICES,
-    FAMILY_ROW_SEPARATOR,
-    FAMILY_ROWS,
-    FAMILY_STEP_ROUTES,
     HIDDEN_APP_CHOICES,
     PRODUCT_QUESTION_BED_TYPES,
     PROTOCOL_ROUTES,
@@ -377,9 +319,7 @@ from .detection import (
     detect_bed_type,
     detect_bed_type_detailed,
     detect_richmat_remote_from_name,
-    family_row_label,
     get_bed_type_options,
-    is_jensen_linon_name,
     is_mac_like_name,
     resolve_bed_type_choice,
 )
@@ -388,7 +328,6 @@ from .discovery_settings import (
     async_is_discovery_disabled,
     async_set_discovery_disabled,
 )
-from .ergomotion4_profiles import PRODUCT_CHOICES as ERGOMOTION4_CHOICES
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
 from .octo_auth import OctoPinStatus, async_verify_octo_pin
 from .pairing import (
@@ -413,27 +352,12 @@ from .pairing_candidates import (
 from .position_estimate_flow import EstimatedPositionsFlowMixin
 from .profile_id import with_profile_ids
 from .profile_migration import (
-    CUSTOMATIC_FAMILY,
-    JENSEN_FAMILY,
-    JIECANG_FAMILY,
-    JORDANS_FAMILY,
-    KEESON_FAMILY,
-    LEGGETT_FAMILY,
-    LIMOSS_FAMILY,
-    LOGICDATA_FAMILY,
-    MALOUF_FAMILY,
-    MANAGED_FAMILIES,
-    OKIN_FAMILY,
-    SLEEPYS_FAMILY,
-    SOLACE_FAMILY,
-    VIBRADORM_FAMILY,
-    ManagedFamily,
     MigrationSnapshot,
     async_control_changes,
     reconfigure_family,
 )
-from .profiles.keeson import APP_LAYOUTS, APP_NAMES, DEFAULT_LAYOUTS
 from .remacro_discovery import remacro_entry_problem, remacro_manufacturer_data
+from .richmat_classic_profiles import APP_NAMES as RICHMAT_CLASSIC_APP_NAMES
 from .setup_operation import (
     BluetoothOperationMixin,
     ConnectionLifetimePolicy,
@@ -441,7 +365,14 @@ from .setup_operation import (
     OperationResult,
     SetupAction,
 )
-from .setup_questions import GENERIC_FIELDS, Question, SetupProfile, setup_profile_for
+from .setup_questions import (
+    GENERIC_FIELDS,
+    FlowContext,
+    Question,
+    SetupProfile,
+    setup_profile,
+    setup_profile_for,
+)
 from .unsupported import (
     PROXY_PAIRING_RECOVERY_URL,
     build_misidentified_issue_url,
@@ -472,7 +403,7 @@ CONFIGURED_RETRY_PREFIX = "configured_retry::"
 _AUTO_DETECT_MIN_CONFIDENCE = 0.7
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
-    {BED_TYPE_CLUSTER018, BED_TYPE_MOTOMOTION, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
+    {BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
      BED_TYPE_GMMOTOR, "gmmotor_sleep_mm", "gmmotor_sleep_sxb"}
 )
 
@@ -862,9 +793,6 @@ def _variant_errors_to_base(errors: dict[str, str]) -> dict[str, str]:
     return errors
 
 
-_VIBRADORM_FAMILY_TYPES: Final = VIBRADORM_FAMILY.bed_types
-
-
 def _bed_type_selector(
     default: str | None, *, show_saved_id: bool = False
 ) -> _SearchableSelect:
@@ -877,9 +805,11 @@ def _bed_type_selector(
         # label; setup asks behind the family row. Configure lists the
         # protocol-named routes the same way.
         unguided = {
-            *(bed_type for bed_type, _variant, _step in _STARCODE_APPS.values()),
-            *(bed_type for bed_type, _service in _REVERIE_ROUTES.values()),
-            *(bed_type for bed_type, _service in _SLEEP_NUMBER_ROUTES.values()),
+            *(
+                answer.bed_type
+                for family in (STARCODE_FAMILY, REVERIE_FAMILY, SLEEP_NUMBER_FAMILY)
+                for answer in family.answers.values()
+            ),
             *RICHMAT_MH_BED_TYPES,
             BED_TYPE_JENSEN,
             # Protocol-named routes are off the setup list but stay selectable.
@@ -887,8 +817,8 @@ def _bed_type_selector(
         }
         # The classic Richmat apps are app rows, each with the app's own label.
         unguided_apps = {
-            bed_type_choice(BED_TYPE_CLUSTER018, app): APP_VARIANT_CHOICES[BED_TYPE_CLUSTER018, app]
-            for app in CLUSTER018_APP_NAMES
+            bed_type_choice(BED_TYPE_RICHMAT_CLASSIC_APPS, app): APP_VARIANT_CHOICES[BED_TYPE_RICHMAT_CLASSIC_APPS, app]
+            for app in RICHMAT_CLASSIC_APP_NAMES
         }
         options = sorted(
             [
@@ -908,28 +838,7 @@ def _bed_type_selector(
             ],
             key=lambda option: option["label"].lower(),
         )
-    family_row = (
-        BED_TYPE_VIBRADORM
-        if default in (BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC)
-        else BED_TYPE_JIECANG_APP
-        if default in (BED_TYPE_JIECANG, BED_TYPE_COMFORT_MOTION) and not show_saved_id
-        else BED_TYPE_FURNIMOVE
-        if default in OKIN_FAMILY.bed_types - {BED_TYPE_FURNIMOVE} and not show_saved_id
-        else BED_TYPE_LEGGETT_OKIN
-        if default in LEGGETT_FAMILY.bed_types - {BED_TYPE_LEGGETT_OKIN} and not show_saved_id
-        else BED_TYPE_SLEEPYS_ELITE_APP
-        if default in SLEEPYS_FAMILY.bed_types - {BED_TYPE_SLEEPYS_ELITE_APP}
-        and not show_saved_id
-        else BED_TYPE_MALOUF_APP
-        if default in MALOUF_FAMILY.bed_types - {BED_TYPE_MALOUF_APP} and not show_saved_id
-        else BED_TYPE_LOGICDATA_APP
-        if default in (BED_TYPE_LOGICDATA, BED_TYPE_LOGICDATA_AIR_PUMP) and not show_saved_id
-        else BED_TYPE_SVANE
-        if default == BED_TYPE_JENSEN and not show_saved_id
-        else _APP_FAMILY_ROWS.get(default or "")
-        if not show_saved_id
-        else None
-    )
+    family_row = shown_row(default, configure=show_saved_id) if default is not None else None
     if family_row is not None and default is not None:
         # The family row keeps the route it was drawn for; its step offers Keep.
         for option in options:
@@ -1095,8 +1004,8 @@ def _family_rows(detected: str | None = None) -> list[tuple[str, str]]:
             choice
             for choice in choices
             if choice is not None
-            and choice in _APP_SETUP_STEPS
-            and _APP_SETUP_STEPS[choice] in _FAMILY_STEPS
+            and (family := question_family(choice)) is not None
+            and family.picks_route
         ]
         for choice in families or choices:
             if choice is not None:
@@ -1113,14 +1022,12 @@ def _brand_first(choice: str, label: str) -> str:
 
     A detected route takes its family row's value, so the row is found by label.
     """
-    row = next(
-        (row for row, _names in FAMILY_ROWS.items() if row == choice or family_row_label(row) == label),
-        None,
+    family = row_family(choice) or next(
+        (family for family in APP_FAMILIES if family_row_label(family.row) == label), None
     )
-    if row is None:
+    if family is None:
         return label
-    family, apps = FAMILY_ROWS[row]
-    return f"{family}: {apps}"
+    return f"{family.name}: {family.apps}"
 
 
 def _family_name(info: BluetoothServiceInfoBleak) -> str:
@@ -1145,15 +1052,6 @@ def _bed_type_field(
     if default is None:
         return marker(CONF_BED_TYPE), selector
     return marker(CONF_BED_TYPE, default=selector.shown(default)), selector
-
-
-_OCTO_MOTOR_OVERRIDES: Final[dict[str, str]] = {
-    "auto": "Use advertised motor count",
-    "1": "1 motor",
-    "2": "2 motors",
-    "3": "3 motors",
-    "4": "4 motors",
-}
 
 
 def _rows_where(
@@ -1228,30 +1126,6 @@ def _condition_owned_generic_fields(
             schema.update(_shown_for({marker: schema.pop(marker)}, owners))
 
 
-def _bed_specific_errors(user_input: Mapping[str, Any], bed_type: str | None) -> dict[str, str]:
-    """Check the selected bed type's own answers."""
-    if bed_type == BED_TYPE_OCTO and not is_valid_octo_pin(
-        normalize_octo_pin(user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN))
-    ):
-        return {CONF_OCTO_PIN: "invalid_pin"}
-    return {}
-
-
-def _add_bed_specific_entry_data(
-    entry_data: dict[str, Any],
-    user_input: Mapping[str, Any],
-    bed_type: str | None,
-) -> None:
-    """Save the selected bed type's own answers from the one setup form."""
-    if bed_type == BED_TYPE_OCTO:
-        entry_data[CONF_OCTO_PIN] = normalize_octo_pin(
-            user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN)
-        )
-        entry_data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] = str(
-            user_input.get(CONF_OCTO_MOTOR_COUNT_OVERRIDE, "auto")
-        )
-
-
 def _hide_owned_generic_fields(
     schema: dict[vol.Marker, Any],
     bed_type: str | None,
@@ -1263,30 +1137,6 @@ def _hide_owned_generic_fields(
     for marker in tuple(schema):
         if marker.schema in hidden:
             del schema[marker]
-
-
-def _validate_vibradorm_setup_roles(client: BleakClient, data: dict[str, Any]) -> None:
-    """Reuse runtime role validation for the exact user-selected app/product."""
-    if data[CONF_BED_TYPE] == BED_TYPE_VMATBASIC:
-        from .beds.vmatbasic import validate_profile_roles
-
-        validate_profile_roles(client, data[CONF_VMATBASIC_PROFILE])
-        return
-    from .beds.vibradorm_app import validate_profile_roles as validate_app_roles
-    from .profiles.vibradorm import validate_vibradorm_app_profile
-
-    control = data[CONF_VIBRADORM_CONTROL_TYPE]
-    profile = validate_vibradorm_app_profile(
-        data[CONF_VIBRADORM_APP_PROFILE],
-        "other" if control == "other" else int(control),
-        restored=data[CONF_VIBRADORM_RESTORED],
-        floor_light=data[CONF_VIBRADORM_FLOOR_LIGHT],
-        rgb=data[CONF_VIBRADORM_RGB],
-        massage=data[CONF_HAS_MASSAGE],
-        light_extension=data[CONF_VIBRADORM_LIGHT_EXTENSION],
-        remote=data.get(CONF_VIBRADORM_VMAT_REMOTE),
-    )
-    validate_app_roles(client, profile)
 
 
 def _limoss_remote_features_left(
@@ -1353,109 +1203,44 @@ async def _async_turn_off_limoss_remote_features(
     return True
 
 
-def _checked_family(migrating: ManagedFamily, staged: Mapping[str, Any]) -> ManagedFamily:
+def _checked_family(migrating: AppFamily, staged: Mapping[str, Any]) -> AppFamily:
     """The family whose check a staged route needs.
 
     A LOGICDATA route reached from another family's change, as the Comfort Motion
     review suggests one, still needs its own link check.
     """
-    if staged.get(CONF_BED_TYPE) in LOGICDATA_FAMILY.bed_types:
+    if staged.get(CONF_BED_TYPE) in LOGICDATA_FAMILY.managed:
         return LOGICDATA_FAMILY
     return migrating
 
 
-def _require_app_family_roles(client: BleakClient, data: Mapping[str, Any]) -> None:
-    """Run the staged Customatic or Jordan's app's own GATT role check."""
-    bed_type = data[CONF_BED_TYPE]
-    if bed_type in (BED_TYPE_ZSERIES, BED_TYPE_SERENITY, BED_TYPE_TRANQUIL):
-        from .beds.serenity import require_app_roles
-
-        app = (
-            f"zseries_{data[CONF_PROTOCOL_VARIANT]}" if bed_type == BED_TYPE_ZSERIES else bed_type
-        )
-        require_app_roles(client, app)
-    elif bed_type in CUSTOMATIC_FAMILY.bed_types:
-        from .beds.customatic import require_command_endpoint
-
-        require_command_endpoint(client, bed_type.removeprefix("customatic_"))
-
-
-def _vibradorm_selection_label(data: Mapping[str, Any]) -> str:
-    if data[CONF_BED_TYPE] == BED_TYPE_VMATBASIC:
-        return f"V-MAT Basic: {VMATBASIC_PROFILES[data[CONF_VMATBASIC_PROFILE]]}"
-    app = data[CONF_VIBRADORM_APP_PROFILE]
-    control = data[CONF_VIBRADORM_CONTROL_TYPE]
-    if app == "vmat":
-        from .profiles.vibradorm import VMAT_REMOTES
-
-        remote = data[CONF_VIBRADORM_VMAT_REMOTE]
-        detail = f"Remote {remote} ({VMAT_REMOTES[remote].asset})"
-    elif app == "werkmeister":
-        detail = VIBRADORM_WERKMEISTER_CONTROLS[control]
-    else:
-        detail = (
-            VIBRADORM_RESTORED_CONTROLS[control]
-            if data.get(CONF_VIBRADORM_RESTORED)
-            else "Standard controls"
-        )
-    return f"{VIBRADORM_APP_PROFILES[app]}: {detail}"
-
-
+# Routes whose app is asked only by declared questions, on the generic step.
+_DECLARED_QUESTION_ROUTES: Final = frozenset(
+    {
+        # The app is its variant, chosen from the bed-type list.
+        BED_TYPE_RICHMAT_CLASSIC_APPS,
+        *KEESON_LAYOUT_APP_BED_TYPES,
+        "ergomotion_4",
+        # One row each asks the app's exact product.
+        *PRODUCT_QUESTION_BED_TYPES,
+        # The layout is BedSense's own question.
+        BED_TYPE_BEDSENSE,
+        # Each app's own answers.
+        BED_TYPE_MOTION_BED,
+        BED_TYPE_DOUBLESLEEP,
+        BED_TYPE_SLEEPTRACKER,
+        BED_TYPE_ISLEEP,
+        BED_TYPE_GMMOTOR,
+        BED_TYPE_MOTOMOTION,
+        "hush_base",
+        BED_TYPE_LEGGETT_LP_LEGACY,
+        *STARCODE_FAMILY.direct,
+    }
+)
+# The step that asks a new bed's app: its family's question, else its declared questions.
 _APP_SETUP_STEPS: Final[dict[str, str]] = {
-    # Declared questions only: the app is its variant, chosen from the bed-type list.
-    BED_TYPE_CLUSTER018: "profile_questions",
-    **dict.fromkeys(CLUSTER033_BED_TYPES | {"ergomotion_4"}, "cluster033_app"),
-    # One row each asks the app's exact product.
-    **dict.fromkeys(PRODUCT_QUESTION_BED_TYPES, "profile_questions"),
-    BED_TYPE_VIBRADORM: "vibradorm",
-    # The LOGICDATA question asks the app, and for Sleep Smart the bed base or pump.
-    **dict.fromkeys(
-        (BED_TYPE_LOGICDATA, BED_TYPE_LOGICDATA_APP, BED_TYPE_LOGICDATA_AIR_PUMP),
-        "logicdata_family",
-    ),
-    **dict.fromkeys(JIECANG_FAMILY.bed_types, "jiecang_family"),
-    **dict.fromkeys(OKIN_FAMILY.bed_types, "okin_family"),
-    # A new Okin CST bed answers the Okin question with its apps first; CST is
-    # not a guided family, so an existing entry keeps Configure.
-    BED_TYPE_OKIN_CST: "okin_family",
-    **dict.fromkeys(KEESON_FAMILY.bed_types, "keeson_family"),
-    **dict.fromkeys(SOLACE_FAMILY.bed_types, "solace_family"),
-    **dict.fromkeys(LEGGETT_FAMILY.bed_types, "leggett_family"),
-    # Declared questions only: the layout is BedSense's own question.
-    BED_TYPE_BEDSENSE: "profile_questions",
-    # The StarCode apps' row asks the app; each app keeps its own step.
-    BED_TYPE_STARCODE_ABM5_4: "starcode_family",
-    # Declared questions only: each app's own answers, on the generic step.
-    **dict.fromkeys(
-        (
-            BED_TYPE_MOTION_BED,
-            BED_TYPE_DOUBLESLEEP,
-            BED_TYPE_SLEEPTRACKER,
-            BED_TYPE_ISLEEP,
-            BED_TYPE_GMMOTOR,
-            BED_TYPE_MOTOMOTION,
-            "hush_base",
-        ),
-        "profile_questions",
-    ),
-    **dict.fromkeys(LIMOSS_FAMILY.bed_types, "limoss_family"),
-    BED_TYPE_STARCODE_M1X12: "starcode_m1x12",
-    BED_TYPE_STARCODE_M5X5: "starcode_m5x5",
-    BED_TYPE_VIBRADORM_APP: "vibradorm",
-    BED_TYPE_VMATBASIC: "vibradorm",
-    BED_TYPE_LEGGETT_LP_LEGACY: "profile_questions",
-    **dict.fromkeys(CUSTOMATIC_FAMILY.bed_types, "customatic_family"),
-    **dict.fromkeys(JORDANS_FAMILY.bed_types, "jordans_family"),
-    BED_TYPE_REMACRO: "remacro_family",
-    BED_TYPE_REVERIE: "reverie_family",
-    BED_TYPE_REVERIE_NIGHTSTAND: "reverie_family",
-    BED_TYPE_SLEEP_NUMBER: "sleep_number_family",
-    BED_TYPE_SLEEP_NUMBER_MCR: "sleep_number_family",
-    **dict.fromkeys(SLEEPYS_FAMILY.bed_types, "sleepys_family"),
-    # The classic apps keep their own declared questions above.
-    **dict.fromkeys({BED_TYPE_RICHMAT, *RICHMAT_MH_BED_TYPES}, "richmat_family"),
-    **dict.fromkeys(JENSEN_FAMILY.bed_types, "jensen_family"),
-    **dict.fromkeys(MALOUF_FAMILY.bed_types, "malouf_family"),
+    **dict.fromkeys(_DECLARED_QUESTION_ROUTES, "profile_questions"),
+    **{bed_type: family.step for family in APP_FAMILIES for bed_type in family.asks},
 }
 
 
@@ -1600,43 +1385,6 @@ def _add_leggett_app_schema_field(
     ] = vol.In(LEGGETT_APP_PROFILES)
 
 
-def _add_starcode_app_schema_fields(schema: dict[vol.Marker, Any], data: dict[str, Any]) -> None:
-    from .beds.starcode_abm5_4_profiles import SELECTORS
-
-    schema[
-        vol.Required(
-            CONF_STARCODE_COMMAND_SELECTOR, default=data.get(CONF_STARCODE_COMMAND_SELECTOR, "none")
-        )
-    ] = vol.In(SELECTORS)
-    schema[
-        vol.Optional(
-            CONF_STARCODE_TRANSPORT_SELECTOR,
-            default=(data.get(CONF_STARCODE_TRANSPORT_SELECTOR) or "auto"),
-        )
-    ] = vol.In(
-        {
-            "auto": "From original Bluetooth device name",
-            "BOX1220": "BLE / 1000 service",
-            "BOX3633": "62741523 service",
-            "BOX25": "Star / Nordic UART",
-            "BOX25_STAR": "Exact star manufacturer / Nordic UART",
-        }
-    )
-
-
-def _starcode_app_errors(data: dict[str, Any]) -> dict[str, str]:
-    from .beds.starcode_abm5_4_profiles import SELECTORS, TRANSPORTS
-
-    errors: dict[str, str] = {}
-    if data.get(CONF_STARCODE_COMMAND_SELECTOR, "none") not in SELECTORS:
-        errors[CONF_STARCODE_COMMAND_SELECTOR] = "starcode_app_invalid"
-    if (data.get(CONF_STARCODE_TRANSPORT_SELECTOR) or "auto") not in (*TRANSPORTS, "auto"):
-        errors[CONF_STARCODE_TRANSPORT_SELECTOR] = "starcode_app_invalid"
-    if CONF_STARCODE_UI_SELECTOR in data and data[CONF_STARCODE_UI_SELECTOR] not in SELECTORS:
-        errors[CONF_STARCODE_COMMAND_SELECTOR] = "starcode_app_invalid"
-    return errors
-
-
 def _starcode_initial_transport(data: Mapping[str, Any], observed_name: str | None) -> str | None:
     """Resolve D from an explicit choice or original BLE identity, never a label."""
     from .beds.starcode_abm5_4_profiles import constructor_selector
@@ -1663,16 +1411,25 @@ def _starcode_setup_transport_present(client: BleakClient, selector: str) -> boo
     return False
 
 
-def _add_feature_fields(
-    schema: dict[vol.Marker, Any], data: Mapping[str, Any], bed_type: str
-) -> None:
-    """Add the light, massage and motor reversal choices of a chair-and-bed app."""
-    schema[
-        vol.Optional(CONF_HAS_LIGHT, default=data.get(CONF_HAS_LIGHT, HAS_LIGHT_DEFAULTS[bed_type]))
-    ] = bool
-    schema[vol.Optional(CONF_HAS_MASSAGE, default=data.get(CONF_HAS_MASSAGE, False))] = bool
-    for key in CONF_REVERSE_MOTORS:
-        schema[vol.Optional(key, default=data.get(key, False))] = bool
+def starcode_live_transport_valid(hass: HomeAssistant, entry_id: str, selector: str) -> bool | None:
+    """Check an entry's connected receiver without connecting or disturbing its link."""
+    from bleak.exc import BleakError
+
+    from .coordinator import AdjustableBedCoordinator
+
+    runtime = hass.data.get(DOMAIN, {}).get(entry_id)
+    if not isinstance(runtime, AdjustableBedCoordinator):
+        return None
+    client = runtime.client
+    if client is None or client.is_connected is not True:
+        return None
+    try:
+        if client.services is None:
+            return None
+        return _starcode_setup_transport_present(client, selector)
+    except BleakError:
+        # A just-connected client may not have completed GATT discovery.
+        return None
 
 
 def _limoss_remote_errors(data: dict[str, Any]) -> dict[str, str]:
@@ -1691,170 +1448,6 @@ def _limoss_remote_errors(data: dict[str, Any]) -> dict[str, str]:
         )
     except TypeError, ValueError:
         return {"base": "limoss_remote_invalid"}
-    return {}
-
-
-def _add_fsm_relax_schema_fields(schema: dict[vol.Marker, Any], data: Mapping[str, Any]) -> None:
-    """Expose local layout, optional controls, reversals and all eight labels."""
-    schema[vol.Required(CONF_PRODUCT_TYPE, default=data.get(CONF_PRODUCT_TYPE, "chair"))] = vol.In(
-        PRODUCT_TYPES
-    )
-    _add_feature_fields(schema, data, BED_TYPE_FSM_RELAX)
-    schema[
-        vol.Optional(
-            CONF_FSM_RELAX_MEMORY_NAMES, default=data.get(CONF_FSM_RELAX_MEMORY_NAMES, [""] * 8)
-        )
-    ] = TextSelector(TextSelectorConfig(multiple=True))
-
-
-def _fsm_relax_errors(data: Mapping[str, Any]) -> dict[str, str]:
-    from .beds.fsm_relax import FsmRelaxSetup
-    from .fsm_relax_state import validate_names
-
-    try:
-        r = tuple(data.get(key, False) for key in CONF_REVERSE_MOTORS)
-        FsmRelaxSetup(
-            data.get(CONF_PRODUCT_TYPE, "chair"),
-            data.get(CONF_HAS_LIGHT, False),
-            data.get(CONF_HAS_MASSAGE, False),
-            (r[0], r[1], r[2], r[3]),
-        )
-        validate_names(data.get(CONF_FSM_RELAX_MEMORY_NAMES, [""] * 8))
-    except ValueError:
-        return {"base": "fsm_relax_invalid"}
-    return {}
-
-
-def _add_starcode_schema_fields(
-    schema: dict[vol.Marker, Any],
-    data: Mapping[str, Any],
-    hass: HomeAssistant,
-    main_entry_id: str | None = None,
-) -> None:
-    schema[
-        vol.Required(
-            CONF_BLE_DEVICE_NAME,
-            default=data.get(CONF_BLE_DEVICE_NAME, data.get(CONF_NAME, vol.UNDEFINED)),
-        )
-    ] = str
-    schema[
-        vol.Required(
-            CONF_STARCODE_M5X5_PROFILE,
-            default=data.get(CONF_STARCODE_M5X5_PROFILE, vol.UNDEFINED),
-        )
-    ] = vol.In({"cb25": "CB25", "f23": "F23", "kneading": "Kneading"})
-    _add_starcode_lift_field(schema, data, hass, main_entry_id)
-
-
-def _add_starcode_lift_field(
-    schema: dict[vol.Marker, Any],
-    data: Mapping[str, Any],
-    hass: HomeAssistant,
-    main_entry_id: str | None = None,
-) -> None:
-    """Select lifts for an AdjustableM5X5 main, which may itself be an ELEVATE."""
-    from .starcode_accessory_group import lift_choices
-
-    schema[
-        vol.Optional(
-            CONF_STARCODE_LIFT_ENTRIES,
-            default=data.get(CONF_STARCODE_LIFT_ENTRIES, []),
-        )
-    ] = SelectSelector(
-        SelectSelectorConfig(
-            options=[
-                {"value": key, "label": label}
-                for key, label in lift_choices(hass, main_entry_id, main_data=data).items()
-            ],
-            multiple=True,
-            mode=SelectSelectorMode.DROPDOWN,
-        )
-    )
-
-
-def _add_starcode_m1x12_schema_fields(
-    schema: dict[vol.Marker, Any],
-    data: Mapping[str, Any],
-    hass: HomeAssistant,
-    main_entry_id: str | None = None,
-) -> None:
-    schema[
-        vol.Required(
-            CONF_BLE_DEVICE_NAME,
-            default=data.get(CONF_BLE_DEVICE_NAME, data.get(CONF_NAME, vol.UNDEFINED)),
-        )
-    ] = str
-    schema[
-        vol.Required(
-            CONF_STARCODE_M1X12_PROFILE,
-            default=data.get(CONF_STARCODE_M1X12_PROFILE, vol.UNDEFINED),
-        )
-    ] = vol.In({"cb25": "CB25", "f23": "F23", "kneading": "Kneading"})
-    _add_starcode_lift_field(schema, data, hass, main_entry_id)
-
-
-def _starcode_errors(
-    hass: HomeAssistant,
-    data: Mapping[str, Any],
-    main_entry_id: str | None = None,
-) -> dict[str, str]:
-    from .beds.starcode_m5x5 import profile_from_name
-
-    name = data.get(CONF_BLE_DEVICE_NAME)
-    if isinstance(name, str) and name.startswith("ELEVATE"):
-        return {CONF_STARCODE_M5X5_PROFILE: "starcode_elevate_bed_type"}
-    if not isinstance(name, str) or profile_from_name(name) != data.get(CONF_STARCODE_M5X5_PROFILE):
-        return {CONF_STARCODE_M5X5_PROFILE: "starcode_profile_mismatch"}
-    return _starcode_lift_errors(hass, data, main_entry_id)
-
-
-def _starcode_m1x12_errors(
-    hass: HomeAssistant,
-    data: Mapping[str, Any],
-    main_entry_id: str | None = None,
-) -> dict[str, str]:
-    from .beds.starcode_m1x12_protocol import profile_from_name
-
-    name = data.get(CONF_BLE_DEVICE_NAME)
-    if not isinstance(name, str) or profile_from_name(name) != data.get(
-        CONF_STARCODE_M1X12_PROFILE
-    ):
-        return {CONF_STARCODE_M1X12_PROFILE: "starcode_m1x12_profile_mismatch"}
-    try:
-        from .starcode_accessory_group import validate_lift_entries
-
-        validate_lift_entries(
-            hass,
-            data,
-            data.get(CONF_STARCODE_LIFT_ENTRIES, []),
-            main_entry_id=main_entry_id,
-        )
-    except ValueError as err:
-        error = (
-            "starcode_m1x12_elevate_reconfigure"
-            if "M1X12 ELEVATE" in str(err)
-            else "starcode_invalid_m1x12_lifts"
-        )
-        return {CONF_STARCODE_LIFT_ENTRIES: error}
-    return {}
-
-
-def _starcode_lift_errors(
-    hass: HomeAssistant,
-    data: Mapping[str, Any],
-    main_entry_id: str | None = None,
-) -> dict[str, str]:
-    from .starcode_accessory_group import validate_lift_entries
-
-    try:
-        validate_lift_entries(
-            hass,
-            data,
-            data.get(CONF_STARCODE_LIFT_ENTRIES, []),
-            main_entry_id=main_entry_id,
-        )
-    except ValueError:
-        return {CONF_STARCODE_LIFT_ENTRIES: "starcode_invalid_lifts"}
     return {}
 
 
@@ -2052,269 +1645,6 @@ def _show_profile_fields(
         _hide_owned_generic_fields(schema, bed_type, variant, keep)
 
 
-# The Okin family's own routes, by the answer that selects each.
-_OKIN_ROUTES: Final[dict[str, str]] = {
-    "furnimove": BED_TYPE_FURNIMOVE,
-    "okin_uuid": BED_TYPE_OKIN_UUID,
-    "okin_dot": BED_TYPE_OKIN_DOT,
-    "okin_rf_eco_bt": BED_TYPE_OKIN_RF_ECO_BT,
-}
-# English labels; strings.json translates the same keys.
-_OKIN_ROUTE_LABELS: Final[dict[str, str]] = {
-    "furnimove": "FurniMove / OKIN Smart Remote app",
-    "okin_uuid": "No app: Okimat or OKIN handset code (requires pairing)",
-    "okin_dot": "No app: DOT remote (RF34 or RF6707)",
-    "okin_rf_eco_bt": "No app: single-actuator staircase, RF ECO BT (requires pairing)",
-}
-_OKIN_KEEP_LABEL: Final = "I don't know: keep the detected controls"
-# The Okin CST products, each the route of the app its accepted report names
-# (cluster 011, Nectar Move).
-_OKIN_CST_APPS: Final[dict[str, str]] = {
-    f"{BED_TYPE_OKIN_CST}:{variant}": variant
-    for variant in OKIN_CST_VARIANTS
-    if variant != VARIANT_AUTO
-}
-
-
-def _route_and_motors_schema(
-    data: Mapping[str, Any], routes: Mapping[str, str], motor_counts: list[int]
-) -> vol.Schema:
-    """Ask a labelled route and the motor count, defaulting to the staged ones."""
-    variant = data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
-    motor_count = data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
-    return vol.Schema(
-        {
-            vol.Required(
-                CONF_PROTOCOL_VARIANT,
-                default=variant if variant in routes else next(iter(routes)),
-            ): SelectSelector(
-                SelectSelectorConfig(
-                    options=[
-                        SelectOptionDict(value=key, label=label) for key, label in routes.items()
-                    ],
-                    mode=SelectSelectorMode.DROPDOWN,
-                )
-            ),
-            vol.Required(
-                CONF_MOTOR_COUNT,
-                default=motor_count if motor_count in motor_counts else motor_counts[0],
-            ): vol.All(vol.Coerce(int), vol.In(motor_counts)),
-        }
-    )
-
-
-# The Keeson question's answers that expand into one exact app or route each.
-_KEESON_GROUPS: Final[dict[str, tuple[tuple[str, str | None], ...]]] = {
-    "ergomotion_apps": (
-        (BED_TYPE_ERGOMOTION_APP, None),
-        (BED_TYPE_ERGOMOTION_4, None),
-        (BED_TYPE_SERTA_MP_REMOTE, None),
-    ),
-    "ore_apps": (
-        (BED_TYPE_KEESON, KEESON_VARIANT_AVANTI_BASES),
-        (BED_TYPE_KEESON, KEESON_VARIANT_AMERICANSTAR),
-        (BED_TYPE_KEESON, KEESON_VARIANT_BEDSENSE_BASES),
-        (BED_TYPE_KEESON, KEESON_VARIANT_INNOVA),
-        (BED_TYPE_KEESON, KEESON_VARIANT_MAXCOIL_UNA),
-        (BED_TYPE_KEESON, KEESON_VARIANT_DYNASTY_BASES),
-    ),
-    "okin_seating_apps": (
-        (BED_TYPE_KEESON, KEESON_VARIANT_ADJUSTABLE_LITE),
-        (BED_TYPE_KEESON, KEESON_VARIANT_SIMON_LI),
-        (BED_TYPE_KEESON, KEESON_VARIANT_HEAL_EVERY_NIGHT),
-        (BED_TYPE_KEESON, KEESON_VARIANT_OKIN_SEATING),
-    ),
-    "purple_base_json": (
-        (BED_TYPE_KEESON, KEESON_VARIANT_PURPLE),
-        (BED_TYPE_KEESON, KEESON_VARIANT_BASE),
-        (BED_TYPE_KEESON, KEESON_VARIANT_JSON),
-    ),
-}
-_KEESON_RESTONIC: Final = frozenset({KEESON_VARIANT_RESTONIC_A, KEESON_VARIANT_RESTONIC_B})
-
-
-# The L&P question's answers: each app's own route and layout, by its report.
-_LEGGETT_ROUTES: Final[dict[str, tuple[str, Mapping[str, str]]]] = {
-    "prodigy_ce": (BED_TYPE_LEGGETT_OKIN, {CONF_LEGGETT_APP_PROFILE: "prodigy4"}),
-    "prodigy2": (BED_TYPE_LEGGETT_OKIN, {CONF_LEGGETT_APP_PROFILE: "prodigy2"}),
-    "prodigy2l": (BED_TYPE_LEGGETT_OKIN, {CONF_LEGGETT_APP_PROFILE: "prodigy2l"}),
-    "useries": (BED_TYPE_LEGGETT_OKIN, {CONF_LEGGETT_APP_PROFILE: "useries"}),
-    # LP Control drives an LP BED receiver with its Okin profile; the route
-    # keeps its default layout, which no LP Control product is proven to change.
-    "lp_control_okin": (
-        BED_TYPE_LEGGETT_OKIN,
-        {CONF_LEGGETT_APP_PROFILE: LEGGETT_APP_DEFAULT_PROFILE},
-    ),
-    "lp_control_gen2": (BED_TYPE_LEGGETT_GEN2, {}),
-    "lp_app_mlrm": (BED_TYPE_LEGGETT_WILINKE, {}),
-    "lp_app_qrrm": (BED_TYPE_RICHMAT, {CONF_RICHMAT_REMOTE: RICHMAT_REMOTE_LP_QRRM}),
-    "lp_legacy": (BED_TYPE_LEGGETT_LP_LEGACY, {}),
-}
-# The legacy L&P app's own settings.
-_LP_LEGACY_KEYS: Final = (
-    CONF_LP_LEGACY_MODEL,
-    CONF_LP_LEGACY_MODE,
-    CONF_LP_LEGACY_WRITE_UUID,
-    CONF_LP_LEGACY_READ_UUID,
-)
-# The umbrella ID's variant for each route it can run.
-_LEGGETT_ALIAS_VARIANTS: Final[dict[str, str]] = {
-    BED_TYPE_LEGGETT_GEN2: LEGGETT_VARIANT_GEN2,
-    BED_TYPE_LEGGETT_OKIN: LEGGETT_VARIANT_OKIN,
-    BED_TYPE_LEGGETT_WILINKE: LEGGETT_VARIANT_MLRM,
-}
-
-
-# The Jensen / Svane question's answers: each app with the bed it runs, as the
-# bed type and variant each selects.
-_JENSEN_ROUTES: Final[dict[str, tuple[str, str | None]]] = {
-    "jensen_jmc400": (BED_TYPE_JENSEN, None),
-    "jensen_linon": (BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON),
-    "svane_bed": (BED_TYPE_SVANE, VARIANT_AUTO),
-    "svane_jmc400": (BED_TYPE_SVANE, SVANE_VARIANT_JMC),
-}
-
-
-def _jensen_suggestion(bed_type: str, variant: str, name: str | None) -> str:
-    """Return the answer the apps' own name rules pick for this bed.
-
-    The Svane Remote app picks its JMC400 profile for a name with ``JMC``, and
-    the Jensen app its LinOn profile for "Adjustable Bed" or "Jensen Bed".
-    Every setup route suggests the same answer; the user confirms it.
-    """
-    from .svane_state import svane_profile_for_selected_name
-
-    for answer, route in _JENSEN_ROUTES.items():
-        if route == (bed_type, variant) and variant != VARIANT_AUTO:
-            return answer
-    if bed_type == BED_TYPE_JENSEN:
-        return "jensen_jmc400"
-    if name != "Svane Bed" and is_jensen_linon_name(name):
-        return "jensen_linon"
-    if svane_profile_for_selected_name(name) == "jmc":
-        return "svane_jmc400"
-    return "svane_bed"
-
-
-# The Malouf question's answers, with the app each stages: the apps first,
-# then the receiver routes.
-_MALOUF_ROUTES: Final[dict[str, tuple[str, str | None]]] = {
-    "malouf": (BED_TYPE_MALOUF_APP, "malouf"),
-    "lucid": (BED_TYPE_MALOUF_APP, "lucid"),
-    "nordic_uart": (BED_TYPE_MALOUF_NEW_OKIN, None),
-    "ffe5": (BED_TYPE_MALOUF_LEGACY_OKIN, None),
-}
-
-
-# The Sleepy's question's answers: the app first, then the receiver routes.
-_SLEEPYS_ROUTES: Final[dict[str, str]] = {
-    "app": BED_TYPE_SLEEPYS_ELITE_APP,
-    "box25": BED_TYPE_SLEEPYS_BOX25,
-    "box24": BED_TYPE_SLEEPYS_BOX24,
-    "box15": BED_TYPE_SLEEPYS_BOX15,
-}
-
-
-# The LOGICDATA question's answers: each app's bed type and app profile. Sleep
-# Smart's bed base and air mattress pump are separate devices.
-_LOGICDATA_ROUTES: Final[dict[str, tuple[str, str | None]]] = {
-    "silvermotion": (BED_TYPE_LOGICDATA, None),
-    "phone": (BED_TYPE_LOGICDATA_APP, "phone"),
-    "tablet": (BED_TYPE_LOGICDATA_APP, "tablet"),
-    "sleep_smart": (BED_TYPE_LOGICDATA_APP, "sleep_smart"),
-    "sleep_smart_pump": (BED_TYPE_LOGICDATA_AIR_PUMP, None),
-}
-
-
-# The app-family questions' answers: each app's bed type, variant and own step.
-_AppAnswer = tuple[str, str | None, str | None]
-_CUSTOMATIC_APPS: Final[dict[str, _AppAnswer]] = {
-    "clarity": (BED_TYPE_CUSTOMATIC_CLARITY, None, None),
-    "jeromes": (BED_TYPE_CUSTOMATIC_JEROMES, None, None),
-    "remedy": (BED_TYPE_CUSTOMATIC_REMEDY, None, None),
-    "zseries_z230": (BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z230, None),
-    "zseries_z280": (BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z280, None),
-}
-_JORDANS_APPS: Final[dict[str, _AppAnswer]] = {
-    "serenity": (BED_TYPE_SERENITY, None, None),
-    "tranquil": (BED_TYPE_TRANQUIL, None, None),
-}
-_STARCODE_APPS: Final[dict[str, _AppAnswer]] = {
-    "m5x4": (BED_TYPE_STARCODE_ABM5_4, None, "starcode_app"),
-    "m5x5": (BED_TYPE_STARCODE_M5X5, None, "starcode_m5x5"),
-    "m1x12": (BED_TYPE_STARCODE_M1X12, None, "starcode_m1x12"),
-}
-# The Reverie question's answers: each receiver route and the service it advertises.
-_REVERIE_ROUTES: Final[dict[str, tuple[str, str]]] = {
-    "protocol_110": (BED_TYPE_REVERIE_NIGHTSTAND, REVERIE_NIGHTSTAND_SERVICE_UUID),
-    "protocol_108": (BED_TYPE_REVERIE, REVERIE_SERVICE_UUID),
-}
-# The Sleep Number question's answers: each transport and the service it advertises.
-_SLEEP_NUMBER_ROUTES: Final[dict[str, tuple[str, str]]] = {
-    "fuzion": (BED_TYPE_SLEEP_NUMBER, SLEEP_NUMBER_SERVICE_UUID),
-    "mcr": (BED_TYPE_SLEEP_NUMBER_MCR, SLEEP_NUMBER_MCR_SERVICE_UUID),
-}
-# The Remacro question's answers: the variant that selects each store app.
-_REMACRO_APPS: Final[dict[str, str]] = {
-    # Auto is the Slumberland app, as in v4.0.2.
-    "slumberland": VARIANT_AUTO,
-    "the_brick": REMACRO_VARIANT_THE_BRICK,
-    "jeromes": REMACRO_VARIANT_JEROMES,
-}
-# The Richmat question's answers: each app's bed type and variant. RMControl and
-# the remote controls share the Richmat route; the RMControl product tells them apart.
-_RICHMAT_APPS: Final[dict[str, tuple[str, str | None]]] = {
-    "rmcontrol": (BED_TYPE_RICHMAT, None),
-    **{app: (bed_type, None) for bed_type, app in RICHMAT_MH_APPS.items()},
-    **{app: (BED_TYPE_CLUSTER018, app) for app in CLUSTER018_APP_NAMES},
-    "remote": (BED_TYPE_RICHMAT, None),
-}
-
-# The Limoss question's answers: the two apps, then the generic controls the
-# family row and detection choose.
-_LIMOSS_APPS: Final[dict[str, _AppAnswer]] = {
-    "limoss_remote": (BED_TYPE_LIMOSS_REMOTE, None, "profile_questions"),
-    "fsm_relax": (BED_TYPE_FSM_RELAX, None, "fsm_relax"),
-    "generic": (BED_TYPE_LIMOSS, None, None),
-}
-# The family question each app answer belongs to.
-_ANSWER_STEPS: Final[dict[tuple[str, str | None], str]] = {
-    **{answer[:2]: "customatic_family" for answer in _CUSTOMATIC_APPS.values()},
-    **{answer[:2]: "jordans_family" for answer in _JORDANS_APPS.values()},
-    **{answer[:2]: "starcode_family" for answer in _STARCODE_APPS.values()},
-    **{answer[:2]: "limoss_family" for answer in _LIMOSS_APPS.values()},
-    **dict.fromkeys(_RICHMAT_APPS.values(), "richmat_family"),
-}
-# Each app family's picker row, by the routes behind it. The first answer is the row.
-_APP_FAMILY_ROWS: Final[dict[str, str]] = {
-    **{
-        bed_type: next(iter(apps.values()))[0]
-        for apps in (_CUSTOMATIC_APPS, _JORDANS_APPS, _STARCODE_APPS)
-        for bed_type, variant, _step in list(apps.values())[1:]
-        # A model answer is a hidden app row, which keeps its own label.
-        if variant is None
-    },
-    BED_TYPE_REVERIE: BED_TYPE_REVERIE_NIGHTSTAND,
-    BED_TYPE_SLEEP_NUMBER_MCR: BED_TYPE_SLEEP_NUMBER,
-    BED_TYPE_LIMOSS_REMOTE: BED_TYPE_LIMOSS,
-    BED_TYPE_FSM_RELAX: BED_TYPE_LIMOSS,
-}
-
-
-# The Keeson question's answers, in the order the form lists them.
-_KEESON_CHOICES: Final = (
-    "sleep_harmony",
-    "restonic",
-    "ergomotion_apps",
-    "ore_apps",
-    "okin_seating_apps",
-    "purple_base_json",
-    "coolbase",
-    "other_route",
-    "keep",
-)
-
-
 def _keeson_route_label(bed_type: str, variant: str | None) -> str:
     """Label one exact Keeson answer: its app row, or its bed type or route."""
     if variant is None:
@@ -2349,12 +1679,6 @@ def _apply_route_defaults(data: dict[str, Any], bed_type: str, variant: str | No
     data[CONF_DISABLE_ANGLE_SENSING] = not bed_type_has_position_feedback(bed_type, route_variant)
 
 
-_JIECANG_LEGACY_ROUTES: Final[dict[str, str]] = {
-    "legacy_jiecang": BED_TYPE_JIECANG,
-    "legacy_lierda": BED_TYPE_COMFORT_MOTION,
-}
-
-
 def _configure_questions(
     data: Mapping[str, Any], saved_bed_type: object = None
 ) -> SetupProfile | None:
@@ -2373,8 +1697,8 @@ def _configure_questions(
     family = next(
         (
             family
-            for family in MANAGED_FAMILIES
-            if data.get(CONF_BED_TYPE) in family.bed_types and saved in family.bed_types
+            for family in GUIDED_FAMILIES
+            if data.get(CONF_BED_TYPE) in family.managed and saved in family.managed
         ),
         None,
     )
@@ -2386,7 +1710,7 @@ def _configure_questions(
 
 
 def _question_field(
-    question: Question, data: Mapping[str, Any], *, visible: bool = False
+    question: Question, data: Mapping[str, Any], context: FlowContext, *, visible: bool = False
 ) -> tuple[vol.Marker, Any]:
     """Return one declared question's form marker and validator.
 
@@ -2397,11 +1721,11 @@ def _question_field(
 
     from .setup_questions import OPTIONAL, REQUIRED
 
-    default = question.default_for(data)
+    default = question.default_for(data, context)
     marker_type = (
         data_entry_flow.Required if default is REQUIRED else data_entry_flow.Optional
     )
-    options = question.options(data)
+    options = question.options(data, context)
     picker = (
         _SearchableSelect(
             [SelectOptionDict(value=str(key), label=label) for key, label in options.items()]
@@ -2422,6 +1746,18 @@ def _question_field(
     )
     if picker is not None:
         return marker, picker
+    if question.multiple:
+        if options is None:
+            return marker, TextSelector(TextSelectorConfig(multiple=True))
+        return marker, SelectSelector(
+            SelectSelectorConfig(
+                options=[
+                    SelectOptionDict(value=str(key), label=label) for key, label in options.items()
+                ],
+                multiple=True,
+                mode=SelectSelectorMode.DROPDOWN,
+            )
+        )
     if question.validator is not None:
         return marker, question.validator
     if question.text:
@@ -2435,7 +1771,11 @@ def _question_field(
 
 
 def _profile_question_schema(
-    profile: SetupProfile, data: Mapping[str, Any], *, advanced_section: bool = True
+    profile: SetupProfile,
+    data: Mapping[str, Any],
+    context: FlowContext,
+    *,
+    advanced_section: bool = True,
 ) -> dict[vol.Marker, Any]:
     """Render a profile's questions, its advanced ones in a collapsed section."""
     schema: dict[vol.Marker, Any] = {}
@@ -2447,7 +1787,7 @@ def _profile_question_schema(
         visible = question.condition_fields() <= shown
         if not visible and not question.asked(data):
             continue
-        marker, validator = _question_field(question, data, visible=visible)
+        marker, validator = _question_field(question, data, context, visible=visible)
         (advanced if question.advanced and advanced_section else schema)[marker] = validator
     if advanced:
         schema[vol.Optional("advanced")] = section(vol.Schema(advanced), {"collapsed": True})
@@ -2455,7 +1795,10 @@ def _profile_question_schema(
 
 
 def _profile_answers(
-    profile: SetupProfile, user_input: Mapping[str, Any], data: Mapping[str, Any]
+    profile: SetupProfile,
+    user_input: Mapping[str, Any],
+    data: Mapping[str, Any],
+    context: FlowContext,
 ) -> dict[str, Any]:
     """Return the submitted answers, flattening the Advanced section.
 
@@ -2471,36 +1814,129 @@ def _profile_answers(
             # A hidden question is neither required nor saved.
             continue
         if question.key in submitted:
-            _marker, validator = _question_field(question, data)
+            _marker, validator = _question_field(question, data, context)
             try:
                 # The schema coerces a select's text; a direct call gets the same.
                 answers[question.key] = validator(submitted[question.key])
             except vol.Invalid:
                 answers[question.key] = submitted[question.key]
-        elif user_input and (default := question.default_for(data)) not in (REQUIRED, OPTIONAL):
+        elif user_input and (default := question.default_for(data, context)) not in (
+            REQUIRED,
+            OPTIONAL,
+        ):
             answers[question.key] = default
     return answers
 
 
-def _add_cb24_side_schema_field(schema: dict[vol.Marker, Any]) -> None:
-    """Expose the legacy CB24 native A/B selector when the type is known."""
-    schema[vol.Optional(CONF_CB24_BED_SELECTION, default=CB24_BED_SELECTION_DEFAULT)] = vol.In(
-        {
-            CB24_BED_SELECTION_DEFAULT: "Both sides",
-            CB24_BED_SELECTION_A: "Side A / Left",
-            CB24_BED_SELECTION_B: "Side B / Right",
-        }
-    )
+_PULSE_FIELDS: Final = (CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS)
+_ANGLE_LIMITS: Final[dict[str, float]] = {
+    CONF_BACK_MAX_ANGLE: DEFAULT_BACK_MAX_ANGLE,
+    CONF_LEGS_MAX_ANGLE: DEFAULT_LEGS_MAX_ANGLE,
+}
+_POSITION_MODES: Final = {
+    POSITION_MODE_SPEED: "Speed (recommended)",
+    POSITION_MODE_ACCURACY: "Accuracy",
+}
+_TEXT: Final = TextSelector(TextSelectorConfig())
 
 
-def _add_cb24_entry_data(
-    entry_data: dict[str, Any], user_input: dict[str, Any], bed_type: str | None
-) -> None:
-    """Persist the native CB24 A/B selector when it was collected."""
-    if bed_type == BED_TYPE_OKIN_CB24:
-        entry_data[CONF_CB24_BED_SELECTION] = int(
-            user_input.get(CONF_CB24_BED_SELECTION, CB24_BED_SELECTION_DEFAULT)
-        )
+def _settings_fields(
+    hass: HomeAssistant,
+    data: Mapping[str, Any],
+    bed_type: str,
+    variant: str,
+    keys: Iterable[str],
+    defaults: Mapping[str, Any] | None = None,
+) -> dict[vol.Marker, Any]:
+    """Return the generic settings fields ``keys`` for a route, in that order.
+
+    Each shows its saved value, else the caller's default, else the route's own:
+    its pulse timing, its disconnect-after-command default and so on.
+    """
+    adapters = get_available_adapters(hass)
+    route_defaults: dict[str, Any] = {
+        CONF_NAME: "Adjustable Bed",
+        CONF_MOTOR_COUNT: DEFAULT_MOTOR_COUNT,
+        CONF_HAS_MASSAGE: DEFAULT_HAS_MASSAGE,
+        CONF_DISABLE_ANGLE_SENSING: DEFAULT_DISABLE_ANGLE_SENSING,
+        CONF_POSITION_MODE: DEFAULT_POSITION_MODE,
+        CONF_PASSIVE_POSITION_RECONCILIATION: passive_position_reconciliation_default_enabled(
+            bed_type
+        ),
+        CONF_PREFERRED_ADAPTER: ADAPTER_AUTO,
+        CONF_CONNECTION_PROFILE: DEFAULT_CONNECTION_PROFILE,
+        **dict(zip(_PULSE_FIELDS, get_motor_pulse_defaults(bed_type, variant), strict=True)),
+        CONF_DISCONNECT_AFTER_COMMAND: disconnect_after_command_default_enabled(bed_type, variant),
+        CONF_IDLE_DISCONNECT_SECONDS: DEFAULT_IDLE_DISCONNECT_SECONDS,
+        **_ANGLE_LIMITS,
+        **(defaults or {}),
+    }
+    validators: dict[str, Any] = {
+        CONF_NAME: str,
+        CONF_MOTOR_COUNT: vol.All(vol.Coerce(int), vol.In(_motor_count_options(bed_type, variant))),
+        CONF_POSITION_MODE: vol.In(_POSITION_MODES),
+        CONF_PREFERRED_ADAPTER: vol.In(adapters),
+        CONF_CONNECTION_PROFILE: vol.In(CONNECTION_PROFILE_OPTIONS),
+        CONF_IDLE_DISCONNECT_SECONDS: vol.All(
+            vol.Coerce(int), vol.Range(min=IDLE_DISCONNECT_KEEP_CONNECTED, max=300)
+        ),
+        **dict.fromkeys((*_PULSE_FIELDS, *_ANGLE_LIMITS), _TEXT),
+    }
+    fields: dict[vol.Marker, Any] = {}
+    for key in keys:
+        default = data.get(key, route_defaults[key])
+        if key == CONF_PREFERRED_ADAPTER and default not in adapters:
+            # A stored adapter that has gone falls back to automatic.
+            default = ADAPTER_AUTO
+        elif key in _PULSE_FIELDS or key in _ANGLE_LIMITS:
+            default = str(default)
+        fields[vol.Optional(key, default=default)] = validators.get(key, bool)
+    return fields
+
+
+def _parse_settings(
+    submitted: Mapping[str, Any], bed_type: str, pulse_defaults: tuple[int, int]
+) -> tuple[dict[str, Any], dict[str, str]]:
+    """Return the submitted pulse timing and angle limits as numbers, and errors by field.
+
+    A blank field takes its default. Only the fields submitted are returned.
+    """
+    values: dict[str, Any] = {}
+    errors: dict[str, str] = {}
+    for key, default in zip(_PULSE_FIELDS, pulse_defaults, strict=True):
+        if key not in submitted:
+            continue
+        try:
+            values[key] = int(submitted[key] or default)
+        except ValueError, TypeError:
+            errors[key] = "invalid_number"
+            continue
+        if key == CONF_MOTOR_PULSE_COUNT and _invalid_pulse_count(bed_type, values[key]):
+            # The profile's own range names the limits.
+            errors[key] = "invalid_pulse_count_range"
+        elif values[key] < 1:
+            errors[key] = "invalid_number"
+    if CONF_MOTOR_PULSE_COUNT not in submitted and _invalid_pulse_count(bed_type, pulse_defaults[0]):
+        errors[CONF_MOTOR_PULSE_COUNT] = "invalid_pulse_count_range"
+    for key, default in _ANGLE_LIMITS.items():
+        if key not in submitted:
+            continue
+        try:
+            values[key] = float(submitted[key] or default)
+        except ValueError, TypeError:
+            errors[key] = "invalid_angle"
+            continue
+        if not 0 < values[key] <= 180:
+            errors[key] = "invalid_angle"
+    return values, errors
+
+
+def _final_settings_questions(bed_type: str, variant: str | None) -> SetupProfile | None:
+    """Return the declared questions a route without an app step asks in its final settings."""
+    if bed_type in _APP_SETUP_STEPS:
+        return None
+    profile = setup_profile(bed_type, variant)
+    return profile if profile is not None and profile.questions else None
 
 
 # Short, single-attempt timeout for the optional setup-time connection probe.
@@ -2528,96 +1964,6 @@ _OCTO_PIN_MESSAGES: Final[dict[OctoPinStatus, str]] = {
 _PROBE_ADVERTISEMENT_WAIT_SECONDS = 10.0
 
 
-def _add_cluster033_schema_fields(schema: dict[vol.Marker, Any], data: Mapping[str, Any]) -> None:
-    bed_type = data[CONF_BED_TYPE]
-    if bed_type == "ergomotion_4":
-        from .beds.ergomotion4 import (
-            CONF_MASSAGE_KEYS,
-            CONF_MODEL_KEYS,
-            CONF_PRODUCT_NAME,
-            CONF_RGB,
-            MASSAGE_KEYS,
-            MODEL_KEYS,
-        )
-        schema[vol.Required(CONF_PRODUCT_TYPE, default=data.get(CONF_PRODUCT_TYPE, "H"))] = vol.In(ERGOMOTION4_CHOICES)
-        # Custom catalog fields stay visible so switching the product takes one
-        # submission. They apply only to Other catalog product.
-        for key, choices in ((CONF_MODEL_KEYS, MODEL_KEYS), (CONF_MASSAGE_KEYS, MASSAGE_KEYS)):
-            schema[vol.Optional(key, default=data.get(key, []))] = SelectSelector(
-                SelectSelectorConfig(options=list(choices), multiple=True, mode=SelectSelectorMode.DROPDOWN)
-            )
-        schema[vol.Optional(CONF_PRODUCT_NAME, default=data.get(CONF_PRODUCT_NAME, "Custom"))] = str
-        schema[vol.Optional(CONF_HAS_LIGHT, default=data.get(CONF_HAS_LIGHT, False))] = bool
-        schema[vol.Optional(CONF_RGB, default=data.get(CONF_RGB, False))] = bool
-        return
-    schema[vol.Required(CONF_PRODUCT_TYPE, default=data.get(CONF_PRODUCT_TYPE, DEFAULT_LAYOUTS[bed_type]))] = vol.In(APP_LAYOUTS[bed_type])
-    if bed_type == "qplus_app":
-        schema[vol.Required(CONF_PROTOCOL_VARIANT, default=data.get(CONF_PROTOCOL_VARIANT, "both"))] = vol.In(("both", "side_a", "side_b"))
-    if bed_type == "serta_mp_remote":
-        for slot in range(1, 5):
-            for axis, maximum in (("head", 60), ("foot", 45)):
-                key = f"serta_mp_memory_{slot}_{axis}"
-                default = 15 if axis == "head" else 0 if slot == 4 else 35
-                schema[vol.Required(key, default=data.get(key, default))] = vol.All(int, vol.Range(min=0, max=maximum))
-
-
-def _normalize_cluster033_data(data: dict[str, Any]) -> None:
-    bed_type = data[CONF_BED_TYPE]
-    choices = ERGOMOTION4_CHOICES if bed_type == "ergomotion_4" else APP_LAYOUTS[bed_type]
-    layout = data.get(CONF_PRODUCT_TYPE, "H" if bed_type == "ergomotion_4" else DEFAULT_LAYOUTS[bed_type])
-    if layout not in choices:
-        raise ValueError("Choose the selected app's layout")
-    if bed_type == "ergomotion_4" and layout == "custom":
-        from .beds.ergomotion4 import (
-            CONF_MASSAGE_KEYS,
-            CONF_MODEL_KEYS,
-            CONF_PRODUCT_NAME,
-            CONF_RGB,
-            custom_product,
-        )
-        custom_product(data.get(CONF_PRODUCT_NAME, "Custom"), tuple(data.get(CONF_MODEL_KEYS, ())), tuple(data.get(CONF_MASSAGE_KEYS, ())), data.get(CONF_HAS_LIGHT, False), data.get(CONF_RGB, False))
-    data[CONF_PRODUCT_TYPE] = layout
-    data[CONF_MOTOR_COUNT] = 2
-    data[CONF_HAS_MASSAGE] = False  # Exact app-labelled controls own their entities.
-    data[CONF_DISABLE_ANGLE_SENSING] = bed_type != "serta_mp_remote"
-    data[CONF_MOTOR_PULSE_USER_SET] = False
-
-
-# Options fields of app profiles whose adder needs only the current data.
-_OPTIONS_APP_FIELDS: Final[dict[str, Callable[[dict[vol.Marker, Any], dict[str, Any]], None]]] = {
-    **dict.fromkeys(CLUSTER033_BED_TYPES | {"ergomotion_4"}, _add_cluster033_schema_fields),
-    BED_TYPE_STARCODE_ABM5_4: _add_starcode_app_schema_fields,
-    BED_TYPE_FSM_RELAX: _add_fsm_relax_schema_fields,
-}
-# Bed types whose own app settings only a setup step or Configure can collect.
-# A family step asks which app runs the bed; it collects no app settings itself.
-_FAMILY_STEPS: Final = frozenset(
-    {
-        "jiecang_family",
-        "okin_family",
-        "keeson_family",
-        "solace_family",
-        "leggett_family",
-        "sleepys_family",
-        "customatic_family",
-        "jordans_family",
-        "malouf_family",
-        "remacro_family",
-        "jensen_family",
-        "reverie_family",
-        "richmat_family",
-        "sleep_number_family",
-        "limoss_family",
-    }
-)
-# Steps that ask which app runs the bed: a discovered bed's first question.
-_APP_QUESTION_STEPS: Final = _FAMILY_STEPS | {"vibradorm", "logicdata_family", "starcode_family"}
-# Each family question's name, from its family row.
-_FAMILY_NAMES: Final[dict[str, str]] = {
-    _APP_SETUP_STEPS[bed_type]: family for bed_type, (family, _apps) in FAMILY_ROWS.items()
-}
-
-
 def _row_family(choice: str) -> str | None:
     """Return the family of a bed-type list row: the family its journey asks.
 
@@ -2625,8 +1971,8 @@ def _row_family(choice: str) -> str | None:
     app or AdjustableM5X5, though its own bed type opens only its own step.
     """
     bed_type, variant = resolve_bed_type_choice(choice)
-    step = _ANSWER_STEPS.get((bed_type, variant)) or _APP_SETUP_STEPS.get(bed_type)
-    return _FAMILY_NAMES.get(step) if step is not None else None
+    family = answer_family(bed_type, variant) or question_family(bed_type)
+    return family.name if family is not None else None
 
 
 def _with_family(option: SelectOptionDict) -> SelectOptionDict:
@@ -2640,13 +1986,15 @@ def _with_family(option: SelectOptionDict) -> SelectOptionDict:
         return option
     app = option["label"].removesuffix(f" ({family})")
     return SelectOptionDict(value=option["value"], label=f"{app}{FAMILY_ROW_SEPARATOR}{family}")
+
+
+# Routes whose choice opens the app's own settings.
 APP_SETTINGS_BED_TYPES: Final = (
-    frozenset(
-        bed_type for bed_type, step in _APP_SETUP_STEPS.items() if step not in _FAMILY_STEPS
-    )
-    | frozenset(_OPTIONS_APP_FIELDS)
-    # The Malouf family step stages the app; its model is asked after it.
-    | {BED_TYPE_MALOUF_APP}
+    _DECLARED_QUESTION_ROUTES
+    | {bed_type for family in APP_FAMILIES if not family.picks_route for bed_type in family.asks}
+    # FSM Relax asks its own settings after the Limoss question, and the Malouf
+    # family step stages the app, whose model is asked after it.
+    | {BED_TYPE_FSM_RELAX, BED_TYPE_MALOUF_APP}
 )
 
 
@@ -2703,9 +2051,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     # stores the profile id each entry runs (profile_id.py); setup derives it
     # for new entries. Minor version 2 drops the obsolete keys recorded in
     # docs/design/config-keys.md; minor version 3 turns Massage off on layouts
-    # whose profile has no massage.
+    # whose profile has no massage; minor version 5 stores each Octo setup's
+    # motor layout as its override.
     VERSION = 5
-    MINOR_VERSION = 3
+    MINOR_VERSION = 5
 
     @staticmethod
     def _mark_ble_bond_established(entry_data: dict[str, Any]) -> dict[str, Any]:
@@ -2753,7 +2102,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if not isinstance(bed_type, str) or (step := _APP_SETUP_STEPS.get(bed_type)) is None:
             return None
         self._manual_data = entry_data
-        self._vibradorm_app_bluetooth_pairing = pairing_step == "bluetooth_pairing"
+        self._route_pairing_from_discovery = pairing_step == "bluetooth_pairing"
         return await getattr(self, f"async_step_{step}")()
 
     async def _async_keep_detected(
@@ -2836,7 +2185,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             self._manual_data = self._migration.staged(entry.title)
         if is_paired(entry.data):
             return await self.async_step_migration_split(user_input)
-        return await getattr(self, f"async_step_{family.key}")(user_input)
+        return await getattr(self, f"async_step_{family.step}")(user_input)
 
     async def async_step_migration_split(
         self, user_input: dict[str, Any] | None = None
@@ -2881,65 +2230,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Choose by app or keep the historical setup, never infer a profile."""
-        if (another := await self._async_another_app(user_input)) is not None:
-            return another
-        assert self._manual_data is not None
-        # On a legacy entry the legacy setup is the saved route, so it keeps it.
-        on_legacy = (
-            self._migration is not None
-            and self._migration.data.get(CONF_BED_TYPE) == BED_TYPE_VIBRADORM
-        )
-        choices = {
-            "vmat": "VMAT",
-            "caresse": "Caresse Diamant",
-            "werkmeister": "Werkmeister",
-            "vmatbasic": "V-MAT Basic",
-            "legacy": "Keep current setup" if on_legacy else "Legacy setup",
-        }
-        if self._migration is not None and not on_legacy:
-            choices["keep"] = "Keep current setup"
-        choice = (user_input or {}).get("app")
-        if choice in choices:
-            if choice == "keep" or (choice == "legacy" and on_legacy):
-                return await self.async_step_migration_keep()
-            self._migration_verified = False
-            same_profile = (
-                choice == "vmatbasic" and self._manual_data.get(CONF_BED_TYPE) == BED_TYPE_VMATBASIC
-            ) or (
-                self._manual_data.get(CONF_BED_TYPE) == BED_TYPE_VIBRADORM_APP
-                and self._manual_data.get(CONF_VIBRADORM_APP_PROFILE) == choice
-            )
-            if not same_profile:
-                for key in (*VIBRADORM_APP_CONFIG_KEYS, *VMATBASIC_CONFIG_KEYS):
-                    self._manual_data.pop(key, None)
-                self._manual_data.pop(CONF_VIBRADORM_APP_METADATA, None)
-            if choice == "legacy":
-                # A form drawn for a detected app or V-MAT Basic, or an app
-                # entry, set none of the legacy settings, so they are asked.
-                self._select_family_route(BED_TYPE_VIBRADORM, None)
-                return await self.async_step_profile_questions()
-            if choice == "vmatbasic":
-                self._manual_data[CONF_BED_TYPE] = BED_TYPE_VMATBASIC
-            else:
-                self._manual_data[CONF_BED_TYPE] = BED_TYPE_VIBRADORM_APP
-                self._manual_data[CONF_VIBRADORM_APP_PROFILE] = choice
-            return await self.async_step_profile_questions()
-        return self.async_show_form(
-            step_id="vibradorm",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("app"): SelectSelector(
-                        SelectSelectorConfig(
-                            options=[
-                                SelectOptionDict(value=value, label=label)
-                                for value, label in choices.items()
-                            ],
-                            mode=SelectSelectorMode.DROPDOWN,
-                        )
-                    )
-                }
-            ),
-        )
+        return await self._async_family_step(VIBRADORM_FAMILY, user_input)
 
     def _migration_unchanged(self) -> bool:
         return self._migration is not None and self._migration.matches(
@@ -2954,56 +2245,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         return _checked_family(self._migration_family, staged or {}).requires_check(staged or {})
 
     def _migration_endpoint_check(self, client: BleakClient, data: dict[str, Any]) -> None:
-        """Run the migrating family's exact endpoint check on the candidate link."""
+        """Run the staged route's family check on the candidate link."""
         self._migration_preview = {}
         if self._migration_family is None:
             return
-        family = _checked_family(self._migration_family, data)
-        if family is LOGICDATA_FAMILY:
-            from .controller_factory import require_logicdata_route
-
-            require_logicdata_route(client, data)
-        elif self._migration_family is VIBRADORM_FAMILY and data[CONF_BED_TYPE] != BED_TYPE_VIBRADORM:
-            # The legacy controller has no app roles; pairing proves its bond.
-            _validate_vibradorm_setup_roles(client, data)
-        elif self._migration_family is JIECANG_FAMILY:
-            from .beds.jiecang_app import require_app_transport
-
-            require_app_transport(client, data)
-        elif self._migration_family is OKIN_FAMILY and data[CONF_BED_TYPE] in OKIN_FAMILY.bed_types:
-            from .controller_factory import require_okin_route_endpoint
-
-            require_okin_route_endpoint(client, data[CONF_BED_TYPE])
-        elif (
-            self._migration_family is SLEEPYS_FAMILY
-            and data[CONF_BED_TYPE] in SLEEPYS_FAMILY.bed_types
-        ):
-            from .controller_factory import require_sleepys_route
-
-            require_sleepys_route(client, data)
-        elif self._migration_family in (CUSTOMATIC_FAMILY, JORDANS_FAMILY):
-            _require_app_family_roles(client, data)
-        elif (
-            self._migration_family is LIMOSS_FAMILY
-            and data[CONF_BED_TYPE] == BED_TYPE_LIMOSS_REMOTE
-        ):
-            from .beds.limoss_remote import require_app_route
-
-            require_app_route(client)
-        elif self._migration_family is MALOUF_FAMILY and data[CONF_BED_TYPE] == BED_TYPE_MALOUF_APP:
-            from .beds.malouf_app import require_app_transport
-
-            # Automatic transport reads the advertised device name, as the
-            # runtime does; an unnamed bed has none.
-            advertised = bluetooth.async_last_service_info(
-                self.hass, data[CONF_ADDRESS], connectable=False
-            )
-            transport = require_app_transport(
-                client, data, advertised.device.name if advertised else None
-            )
-            # The confirm step lists this transport's controls; the entry
-            # keeps the user's choice, which may stay automatic.
-            self._migration_preview = {CONF_MALOUF_APP_TRANSPORT: transport}
+        check = _checked_family(self._migration_family, data).endpoint_check
+        if check is not None:
+            # The confirm step lists the controls of what the check resolved.
+            self._migration_preview = dict(check(self.hass, client, data))
 
     def _migration_probe_check(self) -> Callable[[BleakClient], None] | None:
         """Return the probe's strict migration check, or None outside a migration."""
@@ -3029,18 +2278,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 yield
 
     def _migration_selection_label(self, data: Mapping[str, Any]) -> str:
-        if data.get(CONF_BED_TYPE) in (BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC):
-            return _vibradorm_selection_label(data)
+        """Name a route by its profile's title, which names the app and its selection."""
         from .profile_review import route_label
 
-        if data.get(CONF_BED_TYPE) == BED_TYPE_MALOUF_APP:
-            # Both apps run one bed type, so name the app and its model.
-            app = MALOUF_APP_PROFILES.get(data.get(CONF_MALOUF_APP_PROFILE, ""), "")
-            return f"{app}: {MALOUF_APP_MODELS.get(data.get(CONF_MALOUF_APP_MODEL, ''), '')}"
-        if data.get(CONF_BED_TYPE) == BED_TYPE_SLEEPYS_ELITE_APP:
-            # Every selector runs the same bed type, so name the control box.
-            return f"{route_label(data)}: {data.get(CONF_SLEEPYS_ELITE_SELECTOR)}"
-
+        profile = setup_profile_for(data)
+        if profile is not None and profile.title is not None:
+            return profile.title(data)
         return route_label(data)
 
     async def _async_show_migration_confirm(
@@ -3196,178 +2439,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     async def async_step_logicdata_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Ask which LOGICDATA app runs the bed, and for Sleep Smart the bed base or pump.
-
-        The apps share Bluetooth services, so nothing about the bed chooses one.
-        """
-        if (another := await self._async_another_app(user_input)) is not None:
-            return another
-        assert self._manual_data is not None
-        data = self._manual_data
-        if self._logicdata_incoming is None:
-            self._logicdata_incoming = data[CONF_BED_TYPE]
-        incoming = self._logicdata_incoming
-        guided = self._migration is not None
-        # Keep saves the route detection or the saved setup chose; the family
-        # row alone chose no app to keep.
-        can_keep = guided or incoming != BED_TYPE_LOGICDATA_APP
-        # The pump is its own physical device, never a route a bed entry changes to.
-        answers = [
-            answer
-            for answer, (bed_type, _app) in _LOGICDATA_ROUTES.items()
-            if not (guided and bed_type == BED_TYPE_LOGICDATA_AIR_PUMP)
-        ]
-        choice = (user_input or {}).get("choice")
-        if choice == "keep" and can_keep:
-            if guided:
-                return await self.async_step_migration_keep()
-            return await self._async_keep_detected(
-                "logicdata_family", self._async_continue_logicdata_route
-            )
-        if choice in answers:
-            bed_type, app = _LOGICDATA_ROUTES[choice]
-            if (bed_type, app) != (data[CONF_BED_TYPE], data.get(CONF_LOGICDATA_APP_PROFILE)):
-                # Another app's command family, layout and transport mean nothing here.
-                for key in LOGICDATA_FAMILY.route_keys:
-                    data.pop(key, None)
-            self._select_family_route(bed_type, None)
-            if app is not None:
-                data[CONF_LOGICDATA_APP_PROFILE] = app
-            return await self._async_continue_logicdata_route()
-        return self.async_show_form(
-            step_id="logicdata_family",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("choice"): SelectSelector(
-                        SelectSelectorConfig(
-                            options=[*answers, *(["keep"] if can_keep else [])],
-                            translation_key="logicdata_family_choice",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-            description_placeholders={"current": bed_type_label(incoming)},
-        )
-
-    async def _async_continue_logicdata_route(self) -> ConfigFlowResult:
-        """Ask an app's own command family and layout, then finish the route."""
-        from .setup_questions import setup_profile_for
-
-        assert self._manual_data is not None
-        # The row's form was drawn for the apps, so SimplicityFrame asks its
-        # motor count here too.
-        if (profile := setup_profile_for(self._manual_data)) is not None and profile.questions:
-            return await self.async_step_profile_questions()
-        # The pump continues to its check.
-        return await self._async_finish_family_route()
+        """Ask which LOGICDATA app runs the bed, and for Sleep Smart the bed base or pump."""
+        return await self._async_family_step(LOGICDATA_FAMILY, user_input)
 
     async def async_step_jiecang_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Ask which app or remote controls the bed; never infer it from the bed's name."""
-        if (another := await self._async_another_app(user_input)) is not None:
-            return another
-        from .profile_review import suggested_apps
-
-        assert self._manual_data is not None
-        if self._jiecang_incoming is None:
-            self._jiecang_incoming = self._manual_data.get(CONF_BED_TYPE)
-        incoming = self._jiecang_incoming
-        # Keep saves the route detection or the saved setup chose; the family
-        # row alone chose no route to keep.
-        can_keep = self._migration is not None or incoming in _JIECANG_LEGACY_ROUTES.values()
-        choices = [*JIECANG_APP_PROFILES, *_JIECANG_LEGACY_ROUTES, *(["keep"] if can_keep else [])]
-        # Another family's app the review suggests for this route, such as the
-        # LOGICDATA app for a Comfort Motion bed, continues in that family's question.
-        apps = [
-            app
-            for app in suggested_apps(self.hass, self._manual_data)
-            if resolve_bed_type_choice(app)[0] not in JIECANG_FAMILY.bed_types
-        ]
-        choice = (user_input or {}).get("choice")
-        if choice in apps:
-            data = self._manual_data
-            for key in JIECANG_FAMILY.route_keys:
-                data.pop(key, None)
-            bed_type, variant = resolve_bed_type_choice(choice)
-            self._select_family_route(bed_type, variant)
-            if (step := _APP_SETUP_STEPS.get(bed_type)) is not None:
-                return await getattr(self, f"async_step_{step}")()
-            return await self._async_finish_family_route()
-        if choice in choices:
-            data = self._manual_data
-            if choice == "keep":
-                if self._migration is not None:
-                    return await self.async_step_migration_keep()
-                return await self._async_keep_detected(
-                    "jiecang_family", self._async_finish_family_route
-                )
-            same_app = (
-                data.get(CONF_BED_TYPE) == BED_TYPE_JIECANG_APP
-                and data.get(CONF_JIECANG_APP_PROFILE) == choice
-            )
-            if not same_app:
-                for key in JIECANG_FAMILY.route_keys:
-                    data.pop(key, None)
-            self._migration_verified = False
-            if choice in _JIECANG_LEGACY_ROUTES:
-                data[CONF_BED_TYPE] = _JIECANG_LEGACY_ROUTES[choice]
-                if incoming == BED_TYPE_JIECANG_APP:
-                    # The apps set the layout and cadence themselves, so the
-                    # saved motor count means nothing here: ask the route's own.
-                    return await self.async_step_jiecang_legacy()
-                return await self._async_finish_family_route()
-            data[CONF_BED_TYPE] = BED_TYPE_JIECANG_APP
-            data[CONF_JIECANG_APP_PROFILE] = choice
-            return await self.async_step_profile_questions()
-        return self.async_show_form(
-            step_id="jiecang_family",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("choice"): SelectSelector(
-                        SelectSelectorConfig(
-                            # Each suggested app is translated as a choice of its own.
-                            options=[
-                                *(key for key in choices if key != "keep"),
-                                *apps,
-                                *(["keep"] if can_keep else []),
-                            ],
-                            translation_key="jiecang_family_choice",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-            description_placeholders={"current": bed_type_label(incoming)},
-        )
-
-    async def async_step_jiecang_legacy(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Collect the motor count a legacy remote route needs, with its own cadence."""
-        assert self._manual_data is not None
-        data = self._manual_data
-        bed_type = data[CONF_BED_TYPE]
-        if user_input is not None:
-            data[CONF_MOTOR_COUNT] = int(user_input[CONF_MOTOR_COUNT])
-            self._journey_set.add(CONF_MOTOR_COUNT)
-            pulse_count, pulse_delay = get_motor_pulse_defaults(bed_type, VARIANT_AUTO)
-            data[CONF_MOTOR_PULSE_COUNT] = pulse_count
-            data[CONF_MOTOR_PULSE_DELAY_MS] = pulse_delay
-            data[CONF_MOTOR_PULSE_USER_SET] = False
-            return await self._async_finish_family_route()
-        return self.async_show_form(
-            step_id="jiecang_legacy",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(CONF_MOTOR_COUNT, default=DEFAULT_MOTOR_COUNT): vol.All(
-                        vol.Coerce(int), vol.In(_motor_count_options(bed_type))
-                    )
-                }
-            ),
-            description_placeholders={"current": bed_type_label(bed_type)},
-        )
+        return await self._async_family_step(JIECANG_FAMILY, user_input)
 
     async def _async_finish_family_route(self) -> ConfigFlowResult:
         """Continue a route chosen in a family step: a new bed's settings, pairing, the check."""
@@ -3386,7 +2465,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if requires_pairing(data[CONF_BED_TYPE], data.get(CONF_PROTOCOL_VARIANT)):
             return await (
                 self.async_step_bluetooth_pairing()
-                if self._vibradorm_app_bluetooth_pairing
+                if self._route_pairing_from_discovery
                 else self.async_step_manual_pairing()
             )
         return await self._finish_with_verify(data, data.get(CONF_NAME, "Adjustable Bed"))
@@ -3395,156 +2474,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Ask which app or remote controls an Okin receiver; its GATT cannot tell."""
-        if (another := await self._async_another_app(user_input)) is not None:
-            return another
-        from .furnimove_repair import CONF_STAIRCASE_LAYOUT_CONFIRMED
-        from .profile_review import choice_label, related_app_choices
-
-        assert self._manual_data is not None
-        data = self._manual_data
-        if self._okin_incoming is None:
-            self._okin_incoming = (
-                data[CONF_BED_TYPE],
-                data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO),
-            )
-            if self._migration is None and (
-                self._okin_incoming in APP_VARIANT_CHOICES
-                or self._okin_incoming[0] == BED_TYPE_OKIN_CST
-                and self._okin_incoming[1] in _OKIN_CST_APPS.values()
-            ):
-                # An app row, such as Nectar Move, or an explicit CST product
-                # already answered the question.
-                return await self._async_finish_family_route()
-        incoming, incoming_variant = self._okin_incoming
-        # The apps the app review suggests for this route stay one answer away.
-        apps = related_app_choices(incoming, incoming_variant)
-        # A detected or chosen Okin CST bed is offered its own apps first.
-        cst_apps = _OKIN_CST_APPS if incoming == BED_TYPE_OKIN_CST else {}
-        # A FurniMove row or gateway chose no handset, so there is nothing to keep.
-        can_keep = self._migration is not None or incoming != BED_TYPE_FURNIMOVE
-        choice = (user_input or {}).get("choice")
-        if choice == "keep" and can_keep:
-            if self._migration is not None:
-                return await self.async_step_migration_keep()
-            return await self._async_keep_detected(
-                "okin_family",
-                self.async_step_profile_questions
-                if incoming in (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT, BED_TYPE_OKIN_DOT)
-                else self._async_finish_family_route,
-            )
-        if choice in cst_apps:
-            self._select_family_route(BED_TYPE_OKIN_CST, cst_apps[choice])
-            return await self._async_finish_family_route()
-        if choice in _OKIN_ROUTES or choice in apps:
-            bed_type, variant = (
-                (_OKIN_ROUTES[choice], None)
-                if choice in _OKIN_ROUTES
-                else resolve_bed_type_choice(choice)
-            )
-            if incoming == BED_TYPE_OKIMAT and bed_type == BED_TYPE_OKIN_UUID:
-                # The same route under its saved ID; never rewrite the ID.
-                bed_type = BED_TYPE_OKIMAT
-            self._migration_verified = False
-            if bed_type != data[CONF_BED_TYPE]:
-                for key in (*OKIN_FAMILY.route_keys, CONF_STAIRCASE_LAYOUT_CONFIRMED):
-                    data.pop(key, None)
-                self._select_family_route(bed_type, variant)
-            if bed_type == BED_TYPE_FURNIMOVE:
-                return await self.async_step_profile_questions()
-            if bed_type in (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT, BED_TYPE_OKIN_DOT):
-                return await self.async_step_profile_questions()
-            if bed_type == BED_TYPE_OKIN_RF_ECO_BT:
-                # Choosing the staircase is the explicit confirmation its repair asks for.
-                data[CONF_STAIRCASE_LAYOUT_CONFIRMED] = True
-                data[CONF_MOTOR_COUNT] = 1
-                self._journey_set.add(CONF_MOTOR_COUNT)
-            return await self._async_finish_family_route()
-        routes = [
-            SelectOptionDict(value=key, label=label) for key, label in _OKIN_ROUTE_LABELS.items()
-        ]
-        app_options = [
-            *(
-                SelectOptionDict(value=key, label=OKIN_CST_VARIANTS[variant])
-                for key, variant in cst_apps.items()
-            ),
-            *(SelectOptionDict(value=app, label=choice_label(app)) for app in apps),
-        ]
-        options = [
-            # The detected family's apps come first, then the other Okin answers.
-            *([*app_options, *routes] if cst_apps else [*routes, *app_options]),
-            *([SelectOptionDict(value="keep", label=_OKIN_KEEP_LABEL)] if can_keep else []),
-        ]
-        return self.async_show_form(
-            step_id="okin_family",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("choice"): SelectSelector(
-                        SelectSelectorConfig(
-                            options=options,
-                            translation_key="okin_family_choice",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-            description_placeholders={"current": bed_type_label(incoming)},
-        )
+        return await self._async_family_step(OKIN_FAMILY, user_input)
 
     async def async_step_keeson_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Ask which app or remote runs a Keeson bed; shared names cannot tell."""
-        if (another := await self._async_another_app(user_input)) is not None:
-            return another
-        assert self._manual_data is not None
-        data = self._manual_data
-        if self._keeson_incoming is None:
-            self._keeson_incoming = (
-                data[CONF_BED_TYPE],
-                data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO),
-            )
-            incoming, variant = self._keeson_incoming
-            if self._migration is None and (incoming, variant) in APP_VARIANT_CHOICES:
-                # An app row already answered the question.
-                return await self._async_continue_keeson_route()
-        incoming, _variant = self._keeson_incoming
-        choice = (user_input or {}).get("choice")
-        if choice == "keep":
-            if self._migration is not None:
-                return await self.async_step_migration_keep()
-            return await self._async_keep_detected("keeson_family", self._async_finish_family_route)
-        if choice in _KEESON_GROUPS:
-            self._keeson_group = choice
-            return await self.async_step_keeson_app()
-        if choice == "restonic":
-            return await self.async_step_keeson_restonic()
-        if choice == "other_route":
-            self._select_family_route(BED_TYPE_KEESON, data.get(CONF_PROTOCOL_VARIANT))
-            return await self.async_step_keeson_route()
-        if choice in ("sleep_harmony", "coolbase"):
-            self._select_family_route(
-                *(
-                    (BED_TYPE_KEESON, KEESON_VARIANT_SLEEP_HARMONY)
-                    if choice == "sleep_harmony"
-                    else (BED_TYPE_COOLBASE, None)
-                )
-            )
-            return await self._async_finish_family_route()
-        return self.async_show_form(
-            step_id="keeson_family",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("choice"): SelectSelector(
-                        SelectSelectorConfig(
-                            options=list(_KEESON_CHOICES),
-                            translation_key="keeson_family_choice",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-            description_placeholders={"current": bed_type_label(incoming)},
-        )
+        return await self._async_family_step(KEESON_FAMILY, user_input)
 
     def _select_family_route(self, bed_type: str, variant: str | None) -> None:
         """Stage one family route, with Configure's defaults when it changes.
@@ -3560,43 +2496,21 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return
         _apply_route_defaults(data, bed_type, variant)
 
-    async def _async_continue_keeson_route(self) -> ConfigFlowResult:
-        """Ask what the staged route still needs, then finish it."""
-        assert self._manual_data is not None
-        data = self._manual_data
-        bed_type = data[CONF_BED_TYPE]
-        variant = data.get(CONF_PROTOCOL_VARIANT)
-        if bed_type in _APP_SETUP_STEPS and bed_type not in KEESON_FAMILY.bed_types:
-            # Its own app step owns the layout.
-            return await getattr(self, f"async_step_{_APP_SETUP_STEPS[bed_type]}")()
-        if variant in _KEESON_RESTONIC:
-            return await self.async_step_keeson_restonic()
-        return await self._async_ask_keeson_route()
-
-    async def _async_ask_keeson_route(self) -> ConfigFlowResult:
-        """Ask the staged route's declared questions, such as an app screen's motor count."""
-        from .setup_questions import setup_profile_for
-
-        assert self._manual_data is not None
-        if (profile := setup_profile_for(self._manual_data)) is not None and profile.questions:
-            return await self.async_step_profile_questions()
-        return await self._async_finish_family_route()
-
     async def async_step_keeson_app(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Expand a grouped answer into its exact app or route."""
-        assert self._keeson_group is not None
+        assert self._narrowing is not None
+        family, grouped = self._narrowing
         # Purple, Base and JSON are plain routes, not app rows, so key every
         # answer by its own bed type and variant.
         routes = {
-            f"{bed_type}:{variant}" if variant else bed_type: (bed_type, variant)
-            for bed_type, variant in _KEESON_GROUPS[self._keeson_group]
+            f"{answer.bed_type}:{answer.variant}" if answer.variant else answer.bed_type: answer
+            for answer in grouped.group
         }
         choice = (user_input or {}).get("choice")
-        if choice in routes:
-            self._select_family_route(*routes[choice])
-            return await self._async_continue_keeson_route()
+        if isinstance(choice, str) and choice in routes:
+            return await self._async_stage_answer(family, self._visit(family), routes[choice])
         return self.async_show_form(
             step_id="keeson_app",
             data_schema=vol.Schema(
@@ -3604,618 +2518,241 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     vol.Required("choice"): SelectSelector(
                         SelectSelectorConfig(
                             options=[
-                                SelectOptionDict(value=key, label=_keeson_route_label(*route))
-                                for key, route in routes.items()
+                                SelectOptionDict(
+                                    value=key, label=_keeson_route_label(answer.bed_type, answer.variant)
+                                )
+                                for key, answer in routes.items()
                             ],
                             mode=SelectSelectorMode.LIST,
                         )
                     )
                 }
             ),
-        )
-
-    async def async_step_keeson_restonic(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Ask the remote style chosen in the Restonic BT app's settings."""
-        assert self._manual_data is not None
-        style = (user_input or {}).get(CONF_PROTOCOL_VARIANT)
-        if style in _KEESON_RESTONIC:
-            self._select_family_route(BED_TYPE_KEESON, style)
-            return await self._async_finish_family_route()
-        current = self._manual_data.get(CONF_PROTOCOL_VARIANT)
-        return self.async_show_form(
-            step_id="keeson_restonic",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        CONF_PROTOCOL_VARIANT,
-                        default=current if current in _KEESON_RESTONIC else KEESON_VARIANT_RESTONIC_A,
-                    ): SelectSelector(
-                        SelectSelectorConfig(
-                            options=sorted(_KEESON_RESTONIC),
-                            translation_key="keeson_restonic_style",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-        )
-
-    async def async_step_keeson_route(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Collect an older Keeson remote route and the motor count."""
-        assert self._manual_data is not None
-        data = self._manual_data
-        routes = _labelled_routes(BED_TYPE_KEESON)
-        motor_counts = _motor_count_options(BED_TYPE_KEESON)
-        if user_input is not None and user_input.get(CONF_PROTOCOL_VARIANT) in routes:
-            self._select_family_route(BED_TYPE_KEESON, user_input[CONF_PROTOCOL_VARIANT])
-            data[CONF_MOTOR_COUNT] = int(user_input[CONF_MOTOR_COUNT])
-            self._journey_set.add(CONF_MOTOR_COUNT)
-            return await self._async_ask_keeson_route()
-        return self.async_show_form(
-            step_id="keeson_route",
-            data_schema=_route_and_motors_schema(data, routes, motor_counts),
         )
 
     async def async_step_solace_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Ask which app runs a QMS-named bed; several apps share those names."""
-        if (another := await self._async_another_app(user_input)) is not None:
-            return another
-        assert self._manual_data is not None
-        data = self._manual_data
-        if self._solace_incoming is None:
-            self._solace_incoming = (
-                data[CONF_BED_TYPE],
-                data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO),
-            )
-            if self._migration is None and self._solace_incoming[1] == SOLACE_VARIANT_WOOSA:
-                # The Woosa Sleep row already answered the question.
-                return await self.async_step_solace_woosa()
-        incoming, _variant = self._solace_incoming
-        choice = (user_input or {}).get("choice")
-        if choice == "keep":
-            if self._migration is not None:
-                return await self.async_step_migration_keep()
-            return await self._async_keep_detected("solace_family", self._async_finish_family_route)
-        if choice == "name_route":
-            self._select_family_route(BED_TYPE_SOLACE, VARIANT_AUTO)
-            return await self._async_finish_family_route()
-        if choice == "woosa":
-            return await self.async_step_solace_woosa()
-        if choice == "motion_bed":
-            self._select_family_route(BED_TYPE_MOTION_BED, None)
-            return await self.async_step_profile_questions()
-        if choice == "bedsense":
-            self._select_family_route(BED_TYPE_BEDSENSE, None)
-            return await self.async_step_profile_questions()
-        return self.async_show_form(
-            step_id="solace_family",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("choice"): SelectSelector(
-                        SelectSelectorConfig(
-                            options=["name_route", "woosa", "motion_bed", "bedsense", "keep"],
-                            translation_key="solace_family_choice",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-            description_placeholders={"current": bed_type_label(incoming)},
-        )
+        return await self._async_family_step(SOLACE_FAMILY, user_input)
 
     async def async_step_solace_woosa(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Say what Woosa Sleep controls differ before choosing it."""
         if user_input is not None:
-            self._select_family_route(BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA)
-            return await self._async_finish_family_route()
+            woosa = dataclasses.replace(SOLACE_FAMILY.answers["woosa"], step=None)
+            return await self._async_stage_answer(SOLACE_FAMILY, self._visit(SOLACE_FAMILY), woosa)
         return self.async_show_form(step_id="solace_woosa", data_schema=vol.Schema({}))
 
     async def async_step_leggett_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Ask which L&P app or remote runs the bed; each app has its own layout."""
-        if (another := await self._async_another_app(user_input)) is not None:
-            return another
-        assert self._manual_data is not None
-        data = self._manual_data
-        if self._leggett_incoming is None:
-            self._leggett_incoming = (
-                data[CONF_BED_TYPE],
-                data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO),
-            )
-        incoming, _variant = self._leggett_incoming
-        choice = (user_input or {}).get("choice")
-        if choice == "keep":
-            if self._migration is not None:
-                return await self.async_step_migration_keep()
-            return await self._async_keep_detected("leggett_family", self._async_finish_family_route)
-        if choice in _LEGGETT_ROUTES:
-            bed_type, extra = _LEGGETT_ROUTES[choice]
-            variant: str | None = None
-            if incoming == BED_TYPE_LEGGETT_PLATT and bed_type in _LEGGETT_ALIAS_VARIANTS:
-                # The same route under its saved ID; never rewrite the ID.
-                bed_type, variant = BED_TYPE_LEGGETT_PLATT, _LEGGETT_ALIAS_VARIANTS[bed_type]
-            if bed_type != data[CONF_BED_TYPE]:
-                # The legacy app's and the QRRM remote's own settings mean
-                # nothing on another route.
-                for key in (*_LP_LEGACY_KEYS, CONF_RICHMAT_REMOTE):
-                    data.pop(key, None)
-            self._select_family_route(bed_type, variant)
-            data.update(extra)
-            if CONF_LEGGETT_APP_PROFILE in extra:
-                # The app's own layout.
-                data[CONF_MOTOR_COUNT] = LEGGETT_APP_MOTOR_COUNTS[extra[CONF_LEGGETT_APP_PROFILE]]
-                self._journey_set.add(CONF_MOTOR_COUNT)
-            elif CONF_LEGGETT_APP_PROFILE in data and not _is_leggett_app_type(
-                bed_type, variant
-            ):
-                data.pop(CONF_LEGGETT_APP_PROFILE)
-            if bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
-                return await self.async_step_profile_questions()
-            return await self._async_finish_family_route()
-        return self.async_show_form(
-            step_id="leggett_family",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("choice"): SelectSelector(
-                        SelectSelectorConfig(
-                            options=[*_LEGGETT_ROUTES, "keep"],
-                            translation_key="leggett_family_choice",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-            description_placeholders={"current": bed_type_label(incoming)},
-        )
+        return await self._async_family_step(LEGGETT_FAMILY, user_input)
 
     async def async_step_jensen_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Ask which app and bed a Jensen or Svane controller runs.
-
-        The JMC400 name and the LinonPI services each occur with both apps, so
-        they never decide the profile; the apps' own name rules only suggest it.
-        """
-        if (another := await self._async_another_app(user_input)) is not None:
-            return another
-        assert self._manual_data is not None
-        data = self._manual_data
-        if self._jensen_incoming is None:
-            self._jensen_incoming = (
-                data[CONF_BED_TYPE],
-                data.get(CONF_PROTOCOL_VARIANT) or VARIANT_AUTO,
-            )
-        choice = (user_input or {}).get("choice")
-        if choice == "keep" and self._migration is not None:
-            return await self.async_step_migration_keep()
-        if isinstance(choice, str) and choice in _JENSEN_ROUTES:
-            from .setup_questions import setup_profile_for
-
-            self._select_family_route(*_JENSEN_ROUTES[choice])
-            # The form before this step was drawn for Svane, so a route with
-            # settings of its own asks them now.
-            if (profile := setup_profile_for(data)) is not None and profile.questions:
-                return await self.async_step_profile_questions()
-            return await self._async_finish_family_route()
-        # An unnamed advertisement reports the address as its name, which no
-        # name rule reads; the next source then names the bed.
-        advertised = (
-            self._discovery_info
-            if self._discovery_info is not None
-            else bluetooth.async_last_service_info(
-                self.hass, data[CONF_ADDRESS], connectable=False
-            )
-        )
-        name = next(
-            (
-                candidate
-                for candidate in (
-                    advertised.name if advertised is not None else None,
-                    data.get(CONF_BLE_DEVICE_NAME),
-                )
-                if isinstance(candidate, str) and candidate and not is_mac_like_name(candidate)
-            ),
-            None,
-        )
-        return self.async_show_form(
-            step_id="jensen_family",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        "choice", default=_jensen_suggestion(*self._jensen_incoming, name)
-                    ): SelectSelector(
-                        SelectSelectorConfig(
-                            options=[
-                                *_JENSEN_ROUTES,
-                                *(["keep"] if self._migration is not None else []),
-                            ],
-                            translation_key="jensen_family_choice",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-        )
+        """Ask which app and bed a Jensen or Svane controller runs."""
+        return await self._async_family_step(JENSEN_FAMILY, user_input)
 
     async def async_step_sleepys_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Ask which app or receiver runs a Sleepy's Elite bed; never infer it from the bed."""
-        if (another := await self._async_another_app(user_input)) is not None:
-            return another
-        from .profile_review import choice_label, suggested_apps
-
-        assert self._manual_data is not None
-        data = self._manual_data
-        if self._sleepys_incoming is None:
-            self._sleepys_incoming = data[CONF_BED_TYPE]
-        incoming = self._sleepys_incoming
-        # The apps the app review suggests for this route stay one answer away.
-        apps = [
-            app
-            for app in suggested_apps(self.hass, data)
-            if resolve_bed_type_choice(app)[0] not in SLEEPYS_FAMILY.bed_types
-        ]
-        # Keep saves the route detection or the saved setup chose; the family
-        # row alone chose no control box to keep.
-        can_keep = self._migration is not None or incoming != BED_TYPE_SLEEPYS_ELITE_APP
-        choice = (user_input or {}).get("choice")
-        if choice == "keep" and can_keep:
-            if self._migration is not None:
-                return await self.async_step_migration_keep()
-            return await self._async_keep_detected(
-                "sleepys_family", self._async_continue_sleepys_route
-            )
-        if choice in _SLEEPYS_ROUTES or choice in apps:
-            bed_type, variant = (
-                (_SLEEPYS_ROUTES[choice], None)
-                if choice in _SLEEPYS_ROUTES
-                else resolve_bed_type_choice(choice)
-            )
-            if bed_type != data[CONF_BED_TYPE]:
-                # A new route starts from its own defaults, never another
-                # route's control box or dialect.
-                data.pop(CONF_SLEEPYS_ELITE_SELECTOR, None)
-            self._select_family_route(bed_type, variant)
-            return await self._async_continue_sleepys_route()
-        options = [
-            *(SelectOptionDict(value=key, label=key) for key in _SLEEPYS_ROUTES),
-            *(SelectOptionDict(value=app, label=choice_label(app)) for app in apps),
-            *([SelectOptionDict(value="keep", label="keep")] if can_keep else []),
-        ]
-        return self.async_show_form(
-            step_id="sleepys_family",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("choice"): SelectSelector(
-                        SelectSelectorConfig(
-                            options=options,
-                            translation_key="sleepys_family_choice",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-            description_placeholders={"current": bed_type_label(incoming)},
-        )
-
-    async def _async_continue_sleepys_route(self) -> ConfigFlowResult:
-        """Ask what the staged route still needs, then finish it."""
-        from .setup_questions import setup_profile_for
-
-        assert self._manual_data is not None
-        data = self._manual_data
-        step = _APP_SETUP_STEPS.get(data[CONF_BED_TYPE])
-        if step is not None and step != "sleepys_family":
-            # A suggested app's own step owns its settings.
-            return await getattr(self, f"async_step_{step}")()
-        profile = setup_profile_for(data)
-        if profile is not None and profile.questions:
-            return await self.async_step_profile_questions()
-        return await self._async_finish_family_route()
+        return await self._async_family_step(SLEEPYS_FAMILY, user_input)
 
     async def async_step_customatic_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Ask which Customatic app runs the bed, and for Z-Series the model."""
-        return await self._async_app_family("customatic_family", _CUSTOMATIC_APPS, user_input)
+        return await self._async_family_step(CUSTOMATIC_FAMILY, user_input)
 
     async def async_step_jordans_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Ask which Jordan's app runs the bed."""
-        return await self._async_app_family("jordans_family", _JORDANS_APPS, user_input)
+        return await self._async_family_step(JORDANS_FAMILY, user_input)
 
     async def async_step_starcode_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Ask which StarCode app runs the bed, then that app's own settings."""
-        return await self._async_app_family("starcode_family", _STARCODE_APPS, user_input)
+        return await self._async_family_step(STARCODE_FAMILY, user_input)
 
     async def async_step_reverie_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Confirm the Reverie receiver from the service the bed advertises."""
-        return await self._async_service_family("reverie_family", _REVERIE_ROUTES, user_input)
+        return await self._async_family_step(REVERIE_FAMILY, user_input)
 
     async def async_step_sleep_number_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Confirm the Sleep Number transport from the service the bed advertises."""
-        return await self._async_service_family(
-            "sleep_number_family", _SLEEP_NUMBER_ROUTES, user_input
-        )
-
-    async def _async_service_family(
-        self,
-        step_id: str,
-        routes: Mapping[str, tuple[str, str]],
-        user_input: dict[str, Any] | None,
-    ) -> ConfigFlowResult:
-        """Confirm a family's route from the service the bed advertises.
-
-        The receiver's service, not the app or name, decides the route. Only a
-        bed whose advertisement shows none of the services, or several, is
-        asked. The first route is the family's picker row.
-        """
-        if (another := await self._async_another_app(user_input)) is not None:
-            return another
-        from .setup_questions import setup_profile_for
-
-        assert self._manual_data is not None
-        data = self._manual_data
-        if self._app_family_incoming is None:
-            self._app_family_incoming = data[CONF_BED_TYPE]
-        incoming = self._app_family_incoming
-        info = self._discovery_info or bluetooth.async_last_service_info(
-            self.hass, data[CONF_ADDRESS], connectable=False
-        )
-        advertised = {uuid.lower() for uuid in (info.service_uuids if info else ())}
-        confirmed = [key for key, (_bed_type, service) in routes.items() if service in advertised]
-        choice = (user_input or {}).get("choice")
-        if choice is None and len(confirmed) == 1:
-            choice = confirmed[0]
-        if choice == "keep" or (isinstance(choice, str) and choice in routes):
-            if choice != "keep":
-                self._select_family_route(routes[choice][0], None)
-            profile = setup_profile_for(self._manual_data)
-            resume = (
-                self.async_step_profile_questions
-                if profile is not None and profile.questions
-                else self._async_finish_family_route
-            )
-            if choice == "keep" and self._migration is None:
-                return await self._async_keep_detected(step_id, resume)
-            return await resume()
-        # A route detection or the saved setup chose stays one answer away.
-        can_keep = incoming != next(iter(routes.values()))[0]
-        return self.async_show_form(
-            step_id=step_id,
-            data_schema=vol.Schema(
-                {
-                    vol.Required("choice"): SelectSelector(
-                        SelectSelectorConfig(
-                            options=[*routes, *(["keep"] if can_keep else [])],
-                            translation_key=f"{step_id}_choice",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-        )
+        return await self._async_family_step(SLEEP_NUMBER_FAMILY, user_input)
 
     async def async_step_richmat_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Ask which Richmat app or remote runs the bed; shared names and services cannot tell.
-
-        An app chosen elsewhere, such as from a brand's list, already answered.
-        """
-        if (another := await self._async_another_app(user_input)) is not None:
-            return another
-        assert self._manual_data is not None
-        data = self._manual_data
-        if self._app_family_incoming is None:
-            self._app_family_incoming = data[CONF_BED_TYPE]
-            if self._app_family_incoming != BED_TYPE_RICHMAT:
-                return await self._async_continue_richmat_route()
-        choice = (user_input or {}).get("choice")
-        if isinstance(choice, str) and choice in _RICHMAT_APPS:
-            bed_type, variant = _RICHMAT_APPS[choice]
-            self._select_family_route(bed_type, variant)
-            if bed_type == BED_TYPE_RICHMAT:
-                # RMControl still names its product; the remote controls have none.
-                data[CONF_RMCONTROL_PRODUCT] = None if choice == "rmcontrol" else ""
-            else:
-                for key in (CONF_RMCONTROL_PRODUCT, CONF_RMCONTROL_SIDE, CONF_RICHMAT_REMOTE):
-                    data.pop(key, None)
-            return await self._async_continue_richmat_route()
-        return self.async_show_form(
-            step_id="richmat_family",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("choice"): SelectSelector(
-                        SelectSelectorConfig(
-                            options=list(_RICHMAT_APPS),
-                            translation_key="richmat_family_choice",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-        )
-
-    async def _async_continue_richmat_route(self) -> ConfigFlowResult:
-        """Stage what the chosen Richmat route reads from the bed's name, then ask its questions."""
-        assert self._manual_data is not None
-        data = self._manual_data
-        bed_type = data[CONF_BED_TYPE]
-        info = self._discovery_info or bluetooth.async_last_service_info(
-            self.hass, data[CONF_ADDRESS], connectable=False
-        )
-        name = info.name if info is not None else None
-        if bed_type in RICHMAT_MH_APPS:
-            # The app's name rule reads the raw advertised name.
-            data.update(_name_rule_setup_name(bed_type, name))
-        elif bed_type == BED_TYPE_RICHMAT and CONF_RICHMAT_REMOTE not in data:
-            # A listed code the name carries is the default; an unlisted one is
-            # kept as detected.
-            code = detect_richmat_remote_from_name(name)
-            data[CONF_RICHMAT_REMOTE] = (
-                code.upper()
-                if code and code.upper() in RICHMAT_REMOTES
-                else code or RICHMAT_REMOTE_AUTO
-            )
-        return await self.async_step_profile_questions()
+        """Ask which Richmat app or remote runs the bed; shared names and services cannot tell."""
+        return await self._async_family_step(RICHMAT_FAMILY, user_input)
 
     async def async_step_remacro_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Ask which store app runs a Remacro bed, offering the apps that list its model.
-
-        The advertisement picks the model, never the app. A model no app lists,
-        or none seen yet, runs the fallback controls on any app.
-        """
-        if (another := await self._async_another_app(user_input)) is not None:
-            return another
-        from .beds.remacro_protocol import (
-            MODELS,
-            advertised_model_id,
-            app_for_variant,
-            apps_listing,
-        )
-
-        assert self._manual_data is not None
-        data = self._manual_data
-        manufacturer_data = remacro_manufacturer_data(
-            self.hass,
-            data[CONF_ADDRESS],
-            self._discovery_info.manufacturer_data if self._discovery_info is not None else None,
-        )
-        model_id = advertised_model_id(manufacturer_data)
-        listing = apps_listing(model_id)
-        apps = [
-            key
-            for key, variant in _REMACRO_APPS.items()
-            if not listing or app_for_variant(variant) in listing
-        ]
-        choice = (user_input or {}).get("choice")
-        if isinstance(choice, str) and choice in apps:
-            # The bed type stays; only the app changes, so the form's settings stay.
-            data[CONF_PROTOCOL_VARIANT] = _REMACRO_APPS[choice]
-            self._manual_data = self._maybe_add_advertisement_metadata(
-                data, manufacturer_data=manufacturer_data
-            )
-            return await self._async_finish_family_route()
-        model = (
-            "none seen yet"
-            if model_id is None
-            else MODELS[model_id].name
-            if model_id in MODELS
-            else f"company ID {model_id}"
-        )
-        return self.async_show_form(
-            step_id="remacro_family",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("choice"): SelectSelector(
-                        SelectSelectorConfig(
-                            options=apps,
-                            translation_key="remacro_family_choice",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-            description_placeholders={"model": model},
-        )
+        """Ask which store app runs a Remacro bed, offering the apps that list its model."""
+        return await self._async_family_step(REMACRO_FAMILY, user_input)
 
     async def async_step_limoss_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Ask which app runs a Limoss receiver, or keep its generic controls."""
-        return await self._async_app_family(
-            "limoss_family", _LIMOSS_APPS, user_input, row=BED_TYPE_LIMOSS
-        )
+        return await self._async_family_step(LIMOSS_FAMILY, user_input)
 
-    async def _async_app_family(
-        self,
-        step_id: str,
-        apps: Mapping[str, _AppAnswer],
-        user_input: dict[str, Any] | None,
-        *,
-        row: str | None = None,
+    async def _async_family_step(
+        self, family: AppFamily, user_input: dict[str, Any] | None
     ) -> ConfigFlowResult:
-        """Ask which app of a family runs the bed; the apps share names and services.
+        """Ask a family's question from its declaration (``app_families.py``).
 
-        Only the family row asks: an app chosen elsewhere, such as from a brand's
-        list, already answered. A guided change asks again and offers Keep. The
-        row is the first answer's route unless given.
+        A discovered bed's question also offers every other app. A route the
+        question already settled continues; Keep keeps the saved or detected
+        route; an answer stages its route and the settings it names.
         """
         if (another := await self._async_another_app(user_input)) is not None:
             return another
-        assert self._manual_data is not None
-        data = self._manual_data
-        row = row or next(iter(apps.values()))[0]
-        # Another family's guided change can hand over a suggested app.
-        guided = self._migration_family is not None and self._migration_family.key == step_id
-        if self._app_family_incoming is None:
-            self._app_family_incoming = data[CONF_BED_TYPE]
-            # An app's own row, or a route arriving from another family,
-            # already answered.
-            if not guided and self._app_family_incoming != row:
-                return await self._async_continue_app_family(apps)
-        choice = (user_input or {}).get("choice")
-        if choice == "keep" and guided:
-            return await self.async_step_migration_keep()
-        if isinstance(choice, str) and choice in apps:
-            bed_type, variant, _step = apps[choice]
-            changed = bed_type != data[CONF_BED_TYPE]
-            self._select_family_route(bed_type, variant)
-            if changed:
-                # A new app starts without the old one's own settings, as in Configure.
-                AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(data, bed_type)  # noqa: SLF001
-            return await self._async_continue_app_family(apps)
+        visit = self._visit(family)
+        if family.settled(visit):
+            return await self._async_continue_route()
+        offered = family.offered(visit)
+        choice = (user_input or {}).get(family.field)
+        if choice is None:
+            choice = family.preselect(visit)
+        if isinstance(choice, str) and (answer := offered.get(choice)) is not None:
+            if answer.keep:
+                if visit.guided:
+                    return await self.async_step_migration_keep()
+                return await self._async_keep_detected(
+                    family.step,
+                    self._async_finish_family_route
+                    if family.keep_then is Then.FINISH
+                    else self._async_continue_route,
+                )
+            if answer.step is not None:
+                self._narrowing = (family, answer)
+                return await getattr(self, f"async_step_{answer.step}")()
+            return await self._async_stage_answer(family, visit, answer)
+        options: list[str] | list[SelectOptionDict] = (
+            list(offered)
+            if family.form is Form.KEYS
+            else [
+                SelectOptionDict(
+                    value=key,
+                    label=answer.label or (family.keep_label if answer.keep else key),
+                )
+                for key, answer in offered.items()
+            ]
+        )
+        selector = SelectSelector(
+            SelectSelectorConfig(options=options, mode=SelectSelectorMode.DROPDOWN)
+            if family.form is Form.DROPDOWN
+            else SelectSelectorConfig(
+                options=options,
+                translation_key=f"{family.step}_choice",
+                mode=SelectSelectorMode.LIST,
+            )
+        )
+        marker = (
+            vol.Required(family.field, default=family.suggest(visit))
+            if family.suggest is not None
+            else vol.Required(family.field)
+        )
         return self.async_show_form(
-            step_id=step_id,
-            data_schema=vol.Schema(
-                {
-                    vol.Required("choice"): SelectSelector(
-                        SelectSelectorConfig(
-                            options=[*apps, *(["keep"] if guided else [])],
-                            translation_key=f"{step_id}_choice",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
+            step_id=family.step,
+            data_schema=vol.Schema({marker: selector}),
+            description_placeholders=(
+                family.placeholders(visit) if family.placeholders is not None else None
             ),
         )
 
-    async def _async_continue_app_family(
-        self, apps: Mapping[str, _AppAnswer]
+    def _visit(self, family: AppFamily) -> Visit:
+        """Return what the family's question knows now, recording where it started."""
+        assert self._manual_data is not None
+        first = family.step not in self._family_incoming
+        return Visit(
+            hass=self.hass,
+            family=family,
+            data=self._manual_data,
+            incoming=self._incoming(family.step),
+            first=first,
+            guided=self._migration is not None,
+            guiding=self._migration_family is family,
+            saved=self._migration.data if self._migration is not None else None,
+            discovery=self._discovery_info,
+        )
+
+    async def _async_stage_answer(
+        self, family: AppFamily, visit: Visit, answer: Answer
     ) -> ConfigFlowResult:
-        """Continue with the staged app's own step, or finish its route."""
+        """Stage an answer's route and settings, ask its own questions, then continue."""
         assert self._manual_data is not None
         data = self._manual_data
-        step = next(
-            (
-                step
-                for bed_type, _variant, step in apps.values()
-                if bed_type == data[CONF_BED_TYPE]
-            ),
-            None,
-        )
-        if step is not None:
-            return await getattr(self, f"async_step_{step}")()
+        answer = family.saved_id(visit.incoming[0], answer)
+        changed = family.changes_route(data, answer)
+        if changed:
+            for key in family.clears:
+                data.pop(key, None)
+        if answer.keeps_settings:
+            self._migration_verified = False
+            self._migration_preview = {}
+            data[CONF_BED_TYPE] = answer.bed_type
+            if answer.variant is not None:
+                data[CONF_PROTOCOL_VARIANT] = answer.variant
+        else:
+            self._select_family_route(answer.bed_type, answer.variant)
+        if changed and family.clears_other_profiles:
+            # A new app starts without the old one's own settings, as in Configure.
+            AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(data, answer.bed_type)  # noqa: SLF001
+        for key, value in answer.data.items():
+            if value is REMOVED:
+                data.pop(key, None)
+                continue
+            data[key] = value
+            if key in GENERIC_FIELDS:
+                self._journey_set.add(key)
+        if (ask := answer.ask) is None:
+            return await self._async_then(family, answer)
+
+        async def answered(answers: Mapping[str, Any]) -> ConfigFlowResult:
+            assert self._manual_data is not None
+            if CONF_PROTOCOL_VARIANT in answers:
+                self._select_family_route(answer.bed_type, answers[CONF_PROTOCOL_VARIANT])
+            asked = {key: value for key, value in answers.items() if key != CONF_PROTOCOL_VARIANT}
+            self._manual_data.update(asked)
+            self._journey_set.update(asked.keys() & GENERIC_FIELDS)
+            self._manual_data.update(ask.settled(self._manual_data))
+            return await self._async_then(family, answer)
+
+        return await self._async_ask(ask, answered)
+
+    async def _async_then(self, family: AppFamily, answer: Answer) -> ConfigFlowResult:
+        """Continue after an answer: its route's questions, its own app question, or finish."""
+        assert self._manual_data is not None
+        if answer.then is Then.FINISH:
+            return await self._async_finish_family_route()
+        if answer.then is Then.OWN_STEP:
+            step = _APP_SETUP_STEPS.get(self._manual_data[CONF_BED_TYPE])
+            if step is not None and step != family.step:
+                return await getattr(self, f"async_step_{step}")()
+        return await self._async_continue_route()
+
+    async def _async_continue_route(self) -> ConfigFlowResult:
+        """Ask the staged route's declared questions, if it has any, then finish it."""
+        assert self._manual_data is not None
+        profile = setup_profile_for(self._manual_data)
+        if profile is not None and profile.questions:
+            return await self.async_step_profile_questions()
         return await self._async_finish_family_route()
 
     async def async_step_profile_questions(
@@ -4226,15 +2763,18 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
         assert self._manual_data is not None
         data = self._manual_data
-        profile = setup_profile_for(data)
+        asking = self._asking
+        profile = asking[0] if asking is not None else setup_profile_for(data)
         assert profile is not None and profile.questions
         if profile.seed is not None:
             self._manual_data = data = profile.seed(self.hass, data, self._discovery_info)
-        answers = _profile_answers(profile, user_input or {}, data)
+        context = FlowContext(self.hass, verifiable=self._verification_possible())
+        answers = _profile_answers(profile, user_input or {}, data, context)
         candidate = profile.staged(data, answers)
-        errors = (
-            profile.validate(candidate) if user_input is not None and profile.validate else {}
-        )
+        errors = profile.errors(candidate, context) if user_input is not None else {}
+        if user_input is not None and not errors and asking is not None:
+            self._asking = None
+            return await asking[1](answers)
         if user_input is not None and not errors:
             # What normalizing dropped stays dropped.
             # An answer that picks the route settles what that route's profile owns.
@@ -4242,192 +2782,32 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 **candidate,
                 **(setup_profile_for(candidate) or profile).settled(candidate),
             }
+            if self._recheck_answers:
+                # Answers that corrected a failed connection check are checked again.
+                self._recheck_answers = False
+                self._verify_form_shown = False
+                self._pending_entry = self._manual_data
+                self._async_start_probe_operation()
             return await self._async_finish_family_route()
+        return self._show_profile_questions(profile, candidate, errors)
+
+    def _show_profile_questions(
+        self, profile: SetupProfile, data: Mapping[str, Any], errors: dict[str, str]
+    ) -> ConfigFlowResult:
         return self.async_show_form(
             step_id="profile_questions",
-            data_schema=vol.Schema(_profile_question_schema(profile, candidate)),
+            data_schema=vol.Schema(_profile_question_schema(profile, data, FlowContext(self.hass))),
             errors=errors,
             description_placeholders={
                 "profile": profile.title(data) if profile.title else bed_type_label(data[CONF_BED_TYPE])
             },
         )
 
-    async def async_step_starcode_app(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Explicit AdjustableM5X4 provenance; a shared UART is not app identity."""
-        assert self._manual_data is not None
-        data = {**self._manual_data, **(user_input or {})}
-        errors = _starcode_app_errors(data) if user_input is not None else {}
-        if user_input is not None and not errors:
-            data[CONF_STARCODE_COMMAND_SELECTOR] = data.get(CONF_STARCODE_COMMAND_SELECTOR, "none")
-            data[CONF_STARCODE_UI_SELECTOR] = data[CONF_STARCODE_COMMAND_SELECTOR]
-            if data.get(CONF_STARCODE_TRANSPORT_SELECTOR) == "auto":
-                data.pop(CONF_STARCODE_TRANSPORT_SELECTOR, None)
-            data[CONF_MOTOR_COUNT] = 2
-            data[CONF_HAS_MASSAGE] = True
-            data[CONF_DISABLE_ANGLE_SENSING] = True
-            self._journey_set |= {CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}
-            if self._discovery_info is not None and self._discovery_info.name:
-                data.setdefault(CONF_BLE_DEVICE_NAME, self._discovery_info.name)
-            initial_transport = _starcode_initial_transport(
-                data, self._discovery_info.name if self._discovery_info is not None else None
-            )
-            if initial_transport is not None:
-                data[CONF_STARCODE_TRANSPORT_SELECTOR] = initial_transport
-            elif not self._verification_possible():
-                self._manual_data = data
-                schema: dict[vol.Marker, Any] = {}
-                _add_starcode_app_schema_fields(schema, data)
-                return self.async_show_form(
-                    step_id="starcode_app",
-                    data_schema=vol.Schema(schema),
-                    errors={CONF_STARCODE_TRANSPORT_SELECTOR: "starcode_app_invalid"},
-                )
-            self._manual_data = data
-            self._verify_form_shown = False
-            if self._operation is not None:
-                self._pending_entry = data
-                self._async_start_probe_operation()
-            return await self._finish_with_verify(data, data.get(CONF_NAME, "Adjustable Bed"))
-        schema: dict[vol.Marker, Any] = {}
-        _add_starcode_app_schema_fields(schema, data)
-        return self.async_show_form(
-            step_id="starcode_app", data_schema=vol.Schema(schema), errors=errors
-        )
-
-    async def async_step_cluster033_app(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        """Choose a source-owned app layout without guessing from shared adverts."""
-        assert self._manual_data is not None
-        data = {**self._manual_data, **(user_input or {})}
-        errors = {}
-        if user_input is not None:
-            try:
-                _normalize_cluster033_data(data)
-            except ValueError:
-                errors["base"] = "cluster033_layout"
-            else:
-                self._manual_data = data
-                return await self._finish_with_verify(data, data.get(CONF_NAME, APP_NAMES.get(data[CONF_BED_TYPE], "Ergomotion 4.0")))
-        schema: dict[vol.Marker, Any] = {}
-        _add_cluster033_schema_fields(schema, data)
-        return self.async_show_form(step_id="cluster033_app", data_schema=vol.Schema(schema), errors=errors)
-
-    async def async_step_fsm_relax(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Select an app profile explicitly, without inferring physical axes."""
-        assert self._manual_data is not None
-        data = {**self._manual_data, **(user_input or {})}
-        errors = _fsm_relax_errors(data) if user_input is not None else {}
-        self._manual_data = data
-        if user_input is not None and not errors:
-            data[CONF_DISABLE_ANGLE_SENSING] = True
-            return await self._finish_with_verify(data, data.get(CONF_NAME, "Adjustable Bed"))
-        schema: dict[vol.Marker, Any] = {}
-        _add_fsm_relax_schema_fields(schema, data)
-        return self.async_show_form(
-            step_id="fsm_relax", data_schema=vol.Schema(schema), errors=errors
-        )
-
-    async def async_step_starcode_m5x5(
-        self,
-        user_input: dict[str, Any] | None = None,
-    ) -> ConfigFlowResult:
-        """Confirm the app class without inferring it from shared Nordic UART."""
-        assert self._manual_data is not None
-        data = {**self._manual_data, **(user_input or {})}
-        errors = _starcode_errors(self.hass, data) if user_input is not None else {}
-        if user_input is not None and not errors:
-            data[CONF_MOTOR_COUNT] = 2
-            data[CONF_HAS_MASSAGE] = True
-            data[CONF_DISABLE_ANGLE_SENSING] = False
-            self._manual_data = data
-            return await self._finish_with_verify(data, data.get(CONF_NAME, "AdjustableM5X5"))
-        schema: dict[vol.Marker, Any] = {}
-        _add_starcode_schema_fields(schema, data, self.hass)
-        return self.async_show_form(
-            step_id="starcode_m5x5", data_schema=vol.Schema(schema), errors=errors
-        )
-
-    async def async_step_starcode_m1x12(
-        self,
-        user_input: dict[str, Any] | None = None,
-    ) -> ConfigFlowResult:
-        """Confirm Adjustable Comfort M1X12 app identity and its named profile."""
-        assert self._manual_data is not None
-        data = {**self._manual_data, **(user_input or {})}
-        errors = _starcode_m1x12_errors(self.hass, data) if user_input is not None else {}
-        if user_input is not None and not errors:
-            data[CONF_HAS_MASSAGE] = True
-            data[CONF_DISABLE_ANGLE_SENSING] = True
-            data[CONF_MOTOR_PULSE_USER_SET] = False
-            data[CONF_MOTOR_PULSE_DELAY_MS] = 100
-            self._manual_data = data
-            return await self._finish_with_verify(
-                data, data.get(CONF_NAME, "Adjustable Comfort M1X12")
-            )
-        schema: dict[vol.Marker, Any] = {}
-        _add_starcode_m1x12_schema_fields(schema, data, self.hass)
-        return self.async_show_form(
-            step_id="starcode_m1x12", data_schema=vol.Schema(schema), errors=errors
-        )
-
     async def async_step_malouf_family(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Ask which app or receiver runs a Malouf or Lucid bed; never infer it from the bed.
-
-        Shared services and retail names identify neither the app nor the hardware.
-        """
-        if (another := await self._async_another_app(user_input)) is not None:
-            return another
-        assert self._manual_data is not None
-        data = self._manual_data
-        if self._malouf_incoming is None:
-            self._malouf_incoming = data[CONF_BED_TYPE]
-        incoming = self._malouf_incoming
-        # Keep saves the receiver detection or the saved setup chose; the family
-        # row alone chose no app to keep.
-        can_keep = self._migration is not None or incoming != BED_TYPE_MALOUF_APP
-        choice = (user_input or {}).get("choice")
-        if choice == "keep" and can_keep:
-            if self._migration is not None:
-                return await self.async_step_migration_keep()
-            return await self._async_keep_detected(
-                "malouf_family", self.async_step_profile_questions
-            )
-        if isinstance(choice, str) and choice in _MALOUF_ROUTES:
-            bed_type, app = _MALOUF_ROUTES[choice]
-            if (bed_type, app) != (data[CONF_BED_TYPE], data.get(CONF_MALOUF_APP_PROFILE)):
-                # Another app or receiver starts from its own defaults, never
-                # another app's model, role or transport.
-                for key in (
-                    CONF_MALOUF_APP_PROFILE,
-                    CONF_MALOUF_APP_MODEL,
-                    CONF_MALOUF_APP_TRANSPORT,
-                    CONF_MALOUF_APP_PRIMARY,
-                ):
-                    data.pop(key, None)
-            self._select_family_route(bed_type, None)
-            if app is not None:
-                data[CONF_MALOUF_APP_PROFILE] = app
-            return await self.async_step_profile_questions()
-        return self.async_show_form(
-            step_id="malouf_family",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("choice"): SelectSelector(
-                        SelectSelectorConfig(
-                            options=[*_MALOUF_ROUTES, *(["keep"] if can_keep else [])],
-                            translation_key="malouf_family_choice",
-                            mode=SelectSelectorMode.LIST,
-                        )
-                    )
-                }
-            ),
-            description_placeholders={"current": bed_type_label(incoming)},
-        )
+        """Ask which app or receiver runs a Malouf or Lucid bed; never infer it from the bed."""
+        return await self._async_family_step(MALOUF_FAMILY, user_input)
 
     @staticmethod
     def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
@@ -4441,27 +2821,27 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self._discovered_devices: dict[str, BluetoothServiceInfoBleak] = {}
         self._all_ble_devices: dict[str, BluetoothServiceInfoBleak] = {}
         self._manual_data: dict[str, Any] | None = None
-        self._vibradorm_app_bluetooth_pairing = False
+        # A family route that needs pairing pairs from discovery, not manual entry.
+        self._route_pairing_from_discovery = False
+        # The declared questions are open again to correct a failed connection check.
+        self._recheck_answers = False
+        # A family answer's own questions, asked on the generic step, and what
+        # applies their answers; None asks the staged profile's questions.
+        self._asking: (
+            tuple[SetupProfile, Callable[[Mapping[str, Any]], Awaitable[ConfigFlowResult]]] | None
+        ) = None
         # Guided change of an existing entry (profile_migration).
         self._migration: MigrationSnapshot | None = None
-        self._migration_family: ManagedFamily | None = None
+        self._migration_family: AppFamily | None = None
         self._migration_verified = False
         self._migration_endpoints_checked = False
-        # The route a Jiecang family step started from.
-        self._jiecang_incoming: str | None = None
-        self._okin_incoming: tuple[str, str] | None = None
-        self._keeson_incoming: tuple[str, str] | None = None
-        self._keeson_group: str | None = None
-        self._solace_incoming: tuple[str, str] | None = None
-        self._leggett_incoming: tuple[str, str] | None = None
-        self._sleepys_incoming: str | None = None
-        self._malouf_incoming: str | None = None
+        # The route each family question started from, by its step.
+        self._family_incoming: dict[str, tuple[str, str]] = {}
+        # The family and answer a narrowing step, such as keeson_app, expands.
+        self._narrowing: tuple[AppFamily, Answer] | None = None
         # What the connection check resolved for the staged route, for the
         # confirm step's control list only.
         self._migration_preview: dict[str, Any] = {}
-        self._logicdata_incoming: str | None = None
-        self._jensen_incoming: tuple[str, str] | None = None
-        self._app_family_incoming: str | None = None
         # The bed-type row the app question or the brand list chose.
         self._selected_bed_type: str | None = None
         # The step that continues once the app is chosen, when the device came first.
@@ -4502,8 +2882,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # Set when the user chose to replace an existing host bond rather than
         # pair on top of it.
         self._pairing_remove_record: LocalBondRecord | None = None
-        # The evidence behind a verified bond, kept for logging and diagnostics.
-        self._pairing_success_evidence: BondEvidence | None = None
         # Which pairing form to return to on Retry, and whether the pairing
         # result form has actually been rendered (see async_step_pairing_result).
         self._pairing_origin_step: str | None = None
@@ -4553,7 +2931,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         seen: set[str] = set()
         disambiguation_types: list[str] = []
         for candidate in (bed_type, *(detection_result.ambiguous_types or ())):
-            if candidate in _VIBRADORM_FAMILY_TYPES:
+            if candidate in VIBRADORM_FAMILY.asks:
                 candidate = BED_TYPE_VIBRADORM
             if candidate not in seen:
                 seen.add(candidate)
@@ -4851,27 +3229,22 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return False
         data = {**entry.data, **dict(entry.options)}
         override = data.get(CONF_OCTO_MOTOR_COUNT_OVERRIDE)
-        if override is not None and override != "auto":
+        if override not in (None, "auto"):
             return override == "1" or override == 1
-        if override == "auto":
-            snapshot = self._octo_capability_snapshot(entry)
-            discovered_count = snapshot.get("discovered_motor_count") if snapshot else None
-            if type(discovered_count) is int and 1 <= discovered_count <= 4:
-                return discovered_count == 1
-            records = snapshot.get("capability_records") if snapshot else None
-            motor_record = (
-                records.get("1", records.get("000001")) if isinstance(records, dict) else None
-            )
-            characteristic = (
-                motor_record.get("characteristic") if isinstance(motor_record, dict) else None
-            )
-            if isinstance(characteristic, list) and characteristic:
-                return characteristic[0] == 1
-            return False
-        # Existing entries used the generic count field before the OCTO Auto
-        # override existed. Preserve their stored one-motor layout.
-        motor_count = data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
-        return motor_count == 1
+        snapshot = self._octo_capability_snapshot(entry)
+        discovered_count = snapshot.get("discovered_motor_count") if snapshot else None
+        if type(discovered_count) is int and 1 <= discovered_count <= 4:
+            return discovered_count == 1
+        records = snapshot.get("capability_records") if snapshot else None
+        motor_record = (
+            records.get("1", records.get("000001")) if isinstance(records, dict) else None
+        )
+        characteristic = (
+            motor_record.get("characteristic") if isinstance(motor_record, dict) else None
+        )
+        if isinstance(characteristic, list) and characteristic:
+            return characteristic[0] == 1
+        return False
 
     async def _pair_layout_snapshot(self, entry: ConfigEntry) -> dict[str, Any] | None:
         """Capture the side's generic motor layout from its capability controller.
@@ -5143,8 +3516,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 return await self.async_step_bluetooth_disambiguate()
             if detected is None:
                 return await self._async_search_every_app()
-            if (question := _APP_SETUP_STEPS.get(detected)) in _APP_QUESTION_STEPS:
+            if (family := question_family(detected)) is not None:
                 # The family's question is this bed's app question.
+                question = family.step
                 self._another_app_step = question
                 result = await self._async_start_new_bed(detected, None)
                 if result.get("type") is not FlowResultType.FORM or result.get("step_id") == question:
@@ -5212,17 +3586,29 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
     def _reset_family_state(self) -> None:
         """Forget the route each family question started from, for a new journey."""
-        self._jiecang_incoming = None
-        self._okin_incoming = None
-        self._keeson_incoming = None
-        self._keeson_group = None
-        self._solace_incoming = None
-        self._leggett_incoming = None
-        self._sleepys_incoming = None
-        self._malouf_incoming = None
-        self._logicdata_incoming = None
-        self._jensen_incoming = None
-        self._app_family_incoming = None
+        self._family_incoming.clear()
+        self._narrowing = None
+        self._asking = None
+
+    async def _async_ask(
+        self,
+        questions: SetupProfile,
+        then: Callable[[Mapping[str, Any]], Awaitable[ConfigFlowResult]],
+    ) -> ConfigFlowResult:
+        """Ask a family answer's own questions on the generic step; ``then`` applies them."""
+        self._asking = (questions, then)
+        return await self.async_step_profile_questions()
+
+    def _incoming(self, step_id: str) -> tuple[str, str]:
+        """Return the route a family question started from, recorded on its first visit."""
+        assert self._manual_data is not None
+        return self._family_incoming.setdefault(
+            step_id,
+            (
+                self._manual_data[CONF_BED_TYPE],
+                self._manual_data.get(CONF_PROTOCOL_VARIANT) or VARIANT_AUTO,
+            ),
+        )
 
     async def _async_another_app(
         self, user_input: dict[str, Any] | None
@@ -5280,7 +3666,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if app_step := await self._async_app_setup_step(data, pairing_step=pairing_step):
             return app_step
         self._manual_data = data
-        self._vibradorm_app_bluetooth_pairing = pairing_step == "bluetooth_pairing"
+        self._route_pairing_from_discovery = pairing_step == "bluetooth_pairing"
         return await self._async_finish_family_route()
 
     async def _async_new_bed_settings(self, then: Literal["route", "verify"]) -> ConfigFlowResult:
@@ -5373,77 +3759,31 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """Return the final settings form for the staged route."""
         assert self._manual_data is not None
         data = self._manual_data
-        adapters = get_available_adapters(self.hass)
-        adapter = data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
-        pulse_count, pulse_delay = get_motor_pulse_defaults(bed_type, variant, signals)
-        schema: dict[vol.Marker, Any] = {
-            vol.Optional(CONF_NAME, default=data.get(CONF_NAME, "Adjustable Bed")): str,
-        }
-        if CONF_MOTOR_COUNT not in hidden:
-            schema[
-                vol.Optional(
-                    CONF_MOTOR_COUNT,
-                    default=data.get(CONF_MOTOR_COUNT, self._new_bed_motor_count(bed_type)),
-                )
-            ] = vol.All(vol.Coerce(int), vol.In(_motor_count_options(bed_type, variant)))
-        if CONF_HAS_MASSAGE not in hidden:
-            schema[
-                vol.Optional(CONF_HAS_MASSAGE, default=data.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE))
-            ] = bool
-        if CONF_DISABLE_ANGLE_SENSING not in hidden and any(
-            bed_type_has_position_feedback(bed_type, route) for route in (variant, *routes)
-        ):
+        defaults = {
+            CONF_MOTOR_COUNT: self._new_bed_motor_count(bed_type),
             # Positions are read unless the user turns them off.
-            schema[
-                vol.Optional(
-                    CONF_DISABLE_ANGLE_SENSING, default=data.get(CONF_DISABLE_ANGLE_SENSING, False)
+            CONF_DISABLE_ANGLE_SENSING: False,
+            **dict(zip(_PULSE_FIELDS, get_motor_pulse_defaults(bed_type, variant, signals), strict=True)),
+        }
+
+        def fields(*keys: str) -> dict[vol.Marker, Any]:
+            return _settings_fields(
+                self.hass, data, bed_type, variant, [k for k in keys if k not in hidden], defaults
+            )
+
+        schema = fields(CONF_NAME, CONF_MOTOR_COUNT, CONF_HAS_MASSAGE)
+        if any(bed_type_has_position_feedback(bed_type, route) for route in (variant, *routes)):
+            schema.update(fields(CONF_DISABLE_ANGLE_SENSING))
+        if (questions := _final_settings_questions(bed_type, variant)) is not None:
+            schema.update(
+                _profile_question_schema(
+                    questions, data, FlowContext(self.hass), advanced_section=False
                 )
-            ] = bool
-        if bed_type == BED_TYPE_OCTO:
-            schema[vol.Optional(CONF_OCTO_PIN, default=DEFAULT_OCTO_PIN)] = TextSelector(
-                TextSelectorConfig()
             )
-            schema[vol.Optional(CONF_OCTO_MOTOR_COUNT_OVERRIDE, default="auto")] = vol.In(
-                _OCTO_MOTOR_OVERRIDES
-            )
-        if bed_type == BED_TYPE_OKIN_CB24:
-            _add_cb24_side_schema_field(schema)
-        schema[
-            vol.Optional(
-                CONF_PREFERRED_ADAPTER, default=adapter if adapter in adapters else ADAPTER_AUTO
-            )
-        ] = vol.In(adapters)
-        schema[
-            vol.Optional(
-                CONF_DISCONNECT_AFTER_COMMAND,
-                default=data.get(
-                    CONF_DISCONNECT_AFTER_COMMAND,
-                    disconnect_after_command_default_enabled(bed_type, variant),
-                ),
-            )
-        ] = bool
+        schema.update(fields(CONF_PREFERRED_ADAPTER, CONF_DISCONNECT_AFTER_COMMAND))
         if len(routes) >= 2 and (advanced := _route_section(bed_type, variant)) is not None:
             schema[vol.Optional("advanced")] = advanced
-        timing: dict[vol.Marker, Any] = {}
-        if CONF_MOTOR_PULSE_COUNT not in hidden:
-            timing[
-                vol.Optional(
-                    CONF_MOTOR_PULSE_COUNT, default=str(data.get(CONF_MOTOR_PULSE_COUNT, pulse_count))
-                )
-            ] = TextSelector(TextSelectorConfig())
-        if CONF_MOTOR_PULSE_DELAY_MS not in hidden:
-            timing[
-                vol.Optional(
-                    CONF_MOTOR_PULSE_DELAY_MS,
-                    default=str(data.get(CONF_MOTOR_PULSE_DELAY_MS, pulse_delay)),
-                )
-            ] = TextSelector(TextSelectorConfig())
-        timing[
-            vol.Optional(
-                CONF_IDLE_DISCONNECT_SECONDS,
-                default=data.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
-            )
-        ] = vol.All(vol.Coerce(int), vol.Range(min=IDLE_DISCONNECT_KEEP_CONNECTED, max=300))
+        timing = fields(*_PULSE_FIELDS, CONF_IDLE_DISCONNECT_SECONDS)
         schema[vol.Optional("timing")] = section(vol.Schema(timing), {"collapsed": True})
         return schema
 
@@ -5478,29 +3818,21 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         assert self._manual_data is not None
         data = self._manual_data
         bed_type: str = data[CONF_BED_TYPE]
-        errors: dict[str, str] = {}
         # A client that ignores the form cannot answer what the route sets itself.
         submitted = {key: value for key, value in submitted.items() if key not in hidden}
-        keys = (CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS)
-        pulse = dict(zip(keys, get_motor_pulse_defaults(bed_type, variant, signals), strict=True))
-        drawn = dict(
-            zip(keys, get_motor_pulse_defaults(bed_type, drawn_variant, signals), strict=True)
+        pulse_defaults = get_motor_pulse_defaults(bed_type, variant, signals)
+        drawn = get_motor_pulse_defaults(bed_type, drawn_variant, signals)
+        shown = {key: data.get(key, value) for key, value in zip(_PULSE_FIELDS, drawn, strict=True)}
+        # Left as drawn: the staged value, or the chosen route's own default.
+        answered = {
+            key: submitted[key]
+            for key in _PULSE_FIELDS
+            if submitted.get(key) not in (None, "") and str(submitted[key]) != str(shown[key])
+        }
+        pulse, errors = _parse_settings(
+            {**(shown if variant == drawn_variant else {}), **answered}, bed_type, pulse_defaults
         )
-        changed = False
-        for key in keys:
-            shown = data.get(key, drawn[key])
-            value = submitted.get(key)
-            if value in (None, "") or str(value) == str(shown):
-                # Left as drawn: the staged value, or the chosen route's own default.
-                pulse[key] = int(shown) if variant == drawn_variant else pulse[key]
-                continue
-            changed = True
-            try:
-                pulse[key] = int(value)
-            except ValueError, TypeError:
-                errors[key] = "invalid_number"
-        if not errors and _invalid_pulse_count(bed_type, pulse[CONF_MOTOR_PULSE_COUNT]):
-            errors[CONF_MOTOR_PULSE_COUNT] = "invalid_pulse_count_range"
+        pulse = {**dict(zip(_PULSE_FIELDS, pulse_defaults, strict=True)), **pulse}
         # A count the form did not show is the route's to set; the app or its
         # name may still settle it at runtime, as for an Octo RTV.
         shown_count = (
@@ -5521,7 +3853,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             bed_type, variant, data[CONF_ADDRESS], manufacturer_data
         ):
             errors[CONF_PROTOCOL_VARIANT] = variant_error
-        errors.update(_bed_specific_errors(submitted, bed_type))
         entry: dict[str, Any] = {
             **data,
             CONF_NAME: submitted.get(CONF_NAME) or data.get(CONF_NAME, "Adjustable Bed"),
@@ -5543,7 +3874,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             # The user saw these, so a protocol migration must not treat them as
             # generated defaults, unless a route the app chose set them. Timing
             # the user changed is theirs.
-            CONF_MOTOR_PULSE_USER_SET: changed or data.get(CONF_MOTOR_PULSE_USER_SET, True),
+            CONF_MOTOR_PULSE_USER_SET: bool(answered) or data.get(CONF_MOTOR_PULSE_USER_SET, True),
             CONF_DISCONNECT_AFTER_COMMAND: bool(
                 submitted.get(
                     CONF_DISCONNECT_AFTER_COMMAND,
@@ -5560,8 +3891,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         }
         if CONF_PROTOCOL_VARIANT in data or variant != data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO):
             entry[CONF_PROTOCOL_VARIANT] = variant
-        _add_cb24_entry_data(entry, dict(submitted), bed_type)
-        _add_bed_specific_entry_data(entry, submitted, bed_type)
+        if (questions := _final_settings_questions(bed_type, variant)) is not None:
+            context = FlowContext(self.hass)
+            entry = questions.staged(entry, _profile_answers(questions, submitted, entry, context))
+            errors.update(questions.errors(entry, context))
+            entry.update(questions.settled(entry))
         entry = self._maybe_add_advertisement_metadata(entry, manufacturer_data=manufacturer_data)
         _LOGGER.info(
             "New bed: address=%s, type=%s, variant=%s, motors=%s, adapter=%s",
@@ -6853,7 +5187,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 entry_data = self._mark_ble_bond_established(entry_data)
                 entry_data[CONF_BLE_BOND_CONTEXT] = build_bond_context(evidence)
                 entry_data.pop(CONF_BLE_BOND_ATTEMPTED_SOURCE, None)
-                self._pairing_success_evidence = evidence
             elif succeeded and self._pairing_mode != "verify_existing":
                 # A bond was asked for and nothing contradicted it, but this
                 # protocol has no authentication-gated read to prove it with.
@@ -8122,12 +6455,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             ):
                 self._verify_form_shown = False
                 self._manual_data = dict(self._pending_entry)
-                schema: dict[vol.Marker, Any] = {}
-                _add_starcode_app_schema_fields(schema, self._manual_data)
-                return self.async_show_form(
-                    step_id="starcode_app",
-                    data_schema=vol.Schema(schema),
-                    errors={CONF_STARCODE_TRANSPORT_SELECTOR: "starcode_app_invalid"},
+                self._recheck_answers = True
+                profile = setup_profile_for(self._manual_data)
+                assert profile is not None
+                return self._show_profile_questions(
+                    profile,
+                    self._manual_data,
+                    {CONF_STARCODE_TRANSPORT_SELECTOR: "starcode_app_invalid"},
                 )
             return await self._async_create_selected_app_entry(
                 title=self._pending_title or self._pending_entry.get(CONF_NAME, "Adjustable Bed"),
@@ -8271,18 +6605,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         return self.async_show_form(
             step_id="diagnostic",
             data_schema=vol.Schema({vol.Required(CONF_ADDRESS): vol.In(devices)}),
-        )
-
-    async def async_step_diagnostic_confirm(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Backward-compatible handler for old flow links."""
-        assert self._discovery_info is not None
-        return self._async_abort_diagnostic_browser(
-            address=self._discovery_info.address.upper(),
-            name=self._discovery_info.name,
-            source=getattr(self._discovery_info, "source", None),
-            connectable=getattr(self._discovery_info, "connectable", None),
         )
 
     async def async_step_diagnostic_manual(
@@ -8563,112 +6885,21 @@ class AdjustableBedOptionsFlow(
 
     @staticmethod
     def _remove_irrelevant_bed_settings(data: dict[str, Any], bed_type: str) -> None:
-        """Drop settings that belong only to the previously selected protocol."""
-        pairlink_keys = (
-            CONF_PAIRLINK_ROLE,
-            CONF_PAIRLINK_HOST_SOURCE,
-            CONF_PAIRLINK_HOME_ID,
-            CONF_PAIRLINK_PASSWORD_TEXT,
-            CONF_PAIRLINK_PASSWORD_HEX,
-        )
-        if bed_type != BED_TYPE_REVERIE_PAIRLINK:
-            for key in pairlink_keys:
-                data.pop(key, None)
-        else:
+        """Drop settings that belong only to the previously selected protocol.
+
+        Every setting another bed type's profiles own goes (``app_profiles``);
+        the rest follow the route's capabilities.
+        """
+        for key in foreign_settings(bed_type):
+            data.pop(key, None)
+        if bed_type == BED_TYPE_REVERIE_PAIRLINK:
             for key in (CONF_PAIRLINK_HOST_SOURCE, CONF_PAIRLINK_HOME_ID, CONF_PAIRLINK_PASSWORD_HEX):
                 if data.get(key) in (None, ""):
                     data.pop(key, None)
         if not get_variants_for_bed_type(bed_type):
             data.pop(CONF_PROTOCOL_VARIANT, None)
-        if bed_type != BED_TYPE_OCTO:
-            data.pop(CONF_OCTO_MOTOR_COUNT_OVERRIDE, None)
-        if bed_type != BED_TYPE_OCTO:
-            data.pop(CONF_OCTO_PIN, None)
-        if bed_type != BED_TYPE_JENSEN:
-            data.pop(CONF_JENSEN_PIN, None)
-        if bed_type != BED_TYPE_RICHMAT:
-            data.pop(CONF_RICHMAT_REMOTE, None)
-            data.pop(CONF_RMCONTROL_PRODUCT, None)
-            data.pop(CONF_RMCONTROL_SIDE, None)
         if not _is_leggett_app_type(bed_type, data.get(CONF_PROTOCOL_VARIANT)):
             data.pop(CONF_LEGGETT_APP_PROFILE, None)
-        if bed_type != BED_TYPE_FURNIMOVE:
-            data.pop(CONF_FURNIMOVE_REMOTE, None)
-        if bed_type != BED_TYPE_OKIN_CST:
-            from .furnimove_repair import CONF_OKIMAT_MODEL_ON_CST, CONF_OKIN_CST_KEPT
-
-            data.pop(CONF_OKIMAT_MODEL_ON_CST, None)
-            data.pop(CONF_OKIN_CST_KEPT, None)
-        if bed_type != BED_TYPE_LOGICDATA_APP:
-            for key in (
-                CONF_LOGICDATA_APP_PROFILE,
-                CONF_LOGICDATA_APP_FAMILY,
-                CONF_LOGICDATA_APP_LAYOUT,
-                CONF_LOGICDATA_APP_TRANSPORT,
-            ):
-                data.pop(key, None)
-        if bed_type != BED_TYPE_JIECANG_APP:
-            for key in (
-                CONF_JIECANG_APP_PROFILE,
-                CONF_JIECANG_APP_LAYOUT,
-                CONF_JIECANG_APP_TRANSPORT,
-            ):
-                data.pop(key, None)
-        if bed_type != BED_TYPE_STARCODE_ABM5_4:
-            for key in STARCODE_APP_CONFIG_KEYS:
-                data.pop(key, None)
-        if bed_type != BED_TYPE_SLEEPTRACKER:
-            for key in SLEEPTRACKER_CONFIG_KEYS - {CONF_PRODUCT_TYPE}:
-                data.pop(key, None)
-        if bed_type != BED_TYPE_MOTION_BED:
-            for key in MOTION_BED_CONFIG_KEYS:
-                data.pop(key, None)
-        if bed_type != BED_TYPE_LIMOSS_REMOTE:
-            data.pop(CONF_LIMOSS_REMOTE_THEME, None)
-            # Per-MAC local memories remain durable when changing protocol.
-        if bed_type not in HAS_LIGHT_DEFAULTS and bed_type != "ergomotion_4":
-            data.pop(CONF_HAS_LIGHT, None)
-        if bed_type not in CHAIR_AND_BED_APP_BED_TYPES:
-            for key in CONF_REVERSE_MOTORS:
-                data.pop(key, None)
-            profile = per_side_profile(bed_type, data.get(CONF_PROTOCOL_VARIANT))
-            if bed_type != BED_TYPE_SLEEPTRACKER and not (
-                profile is not None and CONF_PRODUCT_TYPE in profile.keys
-            ):
-                data.pop(CONF_PRODUCT_TYPE, None)
-
-        if bed_type != BED_TYPE_STARCODE_M5X5:
-            data.pop(CONF_STARCODE_M5X5_PROFILE, None)
-        if bed_type != BED_TYPE_STARCODE_M1X12:
-            data.pop(CONF_STARCODE_M1X12_PROFILE, None)
-        if bed_type not in STARCODE_GROUP_BED_TYPES:
-            data.pop(CONF_STARCODE_LIFT_ENTRIES, None)
-        if bed_type != BED_TYPE_VIBRADORM_APP:
-            for key in VIBRADORM_APP_CONFIG_KEYS:
-                data.pop(key, None)
-            data.pop(CONF_VIBRADORM_APP_METADATA, None)
-        if bed_type != BED_TYPE_VMATBASIC:
-            for key in VMATBASIC_CONFIG_KEYS:
-                data.pop(key, None)
-        if bed_type != BED_TYPE_MALOUF_APP:
-            for key in (
-                CONF_MALOUF_APP_PROFILE,
-                CONF_MALOUF_APP_MODEL,
-                CONF_MALOUF_APP_TRANSPORT,
-                CONF_MALOUF_APP_PRIMARY,
-            ):
-                data.pop(key, None)
-        if bed_type != BED_TYPE_LEGGETT_LP_LEGACY:
-            for key in (
-                CONF_LP_LEGACY_MODEL,
-                CONF_LP_LEGACY_MODE,
-                CONF_LP_LEGACY_WRITE_UUID,
-                CONF_LP_LEGACY_READ_UUID,
-            ):
-                data.pop(key, None)
-        if bed_type not in MALOUF_BED_TYPES:
-            data.pop(CONF_MALOUF_LAYOUT, None)
-            data.pop(CONF_MALOUF_MEMORY_SLOTS, None)
         if not supports_passive_position_reconciliation(bed_type):
             data.pop(CONF_PASSIVE_POSITION_RECONCILIATION, None)
         traits = bed_traits(bed_type)
@@ -8819,43 +7050,30 @@ class AdjustableBedOptionsFlow(
         variant = current.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
         pulse_defaults = get_motor_pulse_defaults(bed_type, variant)
         adapters = get_available_adapters(self.hass)
-        adapter = current.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
-        if adapter not in adapters:
-            adapter = ADAPTER_AUTO
-        schema: dict[vol.Marker, Any] = {
-            vol.Optional(CONF_PREFERRED_ADAPTER, default=adapter): vol.In(adapters),
-            vol.Optional(
+        schema = _settings_fields(
+            self.hass,
+            current,
+            bed_type,
+            variant,
+            (
+                CONF_PREFERRED_ADAPTER,
                 CONF_CONNECTION_PROFILE,
-                default=current.get(CONF_CONNECTION_PROFILE, DEFAULT_CONNECTION_PROFILE),
-            ): vol.In(CONNECTION_PROFILE_OPTIONS),
-            vol.Optional(
-                CONF_MOTOR_PULSE_COUNT,
-                default=str(current.get(CONF_MOTOR_PULSE_COUNT, pulse_defaults[0])),
-            ): TextSelector(TextSelectorConfig()),
-            vol.Optional(
-                CONF_MOTOR_PULSE_DELAY_MS,
-                default=str(current.get(CONF_MOTOR_PULSE_DELAY_MS, pulse_defaults[1])),
-            ): TextSelector(TextSelectorConfig()),
-            vol.Optional(
+                *_PULSE_FIELDS,
                 CONF_DISCONNECT_AFTER_COMMAND,
-                default=current.get(
-                    CONF_DISCONNECT_AFTER_COMMAND,
-                    disconnect_after_command_default_enabled(bed_type, variant),
-                ),
-            ): bool,
-            vol.Optional(
                 CONF_IDLE_DISCONNECT_SECONDS,
-                default=current.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
-            ): vol.All(vol.Coerce(int), vol.Range(min=IDLE_DISCONNECT_KEEP_CONNECTED, max=300)),
-        }
+            ),
+        )
         if bed_type == BED_TYPE_REVERIE_PAIRLINK:
             schema.update(_pairlink_settings_schema(self.hass, current))
         _hide_owned_generic_fields(schema, bed_type, variant)
         # This receiver's own profile questions; the pair's shared form cannot
         # ask them, because each side may run another profile.
         questions = _configure_questions(current)
+        context = FlowContext(self.hass, self.config_entry.entry_id)
         if questions is not None:
-            schema.update(_profile_question_schema(questions, current, advanced_section=False))
+            schema.update(
+                _profile_question_schema(questions, current, context, advanced_section=False)
+            )
         errors: dict[str, str] = {}
         if user_input is not None:
             changes = dict(user_input)
@@ -8869,21 +7087,9 @@ class AdjustableBedOptionsFlow(
                         changes,
                     )
                 )
-            for field, default in zip(
-                (CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS), pulse_defaults, strict=True
-            ):
-                if field not in changes:
-                    continue
-                try:
-                    changes[field] = int(changes[field] or default)
-                    if changes[field] < 1:
-                        errors[field] = "invalid_number"
-                except ValueError, TypeError:
-                    errors[field] = "invalid_number"
-            if not errors and _invalid_pulse_count(
-                bed_type, changes.get(CONF_MOTOR_PULSE_COUNT, pulse_defaults[0])
-            ):
-                errors[CONF_MOTOR_PULSE_COUNT] = "invalid_pulse_count_range"
+            parsed, pulse_errors = _parse_settings(changes, bed_type, pulse_defaults)
+            changes.update(parsed)
+            errors.update(pulse_errors)
             if not errors:
                 shown = _shown_option_values(schema)
                 for field in (CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS):
@@ -8894,7 +7100,8 @@ class AdjustableBedOptionsFlow(
                     CONF_PREFERRED_ADAPTER in user_input
                     and current.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO) not in adapters
                 ):
-                    changes[CONF_PREFERRED_ADAPTER] = adapter
+                    # A gone adapter showed as automatic; save that, not the stale one.
+                    changes[CONF_PREFERRED_ADAPTER] = user_input[CONF_PREFERRED_ADAPTER]
                 if changes.keys() & {CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS}:
                     changes[CONF_MOTOR_PULSE_USER_SET] = True
                 if questions is not None:
@@ -8902,10 +7109,9 @@ class AdjustableBedOptionsFlow(
                     changes = {key: value for key, value in changes.items() if key not in asked}
                     before = {**current, **changes}
                     app_data = questions.staged(
-                        before, _profile_answers(questions, user_input, current)
+                        before, _profile_answers(questions, user_input, current, context)
                     )
-                    if questions.validate:
-                        errors.update(questions.validate(app_data))
+                    errors.update(questions.errors(app_data, context))
                     # A profile derives its settled values only from answers its
                     # checks accepted, as setup and single-entry Configure do.
                     if not errors:
@@ -8964,26 +7170,6 @@ class AdjustableBedOptionsFlow(
             errors=errors,
             description_placeholders={"name": child.get(CONF_NAME, side.title())},
         )
-
-    def _starcode_live_transport_valid(self, selector: str) -> bool | None:
-        """Check the current receiver without connecting or disturbing its link."""
-        from bleak.exc import BleakError
-
-        from .coordinator import AdjustableBedCoordinator
-
-        runtime = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
-        if not isinstance(runtime, AdjustableBedCoordinator):
-            return None
-        client = runtime.client
-        if client is None or client.is_connected is not True:
-            return None
-        try:
-            if client.services is None:
-                return None
-            return _starcode_setup_transport_present(client, selector)
-        except BleakError:
-            # A just-connected client may not have completed GATT discovery.
-            return None
 
     async def async_step_unpair(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Confirm splitting a paired bed back into two entries."""
@@ -9166,9 +7352,6 @@ class AdjustableBedOptionsFlow(
         step_id: str,
     ) -> ConfigFlowResult:
         """Show and save the normal options form."""
-        separate_address_pair = (
-            self.config_entry.data.get(CONF_PAIR_MODE) == PAIR_MODE_SEPARATE_ADDRESS
-        )
         # Get current values from config entry
         current_data: dict[str, Any] = dict(self.config_entry.data)
         separate_address_pair = (
@@ -9192,9 +7375,7 @@ class AdjustableBedOptionsFlow(
             for key in VMATBASIC_CONFIG_KEYS - {CONF_VMATBASIC_PROFILE}:
                 current_data.pop(key, None)
         current_data = {**current_data, **self._pending_data}
-        bed_type = current_data.get(CONF_BED_TYPE)
-        if bed_type is None:
-            bed_type = BED_TYPE_DIAGNOSTIC
+        bed_type: str = current_data.get(CONF_BED_TYPE) or BED_TYPE_DIAGNOSTIC
 
         variants = get_variants_for_bed_type(bed_type)
         form_variant = self._variant_for_bed_type(bed_type, current_data)
@@ -9202,7 +7383,6 @@ class AdjustableBedOptionsFlow(
         if user_input is not None:
             _apply_bed_type_choice(user_input, shown_choice)
         has_position_feedback = bed_type_has_position_feedback(bed_type, form_variant)
-        form_pulse_defaults = get_motor_pulse_defaults(bed_type, form_variant)
         motor_count_options = _motor_count_options(bed_type, form_variant)
         try:
             form_motor_count = int(current_data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT))
@@ -9216,13 +7396,7 @@ class AdjustableBedOptionsFlow(
             if form_motor_count not in motor_count_options:
                 form_motor_count = motor_count_options[0]
 
-        # Get available Bluetooth adapters
         adapters = get_available_adapters(self.hass)
-
-        # Get current adapter, falling back to auto if stored adapter no longer exists
-        current_adapter = current_data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
-        if current_adapter not in adapters:
-            current_adapter = ADAPTER_AUTO
 
         # Global discovery toggle (shared across all beds, not stored per-entry)
         discovery_disabled = self._pending_data.get(
@@ -9230,117 +7404,34 @@ class AdjustableBedOptionsFlow(
             await async_is_discovery_disabled(self.hass),
         )
 
-        # Build schema
+        context = FlowContext(self.hass, self.config_entry.entry_id)
+
+        def fields(*keys: str) -> dict[vol.Marker, Any]:
+            return _settings_fields(
+                self.hass,
+                {**current_data, CONF_MOTOR_COUNT: form_motor_count},
+                bed_type,
+                form_variant,
+                keys,
+            )
+
         schema_dict: dict[vol.Marker, Any] = {
             **dict([_bed_type_field(vol.Optional, shown_choice, show_saved_id=True)]),
-            vol.Optional(
+            **fields(
                 CONF_HAS_MASSAGE,
-                default=current_data.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
-            ): bool,
-            vol.Optional(
                 CONF_PREFERRED_ADAPTER,
-                default=current_adapter,
-            ): vol.In(adapters),
-            vol.Optional(
                 CONF_CONNECTION_PROFILE,
-                default=current_data.get(CONF_CONNECTION_PROFILE, DEFAULT_CONNECTION_PROFILE),
-            ): vol.In(CONNECTION_PROFILE_OPTIONS),
-            vol.Optional(
-                CONF_MOTOR_PULSE_COUNT,
-                default=str(current_data.get(CONF_MOTOR_PULSE_COUNT, form_pulse_defaults[0])),
-            ): TextSelector(TextSelectorConfig()),
-            vol.Optional(
-                CONF_MOTOR_PULSE_DELAY_MS,
-                default=str(current_data.get(CONF_MOTOR_PULSE_DELAY_MS, form_pulse_defaults[1])),
-            ): TextSelector(TextSelectorConfig()),
-            vol.Optional(
+                *_PULSE_FIELDS,
                 CONF_DISCONNECT_AFTER_COMMAND,
-                default=current_data.get(
-                    CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND
-                ),
-            ): bool,
-            vol.Optional(
                 CONF_IDLE_DISCONNECT_SECONDS,
-                default=current_data.get(
-                    CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
-                ),
-            ): vol.All(vol.Coerce(int), vol.Range(min=IDLE_DISCONNECT_KEEP_CONNECTED, max=300)),
-            vol.Optional(
-                CONF_DISABLE_DISCOVERY,
-                default=discovery_disabled,
-            ): bool,
+            ),
+            vol.Optional(CONF_DISABLE_DISCOVERY, default=discovery_disabled): bool,
+            **fields(CONF_MOTOR_COUNT),
         }
-
-        if bed_type == BED_TYPE_OCTO:
-            octo_motor_override = current_data.get(CONF_OCTO_MOTOR_COUNT_OVERRIDE)
-            if octo_motor_override is None:
-                # Migrate a pre-selector count only when this entry was already
-                # OCTO. A count carried from another profile is not an explicit
-                # OCTO layout choice; new OCTO setups start in advertised Auto.
-                if self.config_entry.data.get(CONF_BED_TYPE) == BED_TYPE_OCTO:
-                    configured_count = current_data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
-                    octo_motor_override = (
-                        str(configured_count) if configured_count != DEFAULT_MOTOR_COUNT else "auto"
-                    )
-                else:
-                    octo_motor_override = "auto"
-            schema_dict[
-                vol.Optional(
-                    CONF_OCTO_MOTOR_COUNT_OVERRIDE,
-                    default=str(octo_motor_override),
-                )
-            ] = vol.In(
-                {
-                    "auto": "Use advertised motor count",
-                    "1": "1 motor",
-                    "2": "2 motors",
-                    "3": "3 motors",
-                    "4": "4 motors",
-                }
-            )
-        else:
-            schema_dict[
-                vol.Optional(
-                    CONF_MOTOR_COUNT,
-                    default=str(form_motor_count),
-                )
-            ] = vol.All(
-                vol.Coerce(str),
-                vol.In([str(count) for count in motor_count_options]),
-            )
-
         if has_position_feedback:
-            schema_dict[
-                vol.Optional(
-                    CONF_DISABLE_ANGLE_SENSING,
-                    default=current_data.get(
-                        CONF_DISABLE_ANGLE_SENSING,
-                        DEFAULT_DISABLE_ANGLE_SENSING,
-                    ),
-                )
-            ] = bool
-            schema_dict[
-                vol.Optional(
-                    CONF_POSITION_MODE,
-                    default=current_data.get(CONF_POSITION_MODE, DEFAULT_POSITION_MODE),
-                )
-            ] = vol.In(
-                {
-                    POSITION_MODE_SPEED: "Speed (recommended)",
-                    POSITION_MODE_ACCURACY: "Accuracy",
-                }
-            )
-
+            schema_dict.update(fields(CONF_DISABLE_ANGLE_SENSING, CONF_POSITION_MODE))
         if supports_passive_position_reconciliation(bed_type):
-            schema_dict[
-                vol.Optional(
-                    CONF_PASSIVE_POSITION_RECONCILIATION,
-                    default=current_data.get(
-                        CONF_PASSIVE_POSITION_RECONCILIATION,
-                        passive_position_reconciliation_default_enabled(bed_type),
-                    ),
-                )
-            ] = bool
+            schema_dict.update(fields(CONF_PASSIVE_POSITION_RECONCILIATION))
 
         # Add variant selection if the bed type has variants. Handsets that moved
         # to the FurniMove app profile stay selectable only for an entry using one.
@@ -9360,15 +7451,6 @@ class AdjustableBedOptionsFlow(
 
         if bed_type == BED_TYPE_REVERIE_PAIRLINK and not separate_address_pair:
             schema_dict.update(_pairlink_settings_schema(self.hass, current_data))
-
-        # Add PIN field for Octo beds
-        if bed_type == BED_TYPE_OCTO:
-            schema_dict[
-                vol.Optional(
-                    CONF_OCTO_PIN,
-                    default=current_data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN),
-                )
-            ] = TextSelector(TextSelectorConfig())
 
         # Each route's own fields are on the form, shown only for that route.
         route_rows = {
@@ -9393,20 +7475,6 @@ class AdjustableBedOptionsFlow(
                 schema_dict.update(_shown_for(leggett, leggett_routes))
             elif _is_leggett_app_type(bed_type, form_variant):
                 _add_leggett_app_schema_field(schema_dict, current_data)
-            elif bed_type == BED_TYPE_STARCODE_M5X5:
-                _add_starcode_schema_fields(
-                    schema_dict, current_data, self.hass, self.config_entry.entry_id
-                )
-            elif bed_type == BED_TYPE_STARCODE_M1X12:
-                _add_starcode_m1x12_schema_fields(
-                    schema_dict, current_data, self.hass, self.config_entry.entry_id
-                )
-            elif bed_type == BED_TYPE_STAR_ELEVATE:
-                _add_starcode_lift_field(
-                    schema_dict, current_data, self.hass, self.config_entry.entry_id
-                )
-            elif add_app_fields := _OPTIONS_APP_FIELDS.get(bed_type):
-                add_app_fields(schema_dict, current_data)
             elif (
                 questions := _configure_questions(
                     {**current_data, CONF_BED_TYPE: bed_type},
@@ -9414,7 +7482,9 @@ class AdjustableBedOptionsFlow(
                 )
             ) is not None:
                 schema_dict.update(
-                    _profile_question_schema(questions, current_data, advanced_section=False)
+                    _profile_question_schema(
+                        questions, current_data, context, advanced_section=False
+                    )
                 )
 
         asked = {marker.schema for marker in schema_dict} & {marker.schema for marker in held}
@@ -9430,36 +7500,9 @@ class AdjustableBedOptionsFlow(
             keep=asked,
         )
 
-        if bed_type == BED_TYPE_OKIN_CB24:
-            schema_dict[
-                vol.Optional(
-                    CONF_CB24_BED_SELECTION,
-                    default=current_data.get(CONF_CB24_BED_SELECTION, CB24_BED_SELECTION_DEFAULT),
-                )
-            ] = vol.In(
-                {
-                    CB24_BED_SELECTION_DEFAULT: "Both sides",
-                    CB24_BED_SELECTION_A: "Side A / Left",
-                    CB24_BED_SELECTION_B: "Side B / Right",
-                }
-            )
-
-        # Add angle limit fields for beds that use angle-based positions
-        # (not percentage-based beds like Keeson/Ergomotion/Serta/Jensen)
-        # Only show for beds that actually support position feedback
-        if bed_type and not bed_traits(bed_type).percentage_positions and has_position_feedback:
-            schema_dict[
-                vol.Optional(
-                    CONF_BACK_MAX_ANGLE,
-                    default=str(current_data.get(CONF_BACK_MAX_ANGLE, DEFAULT_BACK_MAX_ANGLE)),
-                )
-            ] = TextSelector(TextSelectorConfig())
-            schema_dict[
-                vol.Optional(
-                    CONF_LEGS_MAX_ANGLE,
-                    default=str(current_data.get(CONF_LEGS_MAX_ANGLE, DEFAULT_LEGS_MAX_ANGLE)),
-                )
-            ] = TextSelector(TextSelectorConfig())
+        # Angle limits apply to beds that report angles, not percentages.
+        if not bed_traits(bed_type).percentage_positions and has_position_feedback:
+            schema_dict.update(fields(*_ANGLE_LIMITS))
 
         if user_input is not None:
             # HA's select control uses string values; keep persisted counts numeric.
@@ -9467,7 +7510,7 @@ class AdjustableBedOptionsFlow(
             original_type = self.config_entry.data.get(CONF_BED_TYPE)
             selected_type = user_input.get(CONF_BED_TYPE, original_type)
             family = next(
-                (family for family in MANAGED_FAMILIES if original_type in family.bed_types),
+                (family for family in GUIDED_FAMILIES if original_type in family.managed),
                 None,
             )
             original_profile = {**self.config_entry.data, **self.config_entry.options}
@@ -9487,7 +7530,7 @@ class AdjustableBedOptionsFlow(
             if (
                 not separate_address_pair
                 and family is not None
-                and selected_type in family.bed_types
+                and selected_type in family.managed
                 and (
                     selected_type != original_type
                     or any(
@@ -9776,16 +7819,27 @@ class AdjustableBedOptionsFlow(
                     self.config_entry.data.get(CONF_BED_TYPE),
                 )
             ) is not None:
-                answers = _profile_answers(declared, user_input, current_data)
-                before = {**current_data, **user_input}
+                answers = _profile_answers(declared, user_input, current_data, context)
+                # The answers apply to the saved setup, as setup applies them to
+                # the staged one, so a profile can tell what they change.
+                before = {
+                    **current_data,
+                    **{key: value for key, value in user_input.items() if key not in answers},
+                }
                 app_data = declared.staged(before, answers)
-                if declared.validate and (app_errors := declared.validate(app_data)):
+                if app_errors := declared.errors(app_data, context):
                     return self.async_show_form(
                         step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors
                     )
                 # The answers, and whatever normalizing corrected, are saved.
+                for key in answers.keys() - app_data.keys():
+                    user_input.pop(key, None)
                 user_input.update(
-                    {key: value for key, value in app_data.items() if before.get(key) != value}
+                    {
+                        key: value
+                        for key, value in app_data.items()
+                        if before.get(key) != value or user_input.get(key, value) != value
+                    }
                 )
                 # An answer that picks the route, such as MC3, settles what that
                 # route's own profile owns.
@@ -9794,7 +7848,7 @@ class AdjustableBedOptionsFlow(
                 # What normalizing dropped, such as retained settings an answer no
                 # longer allows or an Auto choice stored as no value, leaves the
                 # saved entry too, even when the form submitted it.
-                stale_profile_keys = frozenset(before) - frozenset(app_data)
+                stale_profile_keys = (frozenset(before) | answers.keys()) - frozenset(app_data)
             elif not separate_address_pair and (
                 owner := setup_profile_for({**current_data, **user_input, CONF_BED_TYPE: bed_type})
             ) is not None:
@@ -9802,94 +7856,6 @@ class AdjustableBedOptionsFlow(
                 # owns, such as MC3's missing massage, even when an entry
                 # switches in from a bed type that had them on.
                 user_input.update(owner.fixed_values())
-            if bed_type == BED_TYPE_STARCODE_ABM5_4 and not separate_address_pair:
-                from .beds.starcode_abm5_4_profiles import SELECTORS
-
-                app_data = {**current_data, **user_input}
-                if CONF_STARCODE_COMMAND_SELECTOR in user_input and (
-                    user_input[CONF_STARCODE_COMMAND_SELECTOR]
-                    != current_data.get(CONF_STARCODE_COMMAND_SELECTOR)
-                    or app_data.get(CONF_STARCODE_UI_SELECTOR, "none") not in SELECTORS
-                ):
-                    user_input[CONF_STARCODE_UI_SELECTOR] = app_data[CONF_STARCODE_COMMAND_SELECTOR]
-                    app_data[CONF_STARCODE_UI_SELECTOR] = user_input[CONF_STARCODE_UI_SELECTOR]
-                app_errors = _starcode_app_errors(app_data)
-                if app_errors:
-                    return self.async_show_form(
-                        step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors
-                    )
-                if user_input.get(CONF_STARCODE_TRANSPORT_SELECTOR) == "auto":
-                    initial_transport = _starcode_initial_transport(app_data, None)
-                    if initial_transport is None:
-                        return self.async_show_form(
-                            step_id=step_id,
-                            data_schema=vol.Schema(schema_dict),
-                            errors={CONF_STARCODE_TRANSPORT_SELECTOR: "starcode_app_invalid"},
-                        )
-                    user_input[CONF_STARCODE_TRANSPORT_SELECTOR] = initial_transport
-                selected_transport = _starcode_initial_transport({**app_data, **user_input}, None)
-                if (
-                    selected_transport is not None
-                    and selected_transport
-                    != _starcode_initial_transport(self.config_entry.data, None)
-                    and self._starcode_live_transport_valid(selected_transport) is False
-                ):
-                    return self.async_show_form(
-                        step_id=step_id,
-                        data_schema=vol.Schema(schema_dict),
-                        errors={CONF_STARCODE_TRANSPORT_SELECTOR: "starcode_app_invalid"},
-                    )
-                user_input[CONF_MOTOR_COUNT] = 2
-                user_input[CONF_HAS_MASSAGE] = True
-                user_input[CONF_DISABLE_ANGLE_SENSING] = True
-            if bed_type in CLUSTER033_BED_TYPES | {"ergomotion_4"} and not separate_address_pair:
-                app_data = {**current_data, **user_input}
-                try:
-                    _normalize_cluster033_data(app_data)
-                except ValueError:
-                    return self.async_show_form(step_id=step_id, data_schema=vol.Schema(schema_dict), errors={"base": "cluster033_layout"})
-                user_input.update({key: app_data[key] for key in (CONF_PRODUCT_TYPE, CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING, CONF_MOTOR_PULSE_USER_SET)})
-            if bed_type == BED_TYPE_FSM_RELAX and not separate_address_pair:
-                if errors := _fsm_relax_errors({**current_data, **user_input}):
-                    return self.async_show_form(
-                        step_id=step_id, data_schema=vol.Schema(schema_dict), errors=errors
-                    )
-                user_input[CONF_DISABLE_ANGLE_SENSING] = True
-
-            if bed_type == BED_TYPE_STARCODE_M5X5 and not separate_address_pair:
-                app_errors = _starcode_errors(
-                    self.hass, {**current_data, **user_input}, self.config_entry.entry_id
-                )
-                if app_errors:
-                    return self.async_show_form(
-                        step_id=step_id, data_schema=vol.Schema(schema_dict), errors=app_errors
-                    )
-                user_input[CONF_HAS_MASSAGE] = True
-                user_input[CONF_DISABLE_ANGLE_SENSING] = False
-            if bed_type == BED_TYPE_STARCODE_M1X12 and not separate_address_pair:
-                app_errors = _starcode_m1x12_errors(
-                    self.hass,
-                    {**current_data, **user_input},
-                    self.config_entry.entry_id,
-                )
-                if app_errors:
-                    return self.async_show_form(
-                        step_id=step_id,
-                        data_schema=vol.Schema(schema_dict),
-                        errors=app_errors,
-                    )
-                user_input[CONF_HAS_MASSAGE] = True
-                user_input[CONF_DISABLE_ANGLE_SENSING] = True
-                user_input[CONF_MOTOR_PULSE_USER_SET] = False
-                user_input[CONF_MOTOR_PULSE_DELAY_MS] = 100
-            if bed_type == BED_TYPE_STAR_ELEVATE and not separate_address_pair:
-                lift_errors = _starcode_lift_errors(
-                    self.hass, {**current_data, **user_input}, self.config_entry.entry_id
-                )
-                if lift_errors:
-                    return self.async_show_form(
-                        step_id=step_id, data_schema=vol.Schema(schema_dict), errors=lift_errors
-                    )
             if bed_type == BED_TYPE_SVANE:
                 svane_variant = user_input.get(
                     CONF_PROTOCOL_VARIANT, current_data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)
@@ -9909,15 +7875,6 @@ class AdjustableBedOptionsFlow(
                             CONF_MOTOR_PULSE_USER_SET: False,
                         }
                     )
-            if bed_type == BED_TYPE_OCTO and CONF_OCTO_PIN in user_input:
-                octo_pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN))
-                if not is_valid_octo_pin(octo_pin):
-                    return self.async_show_form(
-                        step_id=step_id,
-                        data_schema=vol.Schema(schema_dict),
-                        errors={CONF_OCTO_PIN: "invalid_pin"},
-                    )
-                user_input[CONF_OCTO_PIN] = octo_pin
             if self.config_entry.data.get(
                 CONF_PAIR_MODE
             ) == PAIR_MODE_SINGLE_ADDRESS and not supports_single_address_pairing(
@@ -9935,68 +7892,14 @@ class AdjustableBedOptionsFlow(
                     data_schema=vol.Schema(schema_dict),
                     errors={"base": "single_address_pairing_unsupported"},
                 )
-            # Get bed-specific defaults for motor pulse settings
-            pulse_defaults = get_motor_pulse_defaults(
-                bed_type,
-                requested_variant,
+            parsed, setting_errors = _parse_settings(
+                user_input, bed_type, get_motor_pulse_defaults(bed_type, requested_variant)
             )
-            # Convert text values to integers
-            try:
-                if CONF_MOTOR_PULSE_COUNT in user_input:
-                    user_input[CONF_MOTOR_PULSE_COUNT] = int(
-                        user_input[CONF_MOTOR_PULSE_COUNT] or pulse_defaults[0]
-                    )
-                if CONF_MOTOR_PULSE_DELAY_MS in user_input:
-                    user_input[CONF_MOTOR_PULSE_DELAY_MS] = int(
-                        user_input[CONF_MOTOR_PULSE_DELAY_MS] or pulse_defaults[1]
-                    )
-            except ValueError, TypeError:
+            if setting_errors:
                 return self.async_show_form(
-                    step_id=step_id,
-                    data_schema=vol.Schema(schema_dict),
-                    errors={"base": "invalid_number"},
+                    step_id=step_id, data_schema=vol.Schema(schema_dict), errors=setting_errors
                 )
-            if _invalid_pulse_count(
-                bed_type, user_input.get(CONF_MOTOR_PULSE_COUNT, pulse_defaults[0])
-            ):
-                return self.async_show_form(
-                    step_id=step_id,
-                    data_schema=vol.Schema(schema_dict),
-                    errors={CONF_MOTOR_PULSE_COUNT: "invalid_pulse_count_range"},
-                )
-            # Convert angle limit values to floats with field-specific error handling
-            if CONF_BACK_MAX_ANGLE in user_input:
-                try:
-                    value = float(user_input[CONF_BACK_MAX_ANGLE] or DEFAULT_BACK_MAX_ANGLE)
-                    if value <= 0 or value > 180:
-                        return self.async_show_form(
-                            step_id=step_id,
-                            data_schema=vol.Schema(schema_dict),
-                            errors={CONF_BACK_MAX_ANGLE: "invalid_angle"},
-                        )
-                    user_input[CONF_BACK_MAX_ANGLE] = value
-                except ValueError, TypeError:
-                    return self.async_show_form(
-                        step_id=step_id,
-                        data_schema=vol.Schema(schema_dict),
-                        errors={CONF_BACK_MAX_ANGLE: "invalid_angle"},
-                    )
-            if CONF_LEGS_MAX_ANGLE in user_input:
-                try:
-                    value = float(user_input[CONF_LEGS_MAX_ANGLE] or DEFAULT_LEGS_MAX_ANGLE)
-                    if value <= 0 or value > 180:
-                        return self.async_show_form(
-                            step_id=step_id,
-                            data_schema=vol.Schema(schema_dict),
-                            errors={CONF_LEGS_MAX_ANGLE: "invalid_angle"},
-                        )
-                    user_input[CONF_LEGS_MAX_ANGLE] = value
-                except ValueError, TypeError:
-                    return self.async_show_form(
-                        step_id=step_id,
-                        data_schema=vol.Schema(schema_dict),
-                        errors={CONF_LEGS_MAX_ANGLE: "invalid_angle"},
-                    )
+            user_input.update(parsed)
 
             async def commit_global_settings() -> ConfigFlowResult | None:
                 """Apply global and hardware changes before confirming the review."""

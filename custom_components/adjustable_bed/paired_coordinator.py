@@ -796,10 +796,6 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
         sided_key = key if key.endswith(suffix) else f"{key}{suffix}"
         return f"{self._single_inner.address}_{sided_key}"
 
-    def entity_translation_key(self, key: str) -> str:
-        suffix = f"_{self._single_side}"
-        return key if key.endswith(suffix) else f"{key}{suffix}"
-
     def _scoped_command_resources(
         self,
         resource: str | None = None,

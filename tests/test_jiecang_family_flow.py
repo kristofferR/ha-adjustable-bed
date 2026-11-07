@@ -97,9 +97,9 @@ async def test_remote_chosen_from_the_app_row_asks_its_motor_count(hass):
     flow = setup_flow(hass, const.BED_TYPE_JIECANG_APP)
     flow._manual_data[const.CONF_MOTOR_PULSE_COUNT] = 99
     result = await flow.async_step_jiecang_family({"choice": "legacy_jiecang"})
-    assert result["step_id"] == "jiecang_legacy"
+    assert result["step_id"] == "profile_questions"
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_jiecang_legacy({const.CONF_MOTOR_COUNT: "3"})
+        await flow.async_step_profile_questions({const.CONF_MOTOR_COUNT: "3"})
     saved = finish.call_args.args[0]
     assert saved[const.CONF_BED_TYPE] == const.BED_TYPE_JIECANG
     assert saved[const.CONF_MOTOR_COUNT] == 3
@@ -182,7 +182,7 @@ async def test_app_entry_changes_to_a_remote_route_without_a_transport_check(
     result = await reconfigure(hass, entry)
     result = await manager.async_configure(result["flow_id"], {"choice": choice})
     # The app's layout set the motors; the legacy route asks its own count.
-    assert result["step_id"] == "jiecang_legacy"
+    assert result["step_id"] == "profile_questions"
     result = await manager.async_configure(result["flow_id"], {const.CONF_MOTOR_COUNT: 4})
     assert result["step_id"] == "migration_confirm"
     result = await manager.async_configure(result["flow_id"], {"action": "apply"})

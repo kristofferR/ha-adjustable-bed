@@ -8,8 +8,8 @@ protocol values.
 
 ## The transaction
 
-`profile_migration.py` holds the shared parts; each family supplies only its
-own questions and checks.
+`profile_migration.py` holds the shared parts. Each family's declaration in
+`app_families.py` supplies only its own question, route settings and checks.
 
 1. **Snapshot.** Reconfigure copies the saved data and options
    (`MigrationSnapshot`). Every later step works on a staged copy.
@@ -17,7 +17,7 @@ own questions and checks.
    the app shows. Choosing a different app clears the previous app's profile
    metadata; keeping the same app keeps it.
 3. **Verify.** A family with exact endpoint or bond requirements
-   (`ManagedFamily.requires_check`) must pass a connection check. The old
+   (`AppFamily.requires_check`) must pass a connection check. The old
    runtime's transport is reserved under its normal locks for the check. A
    link that cannot be observed closed fails the check and stays owned until
    it closes, so no second connection overlaps it. The check has its own
@@ -48,8 +48,8 @@ Vibradorm's role checks and native bond rules stay Vibradorm's.
 
 ## Entry points
 
-- **Reconfigure** opens the wizard for a family registered in
-  `MANAGED_FAMILIES`. A family also names, in `asks_for`, the routes of other
+- **Reconfigure** opens the wizard for a family declared `guided`
+  (`GUIDED_FAMILIES`). A family also names, in `asks_for`, the routes of other
   bed types its question chooses that have no guided change of their own
   (Okin CST for Okin; the legacy L&P app and the L&P app's QRRM remote for
   L&P), so an entry on one can reach the family's other routes. Configure

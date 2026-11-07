@@ -524,22 +524,6 @@ class ReverieNightstandController(BedController):
                 _LOGGER.exception("Failed to write to %s", char_uuid)
                 raise
 
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        """Write a command to the bed (writes to linear head characteristic)."""
-        await self._write_gatt_with_retry(
-            REVERIE_NIGHTSTAND_LINEAR_HEAD_UUID,
-            command,
-            repeat_count,
-            repeat_delay_ms,
-            cancel_event,
-        )
-
     async def start_notify(
         self, callback: Callable[[str, float], None] | None = None
     ) -> None:
