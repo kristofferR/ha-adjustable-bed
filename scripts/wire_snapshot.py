@@ -206,6 +206,18 @@ UNPLANNED_ACTIONS = frozenset(
     }
 )
 
+# No-argument actions that moved from BedController to their family's controller
+# after this plan was frozen. They keep their place in the name-ordered plan.
+FAMILY_ACTIONS = frozenset(
+    {
+        "cancel_alarm_timer",
+        "cancel_sleep_timer",
+        "rmcontrol_query_alarms",
+        "rmcontrol_query_anti_snore",
+        "solace_query_audio_volume",
+    }
+)
+
 Call = Callable[[Any], Awaitable[Any]]
 
 
@@ -286,7 +298,7 @@ def _base_actions() -> list[str]:
             continue
         if all(p.default is not inspect.Parameter.empty for p in params):
             names.append(name)
-    return names
+    return sorted({*names, *FAMILY_ACTIONS})
 
 
 def plan_commands(controller: Any) -> list[Command]:
@@ -391,10 +403,12 @@ def _argument_commands(controller: Any) -> list[Command]:
     c = controller
     out: list[Command] = []
 
-    def add(flag: str | None, method: str, name: str, *args: Any, **kwargs: Any) -> None:
+    def add(
+        flag: str | bool | None, method: str, name: str, *args: Any, **kwargs: Any
+    ) -> None:
         if not _overrides(c, method):
             return
-        declared = _flag(c, flag) if flag else False
+        declared = flag if isinstance(flag, bool) else _flag(c, flag) if flag else False
         out.append(Command(name, _method(method, *args, **kwargs), declared))
 
     if _flag(c, "supports_light_level_control"):
@@ -504,7 +518,8 @@ def _argument_commands(controller: Any) -> list[Command]:
     )
     add("supports_solace_audio", "solace_select_music", "solace_music_1", 1)
     add("supports_solace_audio", "solace_set_audio_volume", "solace_volume_5", 5)
-    add("supports_confirmed_calibration", "calibrate", "calibrate", confirmed=True)
+    # Only the FSM Relax family implements confirmed calibration.
+    add(True, "calibrate", "calibrate", confirmed=True)
     add("supports_device_rename", "rename_device", "rename_device", "Bed")
     add(None, "set_furnimove_massage_program", "furnimove_massage_program_1", 1)
     return out

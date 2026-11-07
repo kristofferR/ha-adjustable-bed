@@ -410,3 +410,24 @@ async def test_goto_preset_duration_rejected_where_unsupported(
         DOMAIN, "goto_preset", {"device_id": "bed", "preset": 1}, blocking=True,
     )
     controller.preset_memory.assert_awaited_once_with(1)
+
+
+async def test_percentage_bed_without_sliders_accepts_no_set_position_motor() -> None:
+    """A direct percentage bed with no sliders never falls back to generic motors."""
+    from custom_components.adjustable_bed import services
+    from custom_components.adjustable_bed.beds.base import BedController
+    from custom_components.adjustable_bed.const import BED_TYPE_SLEEP_NUMBER
+
+    controller = MagicMock(
+        spec=BedController,
+        supports_direct_position_control=True,
+        reports_percentage_position=True,
+        position_number_specs=(),
+        requires_disconnected_transport=False,
+    )
+    coordinator, _ = target(BED_TYPE_SLEEP_NUMBER)
+    coordinator.entry = SimpleNamespace(data={"bed_type": BED_TYPE_SLEEP_NUMBER})
+    coordinator.capability_controller = controller
+    coordinator.disable_angle_sensing = False
+    with pytest.raises(ServiceValidationError, match="Motor 'back' is not valid"):
+        await services._set_position_plan(coordinator, coordinator, [], "back", 50)

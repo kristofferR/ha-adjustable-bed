@@ -908,12 +908,15 @@ async def _set_position_plan(
         # For Keeson/Ergomotion: only head and feet are valid, they map to back/legs keys.
         # For standard beds: based on motor_count (2=back/legs, 3=+head, 4=+feet).
         specs = controller.position_number_specs
-        percentage_specs = bool(specs) and all(
-            spec.native_unit_of_measurement == POSITION_UNIT_PERCENT for spec in specs
+        # A percentage bed with no sliders (for example articulation disabled)
+        # keeps an empty axis set rather than falling back to generic motors.
+        percentage_targets = controller.reports_percentage_position is True or (
+            bool(specs)
+            and all(spec.native_unit_of_measurement == POSITION_UNIT_PERCENT for spec in specs)
         )
         # SBI reports back/legs only, within its pulse tables.
         if bed_type in (BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_SBI) or (
-            supports_direct_position_control and percentage_specs
+            supports_direct_position_control and percentage_targets
         ):
             motor_configs = {
                 spec.position_key: {
