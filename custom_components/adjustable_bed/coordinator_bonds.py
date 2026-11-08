@@ -1174,6 +1174,22 @@ class CoordinatorBondsMixin:
         self._record_bond_verification("encrypted_in_place", attempt_details=attempt_details)
         return verified, None
 
+    def _verified_bond_releases_latch(self: AdjustableBedCoordinator) -> bool:
+        """Return True when this verified bond proves the latch is obsolete.
+
+        A bond that survived to a connection that never asked to pair proves
+        it directly. On an ESPHome proxy one verified bonded session is enough
+        as well: an unpaired reconnect there is now paired in place instead of
+        failing, so always requesting ``pair=True`` buys nothing and costs the
+        bed every reconnect outside its pairing window. The one-connection
+        beds keep their existing rule.
+        """
+        if not self._attempt_used_pairing:
+            return True
+        return is_esphome_proxy_path(self._connection_path) and not (
+            grants_one_connection_per_pairing_window(self._bed_type, self._protocol_variant)
+        )
+
     async def _async_record_verified_bond(
         self: AdjustableBedCoordinator, attempt_details: dict[str, Any] | None = None
     ) -> bool:
@@ -1190,11 +1206,12 @@ class CoordinatorBondsMixin:
         self._record_bond_provenance()
         release_latch = False
         if self._ble_bond_marker_unreliable:
-            if not self._attempt_used_pairing:
+            if self._verified_bond_releases_latch():
                 # The bond survived to a connection that never asked to pair, so
                 # whatever made the marker unreliable no longer applies (a
                 # different adapter, a firmware change, a proxy that now
-                # persists bonds). Trust the marker again.
+                # persists bonds), or a proxy session proved it (see
+                # _verified_bond_releases_latch). Trust the marker again.
                 release_latch = True
                 self._log_bond_marker_reliable_again()
             else:

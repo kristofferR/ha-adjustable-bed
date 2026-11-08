@@ -990,6 +990,44 @@ class TestProxyLinkPairedInPlace:
         assert coordinator._ble_bond_marker_unreliable is False
         assert coordinator._last_bond_verification["status"] == "encrypted_in_place"
 
+    async def test_in_place_pairing_releases_the_latch(self, hass: HomeAssistant) -> None:
+        """One bonded proxy session is enough to stop forcing pair=True."""
+        coordinator = self._make_coordinator(
+            hass,
+            **{CONF_BLE_BOND_MARKER_UNRELIABLE: True, CONF_BLE_BOND_ESTABLISHED: False},
+        )
+        self._link(coordinator, reads=[BleakError(_AUTH_ERROR), b"CU170"])
+
+        with patch_coordinator_global("delete_pairing_required_issue", new_callable=AsyncMock):
+            assert await coordinator._async_verify_bonded() is True
+
+        assert coordinator._ble_bond_marker_unreliable is False
+        assert coordinator._ble_bond_established is True
+        assert CONF_BLE_BOND_MARKER_UNRELIABLE not in coordinator.entry.data
+        assert coordinator.entry.data[CONF_BLE_BOND_ESTABLISHED] is True
+
+        # The next reconnect no longer asks the bed for a new bond.
+        device = MagicMock()
+        device.details = {}
+        _, use_pairing, _ = coordinator._prepare_pairing_attempt(device, {})
+        assert use_pairing is False
+
+    async def test_a_paired_proxy_session_releases_the_latch(self, hass: HomeAssistant) -> None:
+        """A power-cycle pairing over a proxy must not stay latched afterwards."""
+        coordinator = self._make_coordinator(
+            hass,
+            **{CONF_BLE_BOND_MARKER_UNRELIABLE: True, CONF_BLE_BOND_ESTABLISHED: False},
+        )
+        client = self._link(coordinator, reads=[b"CU170"])
+        coordinator._attempt_used_pairing = True
+
+        with patch_coordinator_global("delete_pairing_required_issue", new_callable=AsyncMock):
+            assert await coordinator._async_verify_bonded() is True
+
+        client.pair.assert_not_awaited()
+        assert coordinator._ble_bond_marker_unreliable is False
+        assert coordinator._ble_bond_established is True
+
     async def test_a_refused_in_place_pairing_falls_back_to_the_usual_recovery(
         self, hass: HomeAssistant
     ) -> None:

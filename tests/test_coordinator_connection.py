@@ -1019,6 +1019,7 @@ class TestCoordinatorConnection:
             source_domain="esphome",
         )
         coordinator._attempt_used_pairing = False
+        coordinator._ble_bond_marker_unreliable = True
         client = coordinator._client
         client.pair = AsyncMock()
 
@@ -1049,6 +1050,7 @@ class TestCoordinatorConnection:
         create_issue.assert_not_awaited()
         assert coordinator._client is client
         assert coordinator._ble_bond_established is True
+        assert coordinator._ble_bond_marker_unreliable is False
         assert coordinator._last_bond_verification["status"] == "encrypted_in_place"
 
         await coordinator.async_disconnect()
