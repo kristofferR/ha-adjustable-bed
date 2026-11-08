@@ -10,7 +10,6 @@ from custom_components.adjustable_bed.ble_auth import (
     is_ble_authentication_error,
     is_ble_pairing_auth_failure,
     is_esphome_connection_status_change,
-    is_esphome_pairing_response_failure,
 )
 
 
@@ -101,7 +100,6 @@ def test_esphome_pairing_response_disconnect_is_a_failed_pairing(message: str) -
     err = BleakError(message)
     assert is_ble_authentication_error(err) is False
     assert is_esphome_connection_status_change(err) is True
-    assert is_esphome_pairing_response_failure(err) is True
 
 
 def test_esphome_status_change_on_other_requests_is_not_an_auth_error() -> None:
@@ -111,7 +109,7 @@ def test_esphome_status_change_on_other_requests_is_not_an_auth_error() -> None:
         "BluetoothGATTGetServicesResponse: Attribute not found (10)"
     )
     assert is_ble_authentication_error(err) is False
-    assert is_esphome_pairing_response_failure(err) is False
+    assert is_esphome_connection_status_change(err) is True
 
 
 def test_esphome_gatt_auth_error_is_still_an_auth_error() -> None:
@@ -121,7 +119,7 @@ def test_esphome_gatt_auth_error_is_still_an_auth_error() -> None:
         "description=Insufficient authentication"
     )
     assert is_ble_authentication_error(err) is True
-    assert is_esphome_pairing_response_failure(err) is False
+    assert is_esphome_connection_status_change(err) is False
 
 
 @pytest.mark.parametrize("message", ["GATT error 50", "error=150", "Write not permitted"])
