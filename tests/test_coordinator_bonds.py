@@ -15,7 +15,9 @@ from custom_components.adjustable_bed.bluetooth_transport import (
     ConnectionPath,
     TransportClass,
 )
+from custom_components.adjustable_bed.bond_verification import BondVerificationStatus
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ATTEMPTED_SOURCE,
@@ -893,3 +895,206 @@ class TestUnverifiedBondMarkerScope:
 
         assert CONF_BLE_BOND_ATTEMPTED_SOURCE not in coordinator.entry.data
         assert CONF_BLE_BOND_CONTEXT in coordinator.entry.data
+
+
+_AUTH_ERROR = (
+    "Bluetooth GATT Error address=AA:BB:CC:DD:EE:01 "
+    "handle=26 error=5 description=Insufficient authentication"
+)
+
+
+class TestProxyLinkPairedInPlace:
+    """An unpaired proxy reconnect to a bonded bed pairs the live link.
+
+    Through an ESP32 proxy, a reconnect without pair=True comes up unencrypted
+    although bed and proxy still hold the bond. Dropping that link and
+    reconnecting with pair=True asks the bed for a new bond, which it refuses
+    outside its pairing window, so the bed only worked until the next
+    disconnect after each power cycle. Pairing the live link reuses the keys.
+    """
+
+    def _make_coordinator(
+        self,
+        hass: HomeAssistant,
+        bed_type: str = BED_TYPE_LEGGETT_OKIN,
+        **extra_data: object,
+    ) -> AdjustableBedCoordinator:
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=TEST_NAME,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: bed_type,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+                CONF_BLE_BOND_ESTABLISHED: True,
+                **extra_data,
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id="proxy_in_place_pairing_test",
+        )
+        entry.add_to_hass(hass)
+        return AdjustableBedCoordinator(hass, entry)
+
+    def _link(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        *,
+        reads: list[object],
+        transport: TransportClass = TransportClass.PROXY,
+        source_domain: str | None = "esphome",
+    ) -> MagicMock:
+        client = MagicMock()
+        client.is_connected = True
+        client.pair = AsyncMock()
+        client.clear_cache = AsyncMock(return_value=True)
+        client.read_gatt_char = AsyncMock(side_effect=reads)
+        coordinator._client = client
+        coordinator._connection_path = ConnectionPath(
+            source="AA:BB:CC:DD:EE:10",
+            transport=transport,
+            source_domain=source_domain,
+        )
+        coordinator._attempt_used_pairing = False
+        return client
+
+    async def test_unencrypted_proxy_reconnect_pairs_the_live_link(
+        self, hass: HomeAssistant
+    ) -> None:
+        """The probe's auth failure is fixed on the same link, nothing is cleared."""
+        coordinator = self._make_coordinator(hass)
+        coordinator._attempt_trusted_bond_marker = True
+        client = self._link(coordinator, reads=[BleakError(_AUTH_ERROR), b"CU170"])
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator_bonds.create_pairing_required_issue",
+                new_callable=AsyncMock,
+            ) as issue,
+            patch_coordinator_global("delete_pairing_required_issue", new_callable=AsyncMock),
+            patch.object(
+                coordinator, "_async_disconnect_locked", new_callable=AsyncMock
+            ) as disconnect,
+        ):
+            assert await coordinator._async_verify_bonded() is True
+
+        client.pair.assert_awaited_once_with()
+        assert client.read_gatt_char.await_count == 2
+        disconnect.assert_not_awaited()
+        client.clear_cache.assert_not_awaited()
+        issue.assert_not_awaited()
+        assert coordinator._ble_bond_established is True
+        assert coordinator._ble_bond_marker_unreliable is False
+        assert coordinator._last_bond_verification["status"] == "encrypted_in_place"
+
+    async def test_a_refused_in_place_pairing_falls_back_to_the_usual_recovery(
+        self, hass: HomeAssistant
+    ) -> None:
+        """If the bed refuses, the link is dropped and recovery runs as before."""
+        coordinator = self._make_coordinator(hass)
+        client = self._link(coordinator, reads=[BleakError(_AUTH_ERROR)])
+        client.pair = AsyncMock(side_effect=BleakError("Pairing failed due to error: 102"))
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator_bonds.create_pairing_required_issue",
+                new_callable=AsyncMock,
+            ),
+            patch.object(
+                coordinator, "_async_disconnect_locked", new_callable=AsyncMock
+            ) as disconnect,
+        ):
+            assert await coordinator._async_verify_bonded() is False
+
+        client.pair.assert_awaited_once_with()
+        disconnect.assert_awaited_once()
+        assert coordinator._last_bond_evidence is not None
+        assert coordinator._last_bond_evidence.status is BondVerificationStatus.AUTH_FAILED
+
+    async def test_an_auth_failure_after_pairing_in_place_is_real_evidence(
+        self, hass: HomeAssistant
+    ) -> None:
+        """A paired link that still fails the probe goes to the usual recovery."""
+        coordinator = self._make_coordinator(hass)
+        client = self._link(
+            coordinator, reads=[BleakError(_AUTH_ERROR), BleakError(_AUTH_ERROR)]
+        )
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator_bonds.create_pairing_required_issue",
+                new_callable=AsyncMock,
+            ),
+            patch.object(
+                coordinator, "_async_disconnect_locked", new_callable=AsyncMock
+            ) as disconnect,
+        ):
+            assert await coordinator._async_verify_bonded() is False
+
+        client.pair.assert_awaited_once_with()
+        disconnect.assert_awaited_once()
+
+    @pytest.mark.parametrize(
+        ("transport", "source_domain"),
+        [(TransportClass.LOCAL, None), (TransportClass.PROXY, "other_proxy")],
+    )
+    async def test_other_transports_keep_the_reconnect_recovery(
+        self, hass: HomeAssistant, transport: TransportClass, source_domain: str | None
+    ) -> None:
+        """BlueZ raises link security itself; only ESPHome proxies pair in place."""
+        coordinator = self._make_coordinator(hass)
+        client = self._link(
+            coordinator,
+            reads=[BleakError(_AUTH_ERROR)],
+            transport=transport,
+            source_domain=source_domain,
+        )
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator_bonds.create_pairing_required_issue",
+                new_callable=AsyncMock,
+            ),
+            patch.object(coordinator, "_async_disconnect_locked", new_callable=AsyncMock),
+        ):
+            assert await coordinator._async_verify_bonded() is False
+
+        client.pair.assert_not_awaited()
+
+    async def test_a_link_that_already_paired_is_not_paired_again(
+        self, hass: HomeAssistant
+    ) -> None:
+        """An auth failure on a link that requested pairing is evidence."""
+        coordinator = self._make_coordinator(hass)
+        client = self._link(coordinator, reads=[BleakError(_AUTH_ERROR)])
+        coordinator._attempt_used_pairing = True
+
+        assert coordinator._can_encrypt_proxy_link_in_place() is False
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator_bonds.create_pairing_required_issue",
+                new_callable=AsyncMock,
+            ),
+            patch.object(coordinator, "_async_disconnect_locked", new_callable=AsyncMock),
+        ):
+            assert await coordinator._async_verify_bonded() is False
+        client.pair.assert_not_awaited()
+
+    async def test_one_connection_beds_keep_their_own_path(self, hass: HomeAssistant) -> None:
+        """LP Gen2 retains its link and pairs at runtime as before (issue #709)."""
+        coordinator = self._make_coordinator(hass, bed_type=BED_TYPE_LEGGETT_GEN2)
+        client = self._link(coordinator, reads=[BleakError(_AUTH_ERROR)])
+
+        assert coordinator._can_encrypt_proxy_link_in_place() is False
+        assert coordinator._can_encrypt_link_in_place() is True
+        with patch(
+            "custom_components.adjustable_bed.coordinator_bonds.create_pairing_required_issue",
+            new_callable=AsyncMock,
+        ):
+            # The probe keeps the link for startup without pairing it here.
+            assert await coordinator._async_verify_bonded() is True
+        client.pair.assert_not_awaited()
+        assert coordinator._client is client

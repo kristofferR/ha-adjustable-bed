@@ -141,7 +141,9 @@ class TestCoordinatorConnection:
         async def read_characteristic(_uuid):
             nonlocal reads
             reads += 1
-            if reads == 1 or not bond_intact:
+            # Stale handles fail every read on the first link, including the
+            # repeated probe after pairing that link in place.
+            if coordinator._connection_attempt_count == 1 or not bond_intact:
                 raise BleakError("Insufficient encryption")
             return b"Model"
 
@@ -277,7 +279,9 @@ class TestCoordinatorConnection:
         async def read_characteristic(_uuid):
             nonlocal reads
             reads += 1
-            if reads == 1:
+            # Stale handles fail every read on the first link, including the
+            # repeated probe after pairing that link in place.
+            if coordinator._connection_attempt_count == 1:
                 raise BleakError("Insufficient encryption")
             return b"Model"
 
@@ -991,6 +995,61 @@ class TestCoordinatorConnection:
         create_issue.assert_awaited_once()
         delete_issue.assert_not_awaited()
         assert coordinator._client is client
+
+        await coordinator.async_disconnect()
+
+    async def test_runtime_auth_failure_pairs_an_unpaired_proxy_link_in_place(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ) -> None:
+        """A reconnecting pairing-required bed on an ESPHome proxy keeps its link.
+
+        The link came up without pair=True, so it is unencrypted although the
+        bond exists. Pairing it in place fixes the next command; dropping it
+        and reconnecting with pair=True would need the bed's pairing window.
+        """
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        coordinator._bed_type = BED_TYPE_LEGGETT_OKIN
+        coordinator._connection_path = ConnectionPath(
+            source="AA:BB:CC:DD:EE:10",
+            transport=TransportClass.PROXY,
+            source_domain="esphome",
+        )
+        coordinator._attempt_used_pairing = False
+        client = coordinator._client
+        client.pair = AsyncMock()
+
+        async def _auth_failure_command(_controller):
+            raise BleakError(
+                "Bluetooth GATT Error address=AA:BB:CC:DD:EE:FF "
+                "handle=26 error=5 description=Insufficient authentication"
+            )
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator_bonds.create_pairing_required_issue",
+                new_callable=AsyncMock,
+            ) as create_issue,
+            patch_coordinator_global(
+                "delete_pairing_required_issue",
+                new_callable=AsyncMock,
+            ),
+            patch.object(coordinator, "async_disconnect", new_callable=AsyncMock) as disconnect,
+            pytest.raises(BleakError),
+        ):
+            await coordinator.async_execute_controller_command(
+                _auth_failure_command, cancel_running=False
+            )
+
+        client.pair.assert_awaited_once_with()
+        disconnect.assert_not_awaited()
+        create_issue.assert_not_awaited()
+        assert coordinator._client is client
+        assert coordinator._ble_bond_established is True
+        assert coordinator._last_bond_verification["status"] == "encrypted_in_place"
 
         await coordinator.async_disconnect()
 

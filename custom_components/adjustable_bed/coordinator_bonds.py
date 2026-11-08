@@ -23,7 +23,11 @@ from .address_lock import async_get_connect_lock
 from .beds.vibradorm.app_state import ControlType
 from .ble_auth import is_ble_authentication_error as _is_ble_authentication_error
 from .ble_auth import is_ble_pairing_auth_failure
-from .bluetooth_transport import TransportClass, async_clear_proxy_gatt_cache
+from .bluetooth_transport import (
+    TransportClass,
+    async_clear_proxy_gatt_cache,
+    is_esphome_proxy_path,
+)
 from .bond_verification import (
     CONF_BLE_BOND_CONTEXT,
     BondEvidence,
@@ -477,7 +481,68 @@ class CoordinatorBondsMixin:
             and self._pairing_supported is not False
             and self._client is not None
             and self._client.is_connected
+        ) or self._can_encrypt_proxy_link_in_place()
+
+    def _can_encrypt_proxy_link_in_place(self: AdjustableBedCoordinator) -> bool:
+        """Return True when an unpaired ESPHome proxy link should pair in place.
+
+        The issue #709 mechanism is not specific to one-connection beds. Any
+        pairing-required bed that reconnects through an ESP32 proxy without
+        ``pair=True`` comes up unencrypted although bed and proxy still hold
+        the bond, and every encrypted characteristic then fails with GATT
+        error 5. Dropping that link and reconnecting with ``pair=True`` asks
+        the bed for a fresh bond, which it refuses outside its pairing window,
+        so the bed only worked until the next disconnect. Pairing the live
+        link reuses the stored keys instead.
+
+        Limited to ESPHome proxies: BlueZ raises link security on its own, and
+        its pair call on a bonded device is a different operation. Beds with
+        their own bond handling (Sleep Number, the Vibradorm app) and the
+        one-connection beds, which keep their existing path, are excluded.
+        """
+        return (
+            not grants_one_connection_per_pairing_window(self._bed_type, self._protocol_variant)
+            and requires_pairing(self._bed_type, self._protocol_variant)
+            and self._bed_type not in (BED_TYPE_SLEEP_NUMBER, BED_TYPE_VIBRADORM_APP)
+            and not self._attempt_used_pairing
+            and self._pairing_supported is not False
+            and self._client is not None
+            and self._client.is_connected
+            and is_esphome_proxy_path(self._connection_path)
         )
+
+    async def _async_pair_proxy_link_in_place(
+        self: AdjustableBedCoordinator, pairing_details: dict[str, Any] | None = None
+    ) -> bool:
+        """Pair an unpaired ESPHome proxy link without dropping it.
+
+        The caller must hold ``self._lock``. Returns True when the pair call
+        completed; a refusal, a dropped link or any other failure returns
+        False and leaves recovery to the usual authentication handling.
+        """
+        details = pairing_details if pairing_details is not None else {}
+        details["in_place_pairing"] = "attempted"
+        try:
+            paired = await self._async_pair_on_live_link(details)
+        except Exception as err:  # noqa: BLE001 - recovery continues in the caller
+            details["in_place_pairing"] = "failed"
+            details["in_place_pairing_error"] = str(err)
+            _LOGGER.warning(
+                "Could not pair the live proxy link to %s in place (%s); "
+                "falling back to reconnecting with pairing",
+                self._address,
+                err,
+            )
+            return False
+        if not paired or self._client is None or not self._client.is_connected:
+            details["in_place_pairing"] = "failed"
+            return False
+        details["in_place_pairing"] = "succeeded"
+        _LOGGER.info(
+            "Paired the live proxy link to %s in place with its existing bond",
+            self._address,
+        )
+        return True
 
     async def _async_encrypt_link_in_place(self: AdjustableBedCoordinator) -> bool:
         """Pair the retained live link; raise the repair only if the bed refuses."""
@@ -505,6 +570,22 @@ class CoordinatorBondsMixin:
             self._last_bond_evidence = None
             self._record_bond_verification("encrypted_in_place")
             await delete_pairing_required_issue(self.hass, self._address)
+            return True
+
+    async def _async_encrypt_proxy_link_in_place(self: AdjustableBedCoordinator) -> bool:
+        """Pair an unpaired proxy link after a runtime auth failure.
+
+        Unlike :meth:`_async_encrypt_link_in_place`, a failure raises no
+        repair: the caller then runs the normal authentication handling, which
+        drops the link, clears the marker and raises the repair.
+        """
+        async with self._lock:
+            if not self._can_encrypt_proxy_link_in_place():
+                return False
+            if not await self._async_pair_proxy_link_in_place():
+                return False
+            await self._async_record_verified_bond()
+            self._record_bond_verification("encrypted_in_place")
             return True
 
     async def _async_raise_pairing_issue(self: AdjustableBedCoordinator) -> None:
@@ -1000,6 +1081,15 @@ class CoordinatorBondsMixin:
             else:
                 await asyncio.wait_for(client.read_gatt_char(probe_uuid), DEVICE_INFO_READ_TIMEOUT)
         except BleakError as err:
+            if _is_ble_authentication_error(err) and self._can_encrypt_proxy_link_in_place():
+                # An unpaired proxy reconnect to a bonded bed: pair this link
+                # with the stored keys before giving it up (issue #709).
+                result, reprobe_error = await self._async_verify_after_proxy_pairing(
+                    probe_uuid, attempt_details
+                )
+                if result is not None:
+                    return result
+                err = reprobe_error or err
             if _is_ble_authentication_error(err):
                 # We run inside _async_connect_locked, which holds self._lock —
                 # disconnect via the lock-free path to avoid a deadlock.
@@ -1048,6 +1138,41 @@ class CoordinatorBondsMixin:
             return True
 
         return await self._async_record_verified_bond(attempt_details)
+
+    async def _async_verify_after_proxy_pairing(
+        self: AdjustableBedCoordinator,
+        probe_uuid: str,
+        attempt_details: dict[str, Any] | None,
+    ) -> tuple[bool | None, BleakError | None]:
+        """Pair an unencrypted proxy link in place, then repeat the bond probe.
+
+        Returns ``(True, None)`` when the link is bonded now. Otherwise the
+        result is None and the caller falls back to the usual authentication
+        handling, using the repeated probe's auth error when there is one.
+        """
+        pairing_details = (
+            attempt_details.setdefault("pairing", {}) if attempt_details is not None else {}
+        )
+        if not await self._async_pair_proxy_link_in_place(pairing_details):
+            return None, None
+        client = self._client
+        if client is None or not client.is_connected:
+            return None, None
+        try:
+            await asyncio.wait_for(client.read_gatt_char(probe_uuid), DEVICE_INFO_READ_TIMEOUT)
+        except BleakError as err:
+            if _is_ble_authentication_error(err):
+                return None, err
+            # The pair call completed, so the link is encrypted; the repeated
+            # read only failed for an unrelated reason.
+            self._record_bond_verification("inconclusive_error", err, attempt_details)
+            return True, None
+        except (TimeoutError, OSError) as err:
+            self._record_bond_verification("timed_out", err, attempt_details)
+            return True, None
+        verified = await self._async_record_verified_bond(attempt_details)
+        self._record_bond_verification("encrypted_in_place", attempt_details=attempt_details)
+        return verified, None
 
     async def _async_record_verified_bond(
         self: AdjustableBedCoordinator, attempt_details: dict[str, Any] | None = None
