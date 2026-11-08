@@ -73,6 +73,55 @@ async def test_optional_request_outcome_retains_link_and_never_asserts_bond(hass
     assert ctrl._furnimove_bond_task is None
 
 
+@pytest.mark.parametrize("error,declined", [
+    (None, False), (NotImplementedError(), False),
+    (TimeoutError(), True), (BleakError("org.bluez.Error.AuthenticationCanceled"), True),
+])
+async def test_rejected_request_is_not_repeated_on_later_connections(hass, error, declined):
+    """#633: a receiver that rejects pairing drops the BlueZ link each time."""
+    ctrl = coordinator(hass)
+    ctrl._client.pair.side_effect = error
+    device = BLEDevice(ctrl.address, "OKIN-560024", {})
+    ctrl._start_furnimove_bond_request(device)
+    await ctrl._furnimove_bond_task
+    await ctrl._async_cancel_furnimove_bond_request()
+    ctrl._client.pair.reset_mock()
+
+    ctrl._start_furnimove_bond_request(device)
+    if declined:
+        assert ctrl._furnimove_bond_task is None
+        ctrl._client.pair.assert_not_awaited()
+        assert ctrl.pairing_diagnostics["furnimove_bond_request"]["reason"] == "previously_declined"
+    else:
+        await ctrl._furnimove_bond_task
+        ctrl._client.pair.assert_awaited_once()
+    await ctrl._async_cancel_furnimove_bond_request()
+
+
+@pytest.mark.parametrize("intentional", [False, True])
+async def test_link_loss_during_request_skips_it_on_later_connections(hass, intentional):
+    ctrl = coordinator(hass)
+    started = asyncio.Event()
+
+    async def pair():
+        started.set()
+        await asyncio.Event().wait()
+
+    ctrl._client.pair.side_effect = pair
+    device = BLEDevice(ctrl.address, "OKIN-560024", {})
+    ctrl._start_furnimove_bond_request(device)
+    await started.wait()
+    ctrl._connecting = True  # Keep the callback to its bond-request handling.
+    ctrl._intentional_disconnect = intentional
+    ctrl._on_disconnect(ctrl._client)
+    await ctrl._async_cancel_furnimove_bond_request()
+    ctrl._intentional_disconnect = False
+
+    ctrl._start_furnimove_bond_request(device)
+    assert (ctrl._furnimove_bond_task is None) is not intentional
+    await ctrl._async_cancel_furnimove_bond_request()
+
+
 async def test_slow_request_is_background_owned_and_joined_on_cancellation(hass):
     ctrl = coordinator(hass)
     entered = asyncio.Event()

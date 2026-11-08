@@ -437,6 +437,9 @@ class AdjustableBedCoordinator:
         self._observed_ble_device_name: str | None = None
         self._furnimove_bond_task: asyncio.Task[None] | None = None
         self._furnimove_bond_request: dict[str, object] = {"status": "not_requested"}
+        # Set once a receiver rejects, ignores or drops the link during the
+        # advisory bond request; later connections skip it (#633).
+        self._furnimove_bond_declined = False
         self._malouf_layout: str = entry.data.get(CONF_MALOUF_LAYOUT, MALOUF_LAYOUT_AUTO)
         self._malouf_memory_slots: int = int(
             entry.data.get(CONF_MALOUF_MEMORY_SLOTS, MALOUF_MEMORY_SLOTS_AUTO)
@@ -3458,6 +3461,11 @@ class AdjustableBedCoordinator:
         Android requests createBond and immediately connects. Bleak needs a live
         link, so this backend adaptation requests it after GATT discovery while
         controller startup continues. A completed request is not bond proof.
+
+        On BlueZ a rejected request can tear the link down, which Android's
+        createBond does not do. After one rejection, timeout or link loss, later
+        connections skip the request so control is not lost to it on every
+        connect (#633).
         """
         if self._bed_type != BED_TYPE_FURNIMOVE:
             return
@@ -3470,6 +3478,8 @@ class AdjustableBedCoordinator:
             reason = "okinmat_name"
         elif self._device_reports_existing_bond(device):
             reason = "existing_os_bond"
+        elif self._furnimove_bond_declined:
+            reason = "previously_declined"
         else:
             reason = "request"
         self._furnimove_bond_request = {"status": "not_requested", "reason": reason}
@@ -3495,6 +3505,8 @@ class AdjustableBedCoordinator:
             except Exception as err:  # Optional pairing must not interrupt ordinary control.
                 status, error = "failed", err
             finally:
+                if status in ("failed", "timed_out"):
+                    self._furnimove_bond_declined = True
                 if client is self._client:
                     self._furnimove_bond_request["status"] = status
                     if error is not None:
@@ -4964,6 +4976,9 @@ class AdjustableBedCoordinator:
             return
 
         if self._furnimove_bond_task is not None:
+            if not self._furnimove_bond_task.done() and not self._intentional_disconnect:
+                # The link dropped while the request was pending.
+                self._furnimove_bond_declined = True
             self._furnimove_bond_task.cancel()
 
         # Invalidate connection-owned work even during Bleak initialization retries.
