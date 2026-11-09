@@ -73,6 +73,16 @@ start of each write. Awaiting a confirmed write and then sleeping 100 ms adds
 the BLE round trip to every gap, which repeatedly crosses the watchdog over a
 WiFi Bluetooth proxy and makes the motor stop and restart.
 
+Unconfirmed writes cannot hide packet loss on a proxy's WiFi. Every frame
+crosses that hop as a TCP packet, so one lost packet holds back all later
+frames until TCP resends it, usually past the watchdog. Long held moves then
+stop and restart ([#916](https://github.com/kristofferR/ha-adjustable-bed/issues/916)).
+A faster cadence does not help, because queued frames still wait for the lost
+one, so the stream keeps the app's 100 ms interval. A frame loop running next
+to the bed showed no late frames on similar or weaker radio links. Use an
+Ethernet proxy or a Bluetooth adapter on the Home Assistant host when the
+proxy's WiFi is weak.
+
 ### Pairing
 
 - Required. Neither app calls `createBond`, but the write characteristic needs
