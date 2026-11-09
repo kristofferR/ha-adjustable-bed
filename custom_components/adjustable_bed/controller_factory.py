@@ -323,6 +323,8 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
 # Bed types whose controller needs the variant, entry data, the advertisement
 # or the live GATT table. Each builder lives in its bed module.
 _BUILDERS: Final[dict[str, _BuilderSpec]] = {
+    "smart_comfort_synargy": _BuilderSpec("smart_comfort.controller"),
+    "smart_comfort_synergy": _BuilderSpec("smart_comfort.controller"),
     **dict.fromkeys(RICHMAT_MH_APPS, _BuilderSpec("richmat_mh.controller")),
     BED_TYPE_ADJUSTABLE_LUMBAR: _BuilderSpec("adjustable_lumbar"),
     BED_TYPE_ADJUSTAMATTRESS: _BuilderSpec("adjustamattress.controller"),

@@ -641,6 +641,8 @@ BED_TYPE_SBI: Final = "sbi"  # SBI/Q-Plus (Costco) with position feedback
 BED_TYPE_SUTA: Final = "suta"  # SUTA Smart Home AT protocol (ASCII + CRLF)
 BED_TYPE_TIMOTION_AHF: Final = "timotion_ahf"  # TiMOTION AHF 11-byte bitmask protocol
 BED_TYPE_ISLEEP: Final = "isleep"
+BED_TYPE_SMART_COMFORT_SYNARGY: Final = "smart_comfort_synargy"
+BED_TYPE_SMART_COMFORT_SYNERGY: Final = "smart_comfort_synergy"
 BED_TYPE_KAIDI: Final = "kaidi"  # Kaidi custom mesh-over-GATT protocol (Rize/Floyd/ISleep)
 BED_TYPE_LOGICDATA_APP: Final = "logicdata_app"
 # Sleep Smart Air Mattress pump: a separate BLE device on the shared ffe0 service.
@@ -823,6 +825,8 @@ SUPPORTED_BED_TYPES: Final = [
     # Kaidi (Rize/Floyd/ISleep)
     BED_TYPE_KAIDI,
     BED_TYPE_ISLEEP,
+    BED_TYPE_SMART_COMFORT_SYNARGY,
+    BED_TYPE_SMART_COMFORT_SYNERGY,
     # Logicdata SimplicityFrame (SILVERmotion)
     BED_TYPE_LOGICDATA,
     BED_TYPE_LOGICDATA_APP,

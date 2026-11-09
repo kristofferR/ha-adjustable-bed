@@ -619,6 +619,8 @@ Report workspaces are machine-local under
 
 | Key | Package | Version | Status | Workspace under `phase4-early/` |
 |---|---|---|---|---|
+| smart-comfort-synargy | `com.synargy.okin` | 1.1.0 (12) | COMPLETE, accepted | `com.synargy.okin-1.1.0-2026-11-09-queue002/` |
+| smart-comfort-synergy | `com.synergy.okin` | 2.2.0 (16) | COMPLETE, accepted | `com.synergy.okin-2.2.0-2026-11-09-queue002/` |
 | abm5_4 | `com.starcode.abm5_4` | 1.0.1 | COMPLETE | `com.starcode.abm5_4-1.0.1-2026-09-30-extra-four-004-005/report/` |
 | abm5_5 | `com.starcode.abm5_5` | 1.2.3 | COMPLETE | `com.starcode.abm5_5-1.2.3-2026-09-30-extra-four-005-005/report/` |
 | adjlite | `com.keeson.adjustablelite` | 1.0.2 | COMPLETE | `com.keeson.adjustablelite-1.0.2-2026-10-01-queue-e0bb6807-20261001-051-003/report/` |
@@ -764,3 +766,12 @@ its APK Protocol Audit report, named here by its file stem:
 | row121 | audit ledger `row121-hjbed` |
 | row126 | audit ledger `row126-hush-base` |
 | svane-guide | [svane.md](../beds/svane.md) |
+
+### Smart Comfort seat controls
+
+Both accepted apps stream six motor directions and Home at 100 ms and release
+with a seat-scoped zero command after 100 ms. The integration captures the seat
+and release command, cancels refresh on disconnect, and does not retain the
+apps' mutable release race. No concurrent commands, watchdog interval or speed
+selection is proven. Memories are one-shot prepare then recall/save, outside
+the held controls. See [Smart Comfort](../beds/smart-comfort.md).

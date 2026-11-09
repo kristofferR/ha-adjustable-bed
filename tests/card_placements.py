@@ -152,6 +152,9 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
         _APP_STATE_FIELDS_BY_SELECTOR,
         SleepysEliteAppController,
     )
+    from custom_components.adjustable_bed.beds.smart_comfort.controller import (
+        SmartComfortController,
+    )
     from custom_components.adjustable_bed.beds.starcode.abm5_4 import (
         _POSITIVE_SELECTORS,
         StarcodeAbm5_4Controller,
@@ -187,6 +190,8 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
         elif isinstance(controller, StarcodeAbm5_4Controller):
             for selector in _POSITIVE_SELECTORS:
                 yield variant(controller, command_selector=selector)
+        elif isinstance(controller, SmartComfortController):
+            yield variant(controller, _model=0x89, _flags=(7, 7, 7), _ready=True)
         elif isinstance(controller, RufRichmatController):
             yield variant(controller, _normal_ready=True)
 

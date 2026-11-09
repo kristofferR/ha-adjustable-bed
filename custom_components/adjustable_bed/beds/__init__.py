@@ -102,6 +102,7 @@ if TYPE_CHECKING:
     from .sleeptracker.controller import SleeptrackerController as SleeptrackerController
     from .sleepys.box25 import SleepysBox25Controller as SleepysBox25Controller
     from .sleepys.box25 import SleepysBox25LegacyController as SleepysBox25LegacyController
+    from .smart_comfort.controller import SmartComfortController as SmartComfortController
     from .solace.controller import SolaceController as SolaceController
     from .starcode.abm5_4 import StarcodeAbm5_4Controller as StarcodeAbm5_4Controller
     from .starcode.m5x5 import StarcodeM5X5Controller as StarcodeM5X5Controller
@@ -166,6 +167,7 @@ _EXPORT_MODULES = {
     "ComfortMotionController": "comfort_motion",
     "JiecangController": "jiecang.controller",
     "JiecangAppController": "jiecang.app",
+    "SmartComfortController": "smart_comfort.controller",
     "IsleepController": "isleep",
     "KaidiController": "kaidi.controller",
     "KeesonController": "keeson.controller",
@@ -288,6 +290,7 @@ __all__ = [
     "SolaceController",
     "SvaneController",
     "SutaController",
+    "SmartComfortController",
     "TiMOTIONAhfController",
     "VibradormController",
     "VibradormAppController",

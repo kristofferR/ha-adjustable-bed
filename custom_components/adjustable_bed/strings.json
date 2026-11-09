@@ -2852,6 +2852,33 @@
       },
       "ruf_richmat_lift_down": {
         "name": "Lift Down"
+      },
+      "smart_comfort_home": {
+        "name": "Home"
+      },
+      "smart_comfort_base_on": {
+        "name": "Base light on"
+      },
+      "smart_comfort_base_off": {
+        "name": "Base light off"
+      },
+      "smart_comfort_cup_on": {
+        "name": "Cup holder on"
+      },
+      "smart_comfort_cup_off": {
+        "name": "Cup holder off"
+      },
+      "smart_comfort_read_on": {
+        "name": "Reading light on"
+      },
+      "smart_comfort_read_off": {
+        "name": "Reading light off"
+      },
+      "smart_comfort_reclining_up": {
+        "name": "Reclining up"
+      },
+      "smart_comfort_reclining_down": {
+        "name": "Reclining down"
       }
     },
     "cover": {
@@ -3100,6 +3127,9 @@
       },
       "ruf_richmat_lift": {
         "name": "Lift"
+      },
+      "smart_comfort_reclining": {
+        "name": "Reclining"
       }
     },
     "sensor": {
@@ -4476,6 +4506,18 @@
       },
       "ruf_richmat_music_status": {
         "name": "Bed audio status"
+      },
+      "smart_comfort_model": {
+        "name": "Smart Comfort model code"
+      },
+      "smart_comfort_counter_1": {
+        "name": "Feedback counter 1 (raw)"
+      },
+      "smart_comfort_counter_2": {
+        "name": "Feedback counter 2 (raw)"
+      },
+      "smart_comfort_counter_3": {
+        "name": "Feedback counter 3 (raw)"
       }
     },
     "light": {
@@ -4782,6 +4824,12 @@
       },
       "ergomotion4_light": {
         "name": "Reported light state"
+      },
+      "smart_comfort_read": {
+        "name": "Reading light (group report)"
+      },
+      "smart_comfort_cup": {
+        "name": "Cup holder (group report)"
       }
     },
     "number": {
@@ -5021,6 +5069,9 @@
       },
       "tv_lift_position_estimated": {
         "name": "TV lift position (estimated)"
+      },
+      "smart_comfort_read_brightness": {
+        "name": "Reading light brightness"
       }
     },
     "select": {
@@ -5671,6 +5722,14 @@
         "state": {
           "off": "Off",
           "on": "On"
+        }
+      },
+      "smart_comfort_seat": {
+        "name": "Logical seat",
+        "state": {
+          "0": "Address 0",
+          "1": "Address 1",
+          "2": "Address 2"
         }
       }
     },

@@ -269,6 +269,8 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_HJBED: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_GLIDEAWAY_MOTION: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_ISLEEP: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
+    "smart_comfort_synargy": _APP_DEFINED,
+    "smart_comfort_synergy": _APP_DEFINED,
     BED_TYPE_BEDSENSE: frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
     BED_TYPE_SERENITY: _FIXED_LAYOUT,
     BED_TYPE_TRANQUIL: _FIXED_LAYOUT,
@@ -617,6 +619,11 @@ def _logicdata_questions(
 
 
 _DECLARED: Final[dict[str, SetupProfile]] = {
+    **dict.fromkeys(("smart_comfort_synargy", "smart_comfort_synergy"), SetupProfile(owns={
+        CONF_MOTOR_COUNT: 3, CONF_HAS_MASSAGE: False,
+        CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_COUNT: 10,
+        CONF_MOTOR_PULSE_DELAY_MS: 100, CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
+    })),
     # The family step asks the app; the app's layout sets the axes and its own
     # cadence, and none of these apps reports positions.
     BED_TYPE_JIECANG_APP: SetupProfile(

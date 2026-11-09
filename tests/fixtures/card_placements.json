@@ -212,6 +212,12 @@
  "binary_sensor:sleeptracker_wind_down_running": {
   "card_section": "massage"
  },
+ "binary_sensor:smart_comfort_cup": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:smart_comfort_read": {
+  "card_section": "hidden"
+ },
  "binary_sensor:solace_alarm_enabled": {
   "card_section": "hidden"
  },
@@ -1519,6 +1525,37 @@
  "button:sleepys_app_voice_stop": {
   "card_section": "utility"
  },
+ "button:smart_comfort_base_off": {
+  "card_section": "lighting"
+ },
+ "button:smart_comfort_base_on": {
+  "card_section": "lighting"
+ },
+ "button:smart_comfort_cup_off": {
+  "card_section": "lighting"
+ },
+ "button:smart_comfort_cup_on": {
+  "card_section": "lighting"
+ },
+ "button:smart_comfort_home": {
+  "card_section": "presets"
+ },
+ "button:smart_comfort_read_off": {
+  "card_section": "lighting"
+ },
+ "button:smart_comfort_read_on": {
+  "card_section": "lighting"
+ },
+ "button:smart_comfort_reclining_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "smart_comfort_reclining"
+ },
+ "button:smart_comfort_reclining_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "smart_comfort_reclining"
+ },
  "button:solace_music_off": {
   "card_section": "utility"
  },
@@ -2072,6 +2109,10 @@
   "card_section": "motors",
   "card_motor": "ruf_richmat_mattress_right_pillow"
  },
+ "cover:smart_comfort_reclining": {
+  "card_section": "motors",
+  "card_motor": "smart_comfort_reclining"
+ },
  "cover:stair": {
   "card_section": "motors",
   "card_motor": "stair"
@@ -2325,6 +2366,9 @@
  "number:sleepys_app_target_axis_2": {
   "card_section": "utility"
  },
+ "number:smart_comfort_read_brightness": {
+  "card_section": "lighting"
+ },
  "number:starcode_abm5_4_light_level": {
   "card_section": "lighting",
   "card_role": "level"
@@ -2550,6 +2594,9 @@
  },
  "select:sleepys_app_massage_timer_code": {
   "card_section": "massage"
+ },
+ "select:smart_comfort_seat": {
+  "card_section": "utility"
  },
  "select:starcode_abm5_4_massage_timer": {
   "card_section": "massage",
@@ -3465,6 +3512,18 @@
  },
  "sensor:sleepys_app_position_axis_2": {
   "card_section": "utility"
+ },
+ "sensor:smart_comfort_counter_1": {
+  "card_section": "hidden"
+ },
+ "sensor:smart_comfort_counter_2": {
+  "card_section": "hidden"
+ },
+ "sensor:smart_comfort_counter_3": {
+  "card_section": "hidden"
+ },
+ "sensor:smart_comfort_model": {
+  "card_section": "hidden"
  },
  "sensor:solace_audio_volume": {
   "card_section": "hidden"

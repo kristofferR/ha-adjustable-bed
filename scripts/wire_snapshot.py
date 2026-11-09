@@ -1249,6 +1249,8 @@ def default_scenario(bed_type: str) -> Scenario:
         # A provisioned broadcast advertisement carrying the room ID (tests/test_kaidi.py).
         kwargs = {"manufacturer_data": {0xFFFF: bytes.fromhex(KAIDI_BROADCAST % "81")}}
         replies = {"write:01160178563412": "021600"}  # join accepted
+    if bed_type in {"smart_comfort_synargy", "smart_comfort_synergy"}:
+        replies = {"write:a0b156": "a0b15689070707ba"}
     return Scenario(
         id=bed_type,
         bed_type=bed_type,
@@ -1674,6 +1676,10 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         discovery = controller.async_discover_capabilities()
         if inspect.isawaitable(discovery):
             await discovery
+        if controller._coordinator.bed_type in {"smart_comfort_synargy", "smart_comfort_synergy"}:
+            # These v5 profiles own startup in their hook, without session helpers.
+            await controller.async_on_connect(None)
+            return
         await controller.start_notify(lambda *_: None)
         for hook in STARTUP_HOOKS.get(controller._coordinator.bed_type, ()):  # noqa: SLF001
             if hasattr(controller, hook):

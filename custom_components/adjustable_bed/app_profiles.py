@@ -158,6 +158,8 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_HJBED: SideProfile("HJBed", variant_owned=True),
     BED_TYPE_GLIDEAWAY_MOTION: SideProfile("Glideaway Motion", variant_owned=True),
     BED_TYPE_ISLEEP: SideProfile("ISleep"),
+    "smart_comfort_synargy": SideProfile("Smart Comfort by SYNARGY"),
+    "smart_comfort_synergy": SideProfile("Smart Comfort"),
     BED_TYPE_BEDSENSE: SideProfile("BedSense", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
     BED_TYPE_FSM_RELAX: SideProfile("FSM Relax"),
     BED_TYPE_LIMOSS_REMOTE: SideProfile("Limoss Remote"),

@@ -513,6 +513,8 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
 # are NOT included here - they're only kept for backward compatibility with
 # existing config entries. New users should select the protocol-based equivalents.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
+    "smart_comfort_synargy": "Smart Comfort by SYNARGY (com.synargy.okin)",
+    "smart_comfort_synergy": "Smart Comfort (com.synergy.okin)",
     # v5 names the RUF and Richmat apps like the other Richmat MH apps.
     **{
         bed_type: f"{name} app (Richmat)"

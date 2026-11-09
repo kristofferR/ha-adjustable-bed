@@ -56,6 +56,18 @@ The standalone `svane` bed type builds its JMC400 route and both of its routes'
 lamp frames through `codec/jmc.py`, from the Svane Remote profile; its default
 route writes LinonPI frames, so its controller is not a profile over the codec.
 
+## Smart Comfort seat codec
+
+The accepted cluster-024 SYNARGY and SYNERGY literals are reproduced by
+`codec/smart_comfort.py`, with independent profiles in `profiles/smart_comfort.py`.
+Keeson's checked E5 carrier can reproduce the outer motor envelope, but its key
+word semantics do not cover seat-scoped accessory groups, BGR/mask color fields,
+A0/B1 queries or the three replies. Okin N-frame does not encode this payload.
+No existing codec reproduces every relevant command and response format, so this
+family owns its encoders and parser. `tests/test_smart_comfort.py` verifies both
+members' frozen literals, rather than selecting a family by UUID or brand.
+See the [Smart Comfort guide](../beds/smart-comfort.md).
+
 ## Registering a family
 
 A family registers itself in files it owns, so parallel family PRs do not touch
