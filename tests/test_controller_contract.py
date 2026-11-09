@@ -385,7 +385,7 @@ async def test_factory_resolves_every_supported_bed_type(bed_type: str) -> None:
 # Overrides that narrow position feedback once discovery or the advertised model
 # shows which axes report. They may only withhold what the record declares.
 _RUNTIME_NARROWED_FEEDBACK = frozenset(
-    {"LinakController", "ReveriePairlinkController", "SleepNumberMcrController"}
+    {"LinakController", "ParamountController", "ReveriePairlinkController", "SleepNumberMcrController"}
 )
 # Automatic routes the factory can only resolve from a live advertisement.
 _LIVE_ONLY_ROUTES = frozenset({(const.BED_TYPE_DOUBLESLEEP, VARIANT_AUTO)})

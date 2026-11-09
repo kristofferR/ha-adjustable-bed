@@ -2852,6 +2852,12 @@
       },
       "ruf_richmat_lift_down": {
         "name": "Lift Down"
+      },
+      "paramount_gearing_up": {
+        "name": "Linked motion up"
+      },
+      "paramount_gearing_down": {
+        "name": "Linked motion down"
       }
     },
     "cover": {
@@ -3100,6 +3106,9 @@
       },
       "ruf_richmat_lift": {
         "name": "Lift"
+      },
+      "paramount_gearing": {
+        "name": "Linked motion"
       }
     },
     "sensor": {
@@ -4476,6 +4485,27 @@
       },
       "ruf_richmat_music_status": {
         "name": "Bed audio status"
+      },
+      "paramount_capabilities": {
+        "name": "Capabilities"
+      },
+      "paramount_height": {
+        "name": "Bed height"
+      },
+      "paramount_tilt": {
+        "name": "Tilt (raw)"
+      },
+      "paramount_rssi": {
+        "name": "Bed reply signal strength"
+      },
+      "paramount_serial": {
+        "name": "Serial identifier"
+      },
+      "paramount_session_state": {
+        "name": "Session state"
+      },
+      "paramount_registration_result": {
+        "name": "Registration result"
       }
     },
     "light": {
@@ -5021,6 +5051,30 @@
       },
       "tv_lift_position_estimated": {
         "name": "TV lift position (estimated)"
+      },
+      "paramount_head_min": {
+        "name": "Head minimum"
+      },
+      "paramount_head_max": {
+        "name": "Head maximum"
+      },
+      "paramount_legs_min": {
+        "name": "Legs minimum"
+      },
+      "paramount_legs_max": {
+        "name": "Legs maximum"
+      },
+      "paramount_height_min": {
+        "name": "Height minimum"
+      },
+      "paramount_height_max": {
+        "name": "Height maximum"
+      },
+      "paramount_gearing_min": {
+        "name": "Linked motion minimum"
+      },
+      "paramount_gearing_max": {
+        "name": "Linked motion maximum"
       }
     },
     "select": {
@@ -5671,6 +5725,65 @@
         "state": {
           "off": "Off",
           "on": "On"
+        }
+      },
+      "paramount_speed": {
+        "name": "Bed speed",
+        "state": {
+          "slow": "Slow",
+          "fast": "Fast"
+        }
+      },
+      "paramount_call_prohibition": {
+        "name": "Physical call button",
+        "state": {
+          "allowed": "Allowed",
+          "prohibited": "Prohibited"
+        }
+      },
+      "paramount_switch_prohibition": {
+        "name": "Physical bed switches",
+        "state": {
+          "allowed": "Allowed",
+          "prohibited": "Prohibited"
+        }
+      },
+      "paramount_duration": {
+        "name": "Tap movement duration",
+        "state": {
+          "hold": "Hold",
+          "1": "1 second",
+          "2": "2 seconds",
+          "3": "3 seconds",
+          "4": "4 seconds"
+        }
+      },
+      "paramount_head_range": {
+        "name": "Head movement",
+        "state": {
+          "enabled": "Enabled",
+          "disabled": "Disabled"
+        }
+      },
+      "paramount_legs_range": {
+        "name": "Legs movement",
+        "state": {
+          "enabled": "Enabled",
+          "disabled": "Disabled"
+        }
+      },
+      "paramount_height_range": {
+        "name": "Height movement",
+        "state": {
+          "enabled": "Enabled",
+          "disabled": "Disabled"
+        }
+      },
+      "paramount_gearing_range": {
+        "name": "Linked motion movement",
+        "state": {
+          "enabled": "Enabled",
+          "disabled": "Disabled"
         }
       }
     },

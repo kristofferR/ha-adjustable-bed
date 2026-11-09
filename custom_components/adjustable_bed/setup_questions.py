@@ -277,6 +277,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     **dict.fromkeys(RICHMAT_MH_BED_TYPES, _FIXED_LAYOUT),
     "richmat_sleep_receiver": _FIXED_LAYOUT,
     BED_TYPE_LOGICDATA_AIR_PUMP: _FIXED_LAYOUT,
+    "paramount": GENERIC_FIELDS,
     # AHF has no massage. Motor count still sizes the legacy covers.
     BED_TYPE_TIMOTION_AHF: frozenset({CONF_HAS_MASSAGE}),
     # These apps always show their massage page.

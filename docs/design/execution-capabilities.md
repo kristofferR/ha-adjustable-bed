@@ -83,6 +83,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `tranquil` | S stream | U | U | tranquil | recognized masks only |
 | `adjustable_lumbar` (both routes) | S stream | U | U | lumbar | unsupported chord only stops |
 | `eshine_okin` (E2000, E3000/E3100, E5000) | S stream | U | U | eshine-okin | held keys write at once, refresh every 300 ms with no fixed count, STOP 200 ms after release; hold declared. Single-touch coordination excludes a second movement control; the one multi-touch path, Flat+Zero Gravity, is a fixed frame either release stops. None of its 25 constructors sets a speed |
+| `paramount` | S stream | U | S | paramount | One reply-driven held action, neutral on release. Speed is a bed-wide setting, not per-command speed. |
 | `simmons` (all routes) | S stream | U | U | simmons | one held action |
 | `starcode_abm5_4` | S stream | U | U | abm5_4 | one held action |
 | `starcode_m1x12` | S stream | U | U | m1x12 | no bitmask combination; hold declared |
@@ -619,6 +620,7 @@ Report workspaces are machine-local under
 
 | Key | Package | Version | Status | Workspace under `phase4-early/` |
 |---|---|---|---|---|
+| paramount | `com.paramount.bedcontrol` | 3.0.4 | COMPLETE | `com.paramount.bedcontrol-3.0.4-2026-11-09-queue002/report/` |
 | abm5_4 | `com.starcode.abm5_4` | 1.0.1 | COMPLETE | `com.starcode.abm5_4-1.0.1-2026-09-30-extra-four-004-005/report/` |
 | abm5_5 | `com.starcode.abm5_5` | 1.2.3 | COMPLETE | `com.starcode.abm5_5-1.2.3-2026-09-30-extra-four-005-005/report/` |
 | adjlite | `com.keeson.adjustablelite` | 1.0.2 | COMPLETE | `com.keeson.adjustablelite-1.0.2-2026-10-01-queue-e0bb6807-20261001-051-003/report/` |
