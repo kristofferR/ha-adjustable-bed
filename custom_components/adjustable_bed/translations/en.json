@@ -2852,6 +2852,9 @@
       },
       "ruf_richmat_lift_down": {
         "name": "Lift Down"
+      },
+      "adjustable_bed_speech": {
+        "name": "App speech: {action}"
       }
     },
     "cover": {

@@ -147,6 +147,7 @@ from .bond_verification import (
 )
 from .const import (
     ADAPTER_AUTO,
+    BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_BEDSENSE,
     BED_TYPE_CUSTOMATIC_CLARITY,
@@ -1274,7 +1275,7 @@ def _motor_count_options(
         BED_TYPE_LOGICDATA_AIR_PUMP,
     }:
         return [2]
-    if bed_type in {BED_TYPE_CUSTOMATIC_REMEDY, BED_TYPE_ADJUSTABLE_LUMBAR}:
+    if bed_type in {BED_TYPE_CUSTOMATIC_REMEDY, BED_TYPE_ADJUSTABLE_LUMBAR, BED_TYPE_ADJUSTABLE_BED}:
         return [3]
     if bed_type in RICHMAT_MH_BED_TYPES:
         # The selected app model's catalog fixes the axes; the count is unused.

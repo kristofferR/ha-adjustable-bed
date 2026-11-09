@@ -248,6 +248,9 @@
  "binary_sensor:vmatbasic_ed": {
   "card_section": "hidden"
  },
+ "button:adjustable_bed_speech": {
+  "card_section": "utility"
+ },
  "button:adjustable_lumbar_check_massage": {
   "card_section": "utility"
  },

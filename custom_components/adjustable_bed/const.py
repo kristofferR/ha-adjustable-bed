@@ -528,6 +528,7 @@ ZSERIES_PULSE_COUNT_RANGE: Final = (1, 600)
 BED_TYPE_SIMMONS: Final = "simmons"  # Explicit SIMMONS app profile (com.okin.simmons)
 # Explicit Adjustable bed (Lumbar) app profile (com.okin.bedding.adjustablelumbar)
 BED_TYPE_ADJUSTAMATTRESS: Final = "adjustamattress"
+BED_TYPE_ADJUSTABLE_BED: Final = "adjustable_bed"
 BED_TYPE_ADJUSTABLE_LUMBAR: Final = "adjustable_lumbar"
 # Explicit Richmat MH app profiles (row055): one shared library, five catalogs.
 BED_TYPE_HUSH_BASE: Final = "hush_base"
@@ -740,6 +741,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_TRANQUIL,
     BED_TYPE_SIMMONS,
     BED_TYPE_ADJUSTAMATTRESS,
+    BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_ESHINE,
@@ -894,6 +896,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         # chooses a protocol when the variant leaves it on auto.
         BED_TYPE_SIMMONS,
         # Controls are identical for all three tables; only the live link picks one.
+        BED_TYPE_ADJUSTABLE_BED,
         BED_TYPE_ADJUSTABLE_LUMBAR,
         BED_TYPE_ESHINE,
         # Fixed pump controls; pressure is live-link state only.
@@ -1737,10 +1740,18 @@ ADJUSTABLE_LUMBAR_VARIANTS: Final = {
 
 
 # Explicit app bed types whose name rule reads the stored raw Bluetooth name.
+ADJUSTABLE_BED_VARIANTS: Final = {
+    VARIANT_AUTO: "Auto (Bluetooth name and manufacturer)",
+    "adjustable_bed_okin": "OKIN-name table (with response)",
+    "adjustable_bed_star": "Star-name tables (manufacturer selection)",
+    "adjustable_bed_star_5a": "STAR manufacturer table (fixed)",
+}
+
 NAME_RULE_VARIANTS_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_BEDSENSE: frozenset({VARIANT_AUTO}),
     BED_TYPE_SIMMONS: SIMMONS_NAME_RULE_VARIANTS,
     BED_TYPE_ADJUSTAMATTRESS: frozenset({VARIANT_AUTO}),
+    BED_TYPE_ADJUSTABLE_BED: frozenset({VARIANT_AUTO}),
     BED_TYPE_ADJUSTABLE_LUMBAR: frozenset({VARIANT_AUTO}),
     BED_TYPE_STARCODE_M1X12: frozenset({VARIANT_AUTO}),
     **{bed_type: frozenset({VARIANT_AUTO}) for bed_type in RICHMAT_MH_APPS},
@@ -2903,6 +2914,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_ESHINE_OKIN: (10, 300),  # App refresh cadence; count bounds HA movement
     BED_TYPE_ESHINE: (10, 100),  # Eshine 100 ms refresh; count bounds an HA movement
     BED_TYPE_ADJUSTAMATTRESS: (5, 200),  # APK 200 ms refresh, bounded HA movement
+    BED_TYPE_ADJUSTABLE_BED: (10, 100),  # APK 100 ms hold refresh; ~1 s HA movement
     BED_TYPE_ADJUSTABLE_LUMBAR: (10, 100),  # APK 100 ms hold refresh; ~1 s HA movement
     # Richmat MH apps: KEEP repeats at each control's own interval (100 ms for
     # every motor); the count bounds an HA hold.

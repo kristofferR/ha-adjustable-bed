@@ -5,7 +5,9 @@ from __future__ import annotations
 import re
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.profiles.adjustable_bed import AdjustableAppProfile
 from custom_components.adjustable_bed.profiles.okin_nframe import OkinNFrameProfile
+from tests.adjustable_bed_vectors import FROZEN_FRAMES as ADJUSTABLE_BED_FRAMES
 from tests.codec_families import CodecFamily, CodecGuide, spelled_frames
 from tests.okin_nframe_vectors import FIELD_FRAMES, FROZEN_FRAMES, GATEWAY_FRAMES
 from tests.starcode_abm5_4_vectors import BUILDER_VECTORS
@@ -24,14 +26,16 @@ def _variant(key: str, bed_type: str) -> str | None:
         const.BED_TYPE_OKIN_64BIT: key.removeprefix("okin_64bit_"),
         # Adjustable bed (Lumbar) and eShine profile keys are their protocol variants.
         const.BED_TYPE_ADJUSTABLE_LUMBAR: key,
+        const.BED_TYPE_ADJUSTABLE_BED: key,
         const.BED_TYPE_ESHINE_OKIN: key,
     }.get(bed_type)
 
 
 FAMILY = CodecFamily(
-    profiles={OkinNFrameProfile: FROZEN_FRAMES},
+    profiles={OkinNFrameProfile: FROZEN_FRAMES, AdjustableAppProfile: ADJUSTABLE_BED_FRAMES},
     bed_types=frozenset(
         {
+            "adjustable_bed",
             "adjustable_lumbar",
             "customatic_clarity",
             "customatic_jeromes",
@@ -74,6 +78,7 @@ FAMILY = CodecFamily(
         # AdjustableM5X4's BOX15 selector moves with its app's frozen Keeson E6 frames.
         frozen=frozenset().union(
             *FROZEN_FRAMES.values(),
+            *ADJUSTABLE_BED_FRAMES.values(),
             *FIELD_FRAMES.values(),
             GATEWAY_FRAMES,
             {vector for *_, vector in BUILDER_VECTORS},

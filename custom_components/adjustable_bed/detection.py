@@ -28,6 +28,7 @@ from .beds.richmat_classic.profiles import APP_NAMES as RICHMAT_CLASSIC_APPS
 from .beds.starcode.abm5_4_profiles import TRANSPORTS as STARCODE_ABM5_4_TRANSPORTS
 from .beds.svane.state import is_svane_discovery_name
 from .const import (
+    BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_BEDJET_POWERLAYER,
@@ -558,6 +559,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_ZSERIES: "Customatic Z-Series app",
     BED_TYPE_SIMMONS: "SIMMONS app",
     BED_TYPE_ADJUSTAMATTRESS: "AdjustaMattress app (seven product layouts)",
+    BED_TYPE_ADJUSTABLE_BED: "Adjustable bed app",
     BED_TYPE_ADJUSTABLE_LUMBAR: "Adjustable bed (Lumbar) app",
     BED_TYPE_COMFORT_ENHANCEMENTS: "Comfort Enhancements app (choose MC2/MC3/MC4/MC5)",
     BED_TYPE_ESHINE_OKIN: "eShine app (E2000 / E3000 / E3100 / E5000)",

@@ -177,6 +177,8 @@ class _FactoryCoordinator(SimpleNamespace):
 
 def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
     """Return a deterministic protocol variant for factory-completeness tests."""
+    if bed_type == const.BED_TYPE_ADJUSTABLE_BED:
+        return "adjustable_bed_okin"
     if bed_type == BED_TYPE_RICHMAT:
         return RICHMAT_VARIANT_NORDIC
     if bed_type == BED_TYPE_LEGGETT_PLATT:

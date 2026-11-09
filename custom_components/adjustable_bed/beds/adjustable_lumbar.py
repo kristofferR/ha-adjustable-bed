@@ -23,9 +23,11 @@ from ..codec import okin_5a, okin_nframe
 from ..const import (
     ADJUSTABLE_LUMBAR_VARIANT_OKIN,
     ADJUSTABLE_LUMBAR_VARIANT_STAR,
+    BED_TYPE_ADJUSTABLE_BED,
     CONF_BLE_DEVICE_NAME,
 )
 from ..detection import is_mac_like_name
+from ..profiles.adjustable_bed import PROFILES, VOICE_FINITE, VOICE_MOTORS, AdjustableAppProfile
 from ..profiles.okin_nframe import (
     ADJUSTABLE_LUMBAR_KEYS,
     ADJUSTABLE_LUMBAR_PROFILES,
@@ -182,7 +184,9 @@ def _action(name: str) -> MotorCommandCallable:
     return invoke
 
 
-class AdjustableLumbarController(ProfileExecution[OkinNFrameProfile | None], BedController):
+class AdjustableLumbarController(
+    ProfileExecution[OkinNFrameProfile | AdjustableAppProfile | None], BedController
+):
     """Faithful Adjustable bed (Lumbar) app controls for all three tables."""
 
     def __init__(
@@ -218,7 +222,7 @@ class AdjustableLumbarController(ProfileExecution[OkinNFrameProfile | None], Bed
         return self._table
 
     @property
-    def profile(self) -> OkinNFrameProfile | None:
+    def profile(self) -> OkinNFrameProfile | AdjustableAppProfile | None:
         """The N-frame table's profile; ``None`` on 35_22_01 or with no table."""
         return ADJUSTABLE_LUMBAR_PROFILES.get(self._table) if self._table else None
 
@@ -611,8 +615,142 @@ class AdjustableLumbarController(ProfileExecution[OkinNFrameProfile | None], Bed
             raise ValueError(f"Unknown Adjustable bed (Lumbar) action '{action}'")
 
 
+class AdjustableBedAppController(AdjustableLumbarController):
+    """Unit087 app route, sharing the proven transport, gestures and release."""
+
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        *,
+        protocol_variant: str | None = None,
+        device_name: str | None = None,
+    ) -> None:
+        variant = {
+            "adjustable_bed_okin": ADJUSTABLE_LUMBAR_VARIANT_OKIN,
+            "adjustable_bed_star": ADJUSTABLE_LUMBAR_VARIANT_STAR,
+            "adjustable_bed_star_5a": ADJUSTABLE_LUMBAR_VARIANT_STAR,
+        }.get(protocol_variant or "", protocol_variant)
+        super().__init__(coordinator, protocol_variant=variant, device_name=device_name)
+        self._fixed_star = protocol_variant == "adjustable_bed_star_5a"
+        if self._fixed_star:
+            self._table = "35_22_01"
+
+    @property
+    def profile(self) -> AdjustableAppProfile | None:
+        return PROFILES.get(self._table) if self._table else None
+
+    @property
+    def protocol_diagnostics(self) -> dict[str, object]:
+        return {
+            key.replace("adjustable_lumbar", "adjustable_bed"): value
+            for key, value in super().protocol_diagnostics.items()
+        }
+
+    async def async_discover_capabilities(self) -> None:
+        await super().async_discover_capabilities()
+        if self._fixed_star:
+            self._table = "35_22_01"
+
+    def _frame(self, action: str) -> bytes:
+        if self.profile is None:
+            raise ConnectionError("Adjustable bed command table is not resolved")
+        return self.profile.frames[action]
+
+    @property
+    def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
+        # Keep existing translated save/wave controls and expose the alternate
+        # BLE route without requiring a speech recognizer in Home Assistant.
+        buttons = tuple(
+            replace(spec, key=spec.key.replace("adjustable_lumbar", "adjustable_bed"))
+            for spec in super().controller_button_specs
+        )
+        return buttons + tuple(
+            ControllerButtonSpec(
+                f"adjustable_bed_{action}",
+                "App speech: " + action.removeprefix("voice_").replace("_", " ").title(),
+                _action(action),
+                icon="mdi:gesture-tap",
+                translation_key="adjustable_bed_speech",
+                translation_placeholders={
+                    "action": action.removeprefix("voice_").replace("_", " ").title()
+                },
+                card=CARD_UTILITY,
+            )
+            for action in (*VOICE_MOTORS, *(f"voice_{key}" for key in VOICE_FINITE), "voice_stop")
+        )
+
+    def motor_pulse_settings(self) -> tuple[int, int]:
+        count = self._coordinator.motor_pulse_count
+        # P2 touch motors still refresh, under its conservative latched ceiling.
+        if ceiling_ms := self.leased_hold_ms(0):
+            count = self.timed_move_repeat_count(ceiling_ms, REFRESH_MS)
+        return count, REFRESH_MS
+
+    async def _voice_move(self, action: str, duration_ms: int) -> None:
+        """Bound the app's otherwise unbounded speech movement, then release."""
+        try:
+            await self.write_command(self._frame("voice_stop"))
+            if self._table == "35_22_01":
+                duration_ms = min(duration_ms, self.leased_hold_ms(duration_ms))
+                await self.write_command(self._frame(action))
+                try:
+                    await asyncio.wait_for(
+                        self._coordinator.cancel_command.wait(), duration_ms / 1000
+                    )
+                except TimeoutError:
+                    pass
+            else:
+                await self.write_command(
+                    self._frame(action.removeprefix("voice_")),
+                    repeat_count=self.timed_move_repeat_count(duration_ms, REFRESH_MS),
+                    repeat_delay_ms=REFRESH_MS,
+                )
+        finally:
+            try:
+                await self.write_command(self._frame("voice_stop"), cancel_event=asyncio.Event())
+            finally:
+                await self._release()
+
+    async def _move(self, action: str) -> None:
+        if self._table == "35_22_01" and action.startswith("lumbar_"):
+            await self._voice_move(
+                f"voice_{action}",
+                self.leased_hold_ms(self._coordinator.motor_pulse_count * REFRESH_MS),
+            )
+        else:
+            await super()._move(action)
+
+    async def hold_control(self, control: str, duration_ms: int) -> None:
+        self.validate_hold_control(control, duration_ms)
+        if self._table == "35_22_01" and control.startswith("lumbar_"):
+            await self._voice_move(f"voice_{control}", duration_ms)
+        else:
+            await super().hold_control(control, duration_ms)
+
+    async def execute_app_action(self, action: str) -> None:
+        if action in VOICE_MOTORS:
+            await self._voice_move(action, self._coordinator.motor_pulse_count * REFRESH_MS)
+        elif action == "voice_stop":
+            try:
+                await self.write_command(self._frame("voice_stop"), cancel_event=asyncio.Event())
+            finally:
+                await self._release()
+        elif action.removeprefix("voice_") in VOICE_FINITE and action.startswith("voice_"):
+            await self.write_command(self._frame("voice_stop"))
+            await self.write_command(
+                self._frame(action.removeprefix("voice_")), repeat_count=2, repeat_delay_ms=100
+            )
+        else:
+            await super().execute_app_action(action)
+
+
 async def build_controller(ctx: BuildContext) -> AdjustableLumbarController:
     """Build the controller; the app's name rule picks the table unless the variant fixes it."""
-    return AdjustableLumbarController(
+    controller = (
+        AdjustableBedAppController
+        if ctx.bed_type == BED_TYPE_ADJUSTABLE_BED
+        else AdjustableLumbarController
+    )
+    return controller(
         ctx.coordinator, protocol_variant=ctx.variant, device_name=ctx.live_device_name
     )

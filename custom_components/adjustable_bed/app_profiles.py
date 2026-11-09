@@ -23,6 +23,7 @@ from functools import cache
 from typing import Final
 
 from .const import (
+    BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_BEDSENSE,
@@ -188,6 +189,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_TRANQUIL: SideProfile("Tranquil"),
     BED_TYPE_ZSERIES: SideProfile("Customatic Z-Series", variant_owned=True),
     BED_TYPE_ADJUSTAMATTRESS: SideProfile("AdjustaMattress", variant_owned=True),
+    BED_TYPE_ADJUSTABLE_BED: SideProfile("Adjustable bed", variant_owned=True),
     BED_TYPE_ADJUSTABLE_LUMBAR: SideProfile("Adjustable bed (Lumbar)", variant_owned=True),
     BED_TYPE_SIMMONS: SideProfile("SIMMONS", variant_owned=True),
     **dict.fromkeys(RICHMAT_MH_BED_TYPES, SideProfile("Richmat app model", variant_owned=True)),

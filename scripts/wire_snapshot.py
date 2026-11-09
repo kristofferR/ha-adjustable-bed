@@ -1249,8 +1249,11 @@ def default_scenario(bed_type: str) -> Scenario:
         # A provisioned broadcast advertisement carrying the room ID (tests/test_kaidi.py).
         kwargs = {"manufacturer_data": {0xFFFF: bytes.fromhex(KAIDI_BROADCAST % "81")}}
         replies = {"write:01160178563412": "021600"}  # join accepted
+    if bed_type == const.BED_TYPE_ADJUSTABLE_BED:
+        data[const.CONF_BLE_DEVICE_NAME] = "OKIN-1"
     return Scenario(
         id=bed_type,
+        layout_id="adjustable_lumbar" if bed_type == const.BED_TYPE_ADJUSTABLE_BED else None,
         bed_type=bed_type,
         protocol_variant=variant,
         entry_data=data,
@@ -1276,6 +1279,7 @@ VARIANT_ROUTES: dict[str, str] = {
     "remacro": "REMACRO_VARIANTS",
     "sleepys_box25": "SLEEPYS_BOX25_VARIANTS",
     "adjustable_lumbar": "ADJUSTABLE_LUMBAR_VARIANTS",
+    "adjustable_bed": "ADJUSTABLE_BED_VARIANTS",
     "bedsense": "BEDSENSE_VARIANTS",
     "comfort_enhancements": "COMFORT_ENHANCEMENTS_VARIANTS",
     "zseries": "ZSERIES_VARIANTS",

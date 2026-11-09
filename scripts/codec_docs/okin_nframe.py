@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+from custom_components.adjustable_bed.beds.adjustable_lumbar import (
+    REFRESH_MS,
+    RELEASE_STOP_OFFSETS_S,
+    SAVE_HOLD_MS,
+)
 from custom_components.adjustable_bed.beds.okin_uuid.controller import (
     OKIN_UUID_REMOTES,
     OkinUuidComplexCommand,
@@ -17,6 +22,9 @@ from custom_components.adjustable_bed.const import (
     NORDIC_UART_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.profiles import okin_nframe as okin_profiles
+from custom_components.adjustable_bed.profiles.adjustable_bed import (
+    PROFILES as ADJUSTABLE_BED_PROFILES,
+)
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
 GUIDE = "docs/beds/okin-nframe.md"
@@ -491,7 +499,47 @@ def render_okin_nframe_okimat() -> str:
     )
 
 
+def render_adjustable_bed() -> str:
+    rows = (
+        (profile.key, profile.table, action, _hex(frame))
+        for profile in ADJUSTABLE_BED_PROFILES.values()
+        for action, frame in profile.frames.items()
+    )
+    release = (
+        "STOP at "
+        + " and ".join(str(round(offset * 1000)) for offset in RELEASE_STOP_OFFSETS_S)
+        + " ms"
+    )
+    return _block(
+        _table(("Profile", "Asset", "Control", "Bytes"), rows),
+        _table(
+            ("Gesture", "Schedule", "Release"),
+            (
+                ("Touch hold", f"Immediate, every {REFRESH_MS} ms", release),
+                ("Save named preset", f"Hold chord for {SAVE_HOLD_MS} ms", release),
+                (
+                    "Speech motor P1/P3",
+                    f"{REFRESH_MS} ms stream, bounded by entry pulse count",
+                    "Voice STOP and ordinary release",
+                ),
+                (
+                    "Speech motor P2",
+                    f"One start, bounded by entry pulse count × {REFRESH_MS} ms",
+                    "Voice STOP and ordinary release",
+                ),
+                (
+                    "Speech preset, massage or light",
+                    f"Pre-STOP, two writes {REFRESH_MS} ms apart",
+                    "No post-STOP",
+                ),
+                ("Massage query", "Once on request", "None"),
+            ),
+        ),
+    )
+
+
 BLOCKS: list[Block] = [
+    (GUIDE, "adjustable-bed-commands", render_adjustable_bed),
     (GUIDE, "okin-nframe-profiles", render_okin_nframe_profiles),
     (GUIDE, "okin-nframe-transports", render_okin_nframe_transports),
     (GUIDE, "okin-nframe-keys", render_okin_nframe_keys),

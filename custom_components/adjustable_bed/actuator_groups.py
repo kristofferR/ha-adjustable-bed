@@ -11,6 +11,7 @@ from typing import Final
 
 from .beds.ruf_richmat.profiles import DISPLAY_NAMES as RUF_RICHMAT_DISPLAY_NAMES
 from .const import (
+    BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_BEDTECH,
     BED_TYPE_COMFORT_MOTION,
@@ -167,6 +168,7 @@ ACTUATOR_GROUPS: Final[dict[str, tuple[Route, ...]]] = {
         (BED_TYPE_SERENITY, None),
         (BED_TYPE_TRANQUIL, None),
         (BED_TYPE_SIMMONS, None),
+        (BED_TYPE_ADJUSTABLE_BED, None),
         (BED_TYPE_ADJUSTABLE_LUMBAR, None),
         (BED_TYPE_OKIN_FFE, None),
         (BED_TYPE_OKIN_64BIT, None),

@@ -14,6 +14,7 @@ from dataclasses import dataclass, field, replace
 from typing import Final
 
 from .const import (
+    BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_BEDJET_POWERLAYER,
@@ -170,6 +171,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     **dict.fromkeys(RICHMAT_MH_BED_TYPES, _NO_ANGLES),
     # Serta MP Remote is the one Keeson layout app with position feedback.
     **dict.fromkeys(KEESON_LAYOUT_APP_BED_TYPES - {BED_TYPE_SERTA_MP_REMOTE}, _NO_ANGLES),
+    BED_TYPE_ADJUSTABLE_BED: _NO_ANGLES,
     BED_TYPE_ADJUSTABLE_LUMBAR: _NO_ANGLES,
     BED_TYPE_ADJUSTAMATTRESS: _NO_ANGLES,
     # Measured against the BedJet LCD remote's own degree readout.

@@ -25,6 +25,7 @@ from .adapter import discover_services
 from .bed_traits import bed_traits
 from .beds.builder import BuildContext, ControllerBuilder
 from .const import (
+    BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_BEDJET_POWERLAYER,
@@ -324,6 +325,7 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
 # or the live GATT table. Each builder lives in its bed module.
 _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     **dict.fromkeys(RICHMAT_MH_APPS, _BuilderSpec("richmat_mh.controller")),
+    BED_TYPE_ADJUSTABLE_BED: _BuilderSpec("adjustable_lumbar"),
     BED_TYPE_ADJUSTABLE_LUMBAR: _BuilderSpec("adjustable_lumbar"),
     BED_TYPE_ADJUSTAMATTRESS: _BuilderSpec("adjustamattress.controller"),
     BED_TYPE_BEDSENSE: _BuilderSpec("bedsense"),

@@ -1134,7 +1134,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "0c02100000000000000000000000",
         }
     ),
-    # pre-v5 Okin64BitController (com.okin.bedding.adjustbed has no report on disk)
+    # Legacy Okin64BitController compatibility set, including commands unexposed by unit087
     "okin_64bit_nordic": frozenset(
         {
             "08020000000000000000",

@@ -34,6 +34,7 @@ from .beds.sleeptracker.protocol import FOUNDATIONS as SLEEPTRACKER_FOUNDATIONS
 from .beds.sleeptracker.protocol import MODELS as SLEEPTRACKER_MODELS
 from .beds.starcode.m1x12_protocol import profile_from_name as m1x12_profile_from_name
 from .const import (
+    BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_BEDSENSE,
@@ -281,6 +282,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_TIMOTION_AHF: frozenset({CONF_HAS_MASSAGE}),
     # These apps always show their massage page.
     BED_TYPE_ADJUSTAMATTRESS: _FIXED_LAYOUT | {CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING},
+    BED_TYPE_ADJUSTABLE_BED: _FIXED_LAYOUT | _ALWAYS_MASSAGE,
     BED_TYPE_ADJUSTABLE_LUMBAR: _FIXED_LAYOUT | _ALWAYS_MASSAGE,
     BED_TYPE_STARCODE_ABM5_4: _FIXED_LAYOUT | _ALWAYS_MASSAGE,
     # The handset table sets the layout and massage; the receiver sets the protocol.
