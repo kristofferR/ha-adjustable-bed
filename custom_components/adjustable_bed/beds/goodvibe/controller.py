@@ -141,6 +141,7 @@ async def _release(controller: BedController) -> None:
 
 
 def _stop(side: int, link: Link) -> bytes:
+    assert GOODVIBE.stop is not None
     return codec.function(GOODVIBE.stop, side, single=link.legacy)
 
 

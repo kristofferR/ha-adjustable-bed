@@ -580,6 +580,12 @@ format have their own guide. Each profile's **Setup** part explains the
 questions setup asks and which settings it hides. The
 [codec and profile architecture](design/protocol-codecs.md) explains the split.
 
+BedTech asks for the exact 7.1.3 model or **Legacy BedTech controls**. Explicit
+models set their motors, massage and 100 ms refresh; the pulse count bounds a
+normal HA movement. FH models offer one-receiver Left/Right head controls.
+Existing legacy entries retain their field-reported STOP and controls until
+you explicitly choose an app model. See [BedTech](beds/richmat.md#bedtech).
+
 Choose the app, model or remote supplied with your bed when setup asks for it.
 These choices determine which controls are available. Related choices are
 listed together below, with links to their profile sections.

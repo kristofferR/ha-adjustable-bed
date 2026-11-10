@@ -2852,6 +2852,9 @@
       },
       "ruf_richmat_lift_down": {
         "name": "Lift Down"
+      },
+      "bedtech_massage_timer_20": {
+        "name": "Massage 20 minutes"
       }
     },
     "cover": {
@@ -8082,6 +8085,28 @@
         },
         "side": {
           "name": "Paired bed side"
+        }
+      }
+    },
+    "bedtech_app_command": {
+      "name": "BedTech app command",
+      "description": "Run an action using the selected BedTech 7.1.3 model and its app sleeper routing. Movement uses the configured finite pulse count.",
+      "fields": {
+        "device_id": {
+          "name": "Bed",
+          "description": "BedTech bed or paired parent device. Select an explicit app model first."
+        },
+        "action": {
+          "name": "Action",
+          "description": "Ordinary app action, subject to the selected model and sleeper."
+        },
+        "sleeper": {
+          "name": "App sleeper",
+          "description": "1/2 select a receiver, 3 both, 4/5 select one head and share the foot. FH models use one receiver and separate head banks."
+        },
+        "side": {
+          "name": "Target side",
+          "description": "Optional paired target restriction. Conflicting app sleeper routing is rejected."
         }
       }
     }

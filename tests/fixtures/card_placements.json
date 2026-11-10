@@ -491,6 +491,9 @@
   "card_role": "up",
   "card_motor": "bedsense_waist"
  },
+ "button:bedtech_massage_timer_20": {
+  "card_section": "massage"
+ },
  "button:bf_cherish_both_down": {
   "card_section": "motors",
   "card_role": "down",

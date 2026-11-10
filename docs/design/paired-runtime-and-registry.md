@@ -131,3 +131,14 @@ sequential and automatic mode, including automatic mode's switch to sequential
 after a real adapter runs out of connection slots; a STOP that must reach both
 sides; and single-address beds running a native Both. Reports through ESPHome
 proxies with few free slots are the most useful.
+
+### A receiver with one shared command timer
+
+A controller may declare `commands_share_timer` when each physical receiver
+has one command timer. Every explicit BedTech 7.1.3 model declares it: physical
+admission replaces any previous axis or action on that receiver. FH models also
+share it across logical banks. Their single-link topology uses one scheduler resource,
+invalidates queued work on both logical sides when any command replaces it,
+and expands a side or motor STOP to both sides. Side scopes still select the
+wire bank; this declaration does not enable concurrent movement. Other
+single-address profiles retain their independent side resources.

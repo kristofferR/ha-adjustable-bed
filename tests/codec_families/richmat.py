@@ -19,6 +19,7 @@ _VARIANTS = {
     "richmat_nordic": const.RICHMAT_VARIANT_NORDIC,
     "richmat_prefix55": const.RICHMAT_VARIANT_PREFIX55,
     "richmat_prefixaa": const.RICHMAT_VARIANT_PREFIXAA,
+    **{f"bedtech_{model}": model for model in ("bt2000", "bt2500", "bt3000", "bt3000fh", "bt6500", "btx4", "btx4fh", "btx5", "btx5fh")},
     "hjbed": "hj_bedbjrn",
     "goodvibe": "selector-0001",
     **{f"richmat_classic_{app}": app for app in RICHMAT_CLASSIC},

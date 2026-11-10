@@ -323,6 +323,8 @@ def bed_traits(bed_type: str | None, protocol_variant: str | None = None) -> Bed
         return _NONE
     resolved = resolve_explicit_bed_type(bed_type, protocol_variant)
     traits = _BED_TRAITS.get(resolved, _NONE)
+    if resolved == "bedtech" and protocol_variant not in (None, "", VARIANT_AUTO):
+        return _NO_ANGLES
     if resolved in _REVERIE_MODEL_BED_TYPES:
         from .beds.reverie.profiles import resolve_reverie_model
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from datetime import datetime, timedelta, timezone
 
 from custom_components.adjustable_bed import const as _const
@@ -46,7 +47,11 @@ _RICHMAT_NAMES = {
     "richmat_nordic": "Richmat Nordic",
     "richmat_prefix55": "Richmat Prefix55",
     "richmat_prefixaa": "Richmat PrefixAA",
-    "bedtech": "BedTech",
+    "bedtech": "BedTech legacy",
+    **{
+        profile.key: f"BedTech app {model.upper()}"
+        for model, profile in richmat_profiles.BEDTECH_APP_PROFILES.items()
+    },
     "leggett_wilinke": "L&P MlRM",
     "hjbed": "HJBed",
     "eshine": "Eshine",
@@ -71,6 +76,7 @@ _RICHMAT_NAMES = {
 _FIXED_ROUTES = (
     *richmat_profiles.RICHMAT.values(),
     richmat_profiles.BEDTECH,
+    *richmat_profiles.BEDTECH_APP_PROFILES.values(),
     richmat_profiles.LEGGETT_WILINKE,
 )
 _BUTTON_LABELS: dict[richmat_profiles.Button, str] = {
@@ -135,6 +141,10 @@ def bed_types() -> dict[str, tuple[str, ...]]:
             profile.key: (_const.BED_TYPE_RICHMAT,) for profile in richmat_profiles.RICHMAT.values()
         },
         "bedtech": (_const.BED_TYPE_BEDTECH,),
+        **{
+            profile.key: (_const.BED_TYPE_BEDTECH,)
+            for profile in richmat_profiles.BEDTECH_APP_PROFILES.values()
+        },
         "leggett_wilinke": (_const.BED_TYPE_LEGGETT_WILINKE,),
         "hjbed": (_const.BED_TYPE_HJBED,),
         "eshine": (_const.BED_TYPE_ESHINE,),
@@ -210,7 +220,9 @@ def render_richmat_profiles() -> str:
                 _RICHMAT_NAMES[profile.key],
                 ", ".join(f"`{bed_type}`" for bed_type in types[profile.key]),
                 profile.framing,
-                _hex(profile.frame(profile.stop)),
+                _hex(profile.frame(profile.stop))
+                if profile.stop is not None
+                else "End refresh (no frame)",
                 "{} × {} ms".format(*_const.get_motor_pulse_defaults(types[profile.key][0])),
                 _recall(profile),
                 f"{len(profile.memory)} slots",
@@ -325,7 +337,15 @@ def render_richmat_commands() -> str:
         for button, label in _BUTTON_LABELS.items()
     ]
     rows += [
-        ("STOP", *(_hex(profile.frame(profile.stop)) for profile in routes)),
+        (
+            "STOP",
+            *(
+                _hex(profile.frame(profile.stop))
+                if profile.stop is not None
+                else "End refresh (no frame)"
+                for profile in routes
+            ),
+        ),
         (
             "Compatibility STOP (QRRM, BT6500 remotes)",
             _hex(routes[0].frame(richmat_codec.COMPAT_STOP)),
@@ -488,9 +508,7 @@ def render_richmat_mh_fixed() -> str:
                 ("Stop detection", _hex(mh_frames.TX_STOP_DETECTION)),
                 (
                     "Cancel alarm (single-slot models)",
-                    " then ".join(
-                        _hex(x) for x in mh_frames.TX_ALARM_CANCEL
-                    ),
+                    " then ".join(_hex(x) for x in mh_frames.TX_ALARM_CANCEL),
                 ),
             ),
         )
@@ -788,6 +806,7 @@ def render_hjbed_startup() -> str:
 
 
 def render_eshine_commands() -> str:
+    assert richmat_profiles.ESHINE.stop is not None
     labels = {button: label for label, button in eshine_bed.EXTRA_BUTTONS.values()}
     held = f"refresh {eshine_bed.REFRESH_MS} ms; STOP"
 
@@ -823,6 +842,7 @@ def _goodvibe_row(name: str, code: int) -> tuple[str, ...]:
 
 
 def render_goodvibe_commands() -> str:
+    assert richmat_profiles.GOODVIBE.stop is not None
     menu = (
         GOODVIBE_ACTIONS[detail] for details in ACTION_EXPANSIONS.values() for detail in details
     )
@@ -1110,7 +1130,61 @@ def render_lp_legacy_notifications() -> str:
     )
 
 
+def render_bedtech_models() -> str:
+    def cells(model: str, profile: richmat_profiles.RichmatProfile) -> tuple[str, ...]:
+        codes: Mapping[richmat_profiles.Button, int] = profile.codes or {}
+        return (
+            model.upper(),
+            "back, legs, pillow, lumbar" if model == "bt6500" else "back, legs",
+            ", ".join(
+                _BUTTON_LABELS[button]
+                for button in codes
+                if button in {"flat", "zero_g", "anti_snore", "tv"}
+            )
+            or "none",
+            ", ".join(_BUTTON_LABELS[button] for button in codes if button.startswith("massage_"))
+            or "none",
+            "toggle" if "light_toggle" in codes else "none",
+            "yes, shared foot" if model.endswith("fh") else "no",
+        )
+
+    return _block(
+        _table(
+            ("Model", "Motors", "Presets", "Massage", "Light", "Single-address sides"),
+            (
+                cells(model, profile)
+                for model, profile in richmat_profiles.BEDTECH_APP_PROFILES.items()
+            ),
+        )
+    )
+
+
+def render_bedtech_commands() -> str:
+    codes: dict[richmat_profiles.Button, int] = {
+        button: code
+        for profile in richmat_profiles.BEDTECH_APP_PROFILES.values()
+        for button, code in (profile.codes or {}).items()
+    }
+    rows = [
+        (
+            _BUTTON_LABELS[button],
+            _code_hex(code),
+            _hex(richmat_codec.command(code)),
+            "100 ms until release" if button.endswith(("_up", "_down")) else "once",
+        )
+        for button, code in codes.items()
+    ]
+    rows.extend(
+        (f"Memory {slot} {action}", _code_hex(code), _hex(richmat_codec.command(code)), "once")
+        for slot, pair in enumerate(richmat_profiles.BEDTECH.memory, 1)
+        for action, code in zip(("recall", "save"), pair, strict=True)
+    )
+    return _block(_table(("Action", "Code", "Frame (bank 0)", "Timing"), rows))
+
+
 BLOCKS: list[Block] = [
+    (GUIDE, "bedtech-models", render_bedtech_models),
+    (GUIDE, "bedtech-app-commands", render_bedtech_commands),
     (GUIDE, "richmat-profiles", render_richmat_profiles),
     (GUIDE, "richmat-transports", render_richmat_transports),
     (GUIDE, "richmat-framing", render_richmat_framing),

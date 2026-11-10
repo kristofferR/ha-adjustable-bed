@@ -187,7 +187,9 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     },
     "OkinNFrameProfile:zseries_z230": {"hold": ("glory",)},
     "OkinNFrameProfile:zseries_z280": {"hold": ("glory",)},
-    # Richmat 6E (#483): BedTech, GM Motor and Casper Base are blocked.
+    # Richmat 6E (#483): explicit BedTech 7.1.3 models end refresh with no release.
+    **{f"RichmatProfile:bedtech_{model}": {"hold": ("bedtech713",)}
+       for model in ("bt2000", "bt2500", "bt3000", "bt3000fh", "bt6500", "btx4", "btx4fh", "btx5", "btx5fh")},
     "RichmatProfile:eshine": {"hold": ("eshine",)},
     "RichmatProfile:hjbed": {"hold": ("row121",)},
     "RichmatProfile:leggett_wilinke": {"hold": ("lp2",)},
@@ -369,6 +371,10 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     ),
     "profiles/okin_nframe.py:<module>._lumbar": _LUMBAR,
     "profiles/okin_nframe.py:<module>._simmons": _SIMMONS,
+    "profiles/richmat.py:<module>.BEDTECH_APP_PROFILES": tuple(
+        f"RichmatProfile:bedtech_{model}"
+        for model in ("bt2000", "bt2500", "bt3000", "bt3000fh", "bt6500", "btx4", "btx4fh", "btx5", "btx5fh")
+    ),
     "profiles/richmat.py:<module>.ESHINE": ("RichmatProfile:eshine",),
     "profiles/richmat.py:<module>.HJBED": ("RichmatProfile:hjbed",),
     "profiles/richmat.py:<module>.LEGGETT_WILINKE": ("RichmatProfile:leggett_wilinke",),

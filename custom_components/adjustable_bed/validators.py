@@ -87,6 +87,7 @@ from .const import (
 )
 from .profiles.casper import CASPER_BASE_VARIANTS
 from .profiles.hush import HUSH_BASE_VARIANTS
+from .profiles.richmat import BEDTECH_VARIANTS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -116,6 +117,7 @@ def is_valid_octo_pin(pin: str) -> bool:
 
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
+    "bedtech": BEDTECH_VARIANTS,
     BED_TYPE_GOODVIBE: GOODVIBE_PROFILES,
     BED_TYPE_RICHMAT_CLASSIC_APPS: RICHMAT_CLASSIC_APPS,
     BED_TYPE_HJBED: HJBED_PROFILES,

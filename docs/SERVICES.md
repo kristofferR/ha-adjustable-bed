@@ -33,6 +33,41 @@ both sides.
 `target_address` and has no `side` parameter. Select a child device for a
 two-address pair. See [support capture](GETTING_HELP.md#generating-a-support-bundle).
 
+## BedTech app
+
+`bedtech_app_command` uses the selected [BedTech 7.1.3 model](beds/richmat.md#bedtech)
+and its sleeper routing. Each receiver must use the same explicit model.
+`action` names a control from that model's ordinary screen, such as `headUp`,
+`footDown`, `headMassageUp`, `massageTimer20`, `presetFlat`, `memory1Save` or
+`lightToggle`. A normal movement action uses the finite pulse count; use
+`timed_move` for an elapsed duration or renewable hold. `connectionTest` explicitly
+raises the first head for two seconds and returns the link through HA's normal
+connection handoff. Automatic setup never moves the bed. Unsupported model or
+secondary-head actions fail before any receiver is commanded.
+
+| `sleeper` | Normal two-receiver model | FH single-receiver model |
+|---|---|---|
+| `1` / `2` | First / second receiver | Unmodified first-head action |
+| `3` (default) | Both receivers | Both heads; other controls retain bank 0 |
+| `4` / `5` | First / second head; foot actions and STOP reach both receivers | First / second head; shared foot, memory and massage stay in bank 0 |
+
+Target the paired parent for shared-foot operation. A child target or optional
+`side` restricts the request; conflicting app sleeper routing is rejected.
+An unpaired FH receiver can also select its bank with `sleeper`.
+
+```yaml
+action: adjustable_bed.bedtech_app_command
+data:
+  device_id: YOUR_PAIRED_BED_DEVICE_ID
+  action: footUp
+  sleeper: 4
+```
+
+This example raises both foot sections while selecting the first head for
+head actions. `stop` cancels refresh and writes no movement STOP packet on
+explicit models. Their massage-off packet is a separate action. Hardware
+behavior for these explicit app profiles remains unverified.
+
 ## OKIN SleepEase / DoubleSleep
 
 `doublesleep_configure` accepts a bed `device_id` and optional paired target

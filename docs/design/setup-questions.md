@@ -246,6 +246,7 @@ These steps serve every bed type or route, so no profile owns them.
 | `okin_uuid`, `okimat`, `okin_dot` | Remote code (a saved code new setups no longer offer stays this entry's choice), motor count and massage motors; `okin_uuid` and `okimat` also angle sensing. The family row's form is drawn for FurniMove, which sets massage and angle sensing itself. |
 | `keeson:` ORE apps and INNOVA | The app's 2M, 3M or 4M screen, which is the motor count. |
 | `keeson:ergomotion` | Angle sensing: the one older Keeson remote route that reports positions. |
+| `bedtech` | Exact 7.1.3 model or existing legacy controls. Explicit models own motor count, massage, angle sensing and the 100 ms cadence; pulse count bounds a finite HA press. |
 | `goodvibe`, `hjbed`, `casper_base` | The exact product, a searchable list, behind one row each. Good Vibe Sleep's own name rule suggests a product from the Bluetooth name. |
 | `comfort_enhancements` | The app's MC2, MC3, MC4 or MC5 layout. |
 | `bedsense` | Layout, or the layout from the Bluetooth name. |

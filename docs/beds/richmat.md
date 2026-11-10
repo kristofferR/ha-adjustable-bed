@@ -1,6 +1,6 @@
 # Richmat
 
-**Status:** ✅ Tested (Richmat and BedTech routes); ❓ the RMControl, Richmat MH, HJBed, Eshine, classic app, Good Vibe Sleep, L&P legacy app, Casper Base and Hush Base profiles are APK-verified with hardware unverified
+**Status:** ✅ Tested (Richmat and legacy BedTech routes); ❓ explicit BedTech 7.1.3 models; ❓ the RMControl, Richmat MH, HJBed, Eshine, classic app, Good Vibe Sleep, L&P legacy app, Casper Base and Hush Base profiles are APK-verified with hardware unverified
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), getrav, [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt) and [Josh Pearce](https://github.com/joshpearce) (L&P MlRM)
 
@@ -58,7 +58,7 @@ is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 | Analyzed | App | Package ID | Profile |
 |----------|-----|------------|---------|
 | ✅ | [RMControl](https://play.google.com/store/apps/details?id=com.richmat.rmcontrol2) 21.3.7 | `com.richmat.rmcontrol2` | [RMControl](#rmcontrol); the [Richmat remotes](#richmat-remotes) cover the same beds |
-| ✅ | [BedTech](https://play.google.com/store/apps/details?id=com.bedtech) | `com.bedtech` | [BedTech](#bedtech) |
+| ✅ | [BedTech](https://play.google.com/store/apps/details?id=com.bedtech) 7.1.3 (14) | `com.bedtech` | [BedTech](#bedtech) |
 | ✅ | [SleepFunction Bed Control](https://play.google.com/store/apps/details?id=com.richmat.sleepfunction) | `com.richmat.sleepfunction` | [Richmat remotes](#richmat-remotes) |
 | ✅ | [L&P Adjustable Base](https://play.google.com/store/apps/details?id=com.richmat.lp2) 2.3.25 | `com.richmat.lp2` | [L&P MlRM](#lp-mlrm), [Richmat remotes](#richmat-remotes) (QRRM) |
 | ✅ | [L&P Adjustable Base](https://play.google.com/store/apps/details?id=com.richmat.lp) 2.2.1 (13), legacy | `com.richmat.lp` | [L&P legacy app](#lp-legacy-app) |
@@ -89,14 +89,14 @@ is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 
 | Feature | Richmat remotes | BedTech | L&P MlRM | RMControl | Richmat MH | HJBed | Classic apps | Eshine | Good Vibe Sleep | L&P legacy app | Casper Base | Hush Base |
 |---------|-----------------|---------|----------|-----------|------------|-------|------------|--------|-----------------|----------------|-------------|-----------|
-| Motor Control | ✅ (up to 7 motors) | ✅ Head, Foot, Leg/Pillow | ✅ Head, Feet | ✅ Catalog movement with cancellable repeats and release cleanup | ✅ Two motors; the model decides which exist (KEEP then STOP) | ✅ Selected head, foot, combined, pillow, lumbar, tilt, foot-box and sofa routes, depending on product | ✅ Exact app-labelled controls per selected layout | ✅ Head, feet, lumbar and pillow; global STOP | ✅ Exact app-labelled actions, with each product's gesture and operand | ⚠️ Layout-specific app buttons; no generic head, foot or lumbar axes | ✅ Product-specific; PRO back, legs and lumbar, MAX adds pillow | ✅ Product-specific back, legs, pillow, lumbar, combined and third motor |
-| Hold Until Release | ✅ ([renewable hold](../SERVICES.md#renewable-holds)) | ❌ (report PARTIAL) | ✅ | ✅ Products whose motor controls are sustain presses; short-press products keep finite moves | ✅ (KEEP until the lease ends, then STOP 120 ms later) | ✅ (sustained actions) | ✅ Keep buttons, including the Hold presets ([renewable hold](../SERVICES.md#renewable-holds), release 50 ms after it ends); short, long and armed presses keep their gestures | ✅ ([renewable hold](../SERVICES.md#renewable-holds) and `hold_control`, then STOP) | ✅ Sustained-press controls only ([renewable hold](../SERVICES.md#renewable-holds)); short, long and short-and-long presses, and memory-mode controls while memory mode is on, keep their own gestures | ❌ Button gestures only | ❌ Finite pulses, then STOP | ❌ Finite pulses, then STOP |
+| Motor Control | ✅ (up to 7 motors) | ✅ Back/legs; BT6500 pillow/lumbar; FH head banks | ✅ Head, Feet | ✅ Catalog movement with cancellable repeats and release cleanup | ✅ Two motors; the model decides which exist (KEEP then STOP) | ✅ Selected head, foot, combined, pillow, lumbar, tilt, foot-box and sofa routes, depending on product | ✅ Exact app-labelled controls per selected layout | ✅ Head, feet, lumbar and pillow; global STOP | ✅ Exact app-labelled actions, with each product's gesture and operand | ⚠️ Layout-specific app buttons; no generic head, foot or lumbar axes | ✅ Product-specific; PRO back, legs and lumbar, MAX adds pillow | ✅ Product-specific back, legs, pillow, lumbar, combined and third motor |
+| Hold Until Release | ✅ ([renewable hold](../SERVICES.md#renewable-holds)) | ✅ Explicit 7.1.3 models, no release frame; legacy keeps finite pulses | ✅ | ✅ Products whose motor controls are sustain presses; short-press products keep finite moves | ✅ (KEEP until the lease ends, then STOP 120 ms later) | ✅ (sustained actions) | ✅ Keep buttons, including the Hold presets ([renewable hold](../SERVICES.md#renewable-holds), release 50 ms after it ends); short, long and armed presses keep their gestures | ✅ ([renewable hold](../SERVICES.md#renewable-holds) and `hold_control`, then STOP) | ✅ Sustained-press controls only ([renewable hold](../SERVICES.md#renewable-holds)); short, long and short-and-long presses, and memory-mode controls while memory mode is on, keep their own gestures | ❌ Button gestures only | ❌ Finite pulses, then STOP | ❌ Finite pulses, then STOP |
 | [Estimated Positions](../ESTIMATED_POSITIONS.md) | ✅ Opt-in head and feet | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Position Feedback | ❌ | ❌ | ❌ | ❌ (numbered motor reports are not relabeled as physical axes) | ⚠️ VER1 angle replies update the angle numbers; **Reached position** reports memory arrival | Raw observed travel, angle and height data; no inferred position seeking or units | ❌ No inferred angle or general command acknowledgement; desk height, range, unit and error callbacks | ❌ (motor reports never populate position feedback or sliders) | ❌ No calibrated position controls; raw typed events remain visible | ❌ | ❌ Raw motor-number diagnostics only, not calibrated angles | ❌ Raw index, angle and height events only |
 | Memory Presets | ✅ (1-5 slots, varies by model) | ✅ (2 slots) | ✅ (2 slots, held recall) | ✅ Where the selected catalog supports them | ✅ Memory slots from the model's catalog | ✅ Product-specific named recall/save buttons, including memory 1–4 where selected | ✅ Per-node short and long gestures, memory-arm and Hold/Release gates | ❌ (named preset saves instead) | ✅ Product-specific short/long gestures and local memory mode | ⚠️ Only as the selected layout's named app buttons | ✅ The product's slots, recall and save (PRO and MAX: one) | ✅ Product-specific recall and explicit save |
-| Presets | ✅ Zero-G / Anti-Snore / TV / Lounge; Yoga / Read on some models | ✅ Zero-G / Anti-Snore / TV / Lounge | ✅ Zero-G / Anti-Snore / TV / Lounge | ✅ Where the catalog has them | ✅ Standard presets from the model's catalog | ✅ Product-specific | ✅ Where the layout has them | ✅ Flat / Zero-G / Anti-Snore; saves Zero-G and Anti-Snore | ✅ Zero gravity, anti-snoring, TV and lounge actions where the product has them | ⚠️ Only as the selected layout's named app buttons | ✅ TV, Lounge, Anti-snore and Zero-G, recall and save | ✅ Product-specific, recall and save |
-| Massage | ✅ | ✅ (5 modes, timer) | ✅ Discrete head/foot up and down, timers | ✅ Including head/foot intensity up/down where both directions exist | ✅ App-labelled buttons; VER1 head/foot intensity numbers | ✅ Product-specific mode, intensity and timer buttons | ✅ Bound levels, patterns, timers and popup choices | ✅ Head and foot strength, mode, off, 10/20/30-minute buttons | ✅ Exact controls in the selected app layout; bottom massage countdown | ⚠️ Only as the selected layout's named app buttons | ✅ Head and foot intensity, mode, all off, 10/20/30-minute timers | ✅ The product's zones, modes and timers |
-| Under-bed Lights | ✅ (toggle; RGB color picker + timer on select models) | ✅ (toggle and off) | ✅ (toggle) | ⚠️ RGB, **Always On** or **1 through 15 minutes** timer; gated on the light acknowledgment and strip flag | ✅ RGB light or colour action, light timeout, button-light page | ✅ Selected lamp buttons; advanced timeout/RGB require product flag and acknowledgement | ✅ Bound controls, capability-gated RGB and timer settings | ✅ (toggle) | ✅ Product-gated actions, RGB settings and duration choices | ⚠️ Only as the selected layout's named app buttons; no RGB | ✅ Light buttons; ordinary light or RGB page where the product and its reply allow | ✅ RGB strip for lighting-flag products, colour and timer otherwise |
+| Presets | ✅ Zero-G / Anti-Snore / TV / Lounge; Yoga / Read on some models | ✅ Model-specific presets; Lounge only on legacy | ✅ Zero-G / Anti-Snore / TV / Lounge | ✅ Where the catalog has them | ✅ Standard presets from the model's catalog | ✅ Product-specific | ✅ Where the layout has them | ✅ Flat / Zero-G / Anti-Snore; saves Zero-G and Anti-Snore | ✅ Zero gravity, anti-snoring, TV and lounge actions where the product has them | ⚠️ Only as the selected layout's named app buttons | ✅ TV, Lounge, Anti-snore and Zero-G, recall and save | ✅ Product-specific, recall and save |
+| Massage | ✅ | ✅ Model-specific zone, mode, off or 20-minute timer actions | ✅ Discrete head/foot up and down, timers | ✅ Including head/foot intensity up/down where both directions exist | ✅ App-labelled buttons; VER1 head/foot intensity numbers | ✅ Product-specific mode, intensity and timer buttons | ✅ Bound levels, patterns, timers and popup choices | ✅ Head and foot strength, mode, off, 10/20/30-minute buttons | ✅ Exact controls in the selected app layout; bottom massage countdown | ⚠️ Only as the selected layout's named app buttons | ✅ Head and foot intensity, mode, all off, 10/20/30-minute timers | ✅ The product's zones, modes and timers |
+| Under-bed Lights | ✅ (toggle; RGB color picker + timer on select models) | ✅ Model-specific toggle; legacy also off | ✅ (toggle) | ⚠️ RGB, **Always On** or **1 through 15 minutes** timer; gated on the light acknowledgment and strip flag | ✅ RGB light or colour action, light timeout, button-light page | ✅ Selected lamp buttons; advanced timeout/RGB require product flag and acknowledgement | ✅ Bound controls, capability-gated RGB and timer settings | ✅ (toggle) | ✅ Product-gated actions, RGB settings and duration choices | ⚠️ Only as the selected layout's named app buttons; no RGB | ✅ Light buttons; ordinary light or RGB page where the product and its reply allow | ✅ RGB strip for lighting-flag products, colour and timer otherwise |
 | Split-King Sync | ✅ (controller-level on/off; assumed state) | ❌ | ❌ | ✅ Where the catalog has it | ❌ | ✅ Sync buttons where selected | ✅ Where the layout has it | ❌ | ✅ Sync on/off actions where the product has them | ❌ | ❌ (one-address Left/Right on stored L400SH and L300SH) | ❌ (one-address Left/Right on side-flag products) |
 | Alarms | ❌ | ❌ | ❌ | ⚠️ `adjustable_bed.rmcontrol_alarm`, product-gated | ✅ Actions and entities where the model's pages exist | ✅ Single or repeat alarms where the product flag and clock acknowledgement permit | ✅ One selected layout action at the next requested wall-clock time | ❌ | ✅ Product-gated single and repeat alarms, slots 1–7 | ❌ | ⚠️ Single and repeating alarms on stored products with alarm lists; none on PRO and MAX | ✅ Single; repeating only on restored products with that capability |
 | Other | | | | ✅ Disabled-by-default catalog buttons; ⚠️ `adjustable_bed.rmcontrol_anti_snore` on six products | ✅ Smart set lock, snore intervention, detection, aroma, waist mattress | ✅ Music, clock synchronization, local layout, single-address paired sides | ✅ Aroma (no reliable setting acknowledgements); desk target, unit, three recall buttons and fourth/reset button | ⚠️ Eleven read-only diagnostic sensors | ✅ Snore settings where the normal product's settings menu admits them; independent type 1/type 2 sleep sensors with live values and direct BLE reports; only the product's listed sides. ❌ Firmware, Wi-Fi and cloud are outside the direct BLE bed boundary | ⚠️ Disabled-by-default app-response diagnostic; Stop cancels and releases the active action only (no emergency-stop command) | ✅ Music page, external snore trigger, sensor-name query; separate [sleep sensors and remote finder](casper-base.md#separate-sleep-sensors-and-remote-finder) | ✅ Fan, heating and music on products that list them; separate [sleep modules](hush-base.md#sleep-transport) |
@@ -156,7 +156,16 @@ sends STOP.
 | Richmat Nordic | `richmat` | nordic | `6E` | 7 × 150 ms | once | 5 slots | renewable lease |
 | Richmat Prefix55 | `richmat` | prefix55 | `55 01 00 6E C4` | 7 × 150 ms | once | 5 slots | renewable lease |
 | Richmat PrefixAA | `richmat` | prefixaa | `AA 01 00 6E 19` | 7 × 150 ms | once | 5 slots | renewable lease |
-| BedTech | `bedtech` | wilinke | `6E 01 00 5E CD` | 10 × 100 ms | once | 2 slots | no |
+| BedTech legacy | `bedtech` | wilinke | `6E 01 00 5E CD` | 10 × 100 ms | once | 2 slots | no |
+| BedTech app BT2000 | `bedtech` | wilinke | End refresh (no frame) | 10 × 100 ms | once | 2 slots | renewable lease |
+| BedTech app BT2500 | `bedtech` | wilinke | End refresh (no frame) | 10 × 100 ms | once | 2 slots | renewable lease |
+| BedTech app BT3000 | `bedtech` | wilinke | End refresh (no frame) | 10 × 100 ms | once | 2 slots | renewable lease |
+| BedTech app BT3000FH | `bedtech` | wilinke | End refresh (no frame) | 10 × 100 ms | once | 2 slots | renewable lease |
+| BedTech app BT6500 | `bedtech` | wilinke | End refresh (no frame) | 10 × 100 ms | once | 2 slots | renewable lease |
+| BedTech app BTX4 | `bedtech` | wilinke | End refresh (no frame) | 10 × 100 ms | once | 2 slots | renewable lease |
+| BedTech app BTX4FH | `bedtech` | wilinke | End refresh (no frame) | 10 × 100 ms | once | 2 slots | renewable lease |
+| BedTech app BTX5 | `bedtech` | wilinke | End refresh (no frame) | 10 × 100 ms | once | 2 slots | renewable lease |
+| BedTech app BTX5FH | `bedtech` | wilinke | End refresh (no frame) | 10 × 100 ms | once | 2 slots | renewable lease |
 | L&P MlRM | `leggett_wilinke` | wilinke | `6E 01 00 6E DD` | 10 × 110 ms | 100 × 300 ms, then STOP | 2 slots | renewable lease |
 
 ### Catalog apps
@@ -259,7 +268,7 @@ and timing.
 |---|---|---|---|---|---|
 | N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep, Casper Base, Hush Base |
 | W0 | `8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA |
-| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech, L&P MlRM, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep, Casper Base, Hush Base |
+| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep, Casper Base, Hush Base |
 | W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep, Casper Base, Hush Base |
 | W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Good Vibe Sleep, Casper Base, Hush Base |
 | W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep, Casper Base, Hush Base |
@@ -451,9 +460,9 @@ CRC-16. See each profile's Notifications.
 
 ### STOP and release behavior
 
-- STOP is the command with code `6E`. QRRM and BT6500 Richmat remotes, and every
-  BedTech bed, stop with `5E` instead.
-- Movement always ends with STOP, sent with a fresh cancel event, so a cancelled
+- STOP is the command with code `6E`. QRRM and BT6500 Richmat remotes, and the legacy
+  BedTech route, stop with `5E` instead.
+- Fixed-table movement with a declared release always ends with STOP, sent with a fresh cancel event, so a cancelled
   hold still releases the motors. The BedTech route reports a failed STOP; the
   others log it and keep the original error.
 - The catalog apps release per catalog entry: some actions are followed by STOP,
@@ -463,7 +472,8 @@ CRC-16. See each profile's Notifications.
   refreshing at the profile's own interval (the entry's pulse delay on the
   fixed-table routes, the app's KEEP or sustain cadence on the catalog apps)
   until the lease ends or a STOP arrives, up to 30 s, then sends the same STOP.
-  BedTech keeps finite pulses.
+  Legacy BedTech keeps finite pulses; its explicit 7.1.3 models end refresh
+  without a release packet.
 
 ### Vectors
 
@@ -657,97 +667,156 @@ its 120 ms delay); the other frames are the pre-v5 controller's.
 
 ### BedTech
 
-**App:** [BedTech](https://play.google.com/store/apps/details?id=com.bedtech), `com.bedtech`
+**App:** [BedTech](https://play.google.com/store/apps/details?id=com.bedtech) 7.1.3 (14), `com.bedtech`
 
-**Status:** ✅ Tested
-
-Behaves as the Richmat remotes route with WiLinke framing on W1, except as below.
+**Status:** ❓ Needs testing (explicit app models); ✅ existing legacy controls
 
 #### Setup
 
-The `bedtech` bed type, on the W1 service and write characteristic.
+Choose **BedTech app**, then the exact model. Detection cannot select a model.
+Existing entries keep **Legacy BedTech controls**, including their field-reported
+`^` release and old pillow mapping. Select an explicit model to use the app's
+controls and release behavior. No automatic migration changes a working bed.
 
-> [!NOTE]
-> BedTech shares the FEE9 service UUID and characteristic with Richmat WiLinke.
-> QRRM controllers that advertise manufacturer ID `0x4C57` are identified as
-> BedTech. Because ESPHome proxy snapshots can omit that field, the integration
-> also checks the connected controller's vendor model: the confirmed BedTech
-> BT3000 reports `WLT825X_H35`, while the confirmed Casper/Richmat HJC27 reports
-> `WLT825X_H35_S`. Unknown QRRM models are left unchanged rather than guessed.
+All models write with response on W1 (FEE9). The app accepts any nonempty
+Bluetooth name with that service, without a model-name or manufacturer filter.
+Home Assistant normalizes UUIDs and accepts the service at any advertisement
+index. Shared FEE9/QRRM alone remains ambiguous with Richmat, so confirm the app.
+The existing hardware-specific identification remains: manufacturer ID `0x4C57`
+and connected model `WLT825X_H35` identify confirmed BedTech receivers;
+`WLT825X_H35_S` identifies the Casper/Richmat HJC27. A proxy may omit the
+manufacturer field. Unknown models stay unchanged rather than being guessed.
 
-The official app (react-native-ble-manager) uses **write-with-response**
-(`BleManager.write`) for every command; its `writeWithoutResponse` wrapper is
-never called. An earlier claim that the app used write-without-response (and
-that write-with-response made lights/lounge fail) came from an experiment for
-issue #243, not from the official app's implementation. Verified against
-BedTech 7.1.3 Hermes bytecode (2026-07-10, issue #410).
+For BT3000FH, BTX4FH and BTX5FH, enable **Left/Right controls** on the one
+receiver to select the two head banks. Other models can combine two receiver
+entries. Configure each physical receiver's model separately.
+The app's bed-size choices do not negotiate a protocol or change the bytes.
 
 #### Controls
 
-Codes are ASCII characters of the BedTech app: Head `$`/`%`, Foot `&`/`'`,
-Leg/Pillow `)`/`*`, Flat `1`, Zero-G `E`, Anti-Snore `F`, TV `X`, Lounge `e`,
-memory `.`/`/` (save `+`/`,`), Light toggle `<`, Light off `u`, Massage on `]`,
-Massage switch `H`, Head/Foot massage up `L`/`N`, and STOP `^`. See
-[Fixed-table buttons](#fixed-table-buttons) for the frames.
+<!-- generated:bedtech-models -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
 
-- The light has no discrete ON: the integration's on and toggle both send `<`.
-  `.` and `+` belong to memory slot 1.
-- Pillow and leg use `)`/`*`.
+| Model | Motors | Presets | Massage | Light | Single-address sides |
+|---|---|---|---|---|---|
+| BT2000 | back, legs | none | none | none | no |
+| BT2500 | back, legs | Flat, Zero-G, Anti-Snore | Massage toggle, Massage off | none | no |
+| BT3000 | back, legs | Flat, Zero-G, Anti-Snore | Head massage step, Foot massage step, Massage mode step, Massage timer 20 min | toggle | no |
+| BT3000FH | back, legs | Flat, Zero-G, TV | Head massage step, Foot massage step, Massage mode step, Massage off | toggle | yes, shared foot |
+| BT6500 | back, legs, pillow, lumbar | Flat, Zero-G, Anti-Snore | Head massage step, Foot massage step, Massage mode step, Massage off | toggle | no |
+| BTX4 | back, legs | Flat, Zero-G | none | none | no |
+| BTX4FH | back, legs | Flat, Zero-G | none | none | yes, shared foot |
+| BTX5 | back, legs | Flat, Zero-G, Anti-Snore | Head massage step, Foot massage step, Massage mode step, Massage timer 20 min | toggle | no |
+| BTX5FH | back, legs | Flat, Zero-G, Anti-Snore | Head massage step, Foot massage step, Massage mode step, Massage timer 20 min | toggle | yes, shared foot |
+<!-- /generated -->
 
-> [!WARNING]
-> Earlier versions of this document labeled `)`/`*` as "leg/pillow" and
-> `?`/`@`/`A`/`B` as "both heads"/"both feet". The BedTech 7.1.3 command
-> table maps `)`/`*` to `bothHeads`, `?`/`@` to `pillow`, and `A`/`B` to
-> `lumbar` (pillow/lumbar exist only on BT6500). The integration's entity
-> mapping still follows the old labels and needs a separate verification
-> pass before being changed.
+Every model has two memory slots, recalled and saved with one write.
+The declared three-second save duration is unused by the shipped sender.
+BT2000's screen has no preset buttons. BT3000 has no ordinary TV button;
+BT3000FH has TV instead of anti-snore. BT2500's displayed light button throws
+before writing, so no light entity is created for that model.
 
-App codes the integration does not send:
+<!-- generated:bedtech-app-commands -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
 
-| Group | Codes |
-|-------|-------|
-| Pillow (BT6500) | `?` `3F` / `@` `40` |
-| Lumbar (BT6500) | `A` `41` / `B` `42` |
-| Flat (alt, app `flat2`) | `l` `6C` |
-| Massage off | `^` `5E` (the integration sends it as STOP) |
-| Head / foot massage down | `M` `4D` / `O` `4F` |
-| Massage modes | Constant `:` `3A`, Pulse `8` `38`, Wave 1-3 `I`/`J`/`K` `49`-`4B` |
-| Massage timer | 10 min `_` `5F`, 20 min `c` `63`, 30 min `a` `61` |
+| Action | Code | Frame (bank 0) | Timing |
+|---|---|---|---|
+| Head up | `24` | `6E 01 00 24 93` | 100 ms until release |
+| Head down | `25` | `6E 01 00 25 94` | 100 ms until release |
+| Feet up | `26` | `6E 01 00 26 95` | 100 ms until release |
+| Feet down | `27` | `6E 01 00 27 96` | 100 ms until release |
+| Flat | `31` | `6E 01 00 31 A0` | once |
+| Zero-G | `45` | `6E 01 00 45 B4` | once |
+| Anti-Snore | `46` | `6E 01 00 46 B5` | once |
+| Massage toggle | `5D` | `6E 01 00 5D CC` | once |
+| Massage off | `5E` | `6E 01 00 5E CD` | once |
+| Head massage step | `4C` | `6E 01 00 4C BB` | once |
+| Foot massage step | `4E` | `6E 01 00 4E BD` | once |
+| Massage mode step | `48` | `6E 01 00 48 B7` | once |
+| Light toggle | `3C` | `6E 01 00 3C AB` | once |
+| Massage timer 20 min | `63` | `6E 01 00 63 D2` | once |
+| TV | `58` | `6E 01 00 58 C7` | once |
+| Pillow up | `3F` | `6E 01 00 3F AE` | 100 ms until release |
+| Pillow down | `40` | `6E 01 00 40 AF` | 100 ms until release |
+| Lumbar up | `41` | `6E 01 00 41 B0` | 100 ms until release |
+| Lumbar down | `42` | `6E 01 00 42 B1` | 100 ms until release |
+| Memory 1 recall | `2E` | `6E 01 00 2E 9D` | once |
+| Memory 1 save | `2B` | `6E 01 00 2B 9A` | once |
+| Memory 2 recall | `2F` | `6E 01 00 2F 9E` | once |
+| Memory 2 save | `2C` | `6E 01 00 2C 9B` | once |
+<!-- /generated -->
 
-The app gates features per user-selected model; command bytes are shared.
+FH head controls use bank 0 for Left and bank 1 for Right. Both heads use the
+app's fixed combined commands. Only BT3000FH provides synchronized head-down;
+BTX4FH and BTX5FH reject it without a write, so lower each head individually.
+Only BT3000FH provides secondary Flat, Zero-G, TV and light toggle. The other
+FH models reject those secondary actions. FH memory and massage remain in
+bank 0, even when Right is selected. They never use the unused `memory2` table.
+Foot movement remains shared. Every FH command replaces the single physical
+refresh timer, and STOP from either head ends activity on both banks. These
+are model gates, not inferred hardware features.
 
-| Model | Light | Massage | Pillow/Lumbar | Dual (head2) | Presets |
-|-------|-------|---------|---------------|--------------|---------|
-| BT2000 | ❌ | ❌ | ❌ | ❌ | flat, zero-g, anti-snore |
-| BT2500 | ❌ | head only | ❌ | ❌ | flat, zero-g, anti-snore |
-| BT3000 | ✅ | head+foot | ❌ | ❌ | + TV |
-| BT3000FH | ✅ | head+foot | ❌ | ✅ | + TV |
-| BT6500 | ✅ | head+foot | ✅ | ❌ | flat, zero-g, anti-snore |
-| BTX4 | ❌ | ❌ | ❌ | ❌ | flat, zero-g |
-| BTX4FH | ❌ | ❌ | ❌ | ✅ | flat, zero-g |
-| BTX5 | ✅ | head+foot | ❌ | ❌ | flat, zero-g, anti-snore |
-| BTX5FH | ✅ | head+foot | ❌ | ✅ | flat, zero-g, anti-snore |
-
-BT2000/BT2500/BTX4/BTX4FH owners have no BLE light command at all — the
-app hides the button. `light2` (`_u`/`_<`) is only offered on BT3000FH.
-
-**Dual base.** For dual-base (King/Split King) beds the app sends secondary
-controls with `_` prefixed (Head2 `_$`/`_%`, Preset2 Flat `_1`, Light2 Toggle
-`_<`, Memory2 `_/`), framed as `6E 01 01 code sum8`. The integration does not
-send them.
+The legacy route still offers its old Lounge, light off and pillow controls.
+Their codes were previously exposed in response to hardware reports. Explicit
+7.1.3 models do not expose those unused catalog actions. In particular `)`/`*`
+mean **both heads** in this app, and BT6500 pillow uses `?`/`@`, lumbar `A`/`B`.
+The old integration labels stay confined to Legacy. Unused head/foot massage-down,
+direct mode/wave commands and 10/30-minute timers do not acquire entities.
 
 #### Timing
 
-The app repeats only motor position commands (`repeat: 1` in its command
-table), re-sending every `repeat_ms` while the button is held. Presets,
-memory, massage, and light commands are sent once. The app sends no stop
-command on button release (BT6500 field reports still show `^` acting as
-stop, so the integration keeps sending it).
+Explicit app models refresh movement every **100 ms**, with no release packet.
+Every new app-model command replaces the previous stream on that physical
+receiver, including a light or massage action. A normal HA press uses the
+configured finite pulse count. A renewable hold
+continues at the same cadence until release or its 30-second ceiling. STOP,
+cancellation, disconnect and unload end the refresh through the HA scheduler.
+The `^` packet is massage off on models whose UI offers it, not movement STOP.
+No retry replays a rejected app command. Writes are serialized and await GATT
+completion; a slow link does not build the Android app's pending-write backlog.
+
+Legacy keeps its finite pulses and `^` compatibility STOP from BT6500 reports.
+The one-shot preset, memory, massage and light actions do not repeat.
+The app's setup test raises the head for two seconds, stops refresh, and schedules
+disconnect 500 ms later. HA setup only checks the connection. Explicit
+`bedtech_app_command` with `action: connectionTest` raises the first head for
+two seconds and uses HA's configured connection handoff, so a delayed Android
+disconnect callback cannot interrupt a newer operation.
+
+#### Notifications
+
+No app initialization frame, notification subscription, position parser, read
+query, pairing/PIN handshake, MTU negotiation or bed acknowledgement is present.
+GATT write completion is not bed state. The 20-minute massage button sends one command and offers no invented Off
+option or state feedback.
+There are no inferred position sensors or sliders.
+
+#### Services
+
+`bedtech_app_command` exposes the app's sleeper selector. Target the paired parent
+for a two-receiver bed. Selectors 1/2 select one receiver, 3 both, 4/5 select one
+head while sending foot actions and STOP to both receivers. This includes foot
+massage. FH selectors 4/5 select the first/second head on one link; 3 selects both
+heads. Other FH actions retain their documented bank and model guards.
+A conflicting child target and sleeper selector is rejected before any write.
+Movement remains a finite pulse operation; standard `timed_move` provides holds.
+See [the action reference](../SERVICES.md#bedtech-app).
 
 #### Evidence
 
-BedTech sends only its frozen frames, the pre-v5 controller's, checked against
-BedTech 7.1.3 Hermes bytecode (issue #410).
+Accepted unit095 APK Protocol Audit and independent audit001: `com.bedtech`
+7.1.3 (14), nine model routes and 148 frozen literal vectors. The Richmat codec
+reproduces every literal byte for byte, including bank 1. All 585 app
+model/action/side routes are retained as focused test vectors. Hardware remains
+unverified for the explicit profiles, including cessation of movement after
+refresh ends, bank mapping, memory saves and the timer20 button.
+
+Artifact SHA-256: `0d529e90a1d134c9f2e1ff5d3966616ec8f4c01ec63d7e9e79974d8f7e2137a2`.
+Report manifest SHA-256: `d196849c2c9463ac6bbd929eea3070d0e8f234aa511362284508a9c9cdc945fd`.
+The earlier BedTech 7.1.3 Hermes checks (2026-07-10, issue #410) established
+write-with-response; the contrary light/Lounge experiment in issue #243 did
+not describe the official app's write mode. The legacy field-report behavior
+remains available independently of the explicit app profiles.
 
 ### L&P MlRM
 

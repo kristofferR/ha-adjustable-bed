@@ -3260,3 +3260,36 @@ richmat_app_alarm:
               value: "5"
             - label: Sunday
               value: "6"
+
+bedtech_app_command:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    action:
+      required: true
+      selector:
+        select:
+          options: [headUp, headDown, footUp, footDown, pillowUp, pillowDown, lumbarUp, lumbarDown, presetFlat, presetZeroG, presetAntiSnore, presetTV, lightToggle, massageOn, massageOff, headMassageUp, footMassageUp, massageMode, massageTimer20, memory1, memory1Save, memory2, memory2Save, stop, connectionTest]
+    sleeper:
+      default: 3
+      selector:
+        select:
+          options:
+            - value: "1"
+              label: First sleeper
+            - value: "2"
+              label: Second sleeper
+            - value: "3"
+              label: Both sleepers
+            - value: "4"
+              label: First head, shared foot
+            - value: "5"
+              label: Second head, shared foot
+    side:
+      selector:
+        select:
+          options: [left, right, both]

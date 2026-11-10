@@ -601,7 +601,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     ),
     BED_TYPE_LEGGETT_WILINKE: "Leggett & Platt WiLinke (MlRM)",
     # Brand-specific types
-    BED_TYPE_BEDTECH: "BedTech",
+    BED_TYPE_BEDTECH: "BedTech app (select model, or legacy controls)",
     BED_TYPE_COOLBASE: "Cool Base (BaseI5 with fan)",
     BED_TYPE_ERGOMOTION: "Ergomotion",
     BED_TYPE_ERGOMOTION_4: "Ergomotion 4.0 app (explicit product)",

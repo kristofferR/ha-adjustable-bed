@@ -1326,6 +1326,14 @@ def route_scenarios() -> list[Scenario]:
                     replies={**base.replies, **ROUTE_REPLIES.get(f"{bed_type}:{variant}", {})},
                 )
             )
+    # BedTech's manual model selector: each model has its own controls and release.
+    from custom_components.adjustable_bed.profiles.richmat import BEDTECH_APP_PROFILES
+
+    for model in BEDTECH_APP_PROFILES:
+        base = default_scenario("bedtech")
+        scenarios.append(dataclasses.replace(
+            base, id=f"bedtech:{model}", protocol_variant=model, layout_id="bedtech",
+        ))
     # Richmat app family: the picker model selects the byte table within one controller.
     from custom_components.adjustable_bed.beds.richmat_mh.controller import (
         MODEL_VARIANT_PREFIX,

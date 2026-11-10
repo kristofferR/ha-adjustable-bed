@@ -1921,7 +1921,10 @@ class AdjustableBedCoordinator(
                     self._reset_disconnect_timer()
 
     def _protocol_command_resources(self, resources: frozenset[str]) -> frozenset[str]:
-        """Keep Fuzion movements in the same scope as their global halt."""
+        """Keep protocol-wide streams in the same scope as their release."""
+        controller = self.capability_controller
+        if controller is not None and controller.commands_share_timer is True:
+            return command_resources("*")
         if self._bed_type == BED_TYPE_SLEEP_NUMBER and any(
             item == "*"
             or item.startswith("motor:")
@@ -2740,6 +2743,9 @@ class AdjustableBedCoordinator(
             if resources is not None
             else command_resources(resource or "*")
         )
+        controller = self.capability_controller
+        shared_timer = controller is not None and controller.commands_share_timer is True
+        cancel_running = cancel_running or shared_timer
         if cancel_running and (
             expected_stop_epoch is None
             or self._command_scheduler.stop_epoch == expected_stop_epoch
@@ -2757,7 +2763,7 @@ class AdjustableBedCoordinator(
             scheduled,
             resources=self._protocol_command_resources(command_scope),
             kind=CommandKind.HOLD if lease is not None else kind,
-            replacement_key=(resource or "*") if resources is None else None,
+            replacement_key="*" if shared_timer else (resource or "*") if resources is None else None,
             cancel_running=cancel_running,
             group_id=group_id,
             pulse_count=pulse_count,
@@ -2851,6 +2857,10 @@ class AdjustableBedCoordinator(
             await group_operation()
             return
 
+        controller = self.capability_controller
+        cancel_running = cancel_running or (
+            controller is not None and controller.commands_share_timer is True
+        )
         if cancel_running:
             self._cancel_counter += 1
             self._cancel_command.set()

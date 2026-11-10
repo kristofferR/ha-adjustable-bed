@@ -128,6 +128,7 @@ class SideProfile:
 
 
 _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
+    "bedtech": SideProfile("BedTech model", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True),
     "gmmotor": SideProfile("GM Control product", frozenset({CONF_BLE_DEVICE_NAME})),
     "gmmotor_sleep_mm": SideProfile("GM Control MM sleep module"),
     "gmmotor_sleep_sxb": SideProfile("GM Control SXB sleep module"),

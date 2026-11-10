@@ -176,6 +176,7 @@ KEY_SINGLE_ADDRESS_ORIGIN_ENTITY_UNIQUE_IDS: Final = (
 PAIR_LAYOUT_CAPABILITY_KEY: Final = "pair_layout"
 SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
     {
+        "bedtech",
         BED_TYPE_ERGOMOTION,
         BED_TYPE_ERGOMOTION_4,
         BED_TYPE_KEESON,
@@ -204,6 +205,8 @@ def supports_single_address_pairing(
     """Return whether a bed can expose the Phase 3 single-address surface."""
     if bed_type not in SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES:
         return False
+    if bed_type == "bedtech":
+        return protocol_variant in {"bt3000fh", "btx4fh", "btx5fh"}
     if bed_type == BED_TYPE_MOTOMOTION:
         from .profiles.motomotion import Profile
 

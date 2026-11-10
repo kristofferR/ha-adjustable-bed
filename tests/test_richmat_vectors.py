@@ -28,6 +28,7 @@ FIXED_ROUTES = {
 }
 PROFILES = {
     **FIXED_ROUTES,
+    **{profile.key: profile for profile in profiles.BEDTECH_APP_PROFILES.values()},
     "hjbed": profiles.HJBED,
     "eshine": profiles.ESHINE,
     "goodvibe": profiles.GOODVIBE,
@@ -54,7 +55,7 @@ def _decode(data: bytes) -> bytes:
 
 def _fixed_census(profile: profiles.RichmatProfile) -> set[str]:
     codes = {*(profile.codes or {}).values(), *(c for slot in profile.memory for c in slot)}
-    frames = {profile.frame(code).hex() for code in {*codes, profile.stop}}
+    frames = {profile.frame(code).hex() for code in {*codes, profile.stop} if code is not None}
     if profile is profiles.RICHMAT["wilinke"]:
         # Compatibility STOP, GGRM catalog taps and both light packet families.
         frames |= {

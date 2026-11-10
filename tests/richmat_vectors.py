@@ -10,6 +10,8 @@ frames are left out of those captures.
 import json
 from pathlib import Path
 
+from tests.bedtech_vectors import FROZEN_FRAMES as BEDTECH_APP_FRAMES
+
 
 def _goodvibe() -> frozenset[str]:
     """Good Vibe Sleep 2.0.1 (row116): the accepted report's vectors in ``fixtures/goodvibe``.
@@ -2102,3 +2104,6 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
     "goodvibe": _goodvibe(),
     "leggett_lp_legacy": _LP_LEGACY,
 }
+
+
+FROZEN_FRAMES.update(BEDTECH_APP_FRAMES)

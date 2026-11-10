@@ -139,7 +139,8 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `leggett_wilinke`, `leggett_platt` (`mlrm`) | S stream | U | U | lp2 | framed STOP per mode |
 | `hjbed` | S stream | U | U | row121 | per-action recovered release |
 | `richmat_classic_apps` (Avocado Eco Base, CoasterSleep, Forty Winks, Milemont, Superior) | S stream | U | U | avocado, coaster, fortywinks, milemont, superior, row066 | keep buttons repeat every 150 ms tick (110 ms for TWRM and MLRM names) until UP, then release 50 ms later; hold declared per control, on the held controls that run the keep mode under the current selection (see [per-control scope](#per-control-hold-scope)). Each press replaces the sender's one shared command and the release frame ends it; combined motors are fixed keys; speed keys are massage (`com_msg_speed`) |
-| `bedtech` | B | B | B | bedtech | report PARTIAL |
+| `bedtech` legacy | B | B | B | bedtech | Existing hardware-backed route; no new execution declaration |
+| `bedtech` explicit BT2000, BT2500, BT3000, BT3000FH, BT6500, BTX4, BTX4FH, BTX5, BTX5FH | S stream (no release frame) | U | U | bedtech713 | One timer per physical receiver, 100 ms refresh; stop cancels it without writing; FH banks share the timer |
 | `gmmotor` | B | B | B | gm | report PARTIAL; release behavior unresolved |
 | `casper_base` | B | B | B | casper | report PARTIAL |
 | `hush_base` | S stream | B | B | hush, row126 | movement refreshes every 100 ms, first write after 100 ms, until release, then sends STOP `6e` on the same side; massage strength sends once on press and STOP on release; text controls send their short or long gesture with no release. #516 and #591: no shard assesses two held axes or a motor-speed selection. Not declared: the mixed gestures need a per-control scope (see [per-control scope](#per-control-hold-scope)), and Hush runs on the shared Casper Base controller, whose own hold is blocked |
@@ -629,6 +630,7 @@ Report workspaces are machine-local under
 | avocado | `com.richmat.avocadoecobase` | 1.0.4 | COMPLETE | `com.richmat.avocadoecobase-1.0.4-2026-11-03-bulk061-clean002/work/report-revision-sol-003/` |
 | bailey | `com.richmat.bailey2` | 2.1.21 | COMPLETE | `com.richmat.bailey2-2.1.21-2026-11-03-bulk061-001/work/report-revision-sol-002/` |
 | bedsense | `com.fenmenbielei.bedsense` | 1.8 | COMPLETE | `com.fenmenbielei.bedsense-1.8-2026-11-03-bulk101-188-001/report/` |
+| bedtech713 | `com.bedtech` | 7.1.3 (14) | COMPLETE | `com.bedtech-7.1.3-2026-11-10-maxqueue001/report/`, accepted audit001; unit095 |
 | bedtech | `com.richmat.bed_tech` | 2.8.3 | PARTIAL | `com.richmat.bed_tech-2.8.3-2026-11-03-bulk061-001/report/` |
 | best | `com.richmat.best_mattress` | 1.1.1 | COMPLETE | `com.richmat.best_mattress-1.1.1-2026-10-02-queue-e0bb6807-20261001-055-005/report/` |
 | bf | `com.BF` | 1.2.3 | COMPLETE | `com.BF-1.2.3-2026-11-03-bulk061-001/report/` |

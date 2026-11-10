@@ -217,6 +217,7 @@ from .profiles import jiecang as jiecang_profiles
 from .profiles import limoss as limoss_profiles
 from .profiles import logicdata as logicdata_profiles
 from .profiles import malouf as malouf_profiles
+from .profiles.richmat import BEDTECH_APP_PROFILES, BEDTECH_VARIANTS
 
 if TYPE_CHECKING:
     from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
@@ -2080,6 +2081,21 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         BED_TYPE_HJBED,
         questions=(Question(CONF_PROTOCOL_VARIANT, HJBED_PROFILES, searchable=True),),
     ),
+    "bedtech": _asking(
+        "bedtech", questions=(Question(CONF_PROTOCOL_VARIANT, BEDTECH_VARIANTS),),
+    ),
+    **{
+        f"bedtech:{model}": SetupProfile(
+            owns={
+                CONF_MOTOR_COUNT: 4 if model == "bt6500" else 2,
+                CONF_HAS_MASSAGE: any(key.startswith("massage_") for key in profile.codes or {}),
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_MOTOR_PULSE_DELAY_MS: 100,
+            },
+            questions=(Question(CONF_PROTOCOL_VARIANT, BEDTECH_VARIANTS),),
+        )
+        for model, profile in BEDTECH_APP_PROFILES.items()
+    },
     # The product the Hush Base app shows sets every control; nothing detects it.
     "hush_base": _asking("hush_base", questions=(Question(CONF_PROTOCOL_VARIANT, _hush_products),)),
     # The layout owns the motion controls; Auto reads it from the Bluetooth name.

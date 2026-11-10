@@ -102,7 +102,7 @@ Each linked guide has a Status line with the details.
 | Family | Apps, remotes and receivers | Brands sold with it |
 |--------|-----------------------------|---------------------|
 | [BedJet PowerLayer](docs/beds/bedjet-powerlayer.md) | [BedJet PowerLayer adjustable frame](docs/beds/bedjet-powerlayer.md) ✅ | BedJet (the frame, not the BedJet climate unit) |
-| [BedTech](docs/beds/richmat.md#bedtech) | [BedTech](docs/beds/richmat.md#bedtech) ✅ | BedTech |
+| [BedTech](docs/beds/richmat.md#bedtech) | [BedTech](docs/beds/richmat.md#bedtech) ✅ legacy; ❓ nine app models | BedTech |
 | [Casper Base](docs/beds/casper-base.md) | [Casper Base app](docs/beds/casper-base.md) 🧪, [Casper Base sleep sensor, MM or SXB](docs/beds/casper-base.md#separate-sleep-sensors-and-remote-finder) 🧪, [Casper Base remote finder (RCRM handset)](docs/beds/casper-base.md#remote-finder) 🧪 | Casper |
 | [Customatic](docs/beds/okin-nframe.md#customatic-family) | [Clarity](docs/beds/okin-nframe.md#customatic-clarity) 🧪, [Jerome's C](docs/beds/okin-nframe.md#customatic-jeromes) 🧪, [Remedy](docs/beds/okin-nframe.md#customatic-remedy) 🧪, [Z-Series Z-230 / Z-280](docs/beds/okin-nframe.md#customatic-z-series) 🧪 | Customatic, Rize (Clarity, Remedy), Jerome's |
 | [DewertOkin ELEVATE](docs/beds/okin-5a.md#dewertokin-elevate) | [DewertOkin ELEVATE two-actuator lift](docs/beds/okin-5a.md#dewertokin-elevate) 🧪, [Adjustable Comfort M1X12 ELEVATE](docs/beds/starcode-m1x12.md) 🧪 | DewertOkin |
