@@ -763,13 +763,19 @@
  "button:isleep_pattern": {
   "card_section": "massage"
  },
- "button:jalon_massageTimeSwitch": {
+ "button:jalon_foot_intensity": {
   "card_section": "massage"
  },
- "button:jalon_massageWaveSwitch": {
+ "button:jalon_head_intensity": {
+  "card_section": "massage"
+ },
+ "button:jalon_massage_timer": {
   "card_section": "massage"
  },
  "button:jalon_massage_toggle": {
+  "card_section": "massage"
+ },
+ "button:jalon_massage_wave": {
   "card_section": "massage"
  },
  "button:jalon_query_alarm": {
@@ -777,12 +783,6 @@
  },
  "button:jalon_query_massage": {
   "card_section": "utility"
- },
- "button:jalon_strengthFootUp": {
-  "card_section": "massage"
- },
- "button:jalon_strengthHeadUp": {
-  "card_section": "massage"
  },
  "button:keeson_back_down": {
   "card_section": "motors",

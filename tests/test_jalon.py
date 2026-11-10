@@ -466,3 +466,42 @@ async def test_hold_restrictions_are_identical_in_preflight_and_execution(
     with pytest.raises(ValueError):
         await ctrl.hold_control(control, duration)
     hold.assert_not_awaited()
+
+
+def test_discovery_candidate_uses_normalized_name_without_device_object():
+    from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+
+    for name, expected in (("sMaRtBeD123", BED_TYPE_JALON), ("unrelated", None)):
+        info = SimpleNamespace(
+            name=name,
+            address="AA:BB:CC:DD:EE:FF",
+            service_uuids=[],
+            manufacturer_data={},
+            service_data={},
+        )
+        assert detect_bed_type_detailed(info).bed_type == expected
+
+
+def test_entity_translation_keys_follow_home_assistant_contract():
+    import re
+
+    ctrl = controller.JalonController(_FactoryCoordinator(), protocol="P3", layout="0")
+    translations = json.loads(
+        (Path(__file__).parents[1] / "custom_components/adjustable_bed/strings.json").read_text()
+    )
+    for spec in ctrl.controller_button_specs:
+        assert isinstance(spec.translation_key, str)
+        assert re.fullmatch(r"[a-z0-9]+(?:[_-][a-z0-9]+)*", spec.translation_key)
+        assert spec.translation_key in translations["entity"]["button"]
+
+
+def test_massage_connection_state_keeps_link_between_commands_by_default():
+    from custom_components.adjustable_bed.bed_traits import (
+        bed_traits,
+        disconnect_after_command_default_enabled,
+    )
+
+    traits = bed_traits(BED_TYPE_JALON)
+    assert traits.connection_scoped_state
+    assert not traits.persistent_connection
+    assert not disconnect_after_command_default_enabled(BED_TYPE_JALON)

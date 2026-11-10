@@ -4502,7 +4502,8 @@ connection, `smartbed` selects P3. For `okin-ble`, the presence of service `ff20
 selects P2; its absence selects P1. An edited HA display name never selects a
 protocol. Notification registration precedes clock calibration. There is no PIN,
 authentication command, pairing write, or keepalive. HA owns retries and idle
-handoff, independently for each physical receiver.
+handoff, independently for each physical receiver. New setups keep the link
+between commands because massage controls depend on its notification state.
 
 The app normally connects to one receiver. It proves no single-address side
 selector or concurrent motor composition. HA may combine two independently

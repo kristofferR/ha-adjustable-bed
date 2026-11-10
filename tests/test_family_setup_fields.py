@@ -495,6 +495,7 @@ _QUIET_BED_TYPES = (
     const.BED_TYPE_DOUBLESLEEP,
     const.BED_TYPE_FURNIMOVE,
     const.BED_TYPE_ISLEEP,
+    const.BED_TYPE_JALON,
     const.BED_TYPE_KEESON,
     const.BED_TYPE_LIMOSS_REMOTE,
     const.BED_TYPE_OCTO,

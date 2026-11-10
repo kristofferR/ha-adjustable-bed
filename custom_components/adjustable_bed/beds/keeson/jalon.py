@@ -313,15 +313,15 @@ class JalonController(KeesonController):
             ),
             button("jalon_query_massage", "Refresh massage", lambda c: c.query_massage()),
         ]
-        for action, label in (
-            ("massageTimeSwitch", "Massage timer"),
-            ("massageWaveSwitch", "Massage wave"),
-            ("strengthHeadUp", "Head massage intensity"),
-            ("strengthFootUp", "Foot massage intensity"),
+        for key, action, label in (
+            ("massage_timer", "massageTimeSwitch", "Massage timer"),
+            ("massage_wave", "massageWaveSwitch", "Massage wave"),
+            ("head_intensity", "strengthHeadUp", "Head massage intensity"),
+            ("foot_intensity", "strengthFootUp", "Foot massage intensity"),
         ):
             buttons.append(
                 button(
-                    f"jalon_{action}",
+                    f"jalon_{key}",
                     label,
                     lambda c, action=action: c._massage_action(action),
                     massage=True,

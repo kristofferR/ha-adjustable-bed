@@ -1190,6 +1190,9 @@ def default_scenario(bed_type: str) -> Scenario:
         from custom_components.adjustable_bed.profiles.keeson import DEFAULT_LAYOUTS
 
         data[const.CONF_PRODUCT_TYPE] = DEFAULT_LAYOUTS[bed_type]
+    if bed_type == const.BED_TYPE_JALON:
+        data.update({const.CONF_PRODUCT_TYPE: "2", const.CONF_BLE_DEVICE_NAME: "smartbed123"})
+        replies = {"*": "a50b00000258010106"}
     if bed_type == const.BED_TYPE_ISLEEP:
         data.update({const.CONF_PRODUCT_TYPE: 129, const.CONF_KAIDI_ROOM_ID: 10000})
         replies = {
@@ -1565,6 +1568,12 @@ def feature_scenarios(by_id: dict[str, Scenario]) -> list[Scenario]:
             },
         )
     )
+    for protocol in ("p1", "p2"):
+        routes.append(Scenario(
+            id=f"jalon:{protocol}", bed_type="jalon",
+            entry_data={"product_type": "2", "ble_device_name": "okin-ble123"},
+            replies={"*": "edfe00000000000005000000000023"},
+        ))
     return routes
 
 

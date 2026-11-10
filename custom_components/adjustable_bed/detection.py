@@ -2841,7 +2841,7 @@ def _detect_bed_type_detailed(
 
     # These app prefixes are shared with other bed apps. Keep stronger service
     # and model matches above; ask for the app rather than infer its identity.
-    if (service_info.device.name or "").lower().startswith(("okin-ble", "smartbed")):
+    if device_name.startswith(("okin-ble", "smartbed")):
         return DetectionResult(
             bed_type=BED_TYPE_JALON, confidence=0.3,
             signals=[*signals, "name:jalon_app_candidate"],

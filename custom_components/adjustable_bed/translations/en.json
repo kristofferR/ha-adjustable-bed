@@ -2859,20 +2859,20 @@
       "jalon_query_massage": {
         "name": "Refresh massage"
       },
-      "jalon_massageTimeSwitch": {
-        "name": "Massage timer"
-      },
-      "jalon_massageWaveSwitch": {
-        "name": "Massage wave"
-      },
-      "jalon_strengthHeadUp": {
-        "name": "Head massage intensity"
-      },
-      "jalon_strengthFootUp": {
-        "name": "Foot massage intensity"
-      },
       "jalon_query_alarm": {
         "name": "Refresh alarm"
+      },
+      "jalon_massage_timer": {
+        "name": "Massage timer"
+      },
+      "jalon_massage_wave": {
+        "name": "Massage wave"
+      },
+      "jalon_head_intensity": {
+        "name": "Head massage intensity"
+      },
+      "jalon_foot_intensity": {
+        "name": "Foot massage intensity"
       }
     },
     "cover": {
