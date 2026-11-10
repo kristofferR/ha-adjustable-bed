@@ -40,6 +40,7 @@ from .const import (
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LIMOSS_REMOTE,
+    BED_TYPE_MLILY,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_RONDURE,
@@ -95,6 +96,7 @@ from .const import (
     VARIANT_AUTO,
     VMATBASIC_CONFIG_KEYS,
 )
+from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 
 # Explicit protocol variants whose entity-gating capabilities depend only on stored
 # config, for bed types that are not offline-safe as a whole (a Keeson "auto" entry
@@ -105,6 +107,7 @@ OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_ADJUSTAMATTRESS: frozenset(v for v in ADJUSTAMATTRESS_VARIANTS if v != VARIANT_AUTO),
     BED_TYPE_COMFORT_ENHANCEMENTS: frozenset(COMFORT_ENHANCEMENTS_VARIANTS),
     BED_TYPE_GOODVIBE: frozenset(GOODVIBE_PROFILES),
+    BED_TYPE_MLILY: frozenset(MLILY_PROFILES),
     BED_TYPE_HJBED: frozenset(HJBED_PROFILES),
     BED_TYPE_ESHINE_OKIN: frozenset(ESHINE_OKIN_PROFILES),
     BED_TYPE_GLIDEAWAY_MOTION: frozenset(GLIDEAWAY_MOTION_MODELS),

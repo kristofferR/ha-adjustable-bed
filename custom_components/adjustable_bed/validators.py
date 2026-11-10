@@ -31,6 +31,7 @@ from .const import (
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LINAK,
+    BED_TYPE_MLILY,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_64BIT,
@@ -87,6 +88,7 @@ from .const import (
 )
 from .profiles.casper import CASPER_BASE_VARIANTS
 from .profiles.hush import HUSH_BASE_VARIANTS
+from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -117,6 +119,7 @@ def is_valid_octo_pin(pin: str) -> bool:
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_GOODVIBE: GOODVIBE_PROFILES,
+    BED_TYPE_MLILY: MLILY_PROFILES,
     BED_TYPE_RICHMAT_CLASSIC_APPS: RICHMAT_CLASSIC_APPS,
     BED_TYPE_HJBED: HJBED_PROFILES,
     BED_TYPE_ESHINE_OKIN: ESHINE_OKIN_PROFILES,

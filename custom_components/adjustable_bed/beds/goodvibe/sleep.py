@@ -15,12 +15,15 @@ from ...codec import sleep_envelope
 from .schemas import parse_schema
 
 
-def sleep_packet(sequence: int, command: str, value: object) -> bytes:
+def sleep_packet(sequence: int, command: str, value: object, *, omit_null: bool = False) -> bytes:
     """The ordinary request, with the app's sequence limit."""
     if not 1 <= sequence <= 254:
         raise ValueError("Sequence must be 1–254")
+    obj: dict[str, object] = {"id": sequence, "cmd": command}
+    if value is not None or not omit_null:
+        obj["val"] = value
     body = json.dumps(
-        {"id": sequence, "cmd": command, "val": value},
+        obj,
         ensure_ascii=False,
         separators=(",", ":"),
         allow_nan=False,
@@ -61,6 +64,7 @@ SCHEMA_ROUTES = {
     },
     3: {
         "s_time": "0x6d7e84",
+        "s_init": "0x6d7e84",
         "q_time": "0x6d79f8",
         "q_part": "0x6d7858",
         "s_part": "0x6d7858",
@@ -132,6 +136,7 @@ class Realtime:
 @dataclass
 class Receiver:
     kind: int
+    ordinary_utf8: bool = False
     last: str | None = None
     buffer: bytearray = field(default_factory=bytearray)
     target: int = 0
@@ -203,7 +208,7 @@ class Receiver:
         self.target = 0
         if len(raw) < sleep_envelope.HEADER_SIZE:
             raise ValueError("Short assembled sleep notification")
-        text = raw[sleep_envelope.HEADER_SIZE :].decode("latin-1")
+        text = raw[sleep_envelope.HEADER_SIZE :].decode("utf-8" if self.ordinary_utf8 else "latin-1")
         obj = json.loads(text, parse_constant=_invalid_constant)
         route = (
             next((cmd for cmd in P3_ORDER if cmd in text), None)

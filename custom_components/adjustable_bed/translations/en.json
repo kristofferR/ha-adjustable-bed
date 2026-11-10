@@ -8084,6 +8084,71 @@
           "name": "Paired bed side"
         }
       }
+    },
+    "mlily": {
+      "name": "MLILY Control configuration",
+      "description": "Configure this MLILY product or its independent MM/SXB sleep receiver.",
+      "fields": {
+        "device_id": {
+          "name": "Bed or sleep sensor"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "operation": {
+          "name": "Action"
+        },
+        "action": {
+          "name": "Exact alarm action ID"
+        },
+        "datetime": {
+          "name": "Alarm date and time",
+          "description": "ISO 8601 with a timezone offset."
+        },
+        "alarm_id": {
+          "name": "Alarm slot"
+        },
+        "weekdays": {
+          "name": "Repeat weekdays",
+          "description": "Monday is 0, Sunday is 6. Empty means no repeat days."
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "seconds": {
+          "name": "Light duration",
+          "description": "Zero uses the app's always-on value."
+        },
+        "rgb_color": {
+          "name": "Light color"
+        },
+        "value": {
+          "name": "Snore count or time value"
+        },
+        "part": {
+          "name": "Sleep part",
+          "description": "Set type 1 to 1 or 2; type 2 to 11, 12 or 13. Report queries use 1 or 2."
+        },
+        "date": {
+          "name": "Report date"
+        },
+        "report_type": {
+          "name": "Report type",
+          "description": "Day is 1, month is 2."
+        },
+        "alarm_record": {
+          "name": "Observed alarm record",
+          "description": "Six byte values from this receiver, preserving record identity when editing or toggling."
+        },
+        "left": {
+          "name": "Left sleep operand",
+          "description": "SXB anti-snore number or numeric list."
+        },
+        "right": {
+          "name": "Right sleep operand",
+          "description": "SXB anti-snore number or numeric list."
+        }
+      }
     }
   },
   "exceptions": {

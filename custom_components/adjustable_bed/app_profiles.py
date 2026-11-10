@@ -47,6 +47,7 @@ from .const import (
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
+    BED_TYPE_MLILY,
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_OKIN_CST,
@@ -153,6 +154,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
         "Comfort Enhancements", frozenset({CONF_HAS_MASSAGE}), variant_owned=True
     ),
     BED_TYPE_GOODVIBE: SideProfile("Good Vibe Sleep", variant_owned=True),
+    BED_TYPE_MLILY: SideProfile("MLILY Control", variant_owned=True),
     BED_TYPE_RICHMAT_CLASSIC_APPS: SideProfile("Classic Richmat apps", variant_owned=True),
     BED_TYPE_MOTOMOTION: SideProfile("MotoMotion"),
     BED_TYPE_HJBED: SideProfile("HJBed", variant_owned=True),

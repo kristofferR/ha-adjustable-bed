@@ -20,6 +20,7 @@ from tests.form_helpers import finish_new_bed
 ADDRESS = "11:22:33:44:55:66"
 APPS = [
     "rmcontrol",
+    "mlily",
     "revive",
     "best_mattress",
     "blvd_home",

@@ -156,6 +156,9 @@
       "local_name": "200U*"
     },
     {
+      "local_name": "200i*"
+    },
+    {
       "local_name": "208A14*"
     },
     {
@@ -166,6 +169,9 @@
     },
     {
       "local_name": "400I*"
+    },
+    {
+      "local_name": "400i*"
     },
     {
       "local_name": "6BRM*"
@@ -184,6 +190,9 @@
     },
     {
       "local_name": "800I*"
+    },
+    {
+      "local_name": "800i*"
     },
     {
       "local_name": "A0RM*"
@@ -376,6 +385,9 @@
     },
     {
       "local_name": "B6RM*"
+    },
+    {
+      "local_name": "B6RU*"
     },
     {
       "local_name": "B7RM*"
@@ -1729,6 +1741,9 @@
     },
     {
       "local_name": "MARM*"
+    },
+    {
+      "local_name": "MARN*"
     },
     {
       "local_name": "MBRN*"

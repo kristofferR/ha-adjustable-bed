@@ -28,6 +28,7 @@ from custom_components.adjustable_bed.beds.richmat_classic.profiles import APP_N
 from custom_components.adjustable_bed.beds.richmat_mh import protocol as mh_frames
 from custom_components.adjustable_bed.beds.rmcontrol import controller as rmcontrol_bed
 from custom_components.adjustable_bed.beds.rmcontrol import protocol as rmcontrol_frames
+from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.codec import richmat as richmat_codec
 from custom_components.adjustable_bed.profiles import casper as casper_profiles
 from custom_components.adjustable_bed.profiles import hush as hush_profiles
@@ -51,6 +52,7 @@ _RICHMAT_NAMES = {
     "hjbed": "HJBed",
     "eshine": "Eshine",
     "goodvibe": "Good Vibe Sleep",
+    "mlily": "MLILY Control",
     "leggett_lp_legacy": "L&P legacy app",
     **{
         profile.key: f"Richmat MH {name}"
@@ -122,6 +124,7 @@ def _richmat_profiles() -> dict[str, richmat_profiles.RichmatProfile]:
             *richmat_profiles.RICHMAT_MH.values(),
             *richmat_profiles.RICHMAT_CLASSIC.values(),
             richmat_profiles.GOODVIBE,
+            richmat_profiles.MLILY,
             richmat_profiles.LP_LEGACY,
         )
     }
@@ -147,6 +150,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
             for profile in richmat_profiles.RICHMAT_CLASSIC.values()
         },
         "goodvibe": (_const.BED_TYPE_GOODVIBE,),
+        "mlily": (_const.BED_TYPE_MLILY,),
         "leggett_lp_legacy": (_const.BED_TYPE_LEGGETT_LP_LEGACY,),
         # Each app's own products; the restored ones are choices on the same bed type.
         **{
@@ -163,7 +167,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
 
 
 def _catalog_kind(key: str) -> str:
-    if key in ("hjbed", "goodvibe"):
+    if key in ("hjbed", "goodvibe", "mlily"):
         return "per-product catalog"
     if key == "eshine":
         return "[fixed E6000 table](#eshine-commands)"
@@ -186,7 +190,7 @@ def _lease(profile: richmat_profiles.RichmatProfile) -> str:
     if profile.key.startswith("richmat_classic_"):
         # The controller scopes its lease to the keep buttons of the selected layout.
         return "renewable lease on keep buttons"
-    if profile.key == "goodvibe":
+    if profile.key in ("goodvibe", "mlily"):
         # The controller scopes its lease to the product's sustained-press controls.
         return "renewable lease on sustained controls"
     return "renewable lease" if profile.execution.hold == "stream" else "no"
@@ -1110,7 +1114,37 @@ def render_lp_legacy_notifications() -> str:
     )
 
 
+def render_mlily_catalog() -> str:
+    from custom_components.adjustable_bed.profiles.mlily import catalog
+
+    app = catalog()
+    return _block(_table(
+        ("Product / explicit remote route", "Control IDs in app order", "Alarm mode IDs", "Sides", "Light menu getter", "Repeat", "BLE sleep", "Massage timer"),
+        ((key, ", ".join(product.actions), ", ".join(product.alarms),
+          ", ".join(map(str,product.sides)), str(product.light), str(product.repeat_alarm),
+          str(product.sleep == "deviceSleepMonitoringBle"), str(product.massage_timer))
+         for key, product in app.products.items()),
+    ))
+
+
+def render_mlily_commands() -> str:
+    from custom_components.adjustable_bed.profiles.mlily import catalog
+
+    return _block(_table(
+        ("ID", "App control", "Gesture", "Framed short / long (Left)", "Nordic short / long", "Flags"),
+        ((key, goodvibe_bed.label(action), action.gesture,
+          _hex(codec.function(action.short)) + " / " + _hex(codec.function(action.long)),
+          _hex(codec.function(action.legacy_short, single=True)) + " / " + _hex(codec.function(action.long, single=True)),
+          ", ".join(name for name, active in (("local",action.local), ("hidden",action.hidden),
+            ("disabled",not action.interactive), ("force long",action.force_long),
+            ("toggle latch",action.memory_toggle)) if active))
+         for key, action in catalog().actions.items()),
+    ))
+
+
 BLOCKS: list[Block] = [
+    (GUIDE, "mlily-catalog", render_mlily_catalog),
+    (GUIDE, "mlily-commands", render_mlily_commands),
     (GUIDE, "richmat-profiles", render_richmat_profiles),
     (GUIDE, "richmat-transports", render_richmat_transports),
     (GUIDE, "richmat-framing", render_richmat_framing),

@@ -1245,6 +1245,8 @@ def default_scenario(bed_type: str) -> Scenario:
             "read:0000143d-0000-1000-8000-00805f9b34fb": "0102",
             "read:00001111-0000-1000-8000-00805f9b34fb": "000001020304",
         }
+    if bed_type == const.BED_TYPE_MLILY:
+        variant = "6brm"
     if bed_type == const.BED_TYPE_KAIDI:
         # A provisioned broadcast advertisement carrying the room ID (tests/test_kaidi.py).
         kwargs = {"manufacturer_data": {0xFFFF: bytes.fromhex(KAIDI_BROADCAST % "81")}}
@@ -1409,6 +1411,12 @@ def route_scenarios() -> list[Scenario]:
                     layout_id=layout,
                 )
             )
+    if const.BED_TYPE_MLILY in const.SUPPORTED_BED_TYPES:
+        for profile, layout in (("6brm", "mlily_nordic"), ("brrm", "mlily"),
+                                ("e3rm", "mlily"), ("l3rm", "mlily"), ("mdrn", "mlily"),
+                                ("sleep_rm", "mlily_sleep"), ("sleep_hj", "mlily_sleep")):
+            scenarios.append(Scenario(id=f"mlily:{profile}:{layout}", bed_type=const.BED_TYPE_MLILY,
+                                      protocol_variant=profile, layout_id=layout))
     # Classic Richmat apps: each app's own catalog, a desk, memory-arm and Hold
     # layouts, and the bare-byte Nordic UART route.
     if const.BED_TYPE_RICHMAT_CLASSIC_APPS in const.SUPPORTED_BED_TYPES:

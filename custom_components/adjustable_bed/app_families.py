@@ -49,6 +49,7 @@ from .const import (
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
+    BED_TYPE_MLILY,
     BED_TYPE_MOTION_BED,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CST,
@@ -1416,13 +1417,14 @@ RICHMAT_FAMILY: Final = AppFamily(
     row=BED_TYPE_RICHMAT,
     name="Richmat",
     apps=(
-        "RMControl, Revive Control, Best Mattress, Blvd Home, HARMONY, Idealbed, "
+        "RMControl, MLILY Control, Revive Control, Best Mattress, Blvd Home, HARMONY, Idealbed, "
         "RUF | Betten (Motor 2), W.Silver Products, AMERICANSTAR, Bailey's Bed Control, TX, "
         "Avocado Eco Base, CoasterSleep, Forty Winks, Milemont, Superior, SleepFunction and "
         "SVEN & SON apps, and Richmat remotes"
     ),
     answers={
         "rmcontrol": Answer(BED_TYPE_RICHMAT, data={CONF_RMCONTROL_PRODUCT: None}),
+        "mlily": Answer(BED_TYPE_MLILY, data=_NO_RMCONTROL),
         **{app: Answer(bed_type, data=_NO_RMCONTROL) for bed_type, app in RICHMAT_MH_APPS.items()},
         # The classic apps keep their own declared questions.
         **{
@@ -1431,7 +1433,7 @@ RICHMAT_FAMILY: Final = AppFamily(
         },
         "remote": Answer(BED_TYPE_RICHMAT, data={CONF_RMCONTROL_PRODUCT: ""}),
     },
-    routes=RICHMAT_MH_BED_TYPES,
+    routes=RICHMAT_MH_BED_TYPES | {BED_TYPE_MLILY},
     routes_show_row=False,
     offers_keep=keep_never,
     offer=_richmat_answers,

@@ -42,6 +42,7 @@ from .const import (
     BED_TYPE_GMMOTOR,
     BED_TYPE_GOODVIBE,
     BED_TYPE_KEESON,
+    BED_TYPE_MLILY,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_SLEEP_NUMBER,
@@ -1088,6 +1089,10 @@ class SingleAddressPairedCoordinator(PairedBedCoordinator):
 
             product = PRODUCTS.get(entry.data.get(CONF_PROTOCOL_VARIANT, ""))
             self._single_native_both = product is not None and 2 in product.sides
+        if entry.data.get(CONF_BED_TYPE) == BED_TYPE_MLILY:
+            from .profiles.mlily_choices import NATIVE_BOTH_PROFILES
+
+            self._single_native_both = entry.data.get(CONF_PROTOCOL_VARIANT, "") in NATIVE_BOTH_PROFILES
         self._single_position_hydration_task: asyncio.Task[None] | None = None
         self._single_position_hydration_pause_count = 0
         children = {

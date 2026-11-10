@@ -7,8 +7,16 @@ captured with every remote code, framing and light family. Parameterized colour
 frames are left out of those captures.
 """
 
+import gzip
 import json
 from pathlib import Path
+
+
+def _mlily() -> frozenset[str]:
+    fixture = Path(__file__).parent / "fixtures/mlily/wire.json.gz"
+    inherited = {row["hex"] for row in json.loads(gzip.decompress(fixture.read_bytes()))}
+    sides = fixture.with_name("sides.json.gz")
+    return frozenset(inherited | {row[-1] for row in json.loads(gzip.decompress(sides.read_bytes()))})
 
 
 def _goodvibe() -> frozenset[str]:
@@ -2100,5 +2108,6 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
     "richmat_classic_milemont": _RICHMAT_CLASSIC,
     "richmat_classic_superior": _RICHMAT_CLASSIC,
     "goodvibe": _goodvibe(),
+    "mlily": _mlily(),
     "leggett_lp_legacy": _LP_LEGACY,
 }

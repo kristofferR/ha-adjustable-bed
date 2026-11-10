@@ -22,6 +22,8 @@ from .beds.goodvibe.discovery import scan_matches as goodvibe_scan_matches
 from .beds.goodvibe.discovery import suggested_profile as goodvibe_suggested_profile
 from .beds.hjbed.catalog import PROFILE_CHOICES as HJBED_PROFILES
 from .beds.kaidi.protocol import extract_kaidi_advertisement, is_floyd_advertisement
+from .beds.mlily import scan_matches as mlily_scan_matches
+from .beds.mlily import suggested_profile as mlily_suggested_profile
 from .beds.motion_bed.models import accepts_motion_bed_name
 from .beds.richmat_classic.discovery import matching_apps as richmat_classic_matching_apps
 from .beds.richmat_classic.profiles import APP_NAMES as RICHMAT_CLASSIC_APPS
@@ -84,6 +86,7 @@ from .const import (
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MATTRESSFIRM,
+    BED_TYPE_MLILY,
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_MOTOSLEEP,
@@ -277,6 +280,7 @@ from .discovery_hints import (
     FirstPass,
     first_pass,
 )
+from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.motomotion import eligible as motomotion_eligible
 from .profiles.vmatbasic import manufacturer_payload_matches
 
@@ -580,6 +584,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OKIN_FFE: "Okin FFE (13/15 series)",
     BED_TYPE_OKIN_ORE: "Okin ORE (legacy A5 5A)",
     BED_TYPE_GOODVIBE: "Good Vibe Sleep app (choose product or sleep sensor)",
+    BED_TYPE_MLILY: "MLILY Control app (choose product or sleep sensor)",
     BED_TYPE_RICHMAT_CLASSIC_APPS: "Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior",
     BED_TYPE_MOTOMOTION: "MotoMotion app (exact Bluetooth name)",
     BED_TYPE_HJBED: "HJBed app (choose the exact product)",
@@ -676,6 +681,7 @@ APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
     **{("richmat_sleep_receiver", app): f"{label} separate sleep receiver"
        for app, label in (("wsilver2", "W.Silver Products"), ("americanstar", "AMERICANSTAR"),
                           ("bailey2", "Bailey's Bed Control"), ("tx", "TX"))},
+    **{(BED_TYPE_MLILY, profile): f"MLILY Control ({label})" for profile, label in MLILY_PROFILES.items()},
     **{(BED_TYPE_GOODVIBE, profile): f"Good Vibe Sleep ({label})" for profile, label in GOODVIBE_PROFILES.items()},
     **{(BED_TYPE_ESHINE_OKIN, profile): f"eShine app ({label})" for profile, label in ESHINE_OKIN_PROFILES.items()},
     **{(BED_TYPE_RICHMAT_CLASSIC_APPS, app): label for app, label in RICHMAT_CLASSIC_APPS.items()},
@@ -781,6 +787,7 @@ _HIDDEN_APP_ROWS: Final = frozenset(
         # The Good Vibe Sleep products and HJBed products are answers of
         # their app's own question, behind one row each.
         *((BED_TYPE_GOODVIBE, product) for product in GOODVIBE_PROFILES),
+        *((BED_TYPE_MLILY, product) for product in MLILY_PROFILES),
         *((BED_TYPE_HJBED, product) for product in HJBED_PROFILES),
     }
 )
@@ -788,7 +795,7 @@ _HIDDEN_APP_ROWS: Final = frozenset(
 HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_APP_ROWS)
 # Bed types whose one row asks for the product, although each product is an app entry.
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
-    {BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS}
+    {BED_TYPE_MLILY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS}
 )
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
@@ -1245,7 +1252,7 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         For detailed detection with confidence scores, use detect_bed_type_detailed().
     """
     result = detect_bed_type_detailed(service_info)
-    if result.bed_type in (BED_TYPE_GOODVIBE, BED_TYPE_MOTOMOTION) and result.confidence < 0.7:
+    if result.bed_type in (BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MOTOMOTION) and result.confidence < 0.7:
         return None  # An app name hint requires an explicit product choice.
     return result.bed_type
 
@@ -1268,6 +1275,12 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         elif result.bed_type is not None and result.bed_type != BED_TYPE_GOODVIBE:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_GOODVIBE]))
             result.signals[0:0] = hints
+    if mlily_scan_matches(service_info.name) and mlily_suggested_profile(service_info.name) and not any(signal.startswith("excluded:") for signal in result.signals):
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_MLILY, 0.3, ["name:mlily_app_candidate", *result.signals])
+        elif result.bed_type != BED_TYPE_MLILY:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_MLILY]))
+
     return result
 
 

@@ -13,10 +13,16 @@ from ...codec import richmat as codec
 Event = tuple[str, object]
 
 
-def extended(b: list[int]) -> list[Event]:
+def extended(b: list[int], *, mlily: bool = False) -> list[Event]:
     if b[2] != len(b):
         return []
     domain, sub, op = b[3:6]
+    if mlily and (
+        domain not in (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13)
+        or domain == 1 and sub != 2
+        or domain == 6 and sub == 5
+    ):
+        return []
     if domain not in (10, 15) and op not in (2, 3):
         return []
     result = []
@@ -269,8 +275,9 @@ def common(b: list[int]) -> list[Event]:
 class Notifications:
     """Retained framing with the shipped 500 ms partial-record expiry."""
 
-    def __init__(self, emit: Callable[[str, object], None]) -> None:
+    def __init__(self, emit: Callable[[str, object], None], *, mlily: bool = False) -> None:
         self.emit = emit
+        self.mlily = mlily
         self.buffer = bytearray()
         self.rejection: str | None = None
 
@@ -290,7 +297,7 @@ class Notifications:
                 if len(self.buffer) < 3:
                     break
                 code = self.buffer[1]
-                if code in (0x20, 0x21):
+                if code == 0x20 or code == 0x21 and not self.mlily:
                     length = self.buffer[2]
                 elif code == 0x40:
                     if len(self.buffer) < 4:
@@ -308,12 +315,12 @@ class Notifications:
                 frame = list(self.buffer[:length])
                 del self.buffer[:length]
                 # Desk/firmware records remain framed but have no bed-state consumer.
-                if code in (0x21, 0x40):
+                if code == 0x40 or code == 0x21 and not self.mlily:
                     continue
                 if code == 0x20:
                     if len(frame) < 7 or not codec.is_valid(bytes(frame)):
                         continue
-                    events = extended(frame)
+                    events = extended(frame, mlily=self.mlily)
                 else:
                     events = common(frame)
                 for event, value in events:

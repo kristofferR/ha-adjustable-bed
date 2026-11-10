@@ -487,6 +487,7 @@ BED_TYPE_SERENITY: Final = "serenity"  # Explicit Jordan's Serenity app profile
 BED_TYPE_TRANQUIL: Final = "tranquil"  # Explicit Jordan's Tranquil app profile
 # Glideaway model is selected manually; no advertisement-derived model rule.
 BED_TYPE_GOODVIBE: Final = "goodvibe"
+BED_TYPE_MLILY: Final = "mlily"
 BED_TYPE_RICHMAT_CLASSIC_APPS: Final = "richmat_classic_apps"
 # Opt-in to the classic apps' third-service fallback when no fixed service exists.
 CONF_RICHMAT_CLASSIC_THIRD_SERVICE: Final = "richmat_classic_third_service"
@@ -517,7 +518,7 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc5": "MC5: Hi Lo Lift / Massage Plus",
 }
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
-    {"richmat_sleep_receiver", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
+    {"richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
 )
 # Explicit OKIN Bedding app profiles sharing the Serenity controller core.
 OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
@@ -693,6 +694,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_GMMOTOR, BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB,
     *sorted(KEESON_LAYOUT_APP_BED_TYPES),
     BED_TYPE_GOODVIBE,
+    BED_TYPE_MLILY,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_HJBED,
     BED_TYPE_GLIDEAWAY_MOTION,

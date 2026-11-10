@@ -63,6 +63,7 @@ from .const import (
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
+    BED_TYPE_MLILY,
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_OCTO,
@@ -217,6 +218,7 @@ from .profiles import jiecang as jiecang_profiles
 from .profiles import limoss as limoss_profiles
 from .profiles import logicdata as logicdata_profiles
 from .profiles import malouf as malouf_profiles
+from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 
 if TYPE_CHECKING:
     from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
@@ -266,6 +268,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_ESHINE_OKIN: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_ESHINE: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_GOODVIBE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
+    BED_TYPE_MLILY: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_HJBED: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_GLIDEAWAY_MOTION: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_ISLEEP: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
@@ -1006,6 +1009,17 @@ def _goodvibe_seed(
     from .beds.goodvibe.discovery import suggested_profile
 
     if data.get(CONF_PROTOCOL_VARIANT) in GOODVIBE_PROFILES or discovered is None:
+        return dict(data)
+    suggested = suggested_profile(discovered.name)
+    return {**data, CONF_PROTOCOL_VARIANT: suggested} if suggested else dict(data)
+
+
+def _mlily_seed(
+    hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None
+) -> dict[str, Any]:
+    from .beds.mlily import suggested_profile
+
+    if data.get(CONF_PROTOCOL_VARIANT) in MLILY_PROFILES or discovered is None:
         return dict(data)
     suggested = suggested_profile(discovered.name)
     return {**data, CONF_PROTOCOL_VARIANT: suggested} if suggested else dict(data)
@@ -2071,6 +2085,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         ),
     ),
     # The app's product sets every control, so its one row asks it.
+    BED_TYPE_MLILY: _asking(
+        BED_TYPE_MLILY,
+        questions=(Question(CONF_PROTOCOL_VARIANT, MLILY_PROFILES, searchable=True),),
+        seed=_mlily_seed,
+    ),
     BED_TYPE_GOODVIBE: _asking(
         BED_TYPE_GOODVIBE,
         questions=(Question(CONF_PROTOCOL_VARIANT, GOODVIBE_PROFILES, searchable=True),),

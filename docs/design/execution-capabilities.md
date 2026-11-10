@@ -176,6 +176,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `vmatbasic` | S stream | U | U | vmatbasic | all-up/all-down are fixed keys; speed is mood light; hold declared |
 | `eshine` | S stream | U | U | eshine | STOP once after a sustained press; hold declared |
 | `goodvibe` | S stream | U | U | goodvibe | sustained controls refresh every 100 ms, then release `6e`; hold declared per control, on the held controls whose effective gesture is a sustained press (see [per-control scope](#per-control-hold-scope)). Each frame carries one operand and the only release is the side's STOP; all-motor moves are fixed operands; speed rows are massage and music shake |
+| `mlily` | S stream | U | U | mlily159 | Sustained controls only, after a 100 ms tick and at 100 ms intervals; submitted ticks release with STOP. Memory, force-long and 3 s gestures retain the exact selected product rules. |
 | `sleepys_elite_app` | S stream | U | U | sleepy | selector STOP once at release; hold declared |
 | `motosleep` | S stream | B | B | motosleep, powerbob, motosleep-guide | movement repeats every 100 ms while held; release sends `$b` five times (MotoSleep HHC and the Power Bob profiles whose release has it) or the MOTO release frame (zero five times, or `0x9088/0x0001` six times on WR219); other Power Bob profiles stop when the refresh ends. #516 and #591: the guide covers only the commands the integration sends, and the frozen reports that would show composition and the full command inventory are not retained. MotoMotion is another app, with its own row |
 | `motomotion` | S stream | B | B | motomotion, row113 | held motor keys refresh every 100 ms, first write after 100 ms, then send STOP three times 50 ms after release; memory recall refreshes the same way but stops only on `SOFA` names with index 12 `E`, and the shared Home control ends by stopping its refresh with no release frame. Not declared: the controls need a per-control scope (see [per-control scope](#per-control-hold-scope)) and their own review. #516 and #591 not assessed yet |
@@ -619,6 +620,7 @@ Report workspaces are machine-local under
 
 | Key | Package | Version | Status | Workspace under `phase4-early/` |
 |---|---|---|---|---|
+| mlily159 | `com.richmat.mlily2` | 5.0.2 (50200) | COMPLETE, independent audit ACCEPT | `com.richmat.mlily2-5.0.2-2026-11-10-reconciliation002/report/` |
 | abm5_4 | `com.starcode.abm5_4` | 1.0.1 | COMPLETE | `com.starcode.abm5_4-1.0.1-2026-09-30-extra-four-004-005/report/` |
 | abm5_5 | `com.starcode.abm5_5` | 1.2.3 | COMPLETE | `com.starcode.abm5_5-1.2.3-2026-09-30-extra-four-005-005/report/` |
 | adjlite | `com.keeson.adjustablelite` | 1.0.2 | COMPLETE | `com.keeson.adjustablelite-1.0.2-2026-10-01-queue-e0bb6807-20261001-051-003/report/` |

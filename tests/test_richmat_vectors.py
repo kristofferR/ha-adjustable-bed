@@ -31,6 +31,7 @@ PROFILES = {
     "hjbed": profiles.HJBED,
     "eshine": profiles.ESHINE,
     "goodvibe": profiles.GOODVIBE,
+    "mlily": profiles.MLILY,
     "leggett_lp_legacy": profiles.LP_LEGACY,
     **{profile.key: profile for profile in profiles.RICHMAT_MH.values()},
     **{profile.key: profile for profile in profiles.RICHMAT_CLASSIC.values()},
@@ -197,6 +198,24 @@ def _lp_legacy_census() -> set[str]:
 
 
 def _census(key: str) -> set[str]:
+    if key == "mlily":
+        from custom_components.adjustable_bed.profiles.mlily import catalog
+
+        app = catalog()
+        return {
+            codec.function(code, side, single=single).hex()
+            for product in app.products.values()
+            for detail in product.actions
+            for expanded in app.expansions.get(detail, (detail,))
+            for action in (app.actions[expanded],)
+            if not action.local and not action.hidden and action.interactive
+            for side in product.sides for single in (False, True)
+            for code in (
+                *( () if action.force_long else (action.legacy_short if single else action.short,) ),
+                *((action.long,) if action.force_long or action.gesture in ("longPress", "shortAndLongPress")
+                  or goodvibe.memory_eligible(product.label, action.label) else ()),
+            )
+        }
     if key == "hjbed":
         return _hjbed_census()
     if key == "eshine":

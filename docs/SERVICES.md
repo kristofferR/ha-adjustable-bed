@@ -681,6 +681,17 @@ the distinct wire builders and raw-data limitations.
 
 `adjustable_bed.hjbed` exposes product-gated single/repeat alarms, alarm query/delete/toggle, clock synchronization, light timeout/RGB and Normal-layout control mode. Use the exact product alarm action key. All targets validate before writing; feature acknowledgements cannot override static profile flags. See the [operation fields and eligibility](beds/richmat.md#hjbed).
 
+### MLILY Control configuration
+
+`adjustable_bed.mlily` exposes the selected MLILY product's alarms, RGB light and
+countdown controls, plus independent MM/SXB sleep queries. Light and alarm actions
+require their capability reply and exact product getter. Use the product's alarm
+action IDs and observed six-field `alarm_record` from the status sensor. `toggle`
+changes its enabled bit; editing without an explicit action recovers the current
+mode. Save/delete refresh the list; a full list is rejected. See the
+[MLILY Control guide](beds/richmat.md#mlily-control) for all profile gates,
+gestures, notifications and sleep operations.
+
 ### Good Vibe Sleep configuration
 
 `adjustable_bed.goodvibe` exposes product-gated alarm, light and snore settings plus independent sleep-sensor queries. Select an exact alarm action ID from the [command/profile tables](beds/richmat.md#alarms-and-snore-settings). Sleep reports use `operation: report`, a date, part and report type (1 day, 2 month); metadata, continuation and typed receipt form one operation. The status sensor retains typed reports and per-side live values. Use the app-labelled buttons for normal controls and the existing bounded `hold_control` action for held gestures. See the [protocol guide](beds/richmat.md#good-vibe-sleep) for every packet, profile gate and lifecycle limit.

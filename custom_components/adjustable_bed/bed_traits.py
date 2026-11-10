@@ -60,6 +60,7 @@ from .const import (
     BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
+    BED_TYPE_MLILY,
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_OCTO,
@@ -211,6 +212,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_GMMOTOR_SLEEP_MM: _NO_ANGLES_PERSISTENT,
     BED_TYPE_GMMOTOR_SLEEP_SXB: _NO_ANGLES_PERSISTENT,
     BED_TYPE_GOODVIBE: _NO_ANGLES,
+    BED_TYPE_MLILY: _NO_ANGLES,
     BED_TYPE_HJBED: _NO_ANGLES,
     BED_TYPE_HUSH_BASE: _NO_ANGLES,
     "hush_remote": _NO_ANGLES,
@@ -340,7 +342,7 @@ def bed_traits(bed_type: str | None, protocol_variant: str | None = None) -> Bed
             percentage_positions=protocol_variant not in ORE_COMFORT_BED_VARIANTS,
             connection_scoped_state=protocol_variant in _KEESON_SCOPED_VARIANTS,
         )
-    if resolved == BED_TYPE_GOODVIBE:
+    if resolved in (BED_TYPE_GOODVIBE, BED_TYPE_MLILY):
         return replace(traits, connection_scoped_state=protocol_variant in _GOODVIBE_SLEEP_SENSORS)
     return traits
 

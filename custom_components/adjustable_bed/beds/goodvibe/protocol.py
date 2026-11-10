@@ -34,7 +34,9 @@ def clock(minutes: int, code: int) -> tuple[bytes, bytes]:
 
 def light_duration(seconds: int) -> bytes:
     """Seconds, big-endian; zero (always on) is ``FF FF``."""
-    return codec.light_timer(*((0xFF, 0xFF) if seconds == 0 else divmod(seconds, 256)))
+    digits = f"{seconds:04x}"
+    return codec.light_timer(*((0xFF, 0xFF) if seconds == 0 else
+                              (int(digits[:2], 16), int(digits[2:4], 16))))
 
 
 def snore_config(count: bool, value: int) -> bytes:
