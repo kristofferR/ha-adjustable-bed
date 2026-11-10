@@ -15,6 +15,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_BEDJET_POWERLAYER,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_GOODVIBE,
+    BED_TYPE_JALON,
     BED_TYPE_JENSEN,
     BED_TYPE_KEESON,
     BED_TYPE_LINAK,
@@ -85,7 +86,10 @@ def test_goodvibe_sleep_sensors_keep_the_link(profile: str, expected: bool) -> N
     assert disconnect_after_command_default_enabled(BED_TYPE_GOODVIBE, profile) is expected
 
 
-@pytest.mark.parametrize(("bed_type", "expected"), [(BED_TYPE_LINAK, True), (BED_TYPE_JENSEN, False)])
+@pytest.mark.parametrize(
+    ("bed_type", "expected"),
+    [(BED_TYPE_LINAK, True), (BED_TYPE_JENSEN, False), (BED_TYPE_JALON, False)],
+)
 async def test_runtime_default_matches_the_setup_default(
     hass: HomeAssistant, bed_type: str, expected: bool
 ) -> None:
@@ -100,6 +104,7 @@ async def test_runtime_default_matches_the_setup_default(
     coordinator = AdjustableBedCoordinator(hass, entry)
 
     assert coordinator._disconnect_after_command is expected
+    assert disconnect_after_command_default_enabled(bed_type) is expected
 
 
 @pytest.mark.parametrize("bed_type", [BED_TYPE_DOUBLESLEEP, BED_TYPE_OKIN_RF_ECO_BT])
