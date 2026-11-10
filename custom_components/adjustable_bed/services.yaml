@@ -3260,3 +3260,62 @@ richmat_app_alarm:
               value: "5"
             - label: Sunday
               value: "6"
+
+luuna:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    operation:
+      required: true
+      selector:
+        select:
+          options:
+          - alarm
+          - alarm_cancel
+          - light_rgb
+          - light_seconds
+          - light_off
+          - light_warm
+          - light_cold
+          - sleep_name
+          - time_sync
+    value:
+      selector:
+        number:
+          min: 0
+          max: 65535
+          mode: box
+    rgb_color:
+      selector:
+        color_rgb: null
+    hour:
+      selector:
+        number:
+          min: 0
+          max: 23
+          mode: box
+    minute:
+      selector:
+        number:
+          min: 0
+          max: 59
+          mode: box
+    mode:
+      selector:
+        select:
+          options:
+          - tv
+          - zero_g
+          - anti_snore
+          - memory_1
+          - memory_2
+    side:
+      selector:
+        select:
+          options:
+          - left
+          - right
+          - both

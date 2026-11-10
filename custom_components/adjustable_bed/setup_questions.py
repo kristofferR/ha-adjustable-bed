@@ -260,6 +260,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     # finder have no motors.
     "hush_remote": GENERIC_FIELDS,
     "hush_base": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
+    "luuna": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "hush_sleep_mm": GENERIC_FIELDS,
     "hush_sleep_sxb": GENERIC_FIELDS,
     BED_TYPE_COMFORT_ENHANCEMENTS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -1378,6 +1379,18 @@ def _limoss_remote_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return errors(dict(data))
 
 
+def _luuna_settings(data: Mapping[str, Any]) -> dict[str, Any]:
+    from .profiles.luuna import PROFILES
+
+    profile = PROFILES.get(str(data.get(CONF_PROTOCOL_VARIANT)))
+    return {
+        CONF_MOTOR_COUNT: 2 if profile is None or profile.key == "rise" else 4,
+        CONF_HAS_MASSAGE: profile is not None and bool(profile.row[2]),
+        CONF_DISABLE_ANGLE_SENSING: True,
+        CONF_MOTOR_PULSE_DELAY_MS: 100,
+    }
+
+
 def _hush_products(_data: Mapping[str, Any]) -> Mapping[Any, str]:
     """The app's own twelve products first, then the profiles it restores."""
     from .profiles.hush import HUSH_BASE_VARIANTS, PROFILES
@@ -2082,6 +2095,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     ),
     # The product the Hush Base app shows sets every control; nothing detects it.
     "hush_base": _asking("hush_base", questions=(Question(CONF_PROTOCOL_VARIANT, _hush_products),)),
+    "luuna": _asking(
+        "luuna",
+        questions=(Question(CONF_PROTOCOL_VARIANT, _routes("luuna")),),
+        derive=_luuna_settings,
+    ),
     # The layout owns the motion controls; Auto reads it from the Bluetooth name.
     BED_TYPE_BEDSENSE: _asking(
         BED_TYPE_BEDSENSE,

@@ -1,6 +1,6 @@
 # Richmat
 
-**Status:** ✅ Tested (Richmat and BedTech routes); ❓ the RMControl, Richmat MH, HJBed, Eshine, classic app, Good Vibe Sleep, L&P legacy app, Casper Base and Hush Base profiles are APK-verified with hardware unverified
+**Status:** ✅ Tested (Richmat and BedTech routes); ❓ the RMControl, Richmat MH, HJBed, Eshine, classic app, Good Vibe Sleep, L&P legacy app, Casper Base Hush Base and Luuna + profiles are APK-verified with hardware unverified
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), getrav, [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt) and [Josh Pearce](https://github.com/joshpearce) (L&P MlRM)
 
@@ -83,6 +83,7 @@ is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 | ✅ | [Superior](https://play.google.com/store/apps/details?id=com.richmat.superior) 1.0.9 | `com.richmat.superior` | [Classic apps](#classic-richmat-apps) |
 | ✅ | [Good Vibe Sleep](https://play.google.com/store/apps/details?id=com.richmat.goodvibesleep) 2.0.1 (20103) | `com.richmat.goodvibesleep` | [Good Vibe Sleep](#good-vibe-sleep) |
 | ✅ | [Casper Base](https://play.google.com/store/apps/details?id=com.richmat.casperbase) 1.0.8 (10800) | `com.richmat.casperbase` | [Casper Base](#casper-base); setup, sleep sensors and remote finder in its [own guide](casper-base.md) |
+| ✅ | [Luuna +](https://play.google.com/store/apps/details?id=com.richmat.luuna) 2.0.1 (20102) | `com.richmat.luuna` | [Luuna +](#luuna-) |
 | ✅ | [Hush Base](https://play.google.com/store/apps/details?id=com.richmat.hushbase) 1.0.5 (10501) | `com.richmat.hushbase` | [Hush Base](#hush-base); setup, sleep sensors and remote finder in its [own guide](hush-base.md) |
 
 ## Features
@@ -184,6 +185,7 @@ sends STOP.
 | L&P legacy app | `leggett_lp_legacy` | configured characteristics | per-layout catalog | no |
 | Casper Base | `casper_base` | N1, W1, W2, W3, W4, W5 | per-product catalog | no |
 | Hush Base | `hush_base` | N1, W1, W2, W3, W4, W5 | per-product catalog | no |
+| Luuna + | `luuna` | N1, W1, W2, W3, W4, W5 | per-product catalog | renewable lease |
 <!-- /generated -->
 
 ### Catalog app timing
@@ -257,13 +259,13 @@ and timing.
 
 | Key | Service | Write | Notify | Commands | Profiles |
 |---|---|---|---|---|---|
-| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep, Casper Base, Hush Base |
+| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep, Casper Base, Hush Base, Luuna + |
 | W0 | `8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA |
-| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech, L&P MlRM, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep, Casper Base, Hush Base |
-| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep, Casper Base, Hush Base |
-| W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Good Vibe Sleep, Casper Base, Hush Base |
-| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep, Casper Base, Hush Base |
-| W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Good Vibe Sleep, Casper Base, Hush Base |
+| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech, L&P MlRM, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep, Casper Base, Hush Base, Luuna + |
+| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep, Casper Base, Hush Base, Luuna + |
+| W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Good Vibe Sleep, Casper Base, Hush Base, Luuna + |
+| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep, Casper Base, Hush Base, Luuna + |
+| W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Good Vibe Sleep, Casper Base, Hush Base, Luuna + |
 
 W0 is the legacy custom service, W4 and W5 are name-guarded (see the Richmat
 profile's Setup). The Richmat routes try W0 to W5, then N1, then fall back to W1.
@@ -2985,6 +2987,147 @@ Hush Base sends only the frames frozen from its accepted row126 report, whose
 products, shared builders and auxiliary shards are listed in
 `tests/hush_vectors.py`. APK Protocol Audit row126 records the accepted source
 references, dispositions and exclusions.
+
+### Luuna +
+
+**App:** [Luuna +](https://play.google.com/store/apps/details?id=com.richmat.luuna) 2.0.1 (20102), `com.richmat.luuna`
+
+**Status:** ❓ Needs testing. Static BLE evidence is verified; hardware remains unverified.
+
+#### Setup
+
+Select **Luuna + app**, then Rise, Rise Pro or Rise Pro Light. The product is
+explicit: a shared Richmat service or a catalog code in the Bluetooth name does
+not choose it. Setup derives the motor count, massage and disabled angle sensing.
+The profile id is `luuna:<product>`. Two-address pairs keep each receiver's choice.
+There is no one-address Left/Right selector, PIN, bond command or authentication
+handshake in this app. Home Assistant manages the BLE connection and proxy path.
+
+The app scans for case-sensitive name fragments shown below. Prefix discovery
+hints and common Richmat service hints admit matching beds; generic detection
+continues to suggest the Richmat family, where users choose their app.
+The writer and first notify-capable characteristic must be in the same supported
+service. Nordic sends bare opcodes; configuration builders retain their own
+framing on every transport. Write-without-response is used when the selected
+writer supports it, otherwise writes use a response.
+
+#### Controls
+
+<!-- generated:luuna -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Product | Stored key | Catalog code | Motors | Massage | Memory slots | Sleep name | Light flag |
+|---|---|---|---|---|---|---|---|
+| Rise | `rise` | V1RM | 2 | no | 1 | yes | no |
+| Rise Pro | `risepro` | JVRM | 4 | yes | 2 | no | no |
+| Rise Pro Light | `riseprolight` | FDRN | 4 | yes | 1 | yes | yes |
+
+| Action | Normal opcode | Program opcode | Framed write | Products |
+|---|---|---|---|---|
+| HeadUp | `24` | none | `6E 01 00 24 93` | Rise, Rise Pro, Rise Pro Light |
+| HeadDown | `25` | none | `6E 01 00 25 94` | Rise, Rise Pro, Rise Pro Light |
+| FootUp | `26` | none | `6E 01 00 26 95` | Rise, Rise Pro, Rise Pro Light |
+| FootDown | `27` | none | `6E 01 00 27 96` | Rise, Rise Pro, Rise Pro Light |
+| PillowUp | `41` | none | `6E 01 00 41 B0` | Rise Pro, Rise Pro Light |
+| PillowDown | `42` | none | `6E 01 00 42 B1` | Rise Pro, Rise Pro Light |
+| LumberUp | `3F` | none | `6E 01 00 3F AE` | Rise Pro, Rise Pro Light |
+| LumberDown | `40` | none | `6E 01 00 40 AF` | Rise Pro, Rise Pro Light |
+| MotorReset | `31` | none | `6E 01 00 31 A0` | Rise, Rise Pro, Rise Pro Light |
+| MassageHeadInstensityStrengthen | `4C` | none | `6E 01 00 4C BB` | Rise Pro, Rise Pro Light |
+| MassageFootInstensityStrengthen | `4E` | none | `6E 01 00 4E BD` | Rise Pro, Rise Pro Light |
+| MassageModeChange | `48` | none | `6E 01 00 48 B7` | Rise Pro, Rise Pro Light |
+| MassageModeAllOff | `5E` | none | `6E 01 00 5E CD` | Rise Pro, Rise Pro Light |
+| Massage10MinuteTimer | `5F` | none | `6E 01 00 5F CE` | Rise Pro, Rise Pro Light |
+| Massage20MinuteTimer | `63` | none | `6E 01 00 63 D2` | Rise Pro, Rise Pro Light |
+| Massage30MinuteTimer | `61` | none | `6E 01 00 61 D0` | Rise Pro, Rise Pro Light |
+| AntiSnoring | `46` | `69` | `6E 01 00 46 B5` | Rise, Rise Pro, Rise Pro Light |
+| ZeroGravity | `45` | `66` | `6E 01 00 45 B4` | Rise, Rise Pro, Rise Pro Light |
+| TVPosition | `58` | `64` | `6E 01 00 58 C7` | Rise Pro, Rise Pro Light |
+| MemoryPosition1 | `2E` | `2B` | `6E 01 00 2E 9D` | Rise, Rise Pro, Rise Pro Light |
+| MemoryPosition2 | `2F` | `2C` | `6E 01 00 2F 9E` | Rise Pro |
+
+| Startup/query | Framed write | Nordic write |
+|---|---|---|
+| ExitLimit | `6E 02 01 00 71` | `00` |
+| CheckClock | `6E 08 01 01 78` | `01` |
+| CheckLight | `6E 0A 00 01 79` | `01` |
+
+| Setting | Value |
+|---|---|
+| Transports | n1, w5, w4, w3, w2, w1 |
+| Scan keywords (case-sensitive contains) | QRRM, COOL, MPE_, 209A, BED- |
+| Write/held refresh tick | 100 ms |
+| Clock/light query dispatch interval | 300 ms |
+| HA service capability wait budget | 3 s |
+| Light duration choices (seconds) | 0, 300, 600, 900 |
+| Warm / cold RGB | (255, 140, 20) / (255, 255, 255) |
+<!-- /generated -->
+
+Every product has Flat, Anti-Snore, Zero-G and Memory 1. Preset save buttons send
+their separate program opcode once. Rise Pro adds Memory 2; Rise Pro Light does
+not. Massage controls are one-shot actions, including intensity steps, mode,
+off and the three timer buttons. The ordinary strip page requires both the
+Rise Pro Light flag and its exact light capability announcement.
+
+#### Timing
+
+The generated table gives the app's refresh cadence. A finite movement uses the
+entry's pulse count; a renewable hold refreshes until release or its safety
+ceiling. Release cancels refresh without transmitting a STOP opcode. This is the
+app's complete cleanup behavior, not a measured firmware stopping guarantee.
+Commands await serialized GATT writes; the Android timer's duplicated-head race
+and pending movement queue are not reproduced. Cancellation prevents queued
+refreshes from reaching a replacement connection.
+
+After subscribing, startup sends ExitLimit, the local binary calendar for every
+product, and the sleep-advertisement-name query for Rise and Rise Pro Light.
+Clock and light queries follow on the product-query schedule. It sends no
+version, music or other unused shared-library query. Disconnect clears receive
+fragments and capability observations; old callbacks cannot re-enable them.
+
+#### Notifications
+
+Only the exact clock and light announcements enable their corresponding controls.
+Service preflight reconnects each selected receiver through its query lane and
+waits within the generated HA admission budget for the current connection's reply.
+It rejects a missing reply instead of reusing a disconnected capability. Sequential
+pairs validate one receiver at a time and revalidate a replacement connection.
+Alarm add/cancel acknowledgements update status. The bed-provided sleep name is
+retained as diagnostic state; it does not open an accessory connection.
+Other decoded shared-library messages remain structured diagnostic observations.
+Their presence does not enable extra products, position sliders, music, blanket,
+desk, repeating-alarm or side-control commands. Motor height/type use the audited
+unsigned offsets, with optional angle and monitor height; they have no calibrated
+axis mapping. Empty payload classes remain empty.
+
+Home Assistant preserves incomplete common frames and bounds invalid extended
+lengths instead of copying the app's premature fragment consumption or zero-length
+loop. Extended records require their declared length and checksum. Malformed short
+alarm/press records are rejected instead of indexing beyond their payload.
+
+#### Services
+
+`adjustable_bed.luuna` offers `alarm`, `alarm_cancel`, `light_rgb`, `light_seconds`,
+`light_warm`, `light_cold`, `light_off`, `sleep_name` and `time_sync`. Generic
+memory and movement actions use the same profile and command serialization.
+
+Alarms use one selected preset from that product's alarm list and a local hour
+and minute. The countdown ignores seconds; the current minute wraps to tomorrow.
+Both save and cancel write the low frame first, then the high/action frame.
+There is no weekday or repeating schedule on this live alarm path.
+Light RGB is one combined write. Warm/cold accept `value` as brightness percent;
+light duration accepts the generated choices, with zero meaning always on.
+Off is its own opcode, independent of duration. Capability and product checks
+run before any target writes.
+
+#### Evidence
+
+Accepted APK Protocol Audit unit146, including scoped repair001 and independent
+audit002. All normal/program, dynamic-builder and parser literal cases are kept
+in `tests/fixtures/luuna/` and exercised by `tests/test_luuna.py`. The existing
+Richmat codec reproduces the app's literal command frames without a new codec.
+Physical movement, stop latency, supported firmware, calibration and negotiated
+MTU remain for real beta/release users to validate.
 
 ## Notes
 

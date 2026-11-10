@@ -144,6 +144,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "tempur_au": SideProfile("TEMPUR AU"),
     "casper_base": SideProfile("Casper Base product", variant_owned=True),
     "hush_base": SideProfile("Hush Base product", variant_owned=True),
+    "luuna": SideProfile("Luuna + product", variant_owned=True),
     "casper_sleep_mm": SideProfile("Casper Base MM sensor"),
     "casper_sleep_sxb": SideProfile("Casper Base SXB sensor"),
     "hush_sleep_mm": SideProfile("Hush Base MM sensor"),

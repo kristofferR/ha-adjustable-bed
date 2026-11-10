@@ -87,6 +87,7 @@ from .const import (
 )
 from .profiles.casper import CASPER_BASE_VARIANTS
 from .profiles.hush import HUSH_BASE_VARIANTS
+from .profiles.luuna import VARIANTS as LUUNA_VARIANTS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -125,6 +126,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_BEDSENSE: BEDSENSE_VARIANTS,
     BED_TYPE_CASPER_BASE: CASPER_BASE_VARIANTS,
     "hush_base": HUSH_BASE_VARIANTS,
+    "luuna": LUUNA_VARIANTS,
     BED_TYPE_KAIDI: KAIDI_VARIANTS,
     BED_TYPE_OKIN_CB24: OKIN_CB24_VARIANTS,
     BED_TYPE_OKIN_CST: OKIN_CST_VARIANTS,

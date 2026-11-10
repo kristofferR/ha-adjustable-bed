@@ -63,7 +63,7 @@ def weekday(value: object) -> int:
     return day
 
 
-async def handle(call: ServiceCall, *, hush: bool = False) -> None:
+async def handle(call: ServiceCall, *, hush: bool = False, luuna: bool = False) -> None:
     from ...services import _call_targets, _preflight_and_execute
 
     data = call.data
@@ -89,6 +89,11 @@ async def handle(call: ServiceCall, *, hush: bool = False) -> None:
             date(request.year, request.month, request.day)
         except ValueError as err:
             raise ServiceValidationError(str(err)) from err
+    if luuna:
+        from ..luuna.services import async_handle_request
+
+        await async_handle_request(call, request)
+        return
     await _preflight_and_execute(
         _call_targets(call),
         CasperBaseActions,
@@ -152,4 +157,13 @@ def async_register_casper_base_services(hass: HomeAssistant) -> None:
     )
     hass.services.async_register(
         DOMAIN, "hush_base", partial(handle, hush=True), schema=cast("VolSchemaType", hush_schema)
+    )
+
+    luuna_schema = schema.extend({
+        vol.Required("operation"): vol.In((
+            "alarm", "alarm_cancel", "light_rgb", "light_seconds", "light_off", "light_warm", "light_cold", "sleep_name", "time_sync",
+        )),
+    })
+    hass.services.async_register(
+        DOMAIN, "luuna", partial(handle, luuna=True), schema=cast("VolSchemaType", luuna_schema)
     )

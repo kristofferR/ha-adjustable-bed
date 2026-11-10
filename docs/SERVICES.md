@@ -773,3 +773,16 @@ All selected targets are validated before any writes. Existing
 `richmat_mh_alarm`, `richmat_mh_waist_alarm`, `richmat_mh_aroma` and
 `richmat_mh_light_color` actions also work for the model/reply-gated features
 of these app profiles. RUF exposes only its waist alarm among those actions.
+
+## Luuna +
+
+`adjustable_bed.luuna` controls the selected Rise, Rise Pro or Rise Pro Light
+profile. See the [Luuna + profile](beds/richmat.md#luuna-) for its capability gates.
+Choose `alarm` with `hour`, `minute` and `mode` (`anti_snore`, `zero_g`, `tv`,
+`memory_1` or `memory_2`, as the product offers), or `alarm_cancel`.
+Light operations are `light_rgb` (`rgb_color`), `light_warm` / `light_cold`
+(`value`, 0–100 percent brightness), `light_seconds` (`value`, 0/300/600/900),
+and `light_off`. Zero duration means always on. `sleep_name` queries the
+bed-provided accessory name for Rise and Rise Pro Light; `time_sync` sends the
+local calendar. Each target is validated before any writes. Physical behavior
+is unverified.

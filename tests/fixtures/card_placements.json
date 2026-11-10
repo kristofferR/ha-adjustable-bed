@@ -835,6 +835,12 @@
   "card_role": "up",
   "card_motor": "lumbar"
  },
+ "button:luuna_massage": {
+  "card_section": "massage"
+ },
+ "button:luuna_preset": {
+  "card_section": "presets"
+ },
  "button:massage_all_down": {
   "card_section": "massage"
  },
@@ -3050,6 +3056,9 @@
   "card_section": "hidden"
  },
  "sensor:lp_legacy_notification": {
+  "card_section": "hidden"
+ },
+ "sensor:luuna": {
   "card_section": "hidden"
  },
  "sensor:malouf_massage_remaining": {

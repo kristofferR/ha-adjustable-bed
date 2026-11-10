@@ -20,6 +20,7 @@ from tests.form_helpers import finish_new_bed
 ADDRESS = "11:22:33:44:55:66"
 APPS = [
     "rmcontrol",
+    "luuna",
     "revive",
     "best_mattress",
     "blvd_home",
@@ -385,3 +386,17 @@ async def test_configure_switches_a_remote_entry_to_a_classic_app(hass):
         "fortywinks",
     )
     assert entry.data[const.CONF_PRODUCT_TYPE] == layout
+
+
+async def test_luuna_asks_explicit_product_and_derives_its_controls(hass):
+    flow = setup_flow(hass, "QRRM0001")
+    result, _finish = await answer(flow, "luuna")
+    assert result["step_id"] == "profile_questions"
+    assert flow._manual_data[const.CONF_BED_TYPE] == "luuna"
+    with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
+        await flow.async_step_profile_questions({const.CONF_PROTOCOL_VARIANT: "riseprolight"})
+    saved = finish.call_args.args[0]
+    assert saved[const.CONF_PROTOCOL_VARIANT] == "riseprolight"
+    assert saved[const.CONF_MOTOR_COUNT] == 4
+    assert saved[const.CONF_HAS_MASSAGE] is True
+    assert saved[const.CONF_DISABLE_ANGLE_SENSING] is True

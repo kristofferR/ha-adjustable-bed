@@ -142,6 +142,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `bedtech` | B | B | B | bedtech | report PARTIAL |
 | `gmmotor` | B | B | B | gm | report PARTIAL; release behavior unresolved |
 | `casper_base` | B | B | B | casper | report PARTIAL |
+| `luuna` (Rise, Rise Pro, Rise Pro Light) | S stream (no release frame) | U | U | luuna | 100 ms held refresh, cancelled on tap-up/cancel; no live STOP enum caller. No composed axes or speed selector in the complete catalog. |
 | `hush_base` | S stream | B | B | hush, row126 | movement refreshes every 100 ms, first write after 100 ms, until release, then sends STOP `6e` on the same side; massage strength sends once on press and STOP on release; text controls send their short or long gesture with no release. #516 and #591: no shard assesses two held axes or a motor-speed selection. Not declared: the mixed gestures need a per-control scope (see [per-control scope](#per-control-hold-scope)), and Hush runs on the shared Casper Base controller, whose own hold is blocked |
 | **Jiecang F1 (J1)** | | | | | |
 | `jiecang_app` (Dreamask, Dreamotion, Dream Motion HD) | S stream | U | U | dreamask, dreamotion, dreamhd | combined sections are fixed opcodes |
@@ -637,6 +638,7 @@ Report workspaces are machine-local under
 | bob | `com.okin.bedding.rizebob` | 1.0.1 | COMPLETE | `com.okin.bedding.rizebob-1.0.1-2026-08-30/report/` |
 | brick | `com.cheers.brick` | v1.0 | COMPLETE | `com.cheers.brick-v1.0-2026-10-01-queue-e0bb6807-20261001-050-002/report/` |
 | carefree | `com.okin.bedding.rizeiicarefree` | 1.0.1 | COMPLETE | `com.okin.bedding.rizeiicarefree-1.0.1-2026-08-30/report/` |
+| luuna | `com.richmat.luuna` | 2.0.1 (20102) | COMPLETE | `com.richmat.luuna-2.0.1-2026-11-10-maxqueue001/report/`, accepted audit002 |
 | casper | `com.richmat.casperbase` | 1.0.8 | PARTIAL | `com.richmat.casperbase-1.0.8-2026-11-03-bulk101-188-001/report/` |
 | cherish | `com.okin.ore.cherish` | 1.0.4 | COMPLETE | `com.okin.ore.cherish-1.0.4-2026-11-03-bulk061-001/report/` |
 | clarity | `com.okin.bedding.customaticclarity` | 1.0.1 | COMPLETE | `com.okin.bedding.customaticclarity-1.0.1-2026-08-30/report/` |

@@ -1419,10 +1419,11 @@ RICHMAT_FAMILY: Final = AppFamily(
         "RMControl, Revive Control, Best Mattress, Blvd Home, HARMONY, Idealbed, "
         "RUF | Betten (Motor 2), W.Silver Products, AMERICANSTAR, Bailey's Bed Control, TX, "
         "Avocado Eco Base, CoasterSleep, Forty Winks, Milemont, Superior, SleepFunction and "
-        "SVEN & SON apps, and Richmat remotes"
+        "SVEN & SON apps, Luuna +, and Richmat remotes"
     ),
     answers={
         "rmcontrol": Answer(BED_TYPE_RICHMAT, data={CONF_RMCONTROL_PRODUCT: None}),
+        "luuna": Answer("luuna", data=_NO_RMCONTROL),
         **{app: Answer(bed_type, data=_NO_RMCONTROL) for bed_type, app in RICHMAT_MH_APPS.items()},
         # The classic apps keep their own declared questions.
         **{
@@ -1431,7 +1432,7 @@ RICHMAT_FAMILY: Final = AppFamily(
         },
         "remote": Answer(BED_TYPE_RICHMAT, data={CONF_RMCONTROL_PRODUCT: ""}),
     },
-    routes=RICHMAT_MH_BED_TYPES,
+    routes=RICHMAT_MH_BED_TYPES | {"luuna"},
     routes_show_row=False,
     offers_keep=keep_never,
     offer=_richmat_answers,

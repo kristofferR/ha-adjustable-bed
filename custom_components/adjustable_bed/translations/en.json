@@ -2852,6 +2852,12 @@
       },
       "ruf_richmat_lift_down": {
         "name": "Lift Down"
+      },
+      "luuna_preset": {
+        "name": "{action}"
+      },
+      "luuna_massage": {
+        "name": "{action}"
       }
     },
     "cover": {
@@ -4476,6 +4482,9 @@
       },
       "ruf_richmat_music_status": {
         "name": "Bed audio status"
+      },
+      "luuna": {
+        "name": "Luuna + status"
       }
     },
     "light": {
@@ -8084,6 +8093,44 @@
           "name": "Paired bed side"
         }
       }
+    },
+    "luuna": {
+      "name": "Luuna + controls",
+      "description": "Configure the Luuna alarm, light or query the bed-provided sleep accessory name. Requires the selected product and reported capability.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "Luuna bed or paired bed side to control."
+        },
+        "operation": {
+          "name": "Operation",
+          "description": "Light, countdown alarm, local calendar or sleep-name action."
+        },
+        "value": {
+          "name": "Value",
+          "description": "Light duration in seconds (0, 300, 600 or 900), or warm/cold brightness percent (0–100). Zero duration means always on."
+        },
+        "rgb_color": {
+          "name": "RGB color",
+          "description": "Color for the selected light operation."
+        },
+        "hour": {
+          "name": "Alarm hour",
+          "description": "Alarm hour in 24-hour time."
+        },
+        "minute": {
+          "name": "Alarm minute",
+          "description": "Minute within the selected alarm hour."
+        },
+        "mode": {
+          "name": "Alarm preset",
+          "description": "Position preset recalled by the alarm."
+        },
+        "side": {
+          "name": "Paired side",
+          "description": "Side of a paired bed to target."
+        }
+      }
     }
   },
   "exceptions": {
@@ -8890,7 +8937,8 @@
         "milemont": "Milemont app",
         "superior": "Superior app",
         "remote": "SleepFunction or SVEN & SON app, or a Richmat remote: the remote's code",
-        "another": "Another app or remote: search every app"
+        "another": "Another app or remote: search every app",
+        "luuna": "Luuna + app (Rise, Rise Pro, Rise Pro Light)"
       }
     },
     "setup_start": {

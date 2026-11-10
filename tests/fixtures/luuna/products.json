@@ -1,0 +1,313 @@
+[
+  {
+    "key": "none",
+    "code": "",
+    "sections": {
+      "1c": [],
+      "20": [],
+      "24": [],
+      "28": []
+    },
+    "flags": {
+      "2c": "false",
+      "30": "false"
+    }
+  },
+  {
+    "key": "rise",
+    "code": "V1RM",
+    "sections": {
+      "1c": [
+        {
+          "name": "deviceFunctionItemHeadUp",
+          "opcode": 36
+        },
+        {
+          "name": "deviceFunctionItemHeadDown",
+          "opcode": 37
+        },
+        {
+          "name": "deviceFunctionItemFootUp",
+          "opcode": 38
+        },
+        {
+          "name": "deviceFunctionItemFootDown",
+          "opcode": 39
+        },
+        {
+          "name": "deviceFunctionItemMotorReset",
+          "opcode": 49
+        }
+      ],
+      "20": [],
+      "24": [
+        {
+          "name": "deviceFunctionItemAntiSnoring",
+          "opcode": 70
+        },
+        {
+          "name": "deviceFunctionItemZeroGravity",
+          "opcode": 69
+        },
+        {
+          "name": "deviceFunctionItemMemoryPosition1",
+          "opcode": 46
+        }
+      ],
+      "28": [
+        {
+          "name": "deviceFunctionItemAntiSnoring",
+          "opcode": 70
+        },
+        {
+          "name": "deviceFunctionItemZeroGravity",
+          "opcode": 69
+        },
+        {
+          "name": "deviceFunctionItemMemoryPosition1",
+          "opcode": 46
+        }
+      ]
+    },
+    "flags": {
+      "2c": "true",
+      "30": "false"
+    }
+  },
+  {
+    "key": "risepro",
+    "code": "JVRM",
+    "sections": {
+      "1c": [
+        {
+          "name": "deviceFunctionItemHeadUp",
+          "opcode": 36
+        },
+        {
+          "name": "deviceFunctionItemHeadDown",
+          "opcode": 37
+        },
+        {
+          "name": "deviceFunctionItemFootUp",
+          "opcode": 38
+        },
+        {
+          "name": "deviceFunctionItemFootDown",
+          "opcode": 39
+        },
+        {
+          "name": "deviceFunctionItemPillowUp",
+          "opcode": 65
+        },
+        {
+          "name": "deviceFunctionItemPillowDown",
+          "opcode": 66
+        },
+        {
+          "name": "deviceFunctionItemLumberUp",
+          "opcode": 63
+        },
+        {
+          "name": "deviceFunctionItemLumberDown",
+          "opcode": 64
+        },
+        {
+          "name": "deviceFunctionItemMotorReset",
+          "opcode": 49
+        }
+      ],
+      "20": [
+        {
+          "name": "deviceFunctionItemMassageHeadInstensityStrengthen",
+          "opcode": 76
+        },
+        {
+          "name": "deviceFunctionItemMassageFootInstensityStrengthen",
+          "opcode": 78
+        },
+        {
+          "name": "deviceFunctionItemMassageModeChange",
+          "opcode": 72
+        },
+        {
+          "name": "deviceFunctionItemMassageModeAllOff",
+          "opcode": 94
+        },
+        {
+          "name": "deviceFunctionItemMassage10MinuteTimer",
+          "opcode": 95
+        },
+        {
+          "name": "deviceFunctionItemMassage20MinuteTimer",
+          "opcode": 99
+        },
+        {
+          "name": "deviceFunctionItemMassage30MinuteTimer",
+          "opcode": 97
+        }
+      ],
+      "24": [
+        {
+          "name": "deviceFunctionItemAntiSnoring",
+          "opcode": 70
+        },
+        {
+          "name": "deviceFunctionItemZeroGravity",
+          "opcode": 69
+        },
+        {
+          "name": "deviceFunctionItemTVPosition",
+          "opcode": 88
+        },
+        {
+          "name": "deviceFunctionItemMemoryPosition1",
+          "opcode": 46
+        },
+        {
+          "name": "deviceFunctionItemMemoryPosition2",
+          "opcode": 47
+        }
+      ],
+      "28": [
+        {
+          "name": "deviceFunctionItemAntiSnoring",
+          "opcode": 70
+        },
+        {
+          "name": "deviceFunctionItemZeroGravity",
+          "opcode": 69
+        },
+        {
+          "name": "deviceFunctionItemTVPosition",
+          "opcode": 88
+        },
+        {
+          "name": "deviceFunctionItemMemoryPosition1",
+          "opcode": 46
+        },
+        {
+          "name": "deviceFunctionItemMemoryPosition2",
+          "opcode": 47
+        }
+      ]
+    },
+    "flags": {
+      "2c": "false",
+      "30": "false"
+    }
+  },
+  {
+    "key": "riseprolight",
+    "code": "FDRN",
+    "sections": {
+      "1c": [
+        {
+          "name": "deviceFunctionItemHeadUp",
+          "opcode": 36
+        },
+        {
+          "name": "deviceFunctionItemHeadDown",
+          "opcode": 37
+        },
+        {
+          "name": "deviceFunctionItemFootUp",
+          "opcode": 38
+        },
+        {
+          "name": "deviceFunctionItemFootDown",
+          "opcode": 39
+        },
+        {
+          "name": "deviceFunctionItemPillowUp",
+          "opcode": 65
+        },
+        {
+          "name": "deviceFunctionItemPillowDown",
+          "opcode": 66
+        },
+        {
+          "name": "deviceFunctionItemLumberUp",
+          "opcode": 63
+        },
+        {
+          "name": "deviceFunctionItemLumberDown",
+          "opcode": 64
+        },
+        {
+          "name": "deviceFunctionItemMotorReset",
+          "opcode": 49
+        }
+      ],
+      "20": [
+        {
+          "name": "deviceFunctionItemMassageHeadInstensityStrengthen",
+          "opcode": 76
+        },
+        {
+          "name": "deviceFunctionItemMassageFootInstensityStrengthen",
+          "opcode": 78
+        },
+        {
+          "name": "deviceFunctionItemMassageModeChange",
+          "opcode": 72
+        },
+        {
+          "name": "deviceFunctionItemMassageModeAllOff",
+          "opcode": 94
+        },
+        {
+          "name": "deviceFunctionItemMassage10MinuteTimer",
+          "opcode": 95
+        },
+        {
+          "name": "deviceFunctionItemMassage20MinuteTimer",
+          "opcode": 99
+        },
+        {
+          "name": "deviceFunctionItemMassage30MinuteTimer",
+          "opcode": 97
+        }
+      ],
+      "24": [
+        {
+          "name": "deviceFunctionItemAntiSnoring",
+          "opcode": 70
+        },
+        {
+          "name": "deviceFunctionItemZeroGravity",
+          "opcode": 69
+        },
+        {
+          "name": "deviceFunctionItemTVPosition",
+          "opcode": 88
+        },
+        {
+          "name": "deviceFunctionItemMemoryPosition1",
+          "opcode": 46
+        }
+      ],
+      "28": [
+        {
+          "name": "deviceFunctionItemAntiSnoring",
+          "opcode": 70
+        },
+        {
+          "name": "deviceFunctionItemZeroGravity",
+          "opcode": 69
+        },
+        {
+          "name": "deviceFunctionItemTVPosition",
+          "opcode": 88
+        },
+        {
+          "name": "deviceFunctionItemMemoryPosition1",
+          "opcode": 46
+        }
+      ]
+    },
+    "flags": {
+      "2c": "true",
+      "30": "true"
+    }
+  }
+]

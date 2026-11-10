@@ -341,6 +341,7 @@ _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     BED_TYPE_GOODVIBE: _BuilderSpec("goodvibe.controller"),
     BED_TYPE_HJBED: _BuilderSpec("hjbed.controller"),
     "hush_base": _BuilderSpec("hush_base.controller"),
+    "luuna": _BuilderSpec("luuna.controller"),
     BED_TYPE_JENSEN: _BuilderSpec("jensen.controller"),
     BED_TYPE_JIECANG_APP: _BuilderSpec("jiecang.app"),
     BED_TYPE_KAIDI: _BuilderSpec("kaidi.controller"),

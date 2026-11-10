@@ -23,6 +23,7 @@ from custom_components.adjustable_bed.beds.leggett.lp_legacy_profiles import (
     LP_LEGACY_PROFILE_CODES,
     get_lp_legacy_profile,
 )
+from custom_components.adjustable_bed.beds.luuna import controller as luuna_bed
 from custom_components.adjustable_bed.beds.richmat_classic import protocol as classic_frames
 from custom_components.adjustable_bed.beds.richmat_classic.profiles import APP_NAMES as CLASSIC_APPS
 from custom_components.adjustable_bed.beds.richmat_mh import protocol as mh_frames
@@ -31,6 +32,7 @@ from custom_components.adjustable_bed.beds.rmcontrol import protocol as rmcontro
 from custom_components.adjustable_bed.codec import richmat as richmat_codec
 from custom_components.adjustable_bed.profiles import casper as casper_profiles
 from custom_components.adjustable_bed.profiles import hush as hush_profiles
+from custom_components.adjustable_bed.profiles import luuna as luuna_profiles
 from custom_components.adjustable_bed.profiles import richmat as richmat_profiles
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
@@ -39,6 +41,7 @@ GUIDE = "docs/beds/richmat.md"
 _LIBRARY_APPS = {
     "Casper Base": (casper_profiles.PROFILES, _const.BED_TYPE_CASPER_BASE),
     "Hush Base": (hush_profiles.PROFILES, _const.BED_TYPE_HUSH_BASE),
+    "Luuna +": (luuna_profiles.PROFILES, _const.BED_TYPE_LUUNA),
 }
 
 _RICHMAT_NAMES = {
@@ -146,6 +149,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
             profile.key: (_const.BED_TYPE_RICHMAT_CLASSIC_APPS,)
             for profile in richmat_profiles.RICHMAT_CLASSIC.values()
         },
+        **dict.fromkeys(luuna_profiles.PROFILES, (_const.BED_TYPE_LUUNA,)),
         "goodvibe": (_const.BED_TYPE_GOODVIBE,),
         "leggett_lp_legacy": (_const.BED_TYPE_LEGGETT_LP_LEGACY,),
         # Each app's own products; the restored ones are choices on the same bed type.
@@ -1110,7 +1114,39 @@ def render_lp_legacy_notifications() -> str:
     )
 
 
+
+def render_luuna() -> str:
+    profiles = luuna_profiles.PROFILES
+    return _block(
+        _table(("Product", "Stored key", "Catalog code", "Motors", "Massage", "Memory slots", "Sleep name", "Light flag"), (
+            (p.row[0], f"`{p.key}`", p.code, str(2 if p.key == "rise" else 4),
+             "yes" if p.row[2] else "no", "2" if p.key == "risepro" else "1",
+             "yes" if p.row[9] else "no", "yes" if p.row[6] else "no")
+            for p in profiles.values()
+        )),
+        _table(("Action", "Normal opcode", "Program opcode", "Framed write", "Products"), (
+            (name, f"`{short:02X}`", f"`{long:02X}`" if long is not None else "none",
+             _hex(richmat_codec.function(short)),
+             ", ".join(p.row[0] for p in profiles.values() if i in (*p.row[1], *p.row[2], *p.row[3])))
+            for i, (name, short, long) in enumerate(luuna_profiles.ACTIONS)
+        )),
+        _table(("Startup/query", "Framed write", "Nordic write"), (
+            (name.removeprefix("deviceFunctionItem"), _hex(richmat_codec.function(code, action=name)), _hex(bytes([code])))
+            for name, code in (("deviceFunctionItemExitLimit", 0), *luuna_profiles.QUERIES)
+        )),
+        _table(("Setting", "Value"), (
+            ("Transports", ", ".join(luuna_profiles.TRANSPORTS)),
+            ("Scan keywords (case-sensitive contains)", ", ".join(luuna_profiles.SCAN_KEYWORDS)),
+            ("Write/held refresh tick", f"{luuna_profiles.TICK_S * 1000:g} ms"),
+            ("Clock/light query dispatch interval", f"{luuna_profiles.QUERY_INTERVAL_S * 1000:g} ms"),
+            ("HA service capability wait budget", f"{luuna_bed.CAPABILITY_WAIT_S:g} s"),
+            ("Light duration choices (seconds)", ", ".join(map(str, luuna_profiles.LIGHT_DURATIONS))),
+            ("Warm / cold RGB", " / ".join(str(v) for v in luuna_profiles.LIGHT_COLORS.values())),
+        )),
+    )
+
 BLOCKS: list[Block] = [
+    (GUIDE, "luuna", render_luuna),
     (GUIDE, "richmat-profiles", render_richmat_profiles),
     (GUIDE, "richmat-transports", render_richmat_transports),
     (GUIDE, "richmat-framing", render_richmat_framing),

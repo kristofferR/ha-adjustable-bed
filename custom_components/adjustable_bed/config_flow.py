@@ -1232,6 +1232,7 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         BED_TYPE_GMMOTOR,
         BED_TYPE_MOTOMOTION,
         "hush_base",
+        "luuna",
         BED_TYPE_LEGGETT_LP_LEGACY,
         *STARCODE_FAMILY.direct,
     }

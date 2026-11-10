@@ -542,6 +542,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "casper_remote": "Casper Base remote finder (RCRM handset)",
     "casper_base": "Casper Base app (select product)",
     "hush_base": "Hush Base app (select product)",
+    "luuna": "Luuna + app (Rise, Rise Pro, Rise Pro Light)",
     "hush_remote": "Hush Base remote finder (RCRM handset)",
     "hush_sleep_mm": "Hush Base sleep sensor (RM / MM)",
     "hush_sleep_sxb": "Hush Base sleep sensor (HJ / SXB)",
@@ -1276,6 +1277,15 @@ def _detect_bed_type_with_app_candidates(
 ) -> DetectionResult:
     """Keep existing receiver detection while offering an explicit app candidate."""
     result = _detect_bed_type_detailed(service_info, first=first)
+    if first.name(BED_TYPE_RICHMAT) and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ):
+        # Luuna's scan keywords identify a family candidate, never its product.
+        if result.bed_type is None:
+            result.bed_type, result.confidence = BED_TYPE_RICHMAT, 0.3
+        elif result.bed_type != BED_TYPE_RICHMAT and BED_TYPE_RICHMAT not in (result.ambiguous_types or ()):
+            result.ambiguous_types = [*(result.ambiguous_types or ()), BED_TYPE_RICHMAT]
+        result.signals.append("name:richmat_app_candidate")
     if first.name(BED_TYPE_GMMOTOR) and not any(
         signal.startswith("excluded:") for signal in result.signals
     ):
