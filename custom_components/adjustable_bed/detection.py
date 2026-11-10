@@ -789,7 +789,7 @@ _HIDDEN_APP_ROWS: Final = frozenset(
 HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_APP_ROWS)
 # Bed types whose one row asks for the product, although each product is an app entry.
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
-    {BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS}
+    {"luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS}
 )
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
@@ -1277,7 +1277,8 @@ def _detect_bed_type_with_app_candidates(
 ) -> DetectionResult:
     """Keep existing receiver detection while offering an explicit app candidate."""
     result = _detect_bed_type_detailed(service_info, first=first)
-    if first.name(BED_TYPE_RICHMAT) and not any(
+    # A name-only app hint must not contest an existing Richmat receiver signature.
+    if first.name(BED_TYPE_RICHMAT) and not first.service(BED_TYPE_RICHMAT) and not any(
         signal.startswith("excluded:") for signal in result.signals
     ):
         # Luuna's scan keywords identify a family candidate, never its product.

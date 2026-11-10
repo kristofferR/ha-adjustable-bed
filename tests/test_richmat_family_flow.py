@@ -392,6 +392,13 @@ async def test_luuna_asks_explicit_product_and_derives_its_controls(hass):
     flow = setup_flow(hass, "QRRM0001")
     result, _finish = await answer(flow, "luuna")
     assert result["step_id"] == "profile_questions"
+    from tests.form_helpers import options_of
+
+    shown = fields(result)
+
+    choices = options_of(result["data_schema"].schema[shown[const.CONF_PROTOCOL_VARIANT]])
+    assert set(choices) == {"rise", "risepro", "riseprolight"}
+
     assert flow._manual_data[const.CONF_BED_TYPE] == "luuna"
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
         await flow.async_step_profile_questions({const.CONF_PROTOCOL_VARIANT: "riseprolight"})

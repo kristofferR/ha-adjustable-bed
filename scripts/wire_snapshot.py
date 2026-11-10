@@ -1176,6 +1176,7 @@ def default_scenario(bed_type: str) -> Scenario:
         const.BED_TYPE_OCTO: const.OCTO_VARIANT_STANDARD,
         const.BED_TYPE_CASPER_BASE: "casperpro",
         const.BED_TYPE_HUSH_BASE: "hushl400",
+        const.BED_TYPE_LUUNA: "rise",
         const.BED_TYPE_COMFORT_ENHANCEMENTS: "mc2",
         const.BED_TYPE_GLIDEAWAY_MOTION: "motion_400",
         const.BED_TYPE_ZSERIES: const.ZSERIES_VARIANT_Z230,

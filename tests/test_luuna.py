@@ -112,6 +112,10 @@ def test_notification_fields(vector):
 
 @pytest.mark.parametrize("product", PROFILES)
 def test_product_catalog_and_setup(product):
+    from custom_components.adjustable_bed.validators import is_valid_variant_for_bed_type
+
+    assert not is_valid_variant_for_bed_type("luuna", "auto")
+
     ctrl, _ = make(product)
     row = next(
         p for p in json.loads((FIXTURES / "products.json").read_text()) if p["key"] == product

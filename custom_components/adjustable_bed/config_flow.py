@@ -813,6 +813,7 @@ def _bed_type_selector(
                 for answer in family.answers.values()
             ),
             *RICHMAT_MH_BED_TYPES,
+            "luuna",
             BED_TYPE_JENSEN,
             # Protocol-named routes are off the setup list but stay selectable.
             *PROTOCOL_ROUTES,
