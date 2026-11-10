@@ -20,6 +20,46 @@ have no report.
 """
 
 FROZEN_FRAMES: dict[str, frozenset[str]] = {
+    # com.ore.okincomfortbed 1.1.6 (8), unit152 frozen vectors.json.
+    "okin_comfort_bed": frozenset(
+        {
+            "e5fe160000000006",
+            "e5fe160000000105",
+            "e5fe160000000204",
+            "e5fe160000000402",
+            "e5fe1600000008fe",
+            "e5fe1600000010f6",
+            "e5fe1600000020e6",
+            "e5fe1600000040c6",
+            "e5fe160000008086",
+            "e5fe160100000104",
+            "e5fe160100000203",
+            "e5fe1601000008fd",
+            "e5fe1601000009fc",
+            "e5fe1610000010e6",
+            "e5fe1610000011e5",
+            "e5fe1610000012e4",
+            "e5fe1610000013e3",
+            "e5fe1610000020d6",
+            "e5fe1610000021d5",
+            "e5fe1610000022d4",
+            "e5fe1610000023d3",
+            "e5fe1610000030c6",
+            "e5fe1610000031c5",
+            "e5fe1610000032c4",
+            "e5fe1611000010e5",
+            "e5fe1611000011e4",
+            "e5fe1611000012e3",
+            "e5fe1611000013e2",
+            "e5fe1620000001e5",
+            "e5fe1620000002e4",
+            "e5fe1620000008de",
+            "e5fe1620000009dd",
+            "e5fe1631000000d5",
+            "e5fe1631000001d4",
+        }
+    ),
+
     # pre-v5 KeesonController
     "base": frozenset(
         {
