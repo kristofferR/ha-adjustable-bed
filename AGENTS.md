@@ -496,10 +496,8 @@ The `generate_support_bundle` service captures protocol data for debugging and a
 
 ### Common Issues
 
-- **Commands timeout**: Another device (app/remote) may be connected - beds only allow one BLE connection
-- **Position sensing breaks physical remote**: Enable `disable_angle_sensing` option
-- **Connection drops**: Move ESP32 proxy closer to bed, check for interference
-- **Octo beds disconnect after 30s**: Configure the PIN in options
+Troubleshooting belongs in [the troubleshooting guide](docs/TROUBLESHOOTING.md),
+not in auto-injected instructions. Clean-room analysts must not open that guide.
 
 ## Documentation
 
