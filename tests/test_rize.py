@@ -423,3 +423,41 @@ async def test_reading_programming_gate_preserves_voice_recall(product):
         # Other proven default controls on layouts7/8 remain programmable.
         await c.program_preset("leisure", True)
         assert packets(client) == [codec.control(TARGET, OWN, 167, 10)]
+
+
+@pytest.mark.parametrize("wait_at", ("session", "pacing", "ble_lock"))
+async def test_battery_notification_during_upward_admission_still_releases(wait_at):
+    """A newly known restriction wins at transmission, after every awaited lane."""
+    c, _, client = make_controller(135)
+
+    def report_battery():
+        notify(c, "03ffffffff200102030405a60100")
+
+    if wait_at == "session":
+        async def session():
+            report_battery()
+        with patch.object(c, "_ensure_session", side_effect=session), pytest.raises(ValueError, match="battery"):
+            await c.move_back_up()
+    elif wait_at == "pacing":
+        # Enter the pacing wait without waiting on a real protocol clock.
+        c._next_write_at = float("inf")
+        async def paced(awaitable, _timeout):
+            awaitable.close()
+            c._next_write_at = 0
+            report_battery()
+            raise TimeoutError
+        with patch("custom_components.adjustable_bed.beds.kaidi.rize.asyncio.wait_for", side_effect=paced), pytest.raises(ValueError, match="battery"):
+            await c.move_back_up()
+    else:
+        async with c._ble_lock:
+            move = asyncio.create_task(c.move_back_up())
+            await asyncio.sleep(0)
+            assert not move.done()
+            report_battery()
+        with pytest.raises(ValueError, match="battery"):
+            await move
+
+    # No upward frame escaped; the existing finally still emits its matching STOP.
+    assert packets(client) == [codec.control(TARGET, OWN, 3)]
+    await c.move_back_down()
+    assert packets(client)[-2:] == [codec.control(TARGET, OWN, 2), codec.control(TARGET, OWN, 3)]

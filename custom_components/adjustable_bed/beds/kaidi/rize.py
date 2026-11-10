@@ -149,6 +149,21 @@ class RizeController(KaidiAppController):
                 self._battery_mode = value == 1
                 self.forward_controller_state_updates(BATTERY_MODE(self._battery_mode))
 
+    def _validate_power_for_write(self, command: bytes) -> None:
+        """Power notifications received during setup or wire waits take effect now."""
+        if (
+            self._battery_mode is True
+            and len(command) == 14
+            and command[0] == 3
+            and command[5] == codec.CONTROL_CHANNEL
+            and any(
+                command[11] in codes
+                for action, codes in self.profile.commands.items()
+                if action.endswith("_up")
+            )
+        ):
+            raise ValueError("Rize reports battery mode; raising is disabled")
+
     async def write_command(
         self, command: bytes, repeat_count: int = 1, repeat_delay_ms: int = 100,
         cancel_event: asyncio.Event | None = None,
@@ -168,6 +183,7 @@ class RizeController(KaidiAppController):
             await self._write_gatt_with_retry(
                 codec.WRITE_CHAR_UUID, command, response=True, cancel_event=cancel,
                 expected_client=client,
+                before_write=lambda: self._validate_power_for_write(command),
             )
             self._next_write_at = time.monotonic() + self.profile.write_spacing_s
 
