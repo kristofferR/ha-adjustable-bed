@@ -8119,6 +8119,12 @@
         },
         "wake_mode": {
           "name": "Wake action"
+        },
+        "device_id": {
+          "name": "Bed device"
+        },
+        "side": {
+          "name": "Paired bed side"
         }
       }
     }

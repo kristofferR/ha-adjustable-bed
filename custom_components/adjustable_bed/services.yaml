@@ -3262,8 +3262,6 @@ richmat_app_alarm:
               value: "6"
 
 jalon_set_alarm:
-  name: "OkinComfortBed Ⅱ (Jalon): Set bed alarm"
-  description: Set a bed-local wake alarm. Empty weekdays selects the next occurrence today or tomorrow.
   fields:
     device_id:
       required: true

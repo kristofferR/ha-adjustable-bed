@@ -1190,6 +1190,8 @@ def default_scenario(bed_type: str) -> Scenario:
         from custom_components.adjustable_bed.profiles.keeson import DEFAULT_LAYOUTS
 
         data[const.CONF_PRODUCT_TYPE] = DEFAULT_LAYOUTS[bed_type]
+    if bed_type == const.BED_TYPE_JALON_BED:
+        data[const.CONF_PRODUCT_TYPE] = "40"  # the app's default four-motor layout
     if bed_type == const.BED_TYPE_ISLEEP:
         data.update({const.CONF_PRODUCT_TYPE: 129, const.CONF_KAIDI_ROOM_ID: 10000})
         replies = {
@@ -1342,6 +1344,17 @@ def route_scenarios() -> list[Scenario]:
                     protocol_variant=f"{MODEL_VARIANT_PREFIX}{model}",
                 )
             )
+    # Jalon's physical layouts share one transport and fixed model byte zero.
+    # The four-motor layout is already the default scenario.
+    for layout in ("20", "30", "31"):
+        scenarios.append(
+            Scenario(
+                id=f"jalon_bed:layout_{layout}",
+                bed_type=const.BED_TYPE_JALON_BED,
+                entry_data={const.CONF_PRODUCT_TYPE: layout},
+                layout_id=const.BED_TYPE_JALON_BED,
+            )
+        )
     # Jiecang family: one app, four profiles, shared and distinct layouts.
     for profile in ("dreamask", "dreamotion", "dreamhd", "comfort_motion"):
         second = "g2" if profile == "comfort_motion" else "g3"
