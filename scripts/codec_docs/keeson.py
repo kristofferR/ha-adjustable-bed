@@ -48,6 +48,7 @@ _KEESON_NAMES: dict[str, str] = {
     "simon_li": "Simon Li",
     "okin_seating": "OKIN-Seating",
     "heal_every_night": "Heal Every Night",
+    "okin_comfort_bed": "OKIN Comfort Bed",
     "americanstar": "AMERICANSTAR",
     "avanti_bases": "Avanti Bases",
     "bedsense_bases": "Bedsense Bases",
@@ -240,6 +241,7 @@ def render_keeson_profiles() -> str:
                 _carrier(profile),
                 "app controller"
                 if key in _KEESON_CONTROLLERS
+                else "live FFE9 / FFE4" if key == "okin_comfort_bed"
                 else profile.transport.upper() + (" (fixed)" if profile.fixed_write else ""),
                 "app controller" if key in _KEESON_APP_TABLES else profile.lights or "none",
                 "app controller" if key in _KEESON_APP_TABLES else profile.massage,
@@ -321,10 +323,21 @@ def render_keeson_transports() -> str:
                         name
                         for name, profile in profiles.items()
                         if profile.transport == key and name not in _KEESON_CONTROLLERS
+                        and name != "okin_comfort_bed"
                     ),
                 )
                 for key, transport in keeson_codec.TRANSPORTS.items()
             ),
+        ),
+        _table(
+            ("Profile", "Service", "Write", "Notify role", "Selection"),
+            ((
+                _kname(keeson_profiles.OKIN_COMFORT_BED.key),
+                "any discovered service",
+                f"`{keeson_codec.TRANSPORTS['base'].write_uuid}`",
+                f"`{keeson_codec.TRANSPORTS['base'].notify_uuid}` (no CCCD)",
+                "last matching characteristics; both required",
+            ),),
         )
     )
 

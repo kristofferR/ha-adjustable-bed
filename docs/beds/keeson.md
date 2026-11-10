@@ -74,6 +74,7 @@ APK Protocol Audit row044.
 | ✅ | [Bedsense Bases](https://play.google.com/store/apps/details?id=com.ore.sfmc2bedsence) 1.1 (3) | `com.ore.sfmc2bedsence` | [ORE comfort-bed](#ore-comfort-bed-profiles) |
 | ✅ | [Avanti Bases](https://play.google.com/store/apps/details?id=com.ore.AvantiBases) 1.0.5 (7) | `com.ore.AvantiBases` | [ORE comfort-bed](#ore-comfort-bed-profiles) |
 | ✅ | [AMERICANSTAR](https://play.google.com/store/apps/details?id=com.ore.americanstar) 1.0 (1), hardware unverified | `com.ore.americanstar` | [ORE comfort-bed](#ore-comfort-bed-profiles) |
+| ✅ | [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) 1.1.6 (8), hardware unverified | `com.ore.okincomfortbed` | [OKIN Comfort Bed](#okin-comfort-bed) |
 | ✅ | [Glideaway Motion](https://play.google.com/store/apps/details?id=com.ore.bedding.glideawaymontion) 1.0.3 (11) | `com.ore.bedding.glideawaymontion` | [Glideaway Motion](#glideaway-motion) |
 | ✅ | [AdjustaMattress](https://play.google.com/store/apps/details?id=com.okin.adjustamattress) 1.6.0 (10) | `com.okin.adjustamattress` | [AdjustaMattress](#adjustamattress) |
 | ✅ | Scott Living | `com.keeson.scottlivingrelease` | [Scott Living](#scott-living) |
@@ -187,6 +188,7 @@ only through **Reconfigure**, and the app review in Repairs opens it.
 | Simon Li | `keeson` `simon_li` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller | renewable lease |
 | OKIN-Seating | `keeson` `okin_seating` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller | renewable lease |
 | Heal Every Night | `keeson` `heal_every_night` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller | renewable lease |
+| OKIN Comfort Bed | `keeson` `okin_comfort_bed` | K1 `E5`, big-endian | live FFE9 / FFE4 | app controller | app controller | renewable lease |
 | AMERICANSTAR | `keeson` `americanstar` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller | renewable lease |
 | Avanti Bases | `keeson` `avanti_bases` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller | renewable lease |
 | Bedsense Bases | `keeson` `bedsense_bases` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller | renewable lease |
@@ -241,6 +243,7 @@ release refreshes at its app interval until the lease ends or STOP arrives, up t
 | Simon Li | pulse count × 100 ms | same | +10 ms `E5 FE 16 00 00 00 00 06` (STOP ends the wait) | `E5 FE 16 00 00 00 00 06` | no | none |
 | OKIN-Seating | pulse count × 100 ms | same | +10 ms `E5 FE 16 00 00 00 00 06` (STOP ends the wait) | `E5 FE 16 00 00 00 00 06` | no | none |
 | Heal Every Night | pulse count × 100 ms | same | +100 ms `E5 FE 16 00 00 00 00 06` (STOP ends the wait) | `E5 FE 16 00 00 00 00 06` | no | none |
+| OKIN Comfort Bed | pulse count × 100 ms | same | +100 ms `E5 FE 16 00 00 00 00 06` | `E5 FE 16 00 00 00 00 06` | no | 100 ms |
 | AMERICANSTAR | pulse count × 100 ms | same | +100 ms `E5 FE 16 00 00 00 00 06` | `E5 FE 16 00 00 00 00 06` | no | 100 ms |
 | Avanti Bases | pulse count × 100 ms | same | +100 ms `E5 FE 16 00 00 00 00 06` | `E5 FE 16 00 00 00 00 06` | no | 100 ms |
 | Bedsense Bases | pulse count × 100 ms | same | +100 ms `E5 FE 16 00 00 00 00 06` | `E5 FE 16 00 00 00 00 06` | no | 100 ms |
@@ -252,9 +255,9 @@ release refreshes at its app interval until the lease ends or STOP arrives, up t
 Words, encoded in the profile's frame. AdjustaMattress P1, AdjustaMattress P2,
 AMERICANSTAR, Avanti Bases, Bedsense Bases, BF, Cherish, Comfort Enhancements,
 Cool Base, Dynasty Bases, Glideaway Motion, Heal Every Night, INNOVA, Malouf
-legacy OKIN, MaxCoil Una, OKIN-Seating, Rondure, SBI, Scott Living, Simon Li,
-Sleepy's BOX15 keep their key tables with their app controllers; see their
-sections.
+legacy OKIN, MaxCoil Una, OKIN Comfort Bed, OKIN-Seating, Rondure, SBI, Scott
+Living, Simon Li, Sleepy's BOX15 keep their key tables with their app controllers;
+see their sections.
 
 | Profile | Flat | Zero G | Lounge | TV | Anti-snore | Memory recall | Memory save |
 |---|---|---|---|---|---|---|---|
@@ -323,7 +326,7 @@ existing entries keep their identities; the
 |-------------------|---------|-------|
 | `ergomotion` | `keeson` variant `ergomotion` | See [Ergomotion](#ergomotion) |
 | `serta` | `keeson` variant `serta` | See [Serta](#serta) |
-| `keeson` variants `avanti_bases`, `bedsense_bases`, `dynasty_bases`, `maxcoil_una` | `keeson` variant `americanstar` | Identical profiles under each app's own key; see [ORE comfort-bed profiles](#ore-comfort-bed-profiles) |
+| `keeson` variants `avanti_bases`, `bedsense_bases`, `dynasty_bases`, `maxcoil_una`, `okin_comfort_bed` | `keeson` variant `americanstar` | Identical profiles under each app's own key; see [ORE comfort-bed profiles](#ore-comfort-bed-profiles) |
 
 `okin_ffe` and the `keeson` variant `okin` share the [OKIN FFE](#okin-ffe)
 profile but not its timing: `okin_ffe` defaults to 7 pulses 150 ms apart and
@@ -351,6 +354,10 @@ query, the `EF 02` rename frame and the Ergomotion status parser.
 | BASE | `0000ffe5-0000-1000-8000-00805f9b34fb` | `0000ffe9-0000-1000-8000-00805f9b34fb` | `0000ffe4-0000-1000-8000-00805f9b34fb` | `0000fff0-0000-1000-8000-00805f9b34fb` / `0000fff2-0000-1000-8000-00805f9b34fb`<br>`0000ffb0-0000-1000-8000-00805f9b34fb` / `0000ffb2-0000-1000-8000-00805f9b34fb` | Base (BaseI4/I5), Ergomotion, Serta, OKIN FFE, BetterLiving CB1322, Sino, BetterLiving, Sleep Harmony (base-i5), Purple Premium, Restonic BT remote A, Restonic BT remote B, INNOVA, Simon Li, OKIN-Seating, Heal Every Night, AMERICANSTAR, Avanti Bases, Bedsense Bases, Dynasty Bases, MaxCoil Una |
 | KSBT | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | `6e400020-b5a3-f393-e0a9-e50e24dcca9e` / `6e400021-b5a3-f393-e0a9-e50e24dcca9e`<br>`0000ffe5-0000-1000-8000-00805f9b34fb` / `0000ffe9-0000-1000-8000-00805f9b34fb`<br>`0000ffe0-0000-1000-8000-00805f9b34fb` / `0000ffe1-0000-1000-8000-00805f9b34fb` | KSBT, KSBT03C, KSBT03CR, KSBT04C, Sleep Harmony (KSBT04C), Purple Premium Plus, Adjustable Lite (KSBT01C), Adjustable Lite (KSBT03C) |
 | JSON | `0000a00a-0000-1000-8000-00805f9b34fb` | `0000b002-0000-1000-8000-00805f9b34fb` | `0000b004-0000-1000-8000-00805f9b34fb` | none | JSON/A00A |
+
+| Profile | Service | Write | Notify role | Selection |
+|---|---|---|---|---|
+| OKIN Comfort Bed | any discovered service | `0000ffe9-0000-1000-8000-00805f9b34fb` | `0000ffe4-0000-1000-8000-00805f9b34fb` (no CCCD) | last matching characteristics; both required |
 <!-- /generated -->
 
 Detected profiles try the primary write role, then each fallback pair, and use
@@ -375,7 +382,7 @@ family's codec exists.
 |---|---|---|---|
 | K1 `E5`, little-endian | `header FE 16` + word + checksum | `E5 FE 16 01 00 00 00 05` | Base (BaseI4/I5), Ergomotion, Serta, Purple Premium, Restonic BT remote A, Restonic BT remote B, INNOVA, SBI, Rondure, Cool Base |
 | K1 `E6`, little-endian | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 04` | OKIN FFE, BetterLiving CB1322 |
-| K1 `E5`, big-endian | `header FE 16` + word + checksum | `E5 FE 16 00 00 00 01 05` | Sino, BetterLiving, Simon Li, OKIN-Seating, Heal Every Night, AMERICANSTAR, Avanti Bases, Bedsense Bases, Dynasty Bases, MaxCoil Una, AdjustaMattress P2, BF, Cherish, Comfort Enhancements |
+| K1 `E5`, big-endian | `header FE 16` + word + checksum | `E5 FE 16 00 00 00 01 05` | Sino, BetterLiving, Simon Li, OKIN-Seating, Heal Every Night, OKIN Comfort Bed, AMERICANSTAR, Avanti Bases, Bedsense Bases, Dynasty Bases, MaxCoil Una, AdjustaMattress P2, BF, Cherish, Comfort Enhancements |
 | JSON | JSON envelope, see below | see JSON envelope | JSON/A00A |
 | P2 6-byte | `04 02` + big-endian word | `04 02 00 00 00 01` | KSBT, KSBT03C, Adjustable Lite (KSBT01C), Adjustable Lite (KSBT03C) |
 | P2 7-byte (`05`) | `05 02` + big-endian word + `00` | `05 02 00 00 00 01 00` | KSBT03CR |
@@ -1247,7 +1254,7 @@ stops motion and presets.
 
 ### ORE comfort-bed profiles
 
-**App:** MaxCoil Una 1.1.0 (5), `com.ore.maxcoil`; Dynasty Bases 1.0.2 (3), `com.ore.Dynasty`; Bedsense Bases 1.1 (3), `com.ore.sfmc2bedsence`; Avanti Bases 1.0.5 (7), `com.ore.AvantiBases`; AMERICANSTAR 1.0 (1), `com.ore.americanstar`
+**App:** OKIN Comfort Bed 1.1.6 (8), `com.ore.okincomfortbed`; MaxCoil Una 1.1.0 (5), `com.ore.maxcoil`; Dynasty Bases 1.0.2 (3), `com.ore.Dynasty`; Bedsense Bases 1.1 (3), `com.ore.sfmc2bedsence`; Avanti Bases 1.0.5 (7), `com.ore.AvantiBases`; AMERICANSTAR 1.0 (1), `com.ore.americanstar`
 
 **Status:** ❓ Needs testing (artifact-verified, hardware unverified)
 
@@ -1263,7 +1270,7 @@ stops motion and presets.
 
 Choose the app by name in the bed-type list, or answer the
 [Keeson question](#home-assistant-setup) with the app (`maxcoil_una`,
-`dynasty_bases`, `bedsense_bases`, `avanti_bases` or `americanstar`). Setup then
+`dynasty_bases`, `bedsense_bases`, `avanti_bases`, `americanstar` or `okin_comfort_bed`). Setup then
 asks the screen you pick in the app, which sets the **motor count**:
 
 | App screen | Motor count | Covers |
@@ -1279,15 +1286,15 @@ asks the screen you pick in the app, which sets the **motor count**:
   different preset and massage values.
 - For a two-address pair, split the pair before changing the profile. A pair
   side that is out of range keeps its controls, built from the stored profile.
-- Avanti motor layout is a per-side setting too; split before changing it. Its
-  massage page is always enabled, refresh timing is fixed, and angle sensing is
-  absent. Those three generic options are hidden for Avanti.
+- Avanti and OKIN Comfort Bed motor layouts are per-side settings too; split
+  before changing either. Their massage page is always enabled, refresh timing is fixed, and angle sensing is
+  absent. Those three generic options are hidden for both apps.
 
 The apps write big-endian `E5` frames to the last `0000ffe9-0000-1000-8000-00805f9b34fb`
 found across all services (the service UUID is ignored). Controls stay unavailable
 unless `0000ffe4-0000-1000-8000-00805f9b34fb` exists too. The apps never set a
-write type, so Android's default applies: write without response when the
-characteristic offers it, otherwise with response. There is no PIN, pairing,
+write type. The effective mode is runtime data; the integration selects from
+the live properties, preferring write without response when offered. There is no PIN, pairing,
 handshake, MTU request or initialization packet.
 
 #### Controls
@@ -1365,6 +1372,62 @@ packet. Exclusions are in the [ledgers](#analysis-provenance). Real users should
 the physical axis for each layout (especially 2M's combined key and 4M's waist),
 hold and release behavior, preset save/recall, massage levels and timer
 durations, and the actual write type.
+
+### OKIN Comfort Bed
+
+**App:** [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) 1.1.6 (8), `com.ore.okincomfortbed`
+
+**Status:** ❓ Needs testing (artifact-verified, hardware unverified)
+
+Behaves as the [ORE comfort-bed profiles](#ore-comfort-bed-profiles), including
+all three layouts, four recall/save destinations, massage and discrete light.
+
+#### Setup
+
+Choose **OKIN Comfort Bed app (Keeson)** and the screen selected in the app.
+The screen owns motor count independently of Bluetooth name. Massage is always
+available, refresh timing is fixed and angle sensing is disabled. These fields
+are set by the profile; its screen and app selection belong to each physical
+receiver in a two-address pair.
+
+Detection: none. The app accepts every nonempty named BLE device without an
+advertisement filter. No new Home Assistant advertisement matcher is declared.
+The last FFE9 and FFE4 characteristics across all services are required; there
+is no fixed service UUID, authentication or initial command. Write mode is
+selected from live GATT properties, not asserted from the APK.
+
+#### Controls
+
+See the generated ORE command tables above. The 2M union key, 3M head key and
+4M waist key share bytes but retain different names; 4M also has lumbar keys.
+Memory A/B are two slots on one receiver, not left/right selectors. There is
+no single-address side control or concurrent-motor composition.
+
+#### Timing
+
+See [Hold and release timing](#hold-and-release-timing). Holds support a renewable
+lease at the profile cadence and always attempt the zero-word release on
+cancellation. The coordinator serializes immutable writes instead of reproducing
+the Android mutable-characteristic FIFO bug. Save buttons replace long presses,
+a Stop button replaces repeated preset taps, and the timer select directly
+chooses the app's timer-cycle values. Android touch debounce, foreground and
+screen-off teardown are phone UI behavior, not bed protocol requirements.
+
+#### Notifications
+
+The app locally registers FFE4 but writes no CCCD. It accepts only nine-byte
+values, expands byte 7 to bits and discards the result. The integration performs
+no subscription or state parsing for this profile, avoiding an invented CCCD
+operation or unsupported positions, acknowledgements and device state. Light,
+massage levels and timer indicators describe local commands only.
+
+#### Evidence
+
+Unit152's accepted APK Protocol Audit and independent audit001 cover all 104
+literal command/variant vectors and 39 Java builder probes. The shared Keeson
+codec reproduces every reachable frame. Physical axes, release behavior, memory,
+massage/light effects and actual GATT properties remain unverified until real
+users supply beta/release feedback. No static BLE feature is left pending.
 
 ### Keeson layout app family
 
@@ -4484,3 +4547,9 @@ types store their own defaults and are left unchanged.
 - Keeson layout apps: see the [Keeson layout app family](#keeson-layout-app-family).
 - The other routes come from the smartbed-mqtt reverse engineering, fresh
   decompilation of the OEM apps listed above, and hardware reports.
+
+- OKIN Comfort Bed 1.1.6 (8), unit152: artifact SHA-256
+  `a3b9eca1d0c1a14eac904a980667ae680b6f00805a0767d4843d5f46f49a3974`;
+  accepted report manifest SHA-256
+  `313a09f8e5f9aa06cc11ca465bb8d4bbee31eb30816586296e2061a3d1229675`.
+  Static evidence only; hardware unverified.

@@ -8,6 +8,8 @@ is a separate package whose accepted report proves byte-identical frames,
 screens, timing, release and reply handling. Avanti Bases 1.0.5 (7),
 com.ore.AvantiBases, independently proves the same behavior (row065).
 AMERICANSTAR 1.0 (1) independently proves the same behavior (row062).
+OKIN Comfort Bed 1.1.6 (8), com.ore.okincomfortbed, independently proves the
+same behavior with 104 literal command/variant vectors (unit152).
 
 Every command is ``E5 FE 16`` + a big-endian 32-bit word + the complement of the
 byte sum, written to the last FFE9 characteristic found in any service. The app
@@ -38,6 +40,7 @@ from ..const import (
     KEESON_VARIANT_BEDSENSE_BASES,
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_MAXCOIL_UNA,
+    KEESON_VARIANT_OKIN_COMFORT_BED,
 )
 from ..controller_state import StateKey
 from ..profiles import keeson as profiles
@@ -68,6 +71,9 @@ class OreComfortBedApp:
 
 # Sibling apps of this code base register their own entry here.
 ORE_COMFORT_BED_APPS: Final[dict[str, OreComfortBedApp]] = {
+    KEESON_VARIANT_OKIN_COMFORT_BED: OreComfortBedApp(
+        "OKIN Comfort Bed", "com.ore.okincomfortbed", "1.1.6 (8)"
+    ),
     KEESON_VARIANT_AVANTI_BASES: OreComfortBedApp("Avanti Bases", "com.ore.AvantiBases", "1.0.5 (7)"),
     KEESON_VARIANT_AMERICANSTAR: OreComfortBedApp("AMERICANSTAR", "com.ore.americanstar", "1.0 (1)"),
     KEESON_VARIANT_MAXCOIL_UNA: OreComfortBedApp("MaxCoil Una", "com.ore.maxcoil", "1.1.0 (5)"),
@@ -148,8 +154,9 @@ class OreComfortBedController(ProfileExecution[KeesonProfile], BedController):
 
         The app scans every service, ignores service UUIDs and properties, and
         keeps the last FFE9 and the last FFE4 it sees. Controls stay disabled
-        unless both exist. It never sets a write type, so Android's default
-        applies: write-without-response when the characteristic offers it.
+        unless both exist. The artifact never sets a write type; its effective
+        mode needs runtime evidence. HA chooses from the live properties,
+        preferring write-without-response when offered.
         """
         if self._write_char is not None:
             return self._write_char
@@ -182,7 +189,7 @@ class OreComfortBedController(ProfileExecution[KeesonProfile], BedController):
         repeat_delay_ms: int = 100,
         cancel_event: asyncio.Event | None = None,
     ) -> None:
-        """Write to the resolved FFE9 instance with Android's default write type."""
+        """Write to the resolved FFE9 instance using its live GATT properties."""
         characteristic = self._resolve_write_characteristic()
         await self._write_gatt_with_retry(
             KEESON_BASE_WRITE_CHAR_UUID,

@@ -45,7 +45,7 @@ Customatic app profiles.
 | Analyzed | App | Package ID | Profile |
 |---|---|---|---|
 | ⚠️ | [OKIN ComfortBed II-N](https://play.google.com/store/apps/details?id=com.ore.jalon.neworebeding) | `com.ore.jalon.neworebeding` | [Okimat](#okimat), unverified |
-| ⚠️ | [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) | `com.ore.okincomfortbed` | [Okimat](#okimat), unverified |
+| ✅ | [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) 1.1.6 (8), hardware unverified | `com.ore.okincomfortbed` | [ORE comfort-bed profile](keeson.md#okin-comfort-bed), explicit Keeson profile |
 | ✅ | [OKIN Smart Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.smartbedwifi) | `com.okin.bedding.smartbedwifi` | [OKIN SmartBed CB24](#okin-smartbed-cb24); [Okimat](#okimat) unverified |
 | ⚠️ | Rize II | `com.okin.bedding.rizeii` | [Okimat](#okimat), unverified |
 | ✅ | [Resident Adjustable Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.rizeResident) 1.0.1 | `com.okin.bedding.rizeResident` | [Okin CST](#okin-cst) (Rize Resident) |

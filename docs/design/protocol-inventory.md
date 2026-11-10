@@ -523,6 +523,7 @@ No report content is copied here.
 | `innova` | `com.ore.sfm` 2.0 C | `test_innova.py` |
 | `bedsense_bases` | `com.ore.sfmc2bedsence` 1.1 C | `test_innova.py` |
 | `avanti_bases` | `com.ore.AvantiBases` 1.0.5 C | `test_avanti_bases.py` |
+| `okin_comfort_bed` | `com.ore.okincomfortbed` 1.1.6 (8) C | `test_okin_comfort_bed.py` |
 | `dynasty_bases`, `maxcoil_una`, `americanstar` | `com.ore.Dynasty` 1.0.2, `com.ore.maxcoil` 1.1.0, `com.ore.americanstar` 1.0 (all C) | `test_ore_comfort_bed.py` |
 | `simon_li`, `heal_every_night`, `okin_seating` | `com.okin.simon` 1.0.1, `com.okin.healeverynight` 1.0, `com.okin.minghua.R` 1.0.1 (all C) | `test_keeson_okin_apps.py` |
 
@@ -539,7 +540,7 @@ in [Coverage gaps](#coverage-gaps); it does not replace those vector tests.
 
 | Route | Controller class | Frame family |
 | --- | --- | --- |
-| `keeson:americanstar`, `avanti_bases`, `bedsense_bases`, `dynasty_bases`, `maxcoil_una` | `OreComfortBedController` | K1 class D (ORE bases) |
+| `keeson:americanstar`, `avanti_bases`, `bedsense_bases`, `dynasty_bases`, `maxcoil_una`, `okin_comfort_bed` | `OreComfortBedController` | K1 class D (ORE bases) |
 | `keeson:heal_every_night`, `okin_seating`, `simon_li` | `OkinAppKeesonController` | K1 (`heal_every_night` shares a class with `sino`; `okin_seating` with `simon_li`) |
 | `keeson:innova` | `InnovaController` | K1 class A (Keeson mask) |
 | `leggett_platt:gen2`, `:mlrm` | `LeggettGen2Controller`, `LeggettWilinkeController` | distinct, R1 |

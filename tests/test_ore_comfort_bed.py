@@ -39,6 +39,7 @@ from custom_components.adjustable_bed.const import (
     KEESON_VARIANT_BEDSENSE_BASES,
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_MAXCOIL_UNA,
+    KEESON_VARIANT_OKIN_COMFORT_BED,
     VARIANT_AUTO,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
@@ -50,6 +51,7 @@ APPS = (
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_BEDSENSE_BASES,
     KEESON_VARIANT_AVANTI_BASES,
+    KEESON_VARIANT_OKIN_COMFORT_BED,
     KEESON_VARIANT_AMERICANSTAR,
 )
 ADDRESS = "AA:BB:CC:DD:05:60"
@@ -239,7 +241,7 @@ async def test_motor_count_selects_the_app_screen(
 
 
 @pytest.mark.parametrize(("motor_count", "key", "up", "down"), MOVEMENT_ROWS)
-@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR])
+@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR, KEESON_VARIANT_OKIN_COMFORT_BED])
 async def test_hold_repeats_every_100ms_then_releases_with_zero(
     variant: str, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
     sleeps: AsyncMock, motor_count: int, key: str, up: str, down: str,
@@ -256,7 +258,7 @@ async def test_hold_repeats_every_100ms_then_releases_with_zero(
         assert _waits(sleeps) == [0.1] * count
 
 
-@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR])
+@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR, KEESON_VARIANT_OKIN_COMFORT_BED])
 async def test_release_is_sent_even_when_the_hold_was_cancelled(
     variant: str, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
     sleeps: AsyncMock,
@@ -281,7 +283,7 @@ async def test_head_exists_only_on_the_three_motor_screen(
 
 
 @pytest.mark.parametrize(("name", "action", "frames"), SINGLE_ROWS, ids=[r[0] for r in SINGLE_ROWS])
-@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR])
+@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR, KEESON_VARIANT_OKIN_COMFORT_BED])
 async def test_single_actions_wait_100ms_then_write_the_app_frame_once(
     variant: str, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
     sleeps: AsyncMock, name: str, action: Action, frames: list[str],
@@ -302,7 +304,7 @@ async def test_single_actions_wait_100ms_then_write_the_app_frame_once(
     ((3, 0, 2), ["e5fe1610000023d3", "e5fe1610000010e6", "e5fe1611000012e3"]),
     ((0, 3, 0), ["e5fe1610000020d6", "e5fe1610000013e3", "e5fe1611000010e5"]),
 ])
-@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR])
+@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR, KEESON_VARIANT_OKIN_COMFORT_BED])
 async def test_start_sends_current_wave_head_foot_levels(
     variant: str, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
     sleeps: AsyncMock, levels: tuple[int, int, int], frames: list[str],
@@ -314,7 +316,7 @@ async def test_start_sends_current_wave_head_foot_levels(
     assert _waits(sleeps) == [0.1, 0.1, 0.1]
 
 
-@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR])
+@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR, KEESON_VARIANT_OKIN_COMFORT_BED])
 async def test_massage_levels_timer_and_stop_publish_app_state(
     variant: str, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
     sleeps: AsyncMock,
@@ -338,7 +340,7 @@ async def test_massage_levels_timer_and_stop_publish_app_state(
         controller.restore_persisted_app_state({"head": 7})
 
 
-@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR])
+@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR, KEESON_VARIANT_OKIN_COMFORT_BED])
 async def test_write_roles_follow_the_app_scan(
     variant: str, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
     sleeps: AsyncMock,
@@ -365,7 +367,7 @@ async def test_write_roles_follow_the_app_scan(
         await controller.preset_flat()
 
 
-@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR])
+@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR, KEESON_VARIANT_OKIN_COMFORT_BED])
 async def test_notifications_are_never_subscribed(
     variant: str, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
 ) -> None:
@@ -394,7 +396,7 @@ async def test_profile_is_explicit_and_auto_keeps_keeson(
     assert isinstance(auto, KeesonController)
 
 
-@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR])
+@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR, KEESON_VARIANT_OKIN_COMFORT_BED])
 async def test_slider_levels_persist_across_restarts(
     variant: str, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
     sleeps: AsyncMock, hass_storage: dict,
@@ -534,7 +536,7 @@ async def test_failed_store_deletion_does_not_block_entry_removal(
     assert "Could not delete stored app preferences" in caplog.text
 
 
-@pytest.mark.parametrize("variant", [KEESON_VARIANT_DYNASTY_BASES, KEESON_VARIANT_AMERICANSTAR])
+@pytest.mark.parametrize("variant", [KEESON_VARIANT_DYNASTY_BASES, KEESON_VARIANT_AMERICANSTAR, KEESON_VARIANT_OKIN_COMFORT_BED])
 async def test_setup_exposes_the_app_surface(
     variant: str, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
     enable_custom_integrations,
@@ -630,7 +632,7 @@ def test_two_address_pairs_refuse_a_shared_profile_change() -> None:
         assert refusal is not None and refusal[0] == CONF_PROTOCOL_VARIANT
 
 
-@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR])
+@pytest.mark.parametrize("variant", [KEESON_VARIANT_MAXCOIL_UNA, KEESON_VARIANT_AMERICANSTAR, KEESON_VARIANT_OKIN_COMFORT_BED])
 async def test_light_switch_reports_assumed_state(
     variant: str, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock,
     sleeps: AsyncMock, enable_custom_integrations,
