@@ -638,3 +638,105 @@ async def test_notification_refreshes_actual_platform_controls_and_retires_old_r
     c._notification(c._current_link(), None, bytearray.fromhex("6e900001ff"))
     await hass.async_block_till_done()
     assert all(added.count(identity) == 2 for identity in new)
+
+
+@pytest.mark.parametrize("failure", ["write_error", "cancel_before_write", "cancel_during_write"])
+async def test_failed_alarm_delete_retains_observed_slots(coordinator, clocked, failure):
+    c = controller(coordinator, "AMRN")
+    c._accept("clock_available", {})
+    rows = [{"7": slot, "f": 0, "17": 7, "1f": 30, "27": 69, "2f": 129} for slot in (1, 2)]
+    for row in rows:
+        c._accept("group_5_1", {"direction": 2, "fields": row})
+    if failure == "cancel_before_write":
+        coordinator.cancel_command.set()
+        await c.execute_request(Request("delete_alarm", alarm_id=1))
+        assert written(c) == []
+    elif failure == "write_error":
+        coordinator.client.write_gatt_char.side_effect = OSError("write failed")
+        with pytest.raises(OSError):
+            await c.execute_request(Request("delete_alarm", alarm_id=1))
+    else:
+        entered = asyncio.Event()
+
+        async def writing(*args, **kwargs):
+            entered.set()
+            await asyncio.Event().wait()
+
+        coordinator.client.write_gatt_char.side_effect = writing
+        task = asyncio.create_task(c.execute_request(Request("delete_alarm", alarm_id=1)))
+        await entered.wait()
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+    assert c.alarms == rows
+    assert coordinator.controller_state[bed.ALARMS] == rows
+
+
+async def test_blanket_hydration_rejects_stale_session_reply(coordinator, clocked):
+    from dataclasses import replace
+
+    c = controller(coordinator, "HMRN")
+    c._accept("group_13_1", {"7": True})
+    old = c._link
+    queried = asyncio.Event()
+
+    async def write(*args, **kwargs):
+        queried.set()
+
+    coordinator.client.write_gatt_char.side_effect = write
+    task = asyncio.create_task(c.execute_request(Request("blanket_temperature", temperature=40)))
+    await queried.wait()
+    c.on_disconnect()
+    c._link = replace(old)
+    reply = bytearray.fromhex("6e200b0d050200021e23f0")
+    c._notification(old, None, reply)
+    assert not c._blanket_mode_received.is_set()
+    c._notification(c._link, None, reply)
+    assert c._blanket_mode_received.is_set()
+    with pytest.raises(ConnectionError, match="session changed"):
+        await task
+    assert len(written(c)) == 1
+
+
+def test_common_framing_preserves_other_lengths_and_recovers_after_malformed_input():
+    events = []
+    rx = Receiver(lambda *values: events.append(values))
+    # Length-delimited kinds retain their own boundaries, including payload markers.
+    extended = bed.codec.record_20_len(4, 1, 2, (0, 110, 1, 2))
+    desk = bed.codec.record_20_len(15, 1, 2, (0, 110, 1))
+    desk = bytes((desk[0], 33, *desk[2:-1], (sum(desk[:-1]) + 1) & 255))
+    ota = bytes.fromhex("6e4000086e010000")
+    for value in extended + desk + ota + bytes.fromhex("6e90313f6e"):
+        rx.feed(bytes((value,)))
+    assert events == [
+        ("group_4_1", {"rgb": [110, 1, 2], "alpha": 1}),
+        ("common", {"no": 0, "status": 1, "angle": 63}),
+    ]
+    assert rx.pending == b""
+    with pytest.raises(ValueError, match="Nonprogressing"):
+        rx.feed(bytes.fromhex("6e2000"))
+    rx.feed(bytes.fromhex("0102036e90316e9d"))
+    assert events[-1] == ("common", {"no": 0, "status": 1, "angle": 110})
+    assert rx.pending == b""
+
+
+async def test_blanket_mode_readiness_requires_complete_declared_checksum_valid_frame(coordinator):
+    c = controller(coordinator, "HMRN")
+    link = c._current_link()
+    short = bytes.fromhex("6e200a0d050200021ecc")
+    complete = bed.codec.record_20_len(13, 5, 2, (0, 2, 30, 35))
+    malformed = (
+        short,
+        complete[:-1] + bytes((complete[-1] ^ 1,)),
+        bytes((complete[0], complete[1], 10, *complete[3:])),
+    )
+    for frame in malformed:
+        c._notification(link, None, bytearray(frame))
+        assert not c._blanket_mode_received.is_set()
+        assert c.blanket["f"] == c.blanket["17"] == 25
+    # The trailing checksum is required before a fragmented reply is observed.
+    c._notification(link, None, bytearray(complete[:-1]))
+    assert not c._blanket_mode_received.is_set()
+    c._notification(link, None, bytearray(complete[-1:]))
+    assert c._blanket_mode_received.is_set()
+    assert (c.blanket["f"], c.blanket["17"]) == (30, 35)

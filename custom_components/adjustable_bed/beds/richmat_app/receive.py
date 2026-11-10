@@ -142,7 +142,7 @@ def extended(b: bytes) -> dict[str, Value]:
             return {"7": b[7] == 1}
         if o == 2 and n > 9:
             return {"2f": b[7] == 1, "33": math.floor(((b[8] << 8) + b[9]) / 60 + 0.5)}
-        if o == 5 and n > 9:
+        if o == 5 and n >= 11:
             return {"b": "cool" if b[7] == 1 else "warm", "f": b[8], "17": b[9]}
         if o == 6 and n > 7:
             return {"23": b[7] == 1}

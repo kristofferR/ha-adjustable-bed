@@ -310,3 +310,80 @@ async def test_blanket_temperature_hydrates_current_settings_after_connect_and_r
         await target.async_disconnect("idle_timeout")
         assert not live._blanket_mode_received.is_set()
         client.write_gatt_char.reset_mock()
+
+
+@pytest.mark.parametrize("runtime", ["AMRN"], indirect=True)
+async def test_delete_alarm_invalidates_only_written_slot_and_refuses_stale_toggle(hass, runtime):
+    from custom_components.adjustable_bed.sensor import AdjustableBedControllerStateSensor
+
+    target, client = runtime
+
+    async def subscribe(_char, callback):
+        asyncio.get_running_loop().call_soon(callback, None, bytearray.fromhex("6e09010078"))
+
+    client.start_notify.side_effect = subscribe
+    assert await target.async_connect()
+    live = target.controller
+    receive = client.start_notify.await_args.args[1]
+    first = (1, 0, 7, 30, 69, 129)
+    second = (2, 0, 8, 45, 70, 65)
+    receive(None, bytearray(codec.record_20_len(5, 1, 2, first)))
+    receive(None, bytearray(codec.record_20_len(5, 1, 2, second)))
+    sensor = AdjustableBedControllerStateSensor(target, live.controller_state_sensor_specs[0])
+    assert len(sensor.extra_state_attributes[bed.ALARMS]) == 2
+    client.write_gatt_char.reset_mock()
+    await invoke(hass, "delete_alarm", alarm_id=1)
+    assert [row["7"] for row in live.alarms] == [2]
+    assert sensor.extra_state_attributes[bed.ALARMS] == live.alarms
+    assert len(written(client)) == 1
+    assert bytes.fromhex(written(client)[0])[3:7] == bytes((5, 2, 1, 1))
+    # A query with no records is not proof of a complete empty list.
+    await invoke(hass, "query", query="alarms")
+    assert [row["7"] for row in live.alarms] == [2]
+    before = len(written(client))
+    with pytest.raises(ServiceValidationError, match="observed alarm"):
+        await invoke(hass, "toggle_alarm", alarm_id=1)
+    assert len(written(client)) == before
+    await invoke(hass, "toggle_alarm", alarm_id=2, enabled=False)
+    assert bytes.fromhex(written(client)[-1])[6:12] == bytes((2, 0, 8, 45, 70, 64))
+
+
+@pytest.mark.parametrize("runtime", ["HMRN"], indirect=True)
+@pytest.mark.parametrize("split", [1, 5, 10])
+@pytest.mark.parametrize("mode,temperature,other", [(1, 20, 24), (2, 40, 35)])
+async def test_short_blanket_mode_reply_cannot_satisfy_live_hydration(
+    hass, runtime, split, mode, temperature, other
+):
+    from custom_components.adjustable_bed.beds.richmat_app import protocol as p
+
+    target, client = runtime
+    receive = None
+    short = bytes.fromhex("6e200a0d050200021ecc")
+    assert codec.is_valid(short)
+
+    async def subscribe(_char, callback):
+        nonlocal receive
+        receive = callback
+        callback(None, bytearray(codec.record_20_len(13, 1, 2, (0, 1)) + short))
+
+    async def write(_char, data, **kwargs):
+        if data != p.QUERY["blanket"]:
+            return
+        live = target.controller
+        assert not live._blanket_mode_received.is_set()
+        assert live.blanket["b"] == "warm" and live.blanket["f"] == live.blanket["17"] == 25
+        complete = codec.record_20_len(13, 5, 2, (0, mode, 22 if mode == 1 else 30, other))
+        assert receive is not None
+        receive(None, bytearray(short + complete[:split]))
+        assert not live._blanket_mode_received.is_set()
+        assert live.blanket["17"] == 25
+        receive(None, bytearray(complete[split:] + bytes.fromhex("6e09010078")))
+        assert live._blanket_mode_received.is_set()
+        assert live.blanket["b"] == ("cool" if mode == 1 else "warm")
+        assert live.blanket["17"] == other
+
+    client.start_notify.side_effect = subscribe
+    client.write_gatt_char.side_effect = write
+    await invoke(hass, "blanket_temperature", zone=1, temperature=temperature)
+    assert written(client)[-1] == p.extended(13, 5, mode, temperature, other).hex()
+    assert written(client).count(p.QUERY["blanket"].hex()) == 1

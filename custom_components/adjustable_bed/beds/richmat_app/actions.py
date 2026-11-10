@@ -417,4 +417,7 @@ async def execute(c: RichmatAppController, r: Request) -> None:
     for frame in frames:
         if not await c._send(frame, c._current_link(), c._coordinator.cancel_command):
             return
+    if op == "delete_alarm":
+        # The completed write invalidates this observation, without claiming an ACK.
+        c.alarms[:] = [alarm for alarm in c.alarms if alarm["7"] != r.alarm_id]
     c._publish()
