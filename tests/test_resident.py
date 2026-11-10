@@ -487,3 +487,38 @@ def test_name_only_advertisements_offer_app_without_a_service_filter(name):
     assert result.bed_type == BED_TYPE_RESIDENT
     assert result.confidence == 0.3
     assert "name:resident_app_candidate" in result.signals
+
+
+@pytest.mark.parametrize(
+    "metadata",
+    ["missing", None, SimpleNamespace(name=None), MagicMock()],
+)
+@pytest.mark.parametrize(
+    ("name", "expected"), [("Unrelated device", None), ("OKIN-123456", BED_TYPE_RESIDENT)]
+)
+def test_discovery_uses_only_string_names_when_device_metadata_is_incomplete(
+    metadata, name, expected
+):
+    from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+    from tests.test_detection import _make_service_info
+
+    info = _make_service_info(name=name, service_uuids=[])
+    if metadata == "missing":
+        del info.device
+    else:
+        info.device = metadata
+    assert detect_bed_type_detailed(info).bed_type == expected
+
+
+@pytest.mark.parametrize("selected", ["malouf_new_okin", BED_TYPE_RESIDENT])
+def test_resident_search_hint_preserves_explicit_app_and_matching_receiver(selected):
+    from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+    from custom_components.adjustable_bed.profile_recommendations import recommend_profile
+    from tests.test_profile_recommendations import info
+
+    observed = info("Smartbed428000193")
+    observed.manufacturer_data = {89: bytes.fromhex("4142010204")}
+    detected = detect_bed_type_detailed(observed)
+    assert detected.bed_type == "malouf_new_okin"
+    assert BED_TYPE_RESIDENT in (detected.ambiguous_types or ())
+    assert recommend_profile({CONF_BED_TYPE: selected}, observed, {}) is None

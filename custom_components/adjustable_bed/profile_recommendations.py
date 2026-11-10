@@ -34,6 +34,7 @@ from .const import (
     BED_TYPE_HJBED,
     BED_TYPE_KEESON,
     BED_TYPE_OCTO,
+    BED_TYPE_RESIDENT,
     BED_TYPE_RICHMAT,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_SLEEPYS_BOX25,
@@ -267,12 +268,14 @@ def recommend_profile(
     # manufacturer or a high-confidence dedicated signature must corroborate it.
     receiver_ambiguities = set(detected.ambiguous_types or ()) - {
         BED_TYPE_HJBED, BED_TYPE_GOODVIBE, BED_TYPE_ESHINE_OKIN, BED_TYPE_RICHMAT_CLASSIC_APPS,
+        BED_TYPE_RESIDENT,
     }
     if (detected.confidence < 0.9 or receiver_ambiguities) and not any(
         signal.startswith(("name:", "manufacturer", "mac:"))
         and signal not in (
             "name:hjbed_app_candidate", "name:goodvibe_app_candidate",
             "name:eshine_okin_app_candidate", "name:richmat_classic_app_candidate",
+            "name:resident_app_candidate",
         )
         for signal in detected.signals
     ):

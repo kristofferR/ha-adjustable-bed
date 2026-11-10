@@ -1272,9 +1272,11 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             result.signals[0:0] = hints
     # Resident's platform-name filter admits these shared receiver names. Keep
     # existing protocol detection and ask the user to identify the app.
-    platform_name = service_info.device.name or service_info.name or ""
+    device_name = getattr(getattr(service_info, "device", None), "name", None)
+    platform_name = device_name if isinstance(device_name, str) and device_name else service_info.name
     if (
-        platform_name.lower().startswith(("okin", "smartbed"))
+        isinstance(platform_name, str)
+        and platform_name.lower().startswith(("okin", "smartbed"))
         and not any(signal.startswith("excluded:") for signal in result.signals)
     ):
         if result.bed_type is None:
