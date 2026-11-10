@@ -144,6 +144,10 @@ Beds that won't be supported:
 - **Sleeptracker-AI cloud features**: accounts, sleep data, Wi-Fi setup and other cloud services of Tempur-Pedic Ergo, BeautyRest SmartMotion and Serta Motion bases. The Tempur Sleeptracker-AI processor's direct Bluetooth controls on TEMPUR-Ergo ProSmart / ProSmart Air and ActiveBreeze beds are supported; see the [Sleeptracker processor guide](beds/sleeptracker.md)
 - **Logicdata eLift / desk controllers** — Uses local UDP/HTTP, not Bluetooth
 - **ErgoWifi** — Uses Xlink cloud platform
+- **Layla Adjustable Base Remote** (`com.sbi.laylawf`, version 1.1.5): Bed
+  controls use Xlink over local Wi-Fi (UDP) or cloud (TCP), outside this
+  Bluetooth-only integration's scope. This exclusion is specific to this app
+  version; other Layla controllers require separate Bluetooth evidence.
 
 LOGICDATA MOTIONrelax BLE app layouts have an explicit [LOGICDATA app profile](beds/jiecang.md#motionrelax-phone-and-tablet) over the Jiecang codec; the Sleep Smart Air Mattress app has its own [bed profile](beds/jiecang.md#sleep-smart-air-mattress-bed) and [pump type](beds/logicdata-sleep-smart.md). Existing legacy [Jiecang](beds/jiecang.md#legacy-route) entries retain their original protocol.
 
