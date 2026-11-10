@@ -9,7 +9,10 @@ from __future__ import annotations
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.controller_factory import create_controller
-from custom_components.adjustable_bed.profiles.okin_nframe import STARCODE_ABM5_4_PROFILES
+from custom_components.adjustable_bed.profiles.okin_nframe import (
+    STARCODE_ABM5_4_PROFILES,
+    OkinNFrameProfile,
+)
 from scripts.codec_docs import okin_nframe as docs
 from tests.codec_families.okin_nframe import FAMILY
 from tests.test_controller_contract import _FactoryCoordinator, _make_connected_client
@@ -18,7 +21,7 @@ from tests.test_controller_contract import _FactoryCoordinator, _make_connected_
 async def test_every_profile_is_listed_and_built_for_its_bed_types() -> None:
     """The profile summary lists every frozen profile, and each bed type builds it."""
     profiles = docs._okin_profiles()
-    assert {p.key for p in profiles} == {k for v in FAMILY.profiles.values() for k in v}
+    assert {p.key for p in profiles} == FAMILY.profiles[OkinNFrameProfile].keys()
     assert FAMILY.guide is not None
     selectors = {p.key: s for s, p in reversed(list(STARCODE_ABM5_4_PROFILES.items()))}
     for profile in profiles:

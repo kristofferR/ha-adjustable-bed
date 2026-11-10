@@ -5,8 +5,12 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from homeassistant.core import HomeAssistant
 
+from custom_components.adjustable_bed import position_estimate as pe
 from custom_components.adjustable_bed.beds.adjustable_lumbar import AdjustableBedAppController
+from custom_components.adjustable_bed.beds.entity_specs import MotorCommandCallable
+from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.profiles.adjustable_bed import (
     PROFILES,
     VOICE_FINITE,
@@ -19,6 +23,60 @@ from tests.test_adjustable_lumbar import make_controller, nus_services, okin_ser
 def controller(name="OKIN-1", **kwargs):
     source = make_controller(name, **kwargs)
     return AdjustableBedAppController(source._coordinator, device_name=name)
+
+
+@pytest.mark.parametrize(
+    ("action", "moves"),
+    [
+        ("voice_head_up", True),
+        ("voice_head_down", True),
+        ("voice_feet_up", True),
+        ("voice_feet_down", True),
+        ("voice_lumbar_up", True),
+        ("voice_lumbar_down", True),
+        ("voice_flat", True),
+        ("voice_zero_g", True),
+        ("voice_anti_snore", True),
+        ("voice_lounge", True),
+        ("voice_incline", True),
+        ("voice_stop", False),
+        ("voice_light", False),
+        ("voice_wave_1", False),
+        ("voice_wave_2", False),
+        ("voice_wave_3", False),
+        ("voice_massage_on", False),
+        ("voice_massage_stop", False),
+    ],
+)
+async def test_speech_buttons_invalidate_estimates_before_moving(
+    hass: HomeAssistant, action: str, moves: bool
+) -> None:
+    bed = controller()
+    coordinator = bed._coordinator
+    coordinator.hass = hass
+    coordinator.entry.entry_id = "speech_estimates"
+    manager = await pe.async_setup_position_estimates(
+        hass, coordinator.entry.entry_id, ((coordinator.address, None),)
+    )
+    estimate = manager.beds[coordinator.address]
+    estimate.configure({"back": (20.0, 10.0), "legs": (10.0, 8.0)})
+    estimate.set_reference()
+
+    async def admitted(command: MotorCommandCallable, **_kwargs: object) -> None:
+        await command(bed)
+
+    async def check_before_command(_action: str) -> None:
+        assert estimate.tracking(["back", "legs"]) is not moves
+
+    coordinator.async_execute_controller_command = AsyncMock(side_effect=admitted)
+    spec = next(
+        spec for spec in bed.controller_button_specs if spec.key == f"adjustable_bed_{action}"
+    )
+    button = ControllerActionButton(coordinator, spec)
+    button.hass = hass
+    with patch.object(bed, "execute_app_action", new=AsyncMock(side_effect=check_before_command)):
+        await button.async_press()
+    await manager.async_unload()
 
 
 @pytest.mark.parametrize("row", ROWS, ids=lambda row: f"{row['table']}/{row['action']}")

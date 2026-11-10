@@ -100,12 +100,15 @@ VOICE_MOTORS: Final = tuple(
     for axis in ("head", "feet", "lumbar")
     for direction in ("up", "down")
 )
-VOICE_FINITE: Final = (
+VOICE_PRESETS: Final = (
     "flat",
     "zero_g",
     "anti_snore",
     "lounge",
     "incline",
+)
+VOICE_FINITE: Final = (
+    *VOICE_PRESETS,
     "light",
     "wave_1",
     "wave_2",

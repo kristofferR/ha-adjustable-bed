@@ -27,7 +27,13 @@ from ..const import (
     CONF_BLE_DEVICE_NAME,
 )
 from ..detection import is_mac_like_name
-from ..profiles.adjustable_bed import PROFILES, VOICE_FINITE, VOICE_MOTORS, AdjustableAppProfile
+from ..profiles.adjustable_bed import (
+    PROFILES,
+    VOICE_FINITE,
+    VOICE_MOTORS,
+    VOICE_PRESETS,
+    AdjustableAppProfile,
+)
 from ..profiles.okin_nframe import (
     ADJUSTABLE_LUMBAR_KEYS,
     ADJUSTABLE_LUMBAR_PROFILES,
@@ -669,6 +675,9 @@ class AdjustableBedAppController(AdjustableLumbarController):
                 f"adjustable_bed_{action}",
                 "App speech: " + action.removeprefix("voice_").replace("_", " ").title(),
                 _action(action),
+                invalidates_position=(
+                    action in VOICE_MOTORS or action.removeprefix("voice_") in VOICE_PRESETS
+                ),
                 icon="mdi:gesture-tap",
                 translation_key="adjustable_bed_speech",
                 translation_placeholders={

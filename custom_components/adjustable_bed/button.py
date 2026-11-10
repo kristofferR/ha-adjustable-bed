@@ -1397,7 +1397,9 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
                 GESTURE_RELEASE.reset(token)
             return
         press_fn = self._spec.press_fn
-        if _moves_untimed(self._spec.key, held=self._spec.hold is not None):
+        if self._spec.invalidates_position or _moves_untimed(
+            self._spec.key, held=self._spec.hold is not None
+        ):
             press_fn = invalidate_on_command(self.hass, press_fn)
         if self._spec.scheduler_resource is not None:
             await self._coordinator.async_execute_controller_command(
