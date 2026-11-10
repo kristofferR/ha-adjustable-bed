@@ -8100,7 +8100,7 @@
         },
         "actions": {
           "name": "Alarm actions",
-          "description": "A list of node_<number> keys from this layout’s alarm_actions diagnostics. The first bed choice and the layout-ordered massage choices determine the command."
+          "description": "A list of node keys such as node_1 from this layout’s alarm_actions diagnostics. The first bed choice and the layout-ordered massage choices determine the command."
         },
         "time": {
           "name": "Alarm time",

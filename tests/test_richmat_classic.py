@@ -115,7 +115,7 @@ def test_zrs6_navigation_is_not_exposed_as_a_bed_command(app):
         assert result.owner == "retain"
 
 
-@pytest.mark.parametrize("app", APP_NAMES.keys() - RISE_APPS)
+@pytest.mark.parametrize("app", APP_NAMES)
 async def test_short_preset_has_one_recall_and_one_release(app, instant):
     ctrl, coord = controller(app, "A0RN")
     node = next(c.node for c in ctrl._controls if c.short == "58" and c.status == 3)
@@ -123,7 +123,7 @@ async def test_short_preset_has_one_recall_and_one_release(app, instant):
     assert packets(coord) == ["6e010058c7", "6e01006edd"]
 
 
-@pytest.mark.parametrize("app", APP_NAMES.keys() - RISE_APPS)
+@pytest.mark.parametrize("app", APP_NAMES)
 async def test_long_preset_suppresses_short_recall_after_saving(app, instant):
     ctrl, coord = controller(app, "A0RN")
     node = next(c.node for c in ctrl._controls if c.short == "58" and c.status == 3)
