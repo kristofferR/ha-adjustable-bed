@@ -19,6 +19,6 @@ FROZEN_FRAMES = {
         for command in row["commands"]
         if command
     )
-    for model in {row["model"] for row in ROUTES}
+    for model in sorted({row["model"] for row in ROUTES})
 }
 ALL_FRAMES = frozenset(row["hex"].lower() for row in VECTORS if row["hex"] != "NO_WRITE")

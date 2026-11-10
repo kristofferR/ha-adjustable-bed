@@ -8,6 +8,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 
 from ...const import DOMAIN, SIDE_BOTH
+from ...import_executor import async_import_modules
 from ...paired_coordinator import PairedBedCoordinator
 from ...services import (
     DEVICE_IDS,
@@ -21,12 +22,14 @@ from ...services import (
     _validation_controller,
 )
 from ..base import BedController, require_controller
-from .controller import APP_ACTION_CHOICES, BedTechController
-from .routing import app_side
+from .routing import APP_ACTION_CHOICES, app_side
 
 
 async def handle_app_command(call: ServiceCall) -> None:
     """Validate every receiver before executing an app action on its selected sleepers."""
+    await async_import_modules(call.hass, "beds.bedtech.controller")
+    from .controller import BedTechController
+
     action = call.data["action"]
     sleeper = call.data["sleeper"]
     preflighted: PreflightedSides = []

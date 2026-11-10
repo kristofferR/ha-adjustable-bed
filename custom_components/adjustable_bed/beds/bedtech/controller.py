@@ -12,6 +12,7 @@ from ...profiles.richmat import BEDTECH, BEDTECH_APP_PROFILES, Button
 from ..builder import BuildContext
 from ..entity_specs import ControllerButtonSpec, MotorControlSpec
 from ..richmat.controller import RichmatProfileController
+from .routing import APP_ACTIONS
 
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
@@ -254,38 +255,6 @@ class BedTechController(RichmatProfileController):
             await self._move_with_stop(code)
         else:
             await self._send(button)
-
-
-APP_ACTIONS: dict[str, Button] = {
-    "headUp": "head_up",
-    "headDown": "head_down",
-    "footUp": "feet_up",
-    "footDown": "feet_down",
-    "pillowUp": "pillow_up",
-    "pillowDown": "pillow_down",
-    "lumbarUp": "lumbar_up",
-    "lumbarDown": "lumbar_down",
-    "presetFlat": "flat",
-    "presetZeroG": "zero_g",
-    "presetAntiSnore": "anti_snore",
-    "presetTV": "tv",
-    "lightToggle": "light_toggle",
-    "massageOn": "massage_toggle",
-    "massageOff": "massage_off",
-    "headMassageUp": "massage_head",
-    "footMassageUp": "massage_foot",
-    "massageMode": "massage_mode",
-    "massageTimer20": "massage_timer_20",
-}
-APP_ACTION_CHOICES = (
-    *APP_ACTIONS,
-    "memory1",
-    "memory1Save",
-    "memory2",
-    "memory2Save",
-    "stop",
-    "connectionTest",
-)
 
 
 async def build_controller(ctx: BuildContext) -> BedTechController:

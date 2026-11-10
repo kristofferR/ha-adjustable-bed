@@ -1,6 +1,7 @@
 """BedTech 7.1.3 sleeper routing, independent of its shared wire builder."""
 
 from ...const import SIDE_BOTH, SIDE_LEFT, SIDE_RIGHT
+from ...profiles.richmat import Button
 
 
 def app_side(model: str, sleeper: int, action: str) -> str:
@@ -13,3 +14,35 @@ def app_side(model: str, sleeper: int, action: str) -> str:
     if sleeper == 3 or (sleeper in (4, 5) and ("foot" in action or action == "stop")):
         return SIDE_BOTH
     return SIDE_LEFT if sleeper in (1, 4) else SIDE_RIGHT
+
+
+APP_ACTIONS: dict[str, Button] = {
+    "headUp": "head_up",
+    "headDown": "head_down",
+    "footUp": "feet_up",
+    "footDown": "feet_down",
+    "pillowUp": "pillow_up",
+    "pillowDown": "pillow_down",
+    "lumbarUp": "lumbar_up",
+    "lumbarDown": "lumbar_down",
+    "presetFlat": "flat",
+    "presetZeroG": "zero_g",
+    "presetAntiSnore": "anti_snore",
+    "presetTV": "tv",
+    "lightToggle": "light_toggle",
+    "massageOn": "massage_toggle",
+    "massageOff": "massage_off",
+    "headMassageUp": "massage_head",
+    "footMassageUp": "massage_foot",
+    "massageMode": "massage_mode",
+    "massageTimer20": "massage_timer_20",
+}
+APP_ACTION_CHOICES = (
+    *APP_ACTIONS,
+    "memory1",
+    "memory1Save",
+    "memory2",
+    "memory2Save",
+    "stop",
+    "connectionTest",
+)
