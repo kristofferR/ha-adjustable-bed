@@ -190,6 +190,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     # Richmat 6E (#483): BedTech, GM Motor and Casper Base are blocked.
     "RichmatProfile:eshine": {"hold": ("eshine",)},
     "RichmatProfile:hjbed": {"hold": ("row121",)},
+    "RichmatProfile:richmat_app": {"hold": ("row173",)},
     "RichmatProfile:leggett_wilinke": {"hold": ("lp2",)},
     "RichmatProfile:richmat_mh_best_mattress": {"hold": ("best", "row055")},
     "RichmatProfile:richmat_mh_blvd_home": {"hold": ("blvd", "row055")},
@@ -370,6 +371,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/okin_nframe.py:<module>._lumbar": _LUMBAR,
     "profiles/okin_nframe.py:<module>._simmons": _SIMMONS,
     "profiles/richmat.py:<module>.ESHINE": ("RichmatProfile:eshine",),
+    "profiles/richmat.py:<module>.RICHMAT_APP": ("RichmatProfile:richmat_app",),
     "profiles/richmat.py:<module>.HJBED": ("RichmatProfile:hjbed",),
     "profiles/richmat.py:<module>.LEGGETT_WILINKE": ("RichmatProfile:leggett_wilinke",),
     "profiles/richmat.py:<module>.RICHMAT": tuple(

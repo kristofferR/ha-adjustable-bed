@@ -290,3 +290,8 @@ These steps serve every bed type or route, so no profile owns them.
 
 The other profiles declare only the generic fields they own, converted from the
 former side tables.
+
+
+The `richmat_app` profile asks its exact product, with manual and restored entries
+labelled separately; `richmat_app_sleep` asks its independent old/new MM or HJ
+session. Each owns its generic fields and per-side route.

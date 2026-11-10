@@ -1181,6 +1181,8 @@ def default_scenario(bed_type: str) -> Scenario:
         const.BED_TYPE_ZSERIES: const.ZSERIES_VARIANT_Z230,
         const.BED_TYPE_RICHMAT: const.RICHMAT_VARIANT_WILINKE,
         const.BED_TYPE_HJBED: "hj_bedbjrn",
+        const.BED_TYPE_RICHMAT_APP: "6BRM",
+        const.BED_TYPE_RICHMAT_APP_SLEEP: "hj",
         const.BED_TYPE_DOUBLESLEEP: "p1",
         const.BED_TYPE_RICHMAT_CLASSIC_APPS: "avocadoecobase",
     }.get(bed_type)

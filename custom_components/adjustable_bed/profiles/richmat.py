@@ -234,6 +234,9 @@ RICHMAT_MH: Final[dict[str, RichmatProfile]] = {
 HJBED: Final = RichmatProfile(
     key="hjbed", execution=STREAM_HOLD, transports=("w1", "n1", "w5", "w4", "w3", "w2")
 )
+RICHMAT_APP: Final = RichmatProfile(
+    key="richmat_app", execution=STREAM_HOLD, transports=("n1", "w1", "w2", "w3", "w4", "w5")
+)
 # The services Good Vibe accepts; it takes them in the bed's enumeration order.
 # Its controller declares holds per product, on the sustained-press controls.
 GOODVIBE: Final = RichmatProfile(key="goodvibe", transports=("w1", "n1", "w5", "w4", "w3", "w2"))

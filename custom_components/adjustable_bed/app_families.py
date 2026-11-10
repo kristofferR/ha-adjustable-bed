@@ -1422,6 +1422,7 @@ RICHMAT_FAMILY: Final = AppFamily(
         "SVEN & SON apps, and Richmat remotes"
     ),
     answers={
+        "richmat_420": Answer("richmat_app"),
         "rmcontrol": Answer(BED_TYPE_RICHMAT, data={CONF_RMCONTROL_PRODUCT: None}),
         **{app: Answer(bed_type, data=_NO_RMCONTROL) for bed_type, app in RICHMAT_MH_APPS.items()},
         # The classic apps keep their own declared questions.

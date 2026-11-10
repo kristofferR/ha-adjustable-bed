@@ -7,8 +7,11 @@ captured with every remote code, framing and light family. Parameterized colour
 frames are left out of those captures.
 """
 
+import gzip as _gzip
 import json
+import json as _json
 from pathlib import Path
+from pathlib import Path as _Path
 
 
 def _goodvibe() -> frozenset[str]:
@@ -33,7 +36,6 @@ def _goodvibe() -> frozenset[str]:
         size = 5 if data[:2] == b"\x6e\x0c" else len(data)
         frames |= {data[i : i + size].hex() for i in range(0, len(data), size)}
     return frozenset(frames)
-
 
 
 # RUF and Richmat apps (PR #928): RUF, W.Silver, AMERICANSTAR, Bailey and TX run the MH
@@ -2102,3 +2104,51 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
     "goodvibe": _goodvibe(),
     "leggett_lp_legacy": _LP_LEGACY,
 }
+
+
+# Accepted row173: all preserved generic, extended and receive literal fixtures.
+def _richmat_app() -> frozenset[str]:
+    rows = _json.loads(
+        _gzip.decompress(
+            (_Path(__file__).parent / "fixtures/richmat_app/wire.json.gz").read_bytes()
+        )
+    )
+    frames = set()
+    for row in rows:
+        inputs = row["inputs"]
+        if (
+            row["protocol"] == "P3"
+            or any(key in inputs for key in ("layer", "scope", "current_command"))
+            or inputs.get("kind") == "groove"
+        ):
+            continue
+        data = bytes.fromhex(row["expected_bytes"])
+        if inputs.get("kind") == "light_rgb_octets":
+            frames.update(data[index : index + 5].hex() for index in (0, 5))
+        else:
+            frames.add(data.hex())
+    return frozenset(frames)
+
+
+FROZEN_FRAMES["richmat_app"] = _richmat_app() | frozenset(
+    {
+        # Accepted fresh-enum startup constants, distinct from static descriptors.
+        "6e02010071",
+        "6e08010178",
+        "6e0a000179",
+        "6e1a000088",
+        "5e1a000179",
+        "6e01000170",
+        "6e2100008f",
+        "6e22000090",
+        "6e9ac000c8",
+        "6e9a000008",
+        "6e9a100018",
+        "6e9a300139",
+        "6e9a30023a",
+        "6e9a30033b",
+        "6e9a30043c",
+        "6e9aa000a8",
+        "6e9ab000b8",
+    }
+)

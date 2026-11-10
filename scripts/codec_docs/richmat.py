@@ -49,6 +49,7 @@ _RICHMAT_NAMES = {
     "bedtech": "BedTech",
     "leggett_wilinke": "L&P MlRM",
     "hjbed": "HJBed",
+    "richmat_app": "Richmat 4.2.0",
     "eshine": "Eshine",
     "goodvibe": "Good Vibe Sleep",
     "leggett_lp_legacy": "L&P legacy app",
@@ -118,6 +119,7 @@ def _richmat_profiles() -> dict[str, richmat_profiles.RichmatProfile]:
         for profile in (
             *_FIXED_ROUTES,
             richmat_profiles.HJBED,
+            richmat_profiles.RICHMAT_APP,
             richmat_profiles.ESHINE,
             *richmat_profiles.RICHMAT_MH.values(),
             *richmat_profiles.RICHMAT_CLASSIC.values(),
@@ -137,6 +139,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
         "bedtech": (_const.BED_TYPE_BEDTECH,),
         "leggett_wilinke": (_const.BED_TYPE_LEGGETT_WILINKE,),
         "hjbed": (_const.BED_TYPE_HJBED,),
+        "richmat_app": (_const.BED_TYPE_RICHMAT_APP,),
         "eshine": (_const.BED_TYPE_ESHINE,),
         **{
             profile.key: (mh_types[profile.key.removeprefix("richmat_mh_")],)
@@ -488,9 +491,7 @@ def render_richmat_mh_fixed() -> str:
                 ("Stop detection", _hex(mh_frames.TX_STOP_DETECTION)),
                 (
                     "Cancel alarm (single-slot models)",
-                    " then ".join(
-                        _hex(x) for x in mh_frames.TX_ALARM_CANCEL
-                    ),
+                    " then ".join(_hex(x) for x in mh_frames.TX_ALARM_CANCEL),
                 ),
             ),
         )
@@ -1137,4 +1138,82 @@ BLOCKS: list[Block] = [
     (GUIDE, "casper-base-commands", render_casper_base_commands),
     (GUIDE, "casper-base-stored", render_casper_base_stored),
     (GUIDE, "hush-base-commands", render_hush_base_commands),
+]
+
+
+def render_richmat_app_commands() -> str:
+    """Per-descriptor literal commands and parameterized records from shipped code."""
+    from custom_components.adjustable_bed.beds.richmat_app import catalog, protocol, requests
+    from custom_components.adjustable_bed.beds.richmat_app.controller import action_name
+
+    commands = _table(
+        ("Descriptor", "Control", "Short (left)", "Save / long (left)"),
+        (
+            (
+                f"`{key}`",
+                action_name(action),
+                _hex(richmat_codec.function(action["short"], action=action["enum"])),
+                _hex(richmat_codec.function(action["long"], action=action["enum"])),
+            )
+            for key, action in catalog.ACTIONS.items()
+        ),
+    )
+    queries = _table(
+        ("Query", "Frame"), ((name, _hex(frame)) for name, frame in protocol.QUERY.items())
+    )
+    operations = ", ".join(f"`{operation}`" for operation in requests.OPERATIONS)
+    startup = _table(
+        ("Startup phase", "Function", "Frame"),
+        (
+            (phase, enum, _hex(richmat_codec.function(catalog.ENUM_CODES[enum], action=enum)))
+            for phase, enums in (
+                ("Product", protocol.STARTUP),
+                ("Protocol version 1", protocol.VERSION_ONE),
+            )
+            for enum in enums
+        ),
+    )
+    return _block(commands, queries, startup, "Named operations: " + operations + ".")
+
+
+def render_richmat_app_products() -> str:
+    from custom_components.adjustable_bed.beds.richmat_app.catalog import PRODUCTS
+
+    return (
+        "<details>\n<summary>Product catalog and protocol branches</summary>\n\n"
+        + "\n".join(
+            _table(
+                (
+                    "Product",
+                    "Selection",
+                    "Motor menus (ordinary / V1)",
+                    "Presets (ordinary / V1)",
+                    "Blanket",
+                    "RGB / therapy / strip / cold-warm",
+                    "Sleep / BLE menu",
+                ),
+                (
+                    (
+                        key,
+                        "manual" if row["manual"] else "restored",
+                        f"{len(row['versions']['other']['motors'])} / {len(row['versions']['one']['motors'])}",
+                        f"{len(row['versions']['other']['presets'])} / {len(row['versions']['one']['presets'])}",
+                        str(bool(row["selectors"]["0xea47"])),
+                        " / ".join(
+                            str(bool(row["selectors"][s]))
+                            for s in ("0xf303", "0xfbbf", "0x1047b", "0x1276b")
+                        ),
+                        f"{row['selectors']['0x10d37']} / {bool(row['selectors']['0x11a51'])}",
+                    )
+                    for key, row in PRODUCTS.items()
+                ),
+            )
+        )
+        + "\n\n</details>"
+    )
+
+
+BLOCKS += [
+    (GUIDE, "richmat-app-commands", render_richmat_app_commands),
+    (GUIDE, "richmat-app-products", render_richmat_app_products),
 ]

@@ -273,6 +273,10 @@ async def _create_controller_for_bed_type(
 
     if bed_type == "richmat_sleep_receiver":
         return await create_controller(coordinator, bed_type, variant or "wsilver2", client)
+    if bed_type == const.BED_TYPE_RICHMAT_APP_SLEEP:
+        return await create_controller(coordinator, bed_type, variant or "hj", client)
+    if bed_type == const.BED_TYPE_RICHMAT_APP:
+        return await create_controller(coordinator, bed_type, variant or "6BRM", client)
     if bed_type == const.BED_TYPE_HJBED:
         return await create_controller(coordinator, bed_type, variant or "hj_bedbjrn", client)
     if bed_type == const.BED_TYPE_DOUBLESLEEP:

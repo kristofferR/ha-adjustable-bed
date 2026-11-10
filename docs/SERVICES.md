@@ -773,3 +773,10 @@ All selected targets are validated before any writes. Existing
 `richmat_mh_alarm`, `richmat_mh_waist_alarm`, `richmat_mh_aroma` and
 `richmat_mh_light_color` actions also work for the model/reply-gated features
 of these app profiles. RUF exposes only its waist alarm among those actions.
+
+
+### Richmat 4.2.0 configuration
+
+`adjustable_bed.richmat_app` exposes product-gated lighting, alarms, blanket,
+detection, anti-snore/off-bed, USB and cancellable demos. Sleep operations target
+a separate Richmat sleep entry. See the [operation and parameter reference](beds/richmat.md#richmat-420).

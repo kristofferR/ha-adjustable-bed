@@ -11,6 +11,8 @@ from homeassistant.core import HomeAssistant
 from .beds.goodvibe.catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
 from .beds.hjbed.catalog import PROFILE_CHOICES as HJBED_PROFILES
 from .beds.reverie.profiles import REVERIE_MODEL_CHOICES
+from .beds.richmat_app.catalog import ALL_CHOICES as RICHMAT_APP_PRODUCTS
+from .beds.richmat_app.sleep_profiles import CHOICES as RICHMAT_SLEEP_CHOICES
 from .beds.richmat_classic.profiles import APP_NAMES as RICHMAT_CLASSIC_APPS
 from .beds.richmat_mh.models import RICHMAT_MH_VARIANTS_BY_APP
 from .const import (
@@ -44,6 +46,8 @@ from .const import (
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
+    BED_TYPE_RICHMAT_APP,
+    BED_TYPE_RICHMAT_APP_SLEEP,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
@@ -119,6 +123,8 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_GOODVIBE: GOODVIBE_PROFILES,
     BED_TYPE_RICHMAT_CLASSIC_APPS: RICHMAT_CLASSIC_APPS,
     BED_TYPE_HJBED: HJBED_PROFILES,
+    BED_TYPE_RICHMAT_APP: RICHMAT_APP_PRODUCTS,
+    BED_TYPE_RICHMAT_APP_SLEEP: RICHMAT_SLEEP_CHOICES,
     BED_TYPE_ESHINE_OKIN: ESHINE_OKIN_PROFILES,
     BED_TYPE_DOUBLESLEEP: DOUBLESLEEP_VARIANTS,
     BED_TYPE_GLIDEAWAY_MOTION: GLIDEAWAY_MOTION_MODELS,

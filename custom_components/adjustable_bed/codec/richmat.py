@@ -183,3 +183,15 @@ def strip(command_id: int, payload: bytes) -> bytes:
     """RGB-strip frame: ``04 len command 01 00 payload 00 00 sum8``."""
     body = (0x04, len(payload) + 8, command_id, 0x01, 0x00, *payload, 0x00, 0x00)
     return frame(*body)
+
+
+def packed_motor(number: int, angle: int) -> bytes:
+    """Richmat 4.2.0's minimum-width strings, sliced to the first sixteen bits."""
+    bits = "0011" + format(number, "02b") + "0" + format(angle, "09b")
+    return frame(BED, 0x88, int(bits[:8], 2), int(bits[8:16], 2))
+
+
+def packed_massage(first: int, second: int) -> bytes:
+    """Two current intensities, not a zone and gear; there is no third field."""
+    bits = "1010000000" + format(second, "03b") + format(first, "03b")
+    return frame(BED, 0x88, int(bits[:8], 2), int(bits[8:16], 2))

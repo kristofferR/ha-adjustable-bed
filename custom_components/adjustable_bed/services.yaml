@@ -3260,3 +3260,149 @@ richmat_app_alarm:
               value: "5"
             - label: Sunday
               value: "6"
+
+richmat_app:
+  fields:
+    operation:
+      required: true
+      selector:
+        select:
+          options:
+          - sync
+          - detection
+          - toggle_alarm
+          - sleep_sync
+          - query
+          - single_alarm
+          - cancel_alarm
+          - repeat_alarm
+          - delete_alarm
+          - light_timer
+          - light_rgb
+          - strip_rgb
+          - strip_timer
+          - strip_groove
+          - strip_color_mode
+          - strip_breathe
+          - strip_power
+          - therapy_light
+          - therapy_sound
+          - therapy_timer
+          - music_source
+          - white_noise
+          - snore
+          - get_off_bed
+          - snore_intervention
+          - blanket_power
+          - blanket_mode
+          - blanket_temperature
+          - blanket_delay
+          - blanket_mite
+          - blanket_settings
+          - blanket_sleep
+          - usb
+          - demo
+          - sleep_time
+          - sleep_part
+          - sleep_realtime
+          - sleep_report
+          - sleep_snore
+          - sleep_sensitivity
+          - sleep_init
+          - sleep_cancel
+          - sleep_poll
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options:
+          - left
+          - right
+          - both
+    value:
+      selector:
+        number:
+          min: 0
+          max: 65535
+          mode: box
+    mode:
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
+    enabled:
+      selector:
+        boolean: {}
+    rgb_color:
+      selector:
+        color_rgb: {}
+    opacity:
+      selector:
+        number:
+          min: 10
+          max: 100
+          unit_of_measurement: '%'
+    zone:
+      selector:
+        select:
+          options:
+          - value: '1'
+            label: A
+          - value: '2'
+            label: B
+          - value: '3'
+            label: Both
+    temperature:
+      selector:
+        number:
+          min: 16
+          max: 55
+          unit_of_measurement: °C
+    flags:
+      selector:
+        object: {}
+    sleep:
+      selector:
+        object: {}
+    weekdays:
+      selector:
+        object: {}
+    steps:
+      selector:
+        object: {}
+    action:
+      selector:
+        text: {}
+    query:
+      selector:
+        text: {}
+    datetime:
+      selector:
+        datetime: {}
+    alarm_id:
+      selector:
+        number:
+          min: 1
+          max: 7
+          mode: box
+    cycle:
+      selector:
+        boolean: {}
+    part:
+      selector:
+        number:
+          min: 11
+          max: 13
+          mode: box
+    report_type:
+      selector:
+        number:
+          min: 1
+          max: 2
+          mode: box

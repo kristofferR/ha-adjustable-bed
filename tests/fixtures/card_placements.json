@@ -1203,6 +1203,52 @@
  "button:restonic_zzz": {
   "card_section": "utility"
  },
+ "button:richmat_app_action": {
+  "card_section": "utility"
+ },
+ "button:richmat_app_all_motor_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "richmat_app_all_motor"
+ },
+ "button:richmat_app_all_motor_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "richmat_app_all_motor"
+ },
+ "button:richmat_app_lumbar2_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "richmat_app_lumbar2"
+ },
+ "button:richmat_app_lumbar2_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "richmat_app_lumbar2"
+ },
+ "button:richmat_app_release": {
+  "card_section": "hidden"
+ },
+ "button:richmat_app_tilt1_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "richmat_app_tilt1"
+ },
+ "button:richmat_app_tilt1_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "richmat_app_tilt1"
+ },
+ "button:richmat_app_tilt2_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "richmat_app_tilt2"
+ },
+ "button:richmat_app_tilt2_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "richmat_app_tilt2"
+ },
  "button:richmat_classic_action": {
   "card_section": "utility"
  },
@@ -2044,6 +2090,22 @@
   "card_section": "motors",
   "card_motor": "pillow"
  },
+ "cover:richmat_app_all_motor": {
+  "card_section": "motors",
+  "card_motor": "richmat_app_all_motor"
+ },
+ "cover:richmat_app_lumbar2": {
+  "card_section": "motors",
+  "card_motor": "richmat_app_lumbar2"
+ },
+ "cover:richmat_app_tilt1": {
+  "card_section": "motors",
+  "card_motor": "richmat_app_tilt1"
+ },
+ "cover:richmat_app_tilt2": {
+  "card_section": "motors",
+  "card_motor": "richmat_app_tilt2"
+ },
  "cover:richmat_mh_lumbar_2": {
   "card_section": "motors",
   "card_motor": "richmat_mh_lumbar_2"
@@ -2287,6 +2349,12 @@
  "number:reverie_stk_head_wave": {
   "card_section": "massage"
  },
+ "number:richmat_app_angle": {
+  "card_section": "utility"
+ },
+ "number:richmat_app_intensity": {
+  "card_section": "utility"
+ },
  "number:richmat_mh_light_timer": {
   "card_section": "lighting",
   "card_role": "timer"
@@ -2468,6 +2536,9 @@
   "card_section": "massage"
  },
  "select:reverie_stk_side": {
+  "card_section": "utility"
+ },
+ "select:richmat_app_side": {
   "card_section": "utility"
  },
  "select:richmat_mh_snore": {
@@ -3345,6 +3416,12 @@
  },
  "sensor:reverie_pairlink_massage_timer": {
   "card_section": "massage"
+ },
+ "sensor:richmat_app_sleep_status": {
+  "card_section": "hidden"
+ },
+ "sensor:richmat_app_status": {
+  "card_section": "hidden"
  },
  "sensor:richmat_classic_status": {
   "card_section": "utility"

@@ -29,6 +29,7 @@ FIXED_ROUTES = {
 PROFILES = {
     **FIXED_ROUTES,
     "hjbed": profiles.HJBED,
+    "richmat_app": profiles.RICHMAT_APP,
     "eshine": profiles.ESHINE,
     "goodvibe": profiles.GOODVIBE,
     "leggett_lp_legacy": profiles.LP_LEGACY,
@@ -197,6 +198,20 @@ def _lp_legacy_census() -> set[str]:
 
 
 def _census(key: str) -> set[str]:
+    if key == "richmat_app":
+        from custom_components.adjustable_bed.beds.richmat_app.catalog import ACTIONS as app_actions
+        from custom_components.adjustable_bed.beds.richmat_app.catalog import ENUM_CODES
+        from custom_components.adjustable_bed.beds.richmat_app.protocol import STARTUP, VERSION_ONE
+
+        return {
+            codec.function(action[press], side, action=action["enum"], single=single).hex()
+            for action in app_actions.values()
+            for press in ("short", "long")
+            for side in (0, 1)
+            for single in (True, False)
+        } | {
+            codec.function(ENUM_CODES[enum], action=enum).hex() for enum in (*STARTUP, *VERSION_ONE)
+        }
     if key == "hjbed":
         return _hjbed_census()
     if key == "eshine":

@@ -30,6 +30,8 @@ from .beds.gmmotor.profiles import profile_choices as gmmotor_profile_choices
 from .beds.goodvibe.catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
 from .beds.hjbed.catalog import PROFILE_CHOICES as HJBED_PROFILES
 from .beds.leggett.lp_legacy_profiles import LP_LEGACY_PROFILE_CODES
+from .beds.richmat_app.catalog import ALL_CHOICES as RICHMAT_APP_PRODUCTS
+from .beds.richmat_app.sleep_profiles import CHOICES as RICHMAT_SLEEP_CHOICES
 from .beds.sleeptracker.protocol import FOUNDATIONS as SLEEPTRACKER_FOUNDATIONS
 from .beds.sleeptracker.protocol import MODELS as SLEEPTRACKER_MODELS
 from .beds.starcode.m1x12_protocol import profile_from_name as m1x12_profile_from_name
@@ -74,6 +76,8 @@ from .const import (
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
+    BED_TYPE_RICHMAT_APP,
+    BED_TYPE_RICHMAT_APP_SLEEP,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
@@ -267,6 +271,8 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_ESHINE: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_GOODVIBE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_HJBED: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
+    BED_TYPE_RICHMAT_APP: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
+    BED_TYPE_RICHMAT_APP_SLEEP: GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_GLIDEAWAY_MOTION: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_ISLEEP: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_BEDSENSE: frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
@@ -2075,6 +2081,14 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         BED_TYPE_GOODVIBE,
         questions=(Question(CONF_PROTOCOL_VARIANT, GOODVIBE_PROFILES, searchable=True),),
         seed=_goodvibe_seed,
+    ),
+    BED_TYPE_RICHMAT_APP_SLEEP: _asking(
+        BED_TYPE_RICHMAT_APP_SLEEP,
+        questions=(Question(CONF_PROTOCOL_VARIANT, RICHMAT_SLEEP_CHOICES),),
+    ),
+    BED_TYPE_RICHMAT_APP: _asking(
+        BED_TYPE_RICHMAT_APP,
+        questions=(Question(CONF_PROTOCOL_VARIANT, RICHMAT_APP_PRODUCTS, searchable=True),),
     ),
     BED_TYPE_HJBED: _asking(
         BED_TYPE_HJBED,

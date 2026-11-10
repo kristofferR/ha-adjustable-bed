@@ -82,6 +82,7 @@ if TYPE_CHECKING:
     from .reverie.controller import ReverieController as ReverieController
     from .reverie.nightstand import ReverieNightstandController as ReverieNightstandController
     from .richmat.controller import RichmatController as RichmatController
+    from .richmat_app.controller import RichmatAppController as RichmatAppController
     from .richmat_classic.controller import RichmatClassicController as RichmatClassicController
     from .richmat_mh.controller import RichmatMhController as RichmatMhController
     from .rondure import RondureController as RondureController
@@ -120,6 +121,7 @@ _EXPORT_MODULES = {
     "GoodVibeController": "goodvibe.controller",
     "MotoMotionController": "motomotion.controller",
     "HJBedController": "hjbed.controller",
+    "RichmatAppController": "richmat_app.controller",
     "DoubleSleepController": "doublesleep.controller",
     "GmmotorController": "gmmotor.controller",
     "GmmotorDeskController": "gmmotor.desk",

@@ -2852,6 +2852,36 @@
       },
       "ruf_richmat_lift_down": {
         "name": "Lift Down"
+      },
+      "richmat_app_action": {
+        "name": "{action}"
+      },
+      "richmat_app_release": {
+        "name": "Release movement"
+      },
+      "richmat_app_all_motor_up": {
+        "name": "All motors up"
+      },
+      "richmat_app_all_motor_down": {
+        "name": "All motors down"
+      },
+      "richmat_app_lumbar2_up": {
+        "name": "Lumbar 2 up"
+      },
+      "richmat_app_lumbar2_down": {
+        "name": "Lumbar 2 down"
+      },
+      "richmat_app_tilt1_up": {
+        "name": "Tilt 1 up"
+      },
+      "richmat_app_tilt1_down": {
+        "name": "Tilt 1 down"
+      },
+      "richmat_app_tilt2_up": {
+        "name": "Tilt 2 up"
+      },
+      "richmat_app_tilt2_down": {
+        "name": "Tilt 2 down"
       }
     },
     "cover": {
@@ -3100,6 +3130,18 @@
       },
       "ruf_richmat_lift": {
         "name": "Lift"
+      },
+      "richmat_app_all_motor": {
+        "name": "All motors"
+      },
+      "richmat_app_lumbar2": {
+        "name": "Lumbar 2"
+      },
+      "richmat_app_tilt1": {
+        "name": "Tilt 1"
+      },
+      "richmat_app_tilt2": {
+        "name": "Tilt 2"
       }
     },
     "sensor": {
@@ -4476,6 +4518,12 @@
       },
       "ruf_richmat_music_status": {
         "name": "Bed audio status"
+      },
+      "richmat_app_status": {
+        "name": "Richmat app status"
+      },
+      "richmat_app_sleep_status": {
+        "name": "Sleep session status"
       }
     },
     "light": {
@@ -5021,6 +5069,12 @@
       },
       "tv_lift_position_estimated": {
         "name": "TV lift position (estimated)"
+      },
+      "richmat_app_angle": {
+        "name": "Motor angle"
+      },
+      "richmat_app_intensity": {
+        "name": "Massage intensity"
       }
     },
     "select": {
@@ -5671,6 +5725,14 @@
         "state": {
           "off": "Off",
           "on": "On"
+        }
+      },
+      "richmat_app_side": {
+        "name": "App side",
+        "state": {
+          "left": "Left",
+          "right": "Right",
+          "both": "Both"
         }
       }
     },
@@ -8084,6 +8146,96 @@
           "name": "Paired bed side"
         }
       }
+    },
+    "richmat_app": {
+      "name": "Richmat app configuration",
+      "description": "Control supported Richmat 4.2.0 BLE features. Refresh the corresponding capability before changing its settings.",
+      "fields": {
+        "operation": {
+          "name": "Operation",
+          "description": "Operation"
+        },
+        "device_id": {
+          "name": "Device id",
+          "description": "Device id"
+        },
+        "side": {
+          "name": "Side",
+          "description": "Side"
+        },
+        "value": {
+          "name": "Value",
+          "description": "Value"
+        },
+        "mode": {
+          "name": "Mode",
+          "description": "Mode"
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Enabled"
+        },
+        "rgb_color": {
+          "name": "Rgb color",
+          "description": "Rgb color"
+        },
+        "opacity": {
+          "name": "Opacity",
+          "description": "Opacity"
+        },
+        "zone": {
+          "name": "Zone",
+          "description": "Zone"
+        },
+        "temperature": {
+          "name": "Temperature",
+          "description": "Temperature"
+        },
+        "flags": {
+          "name": "Flags",
+          "description": "Flags"
+        },
+        "sleep": {
+          "name": "Sleep",
+          "description": "Sleep"
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "Weekdays"
+        },
+        "steps": {
+          "name": "Steps",
+          "description": "Steps"
+        },
+        "action": {
+          "name": "Action",
+          "description": "Action"
+        },
+        "query": {
+          "name": "Query",
+          "description": "Query"
+        },
+        "datetime": {
+          "name": "Datetime",
+          "description": "Datetime"
+        },
+        "alarm_id": {
+          "name": "Alarm id",
+          "description": "Alarm id"
+        },
+        "cycle": {
+          "name": "Cycle",
+          "description": "Cycle"
+        },
+        "part": {
+          "name": "Part",
+          "description": "Part"
+        },
+        "report_type": {
+          "name": "Report type",
+          "description": "Report type"
+        }
+      }
     }
   },
   "exceptions": {
@@ -8890,7 +9042,8 @@
         "milemont": "Milemont app",
         "superior": "Superior app",
         "remote": "SleepFunction or SVEN & SON app, or a Richmat remote: the remote's code",
-        "another": "Another app or remote: search every app"
+        "another": "Another app or remote: search every app",
+        "richmat_420": "Richmat 4.2.0 app"
       }
     },
     "setup_start": {

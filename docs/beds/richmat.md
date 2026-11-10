@@ -57,6 +57,7 @@ is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 
 | Analyzed | App | Package ID | Profile |
 |----------|-----|------------|---------|
+| ✅ | [Richmat](https://play.google.com/store/apps/details?id=com.richmat.richmat) 4.2.0 (42006) | `com.richmat.richmat` | [Richmat 4.2.0](#richmat-420) |
 | ✅ | [RMControl](https://play.google.com/store/apps/details?id=com.richmat.rmcontrol2) 21.3.7 | `com.richmat.rmcontrol2` | [RMControl](#rmcontrol); the [Richmat remotes](#richmat-remotes) cover the same beds |
 | ✅ | [BedTech](https://play.google.com/store/apps/details?id=com.bedtech) | `com.bedtech` | [BedTech](#bedtech) |
 | ✅ | [SleepFunction Bed Control](https://play.google.com/store/apps/details?id=com.richmat.sleepfunction) | `com.richmat.sleepfunction` | [Richmat remotes](#richmat-remotes) |
@@ -164,6 +165,7 @@ sends STOP.
 | Profile | Bed type | Transport order | Commands | Hold until release |
 |---|---|---|---|---|
 | HJBed | `hjbed` | W1, N1, W5, W4, W3, W2 | per-product catalog | renewable lease |
+| Richmat 4.2.0 | `richmat_app` | N1, W1, W2, W3, W4, W5 | per-model catalog | renewable lease |
 | Eshine | `eshine` | N1, W1, W2, W3, W4, W5 | [fixed E6000 table](#eshine-commands) | renewable lease |
 | Richmat MH Revive Control | `richmat_revive` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
 | Richmat MH Best Mattress | `richmat_best_mattress` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
@@ -257,13 +259,13 @@ and timing.
 
 | Key | Service | Write | Notify | Commands | Profiles |
 |---|---|---|---|---|---|
-| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep, Casper Base, Hush Base |
+| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep, Casper Base, Hush Base |
 | W0 | `8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA |
-| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech, L&P MlRM, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep, Casper Base, Hush Base |
-| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep, Casper Base, Hush Base |
-| W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Good Vibe Sleep, Casper Base, Hush Base |
-| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep, Casper Base, Hush Base |
-| W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Good Vibe Sleep, Casper Base, Hush Base |
+| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep, Casper Base, Hush Base |
+| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep, Casper Base, Hush Base |
+| W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Good Vibe Sleep, Casper Base, Hush Base |
+| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep, Casper Base, Hush Base |
+| W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Good Vibe Sleep, Casper Base, Hush Base |
 
 W0 is the legacy custom service, W4 and W5 are name-guarded (see the Richmat
 profile's Setup). The Richmat routes try W0 to W5, then N1, then fall back to W1.
@@ -2985,6 +2987,1538 @@ Hush Base sends only the frames frozen from its accepted row126 report, whose
 products, shared builders and auxiliary shards are listed in
 `tests/hush_vectors.py`. APK Protocol Audit row126 records the accepted source
 references, dispositions and exclusions.
+
+### Richmat 4.2.0
+
+**App:** [Richmat](https://play.google.com/store/apps/details?id=com.richmat.richmat) 4.2.0 (42006), `com.richmat.richmat`
+
+**Status:** ❓ Needs testing. Complete static protocol support; hardware remains unverified.
+
+#### Setup
+
+Choose **Richmat 4.2.0 app** and the exact product code. The searchable product
+question lists the app's manual products first and labels the additional restored
+products explicitly. QR text is a product code, not a Bluetooth address. Product
+identity, protocol version and selected physical side remain independent.
+The case-sensitive scan uses advertised-name substrings; shared services never
+select an app or product. Home Assistant connects through its normal adapter or
+Bluetooth proxy selection. No PIN or bonding handshake is defined by this app.
+
+The bed's sleep-name reply appears in the status sensor's `events.sleep_device`.
+Add that physical device separately as **Richmat 4.2.0 sleep device**, choosing its
+RM-/MM or HJ-/public session. The restored demo options retain the old library's
+service selection. Each entry owns its own link, sequence and cancellation; a
+sleep-device reply never changes the main bed's product. Use the exact advertised
+name to identify it. This replaces the Android global scanner and singleton
+connection owners with independent HA entries.
+
+#### Controls
+
+The product and observed protocol version choose movement pairs, presets and
+save buttons, massage controls and the angle/intensity sliders. Preset saving
+uses its separate button with the catalog's long opcode, without a save hold.
+Motor reset, light, synchronization and box-lock controls keep their own product
+gates. Catalog declarations without a live control binding do not create bed entities.
+
+<!-- generated:richmat-app-commands -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Descriptor | Control | Short (left) | Save / long (left) |
+|---|---|---|---|
+| `caf351` | None | `6E 01 00 00 6F` | `6E 01 00 00 6F` |
+| `caf3d1` | Stop | `6E 01 00 6E DD` | `6E 01 00 00 6F` |
+| `caf451` | Bed Light Close | `6E 01 00 75 E4` | `6E 01 00 00 6F` |
+| `caf4d1` | Exit Limit | `6E 02 01 00 71` | `6E 02 01 00 71` |
+| `caf551` | Send Stop Detection | `6E 01 00 00 6F` | `6E 01 00 00 6F` |
+| `caf5d1` | Send Start Detection | `6E 88 C2 10 C8` | `6E 88 C2 00 B8` |
+| `caf651` | Music Switch Sound Track | `6E 01 00 C4 33` | `6E 01 00 00 6F` |
+| `caf6d1` | Music Blue Tooth Switch | `6E 01 00 D8 47` | `6E 01 00 00 6F` |
+| `caf751` | Control Box Lock | `6E 01 00 84 F3` | `6E 01 00 84 F3` |
+| `caf7d1` | Relieve Zero Gravity Setting | `6E 01 00 62 D1` | `6E 01 00 00 6F` |
+| `caf851` | Memory Position3 | `6E 01 00 30 9F` | `6E 01 00 2D 9C` |
+| `caf8d1` | Memory Position2 | `6E 01 00 2F 9E` | `6E 01 00 2C 9B` |
+| `caf951` | Memory Position1 | `6E 01 00 2E 9D` | `6E 01 00 2B 9A` |
+| `caf9d1` | T V Position | `6E 01 00 58 C7` | `6E 01 00 64 D3` |
+| `cafa51` | Zero Gravity | `6E 01 00 45 B4` | `6E 01 00 66 D5` |
+| `cafad1` | Lounge Position | `6E 01 00 59 C8` | `6E 01 00 65 D4` |
+| `cafb51` | Anti Snoring | `6E 01 00 46 B5` | `6E 01 00 69 D8` |
+| `cafbd1` | Reading Position | `6E 01 00 F2 61` | `6E 01 00 F3 62` |
+| `cafc51` | Lumbar Memory Position | `6E 01 00 91 00` | `6E 01 00 92 01` |
+| `cafcd1` | Relieve Zero Gravity Setting | `6E 01 00 62 D1` | `6E 01 00 00 6F` |
+| `cafd51` | Massage30 Minute Up And Down | `6E 01 00 90 FF` | `6E 01 00 00 6F` |
+| `cafdd1` | Massage15 Minute Up And Down | `6E 01 00 76 E5` | `6E 01 00 00 6F` |
+| `cafe51` | Release Pressur Position | `6E 01 00 C5 34` | `6E 01 00 00 6F` |
+| `cafed1` | Help Get Up Position | `6E 01 00 3D AC` | `6E 01 00 F8 67` |
+| `caff51` | Yoga Position | `6E 01 00 F0 5F` | `6E 01 00 F1 60` |
+| `caffd1` | Relax Position | `6E 01 00 70 DF` | `6E 01 00 95 04` |
+| `cb0051` | Memory Position4 | `6E 01 00 B2 21` | `6E 01 00 B3 22` |
+| `cb00d1` | Help Get Up | `6E 01 00 3D AC` | `6E 01 00 00 6F` |
+| `cb0151` | Yoga Position | `6E 01 00 6B DA` | `6E 01 00 6A D9` |
+| `cb01d1` | Sleep Position | `6E 01 00 8E FD` | `6E 01 00 8F FE` |
+| `cb0251` | Yoga Position | `6E 01 00 30 9F` | `6E 01 00 2D 9C` |
+| `cb02d1` | Timing Flat Position | `6E 01 00 FE 6D` | `6E 01 00 00 6F` |
+| `cb0351` | Zero Gravity2 | `6E 01 00 6B DA` | `6E 01 00 6A D9` |
+| `cb03d1` | Side Sleep Position | `6E 01 00 BA 29` | `6E 01 00 BB 2A` |
+| `cb0451` | Coaxing Sleep Mode | `6E 01 00 86 F5` | `6E 01 00 89 F8` |
+| `cb04d1` | Lounge Position | `6E 01 00 59 C8` | `6E 01 00 65 D4` |
+| `cb0551` | T V Position | `6E 01 00 58 C7` | `6E 01 00 64 D3` |
+| `cb05d1` | Zero Gravity | `6E 01 00 45 B4` | `6E 01 00 66 D5` |
+| `cb0651` | Help Get Up Position | `6E 01 00 3D AC` | `6E 01 00 F8 67` |
+| `cb06d1` | Relieve Snore Setting | `6E 01 00 CB 3A` | `6E 01 00 00 6F` |
+| `cb0751` | Deep Sleep Position | `6E 01 00 F6 65` | `6E 01 00 F7 66` |
+| `cb07d1` | Massage15 Minute Spine Guard | `6E 01 00 76 E5` | `6E 01 00 00 6F` |
+| `cb0851` | Memory Position5 | `6E 01 00 F4 63` | `6E 01 00 F5 64` |
+| `cb08d1` | Yoga Position | `6E 01 00 6B DA` | `6E 01 00 6A D9` |
+| `cb0951` | Coaxing Sleep Mode3 | `6E 01 00 88 F7` | `6E 01 00 00 6F` |
+| `cb09d1` | Coaxing Sleep Mode2 | `6E 01 00 87 F6` | `6E 01 00 00 6F` |
+| `cb0a51` | Help Sleep Mode1 | `6E 01 00 86 F5` | `6E 01 00 00 6F` |
+| `cb0ad1` | Massage30 Minute Timer | `6E 01 00 61 D0` | `6E 01 00 00 6F` |
+| `cb0b51` | Massage20 Minute Timer | `6E 01 00 63 D2` | `6E 01 00 00 6F` |
+| `cb0bd1` | Massage10 Minute Timer | `6E 01 00 5F CE` | `6E 01 00 00 6F` |
+| `cb0c51` | Memory Position1 | `6E 01 00 76 E5` | `6E 01 00 2B 9A` |
+| `cb0cd1` | Help Sleep Mode1 | `6E 01 00 86 F5` | `6E 01 00 00 6F` |
+| `cb0d51` | Coaxing Sleep Mode | `6E 01 00 76 E5` | `6E 01 00 89 F8` |
+| `cb0dd1` | Coaxing Sleep Mode | `6E 01 00 C5 34` | `6E 01 00 89 F8` |
+| `cb0e51` | Wake Up | `6E 01 00 85 F4` | `6E 01 00 00 6F` |
+| `cb0ed1` | Coaxing Sleep Mode | `6E 01 00 86 F5` | `6E 01 00 89 F8` |
+| `cb0f51` | Head And Foot All Up | `6E 01 00 23 92` | `6E 01 00 00 6F` |
+| `cb0fd1` | Foot Up And Head Down | `6E 01 00 22 91` | `6E 01 00 00 6F` |
+| `cb1051` | Head Up And Foot Down | `6E 01 00 21 90` | `6E 01 00 00 6F` |
+| `cb10d1` | Motor Reset2 | `6E 01 00 6C DB` | `6E 01 00 00 6F` |
+| `cb1151` | Head Up And Foot Stop | `6E 01 00 3D AC` | `6E 01 00 00 6F` |
+| `cb11d1` | Wake Up Position | `6E 01 00 93 02` | `6E 01 00 94 03` |
+| `cb1251` | Relax Position | `6E 01 00 70 DF` | `6E 01 00 95 04` |
+| `cb12d1` | Un Wind Position | `6E 01 00 8C FB` | `6E 01 00 8D FC` |
+| `cb1351` | Tile Down | `6E 01 00 44 B3` | `6E 01 00 00 6F` |
+| `cb13d1` | Tile Up | `6E 01 00 43 B2` | `6E 01 00 00 6F` |
+| `cb1451` | Bed Light | `6E 01 00 3C AB` | `6E 01 00 00 6F` |
+| `cb14d1` | Motor Reset | `6E 01 00 31 A0` | `6E 01 00 00 6F` |
+| `cb1551` | Pillow Down | `6E 01 00 40 AF` | `6E 01 00 00 6F` |
+| `cb15d1` | Pillow Up | `6E 01 00 3F AE` | `6E 01 00 00 6F` |
+| `cb1651` | Lumbar Down | `6E 01 00 42 B1` | `6E 01 00 00 6F` |
+| `cb16d1` | Lumbar Up | `6E 01 00 41 B0` | `6E 01 00 00 6F` |
+| `cb1751` | Foot Down | `6E 01 00 27 96` | `6E 01 00 00 6F` |
+| `cb17d1` | Foot Up | `6E 01 00 26 95` | `6E 01 00 00 6F` |
+| `cb1851` | Head Down | `6E 01 00 25 94` | `6E 01 00 00 6F` |
+| `cb18d1` | Head Up | `6E 01 00 24 93` | `6E 01 00 00 6F` |
+| `cb1951` | Light Board | `6E 01 00 50 BF` | `6E 01 00 00 6F` |
+| `cb19d1` | Pillow Down | `6E 01 00 42 B1` | `6E 01 00 00 6F` |
+| `cb1a51` | Pillow Up | `6E 01 00 41 B0` | `6E 01 00 00 6F` |
+| `cb1ad1` | Lumbar Down | `6E 01 00 40 AF` | `6E 01 00 00 6F` |
+| `cb1b51` | Lumbar Up | `6E 01 00 3F AE` | `6E 01 00 00 6F` |
+| `cb1bd1` | Phone Light | `6E 01 00 00 6F` | `6E 01 00 00 6F` |
+| `cb1c51` | Motor3 Down | `6E 01 00 72 E1` | `6E 01 00 00 6F` |
+| `cb1cd1` | Motor3 Up | `6E 01 00 71 E0` | `6E 01 00 00 6F` |
+| `cb1d51` | Head And Foot Up | `6E 01 00 29 98` | `6E 01 00 00 6F` |
+| `cb1dd1` | Foot Up And Head Down | `6E 01 00 22 91` | `6E 01 00 00 6F` |
+| `cb1e51` | Head And Foot All Up | `6E 01 00 23 92` | `6E 01 00 00 6F` |
+| `cb1ed1` | Head Up And Foot Down | `6E 01 00 21 90` | `6E 01 00 00 6F` |
+| `cb1f51` | Head And Foot Down | `6E 01 00 2A 99` | `6E 01 00 00 6F` |
+| `cb1fd1` | All Motor Down | `6E 01 00 44 B3` | `6E 01 00 00 6F` |
+| `cb2051` | All Motor Up | `6E 01 00 43 B2` | `6E 01 00 00 6F` |
+| `cb20d1` | Lumbar Up | `6E 01 00 44 B3` | `6E 01 00 00 6F` |
+| `cb2151` | Tile Down | `6E 01 00 5C CB` | `6E 01 00 00 6F` |
+| `cb21d1` | Tile Up | `6E 01 00 5B CA` | `6E 01 00 00 6F` |
+| `cb2251` | All Motor Down | `6E 01 00 57 C6` | `6E 01 00 00 6F` |
+| `cb22d1` | All Motor Up | `6E 01 00 56 C5` | `6E 01 00 00 6F` |
+| `cb2351` | Motor Reset2 | `6E 01 00 6C DB` | `6E 01 00 00 6F` |
+| `cb23d1` | Head Up And Foot Stop | `6E 01 00 3D AC` | `6E 01 00 00 6F` |
+| `cb2451` | Sync Off | `6E 01 00 BD 2C` | `6E 01 00 BD 2C` |
+| `cb24d1` | Sync On | `6E 01 00 BC 2B` | `6E 01 00 BC 2B` |
+| `cb2551` | Motor4 Down | `6E 01 00 74 E3` | `6E 01 00 00 6F` |
+| `cb25d1` | Motor4 Up | `6E 01 00 73 E2` | `6E 01 00 00 6F` |
+| `cb2651` | Motor5 Down | `6E 01 00 D1 40` | `6E 01 00 00 6F` |
+| `cb26d1` | Motor5 Up | `6E 01 00 D0 3F` | `6E 01 00 00 6F` |
+| `cb2751` | Motor3 Up | `6E 01 00 5B CA` | `6E 01 00 00 6F` |
+| `cb27d1` | Motor4 Up | `6E 01 00 5C CB` | `6E 01 00 00 6F` |
+| `cb2851` | Light Board | `6E 01 00 50 BF` | `6E 01 00 00 6F` |
+| `cb28d1` | Head And Foot Down | `6E 01 00 57 C6` | `6E 01 00 00 6F` |
+| `cb2951` | Head And Foot Up | `6E 01 00 56 C5` | `6E 01 00 00 6F` |
+| `cb29d1` | Sofa Backward | `6E 01 00 5C CB` | `6E 01 00 00 6F` |
+| `cb2a51` | Sofa Forword | `6E 01 00 5B CA` | `6E 01 00 00 6F` |
+| `cb2ad1` | Motor4 Down | `6E 01 00 74 E3` | `6E 01 00 00 6F` |
+| `cb2b51` | Tile Down | `6E 01 00 73 E2` | `6E 01 00 00 6F` |
+| `cb2bd1` | Tile Up | `6E 01 00 5B CA` | `6E 01 00 00 6F` |
+| `cb2c51` | All Motor Down | `6E 01 00 5C CB` | `6E 01 00 00 6F` |
+| `cb2cd1` | All Motor Up | `6E 01 00 5B CA` | `6E 01 00 00 6F` |
+| `cb2d51` | Motor Reset | `6E 01 00 47 B6` | `6E 01 00 00 6F` |
+| `cb2dd1` | Motor4 Down | `6E 01 00 2A 99` | `6E 01 00 00 6F` |
+| `cb2e51` | Motor4 Up | `6E 01 00 29 98` | `6E 01 00 00 6F` |
+| `cb2ed1` | Motor4 Down | `6E 01 00 7B EA` | `6E 01 00 00 6F` |
+| `cb2f51` | Motor4 Up | `6E 01 00 7A E9` | `6E 01 00 00 6F` |
+| `cb2fd1` | Motor3 Down | `6E 01 00 72 E1` | `6E 01 00 00 6F` |
+| `cb3051` | Motor3 Up | `6E 01 00 71 E0` | `6E 01 00 00 6F` |
+| `cb30d1` | Head And Foot Down | `6E 01 00 44 B3` | `6E 01 00 00 6F` |
+| `cb3151` | Head And Foot Up | `6E 01 00 43 B2` | `6E 01 00 00 6F` |
+| `cb31d1` | Foot Down | `6E 01 00 40 AF` | `6E 01 00 00 6F` |
+| `cb3251` | Foot Up | `6E 01 00 3F AE` | `6E 01 00 00 6F` |
+| `cb32d1` | Head Down | `6E 01 00 42 B1` | `6E 01 00 00 6F` |
+| `cb3351` | Head Up | `6E 01 00 41 B0` | `6E 01 00 00 6F` |
+| `cb33d1` | Head And Foot Down | `6E 01 00 31 A0` | `6E 01 00 00 6F` |
+| `cb3451` | Head And Foot Up | `6E 01 00 23 92` | `6E 01 00 00 6F` |
+| `cb34d1` | Head And Foot Down | `6E 01 00 97 06` | `6E 01 00 00 6F` |
+| `cb3551` | Head And Foot Up | `6E 01 00 96 05` | `6E 01 00 00 6F` |
+| `cb35d1` | Massage30 Minute Timer | `6E 01 00 61 D0` | `6E 01 00 00 6F` |
+| `cb3651` | Massage20 Minute Timer | `6E 01 00 63 D2` | `6E 01 00 00 6F` |
+| `cb36d1` | Massage10 Minute Timer | `6E 01 00 5F CE` | `6E 01 00 00 6F` |
+| `cb3751` | Massage Mode Change | `6E 01 00 48 B7` | `6E 01 00 00 6F` |
+| `cb37d1` | Massage Mode All Off | `6E 01 00 5E CD` | `6E 01 00 00 6F` |
+| `cb3851` | Massage Foot Instensity Strengthen | `6E 01 00 4E BD` | `6E 01 00 00 6F` |
+| `cb38d1` | Massage Head Instensity Strengthen | `6E 01 00 4C BB` | `6E 01 00 00 6F` |
+| `cb3951` | Massage Instensity Strengthen | `6E 01 00 34 A3` | `6E 01 00 00 6F` |
+| `cb39d1` | Massage Foot Instensity Weaken | `6E 01 00 4F BE` | `6E 01 00 00 6F` |
+| `cb3a51` | Massage Head Instensity Weaken | `6E 01 00 4D BC` | `6E 01 00 00 6F` |
+| `cb3ad1` | Massage Foot Instensity Strengthen | `6E 01 00 4E BD` | `6E 01 00 00 6F` |
+| `cb3b51` | Massage Head Instensity Strengthen | `6E 01 00 4C BB` | `6E 01 00 00 6F` |
+| `cb3bd1` | Heating Switch | `6E 01 00 A0 0F` | `6E 01 00 00 6F` |
+| `cb3c51` | Massage Fan Instensity Strengthen | `6E 01 00 E1 50` | `6E 01 00 00 6F` |
+| `cb3cd1` | Music Volumu Down | `6E 01 00 D5 44` | `6E 01 00 00 6F` |
+| `cb3d51` | Music Volumu Up | `6E 01 00 D4 43` | `6E 01 00 00 6F` |
+| `cb3dd1` | Music Pause Play | `6E 01 00 D7 46` | `6E 01 00 00 6F` |
+| `cb3e51` | Music Shake Mode | `6E 01 00 D6 45` | `6E 01 00 00 6F` |
+| `cb3ed1` | Massage Mode Wave | `6E 01 00 39 A8` | `6E 01 00 00 6F` |
+| `cb3f51` | Massage Mode All Off | `6E 01 00 5A C9` | `6E 01 00 00 6F` |
+| `cb3fd1` | Massage Instensity First Gear | `6E 01 00 67 D6` | `6E 01 00 00 6F` |
+| `cb4051` | Massage Instensity Third Gear | `6E 01 00 68 D7` | `6E 01 00 00 6F` |
+| `cb40d1` | Massage2 Open Or Close | `6E 01 00 33 A2` | `6E 01 00 00 6F` |
+| `cb4151` | Massage1 Open Or Close | `6E 01 00 32 A1` | `6E 01 00 00 6F` |
+| `cb41d1` | Massage Mode Wave Third Mode | `6E 01 00 4B BA` | `6E 01 00 00 6F` |
+| `cb4251` | Massage Mode All On | `6E 01 00 5D CC` | `6E 01 00 00 6F` |
+| `cb42d1` | Massage2 Instensity | `6E 01 00 A5 14` | `6E 01 00 00 6F` |
+| `cb4351` | Massage1 Instensity | `6E 01 00 A4 13` | `6E 01 00 00 6F` |
+| `cb43d1` | Massage Mode All Off | `6E 01 00 47 B6` | `6E 01 00 00 6F` |
+| `cb4451` | Massage Switch | `6E 01 00 5D CC` | `6E 01 00 00 6F` |
+| `cb44d1` | Massage Mode All Off | `6E 01 00 5D CC` | `6E 01 00 00 6F` |
+| `cb4551` | Motor And Massage All Off | `6E 01 00 47 B6` | `6E 01 00 00 6F` |
+| `cb45d1` | Music Cut | `6E 01 00 B8 27` | `6E 01 00 00 6F` |
+| `cb4651` | Adjust Volume | `6E 01 00 B7 26` | `6E 01 00 00 6F` |
+| `cb46d1` | Music Close | `6E 01 00 B9 28` | `6E 01 00 00 6F` |
+| `cb4751` | Massage15 Minute Timer | `6E 01 00 60 CF` | `6E 01 00 00 6F` |
+| `cb47d1` | Massage Lumbar Instensity Strengthen | `6E 01 00 E0 4F` | `6E 01 00 00 6F` |
+| `cb4851` | Massage Mode All Off | `6E 01 00 5F CE` | `6E 01 00 00 6F` |
+| `cb48d1` | Swing Mode Switch | `6E 01 00 D6 45` | `6E 01 00 00 6F` |
+| `cb4951` | Swing On And Off | `6E 01 00 D8 47` | `6E 01 00 00 6F` |
+| `cb49d1` | Swing Help Sleep | `6E 01 00 76 E5` | `6E 01 00 00 6F` |
+| `cb4a51` | Music Next Song | `6E 01 00 D3 42` | `6E 01 00 00 6F` |
+| `cb4ad1` | Music Previous Song | `6E 01 00 D2 41` | `6E 01 00 00 6F` |
+| `cb4b51` | Music Lock | `6E 01 00 D9 48` | `6E 01 00 00 6F` |
+| `cb4bd1` | Massage Mode All Off | `6E 01 00 61 D0` | `6E 01 00 00 6F` |
+| `cb4c51` | Massage Mode All Off | `6E 01 00 34 A3` | `6E 01 00 00 6F` |
+| `cb4cd1` | Fan Timer5 Hour | `6E 01 00 A8 17` | `6E 01 00 00 6F` |
+| `cb4d51` | Fan Timer3 Hour | `6E 01 00 A7 16` | `6E 01 00 00 6F` |
+| `cb4dd1` | Fan Timer2 Hour | `6E 01 00 A6 15` | `6E 01 00 00 6F` |
+| `cb4e51` | Fan Change Mode | `6E 01 00 A2 11` | `6E 01 00 00 6F` |
+| `cb4ed1` | Fan All Off | `6E 01 00 A1 10` | `6E 01 00 00 6F` |
+| `cb4f51` | Fan2 Instensity Strengthen | `6E 01 00 8B FA` | `6E 01 00 00 6F` |
+| `cb4fd1` | Fan1 Instensity Strengthen | `6E 01 00 8A F9` | `6E 01 00 00 6F` |
+| `cb5051` | Anti Pinch Sensitivity Mode Change | `6E 01 00 BE 2D` | `6E 01 00 00 6F` |
+| `cb50d1` | Massage Mode Constant | `6E 01 00 3A A9` | `6E 01 00 00 6F` |
+| `cb5151` | Massage Mode Pulse | `6E 01 00 38 A7` | `6E 01 00 00 6F` |
+| `cb51d1` | Massage Switch | `6E 01 00 6F DE` | `6E 01 00 00 6F` |
+| `cb5251` | Massage Speed Weaken | `6E 01 00 37 A6` | `6E 01 00 00 6F` |
+| `cb52d1` | Massage Speed Strengthen | `6E 01 00 36 A5` | `6E 01 00 00 6F` |
+| `cb5351` | Massage Instensity Weaken | `6E 01 00 35 A4` | `6E 01 00 00 6F` |
+| `cb53d1` | Massage Foot Instens Third Mode | `6E 01 00 9F 0E` | `6E 01 00 00 6F` |
+| `cb5451` | Massage Foot Instens Second Mode | `6E 01 00 9E 0D` | `6E 01 00 00 6F` |
+| `cb54d1` | Massage Foot Instens First Mode | `6E 01 00 9D 0C` | `6E 01 00 00 6F` |
+| `cb5551` | Massage Foot Off | `6E 01 00 9C 0B` | `6E 01 00 00 6F` |
+| `cb55d1` | Massage Head Instens Third Mode | `6E 01 00 9B 0A` | `6E 01 00 00 6F` |
+| `cb5651` | Massage Head Instens Second Mode | `6E 01 00 9A 09` | `6E 01 00 00 6F` |
+| `cb56d1` | Massage Head Instens First Mode | `6E 01 00 99 08` | `6E 01 00 00 6F` |
+| `cb5751` | Massage Head Off | `6E 01 00 98 07` | `6E 01 00 00 6F` |
+| `cb57d1` | Heating Off | `6E 01 00 9C 0B` | `6E 01 00 00 6F` |
+| `cb5851` | Heating High Gear | `6E 01 00 9F 0E` | `6E 01 00 00 6F` |
+| `cb58d1` | Heating Middle Gear | `6E 01 00 9E 0D` | `6E 01 00 00 6F` |
+| `cb5951` | Heating Low Gear | `6E 01 00 9D 0C` | `6E 01 00 00 6F` |
+| `cb59d1` | Heating60 Min | `6E 01 00 A2 11` | `6E 01 00 00 6F` |
+| `cb5a51` | Heating30 Min | `6E 01 00 A1 10` | `6E 01 00 00 6F` |
+| `cb5ad1` | Motor And Massage All Off | `6E 01 00 5F CE` | `6E 01 00 00 6F` |
+| `cb5b51` | Massage30 Minute Up And Down | `6E 01 00 90 FF` | `6E 01 00 00 6F` |
+| `cb5bd1` | Massage15 Minute Spine Guard | `6E 01 00 76 E5` | `6E 01 00 00 6F` |
+| `cb5c51` | Massage Mode Wave Second Mode | `6E 01 00 4A B9` | `6E 01 00 00 6F` |
+| `cb5cd1` | Massage Mode Wave First Mode | `6E 01 00 49 B8` | `6E 01 00 00 6F` |
+| `cb5d51` | Fan Forward And Backward Change | `6E 01 00 8C FB` | `6E 01 00 00 6F` |
+| `cb5dd1` | Massage Foot Instensity Strengthen | `6E 01 00 33 A2` | `6E 01 00 00 6F` |
+| `cb5e51` | Massage Instensity Strengthen | `6E 01 00 4E BD` | `6E 01 00 00 6F` |
+| `cb5ed1` | Massage Instensity Second Gear | `6E 01 00 4D BC` | `6E 01 00 00 6F` |
+| `cb5f51` | Massage Mode Wave | `6E 01 00 48 B7` | `6E 01 00 00 6F` |
+| `cb5fd1` | Massage Switch | `6E 01 00 4C BB` | `6E 01 00 00 6F` |
+| `cb6051` | Bed Light On | `6E 01 00 BF 2E` | `6E 01 00 00 6F` |
+| `cb60d1` | Yoga Position | `6E 01 00 F0 5F` | `6E 01 00 6A D9` |
+| `cb6151` | Alarm Mode1 | `6E 01 00 F5 64` | `6E 01 00 00 6F` |
+| `cb61d1` | Reading Position | `6E 01 00 F2 61` | `6E 01 00 F3 62` |
+| `cb6251` | Alarm Wake | `6E 01 00 2E 9D` | `6E 01 00 00 6F` |
+| `cb62d1` | Alarm Mode2 | `6E 01 00 B1 20` | `6E 01 00 00 6F` |
+| `cb6351` | Alarm Mode1 | `6E 01 00 B0 1F` | `6E 01 00 00 6F` |
+| `cb63d1` | Pillow Down | `6E 01 00 40 AF` | `6E 01 00 00 6F` |
+| `cb6451` | Pillow Up | `6E 01 00 3F AE` | `6E 01 00 00 6F` |
+| `cb64d1` | Foot Down | `6E 01 00 27 96` | `6E 01 00 00 6F` |
+| `cb6551` | Foot Up | `6E 01 00 26 95` | `6E 01 00 00 6F` |
+| `cb65d1` | Head Down | `6E 01 00 25 94` | `6E 01 00 00 6F` |
+| `cb6651` | Head Up | `6E 01 00 24 93` | `6E 01 00 00 6F` |
+| `cb66d1` | Pillow Down | `6E 01 00 42 B1` | `6E 01 00 00 6F` |
+| `cb6751` | Pillow Up | `6E 01 00 41 B0` | `6E 01 00 00 6F` |
+| `cb67d1` | Foot Down | `6E 01 00 27 96` | `6E 01 00 00 6F` |
+| `cb6851` | Foot Up | `6E 01 00 26 95` | `6E 01 00 00 6F` |
+| `cb68d1` | Head Down | `6E 01 00 25 94` | `6E 01 00 00 6F` |
+| `cb6951` | Head Up | `6E 01 00 24 93` | `6E 01 00 00 6F` |
+| `cb69d1` | Foot Down | `6E 01 00 27 96` | `6E 01 00 00 6F` |
+| `cb6a51` | Foot Up | `6E 01 00 26 95` | `6E 01 00 00 6F` |
+| `cb6ad1` | Head Down | `6E 01 00 25 94` | `6E 01 00 00 6F` |
+| `cb6b51` | Head Up | `6E 01 00 24 93` | `6E 01 00 00 6F` |
+| `cb6bd1` | Foot Down | `6E 01 00 27 96` | `6E 01 00 00 6F` |
+| `cb6c51` | Foot Up | `6E 01 00 26 95` | `6E 01 00 00 6F` |
+| `cb6cd1` | Head Down | `6E 01 00 25 94` | `6E 01 00 00 6F` |
+| `cb6d51` | Head Up | `6E 01 00 24 93` | `6E 01 00 00 6F` |
+
+| Query | Frame |
+|---|---|
+| alarms | `6E 20 08 05 01 00 00 9C` |
+| snore | `6E 20 08 06 00 00 00 9C` |
+| blanket | `6E 20 07 0D 00 00 A2` |
+| blanket_power | `6E 20 09 0D 01 00 00 00 A5` |
+| blanket_settings | `6E 20 09 0D 08 00 00 00 AC` |
+| sleep_name | `6E 20 08 06 03 00 00 9F` |
+
+| Startup phase | Function | Frame |
+|---|---|---|
+| Product | deviceFunctionItemCheckClock | `6E 08 01 01 78` |
+| Product | deviceFunctionItemCheckLight | `6E 0A 00 01 79` |
+| Product | deviceFunctionItemCheckAroma | `6E 1A 00 00 88` |
+| Product | deviceFunctionItemCheckMattress | `5E 1A 00 01 79` |
+| Product | deviceFunctionItemCheckLumbarMattress | `6E 01 00 01 70` |
+| Product | deviceFunctionItemCheckSnore | `6E 21 00 00 8F` |
+| Product | deviceFunctionItemCheckSpeech | `6E 22 00 00 90` |
+| Product | deviceFunctionItemCheckDetection | `6E 9A C0 00 C8` |
+| Product | deviceFunctionItemQueryVersion | `6E 9A 00 00 08` |
+| Protocol version 1 | deviceFunctionVersionOneBedCurrentMode | `6E 9A 10 00 18` |
+| Protocol version 1 | deviceFunctionVersionOneMotor1CurrentAngle | `6E 9A 30 01 39` |
+| Protocol version 1 | deviceFunctionVersionOneMotor2CurrentAngle | `6E 9A 30 02 3A` |
+| Protocol version 1 | deviceFunctionVersionOneMotor3CurrentAngle | `6E 9A 30 03 3B` |
+| Protocol version 1 | deviceFunctionVersionOneMotor4CurrentAngle | `6E 9A 30 04 3C` |
+| Protocol version 1 | deviceFunctionVersionOneCurrentMassageMode | `6E 9A A0 00 A8` |
+| Protocol version 1 | deviceFunctionVersionOneCurrentBedLightStatus | `6E 9A B0 00 B8` |
+
+Named operations: `sync`, `detection`, `toggle_alarm`, `sleep_sync`, `query`,
+`single_alarm`, `cancel_alarm`, `repeat_alarm`, `delete_alarm`, `light_timer`,
+`light_rgb`, `strip_rgb`, `strip_timer`, `strip_groove`, `strip_color_mode`,
+`strip_breathe`, `strip_power`, `therapy_light`, `therapy_sound`, `therapy_timer`,
+`music_source`, `white_noise`, `snore`, `get_off_bed`, `snore_intervention`,
+`blanket_power`, `blanket_mode`, `blanket_temperature`, `blanket_delay`,
+`blanket_mite`, `blanket_settings`, `blanket_sleep`, `usb`, `demo`, `sleep_time`,
+`sleep_part`, `sleep_realtime`, `sleep_report`, `sleep_snore`,
+`sleep_sensitivity`, `sleep_init`, `sleep_cancel`, `sleep_poll`.
+<!-- /generated -->
+
+Product identities and their two menu branches remain separate even when their
+scalar getters match. These are catalog entries, not a claim that every product
+is a bed or has every feature. The following reference lists only the controls
+and gates selected by the shipped catalog.
+
+<!-- generated:richmat-app-products -->
+<details>
+<summary>Product catalog and protocol branches</summary>
+
+| Product | Selection | Motor menus (ordinary / V1) | Presets (ordinary / V1) | Blanket | RGB / therapy / strip / cold-warm | Sleep / BLE menu |
+|---|---|---|---|---|---|---|
+| 6BRM | manual | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| 6CRM | manual | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| 6DRM | manual | 3 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| 6ERM | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| 6FRM | manual | 2 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| 6HRM | manual | 3 / 0 | 7 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| 7IRM | manual | 4 / 4 | 7 / 9 | False | False / False / False / False | DeviceSleepMonitoringType@cdc991 / False |
+| A0RM | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| A0RN | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| A1RM | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| A2RM | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| A2RN | manual | 3 / 0 | 4 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| A3RM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| A3RN | manual | 3 / 0 | 5 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| A4RN | restored | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| A5RN | manual | 5 / 0 | 3 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| A6RM | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| A6RN | manual | 3 / 0 | 4 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| A7RM | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| A7RN | manual | 4 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| A8RM | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| A8RN | manual | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| A9RM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| A9RN | restored | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| AARM | manual | 5 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| AARN | restored | 1 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ABRM | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ABRN | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ACRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ACRN | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ADRM | manual | 3 / 0 | 8 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ADRN | manual | 4 / 0 | 2 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| AERM | manual | 4 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| AERN | manual | 3 / 0 | 3 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| AFRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| AFRN | manual | 5 / 0 | 1 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| AGRM | manual | 4 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| AHRM | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| AIRM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| AIRN | manual | 3 / 0 | 5 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| AJRM | manual | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| AJRN | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| AKRM | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| AKRN | manual | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ALRM | restored | 4 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ALRN | manual | 4 / 0 | 6 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc971 / False |
+| AMRM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| AMRN | manual | 4 / 4 | 6 / 9 | False | False / False / True / False | DeviceSleepMonitoringType@cdc991 / False |
+| ANRM | restored | 4 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ANRN | manual | 4 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| AORM | restored | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| APRM | restored | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| APRN | restored | 2 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| AQRM | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| AQRN | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ARRM | restored | 1 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ARRN | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ASRM | manual | 1 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ASRN | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ATRM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ATRN | manual | 3 / 0 | 7 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| AURM | manual | 3 / 0 | 7 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| AURN | manual | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| AVRM | restored | 3 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| AWRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| AWRN | manual | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| AXRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| AXRN | restored | 4 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| AYRM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| AYRN | restored | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| AZRM | restored | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| AZRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| B0RM | manual | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| B1RM | manual | 2 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| B1RN | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| B2RM | manual | 1 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| B2RN | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| B3RM | manual | 1 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| B3RN | manual | 3 / 0 | 4 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| B4RM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| B4RN | manual | 3 / 0 | 4 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| B5RM | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| B5RN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| B6RM | manual | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| B6RU | manual | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| B7RM | manual | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| B7RN | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| B8RM | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| B8RN | restored | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| B8TT | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| B9RM | manual | 3 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| B9RN | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| B9TT | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BARM | manual | 2 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BARN | manual | 2 / 0 | 8 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BBRM | manual | 2 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BBRN | restored | 4 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BCRM | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BCRN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BDRM | manual | 4 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BDRN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BERM | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BERN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BFRM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BFRN | manual | 3 / 0 | 4 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| BGRM | manual | 4 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BGRN | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BHRM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BHRN | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BIRM | manual | 4 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BIRN | manual | 5 / 0 | 7 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| BJRM | manual | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BKRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BKRN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BLRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BLRN | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BMRM | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BMRN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BNRM | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BNRN | manual | 3 / 0 | 5 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| BORM | restored | 3 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BORN | manual | 3 / 0 | 1 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| BPRM | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BPRN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BQRM | manual | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BRRM | restored | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BRRN | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BSRM | restored | 1 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BSRN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BTRM | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BTRN | manual | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BURM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BURN | manual | 2 / 0 | 5 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| BVRM | manual | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BVRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BWRM | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BWRN | restored | 4 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BXRM | restored | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BXRN | restored | 4 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BYRM | restored | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BZRM | manual | 2 / 0 | 7 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| BZRN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| C0RM | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| C1RM | restored | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| C1RN | restored | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| C2RM | restored | 5 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| C2RN | restored | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| C3RM | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| C3RN | manual | 3 / 0 | 7 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| C4RM | restored | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| C4RN | manual | 4 / 0 | 7 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| C5RM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| C5RN | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| C6RM | restored | 3 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| C6RN | manual | 4 / 0 | 7 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| C7RM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| C7RN | manual | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| C8RM | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| C8RN | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| C9RM | restored | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| C9RN | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CARM | restored | 5 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CARN | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CBRM | restored | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CBRN | restored | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CCRM | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CCRN | restored | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CDRM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CDRN | restored | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CERM | manual | 3 / 3 | 5 / 5 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CERN | manual | 4 / 0 | 2 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| CFRM | manual | 5 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CFRN | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CGRM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CGRN | manual | 3 / 0 | 4 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| CHRM | restored | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CHRN | restored | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CIRM | restored | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CIRN | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CJRM | restored | 5 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CJRN | manual | 3 / 0 | 6 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| CKRM | restored | 6 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CLRM | restored | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CLRN | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CMRM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CMRN | restored | 1 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CNRM | restored | 3 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CNRN | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CORM | restored | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CORN | restored | 5 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CPRM | restored | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CPRN | restored | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CQRM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CRRM | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CRRN | manual | 4 / 0 | 3 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| CSRM | restored | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CSRN | manual | 4 / 0 | 2 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| CTRM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CTRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CURM | restored | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CURN | manual | 4 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CVRM | restored | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CVRN | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CWRM | manual | 3 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CWRN | manual | 3 / 0 | 9 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CXRM | manual | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CXRN | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CYRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CYRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CZRM | restored | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| CZRN | manual | 3 / 0 | 3 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| D0RM | manual | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| D1RM | manual | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| D1RN | manual | 4 / 0 | 6 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| D2RM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| D2RN | manual | 4 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| D3RM | restored | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| D3RN | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| D4RM | manual | 4 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| D5RM | manual | 1 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| D6RM | manual | 1 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| D7RM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| D8RM | restored | 2 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| D8RN | restored | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| D9RM | manual | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| D9RN | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DARM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DARN | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DBRM | restored | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DBRN | manual | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DCRM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DCRN | restored | 3 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DDRM | restored | 2 / 0 | 7 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DDRN | manual | 4 / 0 | 3 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| DERM | restored | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DERN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DFRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DFRN | restored | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DGRM | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DGRN | restored | 3 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DHRM | restored | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DHRN | restored | 3 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DIRM | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DIRN | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DJRM | restored | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DJRN | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DKRM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DKRN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DLRM | restored | 2 / 0 | 7 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DLRN | manual | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DMRM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DMRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DNRM | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DNRN | manual | 3 / 0 | 5 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| DORN | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DPRM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DPRN | manual | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DQRM | restored | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DQRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DRRM | restored | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DRRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DSRM | restored | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DSRN | restored | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DTRM | manual | 2 / 0 | 4 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| DTRN | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DURM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DURN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DVRM | restored | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DVRN | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DWRM | restored | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DWRN | restored | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DXRM | restored | 2 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DXRN | manual | 2 / 0 | 7 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DYRM | restored | 0 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DYRN | manual | 3 / 0 | 7 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DZRM | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| DZRN | manual | 3 / 0 | 7 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| E0RM | restored | 1 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| E1RM | manual | 4 / 0 | 4 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| E1RN | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| E2RM | restored | 1 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| E2RN | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| E3RM | restored | 4 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| E3RN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| E4RM | restored | 4 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| E4RN | manual | 2 / 0 | 2 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| E5RM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| E6RM | manual | 6 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| E7RM | restored | 4 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| E8RM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| E9RM | restored | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EARM | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc991 / False |
+| EBRM | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ECRM | restored | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EDRM | restored | 4 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EERM | manual | 5 / 0 | 1 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| EFRM | manual | 4 / 0 | 5 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| EFRN | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EGRM | restored | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EGRN | manual | 4 / 0 | 3 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| EHRM | manual | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EHRN | manual | 3 / 0 | 4 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| EIRM | restored | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EIRN | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EJRM | restored | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EJRN | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EKRM | restored | 2 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EKRN | manual | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ELRM | manual | 3 / 3 | 5 / 5 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ELRN | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EMRM | restored | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EMRN | manual | 3 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ENRM | restored | 4 / 0 | 7 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ENRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EORM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EORN | restored | 3 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EPRM | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EPRN | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EQRM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ERRM | restored | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ESRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ESRN | manual | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ETRM | restored | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ETRN | restored | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EURM | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EURN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EVRM | restored | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EVRN | manual | 5 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EWRM | restored | 2 / 0 | 7 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EWRN | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EXRM | restored | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EXRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EYRM | restored | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EYRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EZRM | restored | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| EZRN | manual | 5 / 0 | 5 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| F0RM | manual | 3 / 0 | 4 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| F1RM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| F1RN | manual | 2 / 0 | 5 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| F2RM | restored | 1 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| F2RN | manual | 6 / 0 | 3 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| F3RM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| F3RN | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| F4RM | restored | 3 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| F4RN | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| F5RM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| F5RN | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| F6RM | restored | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| F7RM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| F7RN | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| F8RM | restored | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| F8RN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| F9RM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| F9RN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FARM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FARN | manual | 3 / 0 | 1 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| FBRM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FBRN | manual | 3 / 0 | 5 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| FCRM | restored | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FCRN | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FDRM | restored | 2 / 0 | 7 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FDRN | manual | 4 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FERM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FERN | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FFRM | restored | 3 / 0 | 8 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FFRN | restored | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FGRM | manual | 3 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FGRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FHRM | manual | 3 / 0 | 5 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| FHRN | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FIRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FJRM | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FJRN | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FKRM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FKRN | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FLRM | restored | 4 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FLRN | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FMRM | manual | 2 / 0 | 3 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| FMRN | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FNRM | manual | 2 / 0 | 3 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| FNRN | manual | 4 / 0 | 3 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| FPRM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FPRN | manual | 3 / 0 | 5 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| FQRM | restored | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FQRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FRRM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FRRN | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc971 / False |
+| FSRM | manual | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc991 / False |
+| FSRN | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FTRM | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FTRN | restored | 4 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FURM | manual | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FURN | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FVRM | restored | 3 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FVRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / True |
+| FWRM | restored | 0 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FWRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / True |
+| FXRM | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FXRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / True |
+| FYRM | restored | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FYRN | manual | 4 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FZRM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| FZRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| G1RN | manual | 3 / 0 | 9 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc971 / True |
+| G2RM | restored | 3 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| G2RN | manual | 2 / 0 | 8 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc971 / True |
+| G3RM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| G3RN | manual | 3 / 0 | 8 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| G4RM | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| G4RN | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| G5RM | restored | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| G5RN | restored | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| G6RM | restored | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| G6RN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| G7RM | restored | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| G7RN | manual | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| G8RM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| G8RN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| G9RM | manual | 3 / 0 | 5 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| G9RN | manual | 5 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GARM | manual | 5 / 0 | 1 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| GARN | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GBRM | restored | 3 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GBRN | restored | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GCRM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GCRN | restored | 1 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GDRM | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GDRN | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GERM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GERN | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GFRM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GFRN | restored | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GGRM | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GGRN | manual | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GHRM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GHRN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc971 / False |
+| GJRM | restored | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GJRN | manual | 3 / 0 | 9 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc971 / False |
+| GKRM | manual | 4 / 0 | 3 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| GKRN | manual | 2 / 0 | 8 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc971 / False |
+| GLRM | manual | 3 / 0 | 5 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| GLRN | manual | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GMRM | manual | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GMRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc971 / False |
+| GNRM | restored | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GNRN | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GORM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GPRM | restored | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GQRM | manual | 4 / 0 | 4 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| GQRN | manual | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GRRM | manual | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GRRN | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GSRM | manual | 3 / 0 | 5 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| GSRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GTRM | restored | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GTRN | manual | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GURM | restored | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GURN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GVRN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GWRM | restored | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GWRN | manual | 4 / 0 | 3 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| GXRM | restored | 5 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GXRN | restored | 0 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GYRM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GYRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GZRM | restored | 3 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| GZRN | restored | 1 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| H2RM | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| H2RN | manual | 6 / 0 | 8 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| H3RM | restored | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| H3RN | manual | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| H4RM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| H4RN | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| H5RM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| H6RM | restored | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| H7RM | restored | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| H7RN | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| H8RM | restored | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| H8RN | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc971 / False |
+| H9RM | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| H9RN | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc971 / True |
+| HARM | manual | 3 / 0 | 4 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| HARN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HBRM | manual | 3 / 0 | 5 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| HCRM | restored | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HCRN | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HDRM | restored | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HDRN | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HERM | restored | 5 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HERN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HFRN | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HGRN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HHRN | manual | 5 / 0 | 1 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc971 / False |
+| HJRN | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HKRM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HKRN | manual | 2 / 0 | 6 / 0 | False | False / True / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HLRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HMRM | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HMRN | manual | 4 / 0 | 4 / 0 | True | False / False / False / False | DeviceSleepMonitoringType@cdc971 / False |
+| HNRM | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HNRN | restored | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HPRM | restored | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HQRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc991 / False |
+| HQRN | restored | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HRRM | manual | 3 / 0 | 5 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| HSRM | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HSRN | restored | 5 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HTRM | restored | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HURM | restored | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HURN | restored | 5 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HVRM | manual | 5 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HWRM | manual | 4 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HWRN | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HXRM | manual | 3 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HYRM | manual | 4 / 0 | 2 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| HYRN | manual | 4 / 0 | 3 / 0 | False | False / True / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HZRM | restored | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| HZRN | manual | 4 / 0 | 6 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| I0RM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| I1RM | manual | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| I2RM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| I3RM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| I4RM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| I5RM | manual | 4 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| I6RM | manual | 1 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| I7RM | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| I8RM | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| I9RM | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| IARM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| IBRM | manual | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ICRM | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| IDRM | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| IERM | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| IFRM | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| IGRM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| IHRM | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| IIRM | manual | 3 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| IJRM | manual | 1 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| IKRM | manual | 1 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ILRM | manual | 1 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| IMRM | manual | 1 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| INRM | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| IORM | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| IPRM | manual | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| IQRM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| IRRM | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ISRM | manual | 1 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| J2RM | manual | 2 / 0 | 6 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| J2RN | restored | 0 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| J3RM | manual | 4 / 0 | 2 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| J3RN | manual | 6 / 0 | 4 / 0 | False | True / False / False / False | DeviceSleepMonitoringType@cdc971 / False |
+| J4RM | restored | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| J4RN | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| J5RM | restored | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| J5RN | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| J6RM | restored | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| J6RN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| J7RM | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| J7RN | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| J8RM | manual | 4 / 0 | 1 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| J8RN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| J9RM | restored | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| J9RN | manual | 2 / 0 | 7 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc971 / False |
+| JARN | manual | 2 / 0 | 9 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc971 / False |
+| JBRM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JBRN | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JCRM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JCRN | manual | 4 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JDRM | restored | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JDRN | manual | 4 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JERM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JERN | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JFRM | restored | 4 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JGRM | restored | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JHRM | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JJRM | restored | 1 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JKRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JLRM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JLRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JMRM | manual | 3 / 0 | 4 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| JMRN | manual | 4 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JNRM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JNRN | manual | 4 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JPRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JPRN | manual | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JQRM | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JQRN | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JRRM | restored | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JRRN | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JSRM | restored | 2 / 0 | 7 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JSRN | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JTRM | manual | 4 / 0 | 2 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| JTRN | restored | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JURM | manual | 3 / 0 | 3 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| JURN | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JVRM | manual | 4 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JWRM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JWRN | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JXRM | manual | 4 / 0 | 3 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| JXRN | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JYRM | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JYRN | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JZRM | restored | 1 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| JZRN | manual | 3 / 0 | 8 / 0 | False | False / False / False / True | DeviceSleepMonitoringType@cdc951 / False |
+| K2RM | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| K2RN | manual | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| K3RM | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| K3RN | manual | 5 / 0 | 5 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| K4RM | manual | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| K4RN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc971 / False |
+| K5RM | manual | 3 / 0 | 3 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| K5RN | manual | 2 / 0 | 8 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| K6RM | manual | 3 / 0 | 4 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| K6RN | restored | 1 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| K7RM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| K7RN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| K8RM | restored | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| K8RN | manual | 3 / 0 | 5 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| K9RM | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| K9RN | manual | 4 / 0 | 3 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| KARM | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KARN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KBRM | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KBRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KCRM | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KCRN | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KDRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KDRN | manual | 3 / 0 | 8 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KERM | restored | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KERN | manual | 1 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KFRM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KFRN | manual | 4 / 0 | 4 / 0 | False | False / True / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KGRM | manual | 3 / 0 | 1 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| KGRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KHRM | manual | 3 / 0 | 4 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| KHRN | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KJRM | manual | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KJRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KKRM | restored | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KKRN | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KLRM | manual | 2 / 0 | 7 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KLRN | restored | 1 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KMRM | restored | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KMRN | restored | 1 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KNRM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KNRN | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KPRM | manual | 3 / 0 | 4 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| KPRN | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KQRM | restored | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KQRN | manual | 3 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KRRM | manual | 4 / 0 | 2 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| KRRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KSRM | manual | 3 / 0 | 5 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| KSRN | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KTRM | manual | 2 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KTRN | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KURM | manual | 3 / 0 | 4 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| KVRM | restored | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KVRN | manual | 5 / 0 | 2 / 0 | False | True / False / False / False | DeviceSleepMonitoringType@cdc971 / False |
+| KWRM | manual | 3 / 3 | 5 / 5 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KWRN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KXRM | restored | 5 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KXRN | manual | 6 / 0 | 4 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc971 / False |
+| KYRM | restored | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KYRN | manual | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| KZRN | manual | 4 / 0 | 7 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| L2RN | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| L3RM | restored | 2 / 0 | 7 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| L3RN | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| L4RM | manual | 2 / 0 | 2 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| L4RN | manual | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| L5RM | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| L5RN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| L6RM | manual | 3 / 0 | 4 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| L6RN | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| L7RM | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| L7RN | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| L8RM | restored | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| L8RN | manual | 4 / 0 | 3 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| L9RM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| L9RN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LARM | manual | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LARN | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LBRM | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc991 / False |
+| LBRN | manual | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LCRM | restored | 2 / 0 | 7 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LCRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LDRM | manual | 4 / 0 | 2 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| LDRN | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LERM | manual | 4 / 0 | 2 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| LERN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LFRM | manual | 4 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LFRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc971 / False |
+| LGRM | manual | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LGRN | manual | 2 / 0 | 4 / 0 | False | False / True / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LHRM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LHRN | manual | 2 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LJRM | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LJRN | manual | 2 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LKRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LKRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LLRM | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LLRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LMRM | restored | 1 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LNRM | restored | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LNRN | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LPRM | manual | 3 / 3 | 5 / 5 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LPRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LQRM | restored | 2 / 0 | 8 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LQRN | manual | 4 / 0 | 8 / 0 | False | False / True / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| LRRM | restored | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LRRN | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LSRM | restored | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LSRN | manual | 7 / 0 | 4 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc971 / False |
+| LTRM | manual | 4 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LTRN | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LURM | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LURN | manual | 4 / 0 | 8 / 0 | False | False / True / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| LVRM | restored | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LVRN | manual | 3 / 0 | 3 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| LWRM | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LWRN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LXRM | restored | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LXRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LYRM | restored | 5 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LYRN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LZRM | restored | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| LZRN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| M2RM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| M2RN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| M3RM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| M4RM | manual | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| M4RN | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| M5RM | manual | 5 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| M5RN | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| M6RM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| M6RN | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| M7RM | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| M7RN | restored | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| M8RM | manual | 3 / 0 | 4 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| M8RN | manual | 4 / 0 | 3 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| M9RM | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| M9RN | restored | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MARM | manual | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MARN | manual | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MBRM | manual | 2 / 0 | 7 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MBRN | manual | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MCRM | restored | 3 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MCRN | manual | 5 / 0 | 2 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| MDRM | restored | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MDRN | restored | 5 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MERM | restored | 3 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MERN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MFRM | restored | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MFRN | manual | 3 / 0 | 8 / 0 | False | False / False / False / True | DeviceSleepMonitoringType@cdc951 / False |
+| MGRM | restored | 3 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MGRN | manual | 4 / 0 | 3 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| MHRN | restored | 0 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MJRN | restored | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MKRN | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MLRM | manual | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MLRN | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MMRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MMRN | manual | 4 / 0 | 8 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MNRN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MPRM | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MPRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MQRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MQRN | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MRRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MRRN | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MSRM | manual | 2 / 0 | 8 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MSRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MTRM | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MTRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MURM | manual | 2 / 0 | 8 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MURN | manual | 4 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MVRM | manual | 3 / 0 | 4 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| MVRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MWRM | manual | 2 / 0 | 5 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| MWRN | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MXRM | manual | 2 / 0 | 5 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| MXRN | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MYRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MYRN | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| MZRN | restored | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| N2RM | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| N2RN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| N3RM | manual | 3 / 0 | 7 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| N3RN | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| N4RM | manual | 4 / 0 | 5 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| N4RN | restored | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| N5RM | manual | 4 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| N5RN | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| N6RN | manual | 4 / 0 | 4 / 0 | False | False / False / False / True | DeviceSleepMonitoringType@cdc951 / False |
+| N7RN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| N8RN | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| N9RN | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| NARN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| NBRN | manual | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| NCRN | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| NDRN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| NERN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| NFRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| NGRN | manual | 4 / 0 | 3 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| NHRN | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| NJRN | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| NLRN | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| NMRN | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| NNRN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| NPRN | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| NQRN | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| NRRN | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| NTRN | restored | 0 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| NURN | restored | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| NXRN | manual | 4 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| NYRN | manual | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| None | restored | 0 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| O0RM | manual | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| O1RM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| O2RM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| O3RM | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| O4RM | manual | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| O5RM | manual | 4 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| O6RM | manual | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| O7RM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| O8RM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| O9RM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| OARM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| OMRM | manual | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ONRM | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| OORM | manual | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| OPRM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| OQRM | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ORRM | manual | 5 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| OSRM | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| OTRM | manual | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| OURM | manual | 1 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| OVRM | manual | 1 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| OWRM | manual | 2 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| OXRM | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| OYRM | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| OZRM | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| P0RM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| P1RM | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| P2RM | manual | 5 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| P3RM | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| P3RN | restored | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| P4RM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| P4RN | manual | 3 / 0 | 7 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| P5RM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| P6RM | manual | 5 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| P9RM | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| QRRM | restored | 0 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| R2RM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| R5RM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| R6RM | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| S9RM | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| SARM | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| T0RM | manual | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| T1RM | manual | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| T2RM | manual | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| T3RM | manual | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| T4RM | manual | 3 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| T5RM | manual | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| T6RM | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| T7RM | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| T8RM | manual | 3 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| T9RM | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| TARM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| TBRM | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| TCRM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| TDRM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| TERM | restored | 4 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| TEST | restored | 0 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| THRM | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| TLRM | manual | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| TWRM | manual | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| TZRM | manual | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| U0RM | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| U1RM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| U2RM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| U3RM | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| U4RM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| U5RM | manual | 4 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| U6RM | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| U7RM | manual | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| U8RM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| U9RM | manual | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| UARM | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| UBRM | restored | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| UCRM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| UDRM | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| UERM | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| UFRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| UGRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| UHRM | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| UIRM | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| UJRM | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| UKRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ULRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| UMRM | manual | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| UNRM | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| UORM | manual | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| UPRM | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| UQRM | manual | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| URRM | manual | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| UTRM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| UURM | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| UVRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| UWRM | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| UXRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| UYRM | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| UZRM | manual | 3 / 0 | 7 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| V0RM | manual | 4 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| V1RM | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| V2RM | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| V3RM | manual | 3 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| V4RM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| V5RM | manual | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| V6RM | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| V7RM | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| V8RM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| V9RM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| VARM | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| VBRM | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| VCRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| VDRM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| VERM | manual | 4 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| VFRM | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| VGRM | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| VHRM | manual | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| VIRM | manual | 4 / 0 | 3 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| VJRM | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| VKRM | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| VLRM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| VMRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| VNRM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| VORM | manual | 4 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| VPRM | manual | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| VQRM | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| VRRM | manual | 5 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| VSRM | manual | 3 / 0 | 4 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| VTRM | manual | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| VURM | manual | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| VVRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| VWRM | manual | 2 / 0 | 7 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| VXRM | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| VYRM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| VZRM | manual | 5 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| W0RM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| W1RM | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| W2RM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| W3RM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| W4RM | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| W5RM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| W6RM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| W7RM | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| W8RM | manual | 2 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| W9RM | manual | 3 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| WARM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| WBRM | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| WCRM | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| WDRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| WERM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| WFRM | restored | 0 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| WGRM | manual | 2 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| WHRM | manual | 5 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| WIRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| WJRM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| WKRM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| WLRM | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| WMRM | manual | 1 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| WNRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| WORM | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| WPRM | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| WQRM | manual | 1 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| WRRM | manual | 3 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| WSRM | manual | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| WTRM | manual | 6 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| WURM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| WVRM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| WWRM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| WXRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| WYRM | manual | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| WZRM | manual | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| X0RM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| X1RM | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| X2RM | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| X4RM | restored | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| X5RM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| X6RM | restored | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| X7RM | restored | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| X8RM | restored | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| X9RM | restored | 4 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| XARM | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| XBRM | restored | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| XCRM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| XDRM | restored | 1 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| XERM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| XFRM | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| XGRM | manual | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| XHRM | restored | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| XIRM | manual | 3 / 0 | 5 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| XJRM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| XKRM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| XLRM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| XMRM | restored | 4 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| XNRM | restored | 1 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| XORM | restored | 4 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| XPRM | restored | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| XQRM | restored | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| XRRM | restored | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| XSRM | restored | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| XTRM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| XURM | restored | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| XVRM | restored | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| XWRM | restored | 5 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| XXRM | restored | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| XYRM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| XZRM | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| Y0RM | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| Y1RM | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| Y2RM | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| Y3RM | manual | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| Y4RM | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| Y5RM | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| Y6RM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| Y7RM | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| Y8RM | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| Y9RM | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| YARM | manual | 4 / 0 | 2 / 0 | False | False / False / True / False | DeviceSleepMonitoringType@cdc951 / False |
+| YBRM | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| YCRM | manual | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| YDRM | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| YERM | manual | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| YFRM | manual | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| YGRM | manual | 2 / 0 | 8 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| YHRM | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| YIRM | manual | 4 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| YJRM | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| YKRM | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| YMRM | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| YNRM | manual | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| YORM | manual | 4 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| YPRM | manual | 4 / 0 | 8 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| YQRM | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| YRRM | restored | 2 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| YSRM | restored | 4 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| YTRM | restored | 4 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| YURM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| YVRM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| YWRM | restored | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| YXRM | restored | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| YYRM | restored | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| YZRM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| Z0RM | restored | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| Z1RM | restored | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| Z2RM | restored | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| Z3RM | restored | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| Z4RM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| Z5RM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| Z6RM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| Z7RM | restored | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| Z8RM | manual | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| Z9RM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZARM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZBRM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZCRM | restored | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZDRM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZERM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZFRM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZGRM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZHRM | restored | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZIRM | restored | 3 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZJRM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZKRM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZLRM | restored | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZMRM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZNRM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZORM | restored | 4 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZPRM | restored | 2 / 0 | 1 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZQRM | manual | 2 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZR00 | manual | 2 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZR01 | manual | 1 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZR10 | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZR11 | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZR12 | manual | 2 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZR20 | manual | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZR21 | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZR30 | manual | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZR40 | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZR50 | manual | 4 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZR51 | manual | 4 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZR60 | manual | 2 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZR70 | manual | 5 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZR80 | manual | 5 / 0 | 2 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZR90 | manual | 3 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZRA0 | manual | 5 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZRA1 | manual | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZRA2 | manual | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZRI0 | manual | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZRRM | restored | 3 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZRS0 | restored | 0 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZRS1 | restored | 0 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZRS2 | restored | 0 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZRS3 | restored | 0 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZRS4 | restored | 0 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZRS5 | restored | 0 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZRS6 | restored | 0 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZSRM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZTRM | restored | 4 / 0 | 3 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZURM | restored | 3 / 0 | 5 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZVRM | restored | 4 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZWRM | restored | 2 / 0 | 6 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZXRM | restored | 2 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZYRM | restored | 2 / 0 | 4 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+| ZZRM | restored | 3 / 0 | 0 / 0 | False | False / False / False / False | DeviceSleepMonitoringType@cdc951 / False |
+
+</details>
+<!-- /generated -->
+
+#### Timing
+
+Movement starts after the first 100 ms tick. Releasing or cancelling before that
+tick sends nothing. After a movement tick, cleanup sends its side-scoped STOP
+with a fresh cancellation event. Explicit STOP remains available independently.
+Presets, save buttons, massage taps and settings send once. Main writes are
+serialized and spaced by at least 100 ms, avoiding the Android periodic-queue
+race. Startup subscribes before Exit Limit, then schedules the nine product
+queries at 50 ms producer intervals through that queue. Protocol version exactly
+one schedules its seven additional information queries. No extra disconnect
+packet is invented. USB switching retains its two-second throttle and delayed
+second command; cancellation prevents a stale delayed write.
+
+Blanket general temperature limits differ from its sleep-stage limits. Mite
+removal changes local warm temperatures through the general clamp and sends
+only the mite command. Sleep settings send before a changed main-mode frame.
+The main delay retains the artifact's raw multiply-by-sixty formula even though
+its Android label says hours. Groove timers convert UI seconds to rounded
+minutes before encoding; received timers retain the separate base-sixty decode
+and subscriber multiplication. These values are not calibrated hardware units.
+
+#### Notifications
+
+The status sensor exposes capability pages, alarm records, direct-bed notification
+fields, the local blanket model, saved choices and rejection details. Local
+optimistic changes are not hardware acknowledgements. Alarm list replies append;
+escalation replies replace the first record with the same number. General blanket
+responses merge only the fields their subscribers consume. Unsupported RGB
+colors retain palette index -1.
+
+Common motor replies use `no`; extended replies use `position`. The latter stay
+in diagnostics and do not silently overwrite the former. Malformed lengths,
+truncated fields and stale notifications are rejected without reproducing Android
+exceptions or nonprogressing loops. Unrelated desk/OTA payloads do not become bed
+features. A product-menu reload can remove transient capability pages.
+
+Sleep links use compact UTF-8 JSON over the shared sleep envelope. Sequence wraps
+from 254 to 1; each write is split at the link's negotiated MTU minus three. MM
+writes without response and HJ with response. Required and nullable response
+fields remain distinct. Time replies update sleep type/version metadata. Report
+metadata retains fsize-driven followups and polling cancellation; physiological
+report interpretation is excluded. Local sleep cancellation clears the session,
+without sending the main bed's movement STOP.
+
+#### Services
+
+`adjustable_bed.richmat_app` exposes named configuration operations, validated
+against the selected product and its current capabilities. Use normal device and
+side targeting. The generated command reference and action form list operations;
+no action accepts arbitrary packet bytes.
+
+- Lighting: timer, palette/RGB and opacity, groove/color/breathe modes, power,
+  therapy timer/color/sound and the local-music source.
+- Alarms: single countdown, cancellation, explicit repeat slot, toggle, deletion,
+  list refresh and time synchronization. Weekdays are Monday 0 through Sunday 6;
+  7 means once. Full tables require an explicit slot and never emit Android's -1.
+- Blanket: power, mode, selected-zone temperature, main delay, mite removal, all
+  six settings flags and each zone's sleep schedule. Flags are child lock,
+  protection, anti-freezing, tone, light and screen-off, in that order. A sleep
+  schedule supplies its enabled flag, mode, start/end, repeat days, after-mode,
+  delay and four stage temperatures. Schedule duration is validated together.
+- Detection start/stop, anti-snore/off-bed settings, USB and cancellable automatic
+  demos. Demo steps use known app enum names, sustain seconds and delay seconds.
+- Separate sleep entry: `sleep_sync`, time/part/realtime queries, polling,
+  sensitivity query, automatic anti-snore query/setting, report session, init and
+  local cancellation. `sleep_snore` uses value 0 for query and 1 for setting.
+  There is no valid sensitivity setter in this artifact.
+
+#### Evidence
+
+Row173's accepted Richmat 4.2.0 artifact provides every catalog, frame and lifecycle
+value. `tests/test_richmat_app_vectors.py` preserves all 2,094 literal fixtures and
+24 semantic cases. `tests/test_richmat_app.py` checks integration behavior.
+Physical validation is for real beta/release users and is not implied here.
+Artifact set SHA-256: `ca4b6ab4750585672889a6dd2e53b16a0e693804408eaa343ed6c6af4df2f0b7`.
+
 
 ## Notes
 
