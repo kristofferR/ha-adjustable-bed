@@ -167,6 +167,7 @@ _REVERIE_MAX_ANGLES: Final = {"back": REVERIE_BACK_MAX_ANGLE, "head": REVERIE_BA
 # Bed types absent here have no static traits (BedTraits()). The base record of
 # a bed type with variants describes its automatic route; bed_traits() refines it.
 _BED_TRAITS: Final[dict[str, BedTraits]] = {
+    "paramount": BedTraits(position_feedback=True, connection_scoped_state=True, max_angles={"head": 75, "back": 75, "legs": 30, "feet": 30}),
     **dict.fromkeys(RICHMAT_MH_BED_TYPES, _NO_ANGLES),
     # Serta MP Remote is the one Keeson layout app with position feedback.
     **dict.fromkeys(KEESON_LAYOUT_APP_BED_TYPES - {BED_TYPE_SERTA_MP_REMOTE}, _NO_ANGLES),

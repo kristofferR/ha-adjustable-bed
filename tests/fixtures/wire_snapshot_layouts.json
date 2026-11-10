@@ -190,6 +190,7 @@
 "okin_uuid": {"services": {"0000ffff-0000-1000-8000-00805f9b34fb": ["62741525-52f9-8864-b1ab-3b3a8d65950b", "0000ffe4-0000-1000-8000-00805f9b34fb"]}},
 "omazz_adjusto_iii": {"services": {"0000ffff-0000-1000-8000-00805f9b34fb": ["0000ffe4-0000-1000-8000-00805f9b34fb", "0000ffe9-0000-1000-8000-00805f9b34fb", "6e400003-b5a3-f393-e0a9-e50e24dcca9e", "6e400002-b5a3-f393-e0a9-e50e24dcca9e"]}},
 "qplus_app": {"services": {"0000ffff-0000-1000-8000-00805f9b34fb": ["0000ffe9-0000-1000-8000-00805f9b34fb", "0000ffe4-0000-1000-8000-00805f9b34fb", "6e400003-b5a3-f393-e0a9-e50e24dcca9e", "6e400002-b5a3-f393-e0a9-e50e24dcca9e"]}},
+"paramount": {"services": {"32112022-0177-49cf-a554-254de334cae0": ["34670381-0ca7-47bc-abe3-e1e0dbf25240", "34670381-0ca7-47bc-abe3-e1e0dbf25241"], "4a01231e-b9dd-469a-a33f-58ae392be7b0": ["4e87d8b0-a810-44da-bd51-e4f983ed88a0"]}},
 "remacro": {"services": {"0000ffff-0000-1000-8000-00805f9b34fb": ["6e403588-b5a3-f393-e0a9-e50e24dcca9e", "6e403589-b5a3-f393-e0a9-e50e24dcca9e"]}},
 "remacro:jeromes": {"services": {"0000ffff-0000-1000-8000-00805f9b34fb": ["6e403588-b5a3-f393-e0a9-e50e24dcca9e", "6e403589-b5a3-f393-e0a9-e50e24dcca9e"]}},
 "remacro:the_brick": {"services": {"0000ffff-0000-1000-8000-00805f9b34fb": ["6e403588-b5a3-f393-e0a9-e50e24dcca9e", "6e403589-b5a3-f393-e0a9-e50e24dcca9e"]}},

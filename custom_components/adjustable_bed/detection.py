@@ -648,6 +648,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_STAR_ELEVATE: "DewertOkin ELEVATE (two-actuator lift)",
     BED_TYPE_SOLACE: "Solace (HomeKobo, Sealy MotionFlex and Sweet Night apps)",
     BED_TYPE_SUTA: "SUTA Smart Home (AT protocol)",
+    "paramount": "Paramount Bed Operation (ベッド操作)",
     BED_TYPE_BEDJET_POWERLAYER: "BedJet PowerLayer adjustable frame",
     BED_TYPE_SVANE: "Svane Remote app",
     BED_TYPE_TIMOTION_AHF: "TiMOTION AHF",
@@ -1394,6 +1395,8 @@ def _detect_bed_type_detailed(
             confidence=0.9,
             signals=["name:casper_base_sleep_sensor"],
         )
+    if first.service("paramount"):
+        return DetectionResult("paramount", 1.0, ["service:paramount_session"])
     device_name = (service_info.name or "").lower()
     signals: list[str] = []
     detected_remote = detect_richmat_remote_from_name(service_info.name)

@@ -78,6 +78,7 @@ if TYPE_CHECKING:
     from .okin_uuid.controller import OkinUuidController as OkinUuidController
     from .omazz_adjusto_iii import OmazzAdjustoIIIController as OmazzAdjustoIIIController
     from .ore_comfort_bed import OreComfortBedController as OreComfortBedController
+    from .paramount.controller import ParamountController as ParamountController
     from .remacro.controller import RemacroController as RemacroController
     from .reverie.controller import ReverieController as ReverieController
     from .reverie.nightstand import ReverieNightstandController as ReverieNightstandController
@@ -153,6 +154,7 @@ _EXPORT_MODULES = {
     "SimmonsController": "simmons.controller",
     "AdjustaMattressController": "adjustamattress.controller",
     "AdjustableLumbarController": "adjustable_lumbar",
+    "ParamountController": "paramount.controller",
     "BedJetPowerLayerController": "bedjet_powerlayer",
     "RufRichmatController": "ruf_richmat.controller",
     "RufRichmatSleepController": "ruf_richmat.sleep",

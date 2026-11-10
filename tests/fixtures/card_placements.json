@@ -1065,6 +1065,16 @@
  "button:ore_comfort_program_zero_g": {
   "card_section": "utility"
  },
+ "button:paramount_gearing_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "paramount_gearing"
+ },
+ "button:paramount_gearing_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "paramount_gearing"
+ },
  "button:pillow_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -2040,6 +2050,10 @@
   "card_section": "motors",
   "card_motor": "neck"
  },
+ "cover:paramount_gearing": {
+  "card_section": "motors",
+  "card_motor": "paramount_gearing"
+ },
  "cover:pillow": {
   "card_section": "motors",
   "card_motor": "pillow"
@@ -2270,6 +2284,30 @@
  "number:octo_light_duration": {
   "card_section": "hidden"
  },
+ "number:paramount_gearing_max": {
+  "card_section": "utility"
+ },
+ "number:paramount_gearing_min": {
+  "card_section": "utility"
+ },
+ "number:paramount_head_max": {
+  "card_section": "utility"
+ },
+ "number:paramount_head_min": {
+  "card_section": "utility"
+ },
+ "number:paramount_height_max": {
+  "card_section": "utility"
+ },
+ "number:paramount_height_min": {
+  "card_section": "utility"
+ },
+ "number:paramount_legs_max": {
+  "card_section": "utility"
+ },
+ "number:paramount_legs_min": {
+  "card_section": "utility"
+ },
  "number:reverie_body_tilt": {
   "card_section": "motors",
   "card_motor": "lumbar"
@@ -2457,6 +2495,30 @@
  "select:ore_comfort_massage_timer": {
   "card_section": "massage",
   "card_role": "timer"
+ },
+ "select:paramount_call_prohibition": {
+  "card_section": "utility"
+ },
+ "select:paramount_duration": {
+  "card_section": "utility"
+ },
+ "select:paramount_gearing_range": {
+  "card_section": "utility"
+ },
+ "select:paramount_head_range": {
+  "card_section": "utility"
+ },
+ "select:paramount_height_range": {
+  "card_section": "utility"
+ },
+ "select:paramount_legs_range": {
+  "card_section": "utility"
+ },
+ "select:paramount_speed": {
+  "card_section": "utility"
+ },
+ "select:paramount_switch_prohibition": {
+  "card_section": "utility"
  },
  "select:remacro_control_side": {
   "card_section": "motors"
@@ -3329,6 +3391,27 @@
   "card_section": "hidden"
  },
  "sensor:okin_bedding_app_status_code": {
+  "card_section": "hidden"
+ },
+ "sensor:paramount_capabilities": {
+  "card_section": "hidden"
+ },
+ "sensor:paramount_height": {
+  "card_section": "hidden"
+ },
+ "sensor:paramount_registration_result": {
+  "card_section": "hidden"
+ },
+ "sensor:paramount_rssi": {
+  "card_section": "hidden"
+ },
+ "sensor:paramount_serial": {
+  "card_section": "hidden"
+ },
+ "sensor:paramount_session_state": {
+  "card_section": "hidden"
+ },
+ "sensor:paramount_tilt": {
   "card_section": "hidden"
  },
  "sensor:reverie_foot_massage_intensity": {
