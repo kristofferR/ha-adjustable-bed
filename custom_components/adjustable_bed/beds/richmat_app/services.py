@@ -7,9 +7,19 @@ from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
 
+from ...command_scheduler import ALL_COMMAND_RESOURCES
 from ...const import DOMAIN
 from ...import_executor import async_import_modules
-from ...services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
+from ...services import (
+    DEVICE_IDS,
+    SIDE_FIELD,
+    _call_targets,
+    _capture_command_admission,
+    _execute_preflighted,
+    _family_command,
+    _preflight_and_execute,
+    _preflight_capability,
+)
 from .protocol import BlanketSleep
 from .requests import OPERATIONS, DemoStep, Request
 
@@ -110,12 +120,35 @@ async def handle(call: ServiceCall) -> None:
             validate=lambda c: c.validate_request(request),
         )
     else:
-        await _preflight_and_execute(
-            _call_targets(call),
-            RichmatAppController,
-            "Richmat app configuration",
-            lambda c: c.execute_request(request),
-            validate=lambda c: c.validate_request(request),
+        targets = _call_targets(call)
+        resource = None if request.operation == "demo" else "configuration"
+        admissions = [
+            _capture_command_admission(
+                parent, side, ALL_COMMAND_RESOURCES if resource is None else (resource,)
+            )
+            for parent, side in targets
+        ]
+        label = "Richmat app controls"
+        preflighted = await _preflight_capability(targets, RichmatAppController, label)
+
+        async def validate_live(controller: RichmatAppController) -> None:
+            controller.validate_request(request)
+
+        # Offline controllers know the catalog, not this connection's replies.
+        # Validate every live target before any target executes the request.
+        await _execute_preflighted(
+            targets,
+            preflighted,
+            _family_command(RichmatAppController, label, validate_live),
+            resource=resource,
+            admissions=admissions,
+        )
+        await _execute_preflighted(
+            targets,
+            preflighted,
+            _family_command(RichmatAppController, label, lambda c: c.execute_request(request)),
+            resource=resource,
+            admissions=admissions,
         )
 
 

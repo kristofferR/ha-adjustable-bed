@@ -291,7 +291,6 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
         self._link = link
         self.features.clear()
         self.version = 0
-        self._side_selection = self.product["side"]
         try:
             await client.start_notify(link.rx, partial(self._notification, link))
             await self._send(self._generic("deviceFunctionItemExitLimit", side=0), link)
