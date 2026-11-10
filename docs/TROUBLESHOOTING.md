@@ -242,6 +242,10 @@ show why browser JavaScript failed to load.
 2. **Remove interference:** Move away from WiFi routers, microwaves, or other 2.4GHz devices
 3. **Wait and retry:** Wait a minute and try again - the bed may have been processing a command
 
+### Octo beds disconnect after 30 seconds
+
+Configure the PIN in the integration's options.
+
 ### Bed is discovered but won't connect
 
 **Possible Causes:**
