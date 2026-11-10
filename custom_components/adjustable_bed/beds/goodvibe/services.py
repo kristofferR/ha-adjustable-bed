@@ -197,11 +197,11 @@ class Request:
                 raise ValueError("The observed alarm has an invalid slot")
             return self.record[0]
         if controller.catalog.reply_gated_menus:
-            rows = controller.choices.events.get("repeat_alarm_records", [])
-            occupied = {str(row[0]) for row in rows} if isinstance(rows, list) else set()
-        else:
-            records = controller.choices.events.get("repeat_alarms", {})
-            occupied = set(records) if isinstance(records, dict) else set()
+            # MLILY reports individual records without a list-completion marker.
+            # An empty or partially received cache cannot prove a slot is unused.
+            raise ValueError("Choose alarm_id or alarm_record; the alarm list may be incomplete")
+        records = controller.choices.events.get("repeat_alarms", {})
+        occupied = set(records) if isinstance(records, dict) else set()
         number = next((n for n in range(1, 8) if str(n) not in occupied), None)
         if number is None:
             raise ValueError("All seven observed alarm slots are occupied")

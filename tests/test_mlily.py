@@ -16,8 +16,10 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed.beds.goodvibe import protocol as p
+from custom_components.adjustable_bed.beds.goodvibe import services as configuration
 from custom_components.adjustable_bed.beds.goodvibe.controller import (
     GoodVibeController,
     Link,
@@ -27,6 +29,7 @@ from custom_components.adjustable_bed.beds.goodvibe.receive import Notifications
 from custom_components.adjustable_bed.beds.goodvibe.services import Request
 from custom_components.adjustable_bed.beds.goodvibe.sleep import sleep_packet
 from custom_components.adjustable_bed.codec import richmat as codec
+from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.profiles.mlily import catalog
 from custom_components.adjustable_bed.profiles.mlily_choices import PROFILE_CHOICES
 from tests.test_goodvibe_ha import runtime as goodvibe_runtime
@@ -295,8 +298,90 @@ async def test_repeat_record_dedup_first_id_escalation_and_safe_full_list(hass):
     edited.validate(obj)
     assert edited.frames(obj)[0][6:10] == bytes((1,0,8,0))
     obj.choices.events["repeat_alarm_records"] = [[n,0,7,0,69,1] for n in range(1,8)]
-    with pytest.raises(ValueError, match="occupied"):
+    with pytest.raises(ValueError, match="Choose alarm_id or alarm_record"):
         Request("repeat", action=obj.product.alarms[0], when=datetime.now(UTC)).plan(obj)
+
+
+@pytest.fixture
+async def alarm_service(hass):
+    c = runtime(hass, "mdrn")
+    c.controller._normal.feed(bytes.fromhex("6e09010078"))
+    configuration.async_register_goodvibe_services(hass)
+    with (
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            return_value=([(c, "both")], []),
+        ),
+        patch.object(c, "async_ensure_connected", AsyncMock(return_value=True)),
+        patch.object(c, "_async_refresh_controller_auth", AsyncMock()),
+        patch("custom_components.adjustable_bed.beds.goodvibe.controller.asyncio.sleep", AsyncMock()),
+    ):
+        yield c
+    c._client.is_connected = False
+    await c.async_shutdown()
+
+
+@pytest.mark.parametrize("cache", ("cold", "queried", "partial", "reconnected", "full"))
+async def test_repeat_service_never_allocates_from_an_unproven_list(hass, alarm_service, cache):
+    c = alarm_service
+    obj = c.controller
+    if cache in ("partial", "reconnected", "full"):
+        slots = range(1, 8) if cache == "full" else (1, 3, 6)
+        for slot in slots:
+            obj._normal.feed(codec.record_20_len(5, 1, 2, (slot, 0, 7, 0, 0x56, 1)))
+    if cache == "queried":
+        await hass.services.async_call(
+            DOMAIN, "mlily", {"device_id": "bed", "operation": "alarms"}, blocking=True
+        )
+        assert c._client.write_gatt_char.await_args.args[1] == p.QUERIES["alarms"]
+        c._client.write_gatt_char.reset_mock()
+    if cache == "reconnected":
+        old = obj._link
+        obj.on_disconnect()
+        obj._link = Link(old.client, old.tx, old.rx, old.legacy)
+        obj._normal.feed(bytes.fromhex("6e09010078"))
+    request = Request("repeat", action=obj.product.alarms[0], when=datetime(2026, 11, 11, 7, tzinfo=UTC))
+    with pytest.raises(ValueError, match="Choose alarm_id or alarm_record"):
+        request.plan(obj)
+    with pytest.raises(ValueError, match="Choose alarm_id or alarm_record"):
+        await obj.async_execute_goodvibe_request(request)
+    with pytest.raises(ServiceValidationError, match="Choose alarm_id or alarm_record"):
+        await hass.services.async_call(
+            DOMAIN, "mlily",
+            {"device_id": "bed", "operation": "repeat", "action": request.action,
+             "datetime": request.when}, blocking=True,
+        )
+    c._client.write_gatt_char.assert_not_awaited()
+
+
+@pytest.mark.parametrize("edit", (False, True), ids=("explicit-id", "observed-record"))
+async def test_repeat_service_keeps_the_explicit_slot_when_cache_changes(hass, alarm_service, edit):
+    c = alarm_service
+    obj = c.controller
+    action = obj.product.alarms[0]
+    code = obj.catalog.actions[action].short
+    record = (3, 0, 7, 15, code, 0x81)
+    data = {"alarm_record": record} if edit else {
+        "alarm_id": 3, "action": action, "datetime": datetime(2026, 11, 11, 7, 15, tzinfo=UTC),
+        "weekdays": [0],
+    }
+    original_plan = Request.plan
+
+    def plan_then_receive(request, target):
+        planned = original_plan(request, target)
+        assert planned.alarm_id == 3
+        # A cache change after preflight must not turn an explicit edit into allocation.
+        target.choices.events["repeat_alarm_records"] = [
+            [slot, 0, 8, 30, code, 1] for slot in range(1, 8)
+        ]
+        return planned
+
+    with patch.object(Request, "plan", plan_then_receive):
+        await hass.services.async_call(
+            DOMAIN, "mlily", {"device_id": "bed", "operation": "repeat", **data}, blocking=True,
+        )
+    frames = [call.args[1] for call in c._client.write_gatt_char.await_args_list]
+    assert frames == [p.repeat_alarm(3, 7, 15, code, 0x81), p.QUERIES["alarms"]]
 
 
 async def test_sleep_sessions_use_distinct_gatt_roles_and_optional_values(hass):

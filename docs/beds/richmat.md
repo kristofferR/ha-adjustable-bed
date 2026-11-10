@@ -4243,8 +4243,12 @@ The clock reply and a nonempty alarm getter admit scheduling. Repeat products
 use the repeat page; other products use a single countdown. A single save writes
 low minutes then high minutes/action. Only its acknowledgement changes the saved
 active alarm. Repeating saves encode enabled in bit 0 and Monday through Sunday
-in bits 7 through 1; no weekdays means once. New records use the first unused
-ID from 1 through 7. Full lists are rejected. Editing an observed `alarm_record`
+in bits 7 through 1; no weekdays means once. Repeat saves require an explicit
+`alarm_id` from 1 through 7, or an observed `alarm_record` for an edit. The app
+chooses its first missing ID from its local list; HA requires the intended ID
+because individual replies have no count or completion marker. A cold, partial
+or stale cache cannot prove that a slot is unused. An explicit ID writes that
+slot and may replace its existing alarm. Editing an observed `alarm_record`
 retains its ID and schedule; choosing an action overrides its recovered mode.
 Unknown recovered modes need an explicit choice. List replies deduplicate all
 six fields; escalation replaces only the first matching ID. Save/delete refresh

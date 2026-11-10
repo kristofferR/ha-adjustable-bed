@@ -688,7 +688,10 @@ countdown controls, plus independent MM/SXB sleep queries. Light and alarm actio
 require their capability reply and exact product getter. Use the product's alarm
 action IDs and observed six-field `alarm_record` from the status sensor. `toggle`
 changes its enabled bit; editing without an explicit action recovers the current
-mode. Save/delete refresh the list; a full list is rejected. See the
+mode. Repeat saves require an explicit `alarm_id` (1–7), or an observed
+`alarm_record` for an edit. The protocol does not signal when the list is complete,
+so the integration cannot safely choose an unused ID from cached records.
+Save/delete refresh the observed list. See the
 [MLILY Control guide](beds/richmat.md#mlily-control) for all profile gates,
 gestures, notifications and sleep operations.
 
