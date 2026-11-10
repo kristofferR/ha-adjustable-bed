@@ -24,11 +24,14 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
 from .beds.goodvibe.catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
 from .beds.hjbed.catalog import PROFILE_CHOICES as HJBED_PROFILES
+from .beds.richmat_app.catalog import ALL_CHOICES as RICHMAT_APP_PRODUCTS
+from .beds.richmat_app.sleep_profiles import CHOICES as RICHMAT_SLEEP_CHOICES
 from .const import (
     ADJUSTAMATTRESS_VARIANTS,
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_CASPER_BASE,
     BED_TYPE_COMFORT_ENHANCEMENTS,
+    BED_TYPE_COMFORTBASE,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_ERGOMOTION_4,
     BED_TYPE_ESHINE_OKIN,
@@ -40,8 +43,12 @@ from .const import (
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LIMOSS_REMOTE,
+    BED_TYPE_MLILY,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_OKIN_CB24,
+    BED_TYPE_RICHMAT_APP,
+    BED_TYPE_RICHMAT_APP_SLEEP,
+    BED_TYPE_RIZE,
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
     BED_TYPE_SLEEP_NUMBER,
@@ -95,6 +102,8 @@ from .const import (
     VARIANT_AUTO,
     VMATBASIC_CONFIG_KEYS,
 )
+from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
+from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 
 # Explicit protocol variants whose entity-gating capabilities depend only on stored
 # config, for bed types that are not offline-safe as a whole (a Keeson "auto" entry
@@ -104,8 +113,12 @@ from .const import (
 OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_ADJUSTAMATTRESS: frozenset(v for v in ADJUSTAMATTRESS_VARIANTS if v != VARIANT_AUTO),
     BED_TYPE_COMFORT_ENHANCEMENTS: frozenset(COMFORT_ENHANCEMENTS_VARIANTS),
+    BED_TYPE_COMFORTBASE: frozenset(COMFORTBASE_PRODUCTS),
     BED_TYPE_GOODVIBE: frozenset(GOODVIBE_PROFILES),
+    BED_TYPE_MLILY: frozenset(MLILY_PROFILES),
     BED_TYPE_HJBED: frozenset(HJBED_PROFILES),
+    BED_TYPE_RICHMAT_APP: frozenset(RICHMAT_APP_PRODUCTS),
+    BED_TYPE_RICHMAT_APP_SLEEP: frozenset(RICHMAT_SLEEP_CHOICES),
     BED_TYPE_ESHINE_OKIN: frozenset(ESHINE_OKIN_PROFILES),
     BED_TYPE_GLIDEAWAY_MOTION: frozenset(GLIDEAWAY_MOTION_MODELS),
     BED_TYPE_KEESON: OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS,
@@ -176,6 +189,7 @@ KEY_SINGLE_ADDRESS_ORIGIN_ENTITY_UNIQUE_IDS: Final = (
 PAIR_LAYOUT_CAPABILITY_KEY: Final = "pair_layout"
 SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
     {
+        "bedtech",
         BED_TYPE_ERGOMOTION,
         BED_TYPE_ERGOMOTION_4,
         BED_TYPE_KEESON,
@@ -185,6 +199,7 @@ SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
         BED_TYPE_SLEEP_NUMBER,
         BED_TYPE_KAIDI,
         BED_TYPE_ISLEEP,
+        BED_TYPE_RIZE,
         BED_TYPE_CASPER_BASE,
         "hush_base",
         BED_TYPE_GMMOTOR,
@@ -204,6 +219,8 @@ def supports_single_address_pairing(
     """Return whether a bed can expose the Phase 3 single-address surface."""
     if bed_type not in SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES:
         return False
+    if bed_type == "bedtech":
+        return protocol_variant in {"bt3000fh", "btx4fh", "btx5fh"}
     if bed_type == BED_TYPE_MOTOMOTION:
         from .profiles.motomotion import Profile
 

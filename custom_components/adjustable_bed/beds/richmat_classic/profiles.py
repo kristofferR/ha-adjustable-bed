@@ -1,4 +1,4 @@
-"""Package-local product catalogs for the accepted five older Richmat apps.
+"""Package-local catalogs for the older Richmat apps, Luuna Rise and Power Cool.
 
 Each app's catalog is ``data/<app>.json.gz``, generated outside this
 repository from its accepted APK Protocol Audit report; no generator is checked in.
@@ -28,7 +28,11 @@ APP_NAMES = {
     "fortywinks": "Forty Winks",
     "milemont": "Milemont",
     "superior": "Superior",
+    "luunarise2": "Luuna Rise",
+    "powercool": "Power Cool Sleep System",
 }
+
+RISE_APPS: Final = frozenset({"luunarise2", "powercool"})
 
 
 def current_control_name(control: str) -> str:
@@ -63,6 +67,8 @@ class Control:
     hold_affected: bool
     resource_keys: dict[str, str]
     ancestor_visibility: tuple[str, ...]
+    excluded_short: bool = False
+    excluded_long: bool = False
 
     @property
     def label(self) -> str:
@@ -98,8 +104,8 @@ _COLUMNS = (
 )
 
 
-def _control(node: Node) -> Control:
-    cells = node.row(len(_COLUMNS))
+def _control(node: Node, *, scoped: bool = False) -> Control:
+    cells = node.row(len(_COLUMNS) + (2 if scoped else 0))
     return Control(
         node=cells[0].integer(),
         status=cells[1].integer(),
@@ -122,30 +128,33 @@ def _control(node: Node) -> Control:
         hold_affected=cells[18].flag(),
         resource_keys={key: value.text() for key, value in cells[19].entries().items()},
         ancestor_visibility=tuple(value.text() for value in cells[20].items()),
+        excluded_short=cells[21].flag() if scoped else False,
+        excluded_long=cells[22].flag() if scoped else False,
     )
 
 
-def _model(node: Node) -> Model:
+def _model(node: Node, *, scoped: bool = False) -> Model:
     data = node.record("controls", "modes", "views", "aliases")
     aliases = (alias.record("from", "to") for alias in data["aliases"].items())
     return Model(
-        controls=tuple(_control(row) for row in data["controls"].items()),
+        controls=tuple(_control(row, scoped=scoped) for row in data["controls"].items()),
         modes=tuple(mode.integer() for mode in data["modes"].items()),
         views=tuple(view.text() for view in data["views"].items()),
         aliases=tuple((alias["from"].text(), alias["to"].text()) for alias in aliases),
     )
 
 
-@lru_cache(maxsize=5)
+@lru_cache(maxsize=7)
 def load_catalog(app: str) -> Catalog:
     """Load and validate on an executor before constructing a controller."""
     if app not in APP_NAMES:
-        raise ValueError("Choose one of the five supported apps")
+        raise ValueError("Choose a supported app")
     data = load(DATA_DIR, app).record("models", "fields", "alarm_allowlist")
-    if tuple(column.text() for column in data["fields"].items()) != _COLUMNS:
+    columns = _COLUMNS + (("excluded_short", "excluded_long") if app in RISE_APPS else ())
+    if tuple(column.text() for column in data["fields"].items()) != columns:
         data["fields"].fail(f"the control columns {_COLUMNS}")
     return Catalog(
-        models={layout: _model(model) for layout, model in data["models"].entries().items()},
+        models={layout: _model(model, scoped=app in RISE_APPS) for layout, model in data["models"].entries().items()},
         alarm_allowlist={
             key: value.text() for key, value in data["alarm_allowlist"].entries().items()
         },

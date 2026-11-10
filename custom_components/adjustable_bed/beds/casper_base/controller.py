@@ -343,11 +343,15 @@ class CasperBaseController(ProfileExecution[ProductProfile], BedController, Casp
             raise ValueError("No supported writable Casper Base service")
         if self._notify_char is not None:
             await self.client.start_notify(self._notify_char, self._build_notification_callback())
+        await self._initialize()
+        self._publish()
+
+    async def _initialize(self) -> None:
+        """Run this app's startup after subscribing to the selected service."""
         for action, code in QUERIES:
             await self._send(codec.function(code, action=action, single=self._single))
         if self.product[10]:
             await self._send(codec.calendar(dt_util.now(), build=codec.record_20_len))
-        self._publish()
 
     def _build_notification_callback(self) -> Callable[[BleakGATTCharacteristic, bytearray], None]:
         return self._on_notification
@@ -370,11 +374,17 @@ class CasperBaseController(ProfileExecution[ProductProfile], BedController, Casp
         )
         try:
             for packet in self._receive.feed(bytes(data)):
-                if event := decode_main(packet):
+                if event := self._decode_notification(packet):
                     self._consume(event)
         except (ValueError, IndexError) as err:
-            self.forward_controller_state_update(CASPER_BASE_ERROR, str(err))
+            self._notification_error(str(err))
         self._publish()
+
+    def _notification_error(self, message: str) -> None:
+        self.forward_controller_state_update(CASPER_BASE_ERROR, message)
+
+    def _decode_notification(self, packet: bytes) -> Event | None:
+        return decode_main(packet)
 
     def _consume(self, event: Event) -> None:
         self.events[event.name] = event.values

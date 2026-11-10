@@ -8,22 +8,29 @@ from typing import Any
 
 from homeassistant.core import HomeAssistant
 
+from .beds.galaxy.catalog import PROFILE_CHOICES as GALAXY_PROFILES
 from .beds.goodvibe.catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
 from .beds.hjbed.catalog import PROFILE_CHOICES as HJBED_PROFILES
 from .beds.reverie.profiles import REVERIE_MODEL_CHOICES
+from .beds.richmat_app.catalog import ALL_CHOICES as RICHMAT_APP_PRODUCTS
+from .beds.richmat_app.sleep_profiles import CHOICES as RICHMAT_SLEEP_CHOICES
 from .beds.richmat_classic.profiles import APP_NAMES as RICHMAT_CLASSIC_APPS
 from .beds.richmat_mh.models import RICHMAT_MH_VARIANTS_BY_APP
 from .const import (
     ADAPTER_AUTO,
+    ADJUSTABLE_BED_VARIANTS,
     ADJUSTABLE_LUMBAR_VARIANTS,
     ADJUSTAMATTRESS_VARIANTS,
+    BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_BEDSENSE,
     BED_TYPE_CASPER_BASE,
     BED_TYPE_COMFORT_ENHANCEMENTS,
+    BED_TYPE_COMFORTBASE,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ESHINE_OKIN,
+    BED_TYPE_GALAXY,
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_GOODVIBE,
     BED_TYPE_HJBED,
@@ -31,6 +38,7 @@ from .const import (
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LINAK,
+    BED_TYPE_MLILY,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_64BIT,
@@ -44,6 +52,8 @@ from .const import (
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
+    BED_TYPE_RICHMAT_APP,
+    BED_TYPE_RICHMAT_APP_SLEEP,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
@@ -86,7 +96,11 @@ from .const import (
     ZSERIES_VARIANTS,
 )
 from .profiles.casper import CASPER_BASE_VARIANTS
+from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
 from .profiles.hush import HUSH_BASE_VARIANTS
+from .profiles.luuna import VARIANTS as LUUNA_VARIANTS
+from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
+from .profiles.richmat import BEDTECH_VARIANTS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -116,15 +130,21 @@ def is_valid_octo_pin(pin: str) -> bool:
 
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
+    "bedtech": BEDTECH_VARIANTS,
+    BED_TYPE_GALAXY: GALAXY_PROFILES,
     BED_TYPE_GOODVIBE: GOODVIBE_PROFILES,
+    BED_TYPE_MLILY: MLILY_PROFILES,
     BED_TYPE_RICHMAT_CLASSIC_APPS: RICHMAT_CLASSIC_APPS,
     BED_TYPE_HJBED: HJBED_PROFILES,
+    BED_TYPE_RICHMAT_APP: RICHMAT_APP_PRODUCTS,
+    BED_TYPE_RICHMAT_APP_SLEEP: RICHMAT_SLEEP_CHOICES,
     BED_TYPE_ESHINE_OKIN: ESHINE_OKIN_PROFILES,
     BED_TYPE_DOUBLESLEEP: DOUBLESLEEP_VARIANTS,
     BED_TYPE_GLIDEAWAY_MOTION: GLIDEAWAY_MOTION_MODELS,
     BED_TYPE_BEDSENSE: BEDSENSE_VARIANTS,
     BED_TYPE_CASPER_BASE: CASPER_BASE_VARIANTS,
     "hush_base": HUSH_BASE_VARIANTS,
+    "luuna": LUUNA_VARIANTS,
     BED_TYPE_KAIDI: KAIDI_VARIANTS,
     BED_TYPE_OKIN_CB24: OKIN_CB24_VARIANTS,
     BED_TYPE_OKIN_CST: OKIN_CST_VARIANTS,
@@ -140,8 +160,10 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_SLEEPYS_BOX25: SLEEPYS_BOX25_VARIANTS,
     BED_TYPE_SIMMONS: SIMMONS_VARIANTS,
     BED_TYPE_ADJUSTAMATTRESS: ADJUSTAMATTRESS_VARIANTS,
+    BED_TYPE_ADJUSTABLE_BED: ADJUSTABLE_BED_VARIANTS,
     BED_TYPE_ADJUSTABLE_LUMBAR: ADJUSTABLE_LUMBAR_VARIANTS,
     BED_TYPE_COMFORT_ENHANCEMENTS: COMFORT_ENHANCEMENTS_VARIANTS,
+    BED_TYPE_COMFORTBASE: {key: p.name for key, p in COMFORTBASE_PRODUCTS.items()},
     **{bed_type: RICHMAT_MH_VARIANTS_BY_APP[app] for bed_type, app in RICHMAT_MH_APPS.items()},
     "richmat_sleep_receiver": {"wsilver2": "W.Silver Products", "americanstar": "AMERICANSTAR",
                                "bailey2": "Bailey's Bed Control", "tx": "TX"},

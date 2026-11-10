@@ -37,7 +37,9 @@ from tests.test_controller_contract import _FactoryCoordinator, _make_connected_
 # Controllers that keep their own key tables; only the frame is profile data.
 E6_CONTROLLERS = frozenset(
     {
+        "jalon_13", "jalon_15", "jalon_24",
         "glideaway_motion",
+        "jalon_bed",
         "malouf_legacy_okin",
         "sleepys_box15",
         "scott_living",
@@ -49,6 +51,7 @@ E6_CONTROLLERS = frozenset(
         "bf",
         "cherish",
         "comfort_enhancements",
+        "comfortbase",
     }
 )
 # Their full command plans are captured by the wire snapshot.
@@ -93,6 +96,10 @@ def _decode(data: bytes) -> bytes:
     if data[:3] == b"\xe5\xfe\x17":
         pulses = int.from_bytes(data[3:5], "little"), int.from_bytes(data[5:7], "little")
         return codec.position_target(*pulses)
+    if data[:2] == b"\xed\x80":
+        return codec.alarm_table(data[2], data[3:15])
+    if data[:3] == b"\xed\x80\x03":
+        return codec.alarm_table(data[2], data[3:15])
     if data[:3] == b"\xe7\x80\x01":
         return codec.clock_fields(data[3:9])
     if data[:1] == b"{":
@@ -201,6 +208,17 @@ def _e6_census(key: str) -> set[bytes]:
     """Key frames the controllers that keep their own tables send."""
     profile = profiles.PROFILES[key]
     words = {codec.RELEASE}
+    if key == "comfortbase":
+        from custom_components.adjustable_bed.profiles import comfortbase as app
+
+        words |= {word for _label, up, down in app.AXES.values() for word in (up, down)}
+        words |= {*app.PRESETS.values(), *app.MEMORY.values(), *app.MASSAGE.values(), app.LIGHT_TOGGLE}
+        return {profiles.encode(profile, word) for word in words}
+    if key == "jalon_bed":
+        from custom_components.adjustable_bed.profiles import jalon_bed as app
+        words |= {word for pair in app.MOTORS.values() for word in pair}
+        words |= {*app.HELD.values(), *app.MASSAGE.values(), app.LIGHT}
+        return {profiles.encode(profile, word) for word in words}
     if key == "glideaway_motion":
         gm = glideaway_motion
         words |= {word for pair in gm.AXES.values() for word in pair}
@@ -341,6 +359,10 @@ def test_frozen_frame_round_trips_through_codec(profile: str, literal: str) -> N
 def test_profile_sends_only_frozen_frames(key: str) -> None:
     profile = profiles.PROFILES[key]
     frozen = {bytes.fromhex(literal) for literal in FROZEN_FRAMES[key]}
+    if key in ("jalon_13", "jalon_15", "jalon_24"):
+        from custom_components.adjustable_bed.profiles.jalon import COMMANDS
+        assert {profiles.encode(profile, word).hex() for word in COMMANDS.values()} == FROZEN_FRAMES[key]
+        return
     if key in APP_REPORTED:
         app_controller = key in ("innova", "simon_li", "okin_seating", "heal_every_night")
         app_controller |= key in E6_CONTROLLERS

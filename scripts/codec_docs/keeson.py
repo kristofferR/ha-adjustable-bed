@@ -54,6 +54,9 @@ _KEESON_NAMES: dict[str, str] = {
     "bedsense_bases": "Bedsense Bases",
     "dynasty_bases": "Dynasty Bases",
     "maxcoil_una": "MaxCoil Una",
+    "jalon_13": "OkinComfortBed II P1",
+    "jalon_15": "OkinComfortBed II P2",
+    "jalon_24": "OkinComfortBed II P3",
     "glideaway_motion": "Glideaway Motion",
     "malouf_legacy_okin": "Malouf legacy OKIN",
     "sleepys_box15": "Sleepy's BOX15",
@@ -66,9 +69,13 @@ _KEESON_NAMES: dict[str, str] = {
     "bf": "BF",
     "cherish": "Cherish",
     "comfort_enhancements": "Comfort Enhancements",
+    "comfortbase": "ComfortBaseForBluetooth",
+    "jalon_bed": "OkinComfortBed Ⅱ (Jalon)",
 }
 # Controllers that keep their key tables and timing; their profile is only the frame.
 _KEESON_CONTROLLERS: dict[str, tuple[str, str]] = {
+    **dict.fromkeys(("jalon_13", "jalon_15", "jalon_24"), ("`jalon`", "[OkinComfortBed II](#okincomfortbed-ii)")),
+    "jalon_bed": ("`jalon_bed`", "[OkinComfortBed Ⅱ (Jalon)](#okincomfortbed-ⅱ-jalon)"),
     "glideaway_motion": ("`glideaway_motion`", "[Glideaway Motion](#glideaway-motion)"),
     "malouf_legacy_okin": ("`malouf_legacy_okin`", "[Malouf](malouf.md)"),
     "sleepys_box15": ("`sleepys_box15`", "[Sleepy's](sleepys.md)"),
@@ -80,6 +87,7 @@ _KEESON_CONTROLLERS: dict[str, tuple[str, str]] = {
     "coolbase": ("`coolbase`", "[Cool Base](#cool-base)"),
     "bf": ("`bf`", "[BF and Cherish](#bf-and-cherish)"),
     "cherish": ("`cherish`", "[BF and Cherish](#bf-and-cherish)"),
+    "comfortbase": ("`comfortbase`", "[ComfortBaseForBluetooth](#comfortbaseforbluetooth)"),
     "comfort_enhancements": (
         "`comfort_enhancements`",
         "[Comfort Enhancements](#comfort-enhancements)",
@@ -157,7 +165,8 @@ def _carrier(profile: keeson_profiles.KeesonProfile) -> str:
             "p2_checked": "P2 7-byte, checksum end",
             "json": "JSON",
         }[profile.carrier]
-    side = f", side `{profile.side:02X}`" if profile.side is not None else ""
+    label = "model" if profile.key == "jalon_bed" else "side"
+    side = f", {label} `{profile.side:02X}`" if profile.side is not None else ""
     return f"K1 `{profile.header:02X}`, {profile.order}-endian{side}"
 
 
@@ -680,6 +689,26 @@ def render_keeson_ore() -> str:
     )
 
 
+def render_jalon_bed() -> str:
+    from custom_components.adjustable_bed.profiles import jalon_bed as app
+    rows = [(axis + direction, _word(word), _kframe(app.PROFILE, word))
+            for axis, words in app.MOTORS.items()
+            for direction, word in zip((" up", " down"), words, strict=True)]
+    rows += [(name, _word(word), _kframe(app.PROFILE, word))
+             for name, word in {**app.HELD, **{f"massage {name}": word for name, word in app.MASSAGE.items()}, "light toggle": app.LIGHT, "STOP/release": 0}.items()]
+    layouts = [(key, value.label, ", ".join(value.axes), "0") for key, value in app.LAYOUTS.items()]
+    timing = [("Motor refresh / releases before and after", f"{app.REFRESH_MS} ms / {app.MOTOR_RELEASES}"),
+              ("Preset tap / position-page Flat / release", f"{app.PRESET_REPEATS} / {app.POSITION_FLAT_REPEATS} / 1"),
+              ("Held preset refresh / maximum / release", f"{app.REFRESH_MS} ms / {app.HOLD_LIMIT_MS} ms / none"),
+              ("Massage and light / releases", f"{app.UTILITY_REPEATS} / {app.UTILITY_RELEASES}"),
+              ("Time sync to alarm / disabled alarm / release", f"{app.ALARM_DELAY_MS} ms / {app.DISABLE_REPEATS} / 1")]
+    modes = [(name, f"`{value:02X}`") for name, value in app.WAKE_MODES.items()]
+    return _block(_table(("Control", "Word", "Frame"), rows),
+                  _table(("Layout", "App layout", "HA axes", "Wire model"), layouts),
+                  _table(("Timing / writes", "Value"), timing),
+                  _table(("Wake action", "Mode byte"), modes))
+
+
 def render_keeson_controllers() -> str:
     rows = []
     for key, (route, guide) in _KEESON_CONTROLLERS.items():
@@ -965,7 +994,40 @@ def render_keeson_serta_mp() -> str:
     )
 
 
+def render_comfortbase() -> str:
+    from custom_components.adjustable_bed.const import (
+        KEESON_BASE_NOTIFY_CHAR_UUID,
+        KEESON_BASE_WRITE_CHAR_UUID,
+    )
+    from custom_components.adjustable_bed.profiles import comfortbase as app
+
+    profile = keeson_profiles.COMFORTBASE
+    rows = [(p.name, str(p.stored_value), ", ".join(p.axes), "Yes" if p.massage_light else "No")
+            for p in app.PRODUCTS.values()]
+    controls = [(f"{axis} {direction}", _hex(keeson_profiles.encode(profile, word)))
+                for axis, (_label, up, down) in app.AXES.items()
+                for direction, word in (("up", up), ("down", down))]
+    controls += [(name, _hex(keeson_profiles.encode(profile, word)))
+                 for name, word in {**app.PRESETS, **{f"Memory {n}": w for n, w in app.MEMORY.items()},
+                                    **app.MASSAGE, "Light toggle": app.LIGHT_TOGGLE, "STOP": 0}.items()]
+    return "\n\n".join((
+        "\n".join(_table(("Product", "App value", "Controls", "Massage / light"), rows)),
+        "\n".join(_table(("Action", "Frame"), controls)),
+        "\n".join(_table(("Setting", "Value"), [
+            ("Write service / characteristic", f"`{app.WRITE_SERVICE}` / `{KEESON_BASE_WRITE_CHAR_UUID}`"),
+            ("Notify service / characteristic", f"`{app.NOTIFY_SERVICE}` / `{KEESON_BASE_NOTIFY_CHAR_UUID}`"),
+            ("Held refresh", f"{app.REFRESH_MS} ms"),
+            ("Save all five presets", f"{app.SAVE_SECONDS} s held recall, then STOP"),
+            ("Alarm sequence", f"Two clock writes, {app.ALARM_DELAY_SECONDS * 1000:g} ms wait, one alarm"),
+            ("Clock", "E7 80 01, year minus 1900, zero-based month, day, hour, minute, second, checksum"),
+            ("Alarm", "ED 80 03, hour, minute, opaque FF, Memory A 0E / B 0F, eight zeros, checksum"),
+            ("Alarm cancel", _hex(keeson_codec.alarm_table(3, bytes(4)))),
+        ])),
+    ))
+
+
 BLOCKS: list[Block] = [
+    (GUIDE, "keeson-jalon-bed", render_jalon_bed),
     (GUIDE, "keeson-profiles", render_keeson_profiles),
     (GUIDE, "keeson-transports", render_keeson_transports),
     (GUIDE, "keeson-carriers", render_keeson_carriers),
@@ -990,4 +1052,52 @@ BLOCKS: list[Block] = [
     (GUIDE, "keeson-controllers", render_keeson_controllers),
     (GUIDE, "keeson-glideaway", render_keeson_glideaway),
     (GUIDE, "keeson-scott-living", render_keeson_scott_living),
+    (GUIDE, "keeson-comfortbase", render_comfortbase),
 ]
+
+
+def render_jalon() -> str:
+    from datetime import datetime
+
+    from custom_components.adjustable_bed.profiles import jalon
+    profiles = tuple(jalon.PROFILES.values())
+    now = datetime(2026, 11, 10, 13, 14, 15)
+    return _block(
+        "#### Profiles and transport",
+        _table(("Profile", "Write service", "Write", "Notify service", "Notify", "Response"), (
+            (p.key, keeson_codec.TRANSPORTS[p.transport].service_uuid,
+             keeson_codec.TRANSPORTS[p.transport].write_uuid,
+             "0000ffe0-0000-1000-8000-00805f9b34fb" if p.key != "jalon_24" else keeson_codec.TRANSPORTS[p.notify].service_uuid,
+             keeson_codec.TRANSPORTS[p.notify].notify_uuid, str(not p.no_response))
+            for p in profiles)),
+        "#### Layouts",
+        _table(("App bedType", "Actuators"), ((key, ", ".join(axes)) for key, axes in jalon.LAYOUTS.items())),
+        "#### Commands",
+        _table(("Action", *(p.key for p in profiles)), (
+            (name, *(_hex(keeson_profiles.encode(p, word)) for p in profiles))
+            for name, word in jalon.COMMANDS.items())),
+        "#### Queries and clock",
+        _table(("Action", *(p.key for p in profiles)), (
+            ("Massage query", *(_hex(jalon.massage_query(p)) for p in profiles)),
+            ("Alarm query", "Unavailable", *(_hex(jalon.alarm_query(p)) for p in profiles[1:])),
+            ("Clock (2026-11-10 Tue 13:14:15)", *(_hex(jalon.clock(p, now)) for p in profiles)),
+        )),
+        "#### Wake types",
+        _table(("Action", "P2", "P3"), ((mode, str(value), str(jalon.WAKE_TYPES["jalon_24"][mode]))
+                for mode, value in jalon.WAKE_TYPES["jalon_15"].items())),
+        "#### Timing",
+        _table(("Operation", "Behavior"), (
+            ("Held movement / Flat / M1 / M2", f"Immediate; refresh every {jalon.REFRESH_MS} ms"),
+            ("Release / explicit STOP", f"Immediate STOP and one more after {jalon.REFRESH_MS} ms"),
+            ("Preset tap", f"Single write; release after {jalon.PRESET_MS} ms"),
+            ("Memory recall", f"One {jalon.REFRESH_MS} ms hold then release"),
+            ("Memory programming", f"Same recall word held {jalon.MEMORY_SAVE_MS} ms then release"),
+            ("Massage toggle", f"Single toggle; query after {jalon.QUERY_DELAY_MS} ms"),
+            ("Clock sync", f"Two identical writes {jalon.REFRESH_MS} ms apart, after connect"),
+            ("Alarm query", f"After {jalon.QUERY_DELAY_MS} ms: P2 twice at {jalon.REFRESH_MS} ms; P3 once"),
+            ("Alarm set", f"One write; query after {jalon.QUERY_DELAY_MS} ms: P2 twice, P3 three times at {jalon.ALARM_FOLLOWUP_MS} ms"),
+        )),
+    )
+
+
+BLOCKS.append((GUIDE, "keeson-jalon", render_jalon))

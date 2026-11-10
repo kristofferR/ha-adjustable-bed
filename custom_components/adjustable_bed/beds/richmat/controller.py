@@ -124,7 +124,7 @@ class RichmatProfileController(ProfileExecution[RichmatProfile], BedController):
         return self.profile.frame(command_byte)
 
     def _build_stop_command(self) -> bytes:
-        return self._build_command(self.profile.stop)
+        return b"" if self.profile.stop is None else self._build_command(self.profile.stop)
 
     async def write_command(
         self,
@@ -141,6 +141,7 @@ class RichmatProfileController(ProfileExecution[RichmatProfile], BedController):
                 repeat_delay_ms=repeat_delay_ms,
                 cancel_event=cancel_event,
                 response=self._write_with_response,
+                wall_clock_pacing=self.profile.pace_from_write_start,
             )
         except BleakError as err:
             if "not found" in str(err).lower() or "invalid" in str(err).lower():
@@ -156,7 +157,8 @@ class RichmatProfileController(ProfileExecution[RichmatProfile], BedController):
         await self.write_command(self._build_command(self._code(button)))
 
     async def _send_stop(self) -> None:
-        await self.write_command(self._build_stop_command(), cancel_event=asyncio.Event())
+        if self.profile.stop is not None:
+            await self.write_command(self._build_stop_command(), cancel_event=asyncio.Event())
 
     async def _release(self) -> None:
         """Cleanup STOP; quiet profiles keep the original error, if any."""
@@ -172,7 +174,7 @@ class RichmatProfileController(ProfileExecution[RichmatProfile], BedController):
 
     async def _move_with_stop(self, command_byte: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Pulse a movement code at the entry's pulse settings, then always STOP."""
-        delay_ms = self._coordinator.motor_pulse_delay_ms
+        delay_ms = self.profile.motor_repeat_ms or self._coordinator.motor_pulse_delay_ms
         try:
             await self.write_command(
                 self._build_command(command_byte),

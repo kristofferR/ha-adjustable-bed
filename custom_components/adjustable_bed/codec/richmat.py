@@ -70,6 +70,23 @@ def frame(*values: int) -> bytes:
     return bytes(value & 0xFF for value in (*values, sum(values)))
 
 
+def motor_test_schedule(
+    records: tuple[tuple[int, int, int], ...], rest: int, count: int,
+    radio: int, code: int, identifier: int, motors: tuple[int, ...],
+) -> bytes:
+    """Power Cool RMCS: unchecksummed 5AA5 program, ending in 88.
+
+    Java's %04x followed by substring(0,4) takes the *first* four hex
+    digits for large values. Do not replace this with a 16-bit mask.
+    """
+    def word(value: int) -> bytes:
+        return bytes.fromhex(f"{value:04x}"[:4])
+
+    identity = (0xB2D6, 0xB2D4, 0xB2D2, 0xB2CD, 0xB2C9, 0xB2B6, 0xB2B4, 0xB296, 0xB294)[identifier - 1]
+    body = b"".join(bytes((0xA0 + i, order)) + word(run) + word(pause) for i, (order, run, pause) in enumerate(records))
+    return b"\x5a\xa5" + body + word(rest) + word(count) + bytes((radio, code)) + identity.to_bytes(2, "big") * 2 + bytes(motors) + b"\x88"
+
+
 def is_valid(data: bytes) -> bool:
     """Whether the last byte is the ``sum8`` of the others."""
     return len(data) >= 2 and sum(data[:-1]) & 0xFF == data[-1]
@@ -183,3 +200,15 @@ def strip(command_id: int, payload: bytes) -> bytes:
     """RGB-strip frame: ``04 len command 01 00 payload 00 00 sum8``."""
     body = (0x04, len(payload) + 8, command_id, 0x01, 0x00, *payload, 0x00, 0x00)
     return frame(*body)
+
+
+def packed_motor(number: int, angle: int) -> bytes:
+    """Richmat 4.2.0's minimum-width strings, sliced to the first sixteen bits."""
+    bits = "0011" + format(number, "02b") + "0" + format(angle, "09b")
+    return frame(BED, 0x88, int(bits[:8], 2), int(bits[8:16], 2))
+
+
+def packed_massage(first: int, second: int) -> bytes:
+    """Two current intensities, not a zone and gear; there is no third field."""
+    bits = "1010000000" + format(second, "03b") + format(first, "03b")
+    return frame(BED, 0x88, int(bits[:8], 2), int(bits[8:16], 2))

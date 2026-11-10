@@ -1,0 +1,1021 @@
+{
+  "builders": [
+    {
+      "id": "B01",
+      "builder": "control",
+      "inputs": {
+        "command": 0,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe16000000000005",
+      "scope": "reachable input example",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B02",
+      "builder": "control",
+      "inputs": {
+        "command": 1,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe16010000000004",
+      "scope": "reachable input example",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B03",
+      "builder": "control",
+      "inputs": {
+        "command": 2,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe16020000000003",
+      "scope": "reachable input example",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B04",
+      "builder": "control",
+      "inputs": {
+        "command": 4,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe16040000000001",
+      "scope": "reachable input example",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B05",
+      "builder": "control",
+      "inputs": {
+        "command": 5,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe16050000000000",
+      "scope": "reachable input example",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B06",
+      "builder": "control",
+      "inputs": {
+        "command": 8,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe160800000000fd",
+      "scope": "reachable input example",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B07",
+      "builder": "control",
+      "inputs": {
+        "command": 10,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe160a00000000fb",
+      "scope": "reachable input example",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B08",
+      "builder": "control",
+      "inputs": {
+        "command": 16,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe161000000000f5",
+      "scope": "reachable input example",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B09",
+      "builder": "control",
+      "inputs": {
+        "command": 32,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe162000000000e5",
+      "scope": "reachable input example",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B10",
+      "builder": "control",
+      "inputs": {
+        "command": 64,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe164000000000c5",
+      "scope": "reachable input example",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B11",
+      "builder": "control",
+      "inputs": {
+        "command": 128,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe16800000000085",
+      "scope": "reachable input example",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B12",
+      "builder": "control",
+      "inputs": {
+        "command": 256,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe16000100000004",
+      "scope": "dormant constant or builder-only boundary case, no live selector claim",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B13",
+      "builder": "control",
+      "inputs": {
+        "command": 512,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe16000200000003",
+      "scope": "reachable input example",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B14",
+      "builder": "control",
+      "inputs": {
+        "command": 1024,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe16000400000001",
+      "scope": "dormant constant or builder-only boundary case, no live selector claim",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B15",
+      "builder": "control",
+      "inputs": {
+        "command": 2048,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe160008000000fd",
+      "scope": "dormant constant or builder-only boundary case, no live selector claim",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B16",
+      "builder": "control",
+      "inputs": {
+        "command": 3072,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe16000c000000f9",
+      "scope": "reachable input example",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B17",
+      "builder": "control",
+      "inputs": {
+        "command": 4096,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe160010000000f5",
+      "scope": "reachable input example",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B18",
+      "builder": "control",
+      "inputs": {
+        "command": 8192,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe160020000000e5",
+      "scope": "reachable input example",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B19",
+      "builder": "control",
+      "inputs": {
+        "command": 16384,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe160040000000c5",
+      "scope": "reachable input example",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B20",
+      "builder": "control",
+      "inputs": {
+        "command": 32768,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe16008000000085",
+      "scope": "reachable input example",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B21",
+      "builder": "control",
+      "inputs": {
+        "command": 65536,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe16000001000004",
+      "scope": "dormant constant or builder-only boundary case, no live selector claim",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B22",
+      "builder": "control",
+      "inputs": {
+        "command": 131072,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe16000002000003",
+      "scope": "reachable input example",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B23",
+      "builder": "control",
+      "inputs": {
+        "command": 262144,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe16000004000001",
+      "scope": "dormant constant or builder-only boundary case, no live selector claim",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B24",
+      "builder": "control",
+      "inputs": {
+        "command": 524288,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe160000080000fd",
+      "scope": "dormant constant or builder-only boundary case, no live selector claim",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B25",
+      "builder": "control",
+      "inputs": {
+        "command": 1048576,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe160000100000f5",
+      "scope": "dormant constant or builder-only boundary case, no live selector claim",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B26",
+      "builder": "control",
+      "inputs": {
+        "command": 2097152,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe160000200000e5",
+      "scope": "dormant constant or builder-only boundary case, no live selector claim",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B27",
+      "builder": "control",
+      "inputs": {
+        "command": 4194304,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe160000400000c5",
+      "scope": "dormant constant or builder-only boundary case, no live selector claim",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B28",
+      "builder": "control",
+      "inputs": {
+        "command": 8388608,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe16000080000085",
+      "scope": "dormant constant or builder-only boundary case, no live selector claim",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B29",
+      "builder": "control",
+      "inputs": {
+        "command": 16777216,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe16000000010004",
+      "scope": "dormant constant or builder-only boundary case, no live selector claim",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B30",
+      "builder": "control",
+      "inputs": {
+        "command": 25165824,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe16000080010084",
+      "scope": "reachable input example",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B31",
+      "builder": "control",
+      "inputs": {
+        "command": 33554432,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe16000000020003",
+      "scope": "dormant constant or builder-only boundary case, no live selector claim",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B32",
+      "builder": "control",
+      "inputs": {
+        "command": 67108864,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe16000000040001",
+      "scope": "reachable input example",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B33",
+      "builder": "control",
+      "inputs": {
+        "command": 134217728,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe160000000800fd",
+      "scope": "reachable input example",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B34",
+      "builder": "control",
+      "inputs": {
+        "command": 268435456,
+        "selector": 0
+      },
+      "expected_bytes": "e6fe160000001000f5",
+      "scope": "reachable input example",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B35",
+      "builder": "control",
+      "inputs": {
+        "command": 305419896,
+        "selector": 165
+      },
+      "expected_bytes": "e6fe1678563412a54c",
+      "scope": "dormant constant or builder-only boundary case, no live selector claim",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B36",
+      "builder": "control",
+      "inputs": {
+        "command": 4294967295,
+        "selector": 255
+      },
+      "expected_bytes": "e6fe16ffffffffff0a",
+      "scope": "dormant constant or builder-only boundary case, no live selector claim",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B37",
+      "builder": "alarm",
+      "inputs": {
+        "hour": 7,
+        "minute": 30,
+        "parameter3": 255,
+        "memory": 14
+      },
+      "expected_bytes": "ed8003071eff0e00000000000000005d",
+      "scope": "reachable input example",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B38",
+      "builder": "alarm",
+      "inputs": {
+        "hour": 23,
+        "minute": 59,
+        "parameter3": 255,
+        "memory": 15
+      },
+      "expected_bytes": "ed8003173bff0f00000000000000002f",
+      "scope": "reachable input example",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B39",
+      "builder": "alarm",
+      "inputs": {
+        "hour": 0,
+        "minute": 0,
+        "parameter3": 0,
+        "memory": 0
+      },
+      "expected_bytes": "ed80030000000000000000000000008f",
+      "scope": "reachable input example",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B40",
+      "builder": "alarm",
+      "inputs": {
+        "hour": 256,
+        "minute": -1,
+        "parameter3": 511,
+        "memory": 270
+      },
+      "expected_bytes": "ed800300ffff0e000000000000000083",
+      "scope": "dormant constant or builder-only boundary case, no live selector claim",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B41",
+      "builder": "current_time",
+      "inputs": {
+        "year": 2026,
+        "month_zero": 10,
+        "day": 10,
+        "hour": 2,
+        "minute": 59,
+        "second": 3
+      },
+      "expected_bytes": "e780017e0a0a023b03c5",
+      "scope": "reachable input example",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali",
+        "work/oracle/output.txt"
+      ]
+    },
+    {
+      "id": "B42",
+      "builder": "current_time",
+      "inputs": {
+        "year": 2024,
+        "month_zero": 0,
+        "day": 1,
+        "hour": 0,
+        "minute": 0,
+        "second": 0
+      },
+      "expected_bytes": "e780017c00010000001a",
+      "scope": "synthetic calendar fields from bytecode, not a device capture",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali"
+      ]
+    },
+    {
+      "id": "B43",
+      "builder": "current_time",
+      "inputs": {
+        "year": 2026,
+        "month_zero": 11,
+        "day": 31,
+        "hour": 23,
+        "minute": 59,
+        "second": 59
+      },
+      "expected_bytes": "e780017e0b1f173b3b62",
+      "scope": "synthetic calendar fields from bytecode, not a device capture",
+      "evidence": [
+        "E-builders",
+        "E-builder-smali"
+      ]
+    }
+  ],
+  "notifications": [
+    {
+      "id": "N01",
+      "chunks": [
+        "00000000000000000000"
+      ],
+      "expected": [
+        {
+          "bytes": "00000000000000000000",
+          "minutes": 0,
+          "selected": 0
+        }
+      ],
+      "evidence": [
+        "E-notify",
+        "E-parser",
+        "E-display-smali"
+      ]
+    },
+    {
+      "id": "N02",
+      "chunks": [
+        "0000000000000000a100"
+      ],
+      "expected": [
+        {
+          "bytes": "0000000000000000a100",
+          "minutes": 10,
+          "selected": 10
+        }
+      ],
+      "evidence": [
+        "E-notify",
+        "E-parser",
+        "E-display-smali"
+      ]
+    },
+    {
+      "id": "N03",
+      "chunks": [
+        "0000000000000000b200"
+      ],
+      "expected": [
+        {
+          "bytes": "0000000000000000b200",
+          "minutes": 20,
+          "selected": 20
+        }
+      ],
+      "evidence": [
+        "E-notify",
+        "E-parser",
+        "E-display-smali"
+      ]
+    },
+    {
+      "id": "N04",
+      "chunks": [
+        "0000000000000000f300"
+      ],
+      "expected": [
+        {
+          "bytes": "0000000000000000f300",
+          "minutes": 30,
+          "selected": 30
+        }
+      ],
+      "evidence": [
+        "E-notify",
+        "E-parser",
+        "E-display-smali"
+      ]
+    },
+    {
+      "id": "N05",
+      "chunks": [
+        "0000000000000000f400"
+      ],
+      "expected": [
+        {
+          "bytes": "0000000000000000f400",
+          "minutes": 0,
+          "selected": 0
+        }
+      ],
+      "evidence": [
+        "E-notify",
+        "E-parser",
+        "E-display-smali"
+      ]
+    },
+    {
+      "id": "N06",
+      "chunks": [
+        "00000000000000000000000000000000"
+      ],
+      "expected": [
+        {
+          "bytes": "00000000000000000000000000000000",
+          "minutes": 0,
+          "selected": 0
+        }
+      ],
+      "evidence": [
+        "E-notify",
+        "E-parser",
+        "E-display-smali"
+      ]
+    },
+    {
+      "id": "N07",
+      "chunks": [
+        "0000000000000000000000000000a100"
+      ],
+      "expected": [
+        {
+          "bytes": "0000000000000000000000000000a100",
+          "minutes": 10,
+          "selected": 10
+        }
+      ],
+      "evidence": [
+        "E-notify",
+        "E-parser",
+        "E-display-smali"
+      ]
+    },
+    {
+      "id": "N08",
+      "chunks": [
+        "0000000000000000000000000000b200"
+      ],
+      "expected": [
+        {
+          "bytes": "0000000000000000000000000000b200",
+          "minutes": 20,
+          "selected": 20
+        }
+      ],
+      "evidence": [
+        "E-notify",
+        "E-parser",
+        "E-display-smali"
+      ]
+    },
+    {
+      "id": "N09",
+      "chunks": [
+        "0000000000000000000000000000f300"
+      ],
+      "expected": [
+        {
+          "bytes": "0000000000000000000000000000f300",
+          "minutes": 30,
+          "selected": 30
+        }
+      ],
+      "evidence": [
+        "E-notify",
+        "E-parser",
+        "E-display-smali"
+      ]
+    },
+    {
+      "id": "N10",
+      "chunks": [
+        "0000000000000000000000000000f400"
+      ],
+      "expected": [
+        {
+          "bytes": "0000000000000000000000000000f400",
+          "minutes": 0,
+          "selected": 0
+        }
+      ],
+      "evidence": [
+        "E-notify",
+        "E-parser",
+        "E-display-smali"
+      ]
+    },
+    {
+      "id": "N11",
+      "chunks": [
+        "0000000000000000000000000000000000000000000000"
+      ],
+      "expected": [
+        {
+          "bytes": "0000000000000000000000000000000000000000000000",
+          "minutes": 0,
+          "selected": 0
+        }
+      ],
+      "evidence": [
+        "E-notify",
+        "E-parser",
+        "E-display-smali"
+      ]
+    },
+    {
+      "id": "N12",
+      "chunks": [
+        "00000000000000000000000000000000000000a1000000"
+      ],
+      "expected": [
+        {
+          "bytes": "00000000000000000000000000000000000000a1000000",
+          "minutes": 10,
+          "selected": 10
+        }
+      ],
+      "evidence": [
+        "E-notify",
+        "E-parser",
+        "E-display-smali"
+      ]
+    },
+    {
+      "id": "N13",
+      "chunks": [
+        "00000000000000000000000000000000000000b2000000"
+      ],
+      "expected": [
+        {
+          "bytes": "00000000000000000000000000000000000000b2000000",
+          "minutes": 20,
+          "selected": 20
+        }
+      ],
+      "evidence": [
+        "E-notify",
+        "E-parser",
+        "E-display-smali"
+      ]
+    },
+    {
+      "id": "N14",
+      "chunks": [
+        "00000000000000000000000000000000000000f3000000"
+      ],
+      "expected": [
+        {
+          "bytes": "00000000000000000000000000000000000000f3000000",
+          "minutes": 30,
+          "selected": 30
+        }
+      ],
+      "evidence": [
+        "E-notify",
+        "E-parser",
+        "E-display-smali"
+      ]
+    },
+    {
+      "id": "N15",
+      "chunks": [
+        "00000000000000000000000000000000000000f4000000"
+      ],
+      "expected": [
+        {
+          "bytes": "00000000000000000000000000000000000000f4000000",
+          "minutes": 0,
+          "selected": 0
+        }
+      ],
+      "evidence": [
+        "E-notify",
+        "E-parser",
+        "E-display-smali"
+      ]
+    },
+    {
+      "id": "N16",
+      "chunks": [
+        "f4fe160000000000000000000000000000000002",
+        "000000",
+        "000000"
+      ],
+      "expected": [
+        {
+          "bytes": "f4fe160000000000000000000000000000000002000000",
+          "minutes": 20,
+          "selected": 20
+        },
+        {
+          "bytes": "f4fe160000000000000000000000000000000002000000",
+          "minutes": 20,
+          "selected": 20
+        }
+      ],
+      "evidence": [
+        "E-notify",
+        "E-parser"
+      ]
+    },
+    {
+      "id": "N17",
+      "chunks": [
+        "000000",
+        null,
+        ""
+      ],
+      "expected": [],
+      "evidence": [
+        "E-notify"
+      ]
+    },
+    {
+      "id": "N18",
+      "chunks": [
+        "f4fe1600000000000000"
+      ],
+      "expected": [],
+      "evidence": [
+        "E-notify"
+      ]
+    },
+    {
+      "id": "N19",
+      "chunks": [
+        "000000000000000000000000000000000000000000"
+      ],
+      "expected": [
+        {
+          "bytes": "000000000000000000000000000000000000000000",
+          "minutes": 0,
+          "selected": 0
+        }
+      ],
+      "evidence": [
+        "E-notify",
+        "E-parser"
+      ]
+    },
+    {
+      "id": "N20",
+      "chunks": [
+        "f4fe160000000000000000000000000000000002",
+        ""
+      ],
+      "expected": [
+        {
+          "bytes": "f4fe160000000000000000000000000000000002",
+          "minutes": 0,
+          "selected": 0
+        }
+      ],
+      "evidence": [
+        "E-notify",
+        "E-parser"
+      ]
+    }
+  ],
+  "notice": "All examples are app-derived or synthetic branch fixtures; no hardware traffic supplied."
+}

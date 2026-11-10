@@ -4341,7 +4341,7 @@ class TestOfflineSafeBedTypes:
                 child[CONF_BLE_DEVICE_NAME] = "SealyMF Base"
             elif bed_type == "motomotion":
                 child[CONF_BLE_DEVICE_NAME] = "SOFA000001S000H"
-            elif bed_type == "isleep":
+            elif bed_type in ("isleep", "rize"):
                 child.update({"product_type": 129, "kaidi_room_id": 10001, "kaidi_sofa_acu_no": 2})
             elif bed_type == "furnimove":
                 child["furnimove_remote"] = "00000"

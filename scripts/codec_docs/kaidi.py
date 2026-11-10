@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections import defaultdict
 
 from custom_components.adjustable_bed.codec import kaidi as codec
-from custom_components.adjustable_bed.const import BED_TYPE_ISLEEP, BED_TYPE_KAIDI
+from custom_components.adjustable_bed.const import BED_TYPE_ISLEEP, BED_TYPE_KAIDI, BED_TYPE_RIZE
 from custom_components.adjustable_bed.profiles import kaidi as profiles
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
@@ -162,6 +162,9 @@ def render_kaidi_profiles() -> str:
             "one press, release after the hold",
         )
     )
+    rows.append(("Rize Beds", f"`{BED_TYPE_RIZE}`", "explicit app choice",
+                 listed(tuple(profiles.RIZE_PRODUCTS)), "3",
+                 f"one start, release after hold; writes {profiles.RizeProfile.write_spacing_s * 1000:g} ms apart"))
     return _block(
         _table(
             ("Profile", "Bed type", "Protocol variant", "Products", "Memory slots", "Movement"),
@@ -286,12 +289,47 @@ def render_kaidi_isleep_commands() -> str:
     return _block(_table(("Command", "Left / single", "Right", "Both"), rows))
 
 
+def render_kaidi_rize_commands() -> str:
+    commands = _table(
+        ("Control", "Left / single payload", "Right payload", "Both payload"),
+        ((action, *(_hex(codec.payload(code)) for code in codes))
+         for action, codes in profiles.RIZE_COMMANDS.items()),
+    )
+    products = _table(
+        ("Product", "Name", "Layout", "HA axes (touch or voice)", "Native sides", "Default programming"),
+        ((str(product), name, str(profile.layout), ", ".join(profile.axes),
+          "descriptor other than 2" if product in (130, 141) else "none",
+          ", ".join(profile.programmable_presets) or "none")
+         for product, name in profiles.RIZE_PRODUCTS.items()
+         for profile in (profiles.RizeProfile(product, 10000, 2),)),
+    )
+    specials = _table(
+        ("Operation", "Payload"),
+        (*( (f"Program {preset}", _hex(codec.payload(167, parameter)))
+            for preset, parameter in profiles.RIZE_DEFAULT_PARAMETERS.items()),
+         ("Remedy Pro 4 mode4 start", _hex(codec.payload(167, 1, 1))),
+         ("Remedy Pro 4 mode4 cancel", _hex(codec.payload(167, 1, 4))),
+         ("Enrollment acknowledgment", _hex(codec.payload(profiles.RizeProfile.enroll_ack)))),
+    )
+    timing = _table(
+        ("Setting", "Value"),
+        (("Write spacing", f"{profiles.RizeProfile.write_spacing_s * 1000:g} ms"),
+         ("Power query on live extended-product link", f"{profiles.RizeProfile.power_poll_s:g} s"),
+         ("Enrollment response ceiling", f"{profiles.RizeProfile.enroll_wait_s} s")),
+    )
+    return _block("##### Products", products, "##### Command payloads", commands,
+                  "Strength actions replace parameter1 with 0–100. Other ordinary commands reset both parameters to zero. "
+                  "Right/Both columns require a native-side product. Extended axes, reading, leisure, motion and power are single-side commands.",
+                  "##### Special operations", specials, "##### Timing", timing)
+
+
 def bed_types() -> dict[str, tuple[str, ...]]:
     """Bed types per profile, as the profile summary lists them."""
     return {
         **dict.fromkeys(profiles.SEAT_PROFILES, (BED_TYPE_KAIDI,)),
         profiles.FLOYD.key: (BED_TYPE_KAIDI,),
         profiles.IsleepProfile.key: (BED_TYPE_ISLEEP,),
+        profiles.RizeProfile.key: (BED_TYPE_RIZE,),
     }
 
 
@@ -302,4 +340,5 @@ BLOCKS: list[Block] = [
     (GUIDE, "kaidi-seat-commands", render_kaidi_seat_commands),
     (GUIDE, "kaidi-floyd-commands", render_kaidi_floyd_commands),
     (GUIDE, "kaidi-isleep-commands", render_kaidi_isleep_commands),
+    (GUIDE, "kaidi-rize-commands", render_kaidi_rize_commands),
 ]

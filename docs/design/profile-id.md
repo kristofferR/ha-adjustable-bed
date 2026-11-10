@@ -191,3 +191,8 @@ test, map the alias to the canonical id in `resolve_profile_id`, bump
 `PROFILE_RESOLVER_VERSION`, and list the merge on the v5 breaking changes page
 ([#783](https://github.com/kristofferR/ha-adjustable-bed/issues/783)). Setup then
 re-derives the stored id; the saved fields still stay.
+
+The explicit `adjustable_bed` app route (unit087) keeps its own identity from
+`adjustable_lumbar` and `okin_64bit`: the STAR-manufacturer route has distinct
+speech movement packets and bounded execution. Shared long-table literals do
+not make their reachable features or configuration equivalent.

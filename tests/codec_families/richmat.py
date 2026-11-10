@@ -7,8 +7,9 @@ import re
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.profiles.casper import CasperProfile
 from custom_components.adjustable_bed.profiles.hush import HushProfile
+from custom_components.adjustable_bed.profiles.luuna import LuunaProfile
 from custom_components.adjustable_bed.profiles.richmat import RICHMAT_CLASSIC, RichmatProfile
-from tests import casper_base_vectors, hush_vectors
+from tests import casper_base_vectors, hush_vectors, luuna_vectors
 from tests.codec_families import CodecFamily, CodecGuide
 from tests.richmat_vectors import FROZEN_FRAMES
 
@@ -19,17 +20,21 @@ _VARIANTS = {
     "richmat_nordic": const.RICHMAT_VARIANT_NORDIC,
     "richmat_prefix55": const.RICHMAT_VARIANT_PREFIX55,
     "richmat_prefixaa": const.RICHMAT_VARIANT_PREFIXAA,
+    **{f"bedtech_{model}": model for model in ("bt2000", "bt2500", "bt3000", "bt3000fh", "bt6500", "btx4", "btx4fh", "btx5", "btx5fh")},
     "hjbed": "hj_bedbjrn",
+    "galaxy": "6BRM",
+    "richmat_app": "6BRM",
     "goodvibe": "selector-0001",
+    "mlily": "6brm",
     **{f"richmat_classic_{app}": app for app in RICHMAT_CLASSIC},
 }
 # The Casper Base and Hush Base products are their bed type's protocol variant.
-_PRODUCT_VARIANTS = frozenset({const.BED_TYPE_CASPER_BASE, const.BED_TYPE_HUSH_BASE})
+_PRODUCT_VARIANTS = frozenset({const.BED_TYPE_CASPER_BASE, const.BED_TYPE_HUSH_BASE, const.BED_TYPE_LUUNA})
 _FROZEN = frozenset().union(
     *FROZEN_FRAMES.values(),
     *(
         vectors.SHARED_FRAMES.union(*vectors.FROZEN_FRAMES.values())
-        for vectors in (casper_base_vectors, hush_vectors)
+        for vectors in (casper_base_vectors, hush_vectors, luuna_vectors)
     ),
 )
 
@@ -58,6 +63,7 @@ FAMILY = CodecFamily(
         RichmatProfile: FROZEN_FRAMES,
         CasperProfile: casper_base_vectors.FROZEN_FRAMES,
         HushProfile: hush_vectors.FROZEN_FRAMES,
+        LuunaProfile: luuna_vectors.FROZEN_FRAMES,
     },
     bed_types=frozenset(
         {
@@ -65,9 +71,13 @@ FAMILY = CodecFamily(
             "bedtech",
             "casper_base",
             "eshine",
+            "galaxy",
             "goodvibe",
+            "mlily",
             "hjbed",
+            "richmat_app",
             "hush_base",
+            "luuna",
             "leggett_lp_legacy",
             "leggett_wilinke",
             "richmat",

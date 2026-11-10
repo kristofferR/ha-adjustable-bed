@@ -7,9 +7,11 @@ from custom_components.adjustable_bed.profiles.kaidi import (
     FloydProfile,
     IsleepProfile,
     KaidiCommandProfile,
+    RizeProfile,
 )
 from tests.codec_families import CodecFamily, CodecGuide, spelled_frames
 from tests.kaidi_vectors import FROZEN_PAYLOADS, SESSION_FRAMES
+from tests.rize_vectors import FROZEN_PAYLOADS as RIZE_PAYLOADS
 
 _SEAT_KEYS = ("seat_1", "seat_2", "seat_3", "seat_1_2")
 
@@ -18,8 +20,9 @@ FAMILY = CodecFamily(
         KaidiCommandProfile: {key: FROZEN_PAYLOADS[key] for key in _SEAT_KEYS},
         FloydProfile: {"floyd": FROZEN_PAYLOADS["floyd"]},
         IsleepProfile: {"isleep": FROZEN_PAYLOADS["isleep"]},
+        RizeProfile: {"rize": RIZE_PAYLOADS},
     },
-    bed_types=frozenset({const.BED_TYPE_ISLEEP, const.BED_TYPE_KAIDI}),
+    bed_types=frozenset({const.BED_TYPE_ISLEEP, const.BED_TYPE_KAIDI, const.BED_TYPE_RIZE}),
     guide=CodecGuide(
         path="docs/beds/kaidi.md",
         # Complete session and control frames; templates and opcodes are not frames.
@@ -27,6 +30,7 @@ FAMILY = CodecFamily(
         frozen=frozenset(frame for _, _, frame in SESSION_FRAMES),
         variant=lambda key, bed_type: key if bed_type == const.BED_TYPE_KAIDI else None,
         entry_data={
+            const.BED_TYPE_RIZE: {const.CONF_PRODUCT_TYPE: 129, const.CONF_KAIDI_ROOM_ID: 10000},
             const.BED_TYPE_ISLEEP: {const.CONF_PRODUCT_TYPE: 129, const.CONF_KAIDI_ROOM_ID: 10000}
         },
     ),

@@ -162,6 +162,9 @@
       "local_name": "200U*"
     },
     {
+      "local_name": "200i*"
+    },
+    {
       "local_name": "208A14*"
     },
     {
@@ -172,6 +175,9 @@
     },
     {
       "local_name": "400I*"
+    },
+    {
+      "local_name": "400i*"
     },
     {
       "local_name": "6BRM*"
@@ -189,7 +195,16 @@
       "local_name": "6FRM*"
     },
     {
+      "local_name": "6HRM*"
+    },
+    {
+      "local_name": "7IRM*"
+    },
+    {
       "local_name": "800I*"
+    },
+    {
+      "local_name": "800i*"
     },
     {
       "local_name": "A0RM*"
@@ -228,7 +243,13 @@
       "local_name": "A7RM*"
     },
     {
+      "local_name": "A7RN*"
+    },
+    {
       "local_name": "A8RM*"
+    },
+    {
+      "local_name": "A8RN*"
     },
     {
       "local_name": "A9RM*"
@@ -258,10 +279,19 @@
       "local_name": "ADRM*"
     },
     {
+      "local_name": "ADRN*"
+    },
+    {
       "local_name": "AERM*"
     },
     {
+      "local_name": "AERN*"
+    },
+    {
       "local_name": "AFRM*"
+    },
+    {
+      "local_name": "AFRN*"
     },
     {
       "local_name": "AGRM*"
@@ -288,10 +318,19 @@
       "local_name": "AKRM*"
     },
     {
+      "local_name": "AKRN*"
+    },
+    {
       "local_name": "ALRM*"
     },
     {
+      "local_name": "ALRN*"
+    },
+    {
       "local_name": "AMRM*"
+    },
+    {
+      "local_name": "AMRN*"
     },
     {
       "local_name": "ANRM*"
@@ -318,6 +357,9 @@
       "local_name": "ARRM*"
     },
     {
+      "local_name": "ARRN*"
+    },
+    {
       "local_name": "ASRM*"
     },
     {
@@ -325,6 +367,9 @@
     },
     {
       "local_name": "ATRM*"
+    },
+    {
+      "local_name": "ATRN*"
     },
     {
       "local_name": "AURM*"
@@ -337,6 +382,9 @@
     },
     {
       "local_name": "AWRM*"
+    },
+    {
+      "local_name": "AWRN*"
     },
     {
       "local_name": "AXRM*"
@@ -363,6 +411,9 @@
       "local_name": "B1RM*"
     },
     {
+      "local_name": "B1RN*"
+    },
+    {
       "local_name": "B2RM*"
     },
     {
@@ -372,7 +423,13 @@
       "local_name": "B3RM*"
     },
     {
+      "local_name": "B3RN*"
+    },
+    {
       "local_name": "B4RM*"
+    },
+    {
+      "local_name": "B4RN*"
     },
     {
       "local_name": "B5RM*"
@@ -382,6 +439,9 @@
     },
     {
       "local_name": "B6RM*"
+    },
+    {
+      "local_name": "B6RU*"
     },
     {
       "local_name": "B7RM*"
@@ -402,10 +462,16 @@
       "local_name": "B9RM*"
     },
     {
+      "local_name": "B9RN*"
+    },
+    {
       "local_name": "B9TT*"
     },
     {
       "local_name": "BARM*"
+    },
+    {
+      "local_name": "BARN*"
     },
     {
       "local_name": "BBRM*"
@@ -417,7 +483,13 @@
       "local_name": "BCRM*"
     },
     {
+      "local_name": "BCRN*"
+    },
+    {
       "local_name": "BDRM*"
+    },
+    {
+      "local_name": "BDRN*"
     },
     {
       "local_name": "BED-*"
@@ -432,16 +504,31 @@
       "local_name": "BERM*"
     },
     {
+      "local_name": "BERN*"
+    },
+    {
       "local_name": "BFRM*"
+    },
+    {
+      "local_name": "BFRN*"
     },
     {
       "local_name": "BGRM*"
     },
     {
+      "local_name": "BGRN*"
+    },
+    {
       "local_name": "BHRM*"
     },
     {
+      "local_name": "BHRN*"
+    },
+    {
       "local_name": "BIRM*"
+    },
+    {
+      "local_name": "BIRN*"
     },
     {
       "local_name": "BJRM*"
@@ -450,19 +537,37 @@
       "local_name": "BKRM*"
     },
     {
+      "local_name": "BKRN*"
+    },
+    {
       "local_name": "BLRM*"
+    },
+    {
+      "local_name": "BLRN*"
     },
     {
       "local_name": "BMRM*"
     },
     {
+      "local_name": "BMRN*"
+    },
+    {
       "local_name": "BNRM*"
+    },
+    {
+      "local_name": "BNRN*"
     },
     {
       "local_name": "BORM*"
     },
     {
+      "local_name": "BORN*"
+    },
+    {
       "local_name": "BPRM*"
+    },
+    {
+      "local_name": "BPRN*"
     },
     {
       "local_name": "BQRM*"
@@ -471,7 +576,13 @@
       "local_name": "BRRM*"
     },
     {
+      "local_name": "BRRN*"
+    },
+    {
       "local_name": "BSRM*"
+    },
+    {
+      "local_name": "BSRN*"
     },
     {
       "local_name": "BT201*",
@@ -481,10 +592,19 @@
       "local_name": "BTRM*"
     },
     {
+      "local_name": "BTRN*"
+    },
+    {
       "local_name": "BURM*"
     },
     {
+      "local_name": "BURN*"
+    },
+    {
       "local_name": "BVRM*"
+    },
+    {
+      "local_name": "BVRN*"
     },
     {
       "local_name": "BWRM*"
@@ -503,6 +623,9 @@
     },
     {
       "local_name": "BZRM*"
+    },
+    {
+      "local_name": "BZRN*"
     },
     {
       "local_name": "Bed*"
@@ -526,13 +649,25 @@
       "local_name": "C3RM*"
     },
     {
+      "local_name": "C3RN*"
+    },
+    {
       "local_name": "C4RM*"
+    },
+    {
+      "local_name": "C4RN*"
     },
     {
       "local_name": "C5RM*"
     },
     {
+      "local_name": "C5RN*"
+    },
+    {
       "local_name": "C6RM*"
+    },
+    {
+      "local_name": "C6RN*"
     },
     {
       "local_name": "C7RM*"
@@ -580,10 +715,19 @@
       "local_name": "CERM*"
     },
     {
+      "local_name": "CERN*"
+    },
+    {
+      "local_name": "CFRM*"
+    },
+    {
       "local_name": "CFRN*"
     },
     {
       "local_name": "CGRM*"
+    },
+    {
+      "local_name": "CGRN*"
     },
     {
       "local_name": "CHRM*"
@@ -595,7 +739,13 @@
       "local_name": "CIRM*"
     },
     {
+      "local_name": "CIRN*"
+    },
+    {
       "local_name": "CJRM*"
+    },
+    {
+      "local_name": "CJRN*"
     },
     {
       "local_name": "CKRM*"
@@ -614,6 +764,9 @@
     },
     {
       "local_name": "CNRM*"
+    },
+    {
+      "local_name": "CNRN*"
     },
     {
       "local_name": "COOL*"
@@ -637,13 +790,25 @@
       "local_name": "CRRM*"
     },
     {
+      "local_name": "CRRN*"
+    },
+    {
       "local_name": "CSRM*"
+    },
+    {
+      "local_name": "CSRN*"
     },
     {
       "local_name": "CTRM*"
     },
     {
+      "local_name": "CTRN*"
+    },
+    {
       "local_name": "CURM*"
+    },
+    {
+      "local_name": "CURN*"
     },
     {
       "local_name": "CVRM*"
@@ -653,6 +818,9 @@
     },
     {
       "local_name": "CWRM*"
+    },
+    {
+      "local_name": "CWRN*"
     },
     {
       "local_name": "CXRM*"
@@ -670,6 +838,9 @@
       "local_name": "CZRM*"
     },
     {
+      "local_name": "CZRN*"
+    },
+    {
       "local_name": "Cool*"
     },
     {
@@ -679,10 +850,19 @@
       "local_name": "D1RM*"
     },
     {
+      "local_name": "D1RN*"
+    },
+    {
       "local_name": "D2RM*"
     },
     {
+      "local_name": "D2RN*"
+    },
+    {
       "local_name": "D3RM*"
+    },
+    {
+      "local_name": "D3RN*"
     },
     {
       "local_name": "D4RM*"
@@ -706,7 +886,13 @@
       "local_name": "D9RM*"
     },
     {
+      "local_name": "D9RN*"
+    },
+    {
       "local_name": "DARM*"
+    },
+    {
+      "local_name": "DARN*"
     },
     {
       "local_name": "DBRM*"
@@ -724,7 +910,13 @@
       "local_name": "DDRM*"
     },
     {
+      "local_name": "DDRN*"
+    },
+    {
       "local_name": "DERM*"
+    },
+    {
+      "local_name": "DERN*"
     },
     {
       "local_name": "DFRM*"
@@ -748,13 +940,25 @@
       "local_name": "DIRM*"
     },
     {
+      "local_name": "DIRN*"
+    },
+    {
       "local_name": "DJRM*"
+    },
+    {
+      "local_name": "DJRN*"
     },
     {
       "local_name": "DKRM*"
     },
     {
+      "local_name": "DKRN*"
+    },
+    {
       "local_name": "DLRM*"
+    },
+    {
+      "local_name": "DLRN*"
     },
     {
       "local_name": "DMRM*"
@@ -766,13 +970,28 @@
       "local_name": "DNRM*"
     },
     {
+      "local_name": "DNRN*"
+    },
+    {
+      "local_name": "DORN*"
+    },
+    {
       "local_name": "DPRM*"
+    },
+    {
+      "local_name": "DPRN*"
     },
     {
       "local_name": "DQRM*"
     },
     {
+      "local_name": "DQRN*"
+    },
+    {
       "local_name": "DRRM*"
+    },
+    {
+      "local_name": "DRRN*"
     },
     {
       "local_name": "DSRM*"
@@ -784,10 +1003,19 @@
       "local_name": "DTRM*"
     },
     {
+      "local_name": "DTRN*"
+    },
+    {
       "local_name": "DURM*"
     },
     {
+      "local_name": "DURN*"
+    },
+    {
       "local_name": "DVRM*"
+    },
+    {
+      "local_name": "DVRN*"
     },
     {
       "local_name": "DWRM*"
@@ -799,10 +1027,19 @@
       "local_name": "DXRM*"
     },
     {
+      "local_name": "DXRN*"
+    },
+    {
       "local_name": "DYRM*"
     },
     {
+      "local_name": "DYRN*"
+    },
+    {
       "local_name": "DZRM*"
+    },
+    {
+      "local_name": "DZRN*"
     },
     {
       "local_name": "E0RM*"
@@ -811,13 +1048,25 @@
       "local_name": "E1RM*"
     },
     {
+      "local_name": "E1RN*"
+    },
+    {
       "local_name": "E2RM*"
+    },
+    {
+      "local_name": "E2RN*"
     },
     {
       "local_name": "E3RM*"
     },
     {
+      "local_name": "E3RN*"
+    },
+    {
       "local_name": "E4RM*"
+    },
+    {
+      "local_name": "E4RN*"
     },
     {
       "local_name": "E5RM*"
@@ -835,22 +1084,49 @@
       "local_name": "E9RM*"
     },
     {
+      "local_name": "EARM*"
+    },
+    {
+      "local_name": "EBRM*"
+    },
+    {
       "local_name": "ECRM*"
     },
     {
       "local_name": "EDRM*"
     },
     {
+      "local_name": "EERM*"
+    },
+    {
       "local_name": "EFRM*"
+    },
+    {
+      "local_name": "EFRN*"
     },
     {
       "local_name": "EGRM*"
     },
     {
+      "local_name": "EGRN*"
+    },
+    {
+      "local_name": "EHRM*"
+    },
+    {
+      "local_name": "EHRN*"
+    },
+    {
       "local_name": "EIRM*"
     },
     {
+      "local_name": "EIRN*"
+    },
+    {
       "local_name": "EJRM*"
+    },
+    {
+      "local_name": "EJRN*"
     },
     {
       "local_name": "EKRM*"
@@ -862,10 +1138,22 @@
       "local_name": "ELEVATE*"
     },
     {
+      "local_name": "ELRM*"
+    },
+    {
+      "local_name": "ELRN*"
+    },
+    {
       "local_name": "EMRM*"
     },
     {
+      "local_name": "EMRN*"
+    },
+    {
       "local_name": "ENRM*"
+    },
+    {
+      "local_name": "ENRN*"
     },
     {
       "local_name": "EORM*"
@@ -875,6 +1163,9 @@
     },
     {
       "local_name": "EPRM*"
+    },
+    {
+      "local_name": "EPRN*"
     },
     {
       "local_name": "EQRM*"
@@ -910,6 +1201,9 @@
       "local_name": "EWRM*"
     },
     {
+      "local_name": "EWRN*"
+    },
+    {
       "local_name": "EXRM*"
     },
     {
@@ -925,13 +1219,22 @@
       "local_name": "EZRM*"
     },
     {
+      "local_name": "EZRN*"
+    },
+    {
       "local_name": "F0RM*"
     },
     {
       "local_name": "F1RM*"
     },
     {
+      "local_name": "F1RN*"
+    },
+    {
       "local_name": "F2RM*"
+    },
+    {
+      "local_name": "F2RN*"
     },
     {
       "local_name": "F3RM*"
@@ -949,22 +1252,40 @@
       "local_name": "F5RM*"
     },
     {
+      "local_name": "F5RN*"
+    },
+    {
       "local_name": "F6RM*"
     },
     {
       "local_name": "F7RM*"
     },
     {
+      "local_name": "F7RN*"
+    },
+    {
       "local_name": "F8RM*"
+    },
+    {
+      "local_name": "F8RN*"
     },
     {
       "local_name": "F9RM*"
     },
     {
+      "local_name": "F9RN*"
+    },
+    {
       "local_name": "FARM*"
     },
     {
+      "local_name": "FARN*"
+    },
+    {
       "local_name": "FBRM*"
+    },
+    {
+      "local_name": "FBRN*"
     },
     {
       "local_name": "FC200*"
@@ -979,7 +1300,13 @@
       "local_name": "FDRM*"
     },
     {
+      "local_name": "FDRN*"
+    },
+    {
       "local_name": "FERM*"
+    },
+    {
+      "local_name": "FERN*"
     },
     {
       "local_name": "FFRM*"
@@ -991,7 +1318,13 @@
       "local_name": "FGRM*"
     },
     {
+      "local_name": "FGRN*"
+    },
+    {
       "local_name": "FHRM*"
+    },
+    {
+      "local_name": "FHRN*"
     },
     {
       "local_name": "FIRM*"
@@ -1000,16 +1333,31 @@
       "local_name": "FJRM*"
     },
     {
+      "local_name": "FJRN*"
+    },
+    {
       "local_name": "FKRM*"
+    },
+    {
+      "local_name": "FKRN*"
     },
     {
       "local_name": "FLRM*"
     },
     {
+      "local_name": "FLRN*"
+    },
+    {
       "local_name": "FMRM*"
     },
     {
+      "local_name": "FMRN*"
+    },
+    {
       "local_name": "FNRM*"
+    },
+    {
+      "local_name": "FNRN*"
     },
     {
       "local_name": "FPRM*"
@@ -1021,10 +1369,19 @@
       "local_name": "FQRM*"
     },
     {
+      "local_name": "FQRN*"
+    },
+    {
       "local_name": "FRRM*"
     },
     {
+      "local_name": "FRRN*"
+    },
+    {
       "local_name": "FSRM*"
+    },
+    {
+      "local_name": "FSRN*"
     },
     {
       "local_name": "FTRM*"
@@ -1042,16 +1399,31 @@
       "local_name": "FVRM*"
     },
     {
+      "local_name": "FVRN*"
+    },
+    {
       "local_name": "FWRM*"
+    },
+    {
+      "local_name": "FWRN*"
     },
     {
       "local_name": "FXRM*"
     },
     {
+      "local_name": "FXRN*"
+    },
+    {
       "local_name": "FYRM*"
     },
     {
+      "local_name": "FYRN*"
+    },
+    {
       "local_name": "FZRM*"
+    },
+    {
+      "local_name": "FZRN*"
     },
     {
       "local_name": "G1RN*"
@@ -1066,7 +1438,13 @@
       "local_name": "G3RM*"
     },
     {
+      "local_name": "G3RN*"
+    },
+    {
       "local_name": "G4RM*"
+    },
+    {
+      "local_name": "G4RN*"
     },
     {
       "local_name": "G5RM*"
@@ -1088,6 +1466,9 @@
     },
     {
       "local_name": "G8RM*"
+    },
+    {
+      "local_name": "G8RN*"
     },
     {
       "local_name": "G9RM*"
@@ -1117,6 +1498,9 @@
       "local_name": "GDRM*"
     },
     {
+      "local_name": "GDRN*"
+    },
+    {
       "local_name": "GERM*"
     },
     {
@@ -1132,19 +1516,37 @@
       "local_name": "GGRM*"
     },
     {
+      "local_name": "GGRN*"
+    },
+    {
       "local_name": "GHRM*"
+    },
+    {
+      "local_name": "GHRN*"
     },
     {
       "local_name": "GJRM*"
     },
     {
+      "local_name": "GJRN*"
+    },
+    {
       "local_name": "GKRM*"
+    },
+    {
+      "local_name": "GKRN*"
+    },
+    {
+      "local_name": "GLRM*"
     },
     {
       "local_name": "GLRN*"
     },
     {
       "local_name": "GMRM*"
+    },
+    {
+      "local_name": "GMRN*"
     },
     {
       "local_name": "GNRM*"
@@ -1159,6 +1561,12 @@
       "local_name": "GPRM*"
     },
     {
+      "local_name": "GQRM*"
+    },
+    {
+      "local_name": "GQRN*"
+    },
+    {
       "local_name": "GRRM*"
     },
     {
@@ -1168,13 +1576,28 @@
       "local_name": "GSRM*"
     },
     {
+      "local_name": "GSRN*"
+    },
+    {
       "local_name": "GTRM*"
+    },
+    {
+      "local_name": "GTRN*"
     },
     {
       "local_name": "GURM*"
     },
     {
+      "local_name": "GURN*"
+    },
+    {
+      "local_name": "GVRN*"
+    },
+    {
       "local_name": "GWRM*"
+    },
+    {
+      "local_name": "GWRN*"
     },
     {
       "local_name": "GXRM*"
@@ -1186,6 +1609,9 @@
       "local_name": "GYRM*"
     },
     {
+      "local_name": "GYRN*"
+    },
+    {
       "local_name": "GZRM*"
     },
     {
@@ -1195,7 +1621,19 @@
       "local_name": "H2RM*"
     },
     {
+      "local_name": "H2RN*"
+    },
+    {
       "local_name": "H3RM*"
+    },
+    {
+      "local_name": "H3RN*"
+    },
+    {
+      "local_name": "H4RM*"
+    },
+    {
+      "local_name": "H4RN*"
     },
     {
       "local_name": "H5RM*"
@@ -1207,13 +1645,25 @@
       "local_name": "H7RM*"
     },
     {
+      "local_name": "H7RN*"
+    },
+    {
       "local_name": "H8RM*"
+    },
+    {
+      "local_name": "H8RN*"
     },
     {
       "local_name": "H9RM*"
     },
     {
+      "local_name": "H9RN*"
+    },
+    {
       "local_name": "HARM*"
+    },
+    {
+      "local_name": "HARN*"
     },
     {
       "local_name": "HBRM*"
@@ -1228,22 +1678,46 @@
       "local_name": "HDRM*"
     },
     {
+      "local_name": "HDRN*"
+    },
+    {
       "local_name": "HERM*"
+    },
+    {
+      "local_name": "HERN*"
+    },
+    {
+      "local_name": "HFRN*"
+    },
+    {
+      "local_name": "HGRN*"
     },
     {
       "local_name": "HHC*"
     },
     {
+      "local_name": "HHRN*"
+    },
+    {
       "local_name": "HJ-*"
     },
     {
+      "local_name": "HJRN*"
+    },
+    {
       "local_name": "HKRM*"
+    },
+    {
+      "local_name": "HKRN*"
     },
     {
       "local_name": "HLRM*"
     },
     {
       "local_name": "HMRM*"
+    },
+    {
+      "local_name": "HMRN*"
     },
     {
       "local_name": "HNRM*"
@@ -1264,6 +1738,9 @@
       "local_name": "HRRM*"
     },
     {
+      "local_name": "HSRM*"
+    },
+    {
       "local_name": "HSRN*"
     },
     {
@@ -1282,13 +1759,22 @@
       "local_name": "HWRM*"
     },
     {
+      "local_name": "HWRN*"
+    },
+    {
       "local_name": "HXRM*"
     },
     {
       "local_name": "HYRM*"
     },
     {
+      "local_name": "HYRN*"
+    },
+    {
       "local_name": "HZRM*"
+    },
+    {
+      "local_name": "HZRN*"
     },
     {
       "local_name": "I0RM*"
@@ -1387,7 +1873,13 @@
       "local_name": "J3RM*"
     },
     {
+      "local_name": "J3RN*"
+    },
+    {
       "local_name": "J4RM*"
+    },
+    {
+      "local_name": "J4RN*"
     },
     {
       "local_name": "J5RM*"
@@ -1399,16 +1891,37 @@
       "local_name": "J6RM*"
     },
     {
+      "local_name": "J6RN*"
+    },
+    {
       "local_name": "J7RM*"
     },
     {
+      "local_name": "J7RN*"
+    },
+    {
+      "local_name": "J8RM*"
+    },
+    {
+      "local_name": "J8RN*"
+    },
+    {
       "local_name": "J9RM*"
+    },
+    {
+      "local_name": "J9RN*"
+    },
+    {
+      "local_name": "JARN*"
     },
     {
       "local_name": "JBRM*"
     },
     {
       "local_name": "JBRN*"
+    },
+    {
+      "local_name": "JCRM*"
     },
     {
       "local_name": "JCRN*"
@@ -1421,6 +1934,9 @@
     },
     {
       "local_name": "JERM*"
+    },
+    {
+      "local_name": "JERN*"
     },
     {
       "local_name": "JFRM*"
@@ -1441,13 +1957,22 @@
       "local_name": "JLRM*"
     },
     {
+      "local_name": "JLRN*"
+    },
+    {
       "local_name": "JMC*"
     },
     {
       "local_name": "JMRM*"
     },
     {
+      "local_name": "JMRN*"
+    },
+    {
       "local_name": "JNRM*"
+    },
+    {
+      "local_name": "JNRN*"
     },
     {
       "local_name": "JPRM*"
@@ -1459,28 +1984,82 @@
       "local_name": "JQRM*"
     },
     {
+      "local_name": "JQRN*"
+    },
+    {
       "local_name": "JRRM*"
+    },
+    {
+      "local_name": "JRRN*"
     },
     {
       "local_name": "JSRM*"
     },
     {
+      "local_name": "JSRN*"
+    },
+    {
+      "local_name": "JTRM*"
+    },
+    {
       "local_name": "JTRN*"
+    },
+    {
+      "local_name": "JURM*"
     },
     {
       "local_name": "JURN*"
     },
     {
+      "local_name": "JVRM*"
+    },
+    {
       "local_name": "JWRM*"
+    },
+    {
+      "local_name": "JWRN*"
+    },
+    {
+      "local_name": "JXRM*"
+    },
+    {
+      "local_name": "JXRN*"
+    },
+    {
+      "local_name": "JYRM*"
+    },
+    {
+      "local_name": "JYRN*"
     },
     {
       "local_name": "JZRM*"
     },
     {
+      "local_name": "JZRN*"
+    },
+    {
       "local_name": "K2RM*"
     },
     {
+      "local_name": "K2RN*"
+    },
+    {
+      "local_name": "K3RM*"
+    },
+    {
+      "local_name": "K3RN*"
+    },
+    {
+      "local_name": "K4RM*"
+    },
+    {
+      "local_name": "K4RN*"
+    },
+    {
       "local_name": "K5RM*"
+    },
+    {
+      "local_name": "K5RN*"
     },
     {
       "local_name": "K6RM*"
@@ -1492,13 +2071,25 @@
       "local_name": "K7RM*"
     },
     {
+      "local_name": "K7RN*"
+    },
+    {
       "local_name": "K8RM*"
+    },
+    {
+      "local_name": "K8RN*"
     },
     {
       "local_name": "K9RM*"
     },
     {
+      "local_name": "K9RN*"
+    },
+    {
       "local_name": "KARM*"
+    },
+    {
+      "local_name": "KARN*"
     },
     {
       "local_name": "KBRM*"
@@ -1513,10 +2104,22 @@
       "local_name": "KCRN*"
     },
     {
+      "local_name": "KDRM*"
+    },
+    {
+      "local_name": "KDRN*"
+    },
+    {
       "local_name": "KERM*"
     },
     {
+      "local_name": "KERN*"
+    },
+    {
       "local_name": "KFRM*"
+    },
+    {
+      "local_name": "KFRN*"
     },
     {
       "local_name": "KGRM*"
@@ -1528,10 +2131,22 @@
       "local_name": "KHRM*"
     },
     {
+      "local_name": "KHRN*"
+    },
+    {
       "local_name": "KJRM*"
     },
     {
+      "local_name": "KJRN*"
+    },
+    {
       "local_name": "KKRM*"
+    },
+    {
+      "local_name": "KKRN*"
+    },
+    {
+      "local_name": "KLRM*"
     },
     {
       "local_name": "KLRN*"
@@ -1544,6 +2159,9 @@
     },
     {
       "local_name": "KNRM*"
+    },
+    {
+      "local_name": "KNRN*"
     },
     {
       "local_name": "KPRM*"
@@ -1572,7 +2190,16 @@
       "connectable": true
     },
     {
+      "local_name": "KSRM*"
+    },
+    {
       "local_name": "KSRN*"
+    },
+    {
+      "local_name": "KTRM*"
+    },
+    {
+      "local_name": "KTRN*"
     },
     {
       "local_name": "KURM*"
@@ -1581,13 +2208,28 @@
       "local_name": "KVRM*"
     },
     {
+      "local_name": "KVRN*"
+    },
+    {
+      "local_name": "KWRM*"
+    },
+    {
       "local_name": "KWRN*"
     },
     {
       "local_name": "KXRM*"
     },
     {
+      "local_name": "KXRN*"
+    },
+    {
       "local_name": "KYRM*"
+    },
+    {
+      "local_name": "KYRN*"
+    },
+    {
+      "local_name": "KZRN*"
     },
     {
       "local_name": "L&P *"
@@ -1602,10 +2244,28 @@
       "local_name": "L3RM*"
     },
     {
+      "local_name": "L3RN*"
+    },
+    {
       "local_name": "L4RM*"
     },
     {
+      "local_name": "L4RN*"
+    },
+    {
       "local_name": "L5RM*"
+    },
+    {
+      "local_name": "L5RN*"
+    },
+    {
+      "local_name": "L6RM*"
+    },
+    {
+      "local_name": "L6RN*"
+    },
+    {
+      "local_name": "L7RM*"
     },
     {
       "local_name": "L7RN*"
@@ -1614,13 +2274,22 @@
       "local_name": "L8RM*"
     },
     {
+      "local_name": "L8RN*"
+    },
+    {
       "local_name": "L9RM*"
     },
     {
       "local_name": "L9RN*"
     },
     {
+      "local_name": "LARM*"
+    },
+    {
       "local_name": "LARN*"
+    },
+    {
+      "local_name": "LBRM*"
     },
     {
       "local_name": "LBRN*"
@@ -1638,19 +2307,40 @@
       "local_name": "LDRN*"
     },
     {
+      "local_name": "LERM*"
+    },
+    {
       "local_name": "LERN*"
     },
     {
       "local_name": "LFRM*"
     },
     {
+      "local_name": "LFRN*"
+    },
+    {
       "local_name": "LGRM*"
+    },
+    {
+      "local_name": "LGRN*"
+    },
+    {
+      "local_name": "LHRM*"
+    },
+    {
+      "local_name": "LHRN*"
     },
     {
       "local_name": "LIMOSS*"
     },
     {
       "local_name": "LJRM*"
+    },
+    {
+      "local_name": "LJRN*"
+    },
+    {
+      "local_name": "LKRM*"
     },
     {
       "local_name": "LKRN*"
@@ -1668,34 +2358,82 @@
       "local_name": "LNRM*"
     },
     {
+      "local_name": "LNRN*"
+    },
+    {
+      "local_name": "LPRM*"
+    },
+    {
+      "local_name": "LPRN*"
+    },
+    {
       "local_name": "LQRM*"
+    },
+    {
+      "local_name": "LQRN*"
     },
     {
       "local_name": "LRRM*"
     },
     {
+      "local_name": "LRRN*"
+    },
+    {
       "local_name": "LSRM*"
+    },
+    {
+      "local_name": "LSRN*"
+    },
+    {
+      "local_name": "LTRM*"
+    },
+    {
+      "local_name": "LTRN*"
     },
     {
       "local_name": "LURM*"
     },
     {
+      "local_name": "LURN*"
+    },
+    {
       "local_name": "LVRM*"
+    },
+    {
+      "local_name": "LVRN*"
     },
     {
       "local_name": "LWRM*"
     },
     {
+      "local_name": "LWRN*"
+    },
+    {
       "local_name": "LXRM*"
+    },
+    {
+      "local_name": "LXRN*"
     },
     {
       "local_name": "LYRM*"
     },
     {
+      "local_name": "LYRN*"
+    },
+    {
       "local_name": "LZRM*"
     },
     {
+      "local_name": "LZRN*"
+    },
+    {
+      "local_name": "Luffabenz*"
+    },
+    {
       "local_name": "M2RM*"
+    },
+    {
+      "local_name": "M2RN*"
     },
     {
       "local_name": "M3RM*"
@@ -1728,6 +2466,9 @@
       "local_name": "M8RM*"
     },
     {
+      "local_name": "M8RN*"
+    },
+    {
       "local_name": "M9RM*"
     },
     {
@@ -1737,10 +2478,19 @@
       "local_name": "MARM*"
     },
     {
+      "local_name": "MARN*"
+    },
+    {
+      "local_name": "MBRM*"
+    },
+    {
       "local_name": "MBRN*"
     },
     {
       "local_name": "MCRM*"
+    },
+    {
+      "local_name": "MCRN*"
     },
     {
       "local_name": "MDRM*"
@@ -1752,10 +2502,19 @@
       "local_name": "MERM*"
     },
     {
+      "local_name": "MERN*"
+    },
+    {
       "local_name": "MFRM*"
     },
     {
+      "local_name": "MFRN*"
+    },
+    {
       "local_name": "MGRM*"
+    },
+    {
+      "local_name": "MGRN*"
     },
     {
       "local_name": "MHRN*"
@@ -1764,10 +2523,22 @@
       "local_name": "MJRN*"
     },
     {
+      "local_name": "MKRN*"
+    },
+    {
       "local_name": "MLRM*"
     },
     {
+      "local_name": "MLRN*"
+    },
+    {
       "local_name": "MMRM*"
+    },
+    {
+      "local_name": "MMRN*"
+    },
+    {
+      "local_name": "MNRN*"
     },
     {
       "local_name": "MOTO*",
@@ -1783,13 +2554,64 @@
       "local_name": "MPE_*"
     },
     {
+      "local_name": "MPRM*"
+    },
+    {
+      "local_name": "MPRN*"
+    },
+    {
+      "local_name": "MQRM*"
+    },
+    {
+      "local_name": "MQRN*"
+    },
+    {
       "local_name": "MRRM*"
+    },
+    {
+      "local_name": "MRRN*"
+    },
+    {
+      "local_name": "MSRM*"
+    },
+    {
+      "local_name": "MSRN*"
+    },
+    {
+      "local_name": "MTRM*"
+    },
+    {
+      "local_name": "MTRN*"
+    },
+    {
+      "local_name": "MURM*"
+    },
+    {
+      "local_name": "MURN*"
+    },
+    {
+      "local_name": "MVRM*"
     },
     {
       "local_name": "MVRN*"
     },
     {
+      "local_name": "MWRM*"
+    },
+    {
+      "local_name": "MWRN*"
+    },
+    {
+      "local_name": "MXRM*"
+    },
+    {
       "local_name": "MXRN*"
+    },
+    {
+      "local_name": "MYRM*"
+    },
+    {
+      "local_name": "MYRN*"
     },
     {
       "local_name": "MZRN*"
@@ -1804,7 +2626,28 @@
       "local_name": "My QMS2*"
     },
     {
+      "local_name": "N2RM*"
+    },
+    {
+      "local_name": "N2RN*"
+    },
+    {
+      "local_name": "N3RM*"
+    },
+    {
+      "local_name": "N3RN*"
+    },
+    {
+      "local_name": "N4RM*"
+    },
+    {
       "local_name": "N4RN*"
+    },
+    {
+      "local_name": "N5RM*"
+    },
+    {
+      "local_name": "N5RN*"
     },
     {
       "local_name": "N6RN*"
@@ -1813,10 +2656,67 @@
       "local_name": "N7RN*"
     },
     {
+      "local_name": "N8RN*"
+    },
+    {
+      "local_name": "N9RN*"
+    },
+    {
+      "local_name": "NARN*"
+    },
+    {
+      "local_name": "NBRN*"
+    },
+    {
+      "local_name": "NCRN*"
+    },
+    {
+      "local_name": "NDRN*"
+    },
+    {
+      "local_name": "NERN*"
+    },
+    {
+      "local_name": "NFRN*"
+    },
+    {
+      "local_name": "NGRN*"
+    },
+    {
+      "local_name": "NHRN*"
+    },
+    {
+      "local_name": "NJRN*"
+    },
+    {
+      "local_name": "NLRN*"
+    },
+    {
+      "local_name": "NMRN*"
+    },
+    {
+      "local_name": "NNRN*"
+    },
+    {
+      "local_name": "NPRN*"
+    },
+    {
+      "local_name": "NQRN*"
+    },
+    {
+      "local_name": "NRRN*"
+    },
+    {
       "local_name": "NTRN*"
     },
     {
       "local_name": "NURN*"
+    },
+    {
+      "local_name": "NXRN*"
+    },
+    {
+      "local_name": "NYRN*"
     },
     {
       "local_name": "O0RM*"
@@ -1852,10 +2752,150 @@
       "local_name": "OARM*"
     },
     {
+      "local_name": "OKIN*"
+    },
+    {
       "local_name": "OKIN*Receiver*"
     },
     {
       "local_name": "OKIN*receiver*"
+    },
+    {
+      "local_name": "OKIN-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIN-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIN-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIN-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIN-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIN-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIN-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIN-ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIn*"
+    },
+    {
+      "local_name": "OKIn-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIn-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIn-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIn-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIn-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIn-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIn-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIn-ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKiN*"
+    },
+    {
+      "local_name": "OKiN-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKiN-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKiN-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKiN-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKiN-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKiN-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKiN-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKiN-ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKin*"
+    },
+    {
+      "local_name": "OKin-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKin-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKin-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKin-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKin-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKin-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKin-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKin-ble*",
+      "connectable": true
     },
     {
       "local_name": "OMRM*"
@@ -1900,10 +2940,150 @@
       "local_name": "OZRM*"
     },
     {
+      "local_name": "OkIN*"
+    },
+    {
+      "local_name": "OkIN-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIN-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIN-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIN-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIN-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIN-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIN-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIN-ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIn*"
+    },
+    {
+      "local_name": "OkIn-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIn-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIn-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIn-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIn-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIn-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIn-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIn-ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkiN*"
+    },
+    {
+      "local_name": "OkiN-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkiN-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkiN-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkiN-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkiN-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkiN-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkiN-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkiN-ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "Okin*"
+    },
+    {
       "local_name": "Okin*Receiver*"
     },
     {
       "local_name": "Okin*receiver*"
+    },
+    {
+      "local_name": "Okin-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "Okin-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "Okin-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "Okin-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "Okin-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "Okin-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "Okin-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "Okin-ble*",
+      "connectable": true
     },
     {
       "local_name": "P0RM*"
@@ -1922,6 +3102,9 @@
     },
     {
       "local_name": "P4RM*"
+    },
+    {
+      "local_name": "P4RN*"
     },
     {
       "local_name": "P5RM*"
@@ -2017,10 +3200,40 @@
       "local_name": "RARN*"
     },
     {
+      "local_name": "RHRN*"
+    },
+    {
+      "local_name": "RLRN*"
+    },
+    {
       "local_name": "RM-*"
     },
     {
+      "local_name": "RMRN*"
+    },
+    {
+      "local_name": "RNRN*"
+    },
+    {
+      "local_name": "RRRN*"
+    },
+    {
+      "local_name": "RSRN*"
+    },
+    {
+      "local_name": "RURN*"
+    },
+    {
+      "local_name": "RXRN*"
+    },
+    {
       "local_name": "S4-Y-*"
+    },
+    {
+      "local_name": "S6RN*"
+    },
+    {
+      "local_name": "S7RN*"
     },
     {
       "local_name": "S9RM*"
@@ -2030,6 +3243,262 @@
     },
     {
       "local_name": "SLEEPSTAR*"
+    },
+    {
+      "local_name": "SMARTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARtBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARtBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARtBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARtBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARtbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARtbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARtbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARtbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArtBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArtBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArtBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArtBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArtbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArtbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArtbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArtbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRtBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRtBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRtBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRtBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRtbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRtbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRtbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRtbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMarTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMarTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMarTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMarTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMarTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMarTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMarTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMarTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMartBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMartBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMartBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMartBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMartbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMartbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMartbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMartbed*",
+      "connectable": true
     },
     {
       "local_name": "SOFA*",
@@ -2059,6 +3528,262 @@
     },
     {
       "local_name": "SealyMF*"
+    },
+    {
+      "local_name": "SmARTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARtBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARtBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARtBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARtBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARtbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARtbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARtbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARtbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArtBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArtBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArtBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArtBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArtbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArtbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArtbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArtbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRtBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRtBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRtBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRtBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRtbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRtbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRtbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRtbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmarTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmarTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmarTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmarTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmarTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmarTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmarTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmarTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmartBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmartBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmartBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmartBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmartbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmartbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmartbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "Smartbed*",
+      "connectable": true
     },
     {
       "local_name": "StAR*"
@@ -2796,6 +4521,9 @@
       "local_name": "ZR80*"
     },
     {
+      "local_name": "ZR90*"
+    },
+    {
       "local_name": "ZRA0*"
     },
     {
@@ -2879,10 +4607,290 @@
       "local_name": "my qms2*"
     },
     {
+      "local_name": "oKIN*"
+    },
+    {
+      "local_name": "oKIN-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIN-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIN-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIN-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIN-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIN-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIN-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIN-ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIn*"
+    },
+    {
+      "local_name": "oKIn-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIn-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIn-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIn-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIn-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIn-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIn-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIn-ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKiN*"
+    },
+    {
+      "local_name": "oKiN-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKiN-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKiN-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKiN-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKiN-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKiN-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKiN-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKiN-ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKin*"
+    },
+    {
+      "local_name": "oKin-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKin-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKin-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKin-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKin-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKin-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKin-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKin-ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIN*"
+    },
+    {
+      "local_name": "okIN-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIN-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIN-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIN-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIN-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIN-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIN-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIN-ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIn*"
+    },
+    {
+      "local_name": "okIn-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIn-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIn-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIn-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIn-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIn-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIn-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIn-ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "okiN*"
+    },
+    {
+      "local_name": "okiN-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okiN-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "okiN-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okiN-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "okiN-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okiN-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "okiN-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okiN-ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "okin*"
+    },
+    {
       "local_name": "okin*Receiver*"
     },
     {
       "local_name": "okin*receiver*"
+    },
+    {
+      "local_name": "okin-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okin-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "okin-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okin-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "okin-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okin-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "okin-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okin-ble*",
+      "connectable": true
     },
     {
       "local_name": "qms-i06*"
@@ -2918,6 +4926,262 @@
       "local_name": "s4-y-*"
     },
     {
+      "local_name": "sMARTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARtBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARtBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARtBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARtBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARtbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARtbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARtbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARtbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArtBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArtBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArtBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArtBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArtbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArtbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArtbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArtbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRtBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRtBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRtBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRtBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRtbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRtbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRtbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRtbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMarTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMarTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMarTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMarTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMarTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMarTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMarTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMarTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMartBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMartBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMartBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMartBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMartbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMartbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMartbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMartbed*",
+      "connectable": true
+    },
+    {
       "local_name": "sTAR*"
     },
     {
@@ -2934,6 +5198,262 @@
     },
     {
       "local_name": "sleepstar*"
+    },
+    {
+      "local_name": "smARTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARtBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARtBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARtBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARtBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARtbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARtbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARtbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARtbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArtBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArtBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArtBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArtBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArtbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArtbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArtbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArtbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRtBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRtBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRtBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRtBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRtbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRtbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRtbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRtbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smarTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smarTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smarTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smarTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smarTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smarTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smarTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smarTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smartBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smartBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smartBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smartBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smartbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smartbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smartbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smartbed*",
+      "connectable": true
     },
     {
       "local_name": "stAR*"

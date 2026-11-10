@@ -42,6 +42,7 @@ from .const import (
     BED_TYPE_GMMOTOR,
     BED_TYPE_GOODVIBE,
     BED_TYPE_KEESON,
+    BED_TYPE_MLILY,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_SLEEP_NUMBER,
@@ -245,7 +246,7 @@ class PairedBedCoordinator:
         return self._topology.targets_for(side)
 
     def _pair_cancel_generation(self, side: str, resources: Collection[str]) -> tuple[int, ...]:
-        return self._admission.generation(side, resources)
+        return self._admission.generation(side, self._topology.command_scope(resources))
 
     def _pair_admission_was_cancelled(
         self,
@@ -285,6 +286,7 @@ class PairedBedCoordinator:
         """
         if resource is not None and resources is not None:
             raise ValueError("Pass resource or resources, not both")
+        cancel_running = cancel_running or self._topology.shared_command_timer
         targets_by_child = {
             id(child): target_side for target_side, child in self._targets_for(side)
         }
@@ -402,6 +404,7 @@ class PairedBedCoordinator:
             else command_resources(resource or "*")
         )
         topology = self._topology
+        command_scope = topology.command_scope(command_scope)
         targets = topology.targets_for(side)
         target_sides = [target_side for target_side, _ in targets]
         topology.check_admission(targets)
@@ -420,12 +423,13 @@ class PairedBedCoordinator:
         # cancel the in-flight command on THIS command's own target sides, so a
         # reverse wins instead of waiting out the pulse window or letting a stale
         # queued movement run first. Both the cancel and the counter bump are
-        # per-side — a left command must not abort or invalidate an independent
-        # right movement (and vice versa).
+        # per-side for independent banks; a receiver declaring one shared timer
+        # invalidates both sides of that physical stream.
         if cancel_running:
-            for target_side in target_sides:
+            cancel_targets = topology.cancellation_targets(targets)
+            for target_side, _child in cancel_targets:
                 admission.bump(target_side, command_scope)
-            target_children = {child for _, child in targets}
+            target_children = {child for _, child in cancel_targets}
             # The topology decides whether an overlapping active group or cycle
             # is preempted as a whole or left to finish while this one waits.
             if any(
@@ -467,7 +471,7 @@ class PairedBedCoordinator:
 
     async def async_stop_command(self, *, side: str = SIDE_BOTH) -> None:
         """Stop the targeted side(s); never let one side's failure skip another."""
-        targets = self._targets_for(side)
+        targets = self._topology.cancellation_targets(self._targets_for(side))
         # Bump EVERY targeted side's counter first so a movement still queued on
         # a lane for that side drops instead of starting after this stop,
         # including a side that gets no STOP frame below.
@@ -507,10 +511,10 @@ class PairedBedCoordinator:
         pre-empts the motion holding that side's writer, then runs ``stop_fn``.
         """
         del stream_member  # paired topologies never stream
-        targets = self._targets_for(side)
+        targets = self._topology.cancellation_targets(self._targets_for(side))
         # A movement for this motor still queued on a side lane drops.
         for target_side, _ in targets:
-            self._admission.bump(target_side, command_resources(resource))
+            self._admission.bump(target_side, self._topology.command_scope(command_resources(resource)))
         async with self._connection_mode_transition_lock:
             errors = await self._topology.stop_motor(targets, stop_fn, resource)
         if errors:
@@ -820,6 +824,9 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
             if resources is not None
             else command_resources(resource or "*")
         )
+        controller = self.capability_controller
+        if controller is not None and controller.commands_share_timer is True:
+            return command_resources("*")
         sides = PAIR_SIDES if self._single_side == SIDE_BOTH else (self._single_side,)
         return frozenset(
             f"side:{side}:{item}" for side in sides for item in raw_resources
@@ -1088,6 +1095,10 @@ class SingleAddressPairedCoordinator(PairedBedCoordinator):
 
             product = PRODUCTS.get(entry.data.get(CONF_PROTOCOL_VARIANT, ""))
             self._single_native_both = product is not None and 2 in product.sides
+        if entry.data.get(CONF_BED_TYPE) == BED_TYPE_MLILY:
+            from .profiles.mlily_choices import NATIVE_BOTH_PROFILES
+
+            self._single_native_both = entry.data.get(CONF_PROTOCOL_VARIANT, "") in NATIVE_BOTH_PROFILES
         self._single_position_hydration_task: asyncio.Task[None] | None = None
         self._single_position_hydration_pause_count = 0
         children = {

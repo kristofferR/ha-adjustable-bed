@@ -491,10 +491,13 @@ async def test_the_final_settings_save_each_beds_angle_sensing(hass, row, disabl
 # read them for by default (``bed_type_has_position_feedback`` is False), so
 # angle sensing starts disabled.
 _QUIET_BED_TYPES = (
+    const.BED_TYPE_COMFORTBASE,
     const.BED_TYPE_COOLBASE,
     const.BED_TYPE_DOUBLESLEEP,
     const.BED_TYPE_FURNIMOVE,
     const.BED_TYPE_ISLEEP,
+    const.BED_TYPE_JALON,
+    const.BED_TYPE_RIZE,
     const.BED_TYPE_KEESON,
     const.BED_TYPE_LIMOSS_REMOTE,
     const.BED_TYPE_OCTO,
@@ -524,6 +527,7 @@ def _quiet_routes() -> list[tuple[str, str]]:
         for variant in _routes_of(bed_type)
         if not bed_type_has_position_feedback(bed_type, variant)
         and variant not in _SETUP_ROUTE_EXCLUSIONS.get(bed_type, ())
+        and is_valid_variant_for_bed_type(bed_type, variant)
     ]
 
 

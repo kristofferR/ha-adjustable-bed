@@ -404,6 +404,17 @@ class PairTopology(ABC):
         # Live view: a side the parent drops after setup leaves every strategy.
         return self._pair._children
 
+    @property
+    def shared_command_timer(self) -> bool:
+        return False
+
+    def command_scope(self, resources: Collection[str]) -> frozenset[str]:
+        """A single-timer receiver has one replaceable stream across all sides."""
+        return command_resources("*") if self.shared_command_timer else command_resources(*resources)
+
+    def cancellation_targets(self, targets: list[PairTarget]) -> list[PairTarget]:
+        return self.targets_for(SIDE_BOTH) if self.shared_command_timer else targets
+
     def targets_for(self, side: str) -> list[PairTarget]:
         """Resolve a logical side to the children it reaches, left first."""
         if side not in (SIDE_LEFT, SIDE_RIGHT, SIDE_BOTH):
@@ -1367,6 +1378,11 @@ class SingleLinkSideAwareTopology(_SideLaneTopology):
         super().__init__(pair)
         self._single = pair
         self.native_both = native_both
+
+    @property
+    def shared_command_timer(self) -> bool:
+        controller = self._single._single_inner.capability_controller
+        return controller is not None and controller.commands_share_timer is True
 
     def targets_for(self, side: str) -> list[PairTarget]:
         targets = super().targets_for(side)

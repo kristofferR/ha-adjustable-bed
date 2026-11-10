@@ -22,7 +22,6 @@ from ..const import (
     NORDIC_UART_WRITE_CHAR_UUID,
     OKIMAT_WRITE_CHAR_UUID,
 )
-from ..profiles.okin_nframe import OKIN_64BIT_KEYS as _KEYS
 from ..profiles.okin_nframe import OKIN_64BIT_PROFILES, OkinNFrameProfile
 from .base import BedController, ProfileExecution
 from .builder import BuildContext
@@ -51,6 +50,8 @@ class Okin64BitController(ProfileExecution[OkinNFrameProfile], BedController):
         coordinator: AdjustableBedCoordinator,
         variant: str = OKIN_64BIT_VARIANT_NORDIC,
         char_uuid: str | None = None,
+        *,
+        profile: OkinNFrameProfile | None = None,
     ) -> None:
         """Initialize the OKIN 64-bit controller.
 
@@ -71,7 +72,7 @@ class Okin64BitController(ProfileExecution[OkinNFrameProfile], BedController):
             self._char_uuid = NORDIC_UART_WRITE_CHAR_UUID
 
         # Any other variant uses the Nordic UART route.
-        self._profile = OKIN_64BIT_PROFILES.get(variant, OKIN_64BIT_PROFILES["nordic"])
+        self._profile = profile or OKIN_64BIT_PROFILES.get(variant, OKIN_64BIT_PROFILES["nordic"])
         self._write_with_response = self._profile.write == "response"
 
         _LOGGER.debug(
@@ -142,7 +143,7 @@ class Okin64BitController(ProfileExecution[OkinNFrameProfile], BedController):
 
     def _build_command(self, word: int) -> bytes:
         """Frame one 64-bit word."""
-        return codec.frame(word, 8)
+        return codec.frame(word, self.profile.width)
 
     async def _send_command(self, command: bytes, repeat: int | None = None) -> None:
         """Send a framed command at the entry's pulse settings."""
@@ -156,25 +157,27 @@ class Okin64BitController(ProfileExecution[OkinNFrameProfile], BedController):
             await self._send_command(command)
         finally:
             try:
-                await self.write_command(
-                    self._build_command(_KEYS["stop"]),
-                    cancel_event=asyncio.Event(),
-                )
+                await self._send_stop()
             except Exception:
                 _LOGGER.debug("Failed to send STOP command during cleanup")
 
+    async def _send_stop(self) -> None:
+        """Release the active key; app subclasses may own a release schedule."""
+        await self.write_command(self._build_command(0), cancel_event=asyncio.Event())
+
+    async def _press(self, word: int) -> None:
+        """One app press; subclasses may add their profile's release sequence."""
+        await self.write_command(self._build_command(word))
+
     # Motor control methods
     async def move_head_up(self) -> None:
-        await self._move_with_stop(self._build_command(_KEYS["head_up"]))
+        await self._move_with_stop(self._build_command(self.profile.keys["head_up"]))
 
     async def move_head_down(self) -> None:
-        await self._move_with_stop(self._build_command(_KEYS["head_down"]))
+        await self._move_with_stop(self._build_command(self.profile.keys["head_down"]))
 
     async def move_head_stop(self) -> None:
-        await self.write_command(
-            self._build_command(_KEYS["stop"]),
-            cancel_event=asyncio.Event(),
-        )
+        await self._send_stop()
 
     async def move_back_up(self) -> None:
         await self.move_head_up()
@@ -186,50 +189,47 @@ class Okin64BitController(ProfileExecution[OkinNFrameProfile], BedController):
         await self.move_head_stop()
 
     async def move_legs_up(self) -> None:
-        await self._move_with_stop(self._build_command(_KEYS["foot_up"]))
+        await self._move_with_stop(self._build_command(self.profile.keys["foot_up"]))
 
     async def move_legs_down(self) -> None:
-        await self._move_with_stop(self._build_command(_KEYS["foot_down"]))
+        await self._move_with_stop(self._build_command(self.profile.keys["foot_down"]))
 
     async def move_legs_stop(self) -> None:
         await self.move_head_stop()
 
     async def move_feet_up(self) -> None:
-        await self._move_with_stop(self._build_command(_KEYS["foot_up"]))
+        await self._move_with_stop(self._build_command(self.profile.keys["foot_up"]))
 
     async def move_feet_down(self) -> None:
-        await self._move_with_stop(self._build_command(_KEYS["foot_down"]))
+        await self._move_with_stop(self._build_command(self.profile.keys["foot_down"]))
 
     async def move_feet_stop(self) -> None:
         await self.move_head_stop()
 
     async def move_lumbar_up(self) -> None:
-        await self._move_with_stop(self._build_command(_KEYS["lumbar_up"]))
+        await self._move_with_stop(self._build_command(self.profile.keys["lumbar_up"]))
 
     async def move_lumbar_down(self) -> None:
-        await self._move_with_stop(self._build_command(_KEYS["lumbar_down"]))
+        await self._move_with_stop(self._build_command(self.profile.keys["lumbar_down"]))
 
     async def move_lumbar_stop(self) -> None:
         await self.move_head_stop()
 
     async def stop_all(self) -> None:
-        await self.write_command(
-            self._build_command(_KEYS["stop"]),
-            cancel_event=asyncio.Event(),
-        )
+        await self._send_stop()
 
     # Preset methods
     async def preset_flat(self) -> None:
-        await self.write_command(self._build_command(_KEYS["flat"]))
+        await self._press(self.profile.keys["flat"])
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
         commands = {
-            1: _KEYS["memory_1"],
-            2: _KEYS["memory_2"],
+            1: self.profile.keys["memory_1"],
+            2: self.profile.keys["memory_2"],
         }
         if (word := commands.get(memory_num)) is not None:
-            await self.write_command(self._build_command(word))
+            await self._press(word)
         else:
             _LOGGER.warning("Invalid memory number %d (valid: 1-2)", memory_num)
 
@@ -241,39 +241,39 @@ class Okin64BitController(ProfileExecution[OkinNFrameProfile], BedController):
         )
 
     async def preset_zero_g(self) -> None:
-        await self.write_command(self._build_command(_KEYS["zero_g"]))
+        await self._press(self.profile.keys["zero_g"])
 
     async def preset_anti_snore(self) -> None:
-        await self.write_command(self._build_command(_KEYS["anti_snore"]))
+        await self._press(self.profile.keys["anti_snore"])
 
     async def preset_tv(self) -> None:
-        await self.write_command(self._build_command(_KEYS["tv_pc"]))
+        await self._press(self.profile.keys["tv_pc"])
 
     async def preset_lounge(self) -> None:
-        await self.write_command(self._build_command(_KEYS["lounge"]))
+        await self._press(self.profile.keys["lounge"])
 
     # Light methods
     async def lights_on(self) -> None:
-        await self.write_command(self._build_command(_KEYS["light_on"]))
+        await self._press(self.profile.keys["light_on"])
 
     async def lights_off(self) -> None:
-        await self.write_command(self._build_command(_KEYS["light_off"]))
+        await self._press(self.profile.keys["light_off"])
 
     async def lights_toggle(self) -> None:
-        await self.write_command(self._build_command(_KEYS["light_toggle"]))
+        await self._press(self.profile.keys["light_toggle"])
 
     # Massage methods
     async def massage_toggle(self) -> None:
-        await self.write_command(self._build_command(_KEYS["massage_switch"]))
+        await self._press(self.profile.keys["massage_switch"])
 
     async def massage_head_up(self) -> None:
-        await self.write_command(self._build_command(_KEYS["strength_up"]))
+        await self._press(self.profile.keys["strength_up"])
 
     async def massage_head_down(self) -> None:
-        await self.write_command(self._build_command(_KEYS["strength_down"]))
+        await self._press(self.profile.keys["strength_down"])
 
     async def massage_mode_step(self) -> None:
-        await self.write_command(self._build_command(_KEYS["wave_mode"]))
+        await self._press(self.profile.keys["wave_mode"])
 
 
 async def build_controller(ctx: BuildContext) -> Okin64BitController:

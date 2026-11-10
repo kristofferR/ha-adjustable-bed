@@ -780,7 +780,9 @@
       "gmmotor_product": "Choose an exact admitted GM Control product.",
       "gmmotor_side": "This product does not expose the selected app side.",
       "richmat_classic_layout": "Choose a layout shipped in the selected app.",
-      "motomotion_profile": "Enter a complete MotoMotion Bluetooth local name."
+      "motomotion_profile": "Enter a complete MotoMotion Bluetooth local name.",
+      "rize_profile": "Select a supported Rize Beds product, signed 32-bit room ID, and valid actuator descriptor.",
+      "rize_unpair_first": "Revert to a standalone bed before selecting a Rize profile without separate side controls."
     }
   },
   "options": {
@@ -1467,7 +1469,9 @@
       "gmmotor_side": "This product does not expose the selected app side.",
       "estimate_acknowledge_required": "Confirm that you understand positions are estimated.",
       "migration_reconfigure_required": "To change the app or layout, close Configure and select Reconfigure from this entry's three-dot menu. The guided change checks it before saving.",
-      "richmat_classic_layout": "Choose a layout shipped in the selected app."
+      "richmat_classic_layout": "Choose a layout shipped in the selected app.",
+      "rize_profile": "Select a supported Rize Beds product, signed 32-bit room ID, and valid actuator descriptor.",
+      "rize_unpair_first": "Revert to a standalone bed before selecting a Rize profile without separate side controls."
     },
     "progress": {
       "connecting": "Connecting over Bluetooth…",
@@ -2858,6 +2862,144 @@
       },
       "paramount_gearing_down": {
         "name": "Linked motion down"
+      },
+      "adjustable_bed_speech": {
+        "name": "App speech: {action}"
+      },
+      "smart_comfort_home": {
+        "name": "Home"
+      },
+      "smart_comfort_base_on": {
+        "name": "Base light on"
+      },
+      "smart_comfort_base_off": {
+        "name": "Base light off"
+      },
+      "smart_comfort_cup_on": {
+        "name": "Cup holder on"
+      },
+      "smart_comfort_cup_off": {
+        "name": "Cup holder off"
+      },
+      "smart_comfort_read_on": {
+        "name": "Reading light on"
+      },
+      "smart_comfort_read_off": {
+        "name": "Reading light off"
+      },
+      "smart_comfort_reclining_up": {
+        "name": "Reclining up"
+      },
+      "smart_comfort_reclining_down": {
+        "name": "Reclining down"
+      },
+      "jalon_massage_toggle": {
+        "name": "Toggle massage"
+      },
+      "jalon_query_massage": {
+        "name": "Refresh massage"
+      },
+      "jalon_query_alarm": {
+        "name": "Refresh alarm"
+      },
+      "jalon_massage_timer": {
+        "name": "Massage timer"
+      },
+      "jalon_massage_wave": {
+        "name": "Massage wave"
+      },
+      "jalon_head_intensity": {
+        "name": "Head massage intensity"
+      },
+      "jalon_foot_intensity": {
+        "name": "Foot massage intensity"
+      },
+      "rize_pattern": {
+        "name": "Massage pattern {pattern} (0 cancels)"
+      },
+      "rize_all_down": {
+        "name": "All down"
+      },
+      "rize_all_up": {
+        "name": "All up"
+      },
+      "rize_enroll": {
+        "name": "Enroll unprovisioned bed in selected room"
+      },
+      "rize_motion_on": {
+        "name": "Motion sensor on"
+      },
+      "rize_motion_off": {
+        "name": "Motion sensor off"
+      },
+      "bedtech_massage_timer_20": {
+        "name": "Massage 20 minutes"
+      },
+      "resident_check_massage": {
+        "name": "Refresh massage timer"
+      },
+      "resident_sync_clock": {
+        "name": "Sync bed clock"
+      },
+      "luuna_preset": {
+        "name": "{action}"
+      },
+      "luuna_massage": {
+        "name": "{action}"
+      },
+      "comfortbase_save_flat": {
+        "name": "Save Flat"
+      },
+      "comfortbase_save_zero_g": {
+        "name": "Save Zero gravity"
+      },
+      "comfortbase_save_anti_snore": {
+        "name": "Save Anti-snore"
+      },
+      "richmat_app_action": {
+        "name": "{action}"
+      },
+      "richmat_app_release": {
+        "name": "Release movement"
+      },
+      "richmat_app_all_motor_up": {
+        "name": "All motors up"
+      },
+      "richmat_app_all_motor_down": {
+        "name": "All motors down"
+      },
+      "richmat_app_lumbar2_up": {
+        "name": "Lumbar 2 up"
+      },
+      "richmat_app_lumbar2_down": {
+        "name": "Lumbar 2 down"
+      },
+      "richmat_app_tilt1_up": {
+        "name": "Tilt 1 up"
+      },
+      "richmat_app_tilt1_down": {
+        "name": "Tilt 1 down"
+      },
+      "richmat_app_tilt2_up": {
+        "name": "Tilt 2 up"
+      },
+      "richmat_app_tilt2_down": {
+        "name": "Tilt 2 down"
+      },
+      "jalon_massage_head": {
+        "name": "Head massage"
+      },
+      "jalon_massage_feet": {
+        "name": "Feet massage"
+      },
+      "jalon_massage_all": {
+        "name": "Massage all"
+      },
+      "jalon_massage_type": {
+        "name": "Cycle massage type"
+      },
+      "jalon_bed_massage_timer": {
+        "name": "Cycle massage timer"
       }
     },
     "cover": {
@@ -3109,6 +3251,21 @@
       },
       "paramount_gearing": {
         "name": "Linked motion"
+      },
+      "smart_comfort_reclining": {
+        "name": "Reclining"
+      },
+      "richmat_app_all_motor": {
+        "name": "All motors"
+      },
+      "richmat_app_lumbar2": {
+        "name": "Lumbar 2"
+      },
+      "richmat_app_tilt1": {
+        "name": "Tilt 1"
+      },
+      "richmat_app_tilt2": {
+        "name": "Tilt 2"
       }
     },
     "sensor": {
@@ -4506,6 +4663,45 @@
       },
       "paramount_registration_result": {
         "name": "Registration result"
+      },
+      "smart_comfort_model": {
+        "name": "Smart Comfort model code"
+      },
+      "smart_comfort_counter_1": {
+        "name": "Feedback counter 1 (raw)"
+      },
+      "smart_comfort_counter_2": {
+        "name": "Feedback counter 2 (raw)"
+      },
+      "smart_comfort_counter_3": {
+        "name": "Feedback counter 3 (raw)"
+      },
+      "jalon_massage": {
+        "name": "Massage timer indicator"
+      },
+      "jalon_alarm": {
+        "name": "Bed alarm"
+      },
+      "resident_massage_timer": {
+        "name": "Massage timer"
+      },
+      "luuna": {
+        "name": "Luuna + status"
+      },
+      "massage_timer": {
+        "name": "Massage timer category"
+      },
+      "galaxy_status": {
+        "name": "Galaxy bed status"
+      },
+      "richmat_app_status": {
+        "name": "Richmat app status"
+      },
+      "richmat_app_sleep_status": {
+        "name": "Sleep session status"
+      },
+      "jalon_massage_timer_bucket": {
+        "name": "Massage timer indicator"
       }
     },
     "light": {
@@ -4812,6 +5008,15 @@
       },
       "ergomotion4_light": {
         "name": "Reported light state"
+      },
+      "smart_comfort_read": {
+        "name": "Reading light (group report)"
+      },
+      "smart_comfort_cup": {
+        "name": "Cup holder (group report)"
+      },
+      "rize_battery_mode": {
+        "name": "Battery mode"
       }
     },
     "number": {
@@ -5075,6 +5280,18 @@
       },
       "paramount_gearing_max": {
         "name": "Linked motion maximum"
+      },
+      "smart_comfort_read_brightness": {
+        "name": "Reading light brightness"
+      },
+      "richmat_app_angle": {
+        "name": "Motor angle"
+      },
+      "richmat_app_intensity": {
+        "name": "Massage intensity"
+      },
+      "richmat_rise_lamp_seconds": {
+        "name": "Lamp timer"
       }
     },
     "select": {
@@ -5784,6 +6001,22 @@
         "state": {
           "enabled": "Enabled",
           "disabled": "Disabled"
+        }
+      },
+      "smart_comfort_seat": {
+        "name": "Logical seat",
+        "state": {
+          "0": "Address 0",
+          "1": "Address 1",
+          "2": "Address 2"
+        }
+      },
+      "richmat_app_side": {
+        "name": "App side",
+        "state": {
+          "left": "Left",
+          "right": "Right",
+          "both": "Both"
         }
       }
     },
@@ -8197,6 +8430,403 @@
           "name": "Paired bed side"
         }
       }
+    },
+    "jalon_set_alarm": {
+      "name": "Set OkinComfortBed II alarm",
+      "description": "Configure the Jalon app's bed-local alarm on P2 or P3 receivers.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "time": {
+          "name": "Time"
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "Empty means the next occurrence."
+        },
+        "wake_mode": {
+          "name": "Wake mode"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "rize_program_preset": {
+      "name": "Rize Beds program default preset",
+      "description": "Store the current position as a default preset on one physical Rize bed. Select a single paired side and explicitly confirm.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "preset": {
+          "name": "Preset"
+        },
+        "confirm": {
+          "name": "Confirm programming"
+        },
+        "side": {
+          "name": "Physical side"
+        }
+      }
+    },
+    "bedtech_app_command": {
+      "name": "BedTech app command",
+      "description": "Run an action using the selected BedTech 7.1.3 model and its app sleeper routing. Movement uses the configured finite pulse count.",
+      "fields": {
+        "device_id": {
+          "name": "Bed",
+          "description": "BedTech bed or paired parent device. Select an explicit app model first."
+        },
+        "action": {
+          "name": "Action",
+          "description": "Ordinary app action, subject to the selected model and sleeper."
+        },
+        "sleeper": {
+          "name": "App sleeper",
+          "description": "1/2 select a receiver, 3 both, 4/5 select one head and share the foot. FH models use one receiver and separate head banks."
+        },
+        "side": {
+          "name": "Target side",
+          "description": "Optional paired target restriction. Conflicting app sleeper routing is rejected."
+        }
+      }
+    },
+    "luuna": {
+      "name": "Luuna + controls",
+      "description": "Configure the Luuna alarm, light or query the bed-provided sleep accessory name. Requires the selected product and reported capability.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "Luuna bed or paired bed side to control."
+        },
+        "operation": {
+          "name": "Operation",
+          "description": "Light, countdown alarm, local calendar or sleep-name action."
+        },
+        "value": {
+          "name": "Value",
+          "description": "Light duration in seconds (0, 300, 600 or 900), or warm/cold brightness percent (0–100). Zero duration means always on."
+        },
+        "rgb_color": {
+          "name": "RGB color",
+          "description": "Color for the selected light operation."
+        },
+        "hour": {
+          "name": "Alarm hour",
+          "description": "Alarm hour in 24-hour time."
+        },
+        "minute": {
+          "name": "Alarm minute",
+          "description": "Minute within the selected alarm hour."
+        },
+        "mode": {
+          "name": "Alarm preset",
+          "description": "Position preset recalled by the alarm."
+        },
+        "side": {
+          "name": "Paired side",
+          "description": "Side of a paired bed to target."
+        }
+      }
+    },
+    "comfortbase_set_alarm": {
+      "name": "ComfortBaseForBluetooth: set bed alarm",
+      "description": "Enable or cancel the bed alarm for Memory A or B. Uses the local wall clock. No alarm feedback is available.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "ComfortBaseForBluetooth bed."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Enable or cancel the bed alarm."
+        },
+        "time": {
+          "name": "Time",
+          "description": "Required when enabling, with minute precision."
+        },
+        "memory": {
+          "name": "Memory",
+          "description": "1: Memory A. 2: Memory B. These are presets, not bed sides."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Side of a combined two-address bed."
+        }
+      }
+    },
+    "mlily": {
+      "name": "MLILY Control configuration",
+      "description": "Configure this MLILY product or its independent MM/SXB sleep receiver.",
+      "fields": {
+        "device_id": {
+          "name": "Bed or sleep sensor"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "operation": {
+          "name": "Action"
+        },
+        "action": {
+          "name": "Exact alarm action ID"
+        },
+        "datetime": {
+          "name": "Alarm date and time",
+          "description": "ISO 8601 with a timezone offset."
+        },
+        "alarm_id": {
+          "name": "Alarm slot"
+        },
+        "weekdays": {
+          "name": "Repeat weekdays",
+          "description": "Monday is 0, Sunday is 6. Empty means no repeat days."
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "seconds": {
+          "name": "Light duration",
+          "description": "Zero uses the app's always-on value."
+        },
+        "rgb_color": {
+          "name": "Light color"
+        },
+        "value": {
+          "name": "Snore count or time value"
+        },
+        "part": {
+          "name": "Sleep part",
+          "description": "Set type 1 to 1 or 2; type 2 to 11, 12 or 13. Report queries use 1 or 2."
+        },
+        "date": {
+          "name": "Report date"
+        },
+        "report_type": {
+          "name": "Report type",
+          "description": "Day is 1, month is 2."
+        },
+        "alarm_record": {
+          "name": "Observed alarm record",
+          "description": "Six byte values from this receiver, preserving record identity when editing or toggling."
+        },
+        "left": {
+          "name": "Left sleep operand",
+          "description": "SXB anti-snore number or numeric list."
+        },
+        "right": {
+          "name": "Right sleep operand",
+          "description": "SXB anti-snore number or numeric list."
+        }
+      }
+    },
+    "galaxy": {
+      "name": "Galaxy Bed Control configuration",
+      "description": "Configure the selected Galaxy bed’s admitted alarm, light and anti-snore controls. Separate sleep sensors are not bed controls.",
+      "fields": {
+        "device_id": {
+          "name": "Bed or sleep sensor"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "operation": {
+          "name": "Action"
+        },
+        "action": {
+          "name": "Exact alarm action ID"
+        },
+        "datetime": {
+          "name": "Alarm date and time",
+          "description": "ISO 8601 with a timezone offset."
+        },
+        "alarm_id": {
+          "name": "Alarm slot"
+        },
+        "weekdays": {
+          "name": "Repeat weekdays",
+          "description": "Monday is 0, Sunday is 6. Empty means no repeat days."
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "seconds": {
+          "name": "Light duration",
+          "description": "Zero uses the app's always-on value."
+        },
+        "rgb_color": {
+          "name": "Light color"
+        },
+        "value": {
+          "name": "Value (massage minutes or snore setting)"
+        }
+      }
+    },
+    "richmat_app": {
+      "name": "Richmat app configuration",
+      "description": "Control supported Richmat 4.2.0 BLE features. Refresh the corresponding capability before changing its settings.",
+      "fields": {
+        "operation": {
+          "name": "Operation",
+          "description": "Operation"
+        },
+        "device_id": {
+          "name": "Device id",
+          "description": "Device id"
+        },
+        "side": {
+          "name": "Side",
+          "description": "Side"
+        },
+        "value": {
+          "name": "Value",
+          "description": "Value"
+        },
+        "mode": {
+          "name": "Mode",
+          "description": "Mode"
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Enabled"
+        },
+        "rgb_color": {
+          "name": "Rgb color",
+          "description": "Rgb color"
+        },
+        "opacity": {
+          "name": "Opacity",
+          "description": "Opacity"
+        },
+        "zone": {
+          "name": "Zone",
+          "description": "Zone"
+        },
+        "temperature": {
+          "name": "Temperature",
+          "description": "Temperature"
+        },
+        "flags": {
+          "name": "Flags",
+          "description": "Flags"
+        },
+        "sleep": {
+          "name": "Sleep",
+          "description": "Sleep"
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "Weekdays"
+        },
+        "steps": {
+          "name": "Steps",
+          "description": "Steps"
+        },
+        "action": {
+          "name": "Action",
+          "description": "Action"
+        },
+        "query": {
+          "name": "Query",
+          "description": "Query"
+        },
+        "datetime": {
+          "name": "Datetime",
+          "description": "Datetime"
+        },
+        "alarm_id": {
+          "name": "Alarm id",
+          "description": "Alarm id"
+        },
+        "cycle": {
+          "name": "Cycle",
+          "description": "Cycle"
+        },
+        "part": {
+          "name": "Part",
+          "description": "Part"
+        },
+        "report_type": {
+          "name": "Report type",
+          "description": "Report type"
+        }
+      }
+    },
+    "richmat_rise": {
+      "name": "Luuna Rise / Power Cool bed settings",
+      "description": "Direct BLE bed settings for the selected app and layout. Alarm and lamp actions require a capability reply from the current session. Power Cool TEST runs a finite motor diagnostic cycle; RMCS programs the supplied motor schedule. Physical effects are unverified.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "operation": {
+          "name": "Operation"
+        },
+        "actions": {
+          "name": "Alarm actions",
+          "description": "A list of node keys such as node_1 from this layout’s alarm_actions diagnostics. The first bed choice and the layout-ordered massage choices determine the command."
+        },
+        "time": {
+          "name": "Alarm time",
+          "description": "Next occurrence of this local time, with minute precision. Omit for 1440 minutes."
+        },
+        "rgb_color": {
+          "name": "RGB color"
+        },
+        "seconds": {
+          "name": "Lamp timer",
+          "description": "0 to 300 seconds. Zero uses the app’s distinct slider and Save encodings; the physical zero behavior is unverified."
+        },
+        "timer_save": {
+          "name": "Use Save encoding",
+          "description": "At zero, Save writes 0000 and slider release writes FFFF."
+        },
+        "progress": {
+          "name": "Massage timer index",
+          "description": "D1RM or D9RM slider index, 0 to 5. These are source indices, not inferred durations."
+        },
+        "popup": {
+          "name": "Timer popup choice",
+          "description": "Y6RM app choices 15, 30, 45 or toggle. Actual firmware durations are unverified."
+        },
+        "schedule": {
+          "name": "Motor schedule",
+          "description": "Power Cool RMCS only. records: twelve [order, run_seconds, rest_seconds] rows in fixed M1/M2/M3/M4/M12/M34 up/down order; rest and count: nonnegative integers; radio: rf or ble; code: new or old; identifier: 1 to 9; motors: permutation of [1,2,3,4]. No schedule readback or abort command is proven."
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "jalon_bed_set_alarm": {
+      "name": "OkinComfortBed Ⅱ (Jalon): Set bed alarm",
+      "description": "Set a bed-local wake alarm. Empty weekdays chooses the next occurrence today or tomorrow. Hardware behavior is unverified.",
+      "fields": {
+        "enabled": {
+          "name": "Enabled"
+        },
+        "time": {
+          "name": "Time"
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "Monday 0 through Sunday 6; empty means once."
+        },
+        "wake_mode": {
+          "name": "Wake action"
+        },
+        "device_id": {
+          "name": "Bed device"
+        },
+        "side": {
+          "name": "Paired bed side"
+        }
+      }
     }
   },
   "exceptions": {
@@ -9003,7 +9633,9 @@
         "milemont": "Milemont app",
         "superior": "Superior app",
         "remote": "SleepFunction or SVEN & SON app, or a Richmat remote: the remote's code",
-        "another": "Another app or remote: search every app"
+        "another": "Another app or remote: search every app",
+        "luuna": "Luuna + app (Rise, Rise Pro, Rise Pro Light)",
+        "richmat_420": "Richmat 4.2.0 app"
       }
     },
     "setup_start": {

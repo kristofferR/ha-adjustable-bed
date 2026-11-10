@@ -56,6 +56,7 @@ DESIGN = Path(__file__).parents[1] / "docs" / "design" / "execution-capabilities
 # OKIN, Sino, KSBT CR, OKIN FFE, Sleepy's Box15, Rondure and Scott Living routes
 # are blocked and declare nothing.
 KEESON_STREAM: dict[str, tuple[str, ...]] = {
+    "jalon_bed": ("jalon",),
     "ergomotion": ("sfdergo",),
     "serta": ("serta330",),
     "restonic_a": ("restonic",),
@@ -79,6 +80,10 @@ KEESON_STREAM: dict[str, tuple[str, ...]] = {
     "bf": ("bf",),
     "cherish": ("cherish",),
     "comfort_enhancements": ("enh",),
+    "jalon_13": ("row132",),
+    "jalon_15": ("row132",),
+    "jalon_24": ("row132",),
+    "comfortbase": ("row161",),
     "glideaway_motion": ("glide",),
     # Malouf's legacy OKIN route over the E6 frame (row023).
     "malouf_legacy_okin": ("malouf", "row023"),
@@ -101,6 +106,11 @@ ERGOMOTION_4_STYLES = frozenset(product.style for product in ERGOMOTION_4_PRODUC
 # Declaration -> declared field -> evidence keys from the design document.
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "ParamountProfile:paramount": {"hold": ("paramount",)},
+    **{f"AdjustableAppProfile:{key}": {"hold": ("adjustbed",)}
+       for key in ("adjustable_bed_okin", "adjustable_bed_star", "adjustable_bed_star_5a")},
+    "SmartComfortProfile:synargy": {"hold": ("smart-comfort-synargy",)},
+    "SmartComfortProfile:synergy": {"hold": ("smart-comfort-synergy",)},
+    **{f"LuunaProfile:{key}": {"hold": ("luuna",)} for key in ("rise", "risepro", "riseprolight")},
     # Rows sort by identity, so parallel declarations merge cleanly.
     # Keeson layout apps and Ergomotion 4.0 (#483) stream a held key.
     **{
@@ -136,6 +146,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "Okin5AProfile:star_elevate": {"hold": ("abm5_5", "m1x12")},
     # Okin N-frame (#483): each app streams a held key until release. Nectar
     # Move is the Nectar app's CST route; Prodigy CE and U Series also compose (#516).
+    "OkinNFrameProfile:resident": {"hold": ("resident-base",)},
     "OkinNFrameProfile:adjustable_lumbar_okin": {"hold": ("lumbar",)},
     "OkinNFrameProfile:adjustable_lumbar_star": {"hold": ("lumbar",)},
     # Customatic: held motor keys OR into one shared mask; a release clears one bit (#516).
@@ -189,9 +200,12 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     },
     "OkinNFrameProfile:zseries_z230": {"hold": ("glory",)},
     "OkinNFrameProfile:zseries_z280": {"hold": ("glory",)},
-    # Richmat 6E (#483): BedTech, GM Motor and Casper Base are blocked.
+    # Richmat 6E (#483): explicit BedTech 7.1.3 models end refresh with no release.
+    **{f"RichmatProfile:bedtech_{model}": {"hold": ("bedtech713",)}
+       for model in ("bt2000", "bt2500", "bt3000", "bt3000fh", "bt6500", "btx4", "btx4fh", "btx5", "btx5fh")},
     "RichmatProfile:eshine": {"hold": ("eshine",)},
     "RichmatProfile:hjbed": {"hold": ("row121",)},
+    "RichmatProfile:richmat_app": {"hold": ("row173",)},
     "RichmatProfile:leggett_wilinke": {"hold": ("lp2",)},
     "RichmatProfile:richmat_mh_best_mattress": {"hold": ("best", "row055")},
     "RichmatProfile:richmat_mh_blvd_home": {"hold": ("blvd", "row055")},
@@ -223,14 +237,17 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "furnimove": {"hold": ("fm157",)},
     # Scoped to held controls whose effective gesture is a sustained press:
     # short, long and short-and-long gestures and memory mode keep theirs.
+    "galaxy": {"hold": ("galaxy",), "hold_controls": ("galaxy",)},
     "goodvibe": {"hold": ("goodvibe",), "hold_controls": ("goodvibe",)},
+    "mlily": {"hold": ("mlily159",), "hold_controls": ("mlily159",)},
     # Scoped to the held controls that run the keep mode under the current
     # Hold/Release, memory-arm and head/foot selection (row066, five reports).
     "richmat_classic_apps": {
         "hold": ("avocado", "coaster", "fortywinks", "milemont", "superior", "row066"),
         "hold_controls": ("avocado", "coaster", "fortywinks", "milemont", "superior", "row066"),
     },
-    "isleep": {"hold": ("kaidi",)},  # latched
+    "isleep": {"hold": ("kaidi",)},
+    "RizeProfile:rize": {"hold": ("rize149",)},  # latched
     "jensen": {"hold": ("jensen", "jensen-disp")},
     # Latched; Floyd (no report) and dual-seat beds stay finite.
     "kaidi": {"hold": ("kaidi",)},
@@ -281,15 +298,26 @@ _SIMMONS = ("OkinNFrameProfile:simmons_okin", "OkinNFrameProfile:simmons_smartbe
 # that can declare a capability must be listed and reviewed here.
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/paramount.py:<module>.ParamountProfile": ("ParamountProfile:paramount",),
+    **{
+        f"profiles/adjustable_bed.py:<module>.{site}": tuple(
+            f"AdjustableAppProfile:{key}" for key in
+            ("adjustable_bed_okin", "adjustable_bed_star", "adjustable_bed_star_5a")
+        ) for site in ("AdjustableAppProfile", "PROFILES")
+    },
+    "profiles/smart_comfort.py:<module>.SmartComfortProfile": ("SmartComfortProfile:synargy", "SmartComfortProfile:synergy"),
+    "profiles/okin_nframe.py:<module>.RESIDENT": ("OkinNFrameProfile:resident",),
+    "profiles/luuna.py:<module>.LuunaProfile": tuple(f"LuunaProfile:{key}" for key in ("rise", "risepro", "riseprolight")),
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController": ("richmat_classic_apps",),
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController.execution": ("richmat_classic_apps",),
     "beds/eshine_okin/controller.py:<module>.EshineOkinController": _ESHINE,
     "beds/furnimove/controller.py:<module>.FurniMoveController": ("furnimove",),
     "beds/furnimove/controller.py:<module>.FurniMoveController.execution": ("furnimove",),
-    "beds/goodvibe/controller.py:<module>.GoodVibeController": ("goodvibe",),
-    "beds/goodvibe/controller.py:<module>.GoodVibeController.execution": ("goodvibe",),
-    "beds/isleep.py:<module>.IsleepController": ("isleep",),
-    "beds/isleep.py:<module>.IsleepController.execution": ("isleep",),
+    "beds/goodvibe/controller.py:<module>.GoodVibeController": ("goodvibe", "mlily", "galaxy"),
+    "beds/goodvibe/controller.py:<module>.GoodVibeController.execution": ("goodvibe", "mlily", "galaxy"),
+    "beds/kaidi/app.py:<module>.KaidiAppController": ("isleep",),
+    "profiles/kaidi.py:<module>.RizeProfile": ("RizeProfile:rize",),
+    "beds/kaidi/rize.py:<module>.RizeController": ("RizeProfile:rize",),
+    "beds/kaidi/app.py:<module>.KaidiAppController.execution": ("isleep",),
     "beds/jensen/controller.py:<module>.JensenController": ("jensen",),
     "beds/jensen/controller.py:<module>.JensenController.execution": ("jensen",),
     "beds/kaidi/controller.py:<module>.KaidiController": ("kaidi",),
@@ -372,7 +400,12 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     ),
     "profiles/okin_nframe.py:<module>._lumbar": _LUMBAR,
     "profiles/okin_nframe.py:<module>._simmons": _SIMMONS,
+    "profiles/richmat.py:<module>.BEDTECH_APP_PROFILES": tuple(
+        f"RichmatProfile:bedtech_{model}"
+        for model in ("bt2000", "bt2500", "bt3000", "bt3000fh", "bt6500", "btx4", "btx4fh", "btx5", "btx5fh")
+    ),
     "profiles/richmat.py:<module>.ESHINE": ("RichmatProfile:eshine",),
+    "profiles/richmat.py:<module>.RICHMAT_APP": ("RichmatProfile:richmat_app",),
     "profiles/richmat.py:<module>.HJBED": ("RichmatProfile:hjbed",),
     "profiles/richmat.py:<module>.LEGGETT_WILINKE": ("RichmatProfile:leggett_wilinke",),
     "profiles/richmat.py:<module>.RICHMAT": tuple(

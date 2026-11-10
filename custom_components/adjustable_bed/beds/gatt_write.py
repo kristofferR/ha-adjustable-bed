@@ -95,6 +95,7 @@ class GattWriter(ABC):
         on_write: Callable[[], None] | None = None,
         characteristic: BleakGATTCharacteristic | None = None,
         expected_client: BleakClient | None = None,
+        before_write: Callable[[], None] | None = None,
     ) -> None:
         """Write a command to a GATT characteristic with retry support.
 
@@ -126,6 +127,8 @@ class GattWriter(ABC):
                      require a particular characteristic instance.
             expected_client: Optional connection identity checked after acquiring
                      the BLE lock, so queued writes cannot migrate on reconnect.
+            before_write: Synchronous validation immediately before transmission,
+                     under the BLE lock, after all connection and cancellation checks.
 
         Raises:
             ConnectionError: If not connected to the bed
@@ -188,6 +191,8 @@ class GattWriter(ABC):
                         raise ConnectionError("Not connected to bed")
                     if wall_clock_pacing:
                         write_started = asyncio.get_running_loop().time()
+                    if before_write is not None:
+                        before_write()
                     await client.write_gatt_char(
                         characteristic if characteristic is not None else char_uuid,
                         command,

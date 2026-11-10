@@ -11,6 +11,7 @@ from typing import Final
 
 from .beds.ruf_richmat.profiles import DISPLAY_NAMES as RUF_RICHMAT_DISPLAY_NAMES
 from .const import (
+    BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_BEDTECH,
     BED_TYPE_COMFORT_MOTION,
@@ -55,6 +56,7 @@ from .const import (
     BED_TYPE_RICHMAT_HARMONY,
     BED_TYPE_RICHMAT_IDEALBED,
     BED_TYPE_RICHMAT_REVIVE,
+    BED_TYPE_RIZE,
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEPYS_ELITE_APP,
@@ -126,6 +128,7 @@ ACTUATOR_GROUPS: Final[dict[str, tuple[Route, ...]]] = {
         (BED_TYPE_KAIDI, None),
         (BED_TYPE_KAIDI, KAIDI_VARIANT_FLOYD),
         (BED_TYPE_ISLEEP, None),
+        (BED_TYPE_RIZE, None),
     ),
     "keeson": (
         (BED_TYPE_KEESON, KEESON_VARIANT_BASE),
@@ -167,6 +170,7 @@ ACTUATOR_GROUPS: Final[dict[str, tuple[Route, ...]]] = {
         (BED_TYPE_SERENITY, None),
         (BED_TYPE_TRANQUIL, None),
         (BED_TYPE_SIMMONS, None),
+        (BED_TYPE_ADJUSTABLE_BED, None),
         (BED_TYPE_ADJUSTABLE_LUMBAR, None),
         (BED_TYPE_OKIN_FFE, None),
         (BED_TYPE_OKIN_64BIT, None),

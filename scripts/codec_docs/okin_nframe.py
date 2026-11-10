@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+from custom_components.adjustable_bed.beds.adjustable_lumbar import (
+    REFRESH_MS,
+    RELEASE_STOP_OFFSETS_S,
+    SAVE_HOLD_MS,
+)
 from custom_components.adjustable_bed.beds.okin_uuid.controller import (
     OKIN_UUID_REMOTES,
     OkinUuidComplexCommand,
@@ -17,6 +22,9 @@ from custom_components.adjustable_bed.const import (
     NORDIC_UART_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.profiles import okin_nframe as okin_profiles
+from custom_components.adjustable_bed.profiles.adjustable_bed import (
+    PROFILES as ADJUSTABLE_BED_PROFILES,
+)
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
 GUIDE = "docs/beds/okin-nframe.md"
@@ -129,6 +137,7 @@ _OKIN_GROUPS = {
     "eShine": tuple(okin_profiles.ESHINE_PROFILES.values()),
     "Okin CST": tuple(okin_profiles.CST_PROFILES.values()),
     "OKIN Bedding apps": tuple(okin_profiles.BEDDING_PROFILES.values()),
+    "Resident Adjustable Base": (okin_profiles.RESIDENT,),
     "Okin 64-Bit": tuple(okin_profiles.OKIN_64BIT_PROFILES.values()),
     "Adjustable bed (Lumbar)": tuple(okin_profiles.ADJUSTABLE_LUMBAR_PROFILES.values()),
 }
@@ -401,6 +410,8 @@ def render_okin_nframe_keys() -> str:
         "#### OKIN Bedding app keys",
         _okin_key_table(_OKIN_GROUPS["OKIN Bedding apps"], envelope=False),
         "Each app's literal action table, by the app's action names.",
+        "#### Resident Adjustable Base keys",
+        _okin_key_table(_OKIN_GROUPS["Resident Adjustable Base"], envelope=False),
         "#### Okin 64-Bit keys",
         _okin_key_table(_OKIN_GROUPS["Okin 64-Bit"], envelope=False),
         "#### Adjustable bed (Lumbar) keys",
@@ -491,7 +502,94 @@ def render_okin_nframe_okimat() -> str:
     )
 
 
+def render_adjustable_bed() -> str:
+    rows = (
+        (profile.key, profile.table, action, _hex(frame))
+        for profile in ADJUSTABLE_BED_PROFILES.values()
+        for action, frame in profile.frames.items()
+    )
+    release = (
+        "STOP at "
+        + " and ".join(str(round(offset * 1000)) for offset in RELEASE_STOP_OFFSETS_S)
+        + " ms"
+    )
+    return _block(
+        _table(("Profile", "Asset", "Control", "Bytes"), rows),
+        _table(
+            ("Gesture", "Schedule", "Release"),
+            (
+                ("Touch hold", f"Immediate, every {REFRESH_MS} ms", release),
+                ("Save named preset", f"Hold chord for {SAVE_HOLD_MS} ms", release),
+                (
+                    "Speech motor P1/P3",
+                    f"{REFRESH_MS} ms stream, bounded by entry pulse count",
+                    "Voice STOP and ordinary release",
+                ),
+                (
+                    "Speech motor P2",
+                    f"One start, bounded by entry pulse count × {REFRESH_MS} ms",
+                    "Voice STOP and ordinary release",
+                ),
+                (
+                    "Speech preset, massage or light",
+                    f"Pre-STOP, two writes {REFRESH_MS} ms apart",
+                    "No post-STOP",
+                ),
+                ("Massage query", "Once on request", "None"),
+            ),
+        ),
+    )
+
+
+def render_resident_session() -> str:
+    from custom_components.adjustable_bed.beds.resident import controller as resident
+
+    p = okin_profiles
+    return _block(
+        _table(
+            ("Role", "Service", "Characteristic"),
+            (
+                (
+                    "Control (with response)",
+                    f"`{okin_codec.SERVICE_UUID}`",
+                    f"`{okin_codec.WRITE_UUID}`",
+                ),
+                ("Notification", f"`{okin_codec.SERVICE_UUID}`", f"`{resident.NOTIFY_UUID}`"),
+                ("Model read (ignored)", f"`{resident.INFO_SERVICE}`", f"`{resident.MODEL_UUID}`"),
+            ),
+        ),
+        _table(
+            ("Operation", "Frame", "Schedule"),
+            (
+                (
+                    "Massage query",
+                    _hex(resident.QUERY_MASSAGE),
+                    f"now and +{p.RESIDENT_QUERY_DELAY_MS} ms on startup and massage release",
+                ),
+                (
+                    "Clock query",
+                    _hex(resident.QUERY_CLOCK),
+                    f"{p.RESIDENT_CLOCK_QUERY_DELAY_MS} ms after clock setting",
+                ),
+                (
+                    "Local clock (2026-11-10 07:08:09)",
+                    _hex(okin_codec.calendar_record(0xE7, (126, 10, 10, 7, 8, 9))),
+                    f"once at connect +{p.RESIDENT_CLOCK_DELAY_MS} ms, also manual sync",
+                ),
+            ),
+        ),
+        f"Model read: connect +{p.RESIDENT_INFO_DELAY_MS} ms; notification retry gaps: "
+        + "/".join(str(ms) for ms in p.RESIDENT_NOTIFY_RETRIES_MS)
+        + " ms. "
+        + "Name prefixes (case-insensitive): "
+        + ", ".join(f"`{v}`" for v in p.RESIDENT_NAME_PREFIXES)
+        + ".",
+    )
+
+
 BLOCKS: list[Block] = [
+    (GUIDE, "adjustable-bed-commands", render_adjustable_bed),
+    (GUIDE, "resident-session", render_resident_session),
     (GUIDE, "okin-nframe-profiles", render_okin_nframe_profiles),
     (GUIDE, "okin-nframe-transports", render_okin_nframe_transports),
     (GUIDE, "okin-nframe-keys", render_okin_nframe_keys),

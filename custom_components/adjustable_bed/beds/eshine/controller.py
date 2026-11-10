@@ -385,6 +385,7 @@ class EshineController(ProfileExecution[RichmatProfile], BedController):
             await self._send_stop()
 
     async def _send_stop(self) -> None:
+        assert self.profile.stop is not None
         await self.write_command(self._frame(self.profile.stop), cancel_event=asyncio.Event())
 
     async def stop_all(self) -> None:

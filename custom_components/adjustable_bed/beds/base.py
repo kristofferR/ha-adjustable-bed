@@ -198,6 +198,11 @@ class BedController(GattWriter):
         return True
 
     @property
+    def commands_share_timer(self) -> bool:
+        """Whether every command replaces one physical stream, across axes and sides."""
+        return False
+
+    @property
     def execution(self) -> ExecutionCapabilities:
         """Return the held and concurrent execution this controller may use.
 

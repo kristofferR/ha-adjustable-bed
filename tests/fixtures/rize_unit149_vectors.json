@@ -1,0 +1,6206 @@
+[
+  {
+    "id": "G-head",
+    "protocol": "P1",
+    "action": "G-head",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 1,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101010000",
+    "evidence": [
+      "E-FRAME",
+      "E-WRITE"
+    ]
+  },
+  {
+    "id": "G-head-strength",
+    "protocol": "P1",
+    "action": "G-head-strength",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 77,
+      "parameter": 50,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1014d3200",
+    "evidence": [
+      "E-FRAME",
+      "E-WRITE"
+    ]
+  },
+  {
+    "id": "G-leg-strength",
+    "protocol": "P1",
+    "action": "G-leg-strength",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 79,
+      "parameter": 100,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1014f6400",
+    "evidence": [
+      "E-FRAME",
+      "E-WRITE"
+    ]
+  },
+  {
+    "id": "G-mode4",
+    "protocol": "P1",
+    "action": "G-mode4",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 167,
+      "parameter": 1,
+      "parameter2": 1
+    },
+    "expected_bytes": "034433221120d4c3b2a101a70101",
+    "evidence": [
+      "E-FRAME",
+      "E-WRITE"
+    ]
+  },
+  {
+    "id": "G-mode4-cancel",
+    "protocol": "P1",
+    "action": "G-mode4-cancel",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 167,
+      "parameter": 1,
+      "parameter2": 4
+    },
+    "expected_bytes": "034433221120d4c3b2a101a70104",
+    "evidence": [
+      "E-FRAME",
+      "E-WRITE"
+    ]
+  },
+  {
+    "id": "G-program-ZG",
+    "protocol": "P1",
+    "action": "G-program-ZG",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 167,
+      "parameter": 1,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101a70100",
+    "evidence": [
+      "E-FRAME",
+      "E-WRITE"
+    ]
+  },
+  {
+    "id": "G-zero-destination",
+    "protocol": "P1",
+    "action": "DB -2 virtual address sentinel",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": -2,
+      "own": -1,
+      "opcode": 1
+    },
+    "expected_bytes": "030000000020ffffffff01010000",
+    "evidence": [
+      "E-FRAME",
+      "E-PARSE"
+    ]
+  },
+  {
+    "id": "G-password",
+    "protocol": "P1",
+    "action": "BLE room password check",
+    "builder": "password_check",
+    "inputs": {
+      "room": 10000
+    },
+    "expected_bytes": "0116011027000031313232",
+    "evidence": [
+      "E-SESSION"
+    ]
+  },
+  {
+    "id": "G-enroll",
+    "protocol": "P1",
+    "action": "BLE room enrollment",
+    "builder": "enroll",
+    "inputs": {
+      "room": 10000
+    },
+    "expected_bytes": "0103102700003131323200000000",
+    "evidence": [
+      "E-SESSION"
+    ]
+  },
+  {
+    "id": "G-ping",
+    "protocol": "P1",
+    "action": "Broadcast ping",
+    "builder": "ping",
+    "inputs": {
+      "own": 16909060
+    },
+    "expected_bytes": "03fffffffffe04030201",
+    "evidence": [
+      "E-SESSION"
+    ]
+  },
+  {
+    "id": "C-000",
+    "protocol": "P1",
+    "action": "SEAT_1_HEAD_UP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 1,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101010000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1054",
+      "evidence/js/402.pretty.js:1060",
+      "evidence/js/402.pretty.js:1166",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-001",
+    "protocol": "P1",
+    "action": "SEAT_1_HEAD_DOWN",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 2,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101020000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1066",
+      "evidence/js/402.pretty.js:1072",
+      "evidence/js/402.pretty.js:1178",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-002",
+    "protocol": "P1",
+    "action": "SEAT_1_HEAD_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 3,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101030000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1078",
+      "evidence/js/402.pretty.js:1084",
+      "evidence/js/402.pretty.js:1190",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-003",
+    "protocol": "P1",
+    "action": "SEAT_1_FOOT_UP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 4,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101040000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1058",
+      "evidence/js/402.pretty.js:1170",
+      "evidence/js/402.pretty.js:1215",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-004",
+    "protocol": "P1",
+    "action": "SEAT_1_FOOT_DOWN",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 5,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101050000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1070",
+      "evidence/js/402.pretty.js:1182",
+      "evidence/js/402.pretty.js:1227",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-005",
+    "protocol": "P1",
+    "action": "SEAT_1_FOOT_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 6,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101060000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1082",
+      "evidence/js/402.pretty.js:1194",
+      "evidence/js/402.pretty.js:1239",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-006",
+    "protocol": "P1",
+    "action": "SEAT_1_ALL_UP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 7,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101070000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1056",
+      "evidence/js/402.pretty.js:1168",
+      "evidence/js/402.pretty.js:1213",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-007",
+    "protocol": "P1",
+    "action": "SEAT_1_ALL_DOWN",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 8,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101080000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1068",
+      "evidence/js/402.pretty.js:1180",
+      "evidence/js/402.pretty.js:1225",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-008",
+    "protocol": "P1",
+    "action": "SEAT_1_ALL_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 9,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101090000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1080",
+      "evidence/js/402.pretty.js:1192",
+      "evidence/js/402.pretty.js:1237",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-009",
+    "protocol": "P1",
+    "action": "SEAT_2_HEAD_UP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 10,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1010a0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1128",
+      "evidence/js/402.pretty.js:1134",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-010",
+    "protocol": "P1",
+    "action": "SEAT_2_HEAD_DOWN",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 11,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1010b0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1140",
+      "evidence/js/402.pretty.js:1146",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-011",
+    "protocol": "P1",
+    "action": "SEAT_2_HEAD_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 12,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1010c0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1152",
+      "evidence/js/402.pretty.js:1158",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-012",
+    "protocol": "P1",
+    "action": "SEAT_2_FOOT_UP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 13,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1010d0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1132",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-013",
+    "protocol": "P1",
+    "action": "SEAT_2_FOOT_DOWN",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 14,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1010e0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1144",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-014",
+    "protocol": "P1",
+    "action": "SEAT_2_FOOT_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 15,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1010f0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1156",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-015",
+    "protocol": "P1",
+    "action": "SEAT_2_ALL_UP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 16,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101100000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1130",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-016",
+    "protocol": "P1",
+    "action": "SEAT_2_ALL_DOWN",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 17,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101110000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1142",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-017",
+    "protocol": "P1",
+    "action": "SEAT_2_ALL_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 18,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101120000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1154",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-018",
+    "protocol": "P1",
+    "action": "SEAT_1_2_HEAD_UP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 19,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101130000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1091",
+      "evidence/js/402.pretty.js:1097",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-019",
+    "protocol": "P1",
+    "action": "SEAT_1_2_HEAD_DOWN",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 20,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101140000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1103",
+      "evidence/js/402.pretty.js:1109",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-020",
+    "protocol": "P1",
+    "action": "SEAT_1_2_HEAD_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 21,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101150000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1115",
+      "evidence/js/402.pretty.js:1121",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-021",
+    "protocol": "P1",
+    "action": "SEAT_1_2_FOOT_UP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 22,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101160000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1095",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-022",
+    "protocol": "P1",
+    "action": "SEAT_1_2_FOOT_DOWN",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 23,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101170000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1107",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-023",
+    "protocol": "P1",
+    "action": "SEAT_1_2_FOOT_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 24,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101180000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1119",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-024",
+    "protocol": "P1",
+    "action": "SEAT_1_2_ALL_UP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 25,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101190000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1093",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-025",
+    "protocol": "P1",
+    "action": "SEAT_1_2_ALL_DOWN",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 26,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1011a0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1105",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-026",
+    "protocol": "P1",
+    "action": "SEAT_1_2_ALL_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 27,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1011b0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1117",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-027",
+    "protocol": "P1",
+    "action": "SEAT_1_ALL_MOTOR_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 28,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1011c0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:533",
+      "evidence/js/402.pretty.js:563",
+      "evidence/js/402.pretty.js:581",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-028",
+    "protocol": "P1",
+    "action": "SEAT_2_ALL_MOTOR_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 29,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1011d0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:537",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-029",
+    "protocol": "P1",
+    "action": "SEAT_1_2_ALL_MOTOR_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 30,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1011e0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:535",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-030",
+    "protocol": "P1",
+    "action": "SEAT_1_MEMORY_POSITION_A",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 37,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101250000",
+    "evidence": [
+      "evidence/js/402.pretty.js:641",
+      "evidence/js/402.pretty.js:648",
+      "evidence/js/402.pretty.js:655",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-031",
+    "protocol": "P1",
+    "action": "SEAT_1_MEMORY_POSITION_B",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 38,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101260000",
+    "evidence": [
+      "evidence/js/402.pretty.js:758",
+      "evidence/js/402.pretty.js:774",
+      "evidence/js/402.pretty.js:788",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-032",
+    "protocol": "P1",
+    "action": "SEAT_1_MEMORY_POSITION_C",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 39,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101270000",
+    "evidence": [
+      "evidence/js/402.pretty.js:765",
+      "evidence/js/402.pretty.js:776",
+      "evidence/js/402.pretty.js:790",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-033",
+    "protocol": "P1",
+    "action": "SEAT_1_RUN_TO_POSITION_A",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 41,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101290000",
+    "evidence": [
+      "evidence/js/402.pretty.js:843",
+      "evidence/js/402.pretty.js:864",
+      "evidence/js/402.pretty.js:878",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-034",
+    "protocol": "P1",
+    "action": "SEAT_1_RUN_TO_POSITION_B",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 42,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1012a0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:850",
+      "evidence/js/402.pretty.js:866",
+      "evidence/js/402.pretty.js:880",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-035",
+    "protocol": "P1",
+    "action": "SEAT_1_RUN_TO_POSITION_C",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 43,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1012b0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:857",
+      "evidence/js/402.pretty.js:868",
+      "evidence/js/402.pretty.js:882",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-036",
+    "protocol": "P1",
+    "action": "SEAT_2_MEMORY_POSITION_A",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 45,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1012d0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:645",
+      "evidence/js/402.pretty.js:652",
+      "evidence/js/402.pretty.js:659",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-037",
+    "protocol": "P1",
+    "action": "SEAT_2_MEMORY_POSITION_B",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 46,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1012e0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:762",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-038",
+    "protocol": "P1",
+    "action": "SEAT_2_MEMORY_POSITION_C",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 47,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1012f0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:769",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-039",
+    "protocol": "P1",
+    "action": "SEAT_2_RUN_TO_POSITION_A",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 49,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101310000",
+    "evidence": [
+      "evidence/js/402.pretty.js:847",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-040",
+    "protocol": "P1",
+    "action": "SEAT_2_RUN_TO_POSITION_B",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 50,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101320000",
+    "evidence": [
+      "evidence/js/402.pretty.js:854",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-041",
+    "protocol": "P1",
+    "action": "SEAT_2_RUN_TO_POSITION_C",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 51,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101330000",
+    "evidence": [
+      "evidence/js/402.pretty.js:861",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-042",
+    "protocol": "P1",
+    "action": "SEAT_1_2_MEMORY_POSITION_A",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 53,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101350000",
+    "evidence": [
+      "evidence/js/402.pretty.js:643",
+      "evidence/js/402.pretty.js:650",
+      "evidence/js/402.pretty.js:657",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-043",
+    "protocol": "P1",
+    "action": "SEAT_1_2_MEMORY_POSITION_B",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 54,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101360000",
+    "evidence": [
+      "evidence/js/402.pretty.js:760",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-044",
+    "protocol": "P1",
+    "action": "SEAT_1_2_MEMORY_POSITION_C",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 55,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101370000",
+    "evidence": [
+      "evidence/js/402.pretty.js:767",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-045",
+    "protocol": "P1",
+    "action": "SEAT_1_2_RUN_TO_POSITION_A",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 57,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101390000",
+    "evidence": [
+      "evidence/js/402.pretty.js:845",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-046",
+    "protocol": "P1",
+    "action": "SEAT_1_2_RUN_TO_POSITION_B",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 58,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1013a0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:852",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-047",
+    "protocol": "P1",
+    "action": "SEAT_1_2_RUN_TO_POSITION_C",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 59,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1013b0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:859",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-048",
+    "protocol": "P1",
+    "action": "SEAT_1_MASSAGE_START",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 71,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101470000",
+    "evidence": [
+      "evidence/js/528.pretty.js:452",
+      "evidence/js/528.pretty.js:457",
+      "evidence/js/528.pretty.js:466",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-049",
+    "protocol": "P1",
+    "action": "SEAT_1_MASSAGE_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 72,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101480000",
+    "evidence": [
+      "evidence/js/528.pretty.js:452",
+      "evidence/js/528.pretty.js:457",
+      "evidence/js/528.pretty.js:466",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-050",
+    "protocol": "P1",
+    "action": "SEAT_2_MASSAGE_START",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 73,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101490000",
+    "evidence": [
+      "evidence/js/528.pretty.js:456",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-051",
+    "protocol": "P1",
+    "action": "SEAT_2_MASSAGE_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 74,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1014a0000",
+    "evidence": [
+      "evidence/js/528.pretty.js:456",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-052",
+    "protocol": "P1",
+    "action": "SEAT_1_2_MASSAGE_START",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 75,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1014b0000",
+    "evidence": [
+      "evidence/js/528.pretty.js:454",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-053",
+    "protocol": "P1",
+    "action": "SEAT_1_2_MASSAGE_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 76,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1014c0000",
+    "evidence": [
+      "evidence/js/528.pretty.js:454",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-054",
+    "protocol": "P1",
+    "action": "SEAT_1_HEAD_MASSAGE_SETTING",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 77,
+      "parameter": 50,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1014d3200",
+    "evidence": [
+      "evidence/js/528.pretty.js:585",
+      "evidence/js/528.pretty.js:590",
+      "evidence/js/528.pretty.js:599",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-055",
+    "protocol": "P1",
+    "action": "SEAT_2_HEAD_MASSAGE_SETTING",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 78,
+      "parameter": 50,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1014e3200",
+    "evidence": [
+      "evidence/js/528.pretty.js:589",
+      "evidence/js/528.pretty.js:665",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-056",
+    "protocol": "P1",
+    "action": "SEAT_1_LEG_MASSAGE_SETTING",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 79,
+      "parameter": 50,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1014f3200",
+    "evidence": [
+      "evidence/js/528.pretty.js:623",
+      "evidence/js/528.pretty.js:628",
+      "evidence/js/528.pretty.js:637",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-057",
+    "protocol": "P1",
+    "action": "SEAT_2_LEG_MASSAGE_SETTING",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 80,
+      "parameter": 50,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101503200",
+    "evidence": [
+      "evidence/js/528.pretty.js:627",
+      "evidence/js/528.pretty.js:703",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-058",
+    "protocol": "P1",
+    "action": "SEAT_1_2_HEAD_MASSAGE_SETTING",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 81,
+      "parameter": 50,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101513200",
+    "evidence": [
+      "evidence/js/528.pretty.js:587",
+      "evidence/js/528.pretty.js:663",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-059",
+    "protocol": "P1",
+    "action": "SEAT_1_2_LEG_MASSAGE_SETTING",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 82,
+      "parameter": 50,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101523200",
+    "evidence": [
+      "evidence/js/528.pretty.js:625",
+      "evidence/js/528.pretty.js:701",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-060",
+    "protocol": "P1",
+    "action": "SEAT_1_MASSAGE_15",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 83,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101530000",
+    "evidence": [
+      "evidence/js/528.pretty.js:491",
+      "evidence/js/528.pretty.js:519",
+      "evidence/js/528.pretty.js:536",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-061",
+    "protocol": "P1",
+    "action": "SEAT_1_MASSAGE_30",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 84,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101540000",
+    "evidence": [
+      "evidence/js/528.pretty.js:493",
+      "evidence/js/528.pretty.js:521",
+      "evidence/js/528.pretty.js:538",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-062",
+    "protocol": "P1",
+    "action": "SEAT_1_MASSAGE_45",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 85,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101550000",
+    "evidence": [
+      "evidence/js/528.pretty.js:495",
+      "evidence/js/528.pretty.js:523",
+      "evidence/js/528.pretty.js:540",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-063",
+    "protocol": "P1",
+    "action": "SEAT_2_MASSAGE_15",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 86,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101560000",
+    "evidence": [
+      "evidence/js/528.pretty.js:509",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-064",
+    "protocol": "P1",
+    "action": "SEAT_2_MASSAGE_30",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 87,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101570000",
+    "evidence": [
+      "evidence/js/528.pretty.js:511",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-065",
+    "protocol": "P1",
+    "action": "SEAT_2_MASSAGE_45",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 88,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101580000",
+    "evidence": [
+      "evidence/js/528.pretty.js:513",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-066",
+    "protocol": "P1",
+    "action": "SEAT_1_2_MASSAGE_15",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 89,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101590000",
+    "evidence": [
+      "evidence/js/528.pretty.js:500",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-067",
+    "protocol": "P1",
+    "action": "SEAT_1_2_MASSAGE_30",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 90,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1015a0000",
+    "evidence": [
+      "evidence/js/528.pretty.js:502",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-068",
+    "protocol": "P1",
+    "action": "SEAT_1_2_MASSAGE_45",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 91,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1015b0000",
+    "evidence": [
+      "evidence/js/528.pretty.js:504",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-069",
+    "protocol": "P1",
+    "action": "SEAT_1_BED_LIGHT_ON",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 92,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1015c0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:927",
+      "evidence/js/402.pretty.js:932",
+      "evidence/js/402.pretty.js:941",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-070",
+    "protocol": "P1",
+    "action": "SEAT_1_BED_LIGHT_OFF",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 93,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1015d0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:921",
+      "evidence/js/402.pretty.js:932",
+      "evidence/js/402.pretty.js:941",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-071",
+    "protocol": "P1",
+    "action": "SEAT_2_BED_LIGHT_ON",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 94,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1015e0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:931",
+      "evidence/js/528.pretty.js:412",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-072",
+    "protocol": "P1",
+    "action": "SEAT_2_BED_LIGHT_OFF",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 95,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1015f0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:925",
+      "evidence/js/528.pretty.js:406",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-073",
+    "protocol": "P1",
+    "action": "SEAT_1_2_BED_LIGHT_ON",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 96,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101600000",
+    "evidence": [
+      "evidence/js/402.pretty.js:929",
+      "evidence/js/528.pretty.js:410",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-074",
+    "protocol": "P1",
+    "action": "SEAT_1_2_BED_LIGHT_OFF",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 97,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101610000",
+    "evidence": [
+      "evidence/js/402.pretty.js:923",
+      "evidence/js/528.pretty.js:404",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-075",
+    "protocol": "P1",
+    "action": "SEAT_1_ZG",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 98,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101620000",
+    "evidence": [
+      "evidence/js/402.pretty.js:526",
+      "evidence/js/402.pretty.js:561",
+      "evidence/js/402.pretty.js:579",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-076",
+    "protocol": "P1",
+    "action": "SEAT_2_ZG",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 99,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101630000",
+    "evidence": [
+      "evidence/js/402.pretty.js:530",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-077",
+    "protocol": "P1",
+    "action": "SEAT_1_2_ZG",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 100,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101640000",
+    "evidence": [
+      "evidence/js/402.pretty.js:528",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-078",
+    "protocol": "P1",
+    "action": "SEAT_1_ANTI_SNORE",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 101,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101650000",
+    "evidence": [
+      "evidence/js/402.pretty.js:540",
+      "evidence/js/402.pretty.js:565",
+      "evidence/js/402.pretty.js:583",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-079",
+    "protocol": "P1",
+    "action": "SEAT_2_ANTI_SNORE",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 102,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101660000",
+    "evidence": [
+      "evidence/js/402.pretty.js:544",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-080",
+    "protocol": "P1",
+    "action": "SEAT_1_2_ANTI_SNORE",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 103,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101670000",
+    "evidence": [
+      "evidence/js/402.pretty.js:542",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-081",
+    "protocol": "P1",
+    "action": "SEAT_1_MASSAGE_MODE1",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 107,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1016b0000",
+    "evidence": [
+      "evidence/js/528.pretty.js:297",
+      "evidence/js/528.pretty.js:327",
+      "evidence/js/528.pretty.js:345",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-082",
+    "protocol": "P1",
+    "action": "SEAT_2_MASSAGE_MODE1",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 108,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1016c0000",
+    "evidence": [
+      "evidence/js/528.pretty.js:301",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-083",
+    "protocol": "P1",
+    "action": "SEAT_1_2_MASSAGE_MODE1",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 109,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1016d0000",
+    "evidence": [
+      "evidence/js/528.pretty.js:299",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-084",
+    "protocol": "P1",
+    "action": "SEAT_1_MASSAGE_MODE2",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 110,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1016e0000",
+    "evidence": [
+      "evidence/js/528.pretty.js:304",
+      "evidence/js/528.pretty.js:329",
+      "evidence/js/528.pretty.js:347",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-085",
+    "protocol": "P1",
+    "action": "SEAT_2_MASSAGE_MODE2",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 111,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1016f0000",
+    "evidence": [
+      "evidence/js/528.pretty.js:308",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-086",
+    "protocol": "P1",
+    "action": "SEAT_1_2_MASSAGE_MODE2",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 112,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101700000",
+    "evidence": [
+      "evidence/js/528.pretty.js:306",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-087",
+    "protocol": "P1",
+    "action": "SEAT_1_MASSAGE_MODE3",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 113,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101710000",
+    "evidence": [
+      "evidence/js/528.pretty.js:311",
+      "evidence/js/528.pretty.js:331",
+      "evidence/js/528.pretty.js:349",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-088",
+    "protocol": "P1",
+    "action": "SEAT_2_MASSAGE_MODE3",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 114,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101720000",
+    "evidence": [
+      "evidence/js/528.pretty.js:315",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-089",
+    "protocol": "P1",
+    "action": "SEAT_1_2_MASSAGE_MODE3",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 115,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101730000",
+    "evidence": [
+      "evidence/js/528.pretty.js:313",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-090",
+    "protocol": "P1",
+    "action": "SEAT_1_MASSAGE_MODE_CACEL",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 116,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101740000",
+    "evidence": [
+      "evidence/js/528.pretty.js:290",
+      "evidence/js/528.pretty.js:325",
+      "evidence/js/528.pretty.js:343",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-091",
+    "protocol": "P1",
+    "action": "SEAT_2_MASSAGE_MODE_CACEL",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 117,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101750000",
+    "evidence": [
+      "evidence/js/528.pretty.js:294",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-092",
+    "protocol": "P1",
+    "action": "SEAT_1_2_MASSAGE_MODE_CACEL",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 118,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101760000",
+    "evidence": [
+      "evidence/js/528.pretty.js:292",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-093",
+    "protocol": "P1",
+    "action": "SEAT_1_TIME_CACEL",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 119,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101770000",
+    "evidence": [
+      "evidence/js/528.pretty.js:489",
+      "evidence/js/528.pretty.js:517",
+      "evidence/js/528.pretty.js:534",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-094",
+    "protocol": "P1",
+    "action": "SEAT_2_TIME_CACEL",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 120,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101780000",
+    "evidence": [
+      "evidence/js/528.pretty.js:507",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-095",
+    "protocol": "P1",
+    "action": "SEAT_1_2_TIME_CACEL",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 121,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101790000",
+    "evidence": [
+      "evidence/js/528.pretty.js:498",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MASSAGE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-096",
+    "protocol": "P1",
+    "action": "SEAT_1_BACK_UP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 122,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1017a0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1054",
+      "evidence/js/402.pretty.js:1060",
+      "evidence/js/402.pretty.js:1166",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-097",
+    "protocol": "P1",
+    "action": "SEAT_1_BACK_DOWN",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 123,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1017b0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1066",
+      "evidence/js/402.pretty.js:1072",
+      "evidence/js/402.pretty.js:1178",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-098",
+    "protocol": "P1",
+    "action": "SEAT_1_BACK_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 124,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1017c0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1078",
+      "evidence/js/402.pretty.js:1084",
+      "evidence/js/402.pretty.js:1190",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-099",
+    "protocol": "P1",
+    "action": "SEAT_2_BACK_UP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 125,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1017d0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1128",
+      "evidence/js/402.pretty.js:1134",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-100",
+    "protocol": "P1",
+    "action": "SEAT_2_BACK_DOWN",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 126,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1017e0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1140",
+      "evidence/js/402.pretty.js:1146",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-101",
+    "protocol": "P1",
+    "action": "SEAT_2_BACK_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 127,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1017f0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1152",
+      "evidence/js/402.pretty.js:1158",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-102",
+    "protocol": "P1",
+    "action": "SEAT_1_2_BACK_UP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 128,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101800000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1091",
+      "evidence/js/402.pretty.js:1097",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-103",
+    "protocol": "P1",
+    "action": "SEAT_1_2_BACK_DOWN",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 129,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101810000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1103",
+      "evidence/js/402.pretty.js:1109",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-104",
+    "protocol": "P1",
+    "action": "SEAT_1_2_BACK_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 130,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101820000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1115",
+      "evidence/js/402.pretty.js:1121",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-105",
+    "protocol": "P1",
+    "action": "SEAT_1_WAIST_UP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 131,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101830000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1062",
+      "evidence/js/402.pretty.js:1174",
+      "evidence/js/402.pretty.js:1219",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-106",
+    "protocol": "P1",
+    "action": "SEAT_1_WAIST_DOWN",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 132,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101840000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1074",
+      "evidence/js/402.pretty.js:1186",
+      "evidence/js/402.pretty.js:1231",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-107",
+    "protocol": "P1",
+    "action": "SEAT_1_WAIST_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 133,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101850000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1086",
+      "evidence/js/402.pretty.js:1198",
+      "evidence/js/402.pretty.js:1243",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-108",
+    "protocol": "P1",
+    "action": "SEAT_2_WAIST_UP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 134,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101860000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1136",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-109",
+    "protocol": "P1",
+    "action": "SEAT_2_WAIST_DOWN",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 135,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101870000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1148",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-110",
+    "protocol": "P1",
+    "action": "SEAT_2_WAIST_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 136,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101880000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1160",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-111",
+    "protocol": "P1",
+    "action": "SEAT_1_2_WAIST_UP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 137,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101890000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1099",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-112",
+    "protocol": "P1",
+    "action": "SEAT_1_2_WAIST_DOWN",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 138,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1018a0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1111",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-113",
+    "protocol": "P1",
+    "action": "SEAT_1_2_WAIST_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 139,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1018b0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1123",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-114",
+    "protocol": "P1",
+    "action": "SEAT_1_NECK_UP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 140,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1018c0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1064",
+      "evidence/js/402.pretty.js:1176",
+      "evidence/js/402.pretty.js:1221",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-115",
+    "protocol": "P1",
+    "action": "SEAT_1_NECK_DOWN",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 141,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1018d0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1076",
+      "evidence/js/402.pretty.js:1188",
+      "evidence/js/402.pretty.js:1233",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-116",
+    "protocol": "P1",
+    "action": "SEAT_1_NECK_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 142,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1018e0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1088",
+      "evidence/js/402.pretty.js:1200",
+      "evidence/js/402.pretty.js:1245",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-117",
+    "protocol": "P1",
+    "action": "SEAT_2_NECK_UP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 143,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1018f0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1138",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-118",
+    "protocol": "P1",
+    "action": "SEAT_2_NECK_DOWN",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 144,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101900000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1150",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-119",
+    "protocol": "P1",
+    "action": "SEAT_2_NECK_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 145,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101910000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1162",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-120",
+    "protocol": "P1",
+    "action": "SEAT_1_2_NECK_UP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 146,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101920000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1101",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-121",
+    "protocol": "P1",
+    "action": "SEAT_1_2_NECK_DOWN",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 147,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101930000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1113",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-122",
+    "protocol": "P1",
+    "action": "SEAT_1_2_NECK_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 148,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101940000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1125",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-123",
+    "protocol": "P1",
+    "action": "SEAT_1_NEW_ALL_UP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 149,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101950000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1056",
+      "evidence/js/402.pretty.js:1168",
+      "evidence/js/402.pretty.js:1213",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-124",
+    "protocol": "P1",
+    "action": "SEAT_1_NEW_ALL_DOWN",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 150,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101960000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1068",
+      "evidence/js/402.pretty.js:1180",
+      "evidence/js/402.pretty.js:1225",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-125",
+    "protocol": "P1",
+    "action": "SEAT_1_NEW_ALL_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 151,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101970000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1080",
+      "evidence/js/402.pretty.js:1192",
+      "evidence/js/402.pretty.js:1237",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-126",
+    "protocol": "P1",
+    "action": "SEAT_2_NEW_ALL_UP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 152,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101980000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1130",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-127",
+    "protocol": "P1",
+    "action": "SEAT_2_NEW_ALL_DOWN",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 153,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101990000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1142",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-128",
+    "protocol": "P1",
+    "action": "SEAT_2_NEW_ALL_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 154,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1019a0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1154",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-129",
+    "protocol": "P1",
+    "action": "SEAT_1_2_NEW_ALL_UP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 155,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1019b0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1093",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-130",
+    "protocol": "P1",
+    "action": "SEAT_1_2_NEW_ALL_DOWN",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 156,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1019c0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1105",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-131",
+    "protocol": "P1",
+    "action": "SEAT_1_2_NEW_ALL_STOP",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 157,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1019d0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:1117",
+      "E-FRAME",
+      "E-WRITE",
+      "E-MOVE"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-132",
+    "protocol": "P1",
+    "action": "SEAT_1_BOOK",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 158,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1019e0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:547",
+      "evidence/js/402.pretty.js:567",
+      "evidence/js/402.pretty.js:585",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-133",
+    "protocol": "P1",
+    "action": "SEAT_2_BOOK",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 159,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a1019f0000",
+    "evidence": [
+      "evidence/js/402.pretty.js:551",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-134",
+    "protocol": "P1",
+    "action": "SEAT_1_2_BOOK",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 160,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101a00000",
+    "evidence": [
+      "evidence/js/402.pretty.js:549",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-135",
+    "protocol": "P1",
+    "action": "SEAT_1_LEISURE",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 161,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101a10000",
+    "evidence": [
+      "evidence/js/402.pretty.js:554",
+      "evidence/js/402.pretty.js:569",
+      "evidence/js/402.pretty.js:587",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-136",
+    "protocol": "P1",
+    "action": "SEAT_2_LEISURE",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 162,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101a20000",
+    "evidence": [
+      "evidence/js/402.pretty.js:558",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-137",
+    "protocol": "P1",
+    "action": "SEAT_1_2_LEISURE",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 163,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101a30000",
+    "evidence": [
+      "evidence/js/402.pretty.js:556",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-138",
+    "protocol": "P1",
+    "action": "SEAT_HOT_SENSOR_ON",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 164,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101a40000",
+    "evidence": [
+      "evidence/js/402.pretty.js:80",
+      "evidence/js/528.pretty.js:48",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-139",
+    "protocol": "P1",
+    "action": "SEAT_HOT_SENSOR_OFF",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 165,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101a50000",
+    "evidence": [
+      "evidence/js/402.pretty.js:80",
+      "evidence/js/528.pretty.js:49",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-140",
+    "protocol": "P1",
+    "action": "MCU_POWER_SUPPLY",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 166,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101a60000",
+    "evidence": [
+      "evidence/js/402.pretty.js:343",
+      "E-FRAME",
+      "E-WRITE",
+      "E-PRESET"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-141",
+    "protocol": "P1",
+    "action": "massage_mode4_side-1_start",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 167,
+      "parameter": 1,
+      "parameter2": 1
+    },
+    "expected_bytes": "034433221120d4c3b2a101a70101",
+    "evidence": [
+      "E-MASSAGE",
+      "evidence/js/528.pretty.js:274-398,1048-1060"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-142",
+    "protocol": "P1",
+    "action": "massage_mode4_side-1_cancel",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 167,
+      "parameter": 1,
+      "parameter2": 4
+    },
+    "expected_bytes": "034433221120d4c3b2a101a70104",
+    "evidence": [
+      "E-MASSAGE",
+      "evidence/js/528.pretty.js:274-398,1048-1060"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-143",
+    "protocol": "P1",
+    "action": "massage_mode4_side-2_start",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 167,
+      "parameter": 1,
+      "parameter2": 2
+    },
+    "expected_bytes": "034433221120d4c3b2a101a70102",
+    "evidence": [
+      "E-MASSAGE",
+      "evidence/js/528.pretty.js:274-398,1048-1060"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-144",
+    "protocol": "P1",
+    "action": "massage_mode4_side-2_cancel",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 167,
+      "parameter": 1,
+      "parameter2": 5
+    },
+    "expected_bytes": "034433221120d4c3b2a101a70105",
+    "evidence": [
+      "E-MASSAGE",
+      "evidence/js/528.pretty.js:274-398,1048-1060"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-145",
+    "protocol": "P1",
+    "action": "massage_mode4_both_start",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 167,
+      "parameter": 1,
+      "parameter2": 3
+    },
+    "expected_bytes": "034433221120d4c3b2a101a70103",
+    "evidence": [
+      "E-MASSAGE",
+      "evidence/js/528.pretty.js:274-398,1048-1060"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-146",
+    "protocol": "P1",
+    "action": "massage_mode4_both_cancel",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 167,
+      "parameter": 1,
+      "parameter2": 6
+    },
+    "expected_bytes": "034433221120d4c3b2a101a70106",
+    "evidence": [
+      "E-MASSAGE",
+      "evidence/js/528.pretty.js:274-398,1048-1060"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-147",
+    "protocol": "P1",
+    "action": "set_current_default_position_1",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 167,
+      "parameter": 1,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101a70100",
+    "evidence": [
+      "E-PRESET",
+      "evidence/js/402.pretty.js:636-735,1950-1967",
+      "evidence/js/379.js:STORED_*"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-148",
+    "protocol": "P1",
+    "action": "set_current_default_position_2",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 167,
+      "parameter": 2,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101a70200",
+    "evidence": [
+      "E-PRESET",
+      "evidence/js/402.pretty.js:636-735,1950-1967",
+      "evidence/js/379.js:STORED_*"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-149",
+    "protocol": "P1",
+    "action": "set_current_default_position_3",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 167,
+      "parameter": 3,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101a70300",
+    "evidence": [
+      "E-PRESET",
+      "evidence/js/402.pretty.js:636-735,1950-1967",
+      "evidence/js/379.js:STORED_*"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-150",
+    "protocol": "P1",
+    "action": "set_current_default_position_4",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 167,
+      "parameter": 4,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101a70400",
+    "evidence": [
+      "E-PRESET",
+      "evidence/js/402.pretty.js:636-735,1950-1967",
+      "evidence/js/379.js:STORED_*"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-151",
+    "protocol": "P1",
+    "action": "set_current_default_position_5",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 167,
+      "parameter": 5,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101a70500",
+    "evidence": [
+      "E-PRESET",
+      "evidence/js/402.pretty.js:636-735,1950-1967",
+      "evidence/js/379.js:STORED_*"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-152",
+    "protocol": "P1",
+    "action": "set_current_default_position_6",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 167,
+      "parameter": 6,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101a70600",
+    "evidence": [
+      "E-PRESET",
+      "evidence/js/402.pretty.js:636-735,1950-1967",
+      "evidence/js/379.js:STORED_*"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-153",
+    "protocol": "P1",
+    "action": "set_current_default_position_7",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 167,
+      "parameter": 7,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101a70700",
+    "evidence": [
+      "E-PRESET",
+      "evidence/js/402.pretty.js:636-735,1950-1967",
+      "evidence/js/379.js:STORED_*"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-154",
+    "protocol": "P1",
+    "action": "set_current_default_position_8",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 167,
+      "parameter": 8,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101a70800",
+    "evidence": [
+      "E-PRESET",
+      "evidence/js/402.pretty.js:636-735,1950-1967",
+      "evidence/js/379.js:STORED_*"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-155",
+    "protocol": "P1",
+    "action": "set_current_default_position_9",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 167,
+      "parameter": 9,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101a70900",
+    "evidence": [
+      "E-PRESET",
+      "evidence/js/402.pretty.js:636-735,1950-1967",
+      "evidence/js/379.js:STORED_*"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-156",
+    "protocol": "P1",
+    "action": "set_current_default_position_10",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 167,
+      "parameter": 10,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101a70a00",
+    "evidence": [
+      "E-PRESET",
+      "evidence/js/402.pretty.js:636-735,1950-1967",
+      "evidence/js/379.js:STORED_*"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "C-157",
+    "protocol": "P1",
+    "action": "set_current_default_position_11",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 167,
+      "parameter": 11,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101a70b00",
+    "evidence": [
+      "E-PRESET",
+      "evidence/js/402.pretty.js:636-735,1950-1967",
+      "evidence/js/379.js:STORED_*"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-158",
+    "protocol": "P1",
+    "action": "set_current_default_position_12",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 167,
+      "parameter": 12,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101a70c00",
+    "evidence": [
+      "E-PRESET",
+      "evidence/js/402.pretty.js:636-735,1950-1967",
+      "evidence/js/379.js:STORED_*"
+    ],
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "id": "C-159",
+    "protocol": "P1",
+    "action": "add_device_success",
+    "builder": "bed_frame",
+    "inputs": {
+      "destination": 287454020,
+      "own": 2712847316,
+      "opcode": 69,
+      "parameter": 0,
+      "parameter2": 0
+    },
+    "expected_bytes": "034433221120d4c3b2a101450000",
+    "evidence": [
+      "evidence/java/com/kaidi_test4/rize/MainActivity.java:742",
+      "evidence/java/com/kaidi_test4/rize/util/PlBleApi.java:460",
+      "E-FRAME"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "P-battery",
+    "protocol": "P1",
+    "action": "P-battery",
+    "builder": "power_flag",
+    "inputs": {
+      "data": "03ffffffff200102030405a60100"
+    },
+    "expected_bytes": "03ffffffff200102030405a60100",
+    "evidence": [
+      "E-PARSE",
+      "E-POWER"
+    ],
+    "expected_value": true
+  },
+  {
+    "id": "P-mains",
+    "protocol": "P1",
+    "action": "P-mains",
+    "builder": "power_flag",
+    "inputs": {
+      "data": "03ffffffff200102030405a60000"
+    },
+    "expected_bytes": "03ffffffff200102030405a60000",
+    "evidence": [
+      "E-PARSE",
+      "E-POWER"
+    ],
+    "expected_value": false
+  },
+  {
+    "id": "P-own-zero",
+    "protocol": "P1",
+    "action": "P-own-zero",
+    "builder": "own_address",
+    "inputs": {
+      "data": "010a00000000"
+    },
+    "expected_bytes": "010a00000000",
+    "evidence": [
+      "E-PARSE",
+      "E-POWER"
+    ],
+    "expected_value": 4294967295
+  },
+  {
+    "id": "P-own-nonzero",
+    "protocol": "P1",
+    "action": "P-own-nonzero",
+    "builder": "own_address",
+    "inputs": {
+      "data": "010a44332211"
+    },
+    "expected_bytes": "010a44332211",
+    "evidence": [
+      "E-PARSE",
+      "E-POWER"
+    ],
+    "expected_value": 287454020
+  },
+  {
+    "id": "P-ad-single",
+    "protocol": "P1",
+    "action": "P-ad-single",
+    "builder": "advertisement",
+    "inputs": {
+      "data": "ffffc0ff0110270000870300000000000000"
+    },
+    "expected_bytes": "ffffc0ff0110270000870300000000000000",
+    "evidence": [
+      "E-PARSE",
+      "E-SCAN"
+    ],
+    "expected_value": {
+      "product": 135,
+      "capability_be16": 768,
+      "room": 10000
+    }
+  },
+  {
+    "id": "P-ad-discoverable",
+    "protocol": "P1",
+    "action": "P-ad-discoverable",
+    "builder": "advertisement",
+    "inputs": {
+      "data": "ffffc0ff09000000000000444b0000870300"
+    },
+    "expected_bytes": "ffffc0ff09000000000000444b0000870300",
+    "evidence": [
+      "E-PARSE",
+      "E-SCAN"
+    ],
+    "expected_value": {
+      "product": 135,
+      "capability_be16": 768,
+      "room": null
+    }
+  },
+  {
+    "id": "P-ad-broadcast",
+    "protocol": "P1",
+    "action": "P-ad-broadcast",
+    "builder": "advertisement",
+    "inputs": {
+      "data": "ffffc0ff02102700006655443322110000870300a144332211"
+    },
+    "expected_bytes": "ffffc0ff02102700006655443322110000870300a144332211",
+    "evidence": [
+      "E-PARSE",
+      "E-SCAN"
+    ],
+    "expected_value": {
+      "product": 135,
+      "capability_be16": 768,
+      "room": 10000
+    }
+  },
+  {
+    "id": "R001-L9-T0-S1-D0",
+    "protocol": "P1",
+    "action": "product141 selector0 up",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": 2,
+      "setup_location": 2,
+      "bedNumClick": 0,
+      "bedNum": 1,
+      "direction": 0,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "ONE,1,2,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "034433221120d4c3b2a1017a0000",
+    "expected_frames": [
+      "034433221120d4c3b2a1017a0000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            122,
+            "ONE"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-L9-T0-S1-D1",
+    "protocol": "P1",
+    "action": "product141 selector0 down",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": 2,
+      "setup_location": 2,
+      "bedNumClick": 0,
+      "bedNum": 1,
+      "direction": 1,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "ONE,1,2,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "034433221120d4c3b2a1017b0000",
+    "expected_frames": [
+      "034433221120d4c3b2a1017b0000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            123,
+            "ONE"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-L9-T0-S1-D2",
+    "protocol": "P1",
+    "action": "product141 selector0 matching STOP",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": 2,
+      "setup_location": 2,
+      "bedNumClick": 0,
+      "bedNum": 1,
+      "direction": 2,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "ONE,1,2,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "034433221120d4c3b2a1017c0000",
+    "expected_frames": [
+      "034433221120d4c3b2a1017c0000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            124,
+            "ONE"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-L9-T3-S0-D0",
+    "protocol": "P1",
+    "action": "product141 selector0 up",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": 1,
+      "setup_location": 1,
+      "bedNumClick": 3,
+      "bedNum": 0,
+      "direction": 0,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "ONE,1,1,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "034433221120d4c3b2a101010000",
+    "expected_frames": [
+      "034433221120d4c3b2a101010000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            1,
+            "ONE"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-L9-T3-S0-D1",
+    "protocol": "P1",
+    "action": "product141 selector0 down",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": 1,
+      "setup_location": 1,
+      "bedNumClick": 3,
+      "bedNum": 0,
+      "direction": 1,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "ONE,1,1,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "034433221120d4c3b2a101020000",
+    "expected_frames": [
+      "034433221120d4c3b2a101020000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            2,
+            "ONE"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-L9-T3-S0-D2",
+    "protocol": "P1",
+    "action": "product141 selector0 matching STOP",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": 1,
+      "setup_location": 1,
+      "bedNumClick": 3,
+      "bedNum": 0,
+      "direction": 2,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "ONE,1,1,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "034433221120d4c3b2a101030000",
+    "expected_frames": [
+      "034433221120d4c3b2a101030000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            3,
+            "ONE"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-L9-T3-S1-D0",
+    "protocol": "P1",
+    "action": "product141 selector0 up",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": 1,
+      "setup_location": 1,
+      "bedNumClick": 3,
+      "bedNum": 1,
+      "direction": 0,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "ONE,1,1,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "034433221120d4c3b2a101130000",
+    "expected_frames": [
+      "034433221120d4c3b2a101130000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            19,
+            "ONE"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-L9-T3-S1-D1",
+    "protocol": "P1",
+    "action": "product141 selector0 down",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": 1,
+      "setup_location": 1,
+      "bedNumClick": 3,
+      "bedNum": 1,
+      "direction": 1,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "ONE,1,1,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "034433221120d4c3b2a101140000",
+    "expected_frames": [
+      "034433221120d4c3b2a101140000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            20,
+            "ONE"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-L9-T3-S1-D2",
+    "protocol": "P1",
+    "action": "product141 selector0 matching STOP",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": 1,
+      "setup_location": 1,
+      "bedNumClick": 3,
+      "bedNum": 1,
+      "direction": 2,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "ONE,1,1,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "034433221120d4c3b2a101150000",
+    "expected_frames": [
+      "034433221120d4c3b2a101150000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            21,
+            "ONE"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-L9-T3-S2-D0",
+    "protocol": "P1",
+    "action": "product141 selector0 up",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": 1,
+      "setup_location": 1,
+      "bedNumClick": 3,
+      "bedNum": 2,
+      "direction": 0,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "ONE,1,1,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "034433221120d4c3b2a1010a0000",
+    "expected_frames": [
+      "034433221120d4c3b2a1010a0000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            10,
+            "ONE"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-L9-T3-S2-D1",
+    "protocol": "P1",
+    "action": "product141 selector0 down",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": 1,
+      "setup_location": 1,
+      "bedNumClick": 3,
+      "bedNum": 2,
+      "direction": 1,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "ONE,1,1,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "034433221120d4c3b2a1010b0000",
+    "expected_frames": [
+      "034433221120d4c3b2a1010b0000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            11,
+            "ONE"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-L9-T3-S2-D2",
+    "protocol": "P1",
+    "action": "product141 selector0 matching STOP",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": 1,
+      "setup_location": 1,
+      "bedNumClick": 3,
+      "bedNum": 2,
+      "direction": 2,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "ONE,1,1,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "034433221120d4c3b2a1010c0000",
+    "expected_frames": [
+      "034433221120d4c3b2a1010c0000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            12,
+            "ONE"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-L9-T4-S0-D0",
+    "protocol": "P1",
+    "action": "product141 selector0 up",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": null,
+      "setup_location": null,
+      "bedNumClick": 4,
+      "bedNum": 0,
+      "direction": 0,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,141",
+        "RIGHT,2,4,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "034433221120d4c3b2a1017a0000",
+    "expected_frames": [
+      "034433221120d4c3b2a1017a0000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            122,
+            "LEFT"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
+  },
+  {
+    "id": "R001-L9-T4-S0-D1",
+    "protocol": "P1",
+    "action": "product141 selector0 down",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": null,
+      "setup_location": null,
+      "bedNumClick": 4,
+      "bedNum": 0,
+      "direction": 1,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,141",
+        "RIGHT,2,4,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "034433221120d4c3b2a1017b0000",
+    "expected_frames": [
+      "034433221120d4c3b2a1017b0000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            123,
+            "LEFT"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
+  },
+  {
+    "id": "R001-L9-T4-S0-D2",
+    "protocol": "P1",
+    "action": "product141 selector0 matching STOP",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": null,
+      "setup_location": null,
+      "bedNumClick": 4,
+      "bedNum": 0,
+      "direction": 2,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,141",
+        "RIGHT,2,4,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "034433221120d4c3b2a1017c0000",
+    "expected_frames": [
+      "034433221120d4c3b2a1017c0000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            124,
+            "LEFT"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
+  },
+  {
+    "id": "R001-L9-T4-S1-D0",
+    "protocol": "P1",
+    "action": "product141 selector0 up",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": null,
+      "setup_location": null,
+      "bedNumClick": 4,
+      "bedNum": 1,
+      "direction": 0,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,141",
+        "RIGHT,2,4,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "034433221120d4c3b2a1017a0000 | 038877665520d4c3b2a1017a0000",
+    "expected_frames": [
+      "034433221120d4c3b2a1017a0000",
+      "038877665520d4c3b2a1017a0000"
+    ],
+    "expected_write_count": 2,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            122,
+            "LEFT"
+          ]
+        },
+        {
+          "method": "plBleSend",
+          "args": [
+            122,
+            "RIGHT"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
+  },
+  {
+    "id": "R001-L9-T4-S1-D1",
+    "protocol": "P1",
+    "action": "product141 selector0 down",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": null,
+      "setup_location": null,
+      "bedNumClick": 4,
+      "bedNum": 1,
+      "direction": 1,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,141",
+        "RIGHT,2,4,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "034433221120d4c3b2a1017b0000 | 038877665520d4c3b2a1017b0000",
+    "expected_frames": [
+      "034433221120d4c3b2a1017b0000",
+      "038877665520d4c3b2a1017b0000"
+    ],
+    "expected_write_count": 2,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            123,
+            "LEFT"
+          ]
+        },
+        {
+          "method": "plBleSend",
+          "args": [
+            123,
+            "RIGHT"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
+  },
+  {
+    "id": "R001-L9-T4-S1-D2",
+    "protocol": "P1",
+    "action": "product141 selector0 matching STOP",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": null,
+      "setup_location": null,
+      "bedNumClick": 4,
+      "bedNum": 1,
+      "direction": 2,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,141",
+        "RIGHT,2,4,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "034433221120d4c3b2a1017c0000 | 038877665520d4c3b2a1017c0000",
+    "expected_frames": [
+      "034433221120d4c3b2a1017c0000",
+      "038877665520d4c3b2a1017c0000"
+    ],
+    "expected_write_count": 2,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            124,
+            "LEFT"
+          ]
+        },
+        {
+          "method": "plBleSend",
+          "args": [
+            124,
+            "RIGHT"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
+  },
+  {
+    "id": "R001-L9-T4-S2-D0",
+    "protocol": "P1",
+    "action": "product141 selector0 up",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": null,
+      "setup_location": null,
+      "bedNumClick": 4,
+      "bedNum": 2,
+      "direction": 0,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,141",
+        "RIGHT,2,4,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "038877665520d4c3b2a1017a0000",
+    "expected_frames": [
+      "038877665520d4c3b2a1017a0000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            122,
+            "RIGHT"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
+  },
+  {
+    "id": "R001-L9-T4-S2-D1",
+    "protocol": "P1",
+    "action": "product141 selector0 down",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": null,
+      "setup_location": null,
+      "bedNumClick": 4,
+      "bedNum": 2,
+      "direction": 1,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,141",
+        "RIGHT,2,4,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "038877665520d4c3b2a1017b0000",
+    "expected_frames": [
+      "038877665520d4c3b2a1017b0000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            123,
+            "RIGHT"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
+  },
+  {
+    "id": "R001-L9-T4-S2-D2",
+    "protocol": "P1",
+    "action": "product141 selector0 matching STOP",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": null,
+      "setup_location": null,
+      "bedNumClick": 4,
+      "bedNum": 2,
+      "direction": 2,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,141",
+        "RIGHT,2,4,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "038877665520d4c3b2a1017c0000",
+    "expected_frames": [
+      "038877665520d4c3b2a1017c0000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            124,
+            "RIGHT"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
+  },
+  {
+    "id": "R001-L9-T1-S0-D0",
+    "protocol": "P1",
+    "action": "product141 selector0 up",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": null,
+      "setup_location": null,
+      "bedNumClick": 1,
+      "bedNum": 0,
+      "direction": 0,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,141",
+        "MIDDLE,3,2,141",
+        "RIGHT,2,4,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "034433221120d4c3b2a1017a0000",
+    "expected_frames": [
+      "034433221120d4c3b2a1017a0000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            122,
+            "LEFT"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
+  },
+  {
+    "id": "R001-L9-T1-S0-D1",
+    "protocol": "P1",
+    "action": "product141 selector0 down",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": null,
+      "setup_location": null,
+      "bedNumClick": 1,
+      "bedNum": 0,
+      "direction": 1,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,141",
+        "MIDDLE,3,2,141",
+        "RIGHT,2,4,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "034433221120d4c3b2a1017b0000",
+    "expected_frames": [
+      "034433221120d4c3b2a1017b0000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            123,
+            "LEFT"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
+  },
+  {
+    "id": "R001-L9-T1-S0-D2",
+    "protocol": "P1",
+    "action": "product141 selector0 matching STOP",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": null,
+      "setup_location": null,
+      "bedNumClick": 1,
+      "bedNum": 0,
+      "direction": 2,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,141",
+        "MIDDLE,3,2,141",
+        "RIGHT,2,4,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "034433221120d4c3b2a1017c0000",
+    "expected_frames": [
+      "034433221120d4c3b2a1017c0000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            124,
+            "LEFT"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
+  },
+  {
+    "id": "R001-L9-T2-S2-D0",
+    "protocol": "P1",
+    "action": "product141 selector0 up",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": null,
+      "setup_location": null,
+      "bedNumClick": 2,
+      "bedNum": 2,
+      "direction": 0,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,141",
+        "MIDDLE,3,2,141",
+        "RIGHT,2,4,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "038877665520d4c3b2a1017a0000",
+    "expected_frames": [
+      "038877665520d4c3b2a1017a0000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            122,
+            "RIGHT"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
+  },
+  {
+    "id": "R001-L9-T2-S2-D1",
+    "protocol": "P1",
+    "action": "product141 selector0 down",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": null,
+      "setup_location": null,
+      "bedNumClick": 2,
+      "bedNum": 2,
+      "direction": 1,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,141",
+        "MIDDLE,3,2,141",
+        "RIGHT,2,4,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "038877665520d4c3b2a1017b0000",
+    "expected_frames": [
+      "038877665520d4c3b2a1017b0000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            123,
+            "RIGHT"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
+  },
+  {
+    "id": "R001-L9-T2-S2-D2",
+    "protocol": "P1",
+    "action": "product141 selector0 matching STOP",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": null,
+      "setup_location": null,
+      "bedNumClick": 2,
+      "bedNum": 2,
+      "direction": 2,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,141",
+        "MIDDLE,3,2,141",
+        "RIGHT,2,4,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "038877665520d4c3b2a1017c0000",
+    "expected_frames": [
+      "038877665520d4c3b2a1017c0000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            124,
+            "RIGHT"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
+  },
+  {
+    "id": "R001-L9-T5-S1-D0",
+    "protocol": "P1",
+    "action": "product141 selector0 up",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": null,
+      "setup_location": null,
+      "bedNumClick": 5,
+      "bedNum": 1,
+      "direction": 0,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,141",
+        "MIDDLE,3,2,141",
+        "RIGHT,2,4,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "03ccbbaa9920d4c3b2a1017a0000",
+    "expected_frames": [
+      "03ccbbaa9920d4c3b2a1017a0000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            122,
+            "MIDDLE"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
+  },
+  {
+    "id": "R001-L9-T5-S1-D1",
+    "protocol": "P1",
+    "action": "product141 selector0 down",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": null,
+      "setup_location": null,
+      "bedNumClick": 5,
+      "bedNum": 1,
+      "direction": 1,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,141",
+        "MIDDLE,3,2,141",
+        "RIGHT,2,4,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "03ccbbaa9920d4c3b2a1017b0000",
+    "expected_frames": [
+      "03ccbbaa9920d4c3b2a1017b0000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            123,
+            "MIDDLE"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
+  },
+  {
+    "id": "R001-L9-T5-S1-D2",
+    "protocol": "P1",
+    "action": "product141 selector0 matching STOP",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "movement",
+      "product": 141,
+      "layout": 9,
+      "decoded_actuator_value": null,
+      "setup_location": null,
+      "bedNumClick": 5,
+      "bedNum": 1,
+      "direction": 2,
+      "selector": 0,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,141",
+        "MIDDLE,3,2,141",
+        "RIGHT,2,4,141"
+      ],
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "03ccbbaa9920d4c3b2a1017c0000",
+    "expected_frames": [
+      "03ccbbaa9920d4c3b2a1017c0000"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_action": [
+        {
+          "method": "plBleSend",
+          "args": [
+            124,
+            "MIDDLE"
+          ]
+        }
+      ]
+    },
+    "evidence": [
+      "E-AUDIT001",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
+  },
+  {
+    "id": "R001-DEFAULT-P1-FORWARD-CONFIRM",
+    "protocol": "P1",
+    "action": "Both-selected default programming target/count",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "default_program",
+      "layout": 5,
+      "product": 135,
+      "bedNumClick": 4,
+      "bedNum": 1,
+      "preset": 1,
+      "expected_parameter": 1,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,135",
+        "RIGHT,2,4,135"
+      ],
+      "completion": "confirm",
+      "target_override": null,
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "038877665520d4c3b2a101a70100",
+    "expected_frames": [
+      "038877665520d4c3b2a101a70100"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_long_press": [],
+      "target_after_long_press": "RIGHT",
+      "after_completion": [
+        {
+          "method": "plBleSendProgress",
+          "args": [
+            167,
+            1,
+            "RIGHT"
+          ]
+        }
+      ],
+      "defaultData": 1,
+      "dialog_visible": false
+    },
+    "evidence": [
+      "E-AUDIT002",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-DEFAULT-P1-FORWARD-CANCEL",
+    "protocol": "P1",
+    "action": "Both-selected default programming target/count",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "default_program",
+      "layout": 5,
+      "product": 135,
+      "bedNumClick": 4,
+      "bedNum": 1,
+      "preset": 1,
+      "expected_parameter": 1,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,135",
+        "RIGHT,2,4,135"
+      ],
+      "completion": "cancel",
+      "target_override": null,
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "NO WRITE",
+    "expected_frames": [],
+    "expected_write_count": 0,
+    "expected_stages": {
+      "after_long_press": [],
+      "target_after_long_press": "RIGHT",
+      "after_completion": [],
+      "defaultData": 1,
+      "dialog_visible": false
+    },
+    "evidence": [
+      "E-AUDIT002",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-DEFAULT-P1-REVERSE-CONFIRM",
+    "protocol": "P1",
+    "action": "Both-selected default programming target/count",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "default_program",
+      "layout": 5,
+      "product": 135,
+      "bedNumClick": 4,
+      "bedNum": 1,
+      "preset": 1,
+      "expected_parameter": 1,
+      "initial_target": "ONE",
+      "deviceData": [
+        "RIGHT,2,4,135",
+        "LEFT,1,3,135"
+      ],
+      "completion": "confirm",
+      "target_override": null,
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "034433221120d4c3b2a101a70100",
+    "expected_frames": [
+      "034433221120d4c3b2a101a70100"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_long_press": [],
+      "target_after_long_press": "LEFT",
+      "after_completion": [
+        {
+          "method": "plBleSendProgress",
+          "args": [
+            167,
+            1,
+            "LEFT"
+          ]
+        }
+      ],
+      "defaultData": 1,
+      "dialog_visible": false
+    },
+    "evidence": [
+      "E-AUDIT002",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-DEFAULT-P1-REVERSE-CANCEL",
+    "protocol": "P1",
+    "action": "Both-selected default programming target/count",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "default_program",
+      "layout": 5,
+      "product": 135,
+      "bedNumClick": 4,
+      "bedNum": 1,
+      "preset": 1,
+      "expected_parameter": 1,
+      "initial_target": "ONE",
+      "deviceData": [
+        "RIGHT,2,4,135",
+        "LEFT,1,3,135"
+      ],
+      "completion": "cancel",
+      "target_override": null,
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "NO WRITE",
+    "expected_frames": [],
+    "expected_write_count": 0,
+    "expected_stages": {
+      "after_long_press": [],
+      "target_after_long_press": "LEFT",
+      "after_completion": [],
+      "defaultData": 1,
+      "dialog_visible": false
+    },
+    "evidence": [
+      "E-AUDIT002",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-DEFAULT-P4-FORWARD-CONFIRM",
+    "protocol": "P1",
+    "action": "Both-selected default programming target/count",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "default_program",
+      "layout": 5,
+      "product": 135,
+      "bedNumClick": 4,
+      "bedNum": 1,
+      "preset": 3,
+      "expected_parameter": 4,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,135",
+        "RIGHT,2,4,135"
+      ],
+      "completion": "confirm",
+      "target_override": null,
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "038877665520d4c3b2a101a70400",
+    "expected_frames": [
+      "038877665520d4c3b2a101a70400"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_long_press": [],
+      "target_after_long_press": "RIGHT",
+      "after_completion": [
+        {
+          "method": "plBleSendProgress",
+          "args": [
+            167,
+            4,
+            "RIGHT"
+          ]
+        }
+      ],
+      "defaultData": 4,
+      "dialog_visible": false
+    },
+    "evidence": [
+      "E-AUDIT002",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-DEFAULT-P4-FORWARD-CANCEL",
+    "protocol": "P1",
+    "action": "Both-selected default programming target/count",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "default_program",
+      "layout": 5,
+      "product": 135,
+      "bedNumClick": 4,
+      "bedNum": 1,
+      "preset": 3,
+      "expected_parameter": 4,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,135",
+        "RIGHT,2,4,135"
+      ],
+      "completion": "cancel",
+      "target_override": null,
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "NO WRITE",
+    "expected_frames": [],
+    "expected_write_count": 0,
+    "expected_stages": {
+      "after_long_press": [],
+      "target_after_long_press": "RIGHT",
+      "after_completion": [],
+      "defaultData": 4,
+      "dialog_visible": false
+    },
+    "evidence": [
+      "E-AUDIT002",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-DEFAULT-P4-REVERSE-CONFIRM",
+    "protocol": "P1",
+    "action": "Both-selected default programming target/count",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "default_program",
+      "layout": 5,
+      "product": 135,
+      "bedNumClick": 4,
+      "bedNum": 1,
+      "preset": 3,
+      "expected_parameter": 4,
+      "initial_target": "ONE",
+      "deviceData": [
+        "RIGHT,2,4,135",
+        "LEFT,1,3,135"
+      ],
+      "completion": "confirm",
+      "target_override": null,
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "034433221120d4c3b2a101a70400",
+    "expected_frames": [
+      "034433221120d4c3b2a101a70400"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_long_press": [],
+      "target_after_long_press": "LEFT",
+      "after_completion": [
+        {
+          "method": "plBleSendProgress",
+          "args": [
+            167,
+            4,
+            "LEFT"
+          ]
+        }
+      ],
+      "defaultData": 4,
+      "dialog_visible": false
+    },
+    "evidence": [
+      "E-AUDIT002",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-DEFAULT-P4-REVERSE-CANCEL",
+    "protocol": "P1",
+    "action": "Both-selected default programming target/count",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "default_program",
+      "layout": 5,
+      "product": 135,
+      "bedNumClick": 4,
+      "bedNum": 1,
+      "preset": 3,
+      "expected_parameter": 4,
+      "initial_target": "ONE",
+      "deviceData": [
+        "RIGHT,2,4,135",
+        "LEFT,1,3,135"
+      ],
+      "completion": "cancel",
+      "target_override": null,
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "NO WRITE",
+    "expected_frames": [],
+    "expected_write_count": 0,
+    "expected_stages": {
+      "after_long_press": [],
+      "target_after_long_press": "LEFT",
+      "after_completion": [],
+      "defaultData": 4,
+      "dialog_visible": false
+    },
+    "evidence": [
+      "E-AUDIT002",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-DEFAULT-P7-FORWARD-CONFIRM",
+    "protocol": "P1",
+    "action": "Both-selected default programming target/count",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "default_program",
+      "layout": 5,
+      "product": 135,
+      "bedNumClick": 4,
+      "bedNum": 1,
+      "preset": 4,
+      "expected_parameter": 7,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,135",
+        "RIGHT,2,4,135"
+      ],
+      "completion": "confirm",
+      "target_override": null,
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "038877665520d4c3b2a101a70700",
+    "expected_frames": [
+      "038877665520d4c3b2a101a70700"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_long_press": [],
+      "target_after_long_press": "RIGHT",
+      "after_completion": [
+        {
+          "method": "plBleSendProgress",
+          "args": [
+            167,
+            7,
+            "RIGHT"
+          ]
+        }
+      ],
+      "defaultData": 7,
+      "dialog_visible": false
+    },
+    "evidence": [
+      "E-AUDIT002",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-DEFAULT-P7-FORWARD-CANCEL",
+    "protocol": "P1",
+    "action": "Both-selected default programming target/count",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "default_program",
+      "layout": 5,
+      "product": 135,
+      "bedNumClick": 4,
+      "bedNum": 1,
+      "preset": 4,
+      "expected_parameter": 7,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,135",
+        "RIGHT,2,4,135"
+      ],
+      "completion": "cancel",
+      "target_override": null,
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "NO WRITE",
+    "expected_frames": [],
+    "expected_write_count": 0,
+    "expected_stages": {
+      "after_long_press": [],
+      "target_after_long_press": "RIGHT",
+      "after_completion": [],
+      "defaultData": 7,
+      "dialog_visible": false
+    },
+    "evidence": [
+      "E-AUDIT002",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-DEFAULT-P7-REVERSE-CONFIRM",
+    "protocol": "P1",
+    "action": "Both-selected default programming target/count",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "default_program",
+      "layout": 5,
+      "product": 135,
+      "bedNumClick": 4,
+      "bedNum": 1,
+      "preset": 4,
+      "expected_parameter": 7,
+      "initial_target": "ONE",
+      "deviceData": [
+        "RIGHT,2,4,135",
+        "LEFT,1,3,135"
+      ],
+      "completion": "confirm",
+      "target_override": null,
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "034433221120d4c3b2a101a70700",
+    "expected_frames": [
+      "034433221120d4c3b2a101a70700"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_long_press": [],
+      "target_after_long_press": "LEFT",
+      "after_completion": [
+        {
+          "method": "plBleSendProgress",
+          "args": [
+            167,
+            7,
+            "LEFT"
+          ]
+        }
+      ],
+      "defaultData": 7,
+      "dialog_visible": false
+    },
+    "evidence": [
+      "E-AUDIT002",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-DEFAULT-P7-REVERSE-CANCEL",
+    "protocol": "P1",
+    "action": "Both-selected default programming target/count",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "default_program",
+      "layout": 5,
+      "product": 135,
+      "bedNumClick": 4,
+      "bedNum": 1,
+      "preset": 4,
+      "expected_parameter": 7,
+      "initial_target": "ONE",
+      "deviceData": [
+        "RIGHT,2,4,135",
+        "LEFT,1,3,135"
+      ],
+      "completion": "cancel",
+      "target_override": null,
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "NO WRITE",
+    "expected_frames": [],
+    "expected_write_count": 0,
+    "expected_stages": {
+      "after_long_press": [],
+      "target_after_long_press": "LEFT",
+      "after_completion": [],
+      "defaultData": 7,
+      "dialog_visible": false
+    },
+    "evidence": [
+      "E-AUDIT002",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-DEFAULT-P10-FORWARD-CONFIRM",
+    "protocol": "P1",
+    "action": "Both-selected default programming target/count",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "default_program",
+      "layout": 5,
+      "product": 135,
+      "bedNumClick": 4,
+      "bedNum": 1,
+      "preset": 5,
+      "expected_parameter": 10,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,135",
+        "RIGHT,2,4,135"
+      ],
+      "completion": "confirm",
+      "target_override": null,
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "038877665520d4c3b2a101a70a00",
+    "expected_frames": [
+      "038877665520d4c3b2a101a70a00"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_long_press": [],
+      "target_after_long_press": "RIGHT",
+      "after_completion": [
+        {
+          "method": "plBleSendProgress",
+          "args": [
+            167,
+            10,
+            "RIGHT"
+          ]
+        }
+      ],
+      "defaultData": 10,
+      "dialog_visible": false
+    },
+    "evidence": [
+      "E-AUDIT002",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-DEFAULT-P10-FORWARD-CANCEL",
+    "protocol": "P1",
+    "action": "Both-selected default programming target/count",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "default_program",
+      "layout": 5,
+      "product": 135,
+      "bedNumClick": 4,
+      "bedNum": 1,
+      "preset": 5,
+      "expected_parameter": 10,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,135",
+        "RIGHT,2,4,135"
+      ],
+      "completion": "cancel",
+      "target_override": null,
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "NO WRITE",
+    "expected_frames": [],
+    "expected_write_count": 0,
+    "expected_stages": {
+      "after_long_press": [],
+      "target_after_long_press": "RIGHT",
+      "after_completion": [],
+      "defaultData": 10,
+      "dialog_visible": false
+    },
+    "evidence": [
+      "E-AUDIT002",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-DEFAULT-P10-REVERSE-CONFIRM",
+    "protocol": "P1",
+    "action": "Both-selected default programming target/count",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "default_program",
+      "layout": 5,
+      "product": 135,
+      "bedNumClick": 4,
+      "bedNum": 1,
+      "preset": 5,
+      "expected_parameter": 10,
+      "initial_target": "ONE",
+      "deviceData": [
+        "RIGHT,2,4,135",
+        "LEFT,1,3,135"
+      ],
+      "completion": "confirm",
+      "target_override": null,
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "034433221120d4c3b2a101a70a00",
+    "expected_frames": [
+      "034433221120d4c3b2a101a70a00"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_long_press": [],
+      "target_after_long_press": "LEFT",
+      "after_completion": [
+        {
+          "method": "plBleSendProgress",
+          "args": [
+            167,
+            10,
+            "LEFT"
+          ]
+        }
+      ],
+      "defaultData": 10,
+      "dialog_visible": false
+    },
+    "evidence": [
+      "E-AUDIT002",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-DEFAULT-P10-REVERSE-CANCEL",
+    "protocol": "P1",
+    "action": "Both-selected default programming target/count",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "default_program",
+      "layout": 5,
+      "product": 135,
+      "bedNumClick": 4,
+      "bedNum": 1,
+      "preset": 5,
+      "expected_parameter": 10,
+      "initial_target": "ONE",
+      "deviceData": [
+        "RIGHT,2,4,135",
+        "LEFT,1,3,135"
+      ],
+      "completion": "cancel",
+      "target_override": null,
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "NO WRITE",
+    "expected_frames": [],
+    "expected_write_count": 0,
+    "expected_stages": {
+      "after_long_press": [],
+      "target_after_long_press": "LEFT",
+      "after_completion": [],
+      "defaultData": 10,
+      "dialog_visible": false
+    },
+    "evidence": [
+      "E-AUDIT002",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-DEFAULT-LIVE-FORWARD",
+    "protocol": "P1",
+    "action": "Default confirmation reads live global target",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "default_program",
+      "layout": 5,
+      "product": 135,
+      "bedNumClick": 4,
+      "bedNum": 1,
+      "preset": 1,
+      "expected_parameter": 1,
+      "initial_target": "ONE",
+      "deviceData": [
+        "LEFT,1,3,135",
+        "RIGHT,2,4,135"
+      ],
+      "completion": "confirm",
+      "target_override": "LEFT",
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "034433221120d4c3b2a101a70100",
+    "expected_frames": [
+      "034433221120d4c3b2a101a70100"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_long_press": [],
+      "target_after_long_press": "RIGHT",
+      "after_completion": [
+        {
+          "method": "plBleSendProgress",
+          "args": [
+            167,
+            1,
+            "LEFT"
+          ]
+        }
+      ],
+      "defaultData": 1,
+      "dialog_visible": false
+    },
+    "evidence": [
+      "E-AUDIT002",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "id": "R001-DEFAULT-LIVE-REVERSE",
+    "protocol": "P1",
+    "action": "Default confirmation reads live global target",
+    "builder": "artifact_branch",
+    "inputs": {
+      "kind": "default_program",
+      "layout": 5,
+      "product": 135,
+      "bedNumClick": 4,
+      "bedNum": 1,
+      "preset": 1,
+      "expected_parameter": 1,
+      "initial_target": "ONE",
+      "deviceData": [
+        "RIGHT,2,4,135",
+        "LEFT,1,3,135"
+      ],
+      "completion": "confirm",
+      "target_override": "RIGHT",
+      "address_map": {
+        "ONE": 287454020,
+        "LEFT": 287454020,
+        "RIGHT": 1432778632,
+        "MIDDLE": 2578103244
+      },
+      "own": 2712847316
+    },
+    "expected_bytes": "038877665520d4c3b2a101a70100",
+    "expected_frames": [
+      "038877665520d4c3b2a101a70100"
+    ],
+    "expected_write_count": 1,
+    "expected_stages": {
+      "after_long_press": [],
+      "target_after_long_press": "LEFT",
+      "after_completion": [
+        {
+          "method": "plBleSendProgress",
+          "args": [
+            167,
+            1,
+            "RIGHT"
+          ]
+        }
+      ],
+      "defaultData": 1,
+      "dialog_visible": false
+    },
+    "evidence": [
+      "E-AUDIT002",
+      "E-FRAME",
+      "E-WRITE"
+    ],
+    "normal_setup_disposition": "REACHABLE"
+  }
+]
