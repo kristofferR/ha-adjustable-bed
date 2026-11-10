@@ -25,6 +25,7 @@ FAMILY = CodecFamily(
     profiles={KeesonProfile: FROZEN_FRAMES, AppProfile: FROZEN_FRAMES},
     bed_types=frozenset(
         {
+            "jalon",
             "ergomotion",
             "keeson",
             "okin_ffe",

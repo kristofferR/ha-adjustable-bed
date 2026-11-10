@@ -512,9 +512,29 @@ COMFORT_ENHANCEMENTS: Final = KeesonProfile(
     key="comfort_enhancements", execution=STREAM_HOLD, order="big", hold=None
 )
 
+# OkinComfortBed II 2.0.2 (9), unit132. Each variant is independently frozen.
+JALON_13: Final = KeesonProfile(
+    key="jalon_13", execution=STREAM_HOLD, header=0xE6, side=0,
+    release=Release(steps=((0, 0), (300, 0))),
+    fixed_write=True, hold=(10, 300), refresh_ms=300,
+    presets={"flat": 0x08000000, "zero_g": 0x1000, "lounge": 0x2000,
+             "tv": 0x4000, "anti_snore": 0x8000},
+    memory={1: 0x10000, 2: 0x40000}, memory_slots=2,
+    memory_save=MemorySave(words={1: 0x10000, 2: 0x40000}, repeats=20, repeat_ms=300),
+    massage="none", keeson_motor_names=False,
+)
+JALON_15: Final = replace(JALON_13, key="jalon_15", execution=STREAM_HOLD, no_response=True)
+JALON_24: Final = replace(
+    JALON_13, key="jalon_24", execution=STREAM_HOLD, carrier="p2_side", transport="ksbt", notify="ksbt",
+    no_response=True,
+)
+
 PROFILES: Final[dict[str, KeesonProfile]] = {
     profile.key: profile
     for profile in (
+        JALON_13,
+        JALON_15,
+        JALON_24,
         BASE,
         ERGOMOTION,
         SERTA,

@@ -64,6 +64,7 @@ from .const import (
     BED_TYPE_GOODVIBE,
     BED_TYPE_HJBED,
     BED_TYPE_ISLEEP,
+    BED_TYPE_JALON,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
@@ -583,6 +584,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_RICHMAT_CLASSIC_APPS: "Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior",
     BED_TYPE_MOTOMOTION: "MotoMotion app (exact Bluetooth name)",
     BED_TYPE_HJBED: "HJBed app (choose the exact product)",
+    BED_TYPE_JALON: "OkinComfortBed II / Okin Comfortbed II N (Jalon app)",
     BED_TYPE_GLIDEAWAY_MOTION: "Glideaway Motion / Montion app (400 / 450 / 500 / 600)",
     BED_TYPE_OKIN_64BIT: "Okin 64-Bit (10-byte commands)",
     BED_TYPE_OKIN_CB35: "Okin CB35 (Sealy Posturematic, DewertOkin Star)",
@@ -2835,6 +2837,15 @@ def _detect_bed_type_detailed(
             bed_type=BED_TYPE_MOTION_BED,
             confidence=0.6,
             signals=[*signals, "name:motion_bed"],
+        )
+
+    # These app prefixes are shared with other bed apps. Keep stronger service
+    # and model matches above; ask for the app rather than infer its identity.
+    if (service_info.device.name or "").lower().startswith(("okin-ble", "smartbed")):
+        return DetectionResult(
+            bed_type=BED_TYPE_JALON, confidence=0.3,
+            signals=[*signals, "name:jalon_app_candidate"],
+            ambiguous_types=[BED_TYPE_KEESON, BED_TYPE_OKIN_CB24],
         )
 
     _LOGGER.debug("Device %s does not match any known bed types", service_info.address)

@@ -493,6 +493,10 @@ CONF_RICHMAT_CLASSIC_THIRD_SERVICE: Final = "richmat_classic_third_service"
 BED_TYPE_MOTOMOTION: Final = "motomotion"
 BED_TYPE_HJBED: Final = "hjbed"
 HJBED_SCAN_KEYWORDS: Final = ("QRRM", "COOL", "MPE_", "209A", "ZRA1")
+BED_TYPE_JALON: Final = "jalon"
+JALON_LAYOUTS: Final = {"0": "Head and foot", "10": "Head, foot and neck",
+                         "11": "Head, foot and lumbar", "2": "Head, foot, neck and lumbar"}
+
 BED_TYPE_GLIDEAWAY_MOTION: Final = "glideaway_motion"
 GLIDEAWAY_MOTION_MODELS: Final = {
     "motion_400": "MOTION 400 (GM-A4Z)",
@@ -695,6 +699,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_GOODVIBE,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_HJBED,
+    BED_TYPE_JALON,
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_BEDSENSE,
     BED_TYPE_BF,

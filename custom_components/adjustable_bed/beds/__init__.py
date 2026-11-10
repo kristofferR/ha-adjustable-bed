@@ -51,6 +51,7 @@ if TYPE_CHECKING:
     from .jiecang.controller import JiecangController as JiecangController
     from .kaidi.controller import KaidiController as KaidiController
     from .keeson.controller import KeesonController as KeesonController
+    from .keeson.jalon import JalonController as JalonController
     from .leggett.gen2 import LeggettGen2Controller as LeggettGen2Controller
     from .leggett.lp_legacy import LeggettLpLegacyController as LeggettLpLegacyController
     from .leggett.okin import LeggettOkinController as LeggettOkinController
@@ -141,6 +142,7 @@ _EXPORT_MODULES = {
     "ComfortEnhancementsController": "comfort_enhancements.controller",
     "EshineController": "eshine.controller",
     "EshineOkinController": "eshine_okin.controller",
+    "JalonController": "keeson.jalon",
     "GlideawayMotionController": "glideaway_motion.controller",
     "BedSenseController": "bedsense",
     "InnovaController": "innova",

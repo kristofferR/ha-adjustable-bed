@@ -614,6 +614,8 @@ share the Okin N-frame files.
 
 ## Evidence keys
 
+| row132 | OkinComfortBed II 2.0.2 (9), `com.ore.jalon.neworebeding`, unit132 E07/E09: all three profiles refresh held movement every 300 ms; STOP immediately and again after 300 ms. No concurrent-motor composition. |
+
 Report workspaces are machine-local under
 `disassembly/output/phase4-early/` in the main checkout.
 

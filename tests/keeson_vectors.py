@@ -19,6 +19,9 @@ Enhancements; their pre-v5 frames are those of the wire snapshot. SBI and Rondur
 have no report.
 """
 
+import json
+from pathlib import Path
+
 FROZEN_FRAMES: dict[str, frozenset[str]] = {
     # pre-v5 KeesonController
     "base": frozenset(
@@ -1950,3 +1953,13 @@ ERGOMOTION_4_P1_SIDE_VECTORS: dict[str | None, tuple[int, str]] = {
     "left": (1, "e6fe16010000000202"),
     "right": (1, "e6fe16010000000103"),
 }
+
+# Unit132, com.ore.jalon.neworebeding 2.0.2 (9): literal commands only.
+_JALON_VECTORS = json.loads(
+    (Path(__file__).parent / "fixtures/jalon/vectors.json").read_text()
+)
+FROZEN_FRAMES.update({
+    key: frozenset(v["expected_bytes"] for v in _JALON_VECTORS
+                   if v["protocol"] == protocol and v["inputs"]["kind"] == "ordinary")
+    for protocol, key in (("P1", "jalon_13"), ("P2", "jalon_15"), ("P3", "jalon_24"))
+})

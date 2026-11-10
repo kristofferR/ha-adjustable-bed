@@ -2336,6 +2336,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.hjbed.services import async_register_hjbed_services
     from .beds.jiecang.app_services import async_register_jiecang_app_services
     from .beds.kaidi.floyd_services import async_register_floyd_services
+    from .beds.keeson.jalon_services import async_register_jalon_services
     from .beds.leggett.okin_services import async_register_leggett_okin_services
     from .beds.limoss.remote_services import async_register_limoss_remote_services
     from .beds.linak.services import async_register_linak_services
@@ -2386,6 +2387,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_limoss_remote_services,
         async_register_serenity_services,
         async_register_eshine_okin_services,
+        async_register_jalon_services,
         async_register_glideaway_motion_services,
         async_register_simmons_services,
         async_register_comfort_enhancements_services,

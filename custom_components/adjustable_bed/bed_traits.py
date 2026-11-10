@@ -45,6 +45,7 @@ from .const import (
     BED_TYPE_HUSH_SLEEP_MM,
     BED_TYPE_HUSH_SLEEP_SXB,
     BED_TYPE_ISLEEP,
+    BED_TYPE_JALON,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
@@ -204,6 +205,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_ESHINE_OKIN: _NO_ANGLES,
     BED_TYPE_FSM_RELAX: _NO_ANGLES,
     BED_TYPE_FURNIMOVE: _NO_ANGLES,
+    BED_TYPE_JALON: _NO_ANGLES,
     BED_TYPE_GLIDEAWAY_MOTION: _NO_ANGLES,
     # The app exposes raw motor-index/desk reports, without a proven mapping to
     # the generic head/back/legs/feet angle entities.

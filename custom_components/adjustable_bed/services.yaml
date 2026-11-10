@@ -3260,3 +3260,34 @@ richmat_app_alarm:
               value: "5"
             - label: Sunday
               value: "6"
+
+jalon_set_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    enabled:
+      required: true
+      selector:
+        boolean:
+    time:
+      selector:
+        time:
+    weekdays:
+      selector:
+        select:
+          multiple: true
+          options: [mon, tue, wed, thu, fri, sat, sun]
+    wake_mode:
+      default: flat
+      selector:
+        select:
+          options: [flat, memory_1, memory_2, zero_g, anti_snore, tv, massage]
+    side:
+      default: both
+      selector:
+        select:
+          options: [both, left, right]

@@ -1852,6 +1852,134 @@
       "local_name": "OKIN*receiver*"
     },
     {
+      "local_name": "OKIN-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIN-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIN-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIN-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIN-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIN-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIN-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIN-ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIn-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIn-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIn-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIn-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIn-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIn-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIn-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKIn-ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKiN-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKiN-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKiN-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKiN-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKiN-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKiN-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKiN-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKiN-ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKin-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKin-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKin-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKin-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKin-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKin-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKin-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OKin-ble*",
+      "connectable": true
+    },
+    {
       "local_name": "OMRM*"
     },
     {
@@ -1894,10 +2022,138 @@
       "local_name": "OZRM*"
     },
     {
+      "local_name": "OkIN-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIN-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIN-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIN-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIN-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIN-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIN-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIN-ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIn-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIn-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIn-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIn-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIn-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIn-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIn-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkIn-ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkiN-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkiN-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkiN-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkiN-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkiN-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkiN-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkiN-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "OkiN-ble*",
+      "connectable": true
+    },
+    {
       "local_name": "Okin*Receiver*"
     },
     {
       "local_name": "Okin*receiver*"
+    },
+    {
+      "local_name": "Okin-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "Okin-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "Okin-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "Okin-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "Okin-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "Okin-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "Okin-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "Okin-ble*",
+      "connectable": true
     },
     {
       "local_name": "P0RM*"
@@ -2026,6 +2282,262 @@
       "local_name": "SLEEPSTAR*"
     },
     {
+      "local_name": "SMARTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARtBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARtBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARtBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARtBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARtbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARtbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARtbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMARtbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArtBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArtBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArtBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArtBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArtbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArtbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArtbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMArtbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRtBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRtBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRtBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRtBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRtbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRtbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRtbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMaRtbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMarTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMarTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMarTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMarTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMarTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMarTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMarTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMarTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMartBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMartBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMartBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMartBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMartbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMartbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMartbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMartbed*",
+      "connectable": true
+    },
+    {
       "local_name": "SOFA*",
       "connectable": true
     },
@@ -2053,6 +2565,262 @@
     },
     {
       "local_name": "SealyMF*"
+    },
+    {
+      "local_name": "SmARTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARtBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARtBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARtBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARtBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARtbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARtbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARtbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmARtbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArtBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArtBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArtBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArtBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArtbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArtbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArtbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmArtbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRtBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRtBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRtBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRtBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRtbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRtbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRtbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmaRtbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmarTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmarTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmarTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmarTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmarTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmarTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmarTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmarTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmartBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmartBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmartBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmartBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmartbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmartbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "SmartbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "Smartbed*",
+      "connectable": true
     },
     {
       "local_name": "StAR*"
@@ -2873,10 +3641,266 @@
       "local_name": "my qms2*"
     },
     {
+      "local_name": "oKIN-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIN-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIN-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIN-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIN-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIN-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIN-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIN-ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIn-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIn-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIn-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIn-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIn-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIn-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIn-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKIn-ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKiN-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKiN-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKiN-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKiN-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKiN-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKiN-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKiN-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKiN-ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKin-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKin-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKin-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKin-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKin-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKin-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKin-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "oKin-ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIN-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIN-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIN-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIN-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIN-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIN-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIN-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIN-ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIn-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIn-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIn-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIn-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIn-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIn-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIn-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okIn-ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "okiN-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okiN-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "okiN-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okiN-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "okiN-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okiN-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "okiN-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okiN-ble*",
+      "connectable": true
+    },
+    {
       "local_name": "okin*Receiver*"
     },
     {
       "local_name": "okin*receiver*"
+    },
+    {
+      "local_name": "okin-BLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okin-BLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "okin-BlE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okin-Ble*",
+      "connectable": true
+    },
+    {
+      "local_name": "okin-bLE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okin-bLe*",
+      "connectable": true
+    },
+    {
+      "local_name": "okin-blE*",
+      "connectable": true
+    },
+    {
+      "local_name": "okin-ble*",
+      "connectable": true
     },
     {
       "local_name": "qms-i06*"
@@ -2912,6 +3936,262 @@
       "local_name": "s4-y-*"
     },
     {
+      "local_name": "sMARTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARtBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARtBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARtBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARtBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARtbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARtbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARtbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMARtbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArtBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArtBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArtBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArtBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArtbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArtbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArtbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMArtbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRtBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRtBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRtBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRtBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRtbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRtbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRtbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMaRtbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMarTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMarTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMarTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMarTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMarTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMarTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMarTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMarTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMartBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMartBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMartBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMartBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMartbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMartbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMartbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMartbed*",
+      "connectable": true
+    },
+    {
       "local_name": "sTAR*"
     },
     {
@@ -2928,6 +4208,262 @@
     },
     {
       "local_name": "sleepstar*"
+    },
+    {
+      "local_name": "smARTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARtBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARtBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARtBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARtBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARtbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARtbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARtbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smARtbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArtBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArtBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArtBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArtBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArtbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArtbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArtbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smArtbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRtBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRtBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRtBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRtBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRtbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRtbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRtbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smaRtbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smarTBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smarTBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smarTBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smarTBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smarTbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smarTbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smarTbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smarTbed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smartBED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smartBEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smartBeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smartBed*",
+      "connectable": true
+    },
+    {
+      "local_name": "smartbED*",
+      "connectable": true
+    },
+    {
+      "local_name": "smartbEd*",
+      "connectable": true
+    },
+    {
+      "local_name": "smartbeD*",
+      "connectable": true
+    },
+    {
+      "local_name": "smartbed*",
+      "connectable": true
     },
     {
       "local_name": "stAR*"

@@ -434,3 +434,26 @@ async def test_percentage_bed_without_sliders_accepts_no_set_position_motor() ->
     coordinator.disable_angle_sensing = False
     with pytest.raises(ServiceValidationError, match="Motor 'back' is not valid"):
         await services._set_position_plan(coordinator, coordinator, [], "back", 50)
+
+
+async def test_jalon_programming_hold_is_rejected_before_an_earlier_target_moves(
+    hass: HomeAssistant, resolve
+) -> None:
+    from custom_components.adjustable_bed.beds.keeson.jalon import JalonController
+    from tests.test_controller_contract import _FactoryCoordinator
+
+    first, first_controller = target(held_control_options=("memory_1",))
+    jalon = JalonController(_FactoryCoordinator(), protocol="P3", layout="0")
+    second, second_controller = target(
+        bed_type="jalon", held_control_options=jalon.held_control_options,
+        validate_hold_control=jalon.validate_hold_control,
+    )
+    select(resolve, (first, first_controller), (second, second_controller))
+    with pytest.raises(ServiceValidationError, match="save_preset"):
+        await hass.services.async_call(
+            DOMAIN, "hold_control",
+            {"device_id": ["first", "second"], "control": "memory_1", "duration": 6},
+            blocking=True,
+        )
+    first_controller.hold_control.assert_not_awaited()
+    second_controller.hold_control.assert_not_awaited()

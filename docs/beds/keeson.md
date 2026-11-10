@@ -154,6 +154,9 @@ only through **Reconfigure**, and the app review in Repairs opens it.
 
 | Profile | Route | Frame | Transport | Lights | Massage | Hold until release |
 |---|---|---|---|---|---|---|
+| OkinComfortBed II P1 | bed type `jalon` | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller | renewable lease |
+| OkinComfortBed II P2 | bed type `jalon` | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller | renewable lease |
+| OkinComfortBed II P3 | bed type `jalon` | P2 7-byte (`05`) | app controller | app controller | app controller | renewable lease |
 | Base (BaseI4/I5) | `keeson` `base` (Auto default) | K1 `E5`, little-endian | BASE | toggle | step | no |
 | Ergomotion | `keeson` `ergomotion`; bed type `ergomotion` | K1 `E5`, little-endian | BASE | toggle | step | renewable lease |
 | Serta | `keeson` `serta`; bed type `serta` | K1 `E5`, little-endian | BASE | toggle | step | renewable lease |
@@ -242,10 +245,10 @@ release refreshes at its app interval until the lease ends or STOP arrives, up t
 
 Words, encoded in the profile's frame. AdjustaMattress P1, AdjustaMattress P2,
 AMERICANSTAR, Avanti Bases, Bedsense Bases, BF, Cherish, Comfort Enhancements,
-Cool Base, Dynasty Bases, Glideaway Motion, Heal Every Night, INNOVA, Malouf
-legacy OKIN, MaxCoil Una, OKIN-Seating, Rondure, SBI, Scott Living, Simon Li,
-Sleepy's BOX15 keep their key tables with their app controllers; see their
-sections.
+Cool Base, Dynasty Bases, Glideaway Motion, Heal Every Night, INNOVA,
+OkinComfortBed II P1, OkinComfortBed II P2, OkinComfortBed II P3, Malouf legacy
+OKIN, MaxCoil Una, OKIN-Seating, Rondure, SBI, Scott Living, Simon Li, Sleepy's
+BOX15 keep their key tables with their app controllers; see their sections.
 
 | Profile | Flat | Zero G | Lounge | TV | Anti-snore | Memory recall | Memory save |
 |---|---|---|---|---|---|---|---|
@@ -364,6 +367,8 @@ family's codec exists.
 
 | Frame | Layout | Head up | Profiles |
 |---|---|---|---|
+| K1 `E6`, little-endian, side `00` | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 00 04` | OkinComfortBed II P1, OkinComfortBed II P2, Sleep Harmony (base-i5), Glideaway Motion, Malouf legacy OKIN, Sleepy's BOX15, AdjustaMattress P1 |
+| P2 7-byte (`05`) | `05 02` + big-endian word + `00` | `05 02 00 00 00 01 00` | OkinComfortBed II P3 |
 | K1 `E5`, little-endian | `header FE 16` + word + checksum | `E5 FE 16 01 00 00 00 05` | Base (BaseI4/I5), Ergomotion, Serta, Purple Premium, Restonic BT remote A, Restonic BT remote B, INNOVA, SBI, Rondure, Cool Base |
 | K1 `E6`, little-endian | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 04` | OKIN FFE, BetterLiving CB1322 |
 | K1 `E5`, big-endian | `header FE 16` + word + checksum | `E5 FE 16 00 00 00 01 05` | Sino, BetterLiving, Simon Li, OKIN-Seating, Heal Every Night, AMERICANSTAR, Avanti Bases, Bedsense Bases, Dynasty Bases, MaxCoil Una, AdjustaMattress P2, BF, Cherish, Comfort Enhancements |
@@ -371,7 +376,6 @@ family's codec exists.
 | P2 6-byte | `04 02` + big-endian word | `04 02 00 00 00 01` | KSBT, KSBT03C, Adjustable Lite (KSBT01C), Adjustable Lite (KSBT03C) |
 | P2 7-byte (`05`) | `05 02` + big-endian word + `00` | `05 02 00 00 00 01 00` | KSBT03CR |
 | P2 7-byte, checksum end | `04 02` + big-endian word + checksum | `04 02 00 00 00 01 F8` | KSBT04C, Sleep Harmony (KSBT04C) |
-| K1 `E6`, little-endian, side `00` | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 00 04` | Sleep Harmony (base-i5), Glideaway Motion, Malouf legacy OKIN, Sleepy's BOX15, AdjustaMattress P1 |
 | P2 7-byte, `00` end | `04 02` + big-endian word + `00` | `04 02 00 00 00 01 00` | Purple Premium Plus |
 | K1 `E6`, little-endian, side `01` | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 01 03` | Scott Living |
 | K1 `E6`, little-endian, Left side `02` | `E6 FE 16` + word + side + checksum | `E6 FE 16 01 00 00 00 02 02` | Base (BaseI4/I5), Ergomotion |
@@ -2002,6 +2006,9 @@ frames of other families and keep it.
 
 | Profile | Bed type | Frame | Word `0x1` | Zero word | Hold until release | Guide |
 |---|---|---|---|---|---|---|
+| OkinComfortBed II P1 | `jalon` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | renewable lease | [OkinComfortBed II](#okincomfortbed-ii) |
+| OkinComfortBed II P2 | `jalon` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | renewable lease | [OkinComfortBed II](#okincomfortbed-ii) |
+| OkinComfortBed II P3 | `jalon` | P2 7-byte (`05`) | `05 02 00 00 00 01 00` | `05 02 00 00 00 00 00` | renewable lease | [OkinComfortBed II](#okincomfortbed-ii) |
 | Glideaway Motion | `glideaway_motion` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | renewable lease | [Glideaway Motion](#glideaway-motion) |
 | Malouf legacy OKIN | `malouf_legacy_okin` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | renewable lease | [Malouf](malouf.md) |
 | Sleepy's BOX15 | `sleepys_box15` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | no | [Sleepy's](sleepys.md) |
@@ -4475,3 +4482,171 @@ types store their own defaults and are left unchanged.
 - Keeson layout apps: see the [Keeson layout app family](#keeson-layout-app-family).
 - The other routes come from the smartbed-mqtt reverse engineering, fresh
   decompilation of the OEM apps listed above, and hardware reports.
+
+### OkinComfortBed II
+
+**App:** [Okin Comfortbed II N](https://play.google.com/store/apps/details?id=com.ore.jalon.neworebeding) 2.0.2 (9), `com.ore.jalon.neworebeding`
+
+**Status:** ❓ Needs testing. Static app behavior is verified; hardware behavior is unverified.
+
+#### Setup
+
+Choose **OkinComfortBed II / Okin Comfortbed II N (Jalon app)** and the actuator layout
+shown by the app. The two three-actuator layouts differ: one adds neck, the other
+lumbar. This choice is independent of the transport. The light and massage controls
+are always present; no position, battery, or capability feedback is reported.
+
+Discovery admits names starting with `okin-ble` or `smartbed`, case insensitive.
+These names are shared with other apps, so confirm this app in setup. On each live
+connection, `smartbed` selects P3. For `okin-ble`, the presence of service `ff20`
+selects P2; its absence selects P1. An edited HA display name never selects a
+protocol. Notification registration precedes clock calibration. There is no PIN,
+authentication command, pairing write, or keepalive. HA owns retries and idle
+handoff, independently for each physical receiver.
+
+The app normally connects to one receiver. It proves no single-address side
+selector or concurrent motor composition. HA may combine two independently
+configured addresses; each keeps its own layout, profile, parser and state.
+
+#### Controls
+
+Head/foot, optional neck/lumbar, Flat, Zero G, Lounge, TV, Anti-snore, and two
+memory positions use the table below. The light is a toggle. Massage exposes
+Toggle, Timer, Wave, Head intensity and Foot intensity buttons plus a refresh
+button. Non-toggle massage controls require a fresh nonzero timer indicator.
+No discrete massage on/off or intensity-down operation is inferred from unused
+asset declarations.
+
+Saving M1 or M2 holds the same recall command for the app's programming interval.
+The app's success timer is not an acknowledgement. Recall taps use a short hold;
+`hold_control` also exposes Flat and bounded memory recalls. Use `save_preset` for
+programming. Every movement, recall, save, cancellation and explicit STOP awaits
+the release pair before another command can use the receiver.
+
+<!-- generated:keeson-jalon -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+#### Profiles and transport
+
+| Profile | Write service | Write | Notify service | Notify | Response |
+|---|---|---|---|---|---|
+| jalon_13 | 0000ffe5-0000-1000-8000-00805f9b34fb | 0000ffe9-0000-1000-8000-00805f9b34fb | 0000ffe0-0000-1000-8000-00805f9b34fb | 0000ffe4-0000-1000-8000-00805f9b34fb | True |
+| jalon_15 | 0000ffe5-0000-1000-8000-00805f9b34fb | 0000ffe9-0000-1000-8000-00805f9b34fb | 0000ffe0-0000-1000-8000-00805f9b34fb | 0000ffe4-0000-1000-8000-00805f9b34fb | False |
+| jalon_24 | 6e400001-b5a3-f393-e0a9-e50e24dcca9e | 6e400002-b5a3-f393-e0a9-e50e24dcca9e | 6e400001-b5a3-f393-e0a9-e50e24dcca9e | 6e400003-b5a3-f393-e0a9-e50e24dcca9e | False |
+
+#### Layouts
+
+| App bedType | Actuators |
+|---|---|
+| 0 | head, feet |
+| 10 | head, feet, tilt |
+| 11 | head, feet, lumbar |
+| 2 | head, feet, tilt, lumbar |
+
+#### Commands
+
+| Action | jalon_13 | jalon_15 | jalon_24 |
+|---|---|---|---|
+| stopCommand | `E6 FE 16 00 00 00 00 00 05` | `E6 FE 16 00 00 00 00 00 05` | `05 02 00 00 00 00 00` |
+| headUp | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 01 00 00 00 00 04` | `05 02 00 00 00 01 00` |
+| headDown | `E6 FE 16 02 00 00 00 00 03` | `E6 FE 16 02 00 00 00 00 03` | `05 02 00 00 00 02 00` |
+| footUp | `E6 FE 16 04 00 00 00 00 01` | `E6 FE 16 04 00 00 00 00 01` | `05 02 00 00 00 04 00` |
+| footDown | `E6 FE 16 08 00 00 00 00 FD` | `E6 FE 16 08 00 00 00 00 FD` | `05 02 00 00 00 08 00` |
+| neckUp | `E6 FE 16 10 00 00 00 00 F5` | `E6 FE 16 10 00 00 00 00 F5` | `05 02 00 00 00 10 00` |
+| neckDown | `E6 FE 16 20 00 00 00 00 E5` | `E6 FE 16 20 00 00 00 00 E5` | `05 02 00 00 00 20 00` |
+| lumbarUp | `E6 FE 16 40 00 00 00 00 C5` | `E6 FE 16 40 00 00 00 00 C5` | `05 02 00 00 00 40 00` |
+| lumbarDown | `E6 FE 16 80 00 00 00 00 85` | `E6 FE 16 80 00 00 00 00 85` | `05 02 00 00 00 80 00` |
+| memoryFlat | `E6 FE 16 00 00 00 08 00 FD` | `E6 FE 16 00 00 00 08 00 FD` | `05 02 08 00 00 00 00` |
+| memoryZero | `E6 FE 16 00 10 00 00 00 F5` | `E6 FE 16 00 10 00 00 00 F5` | `05 02 00 00 10 00 00` |
+| memoryLounge | `E6 FE 16 00 20 00 00 00 E5` | `E6 FE 16 00 20 00 00 00 E5` | `05 02 00 00 20 00 00` |
+| memoryTvpc | `E6 FE 16 00 40 00 00 00 C5` | `E6 FE 16 00 40 00 00 00 C5` | `05 02 00 00 40 00 00` |
+| memoryAntiSnore | `E6 FE 16 00 80 00 00 00 85` | `E6 FE 16 00 80 00 00 00 85` | `05 02 00 00 80 00 00` |
+| memory1M5 | `E6 FE 16 00 00 01 00 00 04` | `E6 FE 16 00 00 01 00 00 04` | `05 02 00 01 00 00 00` |
+| memory2M6 | `E6 FE 16 00 00 04 00 00 01` | `E6 FE 16 00 00 04 00 00 01` | `05 02 00 04 00 00 00` |
+| lightSwitch | `E6 FE 16 00 00 02 00 00 03` | `E6 FE 16 00 00 02 00 00 03` | `05 02 00 02 00 00 00` |
+| massageSwitch | `E6 FE 16 00 01 00 00 00 04` | `E6 FE 16 00 01 00 00 00 04` | `05 02 00 00 01 00 00` |
+| massageTimeSwitch | `E6 FE 16 00 02 00 00 00 03` | `E6 FE 16 00 02 00 00 00 03` | `05 02 00 00 02 00 00` |
+| strengthHeadUp | `E6 FE 16 00 08 00 00 00 FD` | `E6 FE 16 00 08 00 00 00 FD` | `05 02 00 00 08 00 00` |
+| strengthFootUp | `E6 FE 16 00 04 00 00 00 01` | `E6 FE 16 00 04 00 00 00 01` | `05 02 00 00 04 00 00` |
+| massageWaveSwitch | `E6 FE 16 00 00 00 10 00 F5` | `E6 FE 16 00 00 00 10 00 F5` | `05 02 10 00 00 00 00` |
+
+#### Queries and clock
+
+| Action | jalon_13 | jalon_15 | jalon_24 |
+|---|---|---|---|
+| Massage query | `00 00 00 00` | `00 00 00 00` | `00 B0` |
+| Alarm query | Unavailable | `E2 80 03 00 9A` | `00 C0` |
+| Clock (2026-11-10 Tue 13:14:15) | `07 04 1A 0B 0A 02 0D 0E 0F` | `E7 80 01 7E 0A 0A 0D 0E 0F DB` | `07 04 1A 0B 0A 02 0D 0E 0F` |
+
+#### Wake types
+
+| Action | P2 | P3 |
+|---|---|---|
+| flat | 28 | 9 |
+| memory_1 | 17 | 5 |
+| memory_2 | 19 | 6 |
+| zero_g | 13 | 1 |
+| anti_snore | 16 | 4 |
+| tv | 15 | 3 |
+| massage | 9 | 8 |
+
+#### Timing
+
+| Operation | Behavior |
+|---|---|
+| Held movement / Flat / M1 / M2 | Immediate; refresh every 300 ms |
+| Release / explicit STOP | Immediate STOP and one more after 300 ms |
+| Preset tap | Single write; release after 100 ms |
+| Memory recall | One 300 ms hold then release |
+| Memory programming | Same recall word held 6000 ms then release |
+| Massage toggle | Single toggle; query after 100 ms |
+| Clock sync | Two identical writes 300 ms apart, after connect |
+| Alarm query | After 100 ms: P2 twice at 300 ms; P3 once |
+| Alarm set | One write; query after 100 ms: P2 twice, P3 three times at 350 ms |
+<!-- /generated -->
+
+#### Timing
+
+The generated timing table describes each sequence. HA retains its command lane
+through both STOP writes, including repeated cancellation and a failed first
+STOP. The app's global timer can cancel its second STOP or another receiver's
+work; HA deliberately uses per-receiver state and awaited cleanup instead.
+Massage toggle sends one effective toggle, matching the normal UI's query that
+cancels the app's pending extra toggle. There is no periodic status query.
+
+#### Notifications
+
+Each notification is independent, without reassembly or an inferred checksum.
+P1/P2 normal massage uses `ED FE`; only P2 consumes the long `F4 FE` form. P3
+uses `A5 0B`. The sensor exposes the app's timer indicator (values above four
+become zero), decoded wave, and head/foot strength as attributes. The indicator
+has no asserted minute unit. Strength uses the app's nibble mapping on P1/P2 and
+integer division on P3, including their zero-value distinctions.
+
+Alarm dispatch accepts the app's hardcoded `A5 0C`, `A5 0D`, or `ED 80 03` headers
+and interprets fields with the selected profile. Its sensor exposes enabled state,
+weekday mask, raw wake type, hour, minute and first/second indicator. P1 can parse
+alarm replies but has no reachable setter or query. P3's declared two-byte minute
+field still reads only the first byte, as the app does. HA rejects incomplete
+records rather than converting missing fields to invented zero state, and clears
+all reported state when the session ends.
+
+#### Services
+
+`jalon_set_alarm` supports P2 and P3: `device_id`, `enabled`, minute-precision
+`time`, optional `weekdays` (`mon` through `sun`) and `wake_mode` from the generated
+table. Empty weekdays means the next occurrence, as in the app. Sunday is bit 0,
+Monday bit 1 through Saturday bit 6; bit 7 marks a recurring selection. P2 disables by zeroing its record; P3 retains
+the fields and clears its enabled byte. No phone alarm, ringtone or audio is
+configured. Use the generic `sync_clock` action to repeat calibration explicitly.
+
+#### Evidence
+
+Unit132, accepted static analysis of `com.ore.jalon.neworebeding` 2.0.2 (9).
+The three profiles reproduce every frozen ordinary, raw, clock and alarm vector;
+notification vectors are synthetic inputs rather than captured hardware traffic.
+Tests: `tests/test_jalon.py`, `tests/fixtures/jalon/vectors.json`.
+Artifact SHA-256: `95964d51b74d4431344cca94054f024a807be10d78b2fad3eeec48c797122c8b`.
+Report manifest SHA-256: `eee6e444d1ae20e0afb9a86e1df9a9a2708fc9d3aeb11fb75c8d1a1f30206f68`.
+Real-user beta/release validation remains needed for STOP, programming, write mode,
+P1 clock fallback, massage interpretation and bed-local alarms.

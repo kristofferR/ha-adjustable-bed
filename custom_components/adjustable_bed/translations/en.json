@@ -2852,6 +2852,27 @@
       },
       "ruf_richmat_lift_down": {
         "name": "Lift Down"
+      },
+      "jalon_massage_toggle": {
+        "name": "Toggle massage"
+      },
+      "jalon_query_massage": {
+        "name": "Refresh massage"
+      },
+      "jalon_massageTimeSwitch": {
+        "name": "Massage timer"
+      },
+      "jalon_massageWaveSwitch": {
+        "name": "Massage wave"
+      },
+      "jalon_strengthHeadUp": {
+        "name": "Head massage intensity"
+      },
+      "jalon_strengthFootUp": {
+        "name": "Foot massage intensity"
+      },
+      "jalon_query_alarm": {
+        "name": "Refresh alarm"
       }
     },
     "cover": {
@@ -4476,6 +4497,12 @@
       },
       "ruf_richmat_music_status": {
         "name": "Bed audio status"
+      },
+      "jalon_massage": {
+        "name": "Massage timer indicator"
+      },
+      "jalon_alarm": {
+        "name": "Bed alarm"
       }
     },
     "light": {
@@ -8082,6 +8109,31 @@
         },
         "side": {
           "name": "Paired bed side"
+        }
+      }
+    },
+    "jalon_set_alarm": {
+      "name": "Set OkinComfortBed II alarm",
+      "description": "Configure the Jalon app's bed-local alarm on P2 or P3 receivers.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "time": {
+          "name": "Time"
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "Empty means the next occurrence."
+        },
+        "wake_mode": {
+          "name": "Wake mode"
+        },
+        "side": {
+          "name": "Side"
         }
       }
     }

@@ -773,3 +773,12 @@ All selected targets are validated before any writes. Existing
 `richmat_mh_alarm`, `richmat_mh_waist_alarm`, `richmat_mh_aroma` and
 `richmat_mh_light_color` actions also work for the model/reply-gated features
 of these app profiles. RUF exposes only its waist alarm among those actions.
+
+### OkinComfortBed II alarm
+
+`adjustable_bed.jalon_set_alarm` configures the Jalon app's bed-local alarm on P2
+or P3 receivers. Supply `device_id`, `enabled`, minute-precision `time`, optional
+`weekdays` (`mon` through `sun`, empty for the next occurrence), and `wake_mode`
+(`flat`, `memory_1`, `memory_2`, `zero_g`, `anti_snore`, `tv`, or `massage`). Paired
+child targets retain their side. P1 has no alarm setter. See the
+[profile guide](beds/keeson.md#okincomfortbed-ii) for timing and notification state.

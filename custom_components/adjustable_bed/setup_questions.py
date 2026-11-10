@@ -51,6 +51,7 @@ from .const import (
     BED_TYPE_GOODVIBE,
     BED_TYPE_HJBED,
     BED_TYPE_ISLEEP,
+    BED_TYPE_JALON,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
@@ -171,6 +172,7 @@ from .const import (
     CONF_VMATBASIC_PROFILE,
     DEFAULT_OCTO_PIN,
     HAS_LIGHT_DEFAULTS,
+    JALON_LAYOUTS,
     JIECANG_APP_LAYOUTS,
     JIECANG_APP_TRANSPORTS,
     KAIDI_VARIANT_FLOYD,
@@ -267,6 +269,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_ESHINE: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_GOODVIBE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_HJBED: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
+    BED_TYPE_JALON: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_GLIDEAWAY_MOTION: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_ISLEEP: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_BEDSENSE: frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
@@ -1717,6 +1720,15 @@ def _asking(key: str, **declared: Any) -> SetupProfile:
 SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     **_BASE,
     **_DECLARED,
+    BED_TYPE_JALON: _asking(
+        BED_TYPE_JALON,
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 300,
+              CONF_PROTOCOL_VARIANT: SET_BY_PROFILE},
+        questions=(Question(CONF_PRODUCT_TYPE, JALON_LAYOUTS, "0"),),
+        derive=lambda data: {CONF_MOTOR_COUNT: {"0": 2, "10": 3, "11": 3, "2": 4}[data[CONF_PRODUCT_TYPE]]},
+        seed=lambda _hass, data, discovered: {**data, **({CONF_BLE_DEVICE_NAME: discovered.device.name or discovered.name} if discovered else {})},
+    ),
     # The handset table, chosen in the app, sets the layout and massage.
     BED_TYPE_FURNIMOVE: _asking(
         BED_TYPE_FURNIMOVE,

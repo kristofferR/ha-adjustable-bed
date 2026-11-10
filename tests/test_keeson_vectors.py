@@ -37,6 +37,7 @@ from tests.test_controller_contract import _FactoryCoordinator, _make_connected_
 # Controllers that keep their own key tables; only the frame is profile data.
 E6_CONTROLLERS = frozenset(
     {
+        "jalon_13", "jalon_15", "jalon_24",
         "glideaway_motion",
         "malouf_legacy_okin",
         "sleepys_box15",
@@ -341,6 +342,10 @@ def test_frozen_frame_round_trips_through_codec(profile: str, literal: str) -> N
 def test_profile_sends_only_frozen_frames(key: str) -> None:
     profile = profiles.PROFILES[key]
     frozen = {bytes.fromhex(literal) for literal in FROZEN_FRAMES[key]}
+    if key.startswith("jalon_"):
+        from custom_components.adjustable_bed.profiles.jalon import COMMANDS
+        assert {profiles.encode(profile, word).hex() for word in COMMANDS.values()} == FROZEN_FRAMES[key]
+        return
     if key in APP_REPORTED:
         app_controller = key in ("innova", "simon_li", "okin_seating", "heal_every_night")
         app_controller |= key in E6_CONTROLLERS
