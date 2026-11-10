@@ -10,6 +10,8 @@ frames are left out of those captures.
 import json
 from pathlib import Path
 
+from tests.richmat_rise_vectors import FROZEN_FRAMES as RISE_FROZEN_FRAMES
+
 
 def _goodvibe() -> frozenset[str]:
     """Good Vibe Sleep 2.0.1 (row116): the accepted report's vectors in ``fixtures/goodvibe``.
@@ -2099,6 +2101,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
     "richmat_classic_fortywinks": _RICHMAT_CLASSIC,
     "richmat_classic_milemont": _RICHMAT_CLASSIC,
     "richmat_classic_superior": _RICHMAT_CLASSIC,
+    **RISE_FROZEN_FRAMES,
     "goodvibe": _goodvibe(),
     "leggett_lp_legacy": _LP_LEGACY,
 }

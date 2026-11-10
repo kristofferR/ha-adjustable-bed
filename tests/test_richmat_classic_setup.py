@@ -12,6 +12,7 @@ from custom_components.adjustable_bed.beds.richmat_classic.models import MODEL_C
 from custom_components.adjustable_bed.beds.richmat_classic.profiles import (
     APP_NAMES,
     DATA_DIR,
+    RISE_APPS,
     load_catalog,
     resolve_layout,
 )
@@ -53,6 +54,7 @@ def test_all_five_app_choices_are_findable_and_model_inventories_are_distinct():
         assert not any(o['value'] == 'richmat_classic_apps:' + app for o in get_bed_type_options())
     assert {app: len(models) for app, models in MODEL_CHOICES.items()} == {
         'avocadoecobase': 704, 'coastersleep': 715, 'fortywinks': 725, 'milemont': 700, 'superior': 725,
+        'luunarise2': 604, 'powercool': 586,
     }
     for app, models in MODEL_CHOICES.items():
         assert set(models) == set(load_catalog(app).models)
@@ -64,7 +66,7 @@ def test_runtime_catalog_matches_every_frozen_member_layout_contract():
     with gzip.open(path, "rt") as source:
         expected = json.load(source)
     assert len(expected["models"]) == 3569
-    catalogs = {app: load(DATA_DIR, app).entries() for app in APP_NAMES}
+    catalogs = {app: load(DATA_DIR, app).entries() for app in APP_NAMES.keys() - RISE_APPS}
     for catalog in catalogs.values():
         assert catalog["fields"].json() == expected["fields"]
     models = {app: catalog["models"].entries() for app, catalog in catalogs.items()}

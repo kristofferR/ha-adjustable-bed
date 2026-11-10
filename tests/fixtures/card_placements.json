@@ -2295,6 +2295,9 @@
   "card_section": "lighting",
   "card_role": "timer_minutes"
  },
+ "number:richmat_rise_lamp_seconds": {
+  "card_section": "utility"
+ },
  "number:sleep_number_setting": {
   "card_section": "firmness"
  },

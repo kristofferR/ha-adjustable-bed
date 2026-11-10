@@ -1458,6 +1458,10 @@ CLASSIC_ROUTES: tuple[tuple[str, str, str], ...] = (
     ("fortywinks", "CORN", "richmat_classic_apps"),
     ("milemont", "JDRM", "richmat_classic_apps"),
     ("superior", "YGRM", "richmat_classic_apps"),
+    ("luunarise2", "HKRM", "richmat_classic_apps"),
+    ("luunarise2", "AHRM", "richmat_classic_apps_nordic"),
+    ("powercool", "AHRM", "richmat_classic_apps"),
+    ("powercool", "E3RM", "richmat_classic_apps_nordic"),
 )
 
 

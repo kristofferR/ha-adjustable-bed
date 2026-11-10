@@ -722,6 +722,34 @@ for other controls. See the [protocol guide](beds/okin-nframe.md#eshine-clock-an
 for packet values, timing and hardware-unverified status. This is separate from
 the E6000 app profile.
 
+## Luuna Rise / Power Cool bed settings
+
+`adjustable_bed.richmat_rise` targets the exact selected app and layout. Use
+`query` to refresh alarm and lamp capability, `alarm` / `cancel_alarm` for the
+bed's countdown, `rgb` for a three-byte color, and `lamp_timer` with `seconds`
+(0–300) and optional `timer_save` to select the app's zero encoding. `actions`
+is a list of `node_<number>` keys from the device's `alarm_actions` diagnostics.
+Only that layout's choices are admitted. `time` is the next local occurrence;
+omitting it selects 1440 minutes. Unsupported preset/massage combinations are
+rejected before writing. Confirmation is not schedule readback.
+
+`massage_timer` accepts `progress` 0–5 only for D1RM/D9RM. `massage_popup` uses
+Y6RM's `popup` choice (`15`, `30`, `45`, `toggle`). These labels do not establish
+firmware durations. Alarm and lamp writes require capability evidence from the
+current physical session, including after an idle reconnect.
+
+Power Cool's explicitly selected TEST layout permits `diagnostic_cycle`, a
+finite motor sequence cancelled by STOP. Its RMCS layout permits
+`program_schedule`. Supply `schedule` with twelve `[order, run_seconds,
+rest_seconds]` records in fixed M1/M2/M3/M4/M12/M34 up/down order, plus `rest`,
+`count`, `radio` (`rf` or `ble`), `code` (`new` or `old`), `identifier` (1–9), and
+`motors` (a permutation of 1–4). Orders must be a permutation of 1–12. The radio
+field is part of the BLE program. No program abort or readback is proven.
+These operations use movement scheduling. Luuna's manufacturing layouts,
+standalone desks, networks and separate accessories are not service targets.
+
+See the [generated command tables](beds/richmat.md#luuna-rise--power-cool).
+
 ## Classic Richmat app settings
 
 `adjustable_bed.richmat_classic` targets the selected Avocado Eco Base,

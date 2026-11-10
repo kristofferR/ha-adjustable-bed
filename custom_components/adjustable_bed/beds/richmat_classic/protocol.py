@@ -38,7 +38,7 @@ SETTINGS_SPACING_MS: Final = 150
 DESK_REFRESH_MS: Final = 200
 
 
-def worker_interval(name: str | None, wire: Wire) -> int:
+def worker_interval(name: str | None, wire: Wire, *, rise: bool = False) -> int:
     """The source startup name guards, without guessing after substring failure."""
     if name is None:
         if wire == "RAW":
@@ -47,6 +47,8 @@ def worker_interval(name: str | None, wire: Wire) -> int:
     if len(name.strip()) < 4:
         raise ValueError("The app sender requires at least four device-name characters")
     prefix = name.strip().upper()[:4]
+    if rise and prefix == "6BRM" and wire == "RAW":
+        return 170
     return FAST_TICK_MS if prefix in FAST_TICK_NAMES else TICK_MS
 
 
@@ -81,7 +83,9 @@ MASSAGE_POPUP: Final = {"15": 0x5F, "30": 0x63, "45": 0x61, "toggle": 0x5E}
 
 def control(payload: bytes, wire: Wire, mode: int = 0) -> bytes:
     """RAW copies every resource byte; FRAMED consumes only the first operand."""
-    return payload if wire == "RAW" else codec.command(payload[0], mode)
+    if wire == "RAW":
+        return codec.encode("nordic", payload[0]) if len(payload) == 1 else payload
+    return codec.command(payload[0], mode)
 
 
 def release(wire: Wire, mode: int = 0) -> bytes:

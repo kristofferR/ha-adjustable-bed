@@ -2992,6 +2992,55 @@ eshine_set_alarm:
             - flat
             - massage
 
+richmat_rise:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    operation:
+      required: true
+      selector:
+        select:
+          options: [query, alarm, cancel_alarm, rgb, lamp_timer, massage_timer, massage_popup, diagnostic_cycle, program_schedule]
+    actions:
+      selector:
+        object:
+    time:
+      selector:
+        time:
+    rgb_color:
+      selector:
+        color_rgb:
+    seconds:
+      selector:
+        number:
+          min: 0
+          max: 300
+          mode: box
+    timer_save:
+      selector:
+        boolean:
+    progress:
+      selector:
+        number:
+          min: 0
+          max: 5
+          mode: box
+    popup:
+      selector:
+        select:
+          options: ["15", "30", "45", toggle]
+    schedule:
+      selector:
+        object:
+    side:
+      selector:
+        select:
+          options: [left, right, both]
+
 richmat_classic:
   fields:
     device_id:

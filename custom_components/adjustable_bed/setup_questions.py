@@ -912,7 +912,9 @@ def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
         *MODEL_CHOICES.get(app, ()),
         *MANUAL_ALIASES.get(app, {}),
         *LAYOUT_PICKER_CHOICES.get(app, {}),
-    } - _CLASSIC_EXCLUDED
+    } - (_CLASSIC_EXCLUDED - ({"TEST", "RMCS"} if app == "powercool" else set()))
+    if app in ("luunarise2", "powercool"):
+        codes -= {"WFRM", "FWRM"}
     return {code: code for code in sorted(codes)}
 
 
@@ -935,7 +937,10 @@ def _classic_errors(data: Mapping[str, Any]) -> dict[str, str]:
 
     layout = data.get(CONF_PRODUCT_TYPE)
     shipped = MODEL_CHOICES.get(str(data.get(CONF_PROTOCOL_VARIANT, "")), ())
-    if layout in _CLASSIC_EXCLUDED or layout not in shipped:
+    excluded = _CLASSIC_EXCLUDED - ({"TEST", "RMCS"} if data.get(CONF_PROTOCOL_VARIANT) == "powercool" else set())
+    if data.get(CONF_PROTOCOL_VARIANT) in ("luunarise2", "powercool"):
+        excluded = excluded | {"WFRM", "FWRM"}
+    if layout in excluded or layout not in shipped:
         return {CONF_PRODUCT_TYPE: "richmat_classic_layout"}
     return {}
 

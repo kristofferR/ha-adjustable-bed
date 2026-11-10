@@ -35,6 +35,8 @@ APPS = [
     "fortywinks",
     "milemont",
     "superior",
+    "luunarise2",
+    "powercool",
     "remote",
 ]
 

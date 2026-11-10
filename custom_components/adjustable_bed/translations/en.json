@@ -5021,6 +5021,9 @@
       },
       "tv_lift_position_estimated": {
         "name": "TV lift position (estimated)"
+      },
+      "richmat_rise_lamp_seconds": {
+        "name": "Lamp timer"
       }
     },
     "select": {
@@ -8082,6 +8085,52 @@
         },
         "side": {
           "name": "Paired bed side"
+        }
+      }
+    },
+    "richmat_rise": {
+      "name": "Luuna Rise / Power Cool bed settings",
+      "description": "Direct BLE bed settings for the selected app and layout. Alarm and lamp actions require a capability reply from the current session. Power Cool TEST runs a finite motor diagnostic cycle; RMCS programs the supplied motor schedule. Physical effects are unverified.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "operation": {
+          "name": "Operation"
+        },
+        "actions": {
+          "name": "Alarm actions",
+          "description": "A list of node_<number> keys from this layout’s alarm_actions diagnostics. The first bed choice and the layout-ordered massage choices determine the command."
+        },
+        "time": {
+          "name": "Alarm time",
+          "description": "Next occurrence of this local time, with minute precision. Omit for 1440 minutes."
+        },
+        "rgb_color": {
+          "name": "RGB color"
+        },
+        "seconds": {
+          "name": "Lamp timer",
+          "description": "0 to 300 seconds. Zero uses the app’s distinct slider and Save encodings; the physical zero behavior is unverified."
+        },
+        "timer_save": {
+          "name": "Use Save encoding",
+          "description": "At zero, Save writes 0000 and slider release writes FFFF."
+        },
+        "progress": {
+          "name": "Massage timer index",
+          "description": "D1RM or D9RM slider index, 0 to 5. These are source indices, not inferred durations."
+        },
+        "popup": {
+          "name": "Timer popup choice",
+          "description": "Y6RM app choices 15, 30, 45 or toggle. Actual firmware durations are unverified."
+        },
+        "schedule": {
+          "name": "Motor schedule",
+          "description": "Power Cool RMCS only. records: twelve [order, run_seconds, rest_seconds] rows in fixed M1/M2/M3/M4/M12/M34 up/down order; rest and count: nonnegative integers; radio: rf or ble; code: new or old; identifier: 1 to 9; motors: permutation of [1,2,3,4]. No schedule readback or abort command is proven."
+        },
+        "side": {
+          "name": "Side"
         }
       }
     }

@@ -24,7 +24,9 @@ from custom_components.adjustable_bed.beds.leggett.lp_legacy_profiles import (
     get_lp_legacy_profile,
 )
 from custom_components.adjustable_bed.beds.richmat_classic import protocol as classic_frames
+from custom_components.adjustable_bed.beds.richmat_classic import rise as rise_frames
 from custom_components.adjustable_bed.beds.richmat_classic.profiles import APP_NAMES as CLASSIC_APPS
+from custom_components.adjustable_bed.beds.richmat_classic.profiles import load_catalog
 from custom_components.adjustable_bed.beds.richmat_mh import protocol as mh_frames
 from custom_components.adjustable_bed.beds.rmcontrol import controller as rmcontrol_bed
 from custom_components.adjustable_bed.beds.rmcontrol import protocol as rmcontrol_frames
@@ -1110,7 +1112,51 @@ def render_lp_legacy_notifications() -> str:
     )
 
 
+def render_rise_commands() -> str:
+    """Direct utility tables and exact member-bound resource domains."""
+    lines: list[str | list[str]] = [_table(("Utility", "Bytes", "Availability"), [
+        ("Alarm query", _hex(classic_frames.ALARM_QUERY), "Selected layout has alarm actions"),
+        ("Lamp query", _hex(classic_frames.LAMP_QUERY), "Every selected bed layout"),
+        ("Cancel alarm", " / ".join(_hex(frame) for frame in classic_frames.alarm(0, 0)), "Live alarm capability"),
+        ("Lamp zero, slider", _hex(rise_frames.lamp_timer(0, save=False)), "Live lamp capability"),
+        ("Lamp zero, Save", _hex(rise_frames.lamp_timer(0, save=True)), "Live lamp capability"),
+        ("Lamp 300 seconds", _hex(rise_frames.lamp_timer(300, save=False)), "Live lamp capability"),
+        ("RGB 1,221,255", _hex(classic_frames.rgb(1, 221, 255)), "Live lamp capability; one concatenated write"),
+        *[(f"D1RM/D9RM slider {i}", " / ".join(_hex(classic_frames.massage_timer(layout, i)) for layout in ("D1RM", "D9RM")), "Exact selected layout only") for i in range(6)],
+        *[(f"Y6RM popup {choice}", _hex(classic_frames.massage_popup(choice)), "Layout offers tag 65") for choice in classic_frames.MASSAGE_POPUP],
+    ])]
+    lines.append(_table(("Alarm preset byte", "With all massage", "With head massage", "With foot massage"), [
+        (_code_hex(preset), *(_code_hex(code) for code in codes))
+        for preset, codes in rise_frames.ALARM_COMBINATIONS.items()
+    ]))
+    for app in ("luunarise2", "powercool"):
+        catalog = load_catalog(app)
+        groups: dict[tuple[str, ...], list[str]] = {}
+        for layout, model in sorted(catalog.models.items()):
+            if layout in ("FWRM", "WFRM", "TEST", "RMCS"):
+                continue
+            for c in model.controls:
+                if not c.rich_button or c.status not in (1, 2, 3):
+                    continue
+                if not any((c.short, c.short_old, c.long, c.tag)):
+                    continue
+                key = (c.short if not c.excluded_short and c.short else "none", c.short_old if not c.excluded_short and c.short_old else "none", c.long if not c.excluded_long and c.long else "none", str(c.status), c.tag or "none", str(c.threshold_ms), "hidden" if any(v in ("invisible", "gone", "4", "8") for v in c.ancestor_visibility) else "visible")
+                if key[:3] == ("none", "none", "none") and key[4] == "none":
+                    continue
+                groups.setdefault(key, []).append(layout)
+        lines.append(f"### {CLASSIC_APPS[app]} resource commands\n\n<details><summary>Selected-layout command and gesture gates</summary>\n")
+        lines.append(_table(("Layouts", "Short", "Raw old-short", "Long", "Status", "Tag", "Threshold ms", "Initial visibility"), [
+            (", ".join(sorted(set(layouts))), *key) for key, layouts in sorted(groups.items())
+        ]))
+        lines.append("\n</details>\n")
+    lines.append(_table(("Power Cool TEST opcode", "Refresh seconds", "Rest seconds"), [
+        (_code_hex(code), str(seconds), "5") for code, seconds in rise_frames.DIAGNOSTIC_CYCLE
+    ]))
+    return _block(*lines)
+
+
 BLOCKS: list[Block] = [
+    (GUIDE, "richmat-rise-commands", render_rise_commands),
     (GUIDE, "richmat-profiles", render_richmat_profiles),
     (GUIDE, "richmat-transports", render_richmat_transports),
     (GUIDE, "richmat-framing", render_richmat_framing),

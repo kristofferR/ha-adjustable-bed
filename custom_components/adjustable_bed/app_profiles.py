@@ -153,7 +153,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
         "Comfort Enhancements", frozenset({CONF_HAS_MASSAGE}), variant_owned=True
     ),
     BED_TYPE_GOODVIBE: SideProfile("Good Vibe Sleep", variant_owned=True),
-    BED_TYPE_RICHMAT_CLASSIC_APPS: SideProfile("Classic Richmat apps", variant_owned=True),
+    BED_TYPE_RICHMAT_CLASSIC_APPS: SideProfile("Classic Richmat apps", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
     BED_TYPE_MOTOMOTION: SideProfile("MotoMotion"),
     BED_TYPE_HJBED: SideProfile("HJBed", variant_owned=True),
     BED_TYPE_GLIDEAWAY_MOTION: SideProfile("Glideaway Motion", variant_owned=True),

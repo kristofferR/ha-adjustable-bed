@@ -11,10 +11,15 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from custom_components.adjustable_bed.beds.richmat_classic import controller as bed
-from custom_components.adjustable_bed.beds.richmat_classic.profiles import APP_NAMES
+from custom_components.adjustable_bed.beds.richmat_classic.profiles import (
+    APP_NAMES as ALL_APP_NAMES,
+)
+from custom_components.adjustable_bed.beds.richmat_classic.profiles import RISE_APPS
 from custom_components.adjustable_bed.beds.richmat_classic.requests import Request
 from custom_components.adjustable_bed.beds.richmat_classic.transport import Transport
 from tests.state_helpers import published
+
+APP_NAMES = {app: name for app, name in ALL_APP_NAMES.items() if app not in RISE_APPS}
 
 
 def controller(app="avocadoecobase", layout="GXRM", wire="FRAMED"):
@@ -110,7 +115,7 @@ def test_zrs6_navigation_is_not_exposed_as_a_bed_command(app):
         assert result.owner == "retain"
 
 
-@pytest.mark.parametrize("app", APP_NAMES)
+@pytest.mark.parametrize("app", APP_NAMES.keys() - RISE_APPS)
 async def test_short_preset_has_one_recall_and_one_release(app, instant):
     ctrl, coord = controller(app, "A0RN")
     node = next(c.node for c in ctrl._controls if c.short == "58" and c.status == 3)
@@ -118,7 +123,7 @@ async def test_short_preset_has_one_recall_and_one_release(app, instant):
     assert packets(coord) == ["6e010058c7", "6e01006edd"]
 
 
-@pytest.mark.parametrize("app", APP_NAMES)
+@pytest.mark.parametrize("app", APP_NAMES.keys() - RISE_APPS)
 async def test_long_preset_suppresses_short_recall_after_saving(app, instant):
     ctrl, coord = controller(app, "A0RN")
     node = next(c.node for c in ctrl._controls if c.short == "58" and c.status == 3)

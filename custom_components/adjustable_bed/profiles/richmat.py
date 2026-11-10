@@ -243,7 +243,7 @@ GOODVIBE: Final = RichmatProfile(key="goodvibe", transports=("w1", "n1", "w5", "
 CLASSIC_TRANSPORTS: Final[tuple[TransportKey, ...]] = ("w1", "w2", "n1", "w4")
 RICHMAT_CLASSIC: Final[dict[str, RichmatProfile]] = {
     app: RichmatProfile(key=f"richmat_classic_{app}", transports=CLASSIC_TRANSPORTS)
-    for app in ("avocadoecobase", "coastersleep", "fortywinks", "milemont", "superior")
+    for app in ("avocadoecobase", "coastersleep", "fortywinks", "milemont", "superior", "luunarise2", "powercool")
 }
 
 # Eshine 1.0.1 (row106): the E6000's one fixed table, over the app's transports.

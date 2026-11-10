@@ -70,6 +70,23 @@ def frame(*values: int) -> bytes:
     return bytes(value & 0xFF for value in (*values, sum(values)))
 
 
+def motor_test_schedule(
+    records: tuple[tuple[int, int, int], ...], rest: int, count: int,
+    radio: int, code: int, identifier: int, motors: tuple[int, ...],
+) -> bytes:
+    """Power Cool RMCS: unchecksummed 5AA5 program, ending in 88.
+
+    Java's %04x followed by substring(0,4) takes the *first* four hex
+    digits for large values. Do not replace this with a 16-bit mask.
+    """
+    def word(value: int) -> bytes:
+        return bytes.fromhex(f"{value:04x}"[:4])
+
+    identity = (0xB2D6, 0xB2D4, 0xB2D2, 0xB2CD, 0xB2C9, 0xB2B6, 0xB2B4, 0xB296, 0xB294)[identifier - 1]
+    body = b"".join(bytes((0xA0 + i, order)) + word(run) + word(pause) for i, (order, run, pause) in enumerate(records))
+    return b"\x5a\xa5" + body + word(rest) + word(count) + bytes((radio, code)) + identity.to_bytes(2, "big") * 2 + bytes(motors) + b"\x88"
+
+
 def is_valid(data: bytes) -> bool:
     """Whether the last byte is the ``sum8`` of the others."""
     return len(data) >= 2 and sum(data[:-1]) & 0xFF == data[-1]

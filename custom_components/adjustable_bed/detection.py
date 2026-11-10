@@ -580,7 +580,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OKIN_FFE: "Okin FFE (13/15 series)",
     BED_TYPE_OKIN_ORE: "Okin ORE (legacy A5 5A)",
     BED_TYPE_GOODVIBE: "Good Vibe Sleep app (choose product or sleep sensor)",
-    BED_TYPE_RICHMAT_CLASSIC_APPS: "Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior",
+    BED_TYPE_RICHMAT_CLASSIC_APPS: " / ".join(RICHMAT_CLASSIC_APPS.values()),
     BED_TYPE_MOTOMOTION: "MotoMotion app (exact Bluetooth name)",
     BED_TYPE_HJBED: "HJBed app (choose the exact product)",
     BED_TYPE_GLIDEAWAY_MOTION: "Glideaway Motion / Montion app (400 / 450 / 500 / 600)",
