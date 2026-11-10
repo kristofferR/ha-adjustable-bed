@@ -2922,6 +2922,9 @@
  "sensor:furnimove_software": {
   "card_section": "hidden"
  },
+ "sensor:galaxy_status": {
+  "card_section": "utility"
+ },
  "sensor:glideaway_motion_alarm": {
   "card_section": "hidden"
  },

@@ -7,8 +7,31 @@ captured with every remote code, framing and light family. Parameterized colour
 frames are left out of those captures.
 """
 
+import gzip
 import json
 from pathlib import Path
+
+
+def _galaxy() -> frozenset[str]:
+    """A09 primary arm64 frozen normal literals, no cross-app inference."""
+    root = Path(__file__).parent / "fixtures/galaxy"
+    ordinary = json.loads(gzip.decompress((root / "ordinary.json.gz").read_bytes()))
+    common = json.loads(gzip.decompress((root / "common.json.gz").read_bytes()))
+    frames = {bytes.fromhex(row[5]).hex() for row in ordinary}
+    surface = json.loads(gzip.decompress((root / "surface.json.gz").read_bytes()))
+    frames.update(row[4] for row in surface)
+    countdown = json.loads(gzip.decompress((root / "countdown.json.gz").read_bytes()))
+    frames.update(
+        bytes.fromhex(call["expected_bytes"]).hex()
+        for row in countdown
+        for call in row["expected"]["calls"]
+    )
+    for row in common:
+        if row["protocol"] == "P-NORMAL" and row["builder"] not in ("desk", "crc_frame"):
+            data = bytes.fromhex(row["expected_bytes"])
+            size = 5 if row["builder"] == "color" else len(data)
+            frames.update(data[i : i + size].hex() for i in range(0, len(data), size))
+    return frozenset(frames)
 
 
 def _goodvibe() -> frozenset[str]:
@@ -33,7 +56,6 @@ def _goodvibe() -> frozenset[str]:
         size = 5 if data[:2] == b"\x6e\x0c" else len(data)
         frames |= {data[i : i + size].hex() for i in range(0, len(data), size)}
     return frozenset(frames)
-
 
 
 # RUF and Richmat apps (PR #928): RUF, W.Silver, AMERICANSTAR, Bailey and TX run the MH
@@ -2099,6 +2121,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
     "richmat_classic_fortywinks": _RICHMAT_CLASSIC,
     "richmat_classic_milemont": _RICHMAT_CLASSIC,
     "richmat_classic_superior": _RICHMAT_CLASSIC,
+    "galaxy": _galaxy(),
     "goodvibe": _goodvibe(),
     "leggett_lp_legacy": _LP_LEGACY,
 }

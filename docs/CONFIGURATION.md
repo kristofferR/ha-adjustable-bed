@@ -643,6 +643,7 @@ that side, then combine them again.
 | BedSense | [Layout, or the Bluetooth-name layout rule](beds/ff_frame.md#bedsense). |
 | Casper Base | [PRO/MAX product](beds/casper-base.md#home-assistant-setup); sleep sensors and the RCRM handset are separate entries. |
 | HJBed | [The exact app product](beds/richmat.md#hjbed). |
+| Galaxy Bed Control | Exact product code and its remote picker; V9RM/RNRN also retain base, standard and splitHead configurations. Each side owns its choices. See [Galaxy](beds/richmat.md#galaxy-bed-control). |
 | Good Vibe Sleep | [The exact product, configuration or remote alias](beds/richmat.md#good-vibe-sleep); independent RM-/HJ- sleep sensors are separate entries with their own type 1 or type 2 profile. App side selection is local; light duration and supported snore settings are device controls. |
 | eShine E2000 / E3000 / E3100 / E5000 | [The same product selector as the app](beds/okin-nframe.md#eshine); E3000/E3100 is one choice, and name or UART matches never choose it. The profile owns its axes, massage/light features and 300 ms refresh. Each side of a two-address pair keeps its own profile; single-address split controls are unavailable. |
 

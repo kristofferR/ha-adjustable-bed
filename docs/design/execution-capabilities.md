@@ -175,6 +175,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `vibradorm_app` | S stream | U | U | diamant, werkmeister | STOP on release; speed is mood light; hold declared, including its VMAT profile (vmat) |
 | `vmatbasic` | S stream | U | U | vmatbasic | all-up/all-down are fixed keys; speed is mood light; hold declared |
 | `eshine` | S stream | U | U | eshine | STOP once after a sustained press; hold declared |
+| `galaxy` | S stream | U | U | galaxy | sustained catalog gestures first tick after 100 ms, refresh until released, then side STOP; memory-latch gestures use one long operand; no concurrent axes or motor-speed proof |
 | `goodvibe` | S stream | U | U | goodvibe | sustained controls refresh every 100 ms, then release `6e`; hold declared per control, on the held controls whose effective gesture is a sustained press (see [per-control scope](#per-control-hold-scope)). Each frame carries one operand and the only release is the side's STOP; all-motor moves are fixed operands; speed rows are massage and music shake |
 | `sleepys_elite_app` | S stream | U | U | sleepy | selector STOP once at release; hold declared |
 | `motosleep` | S stream | B | B | motosleep, powerbob, motosleep-guide | movement repeats every 100 ms while held; release sends `$b` five times (MotoSleep HHC and the Power Bob profiles whose release has it) or the MOTO release frame (zero five times, or `0x9088/0x0001` six times on WR219); other Power Bob profiles stop when the refresh ends. #516 and #591: the guide covers only the commands the integration sends, and the frozen reports that would show composition and the full command inventory are not retained. MotoMotion is another app, with its own row |
@@ -658,6 +659,7 @@ Report workspaces are machine-local under
 | fortywinks | `com.richmat.fortywinks` | 1.0.1 | COMPLETE | `com.richmat.fortywinks-1.0.1-2026-11-03-bulk061-001/work/report-revision-sol-001/` |
 | fsm | `com.limoss.fsmrelax` | 1.9 | COMPLETE | `com.limoss.fsmrelax-1.9-2026-09-30-extra-four-075-001/report/` |
 | glide | `com.ore.bedding.glideawaymontion` | 1.0.3 | COMPLETE | `com.ore.bedding.glideawaymontion-1.0.3-2026-11-03-bulk061-001/report/` |
+| galaxy | `nl.starinternational.galaxy` | 3.3.0 (330002) | COMPLETE | `nl.starinternational.galaxy-3.3.0-2026-11-10-reconciliation001/report/` |
 | goodvibe | `com.richmat.goodvibesleep` | 2.0.1 | COMPLETE | `com.richmat.goodvibesleep-2.0.1-2026-11-03-bulk101-188-001/work/report-repair-sol-003/` |
 | glory | `com.okin.bedding.glory` | 1.0.4 | COMPLETE | `com.okin.bedding.glory-1.0.4-2026-10-01-queue-e0bb6807-20261001-052-002/report/` |
 | gm | `com.desarketing.gmmotor` | 4.6.6 | PARTIAL | `com.desarketing.gmmotor-4.6.6-2026-11-03-bulk101-188-001/report/` |

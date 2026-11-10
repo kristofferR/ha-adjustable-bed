@@ -1,6 +1,6 @@
 # Richmat
 
-**Status:** ✅ Tested (Richmat and BedTech routes); ❓ the RMControl, Richmat MH, HJBed, Eshine, classic app, Good Vibe Sleep, L&P legacy app, Casper Base and Hush Base profiles are APK-verified with hardware unverified
+**Status:** ✅ Tested (Richmat and BedTech routes); ❓ the RMControl, Richmat MH, HJBed, Eshine, classic app, Galaxy Bed Control, Good Vibe Sleep, L&P legacy app, Casper Base and Hush Base profiles are APK-verified with hardware unverified
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), getrav, [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt) and [Josh Pearce](https://github.com/joshpearce) (L&P MlRM)
 
@@ -19,7 +19,7 @@ Brands using Richmat actuators:
   app's [122 remote layouts](#lp-legacy-app)
 - SVEN & SON
 - [Casper Base](#casper-base) (PRO, MAX and stored products)
-- Galaxy (e.g., Galaxy 26W-N)
+- [Galaxy Bed Control](#galaxy-bed-control), including Galaxy 26W-N
 - MLILY
 - Luuna / Luuna Rise
 - BedTech adjustable bases, Dreams Sleepmotion 200i
@@ -81,6 +81,7 @@ is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 | ✅ | [Forty Winks](https://play.google.com/store/apps/details?id=com.richmat.fortywinks) 1.0.1 | `com.richmat.fortywinks` | [Classic apps](#classic-richmat-apps) |
 | ✅ | [Milemont](https://play.google.com/store/apps/details?id=com.richmat.milemont) 1.0.4 | `com.richmat.milemont` | [Classic apps](#classic-richmat-apps) |
 | ✅ | [Superior](https://play.google.com/store/apps/details?id=com.richmat.superior) 1.0.9 | `com.richmat.superior` | [Classic apps](#classic-richmat-apps) |
+| ✅ | [Galaxy Bed Control](https://play.google.com/store/apps/details?id=nl.starinternational.galaxy) 3.3.0 (330002) | `nl.starinternational.galaxy` | [Galaxy Bed Control](#galaxy-bed-control) |
 | ✅ | [Good Vibe Sleep](https://play.google.com/store/apps/details?id=com.richmat.goodvibesleep) 2.0.1 (20103) | `com.richmat.goodvibesleep` | [Good Vibe Sleep](#good-vibe-sleep) |
 | ✅ | [Casper Base](https://play.google.com/store/apps/details?id=com.richmat.casperbase) 1.0.8 (10800) | `com.richmat.casperbase` | [Casper Base](#casper-base); setup, sleep sensors and remote finder in its [own guide](casper-base.md) |
 | ✅ | [Hush Base](https://play.google.com/store/apps/details?id=com.richmat.hushbase) 1.0.5 (10501) | `com.richmat.hushbase` | [Hush Base](#hush-base); setup, sleep sensors and remote finder in its [own guide](hush-base.md) |
@@ -180,6 +181,7 @@ sends STOP.
 | Classic Forty Winks | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic Milemont | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic Superior | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
+| Galaxy Bed Control | `galaxy` | W1, N1, W5, W4, W3, W2 | per-product catalog | no |
 | Good Vibe Sleep | `goodvibe` | W1, N1, W5, W4, W3, W2 | per-product catalog | renewable lease on sustained controls |
 | L&P legacy app | `leggett_lp_legacy` | configured characteristics | per-layout catalog | no |
 | Casper Base | `casper_base` | N1, W1, W2, W3, W4, W5 | per-product catalog | no |
@@ -257,13 +259,13 @@ and timing.
 
 | Key | Service | Write | Notify | Commands | Profiles |
 |---|---|---|---|---|---|
-| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep, Casper Base, Hush Base |
+| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Galaxy Bed Control, Good Vibe Sleep, Casper Base, Hush Base |
 | W0 | `8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA |
-| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech, L&P MlRM, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep, Casper Base, Hush Base |
-| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep, Casper Base, Hush Base |
-| W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Good Vibe Sleep, Casper Base, Hush Base |
-| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Good Vibe Sleep, Casper Base, Hush Base |
-| W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Good Vibe Sleep, Casper Base, Hush Base |
+| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech, L&P MlRM, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Galaxy Bed Control, Good Vibe Sleep, Casper Base, Hush Base |
+| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Galaxy Bed Control, Good Vibe Sleep, Casper Base, Hush Base |
+| W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Galaxy Bed Control, Good Vibe Sleep, Casper Base, Hush Base |
+| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Galaxy Bed Control, Good Vibe Sleep, Casper Base, Hush Base |
+| W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Eshine, Galaxy Bed Control, Good Vibe Sleep, Casper Base, Hush Base |
 
 W0 is the legacy custom service, W4 and W5 are name-guarded (see the Richmat
 profile's Setup). The Richmat routes try W0 to W5, then N1, then fall back to W1.
@@ -3003,3 +3005,1365 @@ references, dispositions and exclusions.
   `d24ad2c95ea839969a5406fa8219f62048386598152608554641586041293cd7`.
 - The Richmat remotes, BedTech and L&P MlRM routes have no accepted report of
   their own; their frames are the pre-v5 controllers'.
+
+### Galaxy Bed Control
+
+**App:** [Galaxy Bed Control](https://play.google.com/store/apps/details?id=nl.starinternational.galaxy) 3.3.0 (330002), `nl.starinternational.galaxy`
+
+**Status:** ❓ Needs testing. Primary arm64 app behavior is verified; hardware and firmware behavior remain unverified.
+
+#### Setup
+
+Choose **Galaxy Bed Control app** and the exact product code. Setup suggests the
+app's advertisement mapping, then requires the selected product's own remote
+when it opens a remote picker. MHRN offers H158B's HNRN/HQRN and H109's
+M7RN/MJRN outcomes. V9RM and RNRN keep separate base, standard and splitHead
+configurations. A constructor, Bluetooth UUID or similar name never substitutes
+one product for another. Unsupported codes and the two standalone desk products
+are refused. Each physical side keeps its own product and remote settings.
+
+Discovery follows Galaxy's case-sensitive substring scan, with the platform's
+prefix matchers as discovery hints. Manual setup remains available when a name
+occurs only inside the advertisement. Advertisement prefix extraction uppercases
+four characters; the MPE branch uses nine. Its explicit mappings are suggestions,
+not protocol aliases. The Russian OTRM mapping is O0RM. Short names and unknown
+products do not select a fallback layout. No app-owned PIN or authentication
+handshake is required. A usable write and notification channel is required before
+any command is admitted. Framing stays bound to the selected write characteristic; a later accepted service cannot change that characteristic’s dialect.
+
+<!-- generated:galaxy-products -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Product / configuration | Controls / alarms | Sides | Light / repeat / snore | Remote picker |
+|---|---|---|---|---|
+| `6BRM` | 6 / 0 | 0 | yes / no / no | none |
+| `6CRM` | 6 / 0 | 0 | yes / no / no | none |
+| `6DRM` | 8 / 0 | 0 | yes / no / no | none |
+| `6ERM` | 8 / 0 | 0 | yes / no / no | none |
+| `6FRM` | 6 / 0 | 0 | yes / no / no | none |
+| `A0RM` | 17 / 0 | 0 | yes / no / no | none |
+| `A0RN` | 22 / 7 | 0 | yes / no / no | none |
+| `A1RM` | 17 / 0 | 0 | yes / no / no | none |
+| `A2RM` | 19 / 0 | 0 | yes / no / no | none |
+| `A2RN` | 19 / 0 | 0 | yes / no / no | none |
+| `A3RM` | 22 / 0 | 0 | yes / no / no | none |
+| `A3RN` | 12 / 0 | 0 | yes / no / no | none |
+| `A4RN` | 11 / 4 | 0 | yes / no / no | none |
+| `A5RN` | 27 / 0 | 0 | yes / no / no | none |
+| `A6RM` | 6 / 0 | 0 | yes / no / no | none |
+| `A6RN` | 19 / 0 | 0 | yes / no / no | none |
+| `A7RM` | 7 / 0 | 0 | yes / no / no | none |
+| `A8RM` | 8 / 0 | 0 | yes / no / no | none |
+| `A9RM` | 17 / 7 | 0 | yes / no / no | none |
+| `A9RN` | 20 / 0 | 0 | yes / no / no | none |
+| `AARM` | 16 / 0 | 0 | yes / no / no | none |
+| `AARN` | 5 / 0 | 0 | yes / no / no | none |
+| `ABRM` | 11 / 1 | 0 | yes / no / no | none |
+| `ABRN` | 21 / 5 | 0 | yes / no / no | none |
+| `ACRM` | 18 / 6 | 0 | yes / no / no | none |
+| `ACRN` | 6 / 0 | 0, 1 | yes / no / no | none |
+| `ADRM` | 22 / 6 | 0 | yes / no / no | none |
+| `AERM` | 20 / 3 | 0 | yes / no / no | none |
+| `AFRM` | 20 / 5 | 0 | yes / no / no | none |
+| `AGRM` | 20 / 5 | 0 | yes / no / no | none |
+| `AHRM` | 17 / 5 | 0 | yes / no / no | none |
+| `AIRM` | 15 / 1 | 0 | yes / no / no | none |
+| `AIRN` | 20 / 0 | 0 | yes / no / no | none |
+| `AJRM` | 12 / 2 | 0 | yes / no / no | none |
+| `AJRN` | 12 / 5 | 0 | yes / no / no | none |
+| `AKRM` | 7 / 0 | 0 | yes / no / no | none |
+| `ALRM` | 20 / 3 | 0 | yes / no / no | none |
+| `AMRM` | 20 / 5 | 0 | yes / no / no | none |
+| `ANRM` | 20 / 5 | 0 | yes / no / no | none |
+| `ANRN` | 26 / 0 | 0 | yes / no / no | none |
+| `AORM` | 8 / 0 | 0 | yes / no / no | none |
+| `APRM` | 28 / 0 | 0 | yes / no / no | none |
+| `APRN` | 7 / 0 | 0 | yes / no / no | none |
+| `AQRM` | 14 / 0 | 0 | yes / no / no | none |
+| `AQRN` | 12 / 0 | 0 | yes / no / no | none |
+| `ARRM` | 7 / 0 | 0 | yes / no / no | none |
+| `ASRM` | 2 / 0 | 0 | yes / no / no | none |
+| `ASRN` | 9 / 0 | 0 | yes / no / no | none |
+| `ATRM` | 12 / 0 | 0 | yes / no / no | none |
+| `AURM` | 22 / 7 | 0 | yes / no / no | none |
+| `AURN` | 11 / 5 | 0 | yes / no / no | none |
+| `AVRM` | 8 / 0 | 0 | yes / no / no | none |
+| `AWRM` | 21 / 0 | 0 | yes / no / no | none |
+| `AXRM` | 21 / 0 | 0 | yes / no / no | none |
+| `AXRN` | 9 / 0 | 0 | yes / no / no | none |
+| `AYRM` | 22 / 2 | 0 | yes / no / no | none |
+| `AYRN` | 12 / 1 | 0 | yes / no / no | none |
+| `AZRM` | 7 / 0 | 0 | yes / no / no | none |
+| `AZRN` | 12 / 0 | 0 | yes / no / no | none |
+| `B0RM` | 7 / 0 | 0 | yes / no / no | none |
+| `B1RM` | 12 / 0 | 0 | yes / no / no | none |
+| `B2RM` | 2 / 0 | 0 | yes / no / no | none |
+| `B2RN` | 22 / 0 | 0 | yes / no / no | none |
+| `B3RM` | 2 / 0 | 0 | yes / no / no | none |
+| `B4RM` | 22 / 5 | 0 | yes / no / no | none |
+| `B5RM` | 8 / 2 | 0 | yes / no / no | none |
+| `B5RN` | 19 / 4 | 0 | yes / no / no | none |
+| `B6RM` | 6 / 0 | 0 | yes / no / no | none |
+| `B7RM` | 7 / 0 | 0 | yes / no / no | none |
+| `B7RN` | 11 / 0 | 0 | yes / no / no | none |
+| `B8RM` | 8 / 0 | 0 | yes / no / no | none |
+| `B8RN` | 22 / 0 | 0 | yes / no / no | none |
+| `B8TT` | 8 / 0 | 0 | yes / no / no | none |
+| `B9RM` | 8 / 1 | 0 | yes / no / no | none |
+| `B9TT` | 12 / 0 | 0 | yes / no / no | none |
+| `BARM` | 4 / 0 | 0 | yes / no / no | none |
+| `BBRM` | 5 / 0 | 0 | yes / no / no | none |
+| `BBRN` | 17 / 0 | 0 | yes / no / no | none |
+| `BCRM` | 7 / 1 | 0 | yes / no / no | none |
+| `BDRM` | 22 / 4 | 0 | yes / no / no | none |
+| `BERM` | 24 / 0 | 0 | yes / no / no | none |
+| `BFRM` | 11 / 0 | 0 | yes / no / no | none |
+| `BGRM` | 22 / 0 | 0 | yes / no / no | none |
+| `BHRM` | 20 / 0 | 0 | yes / no / no | none |
+| `BIRM` | 22 / 0 | 0 | yes / no / no | none |
+| `BJRM` | 11 / 1 | 0 | yes / no / no | none |
+| `BKRM` | 12 / 0 | 0 | yes / no / no | none |
+| `BLRM` | 22 / 0 | 0 | yes / no / no | none |
+| `BMRM` | 12 / 0 | 0 | yes / no / no | none |
+| `BNRM` | 22 / 0 | 0 | yes / no / no | none |
+| `BORM` | 21 / 0 | 0 | yes / no / no | none |
+| `BPRM` | 8 / 0 | 0 | yes / no / no | none |
+| `BQRM` | 7 / 0 | 0 | yes / no / no | none |
+| `BRRM` | 20 / 1 | 0 | yes / no / no | none |
+| `BSRM` | 7 / 0 | 0 | yes / no / no | none |
+| `BTRM` | 6 / 0 | 0, 1, 2 | yes / no / no | none |
+| `BURM` | 22 / 7 | 0, 1, 2 | yes / no / no | none |
+| `BVRM` | 12 / 0 | 0, 1, 2 | yes / no / no | none |
+| `BWRM` | 7 / 1 | 0, 1, 2 | yes / no / no | none |
+| `BWRN` | 11 / 1 | 0 | yes / no / no | none |
+| `BXRM` | 8 / 0 | 0 | yes / no / no | none |
+| `BXRN` | 11 / 1 | 0 | yes / no / no | none |
+| `BYRM` | 8 / 0 | 0 | yes / no / no | none |
+| `BZRM` | 22 / 0 | 0 | yes / no / no | none |
+| `C0RM` | 10 / 1 | 0 | yes / no / no | none |
+| `C1RM` | 7 / 0 | 0 | yes / no / no | none |
+| `C1RN` | 11 / 4 | 0 | yes / no / no | none |
+| `C2RM` | 35 / 0 | 0 | yes / no / no | none |
+| `C2RN` | 22 / 0 | 0 | yes / no / no | none |
+| `C3RM` | 9 / 0 | 0 | yes / no / no | none |
+| `C4RM` | 20 / 0 | 0 | yes / no / no | none |
+| `C5RM` | 20 / 0 | 0 | yes / no / no | none |
+| `C6RM` | 10 / 0 | 0 | yes / no / no | none |
+| `C7RM` | 16 / 0 | 0 | yes / no / no | none |
+| `C7RN` | 20 / 0 | 0 | yes / no / no | none |
+| `C8RM` | 9 / 0 | 0 | yes / no / no | none |
+| `C8RN` | 20 / 0 | 0 | yes / no / no | none |
+| `C9RM` | 25 / 0 | 0 | yes / no / no | none |
+| `C9RN` | 22 / 5 | 0 | yes / no / no | none |
+| `CARM` | 20 / 0 | 0 | yes / no / no | none |
+| `CARN` | 22 / 5 | 0 | yes / no / no | none |
+| `CBRM` | 22 / 5 | 0 | yes / no / no | none |
+| `CBRN` | 20 / 6 | 0 | yes / no / no | none |
+| `CCRM` | 9 / 0 | 0 | yes / no / no | none |
+| `CCRN` | 11 / 0 | 0 | yes / no / no | none |
+| `CDRM` | 12 / 0 | 0 | yes / no / no | none |
+| `CDRN` | 22 / 0 | 0 | yes / no / no | none |
+| `CERM` | 12 / 5 | 0 | yes / no / no | none |
+| `CFRN` | 20 / 0 | 0 | yes / no / no | none |
+| `CGRM` | 20 / 0 | 0 | yes / no / no | none |
+| `CHRM` | 6 / 0 | 0 | yes / no / no | none |
+| `CHRN` | 7 / 0 | 0 | yes / no / no | none |
+| `CIRM` | 19 / 0 | 0 | yes / no / no | none |
+| `CJRM` | 17 / 0 | 0 | yes / no / no | none |
+| `CKRM` | 17 / 0 | 0 | yes / no / no | none |
+| `CLRM` | 20 / 0 | 0 | yes / no / no | none |
+| `CLRN` | 20 / 0 | 0 | yes / no / no | none |
+| `CMRM` | 21 / 1 | 0 | yes / no / no | none |
+| `CMRN` | 2 / 0 | 0 | yes / no / no | none |
+| `CNRM` | 9 / 0 | 0 | yes / no / no | none |
+| `CORM` | 17 / 0 | 0 | yes / no / no | none |
+| `CORN` | 18 / 0 | 0 | yes / no / no | none |
+| `CPRM` | 17 / 0 | 0 | yes / no / no | none |
+| `CPRN` | 11 / 0 | 0 | yes / no / no | none |
+| `CQRM` | 17 / 0 | 0 | yes / no / no | none |
+| `CRRM` | 9 / 0 | 0 | yes / no / no | none |
+| `CSRM` | 21 / 0 | 0 | yes / no / no | none |
+| `CTRM` | 21 / 0 | 0 | yes / no / no | none |
+| `CURM` | 21 / 0 | 0 | yes / no / no | none |
+| `CVRM` | 11 / 0 | 0 | yes / no / no | none |
+| `CVRN` | 8 / 3 | 0 | yes / no / no | none |
+| `CWRM` | 20 / 4 | 0 | yes / no / no | none |
+| `CXRM` | 11 / 0 | 0 | yes / no / no | none |
+| `CXRN` | 17 / 0 | 0 | yes / no / no | none |
+| `CYRM` | 22 / 0 | 0 | yes / no / no | none |
+| `CYRN` | 20 / 0 | 0 | yes / no / no | none |
+| `CZRM` | 22 / 0 | 0 | yes / no / no | none |
+| `D0RM` | 19 / 0 | 0 | yes / no / no | none |
+| `D1RM` | 13 / 0 | 0 | yes / no / no | none |
+| `D2RM` | 18 / 0 | 0 | yes / no / no | none |
+| `D3RM` | 18 / 4 | 0 | yes / no / no | none |
+| `D4RM` | 21 / 0 | 0 | yes / no / no | none |
+| `D5RM` | 2 / 0 | 0 | yes / no / no | none |
+| `D6RM` | 2 / 0 | 0 | yes / no / no | none |
+| `D7RM` | 18 / 1 | 0 | yes / no / no | none |
+| `D8RM` | 6 / 0 | 0 | yes / no / no | none |
+| `D8RN` | 22 / 0 | 0, 1 | yes / no / no | none |
+| `D9RM` | 13 / 0 | 0 | yes / no / no | none |
+| `DARM` | 17 / 7 | 0 | yes / no / no | none |
+| `DBRM` | 11 / 5 | 0 | yes / no / no | none |
+| `DBRN` | 20 / 0 | 0 | yes / no / no | none |
+| `DCRM` | 22 / 0 | 0 | yes / no / no | none |
+| `DCRN` | 9 / 0 | 0 | yes / no / no | none |
+| `DDRM` | 12 / 7 | 0 | yes / no / no | none |
+| `DERM` | 19 / 0 | 0 | yes / no / no | none |
+| `DFRM` | 22 / 6 | 0 | yes / no / no | none |
+| `DFRN` | 21 / 0 | 0 | yes / no / no | none |
+| `DGRM` | 9 / 2 | 0 | yes / no / no | none |
+| `DGRN` | 9 / 0 | 0 | yes / no / no | none |
+| `DHRM` | 24 / 0 | 0, 1 | yes / no / no | none |
+| `DHRN` | 9 / 0 | 0 | yes / no / no | none |
+| `DIRM` | 24 / 0 | 0, 1 | yes / no / no | none |
+| `DJRM` | 20 / 0 | 0 | yes / no / no | none |
+| `DKRM` | 20 / 0 | 0 | yes / no / no | none |
+| `DLRM` | 20 / 0 | 0 | yes / no / no | none |
+| `DMRM` | 12 / 0 | 0 | yes / no / no | none |
+| `DMRN` | 22 / 0 | 0 | yes / no / no | none |
+| `DNRM` | 11 / 0 | 0 | yes / no / no | none |
+| `DPRM` | 22 / 5 | 0 | yes / no / no | none |
+| `DQRM` | 11 / 0 | 0, 1 | yes / no / no | none |
+| `DRRM` | 8 / 0 | 0, 1, 2 | yes / no / no | none |
+| `DSRM` | 13 / 0 | 0 | yes / no / no | none |
+| `DSRN` | 20 / 0 | 0 | yes / no / no | none |
+| `DTRM` | 9 / 0 | 0 | yes / no / no | none |
+| `DURM` | 11 / 0 | 0 | yes / no / no | none |
+| `DVRM` | 15 / 0 | 0 | yes / no / no | none |
+| `DWRM` | 20 / 0 | 0, 1 | yes / no / no | none |
+| `DWRN` | 18 / 0 | 0 | yes / no / no | none |
+| `DXRM` | 7 / 0 | 0 | yes / no / no | none |
+| `DYRM` | 2 / 0 | 0 | yes / no / no | none |
+| `DZRM` | 20 / 6 | 0 | yes / no / no | none |
+| `E0RM` | 3 / 0 | 0 | yes / no / no | none |
+| `E1RM` | 22 / 0 | 0 | yes / no / no | none |
+| `E2RM` | 3 / 0 | 0 | yes / no / no | none |
+| `E3RM` | 17 / 0 | 0 | yes / no / no | none |
+| `E4RM` | 11 / 0 | 0 | yes / no / no | none |
+| `E5RM` | 21 / 7 | 0 | yes / no / no | none |
+| `E6RM` | 17 / 0 | 0 | yes / no / no | none |
+| `E7RM` | 11 / 0 | 0 | yes / no / no | none |
+| `E8RM` | 11 / 0 | 0 | yes / no / no | none |
+| `E9RM` | 20 / 0 | 0 | yes / no / no | none |
+| `ECRM` | 11 / 0 | 0, 1 | yes / no / no | none |
+| `EDRM` | 22 / 0 | 0 | yes / no / no | none |
+| `EFRM` | 19 / 0 | 0 | yes / no / no | none |
+| `EGRM` | 11 / 0 | 0 | yes / no / no | none |
+| `EIRM` | 11 / 0 | 0 | yes / no / no | none |
+| `EJRM` | 7 / 0 | 0 | yes / no / no | none |
+| `EKRM` | 5 / 0 | 0, 1, 2 | yes / no / no | none |
+| `EKRN` | 11 / 4 | 0 | yes / no / no | none |
+| `EMRM` | 22 / 0 | 0 | yes / no / no | none |
+| `ENRM` | 17 / 0 | 0 | yes / no / no | none |
+| `EORM` | 20 / 0 | 0 | yes / no / no | none |
+| `EORN` | 13 / 0 | 0 | yes / no / no | none |
+| `EPRM` | 9 / 0 | 0, 1 | yes / no / no | none |
+| `EQRM` | 12 / 0 | 0 | yes / no / no | none |
+| `ERRM` | 8 / 1 | 0 | yes / no / no | none |
+| `ESRM` | 22 / 0 | 0 | yes / no / no | none |
+| `ESRN` | 11 / 1 | 0 | yes / no / no | none |
+| `ETRM` | 21 / 8 | 0 | yes / no / no | none |
+| `ETRN` | 21 / 0 | 0 | yes / no / no | none |
+| `EURM` | 19 / 0 | 0 | yes / no / no | none |
+| `EURN` | 22 / 5 | 0, 1 | yes / no / no | none |
+| `EVRM` | 20 / 0 | 0 | yes / no / no | none |
+| `EVRN` | 21 / 0 | 0 | yes / no / no | none |
+| `EWRM` | 20 / 0 | 0 | yes / no / no | none |
+| `EXRM` | 20 / 0 | 0 | yes / no / no | none |
+| `EXRN` | 21 / 7 | 0 | yes / no / no | none |
+| `EYRM` | 7 / 0 | 0 | yes / no / no | none |
+| `EYRN` | 21 / 7 | 0 | yes / no / no | none |
+| `EZRM` | 8 / 0 | 0 | yes / no / no | none |
+| `F0RM` | 20 / 0 | 0 | yes / no / no | none |
+| `F1RM` | 20 / 0 | 0 | yes / no / no | none |
+| `F2RM` | 3 / 0 | 0 | yes / no / no | none |
+| `F3RM` | 20 / 0 | 0 | yes / no / no | none |
+| `F3RN` | 21 / 0 | 0 | yes / no / no | none |
+| `F4RM` | 22 / 0 | 0 | yes / no / no | none |
+| `F4RN` | 21 / 4 | 0 | yes / no / no | none |
+| `F5RM` | 20 / 0 | 0, 1 | yes / no / no | none |
+| `F6RM` | 9 / 0 | 0 | yes / no / no | none |
+| `F7RM` | 20 / 0 | 0 | yes / no / no | none |
+| `F8RM` | 11 / 6 | 0 | yes / no / no | none |
+| `F9RM` | 23 / 0 | 0 | yes / no / no | none |
+| `FARM` | 20 / 6 | 0 | yes / no / no | none |
+| `FBRM` | 11 / 0 | 0 | yes / no / no | none |
+| `FCRM` | 13 / 0 | 0 | yes / no / no | none |
+| `FCRN` | 21 / 0 | 0 | no / no / no | none |
+| `FDRM` | 20 / 7 | 0 | yes / no / no | none |
+| `FERM` | 20 / 5 | 0 | yes / no / no | none |
+| `FFRM` | 17 / 8 | 0 | yes / no / no | none |
+| `FFRN` | 7 / 0 | 0 | yes / no / no | none |
+| `FGRM` | 24 / 0 | 0 | yes / no / no | none |
+| `FHRM` | 21 / 5 | 0 | yes / no / no | none |
+| `FIRM` | 22 / 0 | 0 | yes / no / no | none |
+| `FJRM` | 8 / 0 | 0 | yes / no / no | none |
+| `FKRM` | 20 / 0 | 0 | yes / no / no | none |
+| `FLRM` | 9 / 0 | 0 | yes / no / no | none |
+| `FMRM` | 24 / 0 | 0 | yes / no / no | none |
+| `FNRM` | 25 / 3 | 0, 1 | yes / no / no | none |
+| `FPRM` | 20 / 0 | 0 | yes / no / no | none |
+| `FPRN` | 22 / 6 | 0 | yes / no / no | none |
+| `FQRM` | 20 / 0 | 0 | yes / no / no | none |
+| `FRRM` | 22 / 0 | 0 | yes / no / no | none |
+| `FSRM` | 11 / 4 | 0 | yes / no / no | none |
+| `FTRM` | 20 / 0 | 0 | yes / no / no | none |
+| `FTRN` | 8 / 2 | 0 | yes / yes / no | none |
+| `FURM` | 9 / 3 | 0 | yes / no / no | none |
+| `FURN` | 20 / 4 | 0 | yes / no / no | none |
+| `FVRM` | 9 / 1 | 0 | yes / no / no | none |
+| `FXRM` | 9 / 3 | 0 | yes / no / no | none |
+| `FYRM` | 11 / 3 | 0 | yes / no / no | none |
+| `FZRM` | 21 / 5 | 0 | yes / no / no | none |
+| `G1RN` | 24 / 8 | 0 | yes / no / no | none |
+| `G2RM` | 11 / 2 | 0 | yes / no / no | none |
+| `G2RN` | 21 / 1 | 0 | yes / yes / no | none |
+| `G3RM` | 21 / 5 | 0 | yes / no / no | none |
+| `G4RM` | 9 / 0 | 0, 1 | yes / no / no | none |
+| `G5RM` | 17 / 0 | 0 | yes / no / no | none |
+| `G5RN` | 22 / 6 | 0 | yes / no / no | none |
+| `G6RM` | 11 / 0 | 0 | yes / no / no | none |
+| `G6RN` | 20 / 4 | 0 | no / no / no | none |
+| `G7RM` | 20 / 0 | 0 | yes / no / no | none |
+| `G7RN` | 20 / 2 | 0 | no / no / no | none |
+| `G8RM` | 12 / 0 | 0 | yes / no / no | none |
+| `G9RM` | 21 / 5 | 0 | yes / no / no | none |
+| `G9RN` | 23 / 4 | 0 | no / no / no | none |
+| `GARM` | 24 / 0 | 0 | yes / no / no | none |
+| `GARN` | 12 / 4 | 0 | no / no / no | none |
+| `GBRM` | 11 / 0 | 0 | yes / no / no | none |
+| `GBRN` | 7 / 0 | 0 | no / no / no | none |
+| `GCRM` | 22 / 0 | 0 | yes / no / no | none |
+| `GCRN` | 3 / 0 | 0 | no / no / no | none |
+| `GDRM` | 24 / 0 | 0 | yes / no / no | none |
+| `GERM` | 22 / 0 | 0 | yes / no / no | none |
+| `GERN` | 9 / 3 | 0 | no / no / no | none |
+| `GFRM` | 22 / 0 | 0 | yes / no / no | none |
+| `GFRN` | 11 / 3 | 0 | no / no / no | none |
+| `GGRM` | 22 / 0 | 0 | yes / no / no | none |
+| `GHRM` | 20 / 4 | 0, 1 | yes / no / no | none |
+| `GJRM` | 20 / 6 | 0 | yes / no / no | none |
+| `GKRM` | 24 / 0 | 0 | yes / no / no | none |
+| `GLRN` | 11 / 4 | 0 | yes / no / no | none |
+| `GMRM` | 6 / 0 | 0 | yes / no / no | none |
+| `GNRM` | 11 / 0 | 0 | yes / no / no | none |
+| `GNRN` | 12 / 0 | 0 | no / no / no | none |
+| `GORM` | 20 / 0 | 0, 1, 2 | yes / no / no | none |
+| `GPRM` | 11 / 0 | 0 | yes / no / no | none |
+| `GRRM` | 7 / 0 | 0 | yes / no / no | none |
+| `GRRN` | 12 / 0 | 0 | no / no / no | none |
+| `GSRM` | 21 / 5 | 0, 1 | yes / no / no | none |
+| `GTRM` | 20 / 6 | 0 | yes / no / no | none |
+| `GURM` | 11 / 0 | 0 | yes / no / no | none |
+| `GWRM` | 7 / 0 | 0 | yes / no / no | none |
+| `GXRM` | 20 / 0 | 0 | yes / no / no | none |
+| `GXRN` | 2 / 0 | 0 | no / no / no | none |
+| `GYRM` | 19 / 0 | 0 | yes / no / no | none |
+| `GZRM` | 11 / 0 | 0 | yes / no / no | none |
+| `GZRN` | 4 / 0 | 0 | no / no / no | none |
+| `H2RM` | 22 / 0 | 0 | yes / no / no | none |
+| `H3RM` | 12 / 0 | 0 | yes / no / no | none |
+| `H5RM` | 19 / 4 | 0 | yes / no / no | none |
+| `H6RM` | 10 / 0 | 0 | yes / no / no | none |
+| `H7RM` | 22 / 0 | 0 | yes / no / no | none |
+| `H8RM` | 22 / 8 | 0 | yes / no / no | none |
+| `H9RM` | 12 / 0 | 0 | yes / no / no | none |
+| `HARM` | 19 / 0 | 0 | yes / no / no | none |
+| `HBRM` | 20 / 0 | 0 | yes / no / no | none |
+| `HCRM` | 21 / 0 | 0 | yes / no / no | none |
+| `HCRN` | 11 / 0 | 0 | yes / no / no | none |
+| `HDRM` | 11 / 0 | 0 | yes / no / no | none |
+| `HERM` | 17 / 0 | 0 | yes / no / no | none |
+| `HKRM` | 12 / 0 | 0, 1 | yes / no / no | none |
+| `HLRM` | 20 / 0 | 0 | yes / no / no | none |
+| `HMRM` | 22 / 0 | 0 | yes / no / no | none |
+| `HNRM` | 21 / 0 | 0 | yes / no / no | none |
+| `HNRN` | 11 / 2 | 0 | yes / yes / yes | none |
+| `HPRM` | 21 / 0 | 0 | yes / no / no | none |
+| `HQRM` | 21 / 0 | 0 | yes / no / no | none |
+| `HQRN` | 14 / 2 | 0 | yes / yes / yes | none |
+| `HRRM` | 21 / 5 | 0 | yes / no / no | none |
+| `HSRN` | 18 / 4 | 0 | yes / yes / yes | none |
+| `HTRM` | 22 / 8 | 0 | yes / no / no | none |
+| `HURM` | 8 / 0 | 0 | yes / no / no | none |
+| `HURN` | 21 / 4 | 0 | yes / yes / yes | none |
+| `HVRM` | 24 / 0 | 0 | yes / no / no | none |
+| `HWRM` | 22 / 0 | 0 | yes / no / no | none |
+| `HXRM` | 22 / 0 | 0 | yes / no / no | none |
+| `HYRM` | 23 / 0 | 0 | yes / no / no | none |
+| `HZRM` | 11 / 3 | 0 | yes / no / no | none |
+| `I0RM` | 19 / 0 | 0 | yes / no / no | none |
+| `I1RM` | 20 / 5 | 0 | yes / no / no | none |
+| `I2RM` | 19 / 0 | 0 | yes / no / no | none |
+| `I3RM` | 14 / 0 | 0 | yes / no / no | none |
+| `I4RM` | 19 / 0 | 0 | yes / no / no | none |
+| `I5RM` | 22 / 0 | 0 | yes / no / no | none |
+| `I6RM` | 5 / 0 | 0 | yes / no / no | none |
+| `I7RM` | 15 / 0 | 0 | yes / no / no | none |
+| `I8RM` | 16 / 0 | 0 | yes / no / no | none |
+| `I9RM` | 9 / 0 | 0 | yes / no / no | none |
+| `IARM` | 17 / 0 | 0 | yes / no / no | none |
+| `IBRM` | 19 / 4 | 0 | yes / no / no | none |
+| `ICRM` | 16 / 0 | 0 | yes / no / no | none |
+| `IDRM` | 12 / 0 | 0 | yes / no / no | none |
+| `IERM` | 16 / 0 | 0 | yes / no / no | none |
+| `IFRM` | 9 / 0 | 0 | yes / no / no | none |
+| `IGRM` | 17 / 0 | 0 | yes / no / no | none |
+| `IHRM` | 16 / 0 | 0 | yes / no / no | none |
+| `IIRM` | 13 / 0 | 0 | yes / no / no | none |
+| `IJRM` | 3 / 0 | 0 | yes / no / no | none |
+| `IKRM` | 5 / 0 | 0 | yes / no / no | none |
+| `ILRM` | 6 / 0 | 0 | yes / no / no | none |
+| `IMRM` | 5 / 0 | 0 | yes / no / no | none |
+| `INRM` | 8 / 0 | 0 | yes / no / no | none |
+| `IORM` | 12 / 0 | 0 | yes / no / no | none |
+| `IPRM` | 7 / 0 | 0 | yes / no / no | none |
+| `IQRM` | 11 / 1 | 0 | yes / no / no | none |
+| `IRRM` | 19 / 0 | 0 | yes / no / no | none |
+| `ISRM` | 4 / 0 | 0 | yes / no / no | none |
+| `J2RM` | 22 / 0 | 0 | yes / no / no | none |
+| `J2RN` | 16 / 0 | 0 | no / no / no | none |
+| `J3RM` | 22 / 0 | 0 | yes / no / no | none |
+| `J4RM` | 8 / 0 | 0 | yes / no / no | none |
+| `J5RM` | 11 / 0 | 0 | yes / no / no | none |
+| `J5RN` | 20 / 0 | 0 | yes / no / no | none |
+| `J6RM` | 11 / 0 | 0 | yes / no / no | none |
+| `J7RM` | 22 / 0 | 0, 1 | yes / no / no | none |
+| `J9RM` | 22 / 0 | 0 | yes / no / no | none |
+| `JBRM` | 20 / 0 | 0 | yes / no / no | none |
+| `JBRN` | 21 / 0 | 0 | yes / no / no | none |
+| `JCRN` | 15 / 4 | 0 | yes / no / no | none |
+| `JDRM` | 18 / 0 | 0 | yes / no / no | none |
+| `JDRN` | 25 / 5 | 0 | yes / no / no | none |
+| `JERM` | 16 / 0 | 0 | yes / no / no | none |
+| `JFRM` | 18 / 0 | 0 | yes / no / no | none |
+| `JGRM` | 20 / 0 | 0 | yes / no / no | none |
+| `JHRM` | 9 / 0 | 0 | yes / no / no | none |
+| `JJRM` | 5 / 0 | 0 | yes / no / no | none |
+| `JKRM` | 20 / 0 | 0 | yes / no / no | none |
+| `JLRM` | 20 / 0 | 0 | yes / no / no | none |
+| `JMRM` | 19 / 0 | 0, 1 | yes / no / no | none |
+| `JNRM` | 20 / 0 | 0 | yes / no / no | none |
+| `JPRM` | 21 / 0 | 0 | yes / no / no | none |
+| `JPRN` | 20 / 0 | 0, 1 | yes / no / no | none |
+| `JQRM` | 9 / 3 | 0, 1 | yes / no / no | none |
+| `JRRM` | 21 / 8 | 0 | yes / no / no | none |
+| `JSRM` | 20 / 0 | 0 | yes / no / no | none |
+| `JTRN` | 11 / 0 | 0 | yes / no / no | none |
+| `JURN` | 20 / 0 | 0 | yes / no / no | none |
+| `JWRM` | 21 / 6 | 0 | yes / no / no | none |
+| `JZRM` | 7 / 0 | 0 | yes / no / no | none |
+| `K2RM` | 8 / 0 | 0 | yes / no / no | none |
+| `K5RM` | 27 / 0 | 0 | yes / no / no | none |
+| `K6RM` | 19 / 5 | 0 | yes / no / no | none |
+| `K6RN` | 4 / 0 | 0 | yes / no / no | none |
+| `K7RM` | 12 / 0 | 0 | yes / no / no | none |
+| `K8RM` | 12 / 0 | 0 | yes / no / no | none |
+| `K9RM` | 9 / 0 | 0 | yes / no / no | none |
+| `KARM` | 10 / 0 | 0, 1 | yes / no / no | none |
+| `KBRM` | 24 / 0 | 0 | yes / no / no | none |
+| `KBRN` | 22 / 5 | 0, 1 | yes / yes / no | none |
+| `KCRM` | 24 / 0 | 0 | yes / no / no | none |
+| `KCRN` | 21 / 6 | 0 | yes / yes / no | none |
+| `KERM` | 22 / 5 | 0 | yes / no / no | none |
+| `KFRM` | 22 / 7 | 0 | yes / no / no | none |
+| `KGRM` | 22 / 0 | 0 | yes / no / no | none |
+| `KGRN` | 22 / 5 | 0 | yes / yes / no | none |
+| `KHRM` | 12 / 0 | 0 | yes / no / no | none |
+| `KJRM` | 11 / 0 | 0 | yes / no / no | none |
+| `KKRM` | 11 / 4 | 0 | yes / no / no | none |
+| `KLRN` | 3 / 0 | 0 | yes / no / no | none |
+| `KMRM` | 22 / 0 | 0 | yes / no / no | none |
+| `KMRN` | 2 / 0 | 0 | yes / no / no | none |
+| `KNRM` | 11 / 0 | 0 | yes / no / no | none |
+| `KPRM` | 20 / 4 | 0 | yes / no / no | none |
+| `KPRN` | 11 / 3 | 0 | yes / yes / no | none |
+| `KQRM` | 12 / 1 | 0 | yes / no / no | none |
+| `KQRN` | 11 / 2 | 0 | yes / yes / no | none |
+| `KRRM` | 19 / 2 | 0 | yes / no / no | none |
+| `KRRN` | 21 / 5 | 0 | yes / yes / no | none |
+| `KSRN` | 19 / 3 | 0 | yes / yes / no | none |
+| `KURM` | 12 / 0 | 0, 1 | yes / no / no | none |
+| `KVRM` | 21 / 0 | 0 | yes / no / no | none |
+| `KWRN` | 11 / 4 | 0 | yes / yes / no | none |
+| `KXRM` | 18 / 0 | 0 | yes / no / no | none |
+| `KYRM` | 11 / 0 | 0 | yes / no / no | none |
+| `L2RN` | 22 / 0 | 0 | yes / no / no | none |
+| `L3RM` | 20 / 7 | 0 | yes / no / no | none |
+| `L4RM` | 9 / 0 | 0 | yes / no / no | none |
+| `L5RM` | 11 / 0 | 0, 1, 2 | yes / no / no | none |
+| `L7RN` | 23 / 0 | 0 | no / no / no | none |
+| `L8RM` | 11 / 0 | 0 | yes / no / no | none |
+| `L9RM` | 20 / 0 | 0 | yes / no / no | none |
+| `L9RN` | 22 / 5 | 0, 1 | yes / yes / no | none |
+| `LARN` | 11 / 3 | 0 | yes / yes / no | none |
+| `LBRN` | 11 / 4 | 0 | yes / yes / no | none |
+| `LCRM` | 20 / 7 | 0 | yes / no / no | none |
+| `LCRN` | 21 / 5 | 0 | yes / yes / no | none |
+| `LDRM` | 20 / 0 | 0 | yes / no / no | none |
+| `LDRN` | 21 / 3 | 0 | yes / yes / no | none |
+| `LERN` | 12 / 4 | 0, 1 | yes / yes / no | none |
+| `LFRM` | 19 / 5 | 0 | yes / no / no | none |
+| `LGRM` | 20 / 2 | 0 | yes / no / no | none |
+| `LJRM` | 9 / 3 | 0 | yes / no / no | none |
+| `LKRN` | 22 / 5 | 0, 1 | yes / yes / no | none |
+| `LLRM` | 7 / 0 | 0 | yes / no / no | none |
+| `LLRN` | 21 / 5 | 0 | yes / yes / no | none |
+| `LMRM` | 3 / 0 | 0 | yes / no / no | none |
+| `LNRM` | 7 / 0 | 0 | yes / no / no | none |
+| `LQRM` | 22 / 10 | 0 | yes / no / no | none |
+| `LRRM` | 12 / 5 | 0 | yes / no / no | none |
+| `LSRM` | 11 / 4 | 0 | yes / no / no | none |
+| `LURM` | 10 / 0 | 0 | yes / no / no | none |
+| `LVRM` | 21 / 5 | 0 | yes / no / no | none |
+| `LWRM` | 9 / 0 | 0 | yes / no / no | none |
+| `LXRM` | 7 / 0 | 0 | yes / no / no | none |
+| `LYRM` | 22 / 3 | 0 | yes / no / no | none |
+| `LZRM` | 22 / 0 | 0 | yes / no / no | none |
+| `M2RM` | 20 / 0 | 0 | yes / no / no | none |
+| `M3RM` | 22 / 0 | 0 | yes / no / no | none |
+| `M4RM` | 7 / 0 | 0 | yes / no / no | none |
+| `M4RN` | 9 / 3 | 0 | yes / no / no | none |
+| `M5RM` | 19 / 0 | 0 | yes / no / no | none |
+| `M5RN` | 21 / 5 | 0 | yes / no / no | none |
+| `M6RM` | 17 / 0 | 0 | yes / no / no | none |
+| `M6RN` | 21 / 5 | 0 | yes / no / no | none |
+| `M7RM` | 11 / 0 | 0 | yes / no / no | none |
+| `M7RN` | 14 / 3 | 0 | yes / yes / yes | none |
+| `M8RM` | 19 / 5 | 0 | yes / no / no | none |
+| `M9RM` | 9 / 0 | 0 | yes / no / no | none |
+| `M9RN` | 21 / 0 | 0 | no / no / no | none |
+| `MARM` | 11 / 0 | 0 | yes / no / no | none |
+| `MBRN` | 11 / 4 | 0 | yes / no / no | none |
+| `MCRM` | 11 / 0 | 0 | yes / no / no | none |
+| `MDRM` | 11 / 0 | 0 | yes / no / no | none |
+| `MDRN` | 10 / 2 | 0 | yes / yes / no | none |
+| `MERM` | 9 / 0 | 0 | yes / no / no | none |
+| `MFRM` | 11 / 0 | 0 | yes / no / no | none |
+| `MGRM` | 9 / 0 | 0 | yes / no / no | none |
+| `MHRN` | 0 / 0 | 0 | yes / no / no | HNRN, HQRN, M7RN, MJRN |
+| `MJRN` | 17 / 3 | 0 | yes / yes / yes | none |
+| `MLRM` | 19 / 0 | 0 | yes / no / no | none |
+| `MMRM` | 24 / 0 | 0 | yes / no / no | none |
+| `MRRM` | 22 / 0 | 0 | yes / no / no | none |
+| `MVRN` | 20 / 5 | 0 | yes / yes / no | none |
+| `MXRN` | 20 / 9 | 0 | yes / yes / no | none |
+| `MZRN` | 0 / 0 | 0 | yes / no / no | PGRN, PHRN |
+| `N4RN` | 6 / 2 | 0 | yes / yes / no | none |
+| `N6RN` | 22 / 4 | 0 | yes / yes / no | none |
+| `N7RN` | 23 / 5 | 0, 1 | yes / yes / no | none |
+| `NTRN` | 0 / 0 | 0 | yes / no / no | FFRN, NURN |
+| `NURN` | 6 / 0 | 0 | yes / no / no | none |
+| `O0RM` | 20 / 5 | 0 | yes / no / no | none |
+| `O1RM` | 22 / 0 | 0 | yes / no / no | none |
+| `O2RM` | 22 / 0 | 0 | yes / no / no | none |
+| `O3RM` | 22 / 0 | 0 | yes / no / no | none |
+| `O4RM` | 22 / 0 | 0 | yes / no / no | none |
+| `O5RM` | 22 / 0 | 0 | yes / no / no | none |
+| `O6RM` | 20 / 0 | 0 | yes / no / no | none |
+| `O7RM` | 22 / 7 | 0 | yes / no / no | none |
+| `O8RM` | 20 / 0 | 0 | yes / no / no | none |
+| `O9RM` | 22 / 5 | 0 | yes / no / no | none |
+| `OARM` | 22 / 6 | 0 | yes / no / no | none |
+| `OMRM` | 22 / 0 | 0 | yes / no / no | none |
+| `ONRM` | 21 / 0 | 0 | yes / no / no | none |
+| `OORM` | 21 / 0 | 0 | yes / no / no | none |
+| `OPRM` | 22 / 0 | 0 | yes / no / no | none |
+| `OQRM` | 22 / 0 | 0 | yes / no / no | none |
+| `ORRM` | 22 / 0 | 0 | yes / no / no | none |
+| `OSRM` | 22 / 0 | 0 | yes / no / no | none |
+| `OTRM` | 20 / 5 | 0 | yes / no / no | none |
+| `OURM` | 4 / 0 | 0 | yes / no / no | none |
+| `OVRM` | 2 / 0 | 0 | yes / no / no | none |
+| `OWRM` | 6 / 0 | 0 | yes / no / no | none |
+| `OXRM` | 22 / 0 | 0 | yes / no / no | none |
+| `OYRM` | 19 / 4 | 0 | yes / no / no | none |
+| `OZRM` | 21 / 0 | 0 | yes / no / no | none |
+| `P0RM` | 21 / 0 | 0 | yes / no / no | none |
+| `P1RM` | 22 / 2 | 0 | yes / no / no | none |
+| `P2RM` | 17 / 0 | 0 | yes / no / no | none |
+| `P3RM` | 12 / 0 | 0 | yes / no / no | none |
+| `P3RN` | 8 / 0 | 0 | yes / no / no | none |
+| `P4RM` | 21 / 7 | 0 | yes / no / no | none |
+| `P5RM` | 22 / 0 | 0 | yes / no / no | none |
+| `P6RM` | 17 / 0 | 0 | yes / no / no | none |
+| `P9RM` | 8 / 0 | 0 | yes / no / no | none |
+| `P9RN` | 15 / 6 | 0, 1 | yes / yes / no | none |
+| `PARN` | 20 / 0 | 0, 1 | yes / no / no | none |
+| `PGRN` | 8 / 0 | 0 | yes / no / no | none |
+| `PHRN` | 8 / 0 | 0 | yes / no / no | none |
+| `PLRN` | 20 / 4 | 0 | yes / no / no | none |
+| `PNRN` | 20 / 6 | 0 | yes / no / no | none |
+| `PYRN` | 6 / 0 | 0 | yes / no / no | none |
+| `QARN` | 8 / 2 | 0 | yes / no / no | none |
+| `QGRN` | 9 / 3 | 0 | yes / no / no | none |
+| `QHRN` | 22 / 5 | 0 | yes / yes / no | none |
+| `QRRM` | 0 / 0 | 0 | yes / no / no | none |
+| `QVRN` | 3 / 0 | 0 | yes / no / no | none |
+| `R2RM` | 24 / 0 | 0 | yes / no / no | none |
+| `R5RM` | 22 / 0 | 0 | yes / no / no | none |
+| `R5RN` | 18 / 0 | 0 | yes / no / no | none |
+| `R6RM` | 22 / 0 | 0 | yes / no / no | none |
+| `R7RN` | 22 / 5 | 0 | yes / yes / no | none |
+| `RARN` | 22 / 7 | 0 | yes / no / no | none |
+| `RHRN` | 21 / 5 | 0 | yes / yes / no | none |
+| `RLRN` | 21 / 5 | 0 | yes / yes / no | none |
+| `RMRN` | 21 / 5 | 0 | yes / yes / no | none |
+| `RNRN` | 34 / 0 | 0 | yes / no / no | none |
+| `RNRN/splitHead` | 35 / 0 | 0, 1 | yes / no / no | none |
+| `RNRN/standard` | 34 / 0 | 0 | yes / no / no | none |
+| `RRRN` | 22 / 5 | 0 | yes / no / no | none |
+| `RSRN` | 11 / 4 | 0 | yes / yes / no | none |
+| `RURN` | 11 / 1 | 0 | yes / yes / no | none |
+| `RXRN` | 21 / 5 | 0 | yes / yes / no | none |
+| `S6RN` | 6 / 0 | 0 | yes / no / no | none |
+| `S7RN` | 8 / 0 | 0 | yes / no / no | none |
+| `S9RM` | 9 / 0 | 0 | yes / no / no | none |
+| `SARM` | 8 / 0 | 0 | yes / no / no | none |
+| `T0RM` | 8 / 0 | 0 | yes / no / no | none |
+| `T1RM` | 13 / 0 | 0 | yes / no / no | none |
+| `T2RM` | 8 / 0 | 0 | yes / no / no | none |
+| `T3RM` | 12 / 0 | 0 | yes / no / no | none |
+| `T4RM` | 8 / 0 | 0 | yes / no / no | none |
+| `T5RM` | 17 / 5 | 0 | yes / no / no | none |
+| `T6RM` | 8 / 0 | 0 | yes / no / no | none |
+| `T7RM` | 20 / 6 | 0 | yes / no / no | none |
+| `T8RM` | 8 / 0 | 0 | yes / no / no | none |
+| `T9RM` | 21 / 3 | 0 | yes / no / no | none |
+| `TARM` | 22 / 0 | 0 | yes / no / no | none |
+| `TBRM` | 17 / 6 | 0 | yes / no / no | none |
+| `TCRM` | 17 / 0 | 0 | yes / no / no | none |
+| `TDRM` | 20 / 0 | 0 | yes / no / no | none |
+| `TERM` | 23 / 0 | 0 | yes / no / no | none |
+| `TEST` | 2 / 0 | 0 | yes / no / no | none |
+| `THRM` | 21 / 0 | 0 | yes / no / no | none |
+| `TLRM` | 8 / 0 | 0 | yes / no / no | none |
+| `TWRM` | 8 / 0 | 0 | yes / no / no | none |
+| `TZRM` | 8 / 0 | 0 | yes / no / no | none |
+| `U0RM` | 13 / 0 | 0 | yes / no / no | none |
+| `U1RM` | 22 / 0 | 0 | yes / no / no | none |
+| `U2RM` | 22 / 0 | 0 | yes / no / no | none |
+| `U3RM` | 23 / 0 | 0 | yes / no / no | none |
+| `U4RM` | 21 / 0 | 0 | yes / no / no | none |
+| `U5RM` | 24 / 0 | 0 | yes / no / no | none |
+| `U6RM` | 9 / 3 | 0 | yes / no / no | none |
+| `U7RM` | 11 / 0 | 0 | yes / no / no | none |
+| `U8RM` | 12 / 0 | 0 | yes / no / no | none |
+| `U9RM` | 19 / 0 | 0 | yes / no / no | none |
+| `UARM` | 20 / 0 | 0 | yes / no / no | none |
+| `UBRM` | 20 / 0 | 0 | yes / no / no | none |
+| `UCRM` | 12 / 0 | 0 | yes / no / no | none |
+| `UDRM` | 7 / 0 | 0 | yes / no / no | none |
+| `UERM` | 22 / 0 | 0 | yes / no / no | none |
+| `UFRM` | 22 / 7 | 0 | yes / no / no | none |
+| `UGRM` | 22 / 0 | 0 | yes / no / no | none |
+| `UHRM` | 22 / 0 | 0 | yes / no / no | none |
+| `UIRM` | 11 / 0 | 0 | yes / no / no | none |
+| `UJRM` | 20 / 0 | 0 | yes / no / no | none |
+| `UKRM` | 22 / 0 | 0 | yes / no / no | none |
+| `ULRM` | 19 / 0 | 0 | yes / no / no | none |
+| `UMRM` | 12 / 0 | 0 | yes / no / no | none |
+| `UNRM` | 24 / 0 | 0 | yes / no / no | none |
+| `UORM` | 12 / 0 | 0 | yes / no / no | none |
+| `UPRM` | 12 / 0 | 0 | yes / no / no | none |
+| `UQRM` | 12 / 0 | 0 | yes / no / no | none |
+| `URRM` | 20 / 2 | 0 | yes / no / no | none |
+| `UTRM` | 20 / 0 | 0 | yes / no / no | none |
+| `UURM` | 9 / 0 | 0 | yes / no / no | none |
+| `UVRM` | 22 / 0 | 0 | yes / no / no | none |
+| `UWRM` | 12 / 0 | 0 | yes / no / no | none |
+| `UXRM` | 12 / 0 | 0 | yes / no / no | none |
+| `UYRM` | 20 / 0 | 0 | yes / no / no | none |
+| `UZRM` | 22 / 0 | 0 | yes / no / no | none |
+| `V0RM` | 24 / 0 | 0 | yes / no / no | none |
+| `V1RM` | 9 / 3 | 0 | yes / no / no | none |
+| `V2RM` | 22 / 0 | 0 | yes / no / no | none |
+| `V3RM` | 8 / 0 | 0 | yes / no / no | none |
+| `V4RM` | 22 / 7 | 0 | yes / no / no | none |
+| `V5RM` | 8 / 0 | 0 | yes / no / no | none |
+| `V6RM` | 14 / 0 | 0 | yes / no / no | none |
+| `V7RM` | 21 / 0 | 0 | yes / no / no | none |
+| `V8RM` | 22 / 0 | 0 | yes / no / no | none |
+| `V9RM` | 19 / 0 | 0 | yes / no / no | none |
+| `V9RM/splitHead` | 20 / 0 | 0, 1 | yes / no / no | none |
+| `V9RM/standard` | 19 / 0 | 0 | yes / no / no | none |
+| `VARM` | 11 / 0 | 0 | yes / no / no | none |
+| `VBRM` | 18 / 0 | 0 | yes / no / no | none |
+| `VCRM` | 22 / 0 | 0 | yes / no / no | none |
+| `VDRM` | 17 / 0 | 0 | yes / no / no | none |
+| `VERM` | 19 / 0 | 0 | yes / no / no | none |
+| `VFRM` | 22 / 0 | 0 | yes / no / no | none |
+| `VGRM` | 9 / 0 | 0 | yes / no / no | none |
+| `VHRM` | 9 / 0 | 0 | yes / no / no | none |
+| `VIRM` | 19 / 0 | 0 | yes / no / no | none |
+| `VJRM` | 7 / 1 | 0 | yes / no / no | none |
+| `VKRM` | 18 / 0 | 0 | yes / no / no | none |
+| `VLRM` | 17 / 0 | 0 | yes / no / no | none |
+| `VMRM` | 14 / 0 | 0 | yes / no / no | none |
+| `VNRM` | 17 / 0 | 0 | yes / no / no | none |
+| `VORM` | 19 / 7 | 0 | yes / no / no | none |
+| `VPRM` | 17 / 0 | 0 | yes / no / no | none |
+| `VQRM` | 11 / 0 | 0 | yes / no / no | none |
+| `VRRM` | 24 / 0 | 0 | yes / no / no | none |
+| `VSRM` | 20 / 0 | 0 | yes / no / no | none |
+| `VTRM` | 22 / 0 | 0 | yes / no / no | none |
+| `VURM` | 19 / 0 | 0 | yes / no / no | none |
+| `VVRM` | 17 / 0 | 0 | yes / no / no | none |
+| `VWRM` | 17 / 0 | 0 | yes / no / no | none |
+| `VXRM` | 19 / 0 | 0 | yes / no / no | none |
+| `VYRM` | 22 / 0 | 0 | yes / no / no | none |
+| `VZRM` | 17 / 0 | 0 | yes / no / no | none |
+| `W0RM` | 22 / 0 | 0 | yes / no / no | none |
+| `W1RM` | 7 / 0 | 0 | yes / no / no | none |
+| `W2RM` | 22 / 0 | 0 | yes / no / no | none |
+| `W3RM` | 24 / 0 | 0 | yes / no / no | none |
+| `W4RM` | 7 / 0 | 0 | yes / no / no | none |
+| `W5RM` | 17 / 0 | 0 | yes / no / no | none |
+| `W6RM` | 17 / 0 | 0 | yes / no / no | none |
+| `W7RM` | 17 / 0 | 0 | yes / no / no | none |
+| `W8RM` | 4 / 0 | 0 | yes / no / no | none |
+| `W9RM` | 19 / 0 | 0 | yes / no / no | none |
+| `WARM` | 22 / 0 | 0 | yes / no / no | none |
+| `WBRM` | 22 / 0 | 0 | yes / no / no | none |
+| `WCRM` | 22 / 0 | 0 | yes / no / no | none |
+| `WDRM` | 22 / 0 | 0 | yes / no / no | none |
+| `WERM` | 22 / 0 | 0 | yes / no / no | none |
+| `WGRM` | 4 / 0 | 0 | yes / no / no | none |
+| `WHRM` | 17 / 0 | 0 | yes / no / no | none |
+| `WIRM` | 19 / 0 | 0 | yes / no / no | none |
+| `WJRM` | 20 / 4 | 0 | yes / no / no | none |
+| `WKRM` | 20 / 4 | 0 | yes / no / no | none |
+| `WLRM` | 11 / 6 | 0 | yes / no / no | none |
+| `WMRM` | 2 / 1 | 0 | yes / no / no | none |
+| `WNRM` | 22 / 7 | 0 | yes / no / no | none |
+| `WORM` | 7 / 0 | 0 | yes / no / no | none |
+| `WPRM` | 7 / 0 | 0 | yes / no / no | none |
+| `WQRM` | 5 / 0 | 0 | yes / no / no | none |
+| `WRRM` | 9 / 1 | 0 | yes / no / no | none |
+| `WSRM` | 22 / 0 | 0 | yes / no / no | none |
+| `WTRM` | 17 / 0 | 0 | yes / no / no | none |
+| `WURM` | 17 / 7 | 0 | yes / no / no | none |
+| `WVRM` | 13 / 0 | 0 | yes / no / no | none |
+| `WWRM` | 12 / 1 | 0 | yes / no / no | none |
+| `WXRM` | 22 / 7 | 0 | yes / no / no | none |
+| `WYRM` | 12 / 0 | 0 | yes / no / no | none |
+| `WZRM` | 8 / 0 | 0 | yes / no / no | none |
+| `X0RM` | 22 / 0 | 0 | yes / no / no | none |
+| `X1RM` | 7 / 2 | 0 | yes / no / no | none |
+| `X2RM` | 7 / 1 | 0 | yes / no / no | none |
+| `X4RM` | 11 / 0 | 0 | yes / no / no | none |
+| `X5RM` | 11 / 0 | 0 | yes / no / no | none |
+| `X6RM` | 7 / 0 | 0 | yes / no / no | none |
+| `X7RM` | 20 / 2 | 0 | yes / no / no | none |
+| `X8RM` | 11 / 0 | 0 | yes / no / no | none |
+| `X9RM` | 23 / 0 | 0 | yes / no / no | none |
+| `XARM` | 10 / 1 | 0 | yes / no / no | none |
+| `XBRM` | 8 / 0 | 0 | yes / no / no | none |
+| `XCRM` | 20 / 4 | 0 | yes / no / no | none |
+| `XDRM` | 5 / 0 | 0 | yes / no / no | none |
+| `XERM` | 17 / 7 | 0 | yes / no / no | none |
+| `XFRM` | 20 / 5 | 0 | yes / no / no | none |
+| `XGRM` | 9 / 3 | 0 | yes / no / no | none |
+| `XHRM` | 20 / 1 | 0 | yes / no / no | none |
+| `XIRM` | 20 / 0 | 0 | yes / no / no | none |
+| `XJRM` | 22 / 7 | 0 | yes / no / no | none |
+| `XKRM` | 22 / 7 | 0 | yes / no / no | none |
+| `XLRM` | 20 / 4 | 0 | yes / no / no | none |
+| `XMRM` | 24 / 0 | 0 | yes / no / no | none |
+| `XNRM` | 5 / 0 | 0 | yes / no / no | none |
+| `XORM` | 8 / 0 | 0 | yes / no / no | none |
+| `XPRM` | 21 / 1 | 0 | yes / no / no | none |
+| `XQRM` | 14 / 0 | 0 | yes / no / no | none |
+| `XRRM` | 7 / 0 | 0 | yes / no / no | none |
+| `XSRM` | 20 / 0 | 0 | yes / no / no | none |
+| `XTRM` | 20 / 0 | 0 | yes / no / no | none |
+| `XURM` | 12 / 0 | 0 | yes / no / no | none |
+| `XVRM` | 20 / 2 | 0 | yes / no / no | none |
+| `XWRM` | 16 / 0 | 0 | yes / no / no | none |
+| `XXRM` | 8 / 0 | 0 | yes / no / no | none |
+| `XYRM` | 22 / 7 | 0 | yes / no / no | none |
+| `XZRM` | 22 / 7 | 0 | yes / no / no | none |
+| `Y0RM` | 7 / 0 | 0 | yes / no / no | none |
+| `Y1RM` | 9 / 3 | 0 | yes / no / no | none |
+| `Y2RM` | 8 / 0 | 0 | yes / no / no | none |
+| `Y3RM` | 19 / 0 | 0 | yes / no / no | none |
+| `Y4RM` | 11 / 0 | 0 | yes / no / no | none |
+| `Y5RM` | 7 / 0 | 0 | yes / no / no | none |
+| `Y6RM` | 17 / 4 | 0 | yes / no / no | none |
+| `Y7RM` | 9 / 3 | 0 | yes / no / no | none |
+| `Y8RM` | 20 / 6 | 0 | yes / no / no | none |
+| `Y9RM` | 9 / 3 | 0 | yes / no / no | none |
+| `YARM` | 20 / 0 | 0 | yes / no / no | none |
+| `YBRM` | 7 / 0 | 0 | yes / no / no | none |
+| `YCRM` | 6 / 0 | 0 | yes / no / no | none |
+| `YDRM` | 8 / 0 | 0 | yes / no / no | none |
+| `YERM` | 20 / 8 | 0 | yes / no / no | none |
+| `YFRM` | 14 / 0 | 0 | yes / no / no | none |
+| `YGRM` | 28 / 1 | 0 | yes / no / no | none |
+| `YHRM` | 24 / 0 | 0 | yes / no / no | none |
+| `YIRM` | 24 / 2 | 0 | yes / no / no | none |
+| `YJRM` | 22 / 0 | 0 | yes / no / no | none |
+| `YKRM` | 7 / 0 | 0 | yes / no / no | none |
+| `YMRM` | 20 / 1 | 0 | yes / no / no | none |
+| `YNRM` | 9 / 0 | 0 | yes / no / no | none |
+| `YORM` | 24 / 2 | 0 | yes / no / no | none |
+| `YPRM` | 24 / 9 | 0 | yes / no / no | none |
+| `YQRM` | 9 / 3 | 0 | yes / no / no | none |
+| `YRRM` | 8 / 3 | 0 | yes / no / no | none |
+| `YSRM` | 12 / 1 | 0 | yes / no / no | none |
+| `YTRM` | 14 / 1 | 0 | yes / no / no | none |
+| `YURM` | 12 / 1 | 0 | yes / no / no | none |
+| `YVRM` | 12 / 1 | 0 | yes / no / no | none |
+| `YWRM` | 22 / 0 | 0 | yes / no / no | none |
+| `YXRM` | 8 / 2 | 0 | yes / no / no | none |
+| `YYRM` | 17 / 7 | 0 | yes / no / no | none |
+| `YZRM` | 23 / 0 | 0 | yes / no / no | none |
+| `Z0RM` | 7 / 0 | 0 | yes / no / no | none |
+| `Z1RM` | 8 / 0 | 0 | yes / no / no | none |
+| `Z2RM` | 21 / 2 | 0 | yes / no / no | none |
+| `Z3RM` | 20 / 0 | 0 | yes / no / no | none |
+| `Z4RM` | 22 / 7 | 0 | yes / no / no | none |
+| `Z5RM` | 22 / 7 | 0 | yes / no / no | none |
+| `Z6RM` | 17 / 7 | 0 | yes / no / no | none |
+| `Z7RM` | 8 / 0 | 0 | yes / no / no | none |
+| `Z8RM` | 22 / 8 | 0 | yes / no / no | none |
+| `Z9RM` | 12 / 4 | 0 | yes / no / no | none |
+| `ZARM` | 17 / 1 | 0 | yes / no / no | none |
+| `ZBRM` | 12 / 0 | 0 | yes / no / no | none |
+| `ZCRM` | 7 / 0 | 0 | yes / no / no | none |
+| `ZDRM` | 11 / 5 | 0 | yes / no / no | none |
+| `ZERM` | 22 / 0 | 0 | yes / no / no | none |
+| `ZFRM` | 22 / 7 | 0 | yes / no / no | none |
+| `ZGRM` | 22 / 7 | 0 | yes / no / no | none |
+| `ZHRM` | 19 / 1 | 0 | yes / no / no | none |
+| `ZIRM` | 20 / 2 | 0 | yes / no / no | none |
+| `ZJRM` | 12 / 0 | 0 | yes / no / no | none |
+| `ZKRM` | 19 / 0 | 0 | yes / no / no | none |
+| `ZLRM` | 19 / 0 | 0 | yes / no / no | none |
+| `ZMRM` | 20 / 0 | 0 | yes / no / no | none |
+| `ZNRM` | 12 / 0 | 0 | yes / no / no | none |
+| `ZORM` | 20 / 0 | 0 | yes / no / no | none |
+| `ZPRM` | 7 / 0 | 0 | yes / no / no | none |
+| `ZQRM` | 4 / 0 | 0 | yes / no / no | none |
+| `ZR00` | 5 / 0 | 0 | yes / no / no | none |
+| `ZR01` | 3 / 0 | 0 | yes / no / no | none |
+| `ZR10` | 12 / 0 | 0 | yes / no / no | none |
+| `ZR11` | 12 / 0 | 0 | yes / no / no | none |
+| `ZR12` | 12 / 0 | 0 | yes / no / no | none |
+| `ZR20` | 7 / 0 | 0 | yes / no / no | none |
+| `ZR21` | 8 / 0 | 0 | yes / no / no | none |
+| `ZR30` | 6 / 0 | 0 | yes / no / no | none |
+| `ZR40` | 7 / 0 | 0 | yes / no / no | none |
+| `ZR50` | 23 / 0 | 0 | yes / no / no | none |
+| `ZR51` | 23 / 0 | 0 | yes / no / no | none |
+| `ZR60` | 9 / 0 | 0 | yes / no / no | none |
+| `ZR70` | 10 / 0 | 0 | yes / no / no | none |
+| `ZR80` | 12 / 0 | 0 | yes / no / no | none |
+| `ZRA0` | 17 / 0 | 0 | yes / no / no | none |
+| `ZRA1` | 6 / 0 | 0 | yes / no / no | none |
+| `ZRA2` | 12 / 0 | 0 | yes / no / no | none |
+| `ZRI0` | 19 / 0 | 0 | yes / no / no | none |
+| `ZRRM` | 12 / 0 | 0 | yes / no / no | none |
+| `ZRS0` | 0 / 0 | 0 | yes / no / no | B8TT, B9TT |
+| `ZRS1` | 0 / 0 | 0 | yes / no / no | ZRI0, I4RM, I5RM, D7RM |
+| `ZRS2` | 0 / 0 | 0 | yes / no / no | ZR00, ZR01 |
+| `ZRS3` | 0 / 0 | 0 | yes / no / no | APRM, AQRM |
+| `ZRS4` | 0 / 0 | 0 | yes / no / no | MDRM, MERM, MFRM, MGRM |
+| `ZRS5` | 0 / 0 | 0 | yes / no / no | J6RM, MCRM, CORN |
+| `ZRS6` | 0 / 0 | 0 | yes / no / no | CPRN, CORN |
+| `ZSRM` | 17 / 1 | 0 | yes / no / no | none |
+| `ZTRM` | 17 / 1 | 0 | yes / no / no | none |
+| `ZURM` | 17 / 1 | 0 | yes / no / no | none |
+| `ZVRM` | 10 / 0 | 0 | yes / no / no | none |
+| `ZWRM` | 20 / 0 | 0 | yes / no / no | none |
+| `ZXRM` | 7 / 0 | 0 | yes / no / no | none |
+| `ZYRM` | 11 / 0 | 0 | yes / no / no | none |
+| `ZZRM` | 6 / 0 | 0 | yes / no / no | none |
+<!-- /generated -->
+
+#### Controls
+
+Every bed-command button retains its selected descriptor's short operand, long
+operand, Nordic override and gesture. Distinct codes and configurations remain
+independent even when their commands happen to match. Action IDs below identify
+both normal buttons and the exact alarm actions a product admits. The product
+catalog determines which IDs are offered; getter-only lists do not add controls.
+
+The side selector offers only that product's declared sides. Commands, explicit
+service sides and single-address paired children all pass the same side check.
+Home Assistant captures the side and BLE connection for an entire gesture, so a
+side change cannot redirect its release. E3RM, GXRM, JDRM, JFRM and JGRM retain
+the memory-save latch for the seven named memory/preset actions, with GXRM TV's
+exception. APRM, BRRM, YFRM and YGRM start in release mode. BRRM/YFRM/YGRM's
+flagged replacement sends the None operand rather than silently ignoring it.
+Local visual flags do not grant or revoke BLE capabilities.
+
+D1RM/D9RM expose Off, 10, 20 and 30 minute massage countdown choices. A committed
+choice sends once without an added release. Other app-labelled bed effects,
+including hardware fan, heating, aroma, lock, synchronization and music-related
+bed commands, retain their own catalog bytes. Phone torch, speech and navigation
+widgets are local app actions and do not create BLE buttons.
+
+<!-- generated:galaxy-commands -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Action ID | App label / gesture | Framed short / long (Left) | Nordic short / long |
+|---|---|---|---|
+| 00768ad5c89c | deviceFunctionItemMusicPreviousSong / shortPress | `6E 01 00 D2 41` / `6E 01 00 00 6F` | `D2` / `00` |
+| 03948f09ef03 | deviceFunctionItemZeroGravity2 / shortAndLongPress | `6E 01 00 6B DA` / `6E 01 00 6A D9` | `6B` / `6A` |
+| 0633e7cf2d22 | deviceFunctionSofaBackward / sustainPress | `6E 01 00 5C CB` / `6E 01 00 00 6F` | `5C` / `00` |
+| 06ab47fde8fd | deviceFunctionItemTileDown / sustainPress | `6E 01 00 44 B3` / `6E 01 00 00 6F` | `44` / `00` |
+| 06ceedc7765d | deviceFunctionItemRelieveZeroGravitySetting / shortPress | `6E 01 00 62 D1` / `6E 01 00 00 6F` | `62` / `00` |
+| 0781eac7d139 | deviceFunctionItemMusicShakeClose / shortPress | `6E 01 00 DC 4B` / `6E 01 00 00 6F` | `DC` / `00` |
+| 0838ca2e9af9 | deviceFunctionItemMusicSwitchSoundTrack / shortPress | `6E 01 00 C4 33` / `6E 01 00 00 6F` | `C4` / `00` |
+| 08f67be62ad8 | deviceFunctionItemMemoryPosition1 / shortAndLongPress | `6E 01 00 2E 9D` / `6E 01 00 2B 9A` | `42` / `2B` |
+| 0accc27a6ff2 | deviceFunctionItemFootUpAndHeadDown / shortPress | `6E 01 00 22 91` / `6E 01 00 00 6F` | `22` / `00` |
+| 0ae43b2ba3ef | deviceFunctionItemSwingHelpSleep / sustainPress | `6E 01 00 76 E5` / `6E 01 00 00 6F` | `76` / `00` |
+| 0b0b9685e1c1 | deviceFunctionItemMassage15MinuteUpAndDown / shortPress | `6E 01 00 76 E5` / `6E 01 00 00 6F` | `76` / `00` |
+| 0b282e025218 | deviceFunctionItemFootUp / sustainPress | `6E 01 00 26 95` / `6E 01 00 00 6F` | `36` / `00` |
+| 0b963e38699f | deviceFunctionItemTileUp / sustainPress | `6E 01 00 5B CA` / `6E 01 00 00 6F` | `5B` / `00` |
+| 0cb97f6dea8a | deviceFunctionSofaLumbarDown / shortAndLongPress | `6E 01 00 40 AF` / `6E 01 00 00 6F` | `40` / `00` |
+| 0cccbba6ad56 | deviceFunctionItemMemoryPosition1 / shortPress | `6E 01 00 2E 9D` / `6E 01 00 2B 9A` | `2E` / `2B` |
+| 0d663ad100dd | deviceFunctionItemTitleTimer / shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |
+| 0e6510b9d9f8 | deviceFunctionItemNone / shortPress | `6E 01 00 5F CE` / `6E 01 00 00 6F` | `5F` / `00` |
+| 0e689e6ccad3 | deviceFunctionItemMemoryPosition3 / shortAndLongPress | `6E 01 00 30 9F` / `6E 01 00 2D 9C` | `30` / `2D` |
+| 0f5030e77dcb | deviceFunctionSofaForword / sustainPress | `6E 01 00 5B CA` / `6E 01 00 00 6F` | `5B` / `00` |
+| 0f7ade54e07f | deviceFunctionItemFootDown / shortAndLongPress | `6E 01 00 27 96` / `6E 01 00 00 6F` | `27` / `00` |
+| 107670e3a0b3 | deviceFunctionItemLumberDown / shortPress | `6E 01 00 40 AF` / `6E 01 00 00 6F` | `40` / `00` |
+| 113cb2a072be | deviceFunctionItemMlilyMenu / sustainPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |
+| 11560c46d458 | deviceFunctionItemMassageModePulse / shortPress | `6E 01 00 38 A7` / `6E 01 00 00 6F` | `46` / `00` |
+| 1201c925fb63 | deviceFunctionItemMassage2Instensity / shortPress | `6E 01 00 A5 14` / `6E 01 00 00 6F` | `A5` / `00` |
+| 138a26790c48 | deviceFunctionItemMemoryPosition2 / shortAndLongPress | `6E 01 00 2F 9E` / `6E 01 00 2C 9B` | `2F` / `2C` |
+| 13aa59bcdb87 | deviceFunctionItemLumberMemoryPosition / shortAndLongPress | `6E 01 00 91 00` / `6E 01 00 92 01` | `91` / `92` |
+| 151ed6e5c962 | deviceFunctionItemMusicShakeFirstGear / shortPress | `6E 01 00 DD 4C` / `6E 01 00 00 6F` | `DD` / `00` |
+| 153387b194f4 | deviceFunctionItemMotor5Down / sustainPress | `6E 01 00 D1 40` / `6E 01 00 00 6F` | `D1` / `00` |
+| 15ab88d3324f | deviceFunctionItemHeadDown / sustainPress | `6E 01 00 25 94` / `6E 01 00 00 6F` | `38` / `00` |
+| 17837aeaf1c2 | deviceFunctionItemHeadUp / sustainPress | `6E 01 00 23 92` / `6E 01 00 00 6F` | `23` / `00` |
+| 185f017838c5 | deviceFunctionItemMassageFootInstensityWeaken / shortPress | `6E 01 00 4F BE` / `6E 01 00 00 6F` | `4B` / `00` |
+| 18af21d5070b | deviceFunctionItemMotorReset / sustainPress | `6E 01 00 31 A0` / `6E 01 00 00 6F` | `31` / `00` |
+| 190811c7ee7a | deviceFunctionItemMassageInstensityStrengthen / shortPress | `6E 01 00 34 A3` / `6E 01 00 00 6F` | `34` / `00` |
+| 1ab43b1645a6 | deviceFunctionItemMotor3Up / shortAndLongPress | `6E 01 00 71 E0` / `6E 01 00 00 6F` | `71` / `00` |
+| 1c2ed3d5f48f | deviceFunctionItemHeadUp / sustainPress | `6E 01 00 24 93` / `6E 01 00 00 6F` | `35` / `00` |
+| 1dfe8744e8a5 | deviceFunctionItemMassageModeAllOff / shortPress | `6E 01 00 BE 2D` / `6E 01 00 00 6F` | `BE` / `00` |
+| 1fa0bf876809 | deviceFunctionItemMassageSpeedStrengthen / shortPress | `6E 01 00 36 A5` / `6E 01 00 00 6F` | `36` / `00` |
+| 1fd044951f81 | deviceFunctionItemVoice / shortPress (local) | no BLE | no BLE |
+| 20a47df7a9fe | deviceFunctionItemDeepSleepPosition / shortAndLongPress | `6E 01 00 F7 66` / `6E 01 00 F6 65` | `F7` / `F6` |
+| 20da93b5e0d8 | deviceFunctionItemControlBoxLock / shortAndLongPress | `6E 01 00 D9 48` / `6E 01 00 84 F3` | `D9` / `84` |
+| 20fbf4502a1c | deviceFunctionItemMassageModeAllOff / shortPress | `6E 01 00 5F CE` / `6E 01 00 00 6F` | `39` / `00` |
+| 2244dc2953c1 | deviceFunctionItemMassage30MinuteTimer / shortPress | `6E 01 00 90 FF` / `6E 01 00 00 6F` | `90` / `00` |
+| 22cd0b23a7a4 | deviceFunctionItemYogaPosition / shortAndLongPress | `6E 01 00 E0 4F` / `6E 01 00 E2 51` | `E0` / `E2` |
+| 23a6bfbf3393 | deviceFunctionItemMassageModePulse / shortPress | `6E 01 00 38 A7` / `6E 01 00 00 6F` | `38` / `00` |
+| 2456fd1de9c0 | deviceFunctionItemUnWindPosition / shortAndLongPress | `6E 01 00 8C FB` / `6E 01 00 8D FC` | `8C` / `8D` |
+| 25356be8c511 | deviceFunctionItemWakeUpPosition / shortAndLongPress | `6E 01 00 93 02` / `6E 01 00 94 03` | `93` / `94` |
+| 268a2e2cc269 | deviceFunctionItemMassageFootInstensityWeaken / shortPress | `6E 01 00 4F BE` / `6E 01 00 00 6F` | `4F` / `00` |
+| 285b51f4f9e5 | deviceFunctionItemLoungePosition / shortAndLongPress | `6E 01 00 59 C8` / `6E 01 00 65 D4` | `59` / `65` |
+| 29b45867df0e | deviceFunctionItemMassageModeChange / shortPress | `6E 01 00 48 B7` / `6E 01 00 00 6F` | `48` / `00` |
+| 2ab1281f472c | deviceFunctionItemMotorReset / shortPress | `6E 01 00 31 A0` / `6E 01 00 00 6F` | `38` / `00` |
+| 2b688d4c1261 | deviceFunctionItemWakeUp / shortAndLongPress | `6E 01 00 85 F4` / `6E 01 00 00 6F` | `85` / `00` |
+| 309a885f5da0 | deviceFunctionItemMemoryPosition4 / shortAndLongPress | `6E 01 00 B2 21` / `6E 01 00 B3 22` | `B2` / `B3` |
+| 30edc5e57ed3 | deviceFunctionItemHeadAndFootDown / sustainPress | `6E 01 00 97 06` / `6E 01 00 00 6F` | `97` / `00` |
+| 31430a40e557 | deviceFunctionItemMassageModeChange / shortPress | `6E 01 00 47 B6` / `6E 01 00 00 6F` | `47` / `00` |
+| 321b806f1bec | deviceFunctionItemMemoryPosition1 / shortAndLongPress | `6E 01 00 2E 9D` / `6E 01 00 2B 9A` | `2E` / `2B` |
+| 3350a7dbe704 | deviceFunctionItemAntiSnoring / shortAndLongPress | `6E 01 00 46 B5` / `6E 01 00 69 D8` | `46` / `69` |
+| 33937c0eabb4 | deviceFunctionItemBedLight / shortPress | `6E 01 00 3C AB` / `6E 01 00 00 6F` | `3C` / `00` |
+| 3437d7efe461 | deviceFunctionItemMassageModeAllOff / shortPress | `6E 01 00 34 A3` / `6E 01 00 00 6F` | `34` / `00` |
+| 3443d35e240e | deviceFunctionAirbagLumbarSwitch / shortPress | `6E 01 00 CE 3D` / `6E 01 00 00 6F` | `CE` / `00` |
+| 3481196aea0e | deviceFunctionItemMusicShakeThirdGear / shortPress | `6E 01 00 DF 4E` / `6E 01 00 00 6F` | `DF` / `00` |
+| 35eda430fce9 | deviceFunctionItemPillowDown / shortPress | `6E 01 00 42 B1` / `6E 01 00 00 6F` | `42` / `00` |
+| 3624e7135dda | deviceFunctionItemMusicNextSong / shortPress | `6E 01 00 D3 42` / `6E 01 00 00 6F` | `D3` / `00` |
+| 3657bc6b57f3 | deviceFunctionItemMusicVolumuUp / shortPress | `6E 01 00 D4 43` / `6E 01 00 00 6F` | `D4` / `00` |
+| 365e0528fabc | deviceFunctionItemZeroGravity / shortAndLongPress | `6E 01 00 45 B4` / `6E 01 00 66 D5` | `45` / `66` |
+| 3660b44a8d2c | deviceFunctionItemMassageModeAllOff / shortPress | `6E 01 00 5F CE` / `6E 01 00 00 6F` | `5F` / `00` |
+| 368c961c7d0f | deviceFunctionItemMassageInstensityFirstGear / shortPress | `6E 01 00 67 D6` / `6E 01 00 00 6F` | `4C` / `00` |
+| 3a1da8a7936c | deviceFunctionItemRelieveZeroGravitySetting / sustainPress | `6E 01 00 BE 2D` / `6E 01 00 00 6F` | `BE` / `00` |
+| 3a66ceaa8b98 | deviceFunctionItemZeroGravity / shortPress | `6E 01 00 45 B4` / `6E 01 00 66 D5` | `45` / `66` |
+| 3ac30c11abbc | deviceFunctionItemAllMotorUp / sustainPress | `6E 01 00 56 C5` / `6E 01 00 00 6F` | `56` / `00` |
+| 3b0ca50c1a99 | deviceFunctionItemHeadUp / shortAndLongPress | `6E 01 00 24 93` / `6E 01 00 00 6F` | `24` / `00` |
+| 3b7426c168bb | deviceFunctionItemMemoryPosition3 / sustainPress | `6E 01 00 30 9F` / `6E 01 00 2D 9C` | `30` / `2D` |
+| 3c563a6ed95a | deviceFunctionItemLogo / shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |
+| 3d07e495ecba | deviceFunctionItemHeadAndFootAllUp / shortPress | `6E 01 00 23 92` / `6E 01 00 00 6F` | `23` / `00` |
+| 3d3a5c281ba8 | deviceFunctionItemMassage30MinuteUpAndDown / shortPress | `6E 01 00 90 FF` / `6E 01 00 00 6F` | `90` / `00` |
+| 3de07899c72c | deviceFunctionItemBedLightClose / shortPress | `6E 01 00 75 E4` / `6E 01 00 00 6F` | `75` / `00` |
+| 3eaf170d6395 | deviceFunctionItemMassageHeadInstensSecondMode / shortPress | `6E 01 00 9A 09` / `6E 01 00 00 6F` | `9A` / `00` |
+| 3ec2d2e3f45d | deviceFunctionItemMassage10MinuteTimer / shortPress | `6E 01 00 5F CE` / `6E 01 00 00 6F` | `5F` / `00` |
+| 3ef450736fe8 | deviceFunctionItemAlarmMode2 / shortPress | `6E 01 00 B1 20` / `6E 01 00 00 6F` | `B1` / `00` |
+| 413b56feb6cc | deviceFunctionItemAntiSnoring / shortPress | `6E 01 00 46 B5` / `6E 01 00 69 D8` | `46` / `69` |
+| 416528417b6c | deviceFunctionItemLumberDown / sustainPress | `6E 01 00 40 AF` / `6E 01 00 00 6F` | `40` / `00` |
+| 436b2c9f27a5 | deviceFunctionItemFootUp / shortAndLongPress | `6E 01 00 26 95` / `6E 01 00 00 6F` | `26` / `00` |
+| 439f3159f6e0 | deviceFunctionItemMotorAndMassageAllOff / shortPress | `6E 01 00 47 B6` / `6E 01 00 00 6F` | `47` / `00` |
+| 43d4f66d0c82 | deviceFunctionItemFootDown / shortPress | `6E 01 00 21 90` / `6E 01 00 00 6F` | `21` / `00` |
+| 443dc0604e41 | deviceFunctionItemMemoryPosition1 / sustainPress | `6E 01 00 2E 9D` / `6E 01 00 2B 9A` | `2E` / `2B` |
+| 4491ae0fe371 | deviceFunctionItemZeroGravity2 / shortPress | `6E 01 00 6B DA` / `6E 01 00 6A D9` | `6B` / `6A` |
+| 44b0c38bdf3c | deviceFunctionItemBedLight / shortPress | `6E 01 00 3C AB` / `6E 01 00 00 6F` | `43` / `00` |
+| 4500d9c24b53 | deviceFunctionSofaHeadUp / sustainPress | `6E 01 00 24 93` / `6E 01 00 00 6F` | `24` / `00` |
+| 4501725f3ef5 | deviceFunctionItemControlBoxLock / shortAndLongPress | `6E 01 00 84 F3` / `6E 01 00 84 F3` | `84` / `84` |
+| 4509df8a29bc | deviceFunctionItemFanTimer3Hour / shortPress | `6E 01 00 A7 16` / `6E 01 00 00 6F` | `A7` / `00` |
+| 460eaa0c9c06 | deviceFunctionItemTVPosition / shortAndLongPress | `6E 01 00 58 C7` / `6E 01 00 64 D3` | `58` / `64` |
+| 4744e2125604 | deviceFunctionItemMassage30MinuteTimer / shortPress | `6E 01 00 61 D0` / `6E 01 00 00 6F` | `61` / `00` |
+| 4819f56ca2b9 | deviceFunctionItemAllMotorUp / shortPress | `6E 01 00 56 C5` / `6E 01 00 00 6F` | `56` / `00` |
+| 48b8677df3f3 | deviceFunctionItemMassageModeChange / shortPress | `6E 01 00 72 E1` / `6E 01 00 00 6F` | `72` / `00` |
+| 490439c2e818 | deviceFunctionItemLoungePosition / sustainPress | `6E 01 00 59 C8` / `6E 01 00 65 D4` | `59` / `65` |
+| 494aeb2a2642 | deviceFunctionItemAllMotorUp / sustainPress | `6E 01 00 B6 25` / `6E 01 00 00 6F` | `B6` / `00` |
+| 496bd06c72a3 | deviceFunctionItemMusicClose / shortPress | `6E 01 00 B9 28` / `6E 01 00 00 6F` | `B9` / `00` |
+| 4a1fd16956e2 | deviceFunctionItemMassageLumbarInstensityStrengthen / shortPress | `6E 01 00 E0 4F` / `6E 01 00 00 6F` | `E0` / `00` |
+| 4a3a0b986abd | deviceFunctionItemMassageSwitch / shortPress | `6E 01 00 5D CC` / `6E 01 00 00 6F` | `5D` / `00` |
+| 4c393e6d904f | deviceFunctionItemHeadAndFootUp / shortPress | `6E 01 00 29 98` / `6E 01 00 00 6F` | `29` / `00` |
+| 4d9f48795df3 | deviceFunctionItemHeadAndFootUp / sustainPress | `6E 01 00 56 C5` / `6E 01 00 00 6F` | `56` / `00` |
+| 4e26611eed4a | deviceFunctionItemMassageHeadInstensThirdMode / shortPress | `6E 01 00 9B 0A` / `6E 01 00 00 6F` | `9B` / `00` |
+| 4e267fb43482 | deviceFunctionItemMassage1OpenOrClose / shortPress | `6E 01 00 32 A1` / `6E 01 00 00 6F` | `32` / `00` |
+| 4e6a210e7921 | deviceFunctionItemMassageHeadInstensityWeaken / shortPress | `6E 01 00 4D BC` / `6E 01 00 00 6F` | `4A` / `00` |
+| 50246afd1950 | deviceFunctionItemMotorReset / shortPress | `6E 01 00 30 9F` / `6E 01 00 00 6F` | `30` / `00` |
+| 51e59167de7f | deviceFunctionItemZeroGravity / shortPress | `6E 01 00 45 B4` / `6E 01 00 66 D5` | `45` / `66` |
+| 52adbe7a3b28 | deviceFunctionItemMassageFootInstensityStrengthen / shortPress | `6E 01 00 4E BD` / `6E 01 00 00 6F` | `4E` / `00` |
+| 52db8cbeaaac | deviceFunctionItemMusicBlueToothSwitch / shortPress | `6E 01 00 D8 47` / `6E 01 00 00 6F` | `D8` / `00` |
+| 5389041d2923 | deviceFunctionItemMassageHeadInstensityStrengthen / shortPress | `6E 01 00 4C BB` / `6E 01 00 00 6F` | `46` / `00` |
+| 5441ec9f3ae0 | deviceFunctionItemSyncOff / longPress | `6E 01 00 BD 2C` / `6E 01 00 BD 2C` | `BD` / `BD` |
+| 558c0081b122 | deviceFunctionItemHeadUp / sustainPress | `6E 01 00 24 93` / `6E 01 00 00 6F` | `34` / `00` |
+| 5653ca1468dd | deviceFunctionItemCoaxingSleepMode2 / shortPress | `6E 01 00 87 F6` / `6E 01 00 00 6F` | `87` / `00` |
+| 56e4fc173edc | deviceFunctionItemHeadUpAndFootDown / shortPress | `6E 01 00 21 90` / `6E 01 00 00 6F` | `21` / `00` |
+| 572700e782ee | deviceFunctionItemMemoryPosition2 / shortPress | `6E 01 00 2F 9E` / `6E 01 00 2C 9B` | `2F` / `2C` |
+| 57dde465fc30 | deviceFunctionItemFootUp / shortPress | `6E 01 00 26 95` / `6E 01 00 00 6F` | `26` / `00` |
+| 5964d0ea61c6 | deviceFunctionItemPillowUp / shortPress | `6E 01 00 41 B0` / `6E 01 00 00 6F` | `41` / `00` |
+| 59cf0540575c | deviceFunctionItemFootUp / shortPress | `6E 01 00 3E AD` / `6E 01 00 00 6F` | `3E` / `00` |
+| 5acf1c0314fe | deviceFunctionItemMemoryPosition5 / shortPress | `6E 01 00 F4 63` / `6E 01 00 F5 64` | `F4` / `F5` |
+| 5ae3ab06338c | deviceFunctionItemNone / sustainPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |
+| 5dc6c04ba291 | deviceFunctionSofaLumbarUp / sustainPress | `6E 01 00 3F AE` / `6E 01 00 00 6F` | `3F` / `00` |
+| 5ddc7f0c8188 | deviceFunctionItemPillowUp / sustainPress | `6E 01 00 3F AE` / `6E 01 00 00 6F` | `3F` / `00` |
+| 5ed2bfd209c8 | deviceFunctionItemPillowUp / sustainPress | `6E 01 00 7E ED` / `6E 01 00 00 6F` | `7E` / `00` |
+| 5f6dc4efbe19 | deviceFunctionItemMassageSpeedWeaken / shortPress | `6E 01 00 37 A6` / `6E 01 00 00 6F` | `37` / `00` |
+| 6087a67a0ea8 | deviceFunctionItemAllMotorDown / sustainPress | `6E 01 00 B8 27` / `6E 01 00 00 6F` | `B8` / `00` |
+| 60b2ef6a572f | deviceFunctionItemFootUpAndHeadDown / sustainPress | `6E 01 00 22 91` / `6E 01 00 00 6F` | `22` / `00` |
+| 60cc184338e1 | deviceFunctionItemControlBoxLock / shortPress | `6E 01 00 84 F3` / `6E 01 00 84 F3` | `84` / `84` |
+| 620bd72350b8 | deviceFunctionItemAllMotorDown / shortPress | `6E 01 00 57 C6` / `6E 01 00 00 6F` | `57` / `00` |
+| 630602a08285 | deviceFunctionItemAllMotorDown / sustainPress | `6E 01 00 57 C6` / `6E 01 00 00 6F` | `57` / `00` |
+| 64dcdd7ca52d | deviceFunctionItemMassageModeConstant / shortPress | `6E 01 00 3A A9` / `6E 01 00 00 6F` | `3A` / `00` |
+| 6502adff1ac1 | deviceFunctionItemMemoryPosition1 / shortPress | `6E 01 00 2E 9D` / `6E 01 00 2B 9A` | `42` / `2B` |
+| 657730c34383 | deviceFunctionItemSleepPosition / shortAndLongPress | `6E 01 00 8E FD` / `6E 01 00 8F FE` | `8E` / `8F` |
+| 658d5232baf8 | deviceFunctionItemMassageInstensityFirstGear / shortPress | `6E 01 00 67 D6` / `6E 01 00 00 6F` | `67` / `00` |
+| 67113d8caad1 | deviceFunctionItemMemoryPosition3 / shortPress | `6E 01 00 30 9F` / `6E 01 00 2D 9C` | `30` / `2D` |
+| 673557f50269 | deviceFunctionItemHeadDown / sustainPress | `6E 01 00 25 94` / `6E 01 00 00 6F` | `25` / `00` |
+| 6893182c3e1f | deviceFunctionItemMassageModeOffAndMotorReset / shortPress | `6E 01 00 5A C9` / `6E 01 00 00 6F` | `5A` / `00` |
+| 6abf54114f31 | deviceFunctionItemMassageInstensityStrengthen / shortPress | `6E 01 00 34 A3` / `6E 01 00 00 6F` | `4A` / `00` |
+| 6b2ef03f286d | deviceFunctionItemHeadAndFootDown / sustainPress | `6E 01 00 2A 99` / `6E 01 00 00 6F` | `39` / `00` |
+| 6bcd01cdd5b5 | deviceFunctionItemMemoryPosition1 / shortPress | `6E 01 00 45 B4` / `6E 01 00 2B 9A` | `35` / `2B` |
+| 6c1dc1af2c34 | deviceFunctionItemMemoryPosition2 / sustainPress | `6E 01 00 2F 9E` / `6E 01 00 2C 9B` | `2F` / `2C` |
+| 6c2a1bedb707 | deviceFunctionItemMemoryPosition2 / longPress | `6E 01 00 2F 9E` / `6E 01 00 2C 9B` | `2F` / `2C` |
+| 721a2ee6260c | deviceFunctionItemMotor5Up / sustainPress | `6E 01 00 D0 3F` / `6E 01 00 00 6F` | `D0` / `00` |
+| 73d49efb68c5 | deviceFunctionItemHeadDown / shortPress | `6E 01 00 22 91` / `6E 01 00 00 6F` | `22` / `00` |
+| 73f5478bcfb9 | deviceFunctionItemHeadDown / shortAndLongPress | `6E 01 00 25 94` / `6E 01 00 00 6F` | `25` / `00` |
+| 75c061f1dd65 | deviceFunctionItemFootDown / shortPress | `6E 01 00 27 96` / `6E 01 00 00 6F` | `27` / `00` |
+| 76eed6abcd76 | deviceFunctionItemMassageFootInstensFirstMode / shortPress | `6E 01 00 9D 0C` / `6E 01 00 00 6F` | `9D` / `00` |
+| 7758e56b711b | deviceFunctionItemMassageModeAllOff / sustainPress | `6E 01 00 5E CD` / `6E 01 00 00 6F` | `5E` / `00` |
+| 7795d60ad72e | deviceFunctionItemReadingPosition / shortPress | `6E 01 00 F2 61` / `6E 01 00 F3 62` | `F2` / `F3` |
+| 77df14c54e8e | deviceFunctionSofaPillowUp / shortAndLongPress | `6E 01 00 41 B0` / `6E 01 00 00 6F` | `41` / `00` |
+| 77e0e35cf814 | deviceFunctionItemMemory / shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |
+| 77f130d8f765 | deviceFunctionItemReadingPosition / shortAndLongPress | `6E 01 00 F2 61` / `6E 01 00 F3 62` | `F2` / `F3` |
+| 78107fe6925a | deviceFunctionItemMemoryPosition1 / shortPress | `6E 01 00 2B 9A` / `6E 01 00 2B 9A` | `2B` / `2B` |
+| 78323408b9f4 | deviceFunctionItemMassageSpeedStrengthen / shortPress | `6E 01 00 36 A5` / `6E 01 00 00 6F` | `48` / `00` |
+| 787098f3de8a | deviceFunctionItemMotor4Down / sustainPress | `6E 01 00 74 E3` / `6E 01 00 00 6F` | `74` / `00` |
+| 787429a0e059 | deviceFunctionItemHeadAndFootUp / sustainPress | `6E 01 00 29 98` / `6E 01 00 00 6F` | `38` / `00` |
+| 7a1587791f2e | deviceFunctionItemMotor4Down / shortAndLongPress | `6E 01 00 74 E3` / `6E 01 00 00 6F` | `74` / `00` |
+| 7a2bc77f4aa2 | deviceFunctionItemMassageInstensityWeaken / shortPress | `6E 01 00 35 A4` / `6E 01 00 00 6F` | `35` / `00` |
+| 7b24886b91f6 | deviceFunctionItemSideSleepPosition / shortAndLongPress | `6E 01 00 BA 29` / `6E 01 00 BB 2A` | `BA` / `BB` |
+| 7ba02deab1c3 | deviceFunctionAirbagAllSwitch / shortPress | `6E 01 00 CB 3A` / `6E 01 00 00 6F` | `CB` / `00` |
+| 7bb6a14f7e98 | deviceFunctionSofaLumbarUp / shortAndLongPress | `6E 01 00 3F AE` / `6E 01 00 00 6F` | `3F` / `00` |
+| 7cc5950ed801 | deviceFunctionItemMemoryPosition1 / longPress | `6E 01 00 2E 9D` / `6E 01 00 2B 9A` | `2E` / `2B` |
+| 7f8362981224 | deviceFunctionItemMotor3Up / sustainPress | `6E 01 00 71 E0` / `6E 01 00 00 6F` | `71` / `00` |
+| 7f9eda012f64 | deviceFunctionItemMassageFootInstensThirdMode / shortPress | `6E 01 00 9F 0E` / `6E 01 00 00 6F` | `9F` / `00` |
+| 820106f2d6dd | deviceFunctionItemMassageHeadInstensityStrengthen / shortPress | `6E 01 00 4C BB` / `6E 01 00 00 6F` | `4C` / `00` |
+| 8207ce775431 | deviceFunctionItemWakeUp / shortPress | `6E 01 00 85 F4` / `6E 01 00 00 6F` | `85` / `00` |
+| 83090bdc8e09 | deviceFunctionItemHeadAndFootDown / sustainPress | `6E 01 00 2A 99` / `6E 01 00 00 6F` | `2A` / `00` |
+| 835856209472 | deviceFunctionItemHeadUpAndFootStop / shortPress | `6E 01 00 30 9F` / `6E 01 00 00 6F` | `30` / `00` |
+| 838f321d8555 | deviceFunctionItemMassageInstensityThirdGear / shortPress | `6E 01 00 68 D7` / `6E 01 00 00 6F` | `68` / `00` |
+| 8406592d4686 | deviceFunctionItemZeroGravity / shortAndLongPress | `6E 01 00 45 B4` / `6E 01 00 66 D5` | `34` / `66` |
+| 850f5aeb0b3e | deviceFunctionItemMemoryPosition2 / shortPress | `6E 01 00 2F 9E` / `6E 01 00 2C 9B` | `2F` / `2C` |
+| 85384b23cdc1 | deviceFunctionItemMassageModeAllOff / shortPress | `6E 01 00 5E CD` / `6E 01 00 00 6F` | `5E` / `00` |
+| 8597264510db | deviceFunctionItemMemoryPosition1 / shortPress | `6E 01 00 2E 9D` / `6E 01 00 2B 9A` | `2E` / `2B` |
+| 85d834a83487 | deviceFunctionItemSyncOff / shortAndLongPress | `6E 01 00 BD 2C` / `6E 01 00 BD 2C` | `BD` / `BD` |
+| 8661e62701cf | deviceFunctionItemLumberDown / sustainPress | `6E 01 00 40 AF` / `6E 01 00 00 6F` | `43` / `00` |
+| 88a4f08c9252 | deviceFunctionItemSyncOn / shortAndLongPress | `6E 01 00 BC 2B` / `6E 01 00 BC 2B` | `BC` / `BC` |
+| 88aa084c0f06 | deviceFunctionItemHeadDown / sustainPress | `6E 01 00 25 94` / `6E 01 00 00 6F` | `37` / `00` |
+| 896242ba2b4b | deviceFunctionItemHelpGetUp / shortPress | `6E 01 00 3D AC` / `6E 01 00 00 6F` | `3D` / `00` |
+| 89d0d81ea7cd | deviceFunctionItemHelpGetUpPosition / shortPress | `6E 01 00 3D AC` / `6E 01 00 F8 67` | `3D` / `F8` |
+| 8b10d37d7978 | deviceFunctionItemBedLight / shortPress | `6E 01 00 3C AB` / `6E 01 00 00 6F` | `46` / `00` |
+| 8df5b61e297f | deviceFunctionItemPillowUp / sustainPress | `6E 01 00 44 B3` / `6E 01 00 00 6F` | `44` / `00` |
+| 8e73893aad10 | deviceFunctionItemMassage10MinuteTimer / shortPress | `6E 01 00 A1 10` / `6E 01 00 00 6F` | `A1` / `00` |
+| 8fbd6aa186ef | deviceFunctionItemMassageSpeedWeaken / shortPress | `6E 01 00 37 A6` / `6E 01 00 00 6F` | `49` / `00` |
+| 9082899ebbf3 | deviceFunctionItemClock / shortPress (local) | no BLE | no BLE |
+| 90b530b342a8 | deviceFunctionSofaPillowDown / shortAndLongPress | `6E 01 00 42 B1` / `6E 01 00 00 6F` | `42` / `00` |
+| 91906568b6d2 | deviceFunctionItemMemoryPosition4 / sustainPress | `6E 01 00 B2 21` / `6E 01 00 B3 22` | `B2` / `B3` |
+| 91a3c6b8411b | deviceFunctionItemHeadUp / shortPress | `6E 01 00 3D AC` / `6E 01 00 00 6F` | `3D` / `00` |
+| 941d70bafe1e | deviceFunctionItemHeadUpAndFootDown / shortPress | `6E 01 00 21 90` / `6E 01 00 00 6F` | `21` / `00` |
+| 944b1a60f697 | deviceFunctionItemMassageModeAllOff / shortPress | `6E 01 00 5D CC` / `6E 01 00 00 6F` | `5D` / `00` |
+| 96a28bdf766b | deviceFunctionItemTVPosition / shortPress | `6E 01 00 58 C7` / `6E 01 00 64 D3` | `58` / `64` |
+| 97889821ebe9 | deviceFunctionItemMassageModeAllOn / shortPress | `6E 01 00 5D CC` / `6E 01 00 00 6F` | `5D` / `00` |
+| 97d395b86b74 | deviceFunctionItemHeadUpAndFootStop / shortPress | `6E 01 00 3D AC` / `6E 01 00 00 6F` | `3D` / `00` |
+| 98c1e3ac8fca | deviceFunctionItemMassageFootInstensSecondMode / shortPress | `6E 01 00 9E 0D` / `6E 01 00 00 6F` | `9E` / `00` |
+| 9908b3accea1 | deviceFunctionItemPillow2Up / shortAndLongPress | `6E 01 00 7A E9` / `6E 01 00 00 6F` | `7A` / `00` |
+| 9a34fb9046c0 | deviceFunctionItemLumberDown / sustainPress | `6E 01 00 42 B1` / `6E 01 00 00 6F` | `42` / `00` |
+| 9ad1e023bf24 | deviceFunctionItemFan2InstensityStrengthen / shortPress | `6E 01 00 8B FA` / `6E 01 00 00 6F` | `8B` / `00` |
+| 9ad2cd3ffa5a | deviceFunctionItemPillowDown / sustainPress | `6E 01 00 40 AF` / `6E 01 00 00 6F` | `40` / `00` |
+| 9ae059e86a44 | deviceFunctionItemTileDown / sustainPress | `6E 01 00 5C CB` / `6E 01 00 00 6F` | `5C` / `00` |
+| 9b3505985df2 | deviceFunctionItemTileUp / sustainPress | `6E 01 00 43 B2` / `6E 01 00 00 6F` | `43` / `00` |
+| 9bc116cba3e6 | deviceFunctionItemMassageFootOff / shortPress | `6E 01 00 9C 0B` / `6E 01 00 00 6F` | `9C` / `00` |
+| 9bf26831d86a | deviceFunctionItemAntiSnoring / shortPress | `6E 01 00 46 B5` / `6E 01 00 69 D8` | `46` / `69` |
+| 9c0c291dde85 | deviceFunctionItemMassage20MinuteTimer / shortPress | `6E 01 00 63 D2` / `6E 01 00 00 6F` | `63` / `00` |
+| 9cc13d12dfaf | deviceFunctionItemSyncOn / longPress | `6E 01 00 BC 2B` / `6E 01 00 BC 2B` | `BC` / `BC` |
+| 9d39a2d4f2db | deviceFunctionAirbagBackSwitch / shortPress | `6E 01 00 CC 3B` / `6E 01 00 00 6F` | `CC` / `00` |
+| 9d561e6e9c0b | deviceFunctionItemHeadAndFootDown / sustainPress | `6E 01 00 57 C6` / `6E 01 00 00 6F` | `57` / `00` |
+| 9d825ec713c7 | deviceFunctionItemMassageModeAllOff / shortPress | `6E 01 00 5F CE` / `6E 01 00 00 6F` | `50` / `00` |
+| 9f2152edb06d | deviceFunctionItemHeadDown / shortPress | `6E 01 00 31 A0` / `6E 01 00 00 6F` | `31` / `00` |
+| 9f51b232b380 | deviceFunctionItemMassageHeadOff / shortPress | `6E 01 00 98 07` / `6E 01 00 00 6F` | `98` / `00` |
+| a01900db2834 | deviceFunctionItemMassage15MinuteSpineGuard / shortPress | `6E 01 00 76 E5` / `6E 01 00 00 6F` | `76` / `00` |
+| a186fa8a102b | deviceFunctionItemPillowDown / sustainPress | `6E 01 00 80 EF` / `6E 01 00 00 6F` | `80` / `00` |
+| a1da564a9027 | deviceFunctionItemTVPosition / shortPress | `6E 01 00 58 C7` / `6E 01 00 64 D3` | `33` / `64` |
+| a3873cba2a70 | deviceFunctionSofaSitPosition / sustainPress | `6E 01 00 E5 54` / `6E 01 00 00 6F` | `E5` / `00` |
+| a3b39b7b566f | deviceFunctionItemMotorReset / shortPress | `6E 01 00 31 A0` / `6E 01 00 00 6F` | `31` / `00` |
+| a60c7745771b | deviceFunctionItemBedLight / shortPress | `6E 01 00 3C AB` / `6E 01 00 00 6F` | `36` / `00` |
+| a63e4733c91c | deviceFunctionItemMassage30MinuteTimer / shortPress | `6E 01 00 A3 12` / `6E 01 00 00 6F` | `A3` / `00` |
+| a72bd4817ca1 | deviceFunctionItemMassageModeAllOff / shortPress | `6E 01 00 47 B6` / `6E 01 00 00 6F` | `47` / `00` |
+| a74fd401b687 | deviceFunctionItemFootUp / sustainPress | `6E 01 00 26 95` / `6E 01 00 00 6F` | `37` / `00` |
+| a8018fb49c3e | deviceFunctionItemTitleMassage / shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |
+| a89fad642679 | deviceFunctionItemMassageHeadInstensityWeaken / shortPress | `6E 01 00 4D BC` / `6E 01 00 00 6F` | `49` / `00` |
+| a90aac0dab9b | deviceFunctionItemDeepSleepPosition / shortAndLongPress | `6E 01 00 F6 65` / `6E 01 00 F7 66` | `F6` / `F7` |
+| a932d7d08150 | deviceFunctionItemMassage20MinuteTimer / shortPress | `6E 01 00 A2 11` / `6E 01 00 00 6F` | `A2` / `00` |
+| aa1e731452e0 | deviceFunctionItemHeadUp / shortPress | `6E 01 00 24 93` / `6E 01 00 00 6F` | `24` / `00` |
+| aa91f303c38d | deviceFunctionItemMassageModeAllOff / shortPress | `6E 01 00 BA 29` / `6E 01 00 00 6F` | `BA` / `00` |
+| ab5952b9edf7 | deviceFunctionSofaPillowDown / sustainPress | `6E 01 00 42 B1` / `6E 01 00 00 6F` | `42` / `00` |
+| ab65d2e4193c | deviceFunctionItemYogaPosition / shortPress | `6E 01 00 6B DA` / `6E 01 00 6A D9` | `6B` / `6A` |
+| ac2104a8d1f6 | deviceFunctionItemRelaxPosition / shortAndLongPress | `6E 01 00 70 DF` / `6E 01 00 95 04` | `70` / `95` |
+| ade69bf0acfc | deviceFunctionItemMotor4Up / shortAndLongPress | `6E 01 00 73 E2` / `6E 01 00 00 6F` | `73` / `00` |
+| ae200466d8a6 | deviceFunctionAirbagPillowSwitch / shortPress | `6E 01 00 CF 3E` / `6E 01 00 00 6F` | `CF` / `00` |
+| ae5bc6ff0245 | deviceFunctionItemHeadAndFootUp / sustainPress | `6E 01 00 29 98` / `6E 01 00 00 6F` | `29` / `00` |
+| b1a788a4bb5b | deviceFunctionItemFan1InstensityStrengthen / shortPress | `6E 01 00 8A F9` / `6E 01 00 00 6F` | `8A` / `00` |
+| b1e63ceb9e68 | deviceFunctionItemCoaxingSleepMode3 / shortPress | `6E 01 00 88 F7` / `6E 01 00 00 6F` | `88` / `00` |
+| b1fd54d08341 | deviceFunctionItemHeadDown / shortPress | `6E 01 00 25 94` / `6E 01 00 00 6F` | `25` / `00` |
+| b2198a58197b | deviceFunctionItemMotorReset / shortPress | `6E 01 00 31 A0` / `6E 01 00 00 6F` | `32` / `00` |
+| b2b08b2b55b7 | deviceFunctionItemMotorReset2 / shortPress | `6E 01 00 6C DB` / `6E 01 00 00 6F` | `6C` / `00` |
+| b2cc8582c5ea | deviceFunctionItemPillowDown / sustainPress | `6E 01 00 42 B1` / `6E 01 00 00 6F` | `45` / `00` |
+| b4b8d12b8d58 | deviceFunctionItemHelpGetUpPosition / shortAndLongPress | `6E 01 00 3D AC` / `6E 01 00 F8 67` | `3D` / `F8` |
+| b4bc7b0ab4f2 | deviceFunctionItemFanTimer5Hour / shortPress | `6E 01 00 A8 17` / `6E 01 00 00 6F` | `A8` / `00` |
+| b50f84eeaf59 | deviceFunctionItemAlarmMode1 / shortPress | `6E 01 00 B0 1F` / `6E 01 00 00 6F` | `B0` / `00` |
+| b59d0afa1b56 | deviceFunctionItemAromatherapy / shortAndLongPress | `6E 01 00 3B AA` / `6E 01 00 00 6F` | `3B` / `00` |
+| b82f35ef9c9c | deviceFunctionItemFootUp / sustainPress | `6E 01 00 26 95` / `6E 01 00 00 6F` | `26` / `00` |
+| b89dc016ba5e | deviceFunctionItemLoungePosition / shortPress | `6E 01 00 59 C8` / `6E 01 00 65 D4` | `59` / `65` |
+| b8ae596bdcff | deviceFunctionItemMassageModeChange / shortPress | `6E 01 00 48 B7` / `6E 01 00 00 6F` | `4A` / `00` |
+| b96eba48cb6a | deviceFunctionItemMemoryPosition2 / shortPress | `6E 01 00 2F 9E` / `6E 01 00 2C 9B` | `44` / `2C` |
+| b9d7fc9cd4d2 | deviceFunctionSofaPillowUp / sustainPress | `6E 01 00 41 B0` / `6E 01 00 00 6F` | `41` / `00` |
+| b9fd99466308 | deviceFunctionItemMassageModeWave / shortPress | `6E 01 00 39 A8` / `6E 01 00 00 6F` | `39` / `00` |
+| bb01554b17a8 | deviceFunctionItemMassageModeAllOff / shortPress | `6E 01 00 61 D0` / `6E 01 00 00 6F` | `61` / `00` |
+| bd4b6927a35c | deviceFunctionItemYogaPosition / shortAndLongPress | `6E 01 00 6B DA` / `6E 01 00 6A D9` | `6B` / `6A` |
+| be741e4841de | deviceFunctionItemAllMotorDown / sustainPress | `6E 01 00 44 B3` / `6E 01 00 00 6F` | `44` / `00` |
+| beea25299ceb | deviceFunctionItemTitleMassageRussian / shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |
+| bf0dc6e541c4 | deviceFunctionItemTitleFan / shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |
+| bfde3a3a34b4 | deviceFunctionItemMemoryPosition3 / shortPress | `6E 01 00 2D 9C` / `6E 01 00 2D 9C` | `2D` / `2D` |
+| c03b8e2a8fbb | deviceFunctionItemTVPosition / sustainPress | `6E 01 00 58 C7` / `6E 01 00 64 D3` | `58` / `64` |
+| c0c739d85916 | deviceFunctionItemHeadUpAndFootDown / sustainPress | `6E 01 00 21 90` / `6E 01 00 00 6F` | `21` / `00` |
+| c1ee3907b355 | deviceFunctionItemAllMotorDown / sustainPress | `6E 01 00 88 F7` / `6E 01 00 00 6F` | `88` / `00` |
+| c2112226b40f | deviceFunctionItemMassageModeAllOff / shortPress | `6E 01 00 5F CE` / `6E 01 00 00 6F` | `49` / `00` |
+| c2fb85dff51a | deviceFunctionItemFootDown / sustainPress | `6E 01 00 27 96` / `6E 01 00 00 6F` | `41` / `00` |
+| c3b474f99c00 | deviceFunctionItemSyncOff / shortPress | `6E 01 00 BD 2C` / `6E 01 00 BD 2C` | `BD` / `BD` |
+| c3cc6b473b6c | deviceFunctionItemMassageHeadInstensityStrengthen / shortPress | `6E 01 00 4C BB` / `6E 01 00 00 6F` | `42` / `00` |
+| c5b0f8225ba7 | deviceFunctionItemLumberUp / sustainPress | `6E 01 00 3F AE` / `6E 01 00 00 6F` | `3F` / `00` |
+| c5cfd88a0063 | deviceFunctionItemMassageModeAllOff / shortPress | `6E 01 00 5F CE` / `6E 01 00 00 6F` | `47` / `00` |
+| c6e7a2285522 | deviceFunctionItemSyncOn / shortPress | `6E 01 00 BC 2B` / `6E 01 00 BC 2B` | `BC` / `BC` |
+| c73a9fadc0cd | deviceFunctionItemMusicShakeMode / shortPress | `6E 01 00 D6 45` / `6E 01 00 00 6F` | `D6` / `00` |
+| c7b35ccf498d | deviceFunctionItemMemoryPosition5 / shortAndLongPress | `6E 01 00 F4 63` / `6E 01 00 F5 64` | `F4` / `F5` |
+| c93ed25f45e4 | deviceFunctionItemPillowUp / sustainPress | `6E 01 00 41 B0` / `6E 01 00 00 6F` | `41` / `00` |
+| c998a5ea1890 | deviceFunctionItemHeadAndFootUp / sustainPress | `6E 01 00 29 98` / `6E 01 00 00 6F` | `36` / `00` |
+| cb84d65549c2 | deviceFunctionItemMassageSwitch / shortAndLongPress | `6E 01 00 4C BB` / `6E 01 00 00 6F` | `4C` / `00` |
+| cbaf3b6f4035 | deviceFunctionItemLoungePosition / shortAndLongPress | `6E 01 00 59 C8` / `6E 01 00 65 D4` | `32` / `65` |
+| cbb374ca38ea | deviceFunctionItemHeadAndFootDown / shortPress | `6E 01 00 2A 99` / `6E 01 00 00 6F` | `2A` / `00` |
+| cc068f3311b4 | deviceFunctionItemLumberAndPillowDown / sustainPress | `6E 01 00 44 B3` / `6E 01 00 00 6F` | `44` / `00` |
+| ccbaa9322b74 | deviceFunctionItemLumberUp / sustainPress | `6E 01 00 82 F1` / `6E 01 00 00 6F` | `82` / `00` |
+| ccc2a945e831 | deviceFunctionItemAdjustVolume / shortPress | `6E 01 00 B7 26` / `6E 01 00 00 6F` | `B7` / `00` |
+| cdfa48e8574e | deviceFunctionSofaZeroGravityMotorUp / sustainPress | `6E 01 00 71 E0` / `6E 01 00 00 6F` | `71` / `00` |
+| ce185a33a177 | deviceFunctionItemMemoryPosition2 / shortAndLongPress | `6E 01 00 2F 9E` / `6E 01 00 2C 9B` | `44` / `2C` |
+| cedc2c60bea8 | deviceFunctionItemRelieveSnoreSetting / shortPress | `6E 01 00 CB 3A` / `6E 01 00 00 6F` | `CB` / `00` |
+| cf339c0f5687 | deviceFunctionItemHelpSleepMode1 / shortAndLongPress | `6E 01 00 86 F5` / `6E 01 00 00 6F` | `86` / `00` |
+| cf751a703c94 | deviceFunctionItemMassageModeWaveThirdMode / shortPress | `6E 01 00 4B BA` / `6E 01 00 00 6F` | `4B` / `00` |
+| d19a07b24108 | deviceFunctionItemMemoryPosition2 / shortPress | `6E 01 00 2C 9B` / `6E 01 00 2C 9B` | `2C` / `2C` |
+| d221a0c433b7 | deviceFunctionAirbagFootSwitch / shortPress | `6E 01 00 CD 3C` / `6E 01 00 00 6F` | `CD` / `00` |
+| d4192859a471 | deviceFunctionItemLumberUp / sustainPress | `6E 01 00 3F AE` / `6E 01 00 00 6F` | `42` / `00` |
+| d4d9d796e2f6 | deviceFunctionItemMotorReset / shortPress | `6E 01 00 47 B6` / `6E 01 00 00 6F` | `47` / `00` |
+| d5845b8f6cd4 | deviceFunctionItemAlarmMode1 / shortPress | `6E 01 00 F5 64` / `6E 01 00 00 6F` | `F5` / `00` |
+| d6190dbad27a | deviceFunctionItemFanTimer2Hour / shortPress | `6E 01 00 A6 15` / `6E 01 00 00 6F` | `A6` / `00` |
+| d634e893754f | deviceFunctionItemFootDown / sustainPress | `6E 01 00 27 96` / `6E 01 00 00 6F` | `27` / `00` |
+| d70b447d20a4 | deviceFunctionItemMassageModeAllOff / shortPress | `6E 01 00 48 B7` / `6E 01 00 00 6F` | `48` / `00` |
+| d71812168b1b | deviceFunctionItemMassageModeAllOff / shortPress | `6E 01 00 5F CE` / `6E 01 00 00 6F` | `4C` / `00` |
+| d752369adf34 | deviceFunctionItemMassageModeWave / shortAndLongPress | `6E 01 00 48 B7` / `6E 01 00 47 B6` | `48` / `47` |
+| d86d11220ae9 | deviceFunctionItemMemoryPosition2 / shortPress | `6E 01 00 2C 9B` / `6E 01 00 2C 9B` | `45` / `2C` |
+| d959e04c5afb | deviceFunctionItemMotor4Up / sustainPress | `6E 01 00 73 E2` / `6E 01 00 00 6F` | `73` / `00` |
+| da7d355f20b0 | deviceFunctionItemMusicPausePlay / shortPress | `6E 01 00 D7 46` / `6E 01 00 00 6F` | `D7` / `00` |
+| db50fc8b2ab6 | deviceFunctionItemMassageSwitch / shortPress | `6E 01 00 6F DE` / `6E 01 00 00 6F` | `6F` / `00` |
+| db5ea9c30d9c | deviceFunctionItemMusicShakeSecondGear / shortPress | `6E 01 00 DE 4D` / `6E 01 00 00 6F` | `DE` / `00` |
+| dc97e2bd52e7 | deviceFunctionItemLumberAndPillowUp / sustainPress | `6E 01 00 43 B2` / `6E 01 00 00 6F` | `43` / `00` |
+| dd397c2b9ee9 | deviceFunctionItemMusicVolumuDown / shortPress | `6E 01 00 D5 44` / `6E 01 00 00 6F` | `D5` / `00` |
+| dd64ad4208ed | deviceFunctionItemLumberUp / sustainPress | `6E 01 00 41 B0` / `6E 01 00 00 6F` | `41` / `00` |
+| de11c48d4569 | deviceFunctionItemAllMotorUp / sustainPress | `6E 01 00 43 B2` / `6E 01 00 00 6F` | `43` / `00` |
+| de16c1ec2bc9 | deviceFunctionItemMassageFootInstensityStrengthen / shortPress | `6E 01 00 4E BD` / `6E 01 00 00 6F` | `48` / `00` |
+| de3277b9f758 | deviceFunctionItemHeadAndFootDown / sustainPress | `6E 01 00 2A 99` / `6E 01 00 00 6F` | `72` / `00` |
+| de82af361206 | deviceFunctionItemMassageHeadInstensityWeaken / shortPress | `6E 01 00 4D BC` / `6E 01 00 00 6F` | `4D` / `00` |
+| deb93f913eee | deviceFunctionItemMassageInstensitySecondGear / shortPress | `6E 01 00 4D BC` / `6E 01 00 00 6F` | `4D` / `00` |
+| e16e0cd9d82a | deviceFunctionItemCoaxingSleepMode / shortPress | `6E 01 00 86 F5` / `6E 01 00 89 F8` | `86` / `89` |
+| e1edeb9dcc6e | deviceFunctionItemFanAllOff / shortPress | `6E 01 00 A1 10` / `6E 01 00 00 6F` | `A1` / `00` |
+| e2a8e5e02a7e | deviceFunctionItemPillow2Down / shortAndLongPress | `6E 01 00 7B EA` / `6E 01 00 00 6F` | `7B` / `00` |
+| e2e430d20566 | deviceFunctionItemMassageModeWave / shortPress | `6E 01 00 39 A8` / `6E 01 00 00 6F` | `45` / `00` |
+| e33a14c3a7fb | deviceFunctionItemMassageFootInstensityStrengthen / shortPress | `6E 01 00 4E BD` / `6E 01 00 00 6F` | `44` / `00` |
+| e367c085fcec | deviceFunctionItemLumberDown / sustainPress | `6E 01 00 84 F3` / `6E 01 00 00 6F` | `84` / `00` |
+| e45fa296fec6 | deviceFunctionItemAllMotorUp / sustainPress | `6E 01 00 86 F5` / `6E 01 00 00 6F` | `86` / `00` |
+| e4c73fd5e987 | deviceFunctionSofaHeadDown / sustainPress | `6E 01 00 25 94` / `6E 01 00 00 6F` | `25` / `00` |
+| e50dd75b517b | deviceFunctionItemMotorReset / shortAndLongPress | `6E 01 00 31 A0` / `6E 01 00 00 6F` | `31` / `00` |
+| e527904360a5 | deviceFunctionItemMemoryPosition4 / shortPress | `6E 01 00 B2 21` / `6E 01 00 B3 22` | `B2` / `B3` |
+| e682c266d31b | deviceFunctionItemMusicCut / shortPress | `6E 01 00 B8 27` / `6E 01 00 00 6F` | `B8` / `00` |
+| e6cc77b9883b | deviceFunctionItemMassageInstensityStrengthen / shortPress | `6E 01 00 34 A3` / `6E 01 00 00 6F` | `48` / `00` |
+| e7145fceece1 | deviceFunctionSofaLumbarDown / sustainPress | `6E 01 00 40 AF` / `6E 01 00 00 6F` | `40` / `00` |
+| e71e0fe63b0f | deviceFunctionItemPhoneLight / shortAndLongPress (local) | no BLE | no BLE |
+| e8b56157ff71 | deviceFunctionItemNone / shortAndLongPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |
+| e90839281af1 | deviceFunctionItemMassageModeWaveSecondMode / shortPress | `6E 01 00 4A B9` / `6E 01 00 00 6F` | `4A` / `00` |
+| ea01c54f5727 | deviceFunctionItemMassageHeadInstensFirstMode / shortPress | `6E 01 00 99 08` / `6E 01 00 00 6F` | `99` / `00` |
+| eb67babb26cf | deviceFunctionItemMassageModeWaveFirstMode / shortPress | `6E 01 00 49 B8` / `6E 01 00 00 6F` | `49` / `00` |
+| eb7965cc2b32 | deviceFunctionItemMotor3Down / sustainPress | `6E 01 00 72 E1` / `6E 01 00 00 6F` | `72` / `00` |
+| ed0fcf6f5099 | deviceFunctionItemPhoneLight / shortPress (local) | no BLE | no BLE |
+| edf64c411999 | deviceFunctionItemZeroGravity / shortPress | `6E 01 00 45 B4` / `6E 01 00 66 D5` | `34` / `66` |
+| edf7eabe88e0 | deviceFunctionItemMassage1Instensity / shortPress | `6E 01 00 A4 13` / `6E 01 00 00 6F` | `A4` / `00` |
+| f06d71f5757a | deviceFunctionSofaZeroGravityMotorDown / sustainPress | `6E 01 00 72 E1` / `6E 01 00 00 6F` | `72` / `00` |
+| f17c7ae2d266 | deviceFunctionItemLoungePosition / shortPress | `6E 01 00 59 C8` / `6E 01 00 65 D4` | `32` / `65` |
+| f253c5c3b44b | deviceFunctionItemDeepSleepPosition / shortPress | `6E 01 00 F6 65` / `6E 01 00 F7 66` | `F6` / `F7` |
+| f2b8b295e814 | deviceFunctionItemHeadUp / sustainPress | `6E 01 00 24 93` / `6E 01 00 00 6F` | `24` / `00` |
+| f354ae292d2d | deviceFunctionItemTVPosition / shortPress | `6E 01 00 58 C7` / `6E 01 00 64 D3` | `58` / `64` |
+| f47f29344bc8 | deviceFunctionItemNone / shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |
+| f4b3b8be75d2 | deviceFunctionItemAntiSnoring / sustainPress | `6E 01 00 46 B5` / `6E 01 00 69 D8` | `46` / `69` |
+| f5107d4d7128 | deviceFunctionItemMassageInstensityThirdGear / shortPress | `6E 01 00 68 D7` / `6E 01 00 00 6F` | `4E` / `00` |
+| f524675f0711 | deviceFunctionItemMassageModeConstant / shortPress | `6E 01 00 3A A9` / `6E 01 00 00 6F` | `47` / `00` |
+| f60a3278f7ee | deviceFunctionItemHeadAndFootUp / sustainPress | `6E 01 00 96 05` / `6E 01 00 00 6F` | `96` / `00` |
+| f6310d43b778 | deviceFunctionItemMemoryPosition1 / shortPress | `6E 01 00 2B 9A` / `6E 01 00 2B 9A` | `43` / `2B` |
+| f765539996b9 | deviceFunctionItemMassageInstensityWeaken / shortPress | `6E 01 00 35 A4` / `6E 01 00 00 6F` | `4B` / `00` |
+| f989986de6b8 | deviceFunctionItemYogaPosition / shortAndLongPress | `6E 01 00 F0 5F` / `6E 01 00 F1 60` | `F0` / `F1` |
+| f9b05d5ab4bb | deviceFunctionItemReadingPosition / shortAndLongPress | `6E 01 00 F3 62` / `6E 01 00 F2 61` | `F3` / `F2` |
+| fa506142451f | deviceFunctionItemMotor3Down / shortAndLongPress | `6E 01 00 72 E1` / `6E 01 00 00 6F` | `72` / `00` |
+| faadbc92ccae | deviceFunctionItemMassage2OpenOrClose / shortPress | `6E 01 00 33 A2` / `6E 01 00 00 6F` | `33` / `00` |
+| fbf8e6b81d09 | deviceFunctionItemTitleMassageJapan / shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |
+| fd7e4ffdbcc4 | deviceFunctionItemFootUpAndHeadDown / shortPress | `6E 01 00 22 91` / `6E 01 00 00 6F` | `22` / `00` |
+| fdc61ea14bbd | deviceFunctionItemPillowDown / sustainPress | `6E 01 00 42 B1` / `6E 01 00 00 6F` | `42` / `00` |
+| fe4854c04187 | deviceFunctionItemFanChangeMode / shortPress | `6E 01 00 A2 11` / `6E 01 00 00 6F` | `A2` / `00` |
+| fe81a90583c6 | deviceFunctionItemMassageHeadInstensityStrengthen / shortPress | `6E 01 00 4C BB` / `6E 01 00 00 6F` | `49` / `00` |
+| ffb1a70dc13d | deviceFunctionItemZeroGravity / sustainPress | `6E 01 00 45 B4` / `6E 01 00 66 D5` | `45` / `66` |
+<!-- /generated -->
+
+#### Timing
+
+A sustained control first sends after 100 ms, then refreshes while held. Only
+those controls advertise renewable holds; a local memory latch can change a
+sustained action to one long operand. Short presses send on activation. Long and
+short-and-long gestures use the app's 3-second threshold. Release after an active
+short or sustained gesture sends the ordinary side-scoped STOP, using a fresh
+cleanup path that cancellation cannot suppress. Short-and-long and long gestures
+retain the app's absence of that automatic release. Explicit Stop always sends
+STOP. A command in flight cannot be retracted.
+
+Writes are serialized and paced at least 100 ms after completion. Home Assistant
+invalidates pending movement on cancellation rather than replaying the Android
+FIFO's stale movement. It checks the current connection again after pacing and
+ignores notifications from replaced links. There is no app-level automatic write
+retry, normal-message fragmentation or invented startup command. Notification
+remainders expire after 500 ms; malformed packets are discarded without blocking
+subsequent commands or publishing invented values.
+
+<!-- generated:galaxy-startup -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+Subscribe before initialization. Queue the applicable local time and sleep-name
+records, then check clock and light on the 300 ms menu schedule. Sync the two
+local time records only for a product with an alarm list; query the sleep
+advertisement name only for the nine BLE-enabled bed products. The catalog keeps
+each copied configuration’s own gates.
+
+| Step | Framed / Nordic |
+|---|---|
+| Check clock | `6E 08 01 01 78` / `01` |
+| Check light | `6E 0A 00 01 79` / `01` |
+<!-- /generated -->
+
+#### Notifications
+
+The Galaxy bed status sensor exposes decoded events as attributes, including
+motor/angle records, massage, lights, lock, fan, heating, atomization, alarm
+acknowledgements and records, diagnostics and bed sleep-advertisement metadata.
+Raw values retain their reported numbering and units; they do not create assumed
+percentage sliders. Atomization retains both timer bytes. Empty blanket models
+remain empty rather than reporting computations the app never stored. Diagnostic
+and audio-related replies remain observable without starting phone audio or
+creating separate accessory integrations.
+
+Clock replies enable the alarm menu only when the current product has an alarm
+list; PNRN also has its initial menu exception. Light replies require the current
+product's light flag. The first admitted ASCII sleep-name reply is cached until
+the link is reset. Only the nine BLE-enabled bed products admit it; the six
+HNRN/HQRN/HSRN/HURN/M7RN/MJRN products also admit the bed's anti-snore settings.
+Parser press-mode events do not change the local release, hold or memory flags.
+
+Separate sleep monitors, network setup, cloud accounts, firmware updates, desk
+screens and standalone accessories are not part of this bed profile. Their
+shared framing cannot stall the bed notification stream.
+
+#### Services
+
+`adjustable_bed.galaxy` provides product-gated alarm scheduling/cancellation,
+repeat slots, time synchronization, RGB, light timeout/off, massage countdown and
+bed anti-snore settings. Use `single`, `cancel_single`, `repeat`, `delete`,
+`alarms`, `enable_alarm`, `sync`, `light_color`, `light_duration`, `light_off`, `massage_timer`,
+`snore_switch`, `snore_count`, `snore_time` or `snore_query`. Alarm writes take an
+exact action ID from the selected product's alarm list. Repeat alarms use slots
+1 through 7, Monday 0 through Sunday 6, and an explicit enable flag. `enable_alarm` changes an observed slot’s enabled bit while preserving all six received fields, including the reserved field and weekday mask. Query `alarms` first. Validating
+all targets precedes execution; connection-time capability replies are checked
+again before a feature write. A freshly connected bed must report the relevant
+capability before that setting is used.
+
+The advanced settings use the Galaxy length-before-domain record form, distinct
+from the length-after-domain records other apps use. RGB remains two checksummed
+subframes in one write. No raw-command or separate-sensor service is exposed.
+
+<!-- generated:galaxy-settings -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Setting / query | Write |
+|---|---|
+| alarms | `6E 08 20 05 01 00 00 9C` |
+| sleep_name | `6E 08 20 06 03 00 00 9F` |
+| snore_switch | `6E 08 20 06 01 00 00 9D` |
+| snore_config | `6E 09 20 06 05 00 00 00 A2` |
+| snore on | `6E 09 20 06 01 01 00 01 A0` |
+| snore count 3 | `6E 0A 20 06 05 01 01 00 03 A8` |
+| snore time 15 | `6E 0A 20 06 05 01 02 00 0F B5` |
+| repeat slot 1, 07:30, mode 2, Mon/Sun enabled | `6E 0D 20 05 01 01 01 00 07 1E 02 83 4D` |
+| delete slot 3 | `6E 08 20 05 02 01 03 A1` |
+| light 300 seconds | `6E 0B 01 2C A6` |
+| red | `6E 0C FF FF 78 6E 0D 00 00 7B` |
+| D1RM massage countdown 0 min | `6E 01 00 5E CD` |
+| D1RM massage countdown 10 min | `6E 01 00 5F CE` |
+| D1RM massage countdown 20 min | `6E 01 00 63 D2` |
+| D1RM massage countdown 30 min | `6E 01 00 61 D0` |
+| D9RM massage countdown 0 min | `6E 01 00 8B FA` |
+| D9RM massage countdown 10 min | `6E 01 00 5F CE` |
+| D9RM massage countdown 20 min | `6E 01 00 63 D2` |
+| D9RM massage countdown 30 min | `6E 01 00 61 D0` |
+<!-- /generated -->
+
+#### Evidence
+
+Row A09's accepted whole-artifact reconciliation binds every selector to its
+current getters, installed copied configuration, screen route and session state.
+The 48,642 ordinary frozen literals are carried by `tests/fixtures/galaxy` and
+encoded by `codec/richmat.py`; focused tests also cover normal advanced builders,
+parsers, countdown commits and reconciled runtime transitions. This is static
+app evidence, not a claim of hardware validation. Real beta/release users can
+validate firmware, physical sides and release behavior with timestamped captures.
+
+Analysis provenance: `nl.starinternational.galaxy` 3.3.0 (330002), primary arm64
+artifact SHA-256 `9a0b0cca3d62c85a749a17cfacd772740f5b07be85687c491cf269ac85646bdb`;
+accepted reconciliation manifest
+`bb26a0b2a2d97af9e91b40dc83aaf2b7cd46c4753710aa1a2e797ffc64199b59`.
+Supplemental v7a delivery is not interchangeable evidence.

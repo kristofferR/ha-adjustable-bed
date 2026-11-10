@@ -17,6 +17,8 @@ from bleak.exc import BleakError
 from .app_families import FAMILY_STEP_ROUTES, family_row_label
 from .beds.doublesleep.protocol import discover as discover_doublesleep
 from .beds.fsm_relax.discovery import matches_fsm_relax_candidate
+from .beds.galaxy.catalog import PROFILE_CHOICES as GALAXY_PROFILES
+from .beds.galaxy.discovery import scan_matches as galaxy_scan_matches
 from .beds.goodvibe.catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
 from .beds.goodvibe.discovery import scan_matches as goodvibe_scan_matches
 from .beds.goodvibe.discovery import suggested_profile as goodvibe_suggested_profile
@@ -58,6 +60,7 @@ from .const import (
     BED_TYPE_ESHINE_OKIN,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
+    BED_TYPE_GALAXY,
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_GMMOTOR,
     BED_TYPE_GMMOTOR_SLEEP_MM,
@@ -579,6 +582,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OKIN_DOT: "Okin DOT (FurniMove RF1058/RF34/RF6707 remotes)",
     BED_TYPE_OKIN_FFE: "Okin FFE (13/15 series)",
     BED_TYPE_OKIN_ORE: "Okin ORE (legacy A5 5A)",
+    BED_TYPE_GALAXY: "Galaxy Bed Control app (choose product and remote)",
     BED_TYPE_GOODVIBE: "Good Vibe Sleep app (choose product or sleep sensor)",
     BED_TYPE_RICHMAT_CLASSIC_APPS: "Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior",
     BED_TYPE_MOTOMOTION: "MotoMotion app (exact Bluetooth name)",
@@ -676,6 +680,7 @@ APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
     **{("richmat_sleep_receiver", app): f"{label} separate sleep receiver"
        for app, label in (("wsilver2", "W.Silver Products"), ("americanstar", "AMERICANSTAR"),
                           ("bailey2", "Bailey's Bed Control"), ("tx", "TX"))},
+    **{(BED_TYPE_GALAXY, profile): f"Galaxy Bed Control ({label})" for profile, label in GALAXY_PROFILES.items()},
     **{(BED_TYPE_GOODVIBE, profile): f"Good Vibe Sleep ({label})" for profile, label in GOODVIBE_PROFILES.items()},
     **{(BED_TYPE_ESHINE_OKIN, profile): f"eShine app ({label})" for profile, label in ESHINE_OKIN_PROFILES.items()},
     **{(BED_TYPE_RICHMAT_CLASSIC_APPS, app): label for app, label in RICHMAT_CLASSIC_APPS.items()},
@@ -780,6 +785,7 @@ _HIDDEN_APP_ROWS: Final = frozenset(
         *((BED_TYPE_RICHMAT_CLASSIC_APPS, app) for app in RICHMAT_CLASSIC_APPS),
         # The Good Vibe Sleep products and HJBed products are answers of
         # their app's own question, behind one row each.
+        *((BED_TYPE_GALAXY, product) for product in GALAXY_PROFILES),
         *((BED_TYPE_GOODVIBE, product) for product in GOODVIBE_PROFILES),
         *((BED_TYPE_HJBED, product) for product in HJBED_PROFILES),
     }
@@ -788,7 +794,7 @@ _HIDDEN_APP_ROWS: Final = frozenset(
 HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_APP_ROWS)
 # Bed types whose one row asks for the product, although each product is an app entry.
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
-    {BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS}
+    {BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS}
 )
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
@@ -1245,7 +1251,7 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         For detailed detection with confidence scores, use detect_bed_type_detailed().
     """
     result = detect_bed_type_detailed(service_info)
-    if result.bed_type in (BED_TYPE_GOODVIBE, BED_TYPE_MOTOMOTION) and result.confidence < 0.7:
+    if result.bed_type in (BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MOTOMOTION) and result.confidence < 0.7:
         return None  # An app name hint requires an explicit product choice.
     return result.bed_type
 
@@ -1257,6 +1263,13 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     result = _detect_bed_type_with_app_candidates(service_info, first)
     # The app's scan filter is wider than the manifest gate, so it refines
     # advertisements another matcher admitted; it declares no hint of its own.
+    if galaxy_scan_matches(service_info.name) and result.bed_type != BED_TYPE_GALAXY and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ):
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_GALAXY, 0.3, ["name:galaxy_app_candidate", *result.signals])
+        else:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_GALAXY]))
     if goodvibe_scan_matches(service_info.name) and not any(
         signal.startswith("excluded:") for signal in result.signals
     ):

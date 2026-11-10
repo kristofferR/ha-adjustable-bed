@@ -32,6 +32,7 @@ from custom_components.adjustable_bed.codec import richmat as richmat_codec
 from custom_components.adjustable_bed.profiles import casper as casper_profiles
 from custom_components.adjustable_bed.profiles import hush as hush_profiles
 from custom_components.adjustable_bed.profiles import richmat as richmat_profiles
+from scripts.codec_docs import _galaxy
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
 GUIDE = "docs/beds/richmat.md"
@@ -50,6 +51,7 @@ _RICHMAT_NAMES = {
     "leggett_wilinke": "L&P MlRM",
     "hjbed": "HJBed",
     "eshine": "Eshine",
+    "galaxy": "Galaxy Bed Control",
     "goodvibe": "Good Vibe Sleep",
     "leggett_lp_legacy": "L&P legacy app",
     **{
@@ -121,6 +123,7 @@ def _richmat_profiles() -> dict[str, richmat_profiles.RichmatProfile]:
             richmat_profiles.ESHINE,
             *richmat_profiles.RICHMAT_MH.values(),
             *richmat_profiles.RICHMAT_CLASSIC.values(),
+            richmat_profiles.GALAXY,
             richmat_profiles.GOODVIBE,
             richmat_profiles.LP_LEGACY,
         )
@@ -146,6 +149,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
             profile.key: (_const.BED_TYPE_RICHMAT_CLASSIC_APPS,)
             for profile in richmat_profiles.RICHMAT_CLASSIC.values()
         },
+        "galaxy": (_const.BED_TYPE_GALAXY,),
         "goodvibe": (_const.BED_TYPE_GOODVIBE,),
         "leggett_lp_legacy": (_const.BED_TYPE_LEGGETT_LP_LEGACY,),
         # Each app's own products; the restored ones are choices on the same bed type.
@@ -163,7 +167,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
 
 
 def _catalog_kind(key: str) -> str:
-    if key in ("hjbed", "goodvibe"):
+    if key in ("hjbed", "galaxy", "goodvibe"):
         return "per-product catalog"
     if key == "eshine":
         return "[fixed E6000 table](#eshine-commands)"
@@ -1138,3 +1142,5 @@ BLOCKS: list[Block] = [
     (GUIDE, "casper-base-stored", render_casper_base_stored),
     (GUIDE, "hush-base-commands", render_hush_base_commands),
 ]
+
+BLOCKS += _galaxy.BLOCKS

@@ -24,6 +24,7 @@ from homeassistant.helpers.field_visibility import ConditionOperator, FieldCondi
 
 from .bed_traits import bed_type_has_position_feedback
 from .beds.ergomotion4.profiles import PRODUCT_CHOICES as ERGOMOTION4_PRODUCTS
+from .beds.galaxy.catalog import PROFILE_CHOICES as GALAXY_PROFILES
 from .beds.gmmotor.discovery import resolve_selection, selector_from_name
 from .beds.gmmotor.profiles import load_profile as load_gmmotor_profile
 from .beds.gmmotor.profiles import profile_choices as gmmotor_profile_choices
@@ -46,6 +47,7 @@ from .const import (
     BED_TYPE_ESHINE_OKIN,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
+    BED_TYPE_GALAXY,
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_GMMOTOR,
     BED_TYPE_GOODVIBE,
@@ -265,6 +267,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_COMFORT_ENHANCEMENTS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_ESHINE_OKIN: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_ESHINE: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
+    BED_TYPE_GALAXY: GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_GOODVIBE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_HJBED: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_GLIDEAWAY_MOTION: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -997,6 +1000,23 @@ def _gmmotor_errors(data: Mapping[str, Any]) -> dict[str, str]:
     if {"left": 0, "right": 1, "both": 2}.get(data.get(CONF_GMMOTOR_SIDE, "left")) not in profile.sides:
         return {CONF_GMMOTOR_SIDE: "gmmotor_side"}
     return {}
+
+
+def _galaxy_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .beds.galaxy.catalog import resolve_product
+    try:
+        resolve_product(data.get(CONF_PROTOCOL_VARIANT, ""))
+    except ValueError:
+        return {CONF_PROTOCOL_VARIANT: "invalid_variant"}
+    return {}
+
+
+def _galaxy_seed(data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
+    from .beds.galaxy.discovery import suggested_profile
+    if data.get(CONF_PROTOCOL_VARIANT) in GALAXY_PROFILES or discovered is None:
+        return {}
+    profile = suggested_profile(discovered.name)
+    return {CONF_PROTOCOL_VARIANT: profile} if profile is not None else {}
 
 
 def _goodvibe_seed(
@@ -2071,6 +2091,12 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         ),
     ),
     # The app's product sets every control, so its one row asks it.
+    BED_TYPE_GALAXY: _asking(
+        BED_TYPE_GALAXY,
+        questions=(Question(CONF_PROTOCOL_VARIANT, GALAXY_PROFILES, searchable=True),),
+        validate=_galaxy_errors,
+        seed=_galaxy_seed,
+    ),
     BED_TYPE_GOODVIBE: _asking(
         BED_TYPE_GOODVIBE,
         questions=(Question(CONF_PROTOCOL_VARIANT, GOODVIBE_PROFILES, searchable=True),),

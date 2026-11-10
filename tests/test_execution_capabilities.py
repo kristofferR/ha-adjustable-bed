@@ -221,6 +221,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "furnimove": {"hold": ("fm157",)},
     # Scoped to held controls whose effective gesture is a sustained press:
     # short, long and short-and-long gestures and memory mode keep theirs.
+    "galaxy": {"hold": ("galaxy",), "hold_controls": ("galaxy",)},
     "goodvibe": {"hold": ("goodvibe",), "hold_controls": ("goodvibe",)},
     # Scoped to the held controls that run the keep mode under the current
     # Hold/Release, memory-arm and head/foot selection (row066, five reports).
@@ -283,8 +284,8 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "beds/eshine_okin/controller.py:<module>.EshineOkinController": _ESHINE,
     "beds/furnimove/controller.py:<module>.FurniMoveController": ("furnimove",),
     "beds/furnimove/controller.py:<module>.FurniMoveController.execution": ("furnimove",),
-    "beds/goodvibe/controller.py:<module>.GoodVibeController": ("goodvibe",),
-    "beds/goodvibe/controller.py:<module>.GoodVibeController.execution": ("goodvibe",),
+    "beds/goodvibe/controller.py:<module>.GoodVibeController": ("goodvibe", "galaxy"),
+    "beds/goodvibe/controller.py:<module>.GoodVibeController.execution": ("goodvibe", "galaxy"),
     "beds/isleep.py:<module>.IsleepController": ("isleep",),
     "beds/isleep.py:<module>.IsleepController.execution": ("isleep",),
     "beds/jensen/controller.py:<module>.JensenController": ("jensen",),

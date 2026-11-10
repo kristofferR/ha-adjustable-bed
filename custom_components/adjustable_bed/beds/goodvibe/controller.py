@@ -21,6 +21,7 @@ from ...command_scheduler import CommandContext, current_command_context
 from ...controller_state import StateKey
 from ...execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ...profiles.richmat import GOODVIBE
+from ...profiles.richmat_catalog import Catalog
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController
 from ..builder import BuildContext
 from ..entity_specs import (
@@ -146,19 +147,23 @@ def _stop(side: int, link: Link) -> bytes:
 
 def label(action: Action) -> str:
     key = action.label.removeprefix("deviceFunctionItem").removeprefix("deviceFunctionSofa")
-    return re.sub(r"(?<!^)(?=[A-Z])", " ", key)
+    suffix = " (long action)" if action.force_long else ""
+    return re.sub(r"(?<!^)(?=[A-Z])", " ", key) + suffix
 
 
-def select_link(client: BleakClient, kind: int) -> Link:
+def select_link(client: BleakClient, kind: int, *, bind_framing: bool = False) -> Link:
     tx = rx = None
     legacy = False
+    candidate_legacy = False
     for service in client.services:
         uuid = service.uuid.lower()
         if kind == 1:
             pair = GATT.get(uuid)
             if pair is None:
                 continue
-            target, legacy = pair
+            target, candidate_legacy = pair
+            if not bind_framing:
+                legacy = candidate_legacy
         else:
             if uuid not in SLEEP_SERVICES:
                 continue
@@ -171,6 +176,8 @@ def select_link(client: BleakClient, kind: int) -> Link:
                     matches = char.uuid.lower() == target and "write" in char.properties
                 if matches:
                     tx = char
+                    if bind_framing and kind == 1:
+                        legacy = candidate_legacy
             if (
                 rx is None
                 and "notify" in char.properties
@@ -185,20 +192,32 @@ def select_link(client: BleakClient, kind: int) -> Link:
 class GoodVibeController(BedController):
     """A normal product or a separate RM-/HJ- sleep device, chosen explicitly."""
 
-    def __init__(self, coordinator: AdjustableBedCoordinator, *, profile: str) -> None:
+    def __init__(
+        self, coordinator: AdjustableBedCoordinator, *, profile: str, catalog: Catalog | None = None
+    ) -> None:
         super().__init__(coordinator)
-        if profile not in PRODUCTS and profile not in ("sleep_rm", "sleep_hj"):
+        self.catalog = catalog or Catalog(
+            "goodvibe", "Good Vibe Sleep", GOODVIBE, ACTIONS, PRODUCTS, ACTION_EXPANSIONS
+        )
+        self.actions = self.catalog.actions
+        self.record = self.catalog.record
+        self.queries = p.queries(self.record)
+        if profile not in self.catalog.products and (
+            catalog is not None or profile not in ("sleep_rm", "sleep_hj")
+        ):
             raise ValueError("Choose the exact product in Good Vibe Sleep")
-        self.profile = GOODVIBE
+        self.profile = self.catalog.wire
         self.product_key = profile
         self.kind = 2 if profile == "sleep_rm" else 3 if profile == "sleep_hj" else 1
-        self.product = PRODUCTS.get(profile)
+        self.product = self.catalog.products.get(profile)
 
         def initial() -> Choices:
             choices = Choices(
                 release=self.product is None
                 or self.product.label not in ("BRRM", "APRM", "YFRM", "YGRM")
             )
+            if runtime := self.catalog.runtimes.get(profile):
+                choices.release = runtime.initial_release
             if self.product is not None and self.product.light:
                 model = self.product.label.split(" / ")[0]
                 choices.events["light_duration"] = (
@@ -207,7 +226,7 @@ class GoodVibeController(BedController):
             return choices
 
         self.choices = app_session(
-            coordinator.hass, coordinator.address, ("goodvibe", profile), initial
+            coordinator.hass, coordinator.address, (self.catalog.key, profile), initial
         )
         self._address = coordinator.address
         self._link: Link | None = None
@@ -215,15 +234,28 @@ class GoodVibeController(BedController):
         self._expiry: asyncio.TimerHandle | None = None
         self._poll: asyncio.Task[None] | None = None
         self._followups: set[asyncio.Task[None]] = set()
-        self._normal = Notifications(self._event)
+        self._normal = Notifications(self._event, timer_pair=self.catalog.notification_menus)
         self._sleep = Receiver(self.kind) if self.kind != 1 else None
         self._pending_single: dict[str, object] | None = None
         self._report_ready = asyncio.Event()
         self._report_done = asyncio.Event()
         self._report_error: str | None = None
         self._report_context: tuple[int, int, int, int, int] | None = None
+        self._menus: set[str] = set()
+        self._last_write = 0.0
         self._last_event: str | None = None
         self._rejection: str | None = None
+
+    @property
+    def snore_available(self) -> bool:
+        if self.product is None:
+            return False
+        if self.catalog.notification_menus:
+            return self.catalog.runtimes[self.product_key].snore
+        return (
+            self.product.sleep != "deviceSleepMonitoringNone"
+            and self.product.label.split(" / ")[0] not in p.SNORE_MENU_EXCLUDED_MODELS
+        )
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -235,8 +267,10 @@ class GoodVibeController(BedController):
 
     @property
     def requires_persistent_connection(self) -> bool:
-        return super().requires_persistent_connection or self.choices.monitoring or (
-            self._sleep is not None and self._sleep.last in ("q_report", "q_report_allow")
+        return (
+            super().requires_persistent_connection
+            or self.choices.monitoring
+            or (self._sleep is not None and self._sleep.last in ("q_report", "q_report_allow"))
         )
 
     @property
@@ -273,7 +307,7 @@ class GoodVibeController(BedController):
 
     @property
     def persisted_app_state_key(self) -> str:
-        return "goodvibe:" + self.product_key
+        return self.catalog.key + ":" + self.product_key
 
     @property
     def persisted_app_state(self) -> Mapping[str, object]:
@@ -347,6 +381,7 @@ class GoodVibeController(BedController):
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
         return {
+            "app": self.catalog.key,
             "profile": self.product_key,
             "hardware_verified": False,
             "events": deepcopy(self.choices.events),
@@ -357,6 +392,25 @@ class GoodVibeController(BedController):
     def _event(self, name: str, value: object) -> None:
         self._last_event = name
         self.choices.events[name] = deepcopy(value)
+        if self.catalog.notification_menus and self.product is not None:
+            if name == "deviceCharacteristicsSubscriptionClockEvent" and self.product.alarms:
+                self._menus.add("alarm")
+            elif name == "deviceCharacteristicsSubscriptionLightEvent" and self.product.light:
+                self._menus.add("light")
+            elif name == "deviceSleepAdvNameEvent":
+                if self.product.sleep != "deviceSleepMonitoringBle" or "sleep" in self._menus:
+                    self._publish()
+                    return
+                if not isinstance(value, list) or any(
+                    type(v) is not int or not 0 <= v < 128 for v in value
+                ):
+                    self._rejection = "Invalid ASCII sleep advertisement name"
+                    self._publish()
+                    return
+                self._menus.add("sleep")
+                if self.snore_available:
+                    self._menus.add("snore")
+            self.choices.events["menus"] = sorted(self._menus)
         if name in (
             "deviceRepeatAlarmListStatusEvent",
             "deviceRepeatAlarmListEscalationStatusEvent",
@@ -397,6 +451,16 @@ class GoodVibeController(BedController):
             raise ConnectionError("Good Vibe Sleep session changed")
         return link
 
+    async def _pace(self, cleanup: bool) -> bool:
+        if self.catalog.notification_menus:
+            delay = TICK_MS / 1000 - (asyncio.get_running_loop().time() - self._last_write)
+            if delay > 0:
+                if cleanup:
+                    await asyncio.sleep(delay)
+                else:
+                    return await self._delay(max(1, int(delay * 1000)))
+        return True
+
     async def _send(
         self,
         data: bytes,
@@ -418,6 +482,17 @@ class GoodVibeController(BedController):
                 raise ConnectionError("Good Vibe Sleep link was replaced")
             if not cleanup and self._coordinator.cancel_command.is_set():
                 return False
+            # Pacing holds the wire lock; cancellation/link ownership are checked again.
+            if not await self._pace(cleanup):
+                return False
+            if self._current_link() is not link:
+                raise ConnectionError("Catalog link was replaced during pacing")
+            if not cleanup and self._coordinator.cancel_command.is_set():
+                return False
+            if release_gesture is not None and (
+                self._gesture is not release_gesture or not release_gesture.release_is_current
+            ):
+                return False
             response = self.kind == 3 or (
                 self.kind == 1 and "write-without-response" not in link.tx.properties
             )
@@ -428,12 +503,13 @@ class GoodVibeController(BedController):
                 response=response,
                 repeat_count=1,
                 repeat_delay_ms=0,
-                command_origin="goodvibe",
+                command_origin=self.catalog.key,
                 controller_class=type(self).__name__,
             )
             if on_submit is not None:
                 on_submit()
             await link.client.write_gatt_char(link.tx, data, response=response)
+            self._last_write = asyncio.get_running_loop().time()
         return True
 
     async def write_command(
@@ -528,7 +604,7 @@ class GoodVibeController(BedController):
                 ):
                     if operation == "alarms":
                         self.choices.events["repeat_alarms"] = {}
-                        await self._send(p.QUERIES["alarms"], link=link)
+                        await self._send(self.queries["alarms"], link=link)
                     else:
                         await self.sleep_request(operation)
 
@@ -554,22 +630,51 @@ class GoodVibeController(BedController):
             await self.stop_notify()
         else:
             self.on_disconnect()
-        link = select_link(client, self.kind)
+        link = (
+            select_link(client, self.kind, bind_framing=True)
+            if self.catalog.notification_menus
+            else select_link(client, self.kind)
+        )
         self._link = link
         try:
             await client.start_notify(link.rx, partial(self._notification, link))
             if self.kind == 1:
-                for step, (action, code) in enumerate(STARTUP):
-                    if step:
+                startup = STARTUP
+                time_sync = self.product is not None and bool(self.product.alarms)
+                sleep_query = (
+                    self.product is not None and self.product.sleep != "deviceSleepMonitoringNone"
+                )
+                if self.catalog.notification_menus:
+                    runtime = self.catalog.runtimes[self.product_key]
+                    names = {
+                        "check_clock": ("deviceFunctionItemCheckClock", 1),
+                        "check_light": ("deviceFunctionItemCheckLight", 1),
+                    }
+                    startup = tuple(names[name] for name in runtime.query_order)
+                    time_sync, sleep_query = runtime.time_sync, runtime.sleep_query
+                    self._menus = {"alarm"} if runtime.initial_alarm else set()
+                menu_started = asyncio.get_running_loop().time()
+                if self.catalog.notification_menus:
+                    if time_sync:
+                        for frame in p.sync_time(dt_util.now(), dt_util.now(), build=self.record):
+                            await self._send(frame, link=link)
+                    if sleep_query:
+                        await self._send(self.queries["sleep_name"], link=link)
+                for step, (action, code) in enumerate(startup):
+                    if self.catalog.notification_menus:
+                        due = menu_started + (step + 1) * MENU_PROBE_S
+                        await asyncio.sleep(max(0, due - asyncio.get_running_loop().time()))
+                    elif step:
                         await asyncio.sleep(MENU_PROBE_S)
                     await self._send(
                         codec.function(code, action=action, single=link.legacy), link=link
                     )
-                if self.product is not None and self.product.alarms:
-                    for frame in p.sync_time(dt_util.now(), dt_util.now()):
-                        await self._send(frame, link=link)
-                if self.product is not None and self.product.sleep != "deviceSleepMonitoringNone":
-                    await self._send(p.QUERIES["sleep_name"], link=link)
+                if not self.catalog.notification_menus:
+                    if time_sync:
+                        for frame in p.sync_time(dt_util.now(), dt_util.now(), build=self.record):
+                            await self._send(frame, link=link)
+                    if sleep_query:
+                        await self._send(self.queries["sleep_name"], link=link)
             else:
                 await asyncio.sleep(0.00015)
                 if self.kind == 3:
@@ -586,6 +691,10 @@ class GoodVibeController(BedController):
 
     def on_disconnect(self) -> None:
         self._gesture = None
+        self._menus.clear()
+        if self.catalog.notification_menus:
+            for key in ("repeat_alarms", "sleep_advertisement_name", "menus"):
+                self.choices.events.pop(key, None)
         for task in self._followups:
             task.cancel()
         self._followups.clear()
@@ -653,7 +762,7 @@ class GoodVibeController(BedController):
             tuple(
                 child
                 for detail in self.product.actions
-                for child in ACTION_EXPANSIONS.get(detail, (detail,))
+                for child in self.catalog.expansions.get(detail, (detail,))
             )
             if self.product is not None
             else ()
@@ -707,7 +816,7 @@ class GoodVibeController(BedController):
                 )
             )
         for detail in self.control_actions:
-            action = ACTIONS[detail]
+            action = self.actions[detail]
             if action.local:
                 continue
             key = "goodvibe_" + detail
@@ -746,7 +855,7 @@ class GoodVibeController(BedController):
     @property
     def held_control_options(self) -> tuple[str, ...]:
         return (
-            tuple("goodvibe_" + d for d in self.control_actions if not ACTIONS[d].local)
+            tuple("goodvibe_" + d for d in self.control_actions if not self.actions[d].local)
             if self.product
             else ()
         )
@@ -774,7 +883,7 @@ class GoodVibeController(BedController):
         controls = frozenset(
             control
             for control in self.held_control_options
-            if self._effective_gesture(ACTIONS[control.removeprefix("goodvibe_")])[0]
+            if self._effective_gesture(self.actions[control.removeprefix("goodvibe_")])[0]
             == "sustainPress"
         )
         if not controls:
@@ -810,7 +919,7 @@ class GoodVibeController(BedController):
     async def press(self, detail: str, duration: int) -> None:
         if self.product is None or detail not in self.control_actions or not 0 <= duration <= 60000:
             raise ValueError("Action is unavailable for this product")
-        action = ACTIONS[detail]
+        action = self.actions[detail]
         if action.local:
             raise ValueError("Use the configuration action for this local menu")
         gesture, memory = self._effective_gesture(action)
@@ -824,7 +933,7 @@ class GoodVibeController(BedController):
         # The artifact replaces flagged items with the None descriptor while its local release mode is off.
         substituted = (
             self.product.label in ("BRRM", "YFRM", "YGRM")
-            and not self.choices.release
+            and self.choices.release == self.catalog.substitute_when_release
             and action.force_long
         )
         frame = (
@@ -983,11 +1092,7 @@ class GoodVibeController(BedController):
 
     @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
-        if (
-            self.product is None
-            or self.product.sleep == "deviceSleepMonitoringNone"
-            or self.product.label.split(" / ")[0] in p.SNORE_MENU_EXCLUDED_MODELS
-        ):
+        if not self.snore_available:
             return ()
 
         async def count(controller: BedController, value: float) -> None:
@@ -1004,7 +1109,9 @@ class GoodVibeController(BedController):
 
             if value != int(value):
                 raise ValueError("Snore time must be an integer")
-            await selected(controller).async_execute_goodvibe_request(Request("snore_time", value=int(value)))
+            await selected(controller).async_execute_goodvibe_request(
+                Request("snore_time", value=int(value))
+            )
 
         return (
             ControllerNumberSpec(
@@ -1032,8 +1139,8 @@ class GoodVibeController(BedController):
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         specs = [
             ControllerStateSensorSpec(
-                "goodvibe_status",
-                "goodvibe_status",
+                "galaxy_status" if self.catalog.key == "galaxy" else "goodvibe_status",
+                "galaxy_status" if self.catalog.key == "galaxy" else "goodvibe_status",
                 STATUS,
                 "mdi:bed",
                 attribute_keys=(

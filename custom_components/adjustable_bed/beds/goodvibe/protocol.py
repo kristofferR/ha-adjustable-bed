@@ -23,7 +23,7 @@ def action_frame(action: Action, side: int, legacy: bool, long: bool = False) ->
     if side not in (0, 1, 2):
         raise ValueError("Invalid Good Vibe side")
     code = action.long if long else action.legacy_short if legacy else action.short
-    return codec.function(code, side, single=legacy)
+    return codec.function(code, side, single=legacy, action=action.label)
 
 
 def clock(minutes: int, code: int) -> tuple[bytes, bytes]:
@@ -37,32 +37,46 @@ def light_duration(seconds: int) -> bytes:
     return codec.light_timer(*((0xFF, 0xFF) if seconds == 0 else divmod(seconds, 256)))
 
 
-def snore_config(count: bool, value: int) -> bytes:
-    return codec.record_20_len(6, 5, 1, (1 if count else 2, 0, value))
+def snore_config(count: bool, value: int, *, build: codec.Record = codec.record_20_len) -> bytes:
+    return build(6, 5, 1, (1 if count else 2, 0, value))
 
 
-def snore_switch(enabled: bool) -> bytes:
-    return codec.record_20_len(6, 1, 1, (0, int(enabled)))
+def snore_switch(enabled: bool, *, build: codec.Record = codec.record_20_len) -> bytes:
+    return build(6, 1, 1, (0, int(enabled)))
 
 
-def repeat_alarm(number: int, hour: int, minute: int, code: int, mask: int) -> bytes:
-    return codec.record_20_len(5, 1, 1, (number, 0, hour, minute, code, mask))
+def repeat_alarm(
+    number: int,
+    hour: int,
+    minute: int,
+    code: int,
+    mask: int,
+    *,
+    build: codec.Record = codec.record_20_len,
+) -> bytes:
+    return build(5, 1, 1, (number, 0, hour, minute, code, mask))
 
 
-def delete_alarm(number: int) -> bytes:
-    return codec.record_20_len(5, 2, 1, (number,))
+def delete_alarm(number: int, *, build: codec.Record = codec.record_20_len) -> bytes:
+    return build(5, 2, 1, (number,))
 
 
-def sync_time(now: datetime, offset_now: datetime | None = None) -> tuple[bytes, bytes]:
-    return codec.time_sync(now, offset_now, build=codec.record_20_len)
+def sync_time(
+    now: datetime, offset_now: datetime | None = None, *, build: codec.Record = codec.record_20_len
+) -> tuple[bytes, bytes]:
+    return codec.time_sync(now, offset_now, build=build)
 
 
-QUERIES = {
-    "alarms": codec.record_20_len(5, 1, 0, (0,)),
-    "sleep_name": codec.record_20_len(6, 3, 0, (0,)),
-    "snore_switch": codec.record_20_len(6, 1, 0, (0,)),
-    "snore_config": codec.record_20_len(6, 5, 0, (0, 0)),
-}
+def queries(build: codec.Record) -> dict[str, bytes]:
+    return {
+        "alarms": build(5, 1, 0, (0,)),
+        "sleep_name": build(6, 3, 0, (0,)),
+        "snore_switch": build(6, 1, 0, (0,)),
+        "snore_config": build(6, 5, 0, (0, 0)),
+    }
+
+
+QUERIES = queries(codec.record_20_len)
 
 
 def memory_eligible(model: str, action: str) -> bool:

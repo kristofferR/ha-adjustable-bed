@@ -280,3 +280,6 @@ ESHINE: Final = RichmatProfile(
 # ``beds/leggett/lp_legacy_catalog.py``. It writes to the characteristics the user
 # configures, so it drives none of the codec's transports.
 LP_LEGACY: Final = RichmatProfile(key="leggett_lp_legacy", transports=())
+
+# Galaxy Bed Control 3.3.0 (row A09), literal-vector verified independently.
+GALAXY: Final = RichmatProfile(key="galaxy", transports=("w1", "n1", "w5", "w4", "w3", "w2"))

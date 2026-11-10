@@ -20,6 +20,7 @@ _VARIANTS = {
     "richmat_prefix55": const.RICHMAT_VARIANT_PREFIX55,
     "richmat_prefixaa": const.RICHMAT_VARIANT_PREFIXAA,
     "hjbed": "hj_bedbjrn",
+    "galaxy": "6BRM",
     "goodvibe": "selector-0001",
     **{f"richmat_classic_{app}": app for app in RICHMAT_CLASSIC},
 }
@@ -65,6 +66,7 @@ FAMILY = CodecFamily(
             "bedtech",
             "casper_base",
             "eshine",
+            "galaxy",
             "goodvibe",
             "hjbed",
             "hush_base",

@@ -7,34 +7,7 @@ All 12 byte alternatives per action are checked against independent artifact vec
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
-
-@dataclass(frozen=True, slots=True)
-class Action:
-    label: str
-    gesture: str
-    local: bool
-    force_long: bool
-    memory_toggle: bool
-    flagged: bool
-    short: int
-    long: int
-    legacy_short: int
-
-
-@dataclass(frozen=True, slots=True)
-class Product:
-    label: str
-    actions: tuple[str, ...]
-    alarms: tuple[str, ...]
-    sides: tuple[int, ...]
-    light: bool
-    light_display: str
-    repeat_alarm: bool
-    sleep: str
-    massage_timer: bool
-
+from ...profiles.richmat_catalog import Action, Product
 
 # One record per exact descriptor/profile; full command tables are linked from the guide.
 # fmt: off

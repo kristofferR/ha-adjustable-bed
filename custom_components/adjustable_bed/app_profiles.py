@@ -34,6 +34,7 @@ from .const import (
     BED_TYPE_ESHINE_OKIN,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
+    BED_TYPE_GALAXY,
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_GOODVIBE,
     BED_TYPE_HJBED,
@@ -152,6 +153,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_COMFORT_ENHANCEMENTS: SideProfile(
         "Comfort Enhancements", frozenset({CONF_HAS_MASSAGE}), variant_owned=True
     ),
+    BED_TYPE_GALAXY: SideProfile("Galaxy Bed Control", variant_owned=True),
     BED_TYPE_GOODVIBE: SideProfile("Good Vibe Sleep", variant_owned=True),
     BED_TYPE_RICHMAT_CLASSIC_APPS: SideProfile("Classic Richmat apps", variant_owned=True),
     BED_TYPE_MOTOMOTION: SideProfile("MotoMotion"),

@@ -18,7 +18,6 @@ from ...const import DOMAIN
 from ...import_executor import async_import_modules
 from ...services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
 from . import protocol as p
-from .catalog import ACTIONS
 
 if TYPE_CHECKING:
     from .controller import GoodVibeController
@@ -61,9 +60,11 @@ class Request:
     part: int | None = None
     date: date | None = None
     report_type: int = 1
+    alarm_fields: tuple[int, ...] = ()
 
-    def validate(self, controller: GoodVibeController) -> None:
-        if self.operation not in OPERATIONS:
+    def validate(self, controller: GoodVibeController, *, reported: bool = True) -> None:
+        operations = BED_OPERATIONS if controller.catalog.key == "galaxy" else OPERATIONS
+        if self.operation not in operations:
             raise ValueError("Unknown Good Vibe Sleep action")
         product = controller.product
         if product is None:
@@ -111,6 +112,19 @@ class Request:
             "sensitivity",
         ):
             raise ValueError("Add the independent sleep device with an RM- or HJ- profile")
+        if reported and controller.catalog.notification_menus:
+            menu = (
+                "light"
+                if self.operation.startswith("light_")
+                else "alarm"
+                if self.operation
+                in ("single", "cancel_single", "repeat", "delete", "alarms", "enable_alarm")
+                else "snore"
+                if self.operation.startswith("snore_")
+                else None
+            )
+            if menu is not None and menu not in controller._menus:
+                raise ValueError("The connected bed has not advertised this product capability")
         if self.operation in ("light_color", "light_duration", "light_off") and not product.light:
             raise ValueError("The selected product has no light menu")
         if self.operation == "massage_timer" and (
@@ -129,11 +143,15 @@ class Request:
         ):
             raise ValueError("Choose one of this product's app light durations")
         if (
-            self.operation in ("single", "cancel_single", "repeat", "delete", "alarms")
+            self.operation
+            in ("single", "cancel_single", "repeat", "delete", "alarms", "enable_alarm")
             and not product.alarms
         ):
             raise ValueError("The selected product has no alarm menu")
-        if self.operation in ("repeat", "delete", "alarms") and not product.repeat_alarm:
+        if (
+            self.operation in ("repeat", "delete", "alarms", "enable_alarm")
+            and not product.repeat_alarm
+        ):
             raise ValueError("The selected product does not offer repeat alarms")
         if self.operation in ("single", "repeat"):
             if (
@@ -144,6 +162,10 @@ class Request:
                 raise ValueError("Choose an exact alarm action and a timezone-aware date/time")
         if self.alarm_id is not None and not 1 <= self.alarm_id <= 7:
             raise ValueError("Alarm number must be 1–7")
+        if self.operation == "enable_alarm":
+            if self.enabled is None or self.alarm_id is None:
+                raise ValueError("Choose an observed alarm and its enabled state")
+            self.observed_alarm(controller)
         if self.operation == "delete" and self.alarm_id is None:
             raise ValueError("Choose the alarm to delete")
         if self.operation == "repeat" and self.alarm_id is None:
@@ -151,8 +173,7 @@ class Request:
         if any(day not in range(7) for day in self.weekdays):
             raise ValueError("Invalid weekday")
         if self.operation in ("snore_switch", "snore_count", "snore_time", "snore_query") and (
-            product.sleep == "deviceSleepMonitoringNone"
-            or product.label.split(" / ")[0] in p.SNORE_MENU_EXCLUDED_MODELS
+            not controller.snore_available
         ):
             raise ValueError("This product does not expose the BLE sleep/snore menu")
         if self.operation == "snore_switch" and self.enabled is None:
@@ -161,6 +182,19 @@ class Request:
             raise ValueError("Snore count must be 1–30")
         if self.operation == "snore_time" and self.value not in (5, 10, 15, 20, 25, 30):
             raise ValueError("Snore time must be 5–30 in steps of five")
+
+    def observed_alarm(self, controller: GoodVibeController) -> tuple[int, ...]:
+        if self.alarm_fields:
+            return self.alarm_fields
+        records = controller.choices.events.get("repeat_alarms")
+        value = records.get(str(self.alarm_id)) if isinstance(records, dict) else None
+        if (
+            not isinstance(value, (list, tuple))
+            or len(value) != 6
+            or any(type(v) is not int or not 0 <= v <= 255 for v in value)
+        ):
+            raise ValueError("Query the current alarm list before changing its enabled state")
+        return tuple(value)
 
     def repeat_slot(self, controller: GoodVibeController) -> int:
         if self.alarm_id is not None:
@@ -174,15 +208,25 @@ class Request:
 
     def plan(self, controller: GoodVibeController) -> Request:
         """Freeze an automatic allocation while all targets are still in preflight."""
-        self.validate(controller)
+        client = controller.client
+        self.validate(controller, reported=client is not None and client.is_connected)
+        if self.operation == "enable_alarm":
+            return replace(self, alarm_fields=self.observed_alarm(controller))
         if self.operation == "repeat" and self.alarm_id is None:
             return replace(self, alarm_id=self.repeat_slot(controller))
         return self
 
     def frames(self, controller: GoodVibeController) -> tuple[bytes, ...]:
         op = self.operation
+        if op == "enable_alarm":
+            fields = self.observed_alarm(controller)
+            return (
+                controller.record(
+                    5, 1, 1, (*fields[:-1], fields[-1] & 0xFE | int(self.enabled is True))
+                ),
+            )
         if op == "sync":
-            return p.sync_time(dt_util.now(), dt_util.now())
+            return p.sync_time(dt_util.now(), dt_util.now(), build=controller.record)
         if op == "light_color":
             assert self.rgb is not None
             return (codec.rgb(*self.rgb),)
@@ -194,26 +238,28 @@ class Request:
                 code = p.LIGHT_OFF
             else:
                 assert self.value is not None
-                code = p.MASSAGE_TIMER[self.value]
+                code = controller.catalog.timer_codes.get(controller.product_key, p.MASSAGE_TIMER)[
+                    self.value
+                ]
             return (
                 codec.function(code, controller._side(), single=controller._current_link().legacy),
             )
         if op == "snore_switch":
-            return (p.snore_switch(bool(self.enabled)),)
+            return (p.snore_switch(bool(self.enabled), build=controller.record),)
         if op in ("snore_count", "snore_time"):
             assert self.value is not None
-            return (p.snore_config(op == "snore_count", self.value),)
+            return (p.snore_config(op == "snore_count", self.value, build=controller.record),)
         if op == "snore_query":
-            return (p.QUERIES["snore_config"], p.QUERIES["snore_switch"])
+            return (controller.queries["snore_config"], controller.queries["snore_switch"])
         if op == "alarms":
-            return (p.QUERIES["alarms"],)
+            return (controller.queries["alarms"],)
         if op == "delete":
             assert self.alarm_id is not None
-            return (p.delete_alarm(self.alarm_id),)
+            return (p.delete_alarm(self.alarm_id, build=controller.record),)
         if op == "cancel_single":
             return p.clock(0, 0)
         assert self.when is not None and self.action is not None
-        code = ACTIONS[self.action].short
+        code = controller.actions[self.action].short
         if op == "single":
             now = dt_util.now().replace(second=0, microsecond=0)
             minutes = int(
@@ -225,7 +271,11 @@ class Request:
             return p.clock(minutes, code)
         mask = int(self.enabled is not False) + sum(1 << (7 - day) for day in set(self.weekdays))
         number = self.repeat_slot(controller)
-        return (p.repeat_alarm(number, self.when.hour, self.when.minute, code, mask),)
+        return (
+            p.repeat_alarm(
+                number, self.when.hour, self.when.minute, code, mask, build=controller.record
+            ),
+        )
 
 
 FIELDS: dict[vol.Marker, object] = {
@@ -249,6 +299,8 @@ FIELDS: dict[vol.Marker, object] = {
 }
 FIELDS.update(SIDE_FIELD.items())
 SCHEMA = vol.Schema(FIELDS)
+BED_OPERATIONS = (*OPERATIONS[:14], "enable_alarm")
+GALAXY_SCHEMA = SCHEMA.extend({vol.Required("operation"): vol.In(BED_OPERATIONS)})
 
 
 async def handle_goodvibe(call: ServiceCall) -> None:
@@ -272,6 +324,8 @@ async def handle_goodvibe(call: ServiceCall) -> None:
     plans: dict[tuple[str, str], Request] = {}
 
     def validate(target: GoodVibeController) -> None:
+        if target.catalog.key != call.service:
+            raise ServiceValidationError("Choose the action for the target's app")
         plans[(target._address.upper(), target.product_key)] = request.plan(target)
 
     async def execute(target: GoodVibeController) -> None:
@@ -291,3 +345,4 @@ async def handle_goodvibe(call: ServiceCall) -> None:
 
 def async_register_goodvibe_services(hass: HomeAssistant) -> None:
     hass.services.async_register(DOMAIN, "goodvibe", handle_goodvibe, schema=SCHEMA)
+    hass.services.async_register(DOMAIN, "galaxy", handle_goodvibe, schema=GALAXY_SCHEMA)

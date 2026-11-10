@@ -681,6 +681,17 @@ the distinct wire builders and raw-data limitations.
 
 `adjustable_bed.hjbed` exposes product-gated single/repeat alarms, alarm query/delete/toggle, clock synchronization, light timeout/RGB and Normal-layout control mode. Use the exact product alarm action key. All targets validate before writing; feature acknowledgements cannot override static profile flags. See the [operation fields and eligibility](beds/richmat.md#hjbed).
 
+### Galaxy Bed Control configuration
+
+`adjustable_bed.galaxy` configures the selected Galaxy bed's alarms, lights,
+massage countdown and bed anti-snore settings. It uses the same fields as the
+bed settings of `goodvibe`, with Galaxy's own product gates and record format.
+Choose exact alarm action IDs from the [Galaxy command table](beds/richmat.md#galaxy-bed-control).
+Relevant capability replies must have arrived on the current connection.
+`enable_alarm` takes an observed `alarm_id` and `enabled`, preserving the
+received time, action, reserved field and weekday mask.
+Separate sleep-sensor operations are not offered.
+
 ### Good Vibe Sleep configuration
 
 `adjustable_bed.goodvibe` exposes product-gated alarm, light and snore settings plus independent sleep-sensor queries. Select an exact alarm action ID from the [command/profile tables](beds/richmat.md#alarms-and-snore-settings). Sleep reports use `operation: report`, a date, part and report type (1 day, 2 month); metadata, continuation and typed receipt form one operation. The status sensor retains typed reports and per-side live values. Use the app-labelled buttons for normal controls and the existing bounded `hold_control` action for held gestures. See the [protocol guide](beds/richmat.md#good-vibe-sleep) for every packet, profile gate and lifecycle limit.

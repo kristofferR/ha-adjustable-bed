@@ -13,7 +13,7 @@ from ...codec import richmat as codec
 Event = tuple[str, object]
 
 
-def extended(b: list[int]) -> list[Event]:
+def extended(b: list[int], *, timer_pair: bool = False) -> list[Event]:
     if b[2] != len(b):
         return []
     domain, sub, op = b[3:6]
@@ -139,7 +139,7 @@ def extended(b: list[int]) -> list[Event]:
         if sub == 1 and b[2] > 7:
             result.append(("deviceAtomizationOpenStatusEvent", b[7]))
         if sub == 2 and b[2] > 8:
-            result.append(("deviceAtomizationTimeStatusEvent", b[8]))
+            result.append(("deviceAtomizationTimeStatusEvent", b[7:9] if timer_pair else b[8]))
     elif domain == 17:
         if sub == 2 and b[2] > 8:
             raw = b[7] << 8 | b[8]
@@ -176,6 +176,8 @@ def extended(b: list[int]) -> list[Event]:
                     {"type": "RMDeviceBlacketDetailsModel", "fields": {}},
                 )
             )
+    elif domain == 15:
+        pass  # Standalone desk state has no bed consumer; keep stream progress.
     else:
         raise NotImplementedError(f"domain {domain} not yet transcribed")
     return result
@@ -269,8 +271,9 @@ def common(b: list[int]) -> list[Event]:
 class Notifications:
     """Retained framing with the shipped 500 ms partial-record expiry."""
 
-    def __init__(self, emit: Callable[[str, object], None]) -> None:
+    def __init__(self, emit: Callable[[str, object], None], *, timer_pair: bool = False) -> None:
         self.emit = emit
+        self.timer_pair = timer_pair
         self.buffer = bytearray()
         self.rejection: str | None = None
 
@@ -313,7 +316,7 @@ class Notifications:
                 if code == 0x20:
                     if len(frame) < 7 or not codec.is_valid(bytes(frame)):
                         continue
-                    events = extended(frame)
+                    events = extended(frame, timer_pair=self.timer_pair)
                 else:
                     events = common(frame)
                 for event, value in events:

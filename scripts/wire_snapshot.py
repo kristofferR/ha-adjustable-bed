@@ -1180,6 +1180,7 @@ def default_scenario(bed_type: str) -> Scenario:
         const.BED_TYPE_GLIDEAWAY_MOTION: "motion_400",
         const.BED_TYPE_ZSERIES: const.ZSERIES_VARIANT_Z230,
         const.BED_TYPE_RICHMAT: const.RICHMAT_VARIANT_WILINKE,
+        const.BED_TYPE_GALAXY: "6BRM",
         const.BED_TYPE_HJBED: "hj_bedbjrn",
         const.BED_TYPE_DOUBLESLEEP: "p1",
         const.BED_TYPE_RICHMAT_CLASSIC_APPS: "avocadoecobase",
@@ -1199,6 +1200,8 @@ def default_scenario(bed_type: str) -> Scenario:
         }
     if bed_type == const.BED_TYPE_SLEEPTRACKER:
         data[const.CONF_PRODUCT_TYPE] = "unknown"
+    if bed_type == const.BED_TYPE_GALAXY:
+        replies = GALAXY_REPLIES
     if bed_type == const.BED_TYPE_RICHMAT_CLASSIC_APPS:
         data[const.CONF_PRODUCT_TYPE] = "GORM"  # three app modes
     if bed_type == const.BED_TYPE_SLEEPYS_ELITE_APP:
@@ -1397,6 +1400,16 @@ def route_scenarios() -> list[Scenario]:
                     layout_id="ergomotion_4",
                 )
             )
+    if "galaxy" in const.SUPPORTED_BED_TYPES:
+        for product, layout in (
+            ("6BRM", "galaxy_nordic"), ("APRM", "galaxy"),
+            ("E3RM", "galaxy"), ("HNRN", "galaxy"),
+            ("RNRN/splitHead", "galaxy"), ("D1RM", "galaxy"), ("Y6RM", "galaxy"),
+        ):
+            scenarios.append(Scenario(
+                id=f"galaxy:{product}" + (":nordic" if layout == "galaxy_nordic" else ""),
+                bed_type="galaxy", protocol_variant=product, layout_id=layout, replies=GALAXY_REPLIES,
+            ))
     # Good Vibe Sleep: products by gesture mix and native sides, the legacy
     # single-byte link, and the two independent sleep sensors.
     if "goodvibe" in const.SUPPORTED_BED_TYPES:
@@ -1463,6 +1476,14 @@ CLASSIC_ROUTES: tuple[tuple[str, str, str], ...] = (
 
 # Product key and stored layout. 6ERM mixes sustained, short and short-and-long
 # presses on one side; ACRN offers sides 0 and 1, BTRM also the native side 2.
+GALAXY_REPLIES = {
+    "write:6e08010178": "6e09010078",
+    "write:6e0a000179": "6e0e00037f",
+    "write:01": "6e090100786e0e00037f",
+    "write:6e0820060300009f": "6e200f06030200484a2d54455354a7",
+}
+
+
 GOODVIBE_ROUTES: tuple[tuple[str, str], ...] = (
     ("selector-0004", "goodvibe"),
     ("selector-0004", "goodvibe_nordic"),

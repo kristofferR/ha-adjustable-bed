@@ -4476,6 +4476,9 @@
       },
       "ruf_richmat_music_status": {
         "name": "Bed audio status"
+      },
+      "galaxy_status": {
+        "name": "Galaxy bed status"
       }
     },
     "light": {
@@ -8082,6 +8085,48 @@
         },
         "side": {
           "name": "Paired bed side"
+        }
+      }
+    },
+    "galaxy": {
+      "name": "Galaxy Bed Control configuration",
+      "description": "Configure the selected Galaxy bed’s admitted alarm, light and anti-snore controls. Separate sleep sensors are not bed controls.",
+      "fields": {
+        "device_id": {
+          "name": "Bed or sleep sensor"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "operation": {
+          "name": "Action"
+        },
+        "action": {
+          "name": "Exact alarm action ID"
+        },
+        "datetime": {
+          "name": "Alarm date and time",
+          "description": "ISO 8601 with a timezone offset."
+        },
+        "alarm_id": {
+          "name": "Alarm slot"
+        },
+        "weekdays": {
+          "name": "Repeat weekdays",
+          "description": "Monday is 0, Sunday is 6. Empty means no repeat days."
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "seconds": {
+          "name": "Light duration",
+          "description": "Zero uses the app's always-on value."
+        },
+        "rgb_color": {
+          "name": "Light color"
+        },
+        "value": {
+          "name": "Value (massage minutes or snore setting)"
         }
       }
     }

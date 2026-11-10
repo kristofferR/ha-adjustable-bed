@@ -262,6 +262,9 @@ async def _create_controller_for_bed_type(
         coordinator.entry.options = {}
         coordinator.entry.entry_id = "contract-fsm-relax"
         return await create_controller(coordinator, bed_type, variant, client)
+    if bed_type == const.BED_TYPE_GALAXY:
+        selected = variant or "6BRM"
+        return await create_controller(coordinator, bed_type, selected, client)
     if bed_type == const.BED_TYPE_GOODVIBE:
         return await create_controller(coordinator, bed_type, variant or "selector-0001", client)
     if bed_type == const.BED_TYPE_ESHINE_OKIN:

@@ -8,6 +8,7 @@ from typing import Any
 
 from homeassistant.core import HomeAssistant
 
+from .beds.galaxy.catalog import PROFILE_CHOICES as GALAXY_PROFILES
 from .beds.goodvibe.catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
 from .beds.hjbed.catalog import PROFILE_CHOICES as HJBED_PROFILES
 from .beds.reverie.profiles import REVERIE_MODEL_CHOICES
@@ -24,6 +25,7 @@ from .const import (
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ESHINE_OKIN,
+    BED_TYPE_GALAXY,
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_GOODVIBE,
     BED_TYPE_HJBED,
@@ -116,6 +118,7 @@ def is_valid_octo_pin(pin: str) -> bool:
 
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
+    BED_TYPE_GALAXY: GALAXY_PROFILES,
     BED_TYPE_GOODVIBE: GOODVIBE_PROFILES,
     BED_TYPE_RICHMAT_CLASSIC_APPS: RICHMAT_CLASSIC_APPS,
     BED_TYPE_HJBED: HJBED_PROFILES,

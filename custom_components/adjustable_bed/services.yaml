@@ -3260,3 +3260,81 @@ richmat_app_alarm:
               value: "5"
             - label: Sunday
               value: "6"
+
+galaxy:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options:
+          - left
+          - right
+          - both
+    operation:
+      required: true
+      selector:
+        select:
+          options:
+          - single
+          - cancel_single
+          - repeat
+          - enable_alarm
+          - delete
+          - alarms
+          - sync
+          - light_color
+          - light_duration
+          - light_off
+          - massage_timer
+          - snore_switch
+          - snore_count
+          - snore_time
+          - snore_query
+    action:
+      selector:
+        text: null
+    datetime:
+      selector:
+        text: null
+    alarm_id:
+      selector:
+        number:
+          min: 1
+          max: 7
+          mode: box
+    weekdays:
+      selector:
+        select:
+          multiple: true
+          options:
+          - '0'
+          - '1'
+          - '2'
+          - '3'
+          - '4'
+          - '5'
+          - '6'
+    enabled:
+      selector:
+        boolean: null
+    seconds:
+      selector:
+        number:
+          min: 0
+          max: 65535
+          mode: box
+    rgb_color:
+      selector:
+        color_rgb: null
+    value:
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
