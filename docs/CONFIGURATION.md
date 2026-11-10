@@ -985,3 +985,13 @@ dialog_config:
 - **Having connection issues?** See [Troubleshooting](TROUBLESHOOTING.md)
 - **Want to learn about your bed's protocol?** See [Supported Actuators](SUPPORTED_ACTUATORS.md)
 - **Setting up Bluetooth?** See [Connection Guide](CONNECTION_GUIDE.md)
+
+### Rize Beds 1.4.2
+
+Choose **Rize Beds app (Kaidi, 1.4.2)** and confirm the product, signed BLE room
+ID and actuator descriptor suggested by its advertisement. These settings
+belong to each physical side of a two-address pair. The product sets the axes,
+massage and optional controls; nominal motor counts do not enable extra
+commands. Clarity's descriptor selects its movement and matching release
+mapping. Existing Kaidi entries retain their route until reconfigured. See the
+[Rize profile](beds/kaidi.md#rize-beds), including hardware-validation status.

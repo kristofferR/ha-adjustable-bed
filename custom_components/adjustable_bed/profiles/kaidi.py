@@ -601,3 +601,121 @@ def add_isleep_metadata(data: Mapping[str, object], manufacturer_data: Mapping[i
             room = ad.room_id if ad.room_id < 2**31 else ad.room_id - 2**32
             result.setdefault(CONF_KAIDI_ROOM_ID, room)
     return result
+
+
+# Rize Beds 1.4.2 (57), accepted unit149. Independently frozen table, not
+# aliases of the older Seat or ISleep profiles. Column order is left/right/both.
+RIZE_PRODUCTS: Final = {
+    129: "Single", 130: "Double 2/4", 131: "Single 3", 132: "Single 4",
+    133: "Double 3", 134: "Double 4", 135: "Remedy 3", 136: "Remedy 4",
+    137: "Contemporary 4", 138: "Contemporary 5", 140: "Remedy Pro 4", 141: "Clarity",
+}
+RIZE_COMMANDS: Final[Mapping[str, tuple[int, int, int]]] = {
+    "head_up": (1, 10, 19), "head_down": (2, 11, 20), "head_stop": (3, 12, 21),
+    "legs_up": (4, 13, 22), "legs_down": (5, 14, 23), "legs_stop": (6, 15, 24),
+    "all_up": (7, 16, 25), "all_down": (8, 17, 26), "all_stop": (9, 18, 27),
+    "flat": (28, 29, 30),
+    "save_1": (37, 45, 53), "save_2": (38, 46, 54), "save_3": (39, 47, 55),
+    "memory_1": (41, 49, 57), "memory_2": (42, 50, 58), "memory_3": (43, 51, 59),
+    "massage_on": (71, 73, 75), "massage_off": (72, 74, 76),
+    "head_strength": (77, 78, 81), "foot_strength": (79, 79, 79),
+    "timer_1": (83, 86, 89), "timer_2": (84, 87, 90), "timer_3": (85, 88, 91),
+    "light_on": (92, 94, 96), "light_off": (93, 95, 97),
+    "zero_g": (98, 99, 100), "anti_snore": (101, 102, 103),
+    "pattern_1": (107, 108, 109), "pattern_2": (110, 111, 112),
+    "pattern_3": (113, 114, 115), "pattern_cancel": (116, 117, 118),
+    "timer_cancel": (119, 120, 121),
+    "back_up": (122, 122, 122), "back_down": (123, 123, 123), "back_stop": (124, 124, 124),
+    "lumbar_up": (131, 131, 131), "lumbar_down": (132, 132, 132), "lumbar_stop": (133, 133, 133),
+    "neck_up": (140, 140, 140), "neck_down": (141, 141, 141), "neck_stop": (142, 142, 142),
+    "new_all_up": (149, 149, 149), "new_all_down": (150, 150, 150), "new_all_stop": (151, 151, 151),
+    "book": (158, 158, 158), "leisure": (161, 161, 161),
+    "motion_on": (164, 164, 164), "motion_off": (165, 165, 165),
+    "power_query": (166, 166, 166), "special": (167, 167, 167),
+}
+RIZE_DEFAULT_PARAMETERS: Final = {"zero_g": 1, "anti_snore": 4, "book": 7, "leisure": 10}
+
+
+@dataclass(frozen=True)
+class RizeProfile(IsleepProfile):
+    """The current app's product gates, independent of nominal motor count."""
+
+    key: ClassVar[str] = "rize"
+    commands: ClassVar[Mapping[str, tuple[int, int, int]]] = RIZE_COMMANDS
+    execution: ClassVar[ExecutionCapabilities] = ExecutionCapabilities(hold="latched")
+    enroll_wait_s: ClassVar[int] = 30
+    write_spacing_s: ClassVar[float] = 0.05
+    power_poll_s: ClassVar[float] = 3
+
+    @property
+    def split(self) -> bool:
+        return self.product in (130, 141) and self.actuators != 2
+
+    @property
+    def extended(self) -> bool:
+        return self.product in (135, 136, 137, 138, 140)
+
+    @property
+    def layout(self) -> int:
+        return {131: 3, 133: 3, 132: 4, 134: 4, 135: 5, 136: 6, 137: 7,
+                138: 8, 140: 6, 141: 9}.get(self.product, 2)
+
+    @property
+    def programmable_presets(self) -> tuple[str, ...]:
+        if not self.extended:
+            return ()
+        # Reading recall is voice-reachable on7/8, but its long-press
+        # programming control is rendered only on5/6 (E-PRESET).
+        return tuple(
+            preset for preset in RIZE_DEFAULT_PARAMETERS
+            if preset != "book" or self.layout in (5, 6)
+        )
+
+    @property
+    def axes(self) -> tuple[str, ...]:
+        if self.extended:
+            # Voice reaches neck even when the touch panel omits selector5.
+            return ("back", "legs", "lumbar", "neck")
+        if self.product in (132, 134):
+            return ("back", "legs", "head", "lumbar")
+        if self.product in (131, 133):
+            return ("back", "legs", "head")
+        return ("back", "legs")
+
+
+def validate_rize_profile(data: Mapping[str, object]) -> RizeProfile:
+    product = data.get(CONF_PRODUCT_TYPE)
+    room = data.get(CONF_KAIDI_ROOM_ID)
+    actuators = data.get(CONF_KAIDI_SOFA_ACU_NO, 2)
+    if type(product) is not int or product not in RIZE_PRODUCTS:
+        raise ValueError("Select one of the twelve Rize Beds products")
+    if type(room) is not int or not -(2**31) <= room < 2**31:
+        raise ValueError("Rize Beds requires the selected signed 32-bit room ID")
+    if type(actuators) is not int or not 0 <= actuators <= 65535:
+        raise ValueError("Invalid Rize actuator descriptor")
+    return RizeProfile(product, room, actuators)
+
+
+def rize_advertisement(manufacturer_data: Mapping[int, bytes]) -> KaidiAdvertisement | None:
+    """E-SCAN: no name filter and no inference from an app sharing this mesh."""
+    payload = manufacturer_data.get(0xFFFF)
+    ad = parse_kaidi_manufacturer_payload(payload) if payload is not None else None
+    if ad is None or ad.adv_type not in (1, 2, 9) or ad.product_id not in RIZE_PRODUCTS:
+        return None
+    if ad.adv_type == 9 and ad.company_id != 0x4B44:
+        return None
+    acu = ad.sofa_acu_no
+    if acu is None or (acu >> 8 & 7) > 5 or (acu & 15) > 5 or (acu & 240) > 5:
+        return None
+    return ad
+
+
+def add_rize_metadata(data: Mapping[str, object], manufacturer_data: Mapping[int, bytes]) -> dict:
+    result = dict(data)
+    ad = rize_advertisement(manufacturer_data)
+    if ad is not None:
+        result.setdefault(CONF_PRODUCT_TYPE, ad.product_id)
+        result.setdefault(CONF_KAIDI_SOFA_ACU_NO, ad.sofa_acu_no)
+        if ad.room_id is not None:
+            result.setdefault(CONF_KAIDI_ROOM_ID, ad.room_id if ad.room_id < 2**31 else ad.room_id - 2**32)
+    return result

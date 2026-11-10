@@ -1190,7 +1190,7 @@ def default_scenario(bed_type: str) -> Scenario:
         from custom_components.adjustable_bed.profiles.keeson import DEFAULT_LAYOUTS
 
         data[const.CONF_PRODUCT_TYPE] = DEFAULT_LAYOUTS[bed_type]
-    if bed_type == const.BED_TYPE_ISLEEP:
+    if bed_type in (const.BED_TYPE_ISLEEP, const.BED_TYPE_RIZE):
         data.update({const.CONF_PRODUCT_TYPE: 129, const.CONF_KAIDI_ROOM_ID: 10000})
         replies = {
             # Room 10000 joined (own vaddr 1); the node ping finds this address.

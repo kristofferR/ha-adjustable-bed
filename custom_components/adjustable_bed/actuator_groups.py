@@ -55,6 +55,7 @@ from .const import (
     BED_TYPE_RICHMAT_HARMONY,
     BED_TYPE_RICHMAT_IDEALBED,
     BED_TYPE_RICHMAT_REVIVE,
+    BED_TYPE_RIZE,
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEPYS_ELITE_APP,
@@ -126,6 +127,7 @@ ACTUATOR_GROUPS: Final[dict[str, tuple[Route, ...]]] = {
         (BED_TYPE_KAIDI, None),
         (BED_TYPE_KAIDI, KAIDI_VARIANT_FLOYD),
         (BED_TYPE_ISLEEP, None),
+        (BED_TYPE_RIZE, None),
     ),
     "keeson": (
         (BED_TYPE_KEESON, KEESON_VARIANT_BASE),

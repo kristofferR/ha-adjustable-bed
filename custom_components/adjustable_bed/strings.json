@@ -780,7 +780,9 @@
       "gmmotor_product": "Choose an exact admitted GM Control product.",
       "gmmotor_side": "This product does not expose the selected app side.",
       "richmat_classic_layout": "Choose a layout shipped in the selected app.",
-      "motomotion_profile": "Enter a complete MotoMotion Bluetooth local name."
+      "motomotion_profile": "Enter a complete MotoMotion Bluetooth local name.",
+      "rize_profile": "Select a supported Rize Beds product, signed 32-bit room ID, and valid actuator descriptor.",
+      "rize_unpair_first": "Revert to a standalone bed before selecting a Rize profile without separate side controls."
     }
   },
   "options": {
@@ -1467,7 +1469,9 @@
       "gmmotor_side": "This product does not expose the selected app side.",
       "estimate_acknowledge_required": "Confirm that you understand positions are estimated.",
       "migration_reconfigure_required": "To change the app or layout, close Configure and select Reconfigure from this entry's three-dot menu. The guided change checks it before saving.",
-      "richmat_classic_layout": "Choose a layout shipped in the selected app."
+      "richmat_classic_layout": "Choose a layout shipped in the selected app.",
+      "rize_profile": "Select a supported Rize Beds product, signed 32-bit room ID, and valid actuator descriptor.",
+      "rize_unpair_first": "Revert to a standalone bed before selecting a Rize profile without separate side controls."
     },
     "progress": {
       "connecting": "Connecting over Bluetooth…",
@@ -2852,6 +2856,24 @@
       },
       "ruf_richmat_lift_down": {
         "name": "Lift Down"
+      },
+      "rize_pattern": {
+        "name": "Massage pattern {pattern} (0 cancels)"
+      },
+      "rize_all_down": {
+        "name": "All down"
+      },
+      "rize_all_up": {
+        "name": "All up"
+      },
+      "rize_enroll": {
+        "name": "Enroll unprovisioned bed in selected room"
+      },
+      "rize_motion_on": {
+        "name": "Motion sensor on"
+      },
+      "rize_motion_off": {
+        "name": "Motion sensor off"
       }
     },
     "cover": {
@@ -4782,6 +4804,9 @@
       },
       "ergomotion4_light": {
         "name": "Reported light state"
+      },
+      "rize_battery_mode": {
+        "name": "Battery mode"
       }
     },
     "number": {
@@ -8082,6 +8107,24 @@
         },
         "side": {
           "name": "Paired bed side"
+        }
+      }
+    },
+    "rize_program_preset": {
+      "name": "Rize Beds program default preset",
+      "description": "Store the current position as a default preset on one physical Rize bed. Select a single paired side and explicitly confirm.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "preset": {
+          "name": "Preset"
+        },
+        "confirm": {
+          "name": "Confirm programming"
+        },
+        "side": {
+          "name": "Physical side"
         }
       }
     }

@@ -773,3 +773,13 @@ All selected targets are validated before any writes. Existing
 `richmat_mh_alarm`, `richmat_mh_waist_alarm`, `richmat_mh_aroma` and
 `richmat_mh_light_color` actions also work for the model/reply-gated features
 of these app profiles. RUF exposes only its waist alarm among those actions.
+
+### Rize Beds default-preset programming
+
+`adjustable_bed.rize_program_preset` accepts `device_id`, `preset` (`zero_g`,
+`anti_snore`, `book`, `leisure`) and required `confirm: true`. It requires an
+extended Rize product and one physical target. Reading (`book`) programming
+requires layout5/6 (products135/136/140); Reading recall is also available on7/8. For a paired bed, select its
+child device or specify `side: left` or `side: right`; Both and multi-target
+programming are rejected. It writes once to that selected target, with no
+preliminary memory-slot write. See the [Rize guide](beds/kaidi.md#rize-beds).

@@ -114,6 +114,7 @@ from .const import (
     BED_TYPE_RICHMAT_HARMONY,
     BED_TYPE_RICHMAT_IDEALBED,
     BED_TYPE_RICHMAT_REVIVE,
+    BED_TYPE_RIZE,
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
     BED_TYPE_SCOTT_LIVING,
@@ -615,6 +616,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
         "Keeson (Member's Mark, Purple, Sleep Harmony and Linx / Juna Sleep apps, "
         "some Ergomotion Sync beds)"
     ),
+    BED_TYPE_RIZE: "Rize Beds app (Kaidi, 1.4.2)",
     BED_TYPE_ISLEEP: "ISleep app (Kaidi, com.kaidi_test4)",
     BED_TYPE_KAIDI: "Kaidi (Rize Beds and Floyd Home apps; legacy ISleep)",
     BED_TYPE_LINAK: "Linak (Bed Control, Bed Connect and Performance Series apps)",
@@ -1552,7 +1554,7 @@ def _detect_bed_type_detailed(
             bed_type=BED_TYPE_KAIDI,
             confidence=confidence,
             signals=signals,
-            ambiguous_types=[BED_TYPE_ISLEEP],
+            ambiguous_types=[BED_TYPE_ISLEEP, BED_TYPE_RIZE],
         )
 
     if DEWERTOKIN_SERVICE_UUID.lower() in service_uuids:

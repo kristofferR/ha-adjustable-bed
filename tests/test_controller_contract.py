@@ -216,7 +216,7 @@ async def _create_controller_for_bed_type(
     if bed_type in const.KEESON_LAYOUT_APP_BED_TYPES:
         from custom_components.adjustable_bed.profiles.keeson import DEFAULT_LAYOUTS
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = DEFAULT_LAYOUTS[bed_type]
-    if bed_type == const.BED_TYPE_ISLEEP:
+    if bed_type in (const.BED_TYPE_ISLEEP, const.BED_TYPE_RIZE):
         coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: 129, const.CONF_KAIDI_ROOM_ID: 10000})
     if bed_type == const.BED_TYPE_SLEEPTRACKER:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "unknown"
@@ -449,7 +449,7 @@ async def test_registry_entries_resolve_to_controller_classes(bed_type: str) -> 
     entries like BED_TYPE_DIAGNOSTIC that are absent from SUPPORTED_BED_TYPES.
     """
     coordinator = _FactoryCoordinator()
-    if bed_type == const.BED_TYPE_ISLEEP:
+    if bed_type in (const.BED_TYPE_ISLEEP, const.BED_TYPE_RIZE):
         coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: 129, const.CONF_KAIDI_ROOM_ID: 10000})
     if bed_type == const.BED_TYPE_ERGOMOTION_4:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "H"

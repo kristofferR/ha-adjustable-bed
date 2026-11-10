@@ -75,6 +75,7 @@ from .const import (
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
+    BED_TYPE_RIZE,
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
@@ -269,6 +270,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_HJBED: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_GLIDEAWAY_MOTION: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_ISLEEP: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
+    BED_TYPE_RIZE: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_BEDSENSE: frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
     BED_TYPE_SERENITY: _FIXED_LAYOUT,
     BED_TYPE_TRANQUIL: _FIXED_LAYOUT,
@@ -1050,6 +1052,46 @@ def _isleep_layout(data: Mapping[str, Any]) -> Mapping[str, Any]:
 
     return {
         CONF_MOTOR_COUNT: len(validate_isleep_profile(data).axes),
+        CONF_MOTOR_PULSE_USER_SET: False,
+    }
+
+
+def _rize_products(_data: Mapping[str, Any]) -> Mapping[Any, str]:
+    from .profiles.kaidi import RIZE_PRODUCTS
+
+    return {product: f"{name} ({product})" for product, name in RIZE_PRODUCTS.items()}
+
+
+def _rize_seed(
+    hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None
+) -> dict[str, Any]:
+    from homeassistant.components import bluetooth
+
+    from .profiles.kaidi import add_rize_metadata
+
+    info = discovered or bluetooth.async_last_service_info(
+        hass, data.get(CONF_ADDRESS, ""), connectable=True
+    )
+    return add_rize_metadata(data, info.manufacturer_data if info else {})
+
+
+def _rize_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .profiles.kaidi import validate_rize_profile
+
+    try:
+        profile = validate_rize_profile(data)
+    except ValueError:
+        return {"base": "rize_profile"}
+    if data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS and not profile.split:
+        return {"base": "rize_unpair_first"}
+    return {}
+
+
+def _rize_layout(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    from .profiles.kaidi import validate_rize_profile
+
+    return {
+        CONF_MOTOR_COUNT: len(validate_rize_profile(data).axes),
         CONF_MOTOR_PULSE_USER_SET: False,
     }
 
@@ -2120,6 +2162,22 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         validate=_isleep_errors,
         derive=_isleep_layout,
         seed=_isleep_seed,
+    ),
+    BED_TYPE_RIZE: _asking(
+        BED_TYPE_RIZE,
+        owns={
+            **_BASE[BED_TYPE_RIZE].owns,
+            CONF_HAS_MASSAGE: True,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_DELAY_MS: 100,
+        },
+        questions=(
+            Question(CONF_PRODUCT_TYPE, _rize_products, 129),
+            Question(CONF_KAIDI_ROOM_ID, default=10000, validator=vol.All(vol.Coerce(int), _INT32_RANGE)),
+            Question(CONF_KAIDI_SOFA_ACU_NO, default=2,
+                     validator=vol.All(vol.Coerce(int), vol.Range(min=0, max=65535))),
+        ),
+        validate=_rize_errors, derive=_rize_layout, seed=_rize_seed,
     ),
     # The app saves its model apart from the BLE driver the bed advertises.
     BED_TYPE_DOUBLESLEEP: _asking(

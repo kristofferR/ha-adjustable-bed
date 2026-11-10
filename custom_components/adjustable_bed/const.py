@@ -640,6 +640,7 @@ BED_TYPE_SCOTT_LIVING: Final = "scott_living"  # Scott Living 9-byte protocol
 BED_TYPE_SBI: Final = "sbi"  # SBI/Q-Plus (Costco) with position feedback
 BED_TYPE_SUTA: Final = "suta"  # SUTA Smart Home AT protocol (ASCII + CRLF)
 BED_TYPE_TIMOTION_AHF: Final = "timotion_ahf"  # TiMOTION AHF 11-byte bitmask protocol
+BED_TYPE_RIZE: Final = "rize"
 BED_TYPE_ISLEEP: Final = "isleep"
 BED_TYPE_KAIDI: Final = "kaidi"  # Kaidi custom mesh-over-GATT protocol (Rize/Floyd/ISleep)
 BED_TYPE_LOGICDATA_APP: Final = "logicdata_app"
@@ -823,6 +824,7 @@ SUPPORTED_BED_TYPES: Final = [
     # Kaidi (Rize/Floyd/ISleep)
     BED_TYPE_KAIDI,
     BED_TYPE_ISLEEP,
+    BED_TYPE_RIZE,
     # Logicdata SimplicityFrame (SILVERmotion)
     BED_TYPE_LOGICDATA,
     BED_TYPE_LOGICDATA_APP,
@@ -904,6 +906,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_MOTION_BED,
         BED_TYPE_SLEEPTRACKER,
         BED_TYPE_ISLEEP,
+        BED_TYPE_RIZE,
         BED_TYPE_LIMOSS_REMOTE,
     }
 )

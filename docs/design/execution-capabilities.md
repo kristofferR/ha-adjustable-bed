@@ -164,6 +164,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `reverie` | S latched | U | U | reverie, row041 | one frame on press, per-axis stop on release; routines serialize; hold declared |
 | `reverie_pairlink` | B | B | B | reverie, row041 | row041: Pairlink runtime acceptance pending |
 | `reverie_nightstand` | B | B | B | none | no accepted report |
+| `rize` | S latched | U | U | rize149 | one write per press, matching axis STOP on release; app voice starts are bounded by HA; no concurrent multi-motor evidence |
 | `kaidi`, `isleep` | S latched | U | U | kaidi | one start per press, per-axis release; combined is its own opcode; hold declared, except Floyd (B) and the dual-seat `seat_1_2` variant, which starts seat 2 only after seat 1's repeats |
 | `kaidi` (`floyd`) | B | B | B | floyd | report PARTIAL |
 | `remacro` (all models) | S latched | U | U | brick, jewmes, slumber, row050 | one write on press, paired STOP; rocking speed is massage and unreachable (R075); hold declared |
@@ -672,6 +673,7 @@ Report workspaces are machine-local under
 | jensen | `air.no.jensen.adjustablesleep` | 2.0.37 | COMPLETE | `air.no.jensen.adjustablesleep-2.0.37-2026-09-29/report/` |
 | jeromes | `com.okin.bedding.customaticjeromes` | 1.0.1 | COMPLETE | `com.okin.bedding.customaticjeromes-1.0.1-2026-08-30/report/` |
 | jewmes | `com.cheers.jewmes` | v1.202112141512 | COMPLETE | `com.cheers.jewmes-v1.202112141512-2026-10-01-queue-e0bb6807-20261001-050-002/report/` |
+| rize149 | `com.kaidi_test4.rize` | 1.4.2 (57) | COMPLETE | `com.kaidi_test4.rize-1.4.2-2026-11-10-maxqueue001/report/` |
 | kaidi | `com.kaidi_test4` | 1.6.3 | COMPLETE | `com.kaidi_test4-1.6.3-2026-11-03-bulk061-001/report/` |
 | ld-mattress | `com.logicdata.app.mattress.bed` | 1.0.0 | COMPLETE | `com.logicdata.app.mattress.bed-1.0.0-2026-10-01-queue-e0bb6807-20261001-053-005/report/` |
 | ld-pad | `com.logicdata.app.android.pad.bed` | 1.0.4 | COMPLETE | `com.logicdata.app.android.pad.bed-1.0.4-20260827/report/` |

@@ -50,6 +50,7 @@ if TYPE_CHECKING:
     from .jiecang.app import JiecangAppController as JiecangAppController
     from .jiecang.controller import JiecangController as JiecangController
     from .kaidi.controller import KaidiController as KaidiController
+    from .kaidi.rize import RizeController as RizeController
     from .keeson.controller import KeesonController as KeesonController
     from .leggett.gen2 import LeggettGen2Controller as LeggettGen2Controller
     from .leggett.lp_legacy import LeggettLpLegacyController as LeggettLpLegacyController
@@ -167,6 +168,7 @@ _EXPORT_MODULES = {
     "JiecangController": "jiecang.controller",
     "JiecangAppController": "jiecang.app",
     "IsleepController": "isleep",
+    "RizeController": "kaidi.rize",
     "KaidiController": "kaidi.controller",
     "KeesonController": "keeson.controller",
     "LeggettGen2Controller": "leggett.gen2",

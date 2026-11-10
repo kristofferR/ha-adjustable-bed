@@ -99,6 +99,7 @@ from .const import (
     BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
+    BED_TYPE_RIZE,
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
     BED_TYPE_SCOTT_LIVING,
@@ -257,6 +258,7 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     "hush_sleep_sxb": _ControllerSpec(
         "hush_sleep.controller", "HushSleepController", MappingProxyType({"kind": "sxb"})
     ),
+    BED_TYPE_RIZE: _ControllerSpec("kaidi.rize", "RizeController"),
     BED_TYPE_ISLEEP: _ControllerSpec("isleep", "IsleepController"),
     "casper_remote": _ControllerSpec("casper_sleep.controller", "CasperRemoteController"),
     "casper_sleep_mm": _ControllerSpec(

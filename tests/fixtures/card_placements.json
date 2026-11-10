@@ -206,6 +206,9 @@
  "binary_sensor:richmat_mh_smart_set_lock": {
   "card_section": "hidden"
  },
+ "binary_sensor:rize_battery_mode": {
+  "card_section": "hidden"
+ },
  "binary_sensor:sleeptracker_light_on": {
   "card_section": "lighting"
  },
@@ -1263,6 +1266,24 @@
  },
  "button:richmat_mh_toggle_smart_set_lock": {
   "card_section": "utility"
+ },
+ "button:rize_all_down": {
+  "card_section": "utility"
+ },
+ "button:rize_all_up": {
+  "card_section": "utility"
+ },
+ "button:rize_enroll": {
+  "card_section": "hidden"
+ },
+ "button:rize_motion_off": {
+  "card_section": "utility"
+ },
+ "button:rize_motion_on": {
+  "card_section": "utility"
+ },
+ "button:rize_pattern": {
+  "card_section": "massage"
  },
  "button:ruf_richmat_lift_down": {
   "card_section": "motors",

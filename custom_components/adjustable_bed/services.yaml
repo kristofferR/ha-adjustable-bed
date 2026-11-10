@@ -3260,3 +3260,24 @@ richmat_app_alarm:
               value: "5"
             - label: Sunday
               value: "6"
+
+rize_program_preset:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    preset:
+      required: true
+      selector:
+        select:
+          options: [zero_g, anti_snore, book, leisure]
+    confirm:
+      required: true
+      selector:
+        boolean:
+    side:
+      selector:
+        select:
+          options: [left, right]
