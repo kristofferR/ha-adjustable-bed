@@ -57,6 +57,8 @@ STARTUP = (
     ("deviceFunctionItemCheckLight", 1),
 )
 MENU_PROBE_S = 0.3
+# HA readiness budget after the startup queries, not a protocol pacing interval.
+MENU_REPLY_TIMEOUT_S = 3
 TICK_MS = 100
 """A sustained press first sends after one tick, then once per tick."""
 LONG_PRESS_MS = 3000
@@ -242,6 +244,7 @@ class GoodVibeController(BedController):
         self._report_error: str | None = None
         self._report_context: tuple[int, int, int, int, int] | None = None
         self._menus: set[str] = set()
+        self._menus_changed = asyncio.Event()
         self._last_write = 0.0
         self._last_event: str | None = None
         self._rejection: str | None = None
@@ -411,6 +414,7 @@ class GoodVibeController(BedController):
                 if self.snore_available:
                     self._menus.add("snore")
             self.choices.events["menus"] = sorted(self._menus)
+            self._menus_changed.set()
         if name in (
             "deviceRepeatAlarmListStatusEvent",
             "deviceRepeatAlarmListEscalationStatusEvent",
@@ -669,6 +673,28 @@ class GoodVibeController(BedController):
                     await self._send(
                         codec.function(code, action=action, single=link.legacy), link=link
                     )
+                if self.catalog.notification_menus:
+                    expected = {
+                        menu
+                        for menu, required in (
+                            ("alarm", bool(self.product and self.product.alarms)),
+                            ("light", bool(self.product and self.product.light)),
+                            (
+                                "sleep",
+                                bool(self.product and self.product.sleep == "deviceSleepMonitoringBle"),
+                            ),
+                        )
+                        if required
+                    }
+                    try:
+                        async with asyncio.timeout(MENU_REPLY_TIMEOUT_S):
+                            while not expected <= self._menus:
+                                self._menus_changed.clear()
+                                if self._link is not link:
+                                    raise ConnectionError("Catalog link was replaced during startup")
+                                await self._menus_changed.wait()
+                    except TimeoutError:
+                        pass  # Request validation still rejects unadvertised capabilities.
                 if not self.catalog.notification_menus:
                     if time_sync:
                         for frame in p.sync_time(dt_util.now(), dt_util.now(), build=self.record):
@@ -692,6 +718,7 @@ class GoodVibeController(BedController):
     def on_disconnect(self) -> None:
         self._gesture = None
         self._menus.clear()
+        self._menus_changed.set()
         if self.catalog.notification_menus:
             for key in ("repeat_alarms", "sleep_advertisement_name", "menus"):
                 self.choices.events.pop(key, None)

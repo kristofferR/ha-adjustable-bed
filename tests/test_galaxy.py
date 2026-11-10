@@ -278,6 +278,7 @@ async def test_startup_uses_product_queries_and_stale_replies_are_ignored(coordi
     with (
         patch.object(bed, "select_link", return_value=link),
         patch.object(bed.asyncio, "sleep", new=AsyncMock()),
+        patch.object(bed, "MENU_REPLY_TIMEOUT_S", 0),
     ):
         await obj.start_notify()
     frames = writes(coordinator)
@@ -288,6 +289,81 @@ async def test_startup_uses_product_queries_and_stale_replies_are_ignored(coordi
     obj.on_disconnect()
     obj._notification(link, link.rx, bytearray.fromhex("6e09010078"))
     assert not obj._menus
+
+
+async def test_startup_waits_for_late_capabilities_before_first_light_action(coordinator):
+    obj = controller(coordinator, "HNRN")
+    link = obj._link
+    queried = asyncio.Event()
+
+    async def write(_char, frame, **_kwargs):
+        if frame == bytes.fromhex("6e0a000179"):
+            queried.set()
+
+    coordinator.client.write_gatt_char.side_effect = write
+    with patch.object(bed, "select_link", return_value=link), patch.object(bed, "MENU_PROBE_S", 0):
+        startup = asyncio.create_task(obj.start_notify())
+        try:
+            await queried.wait()
+            assert not startup.done()
+            obj._notification(link, link.rx, bytearray.fromhex("6e09010078"))
+            obj._event("deviceSleepAdvNameEvent", list(b"RM-A"))
+            await asyncio.sleep(0)
+            assert not startup.done()  # Clock and sleep replies cannot stand in for light.
+            obj._notification(link, link.rx, bytearray.fromhex("6e0e00037f"))
+            await startup
+            await obj.async_execute_goodvibe_request(Request("light_off"))
+            assert writes(coordinator)[-1] == Request("light_off").frames(obj)[0]
+        finally:
+            startup.cancel()
+            await asyncio.gather(startup, return_exceptions=True)
+            obj.on_disconnect()
+
+
+async def test_startup_capability_timeout_still_rejects_unadvertised_setting(coordinator):
+    obj = controller(coordinator, "HNRN")
+    with (
+        patch.object(bed, "select_link", return_value=obj._link),
+        patch.object(bed, "MENU_PROBE_S", 0),
+        patch.object(bed, "MENU_REPLY_TIMEOUT_S", 0),
+    ):
+        await obj.start_notify()
+    startup_writes = writes(coordinator)
+    with pytest.raises(ValueError, match="advertised"):
+        await obj.async_execute_goodvibe_request(Request("light_off"))
+    assert writes(coordinator) == startup_writes
+    obj.on_disconnect()
+
+
+@pytest.mark.parametrize("disconnect", [True, False])
+async def test_startup_capability_wait_ends_on_disconnect_or_cancellation(coordinator, disconnect):
+    obj = controller(coordinator, "HNRN")
+    link = obj._link
+    queried = asyncio.Event()
+
+    async def write(_char, frame, **_kwargs):
+        if frame == bytes.fromhex("6e0a000179"):
+            queried.set()
+
+    coordinator.client.write_gatt_char.side_effect = write
+    with patch.object(bed, "select_link", return_value=link), patch.object(bed, "MENU_PROBE_S", 0):
+        startup = asyncio.create_task(obj.start_notify())
+        try:
+            await queried.wait()
+            if disconnect:
+                obj.on_disconnect()
+                obj._notification(link, link.rx, bytearray.fromhex("6e0e00037f"))
+                with pytest.raises(ConnectionError, match="startup"):
+                    await startup
+            else:
+                startup.cancel()
+                with pytest.raises(asyncio.CancelledError):
+                    await startup
+            assert obj._link is None
+            assert not obj._menus
+        finally:
+            startup.cancel()
+            await asyncio.gather(startup, return_exceptions=True)
 
 
 async def test_cancelled_hold_releases_captured_side_and_link(coordinator):
