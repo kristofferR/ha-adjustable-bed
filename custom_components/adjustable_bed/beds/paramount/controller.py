@@ -97,8 +97,7 @@ class ParamountController(ProfileExecution, BedController):
         self._settings: codec.Settings | None = None
         self._posture: codec.Posture | None = None
         self._serial: str | None = None
-        self._pending: asyncio.Future[codec.Reply] | None = None
-        self._expected: int | None = None
+        self._replies: list[tuple[int, asyncio.Future[codec.Reply]]] = []
         self._generation = 0
         self._subscribed = False
         self._last_reply = 0.0
@@ -485,36 +484,23 @@ class ParamountController(ProfileExecution, BedController):
                 self.forward_controller_state_updates(RSSI(reply.rssi))
         elif reply.opcode == 6:
             self.forward_controller_state_updates(REGISTRATION_RESULT(reply.payload[0]))
-        if (
-            self._pending is not None
-            and not self._pending.done()
-            and reply.opcode == self._expected
-        ):
-            self._last_reply = asyncio.get_running_loop().time()
-            self._pending.set_result(reply)
+        for index, (opcode, pending) in enumerate(self._replies):
+            if reply.opcode == opcode:
+                del self._replies[index]
+                self._last_reply = asyncio.get_running_loop().time()
+                pending.set_result(reply)
+                break
 
-    async def _exchange(self, command: bytes, cancel: asyncio.Event | None = None) -> codec.Reply:
-        """One matched reply, no replay on missing response, and prompt cancellation."""
-        event = cancel if cancel is not None else self._coordinator.cancel_command
-        if event.is_set():
-            raise asyncio.CancelledError
-        delay = (
-            self._last_reply
-            + self.profile.response_delay_ms / 1000
-            - asyncio.get_running_loop().time()
-        )
-        if delay > 0:
-            try:
-                await asyncio.wait_for(event.wait(), delay)
-            except TimeoutError:
-                pass
-        if event.is_set():
-            raise asyncio.CancelledError
+    def _track_reply(self, command: bytes) -> asyncio.Future[codec.Reply]:
         pending = asyncio.get_running_loop().create_future()
-        self._pending, self._expected = pending, command[1] - 128
+        self._replies.append((command[1] - 128, pending))
+        return pending
+
+    async def _wait_for_reply(
+        self, pending: asyncio.Future[codec.Reply], event: asyncio.Event
+    ) -> codec.Reply:
         cancelled = asyncio.create_task(event.wait())
         try:
-            await self.write_command(command, cancel_event=event)
             done, _ = await asyncio.wait(
                 (pending, cancelled),
                 timeout=self.profile.response_timeout_ms / 1000,
@@ -528,8 +514,31 @@ class ParamountController(ProfileExecution, BedController):
         finally:
             cancelled.cancel()
             await asyncio.gather(cancelled, return_exceptions=True)
-            pending.cancel()
-            self._pending, self._expected = None, None
+
+    async def _exchange(self, command: bytes, cancel: asyncio.Event | None = None) -> codec.Reply:
+        """One matched reply, no replay on missing response, and prompt cancellation."""
+        event = cancel if cancel is not None else self._coordinator.cancel_command
+        if event.is_set():
+            raise asyncio.CancelledError
+        # No sequence number distinguishes old replies. Drain abandoned requests
+        # and unawaited releases before sending anything they could acknowledge.
+        while self._replies:
+            await self._wait_for_reply(self._replies[0][1], event)
+        delay = (
+            self._last_reply
+            + self.profile.response_delay_ms / 1000
+            - asyncio.get_running_loop().time()
+        )
+        if delay > 0:
+            try:
+                await asyncio.wait_for(event.wait(), delay)
+            except TimeoutError:
+                pass
+        if event.is_set():
+            raise asyncio.CancelledError
+        pending = self._track_reply(command)
+        await self.write_command(command, cancel_event=event)
+        return await self._wait_for_reply(pending, event)
 
     async def async_on_connect(self, session: ControllerSession) -> None:
         await session.async_start_notify()
@@ -573,8 +582,11 @@ class ParamountController(ProfileExecution, BedController):
         self._subscribed = False
         self._settings = None
         self._posture = None
-        if self._pending is not None and not self._pending.done():
-            self._pending.set_exception(ConnectionError("Paramount disconnected"))
+        for _, pending in self._replies:
+            pending.set_exception(ConnectionError("Paramount disconnected"))
+            # Abandoned requests may no longer have a waiter to retrieve this.
+            pending.exception()
+        self._replies.clear()
         self.forward_controller_state_updates(
             *(key(None) for key in (HEIGHT, TILT, RSSI, SESSION_STATE, REGISTRATION_RESULT)),
             *(key(None) for key in SETTING_KEYS.values()),
@@ -596,6 +608,7 @@ class ParamountController(ProfileExecution, BedController):
 
     async def _send_stop(self) -> None:
         # Release does not wait on the missing reply that may have stopped motion.
+        self._track_reply(codec.control(0))
         await self.write_command(codec.control(0), cancel_event=asyncio.Event())
 
     async def stop_all(self) -> None:

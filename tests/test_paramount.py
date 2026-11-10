@@ -149,6 +149,77 @@ async def test_stop_during_response_wait_releases_without_waiting_for_reply(
     assert bed.write_command.await_args_list[-1].args[0] == codec.control(0)
 
 
+@pytest.mark.parametrize("source", ("diagnostic", "stop"))
+async def test_late_neutral_reply_is_drained_before_new_movement(
+    bed: ParamountController, source: str
+) -> None:
+    written = asyncio.Event()
+    bed.write_command = AsyncMock(side_effect=lambda *args, **kwargs: written.set())
+    if source == "diagnostic":
+        query = asyncio.create_task(bed.read_positions())
+        await written.wait()
+        query.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await query
+    else:
+        await bed.stop_all()
+
+    written.clear()
+    movement = asyncio.create_task(bed.hold_control("head_up", 1000))
+    await asyncio.sleep(0)
+    await asyncio.sleep(0)
+    assert bed.write_command.await_count == 1
+    bed._notification(bytes.fromhex(REPLIES[3]))
+    await asyncio.wait_for(written.wait(), 0.2)
+    with pytest.raises(TimeoutError, match="not replayed"):
+        await movement
+    assert [call.args[0] for call in bed.write_command.await_args_list] == [
+        codec.control(0),
+        codec.control(2),
+        codec.control(0),
+    ]
+
+
+async def test_cancelled_movement_and_release_both_drain_before_next_request(
+    bed: ParamountController,
+) -> None:
+    written = asyncio.Event()
+    bed.write_command = AsyncMock(side_effect=lambda *args, **kwargs: written.set())
+    movement = asyncio.create_task(bed.hold_control("head_up", 1000))
+    await written.wait()
+    bed._coordinator.cancel_command.set()
+    with pytest.raises(asyncio.CancelledError):
+        await movement
+    assert bed.write_command.await_count == 2
+    bed._coordinator.cancel_command.clear()
+    written.clear()
+    query = asyncio.create_task(bed.read_positions())
+    await asyncio.sleep(0)
+    bed._notification(bytes.fromhex(REPLIES[3]))
+    await asyncio.sleep(0)
+    await asyncio.sleep(0)
+    assert bed.write_command.await_count == 2
+    bed._notification(bytes.fromhex(REPLIES[3]))
+    await asyncio.wait_for(written.wait(), 0.2)
+    bed._notification(bytes.fromhex(REPLIES[3]))
+    await query
+    assert bed.write_command.await_count == 3
+
+
+async def test_undrained_release_blocks_new_command_until_disconnect(
+    bed: ParamountController,
+) -> None:
+    bed.write_command = AsyncMock()
+    await bed.stop_all()
+    with pytest.raises(TimeoutError, match="not replayed"):
+        await bed.read_positions()
+    bed.write_command.assert_awaited_once()
+    bed.on_disconnect()
+    sent = responding(bed)
+    await bed.read_positions()
+    assert sent == [codec.control(0)]
+
+
 async def test_reply_driven_hold_is_bounded_and_cleans_up(bed: ParamountController) -> None:
     sent = responding(bed)
     await bed.hold_control("head_up", 20)
@@ -210,12 +281,12 @@ async def test_idle_refresh_requests_settings_every_fifth_reply(bed: ParamountCo
 async def test_unsolicited_and_old_session_replies_do_not_complete_current_request(
     bed: ParamountController,
 ) -> None:
-    bed._pending = asyncio.get_running_loop().create_future()
-    bed._expected = 1
+    pending = bed._track_reply(codec.frame(0x81))
     bed._notification(bytes.fromhex(REPLIES[3]))
-    assert not bed._pending.done()
+    assert not pending.done()
     bed.on_disconnect()
-    assert isinstance(bed._pending.exception(), ConnectionError)
+    assert isinstance(pending.exception(), ConnectionError)
+    assert not bed._replies
     assert bed._settings is None and bed._posture is None
 
 

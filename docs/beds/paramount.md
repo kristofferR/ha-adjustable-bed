@@ -162,6 +162,11 @@ including recall and concurrent push, sends it in `finally` with a fresh cancel
 event. A whole-side STOP also sends neutral. HA sends release immediately after
 cancellation or failure, including when no reply arrives.
 
+Before sending another request, HA drains replies owed to cancelled requests and
+unawaited neutral releases. A missing old reply blocks new requests until it
+arrives or the connection resets. A late neutral reply cannot acknowledge a new
+movement or cause a movement refresh.
+
 The shipped app chooses neutral for a later matching-reply cycle. Its missing
 reply retry can retain stale movement and resets its retry counter. HA never
 replays a movement because its reply is missing. It fails the request and sends
