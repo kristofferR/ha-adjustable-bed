@@ -131,6 +131,7 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
         self.events: dict[str, Value] = {}
         self.alarms: list[dict[str, Value]] = []
         self.blanket: dict[str, Value] = {"7": False, "b": "warm", "f": 25, "17": 25, "23": False}
+        self._blanket_mode_received = asyncio.Event()
         self.local: dict[str, object] = {
             "side": self.product["side"],
             "demo": [],
@@ -394,13 +395,11 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
         if event == "detection_available":
             self.features.add("detection")
         if event == "group_5_1" and isinstance(fields := values.get("fields"), dict):
-            if values.get("direction") == 2:
-                if fields not in self.alarms:
-                    self.alarms.append(deepcopy(fields))
-            else:
-                old = next((i for i, a in enumerate(self.alarms) if a["7"] == fields["7"]), None)
-                if old is not None:
-                    self.alarms[old] = deepcopy(fields)
+            old = next((i for i, a in enumerate(self.alarms) if a["7"] == fields["7"]), None)
+            if old is not None:
+                self.alarms[old] = deepcopy(fields)
+            elif values.get("direction") == 2:
+                self.alarms.append(deepcopy(fields))
         if event == "alarm_saved" and self._pending_alarm:
             self.local["saved_alarm"] = self._pending_alarm
             self._pending_alarm = None
@@ -419,6 +418,8 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
             }.get(operation, ())
             self.blanket.update({k: deepcopy(values[k]) for k in merge if k in values})
             self._clamp_blanket()
+            if operation == 5 and all(key in values for key in ("b", "f", "17")):
+                self._blanket_mode_received.set()
         if event == "group_4_2" and type(timer := values.get("timer")) is int:
             self.events["groove"] = {"received_timer": timer, "page_seconds": timer * 60}
         if event == "group_6_3" and isinstance(raw := values.get("name_bytes"), list):
@@ -456,6 +457,7 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
             self._version_task.cancel()
         self._version_task = None
         self._pending_alarm = None
+        self._blanket_mode_received.clear()
 
     async def stop_notify(self) -> None:
         link = self._link
@@ -897,11 +899,30 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
 
         validate(self, self._resolved_request(request))
 
+    async def prepare_request(self, request: Request) -> None:
+        if (
+            request.operation == "blanket_temperature"
+            and self.product["selectors"]["0xea47"]
+            and self.blanket.get("7")
+            and not self.blanket.get("23")
+            and not self._blanket_mode_received.is_set()
+        ):
+            link = self._current_link()
+            if not await self._send(p.QUERY["blanket"], link, self._coordinator.cancel_command):
+                raise ValueError("Blanket settings refresh was cancelled")
+            try:
+                await asyncio.wait_for(self._blanket_mode_received.wait(), timeout=5)
+            except TimeoutError as err:
+                raise ValueError("No current blanket mode and temperatures received") from err
+            if self._current_link() is not link:
+                raise ConnectionError("Richmat app BLE session changed")
+        self.validate_request(request)
+
     async def execute_request(self, request: Request) -> None:
         from .actions import execute
 
         request = self._resolved_request(request)
-        self.validate_request(request)
+        await self.prepare_request(request)
         await execute(self, request)
 
 

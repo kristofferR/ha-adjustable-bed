@@ -200,12 +200,12 @@ async def test_blanket_mite_clamp_partial_merge_and_sleep_order(coordinator, clo
     assert written(c)[-1] == "6e200b0d050100011919df"
 
 
-def test_alarm_append_escalation_and_ack_persistence(coordinator):
+def test_alarm_slot_refresh_escalation_and_ack_persistence(coordinator):
     c = controller(coordinator)
     row = {"7": 1, "f": 0, "17": 7, "1f": 30, "27": 69, "2f": 129}
     c._accept("group_5_1", {"fields": row, "direction": 2})
     c._accept("group_5_1", {"fields": {**row, "1f": 31}, "direction": 2})
-    assert len(c.alarms) == 2
+    assert c.alarms == [{**row, "1f": 31}]
     c._accept("group_5_1", {"fields": {**row, "1f": 32}, "direction": 3})
     assert c.alarms[0]["1f"] == 32
     c._pending_alarm = {"action": "caf951", "hour": 7, "minute": 30}
@@ -214,6 +214,63 @@ def test_alarm_append_escalation_and_ack_persistence(coordinator):
     assert isinstance(saved, dict) and saved["hour"] == 7
     c._accept("alarm_cancelled", {})
     assert "saved_alarm" not in c.persisted_app_state
+
+
+async def test_alarm_toggle_preserves_refreshed_slot_contents(coordinator, clocked):
+    product = next(
+        k for k, p in PRODUCTS.items() if p["selectors"]["0x1001d"] and descriptors(p, "0xe18b")
+    )
+    c = controller(coordinator, product)
+    c._accept("clock_available", {})
+    row = {"7": 1, "f": 0, "17": 7, "1f": 30, "27": 69, "2f": 129}
+    c._accept("group_5_1", {"fields": row, "direction": 2})
+    current = {**row, "17": 8, "1f": 45, "27": 70, "2f": 65}
+    c._accept("group_5_1", {"fields": current, "direction": 2})
+    await c.execute_request(Request("toggle_alarm", alarm_id=1, enabled=False))
+    frame = bytes.fromhex(written(c)[-1])
+    assert frame[6:12] == bytes((1, 0, 8, 45, 70, 64))
+    assert c.alarms == [current]
+
+
+async def test_blanket_temperature_requires_mode_reply_before_writing(
+    coordinator, clocked, monkeypatch
+):
+    from custom_components.adjustable_bed.beds.richmat_app import protocol as p
+
+    c = controller(coordinator, "HMRN")
+    c._accept("group_13_1", {"7": True})
+    real_wait_for = asyncio.wait_for
+    monkeypatch.setattr(
+        bed.asyncio, "wait_for", lambda awaitable, timeout: real_wait_for(awaitable, timeout=0)
+    )
+    with pytest.raises(ValueError, match="No current blanket mode"):
+        await c.execute_request(Request("blanket_temperature", zone=1, temperature=40))
+    assert written(c) == [p.QUERY["blanket"].hex()]
+    assert c.blanket["f"] == c.blanket["17"] == 25
+
+
+@pytest.mark.parametrize(
+    "frame,expected",
+    [
+        ("6e90313f6e", {"no": 0, "status": 1, "angle": 63}),
+        ("6e90a06e0c", {"mode": 0, "massage3": 1, "massage2": 5, "massage1": 6}),
+        ("6e23a06e9f", {}),
+    ],
+)
+@pytest.mark.parametrize("split", range(1, 6))
+def test_common_framing_keeps_marker_payload_and_checksum(frame, expected, split):
+    events = []
+    rx = Receiver(lambda *v: events.append(v))
+    wire = bytes.fromhex(frame)
+    rx.feed(wire[:split])
+    if split < 5:
+        assert events == []
+    rx.feed(wire[split:] + bytes.fromhex("6e09010078"))
+    assert events == [
+        ("common" if expected else "stop_music", expected),
+        ("clock_available", {}),
+    ]
+    assert rx.pending == b""
 
 
 def test_receive_buffer_partial_length_and_nonprogress():

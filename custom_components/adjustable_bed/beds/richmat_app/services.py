@@ -132,7 +132,7 @@ async def handle(call: ServiceCall) -> None:
         preflighted = await _preflight_capability(targets, RichmatAppController, label)
 
         async def validate_live(controller: RichmatAppController) -> None:
-            controller.validate_request(request)
+            await controller.prepare_request(request)
 
         # Offline controllers know the catalog, not this connection's replies.
         # Validate every live target before any target executes the request.

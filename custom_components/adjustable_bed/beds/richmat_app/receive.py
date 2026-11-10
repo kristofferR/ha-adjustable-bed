@@ -241,9 +241,7 @@ class Receiver:
             elif kind in (32, 33):
                 size = self.pending[2]
             else:
-                size = self.pending.find(110, 1)
-                if size < 0:
-                    size = len(self.pending)
+                size = 5
             if not size:
                 self.pending.clear()
                 raise ValueError("Nonprogressing Richmat frame")

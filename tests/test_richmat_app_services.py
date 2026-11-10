@@ -268,3 +268,45 @@ async def test_live_preflight_validates_every_target_before_any_requested_write(
         assert "6e0bffff77" not in written(client) + written(other_client)
     finally:
         await second.async_shutdown()
+
+
+@pytest.mark.parametrize("runtime", ["HMRN"], indirect=True)
+@pytest.mark.parametrize(
+    "mode,zone,temperature,expected", [(2, 1, 40, (40, 35)), (1, 2, 20, (22, 20))]
+)
+async def test_blanket_temperature_hydrates_current_settings_after_connect_and_reconnect(
+    hass, runtime, mode, zone, temperature, expected
+):
+    from custom_components.adjustable_bed.beds.richmat_app import protocol as p
+
+    target, client = runtime
+    notification = None
+
+    async def subscribe(_char, callback):
+        nonlocal notification
+        notification = callback
+        asyncio.get_running_loop().call_soon(
+            callback, None, bytearray(codec.record_20_len(13, 1, 2, (0, 1)))
+        )
+
+    async def write(_char, data, **kwargs):
+        if data == p.QUERY["blanket"]:
+            current = codec.record_20_len(
+                13, 5, 2, (0, mode, 22 if mode == 1 else 30, 35 if mode == 2 else 24)
+            )
+            asyncio.get_running_loop().call_soon(notification, None, bytearray(current))
+
+    client.start_notify.side_effect = subscribe
+    client.write_gatt_char.side_effect = write
+    for _ in range(2):
+        await invoke(hass, "blanket_temperature", zone=zone, temperature=temperature)
+        frames = written(client)
+        query = p.QUERY["blanket"].hex()
+        setting = p.extended(13, 5, mode, *expected).hex()
+        assert frames.count(query) == 1
+        assert frames[-1] == setting and frames.index(query) < frames.index(setting)
+        live = target.controller
+        assert live._blanket_mode_received.is_set()
+        await target.async_disconnect("idle_timeout")
+        assert not live._blanket_mode_received.is_set()
+        client.write_gatt_char.reset_mock()
