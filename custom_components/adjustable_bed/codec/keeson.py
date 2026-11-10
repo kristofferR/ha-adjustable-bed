@@ -271,3 +271,39 @@ def parse_position_status(data: bytes) -> PositionStatus | None:
         led_on=bool(data[13] & 0x40),
         timer_minutes=10 * timer if 1 <= timer <= 3 else None,
     )
+
+
+class ComfortBaseAssembler:
+    """Row161's prefixed notification pair, bounded and consumed once per reply.
+
+    The app retains its prefix forever and accepts empty tails. Consuming it
+    avoids replaying stale timer state; reconnects create a fresh assembler.
+    """
+
+    def __init__(self) -> None:
+        self._prefix: bytes | None = None
+
+    def feed(self, data: bytes) -> bytes | None:
+        if not data:
+            return None
+        if len(data) > 20:
+            self._prefix = None
+            return data
+        if len(data) > 6:
+            if data[:3] == b"\xf4\xfe\x16":
+                self._prefix = data
+                return None
+            if len(data) in (10, 16):
+                self._prefix = None
+                return data
+        prefix, self._prefix = self._prefix, None
+        if prefix is not None and len(prefix) + len(data) <= 23:
+            return prefix + data
+        return None
+
+
+def comfortbase_timer(data: bytes) -> int:
+    """Row161's displayed timer category, without header or checksum validation."""
+    offset = {23: 19, 16: 14, 10: 8}.get(len(data))
+    nibble = data[offset] & 15 if offset is not None else 0
+    return {1: 10, 2: 20, 3: 30}.get(nibble, 0)

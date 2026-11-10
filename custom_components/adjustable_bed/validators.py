@@ -22,6 +22,7 @@ from .const import (
     BED_TYPE_BEDSENSE,
     BED_TYPE_CASPER_BASE,
     BED_TYPE_COMFORT_ENHANCEMENTS,
+    BED_TYPE_COMFORTBASE,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ESHINE_OKIN,
     BED_TYPE_GLIDEAWAY_MOTION,
@@ -86,6 +87,7 @@ from .const import (
     ZSERIES_VARIANTS,
 )
 from .profiles.casper import CASPER_BASE_VARIANTS
+from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
 from .profiles.hush import HUSH_BASE_VARIANTS
 
 _LOGGER = logging.getLogger(__name__)
@@ -142,6 +144,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_ADJUSTAMATTRESS: ADJUSTAMATTRESS_VARIANTS,
     BED_TYPE_ADJUSTABLE_LUMBAR: ADJUSTABLE_LUMBAR_VARIANTS,
     BED_TYPE_COMFORT_ENHANCEMENTS: COMFORT_ENHANCEMENTS_VARIANTS,
+    BED_TYPE_COMFORTBASE: {key: p.name for key, p in COMFORTBASE_PRODUCTS.items()},
     **{bed_type: RICHMAT_MH_VARIANTS_BY_APP[app] for bed_type, app in RICHMAT_MH_APPS.items()},
     "richmat_sleep_receiver": {"wsilver2": "W.Silver Products", "americanstar": "AMERICANSTAR",
                                "bailey2": "Bailey's Bed Control", "tx": "TX"},

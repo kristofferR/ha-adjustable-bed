@@ -244,3 +244,9 @@ its own codec, with the reason recorded here.
   50 or 100 ms interval. Frames and their order are unchanged.
 - The legacy route no longer defines the unused `BOTH`, `HEAD_ALT`, `WAIST`,
   `TIMER` and right-side split constants. It never sent them.
+
+ComfortBaseForBluetooth 1.1.2 (6), row161, reuses Keeson K1 only after all
+43 frozen builders reproduce literally through `frame`, `clock_fields` and
+`alarm_table`. Its product catalog is UI data over one `comfortbase` profile.
+The Keeson controller supplies hold/release and recall; its ComfortBase extension
+adds the bounded save gesture, product gates, fixed GATT roles and timer parser.

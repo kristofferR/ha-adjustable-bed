@@ -124,6 +124,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `coolbase` | S stream (no release frame) | U | U | coolbase | release cancels the timer, no STOP bytes |
 | `bf` | S stream | U | U | bf | zero frame at release |
 | `cherish` | S stream | U | U | cherish | combined is a fixed key |
+| `comfortbase` (all ten products) | S stream | U | U | row161 | one held key refreshed every 100 ms, zero STOP at release; combined is a fixed key, no motor-speed control |
 | `comfort_enhancements` | S stream | U | U | enh | STOP 100 ms after release |
 | `glideaway_motion` | S stream | U | U | glide | zero frames at +300 and +600 ms |
 | `adjustamattress` | S stream | U | U | row067 | union movement is a fixed action |
@@ -762,5 +763,6 @@ its APK Protocol Audit report, named here by its file stem:
 | row066 | audit ledger `row066-classic-richmat-apps` |
 | row067 | audit ledger `row067-adjustamattress` |
 | row121 | audit ledger `row121-hjbed` |
+| row161 | accepted ComfortBaseForBluetooth 1.1.2 (6), `com.ore.yorkfeng.comfortbaseble2-1.1.2-2026-11-10-maxqueue001/report/` and independent audit001 |
 | row126 | audit ledger `row126-hush-base` |
 | svane-guide | [svane.md](../beds/svane.md) |

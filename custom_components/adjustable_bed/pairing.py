@@ -29,6 +29,7 @@ from .const import (
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_CASPER_BASE,
     BED_TYPE_COMFORT_ENHANCEMENTS,
+    BED_TYPE_COMFORTBASE,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_ERGOMOTION_4,
     BED_TYPE_ESHINE_OKIN,
@@ -95,6 +96,7 @@ from .const import (
     VARIANT_AUTO,
     VMATBASIC_CONFIG_KEYS,
 )
+from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
 
 # Explicit protocol variants whose entity-gating capabilities depend only on stored
 # config, for bed types that are not offline-safe as a whole (a Keeson "auto" entry
@@ -104,6 +106,7 @@ from .const import (
 OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_ADJUSTAMATTRESS: frozenset(v for v in ADJUSTAMATTRESS_VARIANTS if v != VARIANT_AUTO),
     BED_TYPE_COMFORT_ENHANCEMENTS: frozenset(COMFORT_ENHANCEMENTS_VARIANTS),
+    BED_TYPE_COMFORTBASE: frozenset(COMFORTBASE_PRODUCTS),
     BED_TYPE_GOODVIBE: frozenset(GOODVIBE_PROFILES),
     BED_TYPE_HJBED: frozenset(HJBED_PROFILES),
     BED_TYPE_ESHINE_OKIN: frozenset(ESHINE_OKIN_PROFILES),

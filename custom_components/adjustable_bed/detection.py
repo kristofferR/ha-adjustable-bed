@@ -45,6 +45,7 @@ from .const import (
     BED_TYPE_CHERISH,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORT_MOTION,
+    BED_TYPE_COMFORTBASE,
     BED_TYPE_COOLBASE,
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
@@ -559,6 +560,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SIMMONS: "SIMMONS app",
     BED_TYPE_ADJUSTAMATTRESS: "AdjustaMattress app (seven product layouts)",
     BED_TYPE_ADJUSTABLE_LUMBAR: "Adjustable bed (Lumbar) app",
+    BED_TYPE_COMFORTBASE: "ComfortBaseForBluetooth / ComfortBase BLE (choose product)",
     BED_TYPE_COMFORT_ENHANCEMENTS: "Comfort Enhancements app (choose MC2/MC3/MC4/MC5)",
     BED_TYPE_ESHINE_OKIN: "eShine app (E2000 / E3000 / E3100 / E5000)",
     BED_TYPE_ESHINE: "Eshine app (E6000)",
@@ -788,7 +790,7 @@ _HIDDEN_APP_ROWS: Final = frozenset(
 HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_APP_ROWS)
 # Bed types whose one row asks for the product, although each product is an app entry.
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
-    {BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS}
+    {BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE}
 )
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.

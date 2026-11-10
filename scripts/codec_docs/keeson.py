@@ -65,6 +65,7 @@ _KEESON_NAMES: dict[str, str] = {
     "bf": "BF",
     "cherish": "Cherish",
     "comfort_enhancements": "Comfort Enhancements",
+    "comfortbase": "ComfortBaseForBluetooth",
 }
 # Controllers that keep their key tables and timing; their profile is only the frame.
 _KEESON_CONTROLLERS: dict[str, tuple[str, str]] = {
@@ -79,6 +80,7 @@ _KEESON_CONTROLLERS: dict[str, tuple[str, str]] = {
     "coolbase": ("`coolbase`", "[Cool Base](#cool-base)"),
     "bf": ("`bf`", "[BF and Cherish](#bf-and-cherish)"),
     "cherish": ("`cherish`", "[BF and Cherish](#bf-and-cherish)"),
+    "comfortbase": ("`comfortbase`", "[ComfortBaseForBluetooth](#comfortbaseforbluetooth)"),
     "comfort_enhancements": (
         "`comfort_enhancements`",
         "[Comfort Enhancements](#comfort-enhancements)",
@@ -952,6 +954,38 @@ def render_keeson_serta_mp() -> str:
     )
 
 
+def render_comfortbase() -> str:
+    from custom_components.adjustable_bed.const import (
+        KEESON_BASE_NOTIFY_CHAR_UUID,
+        KEESON_BASE_WRITE_CHAR_UUID,
+    )
+    from custom_components.adjustable_bed.profiles import comfortbase as app
+
+    profile = keeson_profiles.COMFORTBASE
+    rows = [(p.name, str(p.stored_value), ", ".join(p.axes), "Yes" if p.massage_light else "No")
+            for p in app.PRODUCTS.values()]
+    controls = [(f"{axis} {direction}", _hex(keeson_profiles.encode(profile, word)))
+                for axis, (_label, up, down) in app.AXES.items()
+                for direction, word in (("up", up), ("down", down))]
+    controls += [(name, _hex(keeson_profiles.encode(profile, word)))
+                 for name, word in {**app.PRESETS, **{f"Memory {n}": w for n, w in app.MEMORY.items()},
+                                    **app.MASSAGE, "Light toggle": app.LIGHT_TOGGLE, "STOP": 0}.items()]
+    return "\n\n".join((
+        "\n".join(_table(("Product", "App value", "Controls", "Massage / light"), rows)),
+        "\n".join(_table(("Action", "Frame"), controls)),
+        "\n".join(_table(("Setting", "Value"), [
+            ("Write service / characteristic", f"`{app.WRITE_SERVICE}` / `{KEESON_BASE_WRITE_CHAR_UUID}`"),
+            ("Notify service / characteristic", f"`{app.NOTIFY_SERVICE}` / `{KEESON_BASE_NOTIFY_CHAR_UUID}`"),
+            ("Held refresh", f"{app.REFRESH_MS} ms"),
+            ("Save all five presets", f"{app.SAVE_SECONDS} s held recall, then STOP"),
+            ("Alarm sequence", f"Two clock writes, {app.ALARM_DELAY_SECONDS * 1000:g} ms wait, one alarm"),
+            ("Clock", "E7 80 01, year minus 1900, zero-based month, day, hour, minute, second, checksum"),
+            ("Alarm", "ED 80 03, hour, minute, opaque FF, Memory A 0E / B 0F, eight zeros, checksum"),
+            ("Alarm cancel", _hex(keeson_codec.alarm_table(3, bytes(4)))),
+        ])),
+    ))
+
+
 BLOCKS: list[Block] = [
     (GUIDE, "keeson-profiles", render_keeson_profiles),
     (GUIDE, "keeson-transports", render_keeson_transports),
@@ -977,4 +1011,5 @@ BLOCKS: list[Block] = [
     (GUIDE, "keeson-controllers", render_keeson_controllers),
     (GUIDE, "keeson-glideaway", render_keeson_glideaway),
     (GUIDE, "keeson-scott-living", render_keeson_scott_living),
+    (GUIDE, "keeson-comfortbase", render_comfortbase),
 ]

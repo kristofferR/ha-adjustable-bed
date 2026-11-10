@@ -1181,6 +1181,7 @@ def default_scenario(bed_type: str) -> Scenario:
         const.BED_TYPE_ZSERIES: const.ZSERIES_VARIANT_Z230,
         const.BED_TYPE_RICHMAT: const.RICHMAT_VARIANT_WILINKE,
         const.BED_TYPE_HJBED: "hj_bedbjrn",
+        const.BED_TYPE_COMFORTBASE: "accord",
         const.BED_TYPE_DOUBLESLEEP: "p1",
         const.BED_TYPE_RICHMAT_CLASSIC_APPS: "avocadoecobase",
     }.get(bed_type)
@@ -1326,6 +1327,13 @@ def route_scenarios() -> list[Scenario]:
                     replies={**base.replies, **ROUTE_REPLIES.get(f"{bed_type}:{variant}", {})},
                 )
             )
+    from custom_components.adjustable_bed.profiles.comfortbase import PRODUCTS
+
+    for product in PRODUCTS:
+        scenarios.append(dataclasses.replace(
+            default_scenario("comfortbase"), id=f"comfortbase:{product}",
+            protocol_variant=product, layout_id="comfortbase",
+        ))
     # Richmat app family: the picker model selects the byte table within one controller.
     from custom_components.adjustable_bed.beds.richmat_mh.controller import (
         MODEL_VARIANT_PREFIX,

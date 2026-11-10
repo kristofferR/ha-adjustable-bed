@@ -78,6 +78,7 @@ KEESON_STREAM: dict[str, tuple[str, ...]] = {
     "bf": ("bf",),
     "cherish": ("cherish",),
     "comfort_enhancements": ("enh",),
+    "comfortbase": ("row161",),
     "glideaway_motion": ("glide",),
     # Malouf's legacy OKIN route over the E6 frame (row023).
     "malouf_legacy_okin": ("malouf", "row023"),

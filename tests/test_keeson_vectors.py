@@ -49,6 +49,7 @@ E6_CONTROLLERS = frozenset(
         "bf",
         "cherish",
         "comfort_enhancements",
+        "comfortbase",
     }
 )
 # Their full command plans are captured by the wire snapshot.
@@ -93,6 +94,8 @@ def _decode(data: bytes) -> bytes:
     if data[:3] == b"\xe5\xfe\x17":
         pulses = int.from_bytes(data[3:5], "little"), int.from_bytes(data[5:7], "little")
         return codec.position_target(*pulses)
+    if data[:2] == b"\xed\x80":
+        return codec.alarm_table(data[2], data[3:15])
     if data[:3] == b"\xe7\x80\x01":
         return codec.clock_fields(data[3:9])
     if data[:1] == b"{":
@@ -201,6 +204,12 @@ def _e6_census(key: str) -> set[bytes]:
     """Key frames the controllers that keep their own tables send."""
     profile = profiles.PROFILES[key]
     words = {codec.RELEASE}
+    if key == "comfortbase":
+        from custom_components.adjustable_bed.profiles import comfortbase as app
+
+        words |= {word for _label, up, down in app.AXES.values() for word in (up, down)}
+        words |= {*app.PRESETS.values(), *app.MEMORY.values(), *app.MASSAGE.values(), app.LIGHT_TOGGLE}
+        return {profiles.encode(profile, word) for word in words}
     if key == "glideaway_motion":
         gm = glideaway_motion
         words |= {word for pair in gm.AXES.values() for word in pair}

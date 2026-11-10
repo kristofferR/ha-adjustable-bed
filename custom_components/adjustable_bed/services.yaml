@@ -363,12 +363,16 @@ timed_move:
               value: head
             - label: Feet
               value: feet
+            - label: Head and Foot Together
+              value: both
             - label: Tilt
               value: tilt
             - label: Lumbar
               value: lumbar
             - label: Bed Height
               value: bed_height
+            - label: Elevate
+              value: elevate
             - label: Stair
               value: stair
             - label: M1X12 Part 1
@@ -3260,3 +3264,29 @@ richmat_app_alarm:
               value: "5"
             - label: Sunday
               value: "6"
+
+
+comfortbase_set_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    enabled:
+      required: true
+      selector:
+        boolean:
+    time:
+      selector:
+        time:
+    memory:
+      default: 1
+      selector:
+        select:
+          options: ["1", "2"]
+    side:
+      selector:
+        select:
+          options: [both, left, right]

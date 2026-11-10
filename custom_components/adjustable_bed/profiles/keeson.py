@@ -25,6 +25,7 @@ from ..alarm_table import AlarmTableScheduleSpec
 from ..codec import keeson as codec
 from ..codec.keeson import ByteOrder, Carrier, Side, TransportKey
 from ..execution import NO_EXECUTION_CAPABILITIES, STREAM_HOLD, ExecutionCapabilities
+from . import comfortbase as comfortbase_app
 
 Preset = Literal["flat", "zero_g", "lounge", "tv", "anti_snore"]
 Massage = Literal["step", "absolute", "zone_steps", "none"]
@@ -511,6 +512,17 @@ CHERISH: Final = KeesonProfile(key="cherish", execution=STREAM_HOLD, order="big"
 COMFORT_ENHANCEMENTS: Final = KeesonProfile(
     key="comfort_enhancements", execution=STREAM_HOLD, order="big", hold=None
 )
+# com.ore.yorkfeng.comfortbaseble2 1.1.2 (6), row161. Product layouts live
+# in comfortbase.py; neither product nor Memory A/B is a wire-side selector.
+COMFORTBASE: Final = KeesonProfile(
+    key="comfortbase", execution=STREAM_HOLD, header=0xE6, side=0,
+    hold=(10, comfortbase_app.REFRESH_MS), refresh_ms=comfortbase_app.REFRESH_MS, fixed_write=True,
+    release=Release(guarded=True),
+    presets=comfortbase_app.PRESETS,
+    memory=comfortbase_app.MEMORY, memory_slots=2,
+    memory_save=MemorySave(words=comfortbase_app.MEMORY),
+    massage="none", tilt=False, lumbar=False,
+)
 
 PROFILES: Final[dict[str, KeesonProfile]] = {
     profile.key: profile
@@ -556,6 +568,7 @@ PROFILES: Final[dict[str, KeesonProfile]] = {
         BF,
         CHERISH,
         COMFORT_ENHANCEMENTS,
+        COMFORTBASE,
     )
 }
 

@@ -52,6 +52,7 @@ APK Protocol Audit row044.
 
 | Analyzed | App | Package ID | Profile |
 |----------|-----|------------|---------|
+| ✅ | [ComfortBaseForBluetooth](https://play.google.com/store/apps/details?id=com.ore.yorkfeng.comfortbaseble2) 1.1.2 (6) | `com.ore.yorkfeng.comfortbaseble2` | [ComfortBaseForBluetooth](#comfortbaseforbluetooth) |
 | ✅ | [Ergomotion 4.0](https://play.google.com/store/apps/details?id=com.sfd.hump) | `com.sfd.hump` | [Ergomotion 4.0](#ergomotion-40); also [KSBT](#ksbt-family) |
 | ✅ | [1500 Tilt Base Remote](https://play.google.com/store/apps/details?id=com.sfd.rondure_hump) | `com.sfd.rondure_hump` | [KSBT](#ksbt-family) |
 | ✅ | [Q-Plus Adjustable Remote](https://play.google.com/store/apps/details?id=com.sbi.costco) | `com.sbi.costco` | [Q-Plus Adjustable Remote](#q-plus-adjustable-remote); also [KSBT](#ksbt-family) |
@@ -195,6 +196,7 @@ only through **Reconfigure**, and the app review in Repairs opens it.
 | BF | bed type `bf` | K1 `E5`, big-endian | app controller | app controller | app controller | renewable lease |
 | Cherish | bed type `cherish` | K1 `E5`, big-endian | app controller | app controller | app controller | renewable lease |
 | Comfort Enhancements | bed type `comfort_enhancements` | K1 `E5`, big-endian | app controller | app controller | app controller | renewable lease |
+| ComfortBaseForBluetooth | bed type `comfortbase` | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller | renewable lease |
 
 ### Hold and release timing
 
@@ -242,10 +244,10 @@ release refreshes at its app interval until the lease ends or STOP arrives, up t
 
 Words, encoded in the profile's frame. AdjustaMattress P1, AdjustaMattress P2,
 AMERICANSTAR, Avanti Bases, Bedsense Bases, BF, Cherish, Comfort Enhancements,
-Cool Base, Dynasty Bases, Glideaway Motion, Heal Every Night, INNOVA, Malouf
-legacy OKIN, MaxCoil Una, OKIN-Seating, Rondure, SBI, Scott Living, Simon Li,
-Sleepy's BOX15 keep their key tables with their app controllers; see their
-sections.
+ComfortBaseForBluetooth, Cool Base, Dynasty Bases, Glideaway Motion, Heal Every
+Night, INNOVA, Malouf legacy OKIN, MaxCoil Una, OKIN-Seating, Rondure, SBI, Scott
+Living, Simon Li, Sleepy's BOX15 keep their key tables with their app controllers;
+see their sections.
 
 | Profile | Flat | Zero G | Lounge | TV | Anti-snore | Memory recall | Memory save |
 |---|---|---|---|---|---|---|---|
@@ -371,7 +373,7 @@ family's codec exists.
 | P2 6-byte | `04 02` + big-endian word | `04 02 00 00 00 01` | KSBT, KSBT03C, Adjustable Lite (KSBT01C), Adjustable Lite (KSBT03C) |
 | P2 7-byte (`05`) | `05 02` + big-endian word + `00` | `05 02 00 00 00 01 00` | KSBT03CR |
 | P2 7-byte, checksum end | `04 02` + big-endian word + checksum | `04 02 00 00 00 01 F8` | KSBT04C, Sleep Harmony (KSBT04C) |
-| K1 `E6`, little-endian, side `00` | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 00 04` | Sleep Harmony (base-i5), Glideaway Motion, Malouf legacy OKIN, Sleepy's BOX15, AdjustaMattress P1 |
+| K1 `E6`, little-endian, side `00` | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 00 04` | Sleep Harmony (base-i5), Glideaway Motion, Malouf legacy OKIN, Sleepy's BOX15, AdjustaMattress P1, ComfortBaseForBluetooth |
 | P2 7-byte, `00` end | `04 02` + big-endian word + `00` | `04 02 00 00 00 01 00` | Purple Premium Plus |
 | K1 `E6`, little-endian, side `01` | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 01 03` | Scott Living |
 | K1 `E6`, little-endian, Left side `02` | `E6 FE 16` + word + side + checksum | `E6 FE 16 01 00 00 00 02 02` | Base (BaseI4/I5), Ergomotion |
@@ -2013,6 +2015,7 @@ frames of other families and keep it.
 | Cool Base | `coolbase` | K1 `E5`, little-endian | `E5 FE 16 01 00 00 00 05` | `E5 FE 16 00 00 00 00 06` | renewable lease | [Cool Base](#cool-base) |
 | BF | `bf` | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | renewable lease | [BF and Cherish](#bf-and-cherish) |
 | Cherish | `cherish` | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | renewable lease | [BF and Cherish](#bf-and-cherish) |
+| ComfortBaseForBluetooth | `comfortbase` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | renewable lease | [ComfortBaseForBluetooth](#comfortbaseforbluetooth) |
 | Comfort Enhancements | `comfort_enhancements` | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | renewable lease | [Comfort Enhancements](#comfort-enhancements) |
 <!-- /generated -->
 
@@ -4431,6 +4434,94 @@ audit:
   excluded from Git.
 - Audit: APK Protocol Audit row067.
 
+### ComfortBaseForBluetooth
+
+**App:** [ComfortBaseForBluetooth](https://play.google.com/store/apps/details?id=com.ore.yorkfeng.comfortbaseble2) 1.1.2 (6), `com.ore.yorkfeng.comfortbaseble2`
+
+**Status:** ❓ Needs testing. Static app behavior is verified; physical actuator mapping and memory persistence are unverified.
+
+#### Setup
+
+Choose **ComfortBaseForBluetooth / ComfortBase BLE**, then the product shown in the app. Product selection sets the axes and massage controls; it is never a wire selector. Detection: none. The app scans all BLE devices without name, service or manufacturer filters, so shared Keeson discovery cannot identify this app. No PIN, authentication or initial command is required.
+
+The write role is FFE9 under FFE5, and notification role FFE4 under FFE0. Home Assistant subscribes and waits for subscription success before admitting commands. The live characteristic properties determine the supported write mode. Android's writeType and CCCD enable fields are runtime platform values, not literals embedded in the APK.
+
+#### Controls
+
+All five presets support recall and the app's repeated-frame save gesture. Memory A/B are presets, not Left/Right controls. The elevation key is labelled height, not lumbar; back/neck tilt is a separate key. The combined control sends only its fixed head-and-foot command. Every product transmits selector zero; arbitrary selectors and concurrent independent motors are unavailable.
+
+Massage exposes timer cycle, wave next/previous and overall intensity up/down. The light action toggles only. Freestyle has no massage or light controls. No absolute intensity, discrete light state or direct timer selection is inferred.
+
+<!-- generated:keeson-comfortbase -->
+| Product | App value | Controls | Massage / light |
+|---|---|---|---|
+| SS18X20 | 15 | head, feet, elevate | Yes |
+| SS18X40 | 16 | head, feet, both, elevate, tilt | Yes |
+| SSX25 | 17 | head, feet, elevate | Yes |
+| SSX45 | 18 | head, feet, both, elevate, tilt | Yes |
+| Freestyle 2.0 | 14 | head, feet | No |
+| Accord | 11 | head, feet, elevate | Yes |
+| Vesta | 12 | head, feet, elevate | Yes |
+| Odessa | 13 | head, feet, both, elevate, tilt | Yes |
+| Somerston | 19 | head, feet | Yes |
+| Madrid | 20 | head, feet, tilt | Yes |
+
+| Action | Frame |
+|---|---|
+| head up | `E6 FE 16 01 00 00 00 00 04` |
+| head down | `E6 FE 16 02 00 00 00 00 03` |
+| feet up | `E6 FE 16 04 00 00 00 00 01` |
+| feet down | `E6 FE 16 08 00 00 00 00 FD` |
+| both up | `E6 FE 16 05 00 00 00 00 00` |
+| both down | `E6 FE 16 0A 00 00 00 00 FB` |
+| tilt up | `E6 FE 16 10 00 00 00 00 F5` |
+| tilt down | `E6 FE 16 20 00 00 00 00 E5` |
+| elevate up | `E6 FE 16 40 00 00 00 00 C5` |
+| elevate down | `E6 FE 16 80 00 00 00 00 85` |
+| zero_g | `E6 FE 16 00 10 00 00 00 F5` |
+| flat | `E6 FE 16 00 00 00 08 00 FD` |
+| anti_snore | `E6 FE 16 00 80 00 00 00 85` |
+| Memory 1 | `E6 FE 16 00 20 00 00 00 E5` |
+| Memory 2 | `E6 FE 16 00 40 00 00 00 C5` |
+| timer | `E6 FE 16 00 02 00 00 00 03` |
+| wave_next | `E6 FE 16 00 00 00 10 00 F5` |
+| wave_previous | `E6 FE 16 00 00 00 04 00 01` |
+| intensity_up | `E6 FE 16 00 0C 00 00 00 F9` |
+| intensity_down | `E6 FE 16 00 00 80 01 00 84` |
+| Light toggle | `E6 FE 16 00 00 02 00 00 03` |
+| STOP | `E6 FE 16 00 00 00 00 00 05` |
+
+| Setting | Value |
+|---|---|
+| Write service / characteristic | `0000ffe5-0000-1000-8000-00805f9b34fb` / `0000ffe9-0000-1000-8000-00805f9b34fb` |
+| Notify service / characteristic | `0000ffe0-0000-1000-8000-00805f9b34fb` / `0000ffe4-0000-1000-8000-00805f9b34fb` |
+| Held refresh | 100 ms |
+| Save all five presets | 6 s held recall, then STOP |
+| Alarm sequence | Two clock writes, 150 ms wait, one alarm |
+| Clock | E7 80 01, year minus 1900, zero-based month, day, hour, minute, second, checksum |
+| Alarm | ED 80 03, hour, minute, opaque FF, Memory A 0E / B 0F, eight zeros, checksum |
+| Alarm cancel | `ED 80 03 00 00 00 00 00 00 00 00 00 00 00 00 8F` |
+<!-- /generated -->
+
+#### Timing
+
+The generated table gives the refresh and save duration. Movement refreshes while held and sends an immediate zero STOP on release or cancellation. A tap recall sends once without STOP. Each save owns its bounded gesture and completes STOP before another command runs; no delayed callback can stop a subsequent movement. A local completed save is not a firmware acknowledgement.
+
+#### Notifications
+
+The app's timer display uses the low nibble at offset 8 for length 10, 14 for length 16 and 19 for length 23. Values 1/2/3 show 10/20/30 minutes; other values show zero. Other lengths show zero, without header or checksum checks. No position, light state, wave, intensity, alarm or acknowledgement parser exists.
+
+An F4 FE 16 prefix of 7 to 20 bytes begins a fragmented reply. Home Assistant bounds the assembled pair to 23 bytes, consumes its prefix once, ignores empty tails and clears partial state on reconnect or a direct reply. This prevents the app's indefinite stale-prefix replay. Timer state becomes unknown after disconnect.
+
+#### Services
+
+`adjustable_bed.comfortbase_set_alarm` enables a bed alarm for Memory A (1) or B (2), or cancels it. Enabling sends local wall-clock sync twice, waits, then writes the selected time and preset. The third alarm parameter stays opaque; no weekday controls are offered. `adjustable_bed.sync_clock` performs the two clock writes independently. The alarm is available on every product, including Freestyle. Two-address HA pairs preserve their physical target; this app provides no single-address side controls.
+
+#### Evidence
+
+APK Protocol Audit row161 and independent audit001 verify all ten product choices, 31 reachable actions, 43 literal builders and 20 notification scenarios. The static save gesture repeats recall bytes; firmware storage and persistence need validation by beta or release users.
+
+
 ## Notes
 
 ### Timing evidence
@@ -4475,3 +4566,5 @@ types store their own defaults and are left unchanged.
 - Keeson layout apps: see the [Keeson layout app family](#keeson-layout-app-family).
 - The other routes come from the smartbed-mqtt reverse engineering, fresh
   decompilation of the OEM apps listed above, and hardware reports.
+
+ComfortBaseForBluetooth row161 artifact SHA-256: `d6df5addf25e74c1ba7ad32a50e0cdbbf18e1e02a1a0fd511c34eb9546187c8e`. Report manifest: `4f66cc4d61b1edd533de303dfc64bf83c68d78cb65a9fd0a1e1796a9c7ec07c2`.

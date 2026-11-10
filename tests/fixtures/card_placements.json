@@ -532,6 +532,15 @@
  "button:comfort_enhancements_timer_cycle": {
   "card_section": "massage"
  },
+ "button:comfortbase_save_anti_snore": {
+  "card_section": "presets"
+ },
+ "button:comfortbase_save_flat": {
+  "card_section": "presets"
+ },
+ "button:comfortbase_save_zero_g": {
+  "card_section": "presets"
+ },
  "button:connect": {
   "card_section": "connection",
   "card_role": "connect"
@@ -3060,6 +3069,10 @@
  },
  "sensor:massage_head_level": {
   "card_section": "hidden"
+ },
+ "sensor:massage_timer": {
+  "card_section": "massage",
+  "card_role": "timer"
  },
  "sensor:massage_timer_mode": {
   "card_section": "hidden"

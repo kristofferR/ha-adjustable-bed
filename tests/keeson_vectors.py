@@ -19,6 +19,9 @@ Enhancements; their pre-v5 frames are those of the wire snapshot. SBI and Rondur
 have no report.
 """
 
+import json as _json
+from pathlib import Path as _Path
+
 FROZEN_FRAMES: dict[str, frozenset[str]] = {
     # pre-v5 KeesonController
     "base": frozenset(
@@ -1950,3 +1953,10 @@ ERGOMOTION_4_P1_SIDE_VECTORS: dict[str | None, tuple[int, str]] = {
     "left": (1, "e6fe16010000000202"),
     "right": (1, "e6fe16010000000103"),
 }
+
+# Row161, com.ore.yorkfeng.comfortbaseble2 1.1.2 (6), accepted literal builders.
+FROZEN_FRAMES["comfortbase"] = frozenset(
+    row["expected_bytes"] for row in _json.loads(
+        (_Path(__file__).parent / "fixtures/comfortbase/vectors.json").read_text()
+    )["builders"]
+)

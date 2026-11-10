@@ -773,3 +773,11 @@ All selected targets are validated before any writes. Existing
 `richmat_mh_alarm`, `richmat_mh_waist_alarm`, `richmat_mh_aroma` and
 `richmat_mh_light_color` actions also work for the model/reply-gated features
 of these app profiles. RUF exposes only its waist alarm among those actions.
+
+### ComfortBaseForBluetooth bed alarm
+
+`adjustable_bed.comfortbase_set_alarm` accepts `device_id`, `enabled`, a minute-precision
+`time` when enabling, and `memory` (1 for A, 2 for B). Optional `side` targets a physical
+receiver of a two-address pair. Enabling synchronizes the local wall clock twice, then
+programs the bed alarm. Disabling writes the app's all-zero cancel record. There is no
+alarm feedback or decoded weekday schedule. `adjustable_bed.sync_clock` is also available.

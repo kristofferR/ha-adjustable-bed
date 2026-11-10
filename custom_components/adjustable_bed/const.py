@@ -358,10 +358,12 @@ TIMED_MOVE_MOTOR_OPTIONS: Final = (
     "legs",
     "head",
     "feet",
+    "both",
     "tilt",
     "pillow",
     "lumbar",
     "bed_height",
+    "elevate",
     "stair",
     "m1x12_part_1",
     "m1x12_part_2",
@@ -509,6 +511,7 @@ ZSERIES_VARIANTS: Final = {
     ZSERIES_VARIANT_Z280: "Z-280 page (M1/M2, separate massage zones)",
 }
 # Bed types whose variant is a user choice with no automatic default.
+BED_TYPE_COMFORTBASE: Final = "comfortbase"
 BED_TYPE_COMFORT_ENHANCEMENTS: Final = "comfort_enhancements"
 COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc2": "MC2: AC-1/BC3, Massage Plus / Comfort Position",
@@ -517,7 +520,7 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc5": "MC5: Hi Lo Lift / Massage Plus",
 }
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
-    {"richmat_sleep_receiver", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
+    {"richmat_sleep_receiver", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
 )
 # Explicit OKIN Bedding app profiles sharing the Serenity controller core.
 OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
@@ -742,6 +745,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_COMFORT_ENHANCEMENTS,
+    BED_TYPE_COMFORTBASE,
     BED_TYPE_ESHINE,
     BED_TYPE_ESHINE_OKIN,
     # Explicit Richmat MH app profiles
@@ -2899,6 +2903,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # 100 ms is the app refresh; the count also bounds a Z-Series button press.
     BED_TYPE_ZSERIES: (10, 100),
     BED_TYPE_SIMMONS: (4, 300),  # APK 300 ms hold refresh; ~1.2 s HA movement
+    BED_TYPE_COMFORTBASE: (10, 100),
     BED_TYPE_COMFORT_ENHANCEMENTS: (5, 200),  # app 200 ms refresh, bounded HA tap
     BED_TYPE_ESHINE_OKIN: (10, 300),  # App refresh cadence; count bounds HA movement
     BED_TYPE_ESHINE: (10, 100),  # Eshine 100 ms refresh; count bounds an HA movement

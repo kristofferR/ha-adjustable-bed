@@ -48,6 +48,7 @@ FAMILY = CodecFamily(
             "bf",
             "cherish",
             "comfort_enhancements",
+            "comfortbase",
             "ergomotion_4",
         }
     ),

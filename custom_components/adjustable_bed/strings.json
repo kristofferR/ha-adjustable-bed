@@ -2852,6 +2852,15 @@
       },
       "ruf_richmat_lift_down": {
         "name": "Lift Down"
+      },
+      "comfortbase_save_flat": {
+        "name": "Save Flat"
+      },
+      "comfortbase_save_zero_g": {
+        "name": "Save Zero gravity"
+      },
+      "comfortbase_save_anti_snore": {
+        "name": "Save Anti-snore"
       }
     },
     "cover": {
@@ -4476,6 +4485,9 @@
       },
       "ruf_richmat_music_status": {
         "name": "Bed audio status"
+      },
+      "massage_timer": {
+        "name": "Massage timer category"
       }
     },
     "light": {
@@ -8082,6 +8094,32 @@
         },
         "side": {
           "name": "Paired bed side"
+        }
+      }
+    },
+    "comfortbase_set_alarm": {
+      "name": "ComfortBaseForBluetooth: set bed alarm",
+      "description": "Enable or cancel the bed alarm for Memory A or B. Uses the local wall clock. No alarm feedback is available.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "ComfortBaseForBluetooth bed."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Enable or cancel the bed alarm."
+        },
+        "time": {
+          "name": "Time",
+          "description": "Required when enabling, with minute precision."
+        },
+        "memory": {
+          "name": "Memory",
+          "description": "1: Memory A. 2: Memory B. These are presets, not bed sides."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Side of a combined two-address bed."
         }
       }
     }

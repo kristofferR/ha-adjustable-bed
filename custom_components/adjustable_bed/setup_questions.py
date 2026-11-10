@@ -41,6 +41,7 @@ from .const import (
     BED_TYPE_CASPER_BASE,
     BED_TYPE_CHERISH,
     BED_TYPE_COMFORT_ENHANCEMENTS,
+    BED_TYPE_COMFORTBASE,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ESHINE,
     BED_TYPE_ESHINE_OKIN,
@@ -262,6 +263,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "hush_base": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
     "hush_sleep_mm": GENERIC_FIELDS,
     "hush_sleep_sxb": GENERIC_FIELDS,
+    BED_TYPE_COMFORTBASE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_COMFORT_ENHANCEMENTS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_ESHINE_OKIN: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_ESHINE: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
@@ -1714,6 +1716,20 @@ def _asking(key: str, **declared: Any) -> SetupProfile:
     return replace(_BASE.get(key, SetupProfile()), **declared)
 
 
+def _comfortbase_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    from .profiles.comfortbase import PRODUCTS
+
+    product = PRODUCTS.get(data.get(CONF_PROTOCOL_VARIANT, ""))
+    if product is None:
+        return {}
+    return {
+        CONF_MOTOR_COUNT: len(product.axes) - ("both" in product.axes),
+        CONF_HAS_MASSAGE: product.massage_light,
+        CONF_DISABLE_ANGLE_SENSING: True,
+        CONF_MOTOR_PULSE_DELAY_MS: 100,
+    }
+
+
 SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     **_BASE,
     **_DECLARED,
@@ -2051,6 +2067,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         validate=_limoss_remote_errors,
         derive=lambda _data: {CONF_MOTOR_PULSE_USER_SET: False},
         imports=("beds.limoss.remote",),
+    ),
+    BED_TYPE_COMFORTBASE: _asking(
+        BED_TYPE_COMFORTBASE,
+        questions=(Question(CONF_PROTOCOL_VARIANT, _routes(BED_TYPE_COMFORTBASE)),),
+        derive=_comfortbase_settings,
     ),
     # The app's layout is its route, asked on the app's one row.
     BED_TYPE_COMFORT_ENHANCEMENTS: _asking(
