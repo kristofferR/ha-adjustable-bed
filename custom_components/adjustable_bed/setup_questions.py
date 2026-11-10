@@ -1011,12 +1011,14 @@ def _galaxy_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return {}
 
 
-def _galaxy_seed(data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
+def _galaxy_seed(
+    hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None
+) -> dict[str, Any]:
     from .beds.galaxy.discovery import suggested_profile
     if data.get(CONF_PROTOCOL_VARIANT) in GALAXY_PROFILES or discovered is None:
-        return {}
+        return dict(data)
     profile = suggested_profile(discovered.name)
-    return {CONF_PROTOCOL_VARIANT: profile} if profile is not None else {}
+    return {**data, CONF_PROTOCOL_VARIANT: profile} if profile is not None else dict(data)
 
 
 def _goodvibe_seed(

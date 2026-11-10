@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from custom_components.adjustable_bed.beds.galaxy.catalog import ACTIONS as GALAXY_ACTIONS
 from custom_components.adjustable_bed.beds.goodvibe import controller as goodvibe_bed
 from custom_components.adjustable_bed.beds.goodvibe import protocol as goodvibe
 from custom_components.adjustable_bed.beds.goodvibe.catalog import ACTIONS as GOODVIBE_ACTIONS
@@ -31,6 +32,7 @@ PROFILES = {
     "hjbed": profiles.HJBED,
     "eshine": profiles.ESHINE,
     "goodvibe": profiles.GOODVIBE,
+    "galaxy": profiles.GALAXY,
     "leggett_lp_legacy": profiles.LP_LEGACY,
     **{profile.key: profile for profile in profiles.RICHMAT_MH.values()},
     **{profile.key: profile for profile in profiles.RICHMAT_CLASSIC.values()},
@@ -157,6 +159,18 @@ def _goodvibe_census() -> set[str]:
     return {frame.hex() for frame in frames}
 
 
+def _galaxy_census() -> set[str]:
+    """Every catalog action on both framings and all three side operands."""
+    return {
+        goodvibe.action_frame(action, side, single, long).hex()
+        for action in GALAXY_ACTIONS.values()
+        if not action.local
+        for side in (0, 1, 2)
+        for single in (False, True)
+        for long in (False, True)
+    }
+
+
 def _classic_census() -> set[str]:
     """The classic apps' fixed frames, in mode 0.
 
@@ -203,6 +217,8 @@ def _census(key: str) -> set[str]:
         return _eshine_census()
     if key == "goodvibe":
         return _goodvibe_census()
+    if key == "galaxy":
+        return _galaxy_census()
     if key == "leggett_lp_legacy":
         return _lp_legacy_census()
     if key.startswith("richmat_classic_"):

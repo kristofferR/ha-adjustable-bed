@@ -1270,6 +1270,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             result = DetectionResult(BED_TYPE_GALAXY, 0.3, ["name:galaxy_app_candidate", *result.signals])
         else:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_GALAXY]))
+            result.signals.insert(0, "name:galaxy_app_candidate")
     if goodvibe_scan_matches(service_info.name) and not any(
         signal.startswith("excluded:") for signal in result.signals
     ):

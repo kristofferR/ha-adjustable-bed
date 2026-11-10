@@ -82,6 +82,68 @@ async def test_every_profile_builds_and_owns_only_its_side_configuration(hass, c
             resolve_product(key)
 
 
+@pytest.mark.parametrize(
+    "chosen,name,expected",
+    [
+        (None, None, None),
+        (None, "unknown", None),
+        (None, "6BRM123", "6BRM"),
+        ("HNRN", "6BRM123", "HNRN"),
+    ],
+)
+def test_setup_seed_preserves_staged_data_and_explicit_product(hass, chosen, name, expected):
+    from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_PROTOCOL_VARIANT
+    from custom_components.adjustable_bed.setup_questions import setup_profile
+    from tests.test_detection import _make_service_info
+
+    data = {CONF_BED_TYPE: "galaxy", "address": "AA:BB:CC:DD:EE:21", "preferred_adapter": "hci0"}
+    if chosen is not None:
+        data[CONF_PROTOCOL_VARIANT] = chosen
+    profile = setup_profile("galaxy")
+    assert profile is not None and profile.seed is not None
+    seeded = profile.seed(hass, data, _make_service_info(name) if name is not None else None)
+    assert seeded == {**data, **({CONF_PROTOCOL_VARIANT: expected} if expected else {})}
+
+
+@pytest.mark.parametrize(
+    "selected,expected", [("richmat", "bedtech"), ("bedtech", None), ("galaxy", None)]
+)
+def test_app_hint_preserves_receiver_recommendations_and_explicit_galaxy(selected, expected):
+    from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+    from custom_components.adjustable_bed.profile_recommendations import recommend_profile
+    from tests.test_detection import _make_service_info
+
+    advert = _make_service_info(
+        "QRRM157738",
+        service_uuids=["0000fee9-0000-1000-8000-00805f9b34fb"],
+        manufacturer_data={19543: bytes.fromhex("54307651")},
+    )
+    detected = detect_bed_type_detailed(advert)
+    assert detected.bed_type == "bedtech"
+    assert "galaxy" in detected.ambiguous_types
+    assert "name:galaxy_app_candidate" in detected.signals
+    result = recommend_profile(
+        {"bed_type": selected, "protocol_variant": "6BRM" if selected == "galaxy" else "auto"},
+        advert,
+        {},
+    )
+    if expected is None:
+        assert result is None
+    else:
+        assert result is not None and result.suggested == expected
+        assert "galaxy" not in result.choices
+
+
+def test_app_hint_does_not_corroborate_a_shared_receiver_signature():
+    from custom_components.adjustable_bed.profile_recommendations import recommend_profile
+    from tests.test_detection import _make_service_info
+
+    advert = _make_service_info(
+        "prefix-QRRM-suffix", service_uuids=["0000fee9-0000-1000-8000-00805f9b34fb"]
+    )
+    assert recommend_profile({"bed_type": "octo"}, advert, {}) is None
+
+
 async def test_runtime_press_and_memory_vectors(coordinator):
     for vector in fixture("runtime"):
         if vector["kind"] != "press":
