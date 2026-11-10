@@ -213,6 +213,8 @@ async def _create_controller_for_bed_type(
     client = _make_connected_client()
     if bed_type == const.BED_TYPE_ERGOMOTION_4:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "H"
+    if bed_type == const.BED_TYPE_JALON_BED:
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "40"
     if bed_type in const.KEESON_LAYOUT_APP_BED_TYPES:
         from custom_components.adjustable_bed.profiles.keeson import DEFAULT_LAYOUTS
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = DEFAULT_LAYOUTS[bed_type]
@@ -249,6 +251,9 @@ async def _create_controller_for_bed_type(
                 CONF_LP_LEGACY_WRITE_UUID: "11111111-2222-3333-4444-555555555555",
             }
         )
+
+    if bed_type == const.BED_TYPE_JALON_BED:
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "40"
 
     if bed_type == const.BED_TYPE_MOTOMOTION:
         # Include the source-declared side-state specs in translation reachability.
@@ -453,6 +458,8 @@ async def test_registry_entries_resolve_to_controller_classes(bed_type: str) -> 
         coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: 129, const.CONF_KAIDI_ROOM_ID: 10000})
     if bed_type == const.BED_TYPE_ERGOMOTION_4:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "H"
+    if bed_type == const.BED_TYPE_JALON_BED:
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "40"
     controller = await _create_from_registry(coordinator, bed_type)
 
     assert isinstance(controller, BedController)

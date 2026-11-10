@@ -763,6 +763,16 @@
  "button:isleep_pattern": {
   "card_section": "massage"
  },
+ "button:jalon_massage_feet": {
+  "card_section": "massage"
+ },
+ "button:jalon_massage_head": {
+  "card_section": "massage"
+ },
+ "button:jalon_massage_timer": {
+  "card_section": "massage",
+  "card_role": "timer"
+ },
  "button:keeson_back_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -2981,6 +2991,9 @@
  "sensor:innova_massage_timer": {
   "card_section": "massage",
   "card_role": "timer"
+ },
+ "sensor:jalon_massage_timer_bucket": {
+  "card_section": "hidden"
  },
  "sensor:leggett_led_mask": {
   "card_section": "hidden"

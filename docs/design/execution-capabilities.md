@@ -716,6 +716,7 @@ Report workspaces are machine-local under
 | serta330 | `com.ore.serta330` | 1.1 | COMPLETE | `com.ore.serta330-1.1-2026-09-30-extra-four-033-com-ore-serta330-007/report/` |
 | sfdergo | `com.sfd.ergomotion` | 1.6.4 | COMPLETE | `com.sfd.ergomotion-1.6.4-2026-10-26-39bdcafa-repair-002/report/` |
 | sfm | `com.ore.sfm` | 2.0 | COMPLETE | `com.ore.sfm-2.0-2026-10-02-queue-903926b6-20261002-059-002/report/` |
+| jalon | `com.ore.jalon.neworebeding_android` | 1.4 (4) | COMPLETE | `com.ore.jalon.neworebeding_android-1.4-2026-11-10-queue001/report/` |
 | sfmc2 | `com.ore.sfmc2bedsence` | 1.1 | COMPLETE | `com.ore.sfmc2bedsence-1.1-2026-10-02-queue-903926b6-20261002-059-001/report/` |
 | simmons | `com.okin.simmons` | 1.12.9 | COMPLETE | `com.okin.simmons-1.12.9-2026-10-01-queue-e0bb6807-20261001-049-004/report/` |
 | simon | `com.okin.simon` | 1.0.1 | COMPLETE | `com.okin.simon-1.0.1-2026-10-02-queue-903926b6-20261002-060-001/report/` |

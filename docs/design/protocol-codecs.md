@@ -14,6 +14,11 @@ it.
 Imports point one way: controllers use profiles and codecs, profiles use the
 codec, and the codec imports neither.
 
+The independently audited OkinComfortBed Ⅱ (Jalon) profile reproduces all of its
+control, current-time and alarm literals through `codec/keeson.py`. Its model
+byte stays zero and establishes no side addressing; its session and gesture
+behavior lives in `beds/jalon_bed/`, separate from the other ORE apps.
+
 ## Codec families
 
 Each codec module's docstring describes its frame; each profile module's

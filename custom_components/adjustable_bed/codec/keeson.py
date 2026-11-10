@@ -271,3 +271,34 @@ def parse_position_status(data: bytes) -> PositionStatus | None:
         led_on=bool(data[13] & 0x40),
         timer_minutes=10 * timer if 1 <= timer <= 3 else None,
     )
+
+
+@dataclass(frozen=True, slots=True)
+class JalonStatus:
+    """OkinComfortBed Ⅱ's timer bucket and arithmetic signed-shift UBB field."""
+
+    timer_minutes: int
+    light_value: int
+
+
+def parse_jalon_status(data: bytes) -> JalonStatus:
+    """Decode the frozen parser's offsets; assembly/admission belongs to the session.
+
+    The app displays light-on only for a positive result. In particular 80-BF
+    yields -2 and C0-FF yields -1, rather than an unsigned light bit.
+    """
+    offsets = {10: (8, 7), 16: (14, 13), 23: (19, 18)}
+    if len(data) not in offsets:
+        return JalonStatus(0, 0)
+    timer_index, light_index = offsets[len(data)]
+    timer = {1: 10, 2: 20, 3: 30}.get(data[timer_index] & 15, 0)
+    light = int.from_bytes(data[light_index:light_index + 1], signed=True) >> 6
+    return JalonStatus(timer, light)
+
+
+# Fixed GATT roles and reply prefix of the independently audited Jalon app.
+JALON_WRITE_SERVICE: Final = "0000ffe5-0000-1000-8000-00805f9b34fb"
+JALON_WRITE: Final = "0000ffe9-0000-1000-8000-00805f9b34fb"
+JALON_NOTIFY_SERVICE: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
+JALON_NOTIFY: Final = "0000ffe4-0000-1000-8000-00805f9b34fb"
+JALON_PREFIX: Final = bytes.fromhex("f4fe16")

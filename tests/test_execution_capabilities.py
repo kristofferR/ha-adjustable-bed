@@ -56,6 +56,7 @@ DESIGN = Path(__file__).parents[1] / "docs" / "design" / "execution-capabilities
 # OKIN, Sino, KSBT CR, OKIN FFE, Sleepy's Box15, Rondure and Scott Living routes
 # are blocked and declare nothing.
 KEESON_STREAM: dict[str, tuple[str, ...]] = {
+    "jalon_bed": ("jalon",),
     "ergomotion": ("sfdergo",),
     "serta": ("serta330",),
     "restonic_a": ("restonic",),

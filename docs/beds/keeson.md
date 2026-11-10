@@ -77,12 +77,14 @@ APK Protocol Audit row044.
 | ✅ | [Glideaway Motion](https://play.google.com/store/apps/details?id=com.ore.bedding.glideawaymontion) 1.0.3 (11) | `com.ore.bedding.glideawaymontion` | [Glideaway Motion](#glideaway-motion) |
 | ✅ | [AdjustaMattress](https://play.google.com/store/apps/details?id=com.okin.adjustamattress) 1.6.0 (10) | `com.okin.adjustamattress` | [AdjustaMattress](#adjustamattress) |
 | ✅ | Scott Living | `com.keeson.scottlivingrelease` | [Scott Living](#scott-living) |
+| ✅ | [OkinComfortBed Ⅱ](https://apkpure.com/okin-comfortbed-%E2%85%B1/com.ore.jalon.neworebeding_android) 1.4 (4) | `com.ore.jalon.neworebeding_android` | [Jalon](#okincomfortbed-ⅱ-jalon) |
 | Separate processor | Tempur Sleeptracker-AI ([framed-JSON processor guide](sleeptracker.md)) | `com.fullpower.applications.horizon` | none |
 
 The eight apps of the [Keeson layout app family](#keeson-layout-app-family) (Tempur
 Curve, Q-Plus, Serta MP Remote, Omazz Adjusto III, Ergomotion, ROW Control, Ergo
 Slim and TEMPUR AU) are also their own bed types with their app's exact keys and
 layouts; the "also" routes are the generic Keeson variants that drive the same beds.
+
 
 ## Features
 
@@ -195,6 +197,7 @@ only through **Reconfigure**, and the app review in Repairs opens it.
 | BF | bed type `bf` | K1 `E5`, big-endian | app controller | app controller | app controller | renewable lease |
 | Cherish | bed type `cherish` | K1 `E5`, big-endian | app controller | app controller | app controller | renewable lease |
 | Comfort Enhancements | bed type `comfort_enhancements` | K1 `E5`, big-endian | app controller | app controller | app controller | renewable lease |
+| OkinComfortBed Ⅱ (Jalon) | bed type `jalon_bed` | K1 `E6`, little-endian, model `00` | app controller | app controller | app controller | renewable lease |
 
 ### Hold and release timing
 
@@ -242,10 +245,10 @@ release refreshes at its app interval until the lease ends or STOP arrives, up t
 
 Words, encoded in the profile's frame. AdjustaMattress P1, AdjustaMattress P2,
 AMERICANSTAR, Avanti Bases, Bedsense Bases, BF, Cherish, Comfort Enhancements,
-Cool Base, Dynasty Bases, Glideaway Motion, Heal Every Night, INNOVA, Malouf
-legacy OKIN, MaxCoil Una, OKIN-Seating, Rondure, SBI, Scott Living, Simon Li,
-Sleepy's BOX15 keep their key tables with their app controllers; see their
-sections.
+Cool Base, Dynasty Bases, Glideaway Motion, Heal Every Night, INNOVA,
+OkinComfortBed Ⅱ (Jalon), Malouf legacy OKIN, MaxCoil Una, OKIN-Seating, Rondure,
+SBI, Scott Living, Simon Li, Sleepy's BOX15 keep their key tables with their app
+controllers; see their sections.
 
 | Profile | Flat | Zero G | Lounge | TV | Anti-snore | Memory recall | Memory save |
 |---|---|---|---|---|---|---|---|
@@ -371,7 +374,7 @@ family's codec exists.
 | P2 6-byte | `04 02` + big-endian word | `04 02 00 00 00 01` | KSBT, KSBT03C, Adjustable Lite (KSBT01C), Adjustable Lite (KSBT03C) |
 | P2 7-byte (`05`) | `05 02` + big-endian word + `00` | `05 02 00 00 00 01 00` | KSBT03CR |
 | P2 7-byte, checksum end | `04 02` + big-endian word + checksum | `04 02 00 00 00 01 F8` | KSBT04C, Sleep Harmony (KSBT04C) |
-| K1 `E6`, little-endian, side `00` | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 00 04` | Sleep Harmony (base-i5), Glideaway Motion, Malouf legacy OKIN, Sleepy's BOX15, AdjustaMattress P1 |
+| K1 `E6`, little-endian, side `00` | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 00 04` | Sleep Harmony (base-i5), Glideaway Motion, Malouf legacy OKIN, Sleepy's BOX15, AdjustaMattress P1, OkinComfortBed Ⅱ (Jalon) |
 | P2 7-byte, `00` end | `04 02` + big-endian word + `00` | `04 02 00 00 00 01 00` | Purple Premium Plus |
 | K1 `E6`, little-endian, side `01` | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 01 03` | Scott Living |
 | K1 `E6`, little-endian, Left side `02` | `E6 FE 16` + word + side + checksum | `E6 FE 16 01 00 00 00 02 02` | Base (BaseI4/I5), Ergomotion |
@@ -2002,6 +2005,7 @@ frames of other families and keep it.
 
 | Profile | Bed type | Frame | Word `0x1` | Zero word | Hold until release | Guide |
 |---|---|---|---|---|---|---|
+| OkinComfortBed Ⅱ (Jalon) | `jalon_bed` | K1 `E6`, little-endian, model `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | renewable lease | [OkinComfortBed Ⅱ (Jalon)](#okincomfortbed-ⅱ-jalon) |
 | Glideaway Motion | `glideaway_motion` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | renewable lease | [Glideaway Motion](#glideaway-motion) |
 | Malouf legacy OKIN | `malouf_legacy_okin` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | renewable lease | [Malouf](malouf.md) |
 | Sleepy's BOX15 | `sleepys_box15` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | no | [Sleepy's](sleepys.md) |
@@ -4475,3 +4479,151 @@ types store their own defaults and are left unchanged.
 - Keeson layout apps: see the [Keeson layout app family](#keeson-layout-app-family).
 - The other routes come from the smartbed-mqtt reverse engineering, fresh
   decompilation of the OEM apps listed above, and hardware reports.
+
+### OkinComfortBed Ⅱ (Jalon)
+
+**App:** [OkinComfortBed Ⅱ](https://apkpure.com/okin-comfortbed-%E2%85%B1/com.ore.jalon.neworebeding_android) 1.4 (4), `com.ore.jalon.neworebeding_android`
+
+**Status:** ❓ Needs testing. Static APK evidence only, hardware unverified.
+
+#### Setup
+
+Choose **OkinComfortBed Ⅱ (Jalon app, com.ore.jalon.neworebeding_android)**.
+Detection: none. The app scans all devices without a name, service or manufacturer
+advertisement filter. Select the address manually, then the physical layout.
+The similarly named ORE and Okin apps are separate setup choices.
+
+The four layouts below own motor count, massage and the fixed refresh cadence.
+Every layout uses wire model zero. There is no native side selector, angle
+feedback, authentication, PIN, capability exchange or connect-time command.
+Two separate receivers can use HA's ordinary paired-bed infrastructure.
+
+TX is FFE9 under service FFE5; notifications are FFE4 under service FFE0
+(all Bluetooth base UUIDs). Commands require the current session's writable TX
+characteristic. ATT response mode follows live GATT properties: acknowledged
+writes when available, otherwise write without response. The APK does not set
+or prove a fixed write type. HA serializes writes and subscribes through Bleak.
+
+#### Controls
+
+<!-- generated:keeson-jalon -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Control | Word | Frame |
+|---|---|---|
+| back up | `0x00000001` | `E6 FE 16 01 00 00 00 00 04` |
+| back down | `0x00000002` | `E6 FE 16 02 00 00 00 00 03` |
+| feet up | `0x00000004` | `E6 FE 16 04 00 00 00 00 01` |
+| feet down | `0x00000008` | `E6 FE 16 08 00 00 00 00 FD` |
+| head up | `0x00000010` | `E6 FE 16 10 00 00 00 00 F5` |
+| head down | `0x00000020` | `E6 FE 16 20 00 00 00 00 E5` |
+| lumbar up | `0x00000040` | `E6 FE 16 40 00 00 00 00 C5` |
+| lumbar down | `0x00000080` | `E6 FE 16 80 00 00 00 00 85` |
+| flat | `0x08000000` | `E6 FE 16 00 00 00 08 00 FD` |
+| zero_g | `0x00001000` | `E6 FE 16 00 10 00 00 00 F5` |
+| lounge | `0x00002000` | `E6 FE 16 00 20 00 00 00 E5` |
+| tv | `0x00004000` | `E6 FE 16 00 40 00 00 00 C5` |
+| anti_snore | `0x00008000` | `E6 FE 16 00 80 00 00 00 85` |
+| memory_1 | `0x00010000` | `E6 FE 16 00 00 01 00 00 04` |
+| memory_2 | `0x00040000` | `E6 FE 16 00 00 04 00 00 01` |
+| flat_zero_g | `0x08001000` | `E6 FE 16 00 10 00 08 00 ED` |
+| massage head | `0x00000800` | `E6 FE 16 00 08 00 00 00 FD` |
+| massage feet | `0x00000400` | `E6 FE 16 00 04 00 00 00 01` |
+| massage all | `0x00000100` | `E6 FE 16 00 01 00 00 00 04` |
+| massage timer | `0x00000200` | `E6 FE 16 00 02 00 00 00 03` |
+| massage type | `0x10000000` | `E6 FE 16 00 00 00 10 00 F5` |
+| light toggle | `0x00020000` | `E6 FE 16 00 00 02 00 00 03` |
+| STOP/release | `0x00000000` | `E6 FE 16 00 00 00 00 00 05` |
+
+| Layout | App layout | HA axes | Wire model |
+|---|---|---|---|
+| 20 | 2 motors: back and feet | back, feet | 0 |
+| 30 | 3 motors: headrest, back and feet | head, back, feet | 0 |
+| 31 | 3 motors: waist, back and feet | lumbar, back, feet | 0 |
+| 40 | 4 motors: headrest, back, feet and waist | head, back, feet, lumbar | 0 |
+
+| Timing / writes | Value |
+|---|---|
+| Motor refresh / releases before and after | 100 ms / 3 |
+| Preset tap / position-page Flat / release | 3 / 2 / 1 |
+| Held preset refresh / maximum / release | 100 ms / 8000 ms / none |
+| Massage and light / releases | 3 / 2 |
+| Time sync to alarm / disabled alarm / release | 100 ms / 2 / 1 |
+
+| Wake action | Mode byte |
+|---|---|
+| none | `00` |
+| memory_1 | `11` |
+| memory_2 | `13` |
+| massage | `09` |
+<!-- /generated -->
+
+Back is the app's head/back actuator; head is the separate headrest; lumbar is
+labelled waist. Each layout exposes only its own axes. Presets and two memories
+are recalls. The additional app-gesture buttons support held recall through
+`hold_control`, including the combined Flat + Zero G gesture. An eight-second
+"setting success" toast in the app does not prove physical memory programming
+or factory reset. HA does not label these gestures Save or Reset.
+
+Massage buttons send the app's head, feet, all, timer-cycle and type actions.
+They do not promise numeric intensity, a particular timer transition or pattern.
+The light has a native toggle; on/off uses known reported state and refuses an
+unknown state. Commands do not manufacture feedback.
+
+#### Timing
+
+The generated table gives the app-specific refresh and burst counts. Motor
+commands release before starting and in `finally` on cancellation, with fresh
+cancel events for all release writes. The regular Flat action follows the
+position-page two-write path; the app-gesture Flat button follows its three-write
+memory-page path. All immediate bursts use serialized writes without invented
+delays. Preset touch-up ends refresh without a release frame. An explicit HA
+Stop still sends the motor release sequence. Renewable holds also stop when
+the lease expires; preset gestures are capped at the app's eight seconds.
+
+HA owns command admission and cancels work on disconnect/unload. It does not
+reproduce Android's stale GATT pointers, uncancelled delayed handlers, old scan
+callbacks stopping new scans, or timers continuing after the activity closes.
+
+#### Notifications
+
+The timer indicator is a 0/10/20/30-minute bucket, not a remaining-time countdown.
+Standalone 10/16-byte replies use timer/light offsets 8/7 and 14/13. An F4 FE 16
+prefix plus its next tail must total 23 bytes, with offsets 19/18. The signed
+light byte shifted right by six is on only when positive: high-bit values
+remain off, just as the app displays them. No position or massage-level state
+is inferred.
+
+HA consumes a fragment once and clears it on standalone replies, invalid tails
+and disconnect. It refuses unrelated callbacks and unsupported lengths, instead
+of repeating the Android parser's stale fragment or default-zero publication.
+The app does not validate reply checksums or prove ACK correlation.
+
+#### Services
+
+`adjustable_bed.jalon_set_alarm` accepts `enabled`, minute-precision `time`,
+`weekdays` (Monday 0 through Sunday 6) and `wake_mode` (`none`, `memory_1`,
+`memory_2`, `massage`), plus the standard device/side target. Empty weekdays
+chooses today if the selected hour/minute is later, otherwise tomorrow.
+Repeating days set bit 7; Sunday is bit 0. Weekdays and all days yield BE and FF.
+
+Enabling/updating first sends **current local time**, independently of the
+selected alarm fields: E7 80 01, year minus 1900, zero-based month, day,
+hour, minute, second, checksum. It then waits the generated delay and sends
+one ED 80 03 record (selected hour, minute, day mask, wake mode), padded with
+eight zeros and checksummed, followed by one release. Disabling sends the fixed
+all-zero alarm twice and one release, with no clock sync. HA snapshots selected
+fields and revalidates the live transport; an old delayed callback cannot write
+into a newer session. The generic `sync_clock` action synchronizes only the bed
+clock. Phone-local audio and scheduling are outside the integration.
+
+#### Evidence
+
+Row135 proves this package's one BLE protocol and four selectable layouts.
+`tests/fixtures/jalon_bed/vectors.tsv` preserves all 393 Java cases, including
+unused-builder and signed-parser boundaries; `tests/test_jalon_bed.py` compares
+them through the shared codec and verifies gestures, layout gates and alarms.
+
+Artifact SHA-256: `63492b9a7967c864c7f063722c6f3dbf3945a1b8a6876c13f4a99c4ce74b509b`.
+Accepted report manifest SHA-256:
+`fbac3e38a42ad695e832eb115074d9e829969c6701a76b888c6631878ea29bbc`.

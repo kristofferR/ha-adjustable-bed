@@ -55,6 +55,7 @@ from .const import (
     BED_TYPE_GOODVIBE,
     BED_TYPE_HJBED,
     BED_TYPE_ISLEEP,
+    BED_TYPE_JALON_BED,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
@@ -241,6 +242,7 @@ class _BuilderSpec:
 # Bed types whose construction is "import this class and pass the coordinator
 # plus fixed kwargs".
 _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
+    BED_TYPE_JALON_BED: _ControllerSpec("jalon_bed.controller", "JalonBedController"),
     BED_TYPE_BF: _ControllerSpec("bf_cherish.controller", "BfCherishController"),
     BED_TYPE_CHERISH: _ControllerSpec("bf_cherish.controller", "BfCherishController", MappingProxyType({"cherish": True})),
     BED_TYPE_ESHINE: _ControllerSpec("eshine.controller", "EshineController"),

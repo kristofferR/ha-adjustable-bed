@@ -45,6 +45,7 @@ if TYPE_CHECKING:
     from .hjbed.controller import HJBedController as HJBedController
     from .innova import InnovaController as InnovaController
     from .isleep import IsleepController as IsleepController
+    from .jalon_bed.controller import JalonBedController as JalonBedController
     from .jensen.controller import JensenController as JensenController
     from .jensen.linon import JensenLinonController as JensenLinonController
     from .jiecang.app import JiecangAppController as JiecangAppController
@@ -117,6 +118,7 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "JalonBedController": "jalon_bed.controller",
     "GoodVibeController": "goodvibe.controller",
     "MotoMotionController": "motomotion.controller",
     "HJBedController": "hjbed.controller",
@@ -265,6 +267,7 @@ __all__ = [
     "JensenLinonController",
     "KaidiController",
     "KeesonController",
+    "JalonBedController",
     "LimossController",
     "LinakController",
     "LogicdataController",

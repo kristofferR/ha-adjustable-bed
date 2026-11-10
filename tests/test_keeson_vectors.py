@@ -38,6 +38,7 @@ from tests.test_controller_contract import _FactoryCoordinator, _make_connected_
 E6_CONTROLLERS = frozenset(
     {
         "glideaway_motion",
+        "jalon_bed",
         "malouf_legacy_okin",
         "sleepys_box15",
         "scott_living",
@@ -93,6 +94,8 @@ def _decode(data: bytes) -> bytes:
     if data[:3] == b"\xe5\xfe\x17":
         pulses = int.from_bytes(data[3:5], "little"), int.from_bytes(data[5:7], "little")
         return codec.position_target(*pulses)
+    if data[:3] == b"\xed\x80\x03":
+        return codec.alarm_table(data[2], data[3:15])
     if data[:3] == b"\xe7\x80\x01":
         return codec.clock_fields(data[3:9])
     if data[:1] == b"{":
@@ -201,6 +204,11 @@ def _e6_census(key: str) -> set[bytes]:
     """Key frames the controllers that keep their own tables send."""
     profile = profiles.PROFILES[key]
     words = {codec.RELEASE}
+    if key == "jalon_bed":
+        from custom_components.adjustable_bed.profiles import jalon_bed as app
+        words |= {word for pair in app.MOTORS.values() for word in pair}
+        words |= {*app.HELD.values(), *app.MASSAGE.values(), app.LIGHT}
+        return {profiles.encode(profile, word) for word in words}
     if key == "glideaway_motion":
         gm = glideaway_motion
         words |= {word for pair in gm.AXES.values() for word in pair}

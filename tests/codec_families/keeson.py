@@ -27,6 +27,7 @@ FAMILY = CodecFamily(
         {
             "ergomotion",
             "keeson",
+            "jalon_bed",
             "okin_ffe",
             "serta",
             "ergo_slim",

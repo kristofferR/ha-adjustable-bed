@@ -512,6 +512,16 @@ COMFORT_ENHANCEMENTS: Final = KeesonProfile(
     key="comfort_enhancements", execution=STREAM_HOLD, order="big", hold=None
 )
 
+# com.ore.jalon.neworebeding_android 1.4 (4): model byte 0, never a side selector.
+JALON_BED: Final = KeesonProfile(
+    key="jalon_bed", header=0xE6, side=0, fixed_write=True,
+    execution=STREAM_HOLD, hold=(10, 100), refresh_ms=100,
+    release=Release(steps=((0, 0), (0, 0), (0, 0))),
+    presets={"flat": 0x08000000, "zero_g": 0x1000, "lounge": 0x2000,
+             "tv": 0x4000, "anti_snore": 0x8000},
+    memory={1: 0x10000, 2: 0x40000}, memory_slots=2,
+)
+
 PROFILES: Final[dict[str, KeesonProfile]] = {
     profile.key: profile
     for profile in (
@@ -556,6 +566,7 @@ PROFILES: Final[dict[str, KeesonProfile]] = {
         BF,
         CHERISH,
         COMFORT_ENHANCEMENTS,
+        JALON_BED,
     )
 }
 

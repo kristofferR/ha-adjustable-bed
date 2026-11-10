@@ -438,6 +438,7 @@ BED_TYPE_OKIN_7BYTE: Final = "okin_7byte"  # 7-byte via Okin service UUID
 BED_TYPE_OKIN_NORDIC: Final = "okin_nordic"  # 7-byte via Nordic UART
 BED_TYPE_OKIN_CB24: Final = "okin_cb24"  # CB24 protocol via Nordic UART (SmartBed by Okin)
 BED_TYPE_OKIN_DOT: Final = "okin_dot"  # DOT PROTOCOL: CB24-style frames, FurniMove remote keycodes
+BED_TYPE_JALON_BED: Final = "jalon_bed"
 BED_TYPE_BF: Final = "bf"
 BED_TYPE_CHERISH: Final = "cherish"
 BED_TYPE_OKIN_ORE: Final = "okin_ore"  # OREBedBleProtocol (A5 5A format, 00001000 service)
@@ -698,6 +699,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_BEDSENSE,
     BED_TYPE_BF,
+    BED_TYPE_JALON_BED,
     BED_TYPE_CHERISH,
     "casper_remote",
     "hush_remote",

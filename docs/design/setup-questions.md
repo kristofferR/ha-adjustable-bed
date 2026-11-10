@@ -242,6 +242,7 @@ These steps serve every bed type or route, so no profile owns them.
 | Profile | Questions |
 |---|---|
 | `jiecang_app` | Layout (the chosen app's), light, transport (Advanced). Owns motor count and pulse delay; fixes angle sensing off. |
+| `jalon_bed` | The four physical layouts of OkinComfortBed Ⅱ (Jalon); derives motor count and fixes massage, angle sensing and refresh from this app. |
 | `furnimove` | Handset ID; the handset table derives the motor count and massage, and angle sensing is off. |
 | `okin_uuid`, `okimat`, `okin_dot` | Remote code (a saved code new setups no longer offer stays this entry's choice), motor count and massage motors; `okin_uuid` and `okimat` also angle sensing. The family row's form is drawn for FurniMove, which sets massage and angle sensing itself. |
 | `keeson:` ORE apps and INNOVA | The app's 2M, 3M or 4M screen, which is the motor count. |

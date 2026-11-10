@@ -2852,6 +2852,21 @@
       },
       "ruf_richmat_lift_down": {
         "name": "Lift Down"
+      },
+      "jalon_massage_head": {
+        "name": "Head massage"
+      },
+      "jalon_massage_feet": {
+        "name": "Feet massage"
+      },
+      "jalon_massage_all": {
+        "name": "Massage all"
+      },
+      "jalon_massage_timer": {
+        "name": "Cycle massage timer"
+      },
+      "jalon_massage_type": {
+        "name": "Cycle massage type"
       }
     },
     "cover": {
@@ -4476,6 +4491,9 @@
       },
       "ruf_richmat_music_status": {
         "name": "Bed audio status"
+      },
+      "jalon_massage_timer_bucket": {
+        "name": "Massage timer indicator"
       }
     },
     "light": {
@@ -8082,6 +8100,25 @@
         },
         "side": {
           "name": "Paired bed side"
+        }
+      }
+    },
+    "jalon_set_alarm": {
+      "name": "OkinComfortBed Ⅱ (Jalon): Set bed alarm",
+      "description": "Set a bed-local wake alarm. Empty weekdays chooses the next occurrence today or tomorrow. Hardware behavior is unverified.",
+      "fields": {
+        "enabled": {
+          "name": "Enabled"
+        },
+        "time": {
+          "name": "Time"
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "Monday 0 through Sunday 6; empty means once."
+        },
+        "wake_mode": {
+          "name": "Wake action"
         }
       }
     }

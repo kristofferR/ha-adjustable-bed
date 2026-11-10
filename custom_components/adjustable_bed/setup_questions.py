@@ -51,6 +51,7 @@ from .const import (
     BED_TYPE_GOODVIBE,
     BED_TYPE_HJBED,
     BED_TYPE_ISLEEP,
+    BED_TYPE_JALON_BED,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
@@ -1715,6 +1716,19 @@ def _asking(key: str, **declared: Any) -> SetupProfile:
 
 
 SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
+    BED_TYPE_JALON_BED: SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100,
+              CONF_PROTOCOL_VARIANT: SET_BY_PROFILE},
+        questions=(Question(CONF_PRODUCT_TYPE, {
+            "20": "2 motors: back and feet", "30": "3 motors: headrest, back and feet",
+            "31": "3 motors: waist, back and feet",
+            "40": "4 motors: headrest, back, feet and waist",
+        }, "40"),),
+        derive=lambda data: {CONF_MOTOR_COUNT: {"20": 2, "30": 3, "31": 3, "40": 4}.get(
+            data.get(CONF_PRODUCT_TYPE, "40"), 4)},
+        title=lambda _data: "OkinComfortBed Ⅱ (Jalon)",
+    ),
     **_BASE,
     **_DECLARED,
     # The handset table, chosen in the app, sets the layout and massage.
