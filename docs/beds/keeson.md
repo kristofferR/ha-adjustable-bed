@@ -79,6 +79,15 @@ APK Protocol Audit row044.
 | ✅ | Scott Living | `com.keeson.scottlivingrelease` | [Scott Living](#scott-living) |
 | Separate processor | Tempur Sleeptracker-AI ([framed-JSON processor guide](sleeptracker.md)) | `com.fullpower.applications.horizon` | none |
 
+**ComfortBaseForWifi is network-only:** ComfortBaseForWifi 3.7 (10)
+(`com.ore.jalon.comfortwifiandroid`) controls beds over TCP/HTTP and has no
+direct BLE path. Its Wi-Fi setup and cloud/account features are outside this
+Bluetooth-only integration. It is a different app from ComfortBase II (BLE).
+Do not choose a Keeson profile based on the ComfortBaseForWifi app name or its
+product list. For a bed independently identified as using BLE, follow its
+documented route, such as [BaseI4/I5](#base-basei4i5) for the confirmed GlideAway
+ComfortBase Odessa hardware.
+
 The eight apps of the [Keeson layout app family](#keeson-layout-app-family) (Tempur
 Curve, Q-Plus, Serta MP Remote, Omazz Adjusto III, Ergomotion, ROW Control, Ergo
 Slim and TEMPUR AU) are also their own bed types with their app's exact keys and
