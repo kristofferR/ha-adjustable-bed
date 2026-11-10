@@ -70,6 +70,7 @@ from .const import (
     BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
+    BED_TYPE_RESIDENT,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
@@ -132,6 +133,8 @@ class BedTraits:
     # Controls keep state in the connection-scoped controller, so a new entry
     # keeps the link between commands by default.
     connection_scoped_state: bool = False
+    # Startup hooks own Device Information reads, including their timing.
+    owns_device_info_reads: bool = False
     passive_position_reconciliation: bool = False
     # Overrides the connection profile's connect timeout, in seconds.
     connection_timeout: float | None = None
@@ -171,6 +174,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     # Serta MP Remote is the one Keeson layout app with position feedback.
     **dict.fromkeys(KEESON_LAYOUT_APP_BED_TYPES - {BED_TYPE_SERTA_MP_REMOTE}, _NO_ANGLES),
     BED_TYPE_ADJUSTABLE_LUMBAR: _NO_ANGLES,
+    BED_TYPE_RESIDENT: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     BED_TYPE_ADJUSTAMATTRESS: _NO_ANGLES,
     # Measured against the BedJet LCD remote's own degree readout.
     BED_TYPE_BEDJET_POWERLAYER: BedTraits(

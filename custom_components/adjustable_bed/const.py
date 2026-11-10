@@ -529,6 +529,8 @@ BED_TYPE_SIMMONS: Final = "simmons"  # Explicit SIMMONS app profile (com.okin.si
 # Explicit Adjustable bed (Lumbar) app profile (com.okin.bedding.adjustablelumbar)
 BED_TYPE_ADJUSTAMATTRESS: Final = "adjustamattress"
 BED_TYPE_ADJUSTABLE_LUMBAR: Final = "adjustable_lumbar"
+# Resident Adjustable Base 1.0.0, com.okin.resident.release, fixed 36_33_01a table.
+BED_TYPE_RESIDENT: Final = "resident"
 # Explicit Richmat MH app profiles (row055): one shared library, five catalogs.
 BED_TYPE_HUSH_BASE: Final = "hush_base"
 BED_TYPE_HUSH_SLEEP_MM: Final = "hush_sleep_mm"
@@ -741,6 +743,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SIMMONS,
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_RESIDENT,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_ESHINE,
     BED_TYPE_ESHINE_OKIN,
@@ -895,6 +898,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_SIMMONS,
         # Controls are identical for all three tables; only the live link picks one.
         BED_TYPE_ADJUSTABLE_LUMBAR,
+        BED_TYPE_RESIDENT,
         BED_TYPE_ESHINE,
         # Fixed pump controls; pressure is live-link state only.
         BED_TYPE_LOGICDATA_AIR_PUMP,
@@ -2903,6 +2907,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_ESHINE_OKIN: (10, 300),  # App refresh cadence; count bounds HA movement
     BED_TYPE_ESHINE: (10, 100),  # Eshine 100 ms refresh; count bounds an HA movement
     BED_TYPE_ADJUSTAMATTRESS: (5, 200),  # APK 200 ms refresh, bounded HA movement
+    BED_TYPE_RESIDENT: (4, 300),  # Resident 300 ms refresh; four pulses bound an HA tap.
     BED_TYPE_ADJUSTABLE_LUMBAR: (10, 100),  # APK 100 ms hold refresh; ~1 s HA movement
     # Richmat MH apps: KEEP repeats at each control's own interval (100 ms for
     # every motor); the count bounds an HA hold.

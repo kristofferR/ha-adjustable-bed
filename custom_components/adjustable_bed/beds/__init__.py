@@ -79,6 +79,7 @@ if TYPE_CHECKING:
     from .omazz_adjusto_iii import OmazzAdjustoIIIController as OmazzAdjustoIIIController
     from .ore_comfort_bed import OreComfortBedController as OreComfortBedController
     from .remacro.controller import RemacroController as RemacroController
+    from .resident.controller import ResidentController as ResidentController
     from .reverie.controller import ReverieController as ReverieController
     from .reverie.nightstand import ReverieNightstandController as ReverieNightstandController
     from .richmat.controller import RichmatController as RichmatController
@@ -117,6 +118,7 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "ResidentController": "resident.controller",
     "GoodVibeController": "goodvibe.controller",
     "MotoMotionController": "motomotion.controller",
     "HJBedController": "hjbed.controller",

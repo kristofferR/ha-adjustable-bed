@@ -1846,10 +1846,22 @@
       "local_name": "OARM*"
     },
     {
+      "local_name": "OKIN*"
+    },
+    {
       "local_name": "OKIN*Receiver*"
     },
     {
       "local_name": "OKIN*receiver*"
+    },
+    {
+      "local_name": "OKIn*"
+    },
+    {
+      "local_name": "OKiN*"
+    },
+    {
+      "local_name": "OKin*"
     },
     {
       "local_name": "OMRM*"
@@ -1892,6 +1904,18 @@
     },
     {
       "local_name": "OZRM*"
+    },
+    {
+      "local_name": "OkIN*"
+    },
+    {
+      "local_name": "OkIn*"
+    },
+    {
+      "local_name": "OkiN*"
+    },
+    {
+      "local_name": "Okin*"
     },
     {
       "local_name": "Okin*Receiver*"
@@ -2026,6 +2050,198 @@
       "local_name": "SLEEPSTAR*"
     },
     {
+      "local_name": "SMARTBED*"
+    },
+    {
+      "local_name": "SMARTBEd*"
+    },
+    {
+      "local_name": "SMARTBeD*"
+    },
+    {
+      "local_name": "SMARTBed*"
+    },
+    {
+      "local_name": "SMARTbED*"
+    },
+    {
+      "local_name": "SMARTbEd*"
+    },
+    {
+      "local_name": "SMARTbeD*"
+    },
+    {
+      "local_name": "SMARTbed*"
+    },
+    {
+      "local_name": "SMARtBED*"
+    },
+    {
+      "local_name": "SMARtBEd*"
+    },
+    {
+      "local_name": "SMARtBeD*"
+    },
+    {
+      "local_name": "SMARtBed*"
+    },
+    {
+      "local_name": "SMARtbED*"
+    },
+    {
+      "local_name": "SMARtbEd*"
+    },
+    {
+      "local_name": "SMARtbeD*"
+    },
+    {
+      "local_name": "SMARtbed*"
+    },
+    {
+      "local_name": "SMArTBED*"
+    },
+    {
+      "local_name": "SMArTBEd*"
+    },
+    {
+      "local_name": "SMArTBeD*"
+    },
+    {
+      "local_name": "SMArTBed*"
+    },
+    {
+      "local_name": "SMArTbED*"
+    },
+    {
+      "local_name": "SMArTbEd*"
+    },
+    {
+      "local_name": "SMArTbeD*"
+    },
+    {
+      "local_name": "SMArTbed*"
+    },
+    {
+      "local_name": "SMArtBED*"
+    },
+    {
+      "local_name": "SMArtBEd*"
+    },
+    {
+      "local_name": "SMArtBeD*"
+    },
+    {
+      "local_name": "SMArtBed*"
+    },
+    {
+      "local_name": "SMArtbED*"
+    },
+    {
+      "local_name": "SMArtbEd*"
+    },
+    {
+      "local_name": "SMArtbeD*"
+    },
+    {
+      "local_name": "SMArtbed*"
+    },
+    {
+      "local_name": "SMaRTBED*"
+    },
+    {
+      "local_name": "SMaRTBEd*"
+    },
+    {
+      "local_name": "SMaRTBeD*"
+    },
+    {
+      "local_name": "SMaRTBed*"
+    },
+    {
+      "local_name": "SMaRTbED*"
+    },
+    {
+      "local_name": "SMaRTbEd*"
+    },
+    {
+      "local_name": "SMaRTbeD*"
+    },
+    {
+      "local_name": "SMaRTbed*"
+    },
+    {
+      "local_name": "SMaRtBED*"
+    },
+    {
+      "local_name": "SMaRtBEd*"
+    },
+    {
+      "local_name": "SMaRtBeD*"
+    },
+    {
+      "local_name": "SMaRtBed*"
+    },
+    {
+      "local_name": "SMaRtbED*"
+    },
+    {
+      "local_name": "SMaRtbEd*"
+    },
+    {
+      "local_name": "SMaRtbeD*"
+    },
+    {
+      "local_name": "SMaRtbed*"
+    },
+    {
+      "local_name": "SMarTBED*"
+    },
+    {
+      "local_name": "SMarTBEd*"
+    },
+    {
+      "local_name": "SMarTBeD*"
+    },
+    {
+      "local_name": "SMarTBed*"
+    },
+    {
+      "local_name": "SMarTbED*"
+    },
+    {
+      "local_name": "SMarTbEd*"
+    },
+    {
+      "local_name": "SMarTbeD*"
+    },
+    {
+      "local_name": "SMarTbed*"
+    },
+    {
+      "local_name": "SMartBED*"
+    },
+    {
+      "local_name": "SMartBEd*"
+    },
+    {
+      "local_name": "SMartBeD*"
+    },
+    {
+      "local_name": "SMartBed*"
+    },
+    {
+      "local_name": "SMartbED*"
+    },
+    {
+      "local_name": "SMartbEd*"
+    },
+    {
+      "local_name": "SMartbeD*"
+    },
+    {
+      "local_name": "SMartbed*"
+    },
+    {
       "local_name": "SOFA*",
       "connectable": true
     },
@@ -2053,6 +2269,198 @@
     },
     {
       "local_name": "SealyMF*"
+    },
+    {
+      "local_name": "SmARTBED*"
+    },
+    {
+      "local_name": "SmARTBEd*"
+    },
+    {
+      "local_name": "SmARTBeD*"
+    },
+    {
+      "local_name": "SmARTBed*"
+    },
+    {
+      "local_name": "SmARTbED*"
+    },
+    {
+      "local_name": "SmARTbEd*"
+    },
+    {
+      "local_name": "SmARTbeD*"
+    },
+    {
+      "local_name": "SmARTbed*"
+    },
+    {
+      "local_name": "SmARtBED*"
+    },
+    {
+      "local_name": "SmARtBEd*"
+    },
+    {
+      "local_name": "SmARtBeD*"
+    },
+    {
+      "local_name": "SmARtBed*"
+    },
+    {
+      "local_name": "SmARtbED*"
+    },
+    {
+      "local_name": "SmARtbEd*"
+    },
+    {
+      "local_name": "SmARtbeD*"
+    },
+    {
+      "local_name": "SmARtbed*"
+    },
+    {
+      "local_name": "SmArTBED*"
+    },
+    {
+      "local_name": "SmArTBEd*"
+    },
+    {
+      "local_name": "SmArTBeD*"
+    },
+    {
+      "local_name": "SmArTBed*"
+    },
+    {
+      "local_name": "SmArTbED*"
+    },
+    {
+      "local_name": "SmArTbEd*"
+    },
+    {
+      "local_name": "SmArTbeD*"
+    },
+    {
+      "local_name": "SmArTbed*"
+    },
+    {
+      "local_name": "SmArtBED*"
+    },
+    {
+      "local_name": "SmArtBEd*"
+    },
+    {
+      "local_name": "SmArtBeD*"
+    },
+    {
+      "local_name": "SmArtBed*"
+    },
+    {
+      "local_name": "SmArtbED*"
+    },
+    {
+      "local_name": "SmArtbEd*"
+    },
+    {
+      "local_name": "SmArtbeD*"
+    },
+    {
+      "local_name": "SmArtbed*"
+    },
+    {
+      "local_name": "SmaRTBED*"
+    },
+    {
+      "local_name": "SmaRTBEd*"
+    },
+    {
+      "local_name": "SmaRTBeD*"
+    },
+    {
+      "local_name": "SmaRTBed*"
+    },
+    {
+      "local_name": "SmaRTbED*"
+    },
+    {
+      "local_name": "SmaRTbEd*"
+    },
+    {
+      "local_name": "SmaRTbeD*"
+    },
+    {
+      "local_name": "SmaRTbed*"
+    },
+    {
+      "local_name": "SmaRtBED*"
+    },
+    {
+      "local_name": "SmaRtBEd*"
+    },
+    {
+      "local_name": "SmaRtBeD*"
+    },
+    {
+      "local_name": "SmaRtBed*"
+    },
+    {
+      "local_name": "SmaRtbED*"
+    },
+    {
+      "local_name": "SmaRtbEd*"
+    },
+    {
+      "local_name": "SmaRtbeD*"
+    },
+    {
+      "local_name": "SmaRtbed*"
+    },
+    {
+      "local_name": "SmarTBED*"
+    },
+    {
+      "local_name": "SmarTBEd*"
+    },
+    {
+      "local_name": "SmarTBeD*"
+    },
+    {
+      "local_name": "SmarTBed*"
+    },
+    {
+      "local_name": "SmarTbED*"
+    },
+    {
+      "local_name": "SmarTbEd*"
+    },
+    {
+      "local_name": "SmarTbeD*"
+    },
+    {
+      "local_name": "SmarTbed*"
+    },
+    {
+      "local_name": "SmartBED*"
+    },
+    {
+      "local_name": "SmartBEd*"
+    },
+    {
+      "local_name": "SmartBeD*"
+    },
+    {
+      "local_name": "SmartBed*"
+    },
+    {
+      "local_name": "SmartbED*"
+    },
+    {
+      "local_name": "SmartbEd*"
+    },
+    {
+      "local_name": "SmartbeD*"
+    },
+    {
+      "local_name": "Smartbed*"
     },
     {
       "local_name": "StAR*"
@@ -2873,6 +3281,30 @@
       "local_name": "my qms2*"
     },
     {
+      "local_name": "oKIN*"
+    },
+    {
+      "local_name": "oKIn*"
+    },
+    {
+      "local_name": "oKiN*"
+    },
+    {
+      "local_name": "oKin*"
+    },
+    {
+      "local_name": "okIN*"
+    },
+    {
+      "local_name": "okIn*"
+    },
+    {
+      "local_name": "okiN*"
+    },
+    {
+      "local_name": "okin*"
+    },
+    {
       "local_name": "okin*Receiver*"
     },
     {
@@ -2912,6 +3344,198 @@
       "local_name": "s4-y-*"
     },
     {
+      "local_name": "sMARTBED*"
+    },
+    {
+      "local_name": "sMARTBEd*"
+    },
+    {
+      "local_name": "sMARTBeD*"
+    },
+    {
+      "local_name": "sMARTBed*"
+    },
+    {
+      "local_name": "sMARTbED*"
+    },
+    {
+      "local_name": "sMARTbEd*"
+    },
+    {
+      "local_name": "sMARTbeD*"
+    },
+    {
+      "local_name": "sMARTbed*"
+    },
+    {
+      "local_name": "sMARtBED*"
+    },
+    {
+      "local_name": "sMARtBEd*"
+    },
+    {
+      "local_name": "sMARtBeD*"
+    },
+    {
+      "local_name": "sMARtBed*"
+    },
+    {
+      "local_name": "sMARtbED*"
+    },
+    {
+      "local_name": "sMARtbEd*"
+    },
+    {
+      "local_name": "sMARtbeD*"
+    },
+    {
+      "local_name": "sMARtbed*"
+    },
+    {
+      "local_name": "sMArTBED*"
+    },
+    {
+      "local_name": "sMArTBEd*"
+    },
+    {
+      "local_name": "sMArTBeD*"
+    },
+    {
+      "local_name": "sMArTBed*"
+    },
+    {
+      "local_name": "sMArTbED*"
+    },
+    {
+      "local_name": "sMArTbEd*"
+    },
+    {
+      "local_name": "sMArTbeD*"
+    },
+    {
+      "local_name": "sMArTbed*"
+    },
+    {
+      "local_name": "sMArtBED*"
+    },
+    {
+      "local_name": "sMArtBEd*"
+    },
+    {
+      "local_name": "sMArtBeD*"
+    },
+    {
+      "local_name": "sMArtBed*"
+    },
+    {
+      "local_name": "sMArtbED*"
+    },
+    {
+      "local_name": "sMArtbEd*"
+    },
+    {
+      "local_name": "sMArtbeD*"
+    },
+    {
+      "local_name": "sMArtbed*"
+    },
+    {
+      "local_name": "sMaRTBED*"
+    },
+    {
+      "local_name": "sMaRTBEd*"
+    },
+    {
+      "local_name": "sMaRTBeD*"
+    },
+    {
+      "local_name": "sMaRTBed*"
+    },
+    {
+      "local_name": "sMaRTbED*"
+    },
+    {
+      "local_name": "sMaRTbEd*"
+    },
+    {
+      "local_name": "sMaRTbeD*"
+    },
+    {
+      "local_name": "sMaRTbed*"
+    },
+    {
+      "local_name": "sMaRtBED*"
+    },
+    {
+      "local_name": "sMaRtBEd*"
+    },
+    {
+      "local_name": "sMaRtBeD*"
+    },
+    {
+      "local_name": "sMaRtBed*"
+    },
+    {
+      "local_name": "sMaRtbED*"
+    },
+    {
+      "local_name": "sMaRtbEd*"
+    },
+    {
+      "local_name": "sMaRtbeD*"
+    },
+    {
+      "local_name": "sMaRtbed*"
+    },
+    {
+      "local_name": "sMarTBED*"
+    },
+    {
+      "local_name": "sMarTBEd*"
+    },
+    {
+      "local_name": "sMarTBeD*"
+    },
+    {
+      "local_name": "sMarTBed*"
+    },
+    {
+      "local_name": "sMarTbED*"
+    },
+    {
+      "local_name": "sMarTbEd*"
+    },
+    {
+      "local_name": "sMarTbeD*"
+    },
+    {
+      "local_name": "sMarTbed*"
+    },
+    {
+      "local_name": "sMartBED*"
+    },
+    {
+      "local_name": "sMartBEd*"
+    },
+    {
+      "local_name": "sMartBeD*"
+    },
+    {
+      "local_name": "sMartBed*"
+    },
+    {
+      "local_name": "sMartbED*"
+    },
+    {
+      "local_name": "sMartbEd*"
+    },
+    {
+      "local_name": "sMartbeD*"
+    },
+    {
+      "local_name": "sMartbed*"
+    },
+    {
       "local_name": "sTAR*"
     },
     {
@@ -2928,6 +3552,198 @@
     },
     {
       "local_name": "sleepstar*"
+    },
+    {
+      "local_name": "smARTBED*"
+    },
+    {
+      "local_name": "smARTBEd*"
+    },
+    {
+      "local_name": "smARTBeD*"
+    },
+    {
+      "local_name": "smARTBed*"
+    },
+    {
+      "local_name": "smARTbED*"
+    },
+    {
+      "local_name": "smARTbEd*"
+    },
+    {
+      "local_name": "smARTbeD*"
+    },
+    {
+      "local_name": "smARTbed*"
+    },
+    {
+      "local_name": "smARtBED*"
+    },
+    {
+      "local_name": "smARtBEd*"
+    },
+    {
+      "local_name": "smARtBeD*"
+    },
+    {
+      "local_name": "smARtBed*"
+    },
+    {
+      "local_name": "smARtbED*"
+    },
+    {
+      "local_name": "smARtbEd*"
+    },
+    {
+      "local_name": "smARtbeD*"
+    },
+    {
+      "local_name": "smARtbed*"
+    },
+    {
+      "local_name": "smArTBED*"
+    },
+    {
+      "local_name": "smArTBEd*"
+    },
+    {
+      "local_name": "smArTBeD*"
+    },
+    {
+      "local_name": "smArTBed*"
+    },
+    {
+      "local_name": "smArTbED*"
+    },
+    {
+      "local_name": "smArTbEd*"
+    },
+    {
+      "local_name": "smArTbeD*"
+    },
+    {
+      "local_name": "smArTbed*"
+    },
+    {
+      "local_name": "smArtBED*"
+    },
+    {
+      "local_name": "smArtBEd*"
+    },
+    {
+      "local_name": "smArtBeD*"
+    },
+    {
+      "local_name": "smArtBed*"
+    },
+    {
+      "local_name": "smArtbED*"
+    },
+    {
+      "local_name": "smArtbEd*"
+    },
+    {
+      "local_name": "smArtbeD*"
+    },
+    {
+      "local_name": "smArtbed*"
+    },
+    {
+      "local_name": "smaRTBED*"
+    },
+    {
+      "local_name": "smaRTBEd*"
+    },
+    {
+      "local_name": "smaRTBeD*"
+    },
+    {
+      "local_name": "smaRTBed*"
+    },
+    {
+      "local_name": "smaRTbED*"
+    },
+    {
+      "local_name": "smaRTbEd*"
+    },
+    {
+      "local_name": "smaRTbeD*"
+    },
+    {
+      "local_name": "smaRTbed*"
+    },
+    {
+      "local_name": "smaRtBED*"
+    },
+    {
+      "local_name": "smaRtBEd*"
+    },
+    {
+      "local_name": "smaRtBeD*"
+    },
+    {
+      "local_name": "smaRtBed*"
+    },
+    {
+      "local_name": "smaRtbED*"
+    },
+    {
+      "local_name": "smaRtbEd*"
+    },
+    {
+      "local_name": "smaRtbeD*"
+    },
+    {
+      "local_name": "smaRtbed*"
+    },
+    {
+      "local_name": "smarTBED*"
+    },
+    {
+      "local_name": "smarTBEd*"
+    },
+    {
+      "local_name": "smarTBeD*"
+    },
+    {
+      "local_name": "smarTBed*"
+    },
+    {
+      "local_name": "smarTbED*"
+    },
+    {
+      "local_name": "smarTbEd*"
+    },
+    {
+      "local_name": "smarTbeD*"
+    },
+    {
+      "local_name": "smarTbed*"
+    },
+    {
+      "local_name": "smartBED*"
+    },
+    {
+      "local_name": "smartBEd*"
+    },
+    {
+      "local_name": "smartBeD*"
+    },
+    {
+      "local_name": "smartBed*"
+    },
+    {
+      "local_name": "smartbED*"
+    },
+    {
+      "local_name": "smartbEd*"
+    },
+    {
+      "local_name": "smartbeD*"
+    },
+    {
+      "local_name": "smartbed*"
     },
     {
       "local_name": "stAR*"

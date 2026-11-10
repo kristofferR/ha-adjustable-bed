@@ -1287,15 +1287,19 @@ class CoordinatorConnectionMixin:
                 ble_manufacturer: str | None = None
                 ble_model: str | None = None
 
-                if not _defer_device_info and self._bed_type not in {
-                    BED_TYPE_VIBRADORM_APP,
-                    BED_TYPE_VMATBASIC,
-                    BED_TYPE_LIMOSS_REMOTE,
-                    # Its controller performs the app's single raw 2A29 read.
-                    BED_TYPE_ADJUSTABLE_LUMBAR,
-                    # FurniMove owns its staggered reads after subscriptions.
-                    BED_TYPE_FURNIMOVE,
-                }:
+                if (
+                    not _defer_device_info
+                    and not bed_traits(self._bed_type, self._protocol_variant).owns_device_info_reads
+                    and self._bed_type not in {
+                        BED_TYPE_VIBRADORM_APP,
+                        BED_TYPE_VMATBASIC,
+                        BED_TYPE_LIMOSS_REMOTE,
+                        # Its controller performs the app's single raw 2A29 read.
+                        BED_TYPE_ADJUSTABLE_LUMBAR,
+                        # FurniMove owns its staggered reads after subscriptions.
+                        BED_TYPE_FURNIMOVE,
+                    }
+                ):
                     if self._device_info_read_done:
                         ble_manufacturer = self._ble_manufacturer
                         ble_model = self._ble_model

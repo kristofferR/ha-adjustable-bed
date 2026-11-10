@@ -72,6 +72,7 @@ from .const import (
     BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REMACRO,
+    BED_TYPE_RESIDENT,
     BED_TYPE_RICHMAT,
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
@@ -241,6 +242,12 @@ _ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
         ),
         None,
         (BED_TYPE_ADJUSTABLE_LUMBAR,),
+    ),
+    # Resident uses only the custom OKIN service; Nordic UART is not a route.
+    _RouteApps(
+        frozenset({BED_TYPE_OKIMAT, BED_TYPE_OKIN_UUID, BED_TYPE_OKIN_CB24, BED_TYPE_OKIN_64BIT}),
+        None,
+        (BED_TYPE_RESIDENT,),
     ),
     # Shared OKIN FFE, CB24, Keeson and Richmat routes (row049).
     _RouteApps(

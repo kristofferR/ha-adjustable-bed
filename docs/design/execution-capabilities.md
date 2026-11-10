@@ -81,6 +81,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `customatic_zseries` | S stream | U | U | glory | recognized masks only |
 | `serenity` | S stream | U | U | serenity | remaining bitmask restarts a recognized command or is ignored |
 | `tranquil` | S stream | U | U | tranquil | recognized masks only |
+| `resident` | S stream | U | U | resident-base | Every held control refreshes at 300 ms and releases with two STOP frames; combined head/foot keys are explicit, arbitrary motor composition is unproven |
 | `adjustable_lumbar` (both routes) | S stream | U | U | lumbar | unsupported chord only stops |
 | `eshine_okin` (E2000, E3000/E3100, E5000) | S stream | U | U | eshine-okin | held keys write at once, refresh every 300 ms with no fixed count, STOP 200 ms after release; hold declared. Single-touch coordination excludes a second movement control; the one multi-touch path, Flat+Zero Gravity, is a fixed frame either release stops. None of its 25 constructors sets a speed |
 | `simmons` (all routes) | S stream | U | U | simmons | one held action |
@@ -683,6 +684,7 @@ Report workspaces are machine-local under
 | lp | `com.richmat.lp` | 2.2.1 | COMPLETE | `com.richmat.lp-2.2.1-20260827/report/` |
 | lp2 | `com.richmat.lp2` | 2.3.25 | COMPLETE | `com.richmat.lp2-2.3.25-20260827/report/` |
 | lucid | `com.lucid.bedbase` | 1.3.3 | COMPLETE | `com.lucid.bedbase-1.3.3-2026-08-27/report/` |
+| resident-base | `com.okin.resident.release` | 1.0.0 (1) | COMPLETE | `com.okin.resident.release-1.0.0-2026-11-10-maxqueue001/report/`, accepted audit001 |
 | lumbar | `com.okin.bedding.adjustablelumbar` | 1.2.2 | COMPLETE | `com.okin.bedding.adjustablelumbar-1.2.2-2026-10-01-queue-e0bb6807-20261001-054-002/report/` |
 | m1x12 | `com.starcode.adjustablem1x12` | 1.1.3 | COMPLETE | `com.starcode.adjustablem1x12-1.1.3-2026-10-26-39bdcafa-repair-002/report/` |
 | malouf | `com.malouf.bedbase` | 2.4.3 | COMPLETE | `com.malouf.bedbase-2.4.3-2026-08-27/report/` |

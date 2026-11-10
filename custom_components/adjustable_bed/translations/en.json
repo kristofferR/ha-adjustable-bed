@@ -2852,6 +2852,12 @@
       },
       "ruf_richmat_lift_down": {
         "name": "Lift Down"
+      },
+      "resident_check_massage": {
+        "name": "Refresh massage timer"
+      },
+      "resident_sync_clock": {
+        "name": "Sync bed clock"
       }
     },
     "cover": {
@@ -4476,6 +4482,9 @@
       },
       "ruf_richmat_music_status": {
         "name": "Bed audio status"
+      },
+      "resident_massage_timer": {
+        "name": "Massage timer"
       }
     },
     "light": {

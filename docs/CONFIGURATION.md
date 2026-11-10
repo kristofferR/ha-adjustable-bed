@@ -405,6 +405,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Okin CB35 (Sealy Posturematic, DewertOkin Star) | `okin_cb35` | 3 | 300 ms |
 | Okin FFE (13/15 series) | `okin_ffe` | 7 | 150 ms |
 | Okin ORE (legacy A5 5A) | `okin_ore` | 1 | 300 ms |
+| Resident Adjustable Base app (com.okin.resident.release) | `resident` | 4 | 300 ms |
 | Richmat / RMControl app | `richmat` | 7 | 150 ms |
 | SIMMONS app | `simmons` | 4 | 300 ms |
 | SUTA Smart Home (AT protocol) | `suta` | 7 | 150 ms |
@@ -985,3 +986,12 @@ dialog_config:
 - **Having connection issues?** See [Troubleshooting](TROUBLESHOOTING.md)
 - **Want to learn about your bed's protocol?** See [Supported Actuators](SUPPORTED_ACTUATORS.md)
 - **Setting up Bluetooth?** See [Connection Guide](CONNECTION_GUIDE.md)
+
+### Resident Adjustable Base
+
+Choose the explicit Resident Adjustable Base app profile for
+`com.okin.resident.release`. It fixes the two-motor layout, massage, disabled
+angle sensing and command cadence. The pulse count still bounds HA motor taps.
+There is no variant, model or remote-code question. See the
+[Resident guide](beds/okin-nframe.md#resident-adjustable-base). A pair of two
+receivers keeps each receiver's app identity; a one-address pair is unsupported.

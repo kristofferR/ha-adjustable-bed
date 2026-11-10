@@ -30,6 +30,7 @@ PROFILES: dict[str, profiles.OkinNFrameProfile] = {
     profile.key: profile
     for profile in (
         profiles.OKIMAT,
+        profiles.RESIDENT,
         profiles.DEWERTOKIN,
         profiles.RF_ECO_BT,
         *profiles.CUSTOMATIC_PROFILES.values(),
@@ -267,6 +268,7 @@ HOLD_PROFILES = sorted(key for key, profile in PROFILES.items() if profile.execu
 def test_hold_declarations_follow_the_evidence_matrix():
     """Stream-supported rows only; DewertOkin, CB24, DOT, 64-bit and SleepEase are blocked."""
     assert set(HOLD_PROFILES) == {
+        profiles.RESIDENT.key,
         *profiles.LEGGETT_PROFILES,
         *profiles.CUSTOMATIC_PROFILES,
         *(p.key for p in profiles.CST_PROFILES.values()),

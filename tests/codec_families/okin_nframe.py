@@ -43,6 +43,7 @@ FAMILY = CodecFamily(
             "leggett_okin",
             "leggett_platt",
             "okimat",
+            "resident",
             "okin_64bit",
             "okin_cb24",
             "okin_cst",

@@ -1200,6 +1200,12 @@
  "button:reset_defaults": {
   "card_section": "utility"
  },
+ "button:resident_check_massage": {
+  "card_section": "massage"
+ },
+ "button:resident_sync_clock": {
+  "card_section": "utility"
+ },
  "button:restonic_zzz": {
   "card_section": "utility"
  },
@@ -3330,6 +3336,9 @@
  },
  "sensor:okin_bedding_app_status_code": {
   "card_section": "hidden"
+ },
+ "sensor:resident_massage_timer": {
+  "card_section": "massage"
  },
  "sensor:reverie_foot_massage_intensity": {
   "card_section": "massage"

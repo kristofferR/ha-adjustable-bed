@@ -42,6 +42,7 @@ from ..const import (
     BED_TYPE_OKIN_HANDLE,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
+    BED_TYPE_RESIDENT,
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEPYS_BOX25,
@@ -224,6 +225,7 @@ Memory holds end without a release frame (``releases`` applies to motors only).
 """
 CUSTOMATIC_APP_HOLD_MS: Final = 2700
 """The app's Saved/Reset confirmation threshold, not a hardware acknowledgement."""
+
 
 def _customatic(
     key: str, name: str, bed_type: str, axes: tuple[str, ...], flat: int, flat_repeats: int
@@ -1432,3 +1434,51 @@ ADJUSTABLE_LUMBAR_PROFILES: Final[Mapping[str, OkinNFrameProfile]] = MappingProx
         ),
     }
 )
+
+
+# Resident Adjustable Base 1.0.0 (unit160), the only live 36_33_01a catalog.
+# Frozen literals, not the similarly named Rize Resident CST app.
+RESIDENT: Final = OkinNFrameProfile(
+    key="resident",
+    name="Resident Adjustable Base",
+    bed_types=(BED_TYPE_RESIDENT,),
+    width=8,
+    write="response",
+    envelope="plain",
+    axes=("head", "feet"),
+    keys=MappingProxyType(
+        {
+            "stop": 0x0000000000000000,
+            "head_up": 0x0000000100000000,
+            "head_down": 0x0000000200000000,
+            "foot_up": 0x0000000400000000,
+            "foot_down": 0x0000000800000000,
+            "head_foot_up": 0x0000000500000000,
+            "head_foot_down": 0x0000000A00000000,
+            "flat": 0x0800000000000000,
+            "zero_g": 0x0000100000000000,
+            "tv_pc": 0x0000400000000000,
+            "lounge": 0x0000200000000000,
+            "anti_snore": 0x0000800000000000,
+            "memory_1": 0x0001000000000000,
+            "memory_2": 0x0004000000000000,
+            "light_toggle": 0x0002000000000000,
+            "massage_switch": 0x0000010000000000,
+            "massage_off": 0x0200000000000000,
+            "strength_up": 0x00000C0000000000,
+            "strength_down": 0x0180000000000000,
+            "massage_timer": 0x0000020000000000,
+        }
+    ),
+    hold=Hold(repeat_ms=300, releases=2, release_ms=300),
+    execution=STREAM_HOLD,
+    recall=Tap(releases=2),
+    tap=Tap(releases=2),
+    memory_slots=2,
+)
+RESIDENT_NOTIFY_RETRIES_MS: Final = (350, 350, 300)
+RESIDENT_CLOCK_DELAY_MS: Final = 300
+RESIDENT_CLOCK_QUERY_DELAY_MS: Final = 100
+RESIDENT_INFO_DELAY_MS: Final = 1000
+RESIDENT_QUERY_DELAY_MS: Final = 300
+RESIDENT_NAME_PREFIXES: Final = ("okin", "smartbed")

@@ -104,6 +104,7 @@ from .const import (
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REMACRO,
+    BED_TYPE_RESIDENT,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
@@ -559,6 +560,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SIMMONS: "SIMMONS app",
     BED_TYPE_ADJUSTAMATTRESS: "AdjustaMattress app (seven product layouts)",
     BED_TYPE_ADJUSTABLE_LUMBAR: "Adjustable bed (Lumbar) app",
+    BED_TYPE_RESIDENT: "Resident Adjustable Base app (com.okin.resident.release)",
     BED_TYPE_COMFORT_ENHANCEMENTS: "Comfort Enhancements app (choose MC2/MC3/MC4/MC5)",
     BED_TYPE_ESHINE_OKIN: "eShine app (E2000 / E3000 / E3100 / E5000)",
     BED_TYPE_ESHINE: "Eshine app (E6000)",
@@ -1268,6 +1270,18 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         elif result.bed_type is not None and result.bed_type != BED_TYPE_GOODVIBE:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_GOODVIBE]))
             result.signals[0:0] = hints
+    # Resident's platform-name filter admits these shared receiver names. Keep
+    # existing protocol detection and ask the user to identify the app.
+    platform_name = service_info.device.name or service_info.name or ""
+    if (
+        platform_name.lower().startswith(("okin", "smartbed"))
+        and not any(signal.startswith("excluded:") for signal in result.signals)
+    ):
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_RESIDENT, 0.3, [*result.signals, "name:resident_app_candidate"])
+        elif result.bed_type != BED_TYPE_RESIDENT:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_RESIDENT]))
+            result.signals.append("name:resident_app_candidate")
     return result
 
 

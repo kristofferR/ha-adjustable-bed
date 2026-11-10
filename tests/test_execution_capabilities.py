@@ -134,6 +134,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "Okin5AProfile:star_elevate": {"hold": ("abm5_5", "m1x12")},
     # Okin N-frame (#483): each app streams a held key until release. Nectar
     # Move is the Nectar app's CST route; Prodigy CE and U Series also compose (#516).
+    "OkinNFrameProfile:resident": {"hold": ("resident-base",)},
     "OkinNFrameProfile:adjustable_lumbar_okin": {"hold": ("lumbar",)},
     "OkinNFrameProfile:adjustable_lumbar_star": {"hold": ("lumbar",)},
     # Customatic: held motor keys OR into one shared mask; a release clears one bit (#516).
@@ -278,6 +279,7 @@ _SIMMONS = ("OkinNFrameProfile:simmons_okin", "OkinNFrameProfile:simmons_smartbe
 # enumeration cannot reach every variant, layout or product, so every place
 # that can declare a capability must be listed and reviewed here.
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
+    "profiles/okin_nframe.py:<module>.RESIDENT": ("OkinNFrameProfile:resident",),
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController": ("richmat_classic_apps",),
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController.execution": ("richmat_classic_apps",),
     "beds/eshine_okin/controller.py:<module>.EshineOkinController": _ESHINE,
