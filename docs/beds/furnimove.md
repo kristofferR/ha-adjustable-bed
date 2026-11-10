@@ -22,6 +22,13 @@
 |----------|-----|------------|
 | ✅ | [FurniMove](https://play.google.com/store/apps/details?id=com.okin.okinsmartcomfort) **2.2.0 (19)** | `com.okin.okinsmartcomfort` |
 
+Smart Comfort Pro **1.0.5 (7)**, package `com.okin.seating.smartcomfort`, is a
+separate standalone seating app. All three product routes control chairs or
+sofas; no bed route was found. Its seating motion, memory, Home, lock,
+inspection, base-light, cup-holder and scene controls are outside this
+integration's scope. It is not an alias for the supported FurniMove / OKIN Smart
+Remote package `com.okin.okinsmartcomfort` described here.
+
 ## Features
 
 | Feature | Supported |
