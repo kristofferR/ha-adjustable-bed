@@ -84,6 +84,7 @@ async def test_rejected_request_is_not_repeated_on_later_connections(hass, error
     ctrl._client.pair.side_effect = error
     device = BLEDevice(ctrl.address, "OKIN-560024", {})
     ctrl._start_furnimove_bond_request(device)
+    assert ctrl._furnimove_bond_task is not None
     await ctrl._furnimove_bond_task
     await ctrl._async_cancel_furnimove_bond_request()
     ctrl._client.pair.reset_mock()
@@ -94,6 +95,7 @@ async def test_rejected_request_is_not_repeated_on_later_connections(hass, error
         ctrl._client.pair.assert_not_awaited()
         assert ctrl.pairing_diagnostics["furnimove_bond_request"]["reason"] == "previously_declined"
     else:
+        assert ctrl._furnimove_bond_task is not None
         await ctrl._furnimove_bond_task
         ctrl._client.pair.assert_awaited_once()
     await ctrl._async_cancel_furnimove_bond_request()
