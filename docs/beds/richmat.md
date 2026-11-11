@@ -5992,6 +5992,10 @@ fields remain distinct. Time replies update sleep type/version metadata. Report
 metadata retains fsize-driven followups and polling cancellation; physiological
 report interpretation is excluded. Local sleep cancellation clears the session,
 without sending the main bed's movement STOP.
+An active report keeps its BLE link through the metadata handshake and compressed
+transfer, even with quick handoff or a short idle timeout. Completion, cancellation,
+disconnect, or a 60-second integration watchdog ends that hold. The watchdog is an
+integration limit, not a protocol response interval.
 
 #### Services
 

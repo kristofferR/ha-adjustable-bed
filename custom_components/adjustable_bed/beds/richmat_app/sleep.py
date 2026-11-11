@@ -39,6 +39,8 @@ TX = "00000002-3c17-d293-8e48-14fe2e4da212"
 RX = "00000003-3c17-d293-8e48-14fe2e4da212"
 STATUS: Final = StateKey[str | None]("richmat_app_sleep_status")
 STATE: Final = StateKey[dict[str, Value]]("richmat_app_sleep_state")
+# Integration watchdog, not a protocol response or transfer cadence.
+REPORT_TIMEOUT_S: Final = 60
 ORDER = (
     "s_time",
     "q_time",
@@ -263,6 +265,8 @@ class SleepController(BedController):
         self._poll: asyncio.Task[None] | None = None
         self._last_write: float | None = None
         self._report_context: dict[str, Value] | None = None
+        self._report_timeout: asyncio.TimerHandle | None = None
+        self._session = object()
         self._status: str | None = None
         self.state: dict[str, Value] = {}
 
@@ -276,7 +280,11 @@ class SleepController(BedController):
 
     @property
     def requires_persistent_connection(self) -> bool:
-        return self._poll is not None or super().requires_persistent_connection
+        return (
+            self._poll is not None
+            or self._report_context is not None
+            or super().requires_persistent_connection
+        )
 
     @property
     def supports_motor_control(self) -> bool:
@@ -319,10 +327,16 @@ class SleepController(BedController):
 
     def _task(self, command: str, value: object) -> None:
         owner = self._owner
+        session, report = self._session, self._report_context
 
         async def run() -> None:
             async def execute(controller: BedController) -> None:
-                if controller is self and self._owner is owner:
+                if (
+                    controller is self
+                    and self._owner is owner
+                    and self._session is session
+                    and self._report_context is report
+                ):
                     await self.send(command, value)
 
             try:
@@ -330,10 +344,14 @@ class SleepController(BedController):
                     execute, cancel_running=False
                 )
             except asyncio.CancelledError:
+                if self._session is session:
+                    self._finish_report(report)
                 raise
             except Exception as err:
-                self.state["rejection"] = str(err)
-                self._publish()
+                if self._session is session and self._report_context is report:
+                    self.state["rejection"] = str(err)
+                    self._finish_report(report)
+                    self._publish()
 
         task = self._coordinator.entry.async_create_background_task(
             self._coordinator.hass, run(), name="richmat_app_sleep_followup"
@@ -342,9 +360,13 @@ class SleepController(BedController):
         task.add_done_callback(self._tasks.discard)
 
     def _notification(
-        self, owner: BleakClient, _sender: BleakGATTCharacteristic, data: bytearray
+        self, owner: BleakClient, _sender: BleakGATTCharacteristic, data: bytearray,
+        *, session: object | None = None,
     ) -> None:
-        if self._owner is not owner or self.client is not owner or not owner.is_connected:
+        if (
+            self._owner is not owner or self.client is not owner or not owner.is_connected
+            or session is not None and self._session is not session
+        ):
             return
         try:
             result = self.receiver.feed(bytes(data))
@@ -384,10 +406,15 @@ class SleepController(BedController):
                     self.receiver.report_size = size
                     value = {**self._report_context, "allow": 1} if self.mm else {"allow": 1}
                     self._task("q_report_allow", value)
-                elif type(size) is int:
-                    self.state["report_size"] = size
-        except (ValueError, TypeError, IndexError, UnicodeError) as err:
+                else:
+                    if type(size) is int:
+                        self.state["report_size"] = size
+                    self._finish_report(self._report_context)
+            elif command == "report_transfer":
+                self._finish_report(self._report_context)
+        except (ValueError, TypeError, IndexError, UnicodeError, zlib.error) as err:
             self.state["rejection"] = str(err)
+            self._finish_report(self._report_context)
         self._publish()
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
@@ -422,7 +449,9 @@ class SleepController(BedController):
             )
         self._owner = client
         try:
-            await client.start_notify(self._rx, partial(self._notification, client))
+            await client.start_notify(
+                self._rx, partial(self._notification, client, session=self._session)
+            )
             await asyncio.sleep(0.00015)
             await self.execute_request(Request("sync"))
             if self.variant == "hj":
@@ -433,23 +462,29 @@ class SleepController(BedController):
 
     async def send(self, command: str, value: object) -> None:
         client, tx = self._owner, self._tx
+        session, report = self._session, self._report_context
         if client is None or tx is None or self.client is not client or not client.is_connected:
             raise ConnectionError("Sleep BLE session changed")
         sequence = self.sequence
         self.sequence = sequence % 254 + 1
         wire_cmd = "q_report" if command == "q_report_allow" else command
         data = packet(sequence, wire_cmd, value)
-        self.receiver.buffer.clear()
-        self.receiver.current = command
         async with self._ble_lock:
             if self._last_write is not None:
                 await asyncio.sleep(
                     max(0, self._last_write + 0.1 - asyncio.get_running_loop().time())
                 )
+            if self._session is not session or self._report_context is not report:
+                return
+            self.receiver.buffer.clear()
+            self.receiver.current = command
             stride = max(1, client.mtu_size - 3)
             for offset in range(0, len(data), stride):
+                if self._session is not session or self._report_context is not report:
+                    return
                 if self._owner is not client or self._coordinator.cancel_command.is_set():
                     self.receiver.clear()
+                    self._finish_report(report)
                     return
                 await client.write_gatt_char(
                     tx, data[offset : offset + stride], response=not self.mm
@@ -490,6 +525,7 @@ class SleepController(BedController):
     async def execute_request(self, r: Request) -> None:
         self.validate_request(r)
         op = r.operation
+        self._finish_report(self._report_context)
         if op not in ("sync", "sleep_sync", "sleep_realtime", "sleep_poll"):
             self._cancel_work()
             self.receiver.clear()
@@ -552,8 +588,33 @@ class SleepController(BedController):
                 "d": r.when.day,
             }
             self._report_context = value
+            self._report_timeout = asyncio.get_running_loop().call_later(
+                REPORT_TIMEOUT_S, self._report_expired, value
+            )
             self.receiver.report_type = r.report_type
-            await self.send("q_report", value)
+            try:
+                await self.send("q_report", value)
+            except BaseException:
+                self._finish_report(value)
+                raise
+
+    def _finish_report(self, report: dict[str, Value] | None, *, resume: bool = True) -> None:
+        if report is None or self._report_context is not report:
+            return
+        self._report_context = None
+        if self._report_timeout is not None:
+            self._report_timeout.cancel()
+            self._report_timeout = None
+        self.receiver.clear()
+        if resume and self._coordinator.controller is self:
+            self._coordinator.resume_disconnect_timer()
+
+    def _report_expired(self, report: dict[str, Value]) -> None:
+        if self._report_context is not report:
+            return
+        self.state["rejection"] = "Sleep report transfer timed out"
+        self._finish_report(report)
+        self._publish()
 
     def _cancel_work(self) -> None:
         if self._poll:
@@ -564,6 +625,8 @@ class SleepController(BedController):
         self._tasks.clear()
 
     def on_disconnect(self) -> None:
+        self._session = object()
+        self._finish_report(self._report_context, resume=False)
         self._cancel_work()
         self.receiver.clear()
         self._tx = self._rx = self._owner = None
@@ -578,6 +641,7 @@ class SleepController(BedController):
 
     async def stop_all(self) -> None:
         self._cancel_work()
+        self._finish_report(self._report_context)
         self.receiver.clear()
 
     async def _unsupported(self, *args: object) -> None:

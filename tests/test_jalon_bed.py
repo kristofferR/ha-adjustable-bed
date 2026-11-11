@@ -79,6 +79,55 @@ async def test_layout_controls_and_word_model(layout: str, axes: tuple[str, ...]
     assert not ctrl.supports_position_feedback
 
 
+@pytest.mark.parametrize("route", ["jalon_bed", "jalon"])
+@pytest.mark.parametrize("index", range(4))
+async def test_app_picker_reaches_each_distinct_controller_and_layout(hass, route, index):
+    from custom_components.adjustable_bed.beds.keeson.jalon import JalonController
+    from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+    from custom_components.adjustable_bed.const import (
+        CONF_BED_TYPE,
+        CONF_MOTOR_COUNT,
+        CONF_MOTOR_PULSE_DELAY_MS,
+    )
+    from custom_components.adjustable_bed.controller_factory import create_controller
+    from custom_components.adjustable_bed.profiles.jalon import LAYOUTS as OTHER_LAYOUTS
+    from tests.form_helpers import finish_new_bed
+
+    flow = AdjustableBedConfigFlow()
+    flow.hass = hass
+    flow.context = {}
+    flow._app_after_device = "manual_entry"
+    flow._finish_with_verify = AsyncMock(return_value={"type": "create_entry"})
+    form = await flow.async_step_select_app()
+    picker = next(value for key, value in form["data_schema"].schema.items() if key == CONF_BED_TYPE)
+    labels = {value: label for label, value in picker.rows().items()}
+    assert labels["jalon_bed"] != labels["jalon"]
+    assert "OkinComfortBed" in labels[route]
+    assert "Jalon" in labels[route]
+    result = await flow.async_step_select_app({CONF_BED_TYPE: labels[route]})
+    assert result["step_id"] == "manual_entry"
+    result = await flow.async_step_manual_entry({"address": "AA:BB:CC:DD:EE:35"})
+    assert result["step_id"] == "finish_settings"
+    layout = tuple(app.LAYOUTS if route == "jalon_bed" else OTHER_LAYOUTS)[index]
+    await finish_new_bed(flow, result, {CONF_PRODUCT_TYPE: layout})
+    saved = flow._finish_with_verify.await_args.args[0]
+    assert saved[CONF_BED_TYPE] == route and saved[CONF_PRODUCT_TYPE] == layout
+    assert saved[CONF_MOTOR_PULSE_DELAY_MS] == (100 if route == "jalon_bed" else 300)
+    coordinator = _FactoryCoordinator()
+    coordinator.entry.data = saved
+    coordinator.motor_count = saved[CONF_MOTOR_COUNT]
+    ctrl = await create_controller(coordinator, route, None, None)
+    assert type(ctrl) is (JalonBedController if route == "jalon_bed" else JalonController)
+    if route == "jalon_bed":
+        assert ctrl.profile.key == "jalon_bed"
+        assert tuple(spec.key for spec in ctrl.motor_control_specs) == app.LAYOUTS[layout].axes
+        assert saved[CONF_MOTOR_COUNT] == len(app.LAYOUTS[layout].axes)
+    else:
+        assert ctrl.profile.key == "jalon_13"
+        assert {spec.key for spec in ctrl.motor_control_specs} == set(OTHER_LAYOUTS[layout])
+        assert saved[CONF_MOTOR_COUNT] == len(OTHER_LAYOUTS[layout])
+
+
 async def test_movement_cancel_still_releases_with_fresh_event() -> None:
     ctrl = controller()
 
