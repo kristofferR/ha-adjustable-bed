@@ -6,6 +6,7 @@ from ..const import (
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_UUID,
+    BED_TYPE_RESIDENT,
     MANUFACTURER_ID_OKIN,
     OKIMAT_SERVICE_UUID,
 )
@@ -14,7 +15,7 @@ from ._hints import Hint, manufacturer, names, services
 HINTS: tuple[Hint, ...] = (
     *services(
         OKIMAT_SERVICE_UUID,
-        bed_types={BED_TYPE_OKIMAT, BED_TYPE_OKIN_UUID, BED_TYPE_LEGGETT_OKIN, BED_TYPE_NECTAR},
+        bed_types={BED_TYPE_OKIMAT, BED_TYPE_OKIN_UUID, BED_TYPE_LEGGETT_OKIN, BED_TYPE_NECTAR, BED_TYPE_RESIDENT},
     ),
     # Pairing-only receivers advertise just a name until bonded.
     names(

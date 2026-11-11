@@ -190,3 +190,40 @@ def parse_receipt(data: bytes) -> int | None:
     if len(data) != 20 or data[:2] != b"\x09\x0b" or data[2:6] != data[6:10]:
         return None
     return int.from_bytes(data[2:6], "big")
+
+
+def prefixed_query(fields: Sequence[int], width: int = 8) -> bytes:
+    """Encode a short ``width 02`` query whose fields are not a command word."""
+    if width not in WIDTHS:
+        raise ValueError("Unsupported command word width")
+    return bytes((width, 0x02, *fields))
+
+
+def calendar_record(opcode: int, fields: Sequence[int]) -> bytes:
+    """Encode an ``opcode 80 01`` record with six binary calendar fields."""
+    if len(fields) != 6:
+        raise ValueError("A calendar record carries six fields")
+    return bytes((opcode, 0x80, 0x01, *fields))
+
+
+class MassageTimerParser:
+    """Resident's current-chunk FE16 buffering and 09 0B timer selector.
+
+    Matching short frames are rejected instead of reproducing the app's
+    RangeError. Buffers are bounded to one chunk and reset by the session owner.
+    """
+
+    def __init__(self) -> None:
+        self.pending: bytes = b""
+
+    def feed(self, data: bytes) -> int | None:
+        if len(data) < 3:
+            return None
+        assembled = self.pending + data
+        if len(data) == 20 and data[1:3] == b"\xfe\x16":
+            self.pending = data
+            return None
+        self.pending = b""
+        if len(assembled) >= 11 and assembled[:2] == b"\x09\x0b":
+            return assembled[10]
+        return None

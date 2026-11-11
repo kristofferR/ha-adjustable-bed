@@ -274,7 +274,7 @@ shared infrastructure (`base`, `const`, `coordinator`, `detection`, `app_session
 | `adjustable_lumbar` | `AdjustableLumbarController` (`adjustable_lumbar`, 626) | inline | O1 Okin N-frame | adjustable_lumbar_okin, adjustable_lumbar_star | `test_adjustable_lumbar.py` |
 | `adjustamattress` | `AdjustaMattressController` (`adjustamattress`, 1197) | `adjustamattress_protocol.py` | K1 Keeson E5/E6 | P1_L0, P1_L1, P1_L2, P4_L6 | `test_adjustamattress.py` |
 | `bedsense` | `BedSenseController` (`bedsense`, 1099) | `bedsense_commands.py`, `bedsense_memory.py` | S1 FFFF frame | bedsense_1, bedsense_2, bedsense_3, bedsense_4, bedsense_5 +4 | `test_bedsense.py` |
-| `bedtech` | `BedTechController` (`bedtech`, 395) | inline | R1 Richmat 6E |  | `test_bedtech.py` |
+| `bedtech` | `BedTechController` (`bedtech/controller.py`) | inline | R1 Richmat 6E |  | `test_bedtech.py` |
 | `bf` | `BfCherishController` (`bf_cherish`, 779) | inline | K1 Keeson E5/E6 |  | `test_bf_cherish.py` |
 | `casper_base` | `CasperBaseController` (`casper_base`, 1480) | `beds/casper_base/catalog.py`, `beds/casper_base/protocol.py` | D distinct |  | `test_casper_base.py` |
 | `casper_remote` | `CasperRemoteController` (`casper_sleep`, 1025) | `beds/casper_base/protocol.py`, `beds/casper_sleep/protocol.py` | N/A not a bed |  | `test_casper_base.py` |
@@ -767,8 +767,9 @@ evidence the accepted reports do not hold, and say where they are recorded.
 - Richmat legacy-RGB "Always On" sends `6E 0B 00 00 79` where the other families
   send `FF FF`; no accepted report covers the legacy-RGB family
   ([Richmat lights](../beds/richmat.md#lights)).
-- BedTech's `)`/`*` codes drive the pillow entity while the BedTech 7.1.3 table
-  calls them `bothHeads`; the [BedTech](../beds/richmat.md#bedtech) warning stands.
+- BedTech legacy keeps its old pillow mapping. Explicit 7.1.3 model profiles
+  map `)`/`*` to both FH heads, `?`/`@` to BT6500 pillow and `A`/`B` to lumbar;
+  see [BedTech](../beds/richmat.md#bedtech).
 - The legacy `limoss` route resends one counter value per held move and decodes
   positions unsigned; both audited Limoss apps differ. The route has no accepted
   report of its own.

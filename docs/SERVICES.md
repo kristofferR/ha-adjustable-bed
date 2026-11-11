@@ -33,6 +33,41 @@ both sides.
 `target_address` and has no `side` parameter. Select a child device for a
 two-address pair. See [support capture](GETTING_HELP.md#generating-a-support-bundle).
 
+## BedTech app
+
+`bedtech_app_command` uses the selected [BedTech 7.1.3 model](beds/richmat.md#bedtech)
+and its sleeper routing. Each receiver must use the same explicit model.
+`action` names a control from that model's ordinary screen, such as `headUp`,
+`footDown`, `headMassageUp`, `massageTimer20`, `presetFlat`, `memory1Save` or
+`lightToggle`. A normal movement action uses the finite pulse count; use
+`timed_move` for an elapsed duration or renewable hold. `connectionTest` explicitly
+raises the first head for two seconds and returns the link through HA's normal
+connection handoff. Automatic setup never moves the bed. Unsupported model or
+secondary-head actions fail before any receiver is commanded.
+
+| `sleeper` | Normal two-receiver model | FH single-receiver model |
+|---|---|---|
+| `1` / `2` | First / second receiver | Unmodified first-head action |
+| `3` (default) | Both receivers | Both heads; other controls retain bank 0 |
+| `4` / `5` | First / second head; foot actions and STOP reach both receivers | First / second head; shared foot, memory and massage stay in bank 0 |
+
+Target the paired parent for shared-foot operation. A child target or optional
+`side` restricts the request; conflicting app sleeper routing is rejected.
+An unpaired FH receiver can also select its bank with `sleeper`.
+
+```yaml
+action: adjustable_bed.bedtech_app_command
+data:
+  device_id: YOUR_PAIRED_BED_DEVICE_ID
+  action: footUp
+  sleeper: 4
+```
+
+This example raises both foot sections while selecting the first head for
+head actions. `stop` cancels refresh and writes no movement STOP packet on
+explicit models. Their massage-off packet is a separate action. Hardware
+behavior for these explicit app profiles remains unverified.
+
 ## OKIN SleepEase / DoubleSleep
 
 `doublesleep_configure` accepts a bed `device_id` and optional paired target
@@ -681,6 +716,31 @@ the distinct wire builders and raw-data limitations.
 
 `adjustable_bed.hjbed` exposes product-gated single/repeat alarms, alarm query/delete/toggle, clock synchronization, light timeout/RGB and Normal-layout control mode. Use the exact product alarm action key. All targets validate before writing; feature acknowledgements cannot override static profile flags. See the [operation fields and eligibility](beds/richmat.md#hjbed).
 
+### MLILY Control configuration
+
+`adjustable_bed.mlily` exposes the selected MLILY product's alarms, RGB light and
+countdown controls, plus independent MM/SXB sleep queries. Light and alarm actions
+require their capability reply and exact product getter. Use the product's alarm
+action IDs and observed six-field `alarm_record` from the status sensor. `toggle`
+changes its enabled bit; editing without an explicit action recovers the current
+mode. Repeat saves require an explicit `alarm_id` (1–7), or an observed
+`alarm_record` for an edit. The protocol does not signal when the list is complete,
+so the integration cannot safely choose an unused ID from cached records.
+Save/delete refresh the observed list. See the
+[MLILY Control guide](beds/richmat.md#mlily-control) for all profile gates,
+gestures, notifications and sleep operations.
+
+### Galaxy Bed Control configuration
+
+`adjustable_bed.galaxy` configures the selected Galaxy bed's alarms, lights,
+massage countdown and bed anti-snore settings. It uses the same fields as the
+bed settings of `goodvibe`, with Galaxy's own product gates and record format.
+Choose exact alarm action IDs from the [Galaxy command table](beds/richmat.md#galaxy-bed-control).
+Relevant capability replies must have arrived on the current connection.
+`enable_alarm` takes an observed `alarm_id` and `enabled`, preserving the
+received time, action, reserved field and weekday mask.
+Separate sleep-sensor operations are not offered.
+
 ### Good Vibe Sleep configuration
 
 `adjustable_bed.goodvibe` exposes product-gated alarm, light and snore settings plus independent sleep-sensor queries. Select an exact alarm action ID from the [command/profile tables](beds/richmat.md#alarms-and-snore-settings). Sleep reports use `operation: report`, a date, part and report type (1 day, 2 month); metadata, continuation and typed receipt form one operation. The status sensor retains typed reports and per-side live values. Use the app-labelled buttons for normal controls and the existing bounded `hold_control` action for held gestures. See the [protocol guide](beds/richmat.md#good-vibe-sleep) for every packet, profile gate and lifecycle limit.
@@ -721,6 +781,34 @@ Use `sync_clock`, `hold_control`, and the profile's refresh/strength/timer butto
 for other controls. See the [protocol guide](beds/okin-nframe.md#eshine-clock-and-alarms)
 for packet values, timing and hardware-unverified status. This is separate from
 the E6000 app profile.
+
+## Luuna Rise / Power Cool bed settings
+
+`adjustable_bed.richmat_rise` targets the exact selected app and layout. Use
+`query` to refresh alarm and lamp capability, `alarm` / `cancel_alarm` for the
+bed's countdown, `rgb` for a three-byte color, and `lamp_timer` with `seconds`
+(0–300) and optional `timer_save` to select the app's zero encoding. `actions`
+is a list of `node_<number>` keys from the device's `alarm_actions` diagnostics.
+Only that layout's choices are admitted. `time` is the next local occurrence;
+omitting it selects 1440 minutes. Unsupported preset/massage combinations are
+rejected before writing. Confirmation is not schedule readback.
+
+`massage_timer` accepts `progress` 0–5 only for D1RM/D9RM. `massage_popup` uses
+Y6RM's `popup` choice (`15`, `30`, `45`, `toggle`). These labels do not establish
+firmware durations. Alarm and lamp writes require capability evidence from the
+current physical session, including after an idle reconnect.
+
+Power Cool's explicitly selected TEST layout permits `diagnostic_cycle`, a
+finite motor sequence cancelled by STOP. Its RMCS layout permits
+`program_schedule`. Supply `schedule` with twelve `[order, run_seconds,
+rest_seconds]` records in fixed M1/M2/M3/M4/M12/M34 up/down order, plus `rest`,
+`count`, `radio` (`rf` or `ble`), `code` (`new` or `old`), `identifier` (1–9), and
+`motors` (a permutation of 1–4). Orders must be a permutation of 1–12. The radio
+field is part of the BLE program. No program abort or readback is proven.
+These operations use movement scheduling. Luuna's manufacturing layouts,
+standalone desks, networks and separate accessories are not service targets.
+
+See the [generated command tables](beds/richmat.md#luuna-rise--power-cool).
 
 ## Classic Richmat app settings
 
@@ -773,3 +861,62 @@ All selected targets are validated before any writes. Existing
 `richmat_mh_alarm`, `richmat_mh_waist_alarm`, `richmat_mh_aroma` and
 `richmat_mh_light_color` actions also work for the model/reply-gated features
 of these app profiles. RUF exposes only its waist alarm among those actions.
+
+### OkinComfortBed II alarm
+
+`adjustable_bed.jalon_set_alarm` configures the Jalon app's bed-local alarm on P2
+or P3 receivers. Supply `device_id`, `enabled`, minute-precision `time`, optional
+`weekdays` (`mon` through `sun`, empty for the next occurrence), and `wake_mode`
+(`flat`, `memory_1`, `memory_2`, `zero_g`, `anti_snore`, `tv`, or `massage`). Paired
+child targets retain their side. P1 has no alarm setter. See the
+[profile guide](beds/keeson.md#okincomfortbed-ii) for timing and notification state.
+
+### Rize Beds default-preset programming
+
+`adjustable_bed.rize_program_preset` accepts `device_id`, `preset` (`zero_g`,
+`anti_snore`, `book`, `leisure`) and required `confirm: true`. It requires an
+extended Rize product and one physical target. Reading (`book`) programming
+requires layout5/6 (products135/136/140); Reading recall is also available on7/8. For a paired bed, select its
+child device or specify `side: left` or `side: right`; Both and multi-target
+programming are rejected. It writes once to that selected target, with no
+preliminary memory-slot write. See the [Rize guide](beds/kaidi.md#rize-beds).
+
+## Luuna +
+
+`adjustable_bed.luuna` controls the selected Rise, Rise Pro or Rise Pro Light
+profile. See the [Luuna + profile](beds/richmat.md#luuna-) for its capability gates.
+Choose `alarm` with `hour`, `minute` and `mode` (`anti_snore`, `zero_g`, `tv`,
+`memory_1` or `memory_2`, as the product offers), or `alarm_cancel`.
+Light operations are `light_rgb` (`rgb_color`), `light_warm` / `light_cold`
+(`value`, 0–100 percent brightness), `light_seconds` (`value`, 0/300/600/900),
+and `light_off`. Zero duration means always on. `sleep_name` queries the
+bed-provided accessory name for Rise and Rise Pro Light; `time_sync` sends the
+local calendar. Each target is validated before any writes. Physical behavior
+is unverified.
+
+### ComfortBaseForBluetooth bed alarm
+
+`adjustable_bed.comfortbase_set_alarm` accepts `device_id`, `enabled`, a minute-precision
+`time` when enabling, and `memory` (1 for A, 2 for B). Optional `side` targets a physical
+receiver of a two-address pair. Enabling synchronizes the local wall clock twice, then
+programs the bed alarm. Disabling writes the app's all-zero cancel record. There is no
+alarm feedback or decoded weekday schedule. `adjustable_bed.sync_clock` is also available.
+
+
+### Richmat 4.2.0 configuration
+
+`adjustable_bed.richmat_app` exposes product-gated lighting, alarms, blanket,
+detection, anti-snore/off-bed, USB and cancellable demos. Sleep operations target
+a separate Richmat sleep entry. See the [operation and parameter reference](beds/richmat.md#richmat-420).
+
+### OkinComfortBed Ⅱ (Jalon) bed alarm
+
+`adjustable_bed.jalon_bed_set_alarm` targets this app's bed-local wake timer.
+Set `enabled: true`, `time: "07:30:00"`, `weekdays: [0, 1, 2, 3, 4]` (Monday
+through Friday), and `wake_mode: memory_1`. Other wake modes are `none`,
+`memory_2` and `massage`. Empty weekdays means the next occurrence today or
+tomorrow. `enabled: false` clears the alarm without clock synchronization.
+Use the usual `device_id` and optional `side` fields. See the
+[Jalon profile](beds/keeson.md#okincomfortbed-ⅱ-jalon) for the wire behavior,
+held gestures and hardware caveats. The generic `sync_clock` action also
+supports this profile.

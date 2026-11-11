@@ -1176,11 +1176,16 @@ def default_scenario(bed_type: str) -> Scenario:
         const.BED_TYPE_OCTO: const.OCTO_VARIANT_STANDARD,
         const.BED_TYPE_CASPER_BASE: "casperpro",
         const.BED_TYPE_HUSH_BASE: "hushl400",
+        const.BED_TYPE_LUUNA: "rise",
         const.BED_TYPE_COMFORT_ENHANCEMENTS: "mc2",
         const.BED_TYPE_GLIDEAWAY_MOTION: "motion_400",
         const.BED_TYPE_ZSERIES: const.ZSERIES_VARIANT_Z230,
         const.BED_TYPE_RICHMAT: const.RICHMAT_VARIANT_WILINKE,
+        const.BED_TYPE_GALAXY: "6BRM",
         const.BED_TYPE_HJBED: "hj_bedbjrn",
+        const.BED_TYPE_COMFORTBASE: "accord",
+        const.BED_TYPE_RICHMAT_APP: "6BRM",
+        const.BED_TYPE_RICHMAT_APP_SLEEP: "hj",
         const.BED_TYPE_DOUBLESLEEP: "p1",
         const.BED_TYPE_RICHMAT_CLASSIC_APPS: "avocadoecobase",
     }.get(bed_type)
@@ -1190,7 +1195,12 @@ def default_scenario(bed_type: str) -> Scenario:
         from custom_components.adjustable_bed.profiles.keeson import DEFAULT_LAYOUTS
 
         data[const.CONF_PRODUCT_TYPE] = DEFAULT_LAYOUTS[bed_type]
-    if bed_type == const.BED_TYPE_ISLEEP:
+    if bed_type == const.BED_TYPE_JALON:
+        data.update({const.CONF_PRODUCT_TYPE: "2", const.CONF_BLE_DEVICE_NAME: "smartbed123"})
+        replies = {"*": "a50b00000258010106"}
+    if bed_type == const.BED_TYPE_JALON_BED:
+        data[const.CONF_PRODUCT_TYPE] = "40"  # app default four-motor layout
+    if bed_type in (const.BED_TYPE_ISLEEP, const.BED_TYPE_RIZE):
         data.update({const.CONF_PRODUCT_TYPE: 129, const.CONF_KAIDI_ROOM_ID: 10000})
         replies = {
             # Room 10000 joined (own vaddr 1); the node ping finds this address.
@@ -1199,6 +1209,8 @@ def default_scenario(bed_type: str) -> Scenario:
         }
     if bed_type == const.BED_TYPE_SLEEPTRACKER:
         data[const.CONF_PRODUCT_TYPE] = "unknown"
+    if bed_type == const.BED_TYPE_GALAXY:
+        replies = GALAXY_REPLIES
     if bed_type == const.BED_TYPE_RICHMAT_CLASSIC_APPS:
         data[const.CONF_PRODUCT_TYPE] = "GORM"  # three app modes
     if bed_type == const.BED_TYPE_SLEEPYS_ELITE_APP:
@@ -1245,12 +1257,19 @@ def default_scenario(bed_type: str) -> Scenario:
             "read:0000143d-0000-1000-8000-00805f9b34fb": "0102",
             "read:00001111-0000-1000-8000-00805f9b34fb": "000001020304",
         }
+    if bed_type == const.BED_TYPE_MLILY:
+        variant = "6brm"
     if bed_type == const.BED_TYPE_KAIDI:
         # A provisioned broadcast advertisement carrying the room ID (tests/test_kaidi.py).
         kwargs = {"manufacturer_data": {0xFFFF: bytes.fromhex(KAIDI_BROADCAST % "81")}}
         replies = {"write:01160178563412": "021600"}  # join accepted
+    if bed_type == const.BED_TYPE_ADJUSTABLE_BED:
+        data[const.CONF_BLE_DEVICE_NAME] = "OKIN-1"
+    if bed_type in {"smart_comfort_synargy", "smart_comfort_synergy"}:
+        replies = {"write:a0b156": "a0b15689070707ba"}
     return Scenario(
         id=bed_type,
+        layout_id="adjustable_lumbar" if bed_type == const.BED_TYPE_ADJUSTABLE_BED else None,
         bed_type=bed_type,
         protocol_variant=variant,
         entry_data=data,
@@ -1276,6 +1295,7 @@ VARIANT_ROUTES: dict[str, str] = {
     "remacro": "REMACRO_VARIANTS",
     "sleepys_box25": "SLEEPYS_BOX25_VARIANTS",
     "adjustable_lumbar": "ADJUSTABLE_LUMBAR_VARIANTS",
+    "adjustable_bed": "ADJUSTABLE_BED_VARIANTS",
     "bedsense": "BEDSENSE_VARIANTS",
     "comfort_enhancements": "COMFORT_ENHANCEMENTS_VARIANTS",
     "zseries": "ZSERIES_VARIANTS",
@@ -1326,6 +1346,21 @@ def route_scenarios() -> list[Scenario]:
                     replies={**base.replies, **ROUTE_REPLIES.get(f"{bed_type}:{variant}", {})},
                 )
             )
+    # BedTech's manual model selector: each model has its own controls and release.
+    from custom_components.adjustable_bed.profiles.richmat import BEDTECH_APP_PROFILES
+
+    for model in BEDTECH_APP_PROFILES:
+        base = default_scenario("bedtech")
+        scenarios.append(dataclasses.replace(
+            base, id=f"bedtech:{model}", protocol_variant=model, layout_id="bedtech",
+        ))
+    from custom_components.adjustable_bed.profiles.comfortbase import PRODUCTS
+
+    for product in PRODUCTS:
+        scenarios.append(dataclasses.replace(
+            default_scenario("comfortbase"), id=f"comfortbase:{product}",
+            protocol_variant=product, layout_id="comfortbase",
+        ))
     # Richmat app family: the picker model selects the byte table within one controller.
     from custom_components.adjustable_bed.beds.richmat_mh.controller import (
         MODEL_VARIANT_PREFIX,
@@ -1342,6 +1377,17 @@ def route_scenarios() -> list[Scenario]:
                     protocol_variant=f"{MODEL_VARIANT_PREFIX}{model}",
                 )
             )
+    # Jalon's physical layouts share one transport and fixed model byte zero.
+    # The four-motor layout is already the default scenario.
+    for layout in ("20", "30", "31"):
+        scenarios.append(
+            Scenario(
+                id=f"jalon_bed:layout_{layout}",
+                bed_type=const.BED_TYPE_JALON_BED,
+                entry_data={const.CONF_PRODUCT_TYPE: layout},
+                layout_id=const.BED_TYPE_JALON_BED,
+            )
+        )
     # Jiecang family: one app, four profiles, shared and distinct layouts.
     for profile in ("dreamask", "dreamotion", "dreamhd", "comfort_motion"):
         second = "g2" if profile == "comfort_motion" else "g3"
@@ -1397,6 +1443,16 @@ def route_scenarios() -> list[Scenario]:
                     layout_id="ergomotion_4",
                 )
             )
+    if "galaxy" in const.SUPPORTED_BED_TYPES:
+        for product, layout in (
+            ("6BRM", "galaxy_nordic"), ("APRM", "galaxy"),
+            ("E3RM", "galaxy"), ("HNRN", "galaxy"),
+            ("RNRN/splitHead", "galaxy"), ("D1RM", "galaxy"), ("Y6RM", "galaxy"),
+        ):
+            scenarios.append(Scenario(
+                id=f"galaxy:{product}" + (":nordic" if layout == "galaxy_nordic" else ""),
+                bed_type="galaxy", protocol_variant=product, layout_id=layout, replies=GALAXY_REPLIES,
+            ))
     # Good Vibe Sleep: products by gesture mix and native sides, the legacy
     # single-byte link, and the two independent sleep sensors.
     if "goodvibe" in const.SUPPORTED_BED_TYPES:
@@ -1409,6 +1465,12 @@ def route_scenarios() -> list[Scenario]:
                     layout_id=layout,
                 )
             )
+    if const.BED_TYPE_MLILY in const.SUPPORTED_BED_TYPES:
+        for profile, layout in (("6brm", "mlily_nordic"), ("brrm", "mlily"),
+                                ("e3rm", "mlily"), ("l3rm", "mlily"), ("mdrn", "mlily"),
+                                ("sleep_rm", "mlily_sleep"), ("sleep_hj", "mlily_sleep")):
+            scenarios.append(Scenario(id=f"mlily:{profile}:{layout}", bed_type=const.BED_TYPE_MLILY,
+                                      protocol_variant=profile, layout_id=layout))
     # Classic Richmat apps: each app's own catalog, a desk, memory-arm and Hold
     # layouts, and the bare-byte Nordic UART route.
     if const.BED_TYPE_RICHMAT_CLASSIC_APPS in const.SUPPORTED_BED_TYPES:
@@ -1458,11 +1520,23 @@ CLASSIC_ROUTES: tuple[tuple[str, str, str], ...] = (
     ("fortywinks", "CORN", "richmat_classic_apps"),
     ("milemont", "JDRM", "richmat_classic_apps"),
     ("superior", "YGRM", "richmat_classic_apps"),
+    ("luunarise2", "HKRM", "richmat_classic_apps"),
+    ("luunarise2", "AHRM", "richmat_classic_apps_nordic"),
+    ("powercool", "AHRM", "richmat_classic_apps"),
+    ("powercool", "E3RM", "richmat_classic_apps_nordic"),
 )
 
 
 # Product key and stored layout. 6ERM mixes sustained, short and short-and-long
 # presses on one side; ACRN offers sides 0 and 1, BTRM also the native side 2.
+GALAXY_REPLIES = {
+    "write:6e08010178": "6e09010078",
+    "write:6e0a000179": "6e0e00037f",
+    "write:01": "6e090100786e0e00037f",
+    "write:6e0820060300009f": "6e200f06030200484a2d54455354a7",
+}
+
+
 GOODVIBE_ROUTES: tuple[tuple[str, str], ...] = (
     ("selector-0004", "goodvibe"),
     ("selector-0004", "goodvibe_nordic"),
@@ -1565,6 +1639,12 @@ def feature_scenarios(by_id: dict[str, Scenario]) -> list[Scenario]:
             },
         )
     )
+    for protocol in ("p1", "p2"):
+        routes.append(Scenario(
+            id=f"jalon:{protocol}", bed_type="jalon",
+            entry_data={"product_type": "2", "ble_device_name": "okin-ble123"},
+            replies={"*": "edfe00000000000005000000000023"},
+        ))
     return routes
 
 
@@ -1674,6 +1754,10 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         discovery = controller.async_discover_capabilities()
         if inspect.isawaitable(discovery):
             await discovery
+        if controller._coordinator.bed_type in {"smart_comfort_synargy", "smart_comfort_synergy"}:
+            # These v5 profiles own startup in their hook, without session helpers.
+            await controller.async_on_connect(None)
+            return
         await controller.start_notify(lambda *_: None)
         for hook in STARTUP_HOOKS.get(controller._coordinator.bed_type, ()):  # noqa: SLF001
             if hasattr(controller, hook):

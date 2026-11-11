@@ -14,6 +14,7 @@ from dataclasses import dataclass, field, replace
 from typing import Final
 
 from .const import (
+    BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_BEDJET_POWERLAYER,
@@ -25,6 +26,7 @@ from .const import (
     BED_TYPE_CHERISH,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORT_MOTION,
+    BED_TYPE_COMFORTBASE,
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
@@ -35,6 +37,7 @@ from .const import (
     BED_TYPE_ESHINE_OKIN,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
+    BED_TYPE_GALAXY,
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_GMMOTOR,
     BED_TYPE_GMMOTOR_SLEEP_MM,
@@ -45,6 +48,8 @@ from .const import (
     BED_TYPE_HUSH_SLEEP_MM,
     BED_TYPE_HUSH_SLEEP_SXB,
     BED_TYPE_ISLEEP,
+    BED_TYPE_JALON,
+    BED_TYPE_JALON_BED,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
@@ -60,6 +65,7 @@ from .const import (
     BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
+    BED_TYPE_MLILY,
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_OCTO,
@@ -70,10 +76,14 @@ from .const import (
     BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
+    BED_TYPE_RESIDENT,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
+    BED_TYPE_RICHMAT_APP,
+    BED_TYPE_RICHMAT_APP_SLEEP,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
+    BED_TYPE_RIZE,
     BED_TYPE_SBI,
     BED_TYPE_SERENITY,
     BED_TYPE_SERTA,
@@ -132,6 +142,8 @@ class BedTraits:
     # Controls keep state in the connection-scoped controller, so a new entry
     # keeps the link between commands by default.
     connection_scoped_state: bool = False
+    # Startup hooks own Device Information reads, including their timing.
+    owns_device_info_reads: bool = False
     passive_position_reconciliation: bool = False
     # Overrides the connection profile's connect timeout, in seconds.
     connection_timeout: float | None = None
@@ -168,10 +180,14 @@ _REVERIE_MAX_ANGLES: Final = {"back": REVERIE_BACK_MAX_ANGLE, "head": REVERIE_BA
 # a bed type with variants describes its automatic route; bed_traits() refines it.
 _BED_TRAITS: Final[dict[str, BedTraits]] = {
     "paramount": BedTraits(position_feedback=True, connection_scoped_state=True, max_angles={"head": 75, "back": 75, "legs": 30, "feet": 30}),
+    "smart_comfort_synargy": _NO_ANGLES_SCOPED,
+    "smart_comfort_synergy": _NO_ANGLES_SCOPED,
     **dict.fromkeys(RICHMAT_MH_BED_TYPES, _NO_ANGLES),
     # Serta MP Remote is the one Keeson layout app with position feedback.
     **dict.fromkeys(KEESON_LAYOUT_APP_BED_TYPES - {BED_TYPE_SERTA_MP_REMOTE}, _NO_ANGLES),
+    BED_TYPE_ADJUSTABLE_BED: _NO_ANGLES,
     BED_TYPE_ADJUSTABLE_LUMBAR: _NO_ANGLES,
+    BED_TYPE_RESIDENT: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     BED_TYPE_ADJUSTAMATTRESS: _NO_ANGLES,
     # Measured against the BedJet LCD remote's own degree readout.
     BED_TYPE_BEDJET_POWERLAYER: BedTraits(
@@ -185,6 +201,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     ),
     BED_TYPE_BEDSENSE: _NO_ANGLES,
     BED_TYPE_BF: _NO_ANGLES,
+    BED_TYPE_JALON_BED: _NO_ANGLES_SCOPED,
     BED_TYPE_CASPER_BASE: _NO_ANGLES,
     "casper_remote": _NO_ANGLES,
     BED_TYPE_CASPER_SLEEP_MM: _NO_ANGLES,
@@ -193,6 +210,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_RICHMAT_CLASSIC_APPS: _NO_ANGLES,
     # Preset repeat-tap and massage cycles depend on connection-local state.
     BED_TYPE_COMFORT_ENHANCEMENTS: _NO_ANGLES_SCOPED,
+    BED_TYPE_COMFORTBASE: _NO_ANGLES_SCOPED,
     BED_TYPE_COMFORT_MOTION: _SCOPED,
     BED_TYPE_CUSTOMATIC_CLARITY: _NO_ANGLES,
     BED_TYPE_CUSTOMATIC_JEROMES: _NO_ANGLES,
@@ -205,19 +223,27 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_ESHINE_OKIN: _NO_ANGLES,
     BED_TYPE_FSM_RELAX: _NO_ANGLES,
     BED_TYPE_FURNIMOVE: _NO_ANGLES,
+    # Massage adjustments require the timer state received on this connection.
+    BED_TYPE_JALON: _NO_ANGLES_SCOPED,
     BED_TYPE_GLIDEAWAY_MOTION: _NO_ANGLES,
     # The app exposes raw motor-index/desk reports, without a proven mapping to
     # the generic head/back/legs/feet angle entities.
     BED_TYPE_GMMOTOR: _NO_ANGLES_SCOPED,
     BED_TYPE_GMMOTOR_SLEEP_MM: _NO_ANGLES_PERSISTENT,
     BED_TYPE_GMMOTOR_SLEEP_SXB: _NO_ANGLES_PERSISTENT,
+    BED_TYPE_GALAXY: _NO_ANGLES,
     BED_TYPE_GOODVIBE: _NO_ANGLES,
+    BED_TYPE_MLILY: _NO_ANGLES,
     BED_TYPE_HJBED: _NO_ANGLES,
+    BED_TYPE_RICHMAT_APP: _NO_ANGLES,
+    BED_TYPE_RICHMAT_APP_SLEEP: _NO_ANGLES,
     BED_TYPE_HUSH_BASE: _NO_ANGLES,
+    "luuna": _NO_ANGLES_SCOPED,
     "hush_remote": _NO_ANGLES,
     BED_TYPE_HUSH_SLEEP_MM: _NO_ANGLES,
     BED_TYPE_HUSH_SLEEP_SXB: _NO_ANGLES,
     BED_TYPE_ISLEEP: _NO_ANGLES_SCOPED,
+    BED_TYPE_RIZE: _NO_ANGLES_SCOPED,
     BED_TYPE_JENSEN: _PERCENT_FEEDBACK_SCOPED,
     BED_TYPE_JIECANG: _SCOPED,
     BED_TYPE_JIECANG_APP: _NO_ANGLES_SCOPED,
@@ -324,6 +350,8 @@ def bed_traits(bed_type: str | None, protocol_variant: str | None = None) -> Bed
         return _NONE
     resolved = resolve_explicit_bed_type(bed_type, protocol_variant)
     traits = _BED_TRAITS.get(resolved, _NONE)
+    if resolved == "bedtech" and protocol_variant not in (None, "", VARIANT_AUTO):
+        return _NO_ANGLES
     if resolved in _REVERIE_MODEL_BED_TYPES:
         from .beds.reverie.profiles import resolve_reverie_model
 
@@ -341,7 +369,7 @@ def bed_traits(bed_type: str | None, protocol_variant: str | None = None) -> Bed
             percentage_positions=protocol_variant not in ORE_COMFORT_BED_VARIANTS,
             connection_scoped_state=protocol_variant in _KEESON_SCOPED_VARIANTS,
         )
-    if resolved == BED_TYPE_GOODVIBE:
+    if resolved in (BED_TYPE_GOODVIBE, BED_TYPE_MLILY):
         return replace(traits, connection_scoped_state=protocol_variant in _GOODVIBE_SLEEP_SENSORS)
     return traits
 

@@ -143,6 +143,13 @@ async def factory_controllers() -> list[BedController]:
                         device_name=coordinator.entry.data.get(CONF_BLE_DEVICE_NAME),
                     )
                 )
+    # Rize's extended product adds motion actions and mode4 to the basic panel.
+    from custom_components.adjustable_bed.beds.kaidi.rize import RizeController
+    from custom_components.adjustable_bed.const import BED_TYPE_RIZE, CONF_PRODUCT_TYPE
+
+    controller = await _create_controller_for_bed_type(BED_TYPE_RIZE)
+    controller._coordinator.entry.data = {**controller._coordinator.entry.data, CONF_PRODUCT_TYPE: 140}
+    controllers.append(RizeController(controller._coordinator))
     # MotoMotion decodes its panels from the advertised name. This name adds the
     # users, RGB and music panels that the default name lacks.
     controller = await _create_controller_for_bed_type(BED_TYPE_MOTOMOTION)

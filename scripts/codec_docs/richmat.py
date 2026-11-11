@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from datetime import datetime, timedelta, timezone
 
 from custom_components.adjustable_bed import const as _const
@@ -23,15 +24,21 @@ from custom_components.adjustable_bed.beds.leggett.lp_legacy_profiles import (
     LP_LEGACY_PROFILE_CODES,
     get_lp_legacy_profile,
 )
+from custom_components.adjustable_bed.beds.luuna import controller as luuna_bed
 from custom_components.adjustable_bed.beds.richmat_classic import protocol as classic_frames
+from custom_components.adjustable_bed.beds.richmat_classic import rise as rise_frames
 from custom_components.adjustable_bed.beds.richmat_classic.profiles import APP_NAMES as CLASSIC_APPS
+from custom_components.adjustable_bed.beds.richmat_classic.profiles import load_catalog
 from custom_components.adjustable_bed.beds.richmat_mh import protocol as mh_frames
 from custom_components.adjustable_bed.beds.rmcontrol import controller as rmcontrol_bed
 from custom_components.adjustable_bed.beds.rmcontrol import protocol as rmcontrol_frames
+from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.codec import richmat as richmat_codec
 from custom_components.adjustable_bed.profiles import casper as casper_profiles
 from custom_components.adjustable_bed.profiles import hush as hush_profiles
+from custom_components.adjustable_bed.profiles import luuna as luuna_profiles
 from custom_components.adjustable_bed.profiles import richmat as richmat_profiles
+from scripts.codec_docs import _galaxy
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
 GUIDE = "docs/beds/richmat.md"
@@ -39,6 +46,7 @@ GUIDE = "docs/beds/richmat.md"
 _LIBRARY_APPS = {
     "Casper Base": (casper_profiles.PROFILES, _const.BED_TYPE_CASPER_BASE),
     "Hush Base": (hush_profiles.PROFILES, _const.BED_TYPE_HUSH_BASE),
+    "Luuna +": (luuna_profiles.PROFILES, _const.BED_TYPE_LUUNA),
 }
 
 _RICHMAT_NAMES = {
@@ -46,11 +54,18 @@ _RICHMAT_NAMES = {
     "richmat_nordic": "Richmat Nordic",
     "richmat_prefix55": "Richmat Prefix55",
     "richmat_prefixaa": "Richmat PrefixAA",
-    "bedtech": "BedTech",
+    "bedtech": "BedTech legacy",
+    **{
+        profile.key: f"BedTech app {model.upper()}"
+        for model, profile in richmat_profiles.BEDTECH_APP_PROFILES.items()
+    },
     "leggett_wilinke": "L&P MlRM",
     "hjbed": "HJBed",
+    "richmat_app": "Richmat 4.2.0",
     "eshine": "Eshine",
+    "galaxy": "Galaxy Bed Control",
     "goodvibe": "Good Vibe Sleep",
+    "mlily": "MLILY Control",
     "leggett_lp_legacy": "L&P legacy app",
     **{
         profile.key: f"Richmat MH {name}"
@@ -71,6 +86,7 @@ _RICHMAT_NAMES = {
 _FIXED_ROUTES = (
     *richmat_profiles.RICHMAT.values(),
     richmat_profiles.BEDTECH,
+    *richmat_profiles.BEDTECH_APP_PROFILES.values(),
     richmat_profiles.LEGGETT_WILINKE,
 )
 _BUTTON_LABELS: dict[richmat_profiles.Button, str] = {
@@ -118,10 +134,13 @@ def _richmat_profiles() -> dict[str, richmat_profiles.RichmatProfile]:
         for profile in (
             *_FIXED_ROUTES,
             richmat_profiles.HJBED,
+            richmat_profiles.RICHMAT_APP,
             richmat_profiles.ESHINE,
             *richmat_profiles.RICHMAT_MH.values(),
             *richmat_profiles.RICHMAT_CLASSIC.values(),
+            richmat_profiles.GALAXY,
             richmat_profiles.GOODVIBE,
+            richmat_profiles.MLILY,
             richmat_profiles.LP_LEGACY,
         )
     }
@@ -135,8 +154,13 @@ def bed_types() -> dict[str, tuple[str, ...]]:
             profile.key: (_const.BED_TYPE_RICHMAT,) for profile in richmat_profiles.RICHMAT.values()
         },
         "bedtech": (_const.BED_TYPE_BEDTECH,),
+        **{
+            profile.key: (_const.BED_TYPE_BEDTECH,)
+            for profile in richmat_profiles.BEDTECH_APP_PROFILES.values()
+        },
         "leggett_wilinke": (_const.BED_TYPE_LEGGETT_WILINKE,),
         "hjbed": (_const.BED_TYPE_HJBED,),
+        "richmat_app": (_const.BED_TYPE_RICHMAT_APP,),
         "eshine": (_const.BED_TYPE_ESHINE,),
         **{
             profile.key: (mh_types[profile.key.removeprefix("richmat_mh_")],)
@@ -146,7 +170,10 @@ def bed_types() -> dict[str, tuple[str, ...]]:
             profile.key: (_const.BED_TYPE_RICHMAT_CLASSIC_APPS,)
             for profile in richmat_profiles.RICHMAT_CLASSIC.values()
         },
+        **dict.fromkeys(luuna_profiles.PROFILES, (_const.BED_TYPE_LUUNA,)),
+        "galaxy": (_const.BED_TYPE_GALAXY,),
         "goodvibe": (_const.BED_TYPE_GOODVIBE,),
+        "mlily": (_const.BED_TYPE_MLILY,),
         "leggett_lp_legacy": (_const.BED_TYPE_LEGGETT_LP_LEGACY,),
         # Each app's own products; the restored ones are choices on the same bed type.
         **{
@@ -163,7 +190,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
 
 
 def _catalog_kind(key: str) -> str:
-    if key in ("hjbed", "goodvibe"):
+    if key in ("hjbed", "goodvibe", "mlily", "galaxy"):
         return "per-product catalog"
     if key == "eshine":
         return "[fixed E6000 table](#eshine-commands)"
@@ -186,7 +213,7 @@ def _lease(profile: richmat_profiles.RichmatProfile) -> str:
     if profile.key.startswith("richmat_classic_"):
         # The controller scopes its lease to the keep buttons of the selected layout.
         return "renewable lease on keep buttons"
-    if profile.key == "goodvibe":
+    if profile.key in ("goodvibe", "mlily"):
         # The controller scopes its lease to the product's sustained-press controls.
         return "renewable lease on sustained controls"
     return "renewable lease" if profile.execution.hold == "stream" else "no"
@@ -210,7 +237,9 @@ def render_richmat_profiles() -> str:
                 _RICHMAT_NAMES[profile.key],
                 ", ".join(f"`{bed_type}`" for bed_type in types[profile.key]),
                 profile.framing,
-                _hex(profile.frame(profile.stop)),
+                _hex(profile.frame(profile.stop))
+                if profile.stop is not None
+                else "End refresh (no frame)",
                 "{} × {} ms".format(*_const.get_motor_pulse_defaults(types[profile.key][0])),
                 _recall(profile),
                 f"{len(profile.memory)} slots",
@@ -325,7 +354,15 @@ def render_richmat_commands() -> str:
         for button, label in _BUTTON_LABELS.items()
     ]
     rows += [
-        ("STOP", *(_hex(profile.frame(profile.stop)) for profile in routes)),
+        (
+            "STOP",
+            *(
+                _hex(profile.frame(profile.stop))
+                if profile.stop is not None
+                else "End refresh (no frame)"
+                for profile in routes
+            ),
+        ),
         (
             "Compatibility STOP (QRRM, BT6500 remotes)",
             _hex(routes[0].frame(richmat_codec.COMPAT_STOP)),
@@ -488,9 +525,7 @@ def render_richmat_mh_fixed() -> str:
                 ("Stop detection", _hex(mh_frames.TX_STOP_DETECTION)),
                 (
                     "Cancel alarm (single-slot models)",
-                    " then ".join(
-                        _hex(x) for x in mh_frames.TX_ALARM_CANCEL
-                    ),
+                    " then ".join(_hex(x) for x in mh_frames.TX_ALARM_CANCEL),
                 ),
             ),
         )
@@ -788,6 +823,7 @@ def render_hjbed_startup() -> str:
 
 
 def render_eshine_commands() -> str:
+    assert richmat_profiles.ESHINE.stop is not None
     labels = {button: label for label, button in eshine_bed.EXTRA_BUTTONS.values()}
     held = f"refresh {eshine_bed.REFRESH_MS} ms; STOP"
 
@@ -823,6 +859,7 @@ def _goodvibe_row(name: str, code: int) -> tuple[str, ...]:
 
 
 def render_goodvibe_commands() -> str:
+    assert richmat_profiles.GOODVIBE.stop is not None
     menu = (
         GOODVIBE_ACTIONS[detail] for details in ACTION_EXPANSIONS.values() for detail in details
     )
@@ -1110,7 +1147,167 @@ def render_lp_legacy_notifications() -> str:
     )
 
 
+def render_bedtech_models() -> str:
+    def cells(model: str, profile: richmat_profiles.RichmatProfile) -> tuple[str, ...]:
+        codes: Mapping[richmat_profiles.Button, int] = profile.codes or {}
+        return (
+            model.upper(),
+            "back, legs, pillow, lumbar" if model == "bt6500" else "back, legs",
+            ", ".join(
+                _BUTTON_LABELS[button]
+                for button in codes
+                if button in {"flat", "zero_g", "anti_snore", "tv"}
+            )
+            or "none",
+            ", ".join(_BUTTON_LABELS[button] for button in codes if button.startswith("massage_"))
+            or "none",
+            "toggle" if "light_toggle" in codes else "none",
+            "yes, shared foot" if model.endswith("fh") else "no",
+        )
+
+    return _block(
+        _table(
+            ("Model", "Motors", "Presets", "Massage", "Light", "Single-address sides"),
+            (
+                cells(model, profile)
+                for model, profile in richmat_profiles.BEDTECH_APP_PROFILES.items()
+            ),
+        )
+    )
+
+
+def render_bedtech_commands() -> str:
+    codes: dict[richmat_profiles.Button, int] = {
+        button: code
+        for profile in richmat_profiles.BEDTECH_APP_PROFILES.values()
+        for button, code in (profile.codes or {}).items()
+    }
+    rows = [
+        (
+            _BUTTON_LABELS[button],
+            _code_hex(code),
+            _hex(richmat_codec.command(code)),
+            "100 ms until release" if button.endswith(("_up", "_down")) else "once",
+        )
+        for button, code in codes.items()
+    ]
+    rows.extend(
+        (f"Memory {slot} {action}", _code_hex(code), _hex(richmat_codec.command(code)), "once")
+        for slot, pair in enumerate(richmat_profiles.BEDTECH.memory, 1)
+        for action, code in zip(("recall", "save"), pair, strict=True)
+    )
+    return _block(_table(("Action", "Code", "Frame (bank 0)", "Timing"), rows))
+
+
+
+def render_luuna() -> str:
+    profiles = luuna_profiles.PROFILES
+    return _block(
+        _table(("Product", "Stored key", "Catalog code", "Motors", "Massage", "Memory slots", "Sleep name", "Light flag"), (
+            (p.row[0], f"`{p.key}`", p.code, str(2 if p.key == "rise" else 4),
+             "yes" if p.row[2] else "no", "2" if p.key == "risepro" else "1",
+             "yes" if p.row[9] else "no", "yes" if p.row[6] else "no")
+            for p in profiles.values()
+        )),
+        _table(("Action", "Normal opcode", "Program opcode", "Framed write", "Products"), (
+            (name, f"`{short:02X}`", f"`{long:02X}`" if long is not None else "none",
+             _hex(richmat_codec.function(short)),
+             ", ".join(p.row[0] for p in profiles.values() if i in (*p.row[1], *p.row[2], *p.row[3])))
+            for i, (name, short, long) in enumerate(luuna_profiles.ACTIONS)
+        )),
+        _table(("Startup/query", "Framed write", "Nordic write"), (
+            (name.removeprefix("deviceFunctionItem"), _hex(richmat_codec.function(code, action=name)), _hex(bytes([code])))
+            for name, code in (("deviceFunctionItemExitLimit", 0), *luuna_profiles.QUERIES)
+        )),
+        _table(("Setting", "Value"), (
+            ("Transports", ", ".join(luuna_profiles.TRANSPORTS)),
+            ("Scan keywords (case-sensitive contains)", ", ".join(luuna_profiles.SCAN_KEYWORDS)),
+            ("Write/held refresh tick", f"{luuna_profiles.TICK_S * 1000:g} ms"),
+            ("Clock/light query dispatch interval", f"{luuna_profiles.QUERY_INTERVAL_S * 1000:g} ms"),
+            ("HA service capability wait budget", f"{luuna_bed.CAPABILITY_WAIT_S:g} s"),
+            ("Light duration choices (seconds)", ", ".join(map(str, luuna_profiles.LIGHT_DURATIONS))),
+            ("Warm / cold RGB", " / ".join(str(v) for v in luuna_profiles.LIGHT_COLORS.values())),
+        )),
+    )
+
+def render_mlily_catalog() -> str:
+    from custom_components.adjustable_bed.profiles.mlily import catalog
+
+    app = catalog()
+    return _block(_table(
+        ("Product / explicit remote route", "Control IDs in app order", "Alarm mode IDs", "Sides", "Light menu getter", "Repeat", "BLE sleep", "Massage timer"),
+        ((key, ", ".join(product.actions), ", ".join(product.alarms),
+          ", ".join(map(str,product.sides)), str(product.light), str(product.repeat_alarm),
+          str(product.sleep == "deviceSleepMonitoringBle"), str(product.massage_timer))
+         for key, product in app.products.items()),
+    ))
+
+
+def render_mlily_commands() -> str:
+    from custom_components.adjustable_bed.profiles.mlily import catalog
+
+    return _block(_table(
+        ("ID", "App control", "Gesture", "Framed short / long (Left)", "Nordic short / long", "Flags"),
+        ((key, goodvibe_bed.label(action), action.gesture,
+          _hex(codec.function(action.short)) + " / " + _hex(codec.function(action.long)),
+          _hex(codec.function(action.legacy_short, single=True)) + " / " + _hex(codec.function(action.long, single=True)),
+          ", ".join(name for name, active in (("local",action.local), ("hidden",action.hidden),
+            ("disabled",not action.interactive), ("force long",action.force_long),
+            ("toggle latch",action.memory_toggle)) if active))
+         for key, action in catalog().actions.items()),
+    ))
+
+
+def render_rise_commands() -> str:
+    """Direct utility tables and exact member-bound resource domains."""
+    lines: list[str | list[str]] = [_table(("Utility", "Bytes", "Availability"), [
+        ("Alarm query", _hex(classic_frames.ALARM_QUERY), "Selected layout has alarm actions"),
+        ("Lamp query", _hex(classic_frames.LAMP_QUERY), "Every selected bed layout"),
+        ("Cancel alarm", " / ".join(_hex(frame) for frame in classic_frames.alarm(0, 0)), "Live alarm capability"),
+        ("Lamp zero, slider", _hex(rise_frames.lamp_timer(0, save=False)), "Live lamp capability"),
+        ("Lamp zero, Save", _hex(rise_frames.lamp_timer(0, save=True)), "Live lamp capability"),
+        ("Lamp 300 seconds", _hex(rise_frames.lamp_timer(300, save=False)), "Live lamp capability"),
+        ("RGB 1,221,255", _hex(classic_frames.rgb(1, 221, 255)), "Live lamp capability; one concatenated write"),
+        *[(f"D1RM/D9RM slider {i}", " / ".join(_hex(classic_frames.massage_timer(layout, i)) for layout in ("D1RM", "D9RM")), "Exact selected layout only") for i in range(6)],
+        *[(f"Y6RM popup {choice}", _hex(classic_frames.massage_popup(choice)), "Layout offers tag 65") for choice in classic_frames.MASSAGE_POPUP],
+    ])]
+    lines.append(_table(("Alarm preset byte", "With all massage", "With head massage", "With foot massage"), [
+        (_code_hex(preset), *(_code_hex(code) for code in codes))
+        for preset, codes in rise_frames.ALARM_COMBINATIONS.items()
+    ]))
+    for app in ("luunarise2", "powercool"):
+        catalog = load_catalog(app)
+        groups: dict[tuple[str, ...], list[str]] = {}
+        for layout, model in sorted(catalog.models.items()):
+            if layout in ("FWRM", "WFRM", "TEST", "RMCS"):
+                continue
+            for c in model.controls:
+                if not c.rich_button or c.status not in (1, 2, 3):
+                    continue
+                if not any((c.short, c.short_old, c.long, c.tag)):
+                    continue
+                key = (c.short if not c.excluded_short and c.short else "none", c.short_old if not c.excluded_short and c.short_old else "none", c.long if not c.excluded_long and c.long else "none", str(c.status), c.tag or "none", str(c.threshold_ms), "hidden" if any(v in ("invisible", "gone", "4", "8") for v in c.ancestor_visibility) else "visible")
+                if key[:3] == ("none", "none", "none") and key[4] == "none":
+                    continue
+                groups.setdefault(key, []).append(layout)
+        lines.append(f"### {CLASSIC_APPS[app]} resource commands\n\n<details><summary>Selected-layout command and gesture gates</summary>\n")
+        lines.append(_table(("Layouts", "Short", "Raw old-short", "Long", "Status", "Tag", "Threshold ms", "Initial visibility"), [
+            (", ".join(sorted(set(layouts))), *key) for key, layouts in sorted(groups.items())
+        ]))
+        lines.append("\n</details>\n")
+    lines.append(_table(("Power Cool TEST opcode", "Refresh seconds", "Rest seconds"), [
+        (_code_hex(code), str(seconds), "5") for code, seconds in rise_frames.DIAGNOSTIC_CYCLE
+    ]))
+    return _block(*lines)
+
+
 BLOCKS: list[Block] = [
+    (GUIDE, "bedtech-models", render_bedtech_models),
+    (GUIDE, "bedtech-app-commands", render_bedtech_commands),
+    (GUIDE, "luuna", render_luuna),
+    (GUIDE, "mlily-catalog", render_mlily_catalog),
+    (GUIDE, "mlily-commands", render_mlily_commands),
+    (GUIDE, "richmat-rise-commands", render_rise_commands),
     (GUIDE, "richmat-profiles", render_richmat_profiles),
     (GUIDE, "richmat-transports", render_richmat_transports),
     (GUIDE, "richmat-framing", render_richmat_framing),
@@ -1137,4 +1334,84 @@ BLOCKS: list[Block] = [
     (GUIDE, "casper-base-commands", render_casper_base_commands),
     (GUIDE, "casper-base-stored", render_casper_base_stored),
     (GUIDE, "hush-base-commands", render_hush_base_commands),
+]
+
+BLOCKS += _galaxy.BLOCKS
+
+
+def render_richmat_app_commands() -> str:
+    """Per-descriptor literal commands and parameterized records from shipped code."""
+    from custom_components.adjustable_bed.beds.richmat_app import catalog, protocol, requests
+    from custom_components.adjustable_bed.beds.richmat_app.controller import action_name
+
+    commands = _table(
+        ("Descriptor", "Control", "Short (left)", "Save / long (left)"),
+        (
+            (
+                f"`{key}`",
+                action_name(action),
+                _hex(richmat_codec.function(action["short"], action=action["enum"])),
+                _hex(richmat_codec.function(action["long"], action=action["enum"])),
+            )
+            for key, action in catalog.ACTIONS.items()
+        ),
+    )
+    queries = _table(
+        ("Query", "Frame"), ((name, _hex(frame)) for name, frame in protocol.QUERY.items())
+    )
+    operations = ", ".join(f"`{operation}`" for operation in requests.OPERATIONS)
+    startup = _table(
+        ("Startup phase", "Function", "Frame"),
+        (
+            (phase, enum, _hex(richmat_codec.function(catalog.ENUM_CODES[enum], action=enum)))
+            for phase, enums in (
+                ("Product", protocol.STARTUP),
+                ("Protocol version 1", protocol.VERSION_ONE),
+            )
+            for enum in enums
+        ),
+    )
+    return _block(commands, queries, startup, "Named operations: " + operations + ".")
+
+
+def render_richmat_app_products() -> str:
+    from custom_components.adjustable_bed.beds.richmat_app.catalog import PRODUCTS
+
+    return (
+        "<details>\n<summary>Product catalog and protocol branches</summary>\n\n"
+        + "\n".join(
+            _table(
+                (
+                    "Product",
+                    "Selection",
+                    "Motor menus (ordinary / V1)",
+                    "Presets (ordinary / V1)",
+                    "Blanket",
+                    "RGB / therapy / strip / cold-warm",
+                    "Sleep / BLE menu",
+                ),
+                (
+                    (
+                        key,
+                        "manual" if row["manual"] else "restored",
+                        f"{len(row['versions']['other']['motors'])} / {len(row['versions']['one']['motors'])}",
+                        f"{len(row['versions']['other']['presets'])} / {len(row['versions']['one']['presets'])}",
+                        str(bool(row["selectors"]["0xea47"])),
+                        " / ".join(
+                            str(bool(row["selectors"][s]))
+                            for s in ("0xf303", "0xfbbf", "0x1047b", "0x1276b")
+                        ),
+                        f"{row['selectors']['0x10d37']} / {bool(row['selectors']['0x11a51'])}",
+                    )
+                    for key, row in PRODUCTS.items()
+                ),
+            )
+        )
+        + "\n\n</details>"
+    )
+
+
+BLOCKS += [
+    (GUIDE, "richmat-app-commands", render_richmat_app_commands),
+    (GUIDE, "richmat-app-products", render_richmat_app_products),
 ]

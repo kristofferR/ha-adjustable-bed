@@ -81,6 +81,8 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `customatic_zseries` | S stream | U | U | glory | recognized masks only |
 | `serenity` | S stream | U | U | serenity | remaining bitmask restarts a recognized command or is ignored |
 | `tranquil` | S stream | U | U | tranquil | recognized masks only |
+| `adjustable_bed` (unit087) | S stream (P1/P3), S latched (P2) | U | U | adjustbed | P2 uses the conservative latched ceiling because lumbar sends one start; head/feet still refresh during the lease. Speech movement is bounded, followed by voice STOP and ordinary release |
+| `resident` | S stream | U | U | resident-base | Every held control refreshes at 300 ms and releases with two STOP frames; combined head/foot keys are explicit, arbitrary motor composition is unproven |
 | `adjustable_lumbar` (both routes) | S stream | U | U | lumbar | unsupported chord only stops |
 | `eshine_okin` (E2000, E3000/E3100, E5000) | S stream | U | U | eshine-okin | held keys write at once, refresh every 300 ms with no fixed count, STOP 200 ms after release; hold declared. Single-touch coordination excludes a second movement control; the one multi-touch path, Flat+Zero Gravity, is a fixed frame either release stops. None of its 25 constructors sets a speed |
 | `paramount` | S stream | U | S | paramount | One reply-driven held action, neutral on release. Speed is a bed-wide setting, not per-command speed. |
@@ -126,6 +128,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `coolbase` | S stream (no release frame) | U | U | coolbase | release cancels the timer, no STOP bytes |
 | `bf` | S stream | U | U | bf | zero frame at release |
 | `cherish` | S stream | U | U | cherish | combined is a fixed key |
+| `comfortbase` (all ten products) | S stream | U | U | row161 | one held key refreshed every 100 ms, zero STOP at release; combined is a fixed key, no motor-speed control |
 | `comfort_enhancements` | S stream | U | U | enh | STOP 100 ms after release |
 | `glideaway_motion` | S stream | U | U | glide | zero frames at +300 and +600 ms |
 | `adjustamattress` | S stream | U | U | row067 | union movement is a fixed action |
@@ -139,11 +142,14 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `richmat_revive`, `richmat_best_mattress`, `richmat_blvd_home`, `richmat_harmony`, `richmat_idealbed` | S stream | U | U | revive, best, blvd, harmony, ideal, row055 | KEEP rows repeat until removed, STOP after 120 ms; speed rows are massage |
 | `ruf_betten`, `wsilver_products`, `richmat_americanstar`, `bailey_bed_control`, `richmat_tx` | S stream | U | U | ruf, wsilver, rmamericanstar, bailey, tx, row061 | KEEP rows repeat at the model's interval until removed; RUF sends STOP at once, the others STOP after 120 ms |
 | `leggett_wilinke`, `leggett_platt` (`mlrm`) | S stream | U | U | lp2 | framed STOP per mode |
+| `richmat_app` | S stream | U | U | row173 | product movement only; 100ms ticks and explicit STOP |
 | `hjbed` | S stream | U | U | row121 | per-action recovered release |
 | `richmat_classic_apps` (Avocado Eco Base, CoasterSleep, Forty Winks, Milemont, Superior) | S stream | U | U | avocado, coaster, fortywinks, milemont, superior, row066 | keep buttons repeat every 150 ms tick (110 ms for TWRM and MLRM names) until UP, then release 50 ms later; hold declared per control, on the held controls that run the keep mode under the current selection (see [per-control scope](#per-control-hold-scope)). Each press replaces the sender's one shared command and the release frame ends it; combined motors are fixed keys; speed keys are massage (`com_msg_speed`) |
-| `bedtech` | B | B | B | bedtech | report PARTIAL |
+| `bedtech` legacy | B | B | B | bedtech | Existing hardware-backed route; no new execution declaration |
+| `bedtech` explicit BT2000, BT2500, BT3000, BT3000FH, BT6500, BTX4, BTX4FH, BTX5, BTX5FH | S stream (no release frame) | U | U | bedtech713 | One timer per physical receiver, 100 ms refresh; stop cancels it without writing; FH banks share the timer |
 | `gmmotor` | B | B | B | gm | report PARTIAL; release behavior unresolved |
 | `casper_base` | B | B | B | casper | report PARTIAL |
+| `luuna` (Rise, Rise Pro, Rise Pro Light) | S stream (no release frame) | U | U | luuna | 100 ms held refresh, cancelled on tap-up/cancel; no live STOP enum caller. No composed axes or speed selector in the complete catalog. |
 | `hush_base` | S stream | B | B | hush, row126 | movement refreshes every 100 ms, first write after 100 ms, until release, then sends STOP `6e` on the same side; massage strength sends once on press and STOP on release; text controls send their short or long gesture with no release. #516 and #591: no shard assesses two held axes or a motor-speed selection. Not declared: the mixed gestures need a per-control scope (see [per-control scope](#per-control-hold-scope)), and Hush runs on the shared Casper Base controller, whose own hold is blocked |
 | **Jiecang F1 (J1)** | | | | | |
 | `jiecang_app` (Dreamask, Dreamotion, Dream Motion HD) | S stream | U | U | dreamask, dreamotion, dreamhd | combined sections are fixed opcodes |
@@ -166,6 +172,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `reverie` | S latched | U | U | reverie, row041 | one frame on press, per-axis stop on release; routines serialize; hold declared |
 | `reverie_pairlink` | B | B | B | reverie, row041 | row041: Pairlink runtime acceptance pending |
 | `reverie_nightstand` | B | B | B | none | no accepted report |
+| `rize` | S latched | U | U | rize149 | one write per press, matching axis STOP on release; app voice starts are bounded by HA; no concurrent multi-motor evidence |
 | `kaidi`, `isleep` | S latched | U | U | kaidi | one start per press, per-axis release; combined is its own opcode; hold declared, except Floyd (B) and the dual-seat `seat_1_2` variant, which starts seat 2 only after seat 1's repeats |
 | `kaidi` (`floyd`) | B | B | B | floyd | report PARTIAL |
 | `remacro` (all models) | S latched | U | U | brick, jewmes, slumber, row050 | one write on press, paired STOP; rocking speed is massage and unreachable (R075); hold declared |
@@ -177,7 +184,9 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `vibradorm_app` | S stream | U | U | diamant, werkmeister | STOP on release; speed is mood light; hold declared, including its VMAT profile (vmat) |
 | `vmatbasic` | S stream | U | U | vmatbasic | all-up/all-down are fixed keys; speed is mood light; hold declared |
 | `eshine` | S stream | U | U | eshine | STOP once after a sustained press; hold declared |
+| `galaxy` | S stream | U | U | galaxy | sustained catalog gestures first tick after 100 ms, refresh until released, then side STOP; memory-latch gestures use one long operand; no concurrent axes or motor-speed proof |
 | `goodvibe` | S stream | U | U | goodvibe | sustained controls refresh every 100 ms, then release `6e`; hold declared per control, on the held controls whose effective gesture is a sustained press (see [per-control scope](#per-control-hold-scope)). Each frame carries one operand and the only release is the side's STOP; all-motor moves are fixed operands; speed rows are massage and music shake |
+| `mlily` | S stream | U | U | mlily159 | Sustained controls only, after a 100 ms tick and at 100 ms intervals; submitted ticks release with STOP. Memory, force-long and 3 s gestures retain the exact selected product rules. |
 | `sleepys_elite_app` | S stream | U | U | sleepy | selector STOP once at release; hold declared |
 | `motosleep` | S stream | B | B | motosleep, powerbob, motosleep-guide | movement repeats every 100 ms while held; release sends `$b` five times (MotoSleep HHC and the Power Bob profiles whose release has it) or the MOTO release frame (zero five times, or `0x9088/0x0001` six times on WR219); other Power Bob profiles stop when the refresh ends. #516 and #591: the guide covers only the commands the integration sends, and the frozen reports that would show composition and the full command inventory are not retained. MotoMotion is another app, with its own row |
 | `motomotion` | S stream | B | B | motomotion, row113 | held motor keys refresh every 100 ms, first write after 100 ms, then send STOP three times 50 ms after release; memory recall refreshes the same way but stops only on `SOFA` names with index 12 `E`, and the shared Home control ends by stopping its refresh with no release frame. Not declared: the controls need a per-control scope (see [per-control scope](#per-control-hold-scope)) and their own review. #516 and #591 not assessed yet |
@@ -616,12 +625,17 @@ share the Okin N-frame files.
 
 ## Evidence keys
 
+| row132 | OkinComfortBed II 2.0.2 (9), `com.ore.jalon.neworebeding`, unit132 E07/E09: all three profiles refresh held movement every 300 ms; STOP immediately and again after 300 ms. No concurrent-motor composition. |
+
 Report workspaces are machine-local under
 `disassembly/output/phase4-early/` in the main checkout.
 
 | Key | Package | Version | Status | Workspace under `phase4-early/` |
 |---|---|---|---|---|
 | paramount | `com.paramount.bedcontrol` | 3.0.4 | COMPLETE | `com.paramount.bedcontrol-3.0.4-2026-11-09-queue002/report/` |
+| smart-comfort-synargy | `com.synargy.okin` | 1.1.0 (12) | COMPLETE, accepted | `com.synargy.okin-1.1.0-2026-11-09-queue002/` |
+| smart-comfort-synergy | `com.synergy.okin` | 2.2.0 (16) | COMPLETE, accepted | `com.synergy.okin-2.2.0-2026-11-09-queue002/` |
+| mlily159 | `com.richmat.mlily2` | 5.0.2 (50200) | COMPLETE, independent audit ACCEPT | `com.richmat.mlily2-5.0.2-2026-11-10-reconciliation002/report/` |
 | abm5_4 | `com.starcode.abm5_4` | 1.0.1 | COMPLETE | `com.starcode.abm5_4-1.0.1-2026-09-30-extra-four-004-005/report/` |
 | abm5_5 | `com.starcode.abm5_5` | 1.2.3 | COMPLETE | `com.starcode.abm5_5-1.2.3-2026-09-30-extra-four-005-005/report/` |
 | adjlite | `com.keeson.adjustablelite` | 1.0.2 | COMPLETE | `com.keeson.adjustablelite-1.0.2-2026-10-01-queue-e0bb6807-20261001-051-003/report/` |
@@ -632,6 +646,7 @@ Report workspaces are machine-local under
 | avocado | `com.richmat.avocadoecobase` | 1.0.4 | COMPLETE | `com.richmat.avocadoecobase-1.0.4-2026-11-03-bulk061-clean002/work/report-revision-sol-003/` |
 | bailey | `com.richmat.bailey2` | 2.1.21 | COMPLETE | `com.richmat.bailey2-2.1.21-2026-11-03-bulk061-001/work/report-revision-sol-002/` |
 | bedsense | `com.fenmenbielei.bedsense` | 1.8 | COMPLETE | `com.fenmenbielei.bedsense-1.8-2026-11-03-bulk101-188-001/report/` |
+| bedtech713 | `com.bedtech` | 7.1.3 (14) | COMPLETE | `com.bedtech-7.1.3-2026-11-10-maxqueue001/report/`, accepted audit001; unit095 |
 | bedtech | `com.richmat.bed_tech` | 2.8.3 | PARTIAL | `com.richmat.bed_tech-2.8.3-2026-11-03-bulk061-001/report/` |
 | best | `com.richmat.best_mattress` | 1.1.1 | COMPLETE | `com.richmat.best_mattress-1.1.1-2026-10-02-queue-e0bb6807-20261001-055-005/report/` |
 | bf | `com.BF` | 1.2.3 | COMPLETE | `com.BF-1.2.3-2026-11-03-bulk061-001/report/` |
@@ -640,6 +655,7 @@ Report workspaces are machine-local under
 | bob | `com.okin.bedding.rizebob` | 1.0.1 | COMPLETE | `com.okin.bedding.rizebob-1.0.1-2026-08-30/report/` |
 | brick | `com.cheers.brick` | v1.0 | COMPLETE | `com.cheers.brick-v1.0-2026-10-01-queue-e0bb6807-20261001-050-002/report/` |
 | carefree | `com.okin.bedding.rizeiicarefree` | 1.0.1 | COMPLETE | `com.okin.bedding.rizeiicarefree-1.0.1-2026-08-30/report/` |
+| luuna | `com.richmat.luuna` | 2.0.1 (20102) | COMPLETE | `com.richmat.luuna-2.0.1-2026-11-10-maxqueue001/report/`, accepted audit002 |
 | casper | `com.richmat.casperbase` | 1.0.8 | PARTIAL | `com.richmat.casperbase-1.0.8-2026-11-03-bulk101-188-001/report/` |
 | cherish | `com.okin.ore.cherish` | 1.0.4 | COMPLETE | `com.okin.ore.cherish-1.0.4-2026-11-03-bulk061-001/report/` |
 | clarity | `com.okin.bedding.customaticclarity` | 1.0.1 | COMPLETE | `com.okin.bedding.customaticclarity-1.0.1-2026-08-30/report/` |
@@ -661,6 +677,7 @@ Report workspaces are machine-local under
 | fortywinks | `com.richmat.fortywinks` | 1.0.1 | COMPLETE | `com.richmat.fortywinks-1.0.1-2026-11-03-bulk061-001/work/report-revision-sol-001/` |
 | fsm | `com.limoss.fsmrelax` | 1.9 | COMPLETE | `com.limoss.fsmrelax-1.9-2026-09-30-extra-four-075-001/report/` |
 | glide | `com.ore.bedding.glideawaymontion` | 1.0.3 | COMPLETE | `com.ore.bedding.glideawaymontion-1.0.3-2026-11-03-bulk061-001/report/` |
+| galaxy | `nl.starinternational.galaxy` | 3.3.0 (330002) | COMPLETE | `nl.starinternational.galaxy-3.3.0-2026-11-10-reconciliation001/report/` |
 | goodvibe | `com.richmat.goodvibesleep` | 2.0.1 | COMPLETE | `com.richmat.goodvibesleep-2.0.1-2026-11-03-bulk101-188-001/work/report-repair-sol-003/` |
 | glory | `com.okin.bedding.glory` | 1.0.4 | COMPLETE | `com.okin.bedding.glory-1.0.4-2026-10-01-queue-e0bb6807-20261001-052-002/report/` |
 | gm | `com.desarketing.gmmotor` | 4.6.6 | PARTIAL | `com.desarketing.gmmotor-4.6.6-2026-11-03-bulk101-188-001/report/` |
@@ -675,6 +692,7 @@ Report workspaces are machine-local under
 | jensen | `air.no.jensen.adjustablesleep` | 2.0.37 | COMPLETE | `air.no.jensen.adjustablesleep-2.0.37-2026-09-29/report/` |
 | jeromes | `com.okin.bedding.customaticjeromes` | 1.0.1 | COMPLETE | `com.okin.bedding.customaticjeromes-1.0.1-2026-08-30/report/` |
 | jewmes | `com.cheers.jewmes` | v1.202112141512 | COMPLETE | `com.cheers.jewmes-v1.202112141512-2026-10-01-queue-e0bb6807-20261001-050-002/report/` |
+| rize149 | `com.kaidi_test4.rize` | 1.4.2 (57) | COMPLETE | `com.kaidi_test4.rize-1.4.2-2026-11-10-maxqueue001/report/` |
 | kaidi | `com.kaidi_test4` | 1.6.3 | COMPLETE | `com.kaidi_test4-1.6.3-2026-11-03-bulk061-001/report/` |
 | ld-mattress | `com.logicdata.app.mattress.bed` | 1.0.0 | COMPLETE | `com.logicdata.app.mattress.bed-1.0.0-2026-10-01-queue-e0bb6807-20261001-053-005/report/` |
 | ld-pad | `com.logicdata.app.android.pad.bed` | 1.0.4 | COMPLETE | `com.logicdata.app.android.pad.bed-1.0.4-20260827/report/` |
@@ -686,6 +704,8 @@ Report workspaces are machine-local under
 | lp | `com.richmat.lp` | 2.2.1 | COMPLETE | `com.richmat.lp-2.2.1-20260827/report/` |
 | lp2 | `com.richmat.lp2` | 2.3.25 | COMPLETE | `com.richmat.lp2-2.3.25-20260827/report/` |
 | lucid | `com.lucid.bedbase` | 1.3.3 | COMPLETE | `com.lucid.bedbase-1.3.3-2026-08-27/report/` |
+| adjustbed | `com.okin.bedding.adjustbed` | 1.2.1 (33) | COMPLETE | `com.okin.bedding.adjustbed-1.2.1-2026-11-09-queue002/report/` |
+| resident-base | `com.okin.resident.release` | 1.0.0 (1) | COMPLETE | `com.okin.resident.release-1.0.0-2026-11-10-maxqueue001/report/`, accepted audit001 |
 | lumbar | `com.okin.bedding.adjustablelumbar` | 1.2.2 | COMPLETE | `com.okin.bedding.adjustablelumbar-1.2.2-2026-10-01-queue-e0bb6807-20261001-054-002/report/` |
 | m1x12 | `com.starcode.adjustablem1x12` | 1.1.3 | COMPLETE | `com.starcode.adjustablem1x12-1.1.3-2026-10-26-39bdcafa-repair-002/report/` |
 | malouf | `com.malouf.bedbase` | 2.4.3 | COMPLETE | `com.malouf.bedbase-2.4.3-2026-08-27/report/` |
@@ -720,6 +740,7 @@ Report workspaces are machine-local under
 | serta330 | `com.ore.serta330` | 1.1 | COMPLETE | `com.ore.serta330-1.1-2026-09-30-extra-four-033-com-ore-serta330-007/report/` |
 | sfdergo | `com.sfd.ergomotion` | 1.6.4 | COMPLETE | `com.sfd.ergomotion-1.6.4-2026-10-26-39bdcafa-repair-002/report/` |
 | sfm | `com.ore.sfm` | 2.0 | COMPLETE | `com.ore.sfm-2.0-2026-10-02-queue-903926b6-20261002-059-002/report/` |
+| jalon | `com.ore.jalon.neworebeding_android` | 1.4 (4) | COMPLETE | `com.ore.jalon.neworebeding_android-1.4-2026-11-10-queue001/report/` |
 | sfmc2 | `com.ore.sfmc2bedsence` | 1.1 | COMPLETE | `com.ore.sfmc2bedsence-1.1-2026-10-02-queue-903926b6-20261002-059-001/report/` |
 | simmons | `com.okin.simmons` | 1.12.9 | COMPLETE | `com.okin.simmons-1.12.9-2026-10-01-queue-e0bb6807-20261001-049-004/report/` |
 | simon | `com.okin.simon` | 1.0.1 | COMPLETE | `com.okin.simon-1.0.1-2026-10-02-queue-903926b6-20261002-060-001/report/` |
@@ -766,5 +787,16 @@ its APK Protocol Audit report, named here by its file stem:
 | row066 | audit ledger `row066-classic-richmat-apps` |
 | row067 | audit ledger `row067-adjustamattress` |
 | row121 | audit ledger `row121-hjbed` |
+| row161 | accepted ComfortBaseForBluetooth 1.1.2 (6), `com.ore.yorkfeng.comfortbaseble2-1.1.2-2026-11-10-maxqueue001/report/` and independent audit001 |
+| row173 | Richmat 4.2.0 accepted catalog gesture and literal STOP evidence |
 | row126 | audit ledger `row126-hush-base` |
 | svane-guide | [svane.md](../beds/svane.md) |
+
+### Smart Comfort seat controls
+
+Both accepted apps stream six motor directions and Home at 100 ms and release
+with a seat-scoped zero command after 100 ms. The integration captures the seat
+and release command, cancels refresh on disconnect, and does not retain the
+apps' mutable release race. No concurrent commands, watchdog interval or speed
+selection is proven. Memories are one-shot prepare then recall/save, outside
+the held controls. See [Smart Comfort](../beds/smart-comfort.md).

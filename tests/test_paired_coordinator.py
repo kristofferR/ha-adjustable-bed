@@ -1205,6 +1205,8 @@ class SingleAddressInner(SchedulerSurface):
 
 
 class _SideScopedController:
+    commands_share_timer = False
+
     """Minimal controller whose calls see the side bound by ``side_scope``."""
 
     def __init__(self, _coordinator) -> None:
@@ -1345,7 +1347,7 @@ class TestSingleAddressCoordinator:
 
         coordinator, inner = self._scheduled_coordinator()
         intents = []
-        physical = SimpleNamespace(_protocol_command_resources=lambda scope: scope)
+        physical = SimpleNamespace(_protocol_command_resources=lambda scope: scope, capability_controller=None)
 
         async def execute(command, *, resource=None, resources=None, **_kwargs):
             intent = AdjustableBedCoordinator._build_command_intent(

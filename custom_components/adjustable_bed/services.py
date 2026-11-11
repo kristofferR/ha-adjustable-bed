@@ -2322,6 +2322,7 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
 
 def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     """Import the family action modules, which import this one, in the import executor."""
+    from .beds.bedtech.services import register_services as register_bedtech_services
     from .beds.bf_cherish.services import register_services as register_bf_cherish_services
     from .beds.casper_base.services import async_register_casper_base_services
     from .beds.comfort_enhancements.services import async_register_comfort_enhancements_services
@@ -2334,8 +2335,12 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.gmmotor.services import async_register_gmmotor_services
     from .beds.goodvibe.services import async_register_goodvibe_services
     from .beds.hjbed.services import async_register_hjbed_services
+    from .beds.jalon_bed.services import register_services as register_jalon_services
     from .beds.jiecang.app_services import async_register_jiecang_app_services
     from .beds.kaidi.floyd_services import async_register_floyd_services
+    from .beds.kaidi.rize_services import async_register_rize_services
+    from .beds.keeson.comfortbase_services import async_register_comfortbase_services
+    from .beds.keeson.jalon_services import async_register_jalon_services
     from .beds.leggett.okin_services import async_register_leggett_okin_services
     from .beds.limoss.remote_services import async_register_limoss_remote_services
     from .beds.linak.services import async_register_linak_services
@@ -2345,6 +2350,8 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.motomotion.services import async_register_motomotion_services
     from .beds.octo.services import async_register_octo_services
     from .beds.reverie.services import async_register_reverie_services
+    from .beds.richmat_app.services import async_register_richmat_app_services
+    from .beds.richmat_classic.rise_services import async_register_richmat_rise_services
     from .beds.richmat_classic.services import async_register_richmat_classic_services
     from .beds.richmat_mh.services import async_register_richmat_mh_services
     from .beds.rmcontrol.services import async_register_rmcontrol_services
@@ -2359,7 +2366,9 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .position_estimate_services import async_register_position_estimate_services
 
     return (
+        register_bedtech_services,
         register_bf_cherish_services,
+        register_jalon_services,
         async_register_motion_bed_services,
         async_register_casper_base_services,
         async_register_gmmotor_services,
@@ -2367,8 +2376,10 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_position_estimate_services,
         async_register_ruf_richmat_services,
         async_register_richmat_classic_services,
+        async_register_richmat_rise_services,
         async_register_motomotion_services,
         async_register_hjbed_services,
+        async_register_richmat_app_services,
         async_register_goodvibe_services,
         async_register_rmcontrol_services,
         async_register_sleep_number_services,
@@ -2379,6 +2390,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_solace_services,
         async_register_leggett_okin_services,
         async_register_floyd_services,
+        async_register_rize_services,
         async_register_octo_services,
         async_register_customatic_services,
         async_register_furnimove_services,
@@ -2386,9 +2398,11 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_limoss_remote_services,
         async_register_serenity_services,
         async_register_eshine_okin_services,
+        async_register_jalon_services,
         async_register_glideaway_motion_services,
         async_register_simmons_services,
         async_register_comfort_enhancements_services,
+        async_register_comfortbase_services,
         async_register_malouf_app_services,
         async_register_logicdata_app_services,
         async_register_jiecang_app_services,

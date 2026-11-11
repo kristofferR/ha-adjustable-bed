@@ -8,6 +8,7 @@ fixed per-key vectors. It is not a profile over a codec family.
 from __future__ import annotations
 
 STANDALONE: dict[str, str] = {
+    "richmat_app_sleep": "Richmat 4.2.0 independent old/new sleep control sessions over codec/sleep_envelope.py",
     "casper_remote": "remote without bed commands",
     "casper_sleep_mm": "sleep sensor without bed commands; frames use codec/sleep_envelope.py",
     "casper_sleep_sxb": "sleep sensor without bed commands; frames use codec/sleep_envelope.py",

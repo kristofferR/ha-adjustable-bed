@@ -55,19 +55,21 @@ def ping(own: int) -> bytes:
     return b"\x03" + _le32(BROADCAST) + bytes((_PING,)) + _le32(own)
 
 
-def payload(command: int, parameter: int = 0) -> bytes:
+def payload(command: int, parameter: int = 0, parameter2: int = 0) -> bytes:
     """The four-byte command payload a control frame carries."""
-    return bytes((0x01, command, parameter, 0x00))
+    return bytes((0x01, command, parameter, parameter2))
 
 
-def control(target: int, own: int, command: int, parameter: int = 0) -> bytes:
+def control(
+    target: int, own: int, command: int, parameter: int = 0, parameter2: int = 0
+) -> bytes:
     """Send ``command`` from ``own`` to the node at ``target``."""
     return (
         b"\x03"
         + _le32(target)
         + bytes((CONTROL_CHANNEL,))
         + _le32(own)
-        + payload(command, parameter)
+        + payload(command, parameter, parameter2)
     )
 
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from custom_components.adjustable_bed.beds.galaxy.catalog import ACTIONS as GALAXY_ACTIONS
 from custom_components.adjustable_bed.beds.goodvibe import controller as goodvibe_bed
 from custom_components.adjustable_bed.beds.goodvibe import protocol as goodvibe
 from custom_components.adjustable_bed.beds.goodvibe.catalog import ACTIONS as GOODVIBE_ACTIONS
@@ -28,9 +29,13 @@ FIXED_ROUTES = {
 }
 PROFILES = {
     **FIXED_ROUTES,
+    **{profile.key: profile for profile in profiles.BEDTECH_APP_PROFILES.values()},
     "hjbed": profiles.HJBED,
+    "richmat_app": profiles.RICHMAT_APP,
     "eshine": profiles.ESHINE,
     "goodvibe": profiles.GOODVIBE,
+    "mlily": profiles.MLILY,
+    "galaxy": profiles.GALAXY,
     "leggett_lp_legacy": profiles.LP_LEGACY,
     **{profile.key: profile for profile in profiles.RICHMAT_MH.values()},
     **{profile.key: profile for profile in profiles.RICHMAT_CLASSIC.values()},
@@ -54,7 +59,7 @@ def _decode(data: bytes) -> bytes:
 
 def _fixed_census(profile: profiles.RichmatProfile) -> set[str]:
     codes = {*(profile.codes or {}).values(), *(c for slot in profile.memory for c in slot)}
-    frames = {profile.frame(code).hex() for code in {*codes, profile.stop}}
+    frames = {profile.frame(code).hex() for code in {*codes, profile.stop} if code is not None}
     if profile is profiles.RICHMAT["wilinke"]:
         # Compatibility STOP, GGRM catalog taps and both light packet families.
         frames |= {
@@ -157,6 +162,18 @@ def _goodvibe_census() -> set[str]:
     return {frame.hex() for frame in frames}
 
 
+def _galaxy_census() -> set[str]:
+    """Every catalog action on both framings and all three side operands."""
+    return {
+        goodvibe.action_frame(action, side, single, long).hex()
+        for action in GALAXY_ACTIONS.values()
+        if not action.local
+        for side in (0, 1, 2)
+        for single in (False, True)
+        for long in (False, True)
+    }
+
+
 def _classic_census() -> set[str]:
     """The classic apps' fixed frames, in mode 0.
 
@@ -197,14 +214,56 @@ def _lp_legacy_census() -> set[str]:
 
 
 def _census(key: str) -> set[str]:
+    if key == "mlily":
+        from custom_components.adjustable_bed.profiles.mlily import catalog
+
+        app = catalog()
+        return {
+            codec.function(code, side, single=single).hex()
+            for product in app.products.values()
+            for detail in product.actions
+            for expanded in app.expansions.get(detail, (detail,))
+            for action in (app.actions[expanded],)
+            if not action.local and not action.hidden and action.interactive
+            for side in product.sides for single in (False, True)
+            for code in (
+                *( () if action.force_long else (action.legacy_short if single else action.short,) ),
+                *((action.long,) if action.force_long or action.gesture in ("longPress", "shortAndLongPress")
+                  or goodvibe.memory_eligible(product.label, action.label) else ()),
+            )
+        }
+    if key == "richmat_app":
+        from custom_components.adjustable_bed.beds.richmat_app.catalog import ACTIONS as app_actions
+        from custom_components.adjustable_bed.beds.richmat_app.catalog import ENUM_CODES
+        from custom_components.adjustable_bed.beds.richmat_app.protocol import STARTUP, VERSION_ONE
+
+        return {
+            codec.function(action[press], side, action=action["enum"], single=single).hex()
+            for action in app_actions.values()
+            for press in ("short", "long")
+            for side in (0, 1)
+            for single in (True, False)
+        } | {
+            codec.function(ENUM_CODES[enum], action=enum).hex() for enum in (*STARTUP, *VERSION_ONE)
+        }
     if key == "hjbed":
         return _hjbed_census()
     if key == "eshine":
         return _eshine_census()
     if key == "goodvibe":
         return _goodvibe_census()
+    if key == "galaxy":
+        return _galaxy_census()
     if key == "leggett_lp_legacy":
         return _lp_legacy_census()
+    if key in ("richmat_classic_luunarise2", "richmat_classic_powercool"):
+        frames = {
+            classic.release("RAW"), classic.release("FRAMED"), classic.INITIALIZE,
+            classic.ALARM_QUERY, classic.LAMP_QUERY, *classic.alarm(0, 0),
+            *(classic.massage_popup(choice) for choice in classic.MASSAGE_POPUP),
+            *(classic.massage_timer(layout, progress) for layout in ("D1RM", "D9RM") for progress in range(6)),
+        }
+        return {frame.hex() for frame in frames}
     if key.startswith("richmat_classic_"):
         return _classic_census()
     if key.startswith("richmat_mh_"):

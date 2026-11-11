@@ -363,7 +363,7 @@ class TestDetectBedTypeByServiceUUID:
         assert result.confidence == 0.9
         assert "name:okin_ble" in result.signals
         assert "manufacturer_payload:btcb" in result.signals
-        assert result.ambiguous_types == [BED_TYPE_MALOUF_NEW_OKIN]
+        assert result.ambiguous_types == [BED_TYPE_MALOUF_NEW_OKIN, "resident"]
 
     def test_lucid_l600_retail_model_does_not_collapse_protocols(self):
         """Two confirmed L600 signatures must continue to select different framing."""
@@ -994,7 +994,7 @@ class TestDetectBedTypeByManufacturerData:
         assert "name:smartbed428" in result.signals
         assert "manufacturer_payload:ab0102" in result.signals
         # The explicit eShine app hint never replaces this proven receiver match.
-        assert result.ambiguous_types == ["eshine_okin"]
+        assert result.ambiguous_types == ["eshine_okin", "resident"]
 
     def test_cb24_ab_payload_still_detects_cb24(self):
         """Known CB24AB advertisements must keep the CB24 detection path."""
@@ -1171,16 +1171,16 @@ class TestOkinUUIDDisambiguation:
         assert BED_TYPE_NECTAR in result.ambiguous_types
         assert BED_TYPE_OKIN_RF_ECO_BT in result.ambiguous_types
 
-    def test_okin_generic_name_without_advertised_uuid_is_not_auto_detected(self):
-        """Generic OKIN-* advertisements without UUIDs should remain manual."""
+    def test_okin_generic_name_without_advertised_uuid_offers_resident(self):
+        """Resident admits an OKIN platform name without an advertised UUID."""
         service_info = _make_service_info(
             name="OKIN-050226",
             service_uuids=[],
         )
         result = detect_bed_type_detailed(service_info)
 
-        assert result.bed_type is None
-        assert result.confidence == 0.0
+        assert result.bed_type == "resident"
+        assert result.confidence == 0.3
 
     def test_dewertokin_rf_gateway_advertised_uuid_is_detected(self):
         """RF-Gateway advertisements should create DewertOkin discovery flows."""

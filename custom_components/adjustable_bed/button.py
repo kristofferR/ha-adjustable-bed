@@ -61,7 +61,12 @@ from .position_estimate_entities import async_setup_estimate_buttons
 
 if TYPE_CHECKING:
     from .beds.base import BedController
-    from .beds.entity_specs import ControllerButtonSpec, ControllerMotorHoldSpec, MotorControlSpec
+    from .beds.entity_specs import (
+        ControllerButtonSpec,
+        ControllerHoldSpec,
+        ControllerMotorHoldSpec,
+        MotorControlSpec,
+    )
     from .coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -1397,7 +1402,9 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
                 GESTURE_RELEASE.reset(token)
             return
         press_fn = self._spec.press_fn
-        if _moves_untimed(self._spec.key, held=self._spec.hold is not None):
+        if self._spec.invalidates_position or _moves_untimed(
+            self._spec.key, held=self._current_hold_spec() is not None
+        ):
             press_fn = invalidate_on_command(self.hass, press_fn)
         if self._spec.scheduler_resource is not None:
             await self._coordinator.async_execute_controller_command(
@@ -1410,11 +1417,24 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
             press_fn, cancel_running=self._spec.cancel_movement
         )
 
+    def _current_hold_spec(self) -> ControllerHoldSpec | None:
+        """Follow local gesture selectors and replacement controllers in place."""
+        controller = self._coordinator.capability_controller
+        if controller is not None:
+            with self._side_scope():
+                spec = next(
+                    (spec for spec in controller.controller_button_specs if spec.key == self._spec.key),
+                    None,
+                )
+            if spec is not None:
+                return spec.hold
+        return self._spec.hold
+
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Expose the declared held control to the bounded card/service path."""
+        """Expose the current held control to the bounded card/service path."""
         attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
-        hold = self._spec.hold
+        hold = self._current_hold_spec()
         if hold is not None:
             attributes.update(
                 held_control=hold.control,

@@ -242,10 +242,13 @@ These steps serve every bed type or route, so no profile owns them.
 | Profile | Questions |
 |---|---|
 | `jiecang_app` | Layout (the chosen app's), light, transport (Advanced). Owns motor count and pulse delay; fixes angle sensing off. |
+| `jalon_bed` | The four physical layouts of OkinComfortBed Ⅱ (Jalon); derives motor count and fixes massage, angle sensing and refresh from this app. |
 | `furnimove` | Handset ID; the handset table derives the motor count and massage, and angle sensing is off. |
 | `okin_uuid`, `okimat`, `okin_dot` | Remote code (a saved code new setups no longer offer stays this entry's choice), motor count and massage motors; `okin_uuid` and `okimat` also angle sensing. The family row's form is drawn for FurniMove, which sets massage and angle sensing itself. |
 | `keeson:` ORE apps and INNOVA | The app's 2M, 3M or 4M screen, which is the motor count. |
 | `keeson:ergomotion` | Angle sensing: the one older Keeson remote route that reports positions. |
+| `bedtech` | Exact 7.1.3 model or existing legacy controls. Explicit models own motor count, massage, angle sensing and the 100 ms cadence; pulse count bounds a finite HA press. |
+| `mlily` | Exact app product or admitted remote-choice route, or independent MM/SXB sleep receiver. Owns all generic control fields; product selection is per receiver. |
 | `goodvibe`, `hjbed`, `casper_base` | The exact product, a searchable list, behind one row each. Good Vibe Sleep's own name rule suggests a product from the Bluetooth name. |
 | `comfort_enhancements` | The app's MC2, MC3, MC4 or MC5 layout. |
 | `bedsense` | Layout, or the layout from the Bluetooth name. |
@@ -263,6 +266,7 @@ These steps serve every bed type or route, so no profile owns them.
 | `sleeptracker` | Foundation, app layout, unit number, snapshot side, restricted session and processor type; a lumbar layout derives the third motor. |
 | `motion_bed` | Exact Bluetooth name, seeded from the advertisement; restored profile and retained preset and movement layouts. `normalize` stores Auto as no retained layout. |
 | `motomotion` | Exact Bluetooth name, seeded from the advertisement and checked as the app checks it; it selects the panel and feature flags. Owns every generic field; fixes massage and angle sensing off. |
+| `luuna` | The Luuna + product; Auto is not supported. It derives motor count, massage, refresh cadence and disabled angle sensing. |
 | `hush_base` | The product (the protocol variant): the app's own twelve first, then the profiles it restores. Nothing in the advertisement names the product, so the question has no default. |
 | `malouf_app@malouf`, `malouf_app@lucid` | Model (the chosen app's picker, plus a saved model it no longer lists), primary/secondary role and transport (Advanced). Fixes angle sensing off; `normalize` drops a model the picker did not offer. |
 | `malouf_app` | The app too, with every app's models, for an entry switched in from another bed type with Configure's bed-type list; the app and model are checked together on save. |
@@ -290,3 +294,8 @@ These steps serve every bed type or route, so no profile owns them.
 
 The other profiles declare only the generic fields they own, converted from the
 former side tables.
+
+
+The `richmat_app` profile asks its exact product, with manual and restored entries
+labelled separately; `richmat_app_sleep` asks its independent old/new MM or HJ
+session. Each owns its generic fields and per-side route.

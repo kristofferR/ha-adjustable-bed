@@ -82,7 +82,12 @@ class RichmatProfile:
     """Fixed button codes. ``None``: a per-model catalog supplies them."""
     memory: tuple[tuple[int, int], ...] = ()
     """(recall, save) code per memory slot, from slot 1."""
-    stop: int = STOP
+    stop: int | None = STOP
+    """None ends movement refresh without sending a release frame."""
+    pace_from_write_start: bool = False
+    """Absorb GATT acknowledgement time into the repeat interval."""
+    motor_repeat_ms: int | None = None
+    """Fixed app refresh cadence; None keeps the entry settings."""
     recall: Recall = Recall()
     quiet_release: bool = True
     """Movement cleanup logs a failed STOP instead of raising it."""
@@ -177,6 +182,68 @@ BEDTECH: Final = RichmatProfile(
     stop=COMPAT_STOP,
     quiet_release=False,
 )
+# BedTech 7.1.3 (14): only ordinary UI actions that pass their model guards.
+# E_UI/E_CATALOG in the accepted unit095 report; literals in bedtech_vectors.json.
+_BEDTECH_MOTORS: Final[Mapping[Button, int]] = {
+    "head_up": 0x24,
+    "head_down": 0x25,
+    "feet_up": 0x26,
+    "feet_down": 0x27,
+}
+_BEDTECH_PRESETS: Final[Mapping[Button, int]] = {
+    "flat": 0x31,
+    "zero_g": 0x45,
+    "anti_snore": 0x46,
+}
+_BEDTECH_MASSAGE: Final[Mapping[Button, int]] = {
+    "massage_head": 0x4C,
+    "massage_foot": 0x4E,
+    "massage_mode": 0x48,
+    "light_toggle": 0x3C,
+}
+BEDTECH_APP_CODES: Final[Mapping[str, Mapping[Button, int]]] = {
+    "bt2000": {},
+    "bt2500": {**_BEDTECH_PRESETS, "massage_toggle": 0x5D, "massage_off": 0x5E},
+    "bt3000": {**_BEDTECH_PRESETS, **_BEDTECH_MASSAGE, "massage_timer_20": 0x63},
+    "bt3000fh": {
+        "flat": 0x31,
+        "zero_g": 0x45,
+        "tv": 0x58,
+        **_BEDTECH_MASSAGE,
+        "massage_off": 0x5E,
+    },
+    "bt6500": {
+        **_BEDTECH_PRESETS,
+        **_BEDTECH_MASSAGE,
+        "massage_off": 0x5E,
+        "pillow_up": 0x3F,
+        "pillow_down": 0x40,
+        "lumbar_up": 0x41,
+        "lumbar_down": 0x42,
+    },
+    "btx4": {"flat": 0x31, "zero_g": 0x45},
+    "btx4fh": {"flat": 0x31, "zero_g": 0x45},
+    "btx5": {**_BEDTECH_PRESETS, **_BEDTECH_MASSAGE, "massage_timer_20": 0x63},
+    "btx5fh": {**_BEDTECH_PRESETS, **_BEDTECH_MASSAGE, "massage_timer_20": 0x63},
+}
+BEDTECH_APP_PROFILES: Final = {
+    model: RichmatProfile(
+        key=f"bedtech_{model}",
+        transports=("w1",),
+        execution=STREAM_HOLD,
+        codes={**_BEDTECH_MOTORS, **codes},
+        memory=((0x2E, 0x2B), (0x2F, 0x2C)),
+        stop=None,
+        motor_repeat_ms=100,
+        pace_from_write_start=True,
+    )
+    for model, codes in BEDTECH_APP_CODES.items()
+}
+BEDTECH_VARIANTS: Final = {
+    "auto": "Legacy BedTech controls (existing hardware reports)",
+    **{model: f"BedTech app: {model.upper()}" for model in BEDTECH_APP_PROFILES},
+}
+
 LEGGETT_WILINKE: Final = RichmatProfile(
     key="leggett_wilinke",
     execution=STREAM_HOLD,
@@ -234,16 +301,20 @@ RICHMAT_MH: Final[dict[str, RichmatProfile]] = {
 HJBED: Final = RichmatProfile(
     key="hjbed", execution=STREAM_HOLD, transports=("w1", "n1", "w5", "w4", "w3", "w2")
 )
+RICHMAT_APP: Final = RichmatProfile(
+    key="richmat_app", execution=STREAM_HOLD, transports=("n1", "w1", "w2", "w3", "w4", "w5")
+)
 # The services Good Vibe accepts; it takes them in the bed's enumeration order.
 # Its controller declares holds per product, on the sustained-press controls.
 GOODVIBE: Final = RichmatProfile(key="goodvibe", transports=("w1", "n1", "w5", "w4", "w3", "w2"))
+MLILY: Final = RichmatProfile(key="mlily", transports=("w1", "n1", "w5", "w4", "w3", "w2"))
 # The five classic resource-driven apps (row066) share one builder and service
 # order; each keeps its own catalog in ``beds/richmat_classic/data``. The first present
 # service wins, and Nordic UART takes the bare resource bytes.
 CLASSIC_TRANSPORTS: Final[tuple[TransportKey, ...]] = ("w1", "w2", "n1", "w4")
 RICHMAT_CLASSIC: Final[dict[str, RichmatProfile]] = {
     app: RichmatProfile(key=f"richmat_classic_{app}", transports=CLASSIC_TRANSPORTS)
-    for app in ("avocadoecobase", "coastersleep", "fortywinks", "milemont", "superior")
+    for app in ("avocadoecobase", "coastersleep", "fortywinks", "milemont", "superior", "luunarise2", "powercool")
 }
 
 # Eshine 1.0.1 (row106): the E6000's one fixed table, over the app's transports.
@@ -280,3 +351,6 @@ ESHINE: Final = RichmatProfile(
 # ``beds/leggett/lp_legacy_catalog.py``. It writes to the characteristics the user
 # configures, so it drives none of the codec's transports.
 LP_LEGACY: Final = RichmatProfile(key="leggett_lp_legacy", transports=())
+
+# Galaxy Bed Control 3.3.0 (row A09), literal-vector verified independently.
+GALAXY: Final = RichmatProfile(key="galaxy", transports=("w1", "n1", "w5", "w4", "w3", "w2"))

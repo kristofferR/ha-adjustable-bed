@@ -5,6 +5,8 @@
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 > [!NOTE]
+> For **Rize Beds 1.4.2**, choose the explicit [Rize Beds profile](#rize-beds).
+> Existing Kaidi entries retain their legacy route until reconfigured.
 > For **ISleep com.kaidi_test4**, choose the explicit [ISleep profile](#isleep).
 > Its accepted row064 audit corrects movement lifecycle, side routing, massage
 > strengths and memory capacity independently of the legacy Kaidi route.
@@ -28,13 +30,14 @@
 
 | Analyzed | App | Package ID | Profile |
 |----------|-----|------------|---------|
+| ✅ | [Rize Beds](https://play.google.com/store/apps/details?id=com.kaidi_test4.rize) 1.4.2 (57) | `com.kaidi_test4.rize` | [Rize Beds](#rize-beds) |
 | ✅ | [Rize](https://play.google.com/store/apps/details?id=com.kaidi_test4.rize) 1.3.0 | `com.kaidi_test4.rize` | [Seat profiles](#seat-profiles) |
 | ✅ | [Floyd Home](https://play.google.com/store/apps/details?id=com.kaidi_test4.floyd) 1.0.7 (7) | `com.kaidi_test4.floyd` | [Floyd Home](#floyd-home) |
 | ✅ | [ISleep](https://play.google.com/store/apps/details?id=com.kaidi_test4) 1.6.3 (45) | `com.kaidi_test4` | [ISleep](#isleep) |
 
 - All three apps use only the Seat command values; the legacy Bed values in the
   shared library are not used by any of them.
-- Floyd Home and ISleep each have a separately audited profile. Their
+- Rize Beds 1.4.2, Floyd Home and ISleep each have a separately audited profile. Their
   capabilities and control behavior come from their own accepted artifacts, not
   from other apps sharing this transport. Rize/Floyd and existing Kaidi entries
   retain their own route; selecting a shared transport does not identify which
@@ -60,6 +63,19 @@
 | Foreign-room reset | ❌ | ❌ (excluded for safety) | ❌ (mode07, excluded for safety) |
 | Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP); ❌ dual-seat (`seat_1_2`) beds | ❌ | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) |
 
+| Rize Beds 1.4.2 feature | Supported |
+|---|---|
+| Motor Control | ✅ (product/topology axes, plus app voice controls) |
+| Position Feedback | ❌ |
+| Memory Presets | ✅ (three recall/save slots) |
+| Default Programming | ✅ (confirmed, one physical target) |
+| Massage | ✅ (patterns, head strength, timers; leg strength and mode4 per product) |
+| Lights | ✅ (discrete on/off) |
+| Motion Sensor Commands | ✅ (extended products) |
+| Battery Mode | ✅ (extended products, live diagnostic) |
+| Native Sides | ✅ (products130/141, descriptor other than2) |
+| Room Enrollment | ✅ (unprovisioned mode09 only) |
+
 - Floyd Home: a battery event can arrive unsolicited; unknown battery mode is
   not interpreted as battery power. A reported battery mode blocks raising, but
   never blocks lowering or release.
@@ -83,6 +99,7 @@ timing; none reuses a sibling's.
 | Seat 1+2 | `kaidi` | `seat_1_2` | 130, 133, 134, 143 | 4 | pulse settings, then the axis stop |
 | Floyd Home | `kaidi` | `floyd` | 139 | 3 | one start, release after the hold; writes 50 ms apart |
 | ISleep | `isleep` | explicit app choice | 129, 130, 131, 132, 133, 134, 142, 143 | 3 | one press, release after the hold |
+| Rize Beds | `rize` | explicit app choice | 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 140, 141 | 3 | one start, release after hold; writes 50 ms apart |
 <!-- /generated -->
 
 ### Aliases
@@ -93,7 +110,8 @@ None. No two bed types build the same controller and profile.
 
 `codec/kaidi.py` encodes Kaidi's PairLink mesh frames over GATT. A session
 joins the room carried in the bed's advertisement, finds the bed's virtual
-address (`vAddr`), then wraps every command in a control frame addressed to it.
+address (`vAddr`), then wraps every command in a control frame addressed to it. Rize Beds also
+uses the second parameter byte for its special massage operation.
 
 ### Transports
 
@@ -812,6 +830,196 @@ The accepted standalone ISleep 1.6.3 (45) APK audit (row064, see
 [Analysis provenance](#analysis-provenance)); ISleep sends only its frozen
 payloads. HA never resets an existing room.
 
+### Rize Beds
+
+**App:** [Rize Beds](https://play.google.com/store/apps/details?id=com.kaidi_test4.rize) 1.4.2 (57), `com.kaidi_test4.rize`
+
+**Status:** ❓ Needs testing (static artifact coverage; firmware effects and physical stopping unverified)
+
+#### Setup
+
+Choose **Rize Beds app (Kaidi, 1.4.2)**. Setup asks the product, signed room ID
+and advertised actuator descriptor. Manufacturer records suggest those values;
+there is no app name filter. The product and actuator parser gates are those of this app. HA additionally
+requires a Kaidi UUID, name or known OUI for automatic discovery because unrelated
+PairLink products also pass the app's manufacturer-only filter. Manual selection
+remains available. Shared mesh advertisements cannot identify the owning app, so
+Home Assistant offers Rize alongside the existing Kaidi/ISleep routes.
+
+Existing Kaidi entries retain their profile until reconfigured. Native
+single-address Left/Right controls require product130 or141 with descriptor
+other than2. Other products use the single-node commands. Combine two physical
+entries for two-address side control; each retains its own room and product.
+The room password is local BLE authentication, independent of Wi-Fi or a cloud
+account. The enrollment button accepts only a live unprovisioned mode09 bed
+whose product matches setup. Startup leaves such an unprovisioned connection
+available for enrollment; ordinary controls still require room authentication.
+It never resets a foreign room.
+
+#### Controls
+
+The generated tables list every command and product. HA back is the app's
+primary upper control: HEAD on layouts2/5–8, BACK on3/4. Clarity/layout9 uses
+BACK when descriptor2 selects a single node, and HEAD with the appropriate
+left/right/both triple when native sides are available. STOP follows the same
+mapping. These are app UI/wire names, not measured physical actuator aliases.
+
+- One start per movement and the matching axis STOP at release. **All up/down**
+  use the app's combined control; Clarity has no such control. Extended
+  products include neck and combined movement reached through app voice,
+  even where the touch panel omits them.
+- Flat, Zero gravity, Anti-snore, three memory recall/program slots, and
+  discrete lights. Reading (TV) and Leisure (Lounge) belong to extended products.
+- Massage on/off, patterns1–3, head strength0–100 and15/30/45-minute timers.
+  Extended products also expose leg strength, including the app's voice route.
+  Selecting the same pattern or timer cancels it. Remedy Pro4 adds pattern4;
+  its second parameter distinguishes start/cancel from default programming.
+- **Motion sensor on/off** on extended products, also reached through voice.
+  These are commands, not a presence sensor or measured toggle state.
+- The battery-mode diagnostic reports the power flag. A positive report blocks
+  raising; lowering and STOP remain available. Unknown is not battery power.
+
+<!-- generated:kaidi-rize-commands -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+##### Products
+
+| Product | Name | Layout | HA axes (touch or voice) | Native sides | Default programming |
+|---|---|---|---|---|---|
+| 129 | Single | 2 | back, legs | none | none |
+| 130 | Double 2/4 | 2 | back, legs | descriptor other than 2 | none |
+| 131 | Single 3 | 3 | back, legs, head | none | none |
+| 132 | Single 4 | 4 | back, legs, head, lumbar | none | none |
+| 133 | Double 3 | 3 | back, legs, head | none | none |
+| 134 | Double 4 | 4 | back, legs, head, lumbar | none | none |
+| 135 | Remedy 3 | 5 | back, legs, lumbar, neck | none | zero_g, anti_snore, book, leisure |
+| 136 | Remedy 4 | 6 | back, legs, lumbar, neck | none | zero_g, anti_snore, book, leisure |
+| 137 | Contemporary 4 | 7 | back, legs, lumbar, neck | none | zero_g, anti_snore, leisure |
+| 138 | Contemporary 5 | 8 | back, legs, lumbar, neck | none | zero_g, anti_snore, leisure |
+| 140 | Remedy Pro 4 | 6 | back, legs, lumbar, neck | none | zero_g, anti_snore, book, leisure |
+| 141 | Clarity | 9 | back, legs | descriptor other than 2 | none |
+
+##### Command payloads
+
+| Control | Left / single payload | Right payload | Both payload |
+|---|---|---|---|
+| head_up | `01 01 00 00` | `01 0A 00 00` | `01 13 00 00` |
+| head_down | `01 02 00 00` | `01 0B 00 00` | `01 14 00 00` |
+| head_stop | `01 03 00 00` | `01 0C 00 00` | `01 15 00 00` |
+| legs_up | `01 04 00 00` | `01 0D 00 00` | `01 16 00 00` |
+| legs_down | `01 05 00 00` | `01 0E 00 00` | `01 17 00 00` |
+| legs_stop | `01 06 00 00` | `01 0F 00 00` | `01 18 00 00` |
+| all_up | `01 07 00 00` | `01 10 00 00` | `01 19 00 00` |
+| all_down | `01 08 00 00` | `01 11 00 00` | `01 1A 00 00` |
+| all_stop | `01 09 00 00` | `01 12 00 00` | `01 1B 00 00` |
+| flat | `01 1C 00 00` | `01 1D 00 00` | `01 1E 00 00` |
+| save_1 | `01 25 00 00` | `01 2D 00 00` | `01 35 00 00` |
+| save_2 | `01 26 00 00` | `01 2E 00 00` | `01 36 00 00` |
+| save_3 | `01 27 00 00` | `01 2F 00 00` | `01 37 00 00` |
+| memory_1 | `01 29 00 00` | `01 31 00 00` | `01 39 00 00` |
+| memory_2 | `01 2A 00 00` | `01 32 00 00` | `01 3A 00 00` |
+| memory_3 | `01 2B 00 00` | `01 33 00 00` | `01 3B 00 00` |
+| massage_on | `01 47 00 00` | `01 49 00 00` | `01 4B 00 00` |
+| massage_off | `01 48 00 00` | `01 4A 00 00` | `01 4C 00 00` |
+| head_strength | `01 4D 00 00` | `01 4E 00 00` | `01 51 00 00` |
+| foot_strength | `01 4F 00 00` | `01 4F 00 00` | `01 4F 00 00` |
+| timer_1 | `01 53 00 00` | `01 56 00 00` | `01 59 00 00` |
+| timer_2 | `01 54 00 00` | `01 57 00 00` | `01 5A 00 00` |
+| timer_3 | `01 55 00 00` | `01 58 00 00` | `01 5B 00 00` |
+| light_on | `01 5C 00 00` | `01 5E 00 00` | `01 60 00 00` |
+| light_off | `01 5D 00 00` | `01 5F 00 00` | `01 61 00 00` |
+| zero_g | `01 62 00 00` | `01 63 00 00` | `01 64 00 00` |
+| anti_snore | `01 65 00 00` | `01 66 00 00` | `01 67 00 00` |
+| pattern_1 | `01 6B 00 00` | `01 6C 00 00` | `01 6D 00 00` |
+| pattern_2 | `01 6E 00 00` | `01 6F 00 00` | `01 70 00 00` |
+| pattern_3 | `01 71 00 00` | `01 72 00 00` | `01 73 00 00` |
+| pattern_cancel | `01 74 00 00` | `01 75 00 00` | `01 76 00 00` |
+| timer_cancel | `01 77 00 00` | `01 78 00 00` | `01 79 00 00` |
+| back_up | `01 7A 00 00` | `01 7A 00 00` | `01 7A 00 00` |
+| back_down | `01 7B 00 00` | `01 7B 00 00` | `01 7B 00 00` |
+| back_stop | `01 7C 00 00` | `01 7C 00 00` | `01 7C 00 00` |
+| lumbar_up | `01 83 00 00` | `01 83 00 00` | `01 83 00 00` |
+| lumbar_down | `01 84 00 00` | `01 84 00 00` | `01 84 00 00` |
+| lumbar_stop | `01 85 00 00` | `01 85 00 00` | `01 85 00 00` |
+| neck_up | `01 8C 00 00` | `01 8C 00 00` | `01 8C 00 00` |
+| neck_down | `01 8D 00 00` | `01 8D 00 00` | `01 8D 00 00` |
+| neck_stop | `01 8E 00 00` | `01 8E 00 00` | `01 8E 00 00` |
+| new_all_up | `01 95 00 00` | `01 95 00 00` | `01 95 00 00` |
+| new_all_down | `01 96 00 00` | `01 96 00 00` | `01 96 00 00` |
+| new_all_stop | `01 97 00 00` | `01 97 00 00` | `01 97 00 00` |
+| book | `01 9E 00 00` | `01 9E 00 00` | `01 9E 00 00` |
+| leisure | `01 A1 00 00` | `01 A1 00 00` | `01 A1 00 00` |
+| motion_on | `01 A4 00 00` | `01 A4 00 00` | `01 A4 00 00` |
+| motion_off | `01 A5 00 00` | `01 A5 00 00` | `01 A5 00 00` |
+| power_query | `01 A6 00 00` | `01 A6 00 00` | `01 A6 00 00` |
+| special | `01 A7 00 00` | `01 A7 00 00` | `01 A7 00 00` |
+
+Strength actions replace parameter1 with 0–100. Other ordinary commands reset both
+parameters to zero. Right/Both columns require a native-side product. Extended
+axes, reading, leisure, motion and power are single-side commands.
+
+##### Special operations
+
+| Operation | Payload |
+|---|---|
+| Program zero_g | `01 A7 01 00` |
+| Program anti_snore | `01 A7 04 00` |
+| Program book | `01 A7 07 00` |
+| Program leisure | `01 A7 0A 00` |
+| Remedy Pro 4 mode4 start | `01 A7 01 01` |
+| Remedy Pro 4 mode4 cancel | `01 A7 01 04` |
+| Enrollment acknowledgment | `01 45 00 00` |
+
+##### Timing
+
+| Setting | Value |
+|---|---|
+| Write spacing | 50 ms |
+| Power query on live extended-product link | 3 s |
+| Enrollment response ceiling | 30 s |
+<!-- /generated -->
+
+#### Timing
+
+See the generated timing table. A gesture sends no repeated refresh packets.
+The HA pulse settings bound its duration; renewable holds use the integration's
+latched ceiling. Cancellation, short taps and errors still run release cleanup
+on the same live session. HA does not reproduce the Android short-tap STOP
+suppression or reconnect into a new session to send an old release.
+
+#### Notifications
+
+Join/enrollment replies, own address, roster changes and current-MAC ping
+replies establish authenticated live routing. Advertised or persisted virtual
+addresses never authorize a write. A zero address from a live ping is valid.
+
+Only the power flag on channel20 is decoded as bed feedback. Its query runs
+on an already live extended-product connection and never reconnects or extends
+idle ownership. Light, massage strength/pattern/timer and graphic positions
+are app intent, not measured bed state. No position sliders or angle telemetry
+are inferred. Malformed notifications are ignored safely.
+
+#### Services
+
+`adjustable_bed.rize_program_preset` stores the current position as `zero_g`,
+`anti_snore`, `book` or `leisure`, with `confirm: true`. Target one standalone
+physical bed or one explicit side of a paired bed. Reading (`book`) programming
+requires layout5/6 (products135/136/140); Reading recall remains available on7/8
+through the app's voice route. Both/multiple-target
+programming is rejected before writing. HA captures the target under command
+admission and sends one frame without a preliminary memory-slot write.
+
+Use HA automations for schedules calling the standard preset/memory actions;
+the app's phone alarms introduce no on-bed alarm protocol.
+
+#### Evidence
+
+Accepted unit149, Rize Beds1.4.2(57), with225 frozen vectors, including the48
+repaired topology/confirmation branch probes. The codec reproduces these
+literals byte for byte. This profile uses its own product gates and command
+table. Physical validation belongs to beta/release users; no maintainer hardware
+test is implied by static support.
+
 ## Notes
 
 1. Seat profiles: the bed must already be provisioned in the official app. Home
@@ -850,3 +1058,14 @@ ISleep 1.6.3 (45), `com.kaidi_test4` (row064):
 
 The machine-local row117 and row064 comparison ledgers record every command,
 variant, session path and exclusion, and the focused artifact tests.
+
+Rize Beds 1.4.2 (57), `com.kaidi_test4.rize` (unit149):
+
+| Seal | SHA-256 |
+| --- | --- |
+| Artifact set | `4a774ab1a19a618bfdfbbc2591eaabc5852198ca63c0c0dfb6b26481bbcde0b7` |
+| Accepted REPORT.SHA256 | `f1138b823b30bb37708a652c2065ddd3326590298446b3e32d7b8cae130feb44` |
+
+The independent audit002 accepts the repaired topology-dependent layout9
+movement/STOP mapping and default-program confirmation target/count. No static
+gap remains. Hardware behavior remains unverified.

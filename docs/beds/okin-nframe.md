@@ -11,7 +11,7 @@ OKIN SmartBed CB24, Okin DOT, SIMMONS, OKIN SleepEase, the Sleepy's Elite legacy
 CB25 dialect, the AdjustableM5X4 key selectors and the eShine app's products. The 96-bit profiles are the
 Okin CST (CSTProtocol) products and the OKIN Bedding apps: Jordan's Serenity,
 Jordan's Tranquil and Customatic Z-Series. The 64-bit profiles are Okin 64-Bit
-and the Adjustable bed (Lumbar) app.
+the Adjustable bed (Lumbar) app and Resident Adjustable Base.
 
 ## Known Models
 
@@ -34,6 +34,8 @@ and the Adjustable bed (Lumbar) app.
 | [Jordan's Tranquil](#jordans-tranquil) | Beds controlled with the Jordan's Tranquil app |
 | [Customatic Z-Series](#customatic-z-series) | Customatic Z-230 and Z-280 bases with the Z-Series app |
 | [Okin 64-Bit](#okin-64-bit) | Okin controllers with the Adjustable bed app, including `NORA_CON` / `NORACON` |
+| [Adjustable bed app](#adjustable-bed-app) | Beds controlled with Adjustable bed 1.2.1 |
+| [Resident Adjustable Base](#resident-adjustable-base) | Beds controlled with Resident Adjustable Base, hardware models unverified |
 | [Adjustable bed (Lumbar)](#adjustable-bed-lumbar) | Beds controlled with the Adjustable bed(Lumbar) app |
 
 Customatic Z-Series beds use the separate [Customatic Z-Series](#customatic-z-series)
@@ -74,7 +76,8 @@ Customatic app profiles.
 | ✅ | [Support 挺你 科技調整床](https://play.google.com/store/apps/details?id=com.okin.bedding.support) 1.0.4 (5) | `com.okin.bedding.support` | [Okin CST](#okin-cst) (Support) |
 | ✅ | [Nectar Move](https://play.google.com/store/apps/details?id=com.okin.bedding.nectarmotion) 1.0.1 (2) | `com.okin.bedding.nectarmotion` | [Okin CST](#okin-cst) (Nectar Move) |
 | ✅ | [Jordan's Serenity](https://play.google.com/store/apps/details?id=com.okin.bedding.serenity) 1.0.1 (code 2) | `com.okin.bedding.serenity` | [Jordan's Serenity](#jordans-serenity) |
-| ✅ | Adjustable bed | `com.okin.bedding.adjustbed` | [Okin 64-Bit](#okin-64-bit) |
+| ✅ | [Resident Adjustable Base](https://play.google.com/store/apps/details?id=com.okin.resident.release) 1.0.0 (1) | `com.okin.resident.release` | [Resident Adjustable Base](#resident-adjustable-base) |
+| ✅ | [Adjustable bed](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustbed) 1.2.1 (33) | `com.okin.bedding.adjustbed` | [Adjustable bed app](#adjustable-bed-app) |
 | ✅ | [Adjustable bed(Lumbar)](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustablelumbar) 1.2.2 (code 33) | `com.okin.bedding.adjustablelumbar` | [Adjustable bed (Lumbar)](#adjustable-bed-lumbar) |
 | ✅ | [eShine](https://play.google.com/store/apps/details?id=com.okin.eshine) 1.1.8 (22) | `com.okin.eshine` | [eShine](#eshine) (E2000, E3000/E3100, E5000) |
 
@@ -239,6 +242,7 @@ are unchanged.
 | Jordan's Tranquil | `tranquil` | `tranquil` | 96-bit | plain frame | from the characteristic's properties | head, feet | 2 |
 | Customatic Z-230 | `zseries_z230` | `customatic_zseries` | 96-bit | plain frame | from the characteristic's properties | head, feet | 1 |
 | Customatic Z-280 | `zseries_z280` | `customatic_zseries` | 96-bit | plain frame | from the characteristic's properties | head, feet | 2 |
+| Resident Adjustable Base | `resident` | `resident` | 64-bit | plain frame | with response | head, feet | 2 |
 | OKIN 64-bit Nordic UART | `okin_64bit_nordic` | `okin_64bit` | 64-bit | plain frame | without response | head, feet, lumbar | 2 |
 | OKIN 64-bit OKIN service | `okin_64bit_custom` | `okin_64bit` | 64-bit | plain frame | with response | head, feet, lumbar | 2 |
 | Adjustable bed (Lumbar) 36_33_04a | `adjustable_lumbar_okin` | `adjustable_lumbar` | 64-bit | plain frame | with response | head, feet, lumbar | 0 |
@@ -286,6 +290,7 @@ are unchanged.
 | Jordan's Tranquil | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
 | Customatic Z-230 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
 | Customatic Z-280 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Resident Adjustable Base | 300 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms |
 | OKIN 64-bit Nordic UART | entry pulse delay | entry pulse count | 1 STOP |
 | OKIN 64-bit OKIN service | entry pulse delay | entry pulse count | 1 STOP |
 | Adjustable bed (Lumbar) 36_33_04a | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms |
@@ -335,6 +340,7 @@ Entry pulse settings are the configured motor pulse count and delay.
 | Jordan's Tranquil | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
 | Customatic Z-230 | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
 | Customatic Z-280 | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
+| Resident Adjustable Base | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
 | OKIN 64-bit Nordic UART | once, no STOP | once, no STOP | n/a | n/a | once, no STOP | n/a |
 | OKIN 64-bit OKIN service | once, no STOP | once, no STOP | n/a | n/a | once, no STOP | n/a |
 | Adjustable bed (Lumbar) 36_33_04a | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
@@ -826,6 +832,31 @@ controls it supports; held motors send the OR of their primary words.
 
 Each app's literal action table, by the app's action names.
 
+#### Resident Adjustable Base keys
+
+| Command | Word | Frame |
+|---|---|---|
+| STOP / release | `0x0000000000000000` | `08 02 00 00 00 00 00 00 00 00` |
+| Head up | `0x0000000100000000` | `08 02 00 00 00 01 00 00 00 00` |
+| Head down | `0x0000000200000000` | `08 02 00 00 00 02 00 00 00 00` |
+| Foot up | `0x0000000400000000` | `08 02 00 00 00 04 00 00 00 00` |
+| Foot down | `0x0000000800000000` | `08 02 00 00 00 08 00 00 00 00` |
+| `head_foot_up` | `0x0000000500000000` | `08 02 00 00 00 05 00 00 00 00` |
+| `head_foot_down` | `0x0000000A00000000` | `08 02 00 00 00 0A 00 00 00 00` |
+| Flat | `0x0800000000000000` | `08 02 08 00 00 00 00 00 00 00` |
+| Zero-G | `0x0000100000000000` | `08 02 00 00 10 00 00 00 00 00` |
+| `tv_pc` | `0x0000400000000000` | `08 02 00 00 40 00 00 00 00 00` |
+| Lounge / Reading | `0x0000200000000000` | `08 02 00 00 20 00 00 00 00 00` |
+| Anti-snore / Snore | `0x0000800000000000` | `08 02 00 00 80 00 00 00 00 00` |
+| Memory 1 | `0x0001000000000000` | `08 02 00 01 00 00 00 00 00 00` |
+| Memory 2 | `0x0004000000000000` | `08 02 00 04 00 00 00 00 00 00` |
+| Under-bed light toggle | `0x0002000000000000` | `08 02 00 02 00 00 00 00 00 00` |
+| `massage_switch` | `0x0000010000000000` | `08 02 00 00 01 00 00 00 00 00` |
+| Massage off | `0x0200000000000000` | `08 02 02 00 00 00 00 00 00 00` |
+| `strength_up` | `0x00000C0000000000` | `08 02 00 00 0C 00 00 00 00 00` |
+| `strength_down` | `0x0180000000000000` | `08 02 01 80 00 00 00 00 00 00` |
+| Massage timer step | `0x0000020000000000` | `08 02 00 00 02 00 00 00 00 00` |
+
 #### Okin 64-Bit keys
 
 | Command | Word | Profiles | Frame |
@@ -1205,7 +1236,7 @@ The 79 apps use one of these protocols:
 | App | Package ID | Protocol |
 |---|---|---|
 | MFRM Sleepy's Elite | `com.okin.bedding.sleepy` | Multi-protocol |
-| Resident | `com.okin.resident.release` | Flutter |
+| Resident | `com.okin.resident.release` | 64-bit N-frame, [Resident Adjustable Base](#resident-adjustable-base) |
 | Rize II | `com.okin.bedding.rizeii` | OKIN UUID |
 | Simmons | `com.okin.simmons` | Flutter; own frames, see [SIMMONS app](#simmons) |
 | Glideaway | `com.ore.bedding.glideawaymontion` | E6 FE 16 on FFE5/FFE9, [explicit Motion app profile](keeson.md#glideaway-motion) |
@@ -4609,6 +4640,154 @@ Mattress Firm Nordic packets with this protocol.
   both of these services with its own name rule, timing and release STOPs. Select
   that explicit profile for beds controlled with that app; this bed type is unchanged.
 
+### Adjustable bed app
+
+**App:** [Adjustable bed](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustbed) 1.2.1 (33), `com.okin.bedding.adjustbed`
+
+**Status:** ❓ Needs testing
+
+#### Setup
+
+Detection: none. Choose **Adjustable bed app** explicitly for this app, rather than the separate Lumbar app or legacy Okin 64-Bit receiver. Shared names and services do not identify the app or retail model.
+
+`auto` lowercases the raw Bluetooth name: `okin` selects `36_33_04a`; `star` starts at `25_42_02` and switches to `35_22_01` only for exactly the four bytes `STAR` read from Device Information manufacturer 180A/2A29. Advertisement manufacturer data is not that read. Other names need an explicit variant. Each paired receiver owns its variant; no packet selects a split side. A fixed STAR-table variant is available for a known table.
+
+P1/P2 use Nordic UART without response; P3 uses the custom OKIN service with response, as in the Lumbar transport table. An absent Device Information service aborts setup for either name. P3 also aborts on an absent manufacturer characteristic; P1 allows that missing characteristic and retains P1. This read is a selector, not bonding, authentication, or a proven firmware requirement. Home Assistant awaits it and fixes selection per connection, avoiding the app's asynchronous global asset/read race. A failed read retains the name-selected table as a deliberate integration fallback, not a claim about the app's error handling.
+
+#### Controls
+
+| Feature | Supported |
+|---|---|
+| Motor control | Head, feet and speech-dispatched lumbar |
+| Presets | Flat, Zero Gravity, Anti-Snore, Lounge, Incline |
+| Programming | Save the four named presets with the Flat-plus-preset chord |
+| Massage | Global intensity up/down, waves 1–3, off and speech on |
+| Light | Toggle |
+| Positions / numbered memory / side packets | None established by this app |
+
+Covers and the preset, save, wave, intensity and light buttons use the touch route. **App speech** buttons expose the direct BLE actions reached by the speech dispatcher without speech recognition. On P2, the lumbar cover uses that dispatcher too: ordinary lumbar declarations are unreachable. No explicit light-on/off, brightness, color, numbered memory or alarm controls are inferred from unused declarations.
+
+Long tables use the N-frame encoder. The STAR-manufacturer table uses the [Okin 5A encoder](okin-5a.md), with no checksum despite the asset flag. The generated table contains the reachable ordinary and speech packets and raw query:
+
+<!-- generated:adjustable-bed-commands -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Profile | Asset | Control | Bytes |
+|---|---|---|---|
+| adjustable_bed_star | 25_42_02 | head_up | `08 02 00 00 00 01 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | head_down | `08 02 00 00 00 02 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | feet_up | `08 02 00 00 00 04 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | feet_down | `08 02 00 00 00 08 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | lumbar_up | `08 02 00 00 00 10 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | lumbar_down | `08 02 00 00 00 20 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | stop | `08 02 00 00 00 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | flat | `08 02 08 00 00 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | anti_snore | `08 02 00 00 80 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | lounge | `08 02 00 00 20 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | incline | `08 02 00 00 40 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | zero_g | `08 02 00 00 10 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | save_anti_snore | `08 02 08 00 80 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | save_lounge | `08 02 08 00 20 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | save_incline | `08 02 08 00 40 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | save_zero_g | `08 02 08 00 10 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | light | `08 02 00 02 00 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | wave_1 | `08 02 00 00 00 00 00 08 00 00` |
+| adjustable_bed_star | 25_42_02 | wave_2 | `08 02 00 00 00 00 00 10 00 00` |
+| adjustable_bed_star | 25_42_02 | wave_3 | `08 02 00 00 00 00 00 20 00 00` |
+| adjustable_bed_star | 25_42_02 | massage_stop | `08 02 02 00 00 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | massage_up | `08 02 00 00 0C 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | massage_down | `08 02 01 80 00 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | massage_on | `08 02 00 00 01 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | voice_stop | `08 02 00 00 00 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | check_massage | `02 04` |
+| adjustable_bed_star_5a | 35_22_01 | head_up | `5A 01 03 10 30 00 A5` |
+| adjustable_bed_star_5a | 35_22_01 | head_down | `5A 01 03 10 30 01 A5` |
+| adjustable_bed_star_5a | 35_22_01 | feet_up | `5A 01 03 10 30 02 A5` |
+| adjustable_bed_star_5a | 35_22_01 | feet_down | `5A 01 03 10 30 03 A5` |
+| adjustable_bed_star_5a | 35_22_01 | stop | `5A 01 03 10 30 0F A5` |
+| adjustable_bed_star_5a | 35_22_01 | flat | `5A 01 03 10 30 10 A5` |
+| adjustable_bed_star_5a | 35_22_01 | anti_snore | `5A 01 03 10 30 16 A5` |
+| adjustable_bed_star_5a | 35_22_01 | lounge | `5A 01 03 10 30 12 A5` |
+| adjustable_bed_star_5a | 35_22_01 | incline | `5A 01 03 10 30 11 A5` |
+| adjustable_bed_star_5a | 35_22_01 | zero_g | `5A 01 03 10 30 13 A5` |
+| adjustable_bed_star_5a | 35_22_01 | save_anti_snore | `5A 01 03 10 30 93 A5` |
+| adjustable_bed_star_5a | 35_22_01 | save_lounge | `5A 01 03 10 30 91 A5` |
+| adjustable_bed_star_5a | 35_22_01 | save_incline | `5A 01 03 10 30 92 A5` |
+| adjustable_bed_star_5a | 35_22_01 | save_zero_g | `5A 01 03 10 30 90 A5` |
+| adjustable_bed_star_5a | 35_22_01 | light | `5A 01 03 10 30 71 A5` |
+| adjustable_bed_star_5a | 35_22_01 | wave_1 | `5A 01 03 10 30 52 A5` |
+| adjustable_bed_star_5a | 35_22_01 | wave_2 | `5A 01 03 10 30 53 A5` |
+| adjustable_bed_star_5a | 35_22_01 | wave_3 | `5A 01 03 10 30 54 A5` |
+| adjustable_bed_star_5a | 35_22_01 | massage_stop | `5A 01 03 10 30 6F A5` |
+| adjustable_bed_star_5a | 35_22_01 | massage_on | `5A 01 03 10 30 52 A5` |
+| adjustable_bed_star_5a | 35_22_01 | massage_up | `5A 01 03 10 40 60 A5` |
+| adjustable_bed_star_5a | 35_22_01 | massage_down | `5A 01 03 10 40 61 A5` |
+| adjustable_bed_star_5a | 35_22_01 | voice_stop | `5A 01 03 10 30 1F A5` |
+| adjustable_bed_star_5a | 35_22_01 | voice_head_up | `5A 01 03 10 40 00 A5` |
+| adjustable_bed_star_5a | 35_22_01 | voice_head_down | `5A 01 03 10 40 01 A5` |
+| adjustable_bed_star_5a | 35_22_01 | voice_feet_up | `5A 01 03 10 40 02 A5` |
+| adjustable_bed_star_5a | 35_22_01 | voice_feet_down | `5A 01 03 10 40 03 A5` |
+| adjustable_bed_star_5a | 35_22_01 | voice_lumbar_up | `5A 01 03 10 40 06 A5` |
+| adjustable_bed_star_5a | 35_22_01 | voice_lumbar_down | `5A 01 03 10 40 07 A5` |
+| adjustable_bed_star_5a | 35_22_01 | check_massage | `5A B0 00 A5` |
+| adjustable_bed_okin | 36_33_04a | head_up | `08 02 00 00 00 01 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | head_down | `08 02 00 00 00 02 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | feet_up | `08 02 00 00 00 04 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | feet_down | `08 02 00 00 00 08 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | lumbar_up | `08 02 00 00 00 10 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | lumbar_down | `08 02 00 00 00 20 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | stop | `08 02 00 00 00 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | flat | `08 02 08 00 00 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | anti_snore | `08 02 00 00 80 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | lounge | `08 02 00 00 20 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | incline | `08 02 00 00 40 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | zero_g | `08 02 00 00 10 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | save_anti_snore | `08 02 08 00 80 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | save_lounge | `08 02 08 00 20 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | save_incline | `08 02 08 00 40 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | save_zero_g | `08 02 08 00 10 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | light | `08 02 00 02 00 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | wave_1 | `08 02 00 00 00 00 00 08 00 00` |
+| adjustable_bed_okin | 36_33_04a | wave_2 | `08 02 00 00 00 00 00 10 00 00` |
+| adjustable_bed_okin | 36_33_04a | wave_3 | `08 02 00 00 00 00 00 20 00 00` |
+| adjustable_bed_okin | 36_33_04a | massage_stop | `08 02 02 00 00 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | massage_up | `08 02 00 00 0C 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | massage_down | `08 02 01 80 00 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | massage_on | `08 02 00 00 01 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | voice_stop | `08 02 00 00 00 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | check_massage | `02 04` |
+
+| Gesture | Schedule | Release |
+|---|---|---|
+| Touch hold | Immediate, every 100 ms | STOP at 0 and 300 ms |
+| Save named preset | Hold chord for 6000 ms | STOP at 0 and 300 ms |
+| Speech motor P1/P3 | 100 ms stream, bounded by entry pulse count | Voice STOP and ordinary release |
+| Speech motor P2 | One start, bounded by entry pulse count × 100 ms | Voice STOP and ordinary release |
+| Speech preset, massage or light | Pre-STOP, two writes 100 ms apart | No post-STOP |
+| Massage query | Once on request | None |
+<!-- /generated -->
+
+#### Timing
+
+The generated schedule gives refresh and release intervals. Home Assistant serializes physical commands and completes both ordinary release STOPs before admitting the next command. Fresh cancellation events protect cleanup. Save buttons hold the chord until the app's confirmation time, then release; actual storage remains unverified.
+
+Speech movement has a bounded window from the entry's pulse count. P2 sends one speech start, then voice STOP and ordinary release at the deadline or cancellation. A held P2 lumbar control uses its requested duration, bounded by the latched ceiling for a renewable lease. The whole P2 profile uses that conservative ceiling; its head/feet touch controls still refresh throughout the lease. This deliberate safety limit replaces the app's otherwise unbounded speech movement. Speech preset, light and massage buttons retain the finite two-write route, with pre-STOP and no post-STOP. Touch massage off sends its initial command followed by ordinary release, which replaces the app's scheduled extra copy.
+
+#### Notifications
+
+Notifications are subscribed on the selected transport and preserved as raw diagnostics. No position, massage, alarm, battery or command-acknowledgement state is inferred. The app's massage matcher builds a four- or five-byte rule but requires exactly two bytes, so it never parses a reply. Its declared wave/strength decoder cases are also absent. Alarm packets only log; network callbacks have no bed-feature consumer. The broken fragment-buffer and parser paths do not establish usable feedback.
+
+#### Services
+
+Standard movement, STOP and held-control actions work through the command queue. The named save and app speech routes have buttons. Check Massage writes the raw query on demand; there is no Home Assistant massage-page initialization event to trigger the app's delayed page query. There is no additional app service.
+
+#### Evidence
+
+APK Protocol Audit queue unit087, `com.okin.bedding.adjustbed` 1.2.1 (33), accepted report `com.okin.bedding.adjustbed-1.2.1-2026-11-09-queue002/report/`. Artifact SHA256: `2e57cd4265104beac0821850bda6223efe9213d989cd95328730f80cbfb4ae0a`. Report manifest SHA256: `80909e22552bf2c524115375e7da5a255a5a25f3683aa54915fe1635c4e638c1`. The scoped recheck accepted the corrected missing-GATT setup branches. Frozen literals cover all reachable command rows in `tests/fixtures/adjustable_bed_vectors.json`.
+
+Hardware effects, watchdogs, retail compatibility, real replies and preset storage need beta-user validation. Home Assistant uses its own Bluetooth connection policy; the app SDK's MTU, timeout and Android calls are not firmware requirements. Speech/audio/help, Wi-Fi/cloud/accounts and firmware updates are outside the integration. The legacy Okin 64-Bit profile remains separate, with its historical additional commands, for existing entries.
+
+
 ### Adjustable bed (Lumbar)
 
 **App:** [Adjustable bed(Lumbar)](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustablelumbar) 1.2.2 (code 33), `com.okin.bedding.adjustablelumbar`
@@ -4799,6 +4978,107 @@ a 20-APK Flutter XAPK with SHA-256
 `ed65ed1b4970c95c2b1744687f94401447f851f23e81f8af6699a68854988b08`. Behavior is
 static-verified only: **hardware unverified**. Audit: APK Protocol Audit row054.
 
+### Resident Adjustable Base
+
+**App:** [Resident Adjustable Base](https://play.google.com/store/apps/details?id=com.okin.resident.release) 1.0.0 (1), `com.okin.resident.release`
+
+**Status:** ❓ Needs testing. App behavior is statically verified; hardware is unverified.
+
+#### Setup
+
+Choose **Resident Adjustable Base app (com.okin.resident.release)**. Shared
+Okin service and name matches offer it as a candidate alongside existing
+receivers. Accepted name prefixes also offer a low-confidence candidate when
+no service UUID is advertised; the connection check validates the exact GATT
+roles before controls are available. Confirm the app explicitly: these names do not identify its wire
+format by themselves. The app reads the platform Bluetooth device name;
+Home Assistant's discovery gate uses the advertised local name, so a receiver
+whose names differ may need manual setup. All selected receivers use one fixed
+profile. There is no model, remote code or alternate catalog choice, and the
+model-read result does not change controls.
+
+The layout is fixed at two axes, with massage enabled and angle sensing off.
+The app needs all three GATT roles below. It requests no app-specific PIN,
+authentication or bonding sequence. BLE link security remains hardware-specific.
+Two-address pairs retain independent profiles; there is no one-address side
+selector or bed-side synchronization command.
+
+<!-- generated:resident-session -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Role | Service | Characteristic |
+|---|---|---|
+| Control (with response) | `62741523-52f9-8864-b1ab-3b3a8d65950b` | `62741525-52f9-8864-b1ab-3b3a8d65950b` |
+| Notification | `62741523-52f9-8864-b1ab-3b3a8d65950b` | `62741625-52f9-8864-b1ab-3b3a8d65950b` |
+| Model read (ignored) | `0000180a-0000-1000-8000-00805f9b34fb` | `00002a24-0000-1000-8000-00805f9b34fb` |
+
+| Operation | Frame | Schedule |
+|---|---|---|
+| Massage query | `00 04` | now and +300 ms on startup and massage release |
+| Clock query | `08 02 E1 80 01` | 100 ms after clock setting |
+| Local clock (2026-11-10 07:08:09) | `E7 80 01 7E 0A 0A 07 08 09` | once at connect +300 ms, also manual sync |
+
+Model read: connect +1000 ms; notification retry gaps: 350/350/300 ms. Name
+prefixes (case-insensitive): `okin`, `smartbed`.
+<!-- /generated -->
+
+#### Controls
+
+The generated [Resident key table](#resident-adjustable-base-keys) lists every
+control word. Back and legs move separately or together in the same direction.
+Flat, Zero-G, TV/PC, Lounge, Anti-snore and M1/M2 are recalls. M1/M2 are two
+slots, with no memory programming. The underbed lamp is toggle-only. Massage
+has a global start/toggle, stop, strength up/down and timer cycle; it has no
+independent head/foot controls or wave modes. No position feedback is available.
+
+#### Timing
+
+See [hold timing](#hold-and-release-timing) for the profile's refresh and two-STOP release.
+Refresh, STOP and query schedules use monotonic deadlines, so acknowledged
+write latency does not accumulate into their intervals. Every touch control,
+including presets, lights and massage, may be held; a
+normal HA button sends one press and the release. Motor taps use the configured
+pulse count; renewable holds end on release or the integration's lease limit.
+Only the explicit combined-axis keys are supported, without arbitrary motor
+composition. Massage releases interleave a query with each STOP. Both STOPs
+are attempted after cancellation or a write failure, using a fresh cancel event.
+
+Startup awaits notification enablement and its retries, the clock sequence,
+model read and massage queries before admitting commands. It runs once per
+connection, with pending writes and notification callbacks bound to that link.
+It does not reproduce the Android app's overlapping readiness callbacks or
+its already-enabled notification disable/retry race. A disconnect discards
+buffered fragments and timer state. Lost radio connectivity cannot guarantee
+physical STOP delivery.
+
+#### Notifications
+
+The Resident parser consumes only the unsigned timer selector at byte 10 of
+an assembled `09 0B` report. Codes 1, 2 and 3 select the app's 10, 20 and
+30 minute indicators, exposed as **Massage timer**. Other codes leave the
+sensor unknown. This is a selected timer, not a countdown or proof of massage
+power or intensity. Short matching frames are ignored instead of reproducing
+the app's bounds error. Tiny chunks leave a pending fragment unchanged; a
+20-byte current chunk with bytes 1/2 `FE 16` replaces the pending fragment.
+The next accepted chunk is appended before dispatch. Model information and
+clock replies do not publish state.
+
+#### Services
+
+Standard movement and preset actions, `hold_control` for every named profile
+key except STOP, and `move_simultaneously` for back/legs in one direction.
+The **Refresh massage timer** button repeats the query. **Sync bed clock** and
+`sync_clock` set the bed's binary local calendar fields using Home Assistant's
+time zone, then query the clock. Clock setting is unrelated to motor calibration.
+
+#### Evidence
+
+APK Protocol Audit unit160, accepted audit001, proves the single fixed profile,
+all command builders, response handling and lifecycle timings from Resident
+1.0.0. Its frozen vectors are in `tests/fixtures/resident_vectors.json` and the
+N-frame command census. Hardware compatibility and physical response remain
+unverified; real users can validate these after beta or release.
+
 ## Notes
 
 ### Related Okin formats
@@ -4848,3 +5128,7 @@ detection priority and troubleshooting.
 - **FurniMove:** `com.okin.okinsmartcomfort` 2.2.0 (19), audit unit 157.
 
 Raw APKs, decompilation output and frozen reports stay machine-local.
+
+- Resident Adjustable Base: `com.okin.resident.release` 1.0.0 (1), artifact SHA-256
+  `583dd003df0478419935bb1c6649a8e8b0228988e0b38b12c6919efa275e85f7`,
+  accepted unit160 audit001. This app is separate from the Rize Resident CST profile.

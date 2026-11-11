@@ -19,6 +19,11 @@ Enhancements; their pre-v5 frames are those of the wire snapshot. SBI and Rondur
 have no report.
 """
 
+import json
+import json as _json
+from pathlib import Path
+from pathlib import Path as _Path
+
 FROZEN_FRAMES: dict[str, frozenset[str]] = {
     # com.ore.okincomfortbed 1.1.6 (8), unit152 frozen vectors.json.
     "okin_comfort_bed": frozenset(
@@ -1990,3 +1995,75 @@ ERGOMOTION_4_P1_SIDE_VECTORS: dict[str | None, tuple[int, str]] = {
     "left": (1, "e6fe16010000000202"),
     "right": (1, "e6fe16010000000103"),
 }
+
+# Unit132, com.ore.jalon.neworebeding 2.0.2 (9): literal commands only.
+_JALON_VECTORS = json.loads(
+    (Path(__file__).parent / "fixtures/jalon/vectors.json").read_text()
+)
+FROZEN_FRAMES.update({
+    key: frozenset(v["expected_bytes"] for v in _JALON_VECTORS
+                   if v["protocol"] == protocol and v["inputs"]["kind"] == "ordinary")
+    for protocol, key in (("P1", "jalon_13"), ("P2", "jalon_15"), ("P3", "jalon_24"))
+})
+
+# Row161, com.ore.yorkfeng.comfortbaseble2 1.1.2 (6), accepted literal builders.
+FROZEN_FRAMES["comfortbase"] = frozenset(
+    row["expected_bytes"] for row in _json.loads(
+        (_Path(__file__).parent / "fixtures/comfortbase/vectors.json").read_text()
+    )["builders"]
+)
+
+# row135, exact frozen Java outputs (393-case fixture also covers parser boundaries).
+FROZEN_FRAMES["jalon_bed"] = frozenset(
+    [
+        "e6fe16000000000005",
+        "e6fe16000000010004",
+        "e6fe16000000020003",
+        "e6fe16000000040001",
+        "e6fe160000000800fd",
+        "e6fe160000001000f5",
+        "e6fe160000004000c5",
+        "e6fe16000000800085",
+        "e6fe16000001000004",
+        "e6fe16000002000003",
+        "e6fe16000004000001",
+        "e6fe160000080000fd",
+        "e6fe160000100000f5",
+        "e6fe160000200000e5",
+        "e6fe160000400000c5",
+        "e6fe16000080000085",
+        "e6fe16000100000004",
+        "e6fe16000200000003",
+        "e6fe16000400000001",
+        "e6fe160008000000fd",
+        "e6fe160010000000f5",
+        "e6fe160010000800ed",
+        "e6fe160020000000e5",
+        "e6fe160040000000c5",
+        "e6fe16008000000085",
+        "e6fe16010000000004",
+        "e6fe16020000000003",
+        "e6fe16040000000001",
+        "e6fe160800000000fd",
+        "e6fe161000000000f5",
+        "e6fe162000000000e5",
+        "e6fe164000000000c5",
+        "e6fe167856341200f1",
+        "e6fe167856341201f0",
+        "e6fe167856341214dd",
+        "e6fe16785634121fd2",
+        "e6fe167856341228c9",
+        "e6fe1678563412fff2",
+        "e6fe16800000000085",
+        "e780017e0a0a052800d8",
+        "ed80030000000000000000000000008f",
+        "ed8003060081090000000000000000ff",
+        "ed8003071ebe1100000000000000009b",
+        "ed80030c22040000000000000000005d",
+        "ed8003173bff1300000000000000002b",
+        "ef020000000000000000000000000000000e",
+        "ef0231323334353637383930313233343502",
+        "ef0242656400000000000000000000000003",
+        "ef02c3b8e5ba8a6162636465666768696a73",
+    ]
+)
