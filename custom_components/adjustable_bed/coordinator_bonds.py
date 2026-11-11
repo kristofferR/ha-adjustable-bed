@@ -1501,6 +1501,11 @@ class CoordinatorBondsMixin:
         Android requests createBond and immediately connects. Bleak needs a live
         link, so this backend adaptation requests it after GATT discovery while
         controller startup continues. A completed request is not bond proof.
+
+        On BlueZ a rejected request can tear the link down, which Android's
+        createBond does not do. After one rejection, timeout or link loss, later
+        connections skip the request so control is not lost to it on every
+        connect (#633).
         """
         if self._bed_type != BED_TYPE_FURNIMOVE:
             return
@@ -1513,6 +1518,8 @@ class CoordinatorBondsMixin:
             reason = "okinmat_name"
         elif self._device_reports_existing_bond(device):
             reason = "existing_os_bond"
+        elif self._furnimove_bond_declined:
+            reason = "previously_declined"
         else:
             reason = "request"
         self._furnimove_bond_request = {"status": "not_requested", "reason": reason}
@@ -1538,6 +1545,8 @@ class CoordinatorBondsMixin:
             except Exception as err:  # Optional pairing must not interrupt ordinary control.
                 status, error = "failed", err
             finally:
+                if status in ("failed", "timed_out"):
+                    self._furnimove_bond_declined = True
                 if client is self._client:
                     self._furnimove_bond_request["status"] = status
                     if error is not None:

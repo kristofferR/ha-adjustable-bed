@@ -357,6 +357,9 @@ class AdjustableBedCoordinator(
         self._observed_ble_device_name: str | None = None
         self._furnimove_bond_task: asyncio.Task[None] | None = None
         self._furnimove_bond_request: dict[str, object] = {"status": "not_requested"}
+        # Set once a receiver rejects, ignores or drops the link during the
+        # advisory bond request; later connections skip it (#633).
+        self._furnimove_bond_declined = False
         if self._bed_type == BED_TYPE_RICHMAT:
             from .beds.richmat.features import get_richmat_features
 

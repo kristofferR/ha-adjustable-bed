@@ -370,6 +370,10 @@ The offline table has no release row: ending refresh is its entire STOP.
   request after GATT discovery, as a Bleak adaptation. Failure, unsupported
   backends or the operational five-second bound leave ordinary control
   available.
+- On BlueZ a rejected request can drop the link, which Android's `createBond()`
+  does not. After a rejection, a timeout or an unexpected disconnect while the
+  request is pending, later connections skip it until Home Assistant restarts
+  or the entry reloads.
 - Client replacement, disconnect and unload cancel and join that task.
 - An existing OS bond or an `okinmat`-prefixed name skips it; request completion
   never becomes a persisted bond-proof marker.

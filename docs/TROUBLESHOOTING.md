@@ -330,6 +330,22 @@ STOP cleanup can add to the service's total duration, but slow writes no longer
 multiply the movement duration. A controller may finish earlier. Failed writes
 and failed cleanup are still reported.
 
+### Long held moves stop and restart over a WiFi proxy
+
+Some beds stop a motor as soon as a held frame arrives late. Prodigy CE
+(CU170), for example, stops after about 217 ms without a fresh frame. Through
+an ESPHome proxy, every frame crosses the proxy's WiFi as a TCP packet. If one
+packet is lost, all later frames wait until TCP resends it, which typically
+takes 200 ms or more, so the motor stops and starts again when the frames catch
+up. Motor pulse settings cannot bridge that gap.
+
+**Solutions:**
+1. **Use an Ethernet proxy near the bed:** It removes the WiFi hop, and its
+   radio no longer splits airtime between WiFi and Bluetooth.
+2. **Use a Bluetooth adapter on the Home Assistant host** if the bed is in range.
+3. **Strengthen the proxy's WiFi link:** Place it near an access point or
+   connect it to a closer one.
+
 ---
 
 ## Position Feedback Issues

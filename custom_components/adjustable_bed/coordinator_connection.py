@@ -1729,6 +1729,9 @@ class CoordinatorConnectionMixin:
             return
 
         if self._furnimove_bond_task is not None:
+            if not self._furnimove_bond_task.done() and not self._intentional_disconnect:
+                # The link dropped while the request was pending.
+                self._furnimove_bond_declined = True
             self._furnimove_bond_task.cancel()
 
         # Invalidate connection-owned work even during Bleak initialization retries.
