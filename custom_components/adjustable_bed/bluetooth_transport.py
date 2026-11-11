@@ -26,7 +26,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeGuard
 
 from homeassistant.components import bluetooth
 from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
@@ -477,6 +477,15 @@ def client_source(client: Any) -> str | None:
     return None
 
 
+def is_esphome_proxy_path(path: ConnectionPath | None) -> TypeGuard[ConnectionPath]:
+    """Return True when a link runs through an ESPHome Bluetooth proxy."""
+    return (
+        path is not None
+        and path.transport is TransportClass.PROXY
+        and path.source_domain == _ESPHOME_DOMAIN
+    )
+
+
 async def async_clear_proxy_gatt_cache(client: Any, path: ConnectionPath | None) -> bool:
     """Drop the cached GATT table of a bed reached through an ESPHome proxy.
 
@@ -488,12 +497,7 @@ async def async_clear_proxy_gatt_cache(client: Any, path: ConnectionPath | None)
     rediscovers. Limited to ESPHome because Home Assistant's wrapper falls back
     to BlueZ ``RemoveDevice`` for other backends, which deletes a host bond.
     """
-    if (
-        path is None
-        or path.transport is not TransportClass.PROXY
-        or path.source_domain != _ESPHOME_DOMAIN
-        or not getattr(client, "is_connected", False)
-    ):
+    if not is_esphome_proxy_path(path) or not getattr(client, "is_connected", False):
         return False
     try:
         cleared = bool(await client.clear_cache())

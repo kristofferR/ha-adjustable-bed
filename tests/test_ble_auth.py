@@ -9,6 +9,7 @@ from custom_components.adjustable_bed.beds.sleep_number.auth import validate_sle
 from custom_components.adjustable_bed.ble_auth import (
     is_ble_authentication_error,
     is_ble_pairing_auth_failure,
+    is_esphome_connection_status_change,
 )
 
 
@@ -76,6 +77,49 @@ def test_unrelated_errors_match_neither() -> None:
     err = BleakError("[org.bluez.Error.NotConnected] Not Connected")
     assert is_ble_pairing_auth_failure(err) is False
     assert is_ble_authentication_error(err) is False
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        "Bed - AA:BB:CC:DD:EE:01: Failed to connect after 1 attempt(s): Peripheral "
+        "AA:BB:CC:DD:EE:01 changed connection status while waiting for "
+        "BluetoothDevicePairingResponse: Insufficient authorization (8)",
+        "Peripheral AA:BB:CC:DD:EE:01 changed connection status while waiting for "
+        "BluetoothDeviceUnpairingResponse: Insufficient authentication (5)",
+    ],
+)
+def test_esphome_pairing_response_disconnect_is_a_failed_pairing(message: str) -> None:
+    """A proxy link that dropped while pairing is not a missing bond.
+
+    aioesphomeapi prints the ESP-IDF disconnect reason with ATT error names, so
+    status 8 (a connection timeout) reads as "Insufficient authorization".
+    Counting it as an authentication error cleared the bond marker after
+    every failed pairing attempt over a proxy.
+    """
+    err = BleakError(message)
+    assert is_ble_authentication_error(err) is False
+    assert is_esphome_connection_status_change(err) is True
+
+
+def test_esphome_status_change_on_other_requests_is_not_an_auth_error() -> None:
+    """The same drop during service discovery is a lost link, not a pairing failure."""
+    err = BleakError(
+        "Peripheral AA:BB:CC:DD:EE:01 changed connection status while waiting for "
+        "BluetoothGATTGetServicesResponse: Attribute not found (10)"
+    )
+    assert is_ble_authentication_error(err) is False
+    assert is_esphome_connection_status_change(err) is True
+
+
+def test_esphome_gatt_auth_error_is_still_an_auth_error() -> None:
+    """A real GATT security reply over a proxy keeps its meaning."""
+    err = BleakError(
+        "Bluetooth GATT Error address=AA:BB:CC:DD:EE:01 handle=26 error=5 "
+        "description=Insufficient authentication"
+    )
+    assert is_ble_authentication_error(err) is True
+    assert is_esphome_connection_status_change(err) is False
 
 
 @pytest.mark.parametrize("message", ["GATT error 50", "error=150", "Write not permitted"])

@@ -14,10 +14,28 @@ _BLE_AUTHENTICATION_ERROR_MARKERS: tuple[str, ...] = (
 _BLE_AUTHENTICATION_ERROR_CODE_RE = re.compile(r"\b(?:error=|gatt error )(?:5|15)\b")
 
 
+# aioesphomeapi raises this when the proxy reports a link status change while
+# it waits for a reply, e.g. "Peripheral AA:BB:CC:DD:EE:01 changed connection
+# status while waiting for BluetoothDevicePairingResponse: Insufficient
+# authorization (8)". The status is the ESP-IDF disconnect reason printed with
+# ATT error names (8 is a connection timeout), so it means the link dropped,
+# never that a characteristic refused an unencrypted link.
+_ESPHOME_STATUS_CHANGE_MARKER = "changed connection status while waiting for"
+
+
+def is_esphome_connection_status_change(err: BaseException) -> bool:
+    """Return True when an ESPHome proxy reported a dropped link mid-request."""
+    return _ESPHOME_STATUS_CHANGE_MARKER in str(err).lower()
+
+
 def is_ble_authentication_error(err: BaseException) -> bool:
     """Recognize GATT security errors and explicit protocol authentication failures."""
     if isinstance(err, InvalidSleepNumberSession):
         return True
+    if is_esphome_connection_status_change(err):
+        # A dropped link reported in ATT terms. Treating it as a missing bond
+        # cleared the bond marker after every failed proxy pairing attempt.
+        return False
     message = str(err).lower()
     return (
         any(marker in message for marker in _BLE_AUTHENTICATION_ERROR_MARKERS)

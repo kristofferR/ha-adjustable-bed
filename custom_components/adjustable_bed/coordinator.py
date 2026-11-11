@@ -2399,6 +2399,16 @@ class AdjustableBedCoordinator(
                     # Dropping it would spend the single connection a
                     # one-connection-per-window bed grants, and the repair could
                     # not reconnect until the user power-cycled the bed.
+                    if (
+                        self._can_encrypt_proxy_link_in_place()
+                        and await self._async_encrypt_proxy_link_in_place()
+                    ):
+                        # The unpaired proxy link is encrypted now and its bond
+                        # verified; only this command failed. Nothing is
+                        # dropped or cleared, so the next command works.
+                        raise
+                    # After a failed proxy attempt the link counts as paired,
+                    # so this only selects the one-connection beds' path.
                     encrypt_in_place = self._can_encrypt_link_in_place()
                     await self._async_handle_ble_authentication_error(
                         err, retain_link=True, defer_pairing_issue=encrypt_in_place
