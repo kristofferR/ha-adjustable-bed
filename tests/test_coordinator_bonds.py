@@ -19,6 +19,8 @@ from custom_components.adjustable_bed.bond_verification import BondVerificationS
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
+    BED_TYPE_SLEEP_NUMBER,
+    BED_TYPE_VIBRADORM_APP,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ATTEMPTED_SOURCE,
     CONF_BLE_BOND_CONTEXT,
@@ -1027,6 +1029,87 @@ class TestProxyLinkPairedInPlace:
         client.pair.assert_not_awaited()
         assert coordinator._ble_bond_marker_unreliable is False
         assert coordinator._ble_bond_established is True
+
+    @pytest.mark.parametrize("bed_type", [BED_TYPE_SLEEP_NUMBER, BED_TYPE_VIBRADORM_APP])
+    async def test_excluded_proxy_beds_keep_the_paired_session_latch(
+        self, hass: HomeAssistant, bed_type: str
+    ) -> None:
+        """Beds without in-place proxy recovery still need the existing retest rule."""
+        coordinator = self._make_coordinator(
+            hass,
+            bed_type=bed_type,
+            **{CONF_BLE_BOND_MARKER_UNRELIABLE: True, CONF_BLE_BOND_ESTABLISHED: False},
+        )
+        self._link(coordinator, reads=[])
+        coordinator._attempt_used_pairing = True
+
+        with patch_coordinator_global("delete_pairing_required_issue", new_callable=AsyncMock):
+            assert await coordinator._async_record_verified_bond() is True
+
+        assert coordinator._ble_bond_marker_unreliable is True
+        assert coordinator._latched_pairing_successes == 1
+        device = MagicMock(details={})
+        _, use_pairing, _ = coordinator._prepare_pairing_attempt(device, {})
+        assert use_pairing is True
+
+    @pytest.mark.parametrize("previous_source", [None, "old-proxy"])
+    async def test_latch_release_and_provenance_do_not_reload_the_entry(
+        self, hass: HomeAssistant, previous_source: str | None
+    ) -> None:
+        """A new bond owner and released latch are one internal entry update."""
+        from custom_components.adjustable_bed import _async_update_listener
+
+        coordinator = self._make_coordinator(
+            hass,
+            **{CONF_BLE_BOND_MARKER_UNRELIABLE: True, CONF_BLE_BOND_ESTABLISHED: False},
+        )
+        if previous_source is not None:
+            hass.config_entries.async_update_entry(
+                coordinator.entry,
+                data={
+                    **coordinator.entry.data,
+                    CONF_BLE_BOND_CONTEXT: {
+                        "version": 1,
+                        "transport": "proxy",
+                        "source": previous_source,
+                        "verification": "runtime_authenticated_read",
+                        "verified_at": "old",
+                    },
+                },
+            )
+        self._link(coordinator, reads=[b"CU170"])
+        coordinator._attempt_used_pairing = True
+        hass.data.setdefault(DOMAIN, {})[coordinator.entry.entry_id] = coordinator
+        remove_listener = coordinator.entry.add_update_listener(_async_update_listener)
+        try:
+            with (
+                patch_coordinator_global("delete_pairing_required_issue", new_callable=AsyncMock),
+                patch.object(hass.config_entries, "async_reload", new_callable=AsyncMock) as reload,
+                patch.object(
+                    hass.config_entries,
+                    "async_update_entry",
+                    wraps=hass.config_entries.async_update_entry,
+                ) as update,
+            ):
+                assert await coordinator._async_verify_bonded() is True
+                await hass.async_block_till_done()
+
+                assert update.call_count == 1
+                reload.assert_not_awaited()
+                assert (
+                    coordinator.entry.data[CONF_BLE_BOND_CONTEXT]["source"] == "AA:BB:CC:DD:EE:10"
+                )
+                assert CONF_BLE_BOND_MARKER_UNRELIABLE not in coordinator.entry.data
+
+                # A real options change must still reach the listener.
+                hass.config_entries.async_update_entry(
+                    coordinator.entry, options={"motor_count": 3}
+                )
+                await hass.async_block_till_done()
+                reload.assert_awaited_once_with(coordinator.entry.entry_id)
+        finally:
+            remove_listener()
+            hass.data[DOMAIN].pop(coordinator.entry.entry_id)
 
     async def test_a_refused_in_place_pairing_falls_back_to_the_usual_recovery(
         self, hass: HomeAssistant

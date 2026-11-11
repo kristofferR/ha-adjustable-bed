@@ -241,38 +241,37 @@ class CoordinatorBondsMixin:
                 self._latched_pairing_successes = 0
         self._begin_internal_entry_update(bond_established)
 
-    def _record_bond_provenance(self: AdjustableBedCoordinator) -> None:
-        """Persist which transport owns the bond this link just proved.
+    def _record_bond_provenance(
+        self: AdjustableBedCoordinator, *, release_latch: bool = False
+    ) -> None:
+        """Persist the proven owner and any latch release in one entry update.
 
-        Only ever called after an authentication-gated read succeeded. An
-        inconclusive or skipped probe proves nothing and must leave whatever was
-        recorded before untouched, because provenance is what later authorizes a
-        host-side removal.
+        Called after an authenticated read or a successful ESPHome pairing RPC.
+        An inconclusive probe alone proves nothing and must preserve the old
+        provenance, which later authorizes a host-side removal.
         """
         path = self._connection_path
-        if path is None or path.transport is TransportClass.UNKNOWN:
-            # Nothing worth recording: an unknown transport must not be written
-            # as if it were established fact.
-            return
-        evidence = BondEvidence(
-            status=BondVerificationStatus.VERIFIED,
-            owner=BondOwner.from_path(path),
-            operation="runtime_authenticated_read",
-            observed_at=datetime.now(UTC).isoformat(),
-        )
-        # A repair asks for this afterwards to tell "the bond was proven and its
-        # owner is recorded" from "nothing established an owner this time", and
-        # answers the second by dropping the stored provenance. So the positive
-        # evidence has to outlive the read that produced it - including on the
-        # unchanged-owner path below, which deliberately writes nothing.
-        self._last_bond_evidence = evidence
-        context = build_bond_context(evidence)
-        if bond_context_matches(self.entry.data.get(CONF_BLE_BOND_CONTEXT), context):
-            # Same owner as last time. The observation timestamp always differs,
-            # so comparing whole contexts would rewrite the entry on every
-            # reconnect, and every write fires the options listener.
-            return
-        self._persist_bond_flags(established=True, context=context)
+        context = None
+        if path is not None and path.transport is not TransportClass.UNKNOWN:
+            evidence = BondEvidence(
+                status=BondVerificationStatus.VERIFIED,
+                owner=BondOwner.from_path(path),
+                operation="runtime_authenticated_read",
+                observed_at=datetime.now(UTC).isoformat(),
+            )
+            # Keep fresh evidence even when the owner is unchanged: a repair
+            # uses it to decide whether the stored provenance is still valid.
+            self._last_bond_evidence = evidence
+            context = build_bond_context(evidence)
+            if bond_context_matches(self.entry.data.get(CONF_BLE_BOND_CONTEXT), context):
+                # Ignore the observation timestamp to avoid a write per reconnect.
+                context = None
+        if context is not None or release_latch:
+            self._persist_bond_flags(
+                established=True,
+                unreliable=False if release_latch else None,
+                context=context,
+            )
 
     def _mark_ble_bond_established(self: AdjustableBedCoordinator) -> None:
         """Record that future connections should skip `pair=True`."""
@@ -1048,11 +1047,15 @@ class CoordinatorBondsMixin:
             return True
 
         if self._bed_type == BED_TYPE_VIBRADORM_APP:
-            pairing_details = attempt_details.setdefault("pairing", {}) if attempt_details is not None else {}
+            pairing_details = (
+                attempt_details.setdefault("pairing", {}) if attempt_details is not None else {}
+            )
             if await self._async_observe_native_bond(pairing_details):
                 return True
             source = self._connection_path.source if self._connection_path is not None else None
-            attempted_here = bool(source) and source == self.entry.data.get(CONF_BLE_BOND_ATTEMPTED_SOURCE)
+            attempted_here = bool(source) and source == self.entry.data.get(
+                CONF_BLE_BOND_ATTEMPTED_SOURCE
+            )
             if not attempted_here:
                 self._persist_bond_flags(established=False)
             if not defer_pairing_issue:
@@ -1070,7 +1073,7 @@ class CoordinatorBondsMixin:
             self._record_bond_verification(
                 "skipped_cached_timeout", attempt_details=attempt_details
             )
-            return True
+            return await self._async_encrypt_inconclusive_proxy_link(attempt_details)
 
         probe_uuid = DEVICE_INFO_CHARS["model_number"]
         try:
@@ -1113,7 +1116,6 @@ class CoordinatorBondsMixin:
                 err,
             )
             self._record_bond_verification("inconclusive_error", err, attempt_details)
-            return True
         except (TimeoutError, OSError) as err:
             # The field-proven OKIN CST receiver never answers this DIS read,
             # so repeated probes only add latency. Other pairing-required beds
@@ -1135,9 +1137,27 @@ class CoordinatorBondsMixin:
                     err,
                 )
             self._record_bond_verification("timed_out", err, attempt_details)
-            return True
+        else:
+            return await self._async_record_verified_bond(attempt_details)
 
-        return await self._async_record_verified_bond(attempt_details)
+        return await self._async_encrypt_inconclusive_proxy_link(attempt_details)
+
+    async def _async_encrypt_inconclusive_proxy_link(
+        self: AdjustableBedCoordinator, attempt_details: dict[str, Any] | None
+    ) -> bool:
+        """Encrypt an unpaired proxy link before commands when the probe cannot.
+
+        Runtime recovery alone cannot help a quick-handoff bed: command cleanup
+        disconnects the encrypted link and the next command repeats the failure.
+        The caller holds ``self._lock``, as for the normal bond probe.
+        """
+        if self._can_encrypt_proxy_link_in_place():
+            pairing_details = (
+                attempt_details.setdefault("pairing", {}) if attempt_details is not None else {}
+            )
+            if await self._async_pair_proxy_link_in_place(pairing_details):
+                return await self._async_record_verified_bond(attempt_details)
+        return True
 
     async def _async_verify_after_proxy_pairing(
         self: AdjustableBedCoordinator,
@@ -1182,12 +1202,14 @@ class CoordinatorBondsMixin:
         as well: an unpaired reconnect there is now paired in place instead of
         failing, so always requesting ``pair=True`` buys nothing and costs the
         bed every reconnect outside its pairing window. The one-connection
-        beds keep their existing rule.
+        beds and beds with their own bond handling keep their existing rule.
         """
         if not self._attempt_used_pairing:
             return True
-        return is_esphome_proxy_path(self._connection_path) and not (
-            grants_one_connection_per_pairing_window(self._bed_type, self._protocol_variant)
+        return (
+            is_esphome_proxy_path(self._connection_path)
+            and self._bed_type not in (BED_TYPE_SLEEP_NUMBER, BED_TYPE_VIBRADORM_APP)
+            and not grants_one_connection_per_pairing_window(self._bed_type, self._protocol_variant)
         )
 
     async def _async_record_verified_bond(
@@ -1200,10 +1222,9 @@ class CoordinatorBondsMixin:
         # The link is authenticated now, so any earlier authentication failure
         # is history. Leaving it in place would let a later repair believe it
         # still had grounds to remove a bond that is demonstrably working.
-        # _record_bond_provenance() then replaces it with this read's own
+        # _record_bond_provenance() below replaces it with this read's own
         # positive evidence whenever the route is known.
         self._last_bond_evidence = None
-        self._record_bond_provenance()
         release_latch = False
         if self._ble_bond_marker_unreliable:
             if self._verified_bond_releases_latch():
@@ -1236,8 +1257,8 @@ class CoordinatorBondsMixin:
         self._stale_gatt_retry_sources.clear()
         if release_latch:
             self._latched_pairing_successes = 0
-            self._persist_bond_flags(established=True, unreliable=False)
-        else:
+        self._record_bond_provenance(release_latch=release_latch)
+        if not release_latch:
             self._mark_ble_bond_established()
         await delete_pairing_required_issue(self.hass, self._address)
         self._record_bond_verification("succeeded", attempt_details=attempt_details)

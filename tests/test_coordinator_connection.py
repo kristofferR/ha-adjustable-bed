@@ -1055,6 +1055,85 @@ class TestCoordinatorConnection:
 
         await coordinator.async_disconnect()
 
+    @pytest.mark.parametrize("probe_result", ["cached_timeout", "timeout", "inconclusive"])
+    async def test_proxy_encryption_survives_disconnect_after_command(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client,
+        probe_result: str,
+    ) -> None:
+        """An inconclusive probe must not leave every quick-handoff command unencrypted."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_BLE_BOND_ESTABLISHED: True,
+                "disconnect_after_command": True,
+            },
+            unique_id=TEST_ADDRESS,
+        )
+        entry.add_to_hass(hass)
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        coordinator._bond_probe_timed_out = probe_result == "cached_timeout"
+        mock_bleak_client.read_gatt_char.side_effect = (
+            BleakError("Characteristic not found")
+            if probe_result == "inconclusive"
+            else TimeoutError
+        )
+        # Keep this connection-lifecycle test independent of the controller protocol.
+        controller = make_controller_mock(start_notify=AsyncMock(), stop_notify=AsyncMock())
+        encrypted = False
+
+        async def pair() -> None:
+            nonlocal encrypted
+            encrypted = True
+
+        async def disconnect() -> None:
+            nonlocal encrypted
+            encrypted = False
+            mock_bleak_client.is_connected = False
+
+        async def command(_controller) -> None:
+            if not encrypted:
+                raise BleakError("Insufficient authentication")
+
+        mock_bleak_client.pair.side_effect = pair
+        mock_bleak_client.disconnect.side_effect = disconnect
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator_connection.client_source",
+                return_value="proxy-a",
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator_connection.async_path_for_source",
+                return_value=ConnectionPath(
+                    source="proxy-a", transport=TransportClass.PROXY, source_domain="esphome"
+                ),
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator_connection.create_controller",
+                return_value=controller,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator_connection.read_ble_device_info",
+                new=AsyncMock(return_value=(None, None)),
+            ),
+            patch_coordinator_global("delete_pairing_required_issue", new_callable=AsyncMock),
+        ):
+            for _ in range(2):
+                await coordinator.async_execute_controller_command(command, cancel_running=False)
+                assert coordinator._disconnect_timer is not None
+                coordinator._cancel_disconnect_timer()
+                await coordinator._async_idle_disconnect()
+                assert coordinator._client is None
+
+        assert mock_bleak_client.pair.await_count == 2
+        assert mock_bleak_client.disconnect.await_count == 2
+
     async def test_connect_does_not_report_success_without_a_controller(
         self,
         hass: HomeAssistant,
