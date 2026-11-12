@@ -5292,6 +5292,12 @@
       },
       "richmat_rise_lamp_seconds": {
         "name": "Lamp timer"
+      },
+      "richmat_resource_lamp_timeout": {
+        "name": "Light timeout request"
+      },
+      "richmat_resource_massage_timer": {
+        "name": "Massage timer request"
       }
     },
     "select": {
@@ -8825,6 +8831,52 @@
         },
         "side": {
           "name": "Paired bed side"
+        }
+      }
+    },
+    "richmat_resource_bed": {
+      "name": "Lady Americana / ACAA / STA Homecare / Zero Gravity",
+      "description": "Control the selected app’s bed features. Query optional light support before changing its color or timeout. App commands do not certify a physical memory slot.",
+      "fields": {
+        "device_id": {
+          "name": "Bed",
+          "description": "Configured bed devices."
+        },
+        "operation": {
+          "name": "Action",
+          "description": "Query features, set or cancel an alarm, change lighting, set a massage timer, or request an app command."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Target one side or both sides of a paired bed."
+        },
+        "actions": {
+          "name": "Alarm actions",
+          "description": "One preset with optional massage choices from this bed’s available alarm actions."
+        },
+        "time": {
+          "name": "Alarm time",
+          "description": "Next occurrence of this local time. An unset or matching time means tomorrow."
+        },
+        "rgb_color": {
+          "name": "Light color",
+          "description": "Red, green and blue values."
+        },
+        "seconds": {
+          "name": "Light timeout",
+          "description": "0 to 300 seconds. Zero requests keep on."
+        },
+        "progress": {
+          "name": "Massage timer choice",
+          "description": "D1RM slider choice from 0 to 5."
+        },
+        "command": {
+          "name": "App command",
+          "description": "A command the app can request independently of the remote layout. Use Stop to release movement."
+        },
+        "duration_ms": {
+          "name": "Hold duration",
+          "description": "Duration for a held head or foot app command."
         }
       }
     }

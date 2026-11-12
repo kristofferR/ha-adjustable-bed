@@ -944,6 +944,7 @@ _CLASSIC_EXCLUDED: Final = frozenset({"TEST", "RMCS", "ZRS6"})
 def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
     """The chosen app's own layout codes, aliases and ZRS6 layout picks."""
     from .beds.richmat_classic.models import LAYOUT_PICKER_CHOICES, MANUAL_ALIASES, MODEL_CHOICES
+    from .profiles.richmat_resource_apps import APPS
 
     app = str(data.get(CONF_PROTOCOL_VARIANT, ""))
     codes = {
@@ -953,6 +954,8 @@ def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
     } - (_CLASSIC_EXCLUDED - ({"TEST", "RMCS"} if app == "powercool" else set()))
     if app in ("luunarise2", "powercool"):
         codes -= {"WFRM", "FWRM"}
+    if app in APPS:
+        codes -= APPS[app].excluded_layouts
     return {code: code for code in sorted(codes)}
 
 
@@ -972,12 +975,15 @@ def _classic_normalize(previous: Mapping[str, Any], answers: Mapping[str, Any]) 
 def _classic_errors(data: Mapping[str, Any]) -> dict[str, str]:
     """Require a layout the chosen app ships; a shared service never selects one."""
     from .beds.richmat_classic.models import MODEL_CHOICES
+    from .profiles.richmat_resource_apps import APPS
 
     layout = data.get(CONF_PRODUCT_TYPE)
     shipped = MODEL_CHOICES.get(str(data.get(CONF_PROTOCOL_VARIANT, "")), ())
     excluded = _CLASSIC_EXCLUDED - ({"TEST", "RMCS"} if data.get(CONF_PROTOCOL_VARIANT) == "powercool" else set())
     if data.get(CONF_PROTOCOL_VARIANT) in ("luunarise2", "powercool"):
         excluded = excluded | {"WFRM", "FWRM"}
+    if (profile := APPS.get(str(data.get(CONF_PROTOCOL_VARIANT, "")))) is not None:
+        excluded = excluded | profile.excluded_layouts
     if layout in excluded or layout not in shipped:
         return {CONF_PRODUCT_TYPE: "richmat_classic_layout"}
     return {}

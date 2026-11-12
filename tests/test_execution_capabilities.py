@@ -243,8 +243,8 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     # Scoped to the held controls that run the keep mode under the current
     # Hold/Release, memory-arm and head/foot selection (row066, five reports).
     "richmat_classic_apps": {
-        "hold": ("avocado", "coaster", "fortywinks", "milemont", "superior", "row066"),
-        "hold_controls": ("avocado", "coaster", "fortywinks", "milemont", "superior", "row066"),
+        "hold": ("avocado", "coaster", "fortywinks", "milemont", "superior", "row066", "row071"),
+        "hold_controls": ("avocado", "coaster", "fortywinks", "milemont", "superior", "row066", "row071"),
     },
     "isleep": {"hold": ("kaidi",)},
     "RizeProfile:rize": {"hold": ("rize149",)},  # latched

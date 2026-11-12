@@ -20,6 +20,7 @@ from custom_components.adjustable_bed.beds.richmat_mh import protocol as mh
 from custom_components.adjustable_bed.beds.ruf_richmat import controller as ruf_richmat
 from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.profiles import richmat as profiles
+from custom_components.adjustable_bed.profiles.richmat_resource_apps import APPS as RESOURCE_APPS
 from tests.richmat_vectors import FROZEN_FRAMES
 
 FIXED_ROUTES = {
@@ -256,6 +257,17 @@ def _census(key: str) -> set[str]:
         return _galaxy_census()
     if key == "leggett_lp_legacy":
         return _lp_legacy_census()
+    if key.removeprefix("richmat_classic_") in RESOURCE_APPS:
+        # These bed-only apps do not expose the older apps' desk or aroma writers.
+        # Parameterized alarm/RGB/timeout builders have their own literal harness.
+        return {
+            frame.hex() for frame in (
+                classic.release("RAW"), classic.release("FRAMED"), classic.INITIALIZE,
+                classic.ALARM_QUERY, classic.LAMP_QUERY, classic.AROMA_QUERY,
+                *(classic.massage_popup(choice) for choice in classic.MASSAGE_POPUP),
+                *(classic.massage_timer("D1RM", progress) for progress in range(6)),
+            )
+        }
     if key in ("richmat_classic_luunarise2", "richmat_classic_powercool"):
         frames = {
             classic.release("RAW"), classic.release("FRAMED"), classic.INITIALIZE,

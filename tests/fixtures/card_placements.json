@@ -2521,6 +2521,12 @@
   "card_section": "lighting",
   "card_role": "timer_minutes"
  },
+ "number:richmat_resource_lamp_timeout": {
+  "card_section": "utility"
+ },
+ "number:richmat_resource_massage_timer": {
+  "card_section": "utility"
+ },
  "number:richmat_rise_lamp_seconds": {
   "card_section": "utility"
  },

@@ -1389,6 +1389,7 @@ async def _async_with_hold_lease(
     """
     if len(targets) != 1:
         raise ServiceValidationError("A renewable hold targets one bed at a time")
+    _require_hold_topology(targets)
     coordinator, side = targets[0]
     # Key every claim by the target that executes the command: a native
     # single-address Both runs once on its combined side view.
@@ -1953,6 +1954,17 @@ def _require_held_control(
         )
 
 
+def _require_hold_topology(targets: list[tuple[BedTarget, str]]) -> None:
+    """A sequential link cannot sustain Both, before any lease reservation."""
+    if any(
+        isinstance(coordinator, PairedBedCoordinator)
+        and side == SIDE_BOTH
+        and coordinator.connection_mode == "sequential"
+        for coordinator, side in targets
+    ):
+        raise ServiceValidationError("Hold one side at a time with a sequential Bluetooth connection")
+
+
 async def _hold_targets(
     targets: list[tuple[BedTarget, str]],
     control: str,
@@ -1961,6 +1973,7 @@ async def _hold_targets(
     lease: HoldLease | None = None,
 ) -> None:
     """Preflight the whole selection before starting any held write sequence."""
+    _require_hold_topology(targets)
 
     def check(target: BedChild, controller: BedController) -> None:
         _require_held_control(target, controller, control)
@@ -1974,6 +1987,8 @@ async def _hold_targets(
     preflighted = await _preflight_each(targets, check)
 
     async def hold(controller: BedController) -> None:
+        # Automatic link-slot fallback may have changed topology after admission.
+        _require_hold_topology(targets)
         await controller.hold_control(
             control, duration_ms if lease is None else _hold_ceiling(controller, duration_ms)
         )
@@ -2351,6 +2366,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.octo.services import async_register_octo_services
     from .beds.reverie.services import async_register_reverie_services
     from .beds.richmat_app.services import async_register_richmat_app_services
+    from .beds.richmat_classic.resource_services import async_register_resource_bed_services
     from .beds.richmat_classic.rise_services import async_register_richmat_rise_services
     from .beds.richmat_classic.services import async_register_richmat_classic_services
     from .beds.richmat_mh.services import async_register_richmat_mh_services
@@ -2376,6 +2392,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_position_estimate_services,
         async_register_ruf_richmat_services,
         async_register_richmat_classic_services,
+        async_register_resource_bed_services,
         async_register_richmat_rise_services,
         async_register_motomotion_services,
         async_register_hjbed_services,
