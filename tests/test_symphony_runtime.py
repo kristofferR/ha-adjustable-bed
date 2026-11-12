@@ -400,6 +400,37 @@ async def test_registered_split_alarm_hydrates_peer_and_repeats_captured_frame(h
     assert controller._alarm_cache is not None
 
 
+@pytest.mark.parametrize("side", (1, 2))
+@pytest.mark.parametrize("enabled", (False, True))
+async def test_split_p3_midnight_conflict_only_blocks_enabling(hass, monkeypatch, side, enabled):
+    _, _, client, receivers, device = await target(
+        hass, monkeypatch, product="10", selector=6, side=side
+    )
+    await async_register_services(hass)
+    alarms = bytes.fromhex("a50c0e003e0500000001003e0500000001")
+
+    async def write(_char, frame, **kwargs):
+        if frame == bytes.fromhex("00c0"):
+            receivers[0](None, alarms)
+
+    client.write_gatt_char.side_effect = write
+    data = {"device_id": [device], "enabled": enabled}
+    if enabled:
+        data["time"] = "00:00:00"
+    with virtual_clock():
+        if enabled:
+            with pytest.raises(ServiceValidationError, match="opposite side"):
+                await hass.services.async_call(DOMAIN, "symphony_set_alarm", data, blocking=True)
+        else:
+            await hass.services.async_call(DOMAIN, "symphony_set_alarm", data, blocking=True)
+    writes = packets(client)
+    alarm_writes = [frame for frame in writes if frame.startswith("0705")]
+    if enabled:
+        assert alarm_writes == []
+    else:
+        assert alarm_writes == [{1: "070500000000000001", 2: "070500000000000002"}[side]] * 2
+
+
 @pytest.fixture
 async def split_pair(hass, monkeypatch):
     from custom_components.adjustable_bed.paired_coordinator import SingleAddressPairedCoordinator

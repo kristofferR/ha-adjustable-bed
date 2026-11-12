@@ -428,8 +428,10 @@ class SymphonyController(KeesonController):
                 raise ValueError(
                     "Refresh current-session split alarm state before changing either side"
                 )
-            if self.app.product.page == "split_p3" and state.opposite_alarm_conflict(
-                self._alarm_cache, side, hour, minute
+            if (
+                enabled
+                and self.app.product.page == "split_p3"
+                and state.opposite_alarm_conflict(self._alarm_cache, side, hour, minute)
             ):
                 raise ValueError("The opposite side already has an enabled alarm at that time")
         return app.alarm(
