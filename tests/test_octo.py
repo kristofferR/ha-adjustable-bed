@@ -3106,6 +3106,50 @@ class TestOctoCapabilityControls:
         assert controller._capability_records == {}
         assert _light_entities_for(hass, coordinator) == []
 
+    @pytest.mark.parametrize("turn_on", (True, False))
+    async def test_legacy_switch_ignores_precommand_discovery_state(
+        self, hass: HomeAssistant, mock_octo_config_entry, turn_on: bool
+    ) -> None:
+        coordinator = AdjustableBedCoordinator(hass, mock_octo_config_entry)
+        controller = OctoController(coordinator)
+        coordinator._controller = controller
+        controller._session_ready = True
+        controller._legacy_assumed_lights = True
+        controller._has_lights = True
+        controller._write_octo_command = AsyncMock()
+        light = next(
+            entity
+            for entity in _switch_entities_for(hass, coordinator)
+            if entity.entity_description.key == "under_bed_lights"
+        )
+        light.hass = hass
+        light._attr_is_on = not turn_on
+
+        async def execute(command, **_kwargs):
+            # Reconnect discovery publishes unknown before the actual operation.
+            controller._publish_capability_state()
+            await command(controller)
+
+        coordinator.async_execute_controller_command = AsyncMock(side_effect=execute)
+        await light.async_added_to_hass()
+        timer = MagicMock()
+        try:
+            with (
+                patch.object(light, "async_write_ha_state"),
+                patch.object(hass.loop, "call_later", return_value=timer) as schedule,
+            ):
+                await (light.async_turn_on() if turn_on else light.async_turn_off())
+                assert light.is_on is turn_on
+                controller._write_octo_command.assert_awaited_once()
+                if turn_on:
+                    assert light._auto_off_timer is timer
+                    assert schedule.call_args.args[0] == 300
+                else:
+                    assert light._auto_off_timer is None
+                    timer.cancel.assert_called()
+        finally:
+            await light.async_will_remove_from_hass()
+
     @pytest.mark.parametrize("finish", ["expire", "off", "remove", "failed_off"])
     async def test_color_light_tracks_hardware_timeout(self, hass, finish):
         coordinator = MagicMock(motor_count=2)

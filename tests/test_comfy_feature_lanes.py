@@ -71,6 +71,44 @@ async def feature_bed(hass, request):
 
 
 @pytest.mark.parametrize("feature_bed", ("komfyd", "comfyds"), indirect=True)
+async def test_reconnect_hands_off_offline_countdown(feature_bed):
+    co, controller, client, _, light = feature_bed
+    retired = []
+    try:
+        await controller.control("timer_start")
+        for _ in range(2):
+            countdown = controller._countdown
+            assert countdown is not None
+            controller.on_disconnect()
+            co._controller = None
+            controller._tick()
+            assert countdown.cancelled()
+            offline_countdown = controller._countdown
+            assert offline_countdown is not None and not offline_countdown.cancelled()
+            assert co.controller_state[TIMER_REMAINING] > 0
+
+            retired.append(controller)
+            controller = await create_controller(co, co.bed_type, None, client)
+            co._controller = controller
+            await co._async_restore_app_state(controller)
+            controller._ready, controller._own, controller._target = True, 0x11223344, 0x12345678
+            assert offline_countdown.cancelled()
+            assert all(old._countdown is None for old in retired)
+            assert controller._countdown is not None
+            assert co.controller_state[TIMER_REMAINING] > 0
+
+        await controller.control("timer_stop")
+        await controller.select_side("right")
+        await light.async_turn_on()
+        assert controller._countdown is None
+        assert co.controller_state[TIMER_REMAINING] == 0
+        assert co.controller_state[UNDER_BED_LIGHTS_ON] is True
+        assert all(old._countdown is None for old in retired)
+    finally:
+        controller._stop_countdown()
+
+
+@pytest.mark.parametrize("feature_bed", ("komfyd", "comfyds"), indirect=True)
 @pytest.mark.parametrize(
     "action", ("light_on", "light_off", "timer_30", "timer_start", "timer_stop")
 )

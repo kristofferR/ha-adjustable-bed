@@ -471,8 +471,14 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
             _LOGGER.debug("Sending turn on command for %s", self.entity_description.key)
             state_generation = self._state_update_generation
             timer_was_running = self._auto_off_timer is not None
+
+            async def turn_on(controller: BedController) -> None:
+                nonlocal state_generation
+                state_generation = self._state_update_generation
+                await self.entity_description.turn_on_fn(controller)
+
             await self._coordinator.async_execute_controller_command(
-                self.entity_description.turn_on_fn,
+                turn_on,
                 cancel_running=False,
             )
             # Preserve state published during the command, including a changed local side.
@@ -513,8 +519,14 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
         try:
             _LOGGER.debug("Sending turn off command for %s", self.entity_description.key)
             state_generation = self._state_update_generation
+
+            async def turn_off(controller: BedController) -> None:
+                nonlocal state_generation
+                state_generation = self._state_update_generation
+                await self.entity_description.turn_off_fn(controller)
+
             await self._coordinator.async_execute_controller_command(
-                self.entity_description.turn_off_fn,
+                turn_off,
                 cancel_running=False,
             )
             # Fall back to assumed state only if no controller update arrived.

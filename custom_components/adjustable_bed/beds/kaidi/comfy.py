@@ -258,6 +258,9 @@ class ComfyController(KaidiAppController):
             self._countdown.cancel()
             self._countdown = None
 
+    def on_app_state_replaced(self) -> None:
+        self._stop_countdown()
+
     def _tick(self) -> None:
         self._stop_countdown()
         self._publish()

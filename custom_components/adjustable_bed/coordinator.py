@@ -3363,6 +3363,9 @@ class AdjustableBedCoordinator(
         stored = await self._app_state_store.async_slot(slot)
         self._app_state_restoring = True
         try:
+            for previous, previous_slot in self._app_state_slots.items():
+                if previous is not controller and previous_slot == slot:
+                    previous.on_app_state_replaced()
             try:
                 controller.restore_persisted_app_state(stored)
             except ValueError, TypeError:
