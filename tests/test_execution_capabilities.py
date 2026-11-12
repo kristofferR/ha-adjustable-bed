@@ -105,6 +105,7 @@ ERGOMOTION_4_STYLES = frozenset(product.style for product in ERGOMOTION_4_PRODUC
 
 # Declaration -> declared field -> evidence keys from the design document.
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
+    **{f"MLineProfile:{key}": {"hold": ("mline147",)} for key in ("sleep", "smart", "smartsainuo", "okin", "unknown")},
     "ParamountProfile:paramount": {"hold": ("paramount",)},
     **{f"AdjustableAppProfile:{key}": {"hold": ("adjustbed",)}
        for key in ("adjustable_bed_okin", "adjustable_bed_star", "adjustable_bed_star_5a")},
@@ -306,6 +307,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     },
     "profiles/smart_comfort.py:<module>.SmartComfortProfile": ("SmartComfortProfile:synargy", "SmartComfortProfile:synergy"),
     "profiles/okin_nframe.py:<module>.RESIDENT": ("OkinNFrameProfile:resident",),
+    "profiles/mline.py:<module>.MLineProfile": tuple(f"MLineProfile:{key}" for key in ("sleep", "smart", "smartsainuo", "okin", "unknown")),
     "profiles/luuna.py:<module>.LuunaProfile": tuple(f"LuunaProfile:{key}" for key in ("rise", "risepro", "riseprolight")),
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController": ("richmat_classic_apps",),
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController.execution": ("richmat_classic_apps",),

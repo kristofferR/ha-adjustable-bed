@@ -278,6 +278,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "hush_remote": GENERIC_FIELDS,
     "hush_base": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
     "luuna": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
+    "mline": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_HAS_MASSAGE, CONF_MOTOR_PULSE_COUNT},
     "hush_sleep_mm": GENERIC_FIELDS,
     "hush_sleep_sxb": GENERIC_FIELDS,
     BED_TYPE_COMFORTBASE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -1491,6 +1492,23 @@ def _limoss_remote_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return errors(dict(data))
 
 
+def _mline_settings(data: Mapping[str, Any]) -> dict[str, Any]:
+    return {CONF_MOTOR_COUNT: {"two": 2, "triple": 3, "four": 4}.get(str(data.get(CONF_PRODUCT_TYPE)), 2),
+            CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 200}
+
+
+def _mline_layouts(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.mline import LAYOUT_LABELS
+
+    return LAYOUT_LABELS
+
+
+def _mline_protocols(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    return {"auto": "Use Bluetooth name and manufacturer data", "sleep": "Sleep",
+            "smart": "Smart", "smartsainuo": "Smart Sainuo", "okin": "Okin",
+            "unknown": "Unmatched-name fallback"}
+
+
 def _luuna_settings(data: Mapping[str, Any]) -> dict[str, Any]:
     from .profiles.luuna import PROFILES
 
@@ -2282,6 +2300,13 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     },
     # The product the Hush Base app shows sets every control; nothing detects it.
     "hush_base": _asking("hush_base", questions=(Question(CONF_PROTOCOL_VARIANT, _hush_products),)),
+    "mline": _asking(
+        "mline", questions=(Question(CONF_PROTOCOL_VARIANT, _mline_protocols, "auto"),
+            Question(CONF_PRODUCT_TYPE, _mline_layouts, "two"),
+            Question(CONF_HAS_MASSAGE, default=False),
+            Question("mline_child_mode", default=False)),
+        derive=_mline_settings, imports=("profiles.mline",),
+    ),
     "luuna": _asking(
         "luuna",
         questions=(Question(CONF_PROTOCOL_VARIANT, _routes("luuna")),),

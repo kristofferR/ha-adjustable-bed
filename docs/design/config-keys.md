@@ -32,6 +32,12 @@ modules that act on it; diagnostics and support bundles also show most keys. "Be
 Paired sides store the same keys in their descriptors, and an absorbed entry's
 original data and options keep them under `origin_data` and `origin_options`.
 
+### M Line local controls
+
+| Key | Class | Set by | Read by |
+|---|---|---|---|
+| `mline_child_mode` | Profile | M Line setup and Configure question | `beds/mline/controller.py` local control admission; no hardware lock command |
+
 ### Route
 
 | Key | Class | Set by | Read by |

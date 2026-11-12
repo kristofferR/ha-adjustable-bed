@@ -73,6 +73,14 @@ family owns its encoders and parser. `tests/test_smart_comfort.py` verifies both
 members' frozen literals, rather than selecting a family by UUID or brand.
 See the [Smart Comfort guide](../beds/smart-comfort.md).
 
+## M Line composite codec
+
+The M Line 1.2.2 codec delegates its 44 frozen control literals to the proven
+N-frame and Keeson carriers. Neither existing codec implements its complete
+auxiliary and receive formats, so `codec/mline.py` owns those, with typed
+selectors/layouts in `profiles/mline.py`. All 96 accepted packet cases run
+through production encoders. See the [M Line guide](../beds/mline.md).
+
 ## Registering a family
 
 A family registers itself in files it owns, so parallel family PRs do not touch

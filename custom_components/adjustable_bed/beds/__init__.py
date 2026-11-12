@@ -148,6 +148,7 @@ _EXPORT_MODULES = {
     "CasperBaseController": "casper_base.controller",
     "HushBaseController": "hush_base.controller",
     "LuunaController": "luuna.controller",
+    "MLineController": "mline.controller",
     "HushSleepController": "hush_sleep.controller",
     "CasperSleepController": "casper_sleep.controller",
     "ComfortEnhancementsController": "comfort_enhancements.controller",

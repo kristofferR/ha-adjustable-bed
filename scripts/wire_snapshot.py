@@ -1257,6 +1257,9 @@ def default_scenario(bed_type: str) -> Scenario:
             "read:0000143d-0000-1000-8000-00805f9b34fb": "0102",
             "read:00001111-0000-1000-8000-00805f9b34fb": "000001020304",
         }
+    if bed_type == "mline":
+        data[const.CONF_PRODUCT_TYPE] = "two"
+        variant = "sleep"
     if bed_type == const.BED_TYPE_MLILY:
         variant = "6brm"
     if bed_type == const.BED_TYPE_KAIDI:
@@ -1377,6 +1380,15 @@ def route_scenarios() -> list[Scenario]:
                     protocol_variant=f"{MODEL_VARIANT_PREFIX}{model}",
                 )
             )
+    # M Line selectors and physical layouts are independent source axes.
+    for protocol in ("sleep", "smart", "smartsainuo", "okin", "unknown"):
+        for layout in ("two", "triple", "four"):
+            scenarios.append(Scenario(id=f"mline:{protocol}:{layout}", bed_type="mline",
+                protocol_variant=protocol, entry_data={const.CONF_PRODUCT_TYPE: layout,
+                const.CONF_HAS_MASSAGE: True}, layout_id="mline"))
+    for route in ("ffe", "overwrite"):
+        scenarios.append(Scenario(id=f"mline:{route}", bed_type="mline", protocol_variant="sleep",
+            entry_data={const.CONF_PRODUCT_TYPE: "two"}, layout_id=f"mline:{route}"))
     # Jalon's physical layouts share one transport and fixed model byte zero.
     # The four-motor layout is already the default scenario.
     for layout in ("20", "30", "31"):
@@ -1757,6 +1769,10 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         if controller._coordinator.bed_type in {"smart_comfort_synargy", "smart_comfort_synergy"}:
             # These v5 profiles own startup in their hook, without session helpers.
             await controller.async_on_connect(None)
+            return
+        if controller._coordinator.bed_type == "mline":
+            await controller.async_on_connect(None)
+            await controller.async_after_connect(None)
             return
         await controller.start_notify(lambda *_: None)
         for hook in STARTUP_HOOKS.get(controller._coordinator.bed_type, ()):  # noqa: SLF001

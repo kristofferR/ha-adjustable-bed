@@ -920,3 +920,33 @@ Use the usual `device_id` and optional `side` fields. See the
 [Jalon profile](beds/keeson.md#okincomfortbed-ⅱ-jalon) for the wire behavior,
 held gestures and hardware caveats. The generic `sync_clock` action also
 supports this profile.
+
+## M Line
+
+Choose the M Line app and physical layout in setup or Configure. Covers and
+preset buttons support held control and the dashboard card's renewable leases.
+Clock synchronization uses `sync_clock`; bed-local wake alarms use
+`mline_set_alarm` with `enabled`, minute-precision `time`, Monday 0 through Sunday
+6 `weekdays`, and `wake_mode` (`zg`, `flat`, `m1`, `m2`, `vibration`, `antisnore`).
+An empty weekday list selects the next occurrence. Mode bytes depend on the
+selected protocol, including modes that encode zero.
+
+`mline_command` takes `device_id`, optional `side`, and an `action`:
+
+| Action | Fields / behavior |
+|---|---|
+| `privacy` | Sleep only; `enabled` |
+| `anti_snore` | Sleep only; `enabled`, angle `1`, `3` or `6`, position `1` (head) or `2` (elevation) |
+| `anti_snore_demo` | Sleep only; `position` |
+| `settings_refresh` | Settings-page state request, independent of the normal protocol-gated query |
+| `alarm_refresh` | Clock sync, then alarm query |
+| `live_query` | Sleep only; raw sensor query |
+| `history_read` | Sleep only; exactly one physical side, optional `all_records`; returns raw groups and a `transfer` token |
+| `history_ack` | Same live connection; acknowledge the completed `transfer` token once, after consuming the result |
+
+History reads stop at one second idle or the 30-second/8192-record ceiling.
+They do not automatically acknowledge or generate sleep reports. Consume the
+raw result before acknowledging it; reconnect and cancellation invalidate its
+token, which also expires 30 seconds after completion. This explicit consumer boundary replaces the app's phone report/SQL
+processing, without claiming SQL success. See the [M Line guide](beds/mline.md)
+for field projections, source limitations and the external hardware test status.

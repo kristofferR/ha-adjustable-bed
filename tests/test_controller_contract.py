@@ -219,6 +219,8 @@ async def _create_controller_for_bed_type(
         coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "0", const.CONF_BLE_DEVICE_NAME: "smartbed123"})
     if bed_type == const.BED_TYPE_ERGOMOTION_4:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "H"
+    if bed_type == "mline":
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "two"
     if bed_type == const.BED_TYPE_JALON_BED:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "40"
     if bed_type in const.KEESON_LAYOUT_APP_BED_TYPES:

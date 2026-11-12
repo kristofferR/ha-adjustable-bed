@@ -85,6 +85,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `resident` | S stream | U | U | resident-base | Every held control refreshes at 300 ms and releases with two STOP frames; combined head/foot keys are explicit, arbitrary motor composition is unproven |
 | `adjustable_lumbar` (both routes) | S stream | U | U | lumbar | unsupported chord only stops |
 | `eshine_okin` (E2000, E3000/E3100, E5000) | S stream | U | U | eshine-okin | held keys write at once, refresh every 300 ms with no fixed count, STOP 200 ms after release; hold declared. Single-touch coordination excludes a second movement control; the one multi-touch path, Flat+Zero Gravity, is a fixed frame either release stops. None of its 25 constructors sets a speed |
+| `mline` | S stream | U | U | mline147 | Source held movement/presets/recalls refresh every 200 ms; delayed zero release, one selected control per physical receiver. |
 | `paramount` | S stream | U | S | paramount | One reply-driven held action, neutral on release. Speed is a bed-wide setting, not per-command speed. |
 | `simmons` (all routes) | S stream | U | U | simmons | one held action |
 | `starcode_abm5_4` | S stream | U | U | abm5_4 | one held action |
@@ -632,6 +633,7 @@ Report workspaces are machine-local under
 
 | Key | Package | Version | Status | Workspace under `phase4-early/` |
 |---|---|---|---|---|
+| mline147 | `com.okin.mline` | 1.2.2 (38) | COMPLETE, independently accepted | `com.okin.mline-1.2.2-2026-11-12-queue001/report/` |
 | paramount | `com.paramount.bedcontrol` | 3.0.4 | COMPLETE | `com.paramount.bedcontrol-3.0.4-2026-11-09-queue002/report/` |
 | smart-comfort-synargy | `com.synargy.okin` | 1.1.0 (12) | COMPLETE, accepted | `com.synargy.okin-1.1.0-2026-11-09-queue002/` |
 | smart-comfort-synergy | `com.synergy.okin` | 2.2.0 (16) | COMPLETE, accepted | `com.synergy.okin-2.2.0-2026-11-09-queue002/` |

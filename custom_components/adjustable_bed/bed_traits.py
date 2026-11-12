@@ -239,6 +239,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_RICHMAT_APP_SLEEP: _NO_ANGLES,
     BED_TYPE_HUSH_BASE: _NO_ANGLES,
     "luuna": _NO_ANGLES_SCOPED,
+    "mline": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "hush_remote": _NO_ANGLES,
     BED_TYPE_HUSH_SLEEP_MM: _NO_ANGLES,
     BED_TYPE_HUSH_SLEEP_SXB: _NO_ANGLES,

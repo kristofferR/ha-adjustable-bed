@@ -1023,3 +1023,14 @@ list. Generic motor, massage and timing settings belong to the selected app
 profile; a two-address pair keeps each side's product separately. The separate
 sleep device has its own entry and MM/HJ current or restored session choice.
 See the [Richmat guide](beds/richmat.md#richmat-420).
+
+### M Line app
+
+Select **M Line app (com.okin.mline)**, its protocol selector and the physical
+motor layout. Auto reads the original Bluetooth name and manufacturer bytes;
+shared names do not establish this app or the layout. Two motors offer head,
+foot and combined controls, triple adds neck, and four adds neck and lumbar.
+Enable massage only when its conditional route applies to the bed. The local
+child-mode setting blocks movement, presets, light, massage and alarm changes;
+it does not write a hardware lock. Protocol, layout and local settings belong
+to each physical side of a two-address pair. See [M Line](beds/mline.md).

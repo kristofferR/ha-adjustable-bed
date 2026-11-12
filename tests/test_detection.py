@@ -363,7 +363,7 @@ class TestDetectBedTypeByServiceUUID:
         assert result.confidence == 0.9
         assert "name:okin_ble" in result.signals
         assert "manufacturer_payload:btcb" in result.signals
-        assert result.ambiguous_types == [BED_TYPE_MALOUF_NEW_OKIN, "resident"]
+        assert result.ambiguous_types == [BED_TYPE_MALOUF_NEW_OKIN, "resident", "mline"]
 
     def test_lucid_l600_retail_model_does_not_collapse_protocols(self):
         """Two confirmed L600 signatures must continue to select different framing."""
@@ -536,6 +536,7 @@ class TestDetectBedTypeByServiceUUID:
             "sleepstar_subtype:single",
             "uuid:nordic_uart",
             "manufacturer_id:178",
+            "name:mline_app_candidate",
         ]
 
     def test_sleepbt_remains_rejected(self):
@@ -994,7 +995,7 @@ class TestDetectBedTypeByManufacturerData:
         assert "name:smartbed428" in result.signals
         assert "manufacturer_payload:ab0102" in result.signals
         # The explicit eShine app hint never replaces this proven receiver match.
-        assert result.ambiguous_types == ["eshine_okin", "resident"]
+        assert result.ambiguous_types == ["eshine_okin", "resident", "mline"]
 
     def test_cb24_ab_payload_still_detects_cb24(self):
         """Known CB24AB advertisements must keep the CB24 detection path."""
