@@ -130,6 +130,7 @@ from .const import (
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
+    BED_TYPE_SYMPHONY_SLEEP,
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM,
@@ -252,6 +253,7 @@ class _BuilderSpec:
 # plus fixed kwargs".
 _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_RESIDENT: _ControllerSpec("resident.controller", "ResidentController"),
+    BED_TYPE_SYMPHONY_SLEEP: _ControllerSpec("keeson.symphony_sleep", "SymphonySleepController"),
     BED_TYPE_JALON_BED: _ControllerSpec("jalon_bed.controller", "JalonBedController"),
     BED_TYPE_BF: _ControllerSpec("bf_cherish.controller", "BfCherishController"),
     BED_TYPE_CHERISH: _ControllerSpec("bf_cherish.controller", "BfCherishController", MappingProxyType({"cherish": True})),

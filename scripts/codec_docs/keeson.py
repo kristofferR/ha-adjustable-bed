@@ -1101,3 +1101,50 @@ def render_jalon() -> str:
 
 
 BLOCKS.append((GUIDE, "keeson-jalon", render_jalon))
+
+
+def render_symphony_sleep() -> str:
+    from datetime import datetime
+
+    from custom_components.adjustable_bed.profiles import symphony_sleep as app
+
+    words = {**{f"{axis}_{direction}": row[index + 1] for axis, row in app.AXES.items()
+                for index, direction in enumerate(("up", "down"))},
+             **app.PRESETS, "memory_A_recall_and_hold_save": app.MEMORY[1],
+             "memory_B_recall_and_hold_save": app.MEMORY[2], "stop": 0,
+             "light_toggle": app.LIGHT, **app.MASSAGE}
+    now = datetime(2026, 11, 12, 6, 45, 59)
+    return _block(
+        "##### Models",
+        _table(("Model", "App controls", "Light / massage"), (
+            (model.label, ", ".join(app.AXES[a][0] for a in model.axes), str(model.accessories))
+            for model in app.MODELS.values())),
+        "##### Transports",
+        _table(("Selection", "Write service / characteristic", "Notify service / characteristic", "Parser"), (
+            (route, f"{keeson_codec.TRANSPORTS[p.transport].service_uuid} / {keeson_codec.TRANSPORTS[p.transport].write_uuid}",
+             f"{keeson_codec.TRANSPORTS[p.transport].service_uuid if route == 'box2' else keeson_codec.JALON_NOTIFY_SERVICE} / {keeson_codec.TRANSPORTS[p.transport].notify_uuid}",
+             "disabled" if route == "fallback" else "P2" if route == "box2" else "P1")
+            for route, p in app.PROFILES.items())),
+        "##### Normal controls",
+        _table(("Control", "P1", "P2"), ((key, _hex(app.normal("box1", word)), _hex(app.normal("box2", word)))
+              for key, word in words.items())),
+        "##### Bed alarm and clock",
+        _table(("Action", "P1", "P2"), (
+            ("Query alarm", _hex(app.alarm_query("box1")), _hex(app.alarm_query("box2"))),
+            ("Clock, 2026-11-12 Thursday 06:45:59", _hex(app.clock("box1", now)), _hex(app.clock("box2", now))),
+            ("Disable", *(_hex(app.alarm(r, enabled=False, hour=0, minute=0, wake="none")) for r in ("box1", "box2"))),
+            *((f"Enable 06:45, {wake}", *(_hex(app.alarm(r, enabled=True, hour=6, minute=45, wake=wake)) for r in ("box1", "box2"))) for wake in app.WAKE),
+        )),
+        "##### Schedules",
+        _table(("Operation", "Schedule"), (
+            ("Held controls", f"Immediately, then every {app.REFRESH_MS} ms; bounded HA presses use configured pulse count"),
+            ("Release / STOP", "Immediately, +300 ms, +600 ms; awaited on the captured session"),
+            ("Memory A/B program", f"Same recall stream for {app.SAVE_MS} ms, then release; no completion ACK"),
+            ("P2 massage query", "00 B0 at +300 ms and +600 ms, independent of release"),
+            ("Alarm enable or disable", "RTC now, wait 300 ms, alarm; P2 query at +300 ms and +500 ms after alarm"),
+            ("Refresh alarm", "Query now and +200 ms"),
+        )),
+    )
+
+
+BLOCKS.append((GUIDE, "keeson-symphony-sleep", render_symphony_sleep))

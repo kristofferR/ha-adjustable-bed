@@ -151,6 +151,7 @@ from .const import (
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
+    BED_TYPE_SYMPHONY_SLEEP,
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM,
@@ -610,6 +611,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_MOTOMOTION: "MotoMotion app (exact Bluetooth name)",
     BED_TYPE_HJBED: "HJBed app (choose the exact product)",
     BED_TYPE_JALON: "OkinComfortBed II / Okin Comfortbed II N (Jalon app)",
+    BED_TYPE_SYMPHONY_SLEEP: "Symphony Sleep app (com.ore.bedding.symphony, choose model and transport)",
     BED_TYPE_JALON_BED: "OkinComfortBed Ⅱ (Jalon Android app)",
     BED_TYPE_RICHMAT_APP: "Richmat 4.2.0 app (choose product)",
     BED_TYPE_RICHMAT_APP_SLEEP: "Richmat 4.2.0 sleep device (separate RM- or HJ- link)",
@@ -829,7 +831,7 @@ _HIDDEN_APP_ROWS: Final = frozenset(
 HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_APP_ROWS)
 # Bed types whose one row asks for the product, although each product is an app entry.
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
-    {BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE}
+    {BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE}
 )
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.

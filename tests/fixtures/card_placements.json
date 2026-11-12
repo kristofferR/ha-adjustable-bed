@@ -251,6 +251,9 @@
  "binary_sensor:starcode_sonic_active": {
   "card_section": "hidden"
  },
+ "binary_sensor:symphony_alarm_enabled": {
+  "card_section": "utility"
+ },
  "binary_sensor:under_bed_lights": {
   "card_section": "lighting"
  },
@@ -1889,6 +1892,12 @@
  "button:stop_both": {
   "card_section": "motors",
   "card_role": "stop"
+ },
+ "button:symphony_query_alarm": {
+  "card_section": "utility"
+ },
+ "button:symphony_sync_clock": {
+  "card_section": "utility"
  },
  "button:sync_positions": {
   "card_section": "utility"
@@ -4038,6 +4047,13 @@
  },
  "sensor:svane_position_raw": {
   "card_section": "hidden"
+ },
+ "sensor:symphony_alarm_time": {
+  "card_section": "utility"
+ },
+ "sensor:symphony_massage_minutes": {
+  "card_section": "massage",
+  "card_role": "timer"
  },
  "sensor:timotion_ahf_lamp_display_code": {
   "card_section": "hidden"

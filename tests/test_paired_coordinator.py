@@ -14,7 +14,7 @@ from contextvars import ContextVar
 from functools import partial
 from types import SimpleNamespace
 from typing import cast
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -291,6 +291,56 @@ def _pair(log, *, mode=None, **kw):
 
 async def _noop(_controller):
     return None
+
+
+@pytest.mark.parametrize("side", [SIDE_LEFT, SIDE_BOTH])
+@pytest.mark.parametrize("stop_during_preflight", [False, True])
+async def test_clock_sync_after_motor_activity_keeps_configuration_admission(
+    hass, monkeypatch, side, stop_during_preflight
+):
+    from custom_components.adjustable_bed import services
+
+    pair, left, right = _pair([])
+    # A completed motor command changes the all-resource generation, while the
+    # configuration lane remains available to clock synchronization.
+    await pair.async_execute_controller_command(_noop, side=SIDE_LEFT, resource="motor:head")
+    controllers = []
+    for child in (left, right):
+        controller = SimpleNamespace(
+            supports_clock_sync=True,
+            validate_clock_sync=MagicMock(),
+            sync_clock=AsyncMock(),
+            requires_disconnected_transport=False,
+            requires_linked_live_readiness=False,
+            commands_share_timer=False,
+        )
+        controllers.append(controller)
+        monkeypatch.setattr(child, "bed_type", BED_TYPE_LINAK, raising=False)
+        monkeypatch.setattr(child, "capability_controller", controller)
+
+        async def execute(controller, command, **_kwargs):
+            await command(controller)
+
+        monkeypatch.setattr(child, "async_execute_controller_command", partial(execute, controller))
+
+    real_preflight = services._preflight_each
+
+    async def preflight(targets, check):
+        result = await real_preflight(targets, check)
+        if stop_during_preflight:
+            # A physical STOP must still invalidate the captured request even
+            # when it does not change the pair's resource generations.
+            await left.async_stop_command()
+        return result
+
+    monkeypatch.setattr(services, "_preflight_each", preflight)
+    monkeypatch.setattr(services, "_resolve_sided_targets", lambda *_args: ([(pair, side)], []))
+    await services.async_register_services(hass)
+    await hass.services.async_call(DOMAIN, "sync_clock", {"device_id": "bed"}, blocking=True)
+
+    expected = 0 if stop_during_preflight else 1
+    assert controllers[0].sync_clock.await_count == expected
+    assert controllers[1].sync_clock.await_count == (expected if side == SIDE_BOTH else 0)
 
 
 class TestSideRouting:

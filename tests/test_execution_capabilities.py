@@ -105,6 +105,7 @@ ERGOMOTION_4_STYLES = frozenset(product.style for product in ERGOMOTION_4_PRODUC
 
 # Declaration -> declared field -> evidence keys from the design document.
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
+    **{f"KeesonProfile:symphony_sleep_{route}": {"hold": ("symphony078",)} for route in ("box1", "box2", "fallback")},
     "ParamountProfile:paramount": {"hold": ("paramount",)},
     **{f"AdjustableAppProfile:{key}": {"hold": ("adjustbed",)}
        for key in ("adjustable_bed_okin", "adjustable_bed_star", "adjustable_bed_star_5a")},
@@ -297,6 +298,7 @@ _SIMMONS = ("OkinNFrameProfile:simmons_okin", "OkinNFrameProfile:simmons_smartbe
 # enumeration cannot reach every variant, layout or product, so every place
 # that can declare a capability must be listed and reviewed here.
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
+    "profiles/symphony_sleep.py:<module>.PROFILES": tuple(f"KeesonProfile:symphony_sleep_{route}" for route in ("box1", "box2", "fallback")),
     "profiles/paramount.py:<module>.ParamountProfile": ("ParamountProfile:paramount",),
     **{
         f"profiles/adjustable_bed.py:<module>.{site}": tuple(
@@ -463,6 +465,10 @@ async def _family_profiles() -> dict[str, ExecutionCapabilities]:
         for value in vars(sys.modules[cls.__module__]).values()
         for profile in _instances(value, cls)
     ]
+    from custom_components.adjustable_bed.profiles.symphony_sleep import (
+        PROFILES as SYMPHONY_PROFILES,
+    )
+    profiles.extend(SYMPHONY_PROFILES.values())
     for bed_type in SUPPORTED_BED_TYPES:
         profiles.append(getattr(await _create_controller_for_bed_type(bed_type), "profile", None))
     # Layouts are built at runtime and never stored; reach every one.

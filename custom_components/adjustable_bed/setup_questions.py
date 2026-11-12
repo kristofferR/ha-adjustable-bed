@@ -102,6 +102,7 @@ from .const import (
     BED_TYPE_STARCODE_M1X12,
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_SVANE,
+    BED_TYPE_SYMPHONY_SLEEP,
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM,
@@ -1853,6 +1854,29 @@ def _comfortbase_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
     }
 
 
+def _symphony_choices(_data: Mapping[str, Any]) -> dict[str, str]:
+    from .profiles.symphony_sleep import MODELS
+    return {key: model.label for key, model in MODELS.items()}
+
+
+def _symphony_transports(_data: Mapping[str, Any]) -> dict[str, str]:
+    from .profiles.symphony_sleep import TRANSPORT_CHOICES
+    return dict(TRANSPORT_CHOICES)
+
+
+def _symphony_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    errors = {}
+    if data.get(CONF_PRODUCT_TYPE) not in _symphony_choices(data):
+        errors[CONF_PRODUCT_TYPE] = "invalid_selection"
+    if data.get(CONF_PROTOCOL_VARIANT) not in _symphony_transports(data):
+        errors[CONF_PROTOCOL_VARIANT] = "invalid_selection"
+    return errors
+
+
+def _symphony_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    return {CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: data.get(CONF_PRODUCT_TYPE) != "400E"}
+
+
 SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     BED_TYPE_JALON_BED: SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
@@ -2414,6 +2438,14 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         validate=_motion_bed_errors,
         derive=lambda _data: _NO_PULSE_CHOICE,
         seed=_motion_bed_seed,
+    ),
+    BED_TYPE_SYMPHONY_SLEEP: SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: SET_BY_PROFILE,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 300},
+        questions=(Question(CONF_PRODUCT_TYPE, _symphony_choices),
+                   Question(CONF_PROTOCOL_VARIANT, _symphony_transports)),
+        validate=_symphony_errors, derive=_symphony_settings,
+        title=lambda _data: "Symphony Sleep",
     ),
     # Resident's single fixed screen owns its layout and refresh cadence.
     BED_TYPE_RESIDENT: SetupProfile(

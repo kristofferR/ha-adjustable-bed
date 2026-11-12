@@ -1195,6 +1195,9 @@ def default_scenario(bed_type: str) -> Scenario:
         from custom_components.adjustable_bed.profiles.keeson import DEFAULT_LAYOUTS
 
         data[const.CONF_PRODUCT_TYPE] = DEFAULT_LAYOUTS[bed_type]
+    if bed_type == const.BED_TYPE_SYMPHONY_SLEEP:
+        variant = "box1"
+        data.update({const.CONF_PRODUCT_TYPE: "400E", const.CONF_PROTOCOL_VARIANT: variant})
     if bed_type == const.BED_TYPE_JALON:
         data.update({const.CONF_PRODUCT_TYPE: "2", const.CONF_BLE_DEVICE_NAME: "smartbed123"})
         replies = {"*": "a50b00000258010106"}
@@ -1346,6 +1349,21 @@ def route_scenarios() -> list[Scenario]:
                     replies={**base.replies, **ROUTE_REPLIES.get(f"{bed_type}:{variant}", {})},
                 )
             )
+    from custom_components.adjustable_bed.profiles.symphony_sleep import MODELS
+    from custom_components.adjustable_bed.profiles.symphony_sleep import (
+        PROFILES as SYMPHONY_PROFILES,
+    )
+
+    for model in MODELS:
+        for route in SYMPHONY_PROFILES:
+            if (model, route) == ("400E", "box1"):
+                continue  # The default scenario is this explicit choice.
+            scenarios.append(Scenario(
+                id=f"symphony_sleep:{model}:{route}", bed_type=const.BED_TYPE_SYMPHONY_SLEEP,
+                protocol_variant=route,
+                entry_data={const.CONF_PRODUCT_TYPE: model, const.CONF_PROTOCOL_VARIANT: route},
+                layout_id="symphony_sleep:box2" if route == "box2" else "symphony_sleep",
+            ))
     # BedTech's manual model selector: each model has its own controls and release.
     from custom_components.adjustable_bed.profiles.richmat import BEDTECH_APP_PROFILES
 

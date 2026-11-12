@@ -920,3 +920,15 @@ Use the usual `device_id` and optional `side` fields. See the
 [Jalon profile](beds/keeson.md#okincomfortbed-ⅱ-jalon) for the wire behavior,
 held gestures and hardware caveats. The generic `sync_clock` action also
 supports this profile.
+
+### Symphony Sleep daily bed alarm
+
+`adjustable_bed.symphony_set_alarm` accepts `device_id`, `enabled`, a
+minute-precision `time` when enabling, and `wake_mode`: `none`, `memory_1`
+(Memory A) or `memory_2` (Memory B). It synchronizes the bed clock, then writes
+the single daily alarm. Disable clears the fields. These memory labels are
+positions; `side` routes only a Home Assistant two-address pair.
+All selected physical targets are validated before the first requested write,
+and a STOP during admission cancels that target. The alarm, timer and clock
+behavior is specific to [Symphony Sleep](beds/keeson.md#symphony-sleep), with
+hardware unverified. Phone sounds and Android scheduling remain separate.

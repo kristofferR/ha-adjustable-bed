@@ -215,6 +215,9 @@ async def _create_controller_for_bed_type(
     """Create a controller through the factory for a bed type and optional variant."""
     coordinator = _FactoryCoordinator()
     client = _make_connected_client()
+    if bed_type == const.BED_TYPE_SYMPHONY_SLEEP:
+        coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "600E", const.CONF_PROTOCOL_VARIANT: variant or "box1"})
+        return await create_controller(coordinator, bed_type, variant or "box1", client)
     if bed_type == const.BED_TYPE_JALON:
         coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "0", const.CONF_BLE_DEVICE_NAME: "smartbed123"})
     if bed_type == const.BED_TYPE_ERGOMOTION_4:
@@ -224,6 +227,8 @@ async def _create_controller_for_bed_type(
     if bed_type in const.KEESON_LAYOUT_APP_BED_TYPES:
         from custom_components.adjustable_bed.profiles.keeson import DEFAULT_LAYOUTS
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = DEFAULT_LAYOUTS[bed_type]
+    if bed_type == const.BED_TYPE_SYMPHONY_SLEEP:
+        coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "600E", const.CONF_PROTOCOL_VARIANT: "box1"})
     if bed_type in (const.BED_TYPE_ISLEEP, const.BED_TYPE_RIZE):
         coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: 129, const.CONF_KAIDI_ROOM_ID: 10000})
     if bed_type == const.BED_TYPE_SLEEPTRACKER:
@@ -471,6 +476,8 @@ async def test_registry_entries_resolve_to_controller_classes(bed_type: str) -> 
     entries like BED_TYPE_DIAGNOSTIC that are absent from SUPPORTED_BED_TYPES.
     """
     coordinator = _FactoryCoordinator()
+    if bed_type == const.BED_TYPE_SYMPHONY_SLEEP:
+        coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "600E", const.CONF_PROTOCOL_VARIANT: "box1"})
     if bed_type in (const.BED_TYPE_ISLEEP, const.BED_TYPE_RIZE):
         coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: 129, const.CONF_KAIDI_ROOM_ID: 10000})
     if bed_type == const.BED_TYPE_ERGOMOTION_4:

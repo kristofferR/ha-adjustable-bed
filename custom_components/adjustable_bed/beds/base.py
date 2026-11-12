@@ -2025,6 +2025,10 @@ class BedController(GattWriter):
         """Configure a weekly alarm with Monday numbered zero."""
         raise NotImplementedError("Clock alarm not supported on this bed")
 
+    def validate_clock_sync(self) -> None:
+        """Validate profile-specific clock requirements before any target writes."""
+        return None
+
     async def sync_clock(self) -> None:
         """Synchronize the device clock to Home Assistant's local time."""
         raise NotImplementedError("Clock synchronization not supported on this bed")

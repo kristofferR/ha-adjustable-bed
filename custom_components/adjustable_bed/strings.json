@@ -3000,6 +3000,12 @@
       },
       "jalon_bed_massage_timer": {
         "name": "Cycle massage timer"
+      },
+      "symphony_query_alarm": {
+        "name": "Refresh bed alarm"
+      },
+      "symphony_sync_clock": {
+        "name": "Sync bed clock"
       }
     },
     "cover": {
@@ -4702,6 +4708,12 @@
       },
       "jalon_massage_timer_bucket": {
         "name": "Massage timer indicator"
+      },
+      "symphony_massage_minutes": {
+        "name": "Massage time"
+      },
+      "symphony_alarm_time": {
+        "name": "Bed alarm time"
       }
     },
     "light": {
@@ -5017,6 +5029,9 @@
       },
       "rize_battery_mode": {
         "name": "Battery mode"
+      },
+      "symphony_alarm_enabled": {
+        "name": "Bed alarm enabled"
       }
     },
     "number": {
@@ -8825,6 +8840,32 @@
         },
         "side": {
           "name": "Paired bed side"
+        }
+      }
+    },
+    "symphony_set_alarm": {
+      "name": "Symphony Sleep: set bed alarm",
+      "description": "Configure the single daily bed alarm, after syncing its clock. A and B are memory positions.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "Symphony Sleep bed."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Side of a combined two-address bed."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Enable or cancel the bed alarm."
+        },
+        "time": {
+          "name": "Time",
+          "description": "Required when enabling, with minute precision."
+        },
+        "wake_mode": {
+          "name": "Wake position",
+          "description": "None, Memory A or Memory B."
         }
       }
     }

@@ -3855,3 +3855,34 @@ jalon_bed_set_alarm:
       selector:
         select:
           options: [both, left, right]
+symphony_set_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      default: both
+      selector:
+        select:
+          options:
+            - both
+            - left
+            - right
+    enabled:
+      required: true
+      selector:
+        boolean:
+    time:
+      selector:
+        time:
+    wake_mode:
+      default: none
+      selector:
+        select:
+          options:
+            - none
+            - memory_1
+            - memory_2

@@ -2056,11 +2056,16 @@ async def handle_sync_clock(call: ServiceCall) -> None:
                 translation_placeholders={"device_name": target.name},
             )
 
+        controller.validate_clock_sync()
+
+    admissions = [
+        _capture_command_admission(coordinator, side, ("configuration",)) for coordinator, side in targets
+    ]
     preflighted = await _preflight_each(targets, check)
     try:
-        for coordinator, side in targets:
+        for (coordinator, side), admission in zip(targets, admissions, strict=True):
             await _execute_sided(
-                coordinator, side, sync, cancel_running=False, resource="configuration"
+                coordinator, side, sync, cancel_running=False, resource="configuration", admission=admission
             )
     except Exception, asyncio.CancelledError:
         await _release_preflighted(preflighted)
@@ -2341,6 +2346,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.kaidi.rize_services import async_register_rize_services
     from .beds.keeson.comfortbase_services import async_register_comfortbase_services
     from .beds.keeson.jalon_services import async_register_jalon_services
+    from .beds.keeson.symphony_services import register_symphony_services
     from .beds.leggett.okin_services import async_register_leggett_okin_services
     from .beds.limoss.remote_services import async_register_limoss_remote_services
     from .beds.linak.services import async_register_linak_services
@@ -2369,6 +2375,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         register_bedtech_services,
         register_bf_cherish_services,
         register_jalon_services,
+        register_symphony_services,
         async_register_motion_bed_services,
         async_register_casper_base_services,
         async_register_gmmotor_services,
