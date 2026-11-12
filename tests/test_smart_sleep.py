@@ -666,6 +666,30 @@ def test_all_seven_frozen_week_bits(day, expected):
 
 
 @pytest.mark.parametrize("fmt", ["p1", "p2"])
+def test_real_motor_covers_publish_usable_directional_hold_leases(hass, fmt):
+    from custom_components.adjustable_bed.cover import _cover_entities_for
+
+    ctrl = controller(fmt)
+    runtime = MagicMock()
+    runtime.capability_controller = ctrl
+    runtime.entity_side = None
+    runtime.device_info = {}
+    runtime.entity_unique_id.side_effect = lambda key: "smart_sleep_" + key
+
+    covers = _cover_entities_for(hass, runtime)
+    assert {cover.entity_description.key for cover in covers} == set(app.AXES)
+    for cover in covers:
+        attributes = cover.extra_state_attributes
+        assert attributes["hold_lease_mode"] == "stream"
+        for direction in ("up", "down"):
+            control = attributes[f"held_control_{direction}"]
+            assert ctrl.execution.hold_for(control) == "stream"
+            ctrl.validate_hold_control(control, 750)
+    if fmt == "p2":
+        assert ctrl.execution.hold_for("preset_read") is None
+
+
+@pytest.mark.parametrize("fmt", ["p1", "p2"])
 async def test_real_memory_and_preset_entities_publish_card_routes(hass, fmt, no_delays):
     import json
     from pathlib import Path

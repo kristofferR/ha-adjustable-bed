@@ -90,14 +90,17 @@ def acknowledged_writer(ctrl, clock, seconds=0.15, on_start=None):
 
 @pytest.mark.parametrize("fmt", ["p1", "p2"])
 @pytest.mark.parametrize("duration_ms", [1, 100, 200, 30000])
-async def test_timed_move_deadline_cancels_slow_ack_before_release(hass, fmt, duration_ms):
+@pytest.mark.parametrize("ack_seconds", [0.005, 0.15])
+async def test_timed_move_releases_at_deadline_with_fast_or_slow_ack(
+    hass, fmt, duration_ms, ack_seconds
+):
     async with live_bed(hass, fmt) as (coord, ctrl):
         with virtual_clock() as clock:
 
             def serialized(_frame):
                 assert coord._command_lock.locked()
 
-            events = acknowledged_writer(ctrl, clock, on_start=serialized)
+            events = acknowledged_writer(ctrl, clock, seconds=ack_seconds, on_start=serialized)
             call = ServiceCall(
                 hass,
                 DOMAIN,
@@ -118,12 +121,35 @@ async def test_timed_move_deadline_cancels_slow_ack_before_release(hass, fmt, du
             release = codec.stop(fmt, motor=True)
             assert starts[-1] == (release, duration_ms + (100 if fmt == "p1" else 0))
             assert all(at <= duration_ms for frame, at in starts if frame != release)
-            assert any(
-                kind == "cancel" and frame == codec.motion(fmt, 1, True) and at == duration_ms
-                for kind, frame, at in events
-            )
-            assert events[-1] == ("ack", release, starts[-1][1] + 150)
+            if ack_seconds == 0.15 or duration_ms == 1:
+                assert any(
+                    kind == "cancel" and frame == codec.motion(fmt, 1, True) and at == duration_ms
+                    for kind, frame, at in events
+                )
+            assert events[-1] == ("ack", release, starts[-1][1] + round(ack_seconds * 1000))
             assert not ctrl._ble_lock.locked() and not coord._command_lock.locked()
+
+
+@pytest.mark.parametrize("fmt", ["p1", "p2"])
+@pytest.mark.parametrize("cancel_kind", ["event", "task"])
+async def test_bounded_hold_wait_after_fast_ack_remains_cancellable(hass, fmt, cancel_kind):
+    async with live_bed(hass, fmt) as (coord, ctrl):
+        with virtual_clock() as clock:
+            events = acknowledged_writer(ctrl, clock, seconds=0.005)
+            task = asyncio.create_task(ctrl.hold_control("back_up", 100))
+            await asyncio.sleep(0.05)
+            if cancel_kind == "event":
+                coord.cancel_command.set()
+                await task
+            else:
+                task.cancel()
+                with pytest.raises(asyncio.CancelledError):
+                    await task
+            starts = [(frame, at) for kind, frame, at in events if kind == "start"]
+            assert starts == [
+                (codec.motion(fmt, 1, True), 0),
+                (codec.stop(fmt, motor=True), 150 if fmt == "p1" else 50),
+            ]
 
 
 @pytest.mark.parametrize("fmt", ["p1", "p2"])

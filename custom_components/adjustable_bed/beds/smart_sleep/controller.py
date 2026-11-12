@@ -182,6 +182,8 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
             try:
                 async with deadline:
                     await self.write_command(frame, count, interval, admit=True)
+                    if duration is not None:
+                        await self._coordinator.cancel_command.wait()
             except TimeoutError:
                 if not deadline.expired():
                     raise
