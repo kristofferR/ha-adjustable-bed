@@ -593,18 +593,18 @@ class ComfyController(KaidiAppController):
 
     async def control(self, action: str) -> None:
         self.validate_control(action)
+        timer_lane = self._feature_lane("timer") if action.startswith("timer_") else None
         await self._ensure_session()
         self.validate_control(action)
         if action == "zero":
             await self._gesture(self._opcode("zero"), self._opcode("preset_stop"))
             return
-        await self._send_opcode(self._opcode(action))
+        await self._send_opcode(self._opcode(action, timer_lane))
         if action in ("lock", "unlock"):
             self._lock_status = "local" if action == "lock" else "unlocked"
             self._save_local()
-        elif action.startswith("timer_"):
-            lane = self._feature_lane("timer")
-            self._timer_started[lane] = time.time() if action == "timer_start" else 0
+        elif timer_lane is not None:
+            self._timer_started[timer_lane] = time.time() if action == "timer_start" else 0
             self._save_local()
 
     async def _action(self, action: str, *, parameter: int | None = None) -> None:
@@ -646,17 +646,18 @@ class ComfyController(KaidiAppController):
     async def select_timer(self, minutes: int) -> None:
         if type(minutes) is not int or minutes not in (10, 20, 30, 40, 50):
             raise ValueError("The app timer selections are 10, 20, 30, 40 or 50 minutes")
+        lane = self._feature_lane("timer")
         await self._ensure_session()
         self._ordinary_guard()
-        await self._send_opcode(self._opcode(f"timer_{minutes}"))
-        self._timer_minutes[self._feature_lane("timer")] = minutes
+        await self._send_opcode(self._opcode(f"timer_{minutes}", lane))
+        self._timer_minutes[lane] = minutes
         self._save_local()
 
     async def _light(self, enabled: bool) -> None:
+        lane = self._feature_lane("light")
         await self._ensure_session()
         self._ordinary_guard()
-        await self._send_opcode(self._opcode("light_on" if enabled else "light_off"))
-        lane = self._feature_lane("light")
+        await self._send_opcode(self._opcode("light_on" if enabled else "light_off", lane))
         for index in (0, 1, 2) if lane == 2 else (lane,):
             self._led[index] = enabled
         self._save_local()

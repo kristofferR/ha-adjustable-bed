@@ -2999,7 +2999,7 @@ class TestOctoCapabilityControls:
         assert registry.async_get_entity_id("switch", DOMAIN, unique_id) == legacy_row.entity_id
         assert _light_entities_for(hass, coordinator) == []
 
-        controller.lights_on = AsyncMock()
+        controller._write_octo_command = AsyncMock()
 
         async def execute(command, **_kwargs):
             await command(controller)
