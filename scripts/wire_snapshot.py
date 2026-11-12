@@ -1195,6 +1195,8 @@ def default_scenario(bed_type: str) -> Scenario:
         from custom_components.adjustable_bed.profiles.keeson import DEFAULT_LAYOUTS
 
         data[const.CONF_PRODUCT_TYPE] = DEFAULT_LAYOUTS[bed_type]
+    if bed_type == const.BED_TYPE_BEDGEAR:
+        data[const.CONF_BLE_DEVICE_NAME] = "HHC0000001D00X"
     if bed_type == const.BED_TYPE_JALON:
         data.update({const.CONF_PRODUCT_TYPE: "2", const.CONF_BLE_DEVICE_NAME: "smartbed123"})
         replies = {"*": "a50b00000258010106"}
@@ -1654,6 +1656,15 @@ def build_scenarios() -> list[Scenario]:
 
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES]
     scenarios.extend(route_scenarios())
+    # Bedgear A12: each selected layout, dynamic zone array and independent M gate.
+    for pair in ("15", "35", "E1", "81", "51", "44", "91", "13", "71", "61", "D1", "34", "23", "97", "25", "55", "65", "75", "95", "96", "98", "41", "42", "43", "31", "32", "11", "12", "21", "22", "Z1"):
+        scenarios.append(Scenario(id=f"bedgear:{pair}", bed_type="bedgear", layout_id="bedgear",
+            entry_data={"ble_device_name": "HHC00000" + pair + "D00X"}))
+    for suffix in ("DMH", "DE0", "B00", "C00"):
+        # Index 10/11/13 are independent, never another app's layout settings.
+        scenarios.append(Scenario(id=f"bedgear:flags:{suffix}", bed_type="bedgear", layout_id="bedgear",
+            entry_data={"ble_device_name": "HHC0000015" + suffix[:2] + "0" + suffix[2]}))
+
     by_id = {scenario.id: scenario for scenario in scenarios}
     scenarios.extend(feature_scenarios(by_id))
     for sid in PROPERTY_ROUTES:

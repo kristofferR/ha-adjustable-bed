@@ -365,6 +365,8 @@ timed_move:
               value: feet
             - label: Head and Foot Together
               value: both
+            - label: Neck
+              value: neck
             - label: Tilt
               value: tilt
             - label: Lumbar
@@ -3855,3 +3857,72 @@ jalon_bed_set_alarm:
       selector:
         select:
           options: [both, left, right]
+
+bedgear:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+    operation:
+      required: true
+      selector:
+        select:
+          options: [rgb, light_timer, alarm, sync_mode, toggle_sync, save_snore, save_memory]
+    rgb:
+      selector:
+        object:
+    brightness:
+      default: 1
+      selector:
+        number:
+          min: 0
+          max: 1
+          step: 0.01
+          mode: slider
+    minutes:
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 1439
+          step: 1
+          unit_of_measurement: min
+          mode: box
+    time:
+      example: "07:30"
+      selector:
+        text:
+    strength:
+      selector:
+        number:
+          min: 0
+          max: 2
+          step: 1
+          mode: slider
+    wired:
+      default: false
+      selector:
+        boolean:
+    confirm:
+      default: false
+      selector:
+        boolean:
+    slot:
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 2
+          step: 1
+          mode: box
+    recall_on_release:
+      default: false
+      selector:
+        boolean:

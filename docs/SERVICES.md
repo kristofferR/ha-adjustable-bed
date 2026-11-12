@@ -920,3 +920,10 @@ Use the usual `device_id` and optional `side` fields. See the
 [Jalon profile](beds/keeson.md#okincomfortbed-ⅱ-jalon) for the wire behavior,
 held gestures and hardware caveats. The generic `sync_clock` action also
 supports this profile.
+
+## Bedgear settings
+
+Use `adjustable_bed.bedgear` for source-supported RGB, light shutdown minutes,
+alarm strength/time, bed synchronization and memory/snore save options. See
+the [Bedgear control reference](beds/motomotion.md#bedgear) for parameters.
+Motor covers and the card use the generic held and timed movement actions.

@@ -179,6 +179,7 @@ _REVERIE_MAX_ANGLES: Final = {"back": REVERIE_BACK_MAX_ANGLE, "head": REVERIE_BA
 # Bed types absent here have no static traits (BedTraits()). The base record of
 # a bed type with variants describes its automatic route; bed_traits() refines it.
 _BED_TRAITS: Final[dict[str, BedTraits]] = {
+    "bedgear": BedTraits(no_angle_feedback=True, connection_scoped_state=True),
     "paramount": BedTraits(position_feedback=True, connection_scoped_state=True, max_angles={"head": 75, "back": 75, "legs": 30, "feet": 30}),
     "smart_comfort_synargy": _NO_ANGLES_SCOPED,
     "smart_comfort_synergy": _NO_ANGLES_SCOPED,

@@ -267,3 +267,12 @@ ComfortBaseForBluetooth 1.1.2 (6), row161, reuses Keeson K1 only after all
 `alarm_table`. Its product catalog is UI data over one `comfortbase` profile.
 The Keeson controller supplies hold/release and recall; its ComfortBase extension
 adds the bounded save gesture, product gates, fixed GATT roles and timer parser.
+
+Bedgear 2.0.1 (row A12) independently matches the HHC codec's short plain/M
+frames and decimal-digit XOR format. `decimal_fields` preserves the exact string
+widths of all three source builders, including the alarm's six-plus-four fields.
+The unchanged 75 nonempty vectors plus suppressed-query, parser and selector
+cases live in `tests/fixtures/bedgear/`; `tests/test_bedgear_vectors.py` proves
+the byte matches. The separate `BedgearProfile` owns its 15 layouts, independent
+name gates, timing and control release policies. No sibling app's parameters
+select its capabilities.

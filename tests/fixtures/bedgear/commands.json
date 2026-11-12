@@ -1,0 +1,2300 @@
+[
+  {
+    "id": "A12-C001",
+    "variant": "PanelA",
+    "action": "head up",
+    "frames": {
+      "$K": {
+        "plain_hex": "244b",
+        "wrapped_hex": "2423244b520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C002",
+    "variant": "PanelA",
+    "action": "head down",
+    "frames": {
+      "$L": {
+        "plain_hex": "244c",
+        "wrapped_hex": "2423244c520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C003",
+    "variant": "PanelA",
+    "action": "foot up",
+    "frames": {
+      "$M": {
+        "plain_hex": "244d",
+        "wrapped_hex": "2423244d520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C004",
+    "variant": "PanelA",
+    "action": "foot down",
+    "frames": {
+      "$N": {
+        "plain_hex": "244e",
+        "wrapped_hex": "2423244e520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C005",
+    "variant": "PanelA",
+    "action": "LUMBAR-labelled third axis up",
+    "frames": {
+      "$p": {
+        "plain_hex": "2470",
+        "wrapped_hex": "24232470520d"
+      },
+      "$P": {
+        "plain_hex": "2450",
+        "wrapped_hex": "24232450520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C006",
+    "variant": "PanelA",
+    "action": "LUMBAR-labelled third axis down",
+    "frames": {
+      "$q": {
+        "plain_hex": "2471",
+        "wrapped_hex": "24232471520d"
+      },
+      "$Q": {
+        "plain_hex": "2451",
+        "wrapped_hex": "24232451520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C007",
+    "variant": "PanelD",
+    "action": "head up",
+    "frames": {
+      "$K": {
+        "plain_hex": "244b",
+        "wrapped_hex": "2423244b520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C008",
+    "variant": "PanelD",
+    "action": "head down",
+    "frames": {
+      "$L": {
+        "plain_hex": "244c",
+        "wrapped_hex": "2423244c520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C009",
+    "variant": "PanelD",
+    "action": "foot up",
+    "frames": {
+      "$M": {
+        "plain_hex": "244d",
+        "wrapped_hex": "2423244d520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C010",
+    "variant": "PanelD",
+    "action": "foot down",
+    "frames": {
+      "$N": {
+        "plain_hex": "244e",
+        "wrapped_hex": "2423244e520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C011",
+    "variant": "PanelD",
+    "action": "third axis up",
+    "frames": {
+      "$P": {
+        "plain_hex": "2450",
+        "wrapped_hex": "24232450520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C012",
+    "variant": "PanelD",
+    "action": "third axis down",
+    "frames": {
+      "$Q": {
+        "plain_hex": "2451",
+        "wrapped_hex": "24232451520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C013",
+    "variant": "PanelE",
+    "action": "single actuator up",
+    "frames": {
+      "$K": {
+        "plain_hex": "244b",
+        "wrapped_hex": "2423244b520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C014",
+    "variant": "PanelE",
+    "action": "single actuator down",
+    "frames": {
+      "$L": {
+        "plain_hex": "244c",
+        "wrapped_hex": "2423244c520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C015",
+    "variant": "PanelFive",
+    "action": "single actuator up",
+    "frames": {
+      "$K": {
+        "plain_hex": "244b",
+        "wrapped_hex": "2423244b520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C016",
+    "variant": "PanelFive",
+    "action": "single actuator down",
+    "frames": {
+      "$L": {
+        "plain_hex": "244c",
+        "wrapped_hex": "2423244c520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C017",
+    "variant": "PanelEight",
+    "action": "head up",
+    "frames": {
+      "$K": {
+        "plain_hex": "244b",
+        "wrapped_hex": "2423244b520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C018",
+    "variant": "PanelEight",
+    "action": "head down",
+    "frames": {
+      "$L": {
+        "plain_hex": "244c",
+        "wrapped_hex": "2423244c520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C019",
+    "variant": "PanelEight",
+    "action": "foot up",
+    "frames": {
+      "$M": {
+        "plain_hex": "244d",
+        "wrapped_hex": "2423244d520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C020",
+    "variant": "PanelEight",
+    "action": "foot down",
+    "frames": {
+      "$N": {
+        "plain_hex": "244e",
+        "wrapped_hex": "2423244e520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C021",
+    "variant": "PanelNine",
+    "action": "head up",
+    "frames": {
+      "$K": {
+        "plain_hex": "244b",
+        "wrapped_hex": "2423244b520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C022",
+    "variant": "PanelNine",
+    "action": "head down",
+    "frames": {
+      "$L": {
+        "plain_hex": "244c",
+        "wrapped_hex": "2423244c520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C023",
+    "variant": "PanelNine",
+    "action": "foot up",
+    "frames": {
+      "$M": {
+        "plain_hex": "244d",
+        "wrapped_hex": "2423244d520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C024",
+    "variant": "PanelNine",
+    "action": "foot down",
+    "frames": {
+      "$N": {
+        "plain_hex": "244e",
+        "wrapped_hex": "2423244e520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C025",
+    "variant": "PanelSeven",
+    "action": "head up",
+    "frames": {
+      "$K": {
+        "plain_hex": "244b",
+        "wrapped_hex": "2423244b520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C026",
+    "variant": "PanelSeven",
+    "action": "head down",
+    "frames": {
+      "$L": {
+        "plain_hex": "244c",
+        "wrapped_hex": "2423244c520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C027",
+    "variant": "PanelSeven",
+    "action": "foot up",
+    "frames": {
+      "$M": {
+        "plain_hex": "244d",
+        "wrapped_hex": "2423244d520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C028",
+    "variant": "PanelSeven",
+    "action": "foot down",
+    "frames": {
+      "$N": {
+        "plain_hex": "244e",
+        "wrapped_hex": "2423244e520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C029",
+    "variant": "PanelSix",
+    "action": "head up",
+    "frames": {
+      "$K": {
+        "plain_hex": "244b",
+        "wrapped_hex": "2423244b520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C030",
+    "variant": "PanelSix",
+    "action": "head down",
+    "frames": {
+      "$L": {
+        "plain_hex": "244c",
+        "wrapped_hex": "2423244c520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C031",
+    "variant": "PanelSix",
+    "action": "foot up",
+    "frames": {
+      "$M": {
+        "plain_hex": "244d",
+        "wrapped_hex": "2423244d520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C032",
+    "variant": "PanelSix",
+    "action": "foot down",
+    "frames": {
+      "$N": {
+        "plain_hex": "244e",
+        "wrapped_hex": "2423244e520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C033",
+    "variant": "PanelSixZG",
+    "action": "head up",
+    "frames": {
+      "$K": {
+        "plain_hex": "244b",
+        "wrapped_hex": "2423244b520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C034",
+    "variant": "PanelSixZG",
+    "action": "head down",
+    "frames": {
+      "$L": {
+        "plain_hex": "244c",
+        "wrapped_hex": "2423244c520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C035",
+    "variant": "PanelSixZG",
+    "action": "foot up",
+    "frames": {
+      "$M": {
+        "plain_hex": "244d",
+        "wrapped_hex": "2423244d520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C036",
+    "variant": "PanelSixZG",
+    "action": "foot down",
+    "frames": {
+      "$N": {
+        "plain_hex": "244e",
+        "wrapped_hex": "2423244e520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C037",
+    "variant": "PanelOne",
+    "action": "head up",
+    "frames": {
+      "$K": {
+        "plain_hex": "244b",
+        "wrapped_hex": "2423244b520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C038",
+    "variant": "PanelOne",
+    "action": "head down",
+    "frames": {
+      "$L": {
+        "plain_hex": "244c",
+        "wrapped_hex": "2423244c520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C039",
+    "variant": "PanelOne",
+    "action": "foot up",
+    "frames": {
+      "$M": {
+        "plain_hex": "244d",
+        "wrapped_hex": "2423244d520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C040",
+    "variant": "PanelOne",
+    "action": "foot down",
+    "frames": {
+      "$N": {
+        "plain_hex": "244e",
+        "wrapped_hex": "2423244e520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C041",
+    "variant": "PanelOne",
+    "action": "neck up",
+    "frames": {
+      "$P": {
+        "plain_hex": "2450",
+        "wrapped_hex": "24232450520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C042",
+    "variant": "PanelOne",
+    "action": "neck down",
+    "frames": {
+      "$Q": {
+        "plain_hex": "2451",
+        "wrapped_hex": "24232451520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C043",
+    "variant": "PanelTwo",
+    "action": "head up",
+    "frames": {
+      "$K": {
+        "plain_hex": "244b",
+        "wrapped_hex": "2423244b520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C044",
+    "variant": "PanelTwo",
+    "action": "head down",
+    "frames": {
+      "$L": {
+        "plain_hex": "244c",
+        "wrapped_hex": "2423244c520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C045",
+    "variant": "PanelTwo",
+    "action": "foot up",
+    "frames": {
+      "$M": {
+        "plain_hex": "244d",
+        "wrapped_hex": "2423244d520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C046",
+    "variant": "PanelTwo",
+    "action": "foot down",
+    "frames": {
+      "$N": {
+        "plain_hex": "244e",
+        "wrapped_hex": "2423244e520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C047",
+    "variant": "PanelTwo",
+    "action": "neck up",
+    "frames": {
+      "$P": {
+        "plain_hex": "2450",
+        "wrapped_hex": "24232450520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C048",
+    "variant": "PanelTwo",
+    "action": "neck down",
+    "frames": {
+      "$Q": {
+        "plain_hex": "2451",
+        "wrapped_hex": "24232451520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C049",
+    "variant": "PanelFour",
+    "action": "head up",
+    "frames": {
+      "$K": {
+        "plain_hex": "244b",
+        "wrapped_hex": "2423244b520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C050",
+    "variant": "PanelFour",
+    "action": "head down",
+    "frames": {
+      "$L": {
+        "plain_hex": "244c",
+        "wrapped_hex": "2423244c520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C051",
+    "variant": "PanelFour",
+    "action": "foot up",
+    "frames": {
+      "$M": {
+        "plain_hex": "244d",
+        "wrapped_hex": "2423244d520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C052",
+    "variant": "PanelFour",
+    "action": "foot down",
+    "frames": {
+      "$N": {
+        "plain_hex": "244e",
+        "wrapped_hex": "2423244e520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C053",
+    "variant": "PanelFour",
+    "action": "neck up",
+    "frames": {
+      "$P": {
+        "plain_hex": "2450",
+        "wrapped_hex": "24232450520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C054",
+    "variant": "PanelFour",
+    "action": "neck down",
+    "frames": {
+      "$Q": {
+        "plain_hex": "2451",
+        "wrapped_hex": "24232451520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C055",
+    "variant": "PanelFour",
+    "action": "lumbar up",
+    "frames": {
+      "$P": {
+        "plain_hex": "2450",
+        "wrapped_hex": "24232450520d"
+      },
+      "$p": {
+        "plain_hex": "2470",
+        "wrapped_hex": "24232470520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C056",
+    "variant": "PanelFour",
+    "action": "lumbar down",
+    "frames": {
+      "$Q": {
+        "plain_hex": "2451",
+        "wrapped_hex": "24232451520d"
+      },
+      "$q": {
+        "plain_hex": "2471",
+        "wrapped_hex": "24232471520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C057",
+    "variant": "PanelFour",
+    "action": "tilt up",
+    "frames": {
+      "$p": {
+        "plain_hex": "2470",
+        "wrapped_hex": "24232470520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C058",
+    "variant": "PanelFour",
+    "action": "tilt down",
+    "frames": {
+      "$q": {
+        "plain_hex": "2471",
+        "wrapped_hex": "24232471520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C059",
+    "variant": "PanelThree",
+    "action": "head up",
+    "frames": {
+      "$K": {
+        "plain_hex": "244b",
+        "wrapped_hex": "2423244b520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C060",
+    "variant": "PanelThree",
+    "action": "head down",
+    "frames": {
+      "$L": {
+        "plain_hex": "244c",
+        "wrapped_hex": "2423244c520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C061",
+    "variant": "PanelThree",
+    "action": "foot up",
+    "frames": {
+      "$M": {
+        "plain_hex": "244d",
+        "wrapped_hex": "2423244d520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C062",
+    "variant": "PanelThree",
+    "action": "foot down",
+    "frames": {
+      "$N": {
+        "plain_hex": "244e",
+        "wrapped_hex": "2423244e520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C063",
+    "variant": "PanelThree",
+    "action": "neck up",
+    "frames": {
+      "$P": {
+        "plain_hex": "2450",
+        "wrapped_hex": "24232450520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C064",
+    "variant": "PanelThree",
+    "action": "neck down",
+    "frames": {
+      "$Q": {
+        "plain_hex": "2451",
+        "wrapped_hex": "24232451520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C065",
+    "variant": "PanelThree",
+    "action": "lumbar up",
+    "frames": {
+      "$P": {
+        "plain_hex": "2450",
+        "wrapped_hex": "24232450520d"
+      },
+      "$p": {
+        "plain_hex": "2470",
+        "wrapped_hex": "24232470520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C066",
+    "variant": "PanelThree",
+    "action": "lumbar down",
+    "frames": {
+      "$Q": {
+        "plain_hex": "2451",
+        "wrapped_hex": "24232451520d"
+      },
+      "$q": {
+        "plain_hex": "2471",
+        "wrapped_hex": "24232471520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C067",
+    "variant": "PanelZero",
+    "action": "head up",
+    "frames": {
+      "$K": {
+        "plain_hex": "244b",
+        "wrapped_hex": "2423244b520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C068",
+    "variant": "PanelZero",
+    "action": "head down",
+    "frames": {
+      "$L": {
+        "plain_hex": "244c",
+        "wrapped_hex": "2423244c520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C069",
+    "variant": "PanelZero",
+    "action": "foot up",
+    "frames": {
+      "$M": {
+        "plain_hex": "244d",
+        "wrapped_hex": "2423244d520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C070",
+    "variant": "PanelZero",
+    "action": "foot down",
+    "frames": {
+      "$N": {
+        "plain_hex": "244e",
+        "wrapped_hex": "2423244e520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C071",
+    "variant": "PanelZero",
+    "action": "combined head+foot up",
+    "frames": {
+      "$p": {
+        "plain_hex": "2470",
+        "wrapped_hex": "24232470520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C072",
+    "variant": "PanelZero",
+    "action": "combined head+foot down",
+    "frames": {
+      "$q": {
+        "plain_hex": "2471",
+        "wrapped_hex": "24232471520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C073",
+    "variant": "PanelZero",
+    "action": "whole-bed tilt up",
+    "frames": {
+      "$P": {
+        "plain_hex": "2450",
+        "wrapped_hex": "24232450520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C074",
+    "variant": "PanelZero",
+    "action": "whole-bed tilt down",
+    "frames": {
+      "$Q": {
+        "plain_hex": "2451",
+        "wrapped_hex": "24232451520d"
+      }
+    },
+    "release_behavior": "Up cancels heldtimer; if tickcount<5 and no customup callback, three extra command writes at0/100/200ms relative to up. Cancel/dispose omit fallback; no explicit STOP."
+  },
+  {
+    "id": "A12-C075",
+    "variant": "WR1140",
+    "action": "head up",
+    "frames": {
+      "$K": {
+        "plain_hex": "244b",
+        "wrapped_hex": "2423244b520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C076",
+    "variant": "WR1140",
+    "action": "head down",
+    "frames": {
+      "$L": {
+        "plain_hex": "244c",
+        "wrapped_hex": "2423244c520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C077",
+    "variant": "WR1140",
+    "action": "foot up",
+    "frames": {
+      "$M": {
+        "plain_hex": "244d",
+        "wrapped_hex": "2423244d520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C078",
+    "variant": "WR1140",
+    "action": "foot down",
+    "frames": {
+      "$N": {
+        "plain_hex": "244e",
+        "wrapped_hex": "2423244e520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C079",
+    "variant": "WR1140",
+    "action": "neck up",
+    "frames": {
+      "$P": {
+        "plain_hex": "2450",
+        "wrapped_hex": "24232450520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C080",
+    "variant": "WR1140",
+    "action": "neck down",
+    "frames": {
+      "$Q": {
+        "plain_hex": "2451",
+        "wrapped_hex": "24232451520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C081",
+    "variant": "WR1140",
+    "action": "lumbar up",
+    "frames": {
+      "$p": {
+        "plain_hex": "2470",
+        "wrapped_hex": "24232470520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C082",
+    "variant": "WR1140",
+    "action": "lumbar down",
+    "frames": {
+      "$q": {
+        "plain_hex": "2471",
+        "wrapped_hex": "24232471520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C083",
+    "variant": "WR1140",
+    "action": "tilt up",
+    "frames": {
+      "$P": {
+        "plain_hex": "2450",
+        "wrapped_hex": "24232450520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C084",
+    "variant": "WR1140",
+    "action": "tilt down",
+    "frames": {
+      "$Q": {
+        "plain_hex": "2451",
+        "wrapped_hex": "24232451520d"
+      }
+    },
+    "release_behavior": "Up/cancel callback cancels heldtimer and invokes sendStopCMD: b at0/30/60/90/120ms (five writes). Dispose cancels timer only, no STOP."
+  },
+  {
+    "id": "A12-C085",
+    "variant": "PanelA",
+    "action": "flat/home preset",
+    "frames": {
+      "$O": {
+        "plain_hex": "244f",
+        "wrapped_hex": "2423244f520d"
+      }
+    },
+    "release_behavior": "Up cancels heldtimer; if tickcount<5 and no customup callback, three extra command writes at0/100/200ms relative to up. Cancel/dispose omit fallback; no explicit STOP."
+  },
+  {
+    "id": "A12-C086",
+    "variant": "PanelA",
+    "action": "snore preset",
+    "frames": {
+      "$R": {
+        "plain_hex": "2452",
+        "wrapped_hex": "24232452520d"
+      }
+    },
+    "release_behavior": "Up cancels heldtimer; if tickcount<5 and no customup callback, three extra command writes at0/100/200ms relative to up. Cancel/dispose omit fallback; no explicit STOP."
+  },
+  {
+    "id": "A12-C087",
+    "variant": "PanelA",
+    "action": "TV preset",
+    "frames": {
+      "$S": {
+        "plain_hex": "2453",
+        "wrapped_hex": "24232453520d"
+      }
+    },
+    "release_behavior": "Up cancels heldtimer; if tickcount<5 and no customup callback, three extra command writes at0/100/200ms relative to up. Cancel/dispose omit fallback; no explicit STOP."
+  },
+  {
+    "id": "A12-C088",
+    "variant": "PanelA",
+    "action": "zero-gravity preset",
+    "frames": {
+      "$T": {
+        "plain_hex": "2454",
+        "wrapped_hex": "24232454520d"
+      }
+    },
+    "release_behavior": "Up cancels heldtimer; if tickcount<5 and no customup callback, three extra command writes at0/100/200ms relative to up. Cancel/dispose omit fallback; no explicit STOP."
+  },
+  {
+    "id": "A12-C089",
+    "variant": "PanelD",
+    "action": "flat/home preset",
+    "frames": {
+      "$O": {
+        "plain_hex": "244f",
+        "wrapped_hex": "2423244f520d"
+      }
+    },
+    "release_behavior": "Up cancels heldtimer; if tickcount<5 and no customup callback, three extra command writes at0/100/200ms relative to up. Cancel/dispose omit fallback; no explicit STOP."
+  },
+  {
+    "id": "A12-C090",
+    "variant": "PanelE",
+    "action": "snore preset",
+    "frames": {
+      "$R": {
+        "plain_hex": "2452",
+        "wrapped_hex": "24232452520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C091",
+    "variant": "PanelEight",
+    "action": "flat/home preset",
+    "frames": {
+      "$O": {
+        "plain_hex": "244f",
+        "wrapped_hex": "2423244f520d"
+      }
+    },
+    "release_behavior": "Up cancels heldtimer; if tickcount<5 and no customup callback, three extra command writes at0/100/200ms relative to up. Cancel/dispose omit fallback; no explicit STOP."
+  },
+  {
+    "id": "A12-C092",
+    "variant": "PanelEight",
+    "action": "snore preset",
+    "frames": {
+      "$R": {
+        "plain_hex": "2452",
+        "wrapped_hex": "24232452520d"
+      }
+    },
+    "release_behavior": "Up cancels heldtimer; if tickcount<5 and no customup callback, three extra command writes at0/100/200ms relative to up. Cancel/dispose omit fallback; no explicit STOP."
+  },
+  {
+    "id": "A12-C093",
+    "variant": "PanelEight",
+    "action": "TV preset",
+    "frames": {
+      "$S": {
+        "plain_hex": "2453",
+        "wrapped_hex": "24232453520d"
+      }
+    },
+    "release_behavior": "Up cancels heldtimer; if tickcount<5 and no customup callback, three extra command writes at0/100/200ms relative to up. Cancel/dispose omit fallback; no explicit STOP."
+  },
+  {
+    "id": "A12-C094",
+    "variant": "PanelEight",
+    "action": "zero-gravity preset",
+    "frames": {
+      "$T": {
+        "plain_hex": "2454",
+        "wrapped_hex": "24232454520d"
+      }
+    },
+    "release_behavior": "Up cancels heldtimer; if tickcount<5 and no customup callback, three extra command writes at0/100/200ms relative to up. Cancel/dispose omit fallback; no explicit STOP."
+  },
+  {
+    "id": "A12-C095",
+    "variant": "PanelFive",
+    "action": "flat/home preset",
+    "frames": {
+      "$O": {
+        "plain_hex": "244f",
+        "wrapped_hex": "2423244f520d"
+      }
+    },
+    "release_behavior": "Up cancels heldtimer; if tickcount<5 and no customup callback, three extra command writes at0/100/200ms relative to up. Cancel/dispose omit fallback; no explicit STOP."
+  },
+  {
+    "id": "A12-C096",
+    "variant": "PanelFour",
+    "action": "flat/home preset",
+    "frames": {
+      "$O": {
+        "plain_hex": "244f",
+        "wrapped_hex": "2423244f520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C097",
+    "variant": "PanelFour",
+    "action": "snore preset",
+    "frames": {
+      "$R": {
+        "plain_hex": "2452",
+        "wrapped_hex": "24232452520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C098",
+    "variant": "PanelFour",
+    "action": "TV preset",
+    "frames": {
+      "$S": {
+        "plain_hex": "2453",
+        "wrapped_hex": "24232453520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C099",
+    "variant": "PanelFour",
+    "action": "zero-gravity preset",
+    "frames": {
+      "$T": {
+        "plain_hex": "2454",
+        "wrapped_hex": "24232454520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C100",
+    "variant": "PanelNine",
+    "action": "flat/home preset",
+    "frames": {
+      "$O": {
+        "plain_hex": "244f",
+        "wrapped_hex": "2423244f520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C101",
+    "variant": "PanelOne",
+    "action": "flat/home preset",
+    "frames": {
+      "$O": {
+        "plain_hex": "244f",
+        "wrapped_hex": "2423244f520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C102",
+    "variant": "PanelSeven",
+    "action": "flat/home preset",
+    "frames": {
+      "$O": {
+        "plain_hex": "244f",
+        "wrapped_hex": "2423244f520d"
+      }
+    },
+    "release_behavior": "Up cancels heldtimer; if tickcount<5 and no customup callback, three extra command writes at0/100/200ms relative to up. Cancel/dispose omit fallback; no explicit STOP."
+  },
+  {
+    "id": "A12-C103",
+    "variant": "PanelSix",
+    "action": "flat/home preset",
+    "frames": {
+      "$O": {
+        "plain_hex": "244f",
+        "wrapped_hex": "2423244f520d"
+      }
+    },
+    "release_behavior": "Up cancels heldtimer; if tickcount<5 and no customup callback, three extra command writes at0/100/200ms relative to up. Cancel/dispose omit fallback; no explicit STOP."
+  },
+  {
+    "id": "A12-C104",
+    "variant": "PanelSixZG",
+    "action": "zero-gravity preset",
+    "frames": {
+      "$T": {
+        "plain_hex": "2454",
+        "wrapped_hex": "24232454520d"
+      }
+    },
+    "release_behavior": "Up cancels heldtimer; if tickcount<5 and no customup callback, three extra command writes at0/100/200ms relative to up. Cancel/dispose omit fallback; no explicit STOP."
+  },
+  {
+    "id": "A12-C105",
+    "variant": "PanelThree",
+    "action": "flat/home preset",
+    "frames": {
+      "$O": {
+        "plain_hex": "244f",
+        "wrapped_hex": "2423244f520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C106",
+    "variant": "PanelThree",
+    "action": "snore preset",
+    "frames": {
+      "$R": {
+        "plain_hex": "2452",
+        "wrapped_hex": "24232452520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C107",
+    "variant": "PanelThree",
+    "action": "TV preset",
+    "frames": {
+      "$S": {
+        "plain_hex": "2453",
+        "wrapped_hex": "24232453520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C108",
+    "variant": "PanelThree",
+    "action": "zero-gravity preset",
+    "frames": {
+      "$T": {
+        "plain_hex": "2454",
+        "wrapped_hex": "24232454520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C109",
+    "variant": "PanelTwo",
+    "action": "flat/home preset",
+    "frames": {
+      "$O": {
+        "plain_hex": "244f",
+        "wrapped_hex": "2423244f520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C110",
+    "variant": "PanelZero",
+    "action": "flat/home preset",
+    "frames": {
+      "$O": {
+        "plain_hex": "244f",
+        "wrapped_hex": "2423244f520d"
+      }
+    },
+    "release_behavior": "Up cancels heldtimer; if tickcount<5 and no customup callback, three extra command writes at0/100/200ms relative to up. Cancel/dispose omit fallback; no explicit STOP."
+  },
+  {
+    "id": "A12-C111",
+    "variant": "WR1140",
+    "action": "flat/home preset",
+    "frames": {
+      "$O": {
+        "plain_hex": "244f",
+        "wrapped_hex": "2423244f520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C112",
+    "variant": "WR1140",
+    "action": "snore preset",
+    "frames": {
+      "$R": {
+        "plain_hex": "2452",
+        "wrapped_hex": "24232452520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C113",
+    "variant": "WR1140",
+    "action": "TV preset",
+    "frames": {
+      "$S": {
+        "plain_hex": "2453",
+        "wrapped_hex": "24232453520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C114",
+    "variant": "WR1140",
+    "action": "zero-gravity preset",
+    "frames": {
+      "$T": {
+        "plain_hex": "2454",
+        "wrapped_hex": "24232454520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C115",
+    "variant": "PanelA",
+    "action": "recall memory1",
+    "frames": {
+      "$U": {
+        "plain_hex": "2455",
+        "wrapped_hex": "24232455520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C116",
+    "variant": "PanelA",
+    "action": "program memory1",
+    "frames": {
+      "$Z": {
+        "plain_hex": "245a",
+        "wrapped_hex": "2423245a520d"
+      }
+    },
+    "release_behavior": "No STOP. Programcallback resetsmode and rebuilds widget; onTapUp rereads live releaseSend flag, so an up before rebuild can also write corresponding U/V once. Later up callback only resetsUI."
+  },
+  {
+    "id": "A12-C117",
+    "variant": "PanelA",
+    "action": "recall memory2",
+    "frames": {
+      "$V": {
+        "plain_hex": "2456",
+        "wrapped_hex": "24232456520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C118",
+    "variant": "PanelA",
+    "action": "program memory2",
+    "frames": {
+      "$a": {
+        "plain_hex": "2461",
+        "wrapped_hex": "24232461520d"
+      }
+    },
+    "release_behavior": "No STOP. Programcallback resetsmode and rebuilds widget; onTapUp rereads live releaseSend flag, so an up before rebuild can also write corresponding U/V once. Later up callback only resetsUI."
+  },
+  {
+    "id": "A12-C119",
+    "variant": "PanelD",
+    "action": "recall memory1",
+    "frames": {
+      "$U": {
+        "plain_hex": "2455",
+        "wrapped_hex": "24232455520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C120",
+    "variant": "PanelD",
+    "action": "program memory1",
+    "frames": {
+      "$Z": {
+        "plain_hex": "245a",
+        "wrapped_hex": "2423245a520d"
+      }
+    },
+    "release_behavior": "No STOP. Programcallback resetsmode and rebuilds widget; onTapUp rereads live releaseSend flag, so an up before rebuild can also write corresponding U/V once. Later up callback only resetsUI."
+  },
+  {
+    "id": "A12-C121",
+    "variant": "PanelD",
+    "action": "recall memory2",
+    "frames": {
+      "$V": {
+        "plain_hex": "2456",
+        "wrapped_hex": "24232456520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C122",
+    "variant": "PanelD",
+    "action": "program memory2",
+    "frames": {
+      "$a": {
+        "plain_hex": "2461",
+        "wrapped_hex": "24232461520d"
+      }
+    },
+    "release_behavior": "No STOP. Programcallback resetsmode and rebuilds widget; onTapUp rereads live releaseSend flag, so an up before rebuild can also write corresponding U/V once. Later up callback only resetsUI."
+  },
+  {
+    "id": "A12-C123",
+    "variant": "PanelEight",
+    "action": "recall memory1",
+    "frames": {
+      "$U": {
+        "plain_hex": "2455",
+        "wrapped_hex": "24232455520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C124",
+    "variant": "PanelEight",
+    "action": "program memory1",
+    "frames": {
+      "$Z": {
+        "plain_hex": "245a",
+        "wrapped_hex": "2423245a520d"
+      }
+    },
+    "release_behavior": "No STOP. Programcallback resetsmode and rebuilds widget; onTapUp rereads live releaseSend flag, so an up before rebuild can also write corresponding U/V once. Later up callback only resetsUI."
+  },
+  {
+    "id": "A12-C125",
+    "variant": "PanelEight",
+    "action": "recall memory2",
+    "frames": {
+      "$V": {
+        "plain_hex": "2456",
+        "wrapped_hex": "24232456520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C126",
+    "variant": "PanelEight",
+    "action": "program memory2",
+    "frames": {
+      "$a": {
+        "plain_hex": "2461",
+        "wrapped_hex": "24232461520d"
+      }
+    },
+    "release_behavior": "No STOP. Programcallback resetsmode and rebuilds widget; onTapUp rereads live releaseSend flag, so an up before rebuild can also write corresponding U/V once. Later up callback only resetsUI."
+  },
+  {
+    "id": "A12-C127",
+    "variant": "PanelFour",
+    "action": "recall memory1",
+    "frames": {
+      "$U": {
+        "plain_hex": "2455",
+        "wrapped_hex": "24232455520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C128",
+    "variant": "PanelFour",
+    "action": "program memory1",
+    "frames": {
+      "$Z": {
+        "plain_hex": "245a",
+        "wrapped_hex": "2423245a520d"
+      }
+    },
+    "release_behavior": "No STOP. Programcallback resetsmode and rebuilds widget; onTapUp rereads live releaseSend flag, so an up before rebuild can also write corresponding U/V once. Later up callback only resetsUI."
+  },
+  {
+    "id": "A12-C129",
+    "variant": "PanelFour",
+    "action": "recall memory2",
+    "frames": {
+      "$V": {
+        "plain_hex": "2456",
+        "wrapped_hex": "24232456520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C130",
+    "variant": "PanelFour",
+    "action": "program memory2",
+    "frames": {
+      "$a": {
+        "plain_hex": "2461",
+        "wrapped_hex": "24232461520d"
+      }
+    },
+    "release_behavior": "No STOP. Programcallback resetsmode and rebuilds widget; onTapUp rereads live releaseSend flag, so an up before rebuild can also write corresponding U/V once. Later up callback only resetsUI."
+  },
+  {
+    "id": "A12-C131",
+    "variant": "PanelSeven",
+    "action": "recall memory1",
+    "frames": {
+      "$U": {
+        "plain_hex": "2455",
+        "wrapped_hex": "24232455520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C132",
+    "variant": "PanelSeven",
+    "action": "program memory1",
+    "frames": {
+      "$Z": {
+        "plain_hex": "245a",
+        "wrapped_hex": "2423245a520d"
+      }
+    },
+    "release_behavior": "No STOP. Programcallback resetsmode and rebuilds widget; onTapUp rereads live releaseSend flag, so an up before rebuild can also write corresponding U/V once. Later up callback only resetsUI."
+  },
+  {
+    "id": "A12-C133",
+    "variant": "PanelSeven",
+    "action": "recall memory2",
+    "frames": {
+      "$V": {
+        "plain_hex": "2456",
+        "wrapped_hex": "24232456520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C134",
+    "variant": "PanelSeven",
+    "action": "program memory2",
+    "frames": {
+      "$a": {
+        "plain_hex": "2461",
+        "wrapped_hex": "24232461520d"
+      }
+    },
+    "release_behavior": "No STOP. Programcallback resetsmode and rebuilds widget; onTapUp rereads live releaseSend flag, so an up before rebuild can also write corresponding U/V once. Later up callback only resetsUI."
+  },
+  {
+    "id": "A12-C135",
+    "variant": "PanelThree",
+    "action": "recall memory1",
+    "frames": {
+      "$U": {
+        "plain_hex": "2455",
+        "wrapped_hex": "24232455520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C136",
+    "variant": "PanelThree",
+    "action": "program memory1",
+    "frames": {
+      "$Z": {
+        "plain_hex": "245a",
+        "wrapped_hex": "2423245a520d"
+      }
+    },
+    "release_behavior": "No STOP. Programcallback resetsmode and rebuilds widget; onTapUp rereads live releaseSend flag, so an up before rebuild can also write corresponding U/V once. Later up callback only resetsUI."
+  },
+  {
+    "id": "A12-C137",
+    "variant": "PanelThree",
+    "action": "recall memory2",
+    "frames": {
+      "$V": {
+        "plain_hex": "2456",
+        "wrapped_hex": "24232456520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C138",
+    "variant": "PanelThree",
+    "action": "program memory2",
+    "frames": {
+      "$a": {
+        "plain_hex": "2461",
+        "wrapped_hex": "24232461520d"
+      }
+    },
+    "release_behavior": "No STOP. Programcallback resetsmode and rebuilds widget; onTapUp rereads live releaseSend flag, so an up before rebuild can also write corresponding U/V once. Later up callback only resetsUI."
+  },
+  {
+    "id": "A12-C139",
+    "variant": "PanelTwo",
+    "action": "recall memory1",
+    "frames": {
+      "$U": {
+        "plain_hex": "2455",
+        "wrapped_hex": "24232455520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C140",
+    "variant": "PanelTwo",
+    "action": "program memory1",
+    "frames": {
+      "$Z": {
+        "plain_hex": "245a",
+        "wrapped_hex": "2423245a520d"
+      }
+    },
+    "release_behavior": "No STOP. Programcallback resetsmode and rebuilds widget; onTapUp rereads live releaseSend flag, so an up before rebuild can also write corresponding U/V once. Later up callback only resetsUI."
+  },
+  {
+    "id": "A12-C141",
+    "variant": "PanelTwo",
+    "action": "recall memory2",
+    "frames": {
+      "$V": {
+        "plain_hex": "2456",
+        "wrapped_hex": "24232456520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C142",
+    "variant": "PanelTwo",
+    "action": "program memory2",
+    "frames": {
+      "$a": {
+        "plain_hex": "2461",
+        "wrapped_hex": "24232461520d"
+      }
+    },
+    "release_behavior": "No STOP. Programcallback resetsmode and rebuilds widget; onTapUp rereads live releaseSend flag, so an up before rebuild can also write corresponding U/V once. Later up callback only resetsUI."
+  },
+  {
+    "id": "A12-C143",
+    "variant": "PanelZero",
+    "action": "recall memory1",
+    "frames": {
+      "$U": {
+        "plain_hex": "2455",
+        "wrapped_hex": "24232455520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C144",
+    "variant": "PanelZero",
+    "action": "program memory1",
+    "frames": {
+      "$Z": {
+        "plain_hex": "245a",
+        "wrapped_hex": "2423245a520d"
+      }
+    },
+    "release_behavior": "No STOP. Programcallback resetsmode and rebuilds widget; onTapUp rereads live releaseSend flag, so an up before rebuild can also write corresponding U/V once. Later up callback only resetsUI."
+  },
+  {
+    "id": "A12-C145",
+    "variant": "PanelZero",
+    "action": "recall memory2",
+    "frames": {
+      "$V": {
+        "plain_hex": "2456",
+        "wrapped_hex": "24232456520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C146",
+    "variant": "PanelZero",
+    "action": "program memory2",
+    "frames": {
+      "$a": {
+        "plain_hex": "2461",
+        "wrapped_hex": "24232461520d"
+      }
+    },
+    "release_behavior": "No STOP. Programcallback resetsmode and rebuilds widget; onTapUp rereads live releaseSend flag, so an up before rebuild can also write corresponding U/V once. Later up callback only resetsUI."
+  },
+  {
+    "id": "A12-C147",
+    "variant": "WR1140",
+    "action": "recall memory1",
+    "frames": {
+      "$U": {
+        "plain_hex": "2455",
+        "wrapped_hex": "24232455520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C148",
+    "variant": "WR1140",
+    "action": "program memory1",
+    "frames": {
+      "$Z": {
+        "plain_hex": "245a",
+        "wrapped_hex": "2423245a520d"
+      }
+    },
+    "release_behavior": "No STOP. Programcallback resetsmode and rebuilds widget; onTapUp rereads live releaseSend flag, so an up before rebuild can also write corresponding U/V once. Later up callback only resetsUI."
+  },
+  {
+    "id": "A12-C149",
+    "variant": "WR1140",
+    "action": "recall memory2",
+    "frames": {
+      "$V": {
+        "plain_hex": "2456",
+        "wrapped_hex": "24232456520d"
+      }
+    },
+    "release_behavior": "Up/cancel ends refresh and updates UI only; customup callback suppresses short-tap fallback. No explicit STOP."
+  },
+  {
+    "id": "A12-C150",
+    "variant": "WR1140",
+    "action": "program memory2",
+    "frames": {
+      "$a": {
+        "plain_hex": "2461",
+        "wrapped_hex": "24232461520d"
+      }
+    },
+    "release_behavior": "No STOP. Programcallback resetsmode and rebuilds widget; onTapUp rereads live releaseSend flag, so an up before rebuild can also write corresponding U/V once. Later up callback only resetsUI."
+  },
+  {
+    "id": "A12-C151",
+    "variant": "PanelE",
+    "action": "program snore position",
+    "frames": {
+      "$W": {
+        "plain_hex": "2457",
+        "wrapped_hex": "24232457520d"
+      }
+    },
+    "release_behavior": "No STOP; R widget still repeattrue and has customup UIcallback, so held R refresh is separate; do not invent a memoryslot1."
+  },
+  {
+    "id": "A12-C152",
+    "variant": "PanelA",
+    "action": "light toggle",
+    "frames": {
+      "$A": {
+        "plain_hex": "2441",
+        "wrapped_hex": "24232441520d"
+      }
+    },
+    "release_behavior": "Cancel has no releaseSend write. Longpress callback enters localprogrammode; no dedicated lighton/off opcode or stateACK."
+  },
+  {
+    "id": "A12-C153",
+    "variant": "PanelD",
+    "action": "light toggle",
+    "frames": {
+      "$A": {
+        "plain_hex": "2441",
+        "wrapped_hex": "24232441520d"
+      }
+    },
+    "release_behavior": "Cancel has no releaseSend write. Longpress callback enters localprogrammode; no dedicated lighton/off opcode or stateACK."
+  },
+  {
+    "id": "A12-C154",
+    "variant": "PanelEight",
+    "action": "light toggle",
+    "frames": {
+      "$A": {
+        "plain_hex": "2441",
+        "wrapped_hex": "24232441520d"
+      }
+    },
+    "release_behavior": "Cancel has no releaseSend write. Longpress callback enters localprogrammode; no dedicated lighton/off opcode or stateACK."
+  },
+  {
+    "id": "A12-C155",
+    "variant": "PanelFour",
+    "action": "light toggle",
+    "frames": {
+      "$A": {
+        "plain_hex": "2441",
+        "wrapped_hex": "24232441520d"
+      }
+    },
+    "release_behavior": "Cancel has no releaseSend write. Longpress callback enters localprogrammode; no dedicated lighton/off opcode or stateACK."
+  },
+  {
+    "id": "A12-C156",
+    "variant": "PanelSeven",
+    "action": "light toggle",
+    "frames": {
+      "$A": {
+        "plain_hex": "2441",
+        "wrapped_hex": "24232441520d"
+      }
+    },
+    "release_behavior": "Cancel has no releaseSend write. Longpress callback enters localprogrammode; no dedicated lighton/off opcode or stateACK."
+  },
+  {
+    "id": "A12-C157",
+    "variant": "PanelThree",
+    "action": "light toggle",
+    "frames": {
+      "$A": {
+        "plain_hex": "2441",
+        "wrapped_hex": "24232441520d"
+      }
+    },
+    "release_behavior": "Cancel has no releaseSend write. Longpress callback enters localprogrammode; no dedicated lighton/off opcode or stateACK."
+  },
+  {
+    "id": "A12-C158",
+    "variant": "PanelTwo",
+    "action": "light toggle",
+    "frames": {
+      "$A": {
+        "plain_hex": "2441",
+        "wrapped_hex": "24232441520d"
+      }
+    },
+    "release_behavior": "Cancel has no releaseSend write. Longpress callback enters localprogrammode; no dedicated lighton/off opcode or stateACK."
+  },
+  {
+    "id": "A12-C159",
+    "variant": "PanelZero",
+    "action": "light toggle",
+    "frames": {
+      "$A": {
+        "plain_hex": "2441",
+        "wrapped_hex": "24232441520d"
+      }
+    },
+    "release_behavior": "Cancel has no releaseSend write. Longpress callback enters localprogrammode; no dedicated lighton/off opcode or stateACK."
+  },
+  {
+    "id": "A12-C160",
+    "variant": "WR1140",
+    "action": "light toggle",
+    "frames": {
+      "$A": {
+        "plain_hex": "2441",
+        "wrapped_hex": "24232441520d"
+      }
+    },
+    "release_behavior": "Cancel has no releaseSend write. Longpress callback enters localprogrammode; no dedicated lighton/off opcode or stateACK."
+  },
+  {
+    "id": "A12-C161",
+    "variant": "PanelE",
+    "action": "light toggle",
+    "frames": {
+      "$A": {
+        "plain_hex": "2441",
+        "wrapped_hex": "24232441520d"
+      }
+    },
+    "release_behavior": "Cancel has no releaseSend write. Longpress callback enters localprogrammode; no dedicated lighton/off opcode or stateACK."
+  },
+  {
+    "id": "A12-C162",
+    "variant": "PanelD",
+    "action": "head massage button",
+    "frames": {
+      "$C": {
+        "plain_hex": "2443",
+        "wrapped_hex": "24232443520d"
+      }
+    },
+    "release_behavior": "No motorSTOP onrelease; upcallbacks are null/no-op orUIanimationonly."
+  },
+  {
+    "id": "A12-C163",
+    "variant": "PanelD",
+    "action": "foot massage button",
+    "frames": {
+      "$B": {
+        "plain_hex": "2442",
+        "wrapped_hex": "24232442520d"
+      }
+    },
+    "release_behavior": "No motorSTOP onrelease; upcallbacks are null/no-op orUIanimationonly."
+  },
+  {
+    "id": "A12-C164",
+    "variant": "PanelD",
+    "action": "massage STOP",
+    "frames": {
+      "$D": {
+        "plain_hex": "2444",
+        "wrapped_hex": "24232444520d"
+      }
+    },
+    "release_behavior": "No motorSTOP onrelease; upcallbacks are null/no-op orUIanimationonly."
+  },
+  {
+    "id": "A12-C165",
+    "variant": "PanelFour",
+    "action": "head massage button",
+    "frames": {
+      "$C": {
+        "plain_hex": "2443",
+        "wrapped_hex": "24232443520d"
+      }
+    },
+    "release_behavior": "No motorSTOP onrelease; upcallbacks are null/no-op orUIanimationonly."
+  },
+  {
+    "id": "A12-C166",
+    "variant": "PanelFour",
+    "action": "foot massage button",
+    "frames": {
+      "$B": {
+        "plain_hex": "2442",
+        "wrapped_hex": "24232442520d"
+      }
+    },
+    "release_behavior": "No motorSTOP onrelease; upcallbacks are null/no-op orUIanimationonly."
+  },
+  {
+    "id": "A12-C167",
+    "variant": "PanelFour",
+    "action": "massage STOP",
+    "frames": {
+      "$D": {
+        "plain_hex": "2444",
+        "wrapped_hex": "24232444520d"
+      }
+    },
+    "release_behavior": "No motorSTOP onrelease; upcallbacks are null/no-op orUIanimationonly."
+  },
+  {
+    "id": "A12-C168",
+    "variant": "PanelSeven",
+    "action": "head massage button",
+    "frames": {
+      "$C": {
+        "plain_hex": "2443",
+        "wrapped_hex": "24232443520d"
+      }
+    },
+    "release_behavior": "No motorSTOP onrelease; upcallbacks are null/no-op orUIanimationonly."
+  },
+  {
+    "id": "A12-C169",
+    "variant": "PanelSeven",
+    "action": "foot massage button",
+    "frames": {
+      "$B": {
+        "plain_hex": "2442",
+        "wrapped_hex": "24232442520d"
+      }
+    },
+    "release_behavior": "No motorSTOP onrelease; upcallbacks are null/no-op orUIanimationonly."
+  },
+  {
+    "id": "A12-C170",
+    "variant": "PanelSeven",
+    "action": "massage STOP",
+    "frames": {
+      "$D": {
+        "plain_hex": "2444",
+        "wrapped_hex": "24232444520d"
+      }
+    },
+    "release_behavior": "No motorSTOP onrelease; upcallbacks are null/no-op orUIanimationonly."
+  },
+  {
+    "id": "A12-C171",
+    "variant": "PanelTwo",
+    "action": "head massage button",
+    "frames": {
+      "$C": {
+        "plain_hex": "2443",
+        "wrapped_hex": "24232443520d"
+      }
+    },
+    "release_behavior": "No motorSTOP onrelease; upcallbacks are null/no-op orUIanimationonly."
+  },
+  {
+    "id": "A12-C172",
+    "variant": "PanelTwo",
+    "action": "foot massage button",
+    "frames": {
+      "$B": {
+        "plain_hex": "2442",
+        "wrapped_hex": "24232442520d"
+      }
+    },
+    "release_behavior": "No motorSTOP onrelease; upcallbacks are null/no-op orUIanimationonly."
+  },
+  {
+    "id": "A12-C173",
+    "variant": "PanelTwo",
+    "action": "massage STOP",
+    "frames": {
+      "$D": {
+        "plain_hex": "2444",
+        "wrapped_hex": "24232444520d"
+      }
+    },
+    "release_behavior": "No motorSTOP onrelease; upcallbacks are null/no-op orUIanimationonly."
+  },
+  {
+    "id": "A12-C174",
+    "variant": "WR1140",
+    "action": "head massage button",
+    "frames": {
+      "$C": {
+        "plain_hex": "2443",
+        "wrapped_hex": "24232443520d"
+      }
+    },
+    "release_behavior": "No motorSTOP onrelease; upcallbacks are null/no-op orUIanimationonly."
+  },
+  {
+    "id": "A12-C175",
+    "variant": "WR1140",
+    "action": "foot massage button",
+    "frames": {
+      "$B": {
+        "plain_hex": "2442",
+        "wrapped_hex": "24232442520d"
+      }
+    },
+    "release_behavior": "No motorSTOP onrelease; upcallbacks are null/no-op orUIanimationonly."
+  },
+  {
+    "id": "A12-C176",
+    "variant": "WR1140",
+    "action": "massage STOP",
+    "frames": {
+      "$D": {
+        "plain_hex": "2444",
+        "wrapped_hex": "24232444520d"
+      }
+    },
+    "release_behavior": "No motorSTOP onrelease; upcallbacks are null/no-op orUIanimationonly."
+  },
+  {
+    "id": "A12-C177",
+    "variant": "PanelZero",
+    "action": "head massage increase",
+    "frames": {
+      "$G": {
+        "plain_hex": "2447",
+        "wrapped_hex": "24232447520d"
+      }
+    },
+    "release_behavior": "Up cancels heldtimer; if tickcount<5 and no customup callback, three extra command writes at0/100/200ms relative to up. Cancel/dispose omit fallback; no explicit STOP."
+  },
+  {
+    "id": "A12-C178",
+    "variant": "PanelZero",
+    "action": "head massage decrease",
+    "frames": {
+      "$H": {
+        "plain_hex": "2448",
+        "wrapped_hex": "24232448520d"
+      }
+    },
+    "release_behavior": "Up cancels heldtimer; if tickcount<5 and no customup callback, three extra command writes at0/100/200ms relative to up. Cancel/dispose omit fallback; no explicit STOP."
+  },
+  {
+    "id": "A12-C179",
+    "variant": "PanelZero",
+    "action": "head massage STOP",
+    "frames": {
+      "$J": {
+        "plain_hex": "244a",
+        "wrapped_hex": "2423244a520d"
+      }
+    },
+    "release_behavior": "Up cancels heldtimer; if tickcount<5 and no customup callback, three extra command writes at0/100/200ms relative to up. Cancel/dispose omit fallback; no explicit STOP."
+  },
+  {
+    "id": "A12-C180",
+    "variant": "PanelZero",
+    "action": "foot massage increase",
+    "frames": {
+      "$E": {
+        "plain_hex": "2445",
+        "wrapped_hex": "24232445520d"
+      }
+    },
+    "release_behavior": "Up cancels heldtimer; if tickcount<5 and no customup callback, three extra command writes at0/100/200ms relative to up. Cancel/dispose omit fallback; no explicit STOP."
+  },
+  {
+    "id": "A12-C181",
+    "variant": "PanelZero",
+    "action": "foot massage decrease",
+    "frames": {
+      "$F": {
+        "plain_hex": "2446",
+        "wrapped_hex": "24232446520d"
+      }
+    },
+    "release_behavior": "Up cancels heldtimer; if tickcount<5 and no customup callback, three extra command writes at0/100/200ms relative to up. Cancel/dispose omit fallback; no explicit STOP."
+  },
+  {
+    "id": "A12-C182",
+    "variant": "PanelZero",
+    "action": "foot massage STOP",
+    "frames": {
+      "$I": {
+        "plain_hex": "2449",
+        "wrapped_hex": "24232449520d"
+      }
+    },
+    "release_behavior": "Up cancels heldtimer; if tickcount<5 and no customup callback, three extra command writes at0/100/200ms relative to up. Cancel/dispose omit fallback; no explicit STOP."
+  },
+  {
+    "id": "A12-C183",
+    "variant": "all manualSTOP-capable bindings",
+    "action": "motor STOP",
+    "frames": {
+      "$b": {
+        "plain_hex": "2462",
+        "wrapped_hex": "24232462520d"
+      }
+    },
+    "release_behavior": "Fresh one-shot chain has no cancellationguard; disconnect clears selectedDevice so later writes drop unless a newglobaldevice is selected. No per-axisSTOP byte found."
+  },
+  {
+    "id": "A12-C184",
+    "variant": "independent auxiliary route",
+    "action": "set RGB red component",
+    "release_behavior": "No STOP/release. Timer chain clearsbusy100msafterblue; pendingfinaltimer iscoalesced500ms, no lifecyclecancel demonstrated."
+  },
+  {
+    "id": "A12-C185",
+    "variant": "independent auxiliary route",
+    "action": "set RGB green component",
+    "release_behavior": "No STOP/release. Timer chain clearsbusy100msafterblue; pendingfinaltimer iscoalesced500ms, no lifecyclecancel demonstrated."
+  },
+  {
+    "id": "A12-C186",
+    "variant": "independent auxiliary route",
+    "action": "set RGB blue component",
+    "release_behavior": "No STOP/release. Timer chain clearsbusy100msafterblue; pendingfinaltimer iscoalesced500ms, no lifecyclecancel demonstrated."
+  },
+  {
+    "id": "A12-C187",
+    "variant": "independent auxiliary route",
+    "action": "light timer switch",
+    "release_behavior": "No STOP/release or acknowledgmentwait."
+  },
+  {
+    "id": "A12-C188",
+    "variant": "independent auxiliary route",
+    "action": "light timer picker",
+    "release_behavior": "No STOP/release or acknowledgmentwait."
+  },
+  {
+    "id": "A12-C189",
+    "variant": "independent auxiliary route",
+    "action": "set alarm strength0 and currenttime",
+    "release_behavior": "No STOP/release; slider orpickerchange sendsconfiguration."
+  },
+  {
+    "id": "A12-C190",
+    "variant": "independent auxiliary route",
+    "action": "set alarm strength1 and currenttime",
+    "release_behavior": "No STOP/release; slider orpickerchange sendsconfiguration."
+  },
+  {
+    "id": "A12-C191",
+    "variant": "independent auxiliary route",
+    "action": "set alarm strength2 and currenttime",
+    "release_behavior": "No STOP/release; slider orpickerchange sendsconfiguration."
+  },
+  {
+    "id": "A12-C192",
+    "variant": "independent auxiliary route",
+    "action": "select wireless synchronization",
+    "release_behavior": "No STOP/release; UIcheckboxguardfield2b mustbetrue, otherwisewarningdialogonly.800msdoesnotrepeatwire."
+  },
+  {
+    "id": "A12-C193",
+    "variant": "independent auxiliary route",
+    "action": "select wired synchronization",
+    "release_behavior": "No STOP/release; UIcheckboxguardfield2b mustbetrue, otherwisewarningdialogonly.800msdoesnotrepeatwire."
+  },
+  {
+    "id": "A12-C194",
+    "variant": "independent auxiliary route",
+    "action": "toggle currentlyactive sync",
+    "release_behavior": "No STOP/release; iconpresssingleaction."
+  },
+  {
+    "id": "A12-C195",
+    "variant": "independent auxiliary route",
+    "action": "toggle currentlyinactive sync",
+    "release_behavior": "No STOP/release; iconpresssingleaction."
+  },
+  {
+    "id": "A12-C196",
+    "variant": "independent auxiliary route",
+    "action": "query/status request",
+    "release_behavior": "No release or STOP; no responsecorrelation/exactrequestID."
+  }
+]

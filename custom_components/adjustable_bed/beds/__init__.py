@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from .adjustable_lumbar import AdjustableBedAppController as AdjustableBedAppController
     from .adjustable_lumbar import AdjustableLumbarController as AdjustableLumbarController
     from .adjustamattress.controller import AdjustaMattressController as AdjustaMattressController
+    from .bedgear.controller import BedgearController as BedgearController
     from .bedjet_powerlayer import BedJetPowerLayerController as BedJetPowerLayerController
     from .bedsense import BedSenseController as BedSenseController
     from .bf_cherish.controller import BfCherishController as BfCherishController
@@ -198,6 +199,7 @@ _EXPORT_MODULES = {
     "LogicdataAirPumpController": "logicdata.air_pump",
     "MaloufAppController": "malouf.app",
     "MotionBedController": "motion_bed.controller",
+    "BedgearController": "bedgear.controller",
     "MotoSleepController": "motosleep",
     "OctoController": "octo.controller",
     "Okin7ByteController": "okin_7byte",
@@ -288,6 +290,7 @@ __all__ = [
     "LogicdataController",
     "LogicdataAppController",
     "LogicdataAirPumpController",
+    "BedgearController",
     "MotoSleepController",
     "OctoController",
     "RemacroController",

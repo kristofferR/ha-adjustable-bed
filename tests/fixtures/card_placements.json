@@ -414,6 +414,36 @@
   "card_role": "up",
   "card_motor": "bed_height"
  },
+ "button:bedgear_actuator_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "bedgear_actuator"
+ },
+ "button:bedgear_actuator_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "bedgear_actuator"
+ },
+ "button:bedgear_combined_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "bedgear_combined"
+ },
+ "button:bedgear_combined_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "bedgear_combined"
+ },
+ "button:bedgear_light_toggle": {
+  "card_section": "lighting",
+  "card_role": "toggle"
+ },
+ "button:bedgear_massage": {
+  "card_section": "massage"
+ },
+ "button:bedgear_release": {
+  "card_section": "hidden"
+ },
  "button:bedsense_action": {
   "card_section": "utility"
  },
@@ -2040,6 +2070,14 @@
   "card_section": "motors",
   "card_motor": "bed_height"
  },
+ "cover:bedgear_actuator": {
+  "card_section": "motors",
+  "card_motor": "bedgear_actuator"
+ },
+ "cover:bedgear_combined": {
+  "card_section": "motors",
+  "card_motor": "bedgear_combined"
+ },
  "cover:bedsense_back": {
   "card_section": "motors",
   "card_motor": "bedsense_back"
@@ -2892,6 +2930,24 @@
  "sensor:back_angle": {
   "card_section": "motors",
   "card_motor": "back"
+ },
+ "sensor:bedgear_alarm": {
+  "card_section": "hidden"
+ },
+ "sensor:bedgear_alarm_strength": {
+  "card_section": "hidden"
+ },
+ "sensor:bedgear_light_minutes": {
+  "card_section": "hidden"
+ },
+ "sensor:bedgear_rgb": {
+  "card_section": "hidden"
+ },
+ "sensor:bedgear_sync_state": {
+  "card_section": "hidden"
+ },
+ "sensor:bedgear_sync_type": {
+  "card_section": "hidden"
  },
  "sensor:bedsense_circulation": {
   "card_section": "hidden"

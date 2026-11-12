@@ -322,6 +322,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_VIBRADORM_APP: _APP_DEFINED,
     BED_TYPE_VMATBASIC: _APP_DEFINED,
     BED_TYPE_MOTION_BED: _APP_DEFINED,
+    "bedgear": _APP_DEFINED,
     BED_TYPE_MOTOMOTION: _APP_DEFINED,
     BED_TYPE_DOUBLESLEEP: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_SLEEPTRACKER: _APP_DEFINED,
@@ -1253,6 +1254,13 @@ def _motion_bed_seed(
     if discovered is None or not discovered.name:
         return dict(data)
     return {CONF_BLE_DEVICE_NAME: discovered.name, **data}
+
+
+def _bedgear_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .profiles.bedgear import eligible
+
+    name = data.get(CONF_BLE_DEVICE_NAME)
+    return {} if isinstance(name, str) and eligible(name) else {CONF_BLE_DEVICE_NAME: "bedgear_profile"}
 
 
 def _motomotion_errors(data: Mapping[str, Any]) -> dict[str, str]:
@@ -2524,6 +2532,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     ),
     # The exact Bluetooth name selects MotoMotion's panel and its independent
     # feature flags; the app's own controls replace massage and angle sensing.
+    "bedgear": _asking(
+        "bedgear",
+        owns={**_BASE["bedgear"].owns, CONF_HAS_MASSAGE: False, CONF_DISABLE_ANGLE_SENSING: True},
+        questions=(Question(CONF_BLE_DEVICE_NAME, default=lambda data: data.get(CONF_NAME, ""), text=True),),
+        validate=_bedgear_errors,
+        derive=lambda _data: _NO_PULSE_CHOICE,
+        seed=_motion_bed_seed,
+        title=lambda _data: "Bedgear",
+    ),
     BED_TYPE_MOTOMOTION: _asking(
         BED_TYPE_MOTOMOTION,
         owns={
