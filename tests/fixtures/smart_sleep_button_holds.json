@@ -1,0 +1,25 @@
+{
+  "p1": {
+    "preset_memory_1": {
+      "held_control": "preset_memory_1",
+      "hold_start_delay_ms": 0,
+      "hold_release_delay_ms": 0,
+      "hold_lease_mode": "stream"
+    },
+    "preset_memory_2": {
+      "held_control": "preset_memory_2",
+      "hold_start_delay_ms": 0,
+      "hold_release_delay_ms": 0,
+      "hold_lease_mode": "stream"
+    }
+  },
+  "p2": {
+    "smart_sleep_flat": {},
+    "smart_sleep_zero_g": {},
+    "smart_sleep_read": {},
+    "smart_sleep_tv": {},
+    "smart_sleep_anti_snore": {},
+    "preset_memory_1": {},
+    "preset_memory_2": {}
+  }
+}

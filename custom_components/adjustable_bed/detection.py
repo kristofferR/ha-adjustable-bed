@@ -296,6 +296,7 @@ from .discovery_hints import (
 )
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.motomotion import eligible as motomotion_eligible
+from .profiles.smart_sleep import advertisement as smart_sleep_advertisement
 from .profiles.vmatbasic import manufacturer_payload_matches
 
 _LOGGER = logging.getLogger(__name__)
@@ -531,6 +532,7 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
 # are NOT included here - they're only kept for backward compatibility with
 # existing config entries. New users should select the protocol-based equivalents.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
+    "smart_sleep": "OKIN Smart Sleep (com.bedding.monitor.sleep_monitor.release)",
     "smart_comfort_synargy": "Smart Comfort by SYNARGY (com.synargy.okin)",
     "smart_comfort_synergy": "Smart Comfort (com.synergy.okin)",
     # v5 names the RUF and Richmat apps like the other Richmat MH apps.
@@ -2857,6 +2859,9 @@ def _detect_bed_type_detailed(
             service_info.name,
         )
         return DetectionResult(bed_type=BED_TYPE_KEESON, confidence=0.8, signals=signals)
+
+    if smart_sleep_advertisement(service_info.name or "", service_info.manufacturer_data or {}, service_info.address):
+        return DetectionResult("smart_sleep", 0.9, ["name:smart_sleep", "manufacturer_id:89"])
 
     # Check for Richmat Nordic / Keeson KSBT / OKIN 64-bit (same UUID)
     # These share the Nordic UART service UUID

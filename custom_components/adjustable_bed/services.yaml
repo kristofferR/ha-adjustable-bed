@@ -3855,3 +3855,52 @@ jalon_bed_set_alarm:
       selector:
         select:
           options: [both, left, right]
+
+smart_sleep_set_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+    enabled:
+      required: true
+      selector:
+        boolean:
+    time:
+      selector:
+        time:
+    weekdays:
+      default: []
+      selector:
+        select:
+          multiple: true
+          options:
+            - {value: "0", label: Monday}
+            - {value: "1", label: Tuesday}
+            - {value: "2", label: Wednesday}
+            - {value: "3", label: Thursday}
+            - {value: "4", label: Friday}
+            - {value: "5", label: Saturday}
+            - {value: "6", label: Sunday}
+    week_mask:
+      selector:
+        number:
+          min: 0
+          max: 255
+          step: 1
+          mode: box
+    action:
+      default: memory_1
+      selector:
+        select:
+          options: [zero_g, initial, lounge, tv, anti_snore, memory_1, memory_2, light, massage, flat, app_zero_g, app_flat, app_memory_1, app_memory_2, app_vibration]
+    flexible_wake:
+      default: false
+      selector:
+        boolean:

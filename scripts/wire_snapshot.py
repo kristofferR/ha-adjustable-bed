@@ -1237,6 +1237,10 @@ def default_scenario(bed_type: str) -> Scenario:
         # The exact name selects the panel: here panel One.
         data[const.CONF_BLE_DEVICE_NAME] = MOTOMOTION_NAMES[0]
         kwargs = {"device_name": MOTOMOTION_NAMES[0]}
+    if bed_type == "smart_sleep":
+        data[const.CONF_PRODUCT_TYPE] = "0"
+        variant = "p1"
+        replies = {"write:00b0": "a50b000058020203040000000000010103000100"}
     if bed_type == const.BED_TYPE_DOUBLESLEEP:
         data[const.CONF_PRODUCT_TYPE] = "3"
     if bed_type == const.BED_TYPE_LIMOSS_REMOTE:
@@ -1639,6 +1643,19 @@ def feature_scenarios(by_id: dict[str, Scenario]) -> list[Scenario]:
             },
         )
     )
+    # One accepted P1 outcome per numeric model; P2 scan selects only model80.
+    from custom_components.adjustable_bed.profiles.smart_sleep import MODELS as SMART_SLEEP_MODELS
+    for model in SMART_SLEEP_MODELS:
+        if model:
+            routes.append(dataclasses.replace(by_id["smart_sleep"], id=f"smart_sleep:p1_{model}",
+                entry_data={"product_type": str(model)}, layout_id="smart_sleep"))
+    routes.append(Scenario(id="smart_sleep:p2", bed_type="smart_sleep", protocol_variant="p2",
+        entry_data={"product_type": "80"}, layout_id="smart_sleep", replies={
+            "write:00b0": "a50b000058020203040000000000010103000100",
+            "write:2a000002": "2a00000281070313580226",
+            "write:2a000003": "2a0000038107017f0901061e00",
+            "*": "2a0000048106020100000064",
+        }))
     for protocol in ("p1", "p2"):
         routes.append(Scenario(
             id=f"jalon:{protocol}", bed_type="jalon",
@@ -1754,7 +1771,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         discovery = controller.async_discover_capabilities()
         if inspect.isawaitable(discovery):
             await discovery
-        if controller._coordinator.bed_type in {"smart_comfort_synargy", "smart_comfort_synergy"}:
+        if controller._coordinator.bed_type in {"smart_comfort_synargy", "smart_comfort_synergy", "smart_sleep"}:
             # These v5 profiles own startup in their hook, without session helpers.
             await controller.async_on_connect(None)
             return

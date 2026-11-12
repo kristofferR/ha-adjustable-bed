@@ -110,6 +110,7 @@ if TYPE_CHECKING:
     from .sleepys.box25 import SleepysBox25Controller as SleepysBox25Controller
     from .sleepys.box25 import SleepysBox25LegacyController as SleepysBox25LegacyController
     from .smart_comfort.controller import SmartComfortController as SmartComfortController
+    from .smart_sleep.controller import SmartSleepController as SmartSleepController
     from .solace.controller import SolaceController as SolaceController
     from .starcode.abm5_4 import StarcodeAbm5_4Controller as StarcodeAbm5_4Controller
     from .starcode.m5x5 import StarcodeM5X5Controller as StarcodeM5X5Controller
@@ -126,6 +127,7 @@ if TYPE_CHECKING:
 
 _EXPORT_MODULES = {
     "ResidentController": "resident.controller",
+    "SmartSleepController": "smart_sleep.controller",
     "JalonBedController": "jalon_bed.controller",
     "GoodVibeController": "goodvibe.controller",
     "MotoMotionController": "motomotion.controller",

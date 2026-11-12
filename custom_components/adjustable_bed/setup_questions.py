@@ -1853,7 +1853,42 @@ def _comfortbase_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
     }
 
 
+def _smart_sleep_models(data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.smart_sleep import MODELS
+    return {str(model): f"{label} ({model})" for model, label in MODELS.items()
+            if data.get(CONF_PROTOCOL_VARIANT) != "p2" or model == 80}
+
+
+def _smart_sleep_seed(hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
+    from .profiles.smart_sleep import advertisement
+    result = dict(data)
+    if discovered:
+        found = advertisement(discovered.name or "", discovered.manufacturer_data or {}, discovered.address)
+        if found:
+            if result.get(CONF_PROTOCOL_VARIANT) not in ("p1", "p2"):
+                result[CONF_PROTOCOL_VARIANT] = found.format
+            if str(result.get(CONF_PRODUCT_TYPE)) not in _smart_sleep_models(result):
+                result[CONF_PRODUCT_TYPE] = str(found.model)
+    return result
+
+
+def _smart_sleep_normalize(previous: Mapping[str, Any], answers: Mapping[str, Any]) -> dict[str, Any]:
+    result = {**previous, **answers}
+    if result.get(CONF_PROTOCOL_VARIANT) == "p2":
+        result[CONF_PRODUCT_TYPE] = "80"
+    return result
+
+
 SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
+    "smart_sleep": SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(
+            Question(CONF_PROTOCOL_VARIANT, {"p1": "Legacy bed controls (P1)", "p2": "New bed controls (P2)"}, "p1"),
+            Question(CONF_PRODUCT_TYPE, _smart_sleep_models, "0", searchable=True),
+        ),
+        normalize=_smart_sleep_normalize, seed=_smart_sleep_seed,
+    ),
     BED_TYPE_JALON_BED: SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
               CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100,
