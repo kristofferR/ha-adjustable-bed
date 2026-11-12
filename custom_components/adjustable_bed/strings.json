@@ -3000,6 +3000,15 @@
       },
       "jalon_bed_massage_timer": {
         "name": "Cycle massage timer"
+      },
+      "rize_remedy_ii_wave_1": {
+        "name": "Massage wave 1"
+      },
+      "rize_remedy_ii_wave_2": {
+        "name": "Massage wave 2"
+      },
+      "rize_remedy_ii_wave_3": {
+        "name": "Massage wave 3"
       }
     },
     "cover": {
@@ -4702,6 +4711,9 @@
       },
       "jalon_massage_timer_bucket": {
         "name": "Massage timer indicator"
+      },
+      "rize_remedy_ii_save_acknowledged": {
+        "name": "Save acknowledgment code"
       }
     },
     "light": {

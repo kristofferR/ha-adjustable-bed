@@ -242,6 +242,7 @@ are unchanged.
 | Jordan's Tranquil | `tranquil` | `tranquil` | 96-bit | plain frame | from the characteristic's properties | head, feet | 2 |
 | Customatic Z-230 | `zseries_z230` | `customatic_zseries` | 96-bit | plain frame | from the characteristic's properties | head, feet | 1 |
 | Customatic Z-280 | `zseries_z280` | `customatic_zseries` | 96-bit | plain frame | from the characteristic's properties | head, feet | 2 |
+| Rize Remedy II | `rize_remedy_ii` | `rize_remedy_ii` | 96-bit | plain frame | from the characteristic's properties | head, feet, lumbar | 3 |
 | Resident Adjustable Base | `resident` | `resident` | 64-bit | plain frame | with response | head, feet | 2 |
 | OKIN 64-bit Nordic UART | `okin_64bit_nordic` | `okin_64bit` | 64-bit | plain frame | without response | head, feet, lumbar | 2 |
 | OKIN 64-bit OKIN service | `okin_64bit_custom` | `okin_64bit` | 64-bit | plain frame | with response | head, feet, lumbar | 2 |
@@ -290,6 +291,7 @@ are unchanged.
 | Jordan's Tranquil | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
 | Customatic Z-230 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
 | Customatic Z-280 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Rize Remedy II | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
 | Resident Adjustable Base | 300 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms |
 | OKIN 64-bit Nordic UART | entry pulse delay | entry pulse count | 1 STOP |
 | OKIN 64-bit OKIN service | entry pulse delay | entry pulse count | 1 STOP |
@@ -340,6 +342,7 @@ Entry pulse settings are the configured motor pulse count and delay.
 | Jordan's Tranquil | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
 | Customatic Z-230 | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
 | Customatic Z-280 | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
+| Rize Remedy II | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
 | Resident Adjustable Base | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
 | OKIN 64-bit Nordic UART | once, no STOP | once, no STOP | n/a | n/a | once, no STOP | n/a |
 | OKIN 64-bit OKIN service | once, no STOP | once, no STOP | n/a | n/a | once, no STOP | n/a |
@@ -353,7 +356,8 @@ recall key 5500 ms. AdjustableM5X4 presets and recalls are held keys on its
 refresh; it streams Flat for 600 ms and saves or resets for 6000 ms. SleepEase P1
 presets are held keys on its refresh too, as are eShine presets, its Flat + Zero-G
 chord and its light; its massage keys are one write. The OKIN Bedding apps hold
-every action to its own deadline, saves for 5000 ms; see their profiles.
+every action to its own deadline, saves for 5000 ms except Rize Remedy II, whose
+save chord has no threshold; see their profiles.
 <!-- /generated -->
 
 ### Aliases
@@ -802,33 +806,39 @@ controls it supports; held motors send the OR of their primary words.
 | `selector_5_down` | `00000080 00000000` | Jordan's Serenity, Jordan's Tranquil | `0C 02 00 00 00 80 00 00 00 00 00 00 00 00` |
 | Flat | `08000000 00000000` | all | `0C 02 08 00 00 00 00 00 00 00 00 00 00 00` |
 | Zero-G | `00001000 00000000` | all | `0C 02 00 00 10 00 00 00 00 00 00 00 00 00` |
-| Memory 1 | `00010000 00000000` | all | `0C 02 00 01 00 00 00 00 00 00 00 00 00 00` |
+| Memory 1 | `00010000 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-230, Customatic Z-280 | `0C 02 00 01 00 00 00 00 00 00 00 00 00 00` |
 | TV | `00004000 00000000` | Jordan's Serenity, Customatic Z-230, Customatic Z-280 | `0C 02 00 00 40 00 00 00 00 00 00 00 00 00` |
 | Memory 2 | `00040000 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-280 | `0C 02 00 04 00 00 00 00 00 00 00 00 00 00` |
 | `save_zero_g` | `08001000 00000000` | all | `0C 02 08 00 10 00 00 00 00 00 00 00 00 00` |
-| Save memory 1 | `08010000 00000000` | all | `0C 02 08 01 00 00 00 00 00 00 00 00 00 00` |
+| Save memory 1 | `08010000 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-230, Customatic Z-280 | `0C 02 08 01 00 00 00 00 00 00 00 00 00 00` |
 | `save_tv` | `08004000 00000000` | Jordan's Serenity, Customatic Z-230, Customatic Z-280 | `0C 02 08 00 40 00 00 00 00 00 00 00 00 00` |
 | Save memory 2 | `08040000 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-280 | `0C 02 08 04 00 00 00 00 00 00 00 00 00 00` |
 | `massage_head_cycle` | `00000800 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-280 | `0C 02 00 00 08 00 00 00 00 00 00 00 00 00` |
 | `massage_foot_cycle` | `00000400 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-280 | `0C 02 00 00 04 00 00 00 00 00 00 00 00 00` |
-| `massage_mode_cycle` | `10000000 00000000` | all | `0C 02 10 00 00 00 00 00 00 00 00 00 00 00` |
-| `massage_timer_cycle` | `00000200 00000000` | all | `0C 02 00 00 02 00 00 00 00 00 00 00 00 00` |
-| Massage toggle | `00000100 00000000` | all | `0C 02 00 00 01 00 00 00 00 00 00 00 00 00` |
+| `massage_mode_cycle` | `10000000 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-230, Customatic Z-280 | `0C 02 10 00 00 00 00 00 00 00 00 00 00 00` |
+| `massage_timer_cycle` | `00000200 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-230, Customatic Z-280 | `0C 02 00 00 02 00 00 00 00 00 00 00 00 00` |
+| Massage toggle | `00000100 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-230, Customatic Z-280 | `0C 02 00 00 01 00 00 00 00 00 00 00 00 00` |
 | Under-bed light toggle | `00020000 00000000` | all | `0C 02 00 02 00 00 00 00 00 00 00 00 00 00` |
 | `leisure` | `00002000 00000000` | Jordan's Serenity | `0C 02 00 00 20 00 00 00 00 00 00 00 00 00` |
 | Anti-snore / Snore | `00008000 00000000` | all | `0C 02 00 00 80 00 00 00 00 00 00 00 00 00` |
-| Massage wave 1 | `00000000 00080000` | Jordan's Serenity, Jordan's Tranquil | `0C 02 00 00 00 00 00 08 00 00 00 00 00 00` |
-| Massage wave 2 | `00000000 00100000` | Jordan's Serenity, Jordan's Tranquil | `0C 02 00 00 00 00 00 10 00 00 00 00 00 00` |
-| Massage wave 3 | `00000000 00200000` | Jordan's Serenity, Jordan's Tranquil | `0C 02 00 00 00 00 00 20 00 00 00 00 00 00` |
-| Massage off | `02000000 00000000` | Jordan's Serenity, Jordan's Tranquil | `0C 02 02 00 00 00 00 00 00 00 00 00 00 00` |
-| Light on | `00000000 00000040` | Jordan's Serenity, Jordan's Tranquil | `0C 02 00 00 00 00 00 00 00 40 00 00 00 00` |
-| Light off | `00000000 00000080` | Jordan's Serenity, Jordan's Tranquil | `0C 02 00 00 00 00 00 00 00 80 00 00 00 00` |
-| Lounge / Reading | `00002000 00000000` | Jordan's Tranquil | `0C 02 00 00 20 00 00 00 00 00 00 00 00 00` |
-| `save_lounge` | `08002000 00000000` | Jordan's Tranquil | `0C 02 08 00 20 00 00 00 00 00 00 00 00 00` |
+| Massage wave 1 | `00000000 00080000` | Jordan's Serenity, Jordan's Tranquil, Rize Remedy II | `0C 02 00 00 00 00 00 08 00 00 00 00 00 00` |
+| Massage wave 2 | `00000000 00100000` | Jordan's Serenity, Jordan's Tranquil, Rize Remedy II | `0C 02 00 00 00 00 00 10 00 00 00 00 00 00` |
+| Massage wave 3 | `00000000 00200000` | Jordan's Serenity, Jordan's Tranquil, Rize Remedy II | `0C 02 00 00 00 00 00 20 00 00 00 00 00 00` |
+| Massage off | `02000000 00000000` | Jordan's Serenity, Jordan's Tranquil, Rize Remedy II | `0C 02 02 00 00 00 00 00 00 00 00 00 00 00` |
+| Light on | `00000000 00000040` | Jordan's Serenity, Jordan's Tranquil, Rize Remedy II | `0C 02 00 00 00 00 00 00 00 40 00 00 00 00` |
+| Light off | `00000000 00000080` | Jordan's Serenity, Jordan's Tranquil, Rize Remedy II | `0C 02 00 00 00 00 00 00 00 80 00 00 00 00` |
+| Lounge / Reading | `00002000 00000000` | Jordan's Tranquil, Rize Remedy II | `0C 02 00 00 20 00 00 00 00 00 00 00 00 00` |
+| `save_lounge` | `08002000 00000000` | Jordan's Tranquil, Rize Remedy II | `0C 02 08 00 20 00 00 00 00 00 00 00 00 00` |
+| STOP / release | `00000000 00000000` | Rize Remedy II | `0C 02 00 00 00 00 00 00 00 00 00 00 00 00` |
+| Lumbar up | `00000010 00000000` | Rize Remedy II | `0C 02 00 00 00 10 00 00 00 00 00 00 00 00` |
+| Lumbar down | `00000020 00000000` | Rize Remedy II | `0C 02 00 00 00 20 00 00 00 00 00 00 00 00` |
+| Incline | `00004000 00000000` | Rize Remedy II | `0C 02 00 00 40 00 00 00 00 00 00 00 00 00` |
+| `save_incline` | `08004000 00000000` | Rize Remedy II | `0C 02 08 00 40 00 00 00 00 00 00 00 00 00` |
+| Massage intensity up | `00000C00 00000000` | Rize Remedy II | `0C 02 00 00 0C 00 00 00 00 00 00 00 00 00` |
+| Massage intensity down | `01800000 00000000` | Rize Remedy II | `0C 02 01 80 00 00 00 00 00 00 00 00 00 00` |
 | `head_foot_up` | `00000005 00000000` | Customatic Z-230 | `0C 02 00 00 00 05 00 00 00 00 00 00 00 00` |
 | `head_foot_down` | `0000000A 00000000` | Customatic Z-230 | `0C 02 00 00 00 0A 00 00 00 00 00 00 00 00` |
 | `massage_intensity_cycle` | `00000C00 00000000` | Customatic Z-230 | `0C 02 00 00 0C 00 00 00 00 00 00 00 00 00` |
-| STOP / release | `00000000 00000000` | all | `0C 02 00 00 00 00 00 00 00 00 00 00 00 00` |
 
 Each app's literal action table, by the app's action names.
 
@@ -5142,3 +5152,149 @@ Raw APKs, decompilation output and frozen reports stay machine-local.
 - Resident Adjustable Base: `com.okin.resident.release` 1.0.0 (1), artifact SHA-256
   `583dd003df0478419935bb1c6649a8e8b0228988e0b38b12c6919efa275e85f7`,
   accepted unit160 audit001. This app is separate from the Rize Resident CST profile.
+
+
+### Rize Remedy II
+
+**App:** Rize Remedy II 1.0.1 (2), `com.okin.bedding.rizeii`
+
+**Status:** ❓ Needs testing (APK-verified, hardware unverified)
+
+#### Setup
+
+##### Known models
+
+- One fixed product and protocol in the Rize Remedy II app.
+- Select **Rize Remedy II app** explicitly. Generic OKIN names do not identify this app.
+
+##### Protocol Details
+
+The app uses the 96-bit N-frame: `0c 02`, two big-endian 32-bit fields,
+then four zero bytes. Every live frame reproduces through the shared codec.
+
+| Role | UUID |
+| --- | --- |
+| Service | `62741523-52f9-8864-b1ab-3b3a8d65950b` |
+| Write | `62741525-52f9-8864-b1ab-3b3a8d65950b` |
+| Notify | `62741625-52f9-8864-b1ab-3b3a8d65950b` |
+| Optional model read | `00002a24-0000-1000-8000-00805f9b34fb`, Device Information service |
+
+The app leaves the Android characteristic write type unchanged. HA requires
+one exact writable command role and one notifying role in the service. It
+prefers `write`, falling back to `write-without-response` only when advertised.
+This is HA policy, not proof of the app's ATT mode. HA awaits subscription
+completion; the app only checks admission of its notification/CCCD requests.
+The optional readable model value is logged after one second and selects no
+capability. There is no protocol startup payload, app PIN, bond request, MTU
+request or side byte. Generic HA adapters, Bluetooth proxies and authentication
+recovery remain platform features.
+
+##### Detection / Setup
+
+The app scans without a service filter and accepts names starting with `okin`,
+case-insensitively. HA offers a name-only app candidate, preserving stronger
+receiver matches. Choose the app manually; there is no product or protocol
+selector. The fixed layout has head, foot and lumbar axes, massage and lighting.
+Pulse count remains configurable at the app's 100 ms refresh interval.
+
+#### Controls
+
+##### Apps
+
+| App | Profile | Hardware |
+| --- | --- | --- |
+| Rize Remedy II 1.0.1 (2) | `rize_remedy_ii` | Unverified |
+
+##### Features
+
+| Feature | Support |
+| --- | --- |
+| Motors | Head, foot, lumbar up/down and bed-wide STOP |
+| Recall | Flat, Anti-Snore, Leisure, Zero Gravity, Incline |
+| Save | Flat + Zero Gravity, Flat + Incline, Flat + Leisure |
+| Light | Toggle, on, off; state is assumed, not read |
+| Massage | Waves 1/2/3, shared intensity increase/decrease, off |
+| Position feedback | None |
+| Save response | Session-local source acknowledgment, not storage or position telemetry |
+
+##### Commands
+
+<!-- generated:rize-remedy-ii-controls -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Control | Frame |
+|---|---|
+| Stop | `0C 02 00 00 00 00 00 00 00 00 00 00 00 00` |
+| Head Up | `0C 02 00 00 00 01 00 00 00 00 00 00 00 00` |
+| Head Down | `0C 02 00 00 00 02 00 00 00 00 00 00 00 00` |
+| Foot Up | `0C 02 00 00 00 04 00 00 00 00 00 00 00 00` |
+| Foot Down | `0C 02 00 00 00 08 00 00 00 00 00 00 00 00` |
+| Lumbar Up | `0C 02 00 00 00 10 00 00 00 00 00 00 00 00` |
+| Lumbar Down | `0C 02 00 00 00 20 00 00 00 00 00 00 00 00` |
+| Flat | `0C 02 08 00 00 00 00 00 00 00 00 00 00 00` |
+| Anti Snore | `0C 02 00 00 80 00 00 00 00 00 00 00 00 00` |
+| Lounge | `0C 02 00 00 20 00 00 00 00 00 00 00 00 00` |
+| Zero G | `0C 02 00 00 10 00 00 00 00 00 00 00 00 00` |
+| Incline | `0C 02 00 00 40 00 00 00 00 00 00 00 00 00` |
+| Save Lounge | `0C 02 08 00 20 00 00 00 00 00 00 00 00 00` |
+| Save Zero G | `0C 02 08 00 10 00 00 00 00 00 00 00 00 00` |
+| Save Incline | `0C 02 08 00 40 00 00 00 00 00 00 00 00 00` |
+| Light Toggle | `0C 02 00 02 00 00 00 00 00 00 00 00 00 00` |
+| Light On | `0C 02 00 00 00 00 00 00 00 40 00 00 00 00` |
+| Light Off | `0C 02 00 00 00 00 00 00 00 80 00 00 00 00` |
+| Wave 1 | `0C 02 00 00 00 00 00 08 00 00 00 00 00 00` |
+| Wave 2 | `0C 02 00 00 00 00 00 10 00 00 00 00 00 00` |
+| Wave 3 | `0C 02 00 00 00 00 00 20 00 00 00 00 00 00` |
+| Massage Intensity Up | `0C 02 00 00 0C 00 00 00 00 00 00 00 00 00` |
+| Massage Intensity Down | `0C 02 01 80 00 00 00 00 00 00 00 00 00 00` |
+| Massage Off | `0C 02 02 00 00 00 00 00 00 00 00 00 00 00` |
+<!-- /generated -->
+
+##### Timing and release
+
+One refresh lane writes immediately and then every 100 ms while held. Ordinary
+covers send the configured pulse count. Renewable card holds continue until
+release, cancellation or lease expiry; all three axes share one physical
+resource. The app's exact-value action switch does not prove arbitrary
+concurrent motor bit unions. HA serializes replacements and completes cleanup
+before admitting the next operation.
+
+The active voice path stops one-shots after 500 ms. HA uses that bounded press
+for preset, light, massage and save buttons; `hold_control` accepts an explicit
+duration up to 60 seconds. Saves are simultaneous Flat + preset chords with no
+source hold threshold. The three named HA memory slots are Zero Gravity,
+Incline and Leisure; these names alias those exact chords, not generic app
+memory numbers. Releasing both keys sends STOP at +100 and +200 ms. Releasing
+one app key redispatches remaining Flat or recall; in HA, starting that remaining
+control first releases the previous operation. Cleanup uses fresh cancellation
+events and captured connection identity, so old delayed STOPs cannot affect a
+replacement controller or paired side.
+
+##### Notifications
+
+A save response requires more than ten bytes, byte 6 equal to `A0`, and signed
+byte 10 positive (`01` through `7F`), plus a pending save in the subscribed,
+connected session. The source pending codes are Zero Gravity 5, Incline 6,
+Leisure 3. STOP preserves pending intent. HA records the captured pending
+operation once, and invalidates it on disconnect/unsubscribe, failure or another
+operation. Overlapping unresolved saves make untagged replies ambiguous until
+the next session. A response never claims physical memory persistence. No
+position, massage or lighting state is hydrated.
+
+#### Services
+
+Use the normal movement, preset, save-memory, lighting and massage entities or
+shared actions. `hold_control` supports the profile's named controls, including
+`save_zero_g`, `save_incline` and `save_lounge`. Two-address HA pairs retain each
+physical side's profile and session. This app proves no single-address side
+selection or autonomous app reconnect; HA supplies its normal reconnect and
+safe unload cleanup.
+
+#### Evidence
+
+Canonical row180, accepted APK Protocol Audit for `com.okin.bedding.rizeii`
+1.0.1 (2), artifact SHA-256
+`b539d643486912e434f057c3866be9d87b39e1552b057cf753024bccd26bfbd0`.
+The profile reproduces all 24 live command literals. GATT/write-mode behavior,
+physical axis mapping, release effects, save acknowledgments and memory
+persistence need external user validation after a beta or release.

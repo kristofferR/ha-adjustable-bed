@@ -363,7 +363,7 @@ class TestDetectBedTypeByServiceUUID:
         assert result.confidence == 0.9
         assert "name:okin_ble" in result.signals
         assert "manufacturer_payload:btcb" in result.signals
-        assert result.ambiguous_types == [BED_TYPE_MALOUF_NEW_OKIN, "resident"]
+        assert result.ambiguous_types == [BED_TYPE_MALOUF_NEW_OKIN, "resident", "rize_remedy_ii"]
 
     def test_lucid_l600_retail_model_does_not_collapse_protocols(self):
         """Two confirmed L600 signatures must continue to select different framing."""

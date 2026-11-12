@@ -190,6 +190,7 @@ from .const import (
     BED_TYPE_RICHMAT_APP_SLEEP,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_RIZE,
+    BED_TYPE_RIZE_REMEDY_II,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEPTRACKER,
@@ -1269,6 +1270,8 @@ def _motor_count_options(
     """Return motor counts supported by the selected protocol."""
     if bed_type == BED_TYPE_SVANE and protocol_variant != SVANE_VARIANT_JENSEN_LINON:
         return [2]
+    if bed_type == BED_TYPE_RIZE_REMEDY_II:
+        return [3]
     if bed_type == BED_TYPE_STARCODE_M5X5:
         return [2]
     if bed_type == BED_TYPE_OKIN_RF_ECO_BT:
@@ -1321,9 +1324,9 @@ def _richmat_mh_variant_error(
 
 
 def _invalid_pulse_count(bed_type: str | None, pulse_count: int) -> bool:
-    """Reject counts whose Z-Series press would fall outside the 0.1-60 s hold window."""
+    """Keep these 100 ms app profiles within HA's 0.1-60 s press window."""
     low, high = ZSERIES_PULSE_COUNT_RANGE
-    return bed_type == BED_TYPE_ZSERIES and not low <= pulse_count <= high
+    return bed_type in {BED_TYPE_ZSERIES, BED_TYPE_RIZE_REMEDY_II} and not low <= pulse_count <= high
 
 
 def _normalize_fixed_motor_count(
@@ -1347,7 +1350,7 @@ def _default_motor_count(
         and device_name.strip().lower().startswith("rtv")
     ):
         return 1
-    if bed_type in {BED_TYPE_OKIN_CST, BED_TYPE_CUSTOMATIC_REMEDY}:
+    if bed_type in {BED_TYPE_OKIN_CST, BED_TYPE_CUSTOMATIC_REMEDY, BED_TYPE_RIZE_REMEDY_II}:
         return 3
     return DEFAULT_MOTOR_COUNT
 
@@ -3920,6 +3923,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             entry = questions.staged(entry, _profile_answers(questions, submitted, entry, context))
             errors.update(questions.errors(entry, context))
             entry.update(questions.settled(entry))
+        elif (profile := setup_profile_for(entry)) is not None and not profile.questions:
+            # A fixed app still owns its defaults when it has no questions to ask.
+            entry.update(profile.settled(entry))
         entry = self._maybe_add_advertisement_metadata(entry, manufacturer_data=manufacturer_data)
         _LOGGER.info(
             "New bed: address=%s, type=%s, variant=%s, motors=%s, adapter=%s",

@@ -109,6 +109,7 @@ from .const import (
     BED_TYPE_RICHMAT_APP_SLEEP,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_RIZE,
+    BED_TYPE_RIZE_REMEDY_II,
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
     BED_TYPE_SCOTT_LIVING,
@@ -279,6 +280,7 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
         "casper_sleep.controller", "CasperSleepController", MappingProxyType({"kind": "sxb"})
     ),
     BED_TYPE_SERENITY: _ControllerSpec("serenity.controller", "SerenityController"),
+    BED_TYPE_RIZE_REMEDY_II: _ControllerSpec("serenity.rize", "RizeRemedyIIController"),
     BED_TYPE_TRANQUIL: _ControllerSpec("serenity.controller", "TranquilController"),
     BED_TYPE_CUSTOMATIC_CLARITY: _ControllerSpec(
         "customatic.controller", "CustomaticController", MappingProxyType({"profile": "clarity"})

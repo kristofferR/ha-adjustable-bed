@@ -8,9 +8,14 @@ DewertOkin, RF ECO BT, CB24, DOT, Sleepy's legacy CB25, AdjustableM5X4, whose
 report is quarantined) list the frames the pre-v5 controller sent.
 """
 
+
+
+from tests.rize_remedy_ii_vectors import VECTORS as RIZE_REMEDY_II_VECTORS
+
 ESHINE = ("eshine_e2000", "eshine_e30003100", "eshine_e5000")
 
 FROZEN_FRAMES: dict[str, frozenset[str]] = {
+    "rize_remedy_ii": frozenset(literal for _, literal in RIZE_REMEDY_II_VECTORS),
     # Resident Adjustable Base 1.0.0, unit160, frozen 36_33_01a control literals.
     "resident": frozenset(
         {

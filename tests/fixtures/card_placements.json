@@ -1405,6 +1405,15 @@
  "button:rize_pattern": {
   "card_section": "massage"
  },
+ "button:rize_remedy_ii_wave_1": {
+  "card_section": "massage"
+ },
+ "button:rize_remedy_ii_wave_2": {
+  "card_section": "massage"
+ },
+ "button:rize_remedy_ii_wave_3": {
+  "card_section": "massage"
+ },
  "button:ruf_richmat_lift_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -3659,6 +3668,9 @@
   "card_section": "hidden"
  },
  "sensor:richmat_classic_status": {
+  "card_section": "utility"
+ },
+ "sensor:rize_remedy_ii_save_acknowledged": {
   "card_section": "utility"
  },
  "sensor:ruf_richmat_calendar_alarms": {

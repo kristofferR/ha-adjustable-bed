@@ -192,6 +192,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "OkinNFrameProfile:starcode_abm5_4_box15": {"hold": ("abm5_4",)},
     "OkinNFrameProfile:starcode_abm5_4_box25": {"hold": ("abm5_4",)},
     "OkinNFrameProfile:starcode_abm5_4_box3633": {"hold": ("abm5_4",)},
+    "OkinNFrameProfile:rize_remedy_ii": {"hold": ("rize-remedy-ii", "row180")},
     "OkinNFrameProfile:tranquil": {"hold": ("tranquil",)},
     "OkinNFrameProfile:useries": {
         "hold": ("useries", "leggett-disp"),
@@ -277,7 +278,7 @@ _CST = tuple(
     for identity in EVIDENCE
     if identity.startswith("OkinNFrameProfile:cst_")
     or identity.removeprefix("OkinNFrameProfile:")
-    in ("serenity", "tranquil", "zseries_z230", "zseries_z280")
+    in ("serenity", "tranquil", "zseries_z230", "zseries_z280", "rize_remedy_ii")
 )
 _CUSTOMATIC = (
     "OkinNFrameProfile:clarity",

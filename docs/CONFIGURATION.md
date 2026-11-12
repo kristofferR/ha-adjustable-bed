@@ -1023,3 +1023,13 @@ list. Generic motor, massage and timing settings belong to the selected app
 profile; a two-address pair keeps each side's product separately. The separate
 sleep device has its own entry and MM/HJ current or restored session choice.
 See the [Richmat guide](beds/richmat.md#richmat-420).
+
+
+### Rize Remedy II app
+
+Choose **Rize Remedy II app** explicitly. Its fixed layout has head, foot and
+lumbar controls, massage and lighting. The movement pulse count remains
+configurable from 1 to 600 (HA's 60-second press bound); the refresh interval
+is fixed at 100 ms. The three named memory
+slots save Zero Gravity, Incline and Leisure by their Flat + preset chords.
+See the [profile guide](beds/okin-nframe.md#rize-remedy-ii).

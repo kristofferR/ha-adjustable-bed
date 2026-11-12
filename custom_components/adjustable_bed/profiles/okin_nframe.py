@@ -43,6 +43,7 @@ from ..const import (
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_RESIDENT,
+    BED_TYPE_RIZE_REMEDY_II,
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEPYS_BOX25,
@@ -1296,7 +1297,7 @@ _BEDDING: Final = (
     ("zseries_z230", "Customatic Z-230", BED_TYPE_ZSERIES, ZSERIES_Z230_ACTIONS, (_M1,), False),
     ("zseries_z280", "Customatic Z-280", BED_TYPE_ZSERIES, ZSERIES_Z280_ACTIONS, (_M1, _M2), False),
 )
-BEDDING_PROFILES: Final[Mapping[str, OkinNFrameProfile]] = MappingProxyType(
+_BEDDING_PROFILES: Final[Mapping[str, OkinNFrameProfile]] = MappingProxyType(
     {
         key: _cst(
             _two_axis_product(key, memories, lounge=lounge),
@@ -1311,6 +1312,38 @@ BEDDING_PROFILES: Final[Mapping[str, OkinNFrameProfile]] = MappingProxyType(
         )
         for key, name, bed_type, actions, memories, lounge in _BEDDING
     }
+)
+
+
+# Row180 com.okin.bedding.rizeii 1.0.1 (2): all 24 live rows, including STOP.
+# The axes are the live UI's head, foot and lumbar, not ConfigManager.motorNumber.
+RIZE_REMEDY_II_ACTIONS: Final = {
+    "head_up": (1, 0), "head_down": (2, 0),
+    "foot_up": (4, 0), "foot_down": (8, 0),
+    "lumbar_up": (0x10, 0), "lumbar_down": (0x20, 0),
+    "flat": (0x08000000, 0), "anti_snore": (0x8000, 0),
+    "lounge": (0x2000, 0), "zero_g": (0x1000, 0), "incline": (0x4000, 0),
+    "save_lounge": (0x08002000, 0), "save_zero_g": (0x08001000, 0),
+    "save_incline": (0x08004000, 0),
+    "light_toggle": (0x20000, 0), "light_on": (0, 0x40), "light_off": (0, 0x80),
+    "wave_1": (0, 0x80000), "wave_2": (0, 0x100000), "wave_3": (0, 0x200000),
+    "massage_intensity_up": (0x0C00, 0), "massage_intensity_down": (0x01800000, 0),
+    "massage_off": (0x02000000, 0),
+}
+RIZE_REMEDY_II: Final = _cst(
+    CstProduct(
+        key="rize_remedy_ii", memory_slots=(
+            CstMemorySlot("Zero Gravity", 0x1000, 0x08001000),
+            CstMemorySlot("Incline", 0x4000, 0x08004000),
+            CstMemorySlot("Leisure", 0x2000, 0x08002000),
+        ), massage_style="global", motors=("head", "feet", "lumbar"),
+    ),
+    "Rize Remedy II", BED_TYPE_RIZE_REMEDY_II,
+    {"stop": 0, **{action: cst_word(*fields) for action, fields in RIZE_REMEDY_II_ACTIONS.items()}},
+    write="characteristic", hold=BEDDING_HOLD, recall=Tap(releases=2), tap=Tap(releases=2),
+)
+BEDDING_PROFILES: Final[Mapping[str, OkinNFrameProfile]] = MappingProxyType(
+    {**_BEDDING_PROFILES, "rize_remedy_ii": RIZE_REMEDY_II}
 )
 
 

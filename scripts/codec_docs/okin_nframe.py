@@ -270,7 +270,8 @@ def render_okin_nframe_profiles() -> str:
         f"{okin_profiles.STARCODE_ABM5_4_SAVE_HOLD_MS} ms. SleepEase P1 presets are held "
         "keys on its refresh too, as are eShine presets, its Flat + Zero-G chord and its "
         "light; its massage keys are one write. The OKIN Bedding apps hold every action "
-        f"to its own deadline, saves for {okin_profiles.BEDDING_SAVE_HOLD_MS} ms; see their "
+        f"to its own deadline, saves for {okin_profiles.BEDDING_SAVE_HOLD_MS} ms except "
+        "Rize Remedy II, whose save chord has no threshold; see their "
         "profiles.",
     )
 
@@ -587,7 +588,17 @@ def render_resident_session() -> str:
     )
 
 
+def render_rize_remedy_ii_controls() -> str:
+    profile = okin_profiles.RIZE_REMEDY_II
+    return _block(_table(
+        ("Control", "Frame"),
+        ((action.replace("_", " ").title(), _hex(okin_codec.frame(word, profile.width)))
+         for action, word in profile.keys.items()),
+    ))
+
+
 BLOCKS: list[Block] = [
+    (GUIDE, "rize-remedy-ii-controls", render_rize_remedy_ii_controls),
     (GUIDE, "adjustable-bed-commands", render_adjustable_bed),
     (GUIDE, "resident-session", render_resident_session),
     (GUIDE, "okin-nframe-profiles", render_okin_nframe_profiles),

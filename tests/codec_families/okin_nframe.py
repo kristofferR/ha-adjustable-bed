@@ -60,6 +60,7 @@ FAMILY = CodecFamily(
             "sleepys_box25",
             "starcode_abm5_4",
             "tranquil",
+            "rize_remedy_ii",
         }
     ),
     app_routes={
