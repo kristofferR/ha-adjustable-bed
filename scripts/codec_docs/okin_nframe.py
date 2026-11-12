@@ -137,6 +137,7 @@ _OKIN_GROUPS = {
     "eShine": tuple(okin_profiles.ESHINE_PROFILES.values()),
     "Okin CST": tuple(okin_profiles.CST_PROFILES.values()),
     "OKIN Bedding apps": tuple(okin_profiles.BEDDING_PROFILES.values()),
+    "OKIN Motion Bed": (okin_profiles.OKIN_MOTIONBED,),
     "Resident Adjustable Base": (okin_profiles.RESIDENT,),
     "Okin 64-Bit": tuple(okin_profiles.OKIN_64BIT_PROFILES.values()),
     "Adjustable bed (Lumbar)": tuple(okin_profiles.ADJUSTABLE_LUMBAR_PROFILES.values()),
@@ -178,6 +179,7 @@ def _okin_hold(profile: okin_profiles.OkinNFrameProfile) -> tuple[str, str, str]
 
 _ENVELOPES = {
     "plain": "plain frame",
+    "gateway": "fixed E5 gateway envelope",
     "gateway_detected": "plain; RF-Gateway envelope when detected",
     "revision_selector": "plain (R1) or envelope (R0), by selector characteristic",
     "keeson_e6": "Keeson E6 frame; inclined keys plain",
@@ -307,6 +309,8 @@ def render_okin_nframe_transports() -> str:
 
 
 def _okin_frame(profile: okin_profiles.OkinNFrameProfile, word: int, name: str = "") -> str:
+    if profile.envelope == "gateway":
+        return _hex(okin_codec.gateway_frame(word))
     if profile.envelope == "keeson_e6" and name not in profile.plain_keys:
         return _hex(keeson_codec.frame(word, header=0xE6, side=0))
     if profile.width == 5:
@@ -587,7 +591,28 @@ def render_resident_session() -> str:
     )
 
 
+def render_okin_motionbed() -> str:
+    from custom_components.adjustable_bed.const import (
+        KEESON_BASE_NOTIFY_CHAR_UUID,
+        KEESON_BASE_WRITE_CHAR_UUID,
+    )
+    profile = okin_profiles.OKIN_MOTIONBED
+    return _block(
+        _table(("Role", "Service", "Characteristic", "Mode"), (
+            ("Control", "last matching service in Android UUID order", f"`{KEESON_BASE_WRITE_CHAR_UUID}`", "write with response; requires write property"),
+            ("Notification", "last matching service in Android UUID order", f"`{KEESON_BASE_NOTIFY_CHAR_UUID}`", "notify when supported; subscription failure does not gate writes"),
+        )),
+        _table(("Action", "Word", "Final frame"), (
+            (key.replace("_", " "), f"`0x{word:08X}`", _hex(okin_codec.gateway_frame(word)))
+            for key, word in profile.keys.items()
+        )),
+        f"Held directions refresh every {profile.hold.repeat_ms} ms, then send {profile.hold.releases} manual STOP. "
+        f"Memory slots: {profile.memory_slots}. Presets, memory programming and light parameters write once.",
+    )
+
+
 BLOCKS: list[Block] = [
+    (GUIDE, "okin-motionbed", render_okin_motionbed),
     (GUIDE, "adjustable-bed-commands", render_adjustable_bed),
     (GUIDE, "resident-session", render_resident_session),
     (GUIDE, "okin-nframe-profiles", render_okin_nframe_profiles),

@@ -82,6 +82,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `serenity` | S stream | U | U | serenity | remaining bitmask restarts a recognized command or is ignored |
 | `tranquil` | S stream | U | U | tranquil | recognized masks only |
 | `adjustable_bed` (unit087) | S stream (P1/P3), S latched (P2) | U | U | adjustbed | P2 uses the conservative latched ceiling because lumbar sends one start; head/feet still refresh during the lease. Speech movement is bounded, followed by voice STOP and ordinary release |
+| `okin_motionbed` | S stream | U | U | row150 | Six fixed UI directions, one 200 ms refresh stream and manual STOP; no composed motor inference |
 | `resident` | S stream | U | U | resident-base | Every held control refreshes at 300 ms and releases with two STOP frames; combined head/foot keys are explicit, arbitrary motor composition is unproven |
 | `adjustable_lumbar` (both routes) | S stream | U | U | lumbar | unsupported chord only stops |
 | `eshine_okin` (E2000, E3000/E3100, E5000) | S stream | U | U | eshine-okin | held keys write at once, refresh every 300 ms with no fixed count, STOP 200 ms after release; hold declared. Single-touch coordination excludes a second movement control; the one multi-touch path, Flat+Zero Gravity, is a fixed frame either release stops. None of its 25 constructors sets a speed |
@@ -705,6 +706,7 @@ Report workspaces are machine-local under
 | lp2 | `com.richmat.lp2` | 2.3.25 | COMPLETE | `com.richmat.lp2-2.3.25-20260827/report/` |
 | lucid | `com.lucid.bedbase` | 1.3.3 | COMPLETE | `com.lucid.bedbase-1.3.3-2026-08-27/report/` |
 | adjustbed | `com.okin.bedding.adjustbed` | 1.2.1 (33) | COMPLETE | `com.okin.bedding.adjustbed-1.2.1-2026-11-09-queue002/report/` |
+| row150 | `com.okin.motionbed` | 1.0 (2) | COMPLETE | `com.okin.motionbed-1.0-2026-11-12-queue001/report/`, accepted audit002, E09 |
 | resident-base | `com.okin.resident.release` | 1.0.0 (1) | COMPLETE | `com.okin.resident.release-1.0.0-2026-11-10-maxqueue001/report/`, accepted audit001 |
 | lumbar | `com.okin.bedding.adjustablelumbar` | 1.2.2 | COMPLETE | `com.okin.bedding.adjustablelumbar-1.2.2-2026-10-01-queue-e0bb6807-20261001-054-002/report/` |
 | m1x12 | `com.starcode.adjustablem1x12` | 1.1.3 | COMPLETE | `com.starcode.adjustablem1x12-1.1.3-2026-10-26-39bdcafa-repair-002/report/` |

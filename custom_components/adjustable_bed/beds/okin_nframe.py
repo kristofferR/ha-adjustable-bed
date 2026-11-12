@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 
+from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ..codec import okin_nframe as codec
@@ -26,6 +27,11 @@ class OkinNFrameController(BedController):
     def control_characteristic_uuid(self) -> str:
         """Return the Okin write characteristic UUID."""
         return codec.WRITE_UUID
+
+    @property
+    def write_characteristic(self) -> str | BleakGATTCharacteristic:
+        """The resolved write instance, when a profile selects among duplicate UUIDs."""
+        return self.control_characteristic_uuid
 
     def _build_command(self, command_value: int) -> bytes:
         """Frame one command word through the codec."""
@@ -66,8 +72,10 @@ class OkinNFrameController(BedController):
             try:
                 # The lock keeps writes and position reads from interleaving.
                 async with self._ble_lock:
+                    if effective_cancel.is_set():
+                        return
                     await self.client.write_gatt_char(
-                        self.control_characteristic_uuid,
+                        self.write_characteristic,
                         command,
                         response=self._write_with_response,
                     )

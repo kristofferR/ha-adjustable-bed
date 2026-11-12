@@ -404,6 +404,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Okin CB24 (SmartBed by Okin, Amada) | `okin_cb24` | 3 | 300 ms |
 | Okin CB35 (Sealy Posturematic, DewertOkin Star) | `okin_cb35` | 3 | 300 ms |
 | Okin FFE (13/15 series) | `okin_ffe` | 7 | 150 ms |
+| OKIN Motion Bed app (com.okin.motionbed) | `okin_motionbed` | 5 | 200 ms |
 | Okin ORE (legacy A5 5A) | `okin_ore` | 1 | 300 ms |
 | Resident Adjustable Base app (com.okin.resident.release) | `resident` | 4 | 300 ms |
 | Richmat / RMControl app | `richmat` | 7 | 150 ms |

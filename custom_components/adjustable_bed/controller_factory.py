@@ -95,6 +95,7 @@ from .const import (
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_FFE,
     BED_TYPE_OKIN_HANDLE,
+    BED_TYPE_OKIN_MOTIONBED,
     BED_TYPE_OKIN_NORDIC,
     BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_RF_ECO_BT,
@@ -251,6 +252,7 @@ class _BuilderSpec:
 # Bed types whose construction is "import this class and pass the coordinator
 # plus fixed kwargs".
 _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
+    BED_TYPE_OKIN_MOTIONBED: _ControllerSpec("okin_motionbed", "OkinMotionBedController"),
     BED_TYPE_RESIDENT: _ControllerSpec("resident.controller", "ResidentController"),
     BED_TYPE_JALON_BED: _ControllerSpec("jalon_bed.controller", "JalonBedController"),
     BED_TYPE_BF: _ControllerSpec("bf_cherish.controller", "BfCherishController"),

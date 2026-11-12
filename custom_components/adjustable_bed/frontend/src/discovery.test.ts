@@ -36,6 +36,38 @@ function hassWith(entries: EntityRegistryDisplayEntry[]): HomeAssistant {
   });
 }
 
+test("OKIN Motion Bed keeps neutral middle holds and raw light actions reachable", () => {
+  const hass = hassWith([
+    entry("cover.middle", "motionbed_middle"),
+    entry("button.light_0", "motionbed_light_parameter_0"),
+    entry("button.light_1", "motionbed_light_parameter_1"),
+    entry("button.preset_stop", "motionbed_preset_stop"),
+    entry("button.release", "motionbed_release"),
+    entry("button.recall_a", "preset_memory_1"),
+    entry("button.save_a", "program_memory_1"),
+  ]);
+  hass.states["cover.middle"] = {
+    entity_id: "cover.middle", state: "unknown", last_changed: "", last_updated: "",
+    attributes: {
+      held_control_up: "middle_up", held_control_down: "middle_down",
+      held_stop_scope: "side", hold_start_delay_ms: 0, hold_release_delay_ms: 0,
+      hold_release_button_key: "motionbed_release",
+    },
+  };
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.motors[0]).toMatchObject({
+    key: "motionbed_middle", cover: "cover.middle", coverStopScope: "side",
+    releaseButton: "button.release",
+    heldControls: {
+      up: { control: "middle_up", startDelayMs: 0, releaseDelayMs: 0 },
+      down: { control: "middle_down", startDelayMs: 0, releaseDelayMs: 0 },
+    },
+  });
+  expect(bed.presets).toEqual(["button.preset_stop"]);
+  expect(bed.memory).toEqual([{ slot: 1, goto: "button.recall_a", save: "button.save_a" }]);
+  expect(bed.lights.buttons).toEqual(["button.light_0", "button.light_1"]);
+});
+
 test("GM product controls and raw session state stay with their physical device", () => {
   const hass = hassWith([
     entry("button.gm_head", "remote_action", "bed"),
