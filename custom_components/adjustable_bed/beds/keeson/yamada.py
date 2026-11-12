@@ -106,6 +106,10 @@ class YamadaController(KeesonController):
         return True
 
     @property
+    def supports_stop_all(self) -> bool:
+        return True
+
+    @property
     def auto_stops_on_idle(self) -> bool:
         return False  # Ending refresh alone is not a proven hardware STOP.
 

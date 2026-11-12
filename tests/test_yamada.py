@@ -397,8 +397,13 @@ async def test_real_setup_entities_alarm_service_and_card_hold(
         "yamada_alarm_2",
         "yamada_query_alarms",
         "yamada_sync_clock",
+        "stop",
     } <= keys
     assert not {"massage_toggle", "preset_lounge", "preset_memory_2"} & keys
+    stop = next(v.entity_id for v in entities if v.translation_key == "stop")
+    stop_state = hass.states.get(stop)
+    assert stop_state.attributes["card_section"] == "motors"
+    assert stop_state.attributes["card_role"] == "stop"
     covers = [v.entity_id for v in entities if v.domain == "cover"]
     assert len(covers) == 2
     for eid in covers:
@@ -460,7 +465,7 @@ async def test_real_setup_entities_alarm_service_and_card_hold(
                 call.args[1] != encode(c.profile, 0)
                 for call in mock_bleak_client.write_gatt_char.call_args_list
             )
-        await coordinator.async_stop_command()
+        await hass.services.async_call("button", "press", {"entity_id": stop}, blocking=True)
         await holding
     frames = [call.args[1] for call in mock_bleak_client.write_gatt_char.call_args_list]
     assert frames[-2:] == [encode(c.profile, 0)] * 2
