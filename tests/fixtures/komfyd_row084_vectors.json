@@ -1,0 +1,1634 @@
+[
+  {
+    "id": "bed-01",
+    "protocol": "P1",
+    "action": "first_head_up",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 1,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 01 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-02",
+    "protocol": "P1",
+    "action": "first_head_down",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 2,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 02 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-03",
+    "protocol": "P1",
+    "action": "first_head_release",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 3,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 03 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-04",
+    "protocol": "P1",
+    "action": "first_foot_up",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 4,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 04 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-05",
+    "protocol": "P1",
+    "action": "first_foot_down",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 5,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 05 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-06",
+    "protocol": "P1",
+    "action": "first_foot_release",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 6,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 06 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-07",
+    "protocol": "P1",
+    "action": "first_waist_up",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 7,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 07 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-08",
+    "protocol": "P1",
+    "action": "first_waist_down",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 8,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 08 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-09",
+    "protocol": "P1",
+    "action": "first_waist_release",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 9,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 09 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-0a",
+    "protocol": "P1",
+    "action": "second_head_up",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 10,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 0a 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-0b",
+    "protocol": "P1",
+    "action": "second_head_down",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 11,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 0b 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-0c",
+    "protocol": "P1",
+    "action": "second_head_release",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 12,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 0c 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-0d",
+    "protocol": "P1",
+    "action": "second_foot_up",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 13,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 0d 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-0e",
+    "protocol": "P1",
+    "action": "second_foot_down",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 14,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 0e 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-0f",
+    "protocol": "P1",
+    "action": "second_foot_release",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 15,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 0f 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-10",
+    "protocol": "P1",
+    "action": "second_waist_up",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 16,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 10 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-11",
+    "protocol": "P1",
+    "action": "second_waist_down",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 17,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 11 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-12",
+    "protocol": "P1",
+    "action": "second_waist_release",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 18,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 12 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-13",
+    "protocol": "P1",
+    "action": "both_head_up",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 19,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 13 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-14",
+    "protocol": "P1",
+    "action": "both_head_down",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 20,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 14 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-15",
+    "protocol": "P1",
+    "action": "both_head_release",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 21,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 15 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-16",
+    "protocol": "P1",
+    "action": "both_foot_up",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 22,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 16 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-17",
+    "protocol": "P1",
+    "action": "both_foot_down",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 23,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 17 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-18",
+    "protocol": "P1",
+    "action": "both_foot_release",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 24,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 18 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-19",
+    "protocol": "P1",
+    "action": "both_waist_up",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 25,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 19 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-1a",
+    "protocol": "P1",
+    "action": "both_waist_down",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 26,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 1a 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-1b",
+    "protocol": "P1",
+    "action": "both_waist_release",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 27,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 1b 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-1c",
+    "protocol": "P1",
+    "action": "first_preset_release",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 28,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 1c 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-1d",
+    "protocol": "P1",
+    "action": "second_preset_release",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 29,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 1d 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-1e",
+    "protocol": "P1",
+    "action": "both_preset_release",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 30,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 1e 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-1f",
+    "protocol": "P1",
+    "action": "first_zero",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 31,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 1f 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-20",
+    "protocol": "P1",
+    "action": "second_zero",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 32,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 20 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-21",
+    "protocol": "P1",
+    "action": "both_zero",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 33,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 21 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-22",
+    "protocol": "P1",
+    "action": "first_flat",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 34,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 22 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-23",
+    "protocol": "P1",
+    "action": "second_flat",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 35,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 23 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-24",
+    "protocol": "P1",
+    "action": "both_flat",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 36,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 24 00 00",
+    "evidence": [
+      "E07",
+      "E08"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-25",
+    "protocol": "P1",
+    "action": "memory_1_save_first_bank",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 37,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 25 00 00",
+    "evidence": [
+      "E07",
+      "E10"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-26",
+    "protocol": "P1",
+    "action": "memory_2_save_first_bank",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 38,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 26 00 00",
+    "evidence": [
+      "E07",
+      "E10"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-27",
+    "protocol": "P1",
+    "action": "memory_3_save_first_bank",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 39,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 27 00 00",
+    "evidence": [
+      "E07",
+      "E10"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-28",
+    "protocol": "P1",
+    "action": "memory_4_save_first_bank",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 40,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 28 00 00",
+    "evidence": [
+      "E07",
+      "E10"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-29",
+    "protocol": "P1",
+    "action": "memory_1_recall_first_bank",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 41,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 29 00 00",
+    "evidence": [
+      "E07",
+      "E10",
+      "E12"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-2a",
+    "protocol": "P1",
+    "action": "memory_2_recall_first_bank",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 42,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 2a 00 00",
+    "evidence": [
+      "E07",
+      "E10",
+      "E12"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-2b",
+    "protocol": "P1",
+    "action": "memory_3_recall_first_bank",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 43,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 2b 00 00",
+    "evidence": [
+      "E07",
+      "E10",
+      "E12"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-2c",
+    "protocol": "P1",
+    "action": "memory_4_recall_first_bank",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 44,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 2c 00 00",
+    "evidence": [
+      "E07",
+      "E10",
+      "E12"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-3d",
+    "protocol": "P1",
+    "action": "first_lock",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 61,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 3d 00 00",
+    "evidence": [
+      "E07",
+      "E11"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-3e",
+    "protocol": "P1",
+    "action": "second_lock",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 62,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 3e 00 00",
+    "evidence": [
+      "E07",
+      "E11"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-3f",
+    "protocol": "P1",
+    "action": "both_lock",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 63,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 3f 00 00",
+    "evidence": [
+      "E07",
+      "E11"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-40",
+    "protocol": "P1",
+    "action": "first_unlock",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 64,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 40 00 00",
+    "evidence": [
+      "E07",
+      "E11"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-41",
+    "protocol": "P1",
+    "action": "second_unlock",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 65,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 41 00 00",
+    "evidence": [
+      "E07",
+      "E11"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-42",
+    "protocol": "P1",
+    "action": "both_unlock",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 66,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 42 00 00",
+    "evidence": [
+      "E07",
+      "E11"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-45",
+    "protocol": "P1",
+    "action": "post_enrollment_synchronization",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 69,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 45 00 00",
+    "evidence": [
+      "E07",
+      "E16"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-46",
+    "protocol": "P1",
+    "action": "query_lock_state",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 70,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 46 00 00",
+    "evidence": [
+      "E07",
+      "E11",
+      "E12"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-47",
+    "protocol": "P1",
+    "action": "first_head_plus",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 71,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 47 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-48",
+    "protocol": "P1",
+    "action": "first_head_minus",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 72,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 48 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-4a",
+    "protocol": "P1",
+    "action": "second_head_plus",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 74,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 4a 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-4b",
+    "protocol": "P1",
+    "action": "second_head_minus",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 75,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 4b 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-4d",
+    "protocol": "P1",
+    "action": "first_foot_plus",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 77,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 4d 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-4e",
+    "protocol": "P1",
+    "action": "first_foot_minus",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 78,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 4e 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-50",
+    "protocol": "P1",
+    "action": "second_foot_plus",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 80,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 50 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-51",
+    "protocol": "P1",
+    "action": "second_foot_minus",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 81,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 51 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-53",
+    "protocol": "P1",
+    "action": "both_head_plus",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 83,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 53 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-54",
+    "protocol": "P1",
+    "action": "both_head_minus",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 84,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 54 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-56",
+    "protocol": "P1",
+    "action": "both_foot_plus",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 86,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 56 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-57",
+    "protocol": "P1",
+    "action": "both_foot_minus",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 87,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 57 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-59",
+    "protocol": "P1",
+    "action": "first_timer_10_minutes",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 89,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 59 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-5a",
+    "protocol": "P1",
+    "action": "first_timer_20_minutes",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 90,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 5a 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-5b",
+    "protocol": "P1",
+    "action": "first_timer_30_minutes",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 91,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 5b 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-5c",
+    "protocol": "P1",
+    "action": "first_timer_40_minutes",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 92,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 5c 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-5d",
+    "protocol": "P1",
+    "action": "first_timer_50_minutes",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 93,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 5d 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-5e",
+    "protocol": "P1",
+    "action": "first_timer_start",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 94,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 5e 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-5f",
+    "protocol": "P1",
+    "action": "first_timer_stop",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 95,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 5f 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-60",
+    "protocol": "P1",
+    "action": "second_timer_10_minutes",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 96,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 60 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-61",
+    "protocol": "P1",
+    "action": "second_timer_20_minutes",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 97,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 61 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-62",
+    "protocol": "P1",
+    "action": "second_timer_30_minutes",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 98,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 62 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-63",
+    "protocol": "P1",
+    "action": "second_timer_40_minutes",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 99,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 63 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-64",
+    "protocol": "P1",
+    "action": "second_timer_50_minutes",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 100,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 64 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-65",
+    "protocol": "P1",
+    "action": "second_timer_start",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 101,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 65 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-66",
+    "protocol": "P1",
+    "action": "second_timer_stop",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 102,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 66 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-67",
+    "protocol": "P1",
+    "action": "both_timer_10_minutes",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 103,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 67 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-68",
+    "protocol": "P1",
+    "action": "both_timer_20_minutes",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 104,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 68 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-69",
+    "protocol": "P1",
+    "action": "both_timer_30_minutes",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 105,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 69 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-6a",
+    "protocol": "P1",
+    "action": "both_timer_40_minutes",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 106,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 6a 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-6b",
+    "protocol": "P1",
+    "action": "both_timer_50_minutes",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 107,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 6b 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-6c",
+    "protocol": "P1",
+    "action": "both_timer_start",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 108,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 6c 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-6d",
+    "protocol": "P1",
+    "action": "both_timer_stop",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 109,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 6d 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E17"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-6e",
+    "protocol": "P1",
+    "action": "first_light_on",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 110,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 6e 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E09"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-6f",
+    "protocol": "P1",
+    "action": "first_light_off",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 111,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 6f 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E09"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-70",
+    "protocol": "P1",
+    "action": "second_light_on",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 112,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 70 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E09"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-71",
+    "protocol": "P1",
+    "action": "second_light_off",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 113,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 71 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E09"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-72",
+    "protocol": "P1",
+    "action": "both_light_on",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 114,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 72 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E09"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "bed-73",
+    "protocol": "P1",
+    "action": "both_light_off",
+    "inputs": {
+      "builder": "bed",
+      "opcode": 115,
+      "target": 305419896,
+      "own": 287454020
+    },
+    "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 73 00 00",
+    "evidence": [
+      "E07",
+      "E08",
+      "E09"
+    ],
+    "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
+  },
+  {
+    "id": "auth",
+    "protocol": "P1",
+    "action": "Authenticate selected room",
+    "inputs": {
+      "builder": "auth",
+      "room": 305419896
+    },
+    "expected_bytes": "01 16 01 78 56 34 12 31 31 32 32",
+    "evidence": [
+      "E06"
+    ]
+  },
+  {
+    "id": "membership",
+    "protocol": "P1",
+    "action": "EXCLUDED membership enrollment",
+    "inputs": {
+      "builder": "membership",
+      "room": 305419896
+    },
+    "expected_bytes": "01 03 78 56 34 12 31 31 32 32 00 00 00 00",
+    "evidence": [
+      "E06",
+      "E16"
+    ]
+  },
+  {
+    "id": "ping",
+    "protocol": "P1",
+    "action": "Ping all nodes",
+    "inputs": {
+      "builder": "ping",
+      "own": 287454020
+    },
+    "expected_bytes": "03 ff ff ff ff fe 44 33 22 11",
+    "evidence": [
+      "E06",
+      "E12"
+    ]
+  }
+]

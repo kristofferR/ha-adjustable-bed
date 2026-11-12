@@ -5,7 +5,14 @@ from __future__ import annotations
 from collections import defaultdict
 
 from custom_components.adjustable_bed.codec import kaidi as codec
-from custom_components.adjustable_bed.const import BED_TYPE_ISLEEP, BED_TYPE_KAIDI, BED_TYPE_RIZE
+from custom_components.adjustable_bed.const import (
+    BED_TYPE_COMFYDS,
+    BED_TYPE_ISLEEP,
+    BED_TYPE_KAIDI,
+    BED_TYPE_KOMFYD,
+    BED_TYPE_RIZE,
+)
+from custom_components.adjustable_bed.profiles import comfy
 from custom_components.adjustable_bed.profiles import kaidi as profiles
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
@@ -165,6 +172,9 @@ def render_kaidi_profiles() -> str:
     rows.append(("Rize Beds", f"`{BED_TYPE_RIZE}`", "explicit app choice",
                  listed(tuple(profiles.RIZE_PRODUCTS)), "3",
                  f"one start, release after hold; writes {profiles.RizeProfile.write_spacing_s * 1000:g} ms apart"))
+    rows.extend((name, f"`{bed_type}`", "explicit app choice", "129 / 130 / 131 (129 alias)", "4",
+                 "one press, matching release; no refresh")
+                for name, bed_type in (("KomfyD", BED_TYPE_KOMFYD), ("ComfyDS", BED_TYPE_COMFYDS)))
     return _block(
         _table(
             ("Profile", "Bed type", "Protocol variant", "Products", "Memory slots", "Movement"),
@@ -323,6 +333,25 @@ def render_kaidi_rize_commands() -> str:
                   "##### Special operations", specials, "##### Timing", timing)
 
 
+def render_kaidi_comfy_commands() -> str:
+    commands = _table(("App", "Action (source semantics)", "Left", "Right", "Both"),
+        ((name, action, *(f"`{codec.payload(code).hex(' ').upper()}`" for code in codes))
+         for name, table in (("KomfyD", comfy.KOMFYD_COMMANDS), ("ComfyDS", comfy.COMFYDS_COMMANDS))
+         for action, codes in table.items()))
+    profiles = _table(("App", "Initial source", "Reconnect source", "Write queue", "Recall", "Join deadline"),
+        ((profile.key, "zero" if profile.retain_source_on_reconnect else "await source callback",
+          "retain installed source" if profile.retain_source_on_reconnect else "await source callback",
+          f"{profile.first_write_s * 1000:g} ms first / {profile.write_spacing_s * 1000:g} ms spacing",
+          f"{profile.memory_repeat_s * 1000:g} ms until ACK/cancel/session loss",
+          f"{profile.join_timeout_s:g} s HA authentication deadline")
+         for profile in (comfy.ComfyProfile, comfy.ComfyDSProfile)))
+    products = _table(("Raw type", "App product", "Normal side routing"),
+        ((str(raw), str(129 if raw == 131 else raw),
+          "Left / Both / Right" if raw == 130 else "fixed first bank") for raw in comfy.COMFY_PRODUCTS))
+    return _block("##### Products", products, "##### Command payloads", commands,
+                  "##### Session and timing", profiles)
+
+
 def bed_types() -> dict[str, tuple[str, ...]]:
     """Bed types per profile, as the profile summary lists them."""
     return {
@@ -330,6 +359,8 @@ def bed_types() -> dict[str, tuple[str, ...]]:
         profiles.FLOYD.key: (BED_TYPE_KAIDI,),
         profiles.IsleepProfile.key: (BED_TYPE_ISLEEP,),
         profiles.RizeProfile.key: (BED_TYPE_RIZE,),
+        comfy.ComfyProfile.key: (BED_TYPE_KOMFYD,),
+        comfy.ComfyDSProfile.key: (BED_TYPE_COMFYDS,),
     }
 
 
@@ -341,4 +372,5 @@ BLOCKS: list[Block] = [
     (GUIDE, "kaidi-floyd-commands", render_kaidi_floyd_commands),
     (GUIDE, "kaidi-isleep-commands", render_kaidi_isleep_commands),
     (GUIDE, "kaidi-rize-commands", render_kaidi_rize_commands),
+    (GUIDE, "kaidi-comfy-commands", render_kaidi_comfy_commands),
 ]

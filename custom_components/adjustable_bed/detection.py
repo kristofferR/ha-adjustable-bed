@@ -53,6 +53,7 @@ from .const import (
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COMFORTBASE,
+    BED_TYPE_COMFYDS,
     BED_TYPE_COOLBASE,
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
@@ -80,6 +81,7 @@ from .const import (
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
+    BED_TYPE_KOMFYD,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
@@ -647,6 +649,8 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     ),
     BED_TYPE_RIZE: "Rize Beds app (Kaidi, 1.4.2)",
     BED_TYPE_ISLEEP: "ISleep app (Kaidi, com.kaidi_test4)",
+    BED_TYPE_KOMFYD: "KomfyD app (Kaidi, com.pairlink.kaidi.komfyD)",
+    BED_TYPE_COMFYDS: "ComfyDS app (Kaidi, com.pairlink.kaidi.ComfyDS)",
     BED_TYPE_KAIDI: "Kaidi (Rize Beds and Floyd Home apps; legacy ISleep)",
     BED_TYPE_LINAK: "Linak (Bed Control, Bed Connect and Performance Series apps)",
     BED_TYPE_MALOUF_LEGACY_OKIN: "Malouf (FFE5 protocol)",
@@ -1656,7 +1660,7 @@ def _detect_bed_type_detailed(
             bed_type=BED_TYPE_KAIDI,
             confidence=confidence,
             signals=signals,
-            ambiguous_types=[BED_TYPE_ISLEEP, BED_TYPE_RIZE],
+            ambiguous_types=[BED_TYPE_ISLEEP, BED_TYPE_RIZE, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS],
         )
 
     if DEWERTOKIN_SERVICE_UUID.lower() in service_uuids:

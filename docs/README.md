@@ -43,7 +43,7 @@ Each codec has one guide, with a section per profile:
 | [FFFF frame](beds/ff_frame.md) | Solace, Woosa Sleep, BedSense and Motion Bed |
 | [HHC `$#` frames](beds/motomotion.md) | MotoMotion, MotoSleep and Power Bob |
 | [JMC400](beds/jmc.md) | Jensen JMC400 and the Svane Remote app's JMC400 route |
-| [Kaidi](beds/kaidi.md) | Rize Beds, Rize Seat, Floyd Home and ISleep |
+| [Kaidi](beds/kaidi.md) | Rize Beds, Rize Seat, Floyd Home, ISleep, KomfyD and ComfyDS |
 | [Vibradorm](beds/vibradorm.md) | Vibradorm, Caresse, Werkmeister, VMAT and V-MAT Basic |
 | [Smart Comfort seats](beds/smart-comfort.md) | Smart Comfort by SYNARGY and Smart Comfort (SYNERGY) |
 | [BedJet PowerLayer](beds/bedjet-powerlayer.md) | BedJet PowerLayer |

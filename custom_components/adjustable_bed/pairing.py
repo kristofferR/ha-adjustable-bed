@@ -32,6 +32,7 @@ from .const import (
     BED_TYPE_CASPER_BASE,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORTBASE,
+    BED_TYPE_COMFYDS,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_ERGOMOTION_4,
     BED_TYPE_ESHINE_OKIN,
@@ -42,6 +43,7 @@ from .const import (
     BED_TYPE_ISLEEP,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
+    BED_TYPE_KOMFYD,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_MLILY,
     BED_TYPE_MOTOMOTION,
@@ -199,6 +201,8 @@ SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
         BED_TYPE_SLEEP_NUMBER,
         BED_TYPE_KAIDI,
         BED_TYPE_ISLEEP,
+        BED_TYPE_KOMFYD,
+        BED_TYPE_COMFYDS,
         BED_TYPE_RIZE,
         BED_TYPE_CASPER_BASE,
         "hush_base",
@@ -219,6 +223,8 @@ def supports_single_address_pairing(
     """Return whether a bed can expose the Phase 3 single-address surface."""
     if bed_type not in SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES:
         return False
+    if bed_type in (BED_TYPE_KOMFYD, BED_TYPE_COMFYDS):
+        return str(product_type) == "130"
     if bed_type == "bedtech":
         return protocol_variant in {"bt3000fh", "btx4fh", "btx5fh"}
     if bed_type == BED_TYPE_MOTOMOTION:

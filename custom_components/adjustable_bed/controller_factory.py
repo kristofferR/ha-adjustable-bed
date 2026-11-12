@@ -37,6 +37,7 @@ from .const import (
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COMFORTBASE,
+    BED_TYPE_COMFYDS,
     BED_TYPE_COOLBASE,
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
@@ -65,6 +66,7 @@ from .const import (
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
+    BED_TYPE_KOMFYD,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
@@ -270,6 +272,8 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
         "hush_sleep.controller", "HushSleepController", MappingProxyType({"kind": "sxb"})
     ),
     BED_TYPE_RIZE: _ControllerSpec("kaidi.rize", "RizeController"),
+    BED_TYPE_KOMFYD: _ControllerSpec("kaidi.comfy", "ComfyController"),
+    BED_TYPE_COMFYDS: _ControllerSpec("kaidi.comfy", "ComfyController"),
     BED_TYPE_ISLEEP: _ControllerSpec("isleep", "IsleepController"),
     "casper_remote": _ControllerSpec("casper_sleep.controller", "CasperRemoteController"),
     "casper_sleep_mm": _ControllerSpec(

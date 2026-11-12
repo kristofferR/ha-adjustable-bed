@@ -556,6 +556,66 @@
  "button:comfortbase_save_zero_g": {
   "card_section": "presets"
  },
+ "button:comfy_f_decrease": {
+  "card_section": "utility"
+ },
+ "button:comfy_f_increase": {
+  "card_section": "utility"
+ },
+ "button:comfy_foot_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "comfy_foot"
+ },
+ "button:comfy_foot_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "comfy_foot"
+ },
+ "button:comfy_h_decrease": {
+  "card_section": "utility"
+ },
+ "button:comfy_h_increase": {
+  "card_section": "utility"
+ },
+ "button:comfy_head_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "comfy_head"
+ },
+ "button:comfy_head_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "comfy_head"
+ },
+ "button:comfy_lock": {
+  "card_section": "utility"
+ },
+ "button:comfy_query": {
+  "card_section": "utility"
+ },
+ "button:comfy_timer_start": {
+  "card_section": "utility"
+ },
+ "button:comfy_timer_stop": {
+  "card_section": "utility"
+ },
+ "button:comfy_unlock": {
+  "card_section": "utility"
+ },
+ "button:comfy_waist_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "comfy_waist"
+ },
+ "button:comfy_waist_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "comfy_waist"
+ },
+ "button:comfy_zero": {
+  "card_section": "presets"
+ },
  "button:connect": {
   "card_section": "connection",
   "card_role": "connect"
@@ -2076,6 +2136,18 @@
   "card_section": "motors",
   "card_motor": "both"
  },
+ "cover:comfy_foot": {
+  "card_section": "motors",
+  "card_motor": "comfy_foot"
+ },
+ "cover:comfy_head": {
+  "card_section": "motors",
+  "card_motor": "comfy_head"
+ },
+ "cover:comfy_waist": {
+  "card_section": "motors",
+  "card_motor": "comfy_waist"
+ },
  "cover:elevate_actuator_1": {
   "card_section": "motors",
   "card_motor": "elevate_actuator_1"
@@ -2625,6 +2697,12 @@
  "select:adjustamattress_wave_selector": {
   "card_section": "massage"
  },
+ "select:comfy_selected_side": {
+  "card_section": "utility"
+ },
+ "select:comfy_timer_selection": {
+  "card_section": "utility"
+ },
  "select:doublesleep_child_lock": {
   "card_section": "utility"
  },
@@ -2959,6 +3037,12 @@
   "card_section": "hidden"
  },
  "sensor:casper_sleep_r_snoring": {
+  "card_section": "hidden"
+ },
+ "sensor:comfy_lock_status": {
+  "card_section": "hidden"
+ },
+ "sensor:comfy_timer_remaining": {
   "card_section": "hidden"
  },
  "sensor:coolbase_left_fan_level": {

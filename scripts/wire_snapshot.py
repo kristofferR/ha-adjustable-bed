@@ -977,6 +977,7 @@ class Coordinator:
             options={},
             entry_id="wire-snapshot",
             title="Wire Snapshot Bed",
+            async_on_unload=lambda callback: None,
             unique_id="AA:BB:CC:DD:EE:FF",
             async_create_background_task=lambda _hass, coro, *_, **__: _spawn(coro),
         )
@@ -1259,6 +1260,13 @@ def default_scenario(bed_type: str) -> Scenario:
         }
     if bed_type == const.BED_TYPE_MLILY:
         variant = "6brm"
+    if bed_type in (const.BED_TYPE_KOMFYD, const.BED_TYPE_COMFYDS):
+        data.update({const.CONF_BED_TYPE: bed_type, const.CONF_PRODUCT_TYPE: 130,
+                     const.CONF_KAIDI_ROOM_ID: 0x12345678, const.CONF_KAIDI_SOFA_ACU_NO: 0xF322})
+        replies = {"write:011601": "021600,010a44332211",
+                   "write:03fffffffffe": KAIDI_PING_REPLY,
+                   **{f"write:0304030201204433221101{op:02x}": f"0300000000200000000001{op:02x}0000" for op in range(41, 45)}}
+        return Scenario(id=bed_type, bed_type=bed_type, entry_data=data, replies=replies, layout_id="kaidi")
     if bed_type == const.BED_TYPE_KAIDI:
         # A provisioned broadcast advertisement carrying the room ID (tests/test_kaidi.py).
         kwargs = {"manufacturer_data": {0xFFFF: bytes.fromhex(KAIDI_BROADCAST % "81")}}
@@ -1346,6 +1354,12 @@ def route_scenarios() -> list[Scenario]:
                     replies={**base.replies, **ROUTE_REPLIES.get(f"{bed_type}:{variant}", {})},
                 )
             )
+    # Every row084 bed type/alias, without sampling the product inventory.
+    for bed_type in (const.BED_TYPE_KOMFYD, const.BED_TYPE_COMFYDS):
+        base = default_scenario(bed_type)
+        for raw in (129, 130, 131):
+            scenarios.append(dataclasses.replace(base, id=f"{bed_type}:type{raw}",
+                entry_data={**base.entry_data, const.CONF_PRODUCT_TYPE: raw}))
     # BedTech's manual model selector: each model has its own controls and release.
     from custom_components.adjustable_bed.profiles.richmat import BEDTECH_APP_PROFILES
 
@@ -1759,6 +1773,8 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             await controller.async_on_connect(None)
             return
         await controller.start_notify(lambda *_: None)
+        if controller._coordinator.bed_type in {"komfyd", "comfyds"}:
+            await controller.async_after_connect(None)
         for hook in STARTUP_HOOKS.get(controller._coordinator.bed_type, ()):  # noqa: SLF001
             if hasattr(controller, hook):
                 await getattr(controller, hook)()

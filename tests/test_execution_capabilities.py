@@ -247,6 +247,8 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
         "hold_controls": ("avocado", "coaster", "fortywinks", "milemont", "superior", "row066"),
     },
     "isleep": {"hold": ("kaidi",)},
+    "ComfyProfile:komfyd": {"hold": ("komfyd084",)},
+    "ComfyDSProfile:comfyds": {"hold": ("comfyds084",)},
     "RizeProfile:rize": {"hold": ("rize149",)},  # latched
     "jensen": {"hold": ("jensen", "jensen-disp")},
     # Latched; Floyd (no report) and dual-seat beds stay finite.
@@ -315,6 +317,8 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "beds/goodvibe/controller.py:<module>.GoodVibeController": ("goodvibe", "mlily", "galaxy"),
     "beds/goodvibe/controller.py:<module>.GoodVibeController.execution": ("goodvibe", "mlily", "galaxy"),
     "beds/kaidi/app.py:<module>.KaidiAppController": ("isleep",),
+    "profiles/comfy.py:<module>.ComfyProfile": ("ComfyProfile:komfyd", "ComfyDSProfile:comfyds"),
+    "beds/kaidi/comfy.py:<module>.ComfyController": ("ComfyProfile:komfyd", "ComfyDSProfile:comfyds"),
     "profiles/kaidi.py:<module>.RizeProfile": ("RizeProfile:rize",),
     "beds/kaidi/rize.py:<module>.RizeController": ("RizeProfile:rize",),
     "beds/kaidi/app.py:<module>.KaidiAppController.execution": ("isleep",),

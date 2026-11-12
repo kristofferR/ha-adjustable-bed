@@ -46,6 +46,7 @@ from .const import (
     BED_TYPE_CHERISH,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORTBASE,
+    BED_TYPE_COMFYDS,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ESHINE,
     BED_TYPE_ESHINE_OKIN,
@@ -63,6 +64,7 @@ from .const import (
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
+    BED_TYPE_KOMFYD,
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LOGICDATA,
@@ -293,6 +295,8 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_RICHMAT_APP_SLEEP: GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_GLIDEAWAY_MOTION: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_ISLEEP: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
+    BED_TYPE_KOMFYD: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
+    BED_TYPE_COMFYDS: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     "smart_comfort_synargy": _APP_DEFINED,
     "smart_comfort_synergy": _APP_DEFINED,
     BED_TYPE_RIZE: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
@@ -1082,6 +1086,35 @@ def _mlily_seed(
         return dict(data)
     suggested = suggested_profile(discovered.name)
     return {**data, CONF_PROTOCOL_VARIANT: suggested} if suggested else dict(data)
+
+
+def _comfy_products(_data: Mapping[str, Any]) -> Mapping[Any, str]:
+    from .profiles.comfy import COMFY_PRODUCTS
+
+    return COMFY_PRODUCTS
+
+
+def _comfy_seed(
+    hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None
+) -> dict[str, Any]:
+    from homeassistant.components import bluetooth
+
+    from .profiles.comfy import add_comfy_metadata
+
+    info = discovered or bluetooth.async_last_service_info(hass, data[CONF_ADDRESS], connectable=False)
+    return add_comfy_metadata(data, info.manufacturer_data if info else {})
+
+
+def _comfy_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .profiles.comfy import validate_comfy_profile
+
+    try:
+        profile = validate_comfy_profile(data)
+    except ValueError:
+        return {"base": "comfy_profile"}
+    if data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS and not profile.split:
+        return {"base": "comfy_unpair_first"}
+    return {}
 
 
 def _isleep_products(_data: Mapping[str, Any]) -> Mapping[Any, str]:
@@ -2303,6 +2336,21 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         validate=_gmmotor_errors,
     ),
     # The app's product and the mesh room it joins; the advertisement suggests both.
+    **{
+        bed_type: _asking(
+            bed_type,
+            owns={**_BASE[bed_type].owns, CONF_MOTOR_COUNT: 3, CONF_HAS_MASSAGE: False,
+                  CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
+            questions=(
+                Question(CONF_PRODUCT_TYPE, _comfy_products, 129),
+                Question(CONF_KAIDI_ROOM_ID, default=REQUIRED,
+                         validator=vol.All(vol.Coerce(int), _INT32_RANGE)),
+                Question(CONF_KAIDI_SOFA_ACU_NO, default=0,
+                         validator=vol.All(vol.Coerce(int), vol.Range(min=0, max=65535))),
+            ),
+            validate=_comfy_errors, seed=_comfy_seed, imports=("profiles.comfy",),
+        ) for bed_type in (BED_TYPE_KOMFYD, BED_TYPE_COMFYDS)
+    },
     BED_TYPE_ISLEEP: _asking(
         BED_TYPE_ISLEEP,
         owns={

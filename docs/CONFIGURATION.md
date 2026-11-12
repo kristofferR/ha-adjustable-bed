@@ -1023,3 +1023,11 @@ list. Generic motor, massage and timing settings belong to the selected app
 profile; a two-address pair keeps each side's product separately. The separate
 sleep device has its own entry and MM/HJ current or restored session choice.
 See the [Richmat guide](beds/richmat.md#richmat-420).
+
+### KomfyD and ComfyDS
+
+Select the exact app explicitly, then raw type129/130/131, the existing signed
+room ID and capability word. Only130 offers native Left/Both/Right. The high
+capability nibble enables memory saving; other nibbles do not infer motors.
+Shared manufacturer data seeds these fields without selecting an app. No
+Bluetooth name-only rule is proven. See the [profile guide](beds/kaidi.md#komfyd-and-comfyds).

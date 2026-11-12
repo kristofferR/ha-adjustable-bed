@@ -3345,6 +3345,25 @@ jalon_set_alarm:
         select:
           options: [both, left, right]
 
+comfy_control:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      default: both
+      selector:
+        select:
+          options: [left, right, both]
+    action:
+      required: true
+      selector:
+        select:
+          options: [zero, h_increase, h_decrease, f_increase, f_decrease, timer_start, timer_stop, lock, unlock, query]
+
 rize_program_preset:
   fields:
     device_id:
