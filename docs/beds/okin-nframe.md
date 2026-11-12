@@ -35,6 +35,7 @@ the Adjustable bed (Lumbar) app and Resident Adjustable Base.
 | [Customatic Z-Series](#customatic-z-series) | Customatic Z-230 and Z-280 bases with the Z-Series app |
 | [Okin 64-Bit](#okin-64-bit) | Okin controllers with the Adjustable bed app, including `NORA_CON` / `NORACON` |
 | [Adjustable bed app](#adjustable-bed-app) | Beds controlled with Adjustable bed 1.2.1 |
+| [Comfort Enhancement 3 / Comfort Plus3](#comfort-enhancement-3) | All 15 app remote profiles, hardware models unverified |
 | [Resident Adjustable Base](#resident-adjustable-base) | Beds controlled with Resident Adjustable Base, hardware models unverified |
 | [Adjustable bed (Lumbar)](#adjustable-bed-lumbar) | Beds controlled with the Adjustable bed(Lumbar) app |
 
@@ -50,6 +51,7 @@ Customatic app profiles.
 | ✅ | [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) 1.1.6 (8), hardware unverified | `com.ore.okincomfortbed` | [ORE comfort-bed profile](keeson.md#okin-comfort-bed), explicit Keeson profile |
 | ✅ | [OKIN Smart Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.smartbedwifi) | `com.okin.bedding.smartbedwifi` | [OKIN SmartBed CB24](#okin-smartbed-cb24); [Okimat](#okimat) unverified |
 | ⚠️ | Rize II | `com.okin.bedding.rizeii` | [Okimat](#okimat), unverified |
+| ✅ | [Comfort Enhancement 3 / Comfort Plus3](https://play.google.com/store/apps/details?id=com.okin.apex) 1.4.0 (5) | `com.okin.apex` | [Comfort Enhancement 3](#comfort-enhancement-3) |
 | ✅ | [Resident Adjustable Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.rizeResident) 1.0.1 | `com.okin.bedding.rizeResident` | [Okin CST](#okin-cst) (Rize Resident) |
 | ✅ | [Customatic Technologies Z-Series](https://play.google.com/store/apps/details?id=com.okin.bedding.glory) 1.0.4 (5) | `com.okin.bedding.glory` | [Customatic Z-Series](#customatic-z-series) |
 | ✅ | [Jordan's Tranquil](https://play.google.com/store/apps/details?id=com.okin.bedding.tranquil) 1.0.2 (3) | `com.okin.bedding.tranquil` | [Jordan's Tranquil](#jordans-tranquil) |
@@ -204,6 +206,21 @@ are unchanged.
 
 | Profile | Key | Bed types | Word | Frame | Write | Axes | Memory |
 |---|---|---|---|---|---|---|---|
+| Comfort Enhancement 3 remote 0 | `apex_0` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
+| Comfort Enhancement 3 remote 1 | `apex_1` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
+| Comfort Enhancement 3 remote 2 | `apex_2` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
+| Comfort Enhancement 3 remote 3 | `apex_3` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
+| Comfort Enhancement 3 remote 4 | `apex_4` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 1 |
+| Comfort Enhancement 3 remote 5 | `apex_5` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 1 |
+| Comfort Enhancement 3 remote 6 | `apex_6` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 1 |
+| Comfort Enhancement 3 remote 7 | `apex_7` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
+| Comfort Enhancement 3 remote 8 | `apex_8` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
+| Comfort Enhancement 3 remote 9 | `apex_9` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
+| Comfort Enhancement 3 remote 10 | `apex_10` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
+| Comfort Enhancement 3 remote 11 | `apex_11` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
+| Comfort Enhancement 3 remote 12 | `apex_12` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
+| Comfort Enhancement 3 remote 13 | `apex_13` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
+| Comfort Enhancement 3 remote 14 | `apex_14` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
 | Okimat handset table | `okimat` | `okimat`, `okin_uuid` | 32-bit | plain; RF-Gateway envelope when detected | with response | handset table | handset table |
 | DewertOkin | `dewertokin` | `dewertokin`, `okin_handle` | 32-bit | plain; RF-Gateway envelope when detected | with response | head, feet | 2 |
 | OKIN Smart Remote RF ECO BT stair lift | `okin_rf_eco_bt` | `okin_rf_eco_bt` | 32-bit | plain frame | with response | stair | 0 |
@@ -252,6 +269,21 @@ are unchanged.
 
 | Profile | Hold refresh | Repeats | Release |
 |---|---|---|---|
+| Comfort Enhancement 3 remote 0 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 1 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 2 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 3 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 4 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 5 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 6 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 7 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 8 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 9 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 10 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 11 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 12 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 13 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 14 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
 | Okimat handset table | entry pulse delay | entry pulse count | 1 STOP |
 | DewertOkin | entry pulse delay | entry pulse count | 1 STOP |
 | OKIN Smart Remote RF ECO BT stair lift | 100 ms | entry pulse count | none (refresh ends) |
@@ -302,6 +334,21 @@ Entry pulse settings are the configured motor pulse count and delay.
 
 | Profile | Presets and recall | Memory recall | Memory save | Sync, child lock | Light, massage | Control mode |
 |---|---|---|---|---|---|---|
+| Comfort Enhancement 3 remote 0 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Comfort Enhancement 3 remote 1 | once, 2 STOP | once, 2 STOP | n/a | n/a | n/a | n/a |
+| Comfort Enhancement 3 remote 2 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Comfort Enhancement 3 remote 3 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Comfort Enhancement 3 remote 4 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Comfort Enhancement 3 remote 5 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Comfort Enhancement 3 remote 6 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Comfort Enhancement 3 remote 7 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Comfort Enhancement 3 remote 8 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Comfort Enhancement 3 remote 9 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Comfort Enhancement 3 remote 10 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Comfort Enhancement 3 remote 11 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Comfort Enhancement 3 remote 12 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Comfort Enhancement 3 remote 13 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Comfort Enhancement 3 remote 14 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
 | Okimat handset table | 100 × 300 ms, 1 STOP | 100 × 300 ms, 1 STOP | 10 × 200 ms, no STOP (or the handset's hold) | 60 × 100 ms, 1 STOP | once, no STOP | n/a |
 | DewertOkin | 100 × 300 ms, 1 STOP | 100 × 300 ms, 1 STOP | n/a | n/a | once, no STOP | n/a |
 | OKIN Smart Remote RF ECO BT stair lift | n/a | n/a | n/a | n/a | n/a | n/a |
@@ -5142,3 +5189,160 @@ Raw APKs, decompilation output and frozen reports stay machine-local.
 - Resident Adjustable Base: `com.okin.resident.release` 1.0.0 (1), artifact SHA-256
   `583dd003df0478419935bb1c6649a8e8b0228988e0b38b12c6919efa275e85f7`,
   accepted unit160 audit001. This app is separate from the Rize Resident CST profile.
+
+### Comfort Enhancement 3
+
+**App:** [Comfort Enhancement 3](https://play.google.com/store/apps/details?id=com.okin.apex)
+1.4.0 (5), `com.okin.apex`. Acquisition name: Comfort Plus3.
+
+**Status:** ❓ Needs testing. Direct BLE behavior is statically verified; hardware is unverified.
+
+#### Setup
+
+Choose **Comfort Enhancement 3 / Comfort Plus3** under Okin, then choose one of
+its remote indices or enter its exact printed code. The manual-code card is a
+setup route, not another hardware profile. Codes are case-sensitive; unknown
+codes and the app's pending-selection sentinels cannot enable controls.
+The shared Okin service offers an app candidate and preserves stronger receiver
+signatures. No Bluetooth name or manufacturer filter identifies this app or its
+remote. Each physical address keeps its own remote selection and local state.
+There are no additional physical side controls.
+
+#### Controls
+
+Head and Foot use the standard back and legs covers. M3/M4, MidBody, HeadTilt,
+TFlat and combined Head + Foot are app-labelled group buttons, not claims about
+measured anatomy or actuator count. The generated table lists every profile's
+gates. Zzz uses the QS packet on TV-equipped profiles; the wake-up picker still
+uses its own exact preset gates. Profile12 has wake-up massage without a main
+massage page. UBL controls the bed light; the phone flashlight is separate.
+
+<!-- generated:apex-controls -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Index | Exact remote codes | Additional app groups | Memory | ZG | TV / Zzz | QS | Massage | Wake massage | Flat | UBL | Tilt |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 89746, 90882, 91334 | none | M1/M2 | yes | no | no | no | no | yes | yes | no |
+| 1 | 92063, 91751 | none | M1/M2 | yes | no | no | no | no | yes | no | no |
+| 2 | 89925, 90568 | M3 + M4 | M1/M2 | yes | no | no | no | no | yes | yes | no |
+| 3 | 90566, 89927, 92169 | none | M1/M2 | yes | yes | no | yes | yes | yes | yes | no |
+| 4 | 90188, 92177 | Lumbar (M3) | M1 | yes | no | yes | yes | yes | yes | yes | no |
+| 5 | 90192 | M3 + M4 | M1 | yes | no | yes | yes | yes | yes | yes | no |
+| 6 | 91869, 91871, 92379 | M3 + M4 | M1 | yes | no | no | yes | yes | yes | yes | yes |
+| 7 | 93567 | Head + Foot (M1 + M2) | M1/M2 | yes | yes | no | no | no | yes | yes | no |
+| 8 | 93372 | Head + Foot (M1 + M2) | M1/M2 | yes | yes | no | yes | yes | yes | yes | no |
+| 9 | 93375 | MidBody (M3 + M4) | M1/M2 | yes | yes | no | yes | yes | yes | yes | no |
+| 10 | 93379 | M3 + M4, TFlat (M4) | M1/M2 | yes | yes | no | yes | yes | yes | yes | no |
+| 11 | PMT-5019 | MidBody (M3 + M4) | M1/M2 | no | no | no | no | no | no | yes | no |
+| 12 | PMT-5020 | HeadTilt (M3 + M4) | M1/M2 | no | no | no | no | yes | no | yes | no |
+| 13 | 95563 | MidBody (M3), TFlat (M4) | M1/M2 | yes | yes | no | yes | yes | yes | yes | no |
+| 14 | PMT-5024 | MidBody (M3), HeadTilt (M4) | M1/M2 | yes | yes | no | yes | yes | yes | yes | no |
+
+| Command | Word | Profiles | Frame |
+|---|---|---|---|
+| Head up | `0x00000001` | all | `04 02 00 00 00 01` |
+| Head down | `0x00000002` | all | `04 02 00 00 00 02` |
+| Feet up | `0x00000004` | all | `04 02 00 00 00 04` |
+| Feet down | `0x00000008` | all | `04 02 00 00 00 08` |
+| Memory 1 | `0x00001000` | all | `04 02 00 00 10 00` |
+| Memory store (arm) | `0x00010000` | all | `04 02 00 01 00 00` |
+| `m3_m4_up` | `0x00000050` | Comfort Enhancement 3 remote 2, Comfort Enhancement 3 remote 5, Comfort Enhancement 3 remote 6, Comfort Enhancement 3 remote 10 | `04 02 00 00 00 50` |
+| `m3_m4_down` | `0x000000A0` | Comfort Enhancement 3 remote 2, Comfort Enhancement 3 remote 5, Comfort Enhancement 3 remote 6, Comfort Enhancement 3 remote 10 | `04 02 00 00 00 A0` |
+| `tflat_up` | `0x00000040` | Comfort Enhancement 3 remote 10, Comfort Enhancement 3 remote 13 | `04 02 00 00 00 40` |
+| `tflat_down` | `0x00000080` | Comfort Enhancement 3 remote 10, Comfort Enhancement 3 remote 13 | `04 02 00 00 00 80` |
+| Memory 2 | `0x00002000` | Comfort Enhancement 3 remote 0, Comfort Enhancement 3 remote 1, Comfort Enhancement 3 remote 2, Comfort Enhancement 3 remote 3, Comfort Enhancement 3 remote 7, Comfort Enhancement 3 remote 8, Comfort Enhancement 3 remote 9, Comfort Enhancement 3 remote 10, Comfort Enhancement 3 remote 11, Comfort Enhancement 3 remote 12, Comfort Enhancement 3 remote 13, Comfort Enhancement 3 remote 14 | `04 02 00 00 20 00` |
+| Zero-G | `0x00004000` | Comfort Enhancement 3 remote 0, Comfort Enhancement 3 remote 1, Comfort Enhancement 3 remote 2, Comfort Enhancement 3 remote 3, Comfort Enhancement 3 remote 4, Comfort Enhancement 3 remote 5, Comfort Enhancement 3 remote 6, Comfort Enhancement 3 remote 7, Comfort Enhancement 3 remote 8, Comfort Enhancement 3 remote 9, Comfort Enhancement 3 remote 10, Comfort Enhancement 3 remote 13, Comfort Enhancement 3 remote 14 | `04 02 00 00 40 00` |
+| TV | `0x00003000` | Comfort Enhancement 3 remote 3, Comfort Enhancement 3 remote 7, Comfort Enhancement 3 remote 8, Comfort Enhancement 3 remote 9, Comfort Enhancement 3 remote 10, Comfort Enhancement 3 remote 13, Comfort Enhancement 3 remote 14 | `04 02 00 00 30 00` |
+| `qs` | `0x00008000` | Comfort Enhancement 3 remote 3, Comfort Enhancement 3 remote 4, Comfort Enhancement 3 remote 5, Comfort Enhancement 3 remote 7, Comfort Enhancement 3 remote 8, Comfort Enhancement 3 remote 9, Comfort Enhancement 3 remote 10, Comfort Enhancement 3 remote 13, Comfort Enhancement 3 remote 14 | `04 02 00 00 80 00` |
+| Flat | `0x10000000` | Comfort Enhancement 3 remote 0, Comfort Enhancement 3 remote 1, Comfort Enhancement 3 remote 2, Comfort Enhancement 3 remote 3, Comfort Enhancement 3 remote 4, Comfort Enhancement 3 remote 5, Comfort Enhancement 3 remote 6, Comfort Enhancement 3 remote 7, Comfort Enhancement 3 remote 8, Comfort Enhancement 3 remote 9, Comfort Enhancement 3 remote 10, Comfort Enhancement 3 remote 13, Comfort Enhancement 3 remote 14 | `04 02 10 00 00 00` |
+| Under-bed light toggle | `0x00020000` | Comfort Enhancement 3 remote 0, Comfort Enhancement 3 remote 2, Comfort Enhancement 3 remote 3, Comfort Enhancement 3 remote 4, Comfort Enhancement 3 remote 5, Comfort Enhancement 3 remote 6, Comfort Enhancement 3 remote 7, Comfort Enhancement 3 remote 8, Comfort Enhancement 3 remote 9, Comfort Enhancement 3 remote 10, Comfort Enhancement 3 remote 11, Comfort Enhancement 3 remote 12, Comfort Enhancement 3 remote 13, Comfort Enhancement 3 remote 14 | `04 02 00 02 00 00` |
+| `massage_duration` | `0x02000000` | Comfort Enhancement 3 remote 3, Comfort Enhancement 3 remote 4, Comfort Enhancement 3 remote 5, Comfort Enhancement 3 remote 6, Comfort Enhancement 3 remote 8, Comfort Enhancement 3 remote 9, Comfort Enhancement 3 remote 10, Comfort Enhancement 3 remote 13, Comfort Enhancement 3 remote 14 | `04 02 02 00 00 00` |
+| Head massage | `0x00000800` | Comfort Enhancement 3 remote 3, Comfort Enhancement 3 remote 4, Comfort Enhancement 3 remote 5, Comfort Enhancement 3 remote 6, Comfort Enhancement 3 remote 8, Comfort Enhancement 3 remote 9, Comfort Enhancement 3 remote 10, Comfort Enhancement 3 remote 13, Comfort Enhancement 3 remote 14 | `04 02 00 00 08 00` |
+| Foot massage | `0x00400000` | Comfort Enhancement 3 remote 3, Comfort Enhancement 3 remote 4, Comfort Enhancement 3 remote 5, Comfort Enhancement 3 remote 6, Comfort Enhancement 3 remote 8, Comfort Enhancement 3 remote 9, Comfort Enhancement 3 remote 10, Comfort Enhancement 3 remote 13, Comfort Enhancement 3 remote 14 | `04 02 00 40 00 00` |
+| Wave massage | `0x80000000` | Comfort Enhancement 3 remote 3, Comfort Enhancement 3 remote 4, Comfort Enhancement 3 remote 5, Comfort Enhancement 3 remote 6, Comfort Enhancement 3 remote 8, Comfort Enhancement 3 remote 9, Comfort Enhancement 3 remote 10, Comfort Enhancement 3 remote 13, Comfort Enhancement 3 remote 14 | `04 02 80 00 00 00` |
+| `massage_stop` | `0x00000400` | Comfort Enhancement 3 remote 3, Comfort Enhancement 3 remote 4, Comfort Enhancement 3 remote 5, Comfort Enhancement 3 remote 6, Comfort Enhancement 3 remote 8, Comfort Enhancement 3 remote 9, Comfort Enhancement 3 remote 10, Comfort Enhancement 3 remote 13, Comfort Enhancement 3 remote 14 | `04 02 00 00 04 00` |
+| `midbody_up` | `0x00000010` | Comfort Enhancement 3 remote 13, Comfort Enhancement 3 remote 14 | `04 02 00 00 00 10` |
+| `midbody_up` | `0x00000050` | Comfort Enhancement 3 remote 9, Comfort Enhancement 3 remote 11 | `04 02 00 00 00 50` |
+| `midbody_down` | `0x00000020` | Comfort Enhancement 3 remote 13, Comfort Enhancement 3 remote 14 | `04 02 00 00 00 20` |
+| `midbody_down` | `0x000000A0` | Comfort Enhancement 3 remote 9, Comfort Enhancement 3 remote 11 | `04 02 00 00 00 A0` |
+| `head_tilt_up` | `0x00000040` | Comfort Enhancement 3 remote 14 | `04 02 00 00 00 40` |
+| `head_tilt_up` | `0x00000050` | Comfort Enhancement 3 remote 12 | `04 02 00 00 00 50` |
+| `head_tilt_down` | `0x00000080` | Comfort Enhancement 3 remote 14 | `04 02 00 00 00 80` |
+| `head_tilt_down` | `0x000000A0` | Comfort Enhancement 3 remote 12 | `04 02 00 00 00 A0` |
+| `head_foot_up` | `0x00000005` | Comfort Enhancement 3 remote 7, Comfort Enhancement 3 remote 8 | `04 02 00 00 00 05` |
+| `head_foot_down` | `0x0000000A` | Comfort Enhancement 3 remote 7, Comfort Enhancement 3 remote 8 | `04 02 00 00 00 0A` |
+| Lumbar up | `0x00000010` | Comfort Enhancement 3 remote 4 | `04 02 00 00 00 10` |
+| Lumbar down | `0x00000020` | Comfort Enhancement 3 remote 4 | `04 02 00 00 00 20` |
+| `tilt` | `0x00000090` | Comfort Enhancement 3 remote 6 | `04 02 00 00 00 90` |
+| STOP / release | `0x00000000` | all | `04 02 00 00 00 00` |
+<!-- /generated -->
+
+#### Timing
+
+Movement holds use the profile's refresh and STOP schedule in
+[Choosing a profile](#choosing-a-profile). Ordinary cover presses retain the
+configured motor pulse count. A renewable card hold streams until its lease
+ends. HA serializes all resources for this app and captures the target session,
+then awaits fresh-event STOP cleanup. A denied or stale gesture cannot schedule
+a later STOP against another movement or physical bed.
+
+Presets and memories recall once and release. In Favorites, Zero Gravity's
+first callback writes, then a case mismatch makes subsequent callbacks reject
+until reset. HA preserves that proven single-press effect and does not expose a
+uniform renewable preset stream. The System Tilt flag omission and unconditional
+release after rejected presses are unsafe Android ownership bugs.
+
+Saving memory writes the setter at 100..4000 ms, then the selected M1/M2 recall
+at 4100/4200/4300 ms. Normal completion has no extra STOP or position read.
+Cancellation releases safely. These packets differ from local favorite labels.
+
+Massage duration cycles use zero, wait, step, wait. Initial duration/intensity
+choices send the relative number of steps; Wave uses zero and one wave command.
+The local countdown is an estimate, not reported bed state. Live expiry sends
+the bed's paired control/schedule massage-stop effect. Flat clears the local
+countdown without adding a massage-stop command.
+
+#### Notifications
+
+The controller requires write1525 and notify1625 under service1523. Optional
+standard Service Changed subscriptions are enabled and awaited, then bed
+notifications get one retry. Optional model and firmware reads cannot change
+capabilities; the model's HE150 comparison has no app effect. There are no
+startup control writes, authentication, bonding, PIN, position parser or
+heartbeat. The app requests MTU512 but does not prove a negotiated value; HA
+uses its normal queued GATT transport for these short packets. Notifications
+and ACKs establish no actuator, light or massage telemetry.
+
+#### Services
+
+`comfort_enhancement3_start_massage` takes duration, intensity and Head/Feet/HF/Wave.
+`comfort_enhancement3_set_wakeup` selects the current or next day, a slot,
+optional massage/light and an exact supported preset. It removes the old slot
+before rebuilding. `comfort_enhancement3_delete_wakeup` removes one slot.
+There is no proven read/list operation or physical slot maximum.
+
+The schedule encoder concatenates `0B0D`, decimal slot/step text padded to two
+characters, eight hexadecimal delay characters, eight command characters and
+two duration characters, then parses hex pairs. Thus index10 is encoded as
+hexadecimal `10`, not a binary integer byte. HA accepts only the nominal
+13-byte formatter domain (slot/step 0..99, unsigned fields). This is a wire-width
+check, not a firmware capacity claim. Source overflows and odd-width failures
+are rejected before any bed writes. Delay truncates microseconds to whole
+seconds toward zero, tests the sign, then multiplies by ten. HA exposes valid
+clock inputs and normalizes selected current/next day across calendar boundaries.
+
+The source's due callback includes real bed massage-stop writes. HA retains
+that effect with a captured session, slot generation and queued operation;
+edits, deletion and disconnect invalidate stale callbacks. Bed programs already
+written can continue without HA connected. Local callbacks require the same
+live session. Phone reminders, music and notifications are separate.
+
+#### Evidence
+
+APK Protocol Audit row083, accepted report plus repaired F1/F2 audit002.
+All original 29 literal and eight dynamic vectors are reproduced by the Okin
+N-frame codec, including its schedule encoder. External beta/release users may
+validate firmware acceptance; maintainer hardware acquisition is not required.
+
+Artifact XAPK SHA-256:
+`ae413a85a99d7fc6aa8ead9e1a1effc280d42470e02a8f28fb435f223dbe99e5`.

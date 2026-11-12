@@ -150,6 +150,7 @@ from .const import (
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_BEDSENSE,
+    BED_TYPE_COMFORT_ENHANCEMENT3,
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
@@ -411,7 +412,7 @@ CONFIGURED_RETRY_PREFIX = "configured_retry::"
 _AUTO_DETECT_MIN_CONFIDENCE = 0.7
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
-    {BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
+    {BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
      BED_TYPE_GMMOTOR, "gmmotor_sleep_mm", "gmmotor_sleep_sxb"}
 )
 
@@ -1233,6 +1234,7 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         # The layout is BedSense's own question.
         BED_TYPE_BEDSENSE,
         # Each app's own answers.
+        BED_TYPE_COMFORT_ENHANCEMENT3,
         BED_TYPE_MOTION_BED,
         BED_TYPE_DOUBLESLEEP,
         BED_TYPE_SLEEPTRACKER,
@@ -6893,6 +6895,14 @@ class AdjustableBedOptionsFlow(
             return DEFAULT_PROTOCOL_VARIANT
 
         requested_variant = data.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
+        # A profile may offer a setup route, such as entering a remote code,
+        # that it validates and converts to a concrete variant on save.
+        if (profile := setup_profile_for({**data, CONF_BED_TYPE: bed_type})) is not None:
+            for question in profile.questions:
+                if question.key == CONF_PROTOCOL_VARIANT and question.context_choices is None:
+                    choices = question.options(data)
+                    if choices is not None and isinstance(requested_variant, str) and requested_variant in choices:
+                        return requested_variant
         if isinstance(requested_variant, str) and requested_variant in variants:
             return requested_variant
         if VARIANT_AUTO in variants:

@@ -14,6 +14,7 @@ from .const import (
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_BEDTECH,
+    BED_TYPE_COMFORT_ENHANCEMENT3,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
@@ -160,6 +161,7 @@ ACTUATOR_GROUPS: Final[dict[str, tuple[Route, ...]]] = {
     "motosleep": ((BED_TYPE_MOTOSLEEP, None),),
     "octo": ((BED_TYPE_OCTO, None),),
     "okin": (
+        (BED_TYPE_COMFORT_ENHANCEMENT3, None),
         (BED_TYPE_OKIN_HANDLE, None),
         (BED_TYPE_OKIN_UUID, None),
         (BED_TYPE_OKIN_7BYTE, None),

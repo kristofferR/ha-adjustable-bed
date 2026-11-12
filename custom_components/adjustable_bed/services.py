@@ -2325,6 +2325,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.bedtech.services import register_services as register_bedtech_services
     from .beds.bf_cherish.services import register_services as register_bf_cherish_services
     from .beds.casper_base.services import async_register_casper_base_services
+    from .beds.comfort_enhancement3.services import register_services as register_apex_services
     from .beds.comfort_enhancements.services import async_register_comfort_enhancements_services
     from .beds.customatic.services import async_register_customatic_services
     from .beds.doublesleep.services import async_register_doublesleep_services
@@ -2398,6 +2399,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_limoss_remote_services,
         async_register_serenity_services,
         async_register_eshine_okin_services,
+        register_apex_services,
         async_register_jalon_services,
         async_register_glideaway_motion_services,
         async_register_simmons_services,

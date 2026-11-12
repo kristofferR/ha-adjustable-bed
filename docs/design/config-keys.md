@@ -77,6 +77,7 @@ original data and options keep them under `origin_data` and `origin_options`.
 |---|---|---|---|
 | `jiecang_app_layout` | Profile | A question of `jiecang_app` | `beds/jiecang/app.py` |
 | `jiecang_app_transport` | Profile | An Advanced question of `jiecang_app` | `beds/jiecang/app.py` |
+| `comfort_enhancement3_remote_code` | Profile | Exact remote-code question of Comfort Enhancement 3 / Comfort Plus3; saves a canonical remote variant | `profiles/comfort_enhancement3.py`, bed builder |
 | `furnimove_remote` | Profile | A question of `furnimove` | bed builders, `beds/furnimove/repair.py` |
 | `lp_legacy_model` | Profile | A question of `leggett_lp_legacy` | bed builders |
 | `lp_legacy_mode` | Profile | A question of `leggett_lp_legacy` | bed builders |

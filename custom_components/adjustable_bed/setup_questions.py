@@ -44,6 +44,7 @@ from .const import (
     BED_TYPE_BF,
     BED_TYPE_CASPER_BASE,
     BED_TYPE_CHERISH,
+    BED_TYPE_COMFORT_ENHANCEMENT3,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORTBASE,
     BED_TYPE_DOUBLESLEEP,
@@ -232,6 +233,8 @@ from .profiles import jiecang as jiecang_profiles
 from .profiles import limoss as limoss_profiles
 from .profiles import logicdata as logicdata_profiles
 from .profiles import malouf as malouf_profiles
+from .profiles.comfort_enhancement3 import CHOICES_WITH_CODE, REMOTE_CODE, REMOTES
+from .profiles.comfort_enhancement3 import resolve as resolve_apex
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.richmat import BEDTECH_APP_PROFILES, BEDTECH_VARIANTS
 
@@ -530,6 +533,22 @@ class SetupProfile:
         """Return the generic fields no generic form shows: owned or asked here."""
         asked = {question.key for question in self.questions} & GENERIC_FIELDS
         return frozenset(self.owns) | asked
+
+
+def _apex_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    variant = data.get(CONF_PROTOCOL_VARIANT)
+    if variant not in CHOICES_WITH_CODE:
+        return {CONF_PROTOCOL_VARIANT: "apex_remote_required"}
+    try:
+        resolve_apex(variant, data.get(REMOTE_CODE, ""))
+    except ValueError:
+        return {REMOTE_CODE: "apex_remote_code"}
+    return {}
+
+
+def _apex_derive(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    index = resolve_apex(data.get(CONF_PROTOCOL_VARIANT), data.get(REMOTE_CODE, ""))
+    return {CONF_HAS_MASSAGE: REMOTES[index].massage, CONF_PROTOCOL_VARIANT: f"apex_{index}"}
 
 
 def _jiecang_profile(data: Mapping[str, Any]) -> jiecang_profiles.JiecangProfile | None:
@@ -2416,6 +2435,17 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         seed=_motion_bed_seed,
     ),
     # Resident's single fixed screen owns its layout and refresh cadence.
+    BED_TYPE_COMFORT_ENHANCEMENT3: SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: SET_BY_PROFILE,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(
+            Question(CONF_PROTOCOL_VARIANT, CHOICES_WITH_CODE, REQUIRED, searchable=True),
+            Question(REMOTE_CODE, default="", text=True,
+                     when={"field": CONF_PROTOCOL_VARIANT, "operator": ConditionOperator.EQ, "value": "15"}),
+        ),
+        validate=_apex_errors, derive=_apex_derive,
+        title=lambda _data: "Comfort Enhancement 3 / Comfort Plus3",
+    ),
     BED_TYPE_RESIDENT: SetupProfile(
         owns={
             CONF_MOTOR_COUNT: 2,

@@ -100,20 +100,24 @@ async def factory_controllers() -> list[BedController]:
     Layouts differ by variant and motor count, so one default controller per
     bed type misses the controls only some layouts have.
     """
+    from custom_components.adjustable_bed.beds.comfort_enhancement3.controller import (
+        ComfortEnhancement3Controller,
+    )
     from custom_components.adjustable_bed.beds.sleep_number.mcr import SleepNumberMcrController
     from custom_components.adjustable_bed.beds.sleep_number.mcr_protocol import (
         FoundationFeatures,
     )
     from custom_components.adjustable_bed.config_flow import _motor_count_options
     from custom_components.adjustable_bed.controller_factory import create_controller
+    from custom_components.adjustable_bed.profiles.comfort_enhancement3 import REMOTES
     from custom_components.adjustable_bed.validators import get_variants_for_bed_type
     from tests.test_controller_contract import (
         _create_controller_for_bed_type,
         _FactoryCoordinator,
         _make_connected_client,
     )
-
     controllers: list[BedController] = []
+    controllers.extend(ComfortEnhancement3Controller(_FactoryCoordinator(), i) for i in range(len(REMOTES)))
     for bed_type in SUPPORTED_BED_TYPES:
         default = await _create_controller_for_bed_type(bed_type)
         controllers.append(default)

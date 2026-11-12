@@ -34,6 +34,7 @@ from .const import (
     BED_TYPE_BF,
     BED_TYPE_CASPER_BASE,
     BED_TYPE_CHERISH,
+    BED_TYPE_COMFORT_ENHANCEMENT3,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COMFORTBASE,
@@ -335,6 +336,7 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
 # Bed types whose controller needs the variant, entry data, the advertisement
 # or the live GATT table. Each builder lives in its bed module.
 _BUILDERS: Final[dict[str, _BuilderSpec]] = {
+    BED_TYPE_COMFORT_ENHANCEMENT3: _BuilderSpec("comfort_enhancement3.controller"),
     "paramount": _BuilderSpec("paramount.controller"),
     "smart_comfort_synargy": _BuilderSpec("smart_comfort.controller"),
     "smart_comfort_synergy": _BuilderSpec("smart_comfort.controller"),

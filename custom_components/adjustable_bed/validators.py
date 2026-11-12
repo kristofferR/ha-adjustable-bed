@@ -96,6 +96,7 @@ from .const import (
     ZSERIES_VARIANTS,
 )
 from .profiles.casper import CASPER_BASE_VARIANTS
+from .profiles.comfort_enhancement3 import CHOICES as APEX_CHOICES
 from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
 from .profiles.hush import HUSH_BASE_VARIANTS
 from .profiles.luuna import VARIANTS as LUUNA_VARIANTS
@@ -130,6 +131,7 @@ def is_valid_octo_pin(pin: str) -> bool:
 
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
+    "comfort_enhancement3": APEX_CHOICES,
     "bedtech": BEDTECH_VARIANTS,
     BED_TYPE_GALAXY: GALAXY_PROFILES,
     BED_TYPE_GOODVIBE: GOODVIBE_PROFILES,

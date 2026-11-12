@@ -1346,6 +1346,14 @@ def route_scenarios() -> list[Scenario]:
                     replies={**base.replies, **ROUTE_REPLIES.get(f"{bed_type}:{variant}", {})},
                 )
             )
+    from custom_components.adjustable_bed.profiles.comfort_enhancement3 import (
+        PROFILES as APEX_PROFILES,
+    )
+    for profile in APEX_PROFILES:
+        scenarios.append(dataclasses.replace(
+            default_scenario("comfort_enhancement3"), id=f"comfort_enhancement3:{profile}",
+            protocol_variant=profile, layout_id="comfort_enhancement3",
+        ))
     # BedTech's manual model selector: each model has its own controls and release.
     from custom_components.adjustable_bed.profiles.richmat import BEDTECH_APP_PROFILES
 

@@ -361,6 +361,24 @@
   "card_role": "up",
   "card_motor": "all_motors"
  },
+ "button:apex_group": {
+  "card_section": "utility"
+ },
+ "button:apex_massage_both": {
+  "card_section": "massage"
+ },
+ "button:apex_massage_duration": {
+  "card_section": "massage"
+ },
+ "button:apex_massage_wave": {
+  "card_section": "massage"
+ },
+ "button:apex_qs": {
+  "card_section": "presets"
+ },
+ "button:apex_tilt": {
+  "card_section": "presets"
+ },
  "button:auxiliary_1_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -2880,6 +2898,12 @@
   "card_section": "utility"
  },
  "sensor:adjustamattress_wave": {
+  "card_section": "massage"
+ },
+ "sensor:apex_firmware": {
+  "card_section": "hidden"
+ },
+ "sensor:apex_local_massage_end": {
   "card_section": "massage"
  },
  "sensor:app_memory_request": {

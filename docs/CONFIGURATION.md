@@ -1023,3 +1023,13 @@ list. Generic motor, massage and timing settings belong to the selected app
 profile; a two-address pair keeps each side's product separately. The separate
 sleep device has its own entry and MM/HJ current or restored session choice.
 See the [Richmat guide](beds/richmat.md#richmat-420).
+
+### Comfort Enhancement 3 / Comfort Plus3
+
+Choose the exact app remote index (0..14), or the manual-code option and an
+exact supported code. Neither a shared Bluetooth service nor device name
+selects the remote layout. All remote capabilities come from that selection;
+profile12 offers massage in wake-up programs only. Each side of a two-address
+pair owns its own selection. Ordinary cover presses use the configured pulse
+count; the card's renewable hold has its own lease. See the
+[profile guide](beds/okin-nframe.md#comfort-enhancement-3).

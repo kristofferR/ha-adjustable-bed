@@ -920,3 +920,20 @@ Use the usual `device_id` and optional `side` fields. See the
 [Jalon profile](beds/keeson.md#okincomfortbed-ⅱ-jalon) for the wire behavior,
 held gestures and hardware caveats. The generic `sync_clock` action also
 supports this profile.
+
+### Comfort Enhancement 3 / Comfort Plus3
+
+- `adjustable_bed.comfort_enhancement3_start_massage`: `device_id`, `duration`
+  (10, 20 or 30 minutes), `intensity` (1..3), `kind` (`head`, `feet`, `both`, `wave`).
+  Uses relative steps; does not report measured intensity.
+- `adjustable_bed.comfort_enhancement3_set_wakeup`: `device_id`, `slot`, `time`,
+  `next_day`, optional `massage`, `duration`, `intensity`, `kind`, `light`, `preset`.
+  Preset labels are exact: `None`, `M1`, `M2`, `Zero Gravity`, `TV`, `QS`, subject
+  to the selected remote. Time selects today or tomorrow explicitly.
+- `adjustable_bed.comfort_enhancement3_delete_wakeup`: `device_id`, `slot`.
+
+All support the normal paired `side` routing and preflight every target before
+writing. Slot0..99 is the formatter's two-character decimal-text domain, not a
+claim that firmware has 100 slots. Bed programs persist on the bed independently
+of HA's connection; no complete list/read API is proven. The local due callback
+retains the source's bed massage-stop effect, with session/edit fences.
