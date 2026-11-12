@@ -2446,6 +2446,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
                    Question(CONF_PROTOCOL_VARIANT, _symphony_transports)),
         validate=_symphony_errors, derive=_symphony_settings,
         title=lambda _data: "Symphony Sleep",
+        imports=("profiles.symphony_sleep",),
     ),
     # Resident's single fixed screen owns its layout and refresh cadence.
     BED_TYPE_RESIDENT: SetupProfile(
