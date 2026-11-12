@@ -130,6 +130,7 @@ from .const import (
     BED_TYPE_RICHMAT_IDEALBED,
     BED_TYPE_RICHMAT_REVIVE,
     BED_TYPE_RIZE,
+    BED_TYPE_RIZE_HOME,
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
     BED_TYPE_SCOTT_LIVING,
@@ -581,6 +582,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_ADJUSTAMATTRESS: "AdjustaMattress app (seven product layouts)",
     BED_TYPE_ADJUSTABLE_BED: "Adjustable bed app",
     BED_TYPE_ADJUSTABLE_LUMBAR: "Adjustable bed (Lumbar) app",
+    BED_TYPE_RIZE_HOME: "Rize Home app (Remedy III / Contempo IV)",
     BED_TYPE_RESIDENT: "Resident Adjustable Base app (com.okin.resident.release)",
     BED_TYPE_COMFORTBASE: "ComfortBaseForBluetooth / ComfortBase BLE (choose product)",
     BED_TYPE_COMFORT_ENHANCEMENTS: "Comfort Enhancements app (choose MC2/MC3/MC4/MC5)",
@@ -1331,6 +1333,19 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         elif result.bed_type != BED_TYPE_RESIDENT:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_RESIDENT]))
             result.signals.append("name:resident_app_candidate")
+    if (
+        isinstance(service_info.name, str)
+        and service_info.name.lower().startswith("smartbed")
+        and result.confidence < 0.8
+        and not any(signal.startswith("excluded:") for signal in result.signals)
+    ):
+        # Offer the shared name only when there is no confident receiver match.
+        # It cannot select Rize Home or a product, or question a proven receiver.
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_RIZE_HOME, 0.3, ["name:rize_home_app_candidate"])
+        elif result.bed_type != BED_TYPE_RIZE_HOME:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_RIZE_HOME]))
+            result.signals.append("name:rize_home_app_candidate")
     if mlily_scan_matches(service_info.name) and mlily_suggested_profile(service_info.name) and not any(signal.startswith("excluded:") for signal in result.signals):
         if result.bed_type is None:
             result = DetectionResult(BED_TYPE_MLILY, 0.3, ["name:mlily_app_candidate", *result.signals])

@@ -407,6 +407,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Okin ORE (legacy A5 5A) | `okin_ore` | 1 | 300 ms |
 | Resident Adjustable Base app (com.okin.resident.release) | `resident` | 4 | 300 ms |
 | Richmat / RMControl app | `richmat` | 7 | 150 ms |
+| Rize Home app (Remedy III / Contempo IV) | `rize_home` | 3 | 200 ms |
 | SIMMONS app | `simmons` | 4 | 300 ms |
 | SUTA Smart Home (AT protocol) | `suta` | 7 | 150 ms |
 | V-MAT Basic app | `vmatbasic` | 34 | 30 ms |

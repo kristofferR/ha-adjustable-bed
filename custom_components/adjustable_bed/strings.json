@@ -3000,6 +3000,36 @@
       },
       "jalon_bed_massage_timer": {
         "name": "Cycle massage timer"
+      },
+      "rize_home_timer": {
+        "name": "Cycle massage timer"
+      },
+      "rize_home_query": {
+        "name": "Refresh massage state"
+      },
+      "rize_home_motion_on": {
+        "name": "Enable motion sensor (6 seconds)"
+      },
+      "rize_home_motion_off": {
+        "name": "Disable motion sensor (6 seconds)"
+      },
+      "rize_home_reset_memories": {
+        "name": "Reset programmed presets (6 seconds)"
+      },
+      "rize_home_save_reading": {
+        "name": "Save Reading (6 seconds)"
+      },
+      "rize_home_save_memory": {
+        "name": "Save Memory (6 seconds)"
+      },
+      "rize_home_save_anti_snore": {
+        "name": "Save Anti-snore (6 seconds)"
+      },
+      "rize_home_save_leisure": {
+        "name": "Save Leisure (6 seconds)"
+      },
+      "rize_home_save_zero_g": {
+        "name": "Save Zero gravity (6 seconds)"
       }
     },
     "cover": {
@@ -4702,6 +4732,21 @@
       },
       "jalon_massage_timer_bucket": {
         "name": "Massage timer indicator"
+      },
+      "rize_home_timer_index": {
+        "name": "Massage timer index"
+      },
+      "rize_home_combined_intensity": {
+        "name": "Combined massage intensity"
+      },
+      "rize_home_head_intensity": {
+        "name": "Head massage intensity"
+      },
+      "rize_home_foot_intensity": {
+        "name": "Foot massage intensity"
+      },
+      "rize_home_mode": {
+        "name": "Massage mode"
       }
     },
     "light": {
@@ -5017,6 +5062,9 @@
       },
       "rize_battery_mode": {
         "name": "Battery mode"
+      },
+      "rize_home_active": {
+        "name": "Massage active"
       }
     },
     "number": {
@@ -6017,6 +6065,13 @@
           "left": "Left",
           "right": "Right",
           "both": "Both"
+        }
+      },
+      "rize_home_source": {
+        "name": "Rize Home command source",
+        "state": {
+          "button": "Button",
+          "speak": "Speech"
         }
       }
     },

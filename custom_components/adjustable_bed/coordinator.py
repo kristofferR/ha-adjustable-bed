@@ -16,7 +16,7 @@ from collections.abc import (
     Mapping,
 )
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, Self, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, Self, TypeVar, cast
 from uuid import uuid4
 from weakref import WeakKeyDictionary
 
@@ -481,6 +481,8 @@ class AdjustableBedCoordinator(
         # CB35 autonomous presets can outlive the connection-scoped controller.
         self.okin_cb35_preset_started_at: float | None = None
         self._controller_state = ControllerState()
+        # App command source belongs to this physical bed, beyond one BLE link.
+        self.rize_home_source: Literal["button", "speak"] = "button"
         self.starcode_app_retained_state: RetainedAppState | None = None
         self.furnimove_widget_state: tuple[bool, bytes | None, bytes | None] = (False, None, None)
         # App-local state (BedController.persisted_app_state), slotted per restored controller.

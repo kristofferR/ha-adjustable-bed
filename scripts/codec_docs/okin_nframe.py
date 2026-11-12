@@ -22,6 +22,7 @@ from custom_components.adjustable_bed.const import (
     NORDIC_UART_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.profiles import okin_nframe as okin_profiles
+from custom_components.adjustable_bed.profiles import rize_home
 from custom_components.adjustable_bed.profiles.adjustable_bed import (
     PROFILES as ADJUSTABLE_BED_PROFILES,
 )
@@ -587,7 +588,52 @@ def render_resident_session() -> str:
     )
 
 
+def render_rize_home() -> str:
+    p = rize_home
+    return _block(
+        _table(
+            ("Profile", "Bed type", "Motors", "Presets", "Programmable", "Poll query starts"),
+            (
+                (
+                    profile.key,
+                    "`rize_home`",
+                    ", ".join(profile.axes),
+                    ", ".join(profile.presets),
+                    ", ".join(profile.programmable),
+                    ", ".join(f"+{ms} ms" for ms in profile.poll_query_offsets_ms),
+                )
+                for profile in p.PROFILES.values()
+            ),
+        ),
+        _table(
+            ("Role", "UUID"),
+            (
+                ("Service", f"`{p.SERVICE_UUID}`"),
+                ("Write without response", f"`{p.WRITE_UUID}`"),
+                ("Notify / indicate", f"`{p.NOTIFY_UUID}`"),
+            ),
+        ),
+        _table(("Action", "Frame"), ((action, _hex(frame)) for action, frame in p.FRAMES.items())),
+        _table(
+            ("Operation", "Timing"),
+            (
+                ("Held refresh", f"{p.REFRESH_MS} ms"),
+                ("Once writes", ", ".join(f"+{ms} ms" for ms in p.ONCE_OFFSETS_MS)),
+                ("Program / reset / sensor", f"{p.SAVE_MS} ms"),
+                ("Intensity poll", f"{p.POLL_MS} ms"),
+                (
+                    "Massage release",
+                    f"STOP at +{p.RELEASE_STOP_MS} ms; query {p.RELEASE_QUERY_MS} ms later",
+                ),
+                ("Startup settling", f"{p.MTU_SETTLE_MS} ms"),
+                ("Subscription retry", f"once after {p.NOTIFY_RETRY_MS} ms"),
+            ),
+        ),
+    )
+
+
 BLOCKS: list[Block] = [
+    (GUIDE, "rize-home", render_rize_home),
     (GUIDE, "adjustable-bed-commands", render_adjustable_bed),
     (GUIDE, "resident-session", render_resident_session),
     (GUIDE, "okin-nframe-profiles", render_okin_nframe_profiles),

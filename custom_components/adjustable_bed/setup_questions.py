@@ -88,6 +88,7 @@ from .const import (
     BED_TYPE_RICHMAT_APP_SLEEP,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_RIZE,
+    BED_TYPE_RIZE_HOME,
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
@@ -2414,6 +2415,18 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         validate=_motion_bed_errors,
         derive=lambda _data: _NO_PULSE_CHOICE,
         seed=_motion_bed_seed,
+    ),
+    BED_TYPE_RIZE_HOME: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 2,
+            CONF_HAS_MASSAGE: True,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_DELAY_MS: 200,
+        },
+        questions=(Question(CONF_PROTOCOL_VARIANT, {
+            "remedy_iii": "Remedy III", "contempo_iv": "Contempo IV",
+        }, "remedy_iii"),),
+        title=lambda _data: "Rize Home",
     ),
     # Resident's single fixed screen owns its layout and refresh cadence.
     BED_TYPE_RESIDENT: SetupProfile(

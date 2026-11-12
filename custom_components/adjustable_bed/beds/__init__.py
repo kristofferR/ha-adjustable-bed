@@ -91,6 +91,7 @@ if TYPE_CHECKING:
     from .richmat_app.controller import RichmatAppController as RichmatAppController
     from .richmat_classic.controller import RichmatClassicController as RichmatClassicController
     from .richmat_mh.controller import RichmatMhController as RichmatMhController
+    from .rize_home.controller import RizeHomeController as RizeHomeController
     from .rondure import RondureController as RondureController
     from .row_control import RowControlController as RowControlController
     from .ruf_richmat.controller import RufRichmatController as RufRichmatController
@@ -125,6 +126,7 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "RizeHomeController": "rize_home.controller",
     "ResidentController": "resident.controller",
     "JalonBedController": "jalon_bed.controller",
     "GoodVibeController": "goodvibe.controller",

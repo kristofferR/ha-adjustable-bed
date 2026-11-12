@@ -1,0 +1,940 @@
+[
+  {
+    "id": "motionSensorOff-0",
+    "method": "motionSensorOff",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      4,
+      256,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      2,
+      128,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 00 02 80 00 00",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:639-743",
+      "BleManager::motionSensorOff@0x39a068"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "motionSensorOn-0",
+    "method": "motionSensorOn",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      4,
+      32,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      2,
+      16,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 00 02 10 00 00",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:1001-1105",
+      "BleManager::motionSensorOn@0x39b5c8"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "underbedLighting-0",
+    "method": "underbedLighting",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      4,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      2,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 00 02 00 00",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:1106-1182",
+      "BleManager::underbedLighting@0x39b6c8"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "massageHeadAndFootMinus-0",
+    "method": "massageHeadAndFootMinus",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      2,
+      256,
+      0,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      1,
+      128,
+      0,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 01 80 00 00 00",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:1451-1546",
+      "BleManager::massageHeadAndFootMinus@0x39ba40"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "massageHeadAndFoot-0",
+    "method": "massageHeadAndFoot",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      24,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      12,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 00 00 0c 00 00",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:1547-1640",
+      "BleManager::massageHeadAndFoot@0x39bb34"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "massageFootMinus-0",
+    "method": "massageFootMinus",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 01 00 00 00 00",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:1641-1734",
+      "BleManager::massageFootMinus@0x39bc24"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "massageFoot-0",
+    "method": "massageFoot",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      8,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      4,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 00 00 04 00 00",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:1735-1828",
+      "BleManager::massageFoot@0x39bd14"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "massageHeadMinus-0",
+    "method": "massageHeadMinus",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      256,
+      0,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      128,
+      0,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 00 80 00 00 00",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:1829-1922",
+      "BleManager::massageHeadMinus@0x39be04"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "massageHead-0",
+    "method": "massageHead",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      16,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      8,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 00 00 08 00 00",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:1923-2016",
+      "BleManager::massageHead@0x39bef4"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "massageOff-0",
+    "method": "massageOff",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      4,
+      0,
+      0,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 02 00 00 00 00",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2017-2110",
+      "BleManager::massageOff@0x39bfe4"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "massageOn-0",
+    "method": "massageOn",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      16,
+      0,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      8,
+      0,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 00 08 00 00 00",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2111-2204",
+      "BleManager::massageOn@0x39c0d4"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "reading-0",
+    "method": "reading",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      64,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      32,
+      0
+    ],
+    "expected_bytes": "05 02 00 00 20 00",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2205-2296",
+      "BleManager::reading@0x39c1c4"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "m5-0",
+    "method": "m5",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      2,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      1,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 00 01 00 00",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2297-2388",
+      "BleManager::m5@0x39c2b0"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "flat-0",
+    "method": "flat",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      16,
+      0,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      8,
+      0,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 08 00 00 00",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2389-2480",
+      "BleManager::flat@0x39c39c"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "antiSnore-0",
+    "method": "antiSnore",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      256,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      128,
+      0
+    ],
+    "expected_bytes": "05 02 00 00 80 00",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2481-2572",
+      "BleManager::antiSnore@0x39c488"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "zeroGravity-0",
+    "method": "zeroGravity",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      32,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      16,
+      0
+    ],
+    "expected_bytes": "05 02 00 00 10 00",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2573-2664",
+      "BleManager::zeroGravity@0x39c574"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "leisure-0",
+    "method": "leisure",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      128,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      64,
+      0
+    ],
+    "expected_bytes": "05 02 00 00 40 00",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2665-2756",
+      "BleManager::leisure@0x39c660"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "stopCommand-0",
+    "method": "stopCommand",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      0,
+      6,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      3,
+      0
+    ],
+    "expected_bytes": "05 02 00 00 00 03 00",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2757-2904",
+      "BleManager::stopCommand@0x39c74c"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "stopCommand-1",
+    "method": "stopCommand",
+    "branch": 1,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 00 00 00 00",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2757-2904",
+      "BleManager::stopCommand@0x39c74c"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "elevateDown-0",
+    "method": "elevateDown",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      0,
+      256
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      128
+    ],
+    "expected_bytes": "05 02 00 00 00 80",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2905-2981",
+      "BleManager::elevateDown@0x39c8c4"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "elevateUp-0",
+    "method": "elevateUp",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      0,
+      128
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      64
+    ],
+    "expected_bytes": "05 02 00 00 00 40",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2982-3058",
+      "BleManager::elevateUp@0x39c984"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "lumbarDown-0",
+    "method": "lumbarDown",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      0,
+      64
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      32
+    ],
+    "expected_bytes": "05 02 00 00 00 20",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3059-3135",
+      "BleManager::lumbarDown@0x39ca44"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "lumbarUp-0",
+    "method": "lumbarUp",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      0,
+      32
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      16
+    ],
+    "expected_bytes": "05 02 00 00 00 10",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3136-3212",
+      "BleManager::lumbarUp@0x39cb04"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "footDown-0",
+    "method": "footDown",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      0,
+      16
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      8
+    ],
+    "expected_bytes": "05 02 00 00 00 08",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3213-3289",
+      "BleManager::footDown@0x39cbc4"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "footUp-0",
+    "method": "footUp",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      0,
+      8
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      4
+    ],
+    "expected_bytes": "05 02 00 00 00 04",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3290-3366",
+      "BleManager::footUp@0x39cc84"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "headDown-0",
+    "method": "headDown",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      0,
+      4
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      2
+    ],
+    "expected_bytes": "05 02 00 00 00 02",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3367-3443",
+      "BleManager::headDown@0x39cd44"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "headUp-0",
+    "method": "headUp",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      0,
+      2
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      1
+    ],
+    "expected_bytes": "05 02 00 00 00 01",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3444-3520",
+      "BleManager::headUp@0x39ce04"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "headTiltDown-0",
+    "method": "headTiltDown",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      256,
+      0,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      128,
+      0,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 80 00 00 00",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3521-3597",
+      "BleManager::headTiltDown@0x39cec4"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "headTiltUp-0",
+    "method": "headTiltUp",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      128,
+      0,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      64,
+      0,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 40 00 00 00",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3598-3674",
+      "BleManager::headTiltUp@0x39cf84"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "confirmationResponse-0",
+    "method": "confirmationResponse",
+    "branch": 0,
+    "tagged_register_values": [
+      0,
+      352
+    ],
+    "values": [
+      0,
+      176
+    ],
+    "expected_bytes": "00 b0",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3909-3978",
+      "BleManager::confirmationResponse@0x429dec"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "massageOpen-0",
+    "method": "massageOpen",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      2,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 00 00 01 00 00",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3979-4072",
+      "BleManager::massageOpen@0x42a274"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "massageMode-0",
+    "method": "massageMode",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      32,
+      0,
+      0,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      16,
+      0,
+      0,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 10 00 00 00 00",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:4073-4166",
+      "BleManager::massageMode@0x42ce68"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "massageTimer-0",
+    "method": "massageTimer",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      4,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      2,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 00 00 02 00 00",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:4167-4260",
+      "BleManager::massageTimer@0x42f380"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  },
+  {
+    "id": "flatAndZg-0",
+    "method": "flatAndZg",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      16,
+      0,
+      32,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      8,
+      0,
+      16,
+      0
+    ],
+    "expected_bytes": "05 02 08 00 10 00",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:4261-4339",
+      "BleManager::flatAndZg@0x43335c"
+    ],
+    "literal_source": "Dart Smi integer constants written to array fields, untagged then forwarded through Uint8List serializer; not a hardware capture."
+  }
+]
