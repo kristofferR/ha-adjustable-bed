@@ -1986,6 +1986,12 @@
  "button:wake_controller": {
   "card_section": "utility"
  },
+ "button:yamada_query_alarms": {
+  "card_section": "utility"
+ },
+ "button:yamada_sync_clock": {
+  "card_section": "utility"
+ },
  "climate:footwarming_climate": {
   "card_section": "climate"
  },
@@ -4098,6 +4104,12 @@
  },
  "sensor:vmatbasic_temperature": {
   "card_section": "hidden"
+ },
+ "sensor:yamada_alarm_1": {
+  "card_section": "utility"
+ },
+ "sensor:yamada_alarm_2": {
+  "card_section": "utility"
  },
  "switch:automatic_light": {
   "card_section": "utility"

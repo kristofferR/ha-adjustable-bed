@@ -3855,3 +3855,44 @@ jalon_bed_set_alarm:
       selector:
         select:
           options: [both, left, right]
+yamada_set_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [left, right, both]
+    slot:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 2
+          step: 1
+          mode: box
+    enabled:
+      required: true
+      selector:
+        boolean:
+    time:
+      required: true
+      selector:
+        time:
+    weekday:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 255
+          step: 1
+          mode: box
+    preset:
+      required: true
+      selector:
+        select:
+          options: [memory_1, anti_snore, zero_g, tv, flat]

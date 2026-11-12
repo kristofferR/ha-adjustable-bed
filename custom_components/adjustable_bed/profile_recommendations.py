@@ -43,6 +43,7 @@ from .const import (
     BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_STARCODE_ABM5_4,
+    BED_TYPE_YAMADA,
     CONF_BED_TYPE,
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_REMOTE,
@@ -273,7 +274,7 @@ def recommend_profile(
     receiver_ambiguities = set(detected.ambiguous_types or ()) - {
         BED_TYPE_MLILY, BED_TYPE_HJBED, BED_TYPE_GOODVIBE, BED_TYPE_GALAXY,
         BED_TYPE_ESHINE_OKIN, BED_TYPE_RICHMAT_CLASSIC_APPS,
-        BED_TYPE_RESIDENT,
+        BED_TYPE_RESIDENT, BED_TYPE_YAMADA,
         BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP,
     }
     if (detected.confidence < 0.9 or receiver_ambiguities) and not any(
@@ -281,7 +282,7 @@ def recommend_profile(
         and signal not in (
             "name:mlily_app_candidate", "name:hjbed_app_candidate", "name:goodvibe_app_candidate", "name:galaxy_app_candidate",
             "name:eshine_okin_app_candidate", "name:richmat_classic_app_candidate",
-            "name:resident_app_candidate",
+            "name:resident_app_candidate", "name:yamada_app_candidate",
             "name:richmat_app_candidate", "name:richmat_sleep_candidate",
         )
         for signal in detected.signals

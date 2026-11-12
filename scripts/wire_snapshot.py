@@ -1184,6 +1184,7 @@ def default_scenario(bed_type: str) -> Scenario:
         const.BED_TYPE_GALAXY: "6BRM",
         const.BED_TYPE_HJBED: "hj_bedbjrn",
         const.BED_TYPE_COMFORTBASE: "accord",
+        const.BED_TYPE_YAMADA: "p1",
         const.BED_TYPE_RICHMAT_APP: "6BRM",
         const.BED_TYPE_RICHMAT_APP_SLEEP: "hj",
         const.BED_TYPE_DOUBLESLEEP: "p1",
@@ -1388,6 +1389,8 @@ def route_scenarios() -> list[Scenario]:
                 layout_id=const.BED_TYPE_JALON_BED,
             )
         )
+    scenarios.append(Scenario(id="yamada:p2", bed_type="yamada", protocol_variant="p2", layout_id="yamada"))
+
     # Jiecang family: one app, four profiles, shared and distinct layouts.
     for profile in ("dreamask", "dreamotion", "dreamhd", "comfort_motion"):
         second = "g2" if profile == "comfort_motion" else "g3"
@@ -1770,6 +1773,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
 
 # Bed-specific startup the coordinator runs after notifications, in its order.
 STARTUP_HOOKS: dict[str, tuple[str, ...]] = {
+    "yamada": ("sync_clock",),
     "octo": ("discover_features", "send_pin", "start_keepalive"),
     "jensen": ("query_config",),
     "sleep_number": ("query_config",),

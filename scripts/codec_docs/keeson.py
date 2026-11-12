@@ -18,6 +18,7 @@ from custom_components.adjustable_bed.beds.ore_comfort_bed import ORE_COMFORT_BE
 from custom_components.adjustable_bed.codec import keeson as keeson_codec
 from custom_components.adjustable_bed.profiles import keeson as keeson_profiles
 from scripts.codec_docs._common import Block, _block, _hex, _table
+from scripts.codec_docs._yamada import BLOCKS as _YAMADA_BLOCKS
 
 GUIDE = "docs/beds/keeson.md"
 
@@ -71,9 +72,13 @@ _KEESON_NAMES: dict[str, str] = {
     "comfort_enhancements": "Comfort Enhancements",
     "comfortbase": "ComfortBaseForBluetooth",
     "jalon_bed": "OkinComfortBed Ⅱ (Jalon)",
+    "yamada_p1": "アシステック P1",
+    "yamada_p2": "アシステック P2",
 }
 # Controllers that keep their key tables and timing; their profile is only the frame.
 _KEESON_CONTROLLERS: dict[str, tuple[str, str]] = {
+    "yamada_p1": ("`yamada`, P1", "[アシステック](#アシステック--yamada)"),
+    "yamada_p2": ("`yamada`, P2", "[アシステック](#アシステック--yamada)"),
     **dict.fromkeys(("jalon_13", "jalon_15", "jalon_24"), ("`jalon`", "[OkinComfortBed II](#okincomfortbed-ii)")),
     "jalon_bed": ("`jalon_bed`", "[OkinComfortBed Ⅱ (Jalon)](#okincomfortbed-ⅱ-jalon)"),
     "glideaway_motion": ("`glideaway_motion`", "[Glideaway Motion](#glideaway-motion)"),
@@ -1101,3 +1106,5 @@ def render_jalon() -> str:
 
 
 BLOCKS.append((GUIDE, "keeson-jalon", render_jalon))
+
+BLOCKS.extend(_YAMADA_BLOCKS)

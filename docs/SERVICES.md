@@ -920,3 +920,32 @@ Use the usual `device_id` and optional `side` fields. See the
 [Jalon profile](beds/keeson.md#okincomfortbed-ⅱ-jalon) for the wire behavior,
 held gestures and hardware caveats. The generic `sync_clock` action also
 supports this profile.
+
+
+### アシステック / Yamada bed alarms
+
+Refresh bed alarms on the target's current connection before calling
+`adjustable_bed.yamada_set_alarm`. It requires an explicit `slot` (1 or 2),
+`enabled`, minute-precision local `time`, `weekday` mask (0–255) and `preset`
+(`memory_1`, `anti_snore`, `zero_g`, `tv` or `flat`). P1 requires the other
+slot's observed record to preserve it; reconnect clears these observations.
+Both slots are independent, and no first-free allocation is inferred.
+
+Sunday is bit 0 and Saturday bit 6. Add 128 for recurring days (129–255);
+0–128 selects the next occurrence of the supplied local time. Disabling zeros
+the weekday without normalization. P1 also zeros the selected position; P2
+keeps the supplied position. Supply the observed time and preset to preserve them.
+The sensors report observed state only. A successful write is not a bed ACK.
+All targets are validated and admitted before requested writes, with normal
+paired `side` routing. A stale session fails safely.
+
+```yaml
+action: adjustable_bed.yamada_set_alarm
+data:
+  device_id: YOUR_DEVICE_ID
+  slot: 1
+  enabled: true
+  time: "07:30"
+  weekday: 190  # Recurring Monday to Friday
+  preset: zero_g
+```

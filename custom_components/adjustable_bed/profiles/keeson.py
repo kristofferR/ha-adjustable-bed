@@ -552,6 +552,20 @@ JALON_BED: Final = KeesonProfile(
     memory={1: 0x10000, 2: 0x40000}, memory_slots=2,
 )
 
+# アシステック, com.okin.yamada 1.0.1 (6), row178. All 35 frozen
+# literals match Keeson / Okin N-frame encoders. The fifth control byte is
+# always zero, not a proven side selector. No lounge or second memory exists.
+YAMADA_P1: Final = KeesonProfile(
+    key="yamada_p1", execution=STREAM_HOLD, header=0xE6, side=0,
+    fixed_write=True, hold=(4, 300), refresh_ms=300,
+    release=Release(steps=((100, 0), (300, 0)), after_tap=True),
+    presets={"flat": 0x08000000, "zero_g": 0x1000, "tv": 0x4000, "anti_snore": 0x8000},
+    memory={1: 0x2000}, memory_slots=1,
+    memory_save=MemorySave(words={1: 0x2000}),
+    massage="none", tilt=False, lumbar=False, keeson_motor_names=False,
+)
+YAMADA_P2: Final = replace(YAMADA_P1, key="yamada_p2", carrier="p2_side", execution=STREAM_HOLD)
+
 PROFILES: Final[dict[str, KeesonProfile]] = {
     profile.key: profile
     for profile in (
@@ -602,6 +616,8 @@ PROFILES: Final[dict[str, KeesonProfile]] = {
         COMFORT_ENHANCEMENTS,
         COMFORTBASE,
         JALON_BED,
+        YAMADA_P1,
+        YAMADA_P2,
     )
 }
 

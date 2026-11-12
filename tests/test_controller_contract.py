@@ -189,6 +189,8 @@ def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
         return OCTO_VARIANT_STANDARD
     if bed_type == const.BED_TYPE_CASPER_BASE:
         return "casperpro"
+    if bed_type == const.BED_TYPE_YAMADA:
+        return "p1"
     if bed_type == const.BED_TYPE_COMFORTBASE:
         return "accord"
     if bed_type == const.BED_TYPE_COMFORT_ENHANCEMENTS:

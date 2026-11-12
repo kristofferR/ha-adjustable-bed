@@ -267,3 +267,8 @@ ComfortBaseForBluetooth 1.1.2 (6), row161, reuses Keeson K1 only after all
 `alarm_table`. Its product catalog is UI data over one `comfortbase` profile.
 The Keeson controller supplies hold/release and recall; its ComfortBase extension
 adds the bounded save gesture, product gates, fixed GATT roles and timer parser.
+
+アシステック / Yamada 1.0.1 (6), row178, adds explicit P1/P2 profiles only after
+all 35 packet literals match existing Keeson and Okin N-frame encoders. Its
+shared-family controller extension owns alarm parsing, session fences, raw clock
+fields and captured release scheduling. No new codec or product alias is needed.
