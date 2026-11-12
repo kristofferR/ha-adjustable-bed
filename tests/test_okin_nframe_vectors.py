@@ -17,6 +17,7 @@ from custom_components.adjustable_bed.beds.okin_uuid.controller import (
 from custom_components.adjustable_bed.codec import keeson
 from custom_components.adjustable_bed.codec import okin_nframe as codec
 from custom_components.adjustable_bed.profiles import okin_nframe as profiles
+from custom_components.adjustable_bed.profiles.n32_motion_bed import N32
 from tests.okin_nframe_vectors import (
     COMPOSED_FRAMES,
     FIELD_FRAMES,
@@ -31,6 +32,7 @@ PROFILES: dict[str, profiles.OkinNFrameProfile] = {
     for profile in (
         profiles.OKIMAT,
         profiles.RESIDENT,
+        N32,
         profiles.DEWERTOKIN,
         profiles.RF_ECO_BT,
         *profiles.CUSTOMATIC_PROFILES.values(),
@@ -158,7 +160,7 @@ def test_alarm_slots() -> None:
     assert codec.alarm(bytes.fromhex("8205071e000101"), 2).hex() == "07068205071e000101"
     assert codec.alarm(bytes(7), 2).hex() == "070600000000000000"
     with pytest.raises(ValueError):
-        codec.alarm(bytes(7), 3)
+        codec.alarm(bytes(7), 4)
 
 
 @pytest.mark.parametrize(
@@ -268,6 +270,7 @@ HOLD_PROFILES = sorted(key for key, profile in PROFILES.items() if profile.execu
 def test_hold_declarations_follow_the_evidence_matrix():
     """Stream-supported rows only; DewertOkin, CB24, DOT, 64-bit and SleepEase are blocked."""
     assert set(HOLD_PROFILES) == {
+        N32.key,
         profiles.RESIDENT.key,
         *profiles.LEGGETT_PROFILES,
         *profiles.CUSTOMATIC_PROFILES,

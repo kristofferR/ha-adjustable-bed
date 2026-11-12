@@ -21,10 +21,12 @@ from custom_components.adjustable_bed.const import (
     NORDIC_UART_SERVICE_UUID,
     NORDIC_UART_WRITE_CHAR_UUID,
 )
+from custom_components.adjustable_bed.profiles import n32_motion_bed as n32
 from custom_components.adjustable_bed.profiles import okin_nframe as okin_profiles
 from custom_components.adjustable_bed.profiles.adjustable_bed import (
     PROFILES as ADJUSTABLE_BED_PROFILES,
 )
+from custom_components.adjustable_bed.profiles.n32_motion_bed import N32
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
 GUIDE = "docs/beds/okin-nframe.md"
@@ -137,6 +139,7 @@ _OKIN_GROUPS = {
     "eShine": tuple(okin_profiles.ESHINE_PROFILES.values()),
     "Okin CST": tuple(okin_profiles.CST_PROFILES.values()),
     "OKIN Bedding apps": tuple(okin_profiles.BEDDING_PROFILES.values()),
+    "N32 Motion Bed": (N32,),
     "Resident Adjustable Base": (okin_profiles.RESIDENT,),
     "Okin 64-Bit": tuple(okin_profiles.OKIN_64BIT_PROFILES.values()),
     "Adjustable bed (Lumbar)": tuple(okin_profiles.ADJUSTABLE_LUMBAR_PROFILES.values()),
@@ -341,6 +344,16 @@ def _okin_key_table(
             for word in sorted(words):
                 users = [p for p in profiles if getattr(p, table).get(name) == word]
                 label = _OKIN_KEY_LABELS.get(name, f"`{name}`")
+                if profiles[0] is N32:
+                    label = {
+                        "head_up": "Upper up",
+                        "head_down": "Upper down",
+                        "foot_up": "Lower up",
+                        "foot_down": "Lower down",
+                        "cervical_up": "Cervical up",
+                        "cervical_down": "Cervical down",
+                        **n32.PRESET_LABELS,
+                    }.get(name, label)
                 if name.isdigit():
                     label = f"Index {name}"
                 digits = 2 * (8 if table == "long_keys" else max(width, profiles[0].width))
@@ -587,7 +600,63 @@ def render_resident_session() -> str:
     )
 
 
+def render_n32_session() -> str:
+    from datetime import datetime
+
+    return _block(
+        _table(
+            ("Role", "UUID"),
+            (
+                ("Service", f"`{NORDIC_UART_SERVICE_UUID}`"),
+                ("Write, with response", f"`{NORDIC_UART_WRITE_CHAR_UUID}`"),
+                ("Notify or indicate", f"`{NORDIC_UART_READ_CHAR_UUID}`"),
+            ),
+        ),
+        _table(
+            ("Operation", "Frame", "Schedule"),
+            (
+                *(
+                    (f"Query slot {slot}", _hex(n32.query_frame(slot)), "startup and on request")
+                    for slot in n32.SLOTS
+                ),
+                (
+                    "Clock (2026-11-12 23:59:01)",
+                    _hex(n32.clock_frame(datetime(2026, 11, 12, 23, 59, 1))),
+                    f"connect +{n32.CLOCK_DELAY_S * 1000:g} ms",
+                ),
+                *(
+                    (
+                        f"Delete slot {slot}",
+                        _hex(n32.alarm_frame(slot, 0, 0, 0, 0, 0)),
+                        "then query the same slot",
+                    )
+                    for slot in n32.SLOTS
+                ),
+                (
+                    "Slot 1, Monday 06:30, M1",
+                    _hex(n32.alarm_frame(1, 6, 30, n32.alarm_week((0,)), n32.ALARM_MODES["m1"], 1)),
+                    "set then query slot 1",
+                ),
+            ),
+        ),
+        _table(
+            ("Property", "Value"),
+            (
+                ("Held refresh", f"{n32.REFRESH_MS} ms"),
+                ("Frame-button threshold", f"{n32.FRAME_HOLD_MS} ms"),
+                ("Release", f"{N32.hold.releases} STOP"),
+                ("Alarm slots", ", ".join(map(str, n32.SLOTS))),
+                (
+                    "Alarm modes",
+                    ", ".join(f"{name}: {code}" for name, code in n32.ALARM_MODES.items()),
+                ),
+            ),
+        ),
+    )
+
+
 BLOCKS: list[Block] = [
+    (GUIDE, "n32-session", render_n32_session),
     (GUIDE, "adjustable-bed-commands", render_adjustable_bed),
     (GUIDE, "resident-session", render_resident_session),
     (GUIDE, "okin-nframe-profiles", render_okin_nframe_profiles),

@@ -177,6 +177,7 @@ from .const import (
     BED_TYPE_MLILY,
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
+    BED_TYPE_N32_MOTION_BED,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CST,
@@ -1284,7 +1285,7 @@ def _motor_count_options(
         BED_TYPE_LOGICDATA_AIR_PUMP,
     }:
         return [2]
-    if bed_type in {BED_TYPE_CUSTOMATIC_REMEDY, BED_TYPE_ADJUSTABLE_LUMBAR, BED_TYPE_ADJUSTABLE_BED}:
+    if bed_type in {BED_TYPE_CUSTOMATIC_REMEDY, BED_TYPE_ADJUSTABLE_LUMBAR, BED_TYPE_ADJUSTABLE_BED, BED_TYPE_N32_MOTION_BED}:
         return [3]
     if bed_type in RICHMAT_MH_BED_TYPES:
         # The selected app model's catalog fixes the axes; the count is unused.

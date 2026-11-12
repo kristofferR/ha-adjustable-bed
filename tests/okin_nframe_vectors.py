@@ -11,6 +11,8 @@ report is quarantined) list the frames the pre-v5 controller sent.
 ESHINE = ("eshine_e2000", "eshine_e30003100", "eshine_e5000")
 
 FROZEN_FRAMES: dict[str, frozenset[str]] = {
+    # Accepted row080 P1, source-backed masks including unreachable individual keys.
+    "n32_motion_bed": frozenset({'05020000002000', '05020000001000', '05024000000000', '05020001000000', '05020000000a00', '05020000000000', '05020000000100', '05020000100000', '05028000000000', '05020000000500', '05020000000800', '05020000800000', '05020000000400', '05020000200000', '05020000008000', '05020004000000', '05020000004000', '05020800000000', '05020000000200', '05020000400000'}),
     # Resident Adjustable Base 1.0.0, unit160, frozen 36_33_01a control literals.
     "resident": frozenset(
         {

@@ -84,6 +84,7 @@ from .const import (
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_MOTOSLEEP,
+    BED_TYPE_N32_MOTION_BED,
     BED_TYPE_NECTAR,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
@@ -335,6 +336,7 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
 # Bed types whose controller needs the variant, entry data, the advertisement
 # or the live GATT table. Each builder lives in its bed module.
 _BUILDERS: Final[dict[str, _BuilderSpec]] = {
+    BED_TYPE_N32_MOTION_BED: _BuilderSpec("n32_motion_bed.controller"),
     "paramount": _BuilderSpec("paramount.controller"),
     "smart_comfort_synargy": _BuilderSpec("smart_comfort.controller"),
     "smart_comfort_synergy": _BuilderSpec("smart_comfort.controller"),

@@ -267,3 +267,10 @@ ComfortBaseForBluetooth 1.1.2 (6), row161, reuses Keeson K1 only after all
 `alarm_table`. Its product catalog is UI data over one `comfortbase` profile.
 The Keeson controller supplies hold/release and recall; its ComfortBase extension
 adds the bounded save gesture, product gates, fixed GATT roles and timer parser.
+
+N32 Motion Bed 1.1.14 (38), row080, reproduces its four-mask held frames,
+clock and slot queries through Okin N-frame. Its alarm uses the same seven
+counted fields plus an uncounted reserved byte and a third proven slot.
+`alarm(..., reserved=0)` expresses that trailer without changing existing
+profiles' records. Its typed fixed profile uses the shared Okin family
+controller; its own session and alarm callback live in `beds/n32_motion_bed/`.

@@ -1101,6 +1101,42 @@
   "card_role": "up",
   "card_motor": "motor_3"
  },
+ "button:n32_cervical_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "n32_cervical"
+ },
+ "button:n32_cervical_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "n32_cervical"
+ },
+ "button:n32_lower_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "n32_lower"
+ },
+ "button:n32_lower_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "n32_lower"
+ },
+ "button:n32_refresh_alarms": {
+  "card_section": "utility"
+ },
+ "button:n32_relax": {
+  "card_section": "presets"
+ },
+ "button:n32_upper_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "n32_upper"
+ },
+ "button:n32_upper_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "n32_upper"
+ },
  "button:neck_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -2207,6 +2243,18 @@
  "cover:motor_3": {
   "card_section": "motors",
   "card_motor": "motor_3"
+ },
+ "cover:n32_cervical": {
+  "card_section": "motors",
+  "card_motor": "n32_cervical"
+ },
+ "cover:n32_lower": {
+  "card_section": "motors",
+  "card_motor": "n32_lower"
+ },
+ "cover:n32_upper": {
+  "card_section": "motors",
+  "card_motor": "n32_upper"
  },
  "cover:neck": {
   "card_section": "motors",
@@ -3593,6 +3641,15 @@
   "card_section": "utility"
  },
  "sensor:motomotion_status": {
+  "card_section": "utility"
+ },
+ "sensor:n32_alarm_1": {
+  "card_section": "utility"
+ },
+ "sensor:n32_alarm_2": {
+  "card_section": "utility"
+ },
+ "sensor:n32_alarm_3": {
   "card_section": "utility"
  },
  "sensor:okin_bedding_app_alarm_type": {

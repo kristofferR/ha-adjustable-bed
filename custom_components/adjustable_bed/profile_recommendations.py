@@ -35,6 +35,7 @@ from .const import (
     BED_TYPE_HJBED,
     BED_TYPE_KEESON,
     BED_TYPE_MLILY,
+    BED_TYPE_N32_MOTION_BED,
     BED_TYPE_OCTO,
     BED_TYPE_RESIDENT,
     BED_TYPE_RICHMAT,
@@ -274,6 +275,7 @@ def recommend_profile(
         BED_TYPE_MLILY, BED_TYPE_HJBED, BED_TYPE_GOODVIBE, BED_TYPE_GALAXY,
         BED_TYPE_ESHINE_OKIN, BED_TYPE_RICHMAT_CLASSIC_APPS,
         BED_TYPE_RESIDENT,
+        BED_TYPE_N32_MOTION_BED,
         BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP,
     }
     if (detected.confidence < 0.9 or receiver_ambiguities) and not any(
@@ -282,6 +284,7 @@ def recommend_profile(
             "name:mlily_app_candidate", "name:hjbed_app_candidate", "name:goodvibe_app_candidate", "name:galaxy_app_candidate",
             "name:eshine_okin_app_candidate", "name:richmat_classic_app_candidate",
             "name:resident_app_candidate",
+            "name:n32_app_candidate",
             "name:richmat_app_candidate", "name:richmat_sleep_candidate",
         )
         for signal in detected.signals

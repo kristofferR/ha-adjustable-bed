@@ -920,3 +920,25 @@ Use the usual `device_id` and optional `side` fields. See the
 [Jalon profile](beds/keeson.md#okincomfortbed-ⅱ-jalon) for the wire behavior,
 held gestures and hardware caveats. The generic `sync_clock` action also
 supports this profile.
+
+## N32 Motion Bed alarms
+
+`adjustable_bed.n32_motion_bed_alarm` targets an explicitly configured N32
+Motion Bed and accepts `slot: 1`, `2` or `3`, plus `operation: set`, `disable`,
+`delete` or `query`. Two-address pairs retain normal `side` routing.
+
+For `set`, supply `time` (minute precision), `weekdays` (Monday through Sunday,
+empty for once), and `mode` (`none`, `m1`, `m2`, `m3`, `flat`). Disable preserves
+a fresh reported slot; delete clears it and queries it again. Alarm sensors
+publish actual callback state and freshness. See the [N32 profile](beds/okin-nframe.md#n32-motion-bed).
+
+```yaml
+action: adjustable_bed.n32_motion_bed_alarm
+data:
+  device_id: YOUR_DEVICE_ID
+  slot: 1
+  operation: set
+  time: "06:30:00"
+  weekdays: [monday, tuesday, wednesday, thursday, friday]
+  mode: m1
+```
