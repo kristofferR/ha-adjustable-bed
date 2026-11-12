@@ -169,14 +169,22 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
         session, client = self._session, self.client
         release = codec.stop(self.profile.key, motor=motor)
         count = self.leased_hold_refreshes(interval)
+        # The scheduler owns lease expiry; only an unleased press uses this deadline.
+        duration = duration_ms / 1000 if duration_ms is not None and count is None else None
         if count is None:
             count = (
                 max(1, (duration_ms + interval - 1) // interval)
                 if duration_ms is not None
                 else self._coordinator.motor_pulse_count
             )
+        deadline = asyncio.timeout(duration)
         try:
-            await self.write_command(frame, count, interval, admit=True)
+            try:
+                async with deadline:
+                    await self.write_command(frame, count, interval, admit=True)
+            except TimeoutError:
+                if not deadline.expired():
+                    raise
         finally:
             await self._cleanup(release, session, client, self.profile.release_ms)
 
@@ -271,7 +279,12 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
             await self.stop_all()
             await self.write_command(frame, admit=True)
         elif name == "ai_zero":
-            await self.write_command(frame, 2, self.profile.query_ms, admit=True)
+            session, client = self._session, self.client
+            release, delay = codec.stop(self.profile.key), self.profile.release_ms
+            try:
+                await self.write_command(frame, 2, self.profile.query_ms, admit=True)
+            finally:
+                await self._cleanup(release, session, client, delay)
         else:
             await self._held(frame, interval=self.profile.refresh_ms)
 

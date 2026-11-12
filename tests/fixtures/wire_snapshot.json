@@ -22624,7 +22624,7 @@
 "stop:hips_open": {"status":"ok","writes":[[0,"6e400002",true,"05024000000000",3,100],[400,"6e400002",true,"05020000000000",2,107]]},
 "stop:hips_close": {"status":"ok","writes":[[0,"6e400002",true,"05028000000000",3,100],[400,"6e400002",true,"05020000000000",2,107]]},
 "button:smart_sleep_refresh": {"status":"ok","writes":[[0,"6e400002",true,"00b0",2,307],[614,"6e400002",true,"00c0",1,0]]},
-"button:smart_sleep_ai_zero": {"status":"ok","writes":[[0,"6e400002",true,"01b601",2,300]]},
+"button:smart_sleep_ai_zero": {"status":"ok","writes":[[0,"6e400002",true,"01b601",2,300],[407,"6e400002",true,"05020000000000",1,0]]},
 "button:smart_sleep_flat": {"status":"ok","writes":[[0,"6e400002",true,"05020800000000",10,100],[1007,"6e400002",true,"05020000000000",1,0]]},
 "button:smart_sleep_massage_all": {"status":"ok","writes":[[0,"6e400002",true,"05020000010000",1,0],[107,"6e400002",true,"05020000000000",1,0],[414,"6e400002",true,"00b0",1,0]]},
 "button:smart_sleep_massage_off": {"status":"ok","writes":[[0,"6e400002",true,"05020200000000",1,0],[107,"6e400002",true,"05020000000000",1,0],[414,"6e400002",true,"00b0",1,0]]},

@@ -295,7 +295,9 @@ Sleep/vitals/history notifications do not become position or bed-state data.
 
 Movement streams at the profile cadence. An ordinary press uses the configured
 pulse count; a renewable hold continues until release, lease expiry or the
-hold ceiling. Cleanup captures the admitted frame and connection, uses a
+hold ceiling. Bounded motor holds also limit elapsed press work, cancelling a
+slow pending acknowledgement at the deadline. Release remains outside that
+deadline. Cleanup captures the admitted frame and connection, uses a
 fresh cancellation event and drains before the command lock is released.
 P2 motor release differs from global STOP. Home Assistant safety STOP bypasses
 local child admission, including after child mode changes during a command.
@@ -316,7 +318,8 @@ are excluded history/diagnostic evidence and are not exposed actions.
 ### P1 legacy
 
 Movement and recall refresh while held and release after the profile delay.
-AI-zero sends its duplicate at the query interval. Legacy long-press memory
+AI-zero sends its duplicate at the query interval and always runs the admitted
+release afterward, including interruption or write failure. Legacy long-press memory
 has no distinct source-proven SAVE and is not advertised as programming.
 Massage controls release with global STOP and refresh settings.
 Light press requests STOP before its one toggle. Shared privacy/antisnore
