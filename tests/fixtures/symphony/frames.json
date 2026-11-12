@@ -1,0 +1,710 @@
+[
+  {
+    "id": "V01",
+    "protocol": "P1",
+    "action": "headUp",
+    "inputs": {},
+    "expected_bytes": "e6 fe 16 01 00 00 00 00 04",
+    "evidence": [
+      "bleManager.dart@0x6156f4",
+      "bleManager.dart@0x545718",
+      "bleManager.dart@0x545808"
+    ]
+  },
+  {
+    "id": "V02",
+    "protocol": "P1",
+    "action": "headDown",
+    "inputs": {},
+    "expected_bytes": "e6 fe 16 02 00 00 00 00 03",
+    "evidence": [
+      "bleManager.dart@0x615450",
+      "bleManager.dart@0x545808"
+    ]
+  },
+  {
+    "id": "V03",
+    "protocol": "P1",
+    "action": "stop",
+    "inputs": {},
+    "expected_bytes": "e6 fe 16 00 00 00 00 00 05",
+    "evidence": [
+      "bleManager.dart@0x615960",
+      "bleManager.dart@0x545808"
+    ]
+  },
+  {
+    "id": "V04",
+    "protocol": "P1",
+    "action": "headUp_selector1",
+    "inputs": {
+      "selector": 1
+    },
+    "expected_bytes": "e6 fe 16 10 00 00 00 01 f4",
+    "evidence": [
+      "bleManager.dart@0x625060:0x6250a0-0x62513c",
+      "bleManager.dart@0x545808"
+    ]
+  },
+  {
+    "id": "V05",
+    "protocol": "P1",
+    "action": "headUp_selector2",
+    "inputs": {
+      "selector": 2
+    },
+    "expected_bytes": "e6 fe 16 40 00 00 00 02 c3",
+    "evidence": [
+      "bleManager.dart@0x625060:0x625148-0x625218",
+      "bleManager.dart@0x545808"
+    ]
+  },
+  {
+    "id": "V06",
+    "protocol": "P2",
+    "action": "headUp",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 01 04 01 00 00 00",
+    "evidence": [
+      "bleManager.dart@0x6156f4"
+    ]
+  },
+  {
+    "id": "V07",
+    "protocol": "P2",
+    "action": "headDown",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 01 04 02 00 00 00",
+    "evidence": [
+      "bleManager.dart@0x615450"
+    ]
+  },
+  {
+    "id": "V08",
+    "protocol": "P2",
+    "action": "machinery5Up",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 01 04 00 01 00 00",
+    "evidence": [
+      "bleManager.dart@0x62dd18"
+    ]
+  },
+  {
+    "id": "V09",
+    "protocol": "P2",
+    "action": "stopDriver",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 01 04 00 00 00 00",
+    "evidence": [
+      "sound_wave_command.dart@0x615c2c",
+      "bleManager.dart@0x615960"
+    ]
+  },
+  {
+    "id": "V10",
+    "protocol": "P2",
+    "action": "stopCommand",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 02 00",
+    "evidence": [
+      "sound_wave_command.dart@0x615bc4",
+      "bleManager.dart@0x615960"
+    ]
+  },
+  {
+    "id": "V11",
+    "protocol": "P2",
+    "action": "confirmation_query",
+    "inputs": {},
+    "expected_bytes": "2a 00 00 05 81 09 01 ff ff 00 00 22 25 12 4b",
+    "evidence": [
+      "sound_wave_command.dart@0x5430e0",
+      "bleManager.dart@0x542628"
+    ]
+  },
+  {
+    "id": "V12",
+    "protocol": "P3",
+    "action": "headUp",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 01 00",
+    "evidence": [
+      "bleManager.dart@0x6156f4"
+    ]
+  },
+  {
+    "id": "V13",
+    "protocol": "P3",
+    "action": "headDown",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 02 00",
+    "evidence": [
+      "bleManager.dart@0x615450"
+    ]
+  },
+  {
+    "id": "V14",
+    "protocol": "P3",
+    "action": "stop",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 00 00",
+    "evidence": [
+      "bleManager.dart@0x615960"
+    ]
+  },
+  {
+    "id": "V15",
+    "protocol": "P3",
+    "action": "headUp_selector1",
+    "inputs": {
+      "selector": 1
+    },
+    "expected_bytes": "05 02 00 00 00 01 01",
+    "evidence": [
+      "bleManager.dart@0x635f10"
+    ]
+  },
+  {
+    "id": "V16",
+    "protocol": "P3",
+    "action": "headUp_selector2",
+    "inputs": {
+      "selector": 2
+    },
+    "expected_bytes": "05 02 00 00 00 01 02",
+    "evidence": [
+      "bleManager.dart@0x635f10"
+    ]
+  },
+  {
+    "id": "V17",
+    "protocol": "P2",
+    "action": "light",
+    "inputs": {
+      "color": 0,
+      "brightness": 0
+    },
+    "expected_bytes": "aa 00 00 04 01 05 02 01 00 00 00 14",
+    "evidence": [
+      "sound_wave_command.dart@0x6465ec"
+    ]
+  },
+  {
+    "id": "V18",
+    "protocol": "P2",
+    "action": "light",
+    "inputs": {
+      "color": 8,
+      "brightness": 90
+    },
+    "expected_bytes": "aa 00 00 04 01 05 02 07 00 00 00 50",
+    "evidence": [
+      "sound_wave_command.dart@0x6465ec"
+    ]
+  },
+  {
+    "id": "V19",
+    "protocol": "P2",
+    "action": "massageTimer",
+    "inputs": {
+      "current": 0
+    },
+    "expected_bytes": "aa 00 00 06 0b 04 00 01 58 02",
+    "evidence": [
+      "sound_wave_command.dart@0x64a91c"
+    ]
+  },
+  {
+    "id": "V20",
+    "protocol": "P2",
+    "action": "massageTimer",
+    "inputs": {
+      "current": 1
+    },
+    "expected_bytes": "aa 00 00 06 0b 04 00 01 b0 04",
+    "evidence": [
+      "sound_wave_command.dart@0x64a91c"
+    ]
+  },
+  {
+    "id": "V21",
+    "protocol": "P2",
+    "action": "massageTimer",
+    "inputs": {
+      "current": 3
+    },
+    "expected_bytes": "aa 00 00 06 0b 04 00 01 58 02",
+    "evidence": [
+      "sound_wave_command.dart@0x64a91c"
+    ]
+  },
+  {
+    "id": "V22",
+    "protocol": "P2",
+    "action": "massageStrength",
+    "inputs": {
+      "current": 0,
+      "zone": 1
+    },
+    "expected_bytes": "aa 00 00 06 02 03 00 01 04",
+    "evidence": [
+      "sound_wave_command.dart@0x64aeb8"
+    ]
+  },
+  {
+    "id": "V23",
+    "protocol": "P2",
+    "action": "massageStrength",
+    "inputs": {
+      "current": 2,
+      "zone": 2
+    },
+    "expected_bytes": "aa 00 00 06 02 03 00 02 08",
+    "evidence": [
+      "sound_wave_command.dart@0x64ac00"
+    ]
+  },
+  {
+    "id": "V24",
+    "protocol": "P2",
+    "action": "massageStrength",
+    "inputs": {
+      "current": 3,
+      "zone": 1
+    },
+    "expected_bytes": "aa 00 00 06 02 03 00 01 04",
+    "evidence": [
+      "sound_wave_command.dart@0x64aeb8"
+    ]
+  },
+  {
+    "id": "AV01",
+    "protocol": "P2",
+    "action": "openAlarm",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "week": 62,
+      "mode_index": 5
+    },
+    "expected_bytes": "aa 00 00 03 02 07 01 3e 05 01 07 1e 00",
+    "evidence": [
+      "sound_wave_command.dart@0x6414e4",
+      "libapp.so@0x6416a4",
+      "sound_wave_command.dart@0x836778"
+    ]
+  },
+  {
+    "id": "AV02",
+    "protocol": "P2",
+    "action": "openAlarm",
+    "inputs": {
+      "hour": 23,
+      "minute": 59,
+      "week": 128,
+      "mode_index": 0
+    },
+    "expected_bytes": "aa 00 00 03 02 07 01 80 01 01 17 3b 00",
+    "evidence": [
+      "sound_wave_command.dart@0x6414e4",
+      "libapp.so@0x6416a4"
+    ]
+  },
+  {
+    "id": "AV03",
+    "protocol": "P2",
+    "action": "antiSnoreConfigure",
+    "inputs": {
+      "selector": 0,
+      "enable": 1,
+      "strength": 3
+    },
+    "expected_bytes": "aa 00 00 07 01 08 01 02 03 00 00 00 00 00",
+    "evidence": [
+      "sound_wave_command.dart@0x549ac4",
+      "new_antisnore_page.dart@0x549990"
+    ]
+  },
+  {
+    "id": "AV04",
+    "protocol": "P2",
+    "action": "antiSnoreDisable",
+    "inputs": {
+      "selector": 0,
+      "enable": 0,
+      "strength": 0
+    },
+    "expected_bytes": "aa 00 00 07 01 08 00 02 00 00 00 00 00 00",
+    "evidence": [
+      "sound_wave_command.dart@0x549ac4",
+      "new_antisnore_page.dart@0x679590"
+    ]
+  },
+  {
+    "id": "AL01",
+    "protocol": "P1",
+    "action": "setAlarm",
+    "inputs": {
+      "protocol": 4,
+      "hour": 7,
+      "minute": 30,
+      "week": 62,
+      "mode": "m1"
+    },
+    "expected_bytes": "ed 80 03 07 1e 3e 11 00 00 00 00 00 00 00 00 1b",
+    "evidence": [
+      "bleManager.dart@0x54a7c4",
+      "bleManager.dart@0x546df4",
+      "pp.txt:AlarmWaveMode@8c6a41"
+    ]
+  },
+  {
+    "id": "AL02",
+    "protocol": "P1",
+    "action": "setAlarm",
+    "inputs": {
+      "protocol": 4,
+      "hour": 23,
+      "minute": 59,
+      "week": 128,
+      "mode": "zg"
+    },
+    "expected_bytes": "ed 80 03 17 3b 80 0d 00 00 00 00 00 00 00 00 b0",
+    "evidence": [
+      "bleManager.dart@0x54a7c4",
+      "pp.txt:AlarmWaveMode@8c6a61"
+    ]
+  },
+  {
+    "id": "AL03",
+    "protocol": "P3",
+    "action": "setAlarm",
+    "inputs": {
+      "protocol": 5,
+      "hour": 23,
+      "minute": 59,
+      "week": 62,
+      "mode": "m2"
+    },
+    "expected_bytes": "07 05 3e 03 23 59 00 01 01",
+    "evidence": [
+      "bleManager.dart@0x54a7c4:0x54ad0c-0x54ad58"
+    ]
+  },
+  {
+    "id": "AL04",
+    "protocol": "P3",
+    "action": "setAlarm",
+    "inputs": {
+      "protocol": 7,
+      "hour": 7,
+      "minute": 30,
+      "week": 62,
+      "mode": "flat"
+    },
+    "expected_bytes": "07 05 3e 09 07 1e 00 01 01",
+    "evidence": [
+      "bleManager.dart@0x54a7c4"
+    ]
+  },
+  {
+    "id": "AL05",
+    "protocol": "P3",
+    "action": "setAlarm_side",
+    "inputs": {
+      "protocol": 6,
+      "hour": 7,
+      "minute": 30,
+      "week": 62,
+      "mode": "vibration",
+      "side": 2
+    },
+    "expected_bytes": "07 05 3e 08 07 1e 00 01 02",
+    "evidence": [
+      "bleManager.dart@0x62ee98",
+      "bed_alarm_es500shqk_page.dart@0x62ec50"
+    ]
+  },
+  {
+    "id": "AL06",
+    "protocol": "P1",
+    "action": "setAlarm_split_cached",
+    "inputs": {
+      "cache": "ed80030000000000000000000000008f",
+      "side": 1,
+      "hour": 7,
+      "minute": 30,
+      "week": 62,
+      "mode": "m1"
+    },
+    "expected_bytes": "ed 80 03 00 00 00 00 07 1e 3e 11 00 00 00 00 1b",
+    "evidence": [
+      "bleManager.dart@0x62180c",
+      "bed_alarm_es500kgd_shqk_page.dart@0x621698"
+    ]
+  },
+  {
+    "id": "AL07",
+    "protocol": "P1",
+    "action": "setAlarm_split_cached",
+    "inputs": {
+      "cache": "ed800300000000071e3e11000000001b",
+      "side": 2,
+      "hour": 23,
+      "minute": 59,
+      "week": 128,
+      "mode": "zg"
+    },
+    "expected_bytes": "ed 80 03 00 00 00 00 07 1e 3e 11 17 3b 80 0d 3c",
+    "evidence": [
+      "bleManager.dart@0x62180c",
+      "bed_alarm_es500kgd_shqk_page.dart@0x621698"
+    ]
+  },
+  {
+    "id": "C01",
+    "protocol": "P1",
+    "action": "calendar",
+    "inputs": {
+      "selector": 4,
+      "parts": [
+        2026,
+        11,
+        12,
+        4,
+        23,
+        59,
+        58
+      ]
+    },
+    "expected_bytes": "e780017e0a0c173b3a77",
+    "evidence": [
+      "E-CALENDAR"
+    ]
+  },
+  {
+    "id": "C02",
+    "protocol": "P3",
+    "action": "calendar",
+    "inputs": {
+      "selector": 2,
+      "parts": [
+        2026,
+        11,
+        12,
+        4,
+        23,
+        59,
+        58
+      ]
+    },
+    "expected_bytes": "07047e0a0c03173b3a",
+    "evidence": [
+      "E-CALENDAR"
+    ]
+  },
+  {
+    "id": "C03",
+    "protocol": "P3",
+    "action": "calendar",
+    "inputs": {
+      "selector": 5,
+      "parts": [
+        2026,
+        11,
+        12,
+        4,
+        23,
+        59,
+        58
+      ]
+    },
+    "expected_bytes": "070426111204235958",
+    "evidence": [
+      "E-CALENDAR"
+    ]
+  },
+  {
+    "id": "C04",
+    "protocol": "P2",
+    "action": "calendar",
+    "inputs": {
+      "selector": 9,
+      "parts": [
+        2026,
+        11,
+        12,
+        4,
+        23,
+        59,
+        58
+      ]
+    },
+    "expected_bytes": "aa00000301071a0b0c04173b3a",
+    "evidence": [
+      "E-CALENDAR"
+    ]
+  },
+  {
+    "id": "C05",
+    "protocol": "P3",
+    "action": "calendar",
+    "inputs": {
+      "selector": 7,
+      "parts": [
+        2026,
+        11,
+        12,
+        4,
+        23,
+        59,
+        58
+      ]
+    },
+    "expected_bytes": "07041a0a0c04173b3a",
+    "evidence": [
+      "E-CALENDAR"
+    ]
+  },
+  {
+    "id": "C06",
+    "protocol": "P2",
+    "action": "snore",
+    "inputs": {
+      "args": {
+        "version": 2,
+        "model": 10,
+        "axis": "head",
+        "strength": 3
+      }
+    },
+    "expected_bytes": "aa00000701080102030400000000",
+    "evidence": [
+      "E-ANTISNORE"
+    ]
+  },
+  {
+    "id": "C07",
+    "protocol": "P2",
+    "action": "snore",
+    "inputs": {
+      "args": {
+        "version": 2,
+        "model": 13,
+        "axis": "elevation",
+        "strength": 1
+      }
+    },
+    "expected_bytes": "aa00000701080102010600000000",
+    "evidence": [
+      "E-ANTISNORE"
+    ]
+  },
+  {
+    "id": "C08",
+    "protocol": "P3",
+    "action": "snore",
+    "inputs": {
+      "args": {
+        "version": 3,
+        "model": 0,
+        "axis": "elevation",
+        "strength": 6
+      }
+    },
+    "expected_bytes": "040b010602",
+    "evidence": [
+      "E-ANTISNORE"
+    ]
+  },
+  {
+    "id": "C09",
+    "protocol": "P3",
+    "action": "snore",
+    "inputs": {
+      "args": {
+        "version": 3,
+        "model": 10,
+        "axis": "elevation",
+        "strength": 1,
+        "demo": true
+      }
+    },
+    "expected_bytes": "040b020102",
+    "evidence": [
+      "E-ANTISNORE"
+    ]
+  },
+  {
+    "id": "FV-CL24",
+    "protocol": "P2",
+    "action": "light_cache CL24",
+    "inputs": {
+      "change": "brightness",
+      "cached_color": 0,
+      "new": 80
+    },
+    "expected_bytes": "aa0000040105020100000050",
+    "evidence": [
+      "sound_wave_command.dart@0x64658c/0x6465ec/0x6ff9f0"
+    ],
+    "kind": "new source closure case; see closure_reproduce.py"
+  },
+  {
+    "id": "FV-CL25",
+    "protocol": "P2",
+    "action": "light_cache CL25",
+    "inputs": {
+      "change": "color",
+      "cached_brightness": 0,
+      "new": 7
+    },
+    "expected_bytes": "aa0000040105020700000014",
+    "evidence": [
+      "sound_wave_command.dart@0x646f74/0x6465ec/0x6ff9f0"
+    ],
+    "kind": "new source closure case; see closure_reproduce.py"
+  },
+  {
+    "id": "FV-CL26",
+    "protocol": "P3",
+    "action": "privacy CL26",
+    "inputs": {
+      "selector": 8,
+      "enabled": true
+    },
+    "expected_bytes": "01b201",
+    "evidence": [
+      "bleManager.dart@0x5e1844/0x531438"
+    ],
+    "kind": "new source closure case; see closure_reproduce.py"
+  },
+  {
+    "id": "FV-CL27",
+    "protocol": "P2",
+    "action": "privacy CL27",
+    "inputs": {
+      "selector": 9,
+      "enabled": false
+    },
+    "expected_bytes": "aa000007020100",
+    "evidence": [
+      "bleManager.dart@0x5e19b8; sound_wave_command.dart@0x5e1934"
+    ],
+    "kind": "new source closure case; see closure_reproduce.py"
+  },
+  {
+    "id": "FV-CL29",
+    "protocol": "P1",
+    "action": "close_split CL29",
+    "inputs": {
+      "cache": "ed80030102030405060708090a0b0c0d0e",
+      "side": 2
+    },
+    "expected_bytes": "ed80030102030405060708000000000d5e",
+    "evidence": [
+      "bleManager.dart@0x621d10"
+    ],
+    "kind": "new source closure case; see closure_reproduce.py"
+  }
+]

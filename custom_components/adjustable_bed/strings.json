@@ -352,7 +352,8 @@
           "serta_mp_memory_3_head": "Local memory 3, head angle",
           "serta_mp_memory_3_foot": "Local memory 3, foot angle",
           "serta_mp_memory_4_head": "Local memory 4, head angle",
-          "serta_mp_memory_4_foot": "Local memory 4, foot angle"
+          "serta_mp_memory_4_foot": "Local memory 4, foot angle",
+          "symphony_side": "Side for a standalone split-head bed"
         },
         "data_description": {
           "jiecang_app_layout": "Select the layout configured in the app. The device name and motor count do not identify the layout.",
@@ -419,7 +420,8 @@
           "serta_mp_memory_3_head": "The head angle the app's local memory 3 moves to, in degrees.",
           "serta_mp_memory_3_foot": "The foot angle the app's local memory 3 moves to, in degrees.",
           "serta_mp_memory_4_head": "The head angle the app's local memory 4 moves to, in degrees.",
-          "serta_mp_memory_4_foot": "The foot angle the app's local memory 4 moves to, in degrees."
+          "serta_mp_memory_4_foot": "The foot angle the app's local memory 4 moves to, in degrees.",
+          "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target."
         },
         "sections": {
           "advanced": {
@@ -782,7 +784,9 @@
       "richmat_classic_layout": "Choose a layout shipped in the selected app.",
       "motomotion_profile": "Enter a complete MotoMotion Bluetooth local name.",
       "rize_profile": "Select a supported Rize Beds product, signed 32-bit room ID, and valid actuator descriptor.",
-      "rize_unpair_first": "Revert to a standalone bed before selecting a Rize profile without separate side controls."
+      "rize_unpair_first": "Revert to a standalone bed before selecting a Rize profile without separate side controls.",
+      "symphony_profile": "Choose a Symphony Sleep Sense product and BLE selector. The advertisement does not identify the product.",
+      "symphony_unpair_first": "Restore the standalone bed before selecting a product without split-side controls."
     }
   },
   "options": {
@@ -904,7 +908,8 @@
           "serta_mp_memory_3_head": "Local memory 3, head angle",
           "serta_mp_memory_3_foot": "Local memory 3, foot angle",
           "serta_mp_memory_4_head": "Local memory 4, head angle",
-          "serta_mp_memory_4_foot": "Local memory 4, foot angle"
+          "serta_mp_memory_4_foot": "Local memory 4, foot angle",
+          "symphony_side": "Side for a standalone split-head bed"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -1116,7 +1121,8 @@
           "serta_mp_memory_3_head": "Local memory 3, head angle",
           "serta_mp_memory_3_foot": "Local memory 3, foot angle",
           "serta_mp_memory_4_head": "Local memory 4, head angle",
-          "serta_mp_memory_4_foot": "Local memory 4, foot angle"
+          "serta_mp_memory_4_foot": "Local memory 4, foot angle",
+          "symphony_side": "Side for a standalone split-head bed"
         },
         "data_description": {
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
@@ -1252,7 +1258,8 @@
           "serta_mp_memory_3_head": "Local memory 3, head angle",
           "serta_mp_memory_3_foot": "Local memory 3, foot angle",
           "serta_mp_memory_4_head": "Local memory 4, head angle",
-          "serta_mp_memory_4_foot": "Local memory 4, foot angle"
+          "serta_mp_memory_4_foot": "Local memory 4, foot angle",
+          "symphony_side": "Side for a standalone split-head bed"
         },
         "data_description": {
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
@@ -1471,7 +1478,9 @@
       "migration_reconfigure_required": "To change the app or layout, close Configure and select Reconfigure from this entry's three-dot menu. The guided change checks it before saving.",
       "richmat_classic_layout": "Choose a layout shipped in the selected app.",
       "rize_profile": "Select a supported Rize Beds product, signed 32-bit room ID, and valid actuator descriptor.",
-      "rize_unpair_first": "Revert to a standalone bed before selecting a Rize profile without separate side controls."
+      "rize_unpair_first": "Revert to a standalone bed before selecting a Rize profile without separate side controls.",
+      "symphony_profile": "Choose a Symphony Sleep Sense product and BLE selector. The advertisement does not identify the product.",
+      "symphony_unpair_first": "Restore the standalone bed before selecting a product without split-side controls."
     },
     "progress": {
       "connecting": "Connecting over Bluetooth…",
@@ -3000,6 +3009,60 @@
       },
       "jalon_bed_massage_timer": {
         "name": "Cycle massage timer"
+      },
+      "symphony_utility_action": {
+        "name": "{action}"
+      },
+      "symphony_presets_action": {
+        "name": "{action}"
+      },
+      "symphony_lighting_action": {
+        "name": "{action}"
+      },
+      "symphony_massage_action": {
+        "name": "{action}"
+      },
+      "symphony_head_up": {
+        "name": "Head up"
+      },
+      "symphony_head_down": {
+        "name": "Head down"
+      },
+      "symphony_feet_up": {
+        "name": "Foot up"
+      },
+      "symphony_feet_down": {
+        "name": "Foot down"
+      },
+      "symphony_neck_up": {
+        "name": "Neck tilt up"
+      },
+      "symphony_neck_down": {
+        "name": "Neck tilt down"
+      },
+      "symphony_lumbar_up": {
+        "name": "Lumbar up"
+      },
+      "symphony_lumbar_down": {
+        "name": "Lumbar down"
+      },
+      "symphony_elevation_up": {
+        "name": "Elevation up"
+      },
+      "symphony_elevation_down": {
+        "name": "Elevation down"
+      },
+      "symphony_head_foot_up": {
+        "name": "Head and foot up"
+      },
+      "symphony_head_foot_down": {
+        "name": "Head and foot down"
+      },
+      "symphony_head_foot_lift_up": {
+        "name": "Head and foot lifting up"
+      },
+      "symphony_head_foot_lift_down": {
+        "name": "Head and foot lifting down"
       }
     },
     "cover": {
@@ -3266,6 +3329,27 @@
       },
       "richmat_app_tilt2": {
         "name": "Tilt 2"
+      },
+      "symphony_head": {
+        "name": "Head"
+      },
+      "symphony_feet": {
+        "name": "Foot"
+      },
+      "symphony_neck": {
+        "name": "Neck tilt"
+      },
+      "symphony_lumbar": {
+        "name": "Lumbar"
+      },
+      "symphony_elevation": {
+        "name": "Elevation"
+      },
+      "symphony_head_foot": {
+        "name": "Head and foot"
+      },
+      "symphony_head_foot_lift": {
+        "name": "Head and foot lifting"
       }
     },
     "sensor": {
@@ -4702,6 +4786,18 @@
       },
       "jalon_massage_timer_bucket": {
         "name": "Massage timer indicator"
+      },
+      "symphony_firmware": {
+        "name": "Bed firmware"
+      },
+      "symphony_protocol": {
+        "name": "Bed protocol identification"
+      },
+      "symphony_alarm": {
+        "name": "Alarm hour"
+      },
+      "symphony_massage": {
+        "name": "Massage timer index"
       }
     },
     "light": {
@@ -5017,6 +5113,15 @@
       },
       "rize_battery_mode": {
         "name": "Battery mode"
+      },
+      "symphony_privacy": {
+        "name": "Privacy"
+      },
+      "symphony_anti_snore": {
+        "name": "Automatic anti-snore"
+      },
+      "symphony_light_on": {
+        "name": "Underbed light"
       }
     },
     "number": {
@@ -5292,6 +5397,12 @@
       },
       "richmat_rise_lamp_seconds": {
         "name": "Lamp timer"
+      },
+      "symphony_light_color": {
+        "name": "Light color code"
+      },
+      "symphony_light_brightness": {
+        "name": "Light brightness"
       }
     },
     "select": {
@@ -6018,6 +6129,9 @@
           "right": "Right",
           "both": "Both"
         }
+      },
+      "symphony_child_mode": {
+        "name": "Local child mode"
       }
     },
     "climate": {
@@ -8825,6 +8939,90 @@
         },
         "side": {
           "name": "Paired bed side"
+        }
+      }
+    },
+    "symphony_set_alarm": {
+      "name": "Set Symphony alarm",
+      "description": "Set or disable the selected bed alarm. Split models require a fresh complete response to preserve the other side. No firmware slot count is assumed.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "time": {
+          "name": "Time"
+        },
+        "weekdays": {
+          "name": "Weekdays (Monday 1 through Sunday 7)"
+        },
+        "wake_mode": {
+          "name": "Wake mode"
+        }
+      }
+    },
+    "symphony_set_light": {
+      "name": "Set Symphony light",
+      "description": "Set both light parameters explicitly, without replacing unknown companion state. ES700 and SS800 only.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "color": {
+          "name": "Color code (1–7)"
+        },
+        "brightness": {
+          "name": "Brightness (20–80)"
+        }
+      }
+    },
+    "symphony_anti_snore": {
+      "name": "Configure Symphony anti-snore",
+      "description": "Configure Head or Elevation. Legacy strengths are 1, 3 and 6; SoundWave strengths are 1, 2 and 3.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "axis": {
+          "name": "Actuator"
+        },
+        "strength": {
+          "name": "Strength"
+        },
+        "demo": {
+          "name": "Run demonstration"
+        }
+      }
+    },
+    "symphony_preset": {
+      "name": "Recall or save Symphony preset",
+      "description": "Recall a preset, or explicitly save it where the product supports programming.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "preset": {
+          "name": "Preset"
+        },
+        "save": {
+          "name": "Save current position"
         }
       }
     }

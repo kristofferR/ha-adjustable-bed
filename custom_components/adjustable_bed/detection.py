@@ -151,6 +151,7 @@ from .const import (
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
+    BED_TYPE_SYMPHONY,
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM,
@@ -611,6 +612,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_HJBED: "HJBed app (choose the exact product)",
     BED_TYPE_JALON: "OkinComfortBed II / Okin Comfortbed II N (Jalon app)",
     BED_TYPE_JALON_BED: "OkinComfortBed Ⅱ (Jalon Android app)",
+    BED_TYPE_SYMPHONY: "Symphony Sleep Sense (Symphony / com.okin.ist)",
     BED_TYPE_RICHMAT_APP: "Richmat 4.2.0 app (choose product)",
     BED_TYPE_RICHMAT_APP_SLEEP: "Richmat 4.2.0 sleep device (separate RM- or HJ- link)",
     BED_TYPE_GLIDEAWAY_MOTION: "Glideaway Motion / Montion app (400 / 450 / 500 / 600)",
@@ -1286,7 +1288,7 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         For detailed detection with confidence scores, use detect_bed_type_detailed().
     """
     result = detect_bed_type_detailed(service_info)
-    if result.bed_type in (BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MOTOMOTION) and result.confidence < 0.7:
+    if result.bed_type in (BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MOTOMOTION, BED_TYPE_SYMPHONY) and result.confidence < 0.7:
         return None  # An app name hint requires an explicit product choice.
     return result.bed_type
 
@@ -1337,6 +1339,17 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         elif result.bed_type != BED_TYPE_MLILY:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_MLILY]))
 
+    from .profiles.symphony import scan_matches as symphony_scan_matches
+
+    # Shared app keywords must not question an established receiver signature.
+    if result.confidence < 0.8 and symphony_scan_matches(platform_name or "", service_info.manufacturer_data or {}) and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ):
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_SYMPHONY, 0.3, [*result.signals, "name:symphony_app_candidate"])
+        elif result.bed_type != BED_TYPE_SYMPHONY:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_SYMPHONY]))
+            result.signals.append("name:symphony_app_candidate")
     return result
 
 

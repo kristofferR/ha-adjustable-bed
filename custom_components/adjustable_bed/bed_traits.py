@@ -100,6 +100,7 @@ from .const import (
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
+    BED_TYPE_SYMPHONY,
     BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
@@ -144,6 +145,8 @@ class BedTraits:
     connection_scoped_state: bool = False
     # Startup hooks own Device Information reads, including their timing.
     owns_device_info_reads: bool = False
+    # A single-address pair may need separate Left and Right operations.
+    single_address_native_both: bool = True
     passive_position_reconciliation: bool = False
     # Overrides the connection profile's connect timeout, in seconds.
     connection_timeout: float | None = None
@@ -202,6 +205,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_BEDSENSE: _NO_ANGLES,
     BED_TYPE_BF: _NO_ANGLES,
     BED_TYPE_JALON_BED: _NO_ANGLES_SCOPED,
+    BED_TYPE_SYMPHONY: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False, connection_timeout=8.0),
     BED_TYPE_CASPER_BASE: _NO_ANGLES,
     "casper_remote": _NO_ANGLES,
     BED_TYPE_CASPER_SLEEP_MM: _NO_ANGLES,

@@ -1239,6 +1239,9 @@ def default_scenario(bed_type: str) -> Scenario:
         kwargs = {"device_name": MOTOMOTION_NAMES[0]}
     if bed_type == const.BED_TYPE_DOUBLESLEEP:
         data[const.CONF_PRODUCT_TYPE] = "3"
+    if bed_type == const.BED_TYPE_SYMPHONY:
+        data[const.CONF_PRODUCT_TYPE] = "0"
+        variant = "4"
     if bed_type == const.BED_TYPE_LIMOSS_REMOTE:
         # Capabilities as a previous handshake stored them: a 4-motor bed with
         # vibration, two memory slots (the reply is not scripted).
@@ -1327,6 +1330,12 @@ def route_scenarios() -> list[Scenario]:
     from custom_components.adjustable_bed import const
 
     scenarios: list[Scenario] = []
+    # Distinct Symphony carriers, fixed builders, split routes and fifth axis.
+    # Model/selector dispatch itself is exhaustively checked in test_symphony.
+    for product, selector in (("0", "3"), ("12", "9"), ("13", "4"), ("15", "4"), ("10", "6"), ("20", "7")):
+        scenarios.append(dataclasses.replace(default_scenario("symphony"),
+            id=f"symphony:{product}:{selector}", protocol_variant=selector,
+            entry_data={const.CONF_PRODUCT_TYPE: product}, layout_id="symphony"))
     for bed_type, table in VARIANT_ROUTES.items():
         if bed_type not in const.SUPPORTED_BED_TYPES:
             continue
@@ -1757,6 +1766,14 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         if controller._coordinator.bed_type in {"smart_comfort_synargy", "smart_comfort_synergy"}:
             # These v5 profiles own startup in their hook, without session helpers.
             await controller.async_on_connect(None)
+            return
+        if controller._coordinator.bed_type == "symphony":
+            session = SimpleNamespace(
+                client=controller.client, is_current=lambda: True,
+                async_start_notify=lambda: controller.start_notify(lambda *_: None),
+            )
+            await controller.async_on_connect(session)
+            await controller.async_after_connect(session)
             return
         await controller.start_notify(lambda *_: None)
         for hook in STARTUP_HOOKS.get(controller._coordinator.bed_type, ()):  # noqa: SLF001

@@ -1397,6 +1397,10 @@ async def _async_with_hold_lease(
         if isinstance(coordinator, PairedBedCoordinator)
         else _command_targets(coordinator, side)
     )
+    if len(executing) > 1 and isinstance(coordinator, PairedBedCoordinator) and not coordinator.supports_simultaneous_side_holds:
+        raise ServiceValidationError(
+            "Renewable holds require simultaneous side execution; select Left or Right"
+        )
     physical = [(target, resource_for(target)) for target in executing]
     claims = [
         target.claim_hold_lease(lease, resource=resource, reserve=False)
@@ -2363,12 +2367,14 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.solace.services import async_register_solace_services
     from .beds.starcode.accessory_group import register_group_services
     from .beds.svane.services import async_register_svane_services
+    from .beds.symphony.services import register_services as register_symphony_services
     from .position_estimate_services import async_register_position_estimate_services
 
     return (
         register_bedtech_services,
         register_bf_cherish_services,
         register_jalon_services,
+        register_symphony_services,
         async_register_motion_bed_services,
         async_register_casper_base_services,
         async_register_gmmotor_services,

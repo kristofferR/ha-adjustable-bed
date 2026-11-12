@@ -28,6 +28,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import ChildDeviceInfo, DeviceInfo
 
+from .bed_traits import bed_traits
 from .beds.base import CONTROLLER_GESTURE_RELEASE, BedController
 from .beds.remacro.discovery import remacro_side_lacks_global_stop
 from .command_scheduler import (
@@ -247,6 +248,15 @@ class PairedBedCoordinator:
 
     def _pair_cancel_generation(self, side: str, resources: Collection[str]) -> tuple[int, ...]:
         return self._admission.generation(side, self._topology.command_scope(resources))
+
+    @property
+    def supports_simultaneous_side_holds(self) -> bool:
+        """Whether Both can execute one shared lease without serial side waits."""
+        executing = list({id(child): child for _, child in self._targets_for(SIDE_BOTH)}.values())
+        return len(executing) <= 1 or (
+            self.connection_mode == PAIR_CONNECTION_MODE_CONCURRENT
+            and len({child.operation_identity for child in executing}) == len(executing)
+        )
 
     def _pair_admission_was_cancelled(
         self,
@@ -1126,7 +1136,10 @@ class SingleAddressPairedCoordinator(PairedBedCoordinator):
         return f"{self._single_inner.address}_{key}"
 
     def _build_topologies(self) -> tuple[SingleLinkSideAwareTopology, None]:
-        return SingleLinkSideAwareTopology(self, native_both=self._single_native_both), None
+        native_both = self._single_native_both and bed_traits(
+            self.entry.data.get(CONF_BED_TYPE, ""), self.entry.data.get(CONF_PROTOCOL_VARIANT)
+        ).single_address_native_both
+        return SingleLinkSideAwareTopology(self, native_both=native_both), None
 
     async def async_connect(self) -> bool:
         return await self._single_inner.async_connect()

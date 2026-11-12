@@ -1733,6 +1733,8 @@ def _paired_hold_lease_attributes(
     Separate receivers must be connected concurrently, as for a Both hold
     contract; a single address holds both sides on one link.
     """
+    if not coordinator.supports_simultaneous_side_holds:
+        return {}
     if not isinstance(coordinator, SingleAddressPairedCoordinator) and (
         coordinator.connection_mode != PAIR_CONNECTION_MODE_CONCURRENT
         or len(coordinator.children) != 2
@@ -1785,6 +1787,7 @@ def _paired_motor_hold_spec(
     if (
         coordinator.connection_mode != PAIR_CONNECTION_MODE_CONCURRENT
         or len(coordinator.children) != 2
+        or not coordinator.supports_simultaneous_side_holds
     ):
         return None
 

@@ -101,6 +101,7 @@ from .profiles.hush import HUSH_BASE_VARIANTS
 from .profiles.luuna import VARIANTS as LUUNA_VARIANTS
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.richmat import BEDTECH_VARIANTS
+from .profiles.symphony import SELECTORS as SYMPHONY_SELECTORS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -140,6 +141,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_RICHMAT_APP_SLEEP: RICHMAT_SLEEP_CHOICES,
     BED_TYPE_ESHINE_OKIN: ESHINE_OKIN_PROFILES,
     BED_TYPE_DOUBLESLEEP: DOUBLESLEEP_VARIANTS,
+    "symphony": {"auto": "From advertisement", **SYMPHONY_SELECTORS},
     BED_TYPE_GLIDEAWAY_MOTION: GLIDEAWAY_MOTION_MODELS,
     BED_TYPE_BEDSENSE: BEDSENSE_VARIANTS,
     BED_TYPE_CASPER_BASE: CASPER_BASE_VARIANTS,

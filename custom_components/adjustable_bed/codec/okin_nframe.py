@@ -108,6 +108,13 @@ def record(opcode: int, fields: Sequence[int]) -> bytes:
     return bytes((len(fields), opcode, *fields))
 
 
+def parameter_record(opcode: int, fields: Sequence[int], *, size: int | None = None) -> bytes:
+    """Encode a parameter record; some operations declare a different size."""
+    if len(fields) > 255:
+        raise ValueError("A parameter record carries at most 255 field bytes")
+    return bytes((len(fields) if size is None else size, opcode, *fields))
+
+
 def clock(fields: Sequence[int]) -> bytes:
     """Encode the 9-byte ``07 04`` clock frame from seven date and time bytes.
 

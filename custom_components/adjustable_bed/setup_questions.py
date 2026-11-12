@@ -102,6 +102,7 @@ from .const import (
     BED_TYPE_STARCODE_M1X12,
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_SVANE,
+    BED_TYPE_SYMPHONY,
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM,
@@ -170,6 +171,7 @@ from .const import (
     CONF_STARCODE_M5X5_PROFILE,
     CONF_STARCODE_TRANSPORT_SELECTOR,
     CONF_STARCODE_UI_SELECTOR,
+    CONF_SYMPHONY_SIDE,
     CONF_VIBRADORM_APP_METADATA,
     CONF_VIBRADORM_APP_PROFILE,
     CONF_VIBRADORM_CONTROL_TYPE,
@@ -259,6 +261,7 @@ _ALWAYS_MASSAGE: Final = frozenset({CONF_HAS_MASSAGE})
 _NECTAR_MOVE: Final = _FIXED_LAYOUT | _ALWAYS_MASSAGE | {CONF_DISABLE_ANGLE_SENSING}
 
 _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
+    BED_TYPE_SYMPHONY: frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
     "ergomotion_4": _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     "gmmotor": GENERIC_FIELDS,
     "gmmotor_sleep_mm": GENERIC_FIELDS,
@@ -1853,6 +1856,46 @@ def _comfortbase_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
     }
 
 
+def _symphony_seed(_hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
+    from .profiles.symphony import selector_from_scan
+
+    if discovered is None:
+        return dict(data)
+    name = discovered.device.name or discovered.name
+    return {CONF_PROTOCOL_VARIANT: str(selector_from_scan(name, discovered.manufacturer_data)), CONF_BLE_DEVICE_NAME: name, **data}
+
+
+def _symphony_products(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.symphony import PRODUCTS
+
+    return {key: product.name for key, product in PRODUCTS.items()}
+
+
+def _symphony_selectors(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.symphony import SELECTORS
+
+    return SELECTORS
+
+
+def _symphony_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    from .profiles.symphony import PRODUCTS
+
+    product = PRODUCTS.get(data.get(CONF_PRODUCT_TYPE, ""))
+    if product is None:
+        return {}
+    return {CONF_MOTOR_COUNT: len(product.axes) - int("head_foot_lift" in product.axes), CONF_HAS_MASSAGE: product.massage is not None or data.get(CONF_PROTOCOL_VARIANT) in ("8", "9")}
+
+
+def _symphony_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    if data.get(CONF_PRODUCT_TYPE) not in _symphony_products(data) or data.get(CONF_PROTOCOL_VARIANT) not in _symphony_selectors(data):
+        return {"base": "symphony_profile"}
+    from .profiles.symphony import PRODUCTS
+
+    if data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS and PRODUCTS[data[CONF_PRODUCT_TYPE]].page not in ("split_p1", "split_p3"):
+        return {"base": "symphony_unpair_first"}
+    return {}
+
+
 SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     BED_TYPE_JALON_BED: SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
@@ -1869,6 +1912,13 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     ),
     **_BASE,
     **_DECLARED,
+    BED_TYPE_SYMPHONY: _asking(
+        BED_TYPE_SYMPHONY,
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: SET_BY_PROFILE, CONF_DISABLE_ANGLE_SENSING: True},
+        questions=(Question(CONF_PRODUCT_TYPE, _symphony_products, searchable=True), Question(CONF_PROTOCOL_VARIANT, _symphony_selectors), Question(CONF_SYMPHONY_SIDE, {"left": "Left", "right": "Right"}, "left")),
+        derive=_symphony_settings, validate=_symphony_errors, seed=_symphony_seed,
+        title=lambda _data: "Symphony Sleep Sense",
+    ),
     BED_TYPE_JALON: _asking(
         BED_TYPE_JALON,
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,

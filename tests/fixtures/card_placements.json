@@ -251,6 +251,15 @@
  "binary_sensor:starcode_sonic_active": {
   "card_section": "hidden"
  },
+ "binary_sensor:symphony_anti_snore": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:symphony_light_on": {
+  "card_section": "lighting"
+ },
+ "binary_sensor:symphony_privacy": {
+  "card_section": "hidden"
+ },
  "binary_sensor:under_bed_lights": {
   "card_section": "lighting"
  },
@@ -1890,6 +1899,88 @@
   "card_section": "motors",
   "card_role": "stop"
  },
+ "button:symphony_elevation_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "symphony_elevation"
+ },
+ "button:symphony_elevation_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "symphony_elevation"
+ },
+ "button:symphony_feet_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "symphony_feet"
+ },
+ "button:symphony_feet_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "symphony_feet"
+ },
+ "button:symphony_head_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "symphony_head"
+ },
+ "button:symphony_head_foot_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "symphony_head_foot"
+ },
+ "button:symphony_head_foot_lift_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "symphony_head_foot_lift"
+ },
+ "button:symphony_head_foot_lift_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "symphony_head_foot_lift"
+ },
+ "button:symphony_head_foot_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "symphony_head_foot"
+ },
+ "button:symphony_head_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "symphony_head"
+ },
+ "button:symphony_lighting_action": {
+  "card_section": "lighting"
+ },
+ "button:symphony_lumbar_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "symphony_lumbar"
+ },
+ "button:symphony_lumbar_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "symphony_lumbar"
+ },
+ "button:symphony_massage_action": {
+  "card_section": "massage"
+ },
+ "button:symphony_neck_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "symphony_neck"
+ },
+ "button:symphony_neck_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "symphony_neck"
+ },
+ "button:symphony_presets_action": {
+  "card_section": "presets"
+ },
+ "button:symphony_utility_action": {
+  "card_section": "utility"
+ },
  "button:sync_positions": {
   "card_section": "utility"
  },
@@ -2296,6 +2387,34 @@
   "card_section": "motors",
   "card_motor": "starcode_union"
  },
+ "cover:symphony_elevation": {
+  "card_section": "motors",
+  "card_motor": "symphony_elevation"
+ },
+ "cover:symphony_feet": {
+  "card_section": "motors",
+  "card_motor": "symphony_feet"
+ },
+ "cover:symphony_head": {
+  "card_section": "motors",
+  "card_motor": "symphony_head"
+ },
+ "cover:symphony_head_foot": {
+  "card_section": "motors",
+  "card_motor": "symphony_head_foot"
+ },
+ "cover:symphony_head_foot_lift": {
+  "card_section": "motors",
+  "card_motor": "symphony_head_foot_lift"
+ },
+ "cover:symphony_lumbar": {
+  "card_section": "motors",
+  "card_motor": "symphony_lumbar"
+ },
+ "cover:symphony_neck": {
+  "card_section": "motors",
+  "card_motor": "symphony_neck"
+ },
  "cover:tilt": {
   "card_section": "motors",
   "card_motor": "tilt"
@@ -2569,6 +2688,12 @@
   "card_section": "lighting",
   "card_role": "level"
  },
+ "number:symphony_light_brightness": {
+  "card_section": "lighting"
+ },
+ "number:symphony_light_color": {
+  "card_section": "lighting"
+ },
  "number:tv_lift_position_estimated": {
   "card_section": "motors",
   "card_role": "estimate",
@@ -2820,6 +2945,9 @@
  "select:starcode_color": {
   "card_section": "lighting",
   "card_role": "mood"
+ },
+ "select:symphony_child_mode": {
+  "card_section": "utility"
  },
  "select:thermal_timer": {
   "card_section": "climate"
@@ -4037,6 +4165,19 @@
   "card_section": "hidden"
  },
  "sensor:svane_position_raw": {
+  "card_section": "hidden"
+ },
+ "sensor:symphony_alarm": {
+  "card_section": "hidden"
+ },
+ "sensor:symphony_firmware": {
+  "card_section": "hidden"
+ },
+ "sensor:symphony_massage": {
+  "card_section": "massage",
+  "card_role": "timer"
+ },
+ "sensor:symphony_protocol": {
   "card_section": "hidden"
  },
  "sensor:timotion_ahf_lamp_display_code": {
