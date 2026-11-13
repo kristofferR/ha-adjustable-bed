@@ -94,13 +94,20 @@ Optional manufacturer is `00002a29-…`.
 
 ## Detection and setup
 
-Enter the exact case-sensitive Bluetooth name separately from a friendly name:
+Enter the Bluetooth name as advertised, separately from a friendly name.
+Home Assistant matches these prefixes without regard to letter case and keeps
+the original name unchanged:
 
 | Prefix, in factory order | Profile |
 |---|---|
 | `STAR254205`, `STAR255401` | F23 |
 | `STAR255402`, `STAR255403` | Kneading |
 | Remaining `STAR25` | CB25 |
+
+For example, `Star254202…` selects CB25. The app uses Android's cached
+platform name, which is separate from the advertised name HA receives. Its
+audited factory is case-sensitive; HA accepts advertised-name case variations
+to support [beds reported working in the app](https://github.com/kristofferR/ha-adjustable-bed/issues/914#issuecomment-6862684356).
 
 - These names and the shared transport cannot distinguish the app from other
   software. Discovery asks the user to choose the app.

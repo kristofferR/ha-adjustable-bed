@@ -79,10 +79,13 @@ _LOOP_IMPORT_GUARD = textwrap.dedent('''
 def test_factory_first_use_imports_run_off_event_loop():
     result = subprocess.run(
         [sys.executable, "-c", _LOOP_IMPORT_GUARD + textwrap.dedent('''
+            from unittest.mock import patch
             from tests.test_controller_contract import _create_controller_for_bed_type
             from types import SimpleNamespace
+            from custom_components.adjustable_bed import controller_factory
             from custom_components.adjustable_bed.const import (
-                BED_TYPE_RICHMAT, CONF_BED_TYPE, CONF_RICHMAT_REMOTE, SUPPORTED_BED_TYPES,
+                BED_TYPE_RICHMAT, BED_TYPE_STARCODE_ABM5_4, CONF_BED_TYPE,
+                CONF_RICHMAT_REMOTE, SUPPORTED_BED_TYPES,
             )
             from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
             from custom_components.adjustable_bed.profile_id import with_profile_ids
@@ -91,6 +94,14 @@ def test_factory_first_use_imports_run_off_event_loop():
             assert features not in sys.modules
 
             install_loop_import_guard()
+
+            # MetaPathFinder misses cached imports. HA also checks import_module
+            # calls, and a cached relative name still triggers its loop warning.
+            loop_thread = threading.get_ident()
+            original_import = controller_factory.import_module
+            def import_off_loop(*args, **kwargs):
+                assert threading.get_ident() != loop_thread, args
+                return original_import(*args, **kwargs)
 
             async def main():
                 # Entry setup resolves the Richmat motor count from the feature table.
@@ -109,8 +120,10 @@ def test_factory_first_use_imports_run_off_event_loop():
 
                 for bed_type in SUPPORTED_BED_TYPES:
                     await _create_controller_for_bed_type(bed_type)
+                await _create_controller_for_bed_type(BED_TYPE_STARCODE_ABM5_4)
 
-            asyncio.run(main())
+            with patch.object(controller_factory, "import_module", import_off_loop):
+                asyncio.run(main())
         ''')],
         capture_output=True, text=True, check=False,
     )
