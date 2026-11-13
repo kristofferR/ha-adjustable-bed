@@ -1238,6 +1238,7 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         BED_TYPE_SLEEPTRACKER,
         BED_TYPE_ISLEEP,
         BED_TYPE_RIZE,
+        "rize_home",
         BED_TYPE_GMMOTOR,
         BED_TYPE_MOTOMOTION,
         "hush_base",

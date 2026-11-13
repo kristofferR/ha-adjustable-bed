@@ -146,6 +146,8 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "Okin5AProfile:star_elevate": {"hold": ("abm5_5", "m1x12")},
     # Okin N-frame (#483): each app streams a held key until release. Nectar
     # Move is the Nectar app's CST route; Prodigy CE and U Series also compose (#516).
+    "RizeHomeProfile:rize_home_remedy_iii": {"hold": ("rize-home",)},
+    "RizeHomeProfile:rize_home_contempo_iv": {"hold": ("rize-home",)},
     "OkinNFrameProfile:resident": {"hold": ("resident-base",)},
     "OkinNFrameProfile:adjustable_lumbar_okin": {"hold": ("lumbar",)},
     "OkinNFrameProfile:adjustable_lumbar_star": {"hold": ("lumbar",)},
@@ -305,6 +307,9 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
         ) for site in ("AdjustableAppProfile", "PROFILES")
     },
     "profiles/smart_comfort.py:<module>.SmartComfortProfile": ("SmartComfortProfile:synargy", "SmartComfortProfile:synergy"),
+    "profiles/rize_home.py:<module>.RizeHomeProfile": (
+        "RizeHomeProfile:rize_home_remedy_iii", "RizeHomeProfile:rize_home_contempo_iv",
+    ),
     "profiles/okin_nframe.py:<module>.RESIDENT": ("OkinNFrameProfile:resident",),
     "profiles/luuna.py:<module>.LuunaProfile": tuple(f"LuunaProfile:{key}" for key in ("rise", "risepro", "riseprolight")),
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController": ("richmat_classic_apps",),

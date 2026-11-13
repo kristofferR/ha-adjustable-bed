@@ -209,6 +209,9 @@
  "binary_sensor:rize_battery_mode": {
   "card_section": "hidden"
  },
+ "binary_sensor:rize_home_active": {
+  "card_section": "massage"
+ },
  "binary_sensor:sleeptracker_light_on": {
   "card_section": "lighting"
  },
@@ -1395,6 +1398,36 @@
  },
  "button:rize_enroll": {
   "card_section": "hidden"
+ },
+ "button:rize_home_motion_off": {
+  "card_section": "utility"
+ },
+ "button:rize_home_motion_on": {
+  "card_section": "utility"
+ },
+ "button:rize_home_query": {
+  "card_section": "massage"
+ },
+ "button:rize_home_reset_memories": {
+  "card_section": "utility"
+ },
+ "button:rize_home_save_anti_snore": {
+  "card_section": "presets"
+ },
+ "button:rize_home_save_leisure": {
+  "card_section": "presets"
+ },
+ "button:rize_home_save_memory": {
+  "card_section": "presets"
+ },
+ "button:rize_home_save_reading": {
+  "card_section": "presets"
+ },
+ "button:rize_home_save_zero_g": {
+  "card_section": "presets"
+ },
+ "button:rize_home_timer": {
+  "card_section": "massage"
  },
  "button:rize_motion_off": {
   "card_section": "utility"
@@ -2732,6 +2765,9 @@
  "select:richmat_mh_snore": {
   "card_section": "utility"
  },
+ "select:rize_home_source": {
+  "card_section": "utility"
+ },
  "select:ruf_richmat_mattress_left_heat_area": {
   "card_section": "massage"
  },
@@ -3660,6 +3696,21 @@
  },
  "sensor:richmat_classic_status": {
   "card_section": "utility"
+ },
+ "sensor:rize_home_combined_intensity": {
+  "card_section": "massage"
+ },
+ "sensor:rize_home_foot_intensity": {
+  "card_section": "massage"
+ },
+ "sensor:rize_home_head_intensity": {
+  "card_section": "massage"
+ },
+ "sensor:rize_home_mode": {
+  "card_section": "massage"
+ },
+ "sensor:rize_home_timer_index": {
+  "card_section": "massage"
  },
  "sensor:ruf_richmat_calendar_alarms": {
   "card_section": "utility"

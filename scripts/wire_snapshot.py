@@ -1508,6 +1508,12 @@ def route_scenarios() -> list[Scenario]:
                     layout_id="eshine_okin",
                 )
             )
+    if "rize_home" in const.SUPPORTED_BED_TYPES:
+        for product in ("remedy_iii", "contempo_iv"):
+            scenarios.append(Scenario(
+                id=f"rize_home:{product}", bed_type="rize_home",
+                protocol_variant=product, layout_id="rize_home",
+            ))
     return scenarios
 
 
@@ -1757,6 +1763,9 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         if controller._coordinator.bed_type in {"smart_comfort_synargy", "smart_comfort_synergy"}:
             # These v5 profiles own startup in their hook, without session helpers.
             await controller.async_on_connect(None)
+            return
+        if controller._coordinator.bed_type == "rize_home":
+            await controller.async_on_connect(SimpleNamespace(async_start_notify=controller.start_notify))
             return
         await controller.start_notify(lambda *_: None)
         for hook in STARTUP_HOOKS.get(controller._coordinator.bed_type, ()):  # noqa: SLF001

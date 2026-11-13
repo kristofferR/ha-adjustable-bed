@@ -84,6 +84,7 @@ from .const import (
     BED_TYPE_RICHMAT_APP_SLEEP,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_RIZE,
+    BED_TYPE_RIZE_HOME,
     BED_TYPE_SBI,
     BED_TYPE_SERENITY,
     BED_TYPE_SERTA,
@@ -187,6 +188,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     **dict.fromkeys(KEESON_LAYOUT_APP_BED_TYPES - {BED_TYPE_SERTA_MP_REMOTE}, _NO_ANGLES),
     BED_TYPE_ADJUSTABLE_BED: _NO_ANGLES,
     BED_TYPE_ADJUSTABLE_LUMBAR: _NO_ANGLES,
+    BED_TYPE_RIZE_HOME: _NO_ANGLES_SCOPED,
     BED_TYPE_RESIDENT: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     BED_TYPE_ADJUSTAMATTRESS: _NO_ANGLES,
     # Measured against the BedJet LCD remote's own degree readout.
