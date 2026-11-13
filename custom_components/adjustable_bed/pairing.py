@@ -54,6 +54,7 @@ from .const import (
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
     BED_TYPE_SLEEP_NUMBER,
+    BED_TYPE_SYMPHONY,
     BED_TYPE_YAMADA,
     CB24_BED_SELECTION_A,
     CB24_BED_SELECTION_B,
@@ -210,6 +211,7 @@ SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
         "hush_base",
         BED_TYPE_GMMOTOR,
         BED_TYPE_MOTOMOTION,
+        BED_TYPE_SYMPHONY,
     }
 )
 
@@ -225,6 +227,8 @@ def supports_single_address_pairing(
     """Return whether a bed can expose the Phase 3 single-address surface."""
     if bed_type not in SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES:
         return False
+    if bed_type == BED_TYPE_SYMPHONY:
+        return str(product_type) in {"10", "15"}
     if bed_type in (BED_TYPE_KOMFYD, BED_TYPE_COMFYDS):
         return str(product_type) == "130"
     if bed_type == "bedtech":

@@ -664,3 +664,39 @@ async def test_review_S5_sequential_preflight_aborts_on_failed_peer_or_own_relea
         )
     assert connections == expected_connects
     assert all(packets(row[2]) == [] for row in triples.values())
+
+
+@pytest.mark.parametrize("product", ["10", "15", "1", "20", None, "unknown"])
+async def test_split_product_pairing_is_reachable_from_options(
+    hass, enable_custom_integrations, product
+):
+    from custom_components.adjustable_bed.pairing import (
+        build_single_address_pair_entry_data,
+        get_child,
+        supports_single_address_pairing,
+    )
+
+    original = {
+        "address": "AA:33:00:00:00:91",
+        "name": "Symphony",
+        "bed_type": "symphony",
+        "product_type": product,
+        "protocol_variant": "1",
+        "symphony_side": "left",
+    }
+    entry = MockConfigEntry(domain=DOMAIN, data=original)
+    entry.add_to_hass(hass)
+    menu = await hass.config_entries.options.async_init(entry.entry_id)
+    supported = product in ("10", "15")
+    assert ("pair_sides" in menu["menu_options"]) is supported
+    assert supports_single_address_pairing("symphony", "1", product_type=product) is supported
+    if supported:
+        paired = build_single_address_pair_entry_data(original, name="Symphony pair")
+        for side in ("left", "right"):
+            child = get_child(paired, side)
+            assert child["address"] == original["address"]
+            assert child["product_type"] == product
+            assert child["side"] == side
+    else:
+        with pytest.raises(ValueError, match="does not support"):
+            build_single_address_pair_entry_data(original, name="Not split")

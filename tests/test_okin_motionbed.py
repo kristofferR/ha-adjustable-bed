@@ -92,13 +92,25 @@ def client(services=None):
 
 
 @pytest.fixture
-def bed(monkeypatch):
+def motion_clock(monkeypatch):
+    now = [0]
+    monkeypatch.setattr(app, "monotonic_ns", lambda: now[0])
+
+    async def pause(_cancel, seconds):
+        now[0] += round(seconds * 1_000_000_000)
+        return False
+
+    monkeypatch.setattr(app, "_pause", AsyncMock(side_effect=pause))
+    return now
+
+
+@pytest.fixture
+def bed(monkeypatch, motion_clock):
     c = MagicMock()
     c.client = client()
     c.cancel_command = asyncio.Event()
     c.motor_pulse_count = 5
     c.motor_count = 4  # Generic saved count cannot invent a fourth axis.
-    monkeypatch.setattr(app, "_pause", AsyncMock(return_value=False))
     return app.OkinMotionBedController(c), c
 
 
@@ -117,7 +129,7 @@ async def test_every_live_action_has_a_production_caller(bed, action):
             "E5FE160000000006"
         ]
         assert isinstance(app._pause, AsyncMock)
-        assert [a.args[1] for a in app._pause.await_args_list] == [0.2] * 5
+        assert [a.args[1] for a in app._pause.await_args_list] == pytest.approx([0.2] * 5)
     else:
         if action == "stop":
             await ctrl.stop_all()
@@ -343,7 +355,7 @@ async def test_app_picker_manual_setup_and_configure_keep_fixed_profile(
 
 @pytest.mark.usefixtures("mock_coordinator_connected")
 async def test_real_coordinator_failure_idle_reconnect_entities_and_services(
-    hass, mock_bleak_client, monkeypatch
+    hass, mock_bleak_client, monkeypatch, motion_clock
 ):
     from custom_components.adjustable_bed.button import (
         BUTTON_DESCRIPTIONS,
@@ -370,7 +382,6 @@ async def test_real_coordinator_failure_idle_reconnect_entities_and_services(
     mock_bleak_client.start_notify = AsyncMock()
     mock_bleak_client.stop_notify = AsyncMock()
     mock_bleak_client.write_gatt_char = AsyncMock()
-    monkeypatch.setattr(app, "_pause", AsyncMock(return_value=False))
     with patch(
         "custom_components.adjustable_bed.coordinator_connection.read_ble_device_info",
         new_callable=AsyncMock,
@@ -480,3 +491,40 @@ async def test_real_coordinator_failure_idle_reconnect_entities_and_services(
             "E5FE160000000006",
         ]
         await coordinator.async_disconnect()
+
+
+@pytest.mark.parametrize("latency", [0.2, 0.45])
+async def test_finite_hold_includes_acknowledgement_latency(bed, motion_clock, latency):
+    ctrl, coordinator = bed
+    writes = []
+
+    async def acknowledge(_char, frame, **_kwargs):
+        writes.append((motion_clock[0] / 1_000_000_000, bytes(frame)))
+        if frame != okin_nframe.gateway_frame(0):
+            motion_clock[0] += round(latency * 1_000_000_000)
+
+    coordinator.client.write_gatt_char.side_effect = acknowledge
+    await ctrl.hold_control("back_up", 600)
+    assert writes[-1][1] == okin_nframe.gateway_frame(0)
+    assert writes[-1][0] == pytest.approx(0.6)
+    assert all(at < 0.6 for at, frame in writes if frame != okin_nframe.gateway_frame(0))
+
+
+async def test_expired_finite_hold_waiting_for_ble_lock_sends_only_stop(bed, motion_clock):
+    ctrl, coordinator = bed
+    await ctrl.ble_lock.acquire()
+    held = asyncio.create_task(ctrl.hold_control("back_up", 600))
+    await asyncio.sleep(0)
+    motion_clock[0] = 1_000_000_000
+    ctrl.ble_lock.release()
+    await held
+    assert frames(coordinator) == ["E5FE160000000006"]
+
+
+async def test_hold_deadline_is_exact_at_large_clock_offsets(bed, motion_clock):
+    ctrl, coordinator = bed
+    started = 1_700_000_000_123_456_000
+    motion_clock[0] = started
+    await ctrl.hold_control("back_down", 1000)
+    assert frames(coordinator) == ["E5FE160000000204"] * 5 + ["E5FE160000000006"]
+    assert motion_clock[0] == started + 1_000_000_000

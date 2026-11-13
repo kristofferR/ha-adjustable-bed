@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable
+from time import monotonic_ns
 from typing import TYPE_CHECKING, cast
 from uuid import UUID
 
@@ -47,6 +48,10 @@ async def _pause(cancel: asyncio.Event, seconds: float) -> bool:
     except TimeoutError:
         return False
     return True
+
+
+class _HoldElapsed(Exception):
+    """A queued refresh reached its deadline before GATT transmission."""
 
 
 class OkinMotionBedController(ProfileExecution[OkinNFrameProfile], OkinNFrameController):
@@ -199,16 +204,30 @@ class OkinMotionBedController(ProfileExecution[OkinNFrameProfile], OkinNFrameCon
         client = self._session_client
         interval = self.profile.hold.repeat_ms
         assert interval is not None
-        remaining = duration_ms
+        deadline = monotonic_ns() + duration_ms * 1_000_000
+        write = self.write_characteristic
+
+        def before_write() -> None:
+            if monotonic_ns() >= deadline:
+                raise _HoldElapsed
+
         try:
-            while remaining > 0 and not cancel.is_set() and self.client is client:
-                await self.write_command(
-                    self._build_command(self.profile.keys[control]), cancel_event=cancel
-                )
-                wait_ms = min(remaining, interval)
-                if await _pause(cancel, wait_ms / 1000):
+            while monotonic_ns() < deadline and not cancel.is_set() and self.client is client:
+                try:
+                    await self._write_gatt_with_retry(
+                        self.control_characteristic_uuid,
+                        self._build_command(self.profile.keys[control]),
+                        cancel_event=cancel,
+                        response=self._write_with_response,
+                        characteristic=write,
+                        expected_client=client,
+                        before_write=before_write,
+                    )
+                except _HoldElapsed:
                     break
-                remaining -= wait_ms
+                remaining = (deadline - monotonic_ns()) / 1_000_000_000
+                if remaining <= 0 or await _pause(cancel, min(remaining, interval / 1000)):
+                    break
         finally:
             # Never retarget an old gesture's release to a replacement session.
             if self.client is client and self._session_client is client:
