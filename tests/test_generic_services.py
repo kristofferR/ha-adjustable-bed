@@ -53,6 +53,7 @@ def target(
         "validate_device_rename": MagicMock(),
         "rename_device": AsyncMock(),
         "supports_clock_sync": False,
+        "validate_clock_sync": MagicMock(),
         "sync_clock": AsyncMock(),
         "supports_memory_presets": True,
         "memory_slot_count": 4,

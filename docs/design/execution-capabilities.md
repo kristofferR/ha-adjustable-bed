@@ -134,6 +134,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `bf` | S stream | U | U | bf | zero frame at release |
 | `cherish` | S stream | U | U | cherish | combined is a fixed key |
 | `comfortbase` (all ten products) | S stream | U | U | row161 | one held key refreshed every 100 ms, zero STOP at release; combined is a fixed key, no motor-speed control |
+| `symphony_sleep` (all five models and three transports) | S stream | U | U | symphony078 | Immediate held key, 300 ms refresh, STOP at 0/300/600 ms. Combined head and foot is a fixed key. |
 | `comfort_enhancements` | S stream | U | U | enh | STOP 100 ms after release |
 | `glideaway_motion` | S stream | U | U | glide | zero frames at +300 and +600 ms |
 | `adjustamattress` | S stream | U | U | row067 | union movement is a fixed action |
@@ -802,6 +803,7 @@ its APK Protocol Audit report, named here by its file stem:
 | row066 | audit ledger `row066-classic-richmat-apps` |
 | row067 | audit ledger `row067-adjustamattress` |
 | row121 | audit ledger `row121-hjbed` |
+| symphony078 | Accepted Symphony Sleep 1.1.0 (14), row078, all 15 dispatch outcomes; `com.ore.bedding.symphony-1.1.0-2026-11-12-queue001/report/`. |
 | row161 | accepted ComfortBaseForBluetooth 1.1.2 (6), `com.ore.yorkfeng.comfortbaseble2-1.1.2-2026-11-10-maxqueue001/report/` and independent audit001 |
 | row173 | Richmat 4.2.0 accepted catalog gesture and literal STOP evidence |
 | row126 | audit ledger `row126-hush-base` |

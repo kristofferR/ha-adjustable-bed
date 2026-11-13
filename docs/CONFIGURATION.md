@@ -412,6 +412,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Rize Home app (Remedy III / Contempo IV) | `rize_home` | 3 | 200 ms |
 | SIMMONS app | `simmons` | 4 | 300 ms |
 | SUTA Smart Home (AT protocol) | `suta` | 7 | 150 ms |
+| Symphony Sleep app (com.ore.bedding.symphony, choose model and transport) | `symphony_sleep` | 4 | 300 ms |
 | V-MAT Basic app | `vmatbasic` | 34 | 30 ms |
 
 Every other bed type defaults to 10 pulses 100 ms apart.

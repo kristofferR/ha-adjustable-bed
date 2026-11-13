@@ -133,6 +133,7 @@ def is_valid_octo_pin(pin: str) -> bool:
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     "smart_sleep": {"p1": "Legacy bed controls (P1)", "p2": "New bed controls (P2)"},
     "comfort_enhancement3": APEX_CHOICES,
+    "symphony_sleep": {"box1": "Box 1 (P1)", "box2": "Box 2 (P2)", "fallback": "P1 output, parser disabled"},
     "bedtech": BEDTECH_VARIANTS,
     BED_TYPE_GALAXY: GALAXY_PROFILES,
     BED_TYPE_GOODVIBE: GOODVIBE_PROFILES,

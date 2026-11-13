@@ -20,11 +20,19 @@ _ADJUSTAMATTRESS = frozenset(
     if row["expected_bytes"] != "NO WRITE"
 )
 
+_SYMPHONY = json.loads((Path(__file__).parents[1] / "fixtures/symphony_sleep/vectors.json").read_text())["builders"]
+_SYMPHONY_FRAMES = {
+    f"symphony_sleep_{route}": frozenset(row["expected_bytes"] for row in _SYMPHONY
+        if row["protocol"] == ("P2" if route == "box2" else "P1"))
+    for route in ("box1", "box2", "fallback")
+}
+
 FAMILY = CodecFamily(
     # The Keeson layout apps: one AppProfile per layout, vectors per app.
-    profiles={KeesonProfile: FROZEN_FRAMES, AppProfile: FROZEN_FRAMES},
+    profiles={KeesonProfile: {**FROZEN_FRAMES, **_SYMPHONY_FRAMES}, AppProfile: FROZEN_FRAMES},
     bed_types=frozenset(
         {
+            "symphony_sleep",
             "jalon",
             "ergomotion",
             "keeson",
@@ -59,6 +67,6 @@ FAMILY = CodecFamily(
         spelled=spelled_frames(
             r"`((?:E[56] ?FE ?16|0[45] ?02)(?: ?[0-9A-F]{2}){4,})`", re.IGNORECASE
         ),
-        frozen=frozenset().union(*FROZEN_FRAMES.values(), _ADJUSTAMATTRESS),
+        frozen=frozenset().union(*FROZEN_FRAMES.values(), *_SYMPHONY_FRAMES.values(), _ADJUSTAMATTRESS),
     ),
 )

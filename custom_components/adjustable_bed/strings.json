@@ -3244,6 +3244,12 @@
       },
       "n32_cervical_down": {
         "name": "Cervical down"
+      },
+      "symphony_query_alarm": {
+        "name": "Refresh bed alarm"
+      },
+      "symphony_sync_clock": {
+        "name": "Sync bed clock"
       }
     },
     "cover": {
@@ -5047,6 +5053,12 @@
       },
       "n32_alarm_3": {
         "name": "Bed alarm 3"
+      },
+      "symphony_massage_minutes": {
+        "name": "Massage time"
+      },
+      "symphony_alarm_time": {
+        "name": "Bed alarm time"
       }
     },
     "light": {
@@ -5374,6 +5386,9 @@
       },
       "smart_sleep_flexible_wake": {
         "name": "Flexible wake"
+      },
+      "symphony_alarm_enabled": {
+        "name": "Bed alarm enabled"
       }
     },
     "number": {
@@ -9396,6 +9411,32 @@
         "side": {
           "name": "Side",
           "description": "Which physical bed in a two-address pair receives the action."
+        }
+      }
+    },
+    "symphony_set_alarm": {
+      "name": "Symphony Sleep: set bed alarm",
+      "description": "Configure the single daily bed alarm, after syncing its clock. A and B are memory positions.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "Symphony Sleep bed."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Side of a combined two-address bed."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Enable or cancel the bed alarm."
+        },
+        "time": {
+          "name": "Time",
+          "description": "Required when enabling, with minute precision."
+        },
+        "wake_mode": {
+          "name": "Wake position",
+          "description": "None, Memory A or Memory B."
         }
       }
     }

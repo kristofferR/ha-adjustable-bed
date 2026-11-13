@@ -491,6 +491,7 @@ async def test_the_final_settings_save_each_beds_angle_sensing(hass, row, disabl
 # read them for by default (``bed_type_has_position_feedback`` is False), so
 # angle sensing starts disabled.
 _QUIET_BED_TYPES = (
+    const.BED_TYPE_SYMPHONY_SLEEP,
     const.BED_TYPE_COMFORTBASE,
     const.BED_TYPE_COOLBASE,
     const.BED_TYPE_DOUBLESLEEP,

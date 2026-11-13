@@ -4544,5 +4544,21 @@
   },
   "sensor:n32_alarm_3": {
     "card_section": "utility"
+  },
+  "binary_sensor:symphony_alarm_enabled": {
+    "card_section": "utility"
+  },
+  "button:symphony_query_alarm": {
+    "card_section": "utility"
+  },
+  "button:symphony_sync_clock": {
+    "card_section": "utility"
+  },
+  "sensor:symphony_alarm_time": {
+    "card_section": "utility"
+  },
+  "sensor:symphony_massage_minutes": {
+    "card_section": "massage",
+    "card_role": "timer"
   }
 }
