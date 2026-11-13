@@ -1,0 +1,992 @@
+[
+  {
+    "id": "P1-massageAll",
+    "protocol": "P1",
+    "action": "massageAll",
+    "inputs": {
+      "action": "massageAll"
+    },
+    "expected_bytes": "05 02 00 00 01 00 00",
+    "builder_input": [
+      5,
+      2,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:6154; 0x4f0140; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
+    ]
+  },
+  {
+    "id": "P2-massageAll",
+    "protocol": "P2",
+    "action": "massageAll",
+    "inputs": {
+      "action": "massageAll"
+    },
+    "expected_bytes": "e6 fe 16 00 01 00 00 00 04",
+    "builder_input": [
+      230,
+      254,
+      22,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:6154; 0x4f0140; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
+    ]
+  },
+  {
+    "id": "P1-massageStopAll",
+    "protocol": "P1",
+    "action": "massageStopAll",
+    "inputs": {
+      "action": "massageStopAll"
+    },
+    "expected_bytes": "05 02 02 00 00 00 00",
+    "builder_input": [
+      5,
+      2,
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:6504; 0x4f04b0; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
+    ]
+  },
+  {
+    "id": "P2-massageStopAll",
+    "protocol": "P2",
+    "action": "massageStopAll",
+    "inputs": {
+      "action": "massageStopAll"
+    },
+    "expected_bytes": "e6 fe 16 00 00 00 02 00 03",
+    "builder_input": [
+      230,
+      254,
+      22,
+      0,
+      0,
+      0,
+      2,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:6504; 0x4f04b0; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
+    ]
+  },
+  {
+    "id": "P1-waveAdd",
+    "protocol": "P1",
+    "action": "waveAdd",
+    "inputs": {
+      "action": "waveAdd"
+    },
+    "expected_bytes": "05 02 10 00 00 00 00",
+    "builder_input": [
+      5,
+      2,
+      16,
+      0,
+      0,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:6671; 0x4f06ac; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
+    ]
+  },
+  {
+    "id": "P2-waveAdd",
+    "protocol": "P2",
+    "action": "waveAdd",
+    "inputs": {
+      "action": "waveAdd"
+    },
+    "expected_bytes": "e6 fe 16 00 00 00 10 00 f5",
+    "builder_input": [
+      230,
+      254,
+      22,
+      0,
+      0,
+      0,
+      16,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:6671; 0x4f06ac; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
+    ]
+  },
+  {
+    "id": "P1-meanwhileStrengthAdd",
+    "protocol": "P1",
+    "action": "meanwhileStrengthAdd",
+    "inputs": {
+      "action": "meanwhileStrengthAdd"
+    },
+    "expected_bytes": "05 02 00 00 0c 00 00",
+    "builder_input": [
+      5,
+      2,
+      0,
+      0,
+      12,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:6838; 0x4f08a8; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
+    ]
+  },
+  {
+    "id": "P2-meanwhileStrengthAdd",
+    "protocol": "P2",
+    "action": "meanwhileStrengthAdd",
+    "inputs": {
+      "action": "meanwhileStrengthAdd"
+    },
+    "expected_bytes": "e6 fe 16 00 0c 00 00 00 f9",
+    "builder_input": [
+      230,
+      254,
+      22,
+      0,
+      12,
+      0,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:6838; 0x4f08a8; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
+    ]
+  },
+  {
+    "id": "P1-timerSwitch",
+    "protocol": "P1",
+    "action": "timerSwitch",
+    "inputs": {
+      "action": "timerSwitch"
+    },
+    "expected_bytes": "05 02 00 00 02 00 00",
+    "builder_input": [
+      5,
+      2,
+      0,
+      0,
+      2,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:7005; 0x4f0aa4; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
+    ]
+  },
+  {
+    "id": "P2-timerSwitch",
+    "protocol": "P2",
+    "action": "timerSwitch",
+    "inputs": {
+      "action": "timerSwitch"
+    },
+    "expected_bytes": "e6 fe 16 00 02 00 00 00 03",
+    "builder_input": [
+      230,
+      254,
+      22,
+      0,
+      2,
+      0,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:7005; 0x4f0aa4; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
+    ]
+  },
+  {
+    "id": "P1-stopCommand",
+    "protocol": "P1",
+    "action": "stopCommand",
+    "inputs": {
+      "action": "stopCommand"
+    },
+    "expected_bytes": "05 02 00 00 00 00 00",
+    "builder_input": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:7172; 0x4f3780; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
+    ]
+  },
+  {
+    "id": "P2-stopCommand",
+    "protocol": "P2",
+    "action": "stopCommand",
+    "inputs": {
+      "action": "stopCommand"
+    },
+    "expected_bytes": "e6 fe 16 00 00 00 00 00 05",
+    "builder_input": [
+      230,
+      254,
+      22,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:7172; 0x4f3780; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
+    ]
+  },
+  {
+    "id": "P1-machinery4Down",
+    "protocol": "P1",
+    "action": "machinery4Down",
+    "inputs": {
+      "action": "machinery4Down"
+    },
+    "expected_bytes": "05 02 00 00 00 80 00",
+    "builder_input": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      128,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:7355; 0x4f41bc; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
+    ]
+  },
+  {
+    "id": "P2-machinery4Down",
+    "protocol": "P2",
+    "action": "machinery4Down",
+    "inputs": {
+      "action": "machinery4Down"
+    },
+    "expected_bytes": "e6 fe 16 80 00 00 00 00 85",
+    "builder_input": [
+      230,
+      254,
+      22,
+      128,
+      0,
+      0,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:7355; 0x4f41bc; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
+    ]
+  },
+  {
+    "id": "P1-machinery4Up",
+    "protocol": "P1",
+    "action": "machinery4Up",
+    "inputs": {
+      "action": "machinery4Up"
+    },
+    "expected_bytes": "05 02 00 00 00 40 00",
+    "builder_input": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      64,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:7522; 0x4f439c; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
+    ]
+  },
+  {
+    "id": "P2-machinery4Up",
+    "protocol": "P2",
+    "action": "machinery4Up",
+    "inputs": {
+      "action": "machinery4Up"
+    },
+    "expected_bytes": "e6 fe 16 40 00 00 00 00 c5",
+    "builder_input": [
+      230,
+      254,
+      22,
+      64,
+      0,
+      0,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:7522; 0x4f439c; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
+    ]
+  },
+  {
+    "id": "P1-machinery3Down",
+    "protocol": "P1",
+    "action": "machinery3Down",
+    "inputs": {
+      "action": "machinery3Down"
+    },
+    "expected_bytes": "05 02 00 00 00 20 00",
+    "builder_input": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      32,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:7689; 0x4f457c; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
+    ]
+  },
+  {
+    "id": "P2-machinery3Down",
+    "protocol": "P2",
+    "action": "machinery3Down",
+    "inputs": {
+      "action": "machinery3Down"
+    },
+    "expected_bytes": "e6 fe 16 20 00 00 00 00 e5",
+    "builder_input": [
+      230,
+      254,
+      22,
+      32,
+      0,
+      0,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:7689; 0x4f457c; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
+    ]
+  },
+  {
+    "id": "P1-machinery3Up",
+    "protocol": "P1",
+    "action": "machinery3Up",
+    "inputs": {
+      "action": "machinery3Up"
+    },
+    "expected_bytes": "05 02 00 00 00 10 00",
+    "builder_input": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      16,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:7856; 0x4f475c; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
+    ]
+  },
+  {
+    "id": "P2-machinery3Up",
+    "protocol": "P2",
+    "action": "machinery3Up",
+    "inputs": {
+      "action": "machinery3Up"
+    },
+    "expected_bytes": "e6 fe 16 10 00 00 00 00 f5",
+    "builder_input": [
+      230,
+      254,
+      22,
+      16,
+      0,
+      0,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:7856; 0x4f475c; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
+    ]
+  },
+  {
+    "id": "P1-hfDown",
+    "protocol": "P1",
+    "action": "hfDown",
+    "inputs": {
+      "action": "hfDown"
+    },
+    "expected_bytes": "05 02 00 00 00 0a 00",
+    "builder_input": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      10,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:8023; 0x4f493c; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
+    ]
+  },
+  {
+    "id": "P2-hfDown",
+    "protocol": "P2",
+    "action": "hfDown",
+    "inputs": {
+      "action": "hfDown"
+    },
+    "expected_bytes": "e6 fe 16 0a 00 00 00 00 fb",
+    "builder_input": [
+      230,
+      254,
+      22,
+      10,
+      0,
+      0,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:8023; 0x4f493c; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
+    ]
+  },
+  {
+    "id": "P1-hfUp",
+    "protocol": "P1",
+    "action": "hfUp",
+    "inputs": {
+      "action": "hfUp"
+    },
+    "expected_bytes": "05 02 00 00 00 05 00",
+    "builder_input": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      5,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:8190; 0x4f4b1c; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
+    ]
+  },
+  {
+    "id": "P2-hfUp",
+    "protocol": "P2",
+    "action": "hfUp",
+    "inputs": {
+      "action": "hfUp"
+    },
+    "expected_bytes": "e6 fe 16 05 00 00 00 00 00",
+    "builder_input": [
+      230,
+      254,
+      22,
+      5,
+      0,
+      0,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:8190; 0x4f4b1c; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
+    ]
+  },
+  {
+    "id": "P1-footDown",
+    "protocol": "P1",
+    "action": "footDown",
+    "inputs": {
+      "action": "footDown"
+    },
+    "expected_bytes": "05 02 00 00 00 08 00",
+    "builder_input": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      8,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:8357; 0x4f4cfc; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
+    ]
+  },
+  {
+    "id": "P2-footDown",
+    "protocol": "P2",
+    "action": "footDown",
+    "inputs": {
+      "action": "footDown"
+    },
+    "expected_bytes": "e6 fe 16 08 00 00 00 00 fd",
+    "builder_input": [
+      230,
+      254,
+      22,
+      8,
+      0,
+      0,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:8357; 0x4f4cfc; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
+    ]
+  },
+  {
+    "id": "P1-footUp",
+    "protocol": "P1",
+    "action": "footUp",
+    "inputs": {
+      "action": "footUp"
+    },
+    "expected_bytes": "05 02 00 00 00 04 00",
+    "builder_input": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      4,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:8524; 0x4f4edc; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
+    ]
+  },
+  {
+    "id": "P2-footUp",
+    "protocol": "P2",
+    "action": "footUp",
+    "inputs": {
+      "action": "footUp"
+    },
+    "expected_bytes": "e6 fe 16 04 00 00 00 00 01",
+    "builder_input": [
+      230,
+      254,
+      22,
+      4,
+      0,
+      0,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:8524; 0x4f4edc; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
+    ]
+  },
+  {
+    "id": "P1-headDown",
+    "protocol": "P1",
+    "action": "headDown",
+    "inputs": {
+      "action": "headDown"
+    },
+    "expected_bytes": "05 02 00 00 00 02 00",
+    "builder_input": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      2,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:8691; 0x4f50bc; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
+    ]
+  },
+  {
+    "id": "P2-headDown",
+    "protocol": "P2",
+    "action": "headDown",
+    "inputs": {
+      "action": "headDown"
+    },
+    "expected_bytes": "e6 fe 16 02 00 00 00 00 03",
+    "builder_input": [
+      230,
+      254,
+      22,
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:8691; 0x4f50bc; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
+    ]
+  },
+  {
+    "id": "P1-headUp",
+    "protocol": "P1",
+    "action": "headUp",
+    "inputs": {
+      "action": "headUp"
+    },
+    "expected_bytes": "05 02 00 00 00 01 00",
+    "builder_input": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      1,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:8858; 0x4f529c; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
+    ]
+  },
+  {
+    "id": "P2-headUp",
+    "protocol": "P2",
+    "action": "headUp",
+    "inputs": {
+      "action": "headUp"
+    },
+    "expected_bytes": "e6 fe 16 01 00 00 00 00 04",
+    "builder_input": [
+      230,
+      254,
+      22,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:8858; 0x4f529c; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
+    ]
+  },
+  {
+    "id": "P1-light",
+    "protocol": "P1",
+    "action": "light",
+    "inputs": {
+      "action": "light"
+    },
+    "expected_bytes": "05 02 00 02 00 00 00",
+    "builder_input": [
+      5,
+      2,
+      0,
+      2,
+      0,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:9025; 0x4f547c; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
+    ]
+  },
+  {
+    "id": "P2-light",
+    "protocol": "P2",
+    "action": "light",
+    "inputs": {
+      "action": "light"
+    },
+    "expected_bytes": "e6 fe 16 00 00 02 00 00 03",
+    "builder_input": [
+      230,
+      254,
+      22,
+      0,
+      0,
+      2,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:9025; 0x4f547c; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
+    ]
+  },
+  {
+    "id": "P1-memory6_M2",
+    "protocol": "P1",
+    "action": "memory6_M2",
+    "inputs": {
+      "action": "memory6_M2"
+    },
+    "expected_bytes": "05 02 00 04 00 00 00",
+    "builder_input": [
+      5,
+      2,
+      0,
+      4,
+      0,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:12098; 0x62338c; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
+    ]
+  },
+  {
+    "id": "P2-memory6_M2",
+    "protocol": "P2",
+    "action": "memory6_M2",
+    "inputs": {
+      "action": "memory6_M2"
+    },
+    "expected_bytes": "e6 fe 16 00 00 04 00 00 01",
+    "builder_input": [
+      230,
+      254,
+      22,
+      0,
+      0,
+      4,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:12098; 0x62338c; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
+    ]
+  },
+  {
+    "id": "P1-memory5_M1",
+    "protocol": "P1",
+    "action": "memory5_M1",
+    "inputs": {
+      "action": "memory5_M1"
+    },
+    "expected_bytes": "05 02 00 01 00 00 00",
+    "builder_input": [
+      5,
+      2,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:12265; 0x62356c; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
+    ]
+  },
+  {
+    "id": "P2-memory5_M1",
+    "protocol": "P2",
+    "action": "memory5_M1",
+    "inputs": {
+      "action": "memory5_M1"
+    },
+    "expected_bytes": "e6 fe 16 00 00 01 00 00 04",
+    "builder_input": [
+      230,
+      254,
+      22,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:12265; 0x62356c; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
+    ]
+  },
+  {
+    "id": "P1-flatPosition",
+    "protocol": "P1",
+    "action": "flatPosition",
+    "inputs": {
+      "action": "flatPosition"
+    },
+    "expected_bytes": "05 02 08 00 00 00 00",
+    "builder_input": [
+      5,
+      2,
+      8,
+      0,
+      0,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:12432; 0x62374c; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
+    ]
+  },
+  {
+    "id": "P2-flatPosition",
+    "protocol": "P2",
+    "action": "flatPosition",
+    "inputs": {
+      "action": "flatPosition"
+    },
+    "expected_bytes": "e6 fe 16 00 00 00 08 00 fd",
+    "builder_input": [
+      230,
+      254,
+      22,
+      0,
+      0,
+      0,
+      8,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:12432; 0x62374c; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
+    ]
+  },
+  {
+    "id": "P1-antiSnore",
+    "protocol": "P1",
+    "action": "antiSnore",
+    "inputs": {
+      "action": "antiSnore"
+    },
+    "expected_bytes": "05 02 00 00 80 00 00",
+    "builder_input": [
+      5,
+      2,
+      0,
+      0,
+      128,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:12599; 0x62392c; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
+    ]
+  },
+  {
+    "id": "P2-antiSnore",
+    "protocol": "P2",
+    "action": "antiSnore",
+    "inputs": {
+      "action": "antiSnore"
+    },
+    "expected_bytes": "e6 fe 16 00 80 00 00 00 85",
+    "builder_input": [
+      230,
+      254,
+      22,
+      0,
+      128,
+      0,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:12599; 0x62392c; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
+    ]
+  },
+  {
+    "id": "P1-zeroGravity",
+    "protocol": "P1",
+    "action": "zeroGravity",
+    "inputs": {
+      "action": "zeroGravity"
+    },
+    "expected_bytes": "05 02 00 00 10 00 00",
+    "builder_input": [
+      5,
+      2,
+      0,
+      0,
+      16,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:12766; 0x623b0c; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
+    ]
+  },
+  {
+    "id": "P2-zeroGravity",
+    "protocol": "P2",
+    "action": "zeroGravity",
+    "inputs": {
+      "action": "zeroGravity"
+    },
+    "expected_bytes": "e6 fe 16 00 10 00 00 00 f5",
+    "builder_input": [
+      230,
+      254,
+      22,
+      0,
+      16,
+      0,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/mline/tool/bleManager.dart:12766; 0x623b0c; Smi array stores decoded /2",
+      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
+    ]
+  }
+]

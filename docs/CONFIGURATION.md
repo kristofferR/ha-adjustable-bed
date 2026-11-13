@@ -1079,3 +1079,14 @@ feedback; ordinary pulse count and interval remain configurable. In a two-addres
 pair, configure the protocol on each side independently. See the
 [profile guide](beds/keeson.md#アシステック--yamada) for manufacturer-value
 corroboration, alarms and session requirements.
+
+### M Line app
+
+Select **M Line app (com.okin.mline)**, its protocol selector and the physical
+motor layout. Auto reads the original Bluetooth name and manufacturer bytes;
+shared names do not establish this app or the layout. Two motors offer head,
+foot and combined controls, triple adds neck, and four adds neck and lumbar.
+Enable massage only when its conditional route applies to the bed. The local
+child-mode setting blocks movement, presets, light, massage and alarm changes;
+it does not write a hardware lock. Protocol, layout and local settings belong
+to each physical side of a two-address pair. See [M Line](beds/mline.md).

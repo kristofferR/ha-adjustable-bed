@@ -99,6 +99,7 @@ from .const import (
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MATTRESSFIRM,
     BED_TYPE_MLILY,
+    BED_TYPE_MLINE,
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_MOTOSLEEP,
@@ -576,6 +577,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "casper_base": "Casper Base app (select product)",
     "hush_base": "Hush Base app (select product)",
     "luuna": "Luuna + app (Rise, Rise Pro, Rise Pro Light)",
+    "mline": "M Line app (com.okin.mline)",
     "hush_remote": "Hush Base remote finder (RCRM handset)",
     "hush_sleep_mm": "Hush Base sleep sensor (RM / MM)",
     "hush_sleep_sxb": "Hush Base sleep sensor (HJ / SXB)",
@@ -1310,7 +1312,7 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         For detailed detection with confidence scores, use detect_bed_type_detailed().
     """
     result = detect_bed_type_detailed(service_info)
-    if result.bed_type in (BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY) and result.confidence < 0.7:
+    if result.bed_type in (BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE) and result.confidence < 0.7:
         return None  # An app name hint requires an explicit product choice.
     return result.bed_type
 
@@ -1421,6 +1423,15 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         elif result.bed_type != BED_TYPE_YAMADA:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_YAMADA]))
             result.signals.append("name:yamada_app_candidate")
+    # Shared names offer the app; they never replace a stronger receiver match.
+    if first.name(BED_TYPE_MLINE) and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ):
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_MLINE, 0.3, [*result.signals, "name:mline_app_candidate"])
+        elif result.bed_type != BED_TYPE_MLINE:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_MLINE]))
+            result.signals.append("name:mline_app_candidate")
     return result
 
 

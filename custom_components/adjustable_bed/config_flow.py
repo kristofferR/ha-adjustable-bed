@@ -1253,6 +1253,7 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         "bedgear",
         "hush_base",
         "luuna",
+        "mline",
         BED_TYPE_LEGGETT_LP_LEGACY,
         *STARCODE_FAMILY.direct,
     }

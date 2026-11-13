@@ -354,7 +354,8 @@
           "serta_mp_memory_4_head": "Local memory 4, head angle",
           "serta_mp_memory_4_foot": "Local memory 4, foot angle",
           "comfort_enhancement3_remote_code": "Exact remote code",
-          "symphony_side": "Side for a standalone split-head bed"
+          "symphony_side": "Side for a standalone split-head bed",
+          "mline_child_mode": "Local child mode"
         },
         "data_description": {
           "jiecang_app_layout": "Select the layout configured in the app. The device name and motor count do not identify the layout.",
@@ -917,7 +918,8 @@
           "serta_mp_memory_4_head": "Local memory 4, head angle",
           "serta_mp_memory_4_foot": "Local memory 4, foot angle",
           "comfort_enhancement3_remote_code": "Exact remote code",
-          "symphony_side": "Side for a standalone split-head bed"
+          "symphony_side": "Side for a standalone split-head bed",
+          "mline_child_mode": "Local child mode"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -1132,7 +1134,8 @@
           "serta_mp_memory_4_head": "Local memory 4, head angle",
           "serta_mp_memory_4_foot": "Local memory 4, foot angle",
           "comfort_enhancement3_remote_code": "Exact remote code",
-          "symphony_side": "Side for a standalone split-head bed"
+          "symphony_side": "Side for a standalone split-head bed",
+          "mline_child_mode": "Local child mode"
         },
         "data_description": {
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
@@ -1271,7 +1274,8 @@
           "serta_mp_memory_4_head": "Local memory 4, head angle",
           "serta_mp_memory_4_foot": "Local memory 4, foot angle",
           "comfort_enhancement3_remote_code": "Exact remote code",
-          "symphony_side": "Side for a standalone split-head bed"
+          "symphony_side": "Side for a standalone split-head bed",
+          "mline_child_mode": "Local child mode"
         },
         "data_description": {
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
@@ -5213,6 +5217,21 @@
       },
       "bedgear_sync_state": {
         "name": "Synchronization state"
+      },
+      "mline_heart": {
+        "name": "Heart signal"
+      },
+      "mline_breath": {
+        "name": "Breathing signal"
+      },
+      "mline_anti_angle": {
+        "name": "Anti-snore angle code"
+      },
+      "mline_alarm": {
+        "name": "Alarm fields"
+      },
+      "mline_alarm_mode": {
+        "name": "Alarm wake mode"
       }
     },
     "light": {
@@ -5552,6 +5571,18 @@
       },
       "symphony_light_on": {
         "name": "Underbed light"
+      },
+      "mline_motion": {
+        "name": "Motion"
+      },
+      "mline_boolean_projection": {
+        "name": "Sensor Boolean projection"
+      },
+      "mline_privacy": {
+        "name": "Privacy mode"
+      },
+      "mline_anti_enabled": {
+        "name": "Anti-snore enabled"
       }
     },
     "number": {
@@ -9833,6 +9864,63 @@
         "duration_ms": {
           "name": "Hold duration",
           "description": "Duration for a held head or foot app command."
+        }
+      }
+    },
+    "mline_command": {
+      "name": "M Line action",
+      "description": "Configure Sleep privacy or anti-snore, refresh settings/alarm, or transfer raw sensor history. History requires exactly one physical bed side and an explicit acknowledgement after consumption.",
+      "fields": {
+        "device_id": {
+          "name": "Device Id"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "action": {
+          "name": "Action"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "angle": {
+          "name": "Angle"
+        },
+        "position": {
+          "name": "Position"
+        },
+        "all_records": {
+          "name": "All Records"
+        },
+        "transfer": {
+          "name": "Transfer",
+          "description": "Completed transfer token, acknowledged once on the same live BLE session after the caller consumes the raw result."
+        }
+      }
+    },
+    "mline_set_alarm": {
+      "name": "Set M Line alarm",
+      "description": "Set a bed-local recurring or next-occurrence alarm, or disable it. Mode mappings depend on the selected M Line protocol.",
+      "fields": {
+        "device_id": {
+          "name": "Device Id"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "time": {
+          "name": "Time",
+          "description": "Local time with minute precision."
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "Monday 0 through Sunday 6; empty means the next occurrence."
+        },
+        "wake_mode": {
+          "name": "Wake Mode"
         }
       }
     }

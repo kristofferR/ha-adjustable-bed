@@ -4392,3 +4392,84 @@ richmat_resource_bed:
           step: 1
           mode: box
           unit_of_measurement: ms
+
+mline_command:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+    action:
+      required: true
+      selector:
+        select:
+          options: [privacy, anti_snore, anti_snore_demo, settings_refresh, alarm_refresh, live_query, history_read, history_ack]
+    enabled:
+      default: true
+      selector:
+        boolean:
+    angle:
+      default: 1
+      selector:
+        select:
+          options:
+            - {value: "1", label: Low}
+            - {value: "3", label: Medium}
+            - {value: "6", label: High}
+    position:
+      default: 1
+      selector:
+        select:
+          options:
+            - {value: "1", label: Head}
+            - {value: "2", label: Elevation}
+    all_records:
+      default: false
+      selector:
+        boolean:
+    transfer:
+      selector:
+        text:
+
+mline_set_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+    enabled:
+      required: true
+      selector:
+        boolean:
+    time:
+      selector:
+        time:
+    weekdays:
+      selector:
+        select:
+          multiple: true
+          options:
+            - {value: "0", label: Monday}
+            - {value: "1", label: Tuesday}
+            - {value: "2", label: Wednesday}
+            - {value: "3", label: Thursday}
+            - {value: "4", label: Friday}
+            - {value: "5", label: Saturday}
+            - {value: "6", label: Sunday}
+    wake_mode:
+      default: zg
+      selector:
+        select:
+          options: [zg, flat, m1, m2, vibration, antisnore]

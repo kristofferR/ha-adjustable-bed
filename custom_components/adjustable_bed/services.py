@@ -66,6 +66,7 @@ from .const import (
     CONF_PROTOCOL_VARIANT,
     DEFAULT_MOTOR_COUNT,
     DOMAIN,
+    PAIR_CONNECTION_MODE_SEQUENTIAL,
     SIDE_BOTH,
     SIDE_LEFT,
     SIDE_RIGHT,
@@ -663,6 +664,7 @@ async def handle_goto_preset(call: ServiceCall) -> None:
     if missing:
         raise _missing_device_error(missing[0])
 
+    admissions = [_capture_command_admission(parent, side) for parent, side in targets]
     async with _limoss_remote_reload_transaction(targets):
         await _preflight_live_limoss_remote(
             targets, lambda ctrl: ctrl.validate_memory_recall(preset)
@@ -722,8 +724,10 @@ async def handle_goto_preset(call: ServiceCall) -> None:
         # fails, release the still-connected preflighted beds that never ran (and
         # so never reset their idle timer) before propagating.
         try:
-            for coordinator, side in targets:
-                await _execute_sided(coordinator, side, invalidate_on_command(hass, recall))
+            for (coordinator, side), admission in zip(targets, admissions, strict=True):
+                await _execute_sided(
+                    coordinator, side, invalidate_on_command(hass, recall), admission=admission
+                )
         except Exception:
             await _release_preflighted(preflighted)
             raise
@@ -1391,6 +1395,9 @@ async def _async_with_hold_lease(
         raise ServiceValidationError("A renewable hold targets one bed at a time")
     _require_hold_topology(targets)
     coordinator, side = targets[0]
+    if (isinstance(coordinator, PairedBedCoordinator) and side == SIDE_BOTH
+            and coordinator.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL):
+        raise ServiceValidationError("A renewable Both hold requires concurrent physical links")
     # Key every claim by the target that executes the command: a native
     # single-address Both runs once on its combined side view.
     executing = (
@@ -1712,22 +1719,25 @@ async def _preflight_and_execute[T](
     skip_disconnect: bool = False,
     resource: str | None = "configuration",
     admit: bool = False,
+    admissions: Sequence[_CommandAdmission | None] | None = None,
 ) -> None:
     """Preflight every physical target, then run ``command`` on each in turn.
 
     A ``ValueError`` from validation or the command becomes a
     ``ServiceValidationError``. Any failure or cancellation hands the links
     opened only for validation back to their idle timer. ``admit`` lets a STOP
-    pressed during the preflight cancel the command.
+    pressed during the preflight cancel the command. ``admissions`` can carry
+    snapshots captured before a lazy import awaits.
     """
-    admissions = [
-        _capture_command_admission(
-            coordinator, side, ALL_COMMAND_RESOURCES if resource is None else (resource,)
-        )
-        if admit
-        else None
-        for coordinator, side in targets
-    ]
+    if admissions is None:
+        admissions = [
+            _capture_command_admission(
+                coordinator, side, ALL_COMMAND_RESOURCES if resource is None else (resource,)
+            )
+            if admit
+            else None
+            for coordinator, side in targets
+        ]
     preflighted = await _preflight_capability(targets, interface, label, supported, validate)
     await _execute_preflighted(
         targets,
@@ -1884,6 +1894,8 @@ def _hold_seconds(value: object) -> Decimal:
 
 async def handle_hold_control(call: ServiceCall) -> None:
     """Hold one controller-declared control, then run its protocol release."""
+    targets = _call_targets(call)
+    admissions = [_capture_command_admission(parent, side) for parent, side in targets]
     # The other family action modules load with the services, this one does not.
     await async_import_modules(call.hass, "beds.vmatbasic.services")
     from .beds.limoss.remote_services import _hold_limoss_remote
@@ -1893,7 +1905,6 @@ async def handle_hold_control(call: ServiceCall) -> None:
 
     control = current_control_name(call.data[ATTR_CONTROL])
     duration_ms = int(call.data[ATTR_DURATION] * 1000)
-    targets = _call_targets(call)
     route = _profile_route(
         targets,
         {BED_TYPE_SVANE: "svane", BED_TYPE_LIMOSS_REMOTE: "limoss_remote"},
@@ -1914,7 +1925,7 @@ async def handle_hold_control(call: ServiceCall) -> None:
                 )
             )
             if route == "limoss_remote"
-            else lambda: _hold_targets(targets, control, MAX_HOLD_LEASE_MS, lease=held),
+            else lambda: _hold_targets(targets, control, MAX_HOLD_LEASE_MS, lease=held, admissions=admissions),
         )
         return
     if route == "svane":
@@ -1929,7 +1940,7 @@ async def handle_hold_control(call: ServiceCall) -> None:
         await async_import_modules(call.hass, "beds.vmatbasic.controller")
         await _hold_vmatbasic_floor(targets, control, duration_ms)
     else:
-        await _hold_targets(targets, control, duration_ms)
+        await _hold_targets(targets, control, duration_ms, admissions=admissions)
 
 
 def _require_held_control(
@@ -1975,6 +1986,7 @@ async def _hold_targets(
     duration_ms: int,
     *,
     lease: HoldLease | None = None,
+    admissions: Sequence[_CommandAdmission] | None = None,
 ) -> None:
     """Preflight the whole selection before starting any held write sequence."""
     _require_hold_topology(targets)
@@ -1987,7 +1999,8 @@ async def _hold_targets(
 
     # A STOP during any per-side capability/connect wait owns the event that
     # was current when the user pressed. Capture before _preflight_each awaits.
-    admissions = [_capture_command_admission(coordinator, side) for coordinator, side in targets]
+    if admissions is None:
+        admissions = [_capture_command_admission(coordinator, side) for coordinator, side in targets]
     preflighted = await _preflight_each(targets, check)
 
     async def hold(controller: BedController) -> None:
@@ -2080,6 +2093,7 @@ async def handle_sync_clock(call: ServiceCall) -> None:
     admissions = [
         _capture_command_admission(coordinator, side, ("configuration",)) for coordinator, side in targets
     ]
+    admissions = [_capture_command_admission(parent, side, ("configuration",)) for parent, side in targets]
     preflighted = await _preflight_each(targets, check)
     try:
         for (coordinator, side), admission in zip(targets, admissions, strict=True):
@@ -2375,6 +2389,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.linak.services import async_register_linak_services
     from .beds.logicdata.app_services import async_register_logicdata_app_services
     from .beds.malouf.app_services import async_register_malouf_app_services
+    from .beds.mline.services import register_services as register_mline_services
     from .beds.motion_bed.services import async_register_motion_bed_services
     from .beds.motomotion.services import async_register_motomotion_services
     from .beds.n32_motion_bed.services import register_services as register_n32_services
@@ -2400,6 +2415,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
 
     return (
         async_register_bedgear_services,
+        register_mline_services,
         register_bedtech_services,
         register_n32_services,
         register_bf_cherish_services,

@@ -4775,5 +4775,32 @@
   },
   "number:richmat_resource_massage_timer": {
     "card_section": "utility"
+  },
+  "binary_sensor:mline_anti_enabled": {
+    "card_section": "hidden"
+  },
+  "binary_sensor:mline_boolean_projection": {
+    "card_section": "hidden"
+  },
+  "binary_sensor:mline_motion": {
+    "card_section": "hidden"
+  },
+  "binary_sensor:mline_privacy": {
+    "card_section": "hidden"
+  },
+  "sensor:mline_alarm": {
+    "card_section": "hidden"
+  },
+  "sensor:mline_alarm_mode": {
+    "card_section": "hidden"
+  },
+  "sensor:mline_anti_angle": {
+    "card_section": "hidden"
+  },
+  "sensor:mline_breath": {
+    "card_section": "hidden"
+  },
+  "sensor:mline_heart": {
+    "card_section": "hidden"
   }
 }

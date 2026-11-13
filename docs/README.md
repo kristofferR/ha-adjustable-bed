@@ -47,6 +47,7 @@ Each codec has one guide, with a section per profile:
 | [Kaidi](beds/kaidi.md) | Rize Beds, Rize Seat, Floyd Home, ISleep, KomfyD and ComfyDS |
 | [Vibradorm](beds/vibradorm.md) | Vibradorm, Caresse, Werkmeister, VMAT and V-MAT Basic |
 | [OKIN Smart Sleep](beds/smart-sleep.md) | OKIN Smart Sleep legacy P1 and new P2 |
+| [M Line](beds/mline.md) | M Line Sleep, Smart, Smart Sainuo, Okin and fallback selectors |
 | [Smart Comfort seats](beds/smart-comfort.md) | Smart Comfort by SYNARGY and Smart Comfort (SYNERGY) |
 | [BedJet PowerLayer](beds/bedjet-powerlayer.md) | BedJet PowerLayer |
 

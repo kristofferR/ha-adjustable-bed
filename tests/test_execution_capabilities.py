@@ -113,6 +113,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     **{f"KeesonProfile:symphony_sleep_{route}": {"hold": ("symphony078",)} for route in ("box1", "box2", "fallback")},
     "SymphonyWordProfile:symphony": {"hold": ("row133",)},
     "BedgearProfile:bedgear": {"hold": ("bedgear",)},
+    **{f"MLineProfile:{key}": {"hold": ("mline147",)} for key in ("sleep", "smart", "smartsainuo", "okin", "unknown")},
     "ParamountProfile:paramount": {"hold": ("paramount",)},
     **{f"AdjustableAppProfile:{key}": {"hold": ("adjustbed",)}
        for key in ("adjustable_bed_okin", "adjustable_bed_star", "adjustable_bed_star_5a")},
@@ -333,6 +334,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/okin_nframe.py:<module>.OKIN_MOTIONBED": ("OkinNFrameProfile:okin_motionbed",),
     "profiles/n32_motion_bed.py:<module>.N32": ("OkinNFrameProfile:n32_motion_bed",),
     "profiles/okin_nframe.py:<module>.RESIDENT": ("OkinNFrameProfile:resident",),
+    "profiles/mline.py:<module>.MLineProfile": tuple(f"MLineProfile:{key}" for key in ("sleep", "smart", "smartsainuo", "okin", "unknown")),
     "profiles/luuna.py:<module>.LuunaProfile": tuple(f"LuunaProfile:{key}" for key in ("rise", "risepro", "riseprolight")),
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController": ("richmat_classic_apps",),
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController.execution": ("richmat_classic_apps",),
