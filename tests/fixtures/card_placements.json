@@ -4701,5 +4701,17 @@
   },
   "sensor:symphony_protocol": {
     "card_section": "hidden"
+  },
+  "button:yamada_query_alarms": {
+    "card_section": "utility"
+  },
+  "button:yamada_sync_clock": {
+    "card_section": "utility"
+  },
+  "sensor:yamada_alarm_1": {
+    "card_section": "utility"
+  },
+  "sensor:yamada_alarm_2": {
+    "card_section": "utility"
   }
 }

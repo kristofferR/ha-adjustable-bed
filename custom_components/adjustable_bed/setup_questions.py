@@ -116,6 +116,7 @@ from .const import (
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
+    BED_TYPE_YAMADA,
     BED_TYPE_ZSERIES,
     CB24_BED_SELECTION_A,
     CB24_BED_SELECTION_B,
@@ -2012,6 +2013,12 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             Question(CONF_PRODUCT_TYPE, _smart_sleep_models, "0", searchable=True),
         ),
         normalize=_smart_sleep_normalize, seed=_smart_sleep_seed,
+    ),
+    BED_TYPE_YAMADA: SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False,
+              CONF_DISABLE_ANGLE_SENSING: True},
+        questions=(Question(CONF_PROTOCOL_VARIANT, {"p1": "P1: E6 / ED", "p2": "P2: 05 / A5"}),),
+        title=lambda _data: "アシステック / Yamada",
     ),
     BED_TYPE_JALON_BED: SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,

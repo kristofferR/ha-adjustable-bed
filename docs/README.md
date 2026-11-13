@@ -34,7 +34,7 @@ Each codec has one guide, with a section per profile:
 | Codec guide | Profiles for |
 |-------------|--------------|
 | [Jiecang](beds/jiecang.md) | Jiecang, Comfort Motion, the Dream apps and the LOGICDATA apps |
-| [Keeson](beds/keeson.md) | Keeson, Ergomotion, Serta, the Keeson-based apps and Ergomotion 4.0 |
+| [Keeson](beds/keeson.md) | Keeson, Ergomotion, Serta, the Keeson-based apps, Ergomotion 4.0 and アシステック / Yamada |
 | [Symphony Sleep Sense / Okin SoundWave](beds/okin-soundwave.md) | Explicit Symphony products and selectors over proven Keeson, N-frame and SoundWave carriers |
 | [Okin N-frame](beds/okin-nframe.md) | Okimat, DewertOkin, Okin CB24/CST/DOT, Leggett & Platt Okin, Customatic, Jordan's, SIMMONS, SleepEase, AdjustableM5X4, Okin 64-Bit, Adjustable bed (Lumbar), Resident Adjustable Base, N32 Motion Bed, eShine and Comfort Enhancement 3 / Comfort Plus3 |
 | [Okin 5A](beds/okin-5a.md) | Nectar, Mattress Firm 900, Okin CB35 and DewertOkin ELEVATE |

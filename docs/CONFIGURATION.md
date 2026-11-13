@@ -414,6 +414,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | SUTA Smart Home (AT protocol) | `suta` | 7 | 150 ms |
 | Symphony Sleep app (com.ore.bedding.symphony, choose model and transport) | `symphony_sleep` | 4 | 300 ms |
 | V-MAT Basic app | `vmatbasic` | 34 | 30 ms |
+| アシステック / ASSISTEC / Yamada app (com.okin.yamada) | `yamada` | 4 | 300 ms |
 
 Every other bed type defaults to 10 pulses 100 ms apart.
 <!-- /generated -->
@@ -1069,3 +1070,12 @@ profile12 offers massage in wake-up programs only. Each side of a two-address
 pair owns its own selection. Ordinary cover presses use the configured pulse
 count; the card's renewable hold has its own lease. See the
 [profile guide](beds/okin-nframe.md#comfort-enhancement-3).
+
+### アシステック / Yamada
+
+Select the app and explicitly choose P1 or P2. A shared Bluetooth name or UUID
+does not prove the version. Both choices fix two motors, no massage and no angle
+feedback; ordinary pulse count and interval remain configurable. In a two-address
+pair, configure the protocol on each side independently. See the
+[profile guide](beds/keeson.md#アシステック--yamada) for manufacturer-value
+corroboration, alarms and session requirements.

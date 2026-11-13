@@ -3313,6 +3313,12 @@
       },
       "symphony_head_foot_lift_down": {
         "name": "Head and foot lifting down"
+      },
+      "yamada_sync_clock": {
+        "name": "Sync bed clock"
+      },
+      "yamada_query_alarms": {
+        "name": "Refresh bed alarms"
       }
     },
     "cover": {
@@ -5155,6 +5161,12 @@
       },
       "symphony_massage": {
         "name": "Massage timer index"
+      },
+      "yamada_alarm_1": {
+        "name": "Bed alarm 1"
+      },
+      "yamada_alarm_2": {
+        "name": "Bed alarm 2"
       }
     },
     "light": {
@@ -9635,6 +9647,40 @@
         },
         "wake_mode": {
           "name": "Wake mode"
+        }
+      }
+    },
+    "yamada_set_alarm": {
+      "name": "Set アシステック bed alarm",
+      "description": "Write an explicit alarm slot on the current bed connection. Refresh bed alarms first; P1 preserves the observed other slot.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "Bed devices to configure."
+        },
+        "side": {
+          "name": "Side",
+          "description": "The configured side of a paired bed."
+        },
+        "slot": {
+          "name": "Alarm slot",
+          "description": "Choose slot 1 or 2 explicitly."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Enable or disable this bed alarm."
+        },
+        "time": {
+          "name": "Time",
+          "description": "Local time, with minute precision. Supply the observed time when disabling."
+        },
+        "weekday": {
+          "name": "Weekday mask",
+          "description": "Sunday bit 0 to Saturday bit 6. Add 128 for recurring days (129–255); 0–128 selects the next occurrence. Ignored when disabling."
+        },
+        "preset": {
+          "name": "Preset",
+          "description": "The alarm position. Supply the observed preset when disabling P2."
         }
       }
     }

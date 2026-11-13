@@ -84,6 +84,8 @@ KEESON_STREAM: dict[str, tuple[str, ...]] = {
     "jalon_15": ("row132",),
     "jalon_24": ("row132",),
     "comfortbase": ("row161",),
+    "yamada_p1": ("row178",),
+    "yamada_p2": ("row178",),
     "glideaway_motion": ("glide",),
     # Malouf's legacy OKIN route over the E6 frame (row023).
     "malouf_legacy_okin": ("malouf", "row023"),

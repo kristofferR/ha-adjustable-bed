@@ -57,6 +57,7 @@ APK Protocol Audit row044.
 
 | Analyzed | App | Package ID | Profile |
 |----------|-----|------------|---------|
+| ✅ (verified scope) | [アシステック](https://play.google.com/store/apps/details?id=com.okin.yamada) 1.0.1 (6) | `com.okin.yamada` | [Explicit P1/P2](#アシステック--yamada) |
 | ✅ | [ComfortBaseForBluetooth](https://play.google.com/store/apps/details?id=com.ore.yorkfeng.comfortbaseble2) 1.1.2 (6) | `com.ore.yorkfeng.comfortbaseble2` | [ComfortBaseForBluetooth](#comfortbaseforbluetooth) |
 | ✅ | [Ergomotion 4.0](https://play.google.com/store/apps/details?id=com.sfd.hump) | `com.sfd.hump` | [Ergomotion 4.0](#ergomotion-40); also [KSBT](#ksbt-family) |
 | ✅ | [1500 Tilt Base Remote](https://play.google.com/store/apps/details?id=com.sfd.rondure_hump) | `com.sfd.rondure_hump` | [KSBT](#ksbt-family) |
@@ -229,6 +230,8 @@ only through **Reconfigure**, and the app review in Repairs opens it.
 | Comfort Enhancements | bed type `comfort_enhancements` | K1 `E5`, big-endian | app controller | app controller | app controller | renewable lease |
 | ComfortBaseForBluetooth | bed type `comfortbase` | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller | renewable lease |
 | OkinComfortBed Ⅱ (Jalon) | bed type `jalon_bed` | K1 `E6`, little-endian, model `00` | app controller | app controller | app controller | renewable lease |
+| アシステック P1 | bed type `yamada`, P1 | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller | renewable lease |
+| アシステック P2 | bed type `yamada`, P2 | P2 7-byte (`05`) | app controller | app controller | app controller | renewable lease |
 
 ### Hold and release timing
 
@@ -280,8 +283,8 @@ AMERICANSTAR, Avanti Bases, Bedsense Bases, BF, Cherish, Comfort Enhancements,
 ComfortBaseForBluetooth, Cool Base, Dynasty Bases, Glideaway Motion, Heal Every
 Night, INNOVA, OkinComfortBed II P1, OkinComfortBed II P2, OkinComfortBed II P3,
 OkinComfortBed Ⅱ (Jalon), Malouf legacy OKIN, MaxCoil Una, OKIN Comfort Bed,
-OKIN-Seating, Rondure, SBI, Scott Living, Simon Li, Sleepy's BOX15 keep their key
-tables with their app controllers; see their sections.
+OKIN-Seating, Rondure, SBI, Scott Living, Simon Li, Sleepy's BOX15, アシステック P1,
+アシステック P2 keep their key tables with their app controllers; see their sections.
 
 | Profile | Flat | Zero G | Lounge | TV | Anti-snore | Memory recall | Memory save |
 |---|---|---|---|---|---|---|---|
@@ -404,8 +407,8 @@ family's codec exists.
 
 | Frame | Layout | Head up | Profiles |
 |---|---|---|---|
-| K1 `E6`, little-endian, side `00` | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 00 04` | OkinComfortBed II P1, OkinComfortBed II P2, Sleep Harmony (base-i5), Glideaway Motion, Malouf legacy OKIN, Sleepy's BOX15, AdjustaMattress P1, ComfortBaseForBluetooth, OkinComfortBed Ⅱ (Jalon) |
-| P2 7-byte (`05`) | `05 02` + big-endian word + `00` | `05 02 00 00 00 01 00` | OkinComfortBed II P3 |
+| K1 `E6`, little-endian, side `00` | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 00 04` | OkinComfortBed II P1, OkinComfortBed II P2, Sleep Harmony (base-i5), Glideaway Motion, Malouf legacy OKIN, Sleepy's BOX15, AdjustaMattress P1, ComfortBaseForBluetooth, OkinComfortBed Ⅱ (Jalon), アシステック P1 |
+| P2 7-byte (`05`) | `05 02` + big-endian word + `00` | `05 02 00 00 00 01 00` | OkinComfortBed II P3, アシステック P2 |
 | K1 `E5`, little-endian | `header FE 16` + word + checksum | `E5 FE 16 01 00 00 00 05` | Base (BaseI4/I5), Ergomotion, Serta, Purple Premium, Restonic BT remote A, Restonic BT remote B, INNOVA, SBI, Rondure, Cool Base |
 | K1 `E6`, little-endian | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 04` | OKIN FFE, BetterLiving CB1322 |
 | K1 `E5`, big-endian | `header FE 16` + word + checksum | `E5 FE 16 00 00 00 01 05` | Sino, BetterLiving, Simon Li, OKIN-Seating, Heal Every Night, OKIN Comfort Bed, AMERICANSTAR, Avanti Bases, Bedsense Bases, Dynasty Bases, MaxCoil Una, AdjustaMattress P2, BF, Cherish, Comfort Enhancements |
@@ -2099,6 +2102,8 @@ frames of other families and keep it.
 
 | Profile | Bed type | Frame | Word `0x1` | Zero word | Hold until release | Guide |
 |---|---|---|---|---|---|---|
+| アシステック P1 | `yamada`, P1 | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | renewable lease | [アシステック](#アシステック--yamada) |
+| アシステック P2 | `yamada`, P2 | P2 7-byte (`05`) | `05 02 00 00 00 01 00` | `05 02 00 00 00 00 00` | renewable lease | [アシステック](#アシステック--yamada) |
 | OkinComfortBed II P1 | `jalon` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | renewable lease | [OkinComfortBed II](#okincomfortbed-ii) |
 | OkinComfortBed II P2 | `jalon` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | renewable lease | [OkinComfortBed II](#okincomfortbed-ii) |
 | OkinComfortBed II P3 | `jalon` | P2 7-byte (`05`) | `05 02 00 00 00 01 00` | `05 02 00 00 00 00 00` | renewable lease | [OkinComfortBed II](#okincomfortbed-ii) |
@@ -5150,3 +5155,146 @@ All five models and fifteen dispatch outcomes are implemented; physical checks
 belong to external beta/release users, with no maintainer hardware acquisition
 required. Frozen literals and crafted parser cases live in
 `tests/fixtures/symphony_sleep/vectors.json`.
+
+
+### アシステック / Yamada
+
+**App:** [アシステック](https://play.google.com/store/apps/details?id=com.okin.yamada)
+1.0.1 (6), `com.okin.yamada`
+
+**Status:** ❓ Needs testing on both P1 and P2 hardware.
+
+#### Setup
+
+Choose **アシステック / ASSISTEC / Yamada** and explicitly select **P1** or
+**P2**. Setup, Configure and restored entries retain this choice independently
+for each side of a two-address pair. No single-address side selector is proven.
+
+The app scans names starting with `okin-ble` or `smartbed`, ignoring case.
+These shared names suggest the app without identifying it. `ASSISTEC` is a display
+replacement, not a scan prefix. No additional product aliases are inferred.
+The app selects P2 when bytes 0/1/2/4 of the first manufacturer map **value** are
+59/41/4D/02 (hex). Company ID and byte 3 do not participate. Android concatenates
+manufacturer AD segments differently from HA's parsed map; do not concatenate
+arbitrary HA records or infer a version from shared UUIDs. Use the explicit choice
+when the original selector cannot be reconstructed.
+
+Both GATT roles are required. Service and characteristic OR sets are independent;
+the last matching write wins, and every matching notification role is subscribed.
+HA requires the selected write role to support write with response, and each
+notification role to support notify or indicate. No read, authentication, PIN,
+bond, heartbeat or position query is added.
+
+<!-- generated:keeson-yamada -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+#### Controls
+
+| Control | P1 | P2 |
+|---|---|---|
+| head_up | `E6 FE 16 01 00 00 00 00 04` | `05 02 00 00 00 01 00` |
+| head_down | `E6 FE 16 02 00 00 00 00 03` | `05 02 00 00 00 02 00` |
+| foot_up | `E6 FE 16 04 00 00 00 00 01` | `05 02 00 00 00 04 00` |
+| foot_down | `E6 FE 16 08 00 00 00 00 FD` | `05 02 00 00 00 08 00` |
+| anti_snore | `E6 FE 16 00 80 00 00 00 85` | `05 02 00 00 80 00 00` |
+| zero | `E6 FE 16 00 10 00 00 00 F5` | `05 02 00 00 10 00 00` |
+| memory_m2 | `E6 FE 16 00 20 00 00 00 E5` | `05 02 00 00 20 00 00` |
+| tvpc | `E6 FE 16 00 40 00 00 00 C5` | `05 02 00 00 40 00 00` |
+| light | `E6 FE 16 00 00 02 00 00 03` | `05 02 00 02 00 00 00` |
+| flat | `E6 FE 16 00 00 00 08 00 FD` | `05 02 08 00 00 00 00` |
+| stop | `E6 FE 16 00 00 00 00 00 05` | `05 02 00 00 00 00 00` |
+
+| Alarm position | P1 key | P2 key |
+|---|---|---|
+| memory_1 | 14 | 2 |
+| anti_snore | 16 | 4 |
+| zero_g | 13 | 1 |
+| tv | 15 | 3 |
+| flat | 28 | 9 |
+
+| Role | Service OR set | Characteristic OR set |
+|---|---|---|
+| Write | `0000ffe5-0000-1000-8000-00805f9b34fb`, `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `0000ffe9-0000-1000-8000-00805f9b34fb`, `6e400002-b5a3-f393-e0a9-e50e24dcca9e` |
+| Notify | `0000ffe0-0000-1000-8000-00805f9b34fb`, `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `0000ffe4-0000-1000-8000-00805f9b34fb`, `6e400003-b5a3-f393-e0a9-e50e24dcca9e` |
+
+| Example | P1 | P2 |
+|---|---|---|
+| Clock: 2026-11-12 06:30:45 | `E7 80 01 7E 0A 0C 06 1E 2D B2` | `07 04 7E 0A 0C 04 06 1E 2D` |
+| One query round | +0 ms: `E1 80 03 9B` | +0 ms: `00 C0`; +300 ms: `00 D0` |
+
+#### Timing
+
+| Operation | Policy |
+|---|---|
+| Ordinary configured pulses | Configured count × interval, bounded by elapsed time; defaults in Configuration |
+| App holds and renewable card leases | Immediate, then every 300 ms until duration/release/expiry |
+| Release/cancel | Captured zero word at +100/+400 ms, fresh cancellation event |
+| Explicit STOP | Zero word at +100 ms; consumes this command's completed cleanup when preempting |
+| Personal M gesture | Same recall word held 5200 ms; local UI confirmation only |
+| Refresh alarms | +0 ms round, +300 ms round, +600 ms round |
+| After alarm write | One manager round after 300 ms |
+| Notification retry | Once after 1000 ms |
+| Clock | Once on connection, overlapping asynchronous notification setup |
+<!-- /generated -->
+
+M is one personal-position gesture, exposed as Memory 1. Its short and held
+forms send identical bytes. The app's save toast timer is not a SAVE opcode,
+firmware threshold or completion acknowledgement. HA's save action performs the
+held gesture; external users must confirm its physical effect. Lighting exposes
+only the app's single light action, with no assumed on/off state or brightness.
+
+P1 alarm writes use the shared checked table encoder with two four-byte records
+(hour, minute, weekday, position) and four zero bytes. P2 writes one slot with
+weekday, position, hour, minute, zero, enabled and zero. P2 clock fields are raw
+year minus 1900, zero-based month and Sunday-zero weekday, never BCD.
+
+The refresh button performs the page-entry burst. P1 sends three requests;
+P2 sends C0 at 0/300/600 ms and D0 at 300/600/900 ms. Equal deadlines have no
+source-proven ordering. A save schedules only one delayed round. HA keeps all
+queries and release frames inside the captured session and command lane.
+
+#### Notifications
+
+P1 reads both slots at offsets 3–6 and 7–10 of ED 80 03; enabled means the
+weekday is neither 0 nor 128. P2 consumes A5 0C/0D 0E, with weekday at 4,
+position at 5, hour/minute at 6/7 and enabled marker at 9. Marker 0 or 128 means
+disabled. A disabled record retains a previously observed weekday, or remains
+unknown when none was observed on this connection. E7 and A5 0E have no consumed
+hardware state. Trailing bytes do not imply another independently parsed frame.
+
+The app recognizes both prefix families globally before choosing its current
+version callback. Its P1 pending-confirmation check precedes the local header
+check, and truncated input may throw or partially mutate cached alarms. HA
+intentionally rejects short, wrong-profile, invalid-time and stale-session
+messages safely, with no partial commits. These are integration safety guards,
+not claims about Android behavior. Notification buffers and alarm observations
+are per session and cleared on reconnect; no old observation authorizes a write.
+
+#### Services
+
+- `yamada_set_alarm`: explicit slot 1 or 2, enabled state, local time to minute
+  precision, weekday mask and preset. Refresh alarms on each current connection
+  first. P1 also requires the other slot's observed record so it can preserve it.
+  It never allocates a first-free slot or infers a complete inventory.
+- P1 rejects a queued save if its observed table has changed. A table write
+  invalidates that snapshot until the written fields are observed; delayed
+  older responses cannot authorize another table edit. Refresh or reconnect
+  before retrying if the written table has not been observed.
+- The weekday mask uses Sunday bit 0 through Saturday bit 6; 129–255 passes
+  unchanged for recurring days. Values 0–128 choose the next occurrence of the
+  local time, adding exactly 24 elapsed hours when that time has passed.
+- Disabling P1 zeros the selected weekday and position while preserving its
+  supplied time and the observed other slot. P2 zeros weekday/enabled and keeps
+  the supplied position and time. Supply the observed values to preserve them.
+- The two alarm sensors report observations only, with hour, minute, weekday
+  and raw position attributes. Successful writes do not publish invented state.
+- `timed_move`, `hold_control`, presets, memory, lighting and STOP use the
+  coordinator's ordinary admission and cancellation paths. A release belongs
+  to its captured client, address and frame, including under repeated cancellation.
+
+#### Evidence
+
+Row178, com.okin.yamada 1.0.1 (6): the verified direct BLE scope reproduces all
+35 frozen packet literals through the existing Keeson and Okin N-frame codecs,
+plus all four valid parser fixtures. App behavior is statically supported;
+hardware qualification remains external beta/release validation.

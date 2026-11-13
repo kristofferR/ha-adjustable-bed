@@ -2067,3 +2067,11 @@ FROZEN_FRAMES["jalon_bed"] = frozenset(
         "ef02c3b8e5ba8a6162636465666768696a73",
     ]
 )
+
+# com.okin.yamada 1.0.1 (6), row178. Frozen literals, no report-helper code.
+_YAMADA = json.loads((Path(__file__).parent / "fixtures/yamada_vectors.json").read_text())
+for _version in (1, 2):
+    FROZEN_FRAMES[f"yamada_p{_version}"] = frozenset(
+        row["expected_bytes"].replace(" ", "").lower()
+        for row in _YAMADA["packet_vectors"] if row["protocol"] == f"P{_version}"
+    )

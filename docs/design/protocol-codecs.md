@@ -284,3 +284,8 @@ counted fields plus an uncounted reserved byte and a third proven slot.
 `alarm(..., reserved=0)` expresses that trailer without changing existing
 profiles' records. Its typed fixed profile uses the shared Okin family
 controller; its own session and alarm callback live in `beds/n32_motion_bed/`.
+
+アシステック / Yamada 1.0.1 (6), row178, adds explicit P1/P2 profiles only after
+all 35 packet literals match existing Keeson and Okin N-frame encoders. Its
+shared-family controller extension owns alarm parsing, session fences, raw clock
+fields and captured release scheduling. No new codec or product alias is needed.

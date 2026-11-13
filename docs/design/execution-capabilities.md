@@ -133,6 +133,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `coolbase` | S stream (no release frame) | U | U | coolbase | release cancels the timer, no STOP bytes |
 | `bf` | S stream | U | U | bf | zero frame at release |
 | `cherish` | S stream | U | U | cherish | combined is a fixed key |
+| `yamada` (explicit P1/P2) | S stream | U | U | row178 | immediate held refresh every 300 ms and captured zero releases at +100/+400 ms; one control, no composed axes or speed selector |
 | `comfortbase` (all ten products) | S stream | U | U | row161 | one held key refreshed every 100 ms, zero STOP at release; combined is a fixed key, no motor-speed control |
 | `symphony_sleep` (all five models and three transports) | S stream | U | U | symphony078 | Immediate held key, 300 ms refresh, STOP at 0/300/600 ms. Combined head and foot is a fixed key. |
 | `comfort_enhancements` | S stream | U | U | enh | STOP 100 ms after release |
@@ -807,6 +808,7 @@ its APK Protocol Audit report, named here by its file stem:
 | row121 | audit ledger `row121-hjbed` |
 | symphony078 | Accepted Symphony Sleep 1.1.0 (14), row078, all 15 dispatch outcomes; `com.ore.bedding.symphony-1.1.0-2026-11-12-queue001/report/`. |
 | row161 | accepted ComfortBaseForBluetooth 1.1.2 (6), `com.ore.yorkfeng.comfortbaseble2-1.1.2-2026-11-10-maxqueue001/report/` and independent audit001 |
+| row178 | アシステック 1.0.1 (6), verified direct BLE scope under the stall disposition, E07/E08. Both P1/P2 held controls and release literals are proven; the separate report/helper R1 dispatch-equivalence claim remains deferred. |
 | row173 | Richmat 4.2.0 accepted catalog gesture and literal STOP evidence |
 | row126 | audit ledger `row126-hush-base` |
 | svane-guide | [svane.md](../beds/svane.md) |

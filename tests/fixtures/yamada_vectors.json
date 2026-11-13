@@ -1,0 +1,719 @@
+{
+  "packet_vectors": [
+    {
+      "id": "V1-head_up",
+      "kind": "control",
+      "protocol": "P1",
+      "action": "head_up",
+      "inputs": {
+        "version": 1,
+        "action": "head_up"
+      },
+      "expected_bytes": "e6 fe 16 01 00 00 00 00 04",
+      "evidence": [
+        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x3096f8, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
+      ]
+    },
+    {
+      "id": "V2-head_up",
+      "kind": "control",
+      "protocol": "P2",
+      "action": "head_up",
+      "inputs": {
+        "version": 2,
+        "action": "head_up"
+      },
+      "expected_bytes": "05 02 00 00 00 01 00",
+      "evidence": [
+        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x3096f8, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
+      ]
+    },
+    {
+      "id": "V1-head_down",
+      "kind": "control",
+      "protocol": "P1",
+      "action": "head_down",
+      "inputs": {
+        "version": 1,
+        "action": "head_down"
+      },
+      "expected_bytes": "e6 fe 16 02 00 00 00 00 03",
+      "evidence": [
+        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x308d80, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
+      ]
+    },
+    {
+      "id": "V2-head_down",
+      "kind": "control",
+      "protocol": "P2",
+      "action": "head_down",
+      "inputs": {
+        "version": 2,
+        "action": "head_down"
+      },
+      "expected_bytes": "05 02 00 00 00 02 00",
+      "evidence": [
+        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x308d80, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
+      ]
+    },
+    {
+      "id": "V1-foot_up",
+      "kind": "control",
+      "protocol": "P1",
+      "action": "foot_up",
+      "inputs": {
+        "version": 1,
+        "action": "foot_up"
+      },
+      "expected_bytes": "e6 fe 16 04 00 00 00 00 01",
+      "evidence": [
+        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x3093d0, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
+      ]
+    },
+    {
+      "id": "V2-foot_up",
+      "kind": "control",
+      "protocol": "P2",
+      "action": "foot_up",
+      "inputs": {
+        "version": 2,
+        "action": "foot_up"
+      },
+      "expected_bytes": "05 02 00 00 00 04 00",
+      "evidence": [
+        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x3093d0, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
+      ]
+    },
+    {
+      "id": "V1-foot_down",
+      "kind": "control",
+      "protocol": "P1",
+      "action": "foot_down",
+      "inputs": {
+        "version": 1,
+        "action": "foot_down"
+      },
+      "expected_bytes": "e6 fe 16 08 00 00 00 00 fd",
+      "evidence": [
+        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x3090a8, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
+      ]
+    },
+    {
+      "id": "V2-foot_down",
+      "kind": "control",
+      "protocol": "P2",
+      "action": "foot_down",
+      "inputs": {
+        "version": 2,
+        "action": "foot_down"
+      },
+      "expected_bytes": "05 02 00 00 00 08 00",
+      "evidence": [
+        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x3090a8, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
+      ]
+    },
+    {
+      "id": "V1-anti_snore",
+      "kind": "control",
+      "protocol": "P1",
+      "action": "anti_snore",
+      "inputs": {
+        "version": 1,
+        "action": "anti_snore"
+      },
+      "expected_bytes": "e6 fe 16 00 80 00 00 00 85",
+      "evidence": [
+        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x308408, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
+      ]
+    },
+    {
+      "id": "V2-anti_snore",
+      "kind": "control",
+      "protocol": "P2",
+      "action": "anti_snore",
+      "inputs": {
+        "version": 2,
+        "action": "anti_snore"
+      },
+      "expected_bytes": "05 02 00 00 80 00 00",
+      "evidence": [
+        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x308408, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
+      ]
+    },
+    {
+      "id": "V1-zero",
+      "kind": "control",
+      "protocol": "P1",
+      "action": "zero",
+      "inputs": {
+        "version": 1,
+        "action": "zero"
+      },
+      "expected_bytes": "e6 fe 16 00 10 00 00 00 f5",
+      "evidence": [
+        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x308a58, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
+      ]
+    },
+    {
+      "id": "V2-zero",
+      "kind": "control",
+      "protocol": "P2",
+      "action": "zero",
+      "inputs": {
+        "version": 2,
+        "action": "zero"
+      },
+      "expected_bytes": "05 02 00 00 10 00 00",
+      "evidence": [
+        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x308a58, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
+      ]
+    },
+    {
+      "id": "V1-memory_m2",
+      "kind": "control",
+      "protocol": "P1",
+      "action": "memory_m2",
+      "inputs": {
+        "version": 1,
+        "action": "memory_m2"
+      },
+      "expected_bytes": "e6 fe 16 00 20 00 00 00 e5",
+      "evidence": [
+        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x30a20c, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
+      ]
+    },
+    {
+      "id": "V2-memory_m2",
+      "kind": "control",
+      "protocol": "P2",
+      "action": "memory_m2",
+      "inputs": {
+        "version": 2,
+        "action": "memory_m2"
+      },
+      "expected_bytes": "05 02 00 00 20 00 00",
+      "evidence": [
+        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x30a20c, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
+      ]
+    },
+    {
+      "id": "V1-tvpc",
+      "kind": "control",
+      "protocol": "P1",
+      "action": "tvpc",
+      "inputs": {
+        "version": 1,
+        "action": "tvpc"
+      },
+      "expected_bytes": "e6 fe 16 00 40 00 00 00 c5",
+      "evidence": [
+        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x30a5f0, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
+      ]
+    },
+    {
+      "id": "V2-tvpc",
+      "kind": "control",
+      "protocol": "P2",
+      "action": "tvpc",
+      "inputs": {
+        "version": 2,
+        "action": "tvpc"
+      },
+      "expected_bytes": "05 02 00 00 40 00 00",
+      "evidence": [
+        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x30a5f0, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
+      ]
+    },
+    {
+      "id": "V1-light",
+      "kind": "control",
+      "protocol": "P1",
+      "action": "light",
+      "inputs": {
+        "version": 1,
+        "action": "light"
+      },
+      "expected_bytes": "e6 fe 16 00 00 02 00 00 03",
+      "evidence": [
+        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x308730, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
+      ]
+    },
+    {
+      "id": "V2-light",
+      "kind": "control",
+      "protocol": "P2",
+      "action": "light",
+      "inputs": {
+        "version": 2,
+        "action": "light"
+      },
+      "expected_bytes": "05 02 00 02 00 00 00",
+      "evidence": [
+        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x308730, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
+      ]
+    },
+    {
+      "id": "V1-flat",
+      "kind": "control",
+      "protocol": "P1",
+      "action": "flat",
+      "inputs": {
+        "version": 1,
+        "action": "flat"
+      },
+      "expected_bytes": "e6 fe 16 00 00 00 08 00 fd",
+      "evidence": [
+        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x309a20, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
+      ]
+    },
+    {
+      "id": "V2-flat",
+      "kind": "control",
+      "protocol": "P2",
+      "action": "flat",
+      "inputs": {
+        "version": 2,
+        "action": "flat"
+      },
+      "expected_bytes": "05 02 08 00 00 00 00",
+      "evidence": [
+        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x309a20, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
+      ]
+    },
+    {
+      "id": "V1-stop",
+      "kind": "control",
+      "protocol": "P1",
+      "action": "stop",
+      "inputs": {
+        "version": 1,
+        "action": "stop"
+      },
+      "expected_bytes": "e6 fe 16 00 00 00 00 00 05",
+      "evidence": [
+        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x309dd0, size 0x270; writeData 0x29c784; Uint8 map 0x29ce20"
+      ]
+    },
+    {
+      "id": "V2-stop",
+      "kind": "control",
+      "protocol": "P2",
+      "action": "stop",
+      "inputs": {
+        "version": 2,
+        "action": "stop"
+      },
+      "expected_bytes": "05 02 00 00 00 00 00",
+      "evidence": [
+        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x309dd0, size 0x270; writeData 0x29c784; Uint8 map 0x29ce20"
+      ]
+    },
+    {
+      "id": "V1-clock-12",
+      "protocol": "P1",
+      "kind": "clock",
+      "action": "calibrate bed clock",
+      "inputs": {
+        "version": 1,
+        "year": 2026,
+        "month": 11,
+        "day": 12,
+        "weekday": 4,
+        "hour": 6,
+        "minute": 30,
+        "second": 45
+      },
+      "expected_bytes": "e7 80 01 7e 0a 0c 06 1e 2d b2",
+      "evidence": [
+        "libapp.so!BleManager::calibrationTime closure 0x29be38-0x29c530"
+      ]
+    },
+    {
+      "id": "V2-clock-12",
+      "protocol": "P2",
+      "kind": "clock",
+      "action": "calibrate bed clock",
+      "inputs": {
+        "version": 2,
+        "year": 2026,
+        "month": 11,
+        "day": 12,
+        "weekday": 4,
+        "hour": 6,
+        "minute": 30,
+        "second": 45
+      },
+      "expected_bytes": "07 04 7e 0a 0c 04 06 1e 2d",
+      "evidence": [
+        "libapp.so!BleManager::calibrationTime closure 0x29be38-0x29c530"
+      ]
+    },
+    {
+      "id": "V1-clock-15",
+      "protocol": "P1",
+      "kind": "clock",
+      "action": "calibrate bed clock",
+      "inputs": {
+        "version": 1,
+        "year": 2026,
+        "month": 11,
+        "day": 15,
+        "weekday": 7,
+        "hour": 23,
+        "minute": 59,
+        "second": 58
+      },
+      "expected_bytes": "e7 80 01 7e 0a 0f 17 3b 3a 74",
+      "evidence": [
+        "libapp.so!BleManager::calibrationTime closure 0x29be38-0x29c530"
+      ]
+    },
+    {
+      "id": "V2-clock-15",
+      "protocol": "P2",
+      "kind": "clock",
+      "action": "calibrate bed clock",
+      "inputs": {
+        "version": 2,
+        "year": 2026,
+        "month": 11,
+        "day": 15,
+        "weekday": 7,
+        "hour": 23,
+        "minute": 59,
+        "second": 58
+      },
+      "expected_bytes": "07 04 7e 0a 0f 00 17 3b 3a",
+      "evidence": [
+        "libapp.so!BleManager::calibrationTime closure 0x29be38-0x29c530"
+      ]
+    },
+    {
+      "id": "V1-alarm-129",
+      "protocol": "P1",
+      "kind": "alarm_v1",
+      "action": "write both bed alarms",
+      "inputs": {
+        "first": [
+          7,
+          30,
+          129,
+          14
+        ],
+        "second": [
+          8,
+          45,
+          255,
+          15
+        ]
+      },
+      "expected_bytes": "ed 80 03 07 1e 81 0e 08 2d ff 0f 00 00 00 00 98",
+      "evidence": [
+        "libapp.so!BleManager::setAlarm1 0x306074-0x306568"
+      ]
+    },
+    {
+      "id": "V1-alarm-0",
+      "protocol": "P1",
+      "kind": "alarm_v1",
+      "action": "write both bed alarms",
+      "inputs": {
+        "first": [
+          7,
+          30,
+          0,
+          0
+        ],
+        "second": [
+          8,
+          45,
+          128,
+          28
+        ]
+      },
+      "expected_bytes": "ed 80 03 07 1e 00 00 08 2d 80 1c 00 00 00 00 99",
+      "evidence": [
+        "libapp.so!BleManager::setAlarm1 0x306074-0x306568"
+      ]
+    },
+    {
+      "id": "V2-alarm-1-true",
+      "protocol": "P2",
+      "kind": "alarm_v2",
+      "action": "write one bed alarm",
+      "inputs": {
+        "slot": 1,
+        "hour": 7,
+        "minute": 30,
+        "weekday": 129,
+        "position": 2,
+        "enabled": true
+      },
+      "expected_bytes": "07 05 81 02 07 1e 00 01 00",
+      "evidence": [
+        "libapp.so!BleManager::setAlarm2 0x30328c-0x30367c"
+      ]
+    },
+    {
+      "id": "V2-alarm-2-true",
+      "protocol": "P2",
+      "kind": "alarm_v2",
+      "action": "write one bed alarm",
+      "inputs": {
+        "slot": 2,
+        "hour": 8,
+        "minute": 45,
+        "weekday": 255,
+        "position": 9,
+        "enabled": true
+      },
+      "expected_bytes": "07 06 ff 09 08 2d 00 01 00",
+      "evidence": [
+        "libapp.so!BleManager::setAlarm2 0x30328c-0x30367c"
+      ]
+    },
+    {
+      "id": "V2-alarm-1-false",
+      "protocol": "P2",
+      "kind": "alarm_v2",
+      "action": "write one bed alarm",
+      "inputs": {
+        "slot": 1,
+        "hour": 7,
+        "minute": 30,
+        "weekday": 0,
+        "position": 2,
+        "enabled": false
+      },
+      "expected_bytes": "07 05 00 02 07 1e 00 00 00",
+      "evidence": [
+        "libapp.so!BleManager::setAlarm2 0x30328c-0x30367c"
+      ]
+    },
+    {
+      "id": "V2-alarm-2-false",
+      "protocol": "P2",
+      "kind": "alarm_v2",
+      "action": "write one bed alarm",
+      "inputs": {
+        "slot": 2,
+        "hour": 8,
+        "minute": 45,
+        "weekday": 0,
+        "position": 9,
+        "enabled": false
+      },
+      "expected_bytes": "07 06 00 09 08 2d 00 00 00",
+      "evidence": [
+        "libapp.so!BleManager::setAlarm2 0x30328c-0x30367c"
+      ]
+    },
+    {
+      "id": "V1-query-0",
+      "protocol": "P1",
+      "kind": "query",
+      "action": "query bed alarms",
+      "inputs": {
+        "version": 1,
+        "index": 0
+      },
+      "expected_bytes": "e1 80 03 9b",
+      "evidence": [
+        "libapp.so!BleManager::checkAlarm closure 0x303730-0x303a18"
+      ]
+    },
+    {
+      "id": "V2-query-0",
+      "protocol": "P2",
+      "kind": "query",
+      "action": "query bed alarms",
+      "inputs": {
+        "version": 2,
+        "index": 0
+      },
+      "expected_bytes": "00 c0",
+      "evidence": [
+        "libapp.so!BleManager::checkAlarm closure 0x303730-0x303a18"
+      ]
+    },
+    {
+      "id": "V2-query-1",
+      "protocol": "P2",
+      "kind": "query",
+      "action": "query bed alarms",
+      "inputs": {
+        "version": 2,
+        "index": 1
+      },
+      "expected_bytes": "00 d0",
+      "evidence": [
+        "libapp.so!BleManager::checkAlarm closure 0x303730-0x303a18"
+      ]
+    }
+  ],
+  "parser_vectors": [
+    {
+      "id": "P1-alarms-on",
+      "version": 1,
+      "input": [
+        237,
+        128,
+        3,
+        7,
+        30,
+        129,
+        14,
+        8,
+        45,
+        255,
+        15,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "previous_weeks": [
+        255,
+        255
+      ],
+      "expected": {
+        "1": {
+          "hour": 7,
+          "minute": 30,
+          "weekday": 129,
+          "position": 14,
+          "enabled": true
+        },
+        "2": {
+          "hour": 8,
+          "minute": 45,
+          "weekday": 255,
+          "position": 15,
+          "enabled": true
+        }
+      },
+      "evidence": [
+        "AlarmListPage closure 0x325838-0x325efc"
+      ]
+    },
+    {
+      "id": "P1-alarms-disabled-preserve-week",
+      "version": 1,
+      "input": [
+        237,
+        128,
+        3,
+        7,
+        30,
+        0,
+        0,
+        8,
+        45,
+        128,
+        28,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "previous_weeks": [
+        129,
+        130
+      ],
+      "expected": {
+        "1": {
+          "hour": 7,
+          "minute": 30,
+          "weekday": 129,
+          "position": 0,
+          "enabled": false
+        },
+        "2": {
+          "hour": 8,
+          "minute": 45,
+          "weekday": 130,
+          "position": 28,
+          "enabled": false
+        }
+      },
+      "evidence": [
+        "AlarmListPage closure 0x325838-0x325efc"
+      ]
+    },
+    {
+      "id": "P2-alarm-one",
+      "version": 2,
+      "input": [
+        165,
+        12,
+        14,
+        0,
+        129,
+        2,
+        7,
+        30,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "previous_weeks": [
+        255,
+        255
+      ],
+      "expected": {
+        "1": {
+          "hour": 7,
+          "minute": 30,
+          "weekday": 129,
+          "position": 2,
+          "enabled": true
+        }
+      },
+      "evidence": [
+        "AlarmListPage closure 0x32529c-0x325838"
+      ]
+    },
+    {
+      "id": "P2-alarm-two-disabled-preserve-week",
+      "version": 2,
+      "input": [
+        165,
+        13,
+        14,
+        0,
+        0,
+        9,
+        8,
+        45,
+        0,
+        128,
+        0,
+        0,
+        0,
+        0
+      ],
+      "previous_weeks": [
+        129,
+        130
+      ],
+      "expected": {
+        "2": {
+          "hour": 8,
+          "minute": 45,
+          "weekday": 130,
+          "position": 9,
+          "enabled": false
+        }
+      },
+      "evidence": [
+        "AlarmListPage closure 0x32529c-0x325838"
+      ]
+    }
+  ],
+  "scope": "Frozen static vectors, hardware UNVERIFIED. Dynamic values are explicit valid UI-domain inputs. Parser vectors deliberately have arbitrary trailing checksum/reserved bytes because app parsing does not validate them."
+}
