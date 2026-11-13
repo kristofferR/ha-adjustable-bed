@@ -26,6 +26,9 @@ from custom_components.adjustable_bed.beds.leggett.lp_legacy_profiles import (
 )
 from custom_components.adjustable_bed.beds.luuna import controller as luuna_bed
 from custom_components.adjustable_bed.beds.richmat_classic import protocol as classic_frames
+from custom_components.adjustable_bed.beds.richmat_classic import (
+    resource_protocol as resource_frames,
+)
 from custom_components.adjustable_bed.beds.richmat_classic import rise as rise_frames
 from custom_components.adjustable_bed.beds.richmat_classic.profiles import APP_NAMES as CLASSIC_APPS
 from custom_components.adjustable_bed.beds.richmat_classic.profiles import load_catalog
@@ -38,6 +41,7 @@ from custom_components.adjustable_bed.profiles import casper as casper_profiles
 from custom_components.adjustable_bed.profiles import hush as hush_profiles
 from custom_components.adjustable_bed.profiles import luuna as luuna_profiles
 from custom_components.adjustable_bed.profiles import richmat as richmat_profiles
+from custom_components.adjustable_bed.profiles import richmat_resource_apps as resource_profiles
 from scripts.codec_docs import _galaxy
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
@@ -1415,3 +1419,63 @@ BLOCKS += [
     (GUIDE, "richmat-app-commands", render_richmat_app_commands),
     (GUIDE, "richmat-app-products", render_richmat_app_products),
 ]
+
+
+def render_resource_apps() -> str:
+    """One common binding domain, with explicit per-app scopes and parameters."""
+    catalog = load_catalog("lady_americana")
+    groups: dict[tuple[str, ...], set[str]] = {}
+    for layout, model in catalog.models.items():
+        if layout == "WFRM":
+            continue
+        for button in model.controls:
+            if not button.rich_button:
+                continue
+            key = (
+                button.label,
+                button.short_old or button.short or "none",
+                button.short or "none", button.long or "none",
+                str(button.status), button.tag or "none",
+            )
+            groups.setdefault(key, set()).add(layout)
+    rows = []
+    for key, layouts in sorted(groups.items()):
+        label, raw, modern, long, status, tag = key
+        framed = _hex(codec.command(int(modern, 16))) if modern != "none" else "none"
+        long_frame = _hex(codec.command(int(long, 16))) if long != "none" else "none"
+        rows.append((label, raw, framed, long_frame, status, tag, ", ".join(sorted(layouts))))
+    return _block(
+        _table(("App", "Stored key", "Catalog layouts", "Outside bed setup", "Shared 3B BED action"), (
+            (profile.name, app, str(len(resource_profiles.LAYOUTS)), ", ".join(sorted(profile.excluded_layouts)), str(profile.accessory_button))
+            for app, profile in resource_profiles.APPS.items()
+        )),
+        _table(("Input alias", "Layout"), resource_profiles.ALIASES.items()),
+        _table(("App", "Ordinary refresh", "Raw advertised 6BRM refresh", "Held release", "Tap release", "Long counter numerator"), (
+            (profile.name, str(profile.poll_ms), str(profile.raw_6brm_poll_ms), str(profile.held_release_ms), str(profile.tap_release_ms), str(profile.long_press_ms))
+            for profile in resource_profiles.APPS.values()
+        )),
+        _table(("Direct action", "Write", "Gate / sequence"), (
+            ("Framed startup", _hex(classic_frames.INITIALIZE), "Before notification registration; none on raw"),
+            ("Alarm query", _hex(classic_frames.ALARM_QUERY), "Nonempty layout alarm list; then wait 500 ms"),
+            ("LED query", _hex(classic_frames.LAMP_QUERY), "Then wait 500 ms"),
+            ("Shared accessory query", _hex(classic_frames.AROMA_QUERY), "Then wait 500 ms; no accessory controls"),
+            ("Cancel alarm", " / ".join(_hex(f) for f in classic_frames.alarm(0, 0)), "300 ms after each write"),
+            ("RGB example", _hex(classic_frames.rgb(1, 221, 255)), "Observed LED capability; one concatenated write"),
+            *[(f"Light timeout {seconds} s", _hex(resource_frames.lamp_timeout(seconds)), "Observed LED capability; byte-pair fold") for seconds in (0, 1, 255, 256, 300)],
+            *[(f"D1RM timer index {index}", _hex(classic_frames.massage_timer("D1RM", index)), "D1RM only; direct, no release") for index in range(6)],
+        )),
+        _table(("Layout", "Alarm tags, in traversal order"), (
+            (layout, ", ".join(c.alarm_clock for c in model.controls if c.alarm_clock is not None))
+            for layout, model in catalog.models.items() if any(c.alarm_clock for c in model.controls)
+        )),
+        _table(("Generic BED callback request", "Raw", "Framed", "Execution"), (
+            (name, f"{code:02X}", _hex(codec.command(code)), "bounded held refresh, then release" if held else "once, then release")
+            for name, (code, held) in resource_frames.BED_COMMANDS.items()
+        )),
+        "<details><summary>Common layout control bindings</summary>\n",
+        _table(("Control", "Raw", "Framed short", "Framed long", "Status", "Local tag", "Layouts"), rows),
+        "\n</details>",
+    )
+
+
+BLOCKS.append((GUIDE, "richmat-resource-apps", render_resource_apps))

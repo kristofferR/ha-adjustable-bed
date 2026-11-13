@@ -8,11 +8,8 @@ frames are left out of those captures.
 """
 
 import gzip
-import gzip as _gzip
 import json
-import json as _json
 from pathlib import Path
-from pathlib import Path as _Path
 
 from tests.bedtech_vectors import FROZEN_FRAMES as BEDTECH_APP_FRAMES
 from tests.richmat_rise_vectors import FROZEN_FRAMES as RISE_FROZEN_FRAMES
@@ -2148,9 +2145,9 @@ FROZEN_FRAMES.update(BEDTECH_APP_FRAMES)
 
 # Accepted row173: all preserved generic, extended and receive literal fixtures.
 def _richmat_app() -> frozenset[str]:
-    rows = _json.loads(
-        _gzip.decompress(
-            (_Path(__file__).parent / "fixtures/richmat_app/wire.json.gz").read_bytes()
+    rows = json.loads(
+        gzip.decompress(
+            (Path(__file__).parent / "fixtures/richmat_app/wire.json.gz").read_bytes()
         )
     )
     frames = set()
@@ -2192,3 +2189,31 @@ FROZEN_FRAMES["richmat_app"] = _richmat_app() | frozenset(
         "6e9ab000b8",
     }
 )
+
+
+def _cluster017_frames() -> dict[str, frozenset[str]]:
+    root = Path(__file__).parent / "fixtures/richmat_cluster017"
+    rows = json.loads(gzip.decompress((root / "wire.json.gz").read_bytes()))
+    frames: dict[str, set[str]] = {}
+    for app, _source, _wire, _operand, literal in rows:
+        frames.setdefault(app, set()).add(literal.lower())
+    for app, values in frames.items():
+        vectors = json.loads(gzip.decompress((root / f"{app}_vectors.json.gz").read_bytes()))
+        for row in vectors:
+            kind = row.get("builder", row["inputs"].get("kind"))
+            if kind in ("rx", "parser") or row["id"].startswith("parser-"):
+                continue  # Receive defect vectors belong to the parser harness.
+            literal = row["expected_bytes"].lower().replace("|", "").replace(";", "")
+            if len(literal) == 2:
+                values.add(literal)
+            # Direct RGB/alarm examples carry successive independent frames.
+            if len(literal) >= 10 and len(literal) % 10 == 0 and literal.startswith("6e"):
+                values.update(literal[i:i + 10] for i in range(0, len(literal), 10))
+        # Each accepted D1RM builder preserves slider values 1 and 4 literally;
+        # only 0/2/3/5 are replaced with named massage timer operands.
+        values.update({"6e", "6e01000170", "6e01000473"})
+        frames[app] = values
+    return {"richmat_classic_" + app: frozenset(values) for app, values in frames.items()}
+
+
+FROZEN_FRAMES.update(_cluster017_frames())

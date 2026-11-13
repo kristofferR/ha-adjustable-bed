@@ -416,6 +416,9 @@ class RichmatClassicController(BedController):
             await self._send(control(emission.payload, session.wire, mode))
         return True
 
+    async def _next_tick(self, cancel: asyncio.Event) -> bool:
+        return await self._wait(self._worker.tick_ms, cancel)
+
     def _button(self, node: int) -> Control:
         for button in self._controls:
             if button.node == node and button.rich_button:
@@ -522,7 +525,7 @@ class RichmatClassicController(BedController):
                     break
                 if self._worker.mode == 1 and elapsed >= duration and not (context and context.lease):
                     break
-                if not await self._wait(self._worker.tick_ms, cancel):
+                if not await self._next_tick(cancel):
                     break
                 elapsed += self._worker.tick_ms
             if not cancel.is_set():
@@ -936,4 +939,11 @@ async def build_controller(ctx: BuildContext) -> RichmatClassicController:
     from .profiles import load_catalog
 
     await ctx.coordinator.hass.async_add_executor_job(load_catalog, ctx.variant)
+    from ...profiles.richmat_resource_apps import APPS
+
+    if ctx.variant in APPS:
+        await ctx.preload("richmat_classic.resource_controller")
+        from .resource_controller import ResourceBedController
+
+        return ResourceBedController(ctx.coordinator, app=ctx.variant, device_name=ctx.device_name)
     return RichmatClassicController(ctx.coordinator, app=ctx.variant, device_name=ctx.device_name)

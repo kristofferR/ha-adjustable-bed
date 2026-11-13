@@ -17,9 +17,10 @@ from custom_components.adjustable_bed.beds.richmat_classic.profiles import (
 from custom_components.adjustable_bed.beds.richmat_classic.profiles import RISE_APPS
 from custom_components.adjustable_bed.beds.richmat_classic.requests import Request
 from custom_components.adjustable_bed.beds.richmat_classic.transport import Transport
+from custom_components.adjustable_bed.profiles.richmat_resource_apps import APPS as RESOURCE_APPS
 from tests.state_helpers import published
 
-APP_NAMES = {app: name for app, name in ALL_APP_NAMES.items() if app not in RISE_APPS}
+APP_NAMES = {app: name for app, name in ALL_APP_NAMES.items() if app not in RISE_APPS and app not in RESOURCE_APPS}
 
 
 def controller(app="avocadoecobase", layout="GXRM", wire="FRAMED"):

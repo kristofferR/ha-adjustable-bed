@@ -1,5 +1,6 @@
 """The five apps' finite scan-name admission, offered only as an app hint."""
 
+from ...profiles.richmat_resource_apps import APPS, scan_matches
 from .models import MODEL_CHOICES
 
 _PREFIXES = (
@@ -15,5 +16,5 @@ def matching_apps(name: str | None) -> tuple[str, ...]:
     upper = name.upper()
     return tuple(
         app for app, layouts in MODEL_CHOICES.items()
-        if upper.startswith(_PREFIXES) or upper[:4] in layouts
+        if (scan_matches(name) if app in APPS else upper.startswith(_PREFIXES) or upper[:4] in layouts)
     )

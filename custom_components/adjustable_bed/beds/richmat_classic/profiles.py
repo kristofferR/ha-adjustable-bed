@@ -6,12 +6,13 @@ repository from its accepted APK Protocol Audit report; no generator is checked 
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import lru_cache
 from pathlib import Path
 from typing import Final
 
 from ...catalog_json import Node, load
+from ...profiles.richmat_resource_apps import APPS as RESOURCE_APPS
 
 DATA_DIR: Final = Path(__file__).with_name("data")
 
@@ -30,6 +31,7 @@ APP_NAMES = {
     "superior": "Superior",
     "luunarise2": "Luuna Rise",
     "powercool": "Power Cool Sleep System",
+    **{app: profile.name for app, profile in RESOURCE_APPS.items()},
 }
 
 RISE_APPS: Final = frozenset({"luunarise2", "powercool"})
@@ -144,21 +146,31 @@ def _model(node: Node, *, scoped: bool = False) -> Model:
     )
 
 
-@lru_cache(maxsize=7)
+@lru_cache(maxsize=11)
 def load_catalog(app: str) -> Catalog:
     """Load and validate on an executor before constructing a controller."""
     if app not in APP_NAMES:
         raise ValueError("Choose a supported app")
-    data = load(DATA_DIR, app).record("models", "fields", "alarm_allowlist")
+    data = load(DATA_DIR, "resource_apps" if app in RESOURCE_APPS else app).record("models", "fields", "alarm_allowlist")
     columns = _COLUMNS + (("excluded_short", "excluded_long") if app in RISE_APPS else ())
     if tuple(column.text() for column in data["fields"].items()) != columns:
         data["fields"].fail(f"the control columns {_COLUMNS}")
-    return Catalog(
+    catalog = Catalog(
         models={layout: _model(model, scoped=app in RISE_APPS) for layout, model in data["models"].entries().items()},
         alarm_allowlist={
             key: value.text() for key, value in data["alarm_allowlist"].entries().items()
         },
     )
+    if app in RESOURCE_APPS:
+        profile = RESOURCE_APPS[app]
+        return replace(catalog, models={
+            layout: replace(model, controls=tuple(
+                replace(c, excluded_short=True, excluded_long=True)
+                if layout in profile.excluded_layouts or c.short == "3B" and not profile.accessory_button
+                else c for c in model.controls
+            )) for layout, model in catalog.models.items()
+        })
+    return catalog
 
 
 def controls(app: str, layout: str) -> tuple[Control, ...]:

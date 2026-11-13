@@ -1047,3 +1047,43 @@ Use `adjustable_bed.bedgear` for source-supported RGB, light shutdown minutes,
 alarm strength/time, bed synchronization and memory/snore save options. See
 the [Bedgear control reference](beds/motomotion.md#bedgear) for parameters.
 Motor covers and the card use the generic held and timed movement actions.
+
+## Lady Americana / ACAA / STA Homecare / Zero Gravity
+
+`adjustable_bed.richmat_resource_bed` uses the explicitly selected app and layout.
+It accepts a configured bed device (or several) and the usual paired `side`.
+
+| Operation | Parameters | Availability |
+|-----------|------------|--------------|
+| `query` | none | Queries layout-owned alarms, LED support and the shared capability channel |
+| `alarm` | `actions`, optional `time` | One layout-owned preset and optional massage choices, in the status entity's `alarm_actions` list |
+| `cancel_alarm` | none | Sends the alarm cancellation pair to each selected bed |
+| `rgb` | `rgb_color` | Requires an LED capability reply in the current session |
+| `lamp_timeout` | `seconds` (0–300) | Requires that same reply; zero requests keep on |
+| `massage_timer` | `progress` (0–5) | D1RM only |
+| `bed_command` | `command`, optional `duration_ms` (1–60000) | The app's generic BED callback requests, independent of remote buttons |
+
+For example, after choosing a layout with zero-gravity and head/foot massage
+alarm choices:
+
+```yaml
+action: adjustable_bed.richmat_resource_bed
+data:
+  device_id: YOUR_BED_DEVICE_ID
+  operation: alarm
+  time: "07:00:00"
+  actions: [zero_gravity, massage_head, massage_foot]
+```
+
+`bed_command` offers head/foot up/down, TV, lounge, zero gravity, anti-snore,
+memory one/two/three, flat and the app's separate `voice_stop_request`.
+Use the normal Stop action to release movement. An app memory request does not
+prove a physical slot exists on the chosen bed. Other controls and programming
+use the layout's labelled buttons. Current held-button metadata drives the
+standard `hold_control` action and dashboard card.
+
+All targets are validated before execution. STOP on a later target while an
+earlier target awaits Bluetooth cancels that later target's admission. Both
+holds require a topology that can maintain both links; sequential pairs use
+one side at a time. Timer values and alarm selections are requests, not observed
+device schedules or timer feedback. See the [protocol guide](beds/richmat.md#lady-americana--acaa--sta-homecare--zero-gravity-family).

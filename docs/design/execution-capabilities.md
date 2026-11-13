@@ -806,6 +806,7 @@ its APK Protocol Audit report, named here by its file stem:
 | row055 | audit ledger `row055-richmat-cluster` |
 | row061 | discovery ledger `implementation-row061-five/DISCOVERY-LEDGER` (PR #928) |
 | row066 | audit ledger `row066-classic-richmat-apps` |
+| row071 | Independently accepted Lady Americana 1.0.2 (3), ACAA 1.0.4 (5), STA Homecare 1.0.5 (6) and Zero Gravity 1.0.3 (4): mode 1 refreshes until release, ordinarily 150 ms and 170 ms only on a raw advertised 6BRM prefix, followed by 50 ms release. Holds are scoped to current non-null keep controls; no concurrent-motor or single-address side field is declared. |
 | row067 | audit ledger `row067-adjustamattress` |
 | row121 | audit ledger `row121-hjbed` |
 | symphony078 | Accepted Symphony Sleep 1.1.0 (14), row078, all 15 dispatch outcomes; `com.ore.bedding.symphony-1.1.0-2026-11-12-queue001/report/`. |

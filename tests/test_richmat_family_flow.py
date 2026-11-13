@@ -40,6 +40,10 @@ APPS = [
     "superior",
     "luunarise2",
     "powercool",
+    "lady_americana",
+    "acaa",
+    "sta2",
+    "zerogravity",
     "remote",
 ]
 
