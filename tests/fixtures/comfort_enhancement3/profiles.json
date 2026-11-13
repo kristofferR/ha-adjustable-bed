@@ -1,0 +1,570 @@
+[
+  {
+    "id": "remote:00",
+    "selector": 0,
+    "source": "package:apex/pages/boot/use_id_page.dart:_getRemoteIndex0x4d4cb8;System:getTop0x4ffd94/getBottom0x4fec5c;Tool:feature methods",
+    "codes": [
+      "89746",
+      "90882",
+      "91334"
+    ],
+    "top_control_groups": [
+      "head",
+      "foot"
+    ],
+    "M1": true,
+    "flat_preset": true,
+    "under_bed_light": true,
+    "tilt_preset": false,
+    "phone_flashlight": "EXCLUDED phone torch. System.getBottomButton selects SingleLight on this non6 profile.",
+    "hardware_status": "UNVERIFIED",
+    "mapping_confidence": "VERIFIED",
+    "disposition": "CONDITIONALLY REACHABLE",
+    "M2": true,
+    "ZG": true,
+    "TV": false,
+    "QS": false,
+    "Zzz_alias_QS": false,
+    "massage": false,
+    "wake_up_massage": false,
+    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
+    "wake_up_memory_options": [
+      "None",
+      "M1",
+      "M2",
+      "Zero Gravity"
+    ],
+    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
+    "system_bottom_phone_flashlight": true
+  },
+  {
+    "id": "remote:01",
+    "selector": 1,
+    "source": "package:apex/pages/boot/use_id_page.dart:_getRemoteIndex0x4d4cb8;System:getTop0x4ffd94/getBottom0x4fec5c;Tool:feature methods",
+    "codes": [
+      "92063",
+      "91751"
+    ],
+    "top_control_groups": [
+      "head",
+      "foot"
+    ],
+    "M1": true,
+    "flat_preset": true,
+    "under_bed_light": false,
+    "tilt_preset": false,
+    "phone_flashlight": "EXCLUDED phone torch. System.getBottomButton selects SingleLight on this non6 profile.",
+    "hardware_status": "UNVERIFIED",
+    "mapping_confidence": "VERIFIED",
+    "disposition": "CONDITIONALLY REACHABLE",
+    "M2": true,
+    "ZG": true,
+    "TV": false,
+    "QS": false,
+    "Zzz_alias_QS": false,
+    "massage": false,
+    "wake_up_massage": false,
+    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
+    "wake_up_memory_options": [
+      "None",
+      "M1",
+      "M2",
+      "Zero Gravity"
+    ],
+    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
+    "system_bottom_phone_flashlight": true
+  },
+  {
+    "id": "remote:02",
+    "selector": 2,
+    "source": "package:apex/pages/boot/use_id_page.dart:_getRemoteIndex0x4d4cb8;System:getTop0x4ffd94/getBottom0x4fec5c;Tool:feature methods",
+    "codes": [
+      "89925",
+      "90568"
+    ],
+    "top_control_groups": [
+      "head",
+      "foot",
+      "M3+M4"
+    ],
+    "M1": true,
+    "flat_preset": true,
+    "under_bed_light": true,
+    "tilt_preset": false,
+    "phone_flashlight": "EXCLUDED phone torch. System.getBottomButton selects SingleLight on this non6 profile.",
+    "hardware_status": "UNVERIFIED",
+    "mapping_confidence": "VERIFIED",
+    "disposition": "CONDITIONALLY REACHABLE",
+    "M2": true,
+    "ZG": true,
+    "TV": false,
+    "QS": false,
+    "Zzz_alias_QS": false,
+    "massage": false,
+    "wake_up_massage": false,
+    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
+    "wake_up_memory_options": [
+      "None",
+      "M1",
+      "M2",
+      "Zero Gravity"
+    ],
+    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
+    "system_bottom_phone_flashlight": true
+  },
+  {
+    "id": "remote:03",
+    "selector": 3,
+    "source": "package:apex/pages/boot/use_id_page.dart:_getRemoteIndex0x4d4cb8;System:getTop0x4ffd94/getBottom0x4fec5c;Tool:feature methods",
+    "codes": [
+      "90566",
+      "89927",
+      "92169"
+    ],
+    "top_control_groups": [
+      "head",
+      "foot"
+    ],
+    "M1": true,
+    "flat_preset": true,
+    "under_bed_light": true,
+    "tilt_preset": false,
+    "phone_flashlight": "EXCLUDED phone torch. System.getBottomButton selects SingleLight on this non6 profile.",
+    "hardware_status": "UNVERIFIED",
+    "mapping_confidence": "VERIFIED",
+    "disposition": "CONDITIONALLY REACHABLE",
+    "M2": true,
+    "ZG": true,
+    "TV": true,
+    "QS": false,
+    "Zzz_alias_QS": true,
+    "massage": true,
+    "wake_up_massage": true,
+    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
+    "wake_up_memory_options": [
+      "None",
+      "M1",
+      "M2",
+      "Zero Gravity",
+      "TV"
+    ],
+    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
+    "system_bottom_phone_flashlight": true
+  },
+  {
+    "id": "remote:04",
+    "selector": 4,
+    "source": "package:apex/pages/boot/use_id_page.dart:_getRemoteIndex0x4d4cb8;System:getTop0x4ffd94/getBottom0x4fec5c;Tool:feature methods",
+    "codes": [
+      "90188",
+      "92177"
+    ],
+    "top_control_groups": [
+      "head",
+      "foot",
+      "lumbar:M3"
+    ],
+    "M1": true,
+    "flat_preset": true,
+    "under_bed_light": true,
+    "tilt_preset": false,
+    "phone_flashlight": "EXCLUDED phone torch. System.getBottomButton selects SingleLight on this non6 profile.",
+    "hardware_status": "UNVERIFIED",
+    "mapping_confidence": "VERIFIED",
+    "disposition": "CONDITIONALLY REACHABLE",
+    "M2": false,
+    "ZG": true,
+    "TV": false,
+    "QS": true,
+    "Zzz_alias_QS": false,
+    "massage": true,
+    "wake_up_massage": true,
+    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
+    "wake_up_memory_options": [
+      "None",
+      "M1",
+      "Zero Gravity",
+      "QS"
+    ],
+    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
+    "system_bottom_phone_flashlight": true
+  },
+  {
+    "id": "remote:05",
+    "selector": 5,
+    "source": "package:apex/pages/boot/use_id_page.dart:_getRemoteIndex0x4d4cb8;System:getTop0x4ffd94/getBottom0x4fec5c;Tool:feature methods",
+    "codes": [
+      "90192"
+    ],
+    "top_control_groups": [
+      "head",
+      "foot",
+      "M3+M4"
+    ],
+    "M1": true,
+    "flat_preset": true,
+    "under_bed_light": true,
+    "tilt_preset": false,
+    "phone_flashlight": "EXCLUDED phone torch. System.getBottomButton selects SingleLight on this non6 profile.",
+    "hardware_status": "UNVERIFIED",
+    "mapping_confidence": "VERIFIED",
+    "disposition": "CONDITIONALLY REACHABLE",
+    "M2": false,
+    "ZG": true,
+    "TV": false,
+    "QS": true,
+    "Zzz_alias_QS": false,
+    "massage": true,
+    "wake_up_massage": true,
+    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
+    "wake_up_memory_options": [
+      "None",
+      "M1",
+      "Zero Gravity",
+      "QS"
+    ],
+    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
+    "system_bottom_phone_flashlight": true
+  },
+  {
+    "id": "remote:06",
+    "selector": 6,
+    "source": "package:apex/pages/boot/use_id_page.dart:_getRemoteIndex0x4d4cb8;System:getTop0x4ffd94/getBottom0x4fec5c;Tool:feature methods",
+    "codes": [
+      "91869",
+      "91871",
+      "92379"
+    ],
+    "top_control_groups": [
+      "head",
+      "foot",
+      "M3+M4"
+    ],
+    "M1": true,
+    "flat_preset": true,
+    "under_bed_light": true,
+    "tilt_preset": true,
+    "phone_flashlight": "EXCLUDED phone torch. System.getBottomButton selects Tilt instead of SingleLight for profile6; other phone-flashlight flows are not inferred absent.",
+    "hardware_status": "UNVERIFIED",
+    "mapping_confidence": "VERIFIED",
+    "disposition": "CONDITIONALLY REACHABLE",
+    "M2": false,
+    "ZG": true,
+    "TV": false,
+    "QS": false,
+    "Zzz_alias_QS": false,
+    "massage": true,
+    "wake_up_massage": true,
+    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
+    "wake_up_memory_options": [
+      "None",
+      "M1",
+      "Zero Gravity"
+    ],
+    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
+    "system_bottom_phone_flashlight": false
+  },
+  {
+    "id": "remote:07",
+    "selector": 7,
+    "source": "package:apex/pages/boot/use_id_page.dart:_getRemoteIndex0x4d4cb8;System:getTop0x4ffd94/getBottom0x4fec5c;Tool:feature methods",
+    "codes": [
+      "93567"
+    ],
+    "top_control_groups": [
+      "head",
+      "foot",
+      "head+foot:M1+M2"
+    ],
+    "M1": true,
+    "flat_preset": true,
+    "under_bed_light": true,
+    "tilt_preset": false,
+    "phone_flashlight": "EXCLUDED phone torch. System.getBottomButton selects SingleLight on this non6 profile.",
+    "hardware_status": "UNVERIFIED",
+    "mapping_confidence": "VERIFIED",
+    "disposition": "CONDITIONALLY REACHABLE",
+    "M2": true,
+    "ZG": true,
+    "TV": true,
+    "QS": false,
+    "Zzz_alias_QS": true,
+    "massage": false,
+    "wake_up_massage": false,
+    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
+    "wake_up_memory_options": [
+      "None",
+      "M1",
+      "M2",
+      "Zero Gravity",
+      "TV"
+    ],
+    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
+    "system_bottom_phone_flashlight": true
+  },
+  {
+    "id": "remote:08",
+    "selector": 8,
+    "source": "package:apex/pages/boot/use_id_page.dart:_getRemoteIndex0x4d4cb8;System:getTop0x4ffd94/getBottom0x4fec5c;Tool:feature methods",
+    "codes": [
+      "93372"
+    ],
+    "top_control_groups": [
+      "head",
+      "foot",
+      "head+foot:M1+M2"
+    ],
+    "M1": true,
+    "flat_preset": true,
+    "under_bed_light": true,
+    "tilt_preset": false,
+    "phone_flashlight": "EXCLUDED phone torch. System.getBottomButton selects SingleLight on this non6 profile.",
+    "hardware_status": "UNVERIFIED",
+    "mapping_confidence": "VERIFIED",
+    "disposition": "CONDITIONALLY REACHABLE",
+    "M2": true,
+    "ZG": true,
+    "TV": true,
+    "QS": false,
+    "Zzz_alias_QS": true,
+    "massage": true,
+    "wake_up_massage": true,
+    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
+    "wake_up_memory_options": [
+      "None",
+      "M1",
+      "M2",
+      "Zero Gravity",
+      "TV"
+    ],
+    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
+    "system_bottom_phone_flashlight": true
+  },
+  {
+    "id": "remote:09",
+    "selector": 9,
+    "source": "package:apex/pages/boot/use_id_page.dart:_getRemoteIndex0x4d4cb8;System:getTop0x4ffd94/getBottom0x4fec5c;Tool:feature methods",
+    "codes": [
+      "93375"
+    ],
+    "top_control_groups": [
+      "head",
+      "foot",
+      "midbody:M3+M4"
+    ],
+    "M1": true,
+    "flat_preset": true,
+    "under_bed_light": true,
+    "tilt_preset": false,
+    "phone_flashlight": "EXCLUDED phone torch. System.getBottomButton selects SingleLight on this non6 profile.",
+    "hardware_status": "UNVERIFIED",
+    "mapping_confidence": "VERIFIED",
+    "disposition": "CONDITIONALLY REACHABLE",
+    "M2": true,
+    "ZG": true,
+    "TV": true,
+    "QS": false,
+    "Zzz_alias_QS": true,
+    "massage": true,
+    "wake_up_massage": true,
+    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
+    "wake_up_memory_options": [
+      "None",
+      "M1",
+      "M2",
+      "Zero Gravity",
+      "TV"
+    ],
+    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
+    "system_bottom_phone_flashlight": true
+  },
+  {
+    "id": "remote:10",
+    "selector": 10,
+    "source": "package:apex/pages/boot/use_id_page.dart:_getRemoteIndex0x4d4cb8;System:getTop0x4ffd94/getBottom0x4fec5c;Tool:feature methods",
+    "codes": [
+      "93379"
+    ],
+    "top_control_groups": [
+      "head",
+      "foot",
+      "M3+M4",
+      "TFlat:M4"
+    ],
+    "M1": true,
+    "flat_preset": true,
+    "under_bed_light": true,
+    "tilt_preset": false,
+    "phone_flashlight": "EXCLUDED phone torch. System.getBottomButton selects SingleLight on this non6 profile.",
+    "hardware_status": "UNVERIFIED",
+    "mapping_confidence": "VERIFIED",
+    "disposition": "CONDITIONALLY REACHABLE",
+    "M2": true,
+    "ZG": true,
+    "TV": true,
+    "QS": false,
+    "Zzz_alias_QS": true,
+    "massage": true,
+    "wake_up_massage": true,
+    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
+    "wake_up_memory_options": [
+      "None",
+      "M1",
+      "M2",
+      "Zero Gravity",
+      "TV"
+    ],
+    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
+    "system_bottom_phone_flashlight": true
+  },
+  {
+    "id": "remote:11",
+    "selector": 11,
+    "source": "package:apex/pages/boot/use_id_page.dart:_getRemoteIndex0x4d4cb8;System:getTop0x4ffd94/getBottom0x4fec5c;Tool:feature methods",
+    "codes": [
+      "PMT-5019"
+    ],
+    "top_control_groups": [
+      "head",
+      "foot",
+      "midbody:M3+M4"
+    ],
+    "M1": true,
+    "flat_preset": false,
+    "under_bed_light": true,
+    "tilt_preset": false,
+    "phone_flashlight": "EXCLUDED phone torch. System.getBottomButton selects SingleLight on this non6 profile.",
+    "hardware_status": "UNVERIFIED",
+    "mapping_confidence": "VERIFIED",
+    "disposition": "CONDITIONALLY REACHABLE",
+    "M2": true,
+    "ZG": false,
+    "TV": false,
+    "QS": false,
+    "Zzz_alias_QS": false,
+    "massage": false,
+    "wake_up_massage": false,
+    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
+    "wake_up_memory_options": [
+      "None",
+      "M1",
+      "M2"
+    ],
+    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
+    "system_bottom_phone_flashlight": true
+  },
+  {
+    "id": "remote:12",
+    "selector": 12,
+    "source": "package:apex/pages/boot/use_id_page.dart:_getRemoteIndex0x4d4cb8;System:getTop0x4ffd94/getBottom0x4fec5c;Tool:feature methods",
+    "codes": [
+      "PMT-5020"
+    ],
+    "top_control_groups": [
+      "head",
+      "foot",
+      "headTilt:M3+M4"
+    ],
+    "M1": true,
+    "flat_preset": false,
+    "under_bed_light": true,
+    "tilt_preset": false,
+    "phone_flashlight": "EXCLUDED phone torch. System.getBottomButton selects SingleLight on this non6 profile.",
+    "hardware_status": "UNVERIFIED",
+    "mapping_confidence": "VERIFIED",
+    "disposition": "CONDITIONALLY REACHABLE",
+    "M2": true,
+    "ZG": false,
+    "TV": false,
+    "QS": false,
+    "Zzz_alias_QS": false,
+    "massage": false,
+    "wake_up_massage": true,
+    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
+    "wake_up_memory_options": [
+      "None",
+      "M1",
+      "M2"
+    ],
+    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
+    "system_bottom_phone_flashlight": true
+  },
+  {
+    "id": "remote:13",
+    "selector": 13,
+    "source": "package:apex/pages/boot/use_id_page.dart:_getRemoteIndex0x4d4cb8;System:getTop0x4ffd94/getBottom0x4fec5c;Tool:feature methods",
+    "codes": [
+      "95563"
+    ],
+    "top_control_groups": [
+      "head",
+      "foot",
+      "midbody:M3",
+      "TFlat:M4"
+    ],
+    "M1": true,
+    "flat_preset": true,
+    "under_bed_light": true,
+    "tilt_preset": false,
+    "phone_flashlight": "EXCLUDED phone torch. System.getBottomButton selects SingleLight on this non6 profile.",
+    "hardware_status": "UNVERIFIED",
+    "mapping_confidence": "VERIFIED",
+    "disposition": "CONDITIONALLY REACHABLE",
+    "M2": true,
+    "ZG": true,
+    "TV": true,
+    "QS": false,
+    "Zzz_alias_QS": true,
+    "massage": true,
+    "wake_up_massage": true,
+    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
+    "wake_up_memory_options": [
+      "None",
+      "M1",
+      "M2",
+      "Zero Gravity",
+      "TV"
+    ],
+    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
+    "system_bottom_phone_flashlight": true
+  },
+  {
+    "id": "remote:14",
+    "selector": 14,
+    "source": "package:apex/pages/boot/use_id_page.dart:_getRemoteIndex0x4d4cb8;System:getTop0x4ffd94/getBottom0x4fec5c;Tool:feature methods",
+    "codes": [
+      "PMT-5024"
+    ],
+    "top_control_groups": [
+      "head",
+      "foot",
+      "midbody:M3",
+      "headTilt:M4"
+    ],
+    "M1": true,
+    "flat_preset": true,
+    "under_bed_light": true,
+    "tilt_preset": false,
+    "phone_flashlight": "EXCLUDED phone torch. System.getBottomButton selects SingleLight on this non6 profile.",
+    "hardware_status": "UNVERIFIED",
+    "mapping_confidence": "VERIFIED",
+    "disposition": "CONDITIONALLY REACHABLE",
+    "M2": true,
+    "ZG": true,
+    "TV": true,
+    "QS": false,
+    "Zzz_alias_QS": true,
+    "massage": true,
+    "wake_up_massage": true,
+    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
+    "wake_up_memory_options": [
+      "None",
+      "M1",
+      "M2",
+      "Zero Gravity",
+      "TV"
+    ],
+    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
+    "system_bottom_phone_flashlight": true
+  }
+]

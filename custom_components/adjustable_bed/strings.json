@@ -352,7 +352,8 @@
           "serta_mp_memory_3_head": "Local memory 3, head angle",
           "serta_mp_memory_3_foot": "Local memory 3, foot angle",
           "serta_mp_memory_4_head": "Local memory 4, head angle",
-          "serta_mp_memory_4_foot": "Local memory 4, foot angle"
+          "serta_mp_memory_4_foot": "Local memory 4, foot angle",
+          "comfort_enhancement3_remote_code": "Exact remote code"
         },
         "data_description": {
           "jiecang_app_layout": "Select the layout configured in the app. The device name and motor count do not identify the layout.",
@@ -419,7 +420,8 @@
           "serta_mp_memory_3_head": "The head angle the app's local memory 3 moves to, in degrees.",
           "serta_mp_memory_3_foot": "The foot angle the app's local memory 3 moves to, in degrees.",
           "serta_mp_memory_4_head": "The head angle the app's local memory 4 moves to, in degrees.",
-          "serta_mp_memory_4_foot": "The foot angle the app's local memory 4 moves to, in degrees."
+          "serta_mp_memory_4_foot": "The foot angle the app's local memory 4 moves to, in degrees.",
+          "comfort_enhancement3_remote_code": "Use the printed code exactly, including capitalization. No spaces are added or removed."
         },
         "sections": {
           "advanced": {
@@ -784,7 +786,9 @@
       "rize_profile": "Select a supported Rize Beds product, signed 32-bit room ID, and valid actuator descriptor.",
       "rize_unpair_first": "Revert to a standalone bed before selecting a Rize profile without separate side controls.",
       "comfy_profile": "Select bed type 129, 130 or 131, the existing signed room ID, and the capability word.",
-      "comfy_unpair_first": "Revert to a standalone bed before choosing a product without separate side controls."
+      "comfy_unpair_first": "Revert to a standalone bed before choosing a product without separate side controls.",
+      "apex_remote_required": "Choose the remote printed on the bed controller or enter its exact code.",
+      "apex_remote_code": "This exact remote code is not supported. Check capitalization and spaces."
     }
   },
   "options": {
@@ -906,7 +910,8 @@
           "serta_mp_memory_3_head": "Local memory 3, head angle",
           "serta_mp_memory_3_foot": "Local memory 3, foot angle",
           "serta_mp_memory_4_head": "Local memory 4, head angle",
-          "serta_mp_memory_4_foot": "Local memory 4, foot angle"
+          "serta_mp_memory_4_foot": "Local memory 4, foot angle",
+          "comfort_enhancement3_remote_code": "Exact remote code"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -975,7 +980,8 @@
           "sleepys_elite_selector": "Choose the selector saved for this physical bed. Paired sides keep their selector independently.",
           "richmat_classic_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes.",
           "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
-          "starcode_m1x12_profile": "Choose the profile matching the exact Bluetooth name; this app choice is never inferred from shared services or manufacturer data."
+          "starcode_m1x12_profile": "Choose the profile matching the exact Bluetooth name; this app choice is never inferred from shared services or manufacturer data.",
+          "comfort_enhancement3_remote_code": "Use the printed code exactly, including capitalization. No spaces are added or removed."
         }
       },
       "remove_bond": {
@@ -1118,7 +1124,8 @@
           "serta_mp_memory_3_head": "Local memory 3, head angle",
           "serta_mp_memory_3_foot": "Local memory 3, foot angle",
           "serta_mp_memory_4_head": "Local memory 4, head angle",
-          "serta_mp_memory_4_foot": "Local memory 4, foot angle"
+          "serta_mp_memory_4_foot": "Local memory 4, foot angle",
+          "comfort_enhancement3_remote_code": "Exact remote code"
         },
         "data_description": {
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
@@ -1165,7 +1172,8 @@
           "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
           "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
           "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
-          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector."
+          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector.",
+          "comfort_enhancement3_remote_code": "Use the printed code exactly, including capitalization. No spaces are added or removed."
         }
       },
       "right_settings": {
@@ -1254,7 +1262,8 @@
           "serta_mp_memory_3_head": "Local memory 3, head angle",
           "serta_mp_memory_3_foot": "Local memory 3, foot angle",
           "serta_mp_memory_4_head": "Local memory 4, head angle",
-          "serta_mp_memory_4_foot": "Local memory 4, foot angle"
+          "serta_mp_memory_4_foot": "Local memory 4, foot angle",
+          "comfort_enhancement3_remote_code": "Exact remote code"
         },
         "data_description": {
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
@@ -1301,7 +1310,8 @@
           "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
           "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
           "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
-          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector."
+          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector.",
+          "comfort_enhancement3_remote_code": "Use the printed code exactly, including capitalization. No spaces are added or removed."
         }
       },
       "change_app": {
@@ -1475,7 +1485,9 @@
       "rize_profile": "Select a supported Rize Beds product, signed 32-bit room ID, and valid actuator descriptor.",
       "rize_unpair_first": "Revert to a standalone bed before selecting a Rize profile without separate side controls.",
       "comfy_profile": "Select bed type 129, 130 or 131, the existing signed room ID, and the capability word.",
-      "comfy_unpair_first": "Revert to a standalone bed before choosing a product without separate side controls."
+      "comfy_unpair_first": "Revert to a standalone bed before choosing a product without separate side controls.",
+      "apex_remote_required": "Choose the remote printed on the bed controller or enter its exact code.",
+      "apex_remote_code": "This exact remote code is not supported. Check capitalization and spaces."
     },
     "progress": {
       "connecting": "Connecting over Bluetooth…",
@@ -3190,6 +3202,24 @@
       },
       "rize_remedy_ii_wave_3": {
         "name": "Massage wave 3"
+      },
+      "apex_group": {
+        "name": "{action}"
+      },
+      "apex_tilt": {
+        "name": "Tilt"
+      },
+      "apex_massage_duration": {
+        "name": "Cycle massage duration"
+      },
+      "apex_massage_wave": {
+        "name": "Wave massage"
+      },
+      "apex_qs": {
+        "name": "{action}"
+      },
+      "apex_massage_both": {
+        "name": "Step Head + Feet massage"
       }
     },
     "cover": {
@@ -4969,6 +4999,12 @@
       },
       "rize_remedy_ii_save_acknowledged": {
         "name": "Save acknowledgment code"
+      },
+      "apex_local_massage_end": {
+        "name": "Local massage end (estimated)"
+      },
+      "apex_firmware": {
+        "name": "Firmware version"
       }
     },
     "light": {
@@ -9206,6 +9242,84 @@
         "flexible_wake": {
           "name": "Flexible wake",
           "description": "Legacy model 67 only."
+        }
+      }
+    },
+    "comfort_enhancement3_start_massage": {
+      "name": "Start Comfort Enhancement 3 massage",
+      "description": "Start a relative massage program. Values are app choices, not measured bed state.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "duration": {
+          "name": "Massage duration (minutes)"
+        },
+        "intensity": {
+          "name": "Relative intensity steps"
+        },
+        "kind": {
+          "name": "Massage area or Wave"
+        }
+      }
+    },
+    "comfort_enhancement3_set_wakeup": {
+      "name": "Set Comfort Enhancement 3 wake-up",
+      "description": "Replace one bed wake-up program. Available effects depend on the selected remote.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "slot": {
+          "name": "Slot identifier",
+          "description": "0..99 is the wire formatter domain, not the bed capacity. Use the same identifier to edit or delete."
+        },
+        "duration": {
+          "name": "Massage duration (minutes)"
+        },
+        "intensity": {
+          "name": "Relative intensity steps"
+        },
+        "kind": {
+          "name": "Massage area or Wave"
+        },
+        "time": {
+          "name": "Time",
+          "description": "Minute precision, on the explicitly selected current or next day."
+        },
+        "next_day": {
+          "name": "Use tomorrow"
+        },
+        "massage": {
+          "name": "Include massage"
+        },
+        "light": {
+          "name": "Toggle under-bed light"
+        },
+        "preset": {
+          "name": "Preset"
+        }
+      }
+    },
+    "comfort_enhancement3_delete_wakeup": {
+      "name": "Delete Comfort Enhancement 3 wake-up",
+      "description": "Remove one bed wake-up program by its original slot identifier.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "slot": {
+          "name": "Slot identifier",
+          "description": "0..99 is the wire formatter domain, not the bed capacity. Use the same identifier to edit or delete."
         }
       }
     }

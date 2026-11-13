@@ -228,3 +228,18 @@ class MassageTimerParser:
         if len(assembled) >= 11 and assembled[:2] == b"\x09\x0b":
             return assembled[10]
         return None
+
+
+def schedule_step(slot: int, step: int, delay_ticks: int, command: int, duration: int) -> bytes:
+    """Comfort Enhancement 3's decimal-text indices and hexadecimal fields.
+
+    Restrict to the nominal 13-byte domain. 0..99 is a formatter-width bound,
+    not a claim about physical schedule capacity. The source can overflow or
+    fail on odd widths; HA rejects those inputs before any writes.
+    """
+    for name, value, maximum in (("slot", slot, 99), ("step", step, 99),
+                                  ("delay", delay_ticks, 0xFFFFFFFF),
+                                  ("command", command, 0xFFFFFFFF), ("duration", duration, 255)):
+        if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= maximum:
+            raise ValueError(f"{name} outside the schedule wire-format domain")
+    return bytes.fromhex(f"0b0d{slot:02d}{step:02d}{delay_ticks:08x}{command:08x}{duration:02x}")

@@ -26,6 +26,7 @@ from custom_components.adjustable_bed.profiles import rize_home
 from custom_components.adjustable_bed.profiles.adjustable_bed import (
     PROFILES as ADJUSTABLE_BED_PROFILES,
 )
+from custom_components.adjustable_bed.profiles.comfort_enhancement3 import PROFILES as APEX_PROFILES
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
 GUIDE = "docs/beds/okin-nframe.md"
@@ -122,6 +123,7 @@ _OKIN_KEY_LABELS = {
     "flat_zero_g": "Flat + Zero-G chord",
 }
 _OKIN_GROUPS = {
+    "Comfort Enhancement 3": tuple(APEX_PROFILES.values()),
     "Okimat": (okin_profiles.OKIMAT,),
     "DewertOkin": (okin_profiles.DEWERTOKIN,),
     "RF ECO BT": (okin_profiles.RF_ECO_BT,),
@@ -666,10 +668,21 @@ def render_rize_remedy_ii_controls() -> str:
     ))
 
 
+def render_apex() -> str:
+    from custom_components.adjustable_bed.profiles.comfort_enhancement3 import REMOTES
+    return _block(
+        _table(("Index", "Exact remote codes", "Additional app groups", "Memory", "ZG", "TV / Zzz", "QS", "Massage", "Wake massage", "Flat", "UBL", "Tilt"),
+               ((str(i), ", ".join(r.codes), ", ".join(g[1] for g in r.groups) or "none",
+                 "M1/M2" if r.m2 else "M1", *("yes" if v else "no" for v in (r.zg, r.tv, r.qs, r.massage, r.wake_massage, r.flat, r.light, r.tilt))) for i, r in enumerate(REMOTES))),
+        _okin_key_table(tuple(APEX_PROFILES.values()), envelope=False),
+    )
+
+
 BLOCKS: list[Block] = [
     (GUIDE, "rize-home", render_rize_home),
     (GUIDE, "okin-motionbed", render_okin_motionbed),
     (GUIDE, "rize-remedy-ii-controls", render_rize_remedy_ii_controls),
+    (GUIDE, "apex-controls", render_apex),
     (GUIDE, "adjustable-bed-commands", render_adjustable_bed),
     (GUIDE, "resident-session", render_resident_session),
     (GUIDE, "okin-nframe-profiles", render_okin_nframe_profiles),

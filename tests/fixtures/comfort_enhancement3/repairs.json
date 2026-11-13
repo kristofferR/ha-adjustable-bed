@@ -1,0 +1,124 @@
+{
+  "scope": "Same-artifact audit001 repair only; static callback/manager call traces, not hardware outcomes or unique GATT timing. Selected current link connected and write handle valid; no target or pointer/session ownership is invented.",
+  "source_files": {
+    "apex/pages/favorites/favorites_pages.dart": "d52f9f7317cad0f6bee914f7e62afb51a6a449d4d734320a97b943ace4d67b72",
+    "apex/pages/remote/widgets/System.dart": "48d633518cb8efcd36f0d69e21fe593b254ea3334a875108fddddcb704ffcce7",
+    "apex/widgets/XCImageButton.dart": "44dcadccaddfcc4103d71c7db0cf392499221e3cf05c01cf5257bfde954989c3",
+    "flutter/src/cupertino/desktop_text_selection_toolbar_button.dart": "f32c5946133649c3851064e53ad81b225f691335f2e77ac43c53593dbf4147bc"
+  },
+  "favorites_literal_map": {
+    "isZg": "13",
+    "isTV": "17",
+    "isQS": "1b",
+    "isM1": "1f",
+    "isM2": "23"
+  },
+  "system_literal_map": {
+    "isHeadUp": "13",
+    "isHeadDown": "17",
+    "isFootUp": "1b",
+    "isFootDown": "1f",
+    "isFlatUp": "23",
+    "isFlatDown": "27",
+    "isLumberUp": "2b",
+    "isLumberDown": "2f",
+    "isMidBodyUp": "33",
+    "isMidBodyDown": "37",
+    "isTFlatUp": "3b",
+    "isTFlatDown": "3f",
+    "isFlat": "53",
+    "isLight": "5b",
+    "isUbl": "5f",
+    "isHeadFootUp": "43",
+    "isHeadFootDown": "47",
+    "isHeadTiltUp": "4b",
+    "isHeadTiltDown": "4f"
+  },
+  "cases": [
+    {
+      "id": "audit001-F1-actual-key-first-held-reset",
+      "finding": "F1",
+      "requested_key": "isZG",
+      "stored_key": "isZg",
+      "state_field": "13",
+      "edit_mode": false,
+      "expected_admission": [
+        true,
+        false,
+        false,
+        true
+      ],
+      "expected_zg_writeData_calls": [
+        "040200004000",
+        "040200004000"
+      ],
+      "expected_callback_rescheduling": 4,
+      "reset": "Release clears field13 through shared46fb04 and invokes Favorites.stopCommand. Only ZG action writes are counted in this case; STOP cache interference is covered separately."
+    },
+    {
+      "id": "audit001-F2-denied-release-interleave",
+      "finding": "F2",
+      "release_kind": "UP",
+      "cancel_equivalence": "XC cancel505eb0 and up505f2c both clear pressed and invoke widget.field37 unconditionally; source-verified, no admission token.",
+      "expected_press_admission": [
+        true,
+        false
+      ],
+      "expected_manager_stop_call_ms": [
+        120,
+        220
+      ],
+      "expected_callback_ms": [
+        0,
+        100,
+        200,
+        300
+      ],
+      "expected_writeData_calls": [
+        [
+          0,
+          "040200000001"
+        ],
+        [
+          100,
+          "040200000001"
+        ],
+        [
+          200,
+          "040200000001"
+        ],
+        [
+          220,
+          "040200000000"
+        ],
+        [
+          300,
+          "040200000001"
+        ],
+        [
+          320,
+          "040200000001"
+        ]
+      ],
+      "ordering": "Head down0; denied Foot down10; Foot UP20 schedules manager at120/220; Head callbacks100/200/300; manager120 sets zero and schedules flush220; at220 second manager call precedes first flush; flush320 reads Head's300 cache. One nominal event ordering, no physical outcome or write completion timing asserted."
+    },
+    {
+      "id": "audit001-F2-profile6-tilt-omission",
+      "finding": "F2",
+      "profile": 6,
+      "tilt_flag": "57",
+      "tilt_requested": "isTilt",
+      "head_requested": "isHeadUp",
+      "expected_admission": [
+        true,
+        true,
+        false
+      ],
+      "expected_writeData_calls": [
+        "040200000090",
+        "040200000001"
+      ],
+      "ordering": "Tilt first accepted and sets field57; Head Up then passes because19-key map omits isTilt; subsequent Tilt callback is rejected by tracked Head flag. No claim that both keep writing."
+    }
+  ]
+}

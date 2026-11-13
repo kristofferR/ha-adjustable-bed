@@ -1056,3 +1056,13 @@ configurable from 1 to 600 (HA's 60-second press bound); the refresh interval
 is fixed at 100 ms. The three named memory
 slots save Zero Gravity, Incline and Leisure by their Flat + preset chords.
 See the [profile guide](beds/okin-nframe.md#rize-remedy-ii).
+
+### Comfort Enhancement 3 / Comfort Plus3
+
+Choose the exact app remote index (0..14), or the manual-code option and an
+exact supported code. Neither a shared Bluetooth service nor device name
+selects the remote layout. All remote capabilities come from that selection;
+profile12 offers massage in wake-up programs only. Each side of a two-address
+pair owns its own selection. Ordinary cover presses use the configured pulse
+count; the card's renewable hold has its own lease. See the
+[profile guide](beds/okin-nframe.md#comfort-enhancement-3).

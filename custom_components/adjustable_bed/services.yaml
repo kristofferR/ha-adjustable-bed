@@ -3923,3 +3923,114 @@ smart_sleep_set_alarm:
       default: false
       selector:
         boolean:
+
+comfort_enhancement3_start_massage:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      default: both
+      selector:
+        select:
+          options: [both, left, right]
+    duration:
+      default: 10
+      selector:
+        select:
+          options: ["10", "20", "30"]
+    intensity:
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 3
+          mode: box
+    kind:
+      default: head
+      selector:
+        select:
+          options: [head, feet, both, wave]
+
+comfort_enhancement3_set_wakeup:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      default: both
+      selector:
+        select:
+          options: [both, left, right]
+    slot:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 99
+          mode: box
+    duration:
+      default: 10
+      selector:
+        select:
+          options: ["10", "20", "30"]
+    intensity:
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 3
+          mode: box
+    kind:
+      default: head
+      selector:
+        select:
+          options: [head, feet, both, wave]
+    time:
+      required: true
+      selector:
+        time:
+    next_day:
+      default: false
+      selector:
+        boolean:
+    massage:
+      default: false
+      selector:
+        boolean:
+    light:
+      default: false
+      selector:
+        boolean:
+    preset:
+      default: None
+      selector:
+        select:
+          options: ["None", M1, M2, Zero Gravity, TV, QS]
+
+comfort_enhancement3_delete_wakeup:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      default: both
+      selector:
+        select:
+          options: [both, left, right]
+    slot:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 99
+          mode: box

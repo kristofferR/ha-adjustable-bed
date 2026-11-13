@@ -29,6 +29,7 @@ from .app_state_store import app_state_store
 from .const import (
     ADJUSTABLE_LUMBAR_VARIANT_STAR,
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_COMFORT_ENHANCEMENT3,
     BED_TYPE_ESHINE_OKIN,
     BED_TYPE_GALAXY,
     BED_TYPE_GOODVIBE,
@@ -273,7 +274,7 @@ def recommend_profile(
     receiver_ambiguities = set(detected.ambiguous_types or ()) - {
         BED_TYPE_MLILY, BED_TYPE_HJBED, BED_TYPE_GOODVIBE, BED_TYPE_GALAXY,
         BED_TYPE_ESHINE_OKIN, BED_TYPE_RICHMAT_CLASSIC_APPS,
-        BED_TYPE_RESIDENT,
+        BED_TYPE_RESIDENT, BED_TYPE_COMFORT_ENHANCEMENT3,
         BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP,
     }
     if (detected.confidence < 0.9 or receiver_ambiguities) and not any(

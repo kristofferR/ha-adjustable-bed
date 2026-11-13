@@ -34,6 +34,7 @@ from .const import (
     BED_TYPE_BF,
     BED_TYPE_CASPER_BASE,
     BED_TYPE_CHERISH,
+    BED_TYPE_COMFORT_ENHANCEMENT3,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COMFORTBASE,
@@ -346,6 +347,7 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
 _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     BED_TYPE_RIZE_HOME: _BuilderSpec("rize_home.controller"),
     "smart_sleep": _BuilderSpec("smart_sleep.controller"),
+    BED_TYPE_COMFORT_ENHANCEMENT3: _BuilderSpec("comfort_enhancement3.controller"),
     "paramount": _BuilderSpec("paramount.controller"),
     "smart_comfort_synargy": _BuilderSpec("smart_comfort.controller"),
     "smart_comfort_synergy": _BuilderSpec("smart_comfort.controller"),

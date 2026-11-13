@@ -50,6 +50,7 @@ from .const import (
     BED_TYPE_CASPER_SLEEP_MM,
     BED_TYPE_CASPER_SLEEP_SXB,
     BED_TYPE_CHERISH,
+    BED_TYPE_COMFORT_ENHANCEMENT3,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COMFORTBASE,
@@ -591,6 +592,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_ADJUSTABLE_LUMBAR: "Adjustable bed (Lumbar) app",
     BED_TYPE_RIZE_HOME: "Rize Home app (Remedy III / Contempo IV)",
     BED_TYPE_OKIN_MOTIONBED: "OKIN Motion Bed app (com.okin.motionbed)",
+    BED_TYPE_COMFORT_ENHANCEMENT3: "Comfort Enhancement 3 / Comfort Plus3 (com.okin.apex)",
     BED_TYPE_RESIDENT: "Resident Adjustable Base app (com.okin.resident.release)",
     BED_TYPE_COMFORTBASE: "ComfortBaseForBluetooth / ComfortBase BLE (choose product)",
     BED_TYPE_COMFORT_ENHANCEMENTS: "Comfort Enhancements app (choose MC2/MC3/MC4/MC5)",
@@ -841,7 +843,7 @@ _HIDDEN_APP_ROWS: Final = frozenset(
 HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_APP_ROWS)
 # Bed types whose one row asks for the product, although each product is an app entry.
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
-    {BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE}
+    {BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE}
 )
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
@@ -1365,6 +1367,13 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             *(result.ambiguous_types or ()), BED_TYPE_RIZE_REMEDY_II,
         ]))
         result.signals.append("name:rize_remedy_ii_app_candidate")
+    # A shared service makes this app a choice, never overrides a stronger
+    # receiver signature and never infers a remote from the Bluetooth name.
+    if OKIMAT_SERVICE_UUID.lower() in {u.lower() for u in (service_info.service_uuids or ())} and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ) and result.bed_type != BED_TYPE_COMFORT_ENHANCEMENT3:
+        result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_COMFORT_ENHANCEMENT3]))
+        result.signals.append("service:comfort_enhancement3_candidate")
     if mlily_scan_matches(service_info.name) and mlily_suggested_profile(service_info.name) and not any(signal.startswith("excluded:") for signal in result.signals):
         if result.bed_type is None:
             result = DetectionResult(BED_TYPE_MLILY, 0.3, ["name:mlily_app_candidate", *result.signals])

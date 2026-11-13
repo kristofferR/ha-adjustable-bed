@@ -1394,3 +1394,15 @@ SETTING_FRAMES: dict[str, frozenset[str]] = dict.fromkeys(
         }
     ),
 )
+
+# Row083 frozen P1 literals, independently retained in the app fixture. The
+# per-profile gates are checked against the complete accepted variant census.
+_APEX_FRAMES = frozenset({
+    "040200000000", "040200000001", "040200000002", "040200000004", "040200000008",
+    "040200000005", "04020000000a", "040200000010", "040200000020", "040200000040",
+    "040200000080", "040200000050", "0402000000a0", "040200000090", "040200001000",
+    "040200002000", "040200003000", "040200004000", "040200008000", "040200010000",
+    "040200020000", "040200000400", "040200000800", "040200400000", "040280000000",
+    "040210000000", "040202000000",
+})
+FROZEN_FRAMES.update({f"apex_{i}": _APEX_FRAMES for i in range(15)})

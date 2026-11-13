@@ -6,6 +6,7 @@ import re
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.profiles.adjustable_bed import AdjustableAppProfile
+from custom_components.adjustable_bed.profiles.comfort_enhancement3 import CHOICES as APEX_CHOICES
 from custom_components.adjustable_bed.profiles.okin_nframe import OkinNFrameProfile
 from custom_components.adjustable_bed.profiles.rize_home import RizeHomeProfile
 from tests.adjustable_bed_vectors import FROZEN_FRAMES as ADJUSTABLE_BED_FRAMES
@@ -18,6 +19,7 @@ from tests.starcode_abm5_4_vectors import BUILDER_VECTORS
 def _variant(key: str, bed_type: str) -> str | None:
     """The protocol variant that reaches a profile on a bed type, where one does."""
     return {
+        const.BED_TYPE_COMFORT_ENHANCEMENT3: key,
         const.BED_TYPE_LEGGETT_PLATT: const.LEGGETT_VARIANT_OKIN,
         # SIMMONS profile keys are the packet-format variants.
         const.BED_TYPE_SIMMONS: key,
@@ -57,6 +59,7 @@ FAMILY = CodecFamily(
             "resident",
             "rize_home",
             "okin_motionbed",
+            "comfort_enhancement3",
             "okin_64bit",
             "okin_cb24",
             "okin_cst",
@@ -73,6 +76,7 @@ FAMILY = CodecFamily(
         }
     ),
     app_routes={
+        const.BED_TYPE_COMFORT_ENHANCEMENT3: (const.CONF_PROTOCOL_VARIANT, tuple(APEX_CHOICES)),
         const.BED_TYPE_LEGGETT_OKIN: (
             const.CONF_LEGGETT_APP_PROFILE,
             tuple(const.LEGGETT_APP_PROFILES),

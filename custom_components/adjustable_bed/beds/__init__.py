@@ -18,6 +18,9 @@ if TYPE_CHECKING:
     from .bf_cherish.controller import BfCherishController as BfCherishController
     from .casper_base.controller import CasperBaseController as CasperBaseController
     from .casper_sleep.controller import CasperSleepController as CasperSleepController
+    from .comfort_enhancement3.controller import (
+        ComfortEnhancement3Controller as ComfortEnhancement3Controller,
+    )
     from .comfort_enhancements.controller import (
         ComfortEnhancementsController as ComfortEnhancementsController,
     )
@@ -130,6 +133,7 @@ if TYPE_CHECKING:
 
 _EXPORT_MODULES = {
     "RizeHomeController": "rize_home.controller",
+    "ComfortEnhancement3Controller": "comfort_enhancement3.controller",
     "ResidentController": "resident.controller",
     "SmartSleepController": "smart_sleep.controller",
     "JalonBedController": "jalon_bed.controller",

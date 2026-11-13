@@ -107,6 +107,7 @@ ERGOMOTION_4_STYLES = frozenset(product.style for product in ERGOMOTION_4_PRODUC
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "SmartSleepProfile:p1": {"hold": ("row094",)},
     "SmartSleepProfile:p2": {"hold": ("row094",), "hold_controls": ("row094",)},
+    **{f"OkinNFrameProfile:apex_{i}": {"hold": ("row083",)} for i in range(15)},
     "ParamountProfile:paramount": {"hold": ("paramount",)},
     **{f"AdjustableAppProfile:{key}": {"hold": ("adjustbed",)}
        for key in ("adjustable_bed_okin", "adjustable_bed_star", "adjustable_bed_star_5a")},
@@ -307,6 +308,7 @@ _SIMMONS = ("OkinNFrameProfile:simmons_okin", "OkinNFrameProfile:simmons_smartbe
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/smart_sleep.py:<module>.PROFILES": ("SmartSleepProfile:p2",),
     "profiles/smart_sleep.py:<module>.SmartSleepProfile": ("SmartSleepProfile:p1", "SmartSleepProfile:p2"),
+    "profiles/comfort_enhancement3.py:<module>.profile": tuple(f"OkinNFrameProfile:apex_{i}" for i in range(15)),
     "profiles/paramount.py:<module>.ParamountProfile": ("ParamountProfile:paramount",),
     **{
         f"profiles/adjustable_bed.py:<module>.{site}": tuple(
