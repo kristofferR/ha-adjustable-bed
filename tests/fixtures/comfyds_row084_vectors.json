@@ -1,0 +1,1617 @@
+[
+  {
+    "id": "cmd-001",
+    "protocol": "P1",
+    "action": "head up / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 1,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401010000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-002",
+    "protocol": "P1",
+    "action": "head down / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 2,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401020000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-003",
+    "protocol": "P1",
+    "action": "head STOP / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 3,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401030000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-004",
+    "protocol": "P1",
+    "action": "foot up / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 4,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401040000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-005",
+    "protocol": "P1",
+    "action": "foot down / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 5,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401050000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-006",
+    "protocol": "P1",
+    "action": "foot STOP / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 6,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401060000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-007",
+    "protocol": "P1",
+    "action": "waist up / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 7,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401070000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-008",
+    "protocol": "P1",
+    "action": "waist down / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 8,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401080000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-009",
+    "protocol": "P1",
+    "action": "waist STOP / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 9,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401090000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-010",
+    "protocol": "P1",
+    "action": "head up / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 10,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344010a0000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-011",
+    "protocol": "P1",
+    "action": "head down / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 11,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344010b0000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-012",
+    "protocol": "P1",
+    "action": "head STOP / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 12,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344010c0000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-013",
+    "protocol": "P1",
+    "action": "foot up / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 13,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344010d0000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-014",
+    "protocol": "P1",
+    "action": "foot down / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 14,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344010e0000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-015",
+    "protocol": "P1",
+    "action": "foot STOP / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 15,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344010f0000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-016",
+    "protocol": "P1",
+    "action": "waist up / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 16,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401100000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-017",
+    "protocol": "P1",
+    "action": "waist down / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 17,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401110000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-018",
+    "protocol": "P1",
+    "action": "waist STOP / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 18,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401120000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-019",
+    "protocol": "P1",
+    "action": "head up / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 19,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401130000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-020",
+    "protocol": "P1",
+    "action": "head down / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 20,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401140000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-021",
+    "protocol": "P1",
+    "action": "head STOP / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 21,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401150000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-022",
+    "protocol": "P1",
+    "action": "foot up / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 22,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401160000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-023",
+    "protocol": "P1",
+    "action": "foot down / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 23,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401170000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-024",
+    "protocol": "P1",
+    "action": "foot STOP / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 24,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401180000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-025",
+    "protocol": "P1",
+    "action": "waist up / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 25,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401190000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-026",
+    "protocol": "P1",
+    "action": "waist down / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 26,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344011a0000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-027",
+    "protocol": "P1",
+    "action": "waist STOP / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 27,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344011b0000",
+    "evidence": [
+      "E05",
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-028",
+    "protocol": "P1",
+    "action": "preset/one-key release STOP / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 28,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344011c0000",
+    "evidence": [
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-029",
+    "protocol": "P1",
+    "action": "preset/one-key release STOP / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 29,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344011d0000",
+    "evidence": [
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-030",
+    "protocol": "P1",
+    "action": "preset/one-key release STOP / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 30,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344011e0000",
+    "evidence": [
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-031",
+    "protocol": "P1",
+    "action": "zero preset UI / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 31,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344011f0000",
+    "evidence": [
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-032",
+    "protocol": "P1",
+    "action": "zero preset UI / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 32,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401200000",
+    "evidence": [
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-033",
+    "protocol": "P1",
+    "action": "zero preset UI / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 33,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401210000",
+    "evidence": [
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-034",
+    "protocol": "P1",
+    "action": "flat preset UI / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 34,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401220000",
+    "evidence": [
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-035",
+    "protocol": "P1",
+    "action": "flat preset UI / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 35,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401230000",
+    "evidence": [
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-036",
+    "protocol": "P1",
+    "action": "flat preset UI / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 36,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401240000",
+    "evidence": [
+      "E06"
+    ]
+  },
+  {
+    "id": "cmd-037",
+    "protocol": "P1",
+    "action": "save memory slot 1 (bed first bank) / bed first bank",
+    "kind": "command",
+    "inputs": {
+      "opcode": 37,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401250000",
+    "evidence": [
+      "E07",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-038",
+    "protocol": "P1",
+    "action": "save memory slot 2 (bed first bank) / bed first bank",
+    "kind": "command",
+    "inputs": {
+      "opcode": 38,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401260000",
+    "evidence": [
+      "E07",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-039",
+    "protocol": "P1",
+    "action": "save memory slot 3 (bed first bank) / bed first bank",
+    "kind": "command",
+    "inputs": {
+      "opcode": 39,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401270000",
+    "evidence": [
+      "E07",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-040",
+    "protocol": "P1",
+    "action": "save memory slot 4 (bed first bank) / bed first bank",
+    "kind": "command",
+    "inputs": {
+      "opcode": 40,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401280000",
+    "evidence": [
+      "E07",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-041",
+    "protocol": "P1",
+    "action": "recall memory slot 1 (bed first bank) / bed first bank",
+    "kind": "command",
+    "inputs": {
+      "opcode": 41,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401290000",
+    "evidence": [
+      "E07"
+    ]
+  },
+  {
+    "id": "cmd-042",
+    "protocol": "P1",
+    "action": "recall memory slot 2 (bed first bank) / bed first bank",
+    "kind": "command",
+    "inputs": {
+      "opcode": 42,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344012a0000",
+    "evidence": [
+      "E07"
+    ]
+  },
+  {
+    "id": "cmd-043",
+    "protocol": "P1",
+    "action": "recall memory slot 3 (bed first bank) / bed first bank",
+    "kind": "command",
+    "inputs": {
+      "opcode": 43,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344012b0000",
+    "evidence": [
+      "E07"
+    ]
+  },
+  {
+    "id": "cmd-044",
+    "protocol": "P1",
+    "action": "recall memory slot 4 (bed first bank) / bed first bank",
+    "kind": "command",
+    "inputs": {
+      "opcode": 44,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344012c0000",
+    "evidence": [
+      "E07"
+    ]
+  },
+  {
+    "id": "cmd-061",
+    "protocol": "P1",
+    "action": "lock / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 61,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344013d0000",
+    "evidence": [
+      "E08"
+    ]
+  },
+  {
+    "id": "cmd-062",
+    "protocol": "P1",
+    "action": "lock / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 62,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344013e0000",
+    "evidence": [
+      "E08"
+    ]
+  },
+  {
+    "id": "cmd-063",
+    "protocol": "P1",
+    "action": "lock / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 63,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344013f0000",
+    "evidence": [
+      "E08"
+    ]
+  },
+  {
+    "id": "cmd-064",
+    "protocol": "P1",
+    "action": "unlock after dialog YES / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 64,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401400000",
+    "evidence": [
+      "E08"
+    ]
+  },
+  {
+    "id": "cmd-065",
+    "protocol": "P1",
+    "action": "unlock after dialog YES / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 65,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401410000",
+    "evidence": [
+      "E08"
+    ]
+  },
+  {
+    "id": "cmd-066",
+    "protocol": "P1",
+    "action": "unlock after dialog YES / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 66,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401420000",
+    "evidence": [
+      "E08"
+    ]
+  },
+  {
+    "id": "cmd-069",
+    "protocol": "P1",
+    "action": "opcode69 builder only with explicit input destination; add-flow caller routing covered by audit001-boundaries.json",
+    "kind": "command",
+    "inputs": {
+      "opcode": 69,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401450000",
+    "evidence": [
+      "E05",
+      "E09",
+      "E17"
+    ]
+  },
+  {
+    "id": "cmd-070",
+    "protocol": "P1",
+    "action": "query lock ownership/state / selected bed",
+    "kind": "command",
+    "inputs": {
+      "opcode": 70,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401460000",
+    "evidence": [
+      "E05",
+      "E08",
+      "E09"
+    ]
+  },
+  {
+    "id": "cmd-071",
+    "protocol": "P1",
+    "action": "head massage increase / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 71,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401470000",
+    "evidence": [
+      "E06",
+      "E14"
+    ]
+  },
+  {
+    "id": "cmd-072",
+    "protocol": "P1",
+    "action": "head massage decrease / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 72,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401480000",
+    "evidence": [
+      "E06",
+      "E14"
+    ]
+  },
+  {
+    "id": "cmd-074",
+    "protocol": "P1",
+    "action": "head massage increase / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 74,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344014a0000",
+    "evidence": [
+      "E06",
+      "E14"
+    ]
+  },
+  {
+    "id": "cmd-075",
+    "protocol": "P1",
+    "action": "head massage decrease / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 75,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344014b0000",
+    "evidence": [
+      "E06",
+      "E14"
+    ]
+  },
+  {
+    "id": "cmd-077",
+    "protocol": "P1",
+    "action": "foot massage increase / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 77,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344014d0000",
+    "evidence": [
+      "E06",
+      "E14"
+    ]
+  },
+  {
+    "id": "cmd-078",
+    "protocol": "P1",
+    "action": "foot massage decrease / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 78,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344014e0000",
+    "evidence": [
+      "E06",
+      "E14"
+    ]
+  },
+  {
+    "id": "cmd-080",
+    "protocol": "P1",
+    "action": "foot massage increase / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 80,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401500000",
+    "evidence": [
+      "E06",
+      "E14"
+    ]
+  },
+  {
+    "id": "cmd-081",
+    "protocol": "P1",
+    "action": "foot massage decrease / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 81,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401510000",
+    "evidence": [
+      "E06",
+      "E14"
+    ]
+  },
+  {
+    "id": "cmd-083",
+    "protocol": "P1",
+    "action": "head massage increase / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 83,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401530000",
+    "evidence": [
+      "E06",
+      "E14"
+    ]
+  },
+  {
+    "id": "cmd-084",
+    "protocol": "P1",
+    "action": "head massage decrease / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 84,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401540000",
+    "evidence": [
+      "E06",
+      "E14"
+    ]
+  },
+  {
+    "id": "cmd-086",
+    "protocol": "P1",
+    "action": "foot massage increase / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 86,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401560000",
+    "evidence": [
+      "E06",
+      "E14"
+    ]
+  },
+  {
+    "id": "cmd-087",
+    "protocol": "P1",
+    "action": "foot massage decrease / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 87,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401570000",
+    "evidence": [
+      "E06",
+      "E14"
+    ]
+  },
+  {
+    "id": "cmd-089",
+    "protocol": "P1",
+    "action": "massage timer select 10 minutes / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 89,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401590000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-090",
+    "protocol": "P1",
+    "action": "massage timer select 20 minutes / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 90,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344015a0000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-091",
+    "protocol": "P1",
+    "action": "massage timer select 30 minutes / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 91,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344015b0000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-092",
+    "protocol": "P1",
+    "action": "massage timer select 40 minutes / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 92,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344015c0000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-093",
+    "protocol": "P1",
+    "action": "massage timer select 50 minutes / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 93,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344015d0000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-094",
+    "protocol": "P1",
+    "action": "massage timer start / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 94,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344015e0000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-095",
+    "protocol": "P1",
+    "action": "massage timer stop / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 95,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344015f0000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-096",
+    "protocol": "P1",
+    "action": "massage timer select 10 minutes / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 96,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401600000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-097",
+    "protocol": "P1",
+    "action": "massage timer select 20 minutes / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 97,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401610000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-098",
+    "protocol": "P1",
+    "action": "massage timer select 30 minutes / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 98,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401620000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-099",
+    "protocol": "P1",
+    "action": "massage timer select 40 minutes / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 99,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401630000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-100",
+    "protocol": "P1",
+    "action": "massage timer select 50 minutes / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 100,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401640000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-101",
+    "protocol": "P1",
+    "action": "massage timer start / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 101,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401650000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-102",
+    "protocol": "P1",
+    "action": "massage timer stop / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 102,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401660000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-103",
+    "protocol": "P1",
+    "action": "massage timer select 10 minutes / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 103,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401670000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-104",
+    "protocol": "P1",
+    "action": "massage timer select 20 minutes / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 104,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401680000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-105",
+    "protocol": "P1",
+    "action": "massage timer select 30 minutes / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 105,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401690000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-106",
+    "protocol": "P1",
+    "action": "massage timer select 40 minutes / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 106,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344016a0000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-107",
+    "protocol": "P1",
+    "action": "massage timer select 50 minutes / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 107,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344016b0000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-108",
+    "protocol": "P1",
+    "action": "massage timer start / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 108,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344016c0000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-109",
+    "protocol": "P1",
+    "action": "massage timer stop / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 109,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344016d0000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-110",
+    "protocol": "P1",
+    "action": "bed light on / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 110,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344016e0000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-111",
+    "protocol": "P1",
+    "action": "bed light off / left",
+    "kind": "command",
+    "inputs": {
+      "opcode": 111,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "03785634122011223344016f0000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-112",
+    "protocol": "P1",
+    "action": "bed light on / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 112,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401700000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-113",
+    "protocol": "P1",
+    "action": "bed light off / right",
+    "kind": "command",
+    "inputs": {
+      "opcode": 113,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401710000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-114",
+    "protocol": "P1",
+    "action": "bed light on / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 114,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401720000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "cmd-115",
+    "protocol": "P1",
+    "action": "bed light off / both",
+    "kind": "command",
+    "inputs": {
+      "opcode": 115,
+      "destination": 305419896,
+      "own": 1144201745
+    },
+    "expected_bytes": "0378563412201122334401730000",
+    "evidence": [
+      "E06",
+      "E10"
+    ]
+  },
+  {
+    "id": "single-sentinel",
+    "protocol": "P1",
+    "action": "single physical device head up, dst=-2 -> wire0, own broadcast fallback",
+    "kind": "command",
+    "inputs": {
+      "opcode": 1,
+      "destination": -2,
+      "own": 4294967295
+    },
+    "expected_bytes": "030000000020ffffffff01010000",
+    "evidence": [
+      "E05",
+      "E09"
+    ]
+  },
+  {
+    "id": "auth",
+    "protocol": "P1",
+    "action": "authenticate existing room",
+    "kind": "authenticate",
+    "inputs": {
+      "room": 305419896,
+      "password": "31313232"
+    },
+    "expected_bytes": "0116017856341231313232",
+    "evidence": [
+      "E04"
+    ]
+  },
+  {
+    "id": "ping",
+    "protocol": "P1",
+    "action": "enumerate room devices",
+    "kind": "ping",
+    "inputs": {
+      "own": 1144201745
+    },
+    "expected_bytes": "03fffffffffe11223344",
+    "evidence": [
+      "E09"
+    ]
+  },
+  {
+    "id": "enrollment-excluded",
+    "protocol": "P1",
+    "action": "EXCLUDED mesh membership enrollment, preserved setup effect",
+    "kind": "enroll",
+    "inputs": {
+      "room": 305419896,
+      "password": "31313232"
+    },
+    "expected_bytes": "0103785634123131323200000000",
+    "evidence": [
+      "E04",
+      "E11"
+    ]
+  },
+  {
+    "id": "single-advertisement",
+    "protocol": "P1",
+    "action": "manufacturer mode1 type131 alias bed129",
+    "kind": "advertisement",
+    "inputs": {},
+    "expected_bytes": "ffffc0ff0178563412831322000000000000",
+    "expected_state": {
+      "product": 129,
+      "type": 131,
+      "room": 305419896,
+      "virtual": 0,
+      "capability_word": 4898
+    },
+    "evidence": [
+      "E03"
+    ]
+  },
+  {
+    "id": "discoverable-advertisement",
+    "protocol": "P1",
+    "action": "manufacturer mode9 company4b44 type130",
+    "kind": "advertisement",
+    "inputs": {},
+    "expected_bytes": "ffffc0ff09665544332211444b0000821322",
+    "expected_state": {
+      "product": 130,
+      "type": 130,
+      "room": 0,
+      "virtual": 0,
+      "capability_word": 4898
+    },
+    "evidence": [
+      "E03"
+    ]
+  },
+  {
+    "id": "broadcast-advertisement",
+    "protocol": "P1",
+    "action": "manufacturer mode2 channelA1 type130",
+    "kind": "advertisement",
+    "inputs": {},
+    "expected_bytes": "ffffc0ff02785634126655443322110000821322a178563412",
+    "expected_state": {
+      "product": 130,
+      "type": 130,
+      "room": 305419896,
+      "virtual": 305419896,
+      "capability_word": 4898
+    },
+    "evidence": [
+      "E03"
+    ]
+  },
+  {
+    "id": "lock-status",
+    "protocol": "P1",
+    "action": "unsigned lock byte ab",
+    "kind": "notification",
+    "inputs": {},
+    "expected_bytes": "030000000020112233440146ab00",
+    "expected_state": {
+      "kind": "lock_status",
+      "lock": 171
+    },
+    "evidence": [
+      "E08",
+      "E09"
+    ]
+  },
+  {
+    "id": "memory-reply",
+    "protocol": "P1",
+    "action": "memory reply cancels recall repeater",
+    "kind": "notification",
+    "inputs": {},
+    "expected_bytes": "0300000000201122334401290000",
+    "expected_state": {
+      "kind": "memory_reply",
+      "stop_recall_repeat": true
+    },
+    "evidence": [
+      "E07",
+      "E09"
+    ]
+  },
+  {
+    "id": "ping-reply",
+    "protocol": "P1",
+    "action": "online MAC and virtual address",
+    "kind": "notification",
+    "inputs": {},
+    "expected_bytes": "03ffffffffff6655443322117856341201000203",
+    "expected_state": {
+      "kind": "online",
+      "mac": "11:22:33:44:55:66",
+      "virtual": 305419896
+    },
+    "evidence": [
+      "E09"
+    ]
+  },
+  {
+    "id": "ping-reply-zero",
+    "protocol": "P1",
+    "action": "zero remote virtual address becomes UI sentinel-2",
+    "kind": "notification",
+    "inputs": {},
+    "expected_bytes": "03ffffffffff6655443322110000000001000203",
+    "expected_state": {
+      "kind": "online",
+      "mac": "11:22:33:44:55:66",
+      "virtual": -2
+    },
+    "evidence": [
+      "E09"
+    ]
+  }
+]

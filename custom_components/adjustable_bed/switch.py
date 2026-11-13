@@ -22,7 +22,7 @@ from .const import (
     DOMAIN,
     OKIN_BEDDING_APP_BED_TYPES,
 )
-from .controller_state import ControllerState, StateKey
+from .controller_state import ControllerState, StateKey, sided
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
@@ -304,6 +304,7 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
             else None
         )
         self._state_unregister_callback: Callable[[], None] | None = None
+        self._state_update_generation = 0
 
     async def async_added_to_hass(self) -> None:
         """Register for controller-state updates when available."""
@@ -333,9 +334,13 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
             self._attr_is_on = bool(level)
         else:
             state_key = self.entity_description.state_key or UNDER_BED_LIGHTS_ON
+            side_key = sided(state_key, self._coordinator.controller_side)
+            if side_key in state:
+                state_key = side_key
             if state_key not in state:
                 return
             self._attr_is_on = bool(state[state_key])
+        self._state_update_generation += 1
         if self.entity_description.key != "under_bed_lights":
             self.async_write_ha_state()
             return
@@ -467,22 +472,32 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
 
         try:
             _LOGGER.debug("Sending turn on command for %s", self.entity_description.key)
+            state_generation = self._state_update_generation
+            timer_was_running = self._auto_off_timer is not None
+
+            async def turn_on(controller: BedController) -> None:
+                nonlocal state_generation
+                state_generation = self._state_update_generation
+                await self.entity_description.turn_on_fn(controller)
+
             await self._coordinator.async_execute_controller_command(
-                self.entity_description.turn_on_fn,
+                turn_on,
                 cancel_running=False,
             )
-            # Only update assumed state if controller supports discrete on/off
-            # Toggle-only controllers can't reliably track state
-            if self._supports_discrete_control():
+            # Preserve state published during the command, including a changed local side.
+            if (
+                self._supports_discrete_control()
+                and state_generation == self._state_update_generation
+            ):
                 self._attr_is_on = True
                 self.async_write_ha_state()
-                # Schedule auto-off timer if the bed has hardware auto-off
-                self._schedule_auto_off_timer(reset_octo_deadline=True)
             else:
                 _LOGGER.debug(
-                    "Toggle-only controller - state tracking unreliable for %s",
+                    "Keeping controller-published or toggle-only state for %s",
                     self.entity_description.key,
                 )
+            if self._supports_discrete_control() and self._attr_is_on:
+                self._schedule_auto_off_timer(reset_octo_deadline=timer_was_running)
             _LOGGER.debug("Switch %s turned on successfully", self.entity_description.key)
         except NotImplementedError:
             _LOGGER.warning(
@@ -506,13 +521,22 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
 
         try:
             _LOGGER.debug("Sending turn off command for %s", self.entity_description.key)
+            state_generation = self._state_update_generation
+
+            async def turn_off(controller: BedController) -> None:
+                nonlocal state_generation
+                state_generation = self._state_update_generation
+                await self.entity_description.turn_off_fn(controller)
+
             await self._coordinator.async_execute_controller_command(
-                self.entity_description.turn_off_fn,
+                turn_off,
                 cancel_running=False,
             )
-            # Only update assumed state if controller supports discrete on/off
-            # Toggle-only controllers can't reliably track state
-            if self._supports_discrete_control():
+            # Fall back to assumed state only if no controller update arrived.
+            if (
+                self._supports_discrete_control()
+                and state_generation == self._state_update_generation
+            ):
                 # Cancel any pending auto-off timer only after the command succeeds.
                 # If transport fails, keep the timer so HA can still reflect the
                 # hardware-enforced auto-off when it happens.
@@ -521,7 +545,7 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
                 self.async_write_ha_state()
             else:
                 _LOGGER.debug(
-                    "Toggle-only controller - state tracking unreliable for %s",
+                    "Keeping controller-published or toggle-only state for %s",
                     self.entity_description.key,
                 )
             _LOGGER.debug("Switch %s turned off successfully", self.entity_description.key)

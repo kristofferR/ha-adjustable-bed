@@ -51,6 +51,7 @@ if TYPE_CHECKING:
     from .jensen.linon import JensenLinonController as JensenLinonController
     from .jiecang.app import JiecangAppController as JiecangAppController
     from .jiecang.controller import JiecangController as JiecangController
+    from .kaidi.comfy import ComfyController as ComfyController
     from .kaidi.controller import KaidiController as KaidiController
     from .kaidi.rize import RizeController as RizeController
     from .keeson.controller import KeesonController as KeesonController
@@ -187,6 +188,7 @@ _EXPORT_MODULES = {
     "SmartComfortController": "smart_comfort.controller",
     "IsleepController": "isleep",
     "RizeController": "kaidi.rize",
+    "ComfyController": "kaidi.comfy",
     "KaidiController": "kaidi.controller",
     "KeesonController": "keeson.controller",
     "LeggettGen2Controller": "leggett.gen2",

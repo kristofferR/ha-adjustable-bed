@@ -143,6 +143,12 @@ async def factory_controllers() -> list[BedController]:
                         device_name=coordinator.entry.data.get(CONF_BLE_DEVICE_NAME),
                     )
                 )
+    # Both row084 product routes: the dual route adds the local side selector.
+    for bed_type in ("komfyd", "comfyds"):
+        controller = await _create_controller_for_bed_type(bed_type)
+        controller._coordinator.entry.data = {**controller._coordinator.entry.data, "product_type": 130}
+        from custom_components.adjustable_bed.beds.kaidi.comfy import ComfyController
+        controllers.append(ComfyController(controller._coordinator))
     # Rize's extended product adds motion actions and mode4 to the basic panel.
     from custom_components.adjustable_bed.beds.kaidi.rize import RizeController
     from custom_components.adjustable_bed.const import BED_TYPE_RIZE, CONF_PRODUCT_TYPE

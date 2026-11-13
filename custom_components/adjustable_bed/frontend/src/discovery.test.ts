@@ -1707,3 +1707,24 @@ test("Hush product actions remain scoped to their physical device", () => {
   ]);
   expect(bedEntitiesForDevice(hass, "bed").utility).toEqual(["button.hush_memory"]);
 });
+
+test("KomfyD/ComfyDS source labels keep motor leases separate from H/F steps", () => {
+  const hass = hassWith([
+    entry("cover.app_head", "comfy_head"),
+    entry("button.app_h", "comfy_h_increase"),
+    entry("button.app_zero", "comfy_zero"),
+    entry("select.app_timer", "comfy_timer_selection"),
+    entry("select.app_side", "comfy_selected_side"),
+  ]);
+  hass.states["cover.app_head"] = {
+    entity_id: "cover.app_head", state: "unknown", last_changed: "", last_updated: "",
+    attributes: { hold_lease_mode: "latched", hold_lease_motor: "back", bed_side: "right" },
+  };
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.motors[0].holdLease).toEqual({ deviceId: "dev1", motor: "back", side: "right" });
+  expect(bed.presets).toContain("button.app_zero");
+  expect(bed.utility).toContain("button.app_h");
+  expect(bed.utilitySelects).toContain("select.app_timer");
+  expect(bed.utilitySelects).toContain("select.app_side");
+  expect(bed.massage.buttons).toEqual([]);
+});

@@ -782,7 +782,9 @@
       "richmat_classic_layout": "Choose a layout shipped in the selected app.",
       "motomotion_profile": "Enter a complete MotoMotion Bluetooth local name.",
       "rize_profile": "Select a supported Rize Beds product, signed 32-bit room ID, and valid actuator descriptor.",
-      "rize_unpair_first": "Revert to a standalone bed before selecting a Rize profile without separate side controls."
+      "rize_unpair_first": "Revert to a standalone bed before selecting a Rize profile without separate side controls.",
+      "comfy_profile": "Select bed type 129, 130 or 131, the existing signed room ID, and the capability word.",
+      "comfy_unpair_first": "Revert to a standalone bed before choosing a product without separate side controls."
     }
   },
   "options": {
@@ -1471,7 +1473,9 @@
       "migration_reconfigure_required": "To change the app or layout, close Configure and select Reconfigure from this entry's three-dot menu. The guided change checks it before saving.",
       "richmat_classic_layout": "Choose a layout shipped in the selected app.",
       "rize_profile": "Select a supported Rize Beds product, signed 32-bit room ID, and valid actuator descriptor.",
-      "rize_unpair_first": "Revert to a standalone bed before selecting a Rize profile without separate side controls."
+      "rize_unpair_first": "Revert to a standalone bed before selecting a Rize profile without separate side controls.",
+      "comfy_profile": "Select bed type 129, 130 or 131, the existing signed room ID, and the capability word.",
+      "comfy_unpair_first": "Revert to a standalone bed before choosing a product without separate side controls."
     },
     "progress": {
       "connecting": "Connecting over Bluetooth…",
@@ -3048,6 +3052,54 @@
       },
       "motionbed_middle_down": {
         "name": "Middle controls (lumbar icon) down"
+      },
+      "comfy_zero": {
+        "name": "Zero (app preset)"
+      },
+      "comfy_h_increase": {
+        "name": "H increase (app step)"
+      },
+      "comfy_h_decrease": {
+        "name": "H decrease (app step)"
+      },
+      "comfy_f_increase": {
+        "name": "F increase (app step)"
+      },
+      "comfy_f_decrease": {
+        "name": "F decrease (app step)"
+      },
+      "comfy_timer_start": {
+        "name": "App timer start"
+      },
+      "comfy_timer_stop": {
+        "name": "App timer stop"
+      },
+      "comfy_lock": {
+        "name": "Lock controls"
+      },
+      "comfy_unlock": {
+        "name": "Unlock controls"
+      },
+      "comfy_query": {
+        "name": "Query lock status"
+      },
+      "comfy_head_up": {
+        "name": "Head up (app control)"
+      },
+      "comfy_head_down": {
+        "name": "Head down (app control)"
+      },
+      "comfy_foot_up": {
+        "name": "Foot up (app control)"
+      },
+      "comfy_foot_down": {
+        "name": "Foot down (app control)"
+      },
+      "comfy_waist_up": {
+        "name": "Waist up (app control)"
+      },
+      "comfy_waist_down": {
+        "name": "Waist down (app control)"
       }
     },
     "cover": {
@@ -3317,6 +3369,15 @@
       },
       "motionbed_middle": {
         "name": "Middle controls (lumbar icon)"
+      },
+      "comfy_head": {
+        "name": "Head (app control)"
+      },
+      "comfy_foot": {
+        "name": "Foot (app control)"
+      },
+      "comfy_waist": {
+        "name": "Waist (app control)"
       }
     },
     "sensor": {
@@ -4768,6 +4829,17 @@
       },
       "rize_home_mode": {
         "name": "Massage mode"
+      },
+      "comfy_lock_status": {
+        "name": "App control lock",
+        "state": {
+          "unlocked": "Unlocked",
+          "local": "Locally owned",
+          "other": "Owned by another controller"
+        }
+      },
+      "comfy_timer_remaining": {
+        "name": "Local app timer remaining"
       }
     },
     "light": {
@@ -6093,6 +6165,24 @@
         "state": {
           "button": "Button",
           "speak": "Speech"
+        }
+      },
+      "comfy_selected_side": {
+        "name": "App bed side",
+        "state": {
+          "left": "Left",
+          "both": "Both",
+          "right": "Right"
+        }
+      },
+      "comfy_timer_selection": {
+        "name": "App timer selection",
+        "state": {
+          "10": "10 minutes",
+          "20": "20 minutes",
+          "30": "30 minutes",
+          "40": "40 minutes",
+          "50": "50 minutes"
         }
       }
     },
@@ -8901,6 +8991,21 @@
         },
         "side": {
           "name": "Paired bed side"
+        }
+      }
+    },
+    "comfy_control": {
+      "name": "KomfyD/ComfyDS control",
+      "description": "Run a named bed action. H/F and timer effects have unverified physical semantics.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "action": {
+          "name": "Action"
         }
       }
     }

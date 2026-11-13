@@ -920,3 +920,12 @@ Use the usual `device_id` and optional `side` fields. See the
 [Jalon profile](beds/keeson.md#okincomfortbed-ⅱ-jalon) for the wire behavior,
 held gestures and hardware caveats. The generic `sync_clock` action also
 supports this profile.
+
+### KomfyD / ComfyDS
+
+`adjustable_bed.comfy_control` accepts `device_id`, optional paired `side`, and
+`action`: `zero`, `h_increase`, `h_decrease`, `f_increase`, `f_decrease`,
+`timer_start`, `timer_stop`, `lock`, `unlock`, or `query`. Timer duration uses
+the App timer selection entity. H/F and timers retain source semantics with
+unverified physical mapping. All targets are validated before any control
+write. See the [profile guide](beds/kaidi.md#komfyd-and-comfyds).
