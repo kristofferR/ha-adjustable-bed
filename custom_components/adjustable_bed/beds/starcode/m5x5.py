@@ -112,12 +112,13 @@ KEYS: Final = {
 
 
 def profile_from_name(name: str) -> str | None:
-    """Preserve the app's case-sensitive, specific-before-generic factory order."""
-    if name.startswith(("STAR254205", "STAR255401")):
+    """Accept advertised-name casing while preserving the app's factory order."""
+    normalized = name.upper()
+    if normalized.startswith(("STAR254205", "STAR255401")):
         return "f23"
-    if name.startswith(("STAR255402", "STAR255403")):
+    if normalized.startswith(("STAR255402", "STAR255403")):
         return "kneading"
-    if name.startswith("STAR25"):
+    if normalized.startswith("STAR25"):
         return "cb25"
     return None
 

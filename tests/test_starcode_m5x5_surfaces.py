@@ -69,8 +69,11 @@ async def test_paired_generic_settings_preserve_child_app_profiles(hass: HomeAss
     ("profile", "name"),
     [
         ("cb25", "STAR252201123456"),
+        ("cb25", "Star254202123456"),
         ("f23", "STAR254205123456"),
+        ("f23", "Star254205123456"),
         ("kneading", "STAR255402123456"),
+        ("kneading", "Star255402123456"),
     ],
 )
 async def test_explicit_setup_and_factory(hass: HomeAssistant, profile: str, name: str) -> None:
@@ -94,7 +97,9 @@ async def test_explicit_setup_and_factory(hass: HomeAssistant, profile: str, nam
     data = finish.await_args.args[0]
     assert data[CONF_DISABLE_ANGLE_SENSING] is False
     assert data[CONF_HAS_MASSAGE] is True
+    assert data[CONF_BLE_DEVICE_NAME] == name
     c = target(hass, 10, profile)
+    hass.config_entries.async_update_entry(c.entry, data=data)
     controller = await create_controller(c, BED_TYPE_STARCODE_M5X5, "auto", None)
     assert controller.profile == profile
     assert controller.device_name == name
@@ -106,7 +111,7 @@ async def test_name_and_lift_identity_validation(hass: HomeAssistant) -> None:
     profile = SETUP_PROFILES[BED_TYPE_STARCODE_M5X5]
     context = FlowContext(hass, main.entry.entry_id)
     assert profile.errors(main.entry.data, context) == {}
-    bad = {**main.entry.data, CONF_BLE_DEVICE_NAME: "star254205123456"}
+    bad = {**main.entry.data, CONF_BLE_DEVICE_NAME: "Star254205123456"}
     assert CONF_STARCODE_M5X5_PROFILE in profile.errors(bad, FlowContext(hass))
     bad = {**main.entry.data, CONF_STARCODE_LIFT_ENTRIES: [t.entry.entry_id for t in lifts] * 2}
     assert CONF_STARCODE_LIFT_ENTRIES in profile.errors(bad, FlowContext(hass))
@@ -122,6 +127,22 @@ async def test_name_and_lift_identity_validation(hass: HomeAssistant) -> None:
     accepted_lifts = accepted[CONF_STARCODE_LIFT_ENTRIES]
     assert isinstance(accepted_lifts, list)
     assert len(accepted_lifts) == 3
+
+
+async def test_options_preserve_mixed_case_bluetooth_name(hass: HomeAssistant) -> None:
+    main = target(hass, 1, "cb25")
+    flow = AdjustableBedOptionsFlow(main.entry)
+    flow.handler = main.entry.entry_id
+    flow.hass = hass
+    name = "Star254202123456"
+    result = await flow.async_step_settings(
+        {CONF_STARCODE_M5X5_PROFILE: "cb25", CONF_BLE_DEVICE_NAME: name}
+    )
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert main.entry.data[CONF_BLE_DEVICE_NAME] == name
+    controller = await create_controller(main, BED_TYPE_STARCODE_M5X5, "auto", None)
+    assert controller.profile == "cb25"
+    assert controller.device_name == name
 
 
 async def test_controls_state_and_readonly_domains(hass: HomeAssistant) -> None:

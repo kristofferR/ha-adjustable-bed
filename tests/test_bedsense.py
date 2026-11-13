@@ -147,7 +147,9 @@ def test_nine_fresh_layouts_expose_only_proven_controls(layout, axes, cycle):
 
 async def test_factory_and_explicit_app_registration():
     c = make_controller()
-    c._coordinator.hass.async_add_import_executor_job = AsyncMock()
+    c._coordinator.hass.async_add_import_executor_job = AsyncMock(
+        side_effect=lambda func, *args: func(*args)
+    )
     result = await create_controller(c._coordinator, BED_TYPE_BEDSENSE, "auto", c.client, "JQ-D")
     assert isinstance(result, BedSenseController) and result.layout == 2
     assert "com.fenmenbielei.bedsense" in BED_TYPE_DISPLAY_NAMES[BED_TYPE_BEDSENSE]
@@ -447,7 +449,9 @@ async def test_other_axis_stop_preempts_held_movement_through_scheduler(hass):
 
 async def test_offline_factory_uses_stored_raw_name_and_live_address_falls_back():
     c = make_controller()
-    c._coordinator.hass.async_add_import_executor_job = AsyncMock()
+    c._coordinator.hass.async_add_import_executor_job = AsyncMock(
+        side_effect=lambda func, *args: func(*args)
+    )
     c._coordinator.entry.data = {CONF_BLE_DEVICE_NAME: "JQ-D"}
     for client, name, expected in (
         (None, "My KQ bed", 2),

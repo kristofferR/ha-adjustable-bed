@@ -449,13 +449,9 @@ _BUILDERS: Final[dict[str, _BuilderSpec]] = {
 
 
 async def _import_bed_module(coordinator: AdjustableBedCoordinator, module: str) -> ModuleType:
-    """Import a ``.beds`` module in the import executor (issue #368).
-
-    The executor import fills ``sys.modules``, so the second lookup never blocks.
-    """
+    """Import and return a ``.beds`` module entirely in the import executor."""
     name = f".beds.{module}"
-    await coordinator.hass.async_add_import_executor_job(import_module, name, __package__)
-    return import_module(name, __package__)
+    return await coordinator.hass.async_add_import_executor_job(import_module, name, __package__)
 
 
 async def _create_from_registry(
