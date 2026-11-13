@@ -1086,6 +1086,11 @@ class BedController(GattWriter):
         """Retire local callbacks when another controller takes this app-state slot."""
 
     @property
+    def retain_live_controller_offline(self) -> bool:
+        """Keep the latest app-state owner for offline callbacks and local controls."""
+        return False
+
+    @property
     def requests_connection_recovery(self) -> bool:
         """Whether a user-started background session needs recovery after link loss."""
         return False

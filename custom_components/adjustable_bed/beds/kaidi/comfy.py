@@ -10,11 +10,12 @@ from __future__ import annotations
 import asyncio
 import time
 from collections.abc import Mapping
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Any, Final, cast
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
+from ...app_session import app_session
 from ...card import CARD_PRESETS, CARD_UTILITY
 from ...codec import kaidi as codec
 from ...command_scheduler import current_command_context
@@ -47,6 +48,13 @@ LOCK_STATUS: Final = StateKey[str | None]("comfy_lock_status")
 LOCK_OWNER: Final = StateKey[int | None]("comfy_lock_owner")
 
 
+@dataclass
+class ComfySource:
+    """Installed source retained in memory, never authentication or routing."""
+
+    own: int = 0
+
+
 class ComfyController(KaidiAppController):
     """App-specific data and session effects; shared subscription and held motors."""
 
@@ -56,7 +64,13 @@ class ComfyController(KaidiAppController):
         super().__init__(coordinator, validate_comfy_profile(coordinator.entry.data))
         # ComfyDS explicitly starts with zero and retains the installed source
         # across reconnect. KomfyD's initial source is unestablished: await it.
-        self._own = 0 if self.profile.retain_source_on_reconnect else None
+        self._source = app_session(
+            coordinator.hass,
+            coordinator.address,
+            ("comfy", self.profile.key, self.profile.room, self.profile.raw_type),
+            ComfySource,
+        )
+        self._own = self._source.own if self.profile.retain_source_on_reconnect else None
         self._selected_side: int | None = 0
         self._lock_owner = 0
         self._lock_status = "unlocked"
@@ -195,7 +209,7 @@ class ComfyController(KaidiAppController):
             ControllerSelectSpec(
                 "comfy_timer_selection",
                 "comfy_timer_selection",
-                TIMER_SELECTION,
+                sided(TIMER_SELECTION, self.command_side),
                 ("10", "20", "30", "40", "50"),
                 lambda c, value: cast(ComfyController, c).select_timer(int(value)),
             ),
@@ -214,7 +228,7 @@ class ComfyController(KaidiAppController):
             ControllerStateSensorSpec(
                 "comfy_timer_remaining",
                 "comfy_timer_remaining",
-                TIMER_REMAINING,
+                sided(TIMER_REMAINING, self.command_side),
                 "mdi:timer-outline",
                 "s",
             ),
@@ -260,6 +274,10 @@ class ComfyController(KaidiAppController):
 
     def on_app_state_replaced(self) -> None:
         self._stop_countdown()
+
+    @property
+    def retain_live_controller_offline(self) -> bool:
+        return True
 
     def _tick(self) -> None:
         self._stop_countdown()
@@ -419,6 +437,8 @@ class ComfyController(KaidiAppController):
                 self._auth.set()
             case codec.OwnAddress(own):
                 self._own = own or codec.BROADCAST
+                if self.profile.retain_source_on_reconnect:
+                    self._source.own = self._own
                 self._own_event.set()
                 self._schedule_ping()
             case codec.RosterChange():

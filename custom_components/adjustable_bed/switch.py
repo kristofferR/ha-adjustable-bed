@@ -22,7 +22,7 @@ from .const import (
     DOMAIN,
     OKIN_BEDDING_APP_BED_TYPES,
 )
-from .controller_state import ControllerState, StateKey
+from .controller_state import ControllerState, StateKey, sided
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
@@ -334,6 +334,9 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
             self._attr_is_on = bool(level)
         else:
             state_key = self.entity_description.state_key or UNDER_BED_LIGHTS_ON
+            side_key = sided(state_key, self._coordinator.controller_side)
+            if side_key in state:
+                state_key = side_key
             if state_key not in state:
                 return
             self._attr_is_on = bool(state[state_key])

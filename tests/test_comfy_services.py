@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, patch
+import time
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import voluptuous as vol
@@ -11,7 +12,7 @@ from homeassistant.exceptions import ServiceValidationError
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.beds.kaidi.comfy import ComfyController
 from custom_components.adjustable_bed.profiles.comfy import COMFY_ACTIONS
-from tests.test_comfy import make_controller, no_real_timers  # noqa: F401
+from tests.test_comfy import make_controller, no_real_timers, real_coordinator  # noqa: F401
 from tests.test_generic_services import select, target
 from tests.test_isleep import packets
 
@@ -113,6 +114,45 @@ async def test_actual_platform_builders_expose_source_named_controls(hass, app):
         "comfy_lock_status",
         "comfy_timer_remaining",
     }
+
+
+@pytest.mark.parametrize("app", ("komfyd", "comfyds"))
+async def test_feature_entities_read_their_own_side_and_standalone_selection(hass, app):
+    from custom_components.adjustable_bed.entity_runtime import controller_side_scope
+    from custom_components.adjustable_bed.paired_coordinator import SingleAddressSideCoordinator
+    from custom_components.adjustable_bed.select import _select_entities_for
+    from custom_components.adjustable_bed.sensor import _sensor_entities_for
+    from custom_components.adjustable_bed.switch import _switch_entities_for
+
+    co = real_coordinator(hass, app)
+    c = ComfyController(co)
+    co._offline_controller = c
+    await co._async_restore_app_state(c)
+    c._selected_side = 0
+    c._timer_minutes = [30, 20, 40]
+    c._timer_started = [time.time(), 0, 0]
+    c._led = [False, True, False]
+    c._publish()
+
+    for side, minutes, running, lights in (
+        (None, "30", True, False),
+        ("left", "30", True, False),
+        ("right", "20", False, True),
+        ("both", "40", False, False),
+    ):
+        runtime = co if side is None else SingleAddressSideCoordinator(co, side, MagicMock())
+        with controller_side_scope(runtime):
+            selects = _select_entities_for(hass, runtime)
+            sensors = _sensor_entities_for(hass, runtime)
+            switches = _switch_entities_for(hass, runtime)
+        timer = next(e for e in selects if e.translation_key == "comfy_timer_selection")
+        remaining = next(e for e in sensors if e.translation_key == "comfy_timer_remaining")
+        light = next(e for e in switches if e.translation_key == "under_bed_lights")
+        light.async_write_ha_state = MagicMock()
+        light._handle_controller_state_update(runtime.controller_state)
+        assert timer.current_option == minutes
+        assert (remaining.native_value > 0) == running
+        assert light.is_on is lights
 
 
 @pytest.mark.parametrize("app", ("komfyd", "comfyds"))

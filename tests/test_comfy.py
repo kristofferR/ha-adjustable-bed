@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -33,6 +34,7 @@ def no_real_timers(monkeypatch):
 def make_controller(app="komfyd", product=130, *, ready=True):
     _, co, client = make_isleep()
     co.entry.async_on_unload = MagicMock()
+    co.hass.data = {}
     co.entry.data.update(
         {
             const.CONF_BED_TYPE: app,
@@ -273,6 +275,102 @@ async def test_restore_local_side_timer_light_without_wire_or_recall():
     assert LOCK_STATUS in other_co.controller_state
     c._stop_countdown()
     other._stop_countdown()
+
+
+def real_coordinator(hass, app):
+    from homeassistant.const import CONF_ADDRESS
+    from pytest_homeassistant.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+    _, co, _ = make_controller(app, ready=False)
+    entry = MockConfigEntry(
+        domain=const.DOMAIN,
+        data={**co.entry.data, CONF_ADDRESS: co.address},
+    )
+    entry.add_to_hass(hass)
+    return AdjustableBedCoordinator(hass, entry)
+
+
+@pytest.mark.parametrize("app", ("komfyd", "comfyds"))
+async def test_reconstructed_controller_retains_only_the_app_specific_source(hass, app):
+    from custom_components.adjustable_bed.controller_factory import create_controller
+
+    co = real_coordinator(hass, app)
+    first = await create_controller(co, app, None, None)
+    assert isinstance(first, ComfyController)
+    co._offline_controller = first
+    await co._async_restore_app_state(first)
+    notify(first, "010a44332211")
+    first._ready, first._target = True, -2
+    first.on_disconnect()
+
+    second = await create_controller(co, app, None, None)
+    assert isinstance(second, ComfyController)
+    co._controller = second
+    await co._async_restore_app_state(second)
+    assert second._own == (0x11223344 if app == "comfyds" else None)
+    assert not second._ready and second._target is None
+    assert not second._auth.is_set() and not second._memory_ack.is_set()
+
+    _, _, client = make_controller(app)
+    co._client = client
+
+    async def respond(_uuid, frame, **_kwargs):
+        if frame[:3] == b"\x01\x16\x01":
+            notify(second, "021600")
+            if app == "komfyd":
+                notify(second, "010a88776655")
+        elif frame[:6] == bytes.fromhex("03fffffffffe"):
+            notify(second, "0300000000ffffeeddccbbaa00000000")
+
+    client.write_gatt_char.side_effect = respond
+    await second.async_after_connect(MagicMock())
+    own = 0x11223344 if app == "comfyds" else 0x55667788
+    assert packets(client) == [
+        codec.join(second.profile.room), codec.ping(own), codec.control(0, own, 70)
+    ]
+    assert "own" not in second.persisted_app_state
+
+
+@pytest.mark.parametrize("app", ("komfyd", "comfyds"))
+async def test_reconnected_state_owner_remains_current_while_offline(hass, app):
+    from tests.app_state_helpers import stored_app_state
+
+    co = real_coordinator(hass, app)
+    original = ComfyController(co)
+    co._offline_controller = original
+    await co._async_restore_app_state(original)
+    original._select_side("left")
+
+    current = ComfyController(co)
+    co._controller = current
+    await co._async_restore_app_state(current)
+    assert co._offline_controller is current
+    current._select_side("right")
+    current._led[1] = True
+    current._timer_minutes[1] = 30
+    current._timer_started[1] = time.time()
+    current._save_local()
+    current.on_disconnect()
+    co._controller = None
+    current._tick()
+    assert await stored_app_state(co) == current.persisted_app_state
+    assert original._countdown is None
+
+    selector = next(
+        s for s in co.capability_controller.controller_select_specs if s.key == "comfy_selected_side"
+    )
+    assert selector.local_select_fn is not None
+    selector.local_select_fn("both")
+    saved = await stored_app_state(co)
+    assert saved["side"] == 1 and saved["led"][1] and saved["timer_minutes"][1] == 30
+    current._stop_countdown()
+    restored = ComfyController(co)
+    co._controller = restored
+    await co._async_restore_app_state(restored)
+    assert restored.persisted_app_state == saved
+    restored._stop_countdown()
 
 
 async def test_store_gate_and_no_fabricated_capabilities():

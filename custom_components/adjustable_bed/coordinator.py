@@ -3373,6 +3373,8 @@ class AdjustableBedCoordinator(
                 controller.restore_persisted_app_state({})
             self._app_state_slots[controller] = slot
             self._app_state_store.update(slot, controller.persisted_app_state or {})
+            if controller is self._controller and controller.retain_live_controller_offline:
+                self._offline_controller = controller
         finally:
             self._app_state_restoring = False
 
