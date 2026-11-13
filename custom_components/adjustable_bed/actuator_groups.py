@@ -160,6 +160,7 @@ ACTUATOR_GROUPS: Final[dict[str, tuple[Route, ...]]] = {
     "motosleep": ((BED_TYPE_MOTOSLEEP, None),),
     "octo": ((BED_TYPE_OCTO, None),),
     "okin": (
+        ("smart_sleep", None),
         (BED_TYPE_OKIN_HANDLE, None),
         (BED_TYPE_OKIN_UUID, None),
         (BED_TYPE_OKIN_7BYTE, None),

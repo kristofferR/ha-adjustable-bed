@@ -45,6 +45,7 @@ Each codec has one guide, with a section per profile:
 | [JMC400](beds/jmc.md) | Jensen JMC400 and the Svane Remote app's JMC400 route |
 | [Kaidi](beds/kaidi.md) | Rize Beds, Rize Seat, Floyd Home, ISleep, KomfyD and ComfyDS |
 | [Vibradorm](beds/vibradorm.md) | Vibradorm, Caresse, Werkmeister, VMAT and V-MAT Basic |
+| [OKIN Smart Sleep](beds/smart-sleep.md) | OKIN Smart Sleep legacy P1 and new P2 |
 | [Smart Comfort seats](beds/smart-comfort.md) | Smart Comfort by SYNARGY and Smart Comfort (SYNERGY) |
 | [BedJet PowerLayer](beds/bedjet-powerlayer.md) | BedJet PowerLayer |
 

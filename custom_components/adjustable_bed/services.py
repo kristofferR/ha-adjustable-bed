@@ -2361,6 +2361,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.simmons.services import async_register_simmons_services
     from .beds.sleep_number.services import async_register_sleep_number_services
     from .beds.sleeptracker.services import async_register_sleeptracker_services
+    from .beds.smart_sleep.services import register_services as register_smart_sleep_services
     from .beds.solace.services import async_register_solace_services
     from .beds.starcode.accessory_group import register_group_services
     from .beds.svane.services import async_register_svane_services
@@ -2369,6 +2370,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     return (
         register_bedtech_services,
         register_bf_cherish_services,
+        register_smart_sleep_services,
         register_jalon_services,
         async_register_motion_bed_services,
         async_register_casper_base_services,

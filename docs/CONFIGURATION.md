@@ -1033,3 +1033,16 @@ room ID and capability word. Only130 offers native Left/Both/Right. The high
 capability nibble enables memory saving; other nibbles do not infer motors.
 Shared manufacturer data seeds these fields without selecting an app. No
 Bluetooth name-only rule is proven. See the [profile guide](beds/kaidi.md#komfyd-and-comfyds).
+
+### OKIN Smart Sleep
+
+Select OKIN Smart Sleep, then its P1/P2 format and numeric model. Discovery
+requires case-sensitive SLEEP/Sleep plus manufacturer 89; shared Nordic UART
+alone cannot select the app. P2 forces model 80. Models 3 and 67 remain distinct;
+only legacy model 67 offers flexible wake. The five app actuator labels do not
+prove fitted motor count. Ordinary moves use the configured pulse count at
+100 ms; renewable holds use lease expiry and a bounded ceiling.
+Privacy, antisnore and sensitivity use the shared bed channel. Child mode is a
+persisted HA admission setting with a local select and no hardware lock claim.
+Format/model settings belong to each physical side of a paired entry.
+See [Smart Sleep](beds/smart-sleep.md).

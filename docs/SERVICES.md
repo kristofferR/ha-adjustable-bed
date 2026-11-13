@@ -929,3 +929,20 @@ supports this profile.
 the App timer selection entity. H/F and timers retain source semantics with
 unverified physical mapping. All targets are validated before any control
 write. See the [profile guide](beds/kaidi.md#komfyd-and-comfyds).
+
+### `smart_sleep_set_alarm`
+
+Configure a bed-local OKIN Smart Sleep alarm. Fields: `device_id`, `side`,
+`enabled`, minute-precision `time`, `weekdays` (Monday 0 through Sunday 6),
+`action`, optional exact `week_mask` (byte 0–255) and `flexible_wake`.
+All targets are validated before any alarm is written. Flexible wake is only
+legacy model 67. P1 accepts zero_g, flat, memory_1, memory_2 and massage.
+P2 accepts initial, lounge, tv, anti_snore, memory_1, memory_2, light, massage
+and flat, plus the original five `app_*` labels and their source wire mismatch.
+`week_mask` overrides weekday conversion for exact app schedules.
+Use the generic clock sync action to set the bed clock.
+See [Smart Sleep alarm values](beds/smart-sleep.md#alarm-and-clock).
+
+Legacy P1 weekly schedules use `week_mask` directly; the P2 weekday conversion
+is not inferred for legacy masks. Supplying P1 `weekdays` without an exact
+mask is rejected before writing.

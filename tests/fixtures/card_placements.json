@@ -224,6 +224,15 @@
  "binary_sensor:smart_comfort_read": {
   "card_section": "hidden"
  },
+ "binary_sensor:smart_sleep_alarm_on": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:smart_sleep_flexible_wake": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:smart_sleep_massage_on": {
+  "card_section": "hidden"
+ },
  "binary_sensor:solace_alarm_enabled": {
   "card_section": "hidden"
  },
@@ -1806,6 +1815,108 @@
   "card_role": "up",
   "card_motor": "smart_comfort_reclining"
  },
+ "button:smart_sleep_ai_zero": {
+  "card_section": "presets"
+ },
+ "button:smart_sleep_anti_snore": {
+  "card_section": "presets"
+ },
+ "button:smart_sleep_flat": {
+  "card_section": "presets"
+ },
+ "button:smart_sleep_foot_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "smart_sleep_foot"
+ },
+ "button:smart_sleep_foot_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "smart_sleep_foot"
+ },
+ "button:smart_sleep_head_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "smart_sleep_head"
+ },
+ "button:smart_sleep_head_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "smart_sleep_head"
+ },
+ "button:smart_sleep_headrest_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "smart_sleep_headrest"
+ },
+ "button:smart_sleep_headrest_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "smart_sleep_headrest"
+ },
+ "button:smart_sleep_hips_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "smart_sleep_hips"
+ },
+ "button:smart_sleep_hips_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "smart_sleep_hips"
+ },
+ "button:smart_sleep_lumbar_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "smart_sleep_lumbar"
+ },
+ "button:smart_sleep_lumbar_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "smart_sleep_lumbar"
+ },
+ "button:smart_sleep_massage_all": {
+  "card_section": "massage"
+ },
+ "button:smart_sleep_massage_foot_strength": {
+  "card_section": "massage"
+ },
+ "button:smart_sleep_massage_head_strength": {
+  "card_section": "massage"
+ },
+ "button:smart_sleep_massage_off": {
+  "card_section": "massage"
+ },
+ "button:smart_sleep_massage_timer": {
+  "card_section": "massage",
+  "card_role": "timer"
+ },
+ "button:smart_sleep_massage_wave": {
+  "card_section": "massage"
+ },
+ "button:smart_sleep_read": {
+  "card_section": "presets"
+ },
+ "button:smart_sleep_refresh": {
+  "card_section": "utility"
+ },
+ "button:smart_sleep_save_anti_snore": {
+  "card_section": "presets"
+ },
+ "button:smart_sleep_save_read": {
+  "card_section": "presets"
+ },
+ "button:smart_sleep_save_tv": {
+  "card_section": "presets"
+ },
+ "button:smart_sleep_save_zero_g": {
+  "card_section": "presets"
+ },
+ "button:smart_sleep_tv": {
+  "card_section": "presets"
+ },
+ "button:smart_sleep_zero_g": {
+  "card_section": "presets"
+ },
  "button:solace_music_off": {
   "card_section": "utility"
  },
@@ -2399,6 +2510,26 @@
   "card_section": "motors",
   "card_motor": "smart_comfort_reclining"
  },
+ "cover:smart_sleep_foot": {
+  "card_section": "motors",
+  "card_motor": "smart_sleep_foot"
+ },
+ "cover:smart_sleep_head": {
+  "card_section": "motors",
+  "card_motor": "smart_sleep_head"
+ },
+ "cover:smart_sleep_headrest": {
+  "card_section": "motors",
+  "card_motor": "smart_sleep_headrest"
+ },
+ "cover:smart_sleep_hips": {
+  "card_section": "motors",
+  "card_motor": "smart_sleep_hips"
+ },
+ "cover:smart_sleep_lumbar": {
+  "card_section": "motors",
+  "card_motor": "smart_sleep_lumbar"
+ },
  "cover:stair": {
   "card_section": "motors",
   "card_motor": "stair"
@@ -2952,6 +3083,31 @@
  },
  "select:smart_comfort_seat": {
   "card_section": "utility"
+ },
+ "select:smart_sleep_antisnore": {
+  "card_section": "utility"
+ },
+ "select:smart_sleep_child_mode": {
+  "card_section": "utility"
+ },
+ "select:smart_sleep_foot_strength": {
+  "card_section": "massage"
+ },
+ "select:smart_sleep_head_strength": {
+  "card_section": "massage"
+ },
+ "select:smart_sleep_privacy": {
+  "card_section": "utility"
+ },
+ "select:smart_sleep_sensitivity": {
+  "card_section": "utility"
+ },
+ "select:smart_sleep_timer": {
+  "card_section": "massage",
+  "card_role": "timer"
+ },
+ "select:smart_sleep_wave": {
+  "card_section": "massage"
  },
  "select:starcode_abm5_4_massage_timer": {
   "card_section": "massage",
@@ -3949,6 +4105,27 @@
   "card_section": "hidden"
  },
  "sensor:smart_comfort_model": {
+  "card_section": "hidden"
+ },
+ "sensor:smart_sleep_ai_score": {
+  "card_section": "hidden"
+ },
+ "sensor:smart_sleep_ai_status": {
+  "card_section": "hidden"
+ },
+ "sensor:smart_sleep_alarm_action": {
+  "card_section": "hidden"
+ },
+ "sensor:smart_sleep_alarm_time": {
+  "card_section": "hidden"
+ },
+ "sensor:smart_sleep_alarm_week": {
+  "card_section": "hidden"
+ },
+ "sensor:smart_sleep_light_brightness": {
+  "card_section": "hidden"
+ },
+ "sensor:smart_sleep_model": {
   "card_section": "hidden"
  },
  "sensor:solace_audio_volume": {

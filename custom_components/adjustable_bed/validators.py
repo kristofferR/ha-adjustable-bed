@@ -130,6 +130,7 @@ def is_valid_octo_pin(pin: str) -> bool:
 
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
+    "smart_sleep": {"p1": "Legacy bed controls (P1)", "p2": "New bed controls (P2)"},
     "bedtech": BEDTECH_VARIANTS,
     BED_TYPE_GALAXY: GALAXY_PROFILES,
     BED_TYPE_GOODVIBE: GOODVIBE_PROFILES,

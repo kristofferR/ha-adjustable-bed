@@ -172,6 +172,11 @@ async def factory_controllers() -> list[BedController]:
             device_name="SOFA00000MAD00H",
         )
     )
+    # Smart Sleep's legacy model gates add AI-zero and flexible-wake state.
+    from custom_components.adjustable_bed.beds.smart_sleep.controller import SmartSleepController
+    from custom_components.adjustable_bed.profiles.smart_sleep import PROFILES as SMART_SLEEP
+    for model in (8, 67):
+        controllers.append(SmartSleepController(_FactoryCoordinator(), SMART_SLEEP["p1"], model))
     # A Sleep Number MCR foundation reports its per-side motors once connected.
     controller = await _create_controller_for_bed_type(BED_TYPE_SLEEP_NUMBER_MCR)
     assert isinstance(controller, SleepNumberMcrController)

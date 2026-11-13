@@ -3100,6 +3100,87 @@
       },
       "comfy_waist_down": {
         "name": "Waist down (app control)"
+      },
+      "smart_sleep_refresh": {
+        "name": "Refresh bed state"
+      },
+      "smart_sleep_flat": {
+        "name": "Flat"
+      },
+      "smart_sleep_zero_g": {
+        "name": "Zero G"
+      },
+      "smart_sleep_read": {
+        "name": "Read"
+      },
+      "smart_sleep_tv": {
+        "name": "Tv"
+      },
+      "smart_sleep_anti_snore": {
+        "name": "Anti Snore"
+      },
+      "smart_sleep_ai_zero": {
+        "name": "Ai Zero"
+      },
+      "smart_sleep_save_zero_g": {
+        "name": "Save Zero G"
+      },
+      "smart_sleep_save_read": {
+        "name": "Save Read"
+      },
+      "smart_sleep_save_tv": {
+        "name": "Save Tv"
+      },
+      "smart_sleep_save_anti_snore": {
+        "name": "Save Anti Snore"
+      },
+      "smart_sleep_massage_all": {
+        "name": "Massage all"
+      },
+      "smart_sleep_massage_off": {
+        "name": "Massage off"
+      },
+      "smart_sleep_massage_wave": {
+        "name": "Massage wave"
+      },
+      "smart_sleep_massage_timer": {
+        "name": "Massage timer"
+      },
+      "smart_sleep_massage_head_strength": {
+        "name": "Massage head strength"
+      },
+      "smart_sleep_massage_foot_strength": {
+        "name": "Massage foot strength"
+      },
+      "smart_sleep_head_up": {
+        "name": "Head up (app)"
+      },
+      "smart_sleep_head_down": {
+        "name": "Head down (app)"
+      },
+      "smart_sleep_foot_up": {
+        "name": "Foot up (app)"
+      },
+      "smart_sleep_foot_down": {
+        "name": "Foot down (app)"
+      },
+      "smart_sleep_headrest_up": {
+        "name": "Headrest up (app)"
+      },
+      "smart_sleep_headrest_down": {
+        "name": "Headrest down (app)"
+      },
+      "smart_sleep_lumbar_up": {
+        "name": "Lumbar up (app)"
+      },
+      "smart_sleep_lumbar_down": {
+        "name": "Lumbar down (app)"
+      },
+      "smart_sleep_hips_up": {
+        "name": "Hips up (app)"
+      },
+      "smart_sleep_hips_down": {
+        "name": "Hips down (app)"
       }
     },
     "cover": {
@@ -3378,6 +3459,21 @@
       },
       "comfy_waist": {
         "name": "Waist (app control)"
+      },
+      "smart_sleep_head": {
+        "name": "Head (app)"
+      },
+      "smart_sleep_foot": {
+        "name": "Foot (app)"
+      },
+      "smart_sleep_headrest": {
+        "name": "Headrest (app)"
+      },
+      "smart_sleep_lumbar": {
+        "name": "Lumbar (app)"
+      },
+      "smart_sleep_hips": {
+        "name": "Hips (app)"
       }
     },
     "sensor": {
@@ -4840,6 +4936,27 @@
       },
       "comfy_timer_remaining": {
         "name": "Local app timer remaining"
+      },
+      "smart_sleep_model": {
+        "name": "App model ID"
+      },
+      "smart_sleep_alarm_week": {
+        "name": "Alarm week mask"
+      },
+      "smart_sleep_alarm_action": {
+        "name": "Alarm action"
+      },
+      "smart_sleep_alarm_time": {
+        "name": "Alarm time"
+      },
+      "smart_sleep_light_brightness": {
+        "name": "Light brightness (reported)"
+      },
+      "smart_sleep_ai_status": {
+        "name": "AI-zero status"
+      },
+      "smart_sleep_ai_score": {
+        "name": "AI-zero score"
       }
     },
     "light": {
@@ -5158,6 +5275,15 @@
       },
       "rize_home_active": {
         "name": "Massage active"
+      },
+      "smart_sleep_massage_on": {
+        "name": "Massage"
+      },
+      "smart_sleep_alarm_on": {
+        "name": "Alarm"
+      },
+      "smart_sleep_flexible_wake": {
+        "name": "Flexible wake"
       }
     },
     "number": {
@@ -6184,6 +6310,30 @@
           "40": "40 minutes",
           "50": "50 minutes"
         }
+      },
+      "smart_sleep_child_mode": {
+        "name": "Child mode (Home Assistant)"
+      },
+      "smart_sleep_privacy": {
+        "name": "Privacy"
+      },
+      "smart_sleep_antisnore": {
+        "name": "Automatic antisnore"
+      },
+      "smart_sleep_sensitivity": {
+        "name": "Antisnore sensitivity"
+      },
+      "smart_sleep_wave": {
+        "name": "Massage wave"
+      },
+      "smart_sleep_head_strength": {
+        "name": "Head massage strength"
+      },
+      "smart_sleep_foot_strength": {
+        "name": "Foot massage strength"
+      },
+      "smart_sleep_timer": {
+        "name": "Massage timer option"
       }
     },
     "climate": {
@@ -9006,6 +9156,44 @@
         },
         "action": {
           "name": "Action"
+        }
+      }
+    },
+    "smart_sleep_set_alarm": {
+      "name": "Set OKIN Smart Sleep alarm",
+      "description": "Configure a bed-local alarm after validating every target.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "One or more Smart Sleep beds."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Physical side of a paired entry."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Enable or disable the alarm."
+        },
+        "time": {
+          "name": "Time",
+          "description": "Local alarm time, in whole minutes."
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "Monday 0 through Sunday 6."
+        },
+        "week_mask": {
+          "name": "Exact week mask",
+          "description": "Optional raw app mask, overrides weekday conversion."
+        },
+        "action": {
+          "name": "Action",
+          "description": "Format-specific wire action or original app label."
+        },
+        "flexible_wake": {
+          "name": "Flexible wake",
+          "description": "Legacy model 67 only."
         }
       }
     }

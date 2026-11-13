@@ -343,3 +343,65 @@ test("motor-specific cover Stop leaves a different-axis Both hold running", asyn
   fixture.pending.forEach((resolve) => resolve());
   await flushMicrotasks();
 });
+
+// Checked against real Python entity builders by the Smart Sleep controller tests.
+const smartSleepRoutes = (await import("../../../../tests/fixtures/smart_sleep_button_holds.json")).default;
+
+function smartSleepCard(format, key) {
+  const entityId = `button.${key}`;
+  const stopId = "button.smart_sleep_stop";
+  const calls = [];
+  let finishHold;
+  const hass = placed({
+    entities: {
+      [entityId]: { entity_id: entityId, device_id: "bed", platform: "adjustable_bed", translation_key: key },
+      [stopId]: { entity_id: stopId, device_id: "bed", platform: "adjustable_bed", translation_key: "stop" },
+    },
+    states: {
+      [entityId]: { entity_id: entityId, state: "unknown", attributes: smartSleepRoutes[format][key] },
+      [stopId]: { entity_id: stopId, state: "unknown", attributes: {} },
+    },
+    devices: { bed: { id: "bed" } },
+    formatEntityName: () => key,
+    callService(domain, service, data) {
+      calls.push({ domain, service, data });
+      return service === "hold_control"
+        ? new Promise((resolve) => { finishHold = resolve; })
+        : Promise.resolve();
+    },
+  });
+  const card = new AdjustableBedCard();
+  card.hass = hass;
+  card._hold.timers = new FakeClock();
+  const tile = card._actionTile(entityId, stopId);
+  const handler = (name) => tile.values[tile.strings.findIndex((part) => part.endsWith(`${name}=`))];
+  return { calls, handler, tile, entityId, stopId, finish: () => finishHold?.() };
+}
+
+for (const key of Object.keys(smartSleepRoutes.p2)) {
+  test(`Smart Sleep P2 ${key}: the real tile recalls on click without a held-service window`, async () => {
+    const fixture = smartSleepCard("p2", key);
+    assert.equal(fixture.handler("@pointerdown"), undefined);
+    assert.equal(fixture.handler("@pointerup"), undefined);
+    fixture.handler("@click")();
+    await flushMicrotasks();
+    assert.deepEqual(fixture.calls, [{ domain: "button", service: "press", data: { entity_id: fixture.entityId } }]);
+  });
+}
+
+for (const key of Object.keys(smartSleepRoutes.p1)) {
+  test(`Smart Sleep P1 ${key}: the real memory tile leases refresh and releases through STOP`, async () => {
+    const fixture = smartSleepCard("p1", key);
+    fixture.handler("@keydown")(new KeyboardEvent("keydown"));
+    await flushMicrotasks();
+    assert.equal(fixture.calls[0]?.service, "hold_control");
+    assert.equal(fixture.calls[0].data.control, key);
+    assert.equal(fixture.calls[0].data.duration, 0.75);
+    assert.equal(typeof fixture.calls[0].data.hold_owner, "string");
+    fixture.handler("@keyup")(new KeyboardEvent("keyup"));
+    await flushMicrotasks();
+    assert.deepEqual(fixture.calls[1], { domain: "button", service: "press", data: { entity_id: fixture.stopId } });
+    fixture.finish();
+    await flushMicrotasks();
+  });
+}

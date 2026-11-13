@@ -24,6 +24,7 @@ from custom_components.adjustable_bed.cover import (
     AdjustableBedCoverEntityDescription,
     _build_cover_description,
 )
+from custom_components.adjustable_bed.execution import ExecutionCapabilities
 
 
 async def _noop(_controller) -> None:
@@ -196,3 +197,28 @@ def test_cover_without_controller_hold_does_not_publish_hold_metadata() -> None:
     )
 
     assert not cover.extra_state_attributes
+
+
+def test_cover_requires_both_directions_to_support_a_control_scoped_lease() -> None:
+    coordinator = SimpleNamespace(
+        capability_controller=SimpleNamespace(
+            execution=ExecutionCapabilities(hold="stream", hold_controls=frozenset({"back_up"}))
+        ),
+        entity_side=None,
+        device_info={},
+        entity_unique_id=lambda key: key,
+    )
+    cover = AdjustableBedCover(
+        coordinator,
+        _build_cover_description(
+            MotorControlSpec(
+                key="back",
+                translation_key="back",
+                open_fn=_noop,
+                close_fn=_noop,
+                stop_fn=_noop,
+                hold=ControllerMotorHoldSpec("back_up", "back_down"),
+            )
+        ),
+    )
+    assert "hold_lease_mode" not in cover.extra_state_attributes

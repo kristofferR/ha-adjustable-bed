@@ -636,6 +636,7 @@ Report workspaces are machine-local under
 | Key | Package | Version | Status | Workspace under `phase4-early/` |
 |---|---|---|---|---|
 | paramount | `com.paramount.bedcontrol` | 3.0.4 | COMPLETE | `com.paramount.bedcontrol-3.0.4-2026-11-09-queue002/report/` |
+| row094 | `com.bedding.monitor.sleep_monitor.release` | 2.4.9 (263) | COMPLETE, accepted | `com.bedding.monitor.sleep_monitor.release-2.4.9-2026-11-12-queue001/` |
 | smart-comfort-synargy | `com.synargy.okin` | 1.1.0 (12) | COMPLETE, accepted | `com.synargy.okin-1.1.0-2026-11-09-queue002/` |
 | smart-comfort-synergy | `com.synergy.okin` | 2.2.0 (16) | COMPLETE, accepted | `com.synergy.okin-2.2.0-2026-11-09-queue002/` |
 | mlily159 | `com.richmat.mlily2` | 5.0.2 (50200) | COMPLETE, independent audit ACCEPT | `com.richmat.mlily2-5.0.2-2026-11-10-reconciliation002/report/` |
@@ -807,3 +808,9 @@ and release command, cancels refresh on disconnect, and does not retain the
 apps' mutable release race. No concurrent commands, watchdog interval or speed
 selection is proven. Memories are one-shot prepare then recall/save, outside
 the held controls. See [Smart Comfort](../beds/smart-comfort.md).
+
+OKIN Smart Sleep P1 and P2 stream actuator commands every 100 ms and massage
+commands every 300 ms until release. P1 releases after 100 ms; P2 motor
+release is immediate and differs from global STOP. Preset gestures retain
+their format-specific behavior. No concurrent motor, side addressing or motor
+speed selection is proven. See [Smart Sleep](../beds/smart-sleep.md).

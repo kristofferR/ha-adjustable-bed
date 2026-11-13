@@ -267,3 +267,13 @@ ComfortBaseForBluetooth 1.1.2 (6), row161, reuses Keeson K1 only after all
 `alarm_table`. Its product catalog is UI data over one `comfortbase` profile.
 The Keeson controller supplies hold/release and recall; its ComfortBase extension
 adds the bounded save gesture, product gates, fixed GATT roles and timer parser.
+
+## OKIN Smart Sleep
+
+Row094 P1 motor/preset literals reproduce through Keeson's `p2_side` carrier,
+which `codec/smart_sleep.py` reuses. No existing codec reproduces P1's complete
+settings and reply shapes plus P2's AA/2A commands and notifications, including
+its distinct motor-neutral and global STOP. `profiles/smart_sleep.py` declares
+both formats and their catalogs; one family controller owns their session.
+The vector harness compares every accepted in-scope literal before reuse.
+See [Smart Sleep](../beds/smart-sleep.md).

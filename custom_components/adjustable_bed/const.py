@@ -440,6 +440,7 @@ BED_TYPE_OKIN_7BYTE: Final = "okin_7byte"  # 7-byte via Okin service UUID
 BED_TYPE_OKIN_NORDIC: Final = "okin_nordic"  # 7-byte via Nordic UART
 BED_TYPE_OKIN_CB24: Final = "okin_cb24"  # CB24 protocol via Nordic UART (SmartBed by Okin)
 BED_TYPE_OKIN_DOT: Final = "okin_dot"  # DOT PROTOCOL: CB24-style frames, FurniMove remote keycodes
+BED_TYPE_SMART_SLEEP: Final = "smart_sleep"
 BED_TYPE_JALON_BED: Final = "jalon_bed"
 BED_TYPE_BF: Final = "bf"
 BED_TYPE_CHERISH: Final = "cherish"
@@ -712,6 +713,7 @@ BED_TYPE_TEMPUR_AU: Final = 'tempur_au'
 KEESON_LAYOUT_APP_BED_TYPES: Final = frozenset({BED_TYPE_TEMPUR_CURVE, BED_TYPE_QPLUS_APP, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_OMAZZ_ADJUSTO_III, BED_TYPE_ERGOMOTION_APP, BED_TYPE_ROW_CONTROL, BED_TYPE_ERGO_SLIM, BED_TYPE_TEMPUR_AU})
 
 SUPPORTED_BED_TYPES: Final = [
+    BED_TYPE_SMART_SLEEP,
     BED_TYPE_PARAMOUNT,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_ERGOMOTION_4,
