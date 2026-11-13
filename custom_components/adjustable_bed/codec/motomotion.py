@@ -35,8 +35,28 @@ def ascii_command(command: int, parameter: int = 0) -> bytes:
     digits = str(command) + str(parameter)
     if not digits.isascii() or not digits.isdecimal():
         raise ValueError("MotoMotion ASCII fields must be nonnegative decimal integers")
+    return decimal_fields(f"{command:05d}", f"{parameter:05d}")
+
+
+def decimal_fields(left: str, right: str) -> bytes:
+    """Encode decimal strings without changing their widths (Bedgear alarms)."""
+    digits = left + right
+    if not digits.isascii() or not digits.isdecimal():
+        raise ValueError("HHC fields must contain decimal digits")
     checksum = reduce(xor, (ord(c) - 48 for c in digits), 0)
-    return f"$#{command:05d}{parameter:05d}{checksum:05d}R\r".encode("ascii")
+    return f"$#{left}{right}{checksum:05d}R\r".encode("ascii")
+
+
+def short_transport(command: str, *, wrapped: bool) -> bytes | None:
+    """Bedgear's shared writer, including M query suppression and literal dollars."""
+    if command in ("", "null") or (wrapped and command == "$z"):
+        return None
+    if wrapped:
+        if not command.startswith("$#"):
+            command = "$#" + command
+        if not command.endswith("R\r"):
+            command += "R\r"
+    return command.encode("ascii")
 
 
 def binary_command(command: int, parameter: int = 0) -> bytes:

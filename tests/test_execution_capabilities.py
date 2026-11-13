@@ -112,6 +112,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     **{f"OkinNFrameProfile:apex_{i}": {"hold": ("row083",)} for i in range(15)},
     **{f"KeesonProfile:symphony_sleep_{route}": {"hold": ("symphony078",)} for route in ("box1", "box2", "fallback")},
     "SymphonyWordProfile:symphony": {"hold": ("row133",)},
+    "BedgearProfile:bedgear": {"hold": ("bedgear",)},
     "ParamountProfile:paramount": {"hold": ("paramount",)},
     **{f"AdjustableAppProfile:{key}": {"hold": ("adjustbed",)}
        for key in ("adjustable_bed_okin", "adjustable_bed_star", "adjustable_bed_star_5a")},
@@ -317,6 +318,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/symphony_sleep.py:<module>.PROFILES": tuple(f"KeesonProfile:symphony_sleep_{route}" for route in ("box1", "box2", "fallback")),
     **{f"profiles/symphony.py:<module>.{site}": ("SymphonyWordProfile:symphony",)
        for site in ("EXECUTION", "SymphonyProfile", "word_profile")},
+    "profiles/bedgear.py:<module>.BedgearProfile": ("BedgearProfile:bedgear",),
     "profiles/paramount.py:<module>.ParamountProfile": ("ParamountProfile:paramount",),
     **{
         f"profiles/adjustable_bed.py:<module>.{site}": tuple(

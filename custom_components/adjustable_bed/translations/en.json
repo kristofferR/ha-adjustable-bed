@@ -792,7 +792,8 @@
       "apex_remote_required": "Choose the remote printed on the bed controller or enter its exact code.",
       "apex_remote_code": "This exact remote code is not supported. Check capitalization and spaces.",
       "symphony_profile": "Choose a Symphony Sleep Sense product and BLE selector. The advertisement does not identify the product.",
-      "symphony_unpair_first": "Restore the standalone bed before selecting a product without split-side controls."
+      "symphony_unpair_first": "Restore the standalone bed before selecting a product without split-side controls.",
+      "bedgear_profile": "Enter the exact Bedgear Bluetooth local name: 14 UTF-16 units, containing uppercase HHC."
     }
   },
   "options": {
@@ -3319,6 +3320,27 @@
       },
       "yamada_query_alarms": {
         "name": "Refresh bed alarms"
+      },
+      "bedgear_release": {
+        "name": "Release control"
+      },
+      "bedgear_massage": {
+        "name": "{action}"
+      },
+      "bedgear_light_toggle": {
+        "name": "Light toggle"
+      },
+      "bedgear_actuator_up": {
+        "name": "Actuator up"
+      },
+      "bedgear_actuator_down": {
+        "name": "Actuator down"
+      },
+      "bedgear_combined_up": {
+        "name": "Head and foot up"
+      },
+      "bedgear_combined_down": {
+        "name": "Head and foot down"
       }
     },
     "cover": {
@@ -3642,6 +3664,12 @@
       },
       "symphony_head_foot_lift": {
         "name": "Head and foot lifting"
+      },
+      "bedgear_actuator": {
+        "name": "Actuator"
+      },
+      "bedgear_combined": {
+        "name": "Head and foot"
       }
     },
     "sensor": {
@@ -5167,6 +5195,24 @@
       },
       "yamada_alarm_2": {
         "name": "Bed alarm 2"
+      },
+      "bedgear_rgb": {
+        "name": "Reported RGB"
+      },
+      "bedgear_light_minutes": {
+        "name": "Light shutdown timer"
+      },
+      "bedgear_alarm": {
+        "name": "Alarm time"
+      },
+      "bedgear_alarm_strength": {
+        "name": "Alarm strength"
+      },
+      "bedgear_sync_type": {
+        "name": "Synchronization mode"
+      },
+      "bedgear_sync_state": {
+        "name": "Synchronization state"
       }
     },
     "light": {
@@ -9681,6 +9727,60 @@
         "preset": {
           "name": "Preset",
           "description": "The alarm position. Supply the observed preset when disabling P2."
+        }
+      }
+    },
+    "bedgear": {
+      "name": "Bedgear settings",
+      "description": "Configure supported Bedgear BED controls. Received values remain unknown until reported by the bed.",
+      "fields": {
+        "device_id": {
+          "name": "Bed",
+          "description": "Bed to control."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Physical side for a two-address pair."
+        },
+        "operation": {
+          "name": "Control",
+          "description": "Choose the supported setting or save action."
+        },
+        "rgb": {
+          "name": "RGB channels",
+          "description": "Three color channels, each 0 to 255."
+        },
+        "brightness": {
+          "name": "Brightness",
+          "description": "Scale the supplied RGB channels from 0 to 1."
+        },
+        "minutes": {
+          "name": "Light shutdown timer",
+          "description": "0 disables; 10 matches the app timer switch; picker range 0 to 1439 minutes."
+        },
+        "time": {
+          "name": "Alarm time",
+          "description": "HH:MM. Omit only to retain a received alarm time."
+        },
+        "strength": {
+          "name": "Alarm strength",
+          "description": "0 off, 1 or 2. Omit only to retain an actually received strength. This is not a weekday or repeat mode."
+        },
+        "wired": {
+          "name": "Wired synchronization",
+          "description": "False selects wireless; true selects wired."
+        },
+        "confirm": {
+          "name": "Confirm synchronization change",
+          "description": "Required for synchronization mode changes."
+        },
+        "slot": {
+          "name": "Memory slot",
+          "description": "Source-supported memory slot, 1 or 2."
+        },
+        "recall_on_release": {
+          "name": "Recall after saving",
+          "description": "Memory save only: also send the source recall frame, matching release before the app rebuild. Default saves only. Snore save does not support this option."
         }
       }
     }

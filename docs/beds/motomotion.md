@@ -1,4 +1,4 @@
-# HHC `$#` frames (MotoMotion, MotoSleep, Power Bob)
+# HHC `$#` frames (MotoMotion, MotoSleep, Power Bob, Bedgear)
 
 **Status:** ⚠️ Partially tested (existing MotoSleep HHC support user tested in [#51](https://github.com/kristofferR/ha-adjustable-bed/issues/51) and [#445](https://github.com/kristofferR/ha-adjustable-bed/issues/445); MotoMotion 3.1.9, Power Bob and the expanded MotoSleep model matrix static verified, hardware unverified)
 
@@ -26,6 +26,7 @@
 
 | Analyzed | App | Package ID | Profile |
 |----------|-----|------------|---------|
+| ✅ | [Bedgear](https://play.google.com/store/apps/details?id=com.Bedgear.AdjustableBed) 2.0.1 (`2024031901`) | `com.Bedgear.AdjustableBed` | [Bedgear](#bedgear) |
 | ✅ | [MotoMotion](https://play.google.com/store/apps/details?id=com.HHC.MotoMotion) 3.1.9 (code 2026051101) | `com.HHC.MotoMotion` | [MotoMotion](#motomotion) |
 | ✅ | [MotoSleep](https://play.google.com/store/apps/details?id=com.HHC.MotoSleep) 5.1.5 (`2026071001`) | `com.HHC.MotoSleep` | [MotoSleep](#motosleep) |
 | ✅ | [Power Bob for Adjustable Bed](https://play.google.com/store/apps/details?id=com.HHC.PowerBob) 2.0.3 (`2025061101`) | `com.HHC.PowerBob` | [Power Bob](#power-bob) |
@@ -34,30 +35,31 @@ See [Analysis provenance](#analysis-provenance) for artifact hashes.
 
 ## Features
 
-| Feature | MotoMotion | MotoSleep | Power Bob | Legacy route |
-|---------|------------|-----------|-----------|--------------|
-| Motor Control | ✅ App-labelled headrest, lumbar, main, back, legrest and tilt controls, selected by panel | ✅ Profile-specific: back, legs, head, feet, lumbar, neck, tilt, neutral auxiliary pairs | ✅ Profile-specific: back, legs, lumbar, tilt, neutral auxiliary pairs | ✅ Back and legs |
-| Position Feedback | ❌ No measured motor angle/percentage response | ❌ | ❌ | ❌ |
-| Memory Presets | ✅ 0–4 slots, with panel-specific recall and programming | ✅ 2 slots on most profiles; none on WR219 and the smallest panels | ✅ 2 slots on most profiles; none on the smallest panels | ❌ |
-| Zero-G / Anti-Snore / TV / Flat | Home only | ✅ Profile-specific | ✅ Profile-specific | Flat |
-| Swing | ❌ | ✅ WRS20ms Swing and WR219 | ❌ | ❌ |
-| Massage | ✅ Name-selected level controls | ✅ Profile-specific head/foot toggles, intensity steps, stop | ✅ Profile-specific head/foot toggles, intensity steps, stop | ❌ |
-| Heat | ✅ Name/panel-selected level or cycle controls | ❌ | ❌ | ❌ |
-| Lights | ✅ Panel light cycle/toggle, RGB and timer where admitted | ✅ Under-bed `$A` toggle or RGB, profile-specific | ✅ RGB settings; `$A` toggle, profile-specific | ❌ |
-| Split-King Sync | ❌ | ✅ Current MotoSleep HHC MainPanel profiles F, G, H, WR1140 and `New` variants | ❌ | ❌ |
-| Music / Audio | ✅ ASCII or binary equalizer controls; binary playback buttons | ❌ Excluded, see [Notes](#notes) | ❌ Excluded | ❌ |
-| User postures | ✅ Local measurements, four generated/custom raw Hall target postures, fine tuning | ❌ | ❌ | ❌ |
-| Side selection | ✅ Left/right when `SOFA` name index 10 is `S`; retained per address and exact profile across reconnections, with paired child routing taking precedence | ❌ | ❌ | ❌ |
-| Binding | ✅ Eight-byte application binding and explicit application unbinding | ❌ | ❌ | ❌ |
+| Feature | MotoMotion | MotoSleep | Power Bob | Legacy route | Bedgear |
+|---------|------------|-----------|-----------|--------------| --- |
+| Motor Control | ✅ App-labelled headrest, lumbar, main, back, legrest and tilt controls, selected by panel | ✅ Profile-specific: back, legs, head, feet, lumbar, neck, tilt, neutral auxiliary pairs | ✅ Profile-specific: back, legs, lumbar, tilt, neutral auxiliary pairs | ✅ Back and legs | ✅ Name-selected motor zones |
+| Position Feedback | ❌ No measured motor angle/percentage response | ❌ | ❌ | ❌ | ❌ |
+| Memory Presets | ✅ 0–4 slots, with panel-specific recall and programming | ✅ 2 slots on most profiles; none on WR219 and the smallest panels | ✅ 2 slots on most profiles; none on the smallest panels | ❌ | ✅ 0 or 2 slots; Panel E snore save |
+| Zero-G / Anti-Snore / TV / Flat | Home only | ✅ Profile-specific | ✅ Profile-specific | Flat | ✅ Layout-specific |
+| Swing | ❌ | ✅ WRS20ms Swing and WR219 | ❌ | ❌ | ❌ |
+| Massage | ✅ Name-selected level controls | ✅ Profile-specific head/foot toggles, intensity steps, stop | ✅ Profile-specific head/foot toggles, intensity steps, stop | ❌ | ✅ Layout-specific buttons |
+| Heat | ✅ Name/panel-selected level or cycle controls | ❌ | ❌ | ❌ | ❌ |
+| Lights | ✅ Panel light cycle/toggle, RGB and timer where admitted | ✅ Under-bed `$A` toggle or RGB, profile-specific | ✅ RGB settings; `$A` toggle, profile-specific | ❌ | ✅ Toggle, RGB and shutdown minutes where admitted |
+| Split-King Sync | ❌ | ✅ Current MotoSleep HHC MainPanel profiles F, G, H, WR1140 and `New` variants | ❌ | ❌ | ✅ Source-gated bed synchronization |
+| Music / Audio | ✅ ASCII or binary equalizer controls; binary playback buttons | ❌ Excluded, see [Notes](#notes) | ❌ Excluded | ❌ | ❌ Excluded |
+| User postures | ✅ Local measurements, four generated/custom raw Hall target postures, fine tuning | ❌ | ❌ | ❌ | ❌ |
+| Side selection | ✅ Left/right when `SOFA` name index 10 is `S`; retained per address and exact profile across reconnections, with paired child routing taking precedence | ❌ | ❌ | ❌ | ❌ No app wire side selector; HA can pair two receivers |
+| Binding | ✅ Eight-byte application binding and explicit application unbinding | ❌ | ❌ | ❌ | Received bed sync state/toggle, no ownership or authentication exchange |
 
 ## Choosing a profile
 
 The advertised local name selects the profile. Detection suggests `motosleep`
-for an HHC or exact MOTO name and offers MotoMotion only as a candidate (see
-each profile's Setup).
+for an HHC or exact MOTO name. Bedgear's exact name gate adds an app candidate,
+or a low-confidence candidate when no existing route matches. See each profile's Setup.
 
 | Profile | Key | Bed type | Selected by |
 |---------|-----|----------|-------------|
+| [Bedgear](#bedgear) | `bedgear` | `bedgear` | Explicit app choice; exact 14-unit Bluetooth name selects the layout and independent flags |
 | [MotoMotion](#motomotion) | `motomotion` | `motomotion` | The explicit app choice; the exact Bluetooth name selects the panel and flags |
 | [MotoSleep](#motosleep) | `motosleep` | `motosleep` | A name longer than 14 characters containing `HHC`, or a name starting with `MOTO` |
 | [Power Bob](#power-bob) | `power_bob` | `motosleep` | An exact 14-character name containing `HHC` |
@@ -602,6 +604,171 @@ Back `$K`/`$L`, legs `$M`/`$N`, Flat `$O` and STOP `$b`, each wrapped as
 `$#$KR\r` and written with response. STOP follows the MotoSleep HHC release
 schedule.
 
+### Bedgear
+
+**App:** [Bedgear](https://play.google.com/store/apps/details?id=com.Bedgear.AdjustableBed) 2.0.1 (`2024031901`), `com.Bedgear.AdjustableBed`
+
+**Status:** ❓ Needs testing (static verification; hardware unverified)
+
+#### Setup
+
+Choose **Bedgear app** during setup and enter the exact Bluetooth local name.
+Configure can update that name. Eligible names contain uppercase `HHC` anywhere
+and have exactly 14 UTF-16 code units. Case matters. The advertised name adds
+Bedgear as an app candidate; it does not replace an existing MotoSleep route.
+Manual model titles do not select a protocol.
+
+The primary layout and feature gates are independent. Name index 10 other than
+`B` enables the light shutdown timer; `D` also enables RGB and brightness.
+Index 11 `E` enables alarm settings, while `M` wraps short commands and
+suppresses the query. Index 13 `X` enables synchronization settings. These
+indices are zero-based UTF-16 positions.
+
+GATT selection matches uppercase UUID strings containing `FFE0` and `FFE1`.
+The last matching characteristic receives writes, without response. Every
+matching characteristic is subscribed. HA/Bleak manages CCCD and Bluetooth
+connection retries. No application PIN, authentication or startup query is sent.
+
+<!-- generated:bedgear-layouts -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Panel selector example (name[8:10]) | Layout | Motor zones | Memory slots | Presets |
+|---|---|---|---|---|
+| 15 | PanelA | head, foot, lumbar | 2 | flat, anti_snore, tv, zero_g |
+| 35 | PanelD | head, foot, neck | 2 | flat |
+| E1 | PanelE | actuator | 0 | anti_snore |
+| 81 | PanelEight | head, foot | 2 | flat, anti_snore, tv, zero_g |
+| 51 | PanelFive | actuator | 0 | flat |
+| 44 | PanelFour | neck, head, lumbar, foot | 2 | flat, anti_snore, tv, zero_g |
+| 91 | PanelNine | head, foot | 0 | flat |
+| 13 | PanelOne | neck, head, foot | 0 | flat |
+| 71 | PanelSeven | head, foot | 2 | flat |
+| 61 | PanelSix | head, foot | 0 | flat |
+| D1 | PanelSixZG | head, foot | 0 | zero_g |
+| 34 | PanelThree | neck, head, lumbar, foot | 2 | flat, anti_snore, tv, zero_g |
+| 23 | PanelTwo | neck, head, foot | 2 | flat |
+| 01 | PanelZero | head, foot, combined, tilt | 2 | flat |
+| 97 | WR1140 | neck, head, lumbar, foot | 2 | flat, anti_snore, tv, zero_g |
+<!-- /generated -->
+
+#### Controls
+
+Motor covers expose the selected head, foot, neck, lumbar, tilt, combined or
+single-actuator controls. The card supports renewable holds; `timed_move` gives
+a finite movement. Presets, memory recall and memory save appear only on layouts
+that provide them. Buttons expose light toggle and the layout's massage controls.
+SixZG has a Zero-G preset without an inferred Flat action. There are no measured
+motor positions or absolute seeks.
+
+The layout selector gives pair rules priority: 15, then 35/45/85, then index 8
+`4` or 25/55, then 95–98, then 65/75, then single-character layout rules.
+One/Two admit head or head+foot or neck+head+foot. Three/Four additionally use
+source-selected lumbar/tilt arrays. No hidden axis is exposed merely because
+its command appears in a switch branch.
+
+<!-- generated:bedgear-controls -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Control | Plain bytes | M-name bytes | Press | Release |
+|---|---|---|---|---|
+| head up | `24 4B` | `24 23 24 4B 52 0D` | 100 ms refresh | stop |
+| head down | `24 4C` | `24 23 24 4C 52 0D` | 100 ms refresh | stop |
+| foot up | `24 4D` | `24 23 24 4D 52 0D` | 100 ms refresh | stop |
+| foot down | `24 4E` | `24 23 24 4E 52 0D` | 100 ms refresh | stop |
+| lumbar up | `24 50` | `24 23 24 50 52 0D` | 100 ms refresh | stop |
+| lumbar down | `24 51` | `24 23 24 51 52 0D` | 100 ms refresh | stop |
+| preset flat | `24 4F` | `24 23 24 4F 52 0D` | 100 ms refresh | fallback |
+| preset anti snore | `24 52` | `24 23 24 52 52 0D` | 100 ms refresh | fallback |
+| preset tv | `24 53` | `24 23 24 53 52 0D` | 100 ms refresh | fallback |
+| preset zero g | `24 54` | `24 23 24 54 52 0D` | 100 ms refresh | fallback |
+| memory 1 | `24 55` | `24 23 24 55 52 0D` | 100 ms refresh | none |
+| memory 2 | `24 56` | `24 23 24 56 52 0D` | 100 ms refresh | none |
+| light toggle | `24 41` | `24 23 24 41 52 0D` | once | none |
+| neck up | `24 50` | `24 23 24 50 52 0D` | 100 ms refresh | stop |
+| neck down | `24 51` | `24 23 24 51 52 0D` | 100 ms refresh | stop |
+| massage head | `24 43` | `24 23 24 43 52 0D` | once | none |
+| massage foot | `24 42` | `24 23 24 42 52 0D` | once | none |
+| massage stop | `24 44` | `24 23 24 44 52 0D` | once | none |
+| actuator up | `24 4B` | `24 23 24 4B 52 0D` | 100 ms refresh | stop |
+| actuator down | `24 4C` | `24 23 24 4C 52 0D` | 100 ms refresh | stop |
+| preset anti snore | `24 52` | `24 23 24 52 52 0D` | 100 ms refresh | none |
+| lumbar up | `24 70` | `24 23 24 70 52 0D` | 100 ms refresh | stop |
+| lumbar down | `24 71` | `24 23 24 71 52 0D` | 100 ms refresh | stop |
+| preset flat | `24 4F` | `24 23 24 4F 52 0D` | 100 ms refresh | none |
+| preset tv | `24 53` | `24 23 24 53 52 0D` | 100 ms refresh | none |
+| preset zero g | `24 54` | `24 23 24 54 52 0D` | 100 ms refresh | none |
+| combined up | `24 70` | `24 23 24 70 52 0D` | 100 ms refresh | stop |
+| combined down | `24 71` | `24 23 24 71 52 0D` | 100 ms refresh | stop |
+| tilt up | `24 50` | `24 23 24 50 52 0D` | 100 ms refresh | stop |
+| tilt down | `24 51` | `24 23 24 51 52 0D` | 100 ms refresh | fallback |
+| massage head up | `24 47` | `24 23 24 47 52 0D` | 100 ms refresh | fallback |
+| massage head down | `24 48` | `24 23 24 48 52 0D` | 100 ms refresh | fallback |
+| massage head stop | `24 4A` | `24 23 24 4A 52 0D` | 100 ms refresh | fallback |
+| massage foot up | `24 45` | `24 23 24 45 52 0D` | 100 ms refresh | fallback |
+| massage foot down | `24 46` | `24 23 24 46 52 0D` | 100 ms refresh | fallback |
+| massage foot stop | `24 49` | `24 23 24 49 52 0D` | 100 ms refresh | fallback |
+<!-- /generated -->
+
+#### Timing
+
+<!-- generated:bedgear-timing -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Behavior | Value |
+|---|---|
+| First held tick and interval | 100 ms, no immediate write |
+| Motor STOP | 5 writes, 30 ms apart |
+| Short up, fewer than five ticks and no custom up | 3 extra writes, 100 ms apart |
+<!-- /generated -->
+
+Motor releases use STOP except Zero tilt-down, whose normal short up can repeat
+the movement command and whose cancellation only ends refresh. Presets use their
+own release policy. Memory recalls and LCD presets end refresh without a STOP;
+classical presets and Zero massage buttons can use the short-up fallback.
+
+HA serializes commands. Each action captures its BLE session, so cancellation,
+reconnection or controller replacement cannot send delayed writes on a new link.
+The RGB transaction captures one requested color and completes in source order;
+it avoids the app's overlapping mutable timer chains. No phone timer or local
+LCD animation is exposed as a measured bed value.
+
+#### Notifications
+
+Only received RGB, light minutes, alarm time/strength and bind/synchronization
+fields become state. Disconnect clears them. The receiver preserves the source's
+first-chunk CR deferral, pre-CR byte removal, dollar-suffix buffering and literal
+space splitting. HA bounds the buffer and rejects malformed numeric projections.
+The app emits its `OK` event only for a successful 39-token response; this is not
+an acknowledgement for a particular command. Other known response lengths are
+44, 71 and 75 tokens.
+
+#### Services
+
+`adjustable_bed.bedgear` accepts `device_id`, optional physical `side`, and:
+
+| Operation | Parameters and behavior |
+| --- | --- |
+| `rgb` | `rgb: [red, green, blue]` (0–255), `brightness` (0–1). Brightness scales the channels before 0–120 conversion. Red below 10, green/blue below 30 become zero. Sends red, green, then blue with the source queries and delays. |
+| `light_timer` | `minutes: 0..1439`. Zero disables shutdown; 10 is the app's on-switch value. This is minutes, not brightness. |
+| `alarm` | `time: HH:MM`, `strength: 0..2` (off, 1, 2). Omit time or strength only to reuse an actually received value; received time digit widths are preserved. No weekday or repeat parameter. |
+| `sync_mode` | `wired: false` selects wireless, true wired. Requires `confirm: true`. This is bed synchronization, not Bluetooth pairing or network membership. |
+| `toggle_sync` | Requires a received available bind state. The current active/inactive state selects the source command. |
+| `save_memory` | `slot: 1..2`, subject to layout. Optional `recall_on_release: true` sends recall after save, matching the source's up-before-rebuild branch. |
+| `save_snore` | Panel E only, sends save without a release recall. Use the separate held anti-snore preset to recall. |
+
+Memory saves default to save only. Panel E snore save has no release-send branch.
+HA does not reproduce a race against a Flutter widget rebuild. Synchronization does not select another Bluetooth
+address; independent paired beds retain HA's normal physical-side routing.
+
+#### Evidence
+
+Row A12's accepted Bedgear 2.0.1 frames match the shared HHC codec byte for byte,
+including six-plus-four-digit alarm fields. All selected layouts have their own
+Bedgear profile rules. Static verification does not establish physical movement,
+STOP completion or firmware compatibility. External beta/release users can
+qualify those behaviors with timestamps, GATT details and physical observations.
+
+
 ## Notes
 
 - Audio-only code is deliberately excluded. `AUDIO`, `YbAudio`, `MotoAMP`,
@@ -653,3 +820,9 @@ maintainers without real user hardware or app-delivered runtime tables:
 
 These are post-beta/release validation requests, not a requirement that a
 maintainer acquire the beds and not a reason to guess protocol semantics.
+
+Bedgear 2.0.1 (`2024031901`), row A12: XAPK SHA-256
+`4e5430558c7aa4badc5f23e466bfb02ba3412e89a3e0c808760aebeddefbbf1f`.
+Supplied arm64 delivery has 20 APKs. Its APK signer and distinct distribution
+source stamp are separate identities; the config.xxhdpi filename contains
+xhdpi resources. Mirror availability does not certify a Play rollout.

@@ -1,0 +1,1133 @@
+{
+  "scope": "Artifact-derived ASCII transport, decimal frame/checksum, RGB scaling, token parser, literal notification framing and layout/discovery selectors. Static synthetic evidence only; hardware UNVERIFIED.",
+  "transport": [
+    {
+      "id": "literal-A-plain",
+      "command": "$A",
+      "wrapped": false,
+      "expected_hex": "2441",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-A-wrapped",
+      "command": "$A",
+      "wrapped": true,
+      "expected_hex": "24232441520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-B-plain",
+      "command": "$B",
+      "wrapped": false,
+      "expected_hex": "2442",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-B-wrapped",
+      "command": "$B",
+      "wrapped": true,
+      "expected_hex": "24232442520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-C-plain",
+      "command": "$C",
+      "wrapped": false,
+      "expected_hex": "2443",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-C-wrapped",
+      "command": "$C",
+      "wrapped": true,
+      "expected_hex": "24232443520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-D-plain",
+      "command": "$D",
+      "wrapped": false,
+      "expected_hex": "2444",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-D-wrapped",
+      "command": "$D",
+      "wrapped": true,
+      "expected_hex": "24232444520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-E-plain",
+      "command": "$E",
+      "wrapped": false,
+      "expected_hex": "2445",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-E-wrapped",
+      "command": "$E",
+      "wrapped": true,
+      "expected_hex": "24232445520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-F-plain",
+      "command": "$F",
+      "wrapped": false,
+      "expected_hex": "2446",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-F-wrapped",
+      "command": "$F",
+      "wrapped": true,
+      "expected_hex": "24232446520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-G-plain",
+      "command": "$G",
+      "wrapped": false,
+      "expected_hex": "2447",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-G-wrapped",
+      "command": "$G",
+      "wrapped": true,
+      "expected_hex": "24232447520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-H-plain",
+      "command": "$H",
+      "wrapped": false,
+      "expected_hex": "2448",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-H-wrapped",
+      "command": "$H",
+      "wrapped": true,
+      "expected_hex": "24232448520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-I-plain",
+      "command": "$I",
+      "wrapped": false,
+      "expected_hex": "2449",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-I-wrapped",
+      "command": "$I",
+      "wrapped": true,
+      "expected_hex": "24232449520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-J-plain",
+      "command": "$J",
+      "wrapped": false,
+      "expected_hex": "244a",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-J-wrapped",
+      "command": "$J",
+      "wrapped": true,
+      "expected_hex": "2423244a520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-K-plain",
+      "command": "$K",
+      "wrapped": false,
+      "expected_hex": "244b",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-K-wrapped",
+      "command": "$K",
+      "wrapped": true,
+      "expected_hex": "2423244b520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-L-plain",
+      "command": "$L",
+      "wrapped": false,
+      "expected_hex": "244c",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-L-wrapped",
+      "command": "$L",
+      "wrapped": true,
+      "expected_hex": "2423244c520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-M-plain",
+      "command": "$M",
+      "wrapped": false,
+      "expected_hex": "244d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-M-wrapped",
+      "command": "$M",
+      "wrapped": true,
+      "expected_hex": "2423244d520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-N-plain",
+      "command": "$N",
+      "wrapped": false,
+      "expected_hex": "244e",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-N-wrapped",
+      "command": "$N",
+      "wrapped": true,
+      "expected_hex": "2423244e520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-O-plain",
+      "command": "$O",
+      "wrapped": false,
+      "expected_hex": "244f",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-O-wrapped",
+      "command": "$O",
+      "wrapped": true,
+      "expected_hex": "2423244f520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-P-plain",
+      "command": "$P",
+      "wrapped": false,
+      "expected_hex": "2450",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-P-wrapped",
+      "command": "$P",
+      "wrapped": true,
+      "expected_hex": "24232450520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-Q-plain",
+      "command": "$Q",
+      "wrapped": false,
+      "expected_hex": "2451",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-Q-wrapped",
+      "command": "$Q",
+      "wrapped": true,
+      "expected_hex": "24232451520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-R-plain",
+      "command": "$R",
+      "wrapped": false,
+      "expected_hex": "2452",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-R-wrapped",
+      "command": "$R",
+      "wrapped": true,
+      "expected_hex": "24232452520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-S-plain",
+      "command": "$S",
+      "wrapped": false,
+      "expected_hex": "2453",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-S-wrapped",
+      "command": "$S",
+      "wrapped": true,
+      "expected_hex": "24232453520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-T-plain",
+      "command": "$T",
+      "wrapped": false,
+      "expected_hex": "2454",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-T-wrapped",
+      "command": "$T",
+      "wrapped": true,
+      "expected_hex": "24232454520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-U-plain",
+      "command": "$U",
+      "wrapped": false,
+      "expected_hex": "2455",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-U-wrapped",
+      "command": "$U",
+      "wrapped": true,
+      "expected_hex": "24232455520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-V-plain",
+      "command": "$V",
+      "wrapped": false,
+      "expected_hex": "2456",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-V-wrapped",
+      "command": "$V",
+      "wrapped": true,
+      "expected_hex": "24232456520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-W-plain",
+      "command": "$W",
+      "wrapped": false,
+      "expected_hex": "2457",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-W-wrapped",
+      "command": "$W",
+      "wrapped": true,
+      "expected_hex": "24232457520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-Z-plain",
+      "command": "$Z",
+      "wrapped": false,
+      "expected_hex": "245a",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-Z-wrapped",
+      "command": "$Z",
+      "wrapped": true,
+      "expected_hex": "2423245a520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-a-plain",
+      "command": "$a",
+      "wrapped": false,
+      "expected_hex": "2461",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-a-wrapped",
+      "command": "$a",
+      "wrapped": true,
+      "expected_hex": "24232461520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-b-plain",
+      "command": "$b",
+      "wrapped": false,
+      "expected_hex": "2462",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-b-wrapped",
+      "command": "$b",
+      "wrapped": true,
+      "expected_hex": "24232462520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-p-plain",
+      "command": "$p",
+      "wrapped": false,
+      "expected_hex": "2470",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-p-wrapped",
+      "command": "$p",
+      "wrapped": true,
+      "expected_hex": "24232470520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-q-plain",
+      "command": "$q",
+      "wrapped": false,
+      "expected_hex": "2471",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-q-wrapped",
+      "command": "$q",
+      "wrapped": true,
+      "expected_hex": "24232471520d",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-z-plain",
+      "command": "$z",
+      "wrapped": false,
+      "expected_hex": "247a",
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "literal-z-wrapped",
+      "command": "$z",
+      "wrapped": true,
+      "expected_hex": null,
+      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+    },
+    {
+      "id": "empty-rejected",
+      "command": "",
+      "wrapped": false,
+      "expected_hex": null
+    },
+    {
+      "id": "null-string-rejected",
+      "command": "null",
+      "wrapped": true,
+      "expected_hex": null
+    },
+    {
+      "id": "already-framed-synthetic",
+      "command": "$#12R\r",
+      "wrapped": true,
+      "expected_hex": "24233132520d",
+      "note": "synthetic transport-only input, not a claimed reachable bed command"
+    },
+    {
+      "id": "prefix-preserved-suffix-added-synthetic",
+      "command": "$#12",
+      "wrapped": true,
+      "expected_hex": "24233132520d",
+      "note": "synthetic transport-only input"
+    },
+    {
+      "id": "suffix-preserved-prefix-added-synthetic",
+      "command": "12R\r",
+      "wrapped": true,
+      "expected_hex": "24233132520d",
+      "note": "synthetic transport-only input"
+    }
+  ],
+  "rgb": [
+    {
+      "id": "max",
+      "input": [
+        255,
+        255,
+        255
+      ],
+      "expected_parameters": [
+        120,
+        120,
+        120
+      ],
+      "evidence": "BaseViewState.changeColor0x54d830-0x54d98c"
+    },
+    {
+      "id": "red-below",
+      "input": [
+        21,
+        0,
+        0
+      ],
+      "expected_parameters": [
+        0,
+        0,
+        0
+      ],
+      "evidence": "BaseViewState.changeColor0x54d830-0x54d98c"
+    },
+    {
+      "id": "red-at",
+      "input": [
+        22,
+        0,
+        0
+      ],
+      "expected_parameters": [
+        10,
+        0,
+        0
+      ],
+      "evidence": "BaseViewState.changeColor0x54d830-0x54d98c"
+    },
+    {
+      "id": "green-blue-below",
+      "input": [
+        0,
+        63,
+        63
+      ],
+      "expected_parameters": [
+        0,
+        0,
+        0
+      ],
+      "evidence": "BaseViewState.changeColor0x54d830-0x54d98c"
+    },
+    {
+      "id": "green-blue-at",
+      "input": [
+        0,
+        64,
+        64
+      ],
+      "expected_parameters": [
+        0,
+        30,
+        30
+      ],
+      "evidence": "BaseViewState.changeColor0x54d830-0x54d98c"
+    },
+    {
+      "id": "mixed",
+      "input": [
+        128,
+        192,
+        255
+      ],
+      "expected_parameters": [
+        60,
+        90,
+        120
+      ],
+      "evidence": "BaseViewState.changeColor0x54d830-0x54d98c"
+    }
+  ],
+  "tokens": [
+    {
+      "id": "75-distinct-fields",
+      "length": 75,
+      "set": {
+        "11": "07",
+        "12": "45",
+        "14": "2",
+        "28": "00110",
+        "29": "00080",
+        "30": "00040",
+        "54": "00010"
+      },
+      "expected_updates": {
+        "rgb_timer": [
+          "00110",
+          "00080",
+          "00040",
+          "00010"
+        ],
+        "alarm": [
+          "07",
+          "45",
+          "2"
+        ]
+      }
+    },
+    {
+      "id": "71-rgb-only",
+      "length": 71,
+      "set": {
+        "18": "00010",
+        "19": "00020",
+        "20": "00030",
+        "30": "00040"
+      },
+      "expected_updates": {
+        "rgb_timer": [
+          "00010",
+          "00020",
+          "00030",
+          "00040"
+        ]
+      }
+    },
+    {
+      "id": "44-rgb-only",
+      "length": 44,
+      "set": {
+        "18": "00120",
+        "19": "00000",
+        "20": "00030",
+        "30": "00001"
+      },
+      "expected_updates": {
+        "rgb_timer": [
+          "00120",
+          "00000",
+          "00030",
+          "00001"
+        ]
+      }
+    },
+    {
+      "id": "39-bind-active",
+      "length": 39,
+      "set": {
+        "18": "00001",
+        "19": "00002",
+        "20": "00003",
+        "24": "1",
+        "27": "00065",
+        "30": "00010"
+      },
+      "expected_updates": {
+        "rgb_timer": [
+          "00001",
+          "00002",
+          "00003",
+          "00010"
+        ],
+        "bind": {
+          "available": true,
+          "active": true
+        },
+        "sync_type": 1,
+        "event": "OK"
+      }
+    },
+    {
+      "id": "39-bind-inactive",
+      "length": 39,
+      "set": {
+        "24": "0",
+        "27": "00066"
+      },
+      "expected_updates": {
+        "rgb_timer": [
+          "00000",
+          "00000",
+          "00000",
+          "00000"
+        ],
+        "bind": {
+          "available": true,
+          "active": false
+        },
+        "sync_type": 0,
+        "event": "OK"
+      }
+    },
+    {
+      "id": "39-bind-unknown",
+      "length": 39,
+      "set": {
+        "24": "2",
+        "27": "00067"
+      },
+      "expected_updates": {
+        "rgb_timer": [
+          "00000",
+          "00000",
+          "00000",
+          "00000"
+        ],
+        "bind": {
+          "available": false,
+          "active": false
+        },
+        "sync_type": 2,
+        "event": "OK"
+      }
+    },
+    {
+      "id": "wrong-token-count",
+      "length": 40,
+      "set": {},
+      "expected_updates": {}
+    }
+  ],
+  "decimal": [
+    {
+      "id": "red120",
+      "left": "00315",
+      "right": "00120",
+      "expected_ascii": "$#003150012000004R\r",
+      "expected_hex": "2423303033313530303132303030303034520d",
+      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+    },
+    {
+      "id": "green30",
+      "left": "00316",
+      "right": "00030",
+      "expected_ascii": "$#003160003000007R\r",
+      "expected_hex": "2423303033313630303033303030303037520d",
+      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+    },
+    {
+      "id": "blue120",
+      "left": "00317",
+      "right": "00120",
+      "expected_ascii": "$#003170012000006R\r",
+      "expected_hex": "2423303033313730303132303030303036520d",
+      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+    },
+    {
+      "id": "timer10",
+      "left": "00319",
+      "right": "00010",
+      "expected_ascii": "$#003190001000010R\r",
+      "expected_hex": "2423303033313930303031303030303130520d",
+      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+    },
+    {
+      "id": "timerOff",
+      "left": "00319",
+      "right": "00000",
+      "expected_ascii": "$#003190000000011R\r",
+      "expected_hex": "2423303033313930303030303030303131520d",
+      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+    },
+    {
+      "id": "syncWireless",
+      "left": "33049",
+      "right": "00000",
+      "expected_ascii": "$#330490000000013R\r",
+      "expected_hex": "2423333330343930303030303030303133520d",
+      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+    },
+    {
+      "id": "syncWired",
+      "left": "33049",
+      "right": "00001",
+      "expected_ascii": "$#330490000100012R\r",
+      "expected_hex": "2423333330343930303030313030303132520d",
+      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+    },
+    {
+      "id": "syncActiveToggle",
+      "left": "00015",
+      "right": "00000",
+      "expected_ascii": "$#000150000000004R\r",
+      "expected_hex": "2423303030313530303030303030303034520d",
+      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+    },
+    {
+      "id": "syncInactiveToggle",
+      "left": "00012",
+      "right": "00000",
+      "expected_ascii": "$#000120000000003R\r",
+      "expected_hex": "2423303030313230303030303030303033520d",
+      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+    },
+    {
+      "id": "alarm0730off",
+      "left": "073000",
+      "right": "0017",
+      "expected_ascii": "$#073000001700002R\r",
+      "expected_hex": "2423303733303030303031373030303032520d",
+      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+    },
+    {
+      "id": "alarm0830strength1",
+      "left": "083000",
+      "right": "0118",
+      "expected_ascii": "$#083000011800003R\r",
+      "expected_hex": "2423303833303030303131383030303033520d",
+      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+    },
+    {
+      "id": "alarm0830strength2",
+      "left": "083000",
+      "right": "0219",
+      "expected_ascii": "$#083000021900001R\r",
+      "expected_hex": "2423303833303030303231393030303031520d",
+      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+    },
+    {
+      "id": "alarm0000off",
+      "left": "000000",
+      "right": "0017",
+      "expected_ascii": "$#000000001700006R\r",
+      "expected_hex": "2423303030303030303031373030303036520d",
+      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+    },
+    {
+      "id": "alarm2359strength2",
+      "left": "235900",
+      "right": "0219",
+      "expected_ascii": "$#235900021900007R\r",
+      "expected_hex": "2423323335393030303231393030303037520d",
+      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+    },
+    {
+      "id": "genericOddDigitsSynthetic",
+      "left": "1",
+      "right": "23",
+      "expected_ascii": "$#12300000R\r",
+      "expected_hex": "24233132333030303030520d",
+      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+    }
+  ],
+  "framing": [
+    {
+      "id": "noStartIgnored",
+      "chunks": [
+        "313233520d"
+      ],
+      "expected": {
+        "texts": [],
+        "buffer_hex": "",
+        "collecting": false
+      }
+    },
+    {
+      "id": "initialSameChunkNotParsed",
+      "chunks": [
+        "24233030313233520d"
+      ],
+      "expected": {
+        "texts": [],
+        "buffer_hex": "233030313233520d",
+        "collecting": true
+      }
+    },
+    {
+      "id": "fragmentCompletes",
+      "chunks": [
+        "2423303031",
+        "3233520d"
+      ],
+      "expected": {
+        "texts": [
+          "00123"
+        ],
+        "buffer_hex": "",
+        "collecting": true
+      }
+    },
+    {
+      "id": "byteBeforeCRAlwaysDropped",
+      "chunks": [
+        "24313233",
+        "34350d"
+      ],
+      "expected": {
+        "texts": [
+          "1234"
+        ],
+        "buffer_hex": "",
+        "collecting": true
+      }
+    },
+    {
+      "id": "newDollarDoesNotReset",
+      "chunks": [
+        "24313233",
+        "24343536",
+        "520d"
+      ],
+      "expected": {
+        "texts": [
+          "123456"
+        ],
+        "buffer_hex": "",
+        "collecting": true
+      }
+    },
+    {
+      "id": "dollarWithCRIsBufferedAgain",
+      "chunks": [
+        "243132",
+        "243334520d"
+      ],
+      "expected": {
+        "texts": [
+          "1234"
+        ],
+        "buffer_hex": "3334520d",
+        "collecting": true
+      }
+    },
+    {
+      "id": "secondCRSuffixIgnored",
+      "chunks": [
+        "243132",
+        "33520d3435520d"
+      ],
+      "expected": {
+        "texts": [
+          "123"
+        ],
+        "buffer_hex": "",
+        "collecting": true
+      }
+    },
+    {
+      "id": "filterPreservesRepeatedSpace",
+      "chunks": [
+        "24234131325f2020",
+        "423334520d"
+      ],
+      "expected": {
+        "texts": [
+          "12  34"
+        ],
+        "buffer_hex": "",
+        "collecting": true
+      }
+    },
+    {
+      "id": "complete39Response",
+      "chunks": [
+        "24233030303030203030303030203030303030203030303030203030303030203030303030203030303030203030303030203030303030203030303030203030303030203030303030203030303030203030",
+        "3030302030303030302030303030302030303030302030303030302030303030312030303030322030303030332030303030302030303030302030303030302031203030303030203030303030203030303635203030303030203030303030203030303130203030303030203030303030203030303030203030303030203030303030203030303030203030303030203030303030520d"
+      ],
+      "expected": {
+        "texts": [
+          "00000 00000 00000 00000 00000 00000 00000 00000 00000 00000 00000 00000 00000 00000 00000 00000 00000 00000 00001 00002 00003 00000 00000 00000 1 00000 00000 00065 00000 00000 00010 00000 00000 00000 00000 00000 00000 00000 00000"
+        ],
+        "buffer_hex": "",
+        "collecting": true,
+        "updates": [
+          {
+            "rgb_timer": [
+              "00001",
+              "00002",
+              "00003",
+              "00010"
+            ],
+            "bind": {
+              "available": true,
+              "active": true
+            },
+            "sync_type": 1,
+            "event": "OK"
+          }
+        ]
+      }
+    }
+  ],
+  "selectors": [
+    {
+      "id": "pair15",
+      "name": "HHC0000015B00X",
+      "expected_layout": "PanelA",
+      "expected_scan": true
+    },
+    {
+      "id": "pair35",
+      "name": "HHC0000035B00X",
+      "expected_layout": "PanelD",
+      "expected_scan": true
+    },
+    {
+      "id": "pair45",
+      "name": "HHC0000045B00X",
+      "expected_layout": "PanelD",
+      "expected_scan": true
+    },
+    {
+      "id": "pair85",
+      "name": "HHC0000085B00X",
+      "expected_layout": "PanelD",
+      "expected_scan": true
+    },
+    {
+      "id": "pair25",
+      "name": "HHC0000025B00X",
+      "expected_layout": "PanelFour",
+      "expected_scan": true
+    },
+    {
+      "id": "pair55",
+      "name": "HHC0000055B00X",
+      "expected_layout": "PanelFour",
+      "expected_scan": true
+    },
+    {
+      "id": "pair95",
+      "name": "HHC0000095B00X",
+      "expected_layout": "WR1140",
+      "expected_scan": true
+    },
+    {
+      "id": "pair96",
+      "name": "HHC0000096B00X",
+      "expected_layout": "WR1140",
+      "expected_scan": true
+    },
+    {
+      "id": "pair97",
+      "name": "HHC0000097B00X",
+      "expected_layout": "WR1140",
+      "expected_scan": true
+    },
+    {
+      "id": "pair98",
+      "name": "HHC0000098B00X",
+      "expected_layout": "WR1140",
+      "expected_scan": true
+    },
+    {
+      "id": "pair65",
+      "name": "HHC0000065B00X",
+      "expected_layout": "PanelThree",
+      "expected_scan": true
+    },
+    {
+      "id": "pair75",
+      "name": "HHC0000075B00X",
+      "expected_layout": "PanelThree",
+      "expected_scan": true
+    },
+    {
+      "id": "pair01",
+      "name": "HHC0000001B00X",
+      "expected_layout": "PanelZero",
+      "expected_scan": true
+    },
+    {
+      "id": "pair11",
+      "name": "HHC0000011B00X",
+      "expected_layout": "PanelOne",
+      "expected_scan": true
+    },
+    {
+      "id": "pair22",
+      "name": "HHC0000022B00X",
+      "expected_layout": "PanelTwo",
+      "expected_scan": true
+    },
+    {
+      "id": "pair31",
+      "name": "HHC0000031B00X",
+      "expected_layout": "PanelThree",
+      "expected_scan": true
+    },
+    {
+      "id": "pair41",
+      "name": "HHC0000041B00X",
+      "expected_layout": "PanelFour",
+      "expected_scan": true
+    },
+    {
+      "id": "pair51",
+      "name": "HHC0000051B00X",
+      "expected_layout": "PanelFive",
+      "expected_scan": true
+    },
+    {
+      "id": "pair61",
+      "name": "HHC0000061B00X",
+      "expected_layout": "PanelSix",
+      "expected_scan": true
+    },
+    {
+      "id": "pair71",
+      "name": "HHC0000071B00X",
+      "expected_layout": "PanelSeven",
+      "expected_scan": true
+    },
+    {
+      "id": "pair81",
+      "name": "HHC0000081B00X",
+      "expected_layout": "PanelEight",
+      "expected_scan": true
+    },
+    {
+      "id": "pair91",
+      "name": "HHC0000091B00X",
+      "expected_layout": "PanelNine",
+      "expected_scan": true
+    },
+    {
+      "id": "pairA1",
+      "name": "HHC00000A1B00X",
+      "expected_layout": "PanelA",
+      "expected_scan": true
+    },
+    {
+      "id": "pairB1",
+      "name": "HHC00000B1B00X",
+      "expected_layout": "PanelFour",
+      "expected_scan": true
+    },
+    {
+      "id": "pairC1",
+      "name": "HHC00000C1B00X",
+      "expected_layout": "PanelD",
+      "expected_scan": true
+    },
+    {
+      "id": "pairD1",
+      "name": "HHC00000D1B00X",
+      "expected_layout": "PanelSixZG",
+      "expected_scan": true
+    },
+    {
+      "id": "pairE1",
+      "name": "HHC00000E1B00X",
+      "expected_layout": "PanelE",
+      "expected_scan": true
+    },
+    {
+      "id": "pairZ1",
+      "name": "HHC00000Z1B00X",
+      "expected_layout": "PanelOne",
+      "expected_scan": true
+    },
+    {
+      "id": "null",
+      "name": null,
+      "expected_layout": "PanelOne",
+      "expected_scan": false
+    },
+    {
+      "id": "lowercaseHHCRejected",
+      "name": "hhc0000011B00X",
+      "expected_layout": "PanelOne",
+      "expected_scan": false
+    },
+    {
+      "id": "nonprefixHHCAdmitted",
+      "name": "000HHC0011B00X",
+      "expected_layout": "PanelOne",
+      "expected_scan": true
+    },
+    {
+      "id": "utf16-pair25",
+      "name": "HHC😀00025D000",
+      "expected_layout": "PanelFour",
+      "expected_scan": true,
+      "evidence": "Dart String.length/[] use UTF16 code units; device filter40d5b8/MainPanel40ee7c; synthetic non-BMP name, not hardware"
+    },
+    {
+      "id": "utf16-overlength",
+      "name": "HHC😀000025D000",
+      "expected_layout": "PanelZero",
+      "expected_scan": false,
+      "evidence": "Dart String.length/[] use UTF16 code units; synthetic15unit/14codepoint name rejected by scan; layout helper independently tested"
+    }
+  ]
+}

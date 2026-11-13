@@ -1250,6 +1250,7 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         "rize_home",
         BED_TYPE_GMMOTOR,
         BED_TYPE_MOTOMOTION,
+        "bedgear",
         "hush_base",
         "luuna",
         BED_TYPE_LEGGETT_LP_LEGACY,
@@ -1266,7 +1267,7 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
 def _name_rule_setup_name(bed_type: str | None, name: str | None) -> dict[str, str]:
     """Keep the raw Bluetooth name an app name rule reads, never the display name."""
     if (
-        bed_type not in NAME_RULE_VARIANTS_BY_BED_TYPE and bed_type not in (BED_TYPE_GMMOTOR, BED_TYPE_MOTOMOTION)
+        bed_type not in NAME_RULE_VARIANTS_BY_BED_TYPE and bed_type not in (BED_TYPE_GMMOTOR, BED_TYPE_MOTOMOTION, "bedgear")
     ) or name is None or is_mac_like_name(name):
         return {}
     return {CONF_BLE_DEVICE_NAME: name}

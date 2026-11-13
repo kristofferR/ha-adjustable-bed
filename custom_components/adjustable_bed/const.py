@@ -352,6 +352,7 @@ SIDE_BOTH: Final = "both"
 
 # Motors the timed_move action can name, and so the card can hold through it.
 TIMED_MOVE_MOTOR_OPTIONS: Final = (
+    "neck",
     "tv_lift",
     "back",
     "right_back",
@@ -501,6 +502,7 @@ BED_TYPE_MLILY: Final = "mlily"
 BED_TYPE_RICHMAT_CLASSIC_APPS: Final = "richmat_classic_apps"
 # Opt-in to the classic apps' third-service fallback when no fixed service exists.
 CONF_RICHMAT_CLASSIC_THIRD_SERVICE: Final = "richmat_classic_third_service"
+BED_TYPE_BEDGEAR: Final = "bedgear"
 BED_TYPE_MOTOMOTION: Final = "motomotion"
 BED_TYPE_HJBED: Final = "hjbed"
 BED_TYPE_RICHMAT_APP: Final = "richmat_app"
@@ -723,6 +725,7 @@ KEESON_LAYOUT_APP_BED_TYPES: Final = frozenset({BED_TYPE_TEMPUR_CURVE, BED_TYPE_
 SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SMART_SLEEP,
     BED_TYPE_YAMADA,
+    BED_TYPE_BEDGEAR,
     BED_TYPE_PARAMOUNT,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_ERGOMOTION_4,
@@ -911,6 +914,7 @@ SUPPORTED_BED_TYPES: Final = [
 # every member, so adding a post-connect mutation later fails loudly.
 OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
     {
+        BED_TYPE_BEDGEAR,
         BED_TYPE_MOTOMOTION,
         BED_TYPE_RICHMAT_CLASSIC_APPS,
         BED_TYPE_ERGOMOTION_4,

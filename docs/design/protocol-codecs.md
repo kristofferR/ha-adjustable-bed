@@ -289,3 +289,12 @@ controller; its own session and alarm callback live in `beds/n32_motion_bed/`.
 all 35 packet literals match existing Keeson and Okin N-frame encoders. Its
 shared-family controller extension owns alarm parsing, session fences, raw clock
 fields and captured release scheduling. No new codec or product alias is needed.
+
+Bedgear 2.0.1 (row A12) independently matches the HHC codec's short plain/M
+frames and decimal-digit XOR format. `decimal_fields` preserves the exact string
+widths of all three source builders, including the alarm's six-plus-four fields.
+The unchanged 75 nonempty vectors plus suppressed-query, parser and selector
+cases live in `tests/fixtures/bedgear/`; `tests/test_bedgear_vectors.py` proves
+the byte matches. The separate `BedgearProfile` owns its 15 layouts, independent
+name gates, timing and control release policies. No sibling app's parameters
+select its capabilities.

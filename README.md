@@ -126,6 +126,7 @@ Each linked guide has a Status line with the details.
 | [Malouf / Lucid](docs/beds/malouf.md) | [Malouf Base](docs/beds/malouf.md#malouf-base) 🧪, [Lucid Base](docs/beds/malouf.md#lucid-base) 🧪, [Nordic UART receiver](docs/beds/malouf.md#new_okin) ✅, [FFE5 receiver](docs/beds/malouf.md#legacy-ffe5-route) ✅ | Malouf, Lucid, Structures |
 | [OKIN Smart Sleep](docs/beds/smart-sleep.md) | OKIN Smart Sleep 2.4.9, P1 and P2 🧪 | App-selected models, hardware unverified |
 | [Smart Comfort seats](docs/beds/smart-comfort.md) | [Smart Comfort by SYNARGY](docs/beds/smart-comfort.md#synargy) 🧪, [Smart Comfort (SYNERGY)](docs/beds/smart-comfort.md#synergy) 🧪 | SYNARGY, Smart Comfort reclining seats |
+| [Bedgear](docs/beds/motomotion.md#bedgear) | [Bedgear app](docs/beds/motomotion.md#bedgear) 🧪 | Name-selected BED layouts |
 | [MotoMotion](docs/beds/motomotion.md) | [MotoMotion app](docs/beds/motomotion.md) 🧪 | MotoMotion |
 | [MotoSleep / Power Bob](docs/beds/motomotion.md#motosleep-and-power-bob-family) | [MotoSleep / Power Bob app, HHC models](docs/beds/motomotion.md#hhc-profiles-names-longer-than-14-characters) ✅, [Power Bob and binary MOTO models](docs/beds/motomotion.md#power-bob-profiles-14-character-names) 🧪 | HHC, Power Bob |
 | [OCTO Smart Control](docs/beds/octo.md) | [OCTO Smart Control receivers](docs/beds/octo.md#standard-variant-most-common) ✅, [RTV TV lift](docs/beds/octo.md#one-motor-tv-lift) ⚠️, [Octo Remote Star2](docs/beds/octo.md#star2-variant-octo-remote-star2) ✅ | OCTO |
