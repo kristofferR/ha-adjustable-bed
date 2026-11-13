@@ -3165,8 +3165,9 @@ exit-limit, clock query, bed link-name query, epoch sync and calendar sync in
 that order, at the profile's write cadence. Exit-limit is startup only.
 Extended records retain their framing on the Nordic raw route.
 
-The first held refresh waits one tick. HA awaits each radio write before the
-next tick, cancels unsent refreshes, drains an in-flight write, and never catches
+The first held refresh waits one tick before the requested movement window
+starts, so a 100 ms movement can send one refresh. HA awaits each radio write
+before the next tick, cancels unsent refreshes, drains an in-flight write, and never catches
 up missed ticks. Timed movement and renewable card holds use the real command
 scheduler, captured physical owner and a bounded deadline. Release and STOP end
 refresh without sending an extra packet. Firmware watchdog and physical stopping

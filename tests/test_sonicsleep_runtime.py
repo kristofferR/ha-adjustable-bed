@@ -82,10 +82,29 @@ async def test_real_factory_connect_entities_and_registered_alarm_paths(hass, ru
     assert written(client) == ["6e0d200501010300061e458290"]
     client.write_gatt_char.reset_mock()
     await hass.services.async_call(const.DOMAIN, "timed_move", {"device_id": "bed", "motor": "back", "direction": "down", "duration_ms": 250}, blocking=True)
-    assert written(client) == ["25" if ctrl._link.single else "6e01002594"] * 2
+    assert written(client) == ["25" if ctrl._link.single else "6e01002594"] * 3
     client.write_gatt_char.reset_mock()
     await hass.services.async_call(const.DOMAIN, "timed_move", {"device_id": "bed", "motor": "both", "direction": "up", "duration_ms": 250}, blocking=True)
-    assert written(client) == ["29" if ctrl._link.single else "6e01002998"] * 2
+    assert written(client) == ["29" if ctrl._link.single else "6e01002998"] * 3
+
+
+@pytest.mark.parametrize("runtime", ROUTES, indirect=True)
+async def test_minimum_timed_move_and_single_pulse_action_send_one_frame(hass, runtime, clock):
+    target, client, _ = runtime
+    assert await target.async_connect()
+    ctrl = target.controller
+    assert isinstance(ctrl, bed.SonicSleepController)
+    expected = "24" if ctrl._link.single else "6e01002493"
+    client.write_gatt_char.reset_mock()
+    start = clock[0]
+    await hass.services.async_call(const.DOMAIN, "timed_move", {"device_id": "bed", "motor": "back", "direction": "up", "duration_ms": 100}, blocking=True)
+    assert written(client) == [expected]
+    assert clock[0] - start == pytest.approx(0.2)
+
+    target._motor_pulse_count = 1
+    client.write_gatt_char.reset_mock()
+    await target.async_execute_controller_command(lambda c: c.move_back_up())
+    assert written(client) == [expected]
 
 
 async def test_registered_alarm_edit_ack_requires_current_fields_before_toggle(hass, runtime):

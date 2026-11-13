@@ -79,7 +79,7 @@ async def test_routes_exact_startup_roles_and_all_public_commands(clock, route, 
         action = p["action"]
         if action in DIRECTIONS:
             await ctrl.hold_control(action, 201)
-            expected = [row["expected_bytes"]] * 2
+            expected = [row["expected_bytes"]] * 3
         else:
             await ctrl.action(action.removeprefix("save_"), save=action.startswith("save_"))
             expected = [row["expected_bytes"]]
@@ -294,6 +294,44 @@ async def test_cancel_during_tick_fences_unsent_and_drain_inflight(clock):
     await ctrl.hold_control("head_up", 1000)
     await ctrl.stop_all()
     assert frames(c) == ["6e01002493"]
+
+
+@pytest.mark.parametrize("wait", ["tick", "lock"])
+async def test_minimum_hold_drops_writes_after_deadline(clock, monkeypatch, wait):
+    ctrl, c = make()
+    await ctrl.start_notify()
+    c.client.write_gatt_char.reset_mock()
+    start = clock[0]
+    if wait == "tick":
+        async def late_tick(seconds, cancel):
+            clock[0] += 0.2
+            return cancel.is_set()
+
+        monkeypatch.setattr(bed, "_pause", late_tick)
+        await ctrl.hold_control("head_up", 100)
+    else:
+        async with ctrl._ble_lock:
+            task = asyncio.create_task(ctrl.hold_control("head_up", 100))
+            await asyncio.sleep(0)
+            await asyncio.sleep(0)
+            clock[0] = start + 0.2
+        await task
+    assert frames(c) == []
+
+
+async def test_cancel_during_first_tick_prevents_minimum_hold_write(clock, monkeypatch):
+    ctrl, c = make()
+    await ctrl.start_notify()
+    c.client.write_gatt_char.reset_mock()
+
+    async def cancel_tick(seconds, cancel):
+        clock[0] += seconds
+        cancel.set()
+        return True
+
+    monkeypatch.setattr(bed, "_pause", cancel_tick)
+    await ctrl.hold_control("head_up", 100)
+    assert frames(c) == []
 
 
 async def test_slow_writes_do_not_backfill_or_exceed_deadline(clock):

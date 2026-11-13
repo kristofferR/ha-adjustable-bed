@@ -339,7 +339,8 @@ class SonicSleepController(ProfileExecution[SonicSleepProfile], BedController):
         self.validate_hold_control(control, duration_ms)
         link = self._live()
         packet = codec.function(DIRECTIONS[control], single=link.single)
-        deadline = monotonic() + self.leased_hold_ms(duration_ms) / 1000
+        # The first queue tick precedes the requested movement window.
+        deadline = monotonic() + TICK_S + self.leased_hold_ms(duration_ms) / 1000
         while not self._coordinator.cancel_command.is_set() and monotonic() < deadline:
             await self._send(link, packet, deadline=deadline)
 
