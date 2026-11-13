@@ -93,7 +93,9 @@ async def test_factory_uses_advertisement_for_driver_and_saved_model_for_ui():
     bed.coordinator.entry = SimpleNamespace(
         data={"product_type": "3", "ble_device_name": "sleepbt"}, options={}
     )
-    bed.coordinator.hass.async_add_import_executor_job = AsyncMock()
+    bed.coordinator.hass.async_add_import_executor_job = AsyncMock(
+        side_effect=lambda func, *args: func(*args)
+    )
     result = await create_controller(
         bed.coordinator,
         const.BED_TYPE_DOUBLESLEEP,
