@@ -80,6 +80,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `okimat` | S stream | U | U | glory, support, resident | same apps as Okin CST; see observation 3 |
 | `customatic_zseries` | S stream | U | U | glory | recognized masks only |
 | `serenity` | S stream | U | U | serenity | remaining bitmask restarts a recognized command or is ignored |
+| `rize_remedy_ii` | S stream | U | U | rize-remedy-ii, row180 | exact-value switch; Flat + preset save chords only, no arbitrary motor union |
 | `tranquil` | S stream | U | U | tranquil | recognized masks only |
 | `adjustable_bed` (unit087) | S stream (P1/P3), S latched (P2) | U | U | adjustbed | P2 uses the conservative latched ceiling because lumbar sends one start; head/feet still refresh during the lease. Speech movement is bounded, followed by voice STOP and ordinary release |
 | `rize_home` | S stream | U | U | rize-home | Fixed held refresh and source-specific STOP; one global resource, no arbitrary composition |
@@ -761,6 +762,8 @@ Report workspaces are machine-local under
 | svane | `com.svane.svaneremote` | Version 1.8 | COMPLETE | `com.svane.svaneremote-Version_1.8-2026-09-30-extra-four-b-130-003/report/` |
 | tempur | `com.ore.tempur` | 1.7 | COMPLETE | `com.ore.tempur-1.7-2026-10-26-39bdcafa-repair-001/report/` |
 | tempur_au | `com.sfd.tempur_au` | 1.6 | COMPLETE | `com.sfd.tempur_au-1.6-2026-10-26-39bdcafa-001/report/` |
+| rize-remedy-ii | `com.okin.bedding.rizeii` | 1.0.1 (2) | COMPLETE | `com.okin.bedding.rizeii-1.0.1-2026-11-12-queue001/report/` |
+| row180 | `com.okin.bedding.rizeii` | 1.0.1 (2) | COMPLETE | Accepted row180 E07/E08, refresh 100 ms and STOP +100/+200 ms |
 | tranquil | `com.okin.bedding.tranquil` | 1.0.2 | COMPLETE | `com.okin.bedding.tranquil-1.0.2-2026-10-01-queue-e0bb6807-20261001-052-002/report/` |
 | tx | `com.richmat.tx` | 1.0.0 | COMPLETE | `com.richmat.tx-1.0.0-2026-11-03-bulk061-001/work/report-revision-sol-001/` |
 | universal | `com.leggett.android.universal` | 2.9.0 | COMPLETE | `com.leggett.android.universal-2.9.0-20260824/report/` |

@@ -1046,3 +1046,13 @@ Privacy, antisnore and sensitivity use the shared bed channel. Child mode is a
 persisted HA admission setting with a local select and no hardware lock claim.
 Format/model settings belong to each physical side of a paired entry.
 See [Smart Sleep](beds/smart-sleep.md).
+
+
+### Rize Remedy II app
+
+Choose **Rize Remedy II app** explicitly. Its fixed layout has head, foot and
+lumbar controls, massage and lighting. The movement pulse count remains
+configurable from 1 to 600 (HA's 60-second press bound); the refresh interval
+is fixed at 100 ms. The three named memory
+slots save Zero Gravity, Incline and Leisure by their Flat + preset chords.
+See the [profile guide](beds/okin-nframe.md#rize-remedy-ii).

@@ -90,6 +90,7 @@ ROUTES: dict[str, Route] = {
         for product in _CST_PRODUCTS
     },
     "serenity": Route("serenity", "move_head_up", CST_HEAD, CST_STOP, 2, 100),
+    "rize_remedy_ii": Route("rize_remedy_ii", "move_lumbar_up", "0c02000000100000000000000000", CST_STOP, 2, 100),
     "tranquil": Route("tranquil", "move_head_up", CST_HEAD, CST_STOP, 2, 100),
     "zseries_z230": Route("customatic_zseries", "move_head_up", CST_HEAD, CST_STOP, 2, 100),
     "zseries_z280": Route(

@@ -134,6 +134,7 @@ from .const import (
     BED_TYPE_RICHMAT_REVIVE,
     BED_TYPE_RIZE,
     BED_TYPE_RIZE_HOME,
+    BED_TYPE_RIZE_REMEDY_II,
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
     BED_TYPE_SCOTT_LIVING,
@@ -582,6 +583,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_FURNIMOVE: "FurniMove / OKIN Smart Remote (choose handset ID)",
     BED_TYPE_SERENITY: "Jordan's Serenity app",
     BED_TYPE_TRANQUIL: "Jordan's Tranquil app",
+    BED_TYPE_RIZE_REMEDY_II: "Rize Remedy II app",
     BED_TYPE_ZSERIES: "Customatic Z-Series app",
     BED_TYPE_SIMMONS: "SIMMONS app",
     BED_TYPE_ADJUSTAMATTRESS: "AdjustaMattress app (seven product layouts)",
@@ -1354,6 +1356,15 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         elif result.bed_type != BED_TYPE_RIZE_HOME:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_RIZE_HOME]))
             result.signals.append("name:rize_home_app_candidate")
+    if (
+        isinstance(platform_name, str) and platform_name.lower().startswith("okin")
+        and not any(signal.startswith("excluded:") for signal in result.signals)
+    ):
+        # Name-only acceptance in the app proves a candidate, never hardware identity.
+        result.ambiguous_types = list(dict.fromkeys([
+            *(result.ambiguous_types or ()), BED_TYPE_RIZE_REMEDY_II,
+        ]))
+        result.signals.append("name:rize_remedy_ii_app_candidate")
     if mlily_scan_matches(service_info.name) and mlily_suggested_profile(service_info.name) and not any(signal.startswith("excluded:") for signal in result.signals):
         if result.bed_type is None:
             result = DetectionResult(BED_TYPE_MLILY, 0.3, ["name:mlily_app_candidate", *result.signals])
