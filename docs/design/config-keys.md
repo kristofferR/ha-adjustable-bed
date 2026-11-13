@@ -110,6 +110,7 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `richmat_remote` | Profile | A question of `richmat` without an RMControl product; the Richmat question stages the code the Bluetooth name carries | `beds/richmat/controller.py`, `coordinator.py`, `profile_recommendations.py` |
 | `rmcontrol_product` | Profile | A question of `richmat`; the Richmat question's RMControl answer requires one | `beds/richmat/controller.py` |
 | `rmcontrol_side` | Profile | A question of `richmat` with an RMControl product | `beds/richmat/controller.py` |
+| `symphony_side` | Profile | Symphony Sleep Sense product questions and Configure; paired child targets bind their own side | `beds/symphony/controller.py`, `app_profiles.py` |
 | `cb24_bed_selection` | User | A question of `okin_cb24` | `beds/okin_cb24.py` |
 | `gmmotor_side` | Profile | A question of `gmmotor` | bed builders |
 | `starcode_abm5_4_command_selector` | User | A question of `starcode_abm5_4` | bed builders |

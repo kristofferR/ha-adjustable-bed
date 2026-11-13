@@ -118,6 +118,13 @@ async def factory_controllers() -> list[BedController]:
     )
     controllers: list[BedController] = []
     controllers.extend(ComfortEnhancement3Controller(_FactoryCoordinator(), i) for i in range(len(REMOTES)))
+    from custom_components.adjustable_bed.beds.symphony.controller import SymphonyController
+    from custom_components.adjustable_bed.profiles.symphony import PRODUCTS, SymphonyProfile
+
+    for product in PRODUCTS.values():
+        for selector in (4, 9):
+            coordinator = _FactoryCoordinator()
+            controllers.append(SymphonyController(coordinator, SymphonyProfile(product, selector)))
     for bed_type in SUPPORTED_BED_TYPES:
         default = await _create_controller_for_bed_type(bed_type)
         controllers.append(default)

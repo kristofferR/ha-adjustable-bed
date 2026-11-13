@@ -15,6 +15,11 @@ the Adjustable bed (Lumbar) app, Rize Home and Resident Adjustable Base.
 
 ## Known Models
 
+Symphony Sleep Sense's P3 branches and fixed split helpers use this codec.
+See the [Symphony profile](okin-soundwave.md#symphony-sleep-sense) for its
+independent product/selector choices, model gates, alarms and session behavior.
+Its P1 and SoundWave branches are separately vector-tested.
+
 | Profile | Models |
 |---|---|
 | [Okimat](#okimat) | Okimat beds, Lucid L600, Customatic Demo, RF ECO BT bed receivers, other beds with Okin motors; the apps marked ⚠️ under [Apps](#apps) are unverified |

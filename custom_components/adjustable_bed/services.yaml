@@ -4100,3 +4100,128 @@ symphony_set_alarm:
             - none
             - memory_1
             - memory_2
+
+symphony_sense_set_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      default: both
+      selector:
+        select:
+          options: [both, left, right]
+    enabled:
+      required: true
+      selector:
+        boolean:
+    time:
+      selector:
+        time:
+    weekdays:
+      default: []
+      selector:
+        select:
+          multiple: true
+          options:
+            - {value: '1', label: Monday}
+            - {value: '2', label: Tuesday}
+            - {value: '3', label: Wednesday}
+            - {value: '4', label: Thursday}
+            - {value: '5', label: Friday}
+            - {value: '6', label: Saturday}
+            - {value: '7', label: Sunday}
+    wake_mode:
+      selector:
+        select:
+          options: [zero_g, flat, memory_1, memory_2, massage, reading, tv, anti_snore, light]
+
+symphony_set_light:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      default: both
+      selector:
+        select:
+          options: [both, left, right]
+    color:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 7
+          mode: box
+    brightness:
+      required: true
+      selector:
+        number:
+          min: 20
+          max: 80
+          mode: box
+
+symphony_anti_snore:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      default: both
+      selector:
+        select:
+          options: [both, left, right]
+    enabled:
+      required: true
+      selector:
+        boolean:
+    axis:
+      default: head
+      selector:
+        select:
+          options: [head, elevation]
+    strength:
+      default: 1
+      selector:
+        select:
+          options:
+            - {value: '1', label: Low}
+            - {value: '2', label: SoundWave medium}
+            - {value: '3', label: Legacy medium / SoundWave high}
+            - {value: '6', label: Legacy high}
+    demo:
+      default: false
+      selector:
+        boolean:
+
+symphony_preset:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      default: both
+      selector:
+        select:
+          options: [both, left, right]
+    preset:
+      required: true
+      selector:
+        select:
+          options: [zero_g, flat, memory_1, memory_2, reading, tv, anti_snore]
+    save:
+      default: false
+      selector:
+        boolean:

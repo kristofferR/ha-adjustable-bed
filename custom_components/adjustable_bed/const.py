@@ -443,6 +443,8 @@ BED_TYPE_OKIN_DOT: Final = "okin_dot"  # DOT PROTOCOL: CB24-style frames, FurniM
 BED_TYPE_SMART_SLEEP: Final = "smart_sleep"
 BED_TYPE_JALON_BED: Final = "jalon_bed"
 BED_TYPE_SYMPHONY_SLEEP: Final = "symphony_sleep"
+BED_TYPE_SYMPHONY: Final = "symphony"
+CONF_SYMPHONY_SIDE: Final = "symphony_side"
 BED_TYPE_BF: Final = "bf"
 BED_TYPE_CHERISH: Final = "cherish"
 BED_TYPE_OKIN_ORE: Final = "okin_ore"  # OREBedBleProtocol (A5 5A format, 00001000 service)
@@ -737,6 +739,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_BF,
     BED_TYPE_JALON_BED,
     BED_TYPE_SYMPHONY_SLEEP,
+    BED_TYPE_SYMPHONY,
     BED_TYPE_CHERISH,
     "casper_remote",
     "hush_remote",

@@ -4778,7 +4778,31 @@
       "local_name": "SARM*"
     },
     {
+      "local_name": "SLEEP*"
+    },
+    {
       "local_name": "SLEEPSTAR*"
+    },
+    {
+      "local_name": "SLEEp*"
+    },
+    {
+      "local_name": "SLEeP*"
+    },
+    {
+      "local_name": "SLEep*"
+    },
+    {
+      "local_name": "SLeEP*"
+    },
+    {
+      "local_name": "SLeEp*"
+    },
+    {
+      "local_name": "SLeeP*"
+    },
+    {
+      "local_name": "SLeep*"
     },
     {
       "local_name": "SMARTBED*",
@@ -5064,6 +5088,30 @@
     },
     {
       "local_name": "SealyMF*"
+    },
+    {
+      "local_name": "SlEEP*"
+    },
+    {
+      "local_name": "SlEEp*"
+    },
+    {
+      "local_name": "SlEeP*"
+    },
+    {
+      "local_name": "SlEep*"
+    },
+    {
+      "local_name": "SleEP*"
+    },
+    {
+      "local_name": "SleEp*"
+    },
+    {
+      "local_name": "SleeP*"
+    },
+    {
+      "local_name": "Sleep*"
     },
     {
       "local_name": "SmARTBED*",
@@ -7998,6 +8046,30 @@
       "local_name": "s4-y-*"
     },
     {
+      "local_name": "sLEEP*"
+    },
+    {
+      "local_name": "sLEEp*"
+    },
+    {
+      "local_name": "sLEeP*"
+    },
+    {
+      "local_name": "sLEep*"
+    },
+    {
+      "local_name": "sLeEP*"
+    },
+    {
+      "local_name": "sLeEp*"
+    },
+    {
+      "local_name": "sLeeP*"
+    },
+    {
+      "local_name": "sLeep*"
+    },
+    {
       "local_name": "sMARTBED*",
       "connectable": true
     },
@@ -8267,6 +8339,30 @@
     },
     {
       "local_name": "sealymf*"
+    },
+    {
+      "local_name": "slEEP*"
+    },
+    {
+      "local_name": "slEEp*"
+    },
+    {
+      "local_name": "slEeP*"
+    },
+    {
+      "local_name": "slEep*"
+    },
+    {
+      "local_name": "sleEP*"
+    },
+    {
+      "local_name": "sleEp*"
+    },
+    {
+      "local_name": "sleeP*"
+    },
+    {
+      "local_name": "sleep*"
     },
     {
       "local_name": "sleepstar*"

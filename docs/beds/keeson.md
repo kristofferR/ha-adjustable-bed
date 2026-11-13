@@ -13,6 +13,11 @@ architecture.
 
 ## Known Models
 
+Symphony Sleep Sense's selector 4 and fixed split P1 helpers use this codec.
+Its independent product/selector choices, lifecycle, alarm modes and supported
+controls are documented in the [Symphony profile](okin-soundwave.md#symphony-sleep-sense).
+The app is an explicit choice; a shared name or UUID does not identify it.
+
 Brands using Keeson/Ergomotion actuators:
 
 - Serta, including Serta Motion Perfect III and other BLE-enabled, non-cloud Serta bases

@@ -353,6 +353,7 @@ def test_combined_motor_hold_intersection_checks_direction_and_timing(
         device_info={},
         children={"left": left, "right": right},
         connection_mode=PAIR_CONNECTION_MODE_CONCURRENT,
+        supports_simultaneous_side_holds=True,
     )
     button = next(
         item

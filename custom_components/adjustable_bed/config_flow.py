@@ -1241,6 +1241,7 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         BED_TYPE_COMFORT_ENHANCEMENT3,
         BED_TYPE_MOTION_BED,
         BED_TYPE_DOUBLESLEEP,
+        "symphony",
         BED_TYPE_SLEEPTRACKER,
         BED_TYPE_ISLEEP,
         BED_TYPE_KOMFYD,
@@ -1286,6 +1287,9 @@ def _motor_count_options(
         return [1]
     if bed_type == BED_TYPE_FURNIMOVE:
         return [1, 2, 3, 4]
+    if bed_type == "symphony":
+        # Hidden and derived by the explicit product, including SS800's fifth axis.
+        return [2, 3, 4, 5]
     if bed_type in {
         *OKIN_BEDDING_APP_BED_TYPES,
         BED_TYPE_SIMMONS,

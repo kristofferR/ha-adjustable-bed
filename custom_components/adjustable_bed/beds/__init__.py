@@ -125,6 +125,7 @@ if TYPE_CHECKING:
     from .starcode.star_elevate import StarElevateController as StarElevateController
     from .suta import SutaController as SutaController
     from .svane.controller import SvaneController as SvaneController
+    from .symphony.controller import SymphonyController as SymphonyController
     from .tempur_au import TempurAUController as TempurAUController
     from .tempur_curve import TempurCurveController as TempurCurveController
     from .timotion_ahf import TiMOTIONAhfController as TiMOTIONAhfController
@@ -140,6 +141,7 @@ _EXPORT_MODULES = {
     "ResidentController": "resident.controller",
     "SmartSleepController": "smart_sleep.controller",
     "JalonBedController": "jalon_bed.controller",
+    "SymphonyController": "symphony.controller",
     "GoodVibeController": "goodvibe.controller",
     "MotoMotionController": "motomotion.controller",
     "HJBedController": "hjbed.controller",
@@ -300,6 +302,7 @@ __all__ = [
     "KaidiController",
     "KeesonController",
     "JalonBedController",
+    "SymphonyController",
     "LimossController",
     "LinakController",
     "LogicdataController",

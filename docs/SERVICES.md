@@ -68,6 +68,20 @@ head actions. `stop` cancels refresh and writes no movement STOP packet on
 explicit models. Their massage-off packet is a separate action. Hardware
 behavior for these explicit app profiles remains unverified.
 
+## Symphony Sleep Sense
+
+The [Symphony guide](beds/okin-soundwave.md#symphony-sleep-sense) documents
+`symphony_sense_set_alarm`, `symphony_set_light`, `symphony_anti_snore` and
+`symphony_preset`. Recall and save are explicit actions. All selected receivers
+are validated before requested control frames are sent. Alarm changes on split
+products first require a complete current-session response to preserve the peer.
+Sequential alarm operations hydrate again within their executing session.
+Split P1 Both changes compose one full table; split P3 cannot share one enabled
+alarm time between sides. Serialized pairs offer renewable holds on Left or
+Right, while finite Both actions remain available.
+Motor covers expose renewable holds through the standard `timed_move` and
+`hold_control` actions; presets stay finite.
+
 ## OKIN SleepEase / DoubleSleep
 
 `doublesleep_configure` accepts a bed `device_id` and optional paired target

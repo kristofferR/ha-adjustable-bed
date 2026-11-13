@@ -16,6 +16,10 @@ prepare/commit, connection switching and its STOP fan-out:
 | `SequentialTwoLinkTopology` | Two addresses, sequential mode | One link lane. Each side connects, runs and disconnects before the next; STOP reaches only connected or ready local sides. |
 | `SingleLinkSideAwareTopology` | One address | One lane per logical side. A native Both is one physical operation; otherwise the side frames run in turn and STOP cancels the shared scheduler once. |
 
+The static `single_address_native_both` bed trait can require separate side
+operations before a live controller exists. Symphony's two split products use
+that path, including both captured STOP frames on their one physical link.
+
 A two-link pair holds both two-link strategies, and the current connection mode
 selects one. `PairAdmission` holds the cancellation generations and the active
 group for all strategies of a pair, so a command queued before automatic
