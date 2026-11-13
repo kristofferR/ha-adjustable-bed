@@ -82,6 +82,16 @@ APK Protocol Audit row044.
 | ✅ | [OkinComfortBed Ⅱ](https://apkpure.com/okin-comfortbed-%E2%85%B1/com.ore.jalon.neworebeding_android) 1.4 (4) | `com.ore.jalon.neworebeding_android` | [Jalon](#okincomfortbed-ⅱ-jalon) |
 | Separate processor | Tempur Sleeptracker-AI ([framed-JSON processor guide](sleeptracker.md)) | `com.fullpower.applications.horizon` | none |
 
+**iDealBed 6i app boundary:** iDealBed 6i Adjustable, acquired as iDealBed 6i
+Remote, `com.keeson.idealbed6iremote` 1.2.0 (11), controls beds over LAN UDP
+or cloud TCP. No direct BLE or Bluetooth Classic bed-control path was found
+in that exact Android artifact (APK Protocol Audit row145). Its network controls,
+Wi-Fi setup and cloud/account services are outside this Bluetooth-only
+integration. This finding does not apply to all iDealBed devices or to the
+separately supported [Idealbed BLE app](richmat.md#richmat-mh-apps)
+(`com.richmat.idealbed`). Choose a BLE profile only from independently identified
+hardware or app evidence, never from the iDealBed brand or this package name.
+
 **ComfortBaseForWifi is network-only:** ComfortBaseForWifi 3.7 (10)
 (`com.ore.jalon.comfortwifiandroid`) controls beds over TCP/HTTP and has no
 direct BLE path. Its Wi-Fi setup and cloud/account features are outside this
