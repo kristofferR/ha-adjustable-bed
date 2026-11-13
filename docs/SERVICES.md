@@ -920,3 +920,14 @@ Use the usual `device_id` and optional `side` fields. See the
 [Jalon profile](beds/keeson.md#okincomfortbed-ⅱ-jalon) for the wire behavior,
 held gestures and hardware caveats. The generic `sync_clock` action also
 supports this profile.
+
+### SonicSleep bed settings
+
+`adjustable_bed.sonicsleep` takes `device_id`, optional paired `side`, and
+`operation`: `list`, `new`, `edit`, `toggle`, `delete`, `link_name` or `sync_clock`.
+Alarm form fields are `hour`, `minute`, `mode`, `weekdays` (Monday 0 to Sunday 6)
+and `enabled`. Edit/toggle/delete select a received `alarm_id`; toggle preserves
+all received raw fields except enabled. Clock capability and current alarm cache
+are required before writes. Missing/changed cache rejects the action. A silent
+empty-list query cannot safely allocate a new alarm. All target constraints pass
+before any target's setting changes. See the [SonicSleep reference](beds/richmat.md#sonicsleep).

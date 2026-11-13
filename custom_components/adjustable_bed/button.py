@@ -1255,6 +1255,8 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
         attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
         controller = self._coordinator.capability_controller
         hold = controller.standard_button_hold_spec(self.entity_description.key) if controller else None
+        if controller and controller.standard_button_requires_confirmation(self.entity_description.key):
+            attributes["requires_confirmation"] = True
         if hold is not None:
             attributes.update(held_control=hold.control, hold_start_delay_ms=hold.start_delay_ms,
                               hold_release_delay_ms=hold.release_delay_ms)
@@ -1434,6 +1436,8 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Expose the current held control to the bounded card/service path."""
         attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
+        if self._spec.requires_confirmation:
+            attributes["requires_confirmation"] = True
         hold = self._current_hold_spec()
         if hold is not None:
             attributes.update(
@@ -1561,6 +1565,12 @@ class PairedBedCombinedButton(RenamesInPlace, PlacedInCard, ButtonEntity):
         """Expose a bounded Both timed move when both sides own that motor."""
         attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
         action = self.entity_description.key
+        if any(
+            child.capability_controller is not None
+            and child.capability_controller.standard_button_requires_confirmation(action)
+            for child in self._coordinator.children.values()
+        ):
+            attributes["requires_confirmation"] = True
         motor = next(
             (candidate for candidate in ("head", "legs") if action.startswith(f"{candidate}_")),
             None,

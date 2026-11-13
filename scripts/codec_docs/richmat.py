@@ -32,12 +32,14 @@ from custom_components.adjustable_bed.beds.richmat_classic.profiles import load_
 from custom_components.adjustable_bed.beds.richmat_mh import protocol as mh_frames
 from custom_components.adjustable_bed.beds.rmcontrol import controller as rmcontrol_bed
 from custom_components.adjustable_bed.beds.rmcontrol import protocol as rmcontrol_frames
+from custom_components.adjustable_bed.beds.sonicsleep import protocol as sonic_protocol
 from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.codec import richmat as richmat_codec
 from custom_components.adjustable_bed.profiles import casper as casper_profiles
 from custom_components.adjustable_bed.profiles import hush as hush_profiles
 from custom_components.adjustable_bed.profiles import luuna as luuna_profiles
 from custom_components.adjustable_bed.profiles import richmat as richmat_profiles
+from custom_components.adjustable_bed.profiles import sonicsleep as sonic
 from scripts.codec_docs import _galaxy
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
@@ -150,6 +152,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
     """Bed types per profile; ``tests/test_codec_docs.py`` checks them against the factory."""
     mh_types = {app: bed_type for bed_type, app in _const.RICHMAT_MH_APPS.items()}
     return {
+        "one": (_const.BED_TYPE_SONICSLEEP,),
         **{
             profile.key: (_const.BED_TYPE_RICHMAT,) for profile in richmat_profiles.RICHMAT.values()
         },
@@ -251,6 +254,7 @@ def render_richmat_profiles() -> str:
     catalog = _table(
         ("Profile", "Bed type", "Transport order", "Commands", "Hold until release"),
         (
+            ("SonicSleep", "`sonicsleep`", "platform GATT order", "fixed IQRM product", "renewable lease; no release packet"),
             *(
                 (
                     _RICHMAT_NAMES[key],
@@ -299,6 +303,8 @@ def render_richmat_transports() -> str:
     for app in _LIBRARY_APPS:
         for transport in casper_profiles.TRANSPORTS:
             users.setdefault(transport, []).append(app)
+    for transport in sonic.ROUTES.values():
+        users.setdefault(transport, []).append("SonicSleep")
     return _block(
         _table(
             ("Key", "Service", "Write", "Notify", "Commands", "Profiles"),
@@ -1200,6 +1206,39 @@ def render_bedtech_commands() -> str:
 
 
 
+def render_sonicsleep() -> str:
+    actions = {**sonic.DIRECTIONS, "flat": sonic.FLAT}
+    for action, (recall, save) in sonic.PRESETS.items():
+        actions[action] = recall
+        actions["save_" + action] = save
+    return _block(
+        _table(("Product", "Stored product", "Physical motors", "Refresh", "Scan name substrings (case sensitive)"), [
+            (sonic.PROFILE.label, sonic.PROFILE.key, "2 (head and foot)", f"{sonic.TICK_S * 1000:g} ms", ", ".join(sonic.SCAN_KEYWORDS)),
+        ]),
+        _table(("Route", "Service", "Write", "Expected notify constant", "Function format"), (
+            (name, f"`{t.service_uuid}`", f"`{t.write_uuid}`", f"`{t.notify_uuid}`", "raw" if t.single else "framed")
+            for name, key in sonic.ROUTES.items() for t in (codec.TRANSPORTS[key],)
+        )),
+        _table(("Control", "Nordic", "W1–W5"), (
+            (name, _hex(codec.function(code, single=True)), _hex(codec.function(code)))
+            for name, code in actions.items()
+        )),
+        _table(("Startup", "Nordic", "W1–W5"), (
+            (name, _hex(codec.function(code, single=True)), _hex(codec.function(code, action=name)))
+            for name, code in (sonic.EXIT_LIMIT, sonic.QUERY_CLOCK)
+        )),
+        _table(("Extended operation (all routes)", "Frame"), [
+            ("List alarms", _hex(sonic_protocol.LIST_ALARMS)),
+            ("Query bed link name", _hex(sonic_protocol.LINK_NAME)),
+            ("Delete received ID 7", _hex(sonic_protocol.delete_alarm(7))),
+            ("New/edit ID 3, 06:30, zero gravity, Monday/Sunday, enabled", _hex(sonic_protocol.form_alarm(3, 6, 30, "zero_gravity", (0, 6), True).packet())),
+            ("Cached ID 3, opaque 07, 06:30, mode 45, Monday/Sunday, disabled", _hex(sonic_protocol.Alarm(3, 7, 6, 30, 69, 131).toggle(False).packet())),
+            ("Epoch, +05:30 truncated to 05", _hex(codec.time_sync(datetime.fromtimestamp(1794441600, timezone(timedelta(minutes=330))))[0])),
+            ("Calendar, 2026-11-12 05:30:00", _hex(codec.calendar(datetime(2026, 11, 12, 5, 30)))),
+        ]),
+    )
+
+
 def render_luuna() -> str:
     profiles = luuna_profiles.PROFILES
     return _block(
@@ -1302,6 +1341,7 @@ def render_rise_commands() -> str:
 
 
 BLOCKS: list[Block] = [
+    (GUIDE, "sonicsleep", render_sonicsleep),
     (GUIDE, "bedtech-models", render_bedtech_models),
     (GUIDE, "bedtech-app-commands", render_bedtech_commands),
     (GUIDE, "luuna", render_luuna),

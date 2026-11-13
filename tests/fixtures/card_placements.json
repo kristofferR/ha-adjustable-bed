@@ -1697,6 +1697,9 @@
  "button:solace_music_toggle": {
   "card_section": "utility"
  },
+ "button:sonicsleep_action": {
+  "card_section": "presets"
+ },
  "button:stair_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -3791,6 +3794,9 @@
   "card_section": "hidden"
  },
  "sensor:solace_audio_volume": {
+  "card_section": "hidden"
+ },
+ "sensor:sonicsleep": {
   "card_section": "hidden"
  },
  "sensor:starcode_abm5_4_automatic_white_flag": {

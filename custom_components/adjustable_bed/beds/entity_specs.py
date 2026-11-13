@@ -31,6 +31,8 @@ class ControllerButtonSpec:
     invalidates_position: bool = field(default=False, kw_only=True)
     # Cancel held admission; only the held task owns its protocol release frame.
     release_only: bool = field(default=False, kw_only=True)
+    # The native card asks before an explicit destructive/save action.
+    requires_confirmation: bool = field(default=False, kw_only=True)
     # Fills a translated name template, e.g. ``{action}``, with an app label.
     translation_placeholders: Mapping[str, str] | None = field(default=None, kw_only=True)
     card: CardPlacement = field(default=CARD_UTILITY, kw_only=True)

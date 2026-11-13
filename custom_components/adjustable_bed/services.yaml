@@ -3855,3 +3855,78 @@ jalon_bed_set_alarm:
       selector:
         select:
           options: [both, left, right]
+
+sonicsleep:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options:
+          - both
+          - left
+          - right
+    operation:
+      required: true
+      selector:
+        select:
+          options:
+          - list
+          - new
+          - edit
+          - toggle
+          - delete
+          - link_name
+          - sync_clock
+    alarm_id:
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
+    hour:
+      default: 6
+      selector:
+        number:
+          min: 0
+          max: 23
+          mode: box
+    minute:
+      default: 30
+      selector:
+        number:
+          min: 0
+          max: 59
+          mode: box
+    mode:
+      default: zero_gravity
+      selector:
+        select:
+          options:
+          - zero_gravity
+          - lounge
+          - tv
+          - anti_snore
+          - memory_1
+          - memory_2
+    weekdays:
+      selector:
+        select:
+          multiple: true
+          options:
+          - '0'
+          - '1'
+          - '2'
+          - '3'
+          - '4'
+          - '5'
+          - '6'
+    enabled:
+      default: true
+      selector:
+        boolean: null

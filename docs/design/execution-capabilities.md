@@ -149,6 +149,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `bedtech` explicit BT2000, BT2500, BT3000, BT3000FH, BT6500, BTX4, BTX4FH, BTX5, BTX5FH | S stream (no release frame) | U | U | bedtech713 | One timer per physical receiver, 100 ms refresh; stop cancels it without writing; FH banks share the timer |
 | `gmmotor` | B | B | B | gm | report PARTIAL; release behavior unresolved |
 | `casper_base` | B | B | B | casper | report PARTIAL |
+| `sonicsleep` (one / IQRM) | S stream (no release frame) | U | U | sonicsleep | First held refresh after 100 ms; release ends refresh; no firmware watchdog claim. |
 | `luuna` (Rise, Rise Pro, Rise Pro Light) | S stream (no release frame) | U | U | luuna | 100 ms held refresh, cancelled on tap-up/cancel; no live STOP enum caller. No composed axes or speed selector in the complete catalog. |
 | `hush_base` | S stream | B | B | hush, row126 | movement refreshes every 100 ms, first write after 100 ms, until release, then sends STOP `6e` on the same side; massage strength sends once on press and STOP on release; text controls send their short or long gesture with no release. #516 and #591: no shard assesses two held axes or a motor-speed selection. Not declared: the mixed gestures need a per-control scope (see [per-control scope](#per-control-hold-scope)), and Hush runs on the shared Casper Base controller, whose own hold is blocked |
 | **Jiecang F1 (J1)** | | | | | |
@@ -625,6 +626,8 @@ share the Okin N-frame files.
 
 ## Evidence keys
 
+- **sonicsleep**: accepted SonicSleep 1.0.4 (10400), row179, E-MOTOR/E-QUEUE. Six selected directions refresh at 100 ms and gesture release cancels refresh without any release packet. No concurrent-axis or watchdog proof.
+
 | row132 | OkinComfortBed II 2.0.2 (9), `com.ore.jalon.neworebeding`, unit132 E07/E09: all three profiles refresh held movement every 300 ms; STOP immediately and again after 300 ms. No concurrent-motor composition. |
 
 Report workspaces are machine-local under
@@ -632,6 +635,7 @@ Report workspaces are machine-local under
 
 | Key | Package | Version | Status | Workspace under `phase4-early/` |
 |---|---|---|---|---|
+| sonicsleep | `com.richmat.sonicsleep` | 1.0.4 (10400) | COMPLETE, accepted | `com.richmat.sonicsleep-1.0.4-2026-11-12-queue001/report/` |
 | paramount | `com.paramount.bedcontrol` | 3.0.4 | COMPLETE | `com.paramount.bedcontrol-3.0.4-2026-11-09-queue002/report/` |
 | smart-comfort-synargy | `com.synargy.okin` | 1.1.0 (12) | COMPLETE, accepted | `com.synargy.okin-1.1.0-2026-11-09-queue002/` |
 | smart-comfort-synergy | `com.synergy.okin` | 2.2.0 (16) | COMPLETE, accepted | `com.synergy.okin-2.2.0-2026-11-09-queue002/` |

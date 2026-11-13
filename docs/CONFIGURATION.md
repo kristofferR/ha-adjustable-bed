@@ -1023,3 +1023,5 @@ list. Generic motor, massage and timing settings belong to the selected app
 profile; a two-address pair keeps each side's product separately. The separate
 sleep device has its own entry and MM/HJ current or restored session choice.
 See the [Richmat guide](beds/richmat.md#richmat-420).
+
+SonicSleep selects its fixed one/IQRM product under Richmat. Setup owns the two-motor layout, disabled angle sensing and observed-only massage/light surface. Each physical side keeps its app settings. See [SonicSleep](beds/richmat.md#sonicsleep).

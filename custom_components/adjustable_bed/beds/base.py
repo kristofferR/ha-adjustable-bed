@@ -1042,6 +1042,10 @@ class BedController(GattWriter):
         """Optional held-control metadata for an existing standard button."""
         return None
 
+    def standard_button_requires_confirmation(self, key: str) -> bool:
+        """Whether the native card confirms a standard button before sending it."""
+        return False
+
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         """Return additional, product-gated actions for the button platform."""

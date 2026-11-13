@@ -111,6 +111,7 @@ if TYPE_CHECKING:
     from .sleepys.box25 import SleepysBox25LegacyController as SleepysBox25LegacyController
     from .smart_comfort.controller import SmartComfortController as SmartComfortController
     from .solace.controller import SolaceController as SolaceController
+    from .sonicsleep.controller import SonicSleepController as SonicSleepController
     from .starcode.abm5_4 import StarcodeAbm5_4Controller as StarcodeAbm5_4Controller
     from .starcode.m5x5 import StarcodeM5X5Controller as StarcodeM5X5Controller
     from .starcode.star_elevate import StarElevateController as StarElevateController
@@ -125,6 +126,7 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "SonicSleepController": "sonicsleep.controller",
     "ResidentController": "resident.controller",
     "JalonBedController": "jalon_bed.controller",
     "GoodVibeController": "goodvibe.controller",
@@ -304,6 +306,7 @@ __all__ = [
     "SleepysBox25LegacyController",
     "StarElevateController",
     "SolaceController",
+    "SonicSleepController",
     "SvaneController",
     "SutaController",
     "SmartComfortController",

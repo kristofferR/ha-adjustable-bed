@@ -251,6 +251,7 @@ class _BuilderSpec:
 # Bed types whose construction is "import this class and pass the coordinator
 # plus fixed kwargs".
 _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
+    "sonicsleep": _ControllerSpec("sonicsleep.controller", "SonicSleepController"),
     BED_TYPE_RESIDENT: _ControllerSpec("resident.controller", "ResidentController"),
     BED_TYPE_JALON_BED: _ControllerSpec("jalon_bed.controller", "JalonBedController"),
     BED_TYPE_BF: _ControllerSpec("bf_cherish.controller", "BfCherishController"),

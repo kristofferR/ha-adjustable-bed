@@ -1,6 +1,6 @@
 # Richmat
 
-**Status:** ✅ Tested (Richmat and legacy BedTech routes); ❓ explicit BedTech 7.1.3 models; ❓ the RMControl, Richmat MH, HJBed, Eshine, classic app, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, L&P legacy app, Casper Base Hush Base and Luuna + profiles are APK-verified with hardware unverified
+**Status:** ✅ Tested (Richmat and legacy BedTech routes); ❓ explicit BedTech 7.1.3 models; ❓ the RMControl, Richmat MH, HJBed, Eshine, classic app, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, L&P legacy app, Casper Base, Hush Base, SonicSleep and Luuna + profiles are APK-verified with hardware unverified
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), getrav, [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt) and [Josh Pearce](https://github.com/joshpearce) (L&P MlRM)
 
@@ -88,6 +88,7 @@ is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 | ✅ | [Good Vibe Sleep](https://play.google.com/store/apps/details?id=com.richmat.goodvibesleep) 2.0.1 (20103) | `com.richmat.goodvibesleep` | [Good Vibe Sleep](#good-vibe-sleep) |
 | ✅ | [MLILY Control](https://play.google.com/store/apps/details?id=com.richmat.mlily2) 5.0.2 (50200) | `com.richmat.mlily2` | [MLILY Control](#mlily-control) |
 | ✅ | [Casper Base](https://play.google.com/store/apps/details?id=com.richmat.casperbase) 1.0.8 (10800) | `com.richmat.casperbase` | [Casper Base](#casper-base); setup, sleep sensors and remote finder in its [own guide](casper-base.md) |
+| ✅ | [SonicSleep](https://play.google.com/store/apps/details?id=com.richmat.sonicsleep) 1.0.4 (10400) | `com.richmat.sonicsleep` | [SonicSleep](#sonicsleep) |
 | ✅ | [Luuna +](https://play.google.com/store/apps/details?id=com.richmat.luuna) 2.0.1 (20102) | `com.richmat.luuna` | [Luuna +](#luuna-) |
 | ✅ | [Hush Base](https://play.google.com/store/apps/details?id=com.richmat.hushbase) 1.0.5 (10501) | `com.richmat.hushbase` | [Hush Base](#hush-base); setup, sleep sensors and remote finder in its [own guide](hush-base.md) |
 
@@ -178,6 +179,7 @@ sends STOP.
 
 | Profile | Bed type | Transport order | Commands | Hold until release |
 |---|---|---|---|---|
+| SonicSleep | `sonicsleep` | platform GATT order | fixed IQRM product | renewable lease; no release packet |
 | HJBed | `hjbed` | W1, N1, W5, W4, W3, W2 | per-product catalog | renewable lease |
 | Richmat 4.2.0 | `richmat_app` | N1, W1, W2, W3, W4, W5 | per-model catalog | renewable lease |
 | Eshine | `eshine` | N1, W1, W2, W3, W4, W5 | [fixed E6000 table](#eshine-commands) | renewable lease |
@@ -278,13 +280,13 @@ and timing.
 
 | Key | Service | Write | Notify | Commands | Profiles |
 |---|---|---|---|---|---|
-| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna + |
+| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
 | W0 | `8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA |
-| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna + |
-| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna + |
-| W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna + |
-| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna + |
-| W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna + |
+| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
+| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
+| W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
+| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
+| W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
 
 W0 is the legacy custom service, W4 and W5 are name-guarded (see the Richmat
 profile's Setup). The Richmat routes try W0 to W5, then N1, then fall back to W1.
@@ -3066,6 +3068,171 @@ Hush Base sends only the frames frozen from its accepted row126 report, whose
 products, shared builders and auxiliary shards are listed in
 `tests/hush_vectors.py`. APK Protocol Audit row126 records the accepted source
 references, dispositions and exclusions.
+
+### SonicSleep
+
+**App:** [SonicSleep / 소닉슬립](https://play.google.com/store/apps/details?id=com.richmat.sonicsleep) 1.0.4 (10400), `com.richmat.sonicsleep`
+
+**Status:** ❓ APK-verified; hardware unverified.
+
+#### Setup
+
+Search for **SonicSleep** in manual setup or Configure, under Richmat. Setup
+stores the fixed `one` / IQRM product and two physical motors. Head, foot and
+combined controls are selections of those motors. Names and shared services
+never select another product, remote code or downloaded catalog. Each physical
+receiver keeps its own app settings in a two-address pair. There are no
+single-address side bytes, authentication challenge or mandatory bond.
+Home Assistant owns Bluetooth adapters, proxies, retries and connection handoff.
+
+The app's scan matches the case-sensitive substrings in the table. GATT discovery
+iterates recognized services in platform order: first eligible write and notify
+roles are retained independently, while each later recognized service overwrites
+the raw/framed route selector. The writer requires the exact write UUID and
+`write`; a write-without-response-only characteristic is rejected. The first
+`notify` characteristic wins, regardless of the expected UUID. Its writer's
+properties select the write response mode. Multi-service firmware can expose
+mixed roles under this source rule; physical compatibility remains unverified.
+
+#### Controls
+
+Two individual covers and one combined control expose the six held directions.
+Flat and six preset recalls send once. Every preset has an explicit save
+control. The native card asks for confirmation before saving, then sends the
+save opcode once. Automations can call the save entity or `save_preset`
+explicitly. The builder's long enum is a choice of opcode, not a physical hold
+requirement. The observed-only massage, light, position and split information
+never creates extra control entities or calibrated position sliders.
+
+<!-- generated:sonicsleep -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Product | Stored product | Physical motors | Refresh | Scan name substrings (case sensitive) |
+|---|---|---|---|---|
+| IQRM | one | 2 (head and foot) | 100 ms | QRRM, COOL, MPE_, 209A, BED- |
+
+| Route | Service | Write | Expected notify constant | Function format |
+|---|---|---|---|---|
+| Nordic | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | raw |
+| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed |
+| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed |
+| W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed |
+| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed |
+| W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed |
+
+| Control | Nordic | W1–W5 |
+|---|---|---|
+| head_up | `24` | `6E 01 00 24 93` |
+| head_down | `25` | `6E 01 00 25 94` |
+| foot_up | `26` | `6E 01 00 26 95` |
+| foot_down | `27` | `6E 01 00 27 96` |
+| both_up | `29` | `6E 01 00 29 98` |
+| both_down | `2A` | `6E 01 00 2A 99` |
+| flat | `31` | `6E 01 00 31 A0` |
+| zero_gravity | `45` | `6E 01 00 45 B4` |
+| save_zero_gravity | `66` | `6E 01 00 66 D5` |
+| lounge | `59` | `6E 01 00 59 C8` |
+| save_lounge | `65` | `6E 01 00 65 D4` |
+| tv | `58` | `6E 01 00 58 C7` |
+| save_tv | `64` | `6E 01 00 64 D3` |
+| anti_snore | `46` | `6E 01 00 46 B5` |
+| save_anti_snore | `69` | `6E 01 00 69 D8` |
+| memory_1 | `2E` | `6E 01 00 2E 9D` |
+| save_memory_1 | `2B` | `6E 01 00 2B 9A` |
+| memory_2 | `2F` | `6E 01 00 2F 9E` |
+| save_memory_2 | `2C` | `6E 01 00 2C 9B` |
+
+| Startup | Nordic | W1–W5 |
+|---|---|---|
+| deviceFunctionItemExitLimit | `00` | `6E 02 01 00 71` |
+| deviceFunctionItemCheckClock | `01` | `6E 08 01 01 78` |
+
+| Extended operation (all routes) | Frame |
+|---|---|
+| List alarms | `6E 08 20 05 01 00 00 9C` |
+| Query bed link name | `6E 08 20 06 03 00 00 9F` |
+| Delete received ID 7 | `6E 08 20 05 02 01 07 A5` |
+| New/edit ID 3, 06:30, zero gravity, Monday/Sunday, enabled | `6E 0D 20 05 01 01 03 00 06 1E 45 83 91` |
+| Cached ID 3, opaque 07, 06:30, mode 45, Monday/Sunday, disabled | `6E 0D 20 05 01 01 03 07 06 1E 45 82 97` |
+| Epoch, +05:30 truncated to 05 | `6E 0C 20 08 02 01 6A F5 01 80 05 8A` |
+| Calendar, 2026-11-12 05:30:00 | `6E 0D 20 08 03 01 38 0B 0C 05 1E 00 19` |
+<!-- /generated -->
+
+#### Timing
+
+Notifications are registered before enabling the channel. Startup sends
+exit-limit, clock query, bed link-name query, epoch sync and calendar sync in
+that order, at the profile's write cadence. Exit-limit is startup only.
+Extended records retain their framing on the Nordic raw route.
+
+The first held refresh waits one tick. HA awaits each radio write before the
+next tick, cancels unsent refreshes, drains an in-flight write, and never catches
+up missed ticks. Timed movement and renewable card holds use the real command
+scheduler, captured physical owner and a bounded deadline. Release and STOP end
+refresh without sending an extra packet. Firmware watchdog and physical stopping
+behavior remain unverified. Sequential two-link pairs reject renewable Both
+holds before motion; finite operations and individual-side controls remain usable.
+
+#### Notifications
+
+Common five-byte messages have no generic checksum gate. The source stream can
+consume a three-byte common fragment before its tail arrives; extended frames
+wait for their declared length and validate the additive checksum. HA preserves
+valid-frame behavior, bounds pending input and rejects malformed field access.
+The app's weaker bounds are not a claim about HA validation in the app.
+
+The state sensor publishes only observations from the current physical session:
+clock/light/snore/diagnostic capabilities, protocol version, bed mode, raw motor
+and travel values, massage/follow-shake, white/RGB light, anti-snore/off-bed,
+press/split status, BED diagnostic frames, alarm records and bed link name.
+No percentage/degree calibration or battery value is inferred. Reconnect and
+controller replacement invalidate the cache and old notification callbacks.
+
+Alarm list replies insert at the front if the record is absent. Escalations
+replace an existing matching ID only. ACKs remain observations, never retry
+instructions. Cached enable/disable preserves received ID, opaque byte, hour,
+minute, raw mode and weekday bits, replacing enabled bit zero only. Form edits
+use selected time/preset values and zero the opaque field. Selected edit/delete
+reuse received IDs, including IDs outside the new-ID allocator. New allocation
+searches 1 through 7 and hides add after seven list entries; this is app policy,
+not hardware capacity.
+
+The link name uses direct byte-to-character conversion. NULs are retained and
+UTF-8 is not decoded. In the app this name is stored and adds a separate sleep
+peripheral tab; its global scan and disconnect-all operations can affect that
+peripheral. HA retains the bed query/reply but manages only the selected bed's
+owned connection. The separate MM/SXB sleep sensing, reports, OTA and network
+paths remain outside BED support, even when their UUID overlaps W5.
+
+#### Services
+
+`adjustable_bed.sonicsleep` exposes `list`, `new`, `edit`, `toggle`, `delete`,
+`link_name` and `sync_clock`, with device and paired-side targeting. Alarm actions
+require a clock-capability reply. Read/modify/write actions require current
+connection-owned alarm records; missing replies reject before alarm writes.
+After a mutation, that ID requires fresh received fields before another mutation;
+an ACK alone cannot validate the previous record. Prepared fields are checked
+again under the BLE lock immediately before dispatch.
+A new alarm refreshes and collects observed list records before allocating an
+ID. Because no empty-list or list-completion reply is proven, silence rejects
+creation too. A changed cache or released/replaced connection invalidates a
+prepared all-target settings operation. Choose an individual side if a
+sequential pair cannot retain both live alarm caches.
+
+For forms, `hour`, `minute`, `mode`, `weekdays` (Monday 0 through Sunday 6) and
+`enabled` supply explicit values; `alarm_id` identifies a received record for
+edit, toggle or delete. Toggle ignores form defaults and preserves raw fields.
+Clock synchronization preserves whole-hour timezone truncation and year minus
+1970 encoding. No phone telemetry or sleep analytics reader is included.
+
+#### Evidence
+
+APK Protocol Audit row179, SonicSleep 1.0.4 (10400), artifact SHA-256
+`173f81b5e902650733fdd44968f31cf9ceee2b5c376d361acf043b985612b5e4`.
+All accepted command literals use the existing Richmat codec; receive and stream
+contracts are covered by the committed SonicSleep fixtures. Opaque alarm fields
+and caller-specific domains include the accepted R179-A001 repair. Hardware
+validation belongs to external beta/release users with existing beds.
 
 ### Luuna +
 

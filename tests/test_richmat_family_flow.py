@@ -22,6 +22,7 @@ APPS = [
     "richmat_420",
     "rmcontrol",
     "luuna",
+    "sonicsleep",
     "mlily",
     "revive",
     "best_mattress",
