@@ -293,6 +293,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "hush_base": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
     "luuna": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "mline": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_HAS_MASSAGE, CONF_MOTOR_PULSE_COUNT},
+    "sonicsleep": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "hush_sleep_mm": GENERIC_FIELDS,
     "hush_sleep_sxb": GENERIC_FIELDS,
     BED_TYPE_COMFORTBASE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -2503,6 +2504,18 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         "luuna",
         questions=(Question(CONF_PROTOCOL_VARIANT, _routes("luuna")),),
         derive=_luuna_settings,
+    ),
+    "sonicsleep": SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 2,
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_DELAY_MS: 100,
+            CONF_PROTOCOL_VARIANT: "auto",
+        },
+        derive=lambda _data: {CONF_PRODUCT_TYPE: "one"},
+        title=lambda _data: "SonicSleep IQRM",
+        imports=("profiles.sonicsleep",),
     ),
     # The layout owns the motion controls; Auto reads it from the Bluetooth name.
     BED_TYPE_BEDSENSE: _asking(

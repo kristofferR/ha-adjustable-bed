@@ -1421,12 +1421,13 @@ RICHMAT_FAMILY: Final = AppFamily(
         "RUF | Betten (Motor 2), W.Silver Products, AMERICANSTAR, Bailey's Bed Control, TX, "
         "Avocado Eco Base, CoasterSleep, Forty Winks, Milemont, Superior, Luuna Rise, Power Cool Sleep System, "
         "Lady Americana, ACAA, STA Homecare, Zero Gravity, SleepFunction and "
-        "SVEN & SON apps, Luuna +, and Richmat remotes"
+        "SVEN & SON apps, Luuna +, SonicSleep / 소닉슬립, and Richmat remotes"
     ),
     answers={
         "richmat_420": Answer("richmat_app"),
         "rmcontrol": Answer(BED_TYPE_RICHMAT, data={CONF_RMCONTROL_PRODUCT: None}),
         "luuna": Answer("luuna", data=_NO_RMCONTROL),
+        "sonicsleep": Answer("sonicsleep", data=_NO_RMCONTROL),
         "mlily": Answer(BED_TYPE_MLILY, data=_NO_RMCONTROL),
         **{app: Answer(bed_type, data=_NO_RMCONTROL) for bed_type, app in RICHMAT_MH_APPS.items()},
         # The classic apps keep their own declared questions.
@@ -1436,7 +1437,7 @@ RICHMAT_FAMILY: Final = AppFamily(
         },
         "remote": Answer(BED_TYPE_RICHMAT, data={CONF_RMCONTROL_PRODUCT: ""}),
     },
-    routes=RICHMAT_MH_BED_TYPES | {"luuna", BED_TYPE_MLILY},
+    routes=RICHMAT_MH_BED_TYPES | {"luuna", "sonicsleep", BED_TYPE_MLILY},
     routes_show_row=False,
     offers_keep=keep_never,
     offer=_richmat_answers,

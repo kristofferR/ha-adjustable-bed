@@ -825,6 +825,7 @@ def _bed_type_selector(
             ),
             *RICHMAT_MH_BED_TYPES,
             "luuna",
+            "sonicsleep",
             BED_TYPE_MLILY,
             BED_TYPE_JENSEN,
             # Protocol-named routes are off the setup list but stay selectable.
@@ -2786,6 +2787,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         profile = setup_profile_for(self._manual_data)
         if profile is not None and profile.questions:
             return await self.async_step_profile_questions()
+        if profile is not None:
+            await async_import_profile(self.hass, profile)
+            self._manual_data.update(profile.settled(self._manual_data))
         return await self._async_finish_family_route()
 
     async def async_step_profile_questions(
@@ -7926,7 +7930,7 @@ class AdjustableBedOptionsFlow(
                 # A profile without questions still fixes the generic fields it
                 # owns, such as MC3's missing massage, even when an entry
                 # switches in from a bed type that had them on.
-                user_input.update(owner.fixed_values())
+                user_input.update(owner.settled({**current_data, **user_input, CONF_BED_TYPE: bed_type}))
             if bed_type == BED_TYPE_SVANE:
                 svane_variant = user_input.get(
                     CONF_PROTOCOL_VARIANT, current_data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)

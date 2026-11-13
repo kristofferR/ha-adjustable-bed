@@ -1193,6 +1193,8 @@ def default_scenario(bed_type: str) -> Scenario:
     }.get(bed_type)
     kwargs: dict[str, Any] = {}
     replies: dict[str, str] = {}
+    if bed_type == const.BED_TYPE_SONICSLEEP:
+        data[const.CONF_PRODUCT_TYPE] = "one"
     if bed_type in const.KEESON_LAYOUT_APP_BED_TYPES:
         from custom_components.adjustable_bed.profiles.keeson import DEFAULT_LAYOUTS
 
@@ -1357,6 +1359,11 @@ def route_scenarios() -> list[Scenario]:
         scenarios.append(dataclasses.replace(default_scenario("symphony"),
             id=f"symphony:{product}:{selector}", protocol_variant=selector,
             entry_data={const.CONF_PRODUCT_TYPE: product}, layout_id="symphony"))
+    for route in ("Nordic", "W2", "W3", "W4", "W5"):
+        scenarios.append(Scenario(
+            id=f"sonicsleep:{route}", bed_type="sonicsleep",
+            entry_data={const.CONF_PRODUCT_TYPE: "one"}, layout_id=f"sonicsleep:{route}",
+        ))
     for bed_type, table in VARIANT_ROUTES.items():
         if bed_type not in const.SUPPORTED_BED_TYPES:
             continue
@@ -2047,7 +2054,11 @@ def render(snapshot: dict[str, Any]) -> str:
         }
     )
     prefixes = [u[:8] for u in uuids]
-    short = {u: u[:8] if prefixes.count(u[:8]) == 1 else u for u in uuids}
+    # Appending another UUID with a shared prefix must not rename the existing
+    # scenarios' characteristic references. New collisions use their full UUID.
+    previous = json.loads(SNAPSHOT_PATH.read_text())["chars"] if SNAPSHOT_PATH.exists() else {}
+    aliases = {uuid: name for name, uuid in previous.items()}
+    short = {u: aliases.get(u, u[:8] if prefixes.count(u[:8]) == 1 else u) for u in uuids}
     lines = ["{", f'"schema": {snapshot["schema"]},']
     lines.append('"chars": ' + json.dumps({short[u]: u for u in uuids}, sort_keys=True) + ",")
     lines.append('"scenarios": {')

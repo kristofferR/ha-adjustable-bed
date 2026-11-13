@@ -262,6 +262,7 @@ class _BuilderSpec:
 # plus fixed kwargs".
 _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_OKIN_MOTIONBED: _ControllerSpec("okin_motionbed", "OkinMotionBedController"),
+    "sonicsleep": _ControllerSpec("sonicsleep.controller", "SonicSleepController"),
     BED_TYPE_RESIDENT: _ControllerSpec("resident.controller", "ResidentController"),
     BED_TYPE_SYMPHONY_SLEEP: _ControllerSpec("keeson.symphony_sleep", "SymphonySleepController"),
     BED_TYPE_JALON_BED: _ControllerSpec("jalon_bed.controller", "JalonBedController"),

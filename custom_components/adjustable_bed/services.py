@@ -67,6 +67,7 @@ from .const import (
     DEFAULT_MOTOR_COUNT,
     DOMAIN,
     PAIR_CONNECTION_MODE_SEQUENTIAL,
+    PAIR_CONNECTION_MODE_CONCURRENT,
     SIDE_BOTH,
     SIDE_LEFT,
     SIDE_RIGHT,
@@ -79,6 +80,7 @@ from .import_executor import async_import_modules
 from .paired_coordinator import (
     BedChild,
     PairedBedCoordinator,
+    SingleAddressPairedCoordinator,
     SingleAddressSideCoordinator,
 )
 from .paired_devices import side_identifier
@@ -665,6 +667,7 @@ async def handle_goto_preset(call: ServiceCall) -> None:
         raise _missing_device_error(missing[0])
 
     admissions = [_capture_command_admission(parent, side) for parent, side in targets]
+    admissions = [_capture_command_admission(coordinator, side) for coordinator, side in targets]
     async with _limoss_remote_reload_transaction(targets):
         await _preflight_live_limoss_remote(
             targets, lambda ctrl: ctrl.validate_memory_recall(preset)
@@ -751,6 +754,7 @@ async def handle_save_preset(call: ServiceCall) -> None:
     if missing:
         raise _missing_device_error(missing[0])
 
+    admissions = [_capture_command_admission(coordinator, side) for coordinator, side in targets]
     def validate_remote_slot(controller: LimossRemoteController) -> None:
         if (
             not controller.supports_memory_programming
@@ -797,12 +801,13 @@ async def handle_save_preset(call: ServiceCall) -> None:
         # Phase 2: every target validated - now program them. Release any
         # still-connected preflighted bed that never ran if one fails.
         try:
-            for coordinator, side in targets:
+            for (coordinator, side), admission in zip(targets, admissions, strict=True):
                 await _execute_sided(
                     coordinator,
                     side,
                     lambda ctrl, p=preset: ctrl.program_memory(p),  # type: ignore[misc]
                     cancel_running=False,
+                    admission=admission,
                 )
         except Exception:
             await _release_preflighted(preflighted)
@@ -1410,6 +1415,13 @@ async def _async_with_hold_lease(
             "Renewable holds require simultaneous side execution; select Left or Right"
         )
     physical = [(target, resource_for(target)) for target in executing]
+    if (
+        isinstance(coordinator, PairedBedCoordinator)
+        and not isinstance(coordinator, SingleAddressPairedCoordinator)
+        and len(executing) > 1
+        and coordinator.connection_mode != PAIR_CONNECTION_MODE_CONCURRENT
+    ):
+        raise ServiceValidationError("Renewable Both holds require concurrent physical connections")
     claims = [
         target.claim_hold_lease(lease, resource=resource, reserve=False)
         for target, resource in physical
@@ -1896,6 +1908,8 @@ async def handle_hold_control(call: ServiceCall) -> None:
     """Hold one controller-declared control, then run its protocol release."""
     targets = _call_targets(call)
     admissions = [_capture_command_admission(parent, side) for parent, side in targets]
+    targets = _call_targets(call)
+    admissions = [_capture_command_admission(coordinator, side) for coordinator, side in targets]
     # The other family action modules load with the services, this one does not.
     await async_import_modules(call.hass, "beds.vmatbasic.services")
     from .beds.limoss.remote_services import _hold_limoss_remote
@@ -2408,6 +2422,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.sleeptracker.services import async_register_sleeptracker_services
     from .beds.smart_sleep.services import register_services as register_smart_sleep_services
     from .beds.solace.services import async_register_solace_services
+    from .beds.sonicsleep.services import async_register_sonicsleep_services
     from .beds.starcode.accessory_group import register_group_services
     from .beds.svane.services import async_register_svane_services
     from .beds.symphony.services import register_services as register_symphony_sense_services
@@ -2443,6 +2458,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_reverie_services,
         async_register_linak_services,
         async_register_solace_services,
+        async_register_sonicsleep_services,
         async_register_leggett_okin_services,
         async_register_floyd_services,
         async_register_rize_services,

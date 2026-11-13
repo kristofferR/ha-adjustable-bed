@@ -3345,6 +3345,9 @@
       },
       "bedgear_combined_down": {
         "name": "Head and foot down"
+      },
+      "sonicsleep_action": {
+        "name": "{action}"
       }
     },
     "cover": {
@@ -5232,6 +5235,9 @@
       },
       "mline_alarm_mode": {
         "name": "Alarm wake mode"
+      },
+      "sonicsleep": {
+        "name": "SonicSleep state"
       }
     },
     "light": {
@@ -9923,6 +9929,41 @@
           "name": "Wake Mode"
         }
       }
+    },
+    "sonicsleep": {
+      "name": "SonicSleep bed settings",
+      "description": "Read alarms, create or edit a form alarm, preserve a received alarm while toggling it, delete an alarm, query the bed link name or sync its clock.",
+      "fields": {
+        "device_id": {
+          "name": "Device id"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "operation": {
+          "name": "Operation"
+        },
+        "alarm_id": {
+          "name": "Alarm id",
+          "description": "Received ID for edit, toggle and delete. New alarms allocate their own ID."
+        },
+        "hour": {
+          "name": "Hour"
+        },
+        "minute": {
+          "name": "Minute"
+        },
+        "mode": {
+          "name": "Mode"
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "Monday is 0 and Sunday is 6. Empty means once; select all seven for every day."
+        },
+        "enabled": {
+          "name": "Enabled"
+        }
+      }
     }
   },
   "exceptions": {
@@ -10731,7 +10772,8 @@
         "remote": "SleepFunction or SVEN & SON app, or a Richmat remote: the remote's code",
         "another": "Another app or remote: search every app",
         "luuna": "Luuna + app (Rise, Rise Pro, Rise Pro Light)",
-        "richmat_420": "Richmat 4.2.0 app"
+        "richmat_420": "Richmat 4.2.0 app",
+        "sonicsleep": "SonicSleep / 소닉슬립 (IQRM)"
       }
     },
     "setup_start": {

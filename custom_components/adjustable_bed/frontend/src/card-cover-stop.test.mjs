@@ -53,6 +53,28 @@ globalThis.KeyboardEvent = class {
 const { AdjustableBedCard } = await import("./adjustable-bed-card.ts");
 const { bedEntitiesForDevice } = await import("./discovery.ts");
 
+test("explicit preset save asks for confirmation before the one-shot press", () => {
+  const card = new AdjustableBedCard();
+  const calls = [];
+  card.hass = {
+    states: { "button.save": { attributes: { requires_confirmation: true } } },
+    formatEntityName: () => "Save Lounge",
+    callService: (...args) => { calls.push(args); return Promise.resolve(); },
+  };
+  const previous = window.confirm;
+  try {
+    window.confirm = () => false;
+    card._press("button.save");
+    assert.equal(calls.length, 0);
+    window.confirm = (text) => { assert.match(text, /Save Lounge/); return true; };
+    card._press("button.save");
+    assert.deepEqual(calls, [["button", "press", { entity_id: "button.save" }]]);
+  } finally {
+    if (previous) window.confirm = previous;
+    else delete window.confirm;
+  }
+});
+
 class FakeClock {
   now = 0;
   nextId = 0;

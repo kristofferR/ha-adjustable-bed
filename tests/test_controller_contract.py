@@ -225,6 +225,8 @@ async def _create_controller_for_bed_type(
         coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "0", const.CONF_PROTOCOL_VARIANT: "0"})
     if bed_type == const.BED_TYPE_BEDGEAR:
         coordinator.entry.data[const.CONF_BLE_DEVICE_NAME] = "HHC0000001D00X"
+    if bed_type == const.BED_TYPE_SONICSLEEP:
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "one"
     if bed_type == const.BED_TYPE_JALON:
         coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "0", const.CONF_BLE_DEVICE_NAME: "smartbed123"})
     if bed_type == const.BED_TYPE_ERGOMOTION_4:
@@ -496,6 +498,8 @@ async def test_registry_entries_resolve_to_controller_classes(bed_type: str) -> 
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "H"
     if bed_type == const.BED_TYPE_JALON_BED:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "40"
+    if bed_type == const.BED_TYPE_SONICSLEEP:
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "one"
     controller = await _create_from_registry(coordinator, bed_type)
 
     assert isinstance(controller, BedController)

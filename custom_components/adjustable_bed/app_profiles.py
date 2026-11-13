@@ -172,6 +172,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "hush_base": SideProfile("Hush Base product", variant_owned=True),
     "luuna": SideProfile("Luuna + product", variant_owned=True),
     "mline": SideProfile("M Line protocol and layout", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
+    "sonicsleep": SideProfile("SonicSleep IQRM", frozenset({"product_type"})),
     "casper_sleep_mm": SideProfile("Casper Base MM sensor"),
     "casper_sleep_sxb": SideProfile("Casper Base SXB sensor"),
     "hush_sleep_mm": SideProfile("Hush Base MM sensor"),

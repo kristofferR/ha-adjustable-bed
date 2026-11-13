@@ -122,6 +122,7 @@ if TYPE_CHECKING:
     from .smart_comfort.controller import SmartComfortController as SmartComfortController
     from .smart_sleep.controller import SmartSleepController as SmartSleepController
     from .solace.controller import SolaceController as SolaceController
+    from .sonicsleep.controller import SonicSleepController as SonicSleepController
     from .starcode.abm5_4 import StarcodeAbm5_4Controller as StarcodeAbm5_4Controller
     from .starcode.m5x5 import StarcodeM5X5Controller as StarcodeM5X5Controller
     from .starcode.star_elevate import StarElevateController as StarElevateController
@@ -140,6 +141,7 @@ _EXPORT_MODULES = {
     "RizeHomeController": "rize_home.controller",
     "ComfortEnhancement3Controller": "comfort_enhancement3.controller",
     "N32MotionBedController": "n32_motion_bed.controller",
+    "SonicSleepController": "sonicsleep.controller",
     "ResidentController": "resident.controller",
     "SmartSleepController": "smart_sleep.controller",
     "JalonBedController": "jalon_bed.controller",
@@ -330,6 +332,7 @@ __all__ = [
     "SleepysBox25LegacyController",
     "StarElevateController",
     "SolaceController",
+    "SonicSleepController",
     "SvaneController",
     "SutaController",
     "SmartComfortController",
