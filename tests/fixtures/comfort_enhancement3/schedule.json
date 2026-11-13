@@ -1,0 +1,146 @@
+[
+  {
+    "id": "schedule-stop-slot1-delay60s",
+    "protocol": "P2",
+    "action": "schedule-stop-slot1-delay60s",
+    "inputs": {
+      "slot": 1,
+      "step": 0,
+      "delay_ticks": 600,
+      "command": 0,
+      "duration": 5
+    },
+    "expected_bytes": "0b0d0100000002580000000005",
+    "evidence": [
+      "evidence/dart372/asm/apex/tools/alarmClock.dart:combineKeycode4e8664,_formatByteList4e87dc,_formatStep4e8944,setAlarmClock4e8e50,sendCommand4e9638",
+      "evidence/gdt372/dispatch_table.tsv;classes.jsonl;functions.jsonl;aliases.jsonl",
+      "evidence/gdt-padLeft-67c584-authoritative.asm:67c674 unboxed width;gdt-int-toString-579efc-authoritative.asm"
+    ]
+  },
+  {
+    "id": "schedule-head-step2",
+    "protocol": "P2",
+    "action": "schedule-head-step2",
+    "inputs": {
+      "slot": 1,
+      "step": 2,
+      "delay_ticks": 0,
+      "command": 2048,
+      "duration": 0
+    },
+    "expected_bytes": "0b0d0102000000000000080000",
+    "evidence": [
+      "evidence/dart372/asm/apex/tools/alarmClock.dart:combineKeycode4e8664,_formatByteList4e87dc,_formatStep4e8944,setAlarmClock4e8e50,sendCommand4e9638",
+      "evidence/gdt372/dispatch_table.tsv;classes.jsonl;functions.jsonl;aliases.jsonl",
+      "evidence/gdt-padLeft-67c584-authoritative.asm:67c674 unboxed width;gdt-int-toString-579efc-authoritative.asm"
+    ]
+  },
+  {
+    "id": "schedule-ubl-step9",
+    "protocol": "P2",
+    "action": "schedule-ubl-step9",
+    "inputs": {
+      "slot": 9,
+      "step": 9,
+      "delay_ticks": 10,
+      "command": 131072,
+      "duration": 0
+    },
+    "expected_bytes": "0b0d09090000000a0002000000",
+    "evidence": [
+      "evidence/dart372/asm/apex/tools/alarmClock.dart:combineKeycode4e8664,_formatByteList4e87dc,_formatStep4e8944,setAlarmClock4e8e50,sendCommand4e9638",
+      "evidence/gdt372/dispatch_table.tsv;classes.jsonl;functions.jsonl;aliases.jsonl",
+      "evidence/gdt-padLeft-67c584-authoritative.asm:67c674 unboxed width;gdt-int-toString-579efc-authoritative.asm"
+    ]
+  },
+  {
+    "id": "decimal-slot-step10",
+    "protocol": "P2",
+    "action": "decimal-slot-step10",
+    "inputs": {
+      "slot": 10,
+      "step": 10,
+      "delay_ticks": 0,
+      "command": 0,
+      "duration": 0
+    },
+    "expected_bytes": "0b0d1010000000000000000000",
+    "evidence": [
+      "evidence/dart372/asm/apex/tools/alarmClock.dart:combineKeycode4e8664,_formatByteList4e87dc,_formatStep4e8944,setAlarmClock4e8e50,sendCommand4e9638",
+      "evidence/gdt372/dispatch_table.tsv;classes.jsonl;functions.jsonl;aliases.jsonl",
+      "evidence/gdt-padLeft-67c584-authoritative.asm:67c674 unboxed width;gdt-int-toString-579efc-authoritative.asm"
+    ]
+  },
+  {
+    "id": "decimal-slot99-step24",
+    "protocol": "P2",
+    "action": "decimal-slot99-step24",
+    "inputs": {
+      "slot": 99,
+      "step": 24,
+      "delay_ticks": 864000,
+      "command": 16384,
+      "duration": 5
+    },
+    "expected_bytes": "0b0d9924000d2f000000400005",
+    "evidence": [
+      "evidence/dart372/asm/apex/tools/alarmClock.dart:combineKeycode4e8664,_formatByteList4e87dc,_formatStep4e8944,setAlarmClock4e8e50,sendCommand4e9638",
+      "evidence/gdt372/dispatch_table.tsv;classes.jsonl;functions.jsonl;aliases.jsonl",
+      "evidence/gdt-padLeft-67c584-authoritative.asm:67c674 unboxed width;gdt-int-toString-579efc-authoritative.asm"
+    ]
+  },
+  {
+    "id": "schedule-delete-slot2",
+    "protocol": "P2",
+    "action": "schedule-delete-slot2",
+    "inputs": {
+      "slot": 2,
+      "step": 0,
+      "delay_ticks": 0,
+      "command": 0,
+      "duration": 0
+    },
+    "expected_bytes": "0b0d0200000000000000000000",
+    "evidence": [
+      "evidence/dart372/asm/apex/tools/alarmClock.dart:combineKeycode4e8664,_formatByteList4e87dc,_formatStep4e8944,setAlarmClock4e8e50,sendCommand4e9638",
+      "evidence/gdt372/dispatch_table.tsv;classes.jsonl;functions.jsonl;aliases.jsonl",
+      "evidence/gdt-padLeft-67c584-authoritative.asm:67c674 unboxed width;gdt-int-toString-579efc-authoritative.asm"
+    ]
+  },
+  {
+    "id": "schedule-wave-slot3",
+    "protocol": "P2",
+    "action": "schedule-wave-slot3",
+    "inputs": {
+      "slot": 3,
+      "step": 8,
+      "delay_ticks": 0,
+      "command": 2147483648,
+      "duration": 0
+    },
+    "expected_bytes": "0b0d0308000000008000000000",
+    "evidence": [
+      "evidence/dart372/asm/apex/tools/alarmClock.dart:combineKeycode4e8664,_formatByteList4e87dc,_formatStep4e8944,setAlarmClock4e8e50,sendCommand4e9638",
+      "evidence/gdt372/dispatch_table.tsv;classes.jsonl;functions.jsonl;aliases.jsonl",
+      "evidence/gdt-padLeft-67c584-authoritative.asm:67c674 unboxed width;gdt-int-toString-579efc-authoritative.asm"
+    ]
+  },
+  {
+    "id": "fixed-stop-equivalent",
+    "protocol": "P2",
+    "action": "fixed-stop-equivalent",
+    "inputs": {
+      "slot": 0,
+      "step": 0,
+      "delay_ticks": 0,
+      "command": 1024,
+      "duration": 5
+    },
+    "expected_bytes": "0b0d0000000000000000040005",
+    "evidence": [
+      "evidence/dart372/asm/apex/tools/alarmClock.dart:combineKeycode4e8664,_formatByteList4e87dc,_formatStep4e8944,setAlarmClock4e8e50,sendCommand4e9638",
+      "evidence/gdt372/dispatch_table.tsv;classes.jsonl;functions.jsonl;aliases.jsonl",
+      "evidence/gdt-padLeft-67c584-authoritative.asm:67c674 unboxed width;gdt-int-toString-579efc-authoritative.asm"
+    ]
+  }
+]

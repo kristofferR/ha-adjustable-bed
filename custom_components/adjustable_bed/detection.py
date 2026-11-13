@@ -50,9 +50,11 @@ from .const import (
     BED_TYPE_CASPER_SLEEP_MM,
     BED_TYPE_CASPER_SLEEP_SXB,
     BED_TYPE_CHERISH,
+    BED_TYPE_COMFORT_ENHANCEMENT3,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COMFORTBASE,
+    BED_TYPE_COMFYDS,
     BED_TYPE_COOLBASE,
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
@@ -80,6 +82,7 @@ from .const import (
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
+    BED_TYPE_KOMFYD,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
@@ -96,9 +99,11 @@ from .const import (
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MATTRESSFIRM,
     BED_TYPE_MLILY,
+    BED_TYPE_MLINE,
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_MOTOSLEEP,
+    BED_TYPE_N32_MOTION_BED,
     BED_TYPE_NECTAR,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
@@ -111,6 +116,7 @@ from .const import (
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_FFE,
     BED_TYPE_OKIN_HANDLE,
+    BED_TYPE_OKIN_MOTIONBED,
     BED_TYPE_OKIN_NORDIC,
     BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_RF_ECO_BT,
@@ -130,6 +136,8 @@ from .const import (
     BED_TYPE_RICHMAT_IDEALBED,
     BED_TYPE_RICHMAT_REVIVE,
     BED_TYPE_RIZE,
+    BED_TYPE_RIZE_HOME,
+    BED_TYPE_RIZE_REMEDY_II,
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
     BED_TYPE_SCOTT_LIVING,
@@ -151,11 +159,14 @@ from .const import (
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
+    BED_TYPE_SYMPHONY,
+    BED_TYPE_SYMPHONY_SLEEP,
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
+    BED_TYPE_YAMADA,
     BED_TYPE_ZSERIES,
     # Detection constants
     BEDJET_ADVERTISED_SERVICE_UUID,
@@ -294,8 +305,10 @@ from .discovery_hints import (
     FirstPass,
     first_pass,
 )
+from .profiles.bedgear import eligible as bedgear_eligible
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.motomotion import eligible as motomotion_eligible
+from .profiles.smart_sleep import advertisement as smart_sleep_advertisement
 from .profiles.vmatbasic import manufacturer_payload_matches
 
 _LOGGER = logging.getLogger(__name__)
@@ -531,6 +544,7 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
 # are NOT included here - they're only kept for backward compatibility with
 # existing config entries. New users should select the protocol-based equivalents.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
+    "smart_sleep": "OKIN Smart Sleep (com.bedding.monitor.sleep_monitor.release)",
     "smart_comfort_synargy": "Smart Comfort by SYNARGY (com.synargy.okin)",
     "smart_comfort_synergy": "Smart Comfort (com.synergy.okin)",
     # v5 names the RUF and Richmat apps like the other Richmat MH apps.
@@ -563,6 +577,8 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "casper_base": "Casper Base app (select product)",
     "hush_base": "Hush Base app (select product)",
     "luuna": "Luuna + app (Rise, Rise Pro, Rise Pro Light)",
+    "mline": "M Line app (com.okin.mline)",
+    "sonicsleep": "SonicSleep / 소닉슬립 app (IQRM)",
     "hush_remote": "Hush Base remote finder (RCRM handset)",
     "hush_sleep_mm": "Hush Base sleep sensor (RM / MM)",
     "hush_sleep_sxb": "Hush Base sleep sensor (HJ / SXB)",
@@ -576,12 +592,18 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_FURNIMOVE: "FurniMove / OKIN Smart Remote (choose handset ID)",
     BED_TYPE_SERENITY: "Jordan's Serenity app",
     BED_TYPE_TRANQUIL: "Jordan's Tranquil app",
+    BED_TYPE_RIZE_REMEDY_II: "Rize Remedy II app",
     BED_TYPE_ZSERIES: "Customatic Z-Series app",
     BED_TYPE_SIMMONS: "SIMMONS app",
     BED_TYPE_ADJUSTAMATTRESS: "AdjustaMattress app (seven product layouts)",
     BED_TYPE_ADJUSTABLE_BED: "Adjustable bed app",
     BED_TYPE_ADJUSTABLE_LUMBAR: "Adjustable bed (Lumbar) app",
+    BED_TYPE_RIZE_HOME: "Rize Home app (Remedy III / Contempo IV)",
+    BED_TYPE_OKIN_MOTIONBED: "OKIN Motion Bed app (com.okin.motionbed)",
+    BED_TYPE_COMFORT_ENHANCEMENT3: "Comfort Enhancement 3 / Comfort Plus3 (com.okin.apex)",
+    BED_TYPE_N32_MOTION_BED: "N32 Motion Bed app (com.okin.simmonskorea)",
     BED_TYPE_RESIDENT: "Resident Adjustable Base app (com.okin.resident.release)",
+    BED_TYPE_YAMADA: "アシステック / ASSISTEC / Yamada app (com.okin.yamada)",
     BED_TYPE_COMFORTBASE: "ComfortBaseForBluetooth / ComfortBase BLE (choose product)",
     BED_TYPE_COMFORT_ENHANCEMENTS: "Comfort Enhancements app (choose MC2/MC3/MC4/MC5)",
     BED_TYPE_ESHINE_OKIN: "eShine app (E2000 / E3000 / E3100 / E5000)",
@@ -610,7 +632,9 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_MOTOMOTION: "MotoMotion app (exact Bluetooth name)",
     BED_TYPE_HJBED: "HJBed app (choose the exact product)",
     BED_TYPE_JALON: "OkinComfortBed II / Okin Comfortbed II N (Jalon app)",
+    BED_TYPE_SYMPHONY_SLEEP: "Symphony Sleep app (com.ore.bedding.symphony, choose model and transport)",
     BED_TYPE_JALON_BED: "OkinComfortBed Ⅱ (Jalon Android app)",
+    BED_TYPE_SYMPHONY: "Symphony Sleep Sense (Symphony / com.okin.ist)",
     BED_TYPE_RICHMAT_APP: "Richmat 4.2.0 app (choose product)",
     BED_TYPE_RICHMAT_APP_SLEEP: "Richmat 4.2.0 sleep device (separate RM- or HJ- link)",
     BED_TYPE_GLIDEAWAY_MOTION: "Glideaway Motion / Montion app (400 / 450 / 500 / 600)",
@@ -647,10 +671,13 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     ),
     BED_TYPE_RIZE: "Rize Beds app (Kaidi, 1.4.2)",
     BED_TYPE_ISLEEP: "ISleep app (Kaidi, com.kaidi_test4)",
+    BED_TYPE_KOMFYD: "KomfyD app (Kaidi, com.pairlink.kaidi.komfyD)",
+    BED_TYPE_COMFYDS: "ComfyDS app (Kaidi, com.pairlink.kaidi.ComfyDS)",
     BED_TYPE_KAIDI: "Kaidi (Rize Beds and Floyd Home apps; legacy ISleep)",
     BED_TYPE_LINAK: "Linak (Bed Control, Bed Connect and Performance Series apps)",
     BED_TYPE_MALOUF_LEGACY_OKIN: "Malouf (FFE5 protocol)",
     BED_TYPE_MALOUF_NEW_OKIN: "Malouf (Nordic UART protocol)",
+    "bedgear": "Bedgear app",
     BED_TYPE_MOTOSLEEP: "MotoSleep / Power Bob app",
     BED_TYPE_OCTO: "OCTO Smart Control",
     BED_TYPE_REVERIE: "Reverie (Protocol 108)",
@@ -829,7 +856,7 @@ _HIDDEN_APP_ROWS: Final = frozenset(
 HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_APP_ROWS)
 # Bed types whose one row asks for the product, although each product is an app entry.
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
-    {BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE}
+    {BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE}
 )
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
@@ -1286,7 +1313,7 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         For detailed detection with confidence scores, use detect_bed_type_detailed().
     """
     result = detect_bed_type_detailed(service_info)
-    if result.bed_type in (BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MOTOMOTION) and result.confidence < 0.7:
+    if result.bed_type in (BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE) and result.confidence < 0.7:
         return None  # An app name hint requires an explicit product choice.
     return result.bed_type
 
@@ -1331,12 +1358,81 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         elif result.bed_type != BED_TYPE_RESIDENT:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_RESIDENT]))
             result.signals.append("name:resident_app_candidate")
+    if (
+        isinstance(service_info.name, str)
+        and service_info.name.lower().startswith("smartbed")
+        and result.confidence < 0.8
+        and not any(signal.startswith("excluded:") for signal in result.signals)
+    ):
+        # Offer the shared name only when there is no confident receiver match.
+        # It cannot select Rize Home or a product, or question a proven receiver.
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_RIZE_HOME, 0.3, ["name:rize_home_app_candidate"])
+        elif result.bed_type != BED_TYPE_RIZE_HOME:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_RIZE_HOME]))
+            result.signals.append("name:rize_home_app_candidate")
+    if (
+        isinstance(platform_name, str) and platform_name.lower().startswith("okin")
+        and not any(signal.startswith("excluded:") for signal in result.signals)
+    ):
+        # Name-only acceptance in the app proves a candidate, never hardware identity.
+        result.ambiguous_types = list(dict.fromkeys([
+            *(result.ambiguous_types or ()), BED_TYPE_RIZE_REMEDY_II,
+        ]))
+        result.signals.append("name:rize_remedy_ii_app_candidate")
+    # A shared service makes this app a choice, never overrides a stronger
+    # receiver signature and never infers a remote from the Bluetooth name.
+    if OKIMAT_SERVICE_UUID.lower() in {u.lower() for u in (service_info.service_uuids or ())} and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ) and result.bed_type != BED_TYPE_COMFORT_ENHANCEMENT3:
+        result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_COMFORT_ENHANCEMENT3]))
+        result.signals.append("service:comfort_enhancement3_candidate")
+    # These shared app names are candidates only. Never replace a confident
+    # receiver signature or infer N32 from the Nordic service alone.
+    if (isinstance(platform_name, str)
+        and platform_name.lower().startswith(("smartbed", "n32 motionbed"))
+        and result.confidence < 0.7
+        and not any(signal.startswith("excluded:") for signal in result.signals)):
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_N32_MOTION_BED, 0.3, ["name:n32_app_candidate"])
+        elif result.bed_type != BED_TYPE_N32_MOTION_BED:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_N32_MOTION_BED]))
+            result.signals.append("name:n32_app_candidate")
     if mlily_scan_matches(service_info.name) and mlily_suggested_profile(service_info.name) and not any(signal.startswith("excluded:") for signal in result.signals):
         if result.bed_type is None:
             result = DetectionResult(BED_TYPE_MLILY, 0.3, ["name:mlily_app_candidate", *result.signals])
         elif result.bed_type != BED_TYPE_MLILY:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_MLILY]))
 
+    from .profiles.symphony import scan_matches as symphony_scan_matches
+
+    # Shared app keywords must not question an established receiver signature.
+    if result.confidence < 0.8 and symphony_scan_matches(platform_name or "", service_info.manufacturer_data or {}) and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ):
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_SYMPHONY, 0.3, [*result.signals, "name:symphony_app_candidate"])
+        elif result.bed_type != BED_TYPE_SYMPHONY:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_SYMPHONY]))
+            result.signals.append("name:symphony_app_candidate")
+    # A shared name must not question a corroborated receiver signature.
+    if (result.confidence < 0.85 and isinstance(platform_name, str)
+        and platform_name.lower().startswith(("okin-ble", "smartbed"))
+        and not any(signal.startswith("excluded:") for signal in result.signals)):
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_YAMADA, 0.3, ["name:yamada_app_candidate"])
+        elif result.bed_type != BED_TYPE_YAMADA:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_YAMADA]))
+            result.signals.append("name:yamada_app_candidate")
+    # Shared names offer the app; they never replace a stronger receiver match.
+    if first.name(BED_TYPE_MLINE) and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ):
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_MLINE, 0.3, [*result.signals, "name:mline_app_candidate"])
+        elif result.bed_type != BED_TYPE_MLINE:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_MLINE]))
+            result.signals.append("name:mline_app_candidate")
     return result
 
 
@@ -1428,8 +1524,20 @@ def _detect_bed_type_with_app_candidates(
             if BED_TYPE_RICHMAT_CLASSIC_APPS not in (result.ambiguous_types or ()):
                 result.ambiguous_types = [*(result.ambiguous_types or ()), BED_TYPE_RICHMAT_CLASSIC_APPS]
         result.signals.append("name:richmat_classic_app_candidate")
-    # A MotoMotion name rule only adds an app candidate: the app reads the exact
-    # local name, and shared prefixes do not identify its panel.
+    # App name rules add candidates without replacing an existing route.
+    # Each app reads the exact name, not a normalized shared prefix.
+    if bedgear_eligible(service_info.name) and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ):
+        if result.bed_type is None:
+            result = DetectionResult(
+                bed_type="bedgear", confidence=0.3,
+                signals=[*result.signals, "name:bedgear_app_candidate"],
+                ambiguous_types=result.ambiguous_types,
+            )
+        elif result.bed_type != "bedgear":
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "bedgear"]))
+            result.signals.append("name:bedgear_app_candidate")
     if motomotion_eligible(service_info.name):
         if result.bed_type is None and not any(signal.startswith("excluded:") for signal in result.signals):
             return DetectionResult(bed_type=BED_TYPE_MOTOMOTION, confidence=0.3, signals=[*result.signals, "name:motomotion_app_candidate"])
@@ -1656,7 +1764,7 @@ def _detect_bed_type_detailed(
             bed_type=BED_TYPE_KAIDI,
             confidence=confidence,
             signals=signals,
-            ambiguous_types=[BED_TYPE_ISLEEP, BED_TYPE_RIZE],
+            ambiguous_types=[BED_TYPE_ISLEEP, BED_TYPE_RIZE, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS],
         )
 
     if DEWERTOKIN_SERVICE_UUID.lower() in service_uuids:
@@ -2857,6 +2965,9 @@ def _detect_bed_type_detailed(
             service_info.name,
         )
         return DetectionResult(bed_type=BED_TYPE_KEESON, confidence=0.8, signals=signals)
+
+    if smart_sleep_advertisement(service_info.name or "", service_info.manufacturer_data or {}, service_info.address):
+        return DetectionResult("smart_sleep", 0.9, ["name:smart_sleep", "manufacturer_id:89"])
 
     # Check for Richmat Nordic / Keeson KSBT / OKIN 64-bit (same UUID)
     # These share the Nordic UART service UUID

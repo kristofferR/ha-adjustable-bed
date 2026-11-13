@@ -1,0 +1,1302 @@
+[
+  {
+    "id": "motionSensorOff-0",
+    "action": "motionSensorOff",
+    "bytes": "05 02 00 02 80 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "held-6s",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": 6000,
+      "duration_ms_unknown_reason": "Known6s app timer,actual timer ordering is runtime-dependent."
+    },
+    "release_behavior": "Immediate/every200ms;6s delayed closure cancels current timer with no STOP. UI compound path separately sendsSTOP at6s.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "ZG+LIGHT or ANTI-SNORE+LIGHT UI compound action,or voice alias -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:639-743",
+      "BleManager::motionSensorOff@0x39a068",
+      "E-WRITE",
+      "E-SENSOR",
+      "E-MEMORY"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Disable motion sensor"
+  },
+  {
+    "id": "motionSensorOn-0",
+    "action": "motionSensorOn",
+    "bytes": "05 02 00 02 10 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "held-6s",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": 6000,
+      "duration_ms_unknown_reason": "Known6s app timer,actual timer ordering is runtime-dependent."
+    },
+    "release_behavior": "Immediate/every200ms;6s delayed closure cancels current timer with no STOP. UI compound path separately sendsSTOP at6s.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "ZG+LIGHT or ANTI-SNORE+LIGHT UI compound action,or voice alias -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:1001-1105",
+      "BleManager::motionSensorOn@0x39b5c8",
+      "E-WRITE",
+      "E-SENSOR",
+      "E-MEMORY"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Enable motion sensor"
+  },
+  {
+    "id": "underbedLighting-0",
+    "action": "underbedLighting",
+    "bytes": "05 02 00 02 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "once",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Max3 writes; pointer UP can replace with STOP. No brightness/color parameter.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Under-bed light pointer/voice action -> dispatcher -> BleManager.underbedLighting.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:1106-1182",
+      "BleManager::underbedLighting@0x39b6c8",
+      "E-WRITE",
+      "E-ONCE",
+      "E-RELEASE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Under-bed light toggle"
+  },
+  {
+    "id": "massageHeadAndFootMinus-0",
+    "action": "massageHeadAndFootMinus",
+    "bytes": "05 02 01 80 00 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:1451-1546",
+      "BleManager::massageHeadAndFootMinus@0x39ba40",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-ONCE",
+      "E-MASSAGE-POLL",
+      "E-SOURCE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Decrease both massage intensities"
+  },
+  {
+    "id": "massageHeadAndFoot-0",
+    "action": "massageHeadAndFoot",
+    "bytes": "05 02 00 00 0c 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:1547-1640",
+      "BleManager::massageHeadAndFoot@0x39bb34",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-ONCE",
+      "E-MASSAGE-POLL",
+      "E-SOURCE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Increase both massage intensities"
+  },
+  {
+    "id": "massageFootMinus-0",
+    "action": "massageFootMinus",
+    "bytes": "05 02 01 00 00 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:1641-1734",
+      "BleManager::massageFootMinus@0x39bc24",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-ONCE",
+      "E-MASSAGE-POLL",
+      "E-SOURCE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Decrease foot massage intensity"
+  },
+  {
+    "id": "massageFoot-0",
+    "action": "massageFoot",
+    "bytes": "05 02 00 00 04 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:1735-1828",
+      "BleManager::massageFoot@0x39bd14",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-ONCE",
+      "E-MASSAGE-POLL",
+      "E-SOURCE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Increase foot massage intensity"
+  },
+  {
+    "id": "massageHeadMinus-0",
+    "action": "massageHeadMinus",
+    "bytes": "05 02 00 80 00 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:1829-1922",
+      "BleManager::massageHeadMinus@0x39be04",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-ONCE",
+      "E-MASSAGE-POLL",
+      "E-SOURCE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Decrease head massage intensity"
+  },
+  {
+    "id": "massageHead-0",
+    "action": "massageHead",
+    "bytes": "05 02 00 00 08 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:1923-2016",
+      "BleManager::massageHead@0x39bef4",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-ONCE",
+      "E-MASSAGE-POLL",
+      "E-SOURCE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Increase head massage intensity"
+  },
+  {
+    "id": "massageOff-0",
+    "action": "massageOff",
+    "bytes": "05 02 02 00 00 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2017-2110",
+      "BleManager::massageOff@0x39bfe4",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-ONCE",
+      "E-MASSAGE-POLL",
+      "E-SOURCE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Massage off (speech action)"
+  },
+  {
+    "id": "massageOn-0",
+    "action": "massageOn",
+    "bytes": "05 02 00 08 00 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2111-2204",
+      "BleManager::massageOn@0x39c0d4",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-ONCE",
+      "E-MASSAGE-POLL",
+      "E-SOURCE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Massage on (speech action)"
+  },
+  {
+    "id": "reading-0",
+    "action": "reading",
+    "bytes": "05 02 00 00 20 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2205-2296",
+      "BleManager::reading@0x39c1c4",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-ONCE",
+      "E-MASSAGE-POLL",
+      "E-SOURCE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Reading preset recall"
+  },
+  {
+    "id": "m5-0",
+    "action": "m5",
+    "bytes": "05 02 00 01 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2297-2388",
+      "BleManager::m5@0x39c2b0",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-ONCE",
+      "E-MASSAGE-POLL",
+      "E-SOURCE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Memory recall (artifact method m5)"
+  },
+  {
+    "id": "flat-0",
+    "action": "flat",
+    "bytes": "05 02 08 00 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2389-2480",
+      "BleManager::flat@0x39c39c",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-ONCE",
+      "E-MASSAGE-POLL",
+      "E-SOURCE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Flat preset recall"
+  },
+  {
+    "id": "antiSnore-0",
+    "action": "antiSnore",
+    "bytes": "05 02 00 00 80 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2481-2572",
+      "BleManager::antiSnore@0x39c488",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-ONCE",
+      "E-MASSAGE-POLL",
+      "E-SOURCE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Anti-snore preset recall"
+  },
+  {
+    "id": "zeroGravity-0",
+    "action": "zeroGravity",
+    "bytes": "05 02 00 00 10 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2573-2664",
+      "BleManager::zeroGravity@0x39c574",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-ONCE",
+      "E-MASSAGE-POLL",
+      "E-SOURCE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Zero-gravity preset recall"
+  },
+  {
+    "id": "leisure-0",
+    "action": "leisure",
+    "bytes": "05 02 00 00 40 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2665-2756",
+      "BleManager::leisure@0x39c660",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-ONCE",
+      "E-MASSAGE-POLL",
+      "E-SOURCE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Leisure preset recall"
+  },
+  {
+    "id": "stopCommand-0",
+    "action": "stopCommand (speak source)",
+    "bytes": "05 02 00 00 00 03 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "once",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Cancels previous timer then max3 STOP writes; branch0 speak,branch1 button.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "UP,explicit speech Stop,memory-save timeout or massage confirmation -> BleManager.stopCommand.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2757-2904",
+      "BleManager::stopCommand@0x39c74c",
+      "E-WRITE",
+      "E-STOP",
+      "E-ONCE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "stopCommand (speak source)"
+  },
+  {
+    "id": "stopCommand-1",
+    "action": "stopCommand (button source)",
+    "bytes": "05 02 00 00 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "once",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Cancels previous timer then max3 STOP writes; branch0 speak,branch1 button.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "UP,explicit speech Stop,memory-save timeout or massage confirmation -> BleManager.stopCommand.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2757-2904",
+      "BleManager::stopCommand@0x39c74c",
+      "E-WRITE",
+      "E-STOP",
+      "E-ONCE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "stopCommand (button source)"
+  },
+  {
+    "id": "elevateDown-0",
+    "action": "elevateDown",
+    "bytes": "05 02 00 00 00 80",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "held",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "UP sends source-selected STOP. Position CANCEL only cancels refresh. Voice has no auto duration.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product motor control -> touchAction -> SendCommandControl.sendCommand, or global speech alias -> dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2905-2981",
+      "BleManager::elevateDown@0x39c8c4",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-RELEASE",
+      "E-VOICE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "elevateDown"
+  },
+  {
+    "id": "elevateUp-0",
+    "action": "elevateUp",
+    "bytes": "05 02 00 00 00 40",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "held",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "UP sends source-selected STOP. Position CANCEL only cancels refresh. Voice has no auto duration.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product motor control -> touchAction -> SendCommandControl.sendCommand, or global speech alias -> dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2982-3058",
+      "BleManager::elevateUp@0x39c984",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-RELEASE",
+      "E-VOICE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "elevateUp"
+  },
+  {
+    "id": "lumbarDown-0",
+    "action": "lumbarDown",
+    "bytes": "05 02 00 00 00 20",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "held",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "UP sends source-selected STOP. Position CANCEL only cancels refresh. Voice has no auto duration.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product motor control -> touchAction -> SendCommandControl.sendCommand, or global speech alias -> dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3059-3135",
+      "BleManager::lumbarDown@0x39ca44",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-RELEASE",
+      "E-VOICE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "lumbarDown"
+  },
+  {
+    "id": "lumbarUp-0",
+    "action": "lumbarUp",
+    "bytes": "05 02 00 00 00 10",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "held",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "UP sends source-selected STOP. Position CANCEL only cancels refresh. Voice has no auto duration.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product motor control -> touchAction -> SendCommandControl.sendCommand, or global speech alias -> dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3136-3212",
+      "BleManager::lumbarUp@0x39cb04",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-RELEASE",
+      "E-VOICE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "lumbarUp"
+  },
+  {
+    "id": "footDown-0",
+    "action": "footDown",
+    "bytes": "05 02 00 00 00 08",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "held",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "UP sends source-selected STOP. Position CANCEL only cancels refresh. Voice has no auto duration.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product motor control -> touchAction -> SendCommandControl.sendCommand, or global speech alias -> dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3213-3289",
+      "BleManager::footDown@0x39cbc4",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-RELEASE",
+      "E-VOICE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "footDown"
+  },
+  {
+    "id": "footUp-0",
+    "action": "footUp",
+    "bytes": "05 02 00 00 00 04",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "held",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "UP sends source-selected STOP. Position CANCEL only cancels refresh. Voice has no auto duration.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product motor control -> touchAction -> SendCommandControl.sendCommand, or global speech alias -> dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3290-3366",
+      "BleManager::footUp@0x39cc84",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-RELEASE",
+      "E-VOICE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "footUp"
+  },
+  {
+    "id": "headDown-0",
+    "action": "headDown",
+    "bytes": "05 02 00 00 00 02",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "held",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "UP sends source-selected STOP. Position CANCEL only cancels refresh. Voice has no auto duration.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product motor control -> touchAction -> SendCommandControl.sendCommand, or global speech alias -> dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3367-3443",
+      "BleManager::headDown@0x39cd44",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-RELEASE",
+      "E-VOICE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "headDown"
+  },
+  {
+    "id": "headUp-0",
+    "action": "headUp",
+    "bytes": "05 02 00 00 00 01",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "held",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "UP sends source-selected STOP. Position CANCEL only cancels refresh. Voice has no auto duration.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product motor control -> touchAction -> SendCommandControl.sendCommand, or global speech alias -> dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3444-3520",
+      "BleManager::headUp@0x39ce04",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-RELEASE",
+      "E-VOICE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "headUp"
+  },
+  {
+    "id": "headTiltDown-0",
+    "action": "headTiltDown",
+    "bytes": "05 02 80 00 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "held",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "UP sends source-selected STOP. Position CANCEL only cancels refresh. Voice has no auto duration.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product motor control -> touchAction -> SendCommandControl.sendCommand, or global speech alias -> dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3521-3597",
+      "BleManager::headTiltDown@0x39cec4",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-RELEASE",
+      "E-VOICE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "headTiltDown"
+  },
+  {
+    "id": "headTiltUp-0",
+    "action": "headTiltUp",
+    "bytes": "05 02 40 00 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "held",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "UP sends source-selected STOP. Position CANCEL only cancels refresh. Voice has no auto duration.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product motor control -> touchAction -> SendCommandControl.sendCommand, or global speech alias -> dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3598-3674",
+      "BleManager::headTiltUp@0x39cf84",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-RELEASE",
+      "E-VOICE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "headTiltUp"
+  },
+  {
+    "id": "confirmationResponse-0",
+    "action": "confirmationResponse",
+    "bytes": "00 b0",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "once",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "No movement cleanup. Cancels/replaces prior sender timer; max3 query writes unless interrupted.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Massage initState/release/intensity timer -> BleManager.confirmationResponse.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3909-3978",
+      "BleManager::confirmationResponse@0x429dec",
+      "E-WRITE",
+      "E-ONCE",
+      "E-MASSAGE-POLL",
+      "E-DISPATCH"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Query massage state"
+  },
+  {
+    "id": "massageOpen-0",
+    "action": "massageOpen",
+    "bytes": "05 02 00 00 01 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product massage pointer control -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3979-4072",
+      "BleManager::massageOpen@0x42a274",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-ONCE",
+      "E-MASSAGE-POLL",
+      "E-SOURCE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Massage UI power toggle"
+  },
+  {
+    "id": "massageMode-0",
+    "action": "massageMode",
+    "bytes": "05 02 10 00 00 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product massage pointer control -> BleManager.",
+    "variants": [
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:4073-4166",
+      "BleManager::massageMode@0x42ce68",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-ONCE",
+      "E-MASSAGE-POLL",
+      "E-SOURCE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Cycle massage mode"
+  },
+  {
+    "id": "massageTimer-0",
+    "action": "massageTimer",
+    "bytes": "05 02 00 00 02 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product massage pointer control -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:4167-4260",
+      "BleManager::massageTimer@0x42f380",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-ONCE",
+      "E-MASSAGE-POLL",
+      "E-SOURCE"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Cycle massage timer"
+  },
+  {
+    "id": "flatAndZg-0",
+    "action": "flatAndZg",
+    "bytes": "05 02 08 00 10 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "held-6s",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": 6000,
+      "duration_ms_unknown_reason": "Known6s app timer,actual timer ordering is runtime-dependent."
+    },
+    "release_behavior": "Hold6s then local Memory reset dialog and STOP. Early UP cancels hold and sendsSTOP.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "FLAT+ZG compound flags -> _memorySavedFunction -> BleManager.flatAndZg.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:4261-4339",
+      "BleManager::flatAndZg@0x43335c",
+      "E-WRITE",
+      "E-MEMORY",
+      "E-STOP"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Reset programmed presets (FLAT+ZG)"
+  },
+  {
+    "id": "program-leisure",
+    "action": "program leisure",
+    "bytes": "05 02 00 00 40 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "button-source held recall frame for6s",
+      "interval_ms": 200,
+      "duration_ms": 6000,
+      "qualification": "No separate program opcode. With source=speak,underlying helper instead once-sends; report preserves that source-dependent behavior. Boundary timer ordering can change exact count."
+    },
+    "release_behavior": "Release before6s cancels memory timer and sendsSTOP; at6s local Memory saved dialog plusSTOP. Dialog is time-based,not a bed acknowledgement.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Preset PointerDown -> current ControlType -> _memorySavedFunction -> touchAction/dispatcher -> same recall frame;6s callback -> dialog+stopCommand.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2665-2756",
+      "BleManager::leisure@0x39c660",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-ONCE",
+      "E-MASSAGE-POLL",
+      "E-SOURCE",
+      "E-MEMORY"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Program leisure preset via held recall"
+  },
+  {
+    "id": "program-zeroGravity",
+    "action": "program zeroGravity",
+    "bytes": "05 02 00 00 10 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "button-source held recall frame for6s",
+      "interval_ms": 200,
+      "duration_ms": 6000,
+      "qualification": "No separate program opcode. With source=speak,underlying helper instead once-sends; report preserves that source-dependent behavior. Boundary timer ordering can change exact count."
+    },
+    "release_behavior": "Release before6s cancels memory timer and sendsSTOP; at6s local Memory saved dialog plusSTOP. Dialog is time-based,not a bed acknowledgement.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Preset PointerDown -> current ControlType -> _memorySavedFunction -> touchAction/dispatcher -> same recall frame;6s callback -> dialog+stopCommand.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2573-2664",
+      "BleManager::zeroGravity@0x39c574",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-ONCE",
+      "E-MASSAGE-POLL",
+      "E-SOURCE",
+      "E-MEMORY"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Program Zero Gravity preset via held recall"
+  },
+  {
+    "id": "program-antiSnore",
+    "action": "program antiSnore",
+    "bytes": "05 02 00 00 80 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "button-source held recall frame for6s",
+      "interval_ms": 200,
+      "duration_ms": 6000,
+      "qualification": "No separate program opcode. With source=speak,underlying helper instead once-sends; report preserves that source-dependent behavior. Boundary timer ordering can change exact count."
+    },
+    "release_behavior": "Release before6s cancels memory timer and sendsSTOP; at6s local Memory saved dialog plusSTOP. Dialog is time-based,not a bed acknowledgement.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Preset PointerDown -> current ControlType -> _memorySavedFunction -> touchAction/dispatcher -> same recall frame;6s callback -> dialog+stopCommand.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2481-2572",
+      "BleManager::antiSnore@0x39c488",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-ONCE",
+      "E-MASSAGE-POLL",
+      "E-SOURCE",
+      "E-MEMORY"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Program Anti Snore preset via held recall"
+  },
+  {
+    "id": "program-m5",
+    "action": "program memory",
+    "bytes": "05 02 00 01 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "button-source held recall frame for6s",
+      "interval_ms": 200,
+      "duration_ms": 6000,
+      "qualification": "No separate program opcode. With source=speak,underlying helper instead once-sends; report preserves that source-dependent behavior. Boundary timer ordering can change exact count."
+    },
+    "release_behavior": "Release before6s cancels memory timer and sendsSTOP; at6s local Memory saved dialog plusSTOP. Dialog is time-based,not a bed acknowledgement.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Preset PointerDown -> current ControlType -> _memorySavedFunction -> touchAction/dispatcher -> same recall frame;6s callback -> dialog+stopCommand.",
+    "variants": [
+      "MODEL-1"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2297-2388",
+      "BleManager::m5@0x39c2b0",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-ONCE",
+      "E-MASSAGE-POLL",
+      "E-SOURCE",
+      "E-MEMORY"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Program memory preset via held recall"
+  },
+  {
+    "id": "program-reading",
+    "action": "program reading",
+    "bytes": "05 02 00 00 20 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "button-source held recall frame for6s",
+      "interval_ms": 200,
+      "duration_ms": 6000,
+      "qualification": "No separate program opcode. With source=speak,underlying helper instead once-sends; report preserves that source-dependent behavior. Boundary timer ordering can change exact count."
+    },
+    "release_behavior": "Release before6s cancels memory timer and sendsSTOP; at6s local Memory saved dialog plusSTOP. Dialog is time-based,not a bed acknowledgement.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Preset PointerDown -> current ControlType -> _memorySavedFunction -> touchAction/dispatcher -> same recall frame;6s callback -> dialog+stopCommand.",
+    "variants": [
+      "MODEL-1"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "evidence": [
+      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2205-2296",
+      "BleManager::reading@0x39c1c4",
+      "E-WRITE",
+      "E-CONTINUE",
+      "E-ONCE",
+      "E-MASSAGE-POLL",
+      "E-SOURCE",
+      "E-MEMORY"
+    ],
+    "confidence": "VERIFIED",
+    "semantic_action": "Program reading preset via held recall"
+  }
+]

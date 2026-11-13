@@ -1,0 +1,1834 @@
+[
+  {
+    "id": "B-545298-1",
+    "protocol": "P1",
+    "action": "checkState [literal branch 1]",
+    "expected": "e6fe16000000000005",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x545298",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 0,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-54a0e8-0",
+    "protocol": "P1",
+    "action": "checkAlarm [literal branch 0]",
+    "expected": "e180039b",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x54a0e8",
+    "builder": "keeson.checked",
+    "inputs": {
+      "body": "e18003"
+    }
+  },
+  {
+    "id": "B-54b0d8-0",
+    "protocol": "P1",
+    "action": "closeAlarm [literal branch 0]",
+    "expected": "ed80030000000000000000000000008f",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x54b0d8",
+    "builder": "keeson.checked",
+    "inputs": {
+      "body": "ed8003000000000000000000000000"
+    }
+  },
+  {
+    "id": "B-613f30-0",
+    "protocol": "P1",
+    "action": "machinery3Down [literal branch 0]",
+    "expected": "e6fe162000000000e5",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x613f30",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 32,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-6141d4-0",
+    "protocol": "P1",
+    "action": "machinery3Up [literal branch 0]",
+    "expected": "e6fe161000000000f5",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x6141d4",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 16,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-614478-0",
+    "protocol": "P1",
+    "action": "machinery4Down [literal branch 0]",
+    "expected": "e6fe16800000000085",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x614478",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 128,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-61471c-0",
+    "protocol": "P1",
+    "action": "machinery4Up [literal branch 0]",
+    "expected": "e6fe164000000000c5",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x61471c",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 64,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-6149c0-0",
+    "protocol": "P1",
+    "action": "hfDown [literal branch 0]",
+    "expected": "e6fe160a00000000fb",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x6149c0",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 10,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-614c64-0",
+    "protocol": "P1",
+    "action": "hfUp [literal branch 0]",
+    "expected": "e6fe16050000000000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x614c64",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 5,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-614f08-0",
+    "protocol": "P1",
+    "action": "footDown [literal branch 0]",
+    "expected": "e6fe160800000000fd",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x614f08",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 8,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-6151ac-0",
+    "protocol": "P1",
+    "action": "footUp [literal branch 0]",
+    "expected": "e6fe16040000000001",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x6151ac",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 4,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-615450-0",
+    "protocol": "P1",
+    "action": "headDown [literal branch 0]",
+    "expected": "e6fe16020000000003",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x615450",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 2,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-6156f4-0",
+    "protocol": "P1",
+    "action": "headUp [literal branch 0]",
+    "expected": "e6fe16010000000004",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x6156f4",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 1,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-615960-0",
+    "protocol": "P1",
+    "action": "stopCommand [literal branch 0]",
+    "expected": "e6fe16000000000005",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x615960",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 0,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-615d28-0",
+    "protocol": "P1",
+    "action": "massageAll [literal branch 0]",
+    "expected": "e6fe16000100000004",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x615d28",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 256,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-615f88-0",
+    "protocol": "P1",
+    "action": "massageStopAll [literal branch 0]",
+    "expected": "e6fe16000000020003",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x615f88",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 33554432,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-617d94-0",
+    "protocol": "P1",
+    "action": "meanwhileStrengthAdd [literal branch 0]",
+    "expected": "e6fe16000c000000f9",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x617d94",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 3072,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-617f9c-0",
+    "protocol": "P1",
+    "action": "timerSwitch [literal branch 0]",
+    "expected": "e6fe16000200000003",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x617f9c",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 512,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-618150-0",
+    "protocol": "P1",
+    "action": "waveAdd [literal branch 0]",
+    "expected": "e6fe160000001000f5",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x618150",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 268435456,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-618358-0",
+    "protocol": "P1",
+    "action": "footStrengthAdd [literal branch 0]",
+    "expected": "e6fe16000400000001",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x618358",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 1024,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-618560-0",
+    "protocol": "P1",
+    "action": "headStrengthAdd [literal branch 0]",
+    "expected": "e6fe160008000000fd",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x618560",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 2048,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-61cd50-0",
+    "protocol": "P1",
+    "action": "light [literal branch 0]",
+    "expected": "e6fe16000002000003",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x61cd50",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 131072,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-6259d8-0",
+    "protocol": "P1",
+    "action": "strengthFootAdd_234357A [literal branch 0]",
+    "expected": "e6fe16000400000001",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x6259d8",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 1024,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-629648-0",
+    "protocol": "P1",
+    "action": "memory6_M2 [literal branch 0]",
+    "expected": "e6fe16000004000001",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x629648",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 262144,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-6298e0-0",
+    "protocol": "P1",
+    "action": "memory5_M1 [literal branch 0]",
+    "expected": "e6fe16000001000004",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x6298e0",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 65536,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-629b78-0",
+    "protocol": "P1",
+    "action": "antiSnore [literal branch 0]",
+    "expected": "e6fe16008000000085",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x629b78",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 32768,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-629e10-0",
+    "protocol": "P1",
+    "action": "zeroGravity [literal branch 0]",
+    "expected": "e6fe160010000000f5",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x629e10",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 4096,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-62a0a8-0",
+    "protocol": "P1",
+    "action": "flatPosition [literal branch 0]",
+    "expected": "e6fe160000000800fd",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x62a0a8",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 134217728,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-63e2c4-0",
+    "protocol": "P1",
+    "action": "meanwhileStrengthReduce [literal branch 0]",
+    "expected": "e6fe16000080010084",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x63e2c4",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 25165824,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-63e4f0-0",
+    "protocol": "P1",
+    "action": "waveReduce [literal branch 0]",
+    "expected": "e6fe16000000040001",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x63e4f0",
+    "builder": "keeson.frame",
+    "inputs": {
+      "word": 67108864,
+      "header": 230,
+      "order": "little",
+      "side": 0
+    }
+  },
+  {
+    "id": "B-52f078-0",
+    "protocol": "P2",
+    "action": "confirmGaiNewHistoryData [literal branch 0] [EXCLUDED sleep-report consumer; shared BLE effects retained]",
+    "expected": "aa0000070300",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x52f078",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 7,
+      "operation": 3,
+      "size": 0,
+      "query": false,
+      "fields": []
+    }
+  },
+  {
+    "id": "B-613f30-1",
+    "protocol": "P2",
+    "action": "machinery3Down [literal branch 1]",
+    "expected": "aa000001010420000000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x613f30",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 1,
+      "size": 4,
+      "query": false,
+      "fields": [
+        32,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "B-6141d4-1",
+    "protocol": "P2",
+    "action": "machinery3Up [literal branch 1]",
+    "expected": "aa000001010410000000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x6141d4",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 1,
+      "size": 4,
+      "query": false,
+      "fields": [
+        16,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "B-614478-1",
+    "protocol": "P2",
+    "action": "machinery4Down [literal branch 1]",
+    "expected": "aa000001010480000000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x614478",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 1,
+      "size": 4,
+      "query": false,
+      "fields": [
+        128,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "B-61471c-1",
+    "protocol": "P2",
+    "action": "machinery4Up [literal branch 1]",
+    "expected": "aa000001010440000000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x61471c",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 1,
+      "size": 4,
+      "query": false,
+      "fields": [
+        64,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "B-6149c0-1",
+    "protocol": "P2",
+    "action": "hfDown [literal branch 1]",
+    "expected": "aa00000101040a000000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x6149c0",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 1,
+      "size": 4,
+      "query": false,
+      "fields": [
+        10,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "B-614c64-1",
+    "protocol": "P2",
+    "action": "hfUp [literal branch 1]",
+    "expected": "aa000001010405000000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x614c64",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 1,
+      "size": 4,
+      "query": false,
+      "fields": [
+        5,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "B-614f08-1",
+    "protocol": "P2",
+    "action": "footDown [literal branch 1]",
+    "expected": "aa000001010408000000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x614f08",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 1,
+      "size": 4,
+      "query": false,
+      "fields": [
+        8,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "B-6151ac-1",
+    "protocol": "P2",
+    "action": "footUp [literal branch 1]",
+    "expected": "aa000001010404000000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x6151ac",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 1,
+      "size": 4,
+      "query": false,
+      "fields": [
+        4,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "B-615450-1",
+    "protocol": "P2",
+    "action": "headDown [literal branch 1]",
+    "expected": "aa000001010402000000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x615450",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 1,
+      "size": 4,
+      "query": false,
+      "fields": [
+        2,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "B-6156f4-1",
+    "protocol": "P2",
+    "action": "headUp [literal branch 1]",
+    "expected": "aa000001010401000000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x6156f4",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 1,
+      "size": 4,
+      "query": false,
+      "fields": [
+        1,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "B-615d28-1",
+    "protocol": "P2",
+    "action": "massageAll [literal branch 1]",
+    "expected": "aa000002010140",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x615d28",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 2,
+      "operation": 1,
+      "size": 1,
+      "query": false,
+      "fields": [
+        64
+      ]
+    }
+  },
+  {
+    "id": "B-615f88-1",
+    "protocol": "P2",
+    "action": "massageStopAll [literal branch 1]",
+    "expected": "aa000002010141",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x615f88",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 2,
+      "operation": 1,
+      "size": 1,
+      "query": false,
+      "fields": [
+        65
+      ]
+    }
+  },
+  {
+    "id": "B-629648-1",
+    "protocol": "P2",
+    "action": "memory6_M2 [literal branch 1]",
+    "expected": "aa000001030106",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x629648",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 3,
+      "size": 1,
+      "query": false,
+      "fields": [
+        6
+      ]
+    }
+  },
+  {
+    "id": "B-6298e0-1",
+    "protocol": "P2",
+    "action": "memory5_M1 [literal branch 1]",
+    "expected": "aa000001030105",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x6298e0",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 3,
+      "size": 1,
+      "query": false,
+      "fields": [
+        5
+      ]
+    }
+  },
+  {
+    "id": "B-629b78-1",
+    "protocol": "P2",
+    "action": "antiSnore [literal branch 1]",
+    "expected": "aa000001030104",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x629b78",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 3,
+      "size": 1,
+      "query": false,
+      "fields": [
+        4
+      ]
+    }
+  },
+  {
+    "id": "B-629e10-1",
+    "protocol": "P2",
+    "action": "zeroGravity [literal branch 1]",
+    "expected": "aa000001030101",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x629e10",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 3,
+      "size": 1,
+      "query": false,
+      "fields": [
+        1
+      ]
+    }
+  },
+  {
+    "id": "B-62a0a8-1",
+    "protocol": "P2",
+    "action": "flatPosition [literal branch 1]",
+    "expected": "aa000001030109",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x62a0a8",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 3,
+      "size": 1,
+      "query": false,
+      "fields": [
+        9
+      ]
+    }
+  },
+  {
+    "id": "B-62dbe8-0",
+    "protocol": "P2",
+    "action": "machinery5Down [literal branch 0]",
+    "expected": "aa000001010400020000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x62dbe8",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 1,
+      "size": 4,
+      "query": false,
+      "fields": [
+        0,
+        2,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "B-62dd18-0",
+    "protocol": "P2",
+    "action": "machinery5Up [literal branch 0]",
+    "expected": "aa000001010400010000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x62dd18",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 1,
+      "size": 4,
+      "query": false,
+      "fields": [
+        0,
+        1,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "B-659f58-0",
+    "protocol": "P2",
+    "action": "machinery3and4Down [literal branch 0]",
+    "expected": "aa0000010104a0000000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x659f58",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 1,
+      "size": 4,
+      "query": false,
+      "fields": [
+        160,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "B-65a12c-0",
+    "protocol": "P2",
+    "action": "machinery3and4Up [literal branch 0]",
+    "expected": "aa000001010450000000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x65a12c",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 1,
+      "size": 4,
+      "query": false,
+      "fields": [
+        80,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "B-3adfa8-0",
+    "protocol": "P2",
+    "action": "checkSonicMassage [literal branch 0]",
+    "expected": "2a0000068100",
+    "source": "blutter/asm/sleep_monitor/tool/command/sound_wave_command.dart@0x3adfa8",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 6,
+      "operation": 129,
+      "size": 0,
+      "query": true,
+      "fields": []
+    }
+  },
+  {
+    "id": "B-52e560-0",
+    "protocol": "P2",
+    "action": "gainAllHistoricalData [literal branch 0] [EXCLUDED sleep-report consumer; shared BLE effects retained]",
+    "expected": "2a000007820101",
+    "source": "blutter/asm/sleep_monitor/tool/command/sound_wave_command.dart@0x52e560",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 7,
+      "operation": 130,
+      "size": 1,
+      "query": true,
+      "fields": [
+        1
+      ]
+    }
+  },
+  {
+    "id": "B-5430e0-0",
+    "protocol": "P2",
+    "action": "checkConfirm [literal branch 0]",
+    "expected": "2a000005810901ffff00002225124b",
+    "source": "blutter/asm/sleep_monitor/tool/command/sound_wave_command.dart@0x5430e0",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 5,
+      "operation": 129,
+      "size": 9,
+      "query": true,
+      "fields": [
+        1,
+        255,
+        255,
+        0,
+        0,
+        34,
+        37,
+        18,
+        75
+      ]
+    }
+  },
+  {
+    "id": "B-5448ac-0",
+    "protocol": "P2",
+    "action": "gainNewHistoricalData [literal branch 0] [EXCLUDED sleep-report consumer; shared BLE effects retained]",
+    "expected": "2a000007820102",
+    "source": "blutter/asm/sleep_monitor/tool/command/sound_wave_command.dart@0x5448ac",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 7,
+      "operation": 130,
+      "size": 1,
+      "query": true,
+      "fields": [
+        2
+      ]
+    }
+  },
+  {
+    "id": "B-5456b0-0",
+    "protocol": "P2",
+    "action": "checkAntiSnore [literal branch 0]",
+    "expected": "2a0000078100",
+    "source": "blutter/asm/sleep_monitor/tool/command/sound_wave_command.dart@0x5456b0",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 7,
+      "operation": 129,
+      "size": 0,
+      "query": true,
+      "fields": []
+    }
+  },
+  {
+    "id": "B-615bc4-0",
+    "protocol": "P2",
+    "action": "staticStopCommand [literal branch 0]",
+    "expected": "aa0000010200",
+    "source": "blutter/asm/sleep_monitor/tool/command/sound_wave_command.dart@0x615bc4",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 2,
+      "size": 0,
+      "query": false,
+      "fields": []
+    }
+  },
+  {
+    "id": "B-615c2c-0",
+    "protocol": "P2",
+    "action": "staticStopDriver [literal branch 0]",
+    "expected": "aa000001010400000000",
+    "source": "blutter/asm/sleep_monitor/tool/command/sound_wave_command.dart@0x615c2c",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 1,
+      "size": 4,
+      "query": false,
+      "fields": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "B-62cc80-0",
+    "protocol": "P2",
+    "action": "saveAntiSnore [literal branch 0]",
+    "expected": "aa000001050124",
+    "source": "blutter/asm/sleep_monitor/tool/command/sound_wave_command.dart@0x62cc80",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 5,
+      "size": 1,
+      "query": false,
+      "fields": [
+        36
+      ]
+    }
+  },
+  {
+    "id": "B-62cd6c-0",
+    "protocol": "P2",
+    "action": "antiSnore [literal branch 0]",
+    "expected": "aa000001030104",
+    "source": "blutter/asm/sleep_monitor/tool/command/sound_wave_command.dart@0x62cd6c",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 3,
+      "size": 1,
+      "query": false,
+      "fields": [
+        4
+      ]
+    }
+  },
+  {
+    "id": "B-62ce98-0",
+    "protocol": "P2",
+    "action": "saveZeroGravity [literal branch 0]",
+    "expected": "aa000001050121",
+    "source": "blutter/asm/sleep_monitor/tool/command/sound_wave_command.dart@0x62ce98",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 5,
+      "size": 1,
+      "query": false,
+      "fields": [
+        33
+      ]
+    }
+  },
+  {
+    "id": "B-62cf84-0",
+    "protocol": "P2",
+    "action": "zeroGravity [literal branch 0]",
+    "expected": "aa000001030101",
+    "source": "blutter/asm/sleep_monitor/tool/command/sound_wave_command.dart@0x62cf84",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 3,
+      "size": 1,
+      "query": false,
+      "fields": [
+        1
+      ]
+    }
+  },
+  {
+    "id": "B-62d070-0",
+    "protocol": "P2",
+    "action": "flatPosition [literal branch 0]",
+    "expected": "aa000001030109",
+    "source": "blutter/asm/sleep_monitor/tool/command/sound_wave_command.dart@0x62d070",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 3,
+      "size": 1,
+      "query": false,
+      "fields": [
+        9
+      ]
+    }
+  },
+  {
+    "id": "B-62d19c-0",
+    "protocol": "P2",
+    "action": "saveMemory6_M2 [literal branch 0]",
+    "expected": "aa000001050126",
+    "source": "blutter/asm/sleep_monitor/tool/command/sound_wave_command.dart@0x62d19c",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 5,
+      "size": 1,
+      "query": false,
+      "fields": [
+        38
+      ]
+    }
+  },
+  {
+    "id": "B-62d288-0",
+    "protocol": "P2",
+    "action": "memory6_M2 [literal branch 0]",
+    "expected": "aa000001030106",
+    "source": "blutter/asm/sleep_monitor/tool/command/sound_wave_command.dart@0x62d288",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 3,
+      "size": 1,
+      "query": false,
+      "fields": [
+        6
+      ]
+    }
+  },
+  {
+    "id": "B-62d3b4-0",
+    "protocol": "P2",
+    "action": "saveMemory5_M1 [literal branch 0]",
+    "expected": "aa000001050125",
+    "source": "blutter/asm/sleep_monitor/tool/command/sound_wave_command.dart@0x62d3b4",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 5,
+      "size": 1,
+      "query": false,
+      "fields": [
+        37
+      ]
+    }
+  },
+  {
+    "id": "B-62d4a0-0",
+    "protocol": "P2",
+    "action": "memory5_M1 [literal branch 0]",
+    "expected": "aa000001030105",
+    "source": "blutter/asm/sleep_monitor/tool/command/sound_wave_command.dart@0x62d4a0",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 1,
+      "operation": 3,
+      "size": 1,
+      "query": false,
+      "fields": [
+        5
+      ]
+    }
+  },
+  {
+    "id": "B-62e080-0",
+    "protocol": "P2",
+    "action": "checkLight [literal branch 0]",
+    "expected": "2a0000048100",
+    "source": "blutter/asm/sleep_monitor/tool/command/sound_wave_command.dart@0x62e080",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 4,
+      "operation": 129,
+      "size": 0,
+      "query": true,
+      "fields": []
+    }
+  },
+  {
+    "id": "B-62e0ec-0",
+    "protocol": "P2",
+    "action": "closeLight [literal branch 0]",
+    "expected": "aa00000401050000",
+    "source": "blutter/asm/sleep_monitor/tool/command/sound_wave_command.dart@0x62e0ec",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 4,
+      "operation": 1,
+      "size": 5,
+      "query": false,
+      "fields": [
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "B-62e20c-0",
+    "protocol": "P2",
+    "action": "openLight [literal branch 0]",
+    "expected": "aa00000401050001",
+    "source": "blutter/asm/sleep_monitor/tool/command/sound_wave_command.dart@0x62e20c",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 4,
+      "operation": 1,
+      "size": 5,
+      "query": false,
+      "fields": [
+        0,
+        1
+      ]
+    }
+  },
+  {
+    "id": "B-641c1c-0",
+    "protocol": "P2",
+    "action": "checkAlarm [literal branch 0]",
+    "expected": "2a000003810101",
+    "source": "blutter/asm/sleep_monitor/tool/command/sound_wave_command.dart@0x641c1c",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 3,
+      "operation": 129,
+      "size": 1,
+      "query": true,
+      "fields": [
+        1
+      ]
+    }
+  },
+  {
+    "id": "B-641c94-0",
+    "protocol": "P2",
+    "action": "closeAlarm [literal branch 0]",
+    "expected": "aa000003020701000000000000",
+    "source": "blutter/asm/sleep_monitor/tool/command/sound_wave_command.dart@0x641c94",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 3,
+      "operation": 2,
+      "size": 7,
+      "query": false,
+      "fields": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "B-6493a8-0",
+    "protocol": "P2",
+    "action": "sonicMassageAll [literal branch 0]",
+    "expected": "aa0000060c020001",
+    "source": "blutter/asm/sleep_monitor/tool/command/sound_wave_command.dart@0x6493a8",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 6,
+      "operation": 12,
+      "size": 2,
+      "query": false,
+      "fields": [
+        0,
+        1
+      ]
+    }
+  },
+  {
+    "id": "B-649424-0",
+    "protocol": "P2",
+    "action": "sonicMassageStopAll [literal branch 0]",
+    "expected": "aa0000060c020000",
+    "source": "blutter/asm/sleep_monitor/tool/command/sound_wave_command.dart@0x649424",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 6,
+      "operation": 12,
+      "size": 2,
+      "query": false,
+      "fields": [
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "B-64bf28-0",
+    "protocol": "P2",
+    "action": "sonicMassageOpenSonic [literal branch 0]",
+    "expected": "aa00000605020001",
+    "source": "blutter/asm/sleep_monitor/tool/command/sound_wave_command.dart@0x64bf28",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 6,
+      "operation": 5,
+      "size": 2,
+      "query": false,
+      "fields": [
+        0,
+        1
+      ]
+    }
+  },
+  {
+    "id": "B-64bfa4-0",
+    "protocol": "P2",
+    "action": "sonicMassageCloseSonic [literal branch 0]",
+    "expected": "aa00000605020000",
+    "source": "blutter/asm/sleep_monitor/tool/command/sound_wave_command.dart@0x64bfa4",
+    "builder": "okin_soundwave.record",
+    "inputs": {
+      "domain": 6,
+      "operation": 5,
+      "size": 2,
+      "query": false,
+      "fields": [
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "B-528804-0",
+    "protocol": "P3",
+    "action": "checkOpenBlemanage [literal branch 0]",
+    "expected": "01b401",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x528804",
+    "builder": "okin_nframe.parameter_record",
+    "inputs": {
+      "opcode": 180,
+      "fields": [
+        1
+      ],
+      "size": 1
+    }
+  },
+  {
+    "id": "B-52991c-0",
+    "protocol": "P3",
+    "action": "gainAllHistoricalData [literal branch 0] [EXCLUDED sleep-report consumer; shared BLE effects retained]",
+    "expected": "01b101",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x52991c",
+    "builder": "okin_nframe.parameter_record",
+    "inputs": {
+      "opcode": 177,
+      "fields": [
+        1
+      ],
+      "size": 1
+    }
+  },
+  {
+    "id": "B-52a84c-0",
+    "protocol": "P3",
+    "action": "confirmGainHistoryData [literal branch 0] [EXCLUDED sleep-report consumer; shared BLE effects retained]",
+    "expected": "01b301",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x52a84c",
+    "builder": "okin_nframe.parameter_record",
+    "inputs": {
+      "opcode": 179,
+      "fields": [
+        1
+      ],
+      "size": 1
+    }
+  },
+  {
+    "id": "B-5449a4-0",
+    "protocol": "P3",
+    "action": "gainNewHistoricalData [literal branch 0] [EXCLUDED sleep-report consumer; shared BLE effects retained]",
+    "expected": "01b102",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x5449a4",
+    "builder": "okin_nframe.parameter_record",
+    "inputs": {
+      "opcode": 177,
+      "fields": [
+        2
+      ],
+      "size": 1
+    }
+  },
+  {
+    "id": "B-545298-0",
+    "protocol": "P3",
+    "action": "checkState [literal branch 0]",
+    "expected": "00b0",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x545298",
+    "builder": "okin_nframe.request",
+    "inputs": {
+      "code": 176
+    }
+  },
+  {
+    "id": "B-545298-2",
+    "protocol": "P3",
+    "action": "checkState [literal branch 2]",
+    "expected": "00b0",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x545298",
+    "builder": "okin_nframe.request",
+    "inputs": {
+      "code": 176
+    }
+  },
+  {
+    "id": "B-54a0e8-1",
+    "protocol": "P3",
+    "action": "checkAlarm [literal branch 1]",
+    "expected": "00c0",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x54a0e8",
+    "builder": "okin_nframe.request",
+    "inputs": {
+      "code": 192
+    }
+  },
+  {
+    "id": "B-54b0d8-1",
+    "protocol": "P3",
+    "action": "closeAlarm [literal branch 1]",
+    "expected": "070500000000000000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x54b0d8",
+    "builder": "okin_nframe.parameter_record",
+    "inputs": {
+      "opcode": 5,
+      "fields": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "size": 7
+    }
+  },
+  {
+    "id": "B-5e1844-0",
+    "protocol": "P3",
+    "action": "openPrivacyMode [literal branch 0]",
+    "expected": "01b201",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x5e1844",
+    "builder": "okin_nframe.parameter_record",
+    "inputs": {
+      "opcode": 178,
+      "fields": [
+        1
+      ],
+      "size": 1
+    }
+  },
+  {
+    "id": "B-5e19b8-0",
+    "protocol": "P3",
+    "action": "closePrivacyMode [literal branch 0]",
+    "expected": "01b200",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x5e19b8",
+    "builder": "okin_nframe.parameter_record",
+    "inputs": {
+      "opcode": 178,
+      "fields": [
+        0
+      ],
+      "size": 1
+    }
+  },
+  {
+    "id": "B-613f30-2",
+    "protocol": "P3",
+    "action": "machinery3Down [literal branch 2]",
+    "expected": "05020000002000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x613f30",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 32,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-6141d4-2",
+    "protocol": "P3",
+    "action": "machinery3Up [literal branch 2]",
+    "expected": "05020000001000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x6141d4",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 16,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-614478-2",
+    "protocol": "P3",
+    "action": "machinery4Down [literal branch 2]",
+    "expected": "05020000008000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x614478",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 128,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-61471c-2",
+    "protocol": "P3",
+    "action": "machinery4Up [literal branch 2]",
+    "expected": "05020000004000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x61471c",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 64,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-6149c0-2",
+    "protocol": "P3",
+    "action": "hfDown [literal branch 2]",
+    "expected": "05020000000a00",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x6149c0",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 10,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-614c64-2",
+    "protocol": "P3",
+    "action": "hfUp [literal branch 2]",
+    "expected": "05020000000500",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x614c64",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 5,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-614f08-2",
+    "protocol": "P3",
+    "action": "footDown [literal branch 2]",
+    "expected": "05020000000800",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x614f08",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 8,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-6151ac-2",
+    "protocol": "P3",
+    "action": "footUp [literal branch 2]",
+    "expected": "05020000000400",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x6151ac",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 4,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-615450-2",
+    "protocol": "P3",
+    "action": "headDown [literal branch 2]",
+    "expected": "05020000000200",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x615450",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 2,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-6156f4-2",
+    "protocol": "P3",
+    "action": "headUp [literal branch 2]",
+    "expected": "05020000000100",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x6156f4",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 1,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-615960-1",
+    "protocol": "P3",
+    "action": "stopCommand [literal branch 1]",
+    "expected": "05020000000000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x615960",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 0,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-615d28-2",
+    "protocol": "P3",
+    "action": "massageAll [literal branch 2]",
+    "expected": "05020000010000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x615d28",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 256,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-615f88-2",
+    "protocol": "P3",
+    "action": "massageStopAll [literal branch 2]",
+    "expected": "05020200000000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x615f88",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 33554432,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-617d94-1",
+    "protocol": "P3",
+    "action": "meanwhileStrengthAdd [literal branch 1]",
+    "expected": "050200000c0000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x617d94",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 3072,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-617f9c-1",
+    "protocol": "P3",
+    "action": "timerSwitch [literal branch 1]",
+    "expected": "05020000020000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x617f9c",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 512,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-618150-1",
+    "protocol": "P3",
+    "action": "waveAdd [literal branch 1]",
+    "expected": "05021000000000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x618150",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 268435456,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-618358-1",
+    "protocol": "P3",
+    "action": "footStrengthAdd [literal branch 1]",
+    "expected": "05020000040000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x618358",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 1024,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-618560-1",
+    "protocol": "P3",
+    "action": "headStrengthAdd [literal branch 1]",
+    "expected": "05020000080000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x618560",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 2048,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-61cd50-1",
+    "protocol": "P3",
+    "action": "light [literal branch 1]",
+    "expected": "05020002000000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x61cd50",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 131072,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-629648-2",
+    "protocol": "P3",
+    "action": "memory6_M2 [literal branch 2]",
+    "expected": "05020004000000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x629648",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 262144,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-6298e0-2",
+    "protocol": "P3",
+    "action": "memory5_M1 [literal branch 2]",
+    "expected": "05020001000000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x6298e0",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 65536,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-629b78-2",
+    "protocol": "P3",
+    "action": "antiSnore [literal branch 2]",
+    "expected": "05020000800000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x629b78",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 32768,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-629e10-2",
+    "protocol": "P3",
+    "action": "zeroGravity [literal branch 2]",
+    "expected": "05020000100000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x629e10",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 4096,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-62a0a8-2",
+    "protocol": "P3",
+    "action": "flatPosition [literal branch 2]",
+    "expected": "05020800000000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x62a0a8",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 134217728,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-63e2c4-1",
+    "protocol": "P3",
+    "action": "meanwhileStrengthReduce [literal branch 1]",
+    "expected": "05020180000000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x63e2c4",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 25165824,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-63e4f0-1",
+    "protocol": "P3",
+    "action": "waveReduce [literal branch 1]",
+    "expected": "05020008000000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x63e4f0",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 524288,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-658f60-0",
+    "protocol": "P3",
+    "action": "antiSnore_2742_save [literal branch 0]",
+    "expected": "05020004800000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x658f60",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 294912,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-6590bc-0",
+    "protocol": "P3",
+    "action": "zeroGravity_2742_save [literal branch 0]",
+    "expected": "05020004100000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x6590bc",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 266240,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-659218-0",
+    "protocol": "P3",
+    "action": "memory_TV_2742 [literal branch 0]",
+    "expected": "05020000400000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x659218",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 16384,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-6592fc-0",
+    "protocol": "P3",
+    "action": "memory_TV_2742_save [literal branch 0]",
+    "expected": "05020004400000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x6592fc",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 278528,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-659458-0",
+    "protocol": "P3",
+    "action": "memory_reading_2742 [literal branch 0]",
+    "expected": "05020000200000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x659458",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 8192,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-65953c-0",
+    "protocol": "P3",
+    "action": "memory_reading_2742_save [literal branch 0]",
+    "expected": "05020004200000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x65953c",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 270336,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-659b00-0",
+    "protocol": "P3",
+    "action": "memory5_M1_2742_save [literal branch 0]",
+    "expected": "05020005000000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x659b00",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 327680,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-659f58-1",
+    "protocol": "P3",
+    "action": "machinery3and4Down [literal branch 1]",
+    "expected": "0502000000a000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x659f58",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 160,
+      "selector": 0
+    }
+  },
+  {
+    "id": "B-65a12c-1",
+    "protocol": "P3",
+    "action": "machinery3and4Up [literal branch 1]",
+    "expected": "05020000005000",
+    "source": "blutter/asm/sleep_monitor/tool/bluetooth/bleManager.dart@0x65a12c",
+    "builder": "okin_nframe.frame40",
+    "inputs": {
+      "key": 80,
+      "selector": 0
+    }
+  }
+]

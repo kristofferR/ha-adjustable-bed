@@ -84,6 +84,8 @@ KEESON_STREAM: dict[str, tuple[str, ...]] = {
     "jalon_15": ("row132",),
     "jalon_24": ("row132",),
     "comfortbase": ("row161",),
+    "yamada_p1": ("row178",),
+    "yamada_p2": ("row178",),
     "glideaway_motion": ("glide",),
     # Malouf's legacy OKIN route over the E6 frame (row023).
     "malouf_legacy_okin": ("malouf", "row023"),
@@ -105,6 +107,14 @@ ERGOMOTION_4_STYLES = frozenset(product.style for product in ERGOMOTION_4_PRODUC
 
 # Declaration -> declared field -> evidence keys from the design document.
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
+    "SmartSleepProfile:p1": {"hold": ("row094",)},
+    "SmartSleepProfile:p2": {"hold": ("row094",), "hold_controls": ("row094",)},
+    **{f"OkinNFrameProfile:apex_{i}": {"hold": ("row083",)} for i in range(15)},
+    **{f"KeesonProfile:symphony_sleep_{route}": {"hold": ("symphony078",)} for route in ("box1", "box2", "fallback")},
+    "SymphonyWordProfile:symphony": {"hold": ("row133",)},
+    "BedgearProfile:bedgear": {"hold": ("bedgear",)},
+    **{f"MLineProfile:{key}": {"hold": ("mline147",)} for key in ("sleep", "smart", "smartsainuo", "okin", "unknown")},
+    "SonicSleepProfile:one": {"hold": ("sonicsleep",)},
     "ParamountProfile:paramount": {"hold": ("paramount",)},
     **{f"AdjustableAppProfile:{key}": {"hold": ("adjustbed",)}
        for key in ("adjustable_bed_okin", "adjustable_bed_star", "adjustable_bed_star_5a")},
@@ -146,6 +156,10 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "Okin5AProfile:star_elevate": {"hold": ("abm5_5", "m1x12")},
     # Okin N-frame (#483): each app streams a held key until release. Nectar
     # Move is the Nectar app's CST route; Prodigy CE and U Series also compose (#516).
+    "RizeHomeProfile:rize_home_remedy_iii": {"hold": ("rize-home",)},
+    "RizeHomeProfile:rize_home_contempo_iv": {"hold": ("rize-home",)},
+    "OkinNFrameProfile:okin_motionbed": {"hold": ("row150",)},
+    "OkinNFrameProfile:n32_motion_bed": {"hold": ("n32",)},
     "OkinNFrameProfile:resident": {"hold": ("resident-base",)},
     "OkinNFrameProfile:adjustable_lumbar_okin": {"hold": ("lumbar",)},
     "OkinNFrameProfile:adjustable_lumbar_star": {"hold": ("lumbar",)},
@@ -192,6 +206,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "OkinNFrameProfile:starcode_abm5_4_box15": {"hold": ("abm5_4",)},
     "OkinNFrameProfile:starcode_abm5_4_box25": {"hold": ("abm5_4",)},
     "OkinNFrameProfile:starcode_abm5_4_box3633": {"hold": ("abm5_4",)},
+    "OkinNFrameProfile:rize_remedy_ii": {"hold": ("rize-remedy-ii", "row180")},
     "OkinNFrameProfile:tranquil": {"hold": ("tranquil",)},
     "OkinNFrameProfile:useries": {
         "hold": ("useries", "leggett-disp"),
@@ -243,10 +258,12 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     # Scoped to the held controls that run the keep mode under the current
     # Hold/Release, memory-arm and head/foot selection (row066, five reports).
     "richmat_classic_apps": {
-        "hold": ("avocado", "coaster", "fortywinks", "milemont", "superior", "row066"),
-        "hold_controls": ("avocado", "coaster", "fortywinks", "milemont", "superior", "row066"),
+        "hold": ("avocado", "coaster", "fortywinks", "milemont", "superior", "row066", "row071"),
+        "hold_controls": ("avocado", "coaster", "fortywinks", "milemont", "superior", "row066", "row071"),
     },
     "isleep": {"hold": ("kaidi",)},
+    "ComfyProfile:komfyd": {"hold": ("komfyd084",)},
+    "ComfyDSProfile:comfyds": {"hold": ("comfyds084",)},
     "RizeProfile:rize": {"hold": ("rize149",)},  # latched
     "jensen": {"hold": ("jensen", "jensen-disp")},
     # Latched; Floyd (no report) and dual-seat beds stay finite.
@@ -277,7 +294,7 @@ _CST = tuple(
     for identity in EVIDENCE
     if identity.startswith("OkinNFrameProfile:cst_")
     or identity.removeprefix("OkinNFrameProfile:")
-    in ("serenity", "tranquil", "zseries_z230", "zseries_z280")
+    in ("serenity", "tranquil", "zseries_z230", "zseries_z280", "rize_remedy_ii")
 )
 _CUSTOMATIC = (
     "OkinNFrameProfile:clarity",
@@ -297,6 +314,14 @@ _SIMMONS = ("OkinNFrameProfile:simmons_okin", "OkinNFrameProfile:simmons_smartbe
 # enumeration cannot reach every variant, layout or product, so every place
 # that can declare a capability must be listed and reviewed here.
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
+    "profiles/smart_sleep.py:<module>.PROFILES": ("SmartSleepProfile:p2",),
+    "profiles/smart_sleep.py:<module>.SmartSleepProfile": ("SmartSleepProfile:p1", "SmartSleepProfile:p2"),
+    "profiles/comfort_enhancement3.py:<module>.profile": tuple(f"OkinNFrameProfile:apex_{i}" for i in range(15)),
+    "profiles/symphony_sleep.py:<module>.PROFILES": tuple(f"KeesonProfile:symphony_sleep_{route}" for route in ("box1", "box2", "fallback")),
+    **{f"profiles/symphony.py:<module>.{site}": ("SymphonyWordProfile:symphony",)
+       for site in ("EXECUTION", "SymphonyProfile", "word_profile")},
+    "profiles/bedgear.py:<module>.BedgearProfile": ("BedgearProfile:bedgear",),
+    "profiles/sonicsleep.py:<module>.SonicSleepProfile": ("SonicSleepProfile:one",),
     "profiles/paramount.py:<module>.ParamountProfile": ("ParamountProfile:paramount",),
     **{
         f"profiles/adjustable_bed.py:<module>.{site}": tuple(
@@ -305,7 +330,13 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
         ) for site in ("AdjustableAppProfile", "PROFILES")
     },
     "profiles/smart_comfort.py:<module>.SmartComfortProfile": ("SmartComfortProfile:synargy", "SmartComfortProfile:synergy"),
+    "profiles/rize_home.py:<module>.RizeHomeProfile": (
+        "RizeHomeProfile:rize_home_remedy_iii", "RizeHomeProfile:rize_home_contempo_iv",
+    ),
+    "profiles/okin_nframe.py:<module>.OKIN_MOTIONBED": ("OkinNFrameProfile:okin_motionbed",),
+    "profiles/n32_motion_bed.py:<module>.N32": ("OkinNFrameProfile:n32_motion_bed",),
     "profiles/okin_nframe.py:<module>.RESIDENT": ("OkinNFrameProfile:resident",),
+    "profiles/mline.py:<module>.MLineProfile": tuple(f"MLineProfile:{key}" for key in ("sleep", "smart", "smartsainuo", "okin", "unknown")),
     "profiles/luuna.py:<module>.LuunaProfile": tuple(f"LuunaProfile:{key}" for key in ("rise", "risepro", "riseprolight")),
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController": ("richmat_classic_apps",),
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController.execution": ("richmat_classic_apps",),
@@ -315,6 +346,8 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "beds/goodvibe/controller.py:<module>.GoodVibeController": ("goodvibe", "mlily", "galaxy"),
     "beds/goodvibe/controller.py:<module>.GoodVibeController.execution": ("goodvibe", "mlily", "galaxy"),
     "beds/kaidi/app.py:<module>.KaidiAppController": ("isleep",),
+    "profiles/comfy.py:<module>.ComfyProfile": ("ComfyProfile:komfyd", "ComfyDSProfile:comfyds"),
+    "beds/kaidi/comfy.py:<module>.ComfyController": ("ComfyProfile:komfyd", "ComfyDSProfile:comfyds"),
     "profiles/kaidi.py:<module>.RizeProfile": ("RizeProfile:rize",),
     "beds/kaidi/rize.py:<module>.RizeController": ("RizeProfile:rize",),
     "beds/kaidi/app.py:<module>.KaidiAppController.execution": ("isleep",),
@@ -463,6 +496,10 @@ async def _family_profiles() -> dict[str, ExecutionCapabilities]:
         for value in vars(sys.modules[cls.__module__]).values()
         for profile in _instances(value, cls)
     ]
+    from custom_components.adjustable_bed.profiles.symphony_sleep import (
+        PROFILES as SYMPHONY_PROFILES,
+    )
+    profiles.extend(SYMPHONY_PROFILES.values())
     for bed_type in SUPPORTED_BED_TYPES:
         profiles.append(getattr(await _create_controller_for_bed_type(bed_type), "profile", None))
     # Layouts are built at runtime and never stored; reach every one.

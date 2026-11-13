@@ -977,6 +977,7 @@ class Coordinator:
             options={},
             entry_id="wire-snapshot",
             title="Wire Snapshot Bed",
+            async_on_unload=lambda callback: None,
             unique_id="AA:BB:CC:DD:EE:FF",
             async_create_background_task=lambda _hass, coro, *_, **__: _spawn(coro),
         )
@@ -1184,6 +1185,7 @@ def default_scenario(bed_type: str) -> Scenario:
         const.BED_TYPE_GALAXY: "6BRM",
         const.BED_TYPE_HJBED: "hj_bedbjrn",
         const.BED_TYPE_COMFORTBASE: "accord",
+        const.BED_TYPE_YAMADA: "p1",
         const.BED_TYPE_RICHMAT_APP: "6BRM",
         const.BED_TYPE_RICHMAT_APP_SLEEP: "hj",
         const.BED_TYPE_DOUBLESLEEP: "p1",
@@ -1191,10 +1193,17 @@ def default_scenario(bed_type: str) -> Scenario:
     }.get(bed_type)
     kwargs: dict[str, Any] = {}
     replies: dict[str, str] = {}
+    if bed_type == const.BED_TYPE_SONICSLEEP:
+        data[const.CONF_PRODUCT_TYPE] = "one"
     if bed_type in const.KEESON_LAYOUT_APP_BED_TYPES:
         from custom_components.adjustable_bed.profiles.keeson import DEFAULT_LAYOUTS
 
         data[const.CONF_PRODUCT_TYPE] = DEFAULT_LAYOUTS[bed_type]
+    if bed_type == const.BED_TYPE_SYMPHONY_SLEEP:
+        variant = "box1"
+        data.update({const.CONF_PRODUCT_TYPE: "400E", const.CONF_PROTOCOL_VARIANT: variant})
+    if bed_type == const.BED_TYPE_BEDGEAR:
+        data[const.CONF_BLE_DEVICE_NAME] = "HHC0000001D00X"
     if bed_type == const.BED_TYPE_JALON:
         data.update({const.CONF_PRODUCT_TYPE: "2", const.CONF_BLE_DEVICE_NAME: "smartbed123"})
         replies = {"*": "a50b00000258010106"}
@@ -1237,8 +1246,15 @@ def default_scenario(bed_type: str) -> Scenario:
         # The exact name selects the panel: here panel One.
         data[const.CONF_BLE_DEVICE_NAME] = MOTOMOTION_NAMES[0]
         kwargs = {"device_name": MOTOMOTION_NAMES[0]}
+    if bed_type == "smart_sleep":
+        data[const.CONF_PRODUCT_TYPE] = "0"
+        variant = "p1"
+        replies = {"write:00b0": "a50b000058020203040000000000010103000100"}
     if bed_type == const.BED_TYPE_DOUBLESLEEP:
         data[const.CONF_PRODUCT_TYPE] = "3"
+    if bed_type == const.BED_TYPE_SYMPHONY:
+        data[const.CONF_PRODUCT_TYPE] = "0"
+        variant = "4"
     if bed_type == const.BED_TYPE_LIMOSS_REMOTE:
         # Capabilities as a previous handshake stored them: a 4-motor bed with
         # vibration, two memory slots (the reply is not scripted).
@@ -1257,8 +1273,18 @@ def default_scenario(bed_type: str) -> Scenario:
             "read:0000143d-0000-1000-8000-00805f9b34fb": "0102",
             "read:00001111-0000-1000-8000-00805f9b34fb": "000001020304",
         }
+    if bed_type == "mline":
+        data[const.CONF_PRODUCT_TYPE] = "two"
+        variant = "sleep"
     if bed_type == const.BED_TYPE_MLILY:
         variant = "6brm"
+    if bed_type in (const.BED_TYPE_KOMFYD, const.BED_TYPE_COMFYDS):
+        data.update({const.CONF_BED_TYPE: bed_type, const.CONF_PRODUCT_TYPE: 130,
+                     const.CONF_KAIDI_ROOM_ID: 0x12345678, const.CONF_KAIDI_SOFA_ACU_NO: 0xF322})
+        replies = {"write:011601": "021600,010a44332211",
+                   "write:03fffffffffe": KAIDI_PING_REPLY,
+                   **{f"write:0304030201204433221101{op:02x}": f"0300000000200000000001{op:02x}0000" for op in range(41, 45)}}
+        return Scenario(id=bed_type, bed_type=bed_type, entry_data=data, replies=replies, layout_id="kaidi")
     if bed_type == const.BED_TYPE_KAIDI:
         # A provisioned broadcast advertisement carrying the room ID (tests/test_kaidi.py).
         kwargs = {"manufacturer_data": {0xFFFF: bytes.fromhex(KAIDI_BROADCAST % "81")}}
@@ -1327,6 +1353,17 @@ def route_scenarios() -> list[Scenario]:
     from custom_components.adjustable_bed import const
 
     scenarios: list[Scenario] = []
+    # Distinct Symphony carriers, fixed builders, split routes and fifth axis.
+    # Model/selector dispatch itself is exhaustively checked in test_symphony.
+    for product, selector in (("0", "3"), ("12", "9"), ("13", "4"), ("15", "4"), ("10", "6"), ("20", "7")):
+        scenarios.append(dataclasses.replace(default_scenario("symphony"),
+            id=f"symphony:{product}:{selector}", protocol_variant=selector,
+            entry_data={const.CONF_PRODUCT_TYPE: product}, layout_id="symphony"))
+    for route in ("Nordic", "W2", "W3", "W4", "W5"):
+        scenarios.append(Scenario(
+            id=f"sonicsleep:{route}", bed_type="sonicsleep",
+            entry_data={const.CONF_PRODUCT_TYPE: "one"}, layout_id=f"sonicsleep:{route}",
+        ))
     for bed_type, table in VARIANT_ROUTES.items():
         if bed_type not in const.SUPPORTED_BED_TYPES:
             continue
@@ -1346,6 +1383,35 @@ def route_scenarios() -> list[Scenario]:
                     replies={**base.replies, **ROUTE_REPLIES.get(f"{bed_type}:{variant}", {})},
                 )
             )
+    # Every row084 bed type/alias, without sampling the product inventory.
+    for bed_type in (const.BED_TYPE_KOMFYD, const.BED_TYPE_COMFYDS):
+        base = default_scenario(bed_type)
+        for raw in (129, 130, 131):
+            scenarios.append(dataclasses.replace(base, id=f"{bed_type}:type{raw}",
+                entry_data={**base.entry_data, const.CONF_PRODUCT_TYPE: raw}))
+    from custom_components.adjustable_bed.profiles.comfort_enhancement3 import (
+        PROFILES as APEX_PROFILES,
+    )
+    for profile in APEX_PROFILES:
+        scenarios.append(dataclasses.replace(
+            default_scenario("comfort_enhancement3"), id=f"comfort_enhancement3:{profile}",
+            protocol_variant=profile, layout_id="comfort_enhancement3",
+        ))
+    from custom_components.adjustable_bed.profiles.symphony_sleep import MODELS
+    from custom_components.adjustable_bed.profiles.symphony_sleep import (
+        PROFILES as SYMPHONY_PROFILES,
+    )
+
+    for model in MODELS:
+        for route in SYMPHONY_PROFILES:
+            if (model, route) == ("400E", "box1"):
+                continue  # The default scenario is this explicit choice.
+            scenarios.append(Scenario(
+                id=f"symphony_sleep:{model}:{route}", bed_type=const.BED_TYPE_SYMPHONY_SLEEP,
+                protocol_variant=route,
+                entry_data={const.CONF_PRODUCT_TYPE: model, const.CONF_PROTOCOL_VARIANT: route},
+                layout_id="symphony_sleep:box2" if route == "box2" else "symphony_sleep",
+            ))
     # BedTech's manual model selector: each model has its own controls and release.
     from custom_components.adjustable_bed.profiles.richmat import BEDTECH_APP_PROFILES
 
@@ -1377,6 +1443,15 @@ def route_scenarios() -> list[Scenario]:
                     protocol_variant=f"{MODEL_VARIANT_PREFIX}{model}",
                 )
             )
+    # M Line selectors and physical layouts are independent source axes.
+    for protocol in ("sleep", "smart", "smartsainuo", "okin", "unknown"):
+        for layout in ("two", "triple", "four"):
+            scenarios.append(Scenario(id=f"mline:{protocol}:{layout}", bed_type="mline",
+                protocol_variant=protocol, entry_data={const.CONF_PRODUCT_TYPE: layout,
+                const.CONF_HAS_MASSAGE: True}, layout_id="mline"))
+    for route in ("ffe", "overwrite"):
+        scenarios.append(Scenario(id=f"mline:{route}", bed_type="mline", protocol_variant="sleep",
+            entry_data={const.CONF_PRODUCT_TYPE: "two"}, layout_id=f"mline:{route}"))
     # Jalon's physical layouts share one transport and fixed model byte zero.
     # The four-motor layout is already the default scenario.
     for layout in ("20", "30", "31"):
@@ -1388,6 +1463,8 @@ def route_scenarios() -> list[Scenario]:
                 layout_id=const.BED_TYPE_JALON_BED,
             )
         )
+    scenarios.append(Scenario(id="yamada:p2", bed_type="yamada", protocol_variant="p2", layout_id="yamada"))
+
     # Jiecang family: one app, four profiles, shared and distinct layouts.
     for profile in ("dreamask", "dreamotion", "dreamhd", "comfort_motion"):
         second = "g2" if profile == "comfort_motion" else "g3"
@@ -1482,6 +1559,8 @@ def route_scenarios() -> list[Scenario]:
                     bed_type=const.BED_TYPE_RICHMAT_CLASSIC_APPS,
                     protocol_variant=app,
                     entry_data={const.CONF_PRODUCT_TYPE: layout},
+                    factory_kwargs={"device_name": "6BRM-advertised"}
+                    if app in ("lady_americana", "acaa", "sta2", "zerogravity") else {},
                     layout_id=layout_id,
                 )
             )
@@ -1508,6 +1587,12 @@ def route_scenarios() -> list[Scenario]:
                     layout_id="eshine_okin",
                 )
             )
+    if "rize_home" in const.SUPPORTED_BED_TYPES:
+        for product in ("remedy_iii", "contempo_iv"):
+            scenarios.append(Scenario(
+                id=f"rize_home:{product}", bed_type="rize_home",
+                protocol_variant=product, layout_id="rize_home",
+            ))
     return scenarios
 
 
@@ -1524,6 +1609,9 @@ CLASSIC_ROUTES: tuple[tuple[str, str, str], ...] = (
     ("luunarise2", "AHRM", "richmat_classic_apps_nordic"),
     ("powercool", "AHRM", "richmat_classic_apps"),
     ("powercool", "E3RM", "richmat_classic_apps_nordic"),
+    # Independent accepted cluster-017 apps, both GATT-selected wire formats.
+    *((app, "6BRM", wire) for app in ("lady_americana", "acaa", "sta2", "zerogravity")
+      for wire in ("richmat_classic_apps", "richmat_classic_apps_nordic")),
 )
 
 
@@ -1639,6 +1727,19 @@ def feature_scenarios(by_id: dict[str, Scenario]) -> list[Scenario]:
             },
         )
     )
+    # One accepted P1 outcome per numeric model; P2 scan selects only model80.
+    from custom_components.adjustable_bed.profiles.smart_sleep import MODELS as SMART_SLEEP_MODELS
+    for model in SMART_SLEEP_MODELS:
+        if model:
+            routes.append(dataclasses.replace(by_id["smart_sleep"], id=f"smart_sleep:p1_{model}",
+                entry_data={"product_type": str(model)}, layout_id="smart_sleep"))
+    routes.append(Scenario(id="smart_sleep:p2", bed_type="smart_sleep", protocol_variant="p2",
+        entry_data={"product_type": "80"}, layout_id="smart_sleep", replies={
+            "write:00b0": "a50b000058020203040000000000010103000100",
+            "write:2a000002": "2a00000281070313580226",
+            "write:2a000003": "2a0000038107017f0901061e00",
+            "*": "2a0000048106020100000064",
+        }))
     for protocol in ("p1", "p2"):
         routes.append(Scenario(
             id=f"jalon:{protocol}", bed_type="jalon",
@@ -1654,6 +1755,15 @@ def build_scenarios() -> list[Scenario]:
 
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES]
     scenarios.extend(route_scenarios())
+    # Bedgear A12: each selected layout, dynamic zone array and independent M gate.
+    for pair in ("15", "35", "E1", "81", "51", "44", "91", "13", "71", "61", "D1", "34", "23", "97", "25", "55", "65", "75", "95", "96", "98", "41", "42", "43", "31", "32", "11", "12", "21", "22", "Z1"):
+        scenarios.append(Scenario(id=f"bedgear:{pair}", bed_type="bedgear", layout_id="bedgear",
+            entry_data={"ble_device_name": "HHC00000" + pair + "D00X"}))
+    for suffix in ("DMH", "DE0", "B00", "C00"):
+        # Index 10/11/13 are independent, never another app's layout settings.
+        scenarios.append(Scenario(id=f"bedgear:flags:{suffix}", bed_type="bedgear", layout_id="bedgear",
+            entry_data={"ble_device_name": "HHC0000015" + suffix[:2] + "0" + suffix[2]}))
+
     by_id = {scenario.id: scenario for scenario in scenarios}
     scenarios.extend(feature_scenarios(by_id))
     for sid in PROPERTY_ROUTES:
@@ -1754,11 +1864,36 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         discovery = controller.async_discover_capabilities()
         if inspect.isawaitable(discovery):
             await discovery
-        if controller._coordinator.bed_type in {"smart_comfort_synargy", "smart_comfort_synergy"}:
+        if controller._coordinator.bed_type in {"smart_comfort_synargy", "smart_comfort_synergy", "smart_sleep"}:
             # These v5 profiles own startup in their hook, without session helpers.
             await controller.async_on_connect(None)
             return
+        if controller._coordinator.bed_type == "rize_home":
+            await controller.async_on_connect(SimpleNamespace(async_start_notify=controller.start_notify))
+            return
+        if controller._coordinator.bed_type == "symphony":
+            session = SimpleNamespace(
+                client=controller.client, is_current=lambda: True,
+                async_start_notify=lambda: controller.start_notify(lambda *_: None),
+            )
+            await controller.async_on_connect(session)
+            await controller.async_after_connect(session)
+            return
+        if controller._coordinator.bed_type == "mline":
+            await controller.async_on_connect(None)
+            await controller.async_after_connect(None)
+            return
         await controller.start_notify(lambda *_: None)
+        if controller._coordinator.bed_type in {"komfyd", "comfyds"}:
+            await controller.async_after_connect(None)
+        if controller._coordinator.bed_type == "n32_motion_bed":
+            # The helper already subscribed; run the app-owned startup on this
+            # captured controller without changing older snapshot scenarios.
+            async def subscribed() -> None:
+                return None
+
+            session = SimpleNamespace(async_start_notify=subscribed)
+            await controller.async_on_connect(session)
         for hook in STARTUP_HOOKS.get(controller._coordinator.bed_type, ()):  # noqa: SLF001
             if hasattr(controller, hook):
                 await getattr(controller, hook)()
@@ -1770,6 +1905,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
 
 # Bed-specific startup the coordinator runs after notifications, in its order.
 STARTUP_HOOKS: dict[str, tuple[str, ...]] = {
+    "yamada": ("sync_clock",),
     "octo": ("discover_features", "send_pin", "start_keepalive"),
     "jensen": ("query_config",),
     "sleep_number": ("query_config",),
@@ -1918,7 +2054,11 @@ def render(snapshot: dict[str, Any]) -> str:
         }
     )
     prefixes = [u[:8] for u in uuids]
-    short = {u: u[:8] if prefixes.count(u[:8]) == 1 else u for u in uuids}
+    # Appending another UUID with a shared prefix must not rename the existing
+    # scenarios' characteristic references. New collisions use their full UUID.
+    previous = json.loads(SNAPSHOT_PATH.read_text())["chars"] if SNAPSHOT_PATH.exists() else {}
+    aliases = {uuid: name for name, uuid in previous.items()}
+    short = {u: aliases.get(u, u[:8] if prefixes.count(u[:8]) == 1 else u) for u in uuids}
     lines = ["{", f'"schema": {snapshot["schema"]},']
     lines.append('"chars": ' + json.dumps({short[u]: u for u in uuids}, sort_keys=True) + ",")
     lines.append('"scenarios": {')

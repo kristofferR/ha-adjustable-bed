@@ -100,20 +100,31 @@ async def factory_controllers() -> list[BedController]:
     Layouts differ by variant and motor count, so one default controller per
     bed type misses the controls only some layouts have.
     """
+    from custom_components.adjustable_bed.beds.comfort_enhancement3.controller import (
+        ComfortEnhancement3Controller,
+    )
     from custom_components.adjustable_bed.beds.sleep_number.mcr import SleepNumberMcrController
     from custom_components.adjustable_bed.beds.sleep_number.mcr_protocol import (
         FoundationFeatures,
     )
     from custom_components.adjustable_bed.config_flow import _motor_count_options
     from custom_components.adjustable_bed.controller_factory import create_controller
+    from custom_components.adjustable_bed.profiles.comfort_enhancement3 import REMOTES
     from custom_components.adjustable_bed.validators import get_variants_for_bed_type
     from tests.test_controller_contract import (
         _create_controller_for_bed_type,
         _FactoryCoordinator,
         _make_connected_client,
     )
-
     controllers: list[BedController] = []
+    controllers.extend(ComfortEnhancement3Controller(_FactoryCoordinator(), i) for i in range(len(REMOTES)))
+    from custom_components.adjustable_bed.beds.symphony.controller import SymphonyController
+    from custom_components.adjustable_bed.profiles.symphony import PRODUCTS, SymphonyProfile
+
+    for product in PRODUCTS.values():
+        for selector in (4, 9):
+            coordinator = _FactoryCoordinator()
+            controllers.append(SymphonyController(coordinator, SymphonyProfile(product, selector)))
     for bed_type in SUPPORTED_BED_TYPES:
         default = await _create_controller_for_bed_type(bed_type)
         controllers.append(default)
@@ -143,6 +154,12 @@ async def factory_controllers() -> list[BedController]:
                         device_name=coordinator.entry.data.get(CONF_BLE_DEVICE_NAME),
                     )
                 )
+    # Both row084 product routes: the dual route adds the local side selector.
+    for bed_type in ("komfyd", "comfyds"):
+        controller = await _create_controller_for_bed_type(bed_type)
+        controller._coordinator.entry.data = {**controller._coordinator.entry.data, "product_type": 130}
+        from custom_components.adjustable_bed.beds.kaidi.comfy import ComfyController
+        controllers.append(ComfyController(controller._coordinator))
     # Rize's extended product adds motion actions and mode4 to the basic panel.
     from custom_components.adjustable_bed.beds.kaidi.rize import RizeController
     from custom_components.adjustable_bed.const import BED_TYPE_RIZE, CONF_PRODUCT_TYPE
@@ -150,6 +167,11 @@ async def factory_controllers() -> list[BedController]:
     controller = await _create_controller_for_bed_type(BED_TYPE_RIZE)
     controller._coordinator.entry.data = {**controller._coordinator.entry.data, CONF_PRODUCT_TYPE: 140}
     controllers.append(RizeController(controller._coordinator))
+    # Bedgear's exact names select single-actuator, dynamic-zone and alarm controls.
+    from custom_components.adjustable_bed.beds.bedgear.controller import BedgearController
+    bedgear = await _create_controller_for_bed_type("bedgear")
+    for pair in ("E1", "44", "97", "15", "35"):
+        controllers.append(BedgearController(bedgear._coordinator, name="HHC00000" + pair + "DE0X"))
     # MotoMotion decodes its panels from the advertised name. This name adds the
     # users, RGB and music panels that the default name lacks.
     controller = await _create_controller_for_bed_type(BED_TYPE_MOTOMOTION)
@@ -166,6 +188,11 @@ async def factory_controllers() -> list[BedController]:
             device_name="SOFA00000MAD00H",
         )
     )
+    # Smart Sleep's legacy model gates add AI-zero and flexible-wake state.
+    from custom_components.adjustable_bed.beds.smart_sleep.controller import SmartSleepController
+    from custom_components.adjustable_bed.profiles.smart_sleep import PROFILES as SMART_SLEEP
+    for model in (8, 67):
+        controllers.append(SmartSleepController(_FactoryCoordinator(), SMART_SLEEP["p1"], model))
     # A Sleep Number MCR foundation reports its per-side motors once connected.
     controller = await _create_controller_for_bed_type(BED_TYPE_SLEEP_NUMBER_MCR)
     assert isinstance(controller, SleepNumberMcrController)

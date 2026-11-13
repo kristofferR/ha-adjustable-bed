@@ -73,6 +73,14 @@ family owns its encoders and parser. `tests/test_smart_comfort.py` verifies both
 members' frozen literals, rather than selecting a family by UUID or brand.
 See the [Smart Comfort guide](../beds/smart-comfort.md).
 
+## M Line composite codec
+
+The M Line 1.2.2 codec delegates its 44 frozen control literals to the proven
+N-frame and Keeson carriers. Neither existing codec implements its complete
+auxiliary and receive formats, so `codec/mline.py` owns those, with typed
+selectors/layouts in `profiles/mline.py`. All 96 accepted packet cases run
+through production encoders. See the [M Line guide](../beds/mline.md).
+
 ## Registering a family
 
 A family registers itself in files it owns, so parallel family PRs do not touch
@@ -267,3 +275,34 @@ ComfortBaseForBluetooth 1.1.2 (6), row161, reuses Keeson K1 only after all
 `alarm_table`. Its product catalog is UI data over one `comfortbase` profile.
 The Keeson controller supplies hold/release and recall; its ComfortBase extension
 adds the bounded save gesture, product gates, fixed GATT roles and timer parser.
+
+## OKIN Smart Sleep
+
+Row094 P1 motor/preset literals reproduce through Keeson's `p2_side` carrier,
+which `codec/smart_sleep.py` reuses. No existing codec reproduces P1's complete
+settings and reply shapes plus P2's AA/2A commands and notifications, including
+its distinct motor-neutral and global STOP. `profiles/smart_sleep.py` declares
+both formats and their catalogs; one family controller owns their session.
+The vector harness compares every accepted in-scope literal before reuse.
+See [Smart Sleep](../beds/smart-sleep.md).
+
+N32 Motion Bed 1.1.14 (38), row080, reproduces its four-mask held frames,
+clock and slot queries through Okin N-frame. Its alarm uses the same seven
+counted fields plus an uncounted reserved byte and a third proven slot.
+`alarm(..., reserved=0)` expresses that trailer without changing existing
+profiles' records. Its typed fixed profile uses the shared Okin family
+controller; its own session and alarm callback live in `beds/n32_motion_bed/`.
+
+アシステック / Yamada 1.0.1 (6), row178, adds explicit P1/P2 profiles only after
+all 35 packet literals match existing Keeson and Okin N-frame encoders. Its
+shared-family controller extension owns alarm parsing, session fences, raw clock
+fields and captured release scheduling. No new codec or product alias is needed.
+
+Bedgear 2.0.1 (row A12) independently matches the HHC codec's short plain/M
+frames and decimal-digit XOR format. `decimal_fields` preserves the exact string
+widths of all three source builders, including the alarm's six-plus-four fields.
+The unchanged 75 nonempty vectors plus suppressed-query, parser and selector
+cases live in `tests/fixtures/bedgear/`; `tests/test_bedgear_vectors.py` proves
+the byte matches. The separate `BedgearProfile` owns its 15 layouts, independent
+name gates, timing and control release policies. No sibling app's parameters
+select its capabilities.

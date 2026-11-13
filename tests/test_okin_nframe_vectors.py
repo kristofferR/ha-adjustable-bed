@@ -17,6 +17,8 @@ from custom_components.adjustable_bed.beds.okin_uuid.controller import (
 from custom_components.adjustable_bed.codec import keeson
 from custom_components.adjustable_bed.codec import okin_nframe as codec
 from custom_components.adjustable_bed.profiles import okin_nframe as profiles
+from custom_components.adjustable_bed.profiles.comfort_enhancement3 import PROFILES as APEX_PROFILES
+from custom_components.adjustable_bed.profiles.n32_motion_bed import N32
 from tests.okin_nframe_vectors import (
     COMPOSED_FRAMES,
     FIELD_FRAMES,
@@ -29,8 +31,11 @@ from tests.okin_nframe_vectors import (
 PROFILES: dict[str, profiles.OkinNFrameProfile] = {
     profile.key: profile
     for profile in (
+        *APEX_PROFILES.values(),
         profiles.OKIMAT,
         profiles.RESIDENT,
+        profiles.OKIN_MOTIONBED,
+        N32,
         profiles.DEWERTOKIN,
         profiles.RF_ECO_BT,
         *profiles.CUSTOMATIC_PROFILES.values(),
@@ -97,6 +102,8 @@ def _census(profile: profiles.OkinNFrameProfile) -> set[str]:
     else:
         frames = {codec.frame(word).hex() for word in words}
     frames |= {codec.frame(word, 8).hex() for word in profile.long_keys.values()}
+    if profile.envelope == "gateway":
+        frames = {codec.gateway_frame(word).hex() for word in words}
     if profile.envelope == "revision_selector":
         frames |= {codec.gateway_frame(word).hex() for word in words}
     if profile.envelope == "keeson_e6":
@@ -158,7 +165,7 @@ def test_alarm_slots() -> None:
     assert codec.alarm(bytes.fromhex("8205071e000101"), 2).hex() == "07068205071e000101"
     assert codec.alarm(bytes(7), 2).hex() == "070600000000000000"
     with pytest.raises(ValueError):
-        codec.alarm(bytes(7), 3)
+        codec.alarm(bytes(7), 4)
 
 
 @pytest.mark.parametrize(
@@ -268,6 +275,9 @@ HOLD_PROFILES = sorted(key for key, profile in PROFILES.items() if profile.execu
 def test_hold_declarations_follow_the_evidence_matrix():
     """Stream-supported rows only; DewertOkin, CB24, DOT, 64-bit and SleepEase are blocked."""
     assert set(HOLD_PROFILES) == {
+        profiles.OKIN_MOTIONBED.key,
+        *APEX_PROFILES,
+        N32.key,
         profiles.RESIDENT.key,
         *profiles.LEGGETT_PROFILES,
         *profiles.CUSTOMATIC_PROFILES,

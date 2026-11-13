@@ -16,7 +16,7 @@ from collections.abc import (
     Mapping,
 )
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, Self, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, Self, TypeVar, cast
 from uuid import uuid4
 from weakref import WeakKeyDictionary
 
@@ -481,6 +481,8 @@ class AdjustableBedCoordinator(
         # CB35 autonomous presets can outlive the connection-scoped controller.
         self.okin_cb35_preset_started_at: float | None = None
         self._controller_state = ControllerState()
+        # App command source belongs to this physical bed, beyond one BLE link.
+        self.rize_home_source: Literal["button", "speak"] = "button"
         self.starcode_app_retained_state: RetainedAppState | None = None
         self.furnimove_widget_state: tuple[bool, bytes | None, bytes | None] = (False, None, None)
         # App-local state (BedController.persisted_app_state), slotted per restored controller.
@@ -3363,6 +3365,9 @@ class AdjustableBedCoordinator(
         stored = await self._app_state_store.async_slot(slot)
         self._app_state_restoring = True
         try:
+            for previous, previous_slot in self._app_state_slots.items():
+                if previous is not controller and previous_slot == slot:
+                    previous.on_app_state_replaced()
             try:
                 controller.restore_persisted_app_state(stored)
             except ValueError, TypeError:
@@ -3370,6 +3375,8 @@ class AdjustableBedCoordinator(
                 controller.restore_persisted_app_state({})
             self._app_state_slots[controller] = slot
             self._app_state_store.update(slot, controller.persisted_app_state or {})
+            if controller is self._controller and controller.retain_live_controller_offline:
+                self._offline_controller = controller
         finally:
             self._app_state_restoring = False
 

@@ -1,0 +1,2845 @@
+{
+  "provenance": "static artifact constructions, not captured hardware traffic",
+  "commands": [
+    {
+      "id": "Nordic-head_up",
+      "kind": "function",
+      "inputs": {
+        "route": "Nordic",
+        "action": "head_up"
+      },
+      "expected_bytes": "24",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "Nordic-head_down",
+      "kind": "function",
+      "inputs": {
+        "route": "Nordic",
+        "action": "head_down"
+      },
+      "expected_bytes": "25",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "Nordic-foot_up",
+      "kind": "function",
+      "inputs": {
+        "route": "Nordic",
+        "action": "foot_up"
+      },
+      "expected_bytes": "26",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "Nordic-foot_down",
+      "kind": "function",
+      "inputs": {
+        "route": "Nordic",
+        "action": "foot_down"
+      },
+      "expected_bytes": "27",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "Nordic-both_up",
+      "kind": "function",
+      "inputs": {
+        "route": "Nordic",
+        "action": "both_up"
+      },
+      "expected_bytes": "29",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "Nordic-both_down",
+      "kind": "function",
+      "inputs": {
+        "route": "Nordic",
+        "action": "both_down"
+      },
+      "expected_bytes": "2a",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "Nordic-flat",
+      "kind": "function",
+      "inputs": {
+        "route": "Nordic",
+        "action": "flat"
+      },
+      "expected_bytes": "31",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "Nordic-zero_gravity",
+      "kind": "function",
+      "inputs": {
+        "route": "Nordic",
+        "action": "zero_gravity"
+      },
+      "expected_bytes": "45",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "Nordic-lounge",
+      "kind": "function",
+      "inputs": {
+        "route": "Nordic",
+        "action": "lounge"
+      },
+      "expected_bytes": "59",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "Nordic-tv",
+      "kind": "function",
+      "inputs": {
+        "route": "Nordic",
+        "action": "tv"
+      },
+      "expected_bytes": "58",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "Nordic-anti_snore",
+      "kind": "function",
+      "inputs": {
+        "route": "Nordic",
+        "action": "anti_snore"
+      },
+      "expected_bytes": "46",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "Nordic-memory_1",
+      "kind": "function",
+      "inputs": {
+        "route": "Nordic",
+        "action": "memory_1"
+      },
+      "expected_bytes": "2e",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "Nordic-memory_2",
+      "kind": "function",
+      "inputs": {
+        "route": "Nordic",
+        "action": "memory_2"
+      },
+      "expected_bytes": "2f",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "Nordic-save_zero_gravity",
+      "kind": "function",
+      "inputs": {
+        "route": "Nordic",
+        "action": "save_zero_gravity"
+      },
+      "expected_bytes": "66",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "Nordic-save_lounge",
+      "kind": "function",
+      "inputs": {
+        "route": "Nordic",
+        "action": "save_lounge"
+      },
+      "expected_bytes": "65",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "Nordic-save_tv",
+      "kind": "function",
+      "inputs": {
+        "route": "Nordic",
+        "action": "save_tv"
+      },
+      "expected_bytes": "64",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "Nordic-save_anti_snore",
+      "kind": "function",
+      "inputs": {
+        "route": "Nordic",
+        "action": "save_anti_snore"
+      },
+      "expected_bytes": "69",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "Nordic-save_memory_1",
+      "kind": "function",
+      "inputs": {
+        "route": "Nordic",
+        "action": "save_memory_1"
+      },
+      "expected_bytes": "2b",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "Nordic-save_memory_2",
+      "kind": "function",
+      "inputs": {
+        "route": "Nordic",
+        "action": "save_memory_2"
+      },
+      "expected_bytes": "2c",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "Nordic-exit_limit",
+      "kind": "function",
+      "inputs": {
+        "route": "Nordic",
+        "action": "exit_limit"
+      },
+      "expected_bytes": "00",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-SESSION"
+      ]
+    },
+    {
+      "id": "Nordic-query_clock",
+      "kind": "function",
+      "inputs": {
+        "route": "Nordic",
+        "action": "query_clock"
+      },
+      "expected_bytes": "01",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-SESSION"
+      ]
+    },
+    {
+      "id": "W1-head_up",
+      "kind": "function",
+      "inputs": {
+        "route": "W1",
+        "action": "head_up"
+      },
+      "expected_bytes": "6e01002493",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W1-head_down",
+      "kind": "function",
+      "inputs": {
+        "route": "W1",
+        "action": "head_down"
+      },
+      "expected_bytes": "6e01002594",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W1-foot_up",
+      "kind": "function",
+      "inputs": {
+        "route": "W1",
+        "action": "foot_up"
+      },
+      "expected_bytes": "6e01002695",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W1-foot_down",
+      "kind": "function",
+      "inputs": {
+        "route": "W1",
+        "action": "foot_down"
+      },
+      "expected_bytes": "6e01002796",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W1-both_up",
+      "kind": "function",
+      "inputs": {
+        "route": "W1",
+        "action": "both_up"
+      },
+      "expected_bytes": "6e01002998",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W1-both_down",
+      "kind": "function",
+      "inputs": {
+        "route": "W1",
+        "action": "both_down"
+      },
+      "expected_bytes": "6e01002a99",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W1-flat",
+      "kind": "function",
+      "inputs": {
+        "route": "W1",
+        "action": "flat"
+      },
+      "expected_bytes": "6e010031a0",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W1-zero_gravity",
+      "kind": "function",
+      "inputs": {
+        "route": "W1",
+        "action": "zero_gravity"
+      },
+      "expected_bytes": "6e010045b4",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W1-lounge",
+      "kind": "function",
+      "inputs": {
+        "route": "W1",
+        "action": "lounge"
+      },
+      "expected_bytes": "6e010059c8",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W1-tv",
+      "kind": "function",
+      "inputs": {
+        "route": "W1",
+        "action": "tv"
+      },
+      "expected_bytes": "6e010058c7",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W1-anti_snore",
+      "kind": "function",
+      "inputs": {
+        "route": "W1",
+        "action": "anti_snore"
+      },
+      "expected_bytes": "6e010046b5",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W1-memory_1",
+      "kind": "function",
+      "inputs": {
+        "route": "W1",
+        "action": "memory_1"
+      },
+      "expected_bytes": "6e01002e9d",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W1-memory_2",
+      "kind": "function",
+      "inputs": {
+        "route": "W1",
+        "action": "memory_2"
+      },
+      "expected_bytes": "6e01002f9e",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W1-save_zero_gravity",
+      "kind": "function",
+      "inputs": {
+        "route": "W1",
+        "action": "save_zero_gravity"
+      },
+      "expected_bytes": "6e010066d5",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W1-save_lounge",
+      "kind": "function",
+      "inputs": {
+        "route": "W1",
+        "action": "save_lounge"
+      },
+      "expected_bytes": "6e010065d4",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W1-save_tv",
+      "kind": "function",
+      "inputs": {
+        "route": "W1",
+        "action": "save_tv"
+      },
+      "expected_bytes": "6e010064d3",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W1-save_anti_snore",
+      "kind": "function",
+      "inputs": {
+        "route": "W1",
+        "action": "save_anti_snore"
+      },
+      "expected_bytes": "6e010069d8",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W1-save_memory_1",
+      "kind": "function",
+      "inputs": {
+        "route": "W1",
+        "action": "save_memory_1"
+      },
+      "expected_bytes": "6e01002b9a",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W1-save_memory_2",
+      "kind": "function",
+      "inputs": {
+        "route": "W1",
+        "action": "save_memory_2"
+      },
+      "expected_bytes": "6e01002c9b",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W1-exit_limit",
+      "kind": "function",
+      "inputs": {
+        "route": "W1",
+        "action": "exit_limit"
+      },
+      "expected_bytes": "6e02010071",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-SESSION"
+      ]
+    },
+    {
+      "id": "W1-query_clock",
+      "kind": "function",
+      "inputs": {
+        "route": "W1",
+        "action": "query_clock"
+      },
+      "expected_bytes": "6e08010178",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-SESSION"
+      ]
+    },
+    {
+      "id": "W2-head_up",
+      "kind": "function",
+      "inputs": {
+        "route": "W2",
+        "action": "head_up"
+      },
+      "expected_bytes": "6e01002493",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W2-head_down",
+      "kind": "function",
+      "inputs": {
+        "route": "W2",
+        "action": "head_down"
+      },
+      "expected_bytes": "6e01002594",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W2-foot_up",
+      "kind": "function",
+      "inputs": {
+        "route": "W2",
+        "action": "foot_up"
+      },
+      "expected_bytes": "6e01002695",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W2-foot_down",
+      "kind": "function",
+      "inputs": {
+        "route": "W2",
+        "action": "foot_down"
+      },
+      "expected_bytes": "6e01002796",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W2-both_up",
+      "kind": "function",
+      "inputs": {
+        "route": "W2",
+        "action": "both_up"
+      },
+      "expected_bytes": "6e01002998",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W2-both_down",
+      "kind": "function",
+      "inputs": {
+        "route": "W2",
+        "action": "both_down"
+      },
+      "expected_bytes": "6e01002a99",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W2-flat",
+      "kind": "function",
+      "inputs": {
+        "route": "W2",
+        "action": "flat"
+      },
+      "expected_bytes": "6e010031a0",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W2-zero_gravity",
+      "kind": "function",
+      "inputs": {
+        "route": "W2",
+        "action": "zero_gravity"
+      },
+      "expected_bytes": "6e010045b4",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W2-lounge",
+      "kind": "function",
+      "inputs": {
+        "route": "W2",
+        "action": "lounge"
+      },
+      "expected_bytes": "6e010059c8",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W2-tv",
+      "kind": "function",
+      "inputs": {
+        "route": "W2",
+        "action": "tv"
+      },
+      "expected_bytes": "6e010058c7",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W2-anti_snore",
+      "kind": "function",
+      "inputs": {
+        "route": "W2",
+        "action": "anti_snore"
+      },
+      "expected_bytes": "6e010046b5",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W2-memory_1",
+      "kind": "function",
+      "inputs": {
+        "route": "W2",
+        "action": "memory_1"
+      },
+      "expected_bytes": "6e01002e9d",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W2-memory_2",
+      "kind": "function",
+      "inputs": {
+        "route": "W2",
+        "action": "memory_2"
+      },
+      "expected_bytes": "6e01002f9e",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W2-save_zero_gravity",
+      "kind": "function",
+      "inputs": {
+        "route": "W2",
+        "action": "save_zero_gravity"
+      },
+      "expected_bytes": "6e010066d5",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W2-save_lounge",
+      "kind": "function",
+      "inputs": {
+        "route": "W2",
+        "action": "save_lounge"
+      },
+      "expected_bytes": "6e010065d4",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W2-save_tv",
+      "kind": "function",
+      "inputs": {
+        "route": "W2",
+        "action": "save_tv"
+      },
+      "expected_bytes": "6e010064d3",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W2-save_anti_snore",
+      "kind": "function",
+      "inputs": {
+        "route": "W2",
+        "action": "save_anti_snore"
+      },
+      "expected_bytes": "6e010069d8",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W2-save_memory_1",
+      "kind": "function",
+      "inputs": {
+        "route": "W2",
+        "action": "save_memory_1"
+      },
+      "expected_bytes": "6e01002b9a",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W2-save_memory_2",
+      "kind": "function",
+      "inputs": {
+        "route": "W2",
+        "action": "save_memory_2"
+      },
+      "expected_bytes": "6e01002c9b",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W2-exit_limit",
+      "kind": "function",
+      "inputs": {
+        "route": "W2",
+        "action": "exit_limit"
+      },
+      "expected_bytes": "6e02010071",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-SESSION"
+      ]
+    },
+    {
+      "id": "W2-query_clock",
+      "kind": "function",
+      "inputs": {
+        "route": "W2",
+        "action": "query_clock"
+      },
+      "expected_bytes": "6e08010178",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-SESSION"
+      ]
+    },
+    {
+      "id": "W3-head_up",
+      "kind": "function",
+      "inputs": {
+        "route": "W3",
+        "action": "head_up"
+      },
+      "expected_bytes": "6e01002493",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W3-head_down",
+      "kind": "function",
+      "inputs": {
+        "route": "W3",
+        "action": "head_down"
+      },
+      "expected_bytes": "6e01002594",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W3-foot_up",
+      "kind": "function",
+      "inputs": {
+        "route": "W3",
+        "action": "foot_up"
+      },
+      "expected_bytes": "6e01002695",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W3-foot_down",
+      "kind": "function",
+      "inputs": {
+        "route": "W3",
+        "action": "foot_down"
+      },
+      "expected_bytes": "6e01002796",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W3-both_up",
+      "kind": "function",
+      "inputs": {
+        "route": "W3",
+        "action": "both_up"
+      },
+      "expected_bytes": "6e01002998",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W3-both_down",
+      "kind": "function",
+      "inputs": {
+        "route": "W3",
+        "action": "both_down"
+      },
+      "expected_bytes": "6e01002a99",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W3-flat",
+      "kind": "function",
+      "inputs": {
+        "route": "W3",
+        "action": "flat"
+      },
+      "expected_bytes": "6e010031a0",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W3-zero_gravity",
+      "kind": "function",
+      "inputs": {
+        "route": "W3",
+        "action": "zero_gravity"
+      },
+      "expected_bytes": "6e010045b4",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W3-lounge",
+      "kind": "function",
+      "inputs": {
+        "route": "W3",
+        "action": "lounge"
+      },
+      "expected_bytes": "6e010059c8",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W3-tv",
+      "kind": "function",
+      "inputs": {
+        "route": "W3",
+        "action": "tv"
+      },
+      "expected_bytes": "6e010058c7",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W3-anti_snore",
+      "kind": "function",
+      "inputs": {
+        "route": "W3",
+        "action": "anti_snore"
+      },
+      "expected_bytes": "6e010046b5",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W3-memory_1",
+      "kind": "function",
+      "inputs": {
+        "route": "W3",
+        "action": "memory_1"
+      },
+      "expected_bytes": "6e01002e9d",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W3-memory_2",
+      "kind": "function",
+      "inputs": {
+        "route": "W3",
+        "action": "memory_2"
+      },
+      "expected_bytes": "6e01002f9e",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W3-save_zero_gravity",
+      "kind": "function",
+      "inputs": {
+        "route": "W3",
+        "action": "save_zero_gravity"
+      },
+      "expected_bytes": "6e010066d5",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W3-save_lounge",
+      "kind": "function",
+      "inputs": {
+        "route": "W3",
+        "action": "save_lounge"
+      },
+      "expected_bytes": "6e010065d4",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W3-save_tv",
+      "kind": "function",
+      "inputs": {
+        "route": "W3",
+        "action": "save_tv"
+      },
+      "expected_bytes": "6e010064d3",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W3-save_anti_snore",
+      "kind": "function",
+      "inputs": {
+        "route": "W3",
+        "action": "save_anti_snore"
+      },
+      "expected_bytes": "6e010069d8",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W3-save_memory_1",
+      "kind": "function",
+      "inputs": {
+        "route": "W3",
+        "action": "save_memory_1"
+      },
+      "expected_bytes": "6e01002b9a",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W3-save_memory_2",
+      "kind": "function",
+      "inputs": {
+        "route": "W3",
+        "action": "save_memory_2"
+      },
+      "expected_bytes": "6e01002c9b",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W3-exit_limit",
+      "kind": "function",
+      "inputs": {
+        "route": "W3",
+        "action": "exit_limit"
+      },
+      "expected_bytes": "6e02010071",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-SESSION"
+      ]
+    },
+    {
+      "id": "W3-query_clock",
+      "kind": "function",
+      "inputs": {
+        "route": "W3",
+        "action": "query_clock"
+      },
+      "expected_bytes": "6e08010178",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-SESSION"
+      ]
+    },
+    {
+      "id": "W4-head_up",
+      "kind": "function",
+      "inputs": {
+        "route": "W4",
+        "action": "head_up"
+      },
+      "expected_bytes": "6e01002493",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W4-head_down",
+      "kind": "function",
+      "inputs": {
+        "route": "W4",
+        "action": "head_down"
+      },
+      "expected_bytes": "6e01002594",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W4-foot_up",
+      "kind": "function",
+      "inputs": {
+        "route": "W4",
+        "action": "foot_up"
+      },
+      "expected_bytes": "6e01002695",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W4-foot_down",
+      "kind": "function",
+      "inputs": {
+        "route": "W4",
+        "action": "foot_down"
+      },
+      "expected_bytes": "6e01002796",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W4-both_up",
+      "kind": "function",
+      "inputs": {
+        "route": "W4",
+        "action": "both_up"
+      },
+      "expected_bytes": "6e01002998",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W4-both_down",
+      "kind": "function",
+      "inputs": {
+        "route": "W4",
+        "action": "both_down"
+      },
+      "expected_bytes": "6e01002a99",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W4-flat",
+      "kind": "function",
+      "inputs": {
+        "route": "W4",
+        "action": "flat"
+      },
+      "expected_bytes": "6e010031a0",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W4-zero_gravity",
+      "kind": "function",
+      "inputs": {
+        "route": "W4",
+        "action": "zero_gravity"
+      },
+      "expected_bytes": "6e010045b4",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W4-lounge",
+      "kind": "function",
+      "inputs": {
+        "route": "W4",
+        "action": "lounge"
+      },
+      "expected_bytes": "6e010059c8",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W4-tv",
+      "kind": "function",
+      "inputs": {
+        "route": "W4",
+        "action": "tv"
+      },
+      "expected_bytes": "6e010058c7",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W4-anti_snore",
+      "kind": "function",
+      "inputs": {
+        "route": "W4",
+        "action": "anti_snore"
+      },
+      "expected_bytes": "6e010046b5",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W4-memory_1",
+      "kind": "function",
+      "inputs": {
+        "route": "W4",
+        "action": "memory_1"
+      },
+      "expected_bytes": "6e01002e9d",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W4-memory_2",
+      "kind": "function",
+      "inputs": {
+        "route": "W4",
+        "action": "memory_2"
+      },
+      "expected_bytes": "6e01002f9e",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W4-save_zero_gravity",
+      "kind": "function",
+      "inputs": {
+        "route": "W4",
+        "action": "save_zero_gravity"
+      },
+      "expected_bytes": "6e010066d5",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W4-save_lounge",
+      "kind": "function",
+      "inputs": {
+        "route": "W4",
+        "action": "save_lounge"
+      },
+      "expected_bytes": "6e010065d4",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W4-save_tv",
+      "kind": "function",
+      "inputs": {
+        "route": "W4",
+        "action": "save_tv"
+      },
+      "expected_bytes": "6e010064d3",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W4-save_anti_snore",
+      "kind": "function",
+      "inputs": {
+        "route": "W4",
+        "action": "save_anti_snore"
+      },
+      "expected_bytes": "6e010069d8",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W4-save_memory_1",
+      "kind": "function",
+      "inputs": {
+        "route": "W4",
+        "action": "save_memory_1"
+      },
+      "expected_bytes": "6e01002b9a",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W4-save_memory_2",
+      "kind": "function",
+      "inputs": {
+        "route": "W4",
+        "action": "save_memory_2"
+      },
+      "expected_bytes": "6e01002c9b",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W4-exit_limit",
+      "kind": "function",
+      "inputs": {
+        "route": "W4",
+        "action": "exit_limit"
+      },
+      "expected_bytes": "6e02010071",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-SESSION"
+      ]
+    },
+    {
+      "id": "W4-query_clock",
+      "kind": "function",
+      "inputs": {
+        "route": "W4",
+        "action": "query_clock"
+      },
+      "expected_bytes": "6e08010178",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-SESSION"
+      ]
+    },
+    {
+      "id": "W5-head_up",
+      "kind": "function",
+      "inputs": {
+        "route": "W5",
+        "action": "head_up"
+      },
+      "expected_bytes": "6e01002493",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W5-head_down",
+      "kind": "function",
+      "inputs": {
+        "route": "W5",
+        "action": "head_down"
+      },
+      "expected_bytes": "6e01002594",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W5-foot_up",
+      "kind": "function",
+      "inputs": {
+        "route": "W5",
+        "action": "foot_up"
+      },
+      "expected_bytes": "6e01002695",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W5-foot_down",
+      "kind": "function",
+      "inputs": {
+        "route": "W5",
+        "action": "foot_down"
+      },
+      "expected_bytes": "6e01002796",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W5-both_up",
+      "kind": "function",
+      "inputs": {
+        "route": "W5",
+        "action": "both_up"
+      },
+      "expected_bytes": "6e01002998",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W5-both_down",
+      "kind": "function",
+      "inputs": {
+        "route": "W5",
+        "action": "both_down"
+      },
+      "expected_bytes": "6e01002a99",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W5-flat",
+      "kind": "function",
+      "inputs": {
+        "route": "W5",
+        "action": "flat"
+      },
+      "expected_bytes": "6e010031a0",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-MOTOR"
+      ]
+    },
+    {
+      "id": "W5-zero_gravity",
+      "kind": "function",
+      "inputs": {
+        "route": "W5",
+        "action": "zero_gravity"
+      },
+      "expected_bytes": "6e010045b4",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W5-lounge",
+      "kind": "function",
+      "inputs": {
+        "route": "W5",
+        "action": "lounge"
+      },
+      "expected_bytes": "6e010059c8",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W5-tv",
+      "kind": "function",
+      "inputs": {
+        "route": "W5",
+        "action": "tv"
+      },
+      "expected_bytes": "6e010058c7",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W5-anti_snore",
+      "kind": "function",
+      "inputs": {
+        "route": "W5",
+        "action": "anti_snore"
+      },
+      "expected_bytes": "6e010046b5",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W5-memory_1",
+      "kind": "function",
+      "inputs": {
+        "route": "W5",
+        "action": "memory_1"
+      },
+      "expected_bytes": "6e01002e9d",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W5-memory_2",
+      "kind": "function",
+      "inputs": {
+        "route": "W5",
+        "action": "memory_2"
+      },
+      "expected_bytes": "6e01002f9e",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W5-save_zero_gravity",
+      "kind": "function",
+      "inputs": {
+        "route": "W5",
+        "action": "save_zero_gravity"
+      },
+      "expected_bytes": "6e010066d5",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W5-save_lounge",
+      "kind": "function",
+      "inputs": {
+        "route": "W5",
+        "action": "save_lounge"
+      },
+      "expected_bytes": "6e010065d4",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W5-save_tv",
+      "kind": "function",
+      "inputs": {
+        "route": "W5",
+        "action": "save_tv"
+      },
+      "expected_bytes": "6e010064d3",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W5-save_anti_snore",
+      "kind": "function",
+      "inputs": {
+        "route": "W5",
+        "action": "save_anti_snore"
+      },
+      "expected_bytes": "6e010069d8",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W5-save_memory_1",
+      "kind": "function",
+      "inputs": {
+        "route": "W5",
+        "action": "save_memory_1"
+      },
+      "expected_bytes": "6e01002b9a",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W5-save_memory_2",
+      "kind": "function",
+      "inputs": {
+        "route": "W5",
+        "action": "save_memory_2"
+      },
+      "expected_bytes": "6e01002c9b",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-PRESET"
+      ]
+    },
+    {
+      "id": "W5-exit_limit",
+      "kind": "function",
+      "inputs": {
+        "route": "W5",
+        "action": "exit_limit"
+      },
+      "expected_bytes": "6e02010071",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-SESSION"
+      ]
+    },
+    {
+      "id": "W5-query_clock",
+      "kind": "function",
+      "inputs": {
+        "route": "W5",
+        "action": "query_clock"
+      },
+      "expected_bytes": "6e08010178",
+      "evidence": [
+        "E-CATALOG",
+        "E-BUILD",
+        "E-SESSION"
+      ]
+    },
+    {
+      "id": "alarm-list",
+      "kind": "extended",
+      "inputs": {
+        "action": "list_alarms"
+      },
+      "expected_bytes": "6e0820050100009c",
+      "evidence": [
+        "E-EXTENDED"
+      ]
+    },
+    {
+      "id": "alarm-delete7",
+      "kind": "extended",
+      "inputs": {
+        "action": "delete_alarm",
+        "id": 7
+      },
+      "expected_bytes": "6e082005020107a5",
+      "evidence": [
+        "E-EXTENDED"
+      ]
+    },
+    {
+      "id": "bed-link-name",
+      "kind": "extended",
+      "inputs": {
+        "action": "query_link_name"
+      },
+      "expected_bytes": "6e0820060300009f",
+      "evidence": [
+        "E-EXTENDED"
+      ]
+    },
+    {
+      "id": "alarm-once-disabled",
+      "kind": "extended",
+      "inputs": {
+        "action": "upsert_alarm",
+        "id": 3,
+        "hour": 6,
+        "minute": 30,
+        "mode": "zero_gravity",
+        "weekdays": [],
+        "enabled": false
+      },
+      "expected_bytes": "6e0d200501010300061e45000e",
+      "evidence": [
+        "E-EXTENDED"
+      ]
+    },
+    {
+      "id": "alarm-once-enabled",
+      "kind": "extended",
+      "inputs": {
+        "action": "upsert_alarm",
+        "id": 3,
+        "hour": 6,
+        "minute": 30,
+        "mode": "zero_gravity",
+        "weekdays": [],
+        "enabled": true
+      },
+      "expected_bytes": "6e0d200501010300061e45010f",
+      "evidence": [
+        "E-EXTENDED"
+      ]
+    },
+    {
+      "id": "alarm-monday-disabled",
+      "kind": "extended",
+      "inputs": {
+        "action": "upsert_alarm",
+        "id": 3,
+        "hour": 6,
+        "minute": 30,
+        "mode": "zero_gravity",
+        "weekdays": [
+          0
+        ],
+        "enabled": false
+      },
+      "expected_bytes": "6e0d200501010300061e45808e",
+      "evidence": [
+        "E-EXTENDED"
+      ]
+    },
+    {
+      "id": "alarm-monday-enabled",
+      "kind": "extended",
+      "inputs": {
+        "action": "upsert_alarm",
+        "id": 3,
+        "hour": 6,
+        "minute": 30,
+        "mode": "zero_gravity",
+        "weekdays": [
+          0
+        ],
+        "enabled": true
+      },
+      "expected_bytes": "6e0d200501010300061e45818f",
+      "evidence": [
+        "E-EXTENDED"
+      ]
+    },
+    {
+      "id": "alarm-tuesday-disabled",
+      "kind": "extended",
+      "inputs": {
+        "action": "upsert_alarm",
+        "id": 3,
+        "hour": 6,
+        "minute": 30,
+        "mode": "zero_gravity",
+        "weekdays": [
+          1
+        ],
+        "enabled": false
+      },
+      "expected_bytes": "6e0d200501010300061e45404e",
+      "evidence": [
+        "E-EXTENDED"
+      ]
+    },
+    {
+      "id": "alarm-tuesday-enabled",
+      "kind": "extended",
+      "inputs": {
+        "action": "upsert_alarm",
+        "id": 3,
+        "hour": 6,
+        "minute": 30,
+        "mode": "zero_gravity",
+        "weekdays": [
+          1
+        ],
+        "enabled": true
+      },
+      "expected_bytes": "6e0d200501010300061e45414f",
+      "evidence": [
+        "E-EXTENDED"
+      ]
+    },
+    {
+      "id": "alarm-wednesday-disabled",
+      "kind": "extended",
+      "inputs": {
+        "action": "upsert_alarm",
+        "id": 3,
+        "hour": 6,
+        "minute": 30,
+        "mode": "zero_gravity",
+        "weekdays": [
+          2
+        ],
+        "enabled": false
+      },
+      "expected_bytes": "6e0d200501010300061e45202e",
+      "evidence": [
+        "E-EXTENDED"
+      ]
+    },
+    {
+      "id": "alarm-wednesday-enabled",
+      "kind": "extended",
+      "inputs": {
+        "action": "upsert_alarm",
+        "id": 3,
+        "hour": 6,
+        "minute": 30,
+        "mode": "zero_gravity",
+        "weekdays": [
+          2
+        ],
+        "enabled": true
+      },
+      "expected_bytes": "6e0d200501010300061e45212f",
+      "evidence": [
+        "E-EXTENDED"
+      ]
+    },
+    {
+      "id": "alarm-thursday-disabled",
+      "kind": "extended",
+      "inputs": {
+        "action": "upsert_alarm",
+        "id": 3,
+        "hour": 6,
+        "minute": 30,
+        "mode": "zero_gravity",
+        "weekdays": [
+          3
+        ],
+        "enabled": false
+      },
+      "expected_bytes": "6e0d200501010300061e45101e",
+      "evidence": [
+        "E-EXTENDED"
+      ]
+    },
+    {
+      "id": "alarm-thursday-enabled",
+      "kind": "extended",
+      "inputs": {
+        "action": "upsert_alarm",
+        "id": 3,
+        "hour": 6,
+        "minute": 30,
+        "mode": "zero_gravity",
+        "weekdays": [
+          3
+        ],
+        "enabled": true
+      },
+      "expected_bytes": "6e0d200501010300061e45111f",
+      "evidence": [
+        "E-EXTENDED"
+      ]
+    },
+    {
+      "id": "alarm-friday-disabled",
+      "kind": "extended",
+      "inputs": {
+        "action": "upsert_alarm",
+        "id": 3,
+        "hour": 6,
+        "minute": 30,
+        "mode": "zero_gravity",
+        "weekdays": [
+          4
+        ],
+        "enabled": false
+      },
+      "expected_bytes": "6e0d200501010300061e450816",
+      "evidence": [
+        "E-EXTENDED"
+      ]
+    },
+    {
+      "id": "alarm-friday-enabled",
+      "kind": "extended",
+      "inputs": {
+        "action": "upsert_alarm",
+        "id": 3,
+        "hour": 6,
+        "minute": 30,
+        "mode": "zero_gravity",
+        "weekdays": [
+          4
+        ],
+        "enabled": true
+      },
+      "expected_bytes": "6e0d200501010300061e450917",
+      "evidence": [
+        "E-EXTENDED"
+      ]
+    },
+    {
+      "id": "alarm-saturday-disabled",
+      "kind": "extended",
+      "inputs": {
+        "action": "upsert_alarm",
+        "id": 3,
+        "hour": 6,
+        "minute": 30,
+        "mode": "zero_gravity",
+        "weekdays": [
+          5
+        ],
+        "enabled": false
+      },
+      "expected_bytes": "6e0d200501010300061e450412",
+      "evidence": [
+        "E-EXTENDED"
+      ]
+    },
+    {
+      "id": "alarm-saturday-enabled",
+      "kind": "extended",
+      "inputs": {
+        "action": "upsert_alarm",
+        "id": 3,
+        "hour": 6,
+        "minute": 30,
+        "mode": "zero_gravity",
+        "weekdays": [
+          5
+        ],
+        "enabled": true
+      },
+      "expected_bytes": "6e0d200501010300061e450513",
+      "evidence": [
+        "E-EXTENDED"
+      ]
+    },
+    {
+      "id": "alarm-sunday-disabled",
+      "kind": "extended",
+      "inputs": {
+        "action": "upsert_alarm",
+        "id": 3,
+        "hour": 6,
+        "minute": 30,
+        "mode": "zero_gravity",
+        "weekdays": [
+          6
+        ],
+        "enabled": false
+      },
+      "expected_bytes": "6e0d200501010300061e450210",
+      "evidence": [
+        "E-EXTENDED"
+      ]
+    },
+    {
+      "id": "alarm-sunday-enabled",
+      "kind": "extended",
+      "inputs": {
+        "action": "upsert_alarm",
+        "id": 3,
+        "hour": 6,
+        "minute": 30,
+        "mode": "zero_gravity",
+        "weekdays": [
+          6
+        ],
+        "enabled": true
+      },
+      "expected_bytes": "6e0d200501010300061e450311",
+      "evidence": [
+        "E-EXTENDED"
+      ]
+    },
+    {
+      "id": "alarm-everyday-disabled",
+      "kind": "extended",
+      "inputs": {
+        "action": "upsert_alarm",
+        "id": 3,
+        "hour": 6,
+        "minute": 30,
+        "mode": "zero_gravity",
+        "weekdays": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "enabled": false
+      },
+      "expected_bytes": "6e0d200501010300061e45fe0c",
+      "evidence": [
+        "E-EXTENDED"
+      ]
+    },
+    {
+      "id": "alarm-everyday-enabled",
+      "kind": "extended",
+      "inputs": {
+        "action": "upsert_alarm",
+        "id": 3,
+        "hour": 6,
+        "minute": 30,
+        "mode": "zero_gravity",
+        "weekdays": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "enabled": true
+      },
+      "expected_bytes": "6e0d200501010300061e45ff0d",
+      "evidence": [
+        "E-EXTENDED"
+      ]
+    },
+    {
+      "id": "alarm-monday-sunday-disabled",
+      "kind": "extended",
+      "inputs": {
+        "action": "upsert_alarm",
+        "id": 3,
+        "hour": 6,
+        "minute": 30,
+        "mode": "zero_gravity",
+        "weekdays": [
+          0,
+          6
+        ],
+        "enabled": false
+      },
+      "expected_bytes": "6e0d200501010300061e458290",
+      "evidence": [
+        "E-EXTENDED"
+      ]
+    },
+    {
+      "id": "alarm-monday-sunday-enabled",
+      "kind": "extended",
+      "inputs": {
+        "action": "upsert_alarm",
+        "id": 3,
+        "hour": 6,
+        "minute": 30,
+        "mode": "zero_gravity",
+        "weekdays": [
+          0,
+          6
+        ],
+        "enabled": true
+      },
+      "expected_bytes": "6e0d200501010300061e458391",
+      "evidence": [
+        "E-EXTENDED"
+      ]
+    },
+    {
+      "id": "epoch-positive-fractional-zone",
+      "kind": "extended",
+      "inputs": {
+        "action": "sync_epoch",
+        "epoch_seconds": 1794441600,
+        "zone_minutes": 330
+      },
+      "expected_bytes": "6e0c200802016af50180058a",
+      "evidence": [
+        "E-EXTENDED"
+      ]
+    },
+    {
+      "id": "epoch-negative-fractional-zone",
+      "kind": "extended",
+      "inputs": {
+        "action": "sync_epoch",
+        "epoch_seconds": 1794441600,
+        "zone_minutes": -210
+      },
+      "expected_bytes": "6e0c200802016af50180fd82",
+      "evidence": [
+        "E-EXTENDED"
+      ]
+    },
+    {
+      "id": "calendar-1970-origin",
+      "kind": "extended",
+      "inputs": {
+        "action": "sync_calendar",
+        "year": 2026,
+        "month": 11,
+        "day": 12,
+        "hour": 5,
+        "minute": 30,
+        "second": 0
+      },
+      "expected_bytes": "6e0d20080301380b0c051e0019",
+      "evidence": [
+        "E-EXTENDED"
+      ]
+    }
+  ],
+  "notifications": [
+    {
+      "id": "clock-capability",
+      "bytes": "6e09010078",
+      "expected": {
+        "clock_capability": true
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "add-ack",
+      "bytes": "6e07010177",
+      "expected": {
+        "alarm_add_success": true
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "motor-angle",
+      "bytes": "6e90354d80",
+      "expected": {
+        "motor": {
+          "no": 1,
+          "status": 1,
+          "angle": 77
+        }
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "common-checksum-not-enforced",
+      "bytes": "6e90354d00",
+      "expected": {
+        "motor": {
+          "no": 1,
+          "status": 1,
+          "angle": 77
+        }
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "bed-mode-source-not-log",
+      "bytes": "6e901307d8",
+      "expected": {
+        "bed_mode": 3
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "massage-packed",
+      "bytes": "6e90a5d97c",
+      "expected": {
+        "massage": {
+          "mode": 2,
+          "zone1": 7,
+          "zone2": 3,
+          "zone3": 1
+        }
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "detection-normal",
+      "bytes": "6e90c321e2",
+      "expected": {
+        "detection": {
+          "domain": "motor",
+          "index": 2,
+          "status": "normal"
+        }
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "detection-fallback",
+      "bytes": "6e90c34f10",
+      "expected": {
+        "detection": {
+          "domain": "motor",
+          "index": 4,
+          "status": "notPluggedIn"
+        }
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "check-repeat",
+      "bytes": "6e90c24000",
+      "expected": {
+        "detection_check": "repeat"
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "follow-shake",
+      "bytes": "6e90b1c02f",
+      "expected": {
+        "follow_shake": true,
+        "audio_EXCLUDED": {
+          "usb": true,
+          "play": true,
+          "ble": false
+        }
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "follow-shake-gear",
+      "bytes": "6e90d20500",
+      "expected": {
+        "follow_shake_gear": 5
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "travel-height-type-angle",
+      "bytes": "6e200c0102030001f4023cd3",
+      "expected": {
+        "motor_travel": {
+          "height": 50.0,
+          "type": 2,
+          "angle": 60
+        }
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "travel-no-angle",
+      "bytes": "6e200b0102020001f40295",
+      "expected": {
+        "motor_travel": {
+          "height": 50.0,
+          "type": 2,
+          "angle": -1
+        }
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "wrong-motor-function",
+      "bytes": "6e200c0104030001f4023cd5",
+      "expected": {},
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "massage-strength",
+      "bytes": "6e200b02010301050207ae",
+      "expected": {
+        "massage_strength": {
+          "head": 5,
+          "foot": 7
+        }
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "massage_mode",
+      "bytes": "6e200902020200019e",
+      "expected": {
+        "massage_mode": 1
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "massage_frequency",
+      "bytes": "6e20090204020001a0",
+      "expected": {
+        "massage_frequency": 1
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "follow_shake_gear",
+      "bytes": "6e20090205020001a1",
+      "expected": {
+        "follow_shake_gear": 1
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "massage_power",
+      "bytes": "6e20090206020001a2",
+      "expected": {
+        "massage_power": true
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "white-led",
+      "bytes": "6e200903010300019f",
+      "expected": {
+        "white_led": true
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "rgb-color",
+      "bytes": "6e200b04010300ff800020",
+      "expected": {
+        "rgb": [
+          1.0,
+          0.5019607843137255,
+          0.0
+        ]
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "rgb-timer",
+      "bytes": "6e200a04020200021ec0",
+      "expected": {
+        "rgb_timer": 150
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "rgb-motion",
+      "bytes": "6e20090403020001a1",
+      "expected": {
+        "rgb_motion": true
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "rgb-power",
+      "bytes": "6e20090404030000a2",
+      "expected": {
+        "rgb_power": false
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "alarm-list",
+      "bytes": "6e200d0501020300061e458392",
+      "expected": {
+        "alarm": {
+          "event": "list",
+          "id": 3,
+          "reserved": 0,
+          "hour": 6,
+          "minute": 30,
+          "mode": 69,
+          "repeat": 131
+        }
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "alarm-escalation",
+      "bytes": "6e200d0501030300061e458393",
+      "expected": {
+        "alarm": {
+          "event": "escalation",
+          "id": 3,
+          "reserved": 0,
+          "hour": 6,
+          "minute": 30,
+          "mode": 69,
+          "repeat": 131
+        }
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "anti-snore-boolean",
+      "bytes": "6e20090601020001a1",
+      "expected": {
+        "anti_snore_enabled": true
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "off-bed-boolean",
+      "bytes": "6e20090602030000a2",
+      "expected": {
+        "off_bed": false
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "link-name-no-nul-trim",
+      "bytes": "6e200d06030200524d2d4100b3",
+      "expected": {
+        "link_name": "RM-A\u0000"
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "press-mode",
+      "bytes": "6e20090b01020003a8",
+      "expected": {
+        "press_mode": 3
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "standard-split",
+      "bytes": "6e20090b02030002a9",
+      "expected": {
+        "standard_split": true
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "same-split",
+      "bytes": "6e20090b04020001a9",
+      "expected": {
+        "same_split": 1
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "diagnostic-no-op-gate",
+      "bytes": "6e20080a010000a1",
+      "expected": {
+        "diagnostic": {
+          "function": 1,
+          "frame": "6e20080a010000a1"
+        }
+      },
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    },
+    {
+      "id": "bad-extended-checksum",
+      "bytes": "6e200c0102030001f4023c00",
+      "expected": {},
+      "evidence": [
+        "E-NOTIFY"
+      ],
+      "origin": "constructed from artifact parser"
+    }
+  ],
+  "streams": [
+    {
+      "id": "extended-fragments",
+      "chunks": [
+        "ffff6e200c",
+        "01020300",
+        "01f4023cd3"
+      ],
+      "frames": [
+        "6e200c0102030001f4023cd3"
+      ],
+      "remaining": ""
+    },
+    {
+      "id": "extended-coalesced",
+      "chunks": [
+        "6e200c0102030001f4023cd36e200d0501020300061e4583926e200d06030200524d2d4100b3"
+      ],
+      "frames": [
+        "6e200c0102030001f4023cd3",
+        "6e200d0501020300061e458392",
+        "6e200d06030200524d2d4100b3"
+      ],
+      "remaining": ""
+    },
+    {
+      "id": "bad-checksum-then-good",
+      "chunks": [
+        "6e200c0102030001f4023c006e200d0501020300061e458392"
+      ],
+      "frames": [
+        "6e200d0501020300061e458392"
+      ],
+      "remaining": ""
+    },
+    {
+      "id": "common-coalesced",
+      "chunks": [
+        "6e090100786e07010177"
+      ],
+      "frames": [
+        "6e09010078",
+        "6e07010177"
+      ],
+      "remaining": ""
+    },
+    {
+      "id": "common-three-byte-fragment-is-consumed",
+      "chunks": [
+        "6e0901",
+        "0078"
+      ],
+      "frames": [
+        "6e0901"
+      ],
+      "remaining": "0078"
+    }
+  ],
+  "alarm_repair": [
+    {
+      "id": "R179-A001-toggle-off-opaque07",
+      "kind": "cached_toggle",
+      "received": "6e200d0501020307061e458399",
+      "enabled": false,
+      "expected_cached": {
+        "event": "list",
+        "id": 3,
+        "reserved": 7,
+        "hour": 6,
+        "minute": 30,
+        "mode": 69,
+        "repeat": 131
+      },
+      "expected_bytes": "6e0d200501010307061e458297",
+      "evidence": [
+        "E-ALARM-CALLERS"
+      ],
+      "origin": "source-derived synthetic counterexample; no hardware meaning or occurrence asserted"
+    },
+    {
+      "id": "R179-A001-toggle-on-opaque07",
+      "kind": "cached_toggle",
+      "received": "6e200d0501020307061e458298",
+      "enabled": true,
+      "expected_cached": {
+        "event": "list",
+        "id": 3,
+        "reserved": 7,
+        "hour": 6,
+        "minute": 30,
+        "mode": 69,
+        "repeat": 130
+      },
+      "expected_bytes": "6e0d200501010307061e458398",
+      "evidence": [
+        "E-ALARM-CALLERS"
+      ],
+      "origin": "source-derived synthetic counterexample; no hardware meaning or occurrence asserted"
+    },
+    {
+      "id": "R179-A001-toggle-cached-fields-outside-form-domains",
+      "kind": "cached_toggle",
+      "received": "6e200d0501020988fafba75525",
+      "enabled": false,
+      "expected_cached": {
+        "event": "list",
+        "id": 9,
+        "reserved": 136,
+        "hour": 250,
+        "minute": 251,
+        "mode": 167,
+        "repeat": 85
+      },
+      "expected_bytes": "6e0d200501010988fafba75423",
+      "evidence": [
+        "E-ALARM-CALLERS"
+      ],
+      "origin": "source-derived synthetic counterexample; no hardware meaning or occurrence asserted"
+    },
+    {
+      "id": "R179-A001-new-form-zero",
+      "kind": "form",
+      "inputs": {
+        "caller": "new",
+        "action": "upsert_alarm",
+        "id": 3,
+        "hour": 6,
+        "minute": 30,
+        "mode": "zero_gravity",
+        "weekdays": [
+          0,
+          6
+        ],
+        "enabled": false
+      },
+      "expected_bytes": "6e0d200501010300061e458290",
+      "evidence": [
+        "E-ALARM-CALLERS"
+      ],
+      "origin": "source-derived synthetic counterexample; no hardware meaning or occurrence asserted"
+    },
+    {
+      "id": "R179-A001-edit-reuses-received-id-zeroes-opaque",
+      "kind": "form",
+      "inputs": {
+        "caller": "edit",
+        "action": "upsert_alarm",
+        "id": 9,
+        "hour": 6,
+        "minute": 30,
+        "mode": "zero_gravity",
+        "weekdays": [
+          0,
+          6
+        ],
+        "enabled": false
+      },
+      "expected_bytes": "6e0d200501010900061e458296",
+      "evidence": [
+        "E-ALARM-CALLERS"
+      ],
+      "origin": "source-derived synthetic counterexample; no hardware meaning or occurrence asserted"
+    },
+    {
+      "id": "R179-A001-delete-reuses-received-id",
+      "kind": "delete",
+      "inputs": {
+        "action": "delete_alarm",
+        "id": 9
+      },
+      "expected_bytes": "6e082005020109a7",
+      "evidence": [
+        "E-ALARM-CALLERS"
+      ],
+      "origin": "source-derived synthetic counterexample; no hardware meaning or occurrence asserted"
+    }
+  ]
+}

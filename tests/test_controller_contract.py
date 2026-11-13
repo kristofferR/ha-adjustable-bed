@@ -107,6 +107,7 @@ class _FactoryCoordinator(SimpleNamespace):
             _pairlink_runtime=None,
             entry=SimpleNamespace(
                 title="Contract Test Bed",
+                async_on_unload=lambda callback: None,
                 options={},
                 data={
                     const.CONF_FURNIMOVE_REMOTE: "00000",
@@ -189,6 +190,8 @@ def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
         return OCTO_VARIANT_STANDARD
     if bed_type == const.BED_TYPE_CASPER_BASE:
         return "casperpro"
+    if bed_type == const.BED_TYPE_YAMADA:
+        return "p1"
     if bed_type == const.BED_TYPE_COMFORTBASE:
         return "accord"
     if bed_type == const.BED_TYPE_COMFORT_ENHANCEMENTS:
@@ -215,17 +218,33 @@ async def _create_controller_for_bed_type(
     """Create a controller through the factory for a bed type and optional variant."""
     coordinator = _FactoryCoordinator()
     client = _make_connected_client()
+    if bed_type == const.BED_TYPE_SYMPHONY_SLEEP:
+        coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "600E", const.CONF_PROTOCOL_VARIANT: variant or "box1"})
+        return await create_controller(coordinator, bed_type, variant or "box1", client)
+    if bed_type == const.BED_TYPE_SYMPHONY:
+        coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "0", const.CONF_PROTOCOL_VARIANT: "0"})
+    if bed_type == const.BED_TYPE_BEDGEAR:
+        coordinator.entry.data[const.CONF_BLE_DEVICE_NAME] = "HHC0000001D00X"
+    if bed_type == const.BED_TYPE_SONICSLEEP:
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "one"
     if bed_type == const.BED_TYPE_JALON:
         coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "0", const.CONF_BLE_DEVICE_NAME: "smartbed123"})
     if bed_type == const.BED_TYPE_ERGOMOTION_4:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "H"
+    if bed_type == "smart_sleep":
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "0"
+
+    if bed_type == "mline":
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "two"
     if bed_type == const.BED_TYPE_JALON_BED:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "40"
     if bed_type in const.KEESON_LAYOUT_APP_BED_TYPES:
         from custom_components.adjustable_bed.profiles.keeson import DEFAULT_LAYOUTS
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = DEFAULT_LAYOUTS[bed_type]
-    if bed_type in (const.BED_TYPE_ISLEEP, const.BED_TYPE_RIZE):
-        coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: 129, const.CONF_KAIDI_ROOM_ID: 10000})
+    if bed_type == const.BED_TYPE_SYMPHONY_SLEEP:
+        coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "600E", const.CONF_PROTOCOL_VARIANT: "box1"})
+    if bed_type in (const.BED_TYPE_ISLEEP, const.BED_TYPE_RIZE, const.BED_TYPE_KOMFYD, const.BED_TYPE_COMFYDS):
+        coordinator.entry.data.update({const.CONF_BED_TYPE: bed_type, const.CONF_PRODUCT_TYPE: 129, const.CONF_KAIDI_ROOM_ID: 10000})
     if bed_type == const.BED_TYPE_SLEEPTRACKER:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "unknown"
     if bed_type == const.BED_TYPE_SLEEPYS_ELITE_APP:
@@ -471,12 +490,16 @@ async def test_registry_entries_resolve_to_controller_classes(bed_type: str) -> 
     entries like BED_TYPE_DIAGNOSTIC that are absent from SUPPORTED_BED_TYPES.
     """
     coordinator = _FactoryCoordinator()
-    if bed_type in (const.BED_TYPE_ISLEEP, const.BED_TYPE_RIZE):
-        coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: 129, const.CONF_KAIDI_ROOM_ID: 10000})
+    if bed_type == const.BED_TYPE_SYMPHONY_SLEEP:
+        coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "600E", const.CONF_PROTOCOL_VARIANT: "box1"})
+    if bed_type in (const.BED_TYPE_ISLEEP, const.BED_TYPE_RIZE, const.BED_TYPE_KOMFYD, const.BED_TYPE_COMFYDS):
+        coordinator.entry.data.update({const.CONF_BED_TYPE: bed_type, const.CONF_PRODUCT_TYPE: 129, const.CONF_KAIDI_ROOM_ID: 10000})
     if bed_type == const.BED_TYPE_ERGOMOTION_4:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "H"
     if bed_type == const.BED_TYPE_JALON_BED:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "40"
+    if bed_type == const.BED_TYPE_SONICSLEEP:
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "one"
     controller = await _create_from_registry(coordinator, bed_type)
 
     assert isinstance(controller, BedController)

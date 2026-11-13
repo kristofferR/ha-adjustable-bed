@@ -2330,6 +2330,8 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _press(entityId: string): void {
+    if (this.hass?.states[entityId]?.attributes.requires_confirmation === true &&
+        !window.confirm(this._t("action.confirm", { action: entityLabel(this.hass, entityId) }))) return;
     // A preset or other command replaces a tap move; a STOP could cancel it.
     this._hold.retireTap();
     this._call("button", "press", entityId);

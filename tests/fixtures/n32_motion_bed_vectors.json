@@ -1,0 +1,1414 @@
+{
+  "provenance": {
+    "package": "com.okin.simmonskorea",
+    "version": "1.1.14 (38)",
+    "row": "080",
+    "report_sha256": "21d46e4d279eaf5b260f70f8c20bcfc2e3ec00a523abfa74fdfc959a229c6bbf",
+    "accept_sha256": "11ed898c9244c1e281290c8551cded910b1016e35247dcc678670d1d0823a947",
+    "hardware": "UNVERIFIED"
+  },
+  "masks": [
+    {
+      "method": "flat",
+      "body": [
+        8,
+        0,
+        0,
+        0
+      ],
+      "source": "blutter/asm/simmonskorea/src/protocol/driver/okin24_driver.dart:0x505ce8"
+    },
+    {
+      "method": "zero",
+      "body": [
+        0,
+        0,
+        16,
+        0
+      ],
+      "source": "blutter/asm/simmonskorea/src/protocol/driver/okin24_driver.dart:0x505d84"
+    },
+    {
+      "method": "tv",
+      "body": [
+        0,
+        0,
+        64,
+        0
+      ],
+      "source": "blutter/asm/simmonskorea/src/protocol/driver/okin24_driver.dart:0x505e20"
+    },
+    {
+      "method": "lounge",
+      "body": [
+        0,
+        0,
+        32,
+        0
+      ],
+      "source": "blutter/asm/simmonskorea/src/protocol/driver/okin24_driver.dart:0x505ebc"
+    },
+    {
+      "method": "antisnore",
+      "body": [
+        0,
+        0,
+        128,
+        0
+      ],
+      "source": "blutter/asm/simmonskorea/src/protocol/driver/okin24_driver.dart:0x505f58"
+    },
+    {
+      "method": "m2m6",
+      "body": [
+        0,
+        4,
+        0,
+        0
+      ],
+      "source": "blutter/asm/simmonskorea/src/protocol/driver/okin24_driver.dart:0x505ff4"
+    },
+    {
+      "method": "m1m5",
+      "body": [
+        0,
+        1,
+        0,
+        0
+      ],
+      "source": "blutter/asm/simmonskorea/src/protocol/driver/okin24_driver.dart:0x506090"
+    },
+    {
+      "method": "m5down",
+      "body": [
+        128,
+        0,
+        0,
+        0
+      ],
+      "source": "blutter/asm/simmonskorea/src/protocol/driver/okin24_driver.dart:0x505370"
+    },
+    {
+      "method": "m5up",
+      "body": [
+        64,
+        0,
+        0,
+        0
+      ],
+      "source": "blutter/asm/simmonskorea/src/protocol/driver/okin24_driver.dart:0x5054ac"
+    },
+    {
+      "method": "m4down",
+      "body": [
+        0,
+        0,
+        0,
+        32
+      ],
+      "source": "blutter/asm/simmonskorea/src/protocol/driver/okin24_driver.dart:0x505548"
+    },
+    {
+      "method": "m4up",
+      "body": [
+        0,
+        0,
+        0,
+        16
+      ],
+      "source": "blutter/asm/simmonskorea/src/protocol/driver/okin24_driver.dart:0x5055e4"
+    },
+    {
+      "method": "m3down",
+      "body": [
+        0,
+        0,
+        0,
+        128
+      ],
+      "source": "blutter/asm/simmonskorea/src/protocol/driver/okin24_driver.dart:0x505680"
+    },
+    {
+      "method": "m3up",
+      "body": [
+        0,
+        0,
+        0,
+        64
+      ],
+      "source": "blutter/asm/simmonskorea/src/protocol/driver/okin24_driver.dart:0x50571c"
+    },
+    {
+      "method": "m1m2down",
+      "body": [
+        0,
+        0,
+        0,
+        10
+      ],
+      "source": "blutter/asm/simmonskorea/src/protocol/driver/okin24_driver.dart:0x5057b8"
+    },
+    {
+      "method": "m1m2up",
+      "body": [
+        0,
+        0,
+        0,
+        5
+      ],
+      "source": "blutter/asm/simmonskorea/src/protocol/driver/okin24_driver.dart:0x505854"
+    },
+    {
+      "method": "m2down",
+      "body": [
+        0,
+        0,
+        0,
+        8
+      ],
+      "source": "blutter/asm/simmonskorea/src/protocol/driver/okin24_driver.dart:0x5058f0"
+    },
+    {
+      "method": "m2up",
+      "body": [
+        0,
+        0,
+        0,
+        4
+      ],
+      "source": "blutter/asm/simmonskorea/src/protocol/driver/okin24_driver.dart:0x50598c"
+    },
+    {
+      "method": "m1down",
+      "body": [
+        0,
+        0,
+        0,
+        2
+      ],
+      "source": "blutter/asm/simmonskorea/src/protocol/driver/okin24_driver.dart:0x505a28"
+    },
+    {
+      "method": "m1up",
+      "body": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "source": "blutter/asm/simmonskorea/src/protocol/driver/okin24_driver.dart:0x505ac4"
+    },
+    {
+      "method": "stop",
+      "body": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "source": "blutter/asm/simmonskorea/src/protocol/driver/okin24_driver.dart:0x505b60"
+    }
+  ],
+  "raw": [
+    {
+      "id": "v-stop",
+      "function": "held",
+      "inputs": {
+        "action": "stop"
+      },
+      "expected": "05 02 00 00 00 00 00",
+      "source": "PositionCommand.stop 0x505b60 + DriverCommand.complete 0x505438"
+    },
+    {
+      "id": "v-upper-up",
+      "function": "held",
+      "inputs": {
+        "action": "m1m2up"
+      },
+      "expected": "05 02 00 00 00 05 00",
+      "source": "PositionCommand.m1m2up 0x505854"
+    },
+    {
+      "id": "v-lower-down",
+      "function": "held",
+      "inputs": {
+        "action": "m3down"
+      },
+      "expected": "05 02 00 00 00 80 00",
+      "source": "PositionCommand.m3down 0x505680"
+    },
+    {
+      "id": "v-cervical-up",
+      "function": "held",
+      "inputs": {
+        "action": "m4up"
+      },
+      "expected": "05 02 00 00 00 10 00",
+      "source": "PositionCommand.m4up 0x5055e4"
+    },
+    {
+      "id": "v-memory-1",
+      "function": "held",
+      "inputs": {
+        "action": "m1m5"
+      },
+      "expected": "05 02 00 01 00 00 00",
+      "source": "MemoryCommand.m1m5 0x506090"
+    },
+    {
+      "id": "v-memory-3",
+      "function": "held",
+      "inputs": {
+        "action": "antisnore"
+      },
+      "expected": "05 02 00 00 80 00 00",
+      "source": "MemoryCommand.antisnore 0x505f58"
+    },
+    {
+      "id": "v-alarm-1",
+      "function": "setup_alarm",
+      "inputs": {
+        "hour": 6,
+        "minute": 30,
+        "week": 62,
+        "mode": 5,
+        "reserved": 0,
+        "enabled": 1,
+        "slot": 1
+      },
+      "expected": "07 05 3e 05 06 1e 00 01 01 00",
+      "source": "SendCommand.setAlarm 0x39cb54 -> Okin24Driver.search 0x52d104 -> AlarmCommand.setup 0x52dbbc",
+      "semantic_scope": "Raw builder inputs only; low-bit weeks are valid constructor values, not examples of recurring UI normalization."
+    },
+    {
+      "id": "v-alarm-2",
+      "function": "setup_alarm",
+      "inputs": {
+        "hour": 22,
+        "minute": 5,
+        "week": 65,
+        "mode": 4,
+        "reserved": 0,
+        "enabled": 1,
+        "slot": 2
+      },
+      "expected": "07 06 41 04 16 05 00 01 01 00",
+      "source": "AlarmCommand.setup 0x52dbbc",
+      "semantic_scope": "Raw builder inputs only; low-bit weeks are valid constructor values, not examples of recurring UI normalization."
+    },
+    {
+      "id": "v-alarm-delete-3",
+      "function": "setup_alarm",
+      "inputs": {
+        "hour": 8,
+        "minute": 45,
+        "week": 127,
+        "mode": 6,
+        "reserved": 0,
+        "enabled": 0,
+        "slot": 3
+      },
+      "expected": "07 07 7f 06 08 2d 00 00 01 00",
+      "source": "SendCommand.delectAlarm 0x39af04 -> AlarmCommand.setup 0x52dbbc",
+      "semantic_scope": "RELABELED audit001: retained-fields disable/raw builder case, NOT actual UI deletion. Original function/inputs/expected bytes retained exactly; cleared UI slot3 is repair-F1-delete-slot3."
+    },
+    {
+      "id": "v-alarm-query-1",
+      "function": "query_alarm",
+      "inputs": {
+        "slot": 1
+      },
+      "expected": "00 c0",
+      "source": "OtherCommand.checkAlarmNum 0x52da5c"
+    },
+    {
+      "id": "v-alarm-query-2",
+      "function": "query_alarm",
+      "inputs": {
+        "slot": 2
+      },
+      "expected": "00 d0",
+      "source": "OtherCommand.checkAlarmNum 0x52da5c"
+    },
+    {
+      "id": "v-alarm-query-3",
+      "function": "query_alarm",
+      "inputs": {
+        "slot": 3
+      },
+      "expected": "00 e0",
+      "source": "OtherCommand.checkAlarmNum 0x52da5c"
+    },
+    {
+      "id": "v-clock-1",
+      "function": "calibrate",
+      "inputs": {
+        "now": "2025-08-27T12:34:56"
+      },
+      "expected": "07 04 19 08 1b 03 0c 22 38",
+      "source": "AlarmCommand.calibrationTime 0x506e80; DateTime._parts indexes"
+    },
+    {
+      "id": "v-clock-2",
+      "function": "calibrate",
+      "inputs": {
+        "now": "2026-11-12T23:59:01"
+      },
+      "expected": "07 04 1a 0b 0c 04 17 3b 01",
+      "source": "AlarmCommand.calibrationTime 0x506e80"
+    },
+    {
+      "id": "v-once-future",
+      "function": "effective_week",
+      "inputs": {
+        "week": 0,
+        "hour": 8,
+        "minute": 0,
+        "now": "2026-11-12T07:00:00"
+      },
+      "expected": 16,
+      "source": "SendCommand.setAlarm 0x39cd74..0x39cfd8"
+    },
+    {
+      "id": "v-once-rollover-sunday",
+      "function": "effective_week",
+      "inputs": {
+        "week": 128,
+        "hour": 8,
+        "minute": 0,
+        "now": "2026-11-14T09:00:00"
+      },
+      "expected": 128,
+      "source": "SendCommand.setAlarm uses 2^weekday; Sunday remains 128"
+    },
+    {
+      "id": "v-ignored",
+      "function": "parse_notification",
+      "inputs": {},
+      "input_bytes": "a6 11 00",
+      "expected": {
+        "ignored": true
+      },
+      "source": "DriverValueChange callback 0x4a59fc..0x4a5aa8"
+    },
+    {
+      "id": "v-alarm-response-enabled",
+      "function": "parse_notification",
+      "inputs": {},
+      "input_bytes": "a5 0d 00 00 3e 05 06 1e 00 01 00 00",
+      "expected": {
+        "alarm": [
+          6,
+          30,
+          0,
+          5,
+          1,
+          0,
+          0,
+          2
+        ]
+      },
+      "source": "DriverValueChange 0x4a60a4..0x4a6574"
+    },
+    {
+      "id": "v-alarm-response-disabled",
+      "function": "parse_notification",
+      "inputs": {},
+      "input_bytes": "a5 0e 00 00 7f 04 16 05 00 00 01 01",
+      "expected": {
+        "alarm": [
+          22,
+          5,
+          127,
+          4,
+          0,
+          1,
+          1,
+          3
+        ]
+      },
+      "source": "DriverValueChange 0x4a60a4..0x4a6574"
+    },
+    {
+      "id": "v-alarm-empty-forced-disabled",
+      "function": "parse_notification",
+      "inputs": {},
+      "input_bytes": "a5 0c 00 00 00 00 00 00 00 01 00 00",
+      "expected": {
+        "alarm": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "source": "DriverValueChange 0x4a6444..0x4a6490"
+    },
+    {
+      "id": "v-short-alarm-unsafe",
+      "function": "parse_notification",
+      "inputs": {},
+      "input_bytes": "a5 0c 00",
+      "expected": "IndexError",
+      "source": "BleManager._handleData only checks >=3; DriverValueChange indexes through 11"
+    },
+    {
+      "id": "v-massage",
+      "function": "parse_notification",
+      "inputs": {},
+      "input_bytes": "a5 0b 00 00 58 02 03 05 04 00 00 00 00 00 00 00 00 00 00",
+      "expected": {
+        "raw_observers": 2,
+        "massage": [
+          3,
+          3,
+          4,
+          3,
+          2,
+          1
+        ]
+      },
+      "source": "DriverValueChange 0x4a5cd0..0x4a607c"
+    },
+    {
+      "id": "v-massage-zero",
+      "function": "parse_notification",
+      "inputs": {},
+      "input_bytes": "a5 0b 00 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00",
+      "expected": {
+        "raw_observers": 2,
+        "massage": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "source": "DriverValueChange 0x4a5cd0..0x4a607c"
+    },
+    {
+      "id": "v-dormant-antisnore-1",
+      "function": "dormant_antisnore",
+      "inputs": {
+        "first": 2,
+        "second": 6
+      },
+      "expected": "02 0b 02 06 01",
+      "source": "SleepCommand.setAntiSnore 0x52e674; DEAD/UNUSED route"
+    },
+    {
+      "id": "v-dormant-antisnore-2",
+      "function": "dormant_antisnore",
+      "inputs": {
+        "first": 0,
+        "second": 0
+      },
+      "expected": "02 0b 00 00 01",
+      "source": "SleepCommand.setAntiSnore 0x52e674; DEAD/UNUSED route"
+    },
+    {
+      "id": "short-massage",
+      "function": "parse_notification",
+      "inputs": {},
+      "input_bytes": "a5 0b 00",
+      "expected": "IndexError",
+      "source": "DriverValueChange 0x4a5cd0 direct indexes4..8; no19-byte guard"
+    },
+    {
+      "id": "v-massage-short-but-computable",
+      "function": "parse_notification",
+      "inputs": {},
+      "input_bytes": "a5 0b 00 00 58 02 03 05 04",
+      "expected": {
+        "raw_observers": 0,
+        "massage": [
+          3,
+          3,
+          4,
+          3,
+          2,
+          1
+        ]
+      },
+      "source": "DriverValueChange 0x4a5cd0 computed branch has no19-byte raw guard"
+    },
+    {
+      "id": "v-bridge-too-short",
+      "function": "parse_notification",
+      "inputs": {},
+      "input_bytes": "a5 0c",
+      "expected": null,
+      "source": "BleManager._handleData length>=3 guard 0x353060"
+    }
+  ],
+  "repair": [
+    {
+      "id": "repair-F1-delete-slot1",
+      "function": "ui_delete_alarm",
+      "inputs": {
+        "model": {
+          "slot": 1,
+          "hour": 8,
+          "minute": 45,
+          "week": 127,
+          "mode": 6,
+          "music": 4,
+          "enabled": 1
+        }
+      },
+      "expected": [
+        "07 05 00 00 00 00 00 00 01 00",
+        "00 c0"
+      ],
+      "finding": "F1",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x399ac8",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x39b0d0",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39af04",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3aac08",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x4a6794",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x4aa170"
+      ]
+    },
+    {
+      "id": "repair-F1-delete-slot2",
+      "function": "ui_delete_alarm",
+      "inputs": {
+        "model": {
+          "slot": 2,
+          "hour": 8,
+          "minute": 45,
+          "week": 127,
+          "mode": 6,
+          "music": 4,
+          "enabled": 1
+        }
+      },
+      "expected": [
+        "07 06 00 00 00 00 00 00 01 00",
+        "00 d0"
+      ],
+      "finding": "F1",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x399ac8",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x39b0d0",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39af04",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3aac08",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x4a6794",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x4aa170"
+      ]
+    },
+    {
+      "id": "repair-F1-delete-slot3",
+      "function": "ui_delete_alarm",
+      "inputs": {
+        "model": {
+          "slot": 3,
+          "hour": 8,
+          "minute": 45,
+          "week": 127,
+          "mode": 6,
+          "music": 4,
+          "enabled": 1
+        }
+      },
+      "expected": [
+        "07 07 00 00 00 00 00 00 01 00",
+        "00 e0"
+      ],
+      "finding": "F1",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x399ac8",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x39b0d0",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39af04",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3aac08",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x4a6794",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x4aa170"
+      ]
+    },
+    {
+      "id": "repair-F1-close-retains",
+      "function": "ui_close_alarm",
+      "inputs": {
+        "model": {
+          "slot": 3,
+          "hour": 8,
+          "minute": 45,
+          "week": 127,
+          "mode": 6,
+          "music": 4,
+          "enabled": 1
+        },
+        "now": "2026-11-12T07:00:00"
+      },
+      "expected": [
+        "07 07 7f 06 08 2d 00 00 01 00",
+        "00 e0"
+      ],
+      "finding": "F1",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x399ac8",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x39b0d0",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39af04",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3aac08",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x4a6794",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x4aa170"
+      ]
+    },
+    {
+      "id": "repair-F1-cleared-callback",
+      "function": "callback_alarm",
+      "inputs": {
+        "input_bytes": "a5 0e 00 00 00 00 00 00 00 00 00 00",
+        "old": {
+          "slot": 3,
+          "hour": 8,
+          "minute": 45,
+          "week": 127,
+          "mode": 6,
+          "music": 4,
+          "enabled": 1
+        }
+      },
+      "expected": {
+        "operation": "delete",
+        "slot": 3
+      },
+      "finding": "F1",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x399ac8",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x39b0d0",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39af04",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3aac08",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x4a6794",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x4aa170"
+      ]
+    },
+    {
+      "id": "repair-F1-disabled-row-retained",
+      "function": "callback_alarm",
+      "inputs": {
+        "input_bytes": "a5 0c 00 00 07 00 09 0f 00 00 00 00",
+        "old": {
+          "slot": 1,
+          "hour": 6,
+          "minute": 30,
+          "week": 130,
+          "mode": 5,
+          "music": 4,
+          "enabled": 1
+        }
+      },
+      "expected": {
+        "operation": "insert",
+        "model": {
+          "slot": 1,
+          "hour": 9,
+          "minute": 15,
+          "week": 130,
+          "mode": 5,
+          "enabled": 0,
+          "music": 4
+        }
+      },
+      "finding": "F1",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x399ac8",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x39b0d0",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39af04",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3aac08",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x4a6794",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x4aa170"
+      ]
+    },
+    {
+      "id": "repair-F1-enabled-retains-music",
+      "function": "callback_alarm",
+      "inputs": {
+        "input_bytes": "a5 0c 00 00 82 06 06 1e 00 01 00 00",
+        "old": {
+          "slot": 1,
+          "hour": 6,
+          "minute": 30,
+          "week": 130,
+          "mode": 5,
+          "music": 4,
+          "enabled": 1
+        }
+      },
+      "expected": {
+        "operation": "insert",
+        "model": {
+          "slot": 1,
+          "hour": 6,
+          "minute": 30,
+          "week": 130,
+          "mode": 6,
+          "enabled": 1,
+          "music": 4
+        }
+      },
+      "finding": "F1",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x399ac8",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x39b0d0",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39af04",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3aac08",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x4a6794",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x4aa170"
+      ]
+    },
+    {
+      "id": "repair-F1-disabled-no-old",
+      "function": "callback_alarm",
+      "inputs": {
+        "input_bytes": "a5 0c 00 00 07 00 09 0f 00 00 00 00"
+      },
+      "expected": {
+        "operation": "insert",
+        "model": {
+          "slot": 1,
+          "hour": 9,
+          "minute": 15,
+          "week": 7,
+          "mode": 0,
+          "enabled": 0,
+          "music": 0
+        }
+      },
+      "finding": "F1",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x399ac8",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x39b0d0",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39af04",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3aac08",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x4a6794",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x4aa170"
+      ]
+    },
+    {
+      "id": "repair-F1-predicate-all-zero",
+      "function": "should_be_deleted",
+      "inputs": {
+        "model": {
+          "slot": 3,
+          "hour": 0,
+          "minute": 0,
+          "week": 0,
+          "mode": 0,
+          "music": 0,
+          "enabled": 0
+        }
+      },
+      "expected": true,
+      "finding": "F1",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x399ac8",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x39b0d0",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39af04",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3aac08",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x4a6794",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x4aa170"
+      ]
+    },
+    {
+      "id": "repair-F1-predicate-music-nonzero",
+      "function": "should_be_deleted",
+      "inputs": {
+        "model": {
+          "slot": 3,
+          "hour": 0,
+          "minute": 0,
+          "week": 0,
+          "mode": 0,
+          "music": 4,
+          "enabled": 0
+        }
+      },
+      "expected": false,
+      "finding": "F1",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x399ac8",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x39b0d0",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39af04",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3aac08",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x4a6794",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x4aa170"
+      ]
+    },
+    {
+      "id": "repair-F1-predicate-enabled-only",
+      "function": "should_be_deleted",
+      "inputs": {
+        "model": {
+          "slot": 3,
+          "hour": 0,
+          "minute": 0,
+          "week": 0,
+          "mode": 0,
+          "music": 0,
+          "enabled": 1
+        }
+      },
+      "expected": false,
+      "finding": "F1",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x399ac8",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x39b0d0",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39af04",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3aac08",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x4a6794",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x4aa170"
+      ]
+    },
+    {
+      "id": "repair-F2-Monday-UI-to-wire",
+      "function": "ui_alarm_after_toggle",
+      "inputs": {
+        "model": {
+          "slot": 1,
+          "hour": 6,
+          "minute": 30,
+          "week": 0,
+          "mode": 5,
+          "music": 0,
+          "enabled": 1
+        },
+        "toggle": "day",
+        "day_mask": 2,
+        "now": "2026-11-12T07:00:00"
+      },
+      "expected": {
+        "week": 130,
+        "encoded_week": 130,
+        "bytes": "07 05 82 05 06 1e 00 01 01 00"
+      },
+      "finding": "F2",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
+      ]
+    },
+    {
+      "id": "repair-F2-remove-last-day",
+      "function": "ui_toggle_day",
+      "inputs": {
+        "week": 130,
+        "day_mask": 2
+      },
+      "expected": 128,
+      "finding": "F2",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
+      ]
+    },
+    {
+      "id": "repair-F2-Sunday-selection",
+      "function": "ui_toggle_day",
+      "inputs": {
+        "week": 0,
+        "day_mask": 1
+      },
+      "expected": 129,
+      "finding": "F2",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
+      ]
+    },
+    {
+      "id": "repair-F2-add-Wednesday",
+      "function": "ui_toggle_day",
+      "inputs": {
+        "week": 130,
+        "day_mask": 8
+      },
+      "expected": 138,
+      "finding": "F2",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
+      ]
+    },
+    {
+      "id": "repair-F2-remove-Wednesday",
+      "function": "ui_toggle_day",
+      "inputs": {
+        "week": 138,
+        "day_mask": 8
+      },
+      "expected": 130,
+      "finding": "F2",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
+      ]
+    },
+    {
+      "id": "repair-F2-every-day-255",
+      "function": "ui_toggle_every_day",
+      "inputs": {
+        "week": 255
+      },
+      "expected": 0,
+      "finding": "F2",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
+      ]
+    },
+    {
+      "id": "repair-F2-every-day-0",
+      "function": "ui_toggle_every_day",
+      "inputs": {
+        "week": 0
+      },
+      "expected": 255,
+      "finding": "F2",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
+      ]
+    },
+    {
+      "id": "repair-F2-every-day-130",
+      "function": "ui_toggle_every_day",
+      "inputs": {
+        "week": 130
+      },
+      "expected": 255,
+      "finding": "F2",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
+      ]
+    },
+    {
+      "id": "repair-F2-once-0",
+      "function": "ui_toggle_once",
+      "inputs": {
+        "week": 0
+      },
+      "expected": 255,
+      "finding": "F2",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
+      ]
+    },
+    {
+      "id": "repair-F2-once-255",
+      "function": "ui_toggle_once",
+      "inputs": {
+        "week": 255
+      },
+      "expected": 0,
+      "finding": "F2",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
+      ]
+    },
+    {
+      "id": "repair-F2-once-130",
+      "function": "ui_toggle_once",
+      "inputs": {
+        "week": 130
+      },
+      "expected": 0,
+      "finding": "F2",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
+      ]
+    },
+    {
+      "id": "repair-F2-startup-127",
+      "function": "startup_queries_week",
+      "inputs": {
+        "week": 127
+      },
+      "expected": true,
+      "finding": "F2",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
+      ]
+    },
+    {
+      "id": "repair-F2-startup-128",
+      "function": "startup_queries_week",
+      "inputs": {
+        "week": 128
+      },
+      "expected": false,
+      "finding": "F2",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
+      ]
+    },
+    {
+      "id": "repair-F2-startup-130",
+      "function": "startup_queries_week",
+      "inputs": {
+        "week": 130
+      },
+      "expected": false,
+      "finding": "F2",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
+      ]
+    },
+    {
+      "id": "repair-F2-startup--1",
+      "function": "startup_queries_week",
+      "inputs": {
+        "week": -1
+      },
+      "expected": true,
+      "finding": "F2",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
+      ]
+    },
+    {
+      "id": "repair-F2-once-Sunday-UI-to-wire",
+      "function": "ui_alarm_after_toggle",
+      "inputs": {
+        "model": {
+          "slot": 2,
+          "hour": 8,
+          "minute": 45,
+          "week": 255,
+          "mode": 6,
+          "music": 0,
+          "enabled": 1
+        },
+        "toggle": "once",
+        "now": "2026-11-14T09:00:00"
+      },
+      "expected": {
+        "week": 0,
+        "encoded_week": 128,
+        "bytes": "07 06 80 06 08 2d 00 01 01 00"
+      },
+      "finding": "F2",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
+      ]
+    },
+    {
+      "id": "repair-F2-raw-builder-week2",
+      "function": "setup_alarm",
+      "inputs": {
+        "hour": 6,
+        "minute": 30,
+        "week": 2,
+        "mode": 5,
+        "reserved": 0,
+        "enabled": 1,
+        "slot": 1
+      },
+      "expected": "07 05 02 05 06 1e 00 01 01 00",
+      "finding": "F2",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
+        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
+        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
+        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
+      ]
+    },
+    {
+      "id": "repair-F3-payload7",
+      "function": "manufacturer_real_mac",
+      "inputs": {
+        "manufacturer_data": {
+          "89": [
+            16,
+            17,
+            34,
+            51,
+            68,
+            85,
+            102
+          ]
+        }
+      },
+      "expected": "554433221110",
+      "finding": "F3",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/src/bluetooth/core/bluetooth_device_model.dart:0x34ca50",
+        "/analysis/work/gdt/dispatch_by_class.tsv",
+        "/analysis/work/repair-audit001/feedback/identity-getter-aot.txt",
+        "/analysis/work/repair-audit001/feedback/reversed-element-aot.txt",
+        "/analysis/work/repair-audit001/source-pins-verification.txt",
+        "/analysis/work/smali/base/smali_classes4/com/lib/flutter_blue_plus/FlutterBluePlusPlugin.smali:3969",
+        "/analysis/work/blutter/asm/flutter_blue_plus_platform_interface/src/bluetooth_msgs.dart:0x28b128"
+      ]
+    },
+    {
+      "id": "repair-F3-payload8",
+      "function": "manufacturer_real_mac",
+      "inputs": {
+        "manufacturer_data": {
+          "89": [
+            16,
+            17,
+            34,
+            51,
+            68,
+            85,
+            102,
+            119
+          ]
+        }
+      },
+      "expected": "665544332211",
+      "finding": "F3",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/src/bluetooth/core/bluetooth_device_model.dart:0x34ca50",
+        "/analysis/work/gdt/dispatch_by_class.tsv",
+        "/analysis/work/repair-audit001/feedback/identity-getter-aot.txt",
+        "/analysis/work/repair-audit001/feedback/reversed-element-aot.txt",
+        "/analysis/work/repair-audit001/source-pins-verification.txt",
+        "/analysis/work/smali/base/smali_classes4/com/lib/flutter_blue_plus/FlutterBluePlusPlugin.smali:3969",
+        "/analysis/work/blutter/asm/flutter_blue_plus_platform_interface/src/bluetooth_msgs.dart:0x28b128"
+      ]
+    },
+    {
+      "id": "repair-F3-padded7",
+      "function": "manufacturer_real_mac",
+      "inputs": {
+        "manufacturer_data": {
+          "89": [
+            170,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ]
+        }
+      },
+      "expected": "0504030201aa",
+      "finding": "F3",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/src/bluetooth/core/bluetooth_device_model.dart:0x34ca50",
+        "/analysis/work/gdt/dispatch_by_class.tsv",
+        "/analysis/work/repair-audit001/feedback/identity-getter-aot.txt",
+        "/analysis/work/repair-audit001/feedback/reversed-element-aot.txt",
+        "/analysis/work/repair-audit001/source-pins-verification.txt",
+        "/analysis/work/smali/base/smali_classes4/com/lib/flutter_blue_plus/FlutterBluePlusPlugin.smali:3969",
+        "/analysis/work/blutter/asm/flutter_blue_plus_platform_interface/src/bluetooth_msgs.dart:0x28b128"
+      ]
+    },
+    {
+      "id": "repair-F3-short6",
+      "function": "manufacturer_real_mac",
+      "inputs": {
+        "manufacturer_data": {
+          "89": [
+            16,
+            17,
+            34,
+            51,
+            68,
+            85
+          ]
+        }
+      },
+      "expected": null,
+      "finding": "F3",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/src/bluetooth/core/bluetooth_device_model.dart:0x34ca50",
+        "/analysis/work/gdt/dispatch_by_class.tsv",
+        "/analysis/work/repair-audit001/feedback/identity-getter-aot.txt",
+        "/analysis/work/repair-audit001/feedback/reversed-element-aot.txt",
+        "/analysis/work/repair-audit001/source-pins-verification.txt",
+        "/analysis/work/smali/base/smali_classes4/com/lib/flutter_blue_plus/FlutterBluePlusPlugin.smali:3969",
+        "/analysis/work/blutter/asm/flutter_blue_plus_platform_interface/src/bluetooth_msgs.dart:0x28b128"
+      ]
+    },
+    {
+      "id": "repair-F3-empty",
+      "function": "manufacturer_real_mac",
+      "inputs": {
+        "manufacturer_data": {
+          "89": []
+        }
+      },
+      "expected": null,
+      "finding": "F3",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/src/bluetooth/core/bluetooth_device_model.dart:0x34ca50",
+        "/analysis/work/gdt/dispatch_by_class.tsv",
+        "/analysis/work/repair-audit001/feedback/identity-getter-aot.txt",
+        "/analysis/work/repair-audit001/feedback/reversed-element-aot.txt",
+        "/analysis/work/repair-audit001/source-pins-verification.txt",
+        "/analysis/work/smali/base/smali_classes4/com/lib/flutter_blue_plus/FlutterBluePlusPlugin.smali:3969",
+        "/analysis/work/blutter/asm/flutter_blue_plus_platform_interface/src/bluetooth_msgs.dart:0x28b128"
+      ]
+    },
+    {
+      "id": "repair-F3-company-missing",
+      "function": "manufacturer_real_mac",
+      "inputs": {
+        "manufacturer_data": {}
+      },
+      "expected": null,
+      "finding": "F3",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/src/bluetooth/core/bluetooth_device_model.dart:0x34ca50",
+        "/analysis/work/gdt/dispatch_by_class.tsv",
+        "/analysis/work/repair-audit001/feedback/identity-getter-aot.txt",
+        "/analysis/work/repair-audit001/feedback/reversed-element-aot.txt",
+        "/analysis/work/repair-audit001/source-pins-verification.txt",
+        "/analysis/work/smali/base/smali_classes4/com/lib/flutter_blue_plus/FlutterBluePlusPlugin.smali:3969",
+        "/analysis/work/blutter/asm/flutter_blue_plus_platform_interface/src/bluetooth_msgs.dart:0x28b128"
+      ]
+    },
+    {
+      "id": "repair-F3-wrong-company",
+      "function": "manufacturer_real_mac",
+      "inputs": {
+        "manufacturer_data": {
+          "90": [
+            16,
+            17,
+            34,
+            51,
+            68,
+            85,
+            102
+          ]
+        }
+      },
+      "expected": null,
+      "finding": "F3",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/src/bluetooth/core/bluetooth_device_model.dart:0x34ca50",
+        "/analysis/work/gdt/dispatch_by_class.tsv",
+        "/analysis/work/repair-audit001/feedback/identity-getter-aot.txt",
+        "/analysis/work/repair-audit001/feedback/reversed-element-aot.txt",
+        "/analysis/work/repair-audit001/source-pins-verification.txt",
+        "/analysis/work/smali/base/smali_classes4/com/lib/flutter_blue_plus/FlutterBluePlusPlugin.smali:3969",
+        "/analysis/work/blutter/asm/flutter_blue_plus_platform_interface/src/bluetooth_msgs.dart:0x28b128"
+      ]
+    },
+    {
+      "id": "repair-F3-company-null",
+      "function": "manufacturer_real_mac",
+      "inputs": {
+        "manufacturer_data": {
+          "89": null
+        }
+      },
+      "expected": null,
+      "finding": "F3",
+      "evidence": [
+        "/analysis/work/blutter/asm/simmonskorea/src/bluetooth/core/bluetooth_device_model.dart:0x34ca50",
+        "/analysis/work/gdt/dispatch_by_class.tsv",
+        "/analysis/work/repair-audit001/feedback/identity-getter-aot.txt",
+        "/analysis/work/repair-audit001/feedback/reversed-element-aot.txt",
+        "/analysis/work/repair-audit001/source-pins-verification.txt",
+        "/analysis/work/smali/base/smali_classes4/com/lib/flutter_blue_plus/FlutterBluePlusPlugin.smali:3969",
+        "/analysis/work/blutter/asm/flutter_blue_plus_platform_interface/src/bluetooth_msgs.dart:0x28b128"
+      ]
+    }
+  ]
+}

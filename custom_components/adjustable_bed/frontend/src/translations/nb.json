@@ -1,5 +1,6 @@
 {
   "action.close": "Lukk",
+  "action.confirm": "{action}? Dette erstatter den lagrede posisjonen.",
   "editor.open_dialog": "Åpne hele kortet i en dialog",
   "editor.show_percentage_graphic": "Vis prosentposisjoner (skjematisk)",
   "editor.show_lumbar_graphic": "Vis en egen korsryggseksjon",

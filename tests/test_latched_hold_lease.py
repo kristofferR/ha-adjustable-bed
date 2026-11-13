@@ -141,6 +141,8 @@ CASES: dict[str, Case] = {
     "bedsense": Case(_press("move_back_up"), BEDSENSE_ACTIONS["back_up"].frame.hex()),
     "reverie": Case(_reverie, "550154"),
     "kaidi:seat_1": Case(_press("move_back_up"), "030403020120ffffffff01010000"),
+    "komfyd": Case(_press("move_back_up"), "0304030201204433221101010000"),
+    "comfyds": Case(_press("move_back_up"), "0304030201204433221101010000"),
     "isleep": Case(_press("move_back_up"), "0304030201200100000001010000"),
     "remacro": Case(_press("move_back_up"), "0201010100000000"),
 }

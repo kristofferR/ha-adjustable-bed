@@ -1,5 +1,6 @@
 {
   "action.close": "Close",
+  "action.confirm": "{action}? This replaces the saved preset.",
   "editor.open_dialog": "Open full card in a dialog",
   "editor.show_percentage_graphic": "Draw percentage positions (schematic)",
   "editor.show_lumbar_graphic": "Show a separate lumbar section",

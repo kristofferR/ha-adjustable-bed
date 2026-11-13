@@ -321,12 +321,17 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Expose bounded hold metadata to the existing card/service path."""
         attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
-        attributes.update(
-            hold_lease_attributes(
-                [self._coordinator.capability_controller], self.entity_description.key
-            )
-        )
         hold = self.entity_description.hold
+        controllers = [self._coordinator.capability_controller]
+        lease = hold_lease_attributes(
+            controllers,
+            self.entity_description.key,
+            control=hold.up_control if hold is not None else None,
+        )
+        if hold is None or lease == hold_lease_attributes(
+            controllers, self.entity_description.key, control=hold.down_control
+        ):
+            attributes.update(lease)
         if hold is not None:
             attributes.update(
                 held_control_up=hold.up_control,

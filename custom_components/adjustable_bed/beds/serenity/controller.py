@@ -11,6 +11,7 @@ another app's capabilities.
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from datetime import datetime
@@ -33,6 +34,7 @@ from ...profiles.okin_nframe import (
     BEDDING_PROFILES,
     BEDDING_SAVE_HOLD_MS,
     CST_REFRESH_MS,
+    RIZE_REMEDY_II_ACTIONS,
     SERENITY_ACTIONS,
     SERENITY_SAVE_CODES,
     TRANQUIL_ACTIONS,
@@ -54,6 +56,8 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
     from ...coordinator import AdjustableBedCoordinator
+
+_LOGGER = logging.getLogger(__name__)
 
 _SERVICE = "62741523-52f9-8864-b1ab-3b3a8d65950b"
 _NOTIFY = "62741625-52f9-8864-b1ab-3b3a8d65950b"
@@ -122,6 +126,9 @@ class OkinBeddingApp:
     save_codes: Mapping[str, int]
     buttons: tuple[tuple[str, str], ...]
     profile: OkinNFrameProfile
+    information_uuid: str = _MANUFACTURER
+    exact_duration: bool = False
+    information_log_only: bool = False
 
 
 _ZSERIES_BUTTONS_TAIL = (
@@ -132,6 +139,14 @@ _ZSERIES_BUTTONS_TAIL = (
 )
 
 APPS: Final[dict[str, OkinBeddingApp]] = {
+    "rize_remedy_ii": OkinBeddingApp(
+        prefix="rize_remedy_ii", label="Rize Remedy II", actions=RIZE_REMEDY_II_ACTIONS,
+        save_codes={"save_zero_g": 5, "save_incline": 6, "save_lounge": 3},
+        buttons=(("wave_1", "Wave 1"), ("wave_2", "Wave 2"), ("wave_3", "Wave 3")),
+        profile=BEDDING_PROFILES["rize_remedy_ii"],
+        information_uuid="00002a24-0000-1000-8000-00805f9b34fb",
+        exact_duration=True, information_log_only=True,
+    ),
     "serenity": OkinBeddingApp(
         prefix="serenity",
         label="Serenity",
@@ -363,17 +378,20 @@ class OkinBeddingAppController(OkinCstController):
             for service in client.services or ()
             if service.uuid.lower() == "0000180a-0000-1000-8000-00805f9b34fb"
             for char in service.characteristics
-            if char.uuid.lower() == _MANUFACTURER and "read" in char.properties
+            if char.uuid.lower() == self._app.information_uuid and "read" in char.properties
         ]
         if len(matches) != 1:
             return
         try:
             async with asyncio.timeout(2):
                 async with self._ble_lock:
-                    value = await client.read_gatt_char(_MANUFACTURER)
+                    value = await client.read_gatt_char(self._app.information_uuid)
             manufacturer = bytes(value).decode("utf-8", errors="replace")
         except BleakError, OSError, TimeoutError:
             return  # Missing diagnostic information does not block control.
+        if self._app.information_log_only:
+            _LOGGER.debug("%s device information: %s", self._app.label, bytes(value).hex())
+            return
         self._manufacturer_read(manufacturer)
         self._publish({"manufacturer": manufacturer})
 
@@ -477,7 +495,8 @@ class OkinBeddingAppController(OkinCstController):
                     try:
                         await self.write_command(
                             codec.frame96(primary, secondary),
-                            repeat_count=self.timed_move_repeat_count(
+                            repeat_count=(duration_ms + CST_REFRESH_MS - 1) // CST_REFRESH_MS
+                            if self._app.exact_duration else self.timed_move_repeat_count(
                                 duration_ms, CST_REFRESH_MS
                             ),
                             repeat_delay_ms=CST_REFRESH_MS,
@@ -485,6 +504,10 @@ class OkinBeddingAppController(OkinCstController):
                     except TimeoutError:
                         controller_timeout = True
                         raise
+                    if self._app.exact_duration:
+                        # Keep the final press until release/deadline, and
+                        # let cancellation end it immediately.
+                        await self._coordinator.cancel_command.wait()
             except TimeoutError:
                 if controller_timeout or not deadline.expired():
                     raise

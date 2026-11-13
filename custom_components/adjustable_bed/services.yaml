@@ -365,6 +365,8 @@ timed_move:
               value: feet
             - label: Head and Foot Together
               value: both
+            - label: Neck
+              value: neck
             - label: Tilt
               value: tilt
             - label: Lumbar
@@ -3345,6 +3347,25 @@ jalon_set_alarm:
         select:
           options: [both, left, right]
 
+comfy_control:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      default: both
+      selector:
+        select:
+          options: [left, right, both]
+    action:
+      required: true
+      selector:
+        select:
+          options: [zero, h_increase, h_decrease, f_increase, f_decrease, timer_start, timer_stop, lock, unlock, query]
+
 rize_program_preset:
   fields:
     device_id:
@@ -3855,3 +3876,675 @@ jalon_bed_set_alarm:
       selector:
         select:
           options: [both, left, right]
+
+smart_sleep_set_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+    enabled:
+      required: true
+      selector:
+        boolean:
+    time:
+      selector:
+        time:
+    weekdays:
+      default: []
+      selector:
+        select:
+          multiple: true
+          options:
+            - {value: "0", label: Monday}
+            - {value: "1", label: Tuesday}
+            - {value: "2", label: Wednesday}
+            - {value: "3", label: Thursday}
+            - {value: "4", label: Friday}
+            - {value: "5", label: Saturday}
+            - {value: "6", label: Sunday}
+    week_mask:
+      selector:
+        number:
+          min: 0
+          max: 255
+          step: 1
+          mode: box
+    action:
+      default: memory_1
+      selector:
+        select:
+          options: [zero_g, initial, lounge, tv, anti_snore, memory_1, memory_2, light, massage, flat, app_zero_g, app_flat, app_memory_1, app_memory_2, app_vibration]
+    flexible_wake:
+      default: false
+      selector:
+        boolean:
+
+comfort_enhancement3_start_massage:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      default: both
+      selector:
+        select:
+          options: [both, left, right]
+    duration:
+      default: 10
+      selector:
+        select:
+          options: ["10", "20", "30"]
+    intensity:
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 3
+          mode: box
+    kind:
+      default: head
+      selector:
+        select:
+          options: [head, feet, both, wave]
+
+comfort_enhancement3_set_wakeup:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      default: both
+      selector:
+        select:
+          options: [both, left, right]
+    slot:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 99
+          mode: box
+    duration:
+      default: 10
+      selector:
+        select:
+          options: ["10", "20", "30"]
+    intensity:
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 3
+          mode: box
+    kind:
+      default: head
+      selector:
+        select:
+          options: [head, feet, both, wave]
+    time:
+      required: true
+      selector:
+        time:
+    next_day:
+      default: false
+      selector:
+        boolean:
+    massage:
+      default: false
+      selector:
+        boolean:
+    light:
+      default: false
+      selector:
+        boolean:
+    preset:
+      default: None
+      selector:
+        select:
+          options: ["None", M1, M2, Zero Gravity, TV, QS]
+
+comfort_enhancement3_delete_wakeup:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      default: both
+      selector:
+        select:
+          options: [both, left, right]
+    slot:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 99
+          mode: box
+
+n32_motion_bed_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    slot:
+      required: true
+      selector:
+        select:
+          options: ["1", "2", "3"]
+    operation:
+      required: true
+      selector:
+        select:
+          options: [set, disable, delete, query]
+    time:
+      selector:
+        time:
+    weekdays:
+      selector:
+        select:
+          multiple: true
+          options: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+    mode:
+      selector:
+        select:
+          options: [none, m1, m2, m3, flat]
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+symphony_set_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      default: both
+      selector:
+        select:
+          options:
+            - both
+            - left
+            - right
+    enabled:
+      required: true
+      selector:
+        boolean:
+    time:
+      selector:
+        time:
+    wake_mode:
+      default: none
+      selector:
+        select:
+          options:
+            - none
+            - memory_1
+            - memory_2
+
+symphony_sense_set_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      default: both
+      selector:
+        select:
+          options: [both, left, right]
+    enabled:
+      required: true
+      selector:
+        boolean:
+    time:
+      selector:
+        time:
+    weekdays:
+      default: []
+      selector:
+        select:
+          multiple: true
+          options:
+            - {value: '1', label: Monday}
+            - {value: '2', label: Tuesday}
+            - {value: '3', label: Wednesday}
+            - {value: '4', label: Thursday}
+            - {value: '5', label: Friday}
+            - {value: '6', label: Saturday}
+            - {value: '7', label: Sunday}
+    wake_mode:
+      selector:
+        select:
+          options: [zero_g, flat, memory_1, memory_2, massage, reading, tv, anti_snore, light]
+
+symphony_set_light:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      default: both
+      selector:
+        select:
+          options: [both, left, right]
+    color:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 7
+          mode: box
+    brightness:
+      required: true
+      selector:
+        number:
+          min: 20
+          max: 80
+          mode: box
+
+symphony_anti_snore:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      default: both
+      selector:
+        select:
+          options: [both, left, right]
+    enabled:
+      required: true
+      selector:
+        boolean:
+    axis:
+      default: head
+      selector:
+        select:
+          options: [head, elevation]
+    strength:
+      default: 1
+      selector:
+        select:
+          options:
+            - {value: '1', label: Low}
+            - {value: '2', label: SoundWave medium}
+            - {value: '3', label: Legacy medium / SoundWave high}
+            - {value: '6', label: Legacy high}
+    demo:
+      default: false
+      selector:
+        boolean:
+
+symphony_preset:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      default: both
+      selector:
+        select:
+          options: [both, left, right]
+    preset:
+      required: true
+      selector:
+        select:
+          options: [zero_g, flat, memory_1, memory_2, reading, tv, anti_snore]
+    save:
+      default: false
+      selector:
+        boolean:
+yamada_set_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [left, right, both]
+    slot:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 2
+          step: 1
+          mode: box
+    enabled:
+      required: true
+      selector:
+        boolean:
+    time:
+      required: true
+      selector:
+        time:
+    weekday:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 255
+          step: 1
+          mode: box
+    preset:
+      required: true
+      selector:
+        select:
+          options: [memory_1, anti_snore, zero_g, tv, flat]
+
+bedgear:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+    operation:
+      required: true
+      selector:
+        select:
+          options: [rgb, light_timer, alarm, sync_mode, toggle_sync, save_snore, save_memory]
+    rgb:
+      selector:
+        object:
+    brightness:
+      default: 1
+      selector:
+        number:
+          min: 0
+          max: 1
+          step: 0.01
+          mode: slider
+    minutes:
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 1439
+          step: 1
+          unit_of_measurement: min
+          mode: box
+    time:
+      example: "07:30"
+      selector:
+        text:
+    strength:
+      selector:
+        number:
+          min: 0
+          max: 2
+          step: 1
+          mode: slider
+    wired:
+      default: false
+      selector:
+        boolean:
+    confirm:
+      default: false
+      selector:
+        boolean:
+    slot:
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 2
+          step: 1
+          mode: box
+    recall_on_release:
+      default: false
+      selector:
+        boolean:
+
+richmat_resource_bed:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    operation:
+      required: true
+      selector:
+        select:
+          options: [query, alarm, cancel_alarm, rgb, lamp_timeout, massage_timer, bed_command]
+    side:
+      selector:
+        select:
+          options: [left, right, both]
+    actions:
+      selector:
+        object:
+    time:
+      selector:
+        time:
+    rgb_color:
+      selector:
+        color_rgb:
+    seconds:
+      selector:
+        number:
+          min: 0
+          max: 300
+          step: 1
+          mode: box
+          unit_of_measurement: s
+    progress:
+      selector:
+        number:
+          min: 0
+          max: 5
+          step: 1
+          mode: box
+    command:
+      selector:
+        select:
+          options: [head_up, head_down, foot_up, foot_down, tv, lounge, zero_gravity, anti_snore, memory_one, memory_two, memory_three, flat, voice_stop_request]
+    duration_ms:
+      default: 1000
+      selector:
+        number:
+          min: 1
+          max: 60000
+          step: 1
+          mode: box
+          unit_of_measurement: ms
+
+mline_command:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+    action:
+      required: true
+      selector:
+        select:
+          options: [privacy, anti_snore, anti_snore_demo, settings_refresh, alarm_refresh, live_query, history_read, history_ack]
+    enabled:
+      default: true
+      selector:
+        boolean:
+    angle:
+      default: 1
+      selector:
+        select:
+          options:
+            - {value: "1", label: Low}
+            - {value: "3", label: Medium}
+            - {value: "6", label: High}
+    position:
+      default: 1
+      selector:
+        select:
+          options:
+            - {value: "1", label: Head}
+            - {value: "2", label: Elevation}
+    all_records:
+      default: false
+      selector:
+        boolean:
+    transfer:
+      selector:
+        text:
+
+mline_set_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+    enabled:
+      required: true
+      selector:
+        boolean:
+    time:
+      selector:
+        time:
+    weekdays:
+      selector:
+        select:
+          multiple: true
+          options:
+            - {value: "0", label: Monday}
+            - {value: "1", label: Tuesday}
+            - {value: "2", label: Wednesday}
+            - {value: "3", label: Thursday}
+            - {value: "4", label: Friday}
+            - {value: "5", label: Saturday}
+            - {value: "6", label: Sunday}
+    wake_mode:
+      default: zg
+      selector:
+        select:
+          options: [zg, flat, m1, m2, vibration, antisnore]
+
+sonicsleep:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options:
+          - both
+          - left
+          - right
+    operation:
+      required: true
+      selector:
+        select:
+          options:
+          - list
+          - new
+          - edit
+          - toggle
+          - delete
+          - link_name
+          - sync_clock
+    alarm_id:
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
+    hour:
+      default: 6
+      selector:
+        number:
+          min: 0
+          max: 23
+          mode: box
+    minute:
+      default: 30
+      selector:
+        number:
+          min: 0
+          max: 59
+          mode: box
+    mode:
+      default: zero_gravity
+      selector:
+        select:
+          options:
+          - zero_gravity
+          - lounge
+          - tv
+          - anti_snore
+          - memory_1
+          - memory_2
+    weekdays:
+      selector:
+        select:
+          multiple: true
+          options:
+          - '0'
+          - '1'
+          - '2'
+          - '3'
+          - '4'
+          - '5'
+          - '6'
+    enabled:
+      default: true
+      selector:
+        boolean: null

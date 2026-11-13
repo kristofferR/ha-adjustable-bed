@@ -352,7 +352,10 @@
           "serta_mp_memory_3_head": "Local memory 3, head angle",
           "serta_mp_memory_3_foot": "Local memory 3, foot angle",
           "serta_mp_memory_4_head": "Local memory 4, head angle",
-          "serta_mp_memory_4_foot": "Local memory 4, foot angle"
+          "serta_mp_memory_4_foot": "Local memory 4, foot angle",
+          "comfort_enhancement3_remote_code": "Exact remote code",
+          "symphony_side": "Side for a standalone split-head bed",
+          "mline_child_mode": "Local child mode"
         },
         "data_description": {
           "jiecang_app_layout": "Select the layout configured in the app. The device name and motor count do not identify the layout.",
@@ -419,7 +422,9 @@
           "serta_mp_memory_3_head": "The head angle the app's local memory 3 moves to, in degrees.",
           "serta_mp_memory_3_foot": "The foot angle the app's local memory 3 moves to, in degrees.",
           "serta_mp_memory_4_head": "The head angle the app's local memory 4 moves to, in degrees.",
-          "serta_mp_memory_4_foot": "The foot angle the app's local memory 4 moves to, in degrees."
+          "serta_mp_memory_4_foot": "The foot angle the app's local memory 4 moves to, in degrees.",
+          "comfort_enhancement3_remote_code": "Use the printed code exactly, including capitalization. No spaces are added or removed.",
+          "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target."
         },
         "sections": {
           "advanced": {
@@ -782,7 +787,14 @@
       "richmat_classic_layout": "Choose a layout shipped in the selected app.",
       "motomotion_profile": "Enter a complete MotoMotion Bluetooth local name.",
       "rize_profile": "Select a supported Rize Beds product, signed 32-bit room ID, and valid actuator descriptor.",
-      "rize_unpair_first": "Revert to a standalone bed before selecting a Rize profile without separate side controls."
+      "rize_unpair_first": "Revert to a standalone bed before selecting a Rize profile without separate side controls.",
+      "comfy_profile": "Select bed type 129, 130 or 131, the existing signed room ID, and the capability word.",
+      "comfy_unpair_first": "Revert to a standalone bed before choosing a product without separate side controls.",
+      "apex_remote_required": "Choose the remote printed on the bed controller or enter its exact code.",
+      "apex_remote_code": "This exact remote code is not supported. Check capitalization and spaces.",
+      "symphony_profile": "Choose a Symphony Sleep Sense product and BLE selector. The advertisement does not identify the product.",
+      "symphony_unpair_first": "Restore the standalone bed before selecting a product without split-side controls.",
+      "bedgear_profile": "Enter the exact Bedgear Bluetooth local name: 14 UTF-16 units, containing uppercase HHC."
     }
   },
   "options": {
@@ -904,7 +916,10 @@
           "serta_mp_memory_3_head": "Local memory 3, head angle",
           "serta_mp_memory_3_foot": "Local memory 3, foot angle",
           "serta_mp_memory_4_head": "Local memory 4, head angle",
-          "serta_mp_memory_4_foot": "Local memory 4, foot angle"
+          "serta_mp_memory_4_foot": "Local memory 4, foot angle",
+          "comfort_enhancement3_remote_code": "Exact remote code",
+          "symphony_side": "Side for a standalone split-head bed",
+          "mline_child_mode": "Local child mode"
         },
         "data_description": {
           "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
@@ -973,7 +988,8 @@
           "sleepys_elite_selector": "Choose the selector saved for this physical bed. Paired sides keep their selector independently.",
           "richmat_classic_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes.",
           "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
-          "starcode_m1x12_profile": "Choose the profile matching the exact Bluetooth name; this app choice is never inferred from shared services or manufacturer data."
+          "starcode_m1x12_profile": "Choose the profile matching the exact Bluetooth name; this app choice is never inferred from shared services or manufacturer data.",
+          "comfort_enhancement3_remote_code": "Use the printed code exactly, including capitalization. No spaces are added or removed."
         }
       },
       "remove_bond": {
@@ -1116,7 +1132,10 @@
           "serta_mp_memory_3_head": "Local memory 3, head angle",
           "serta_mp_memory_3_foot": "Local memory 3, foot angle",
           "serta_mp_memory_4_head": "Local memory 4, head angle",
-          "serta_mp_memory_4_foot": "Local memory 4, foot angle"
+          "serta_mp_memory_4_foot": "Local memory 4, foot angle",
+          "comfort_enhancement3_remote_code": "Exact remote code",
+          "symphony_side": "Side for a standalone split-head bed",
+          "mline_child_mode": "Local child mode"
         },
         "data_description": {
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
@@ -1163,7 +1182,8 @@
           "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
           "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
           "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
-          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector."
+          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector.",
+          "comfort_enhancement3_remote_code": "Use the printed code exactly, including capitalization. No spaces are added or removed."
         }
       },
       "right_settings": {
@@ -1252,7 +1272,10 @@
           "serta_mp_memory_3_head": "Local memory 3, head angle",
           "serta_mp_memory_3_foot": "Local memory 3, foot angle",
           "serta_mp_memory_4_head": "Local memory 4, head angle",
-          "serta_mp_memory_4_foot": "Local memory 4, foot angle"
+          "serta_mp_memory_4_foot": "Local memory 4, foot angle",
+          "comfort_enhancement3_remote_code": "Exact remote code",
+          "symphony_side": "Side for a standalone split-head bed",
+          "mline_child_mode": "Local child mode"
         },
         "data_description": {
           "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
@@ -1299,7 +1322,8 @@
           "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
           "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
           "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
-          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector."
+          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector.",
+          "comfort_enhancement3_remote_code": "Use the printed code exactly, including capitalization. No spaces are added or removed."
         }
       },
       "change_app": {
@@ -1471,7 +1495,13 @@
       "migration_reconfigure_required": "To change the app or layout, close Configure and select Reconfigure from this entry's three-dot menu. The guided change checks it before saving.",
       "richmat_classic_layout": "Choose a layout shipped in the selected app.",
       "rize_profile": "Select a supported Rize Beds product, signed 32-bit room ID, and valid actuator descriptor.",
-      "rize_unpair_first": "Revert to a standalone bed before selecting a Rize profile without separate side controls."
+      "rize_unpair_first": "Revert to a standalone bed before selecting a Rize profile without separate side controls.",
+      "comfy_profile": "Select bed type 129, 130 or 131, the existing signed room ID, and the capability word.",
+      "comfy_unpair_first": "Revert to a standalone bed before choosing a product without separate side controls.",
+      "apex_remote_required": "Choose the remote printed on the bed controller or enter its exact code.",
+      "apex_remote_code": "This exact remote code is not supported. Check capitalization and spaces.",
+      "symphony_profile": "Choose a Symphony Sleep Sense product and BLE selector. The advertisement does not identify the product.",
+      "symphony_unpair_first": "Restore the standalone bed before selecting a product without split-side controls."
     },
     "progress": {
       "connecting": "Connecting over Bluetooth…",
@@ -3000,6 +3030,324 @@
       },
       "jalon_bed_massage_timer": {
         "name": "Cycle massage timer"
+      },
+      "rize_home_timer": {
+        "name": "Cycle massage timer"
+      },
+      "rize_home_query": {
+        "name": "Refresh massage state"
+      },
+      "rize_home_motion_on": {
+        "name": "Enable motion sensor (6 seconds)"
+      },
+      "rize_home_motion_off": {
+        "name": "Disable motion sensor (6 seconds)"
+      },
+      "rize_home_reset_memories": {
+        "name": "Reset programmed presets (6 seconds)"
+      },
+      "rize_home_save_reading": {
+        "name": "Save Reading (6 seconds)"
+      },
+      "rize_home_save_memory": {
+        "name": "Save Memory (6 seconds)"
+      },
+      "rize_home_save_anti_snore": {
+        "name": "Save Anti-snore (6 seconds)"
+      },
+      "rize_home_save_leisure": {
+        "name": "Save Leisure (6 seconds)"
+      },
+      "rize_home_save_zero_g": {
+        "name": "Save Zero gravity (6 seconds)"
+      },
+      "motionbed_preset_stop": {
+        "name": "Stop preset"
+      },
+      "motionbed_light_parameter_0": {
+        "name": "Bed light parameter 0"
+      },
+      "motionbed_light_parameter_1": {
+        "name": "Bed light parameter 1"
+      },
+      "motionbed_release": {
+        "name": "Release held control"
+      },
+      "motionbed_middle_up": {
+        "name": "Middle controls (lumbar icon) up"
+      },
+      "motionbed_middle_down": {
+        "name": "Middle controls (lumbar icon) down"
+      },
+      "comfy_zero": {
+        "name": "Zero (app preset)"
+      },
+      "comfy_h_increase": {
+        "name": "H increase (app step)"
+      },
+      "comfy_h_decrease": {
+        "name": "H decrease (app step)"
+      },
+      "comfy_f_increase": {
+        "name": "F increase (app step)"
+      },
+      "comfy_f_decrease": {
+        "name": "F decrease (app step)"
+      },
+      "comfy_timer_start": {
+        "name": "App timer start"
+      },
+      "comfy_timer_stop": {
+        "name": "App timer stop"
+      },
+      "comfy_lock": {
+        "name": "Lock controls"
+      },
+      "comfy_unlock": {
+        "name": "Unlock controls"
+      },
+      "comfy_query": {
+        "name": "Query lock status"
+      },
+      "comfy_head_up": {
+        "name": "Head up (app control)"
+      },
+      "comfy_head_down": {
+        "name": "Head down (app control)"
+      },
+      "comfy_foot_up": {
+        "name": "Foot up (app control)"
+      },
+      "comfy_foot_down": {
+        "name": "Foot down (app control)"
+      },
+      "comfy_waist_up": {
+        "name": "Waist up (app control)"
+      },
+      "comfy_waist_down": {
+        "name": "Waist down (app control)"
+      },
+      "smart_sleep_refresh": {
+        "name": "Refresh bed state"
+      },
+      "smart_sleep_flat": {
+        "name": "Flat"
+      },
+      "smart_sleep_zero_g": {
+        "name": "Zero G"
+      },
+      "smart_sleep_read": {
+        "name": "Read"
+      },
+      "smart_sleep_tv": {
+        "name": "Tv"
+      },
+      "smart_sleep_anti_snore": {
+        "name": "Anti Snore"
+      },
+      "smart_sleep_ai_zero": {
+        "name": "Ai Zero"
+      },
+      "smart_sleep_save_zero_g": {
+        "name": "Save Zero G"
+      },
+      "smart_sleep_save_read": {
+        "name": "Save Read"
+      },
+      "smart_sleep_save_tv": {
+        "name": "Save Tv"
+      },
+      "smart_sleep_save_anti_snore": {
+        "name": "Save Anti Snore"
+      },
+      "smart_sleep_massage_all": {
+        "name": "Massage all"
+      },
+      "smart_sleep_massage_off": {
+        "name": "Massage off"
+      },
+      "smart_sleep_massage_wave": {
+        "name": "Massage wave"
+      },
+      "smart_sleep_massage_timer": {
+        "name": "Massage timer"
+      },
+      "smart_sleep_massage_head_strength": {
+        "name": "Massage head strength"
+      },
+      "smart_sleep_massage_foot_strength": {
+        "name": "Massage foot strength"
+      },
+      "smart_sleep_head_up": {
+        "name": "Head up (app)"
+      },
+      "smart_sleep_head_down": {
+        "name": "Head down (app)"
+      },
+      "smart_sleep_foot_up": {
+        "name": "Foot up (app)"
+      },
+      "smart_sleep_foot_down": {
+        "name": "Foot down (app)"
+      },
+      "smart_sleep_headrest_up": {
+        "name": "Headrest up (app)"
+      },
+      "smart_sleep_headrest_down": {
+        "name": "Headrest down (app)"
+      },
+      "smart_sleep_lumbar_up": {
+        "name": "Lumbar up (app)"
+      },
+      "smart_sleep_lumbar_down": {
+        "name": "Lumbar down (app)"
+      },
+      "smart_sleep_hips_up": {
+        "name": "Hips up (app)"
+      },
+      "smart_sleep_hips_down": {
+        "name": "Hips down (app)"
+      },
+      "rize_remedy_ii_wave_1": {
+        "name": "Massage wave 1"
+      },
+      "rize_remedy_ii_wave_2": {
+        "name": "Massage wave 2"
+      },
+      "rize_remedy_ii_wave_3": {
+        "name": "Massage wave 3"
+      },
+      "apex_group": {
+        "name": "{action}"
+      },
+      "apex_tilt": {
+        "name": "Tilt"
+      },
+      "apex_massage_duration": {
+        "name": "Cycle massage duration"
+      },
+      "apex_massage_wave": {
+        "name": "Wave massage"
+      },
+      "apex_qs": {
+        "name": "{action}"
+      },
+      "apex_massage_both": {
+        "name": "Step Head + Feet massage"
+      },
+      "n32_relax": {
+        "name": "Relax"
+      },
+      "n32_refresh_alarms": {
+        "name": "Refresh bed alarms"
+      },
+      "n32_upper_up": {
+        "name": "Upper up"
+      },
+      "n32_upper_down": {
+        "name": "Upper down"
+      },
+      "n32_lower_up": {
+        "name": "Lower up"
+      },
+      "n32_lower_down": {
+        "name": "Lower down"
+      },
+      "n32_cervical_up": {
+        "name": "Cervical up"
+      },
+      "n32_cervical_down": {
+        "name": "Cervical down"
+      },
+      "symphony_query_alarm": {
+        "name": "Refresh bed alarm"
+      },
+      "symphony_sync_clock": {
+        "name": "Sync bed clock"
+      },
+      "symphony_utility_action": {
+        "name": "{action}"
+      },
+      "symphony_presets_action": {
+        "name": "{action}"
+      },
+      "symphony_lighting_action": {
+        "name": "{action}"
+      },
+      "symphony_massage_action": {
+        "name": "{action}"
+      },
+      "symphony_head_up": {
+        "name": "Head up"
+      },
+      "symphony_head_down": {
+        "name": "Head down"
+      },
+      "symphony_feet_up": {
+        "name": "Foot up"
+      },
+      "symphony_feet_down": {
+        "name": "Foot down"
+      },
+      "symphony_neck_up": {
+        "name": "Neck tilt up"
+      },
+      "symphony_neck_down": {
+        "name": "Neck tilt down"
+      },
+      "symphony_lumbar_up": {
+        "name": "Lumbar up"
+      },
+      "symphony_lumbar_down": {
+        "name": "Lumbar down"
+      },
+      "symphony_elevation_up": {
+        "name": "Elevation up"
+      },
+      "symphony_elevation_down": {
+        "name": "Elevation down"
+      },
+      "symphony_head_foot_up": {
+        "name": "Head and foot up"
+      },
+      "symphony_head_foot_down": {
+        "name": "Head and foot down"
+      },
+      "symphony_head_foot_lift_up": {
+        "name": "Head and foot lifting up"
+      },
+      "symphony_head_foot_lift_down": {
+        "name": "Head and foot lifting down"
+      },
+      "yamada_sync_clock": {
+        "name": "Sync bed clock"
+      },
+      "yamada_query_alarms": {
+        "name": "Refresh bed alarms"
+      },
+      "bedgear_release": {
+        "name": "Release control"
+      },
+      "bedgear_massage": {
+        "name": "{action}"
+      },
+      "bedgear_light_toggle": {
+        "name": "Light toggle"
+      },
+      "bedgear_actuator_up": {
+        "name": "Actuator up"
+      },
+      "bedgear_actuator_down": {
+        "name": "Actuator down"
+      },
+      "bedgear_combined_up": {
+        "name": "Head and foot up"
+      },
+      "bedgear_combined_down": {
+        "name": "Head and foot down"
+      },
+      "sonicsleep_action": {
+        "name": "{action}"
       }
     },
     "cover": {
@@ -3266,6 +3614,69 @@
       },
       "richmat_app_tilt2": {
         "name": "Tilt 2"
+      },
+      "motionbed_middle": {
+        "name": "Middle controls (lumbar icon)"
+      },
+      "comfy_head": {
+        "name": "Head (app control)"
+      },
+      "comfy_foot": {
+        "name": "Foot (app control)"
+      },
+      "comfy_waist": {
+        "name": "Waist (app control)"
+      },
+      "smart_sleep_head": {
+        "name": "Head (app)"
+      },
+      "smart_sleep_foot": {
+        "name": "Foot (app)"
+      },
+      "smart_sleep_headrest": {
+        "name": "Headrest (app)"
+      },
+      "smart_sleep_lumbar": {
+        "name": "Lumbar (app)"
+      },
+      "smart_sleep_hips": {
+        "name": "Hips (app)"
+      },
+      "n32_upper": {
+        "name": "Upper"
+      },
+      "n32_lower": {
+        "name": "Lower"
+      },
+      "n32_cervical": {
+        "name": "Cervical"
+      },
+      "symphony_head": {
+        "name": "Head"
+      },
+      "symphony_feet": {
+        "name": "Foot"
+      },
+      "symphony_neck": {
+        "name": "Neck tilt"
+      },
+      "symphony_lumbar": {
+        "name": "Lumbar"
+      },
+      "symphony_elevation": {
+        "name": "Elevation"
+      },
+      "symphony_head_foot": {
+        "name": "Head and foot"
+      },
+      "symphony_head_foot_lift": {
+        "name": "Head and foot lifting"
+      },
+      "bedgear_actuator": {
+        "name": "Actuator"
+      },
+      "bedgear_combined": {
+        "name": "Head and foot"
       }
     },
     "sensor": {
@@ -4702,6 +5113,131 @@
       },
       "jalon_massage_timer_bucket": {
         "name": "Massage timer indicator"
+      },
+      "rize_home_timer_index": {
+        "name": "Massage timer index"
+      },
+      "rize_home_combined_intensity": {
+        "name": "Combined massage intensity"
+      },
+      "rize_home_head_intensity": {
+        "name": "Head massage intensity"
+      },
+      "rize_home_foot_intensity": {
+        "name": "Foot massage intensity"
+      },
+      "rize_home_mode": {
+        "name": "Massage mode"
+      },
+      "comfy_lock_status": {
+        "name": "App control lock",
+        "state": {
+          "unlocked": "Unlocked",
+          "local": "Locally owned",
+          "other": "Owned by another controller"
+        }
+      },
+      "comfy_timer_remaining": {
+        "name": "Local app timer remaining"
+      },
+      "smart_sleep_model": {
+        "name": "App model ID"
+      },
+      "smart_sleep_alarm_week": {
+        "name": "Alarm week mask"
+      },
+      "smart_sleep_alarm_action": {
+        "name": "Alarm action"
+      },
+      "smart_sleep_alarm_time": {
+        "name": "Alarm time"
+      },
+      "smart_sleep_light_brightness": {
+        "name": "Light brightness (reported)"
+      },
+      "smart_sleep_ai_status": {
+        "name": "AI-zero status"
+      },
+      "smart_sleep_ai_score": {
+        "name": "AI-zero score"
+      },
+      "rize_remedy_ii_save_acknowledged": {
+        "name": "Save acknowledgment code"
+      },
+      "apex_local_massage_end": {
+        "name": "Local massage end (estimated)"
+      },
+      "apex_firmware": {
+        "name": "Firmware version"
+      },
+      "n32_alarm_1": {
+        "name": "Bed alarm 1"
+      },
+      "n32_alarm_2": {
+        "name": "Bed alarm 2"
+      },
+      "n32_alarm_3": {
+        "name": "Bed alarm 3"
+      },
+      "symphony_massage_minutes": {
+        "name": "Massage time"
+      },
+      "symphony_alarm_time": {
+        "name": "Bed alarm time"
+      },
+      "symphony_firmware": {
+        "name": "Bed firmware"
+      },
+      "symphony_protocol": {
+        "name": "Bed protocol identification"
+      },
+      "symphony_alarm": {
+        "name": "Alarm hour"
+      },
+      "symphony_massage": {
+        "name": "Massage timer index"
+      },
+      "yamada_alarm_1": {
+        "name": "Bed alarm 1"
+      },
+      "yamada_alarm_2": {
+        "name": "Bed alarm 2"
+      },
+      "bedgear_rgb": {
+        "name": "Reported RGB"
+      },
+      "bedgear_light_minutes": {
+        "name": "Light shutdown timer"
+      },
+      "bedgear_alarm": {
+        "name": "Alarm time"
+      },
+      "bedgear_alarm_strength": {
+        "name": "Alarm strength"
+      },
+      "bedgear_sync_type": {
+        "name": "Synchronization mode"
+      },
+      "bedgear_sync_state": {
+        "name": "Synchronization state"
+      },
+      "mline_heart": {
+        "name": "Heart signal"
+      },
+      "mline_breath": {
+        "name": "Breathing signal"
+      },
+      "mline_anti_angle": {
+        "name": "Anti-snore angle code"
+      },
+      "mline_alarm": {
+        "name": "Alarm fields"
+      },
+      "mline_alarm_mode": {
+        "name": "Alarm wake mode"
+      },
+      "sonicsleep": {
+        "name": "SonicSleep state"
       }
     },
     "light": {
@@ -5017,6 +5553,42 @@
       },
       "rize_battery_mode": {
         "name": "Battery mode"
+      },
+      "rize_home_active": {
+        "name": "Massage active"
+      },
+      "smart_sleep_massage_on": {
+        "name": "Massage"
+      },
+      "smart_sleep_alarm_on": {
+        "name": "Alarm"
+      },
+      "smart_sleep_flexible_wake": {
+        "name": "Flexible wake"
+      },
+      "symphony_alarm_enabled": {
+        "name": "Bed alarm enabled"
+      },
+      "symphony_privacy": {
+        "name": "Privacy"
+      },
+      "symphony_anti_snore": {
+        "name": "Automatic anti-snore"
+      },
+      "symphony_light_on": {
+        "name": "Underbed light"
+      },
+      "mline_motion": {
+        "name": "Motion"
+      },
+      "mline_boolean_projection": {
+        "name": "Sensor Boolean projection"
+      },
+      "mline_privacy": {
+        "name": "Privacy mode"
+      },
+      "mline_anti_enabled": {
+        "name": "Anti-snore enabled"
       }
     },
     "number": {
@@ -5292,6 +5864,18 @@
       },
       "richmat_rise_lamp_seconds": {
         "name": "Lamp timer"
+      },
+      "symphony_light_color": {
+        "name": "Light color code"
+      },
+      "symphony_light_brightness": {
+        "name": "Light brightness"
+      },
+      "richmat_resource_lamp_timeout": {
+        "name": "Light timeout request"
+      },
+      "richmat_resource_massage_timer": {
+        "name": "Massage timer request"
       }
     },
     "select": {
@@ -6018,6 +6602,58 @@
           "right": "Right",
           "both": "Both"
         }
+      },
+      "rize_home_source": {
+        "name": "Rize Home command source",
+        "state": {
+          "button": "Button",
+          "speak": "Speech"
+        }
+      },
+      "comfy_selected_side": {
+        "name": "App bed side",
+        "state": {
+          "left": "Left",
+          "both": "Both",
+          "right": "Right"
+        }
+      },
+      "comfy_timer_selection": {
+        "name": "App timer selection",
+        "state": {
+          "10": "10 minutes",
+          "20": "20 minutes",
+          "30": "30 minutes",
+          "40": "40 minutes",
+          "50": "50 minutes"
+        }
+      },
+      "smart_sleep_child_mode": {
+        "name": "Child mode (Home Assistant)"
+      },
+      "smart_sleep_privacy": {
+        "name": "Privacy"
+      },
+      "smart_sleep_antisnore": {
+        "name": "Automatic antisnore"
+      },
+      "smart_sleep_sensitivity": {
+        "name": "Antisnore sensitivity"
+      },
+      "smart_sleep_wave": {
+        "name": "Massage wave"
+      },
+      "smart_sleep_head_strength": {
+        "name": "Head massage strength"
+      },
+      "smart_sleep_foot_strength": {
+        "name": "Foot massage strength"
+      },
+      "smart_sleep_timer": {
+        "name": "Massage timer option"
+      },
+      "symphony_child_mode": {
+        "name": "Local child mode"
       }
     },
     "climate": {
@@ -8827,6 +9463,507 @@
           "name": "Paired bed side"
         }
       }
+    },
+    "comfy_control": {
+      "name": "KomfyD/ComfyDS control",
+      "description": "Run a named bed action. H/F and timer effects have unverified physical semantics.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "action": {
+          "name": "Action"
+        }
+      }
+    },
+    "smart_sleep_set_alarm": {
+      "name": "Set OKIN Smart Sleep alarm",
+      "description": "Configure a bed-local alarm after validating every target.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "One or more Smart Sleep beds."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Physical side of a paired entry."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Enable or disable the alarm."
+        },
+        "time": {
+          "name": "Time",
+          "description": "Local alarm time, in whole minutes."
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "Monday 0 through Sunday 6."
+        },
+        "week_mask": {
+          "name": "Exact week mask",
+          "description": "Optional raw app mask, overrides weekday conversion."
+        },
+        "action": {
+          "name": "Action",
+          "description": "Format-specific wire action or original app label."
+        },
+        "flexible_wake": {
+          "name": "Flexible wake",
+          "description": "Legacy model 67 only."
+        }
+      }
+    },
+    "comfort_enhancement3_start_massage": {
+      "name": "Start Comfort Enhancement 3 massage",
+      "description": "Start a relative massage program. Values are app choices, not measured bed state.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "duration": {
+          "name": "Massage duration (minutes)"
+        },
+        "intensity": {
+          "name": "Relative intensity steps"
+        },
+        "kind": {
+          "name": "Massage area or Wave"
+        }
+      }
+    },
+    "comfort_enhancement3_set_wakeup": {
+      "name": "Set Comfort Enhancement 3 wake-up",
+      "description": "Replace one bed wake-up program. Available effects depend on the selected remote.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "slot": {
+          "name": "Slot identifier",
+          "description": "0..99 is the wire formatter domain, not the bed capacity. Use the same identifier to edit or delete."
+        },
+        "duration": {
+          "name": "Massage duration (minutes)"
+        },
+        "intensity": {
+          "name": "Relative intensity steps"
+        },
+        "kind": {
+          "name": "Massage area or Wave"
+        },
+        "time": {
+          "name": "Time",
+          "description": "Minute precision, on the explicitly selected current or next day."
+        },
+        "next_day": {
+          "name": "Use tomorrow"
+        },
+        "massage": {
+          "name": "Include massage"
+        },
+        "light": {
+          "name": "Toggle under-bed light"
+        },
+        "preset": {
+          "name": "Preset"
+        }
+      }
+    },
+    "comfort_enhancement3_delete_wakeup": {
+      "name": "Delete Comfort Enhancement 3 wake-up",
+      "description": "Remove one bed wake-up program by its original slot identifier.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "slot": {
+          "name": "Slot identifier",
+          "description": "0..99 is the wire formatter domain, not the bed capacity. Use the same identifier to edit or delete."
+        }
+      }
+    },
+    "n32_motion_bed_alarm": {
+      "name": "N32 Motion Bed alarm",
+      "description": "Set, disable, delete or query one of the three bed alarm slots. Set requires all alarm fields. Empty weekdays schedules the next occurrence. Hardware remains unverified.",
+      "fields": {
+        "device_id": {
+          "name": "Bed",
+          "description": "The configured N32 physical bed or paired side."
+        },
+        "slot": {
+          "name": "Slot",
+          "description": "App-supported alarm slot 1, 2 or 3."
+        },
+        "operation": {
+          "name": "Operation",
+          "description": "Set uses complete fields. Disable preserves a fresh reported alarm. Delete clears the slot. Query refreshes it."
+        },
+        "time": {
+          "name": "Time",
+          "description": "Local bed alarm time, with minute precision. Required for set."
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "Required for set. Empty means once at the next occurrence; selected days recur weekly."
+        },
+        "mode": {
+          "name": "Mode",
+          "description": "Required for set. None, M1, M2, M3 or Flat. Music and phone notifications are separate."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which physical bed in a two-address pair receives the action."
+        }
+      }
+    },
+    "symphony_set_alarm": {
+      "name": "Symphony Sleep: set bed alarm",
+      "description": "Configure the single daily bed alarm, after syncing its clock. A and B are memory positions.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "Symphony Sleep bed."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Side of a combined two-address bed."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Enable or cancel the bed alarm."
+        },
+        "time": {
+          "name": "Time",
+          "description": "Required when enabling, with minute precision."
+        },
+        "wake_mode": {
+          "name": "Wake position",
+          "description": "None, Memory A or Memory B."
+        }
+      }
+    },
+    "symphony_set_light": {
+      "name": "Set Symphony light",
+      "description": "Set both light parameters explicitly, without replacing unknown companion state. ES700 and SS800 only.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "color": {
+          "name": "Color code (1–7)"
+        },
+        "brightness": {
+          "name": "Brightness (20–80)"
+        }
+      }
+    },
+    "symphony_anti_snore": {
+      "name": "Configure Symphony anti-snore",
+      "description": "Configure Head or Elevation. Legacy strengths are 1, 3 and 6; SoundWave strengths are 1, 2 and 3.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "axis": {
+          "name": "Actuator"
+        },
+        "strength": {
+          "name": "Strength"
+        },
+        "demo": {
+          "name": "Run demonstration"
+        }
+      }
+    },
+    "symphony_preset": {
+      "name": "Recall or save Symphony preset",
+      "description": "Recall a preset, or explicitly save it where the product supports programming.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "preset": {
+          "name": "Preset"
+        },
+        "save": {
+          "name": "Save current position"
+        }
+      }
+    },
+    "symphony_sense_set_alarm": {
+      "name": "Set Symphony alarm",
+      "description": "Set or disable the selected bed alarm. Split models require a fresh complete response to preserve the other side. No firmware slot count is assumed.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "time": {
+          "name": "Time"
+        },
+        "weekdays": {
+          "name": "Weekdays (Monday 1 through Sunday 7)"
+        },
+        "wake_mode": {
+          "name": "Wake mode"
+        }
+      }
+    },
+    "yamada_set_alarm": {
+      "name": "Set アシステック bed alarm",
+      "description": "Write an explicit alarm slot on the current bed connection. Refresh bed alarms first; P1 preserves the observed other slot.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "Bed devices to configure."
+        },
+        "side": {
+          "name": "Side",
+          "description": "The configured side of a paired bed."
+        },
+        "slot": {
+          "name": "Alarm slot",
+          "description": "Choose slot 1 or 2 explicitly."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Enable or disable this bed alarm."
+        },
+        "time": {
+          "name": "Time",
+          "description": "Local time, with minute precision. Supply the observed time when disabling."
+        },
+        "weekday": {
+          "name": "Weekday mask",
+          "description": "Sunday bit 0 to Saturday bit 6. Add 128 for recurring days (129–255); 0–128 selects the next occurrence. Ignored when disabling."
+        },
+        "preset": {
+          "name": "Preset",
+          "description": "The alarm position. Supply the observed preset when disabling P2."
+        }
+      }
+    },
+    "bedgear": {
+      "name": "Bedgear settings",
+      "description": "Configure supported Bedgear BED controls. Received values remain unknown until reported by the bed.",
+      "fields": {
+        "device_id": {
+          "name": "Bed",
+          "description": "Bed to control."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Physical side for a two-address pair."
+        },
+        "operation": {
+          "name": "Control",
+          "description": "Choose the supported setting or save action."
+        },
+        "rgb": {
+          "name": "RGB channels",
+          "description": "Three color channels, each 0 to 255."
+        },
+        "brightness": {
+          "name": "Brightness",
+          "description": "Scale the supplied RGB channels from 0 to 1."
+        },
+        "minutes": {
+          "name": "Light shutdown timer",
+          "description": "0 disables; 10 matches the app timer switch; picker range 0 to 1439 minutes."
+        },
+        "time": {
+          "name": "Alarm time",
+          "description": "HH:MM. Omit only to retain a received alarm time."
+        },
+        "strength": {
+          "name": "Alarm strength",
+          "description": "0 off, 1 or 2. Omit only to retain an actually received strength. This is not a weekday or repeat mode."
+        },
+        "wired": {
+          "name": "Wired synchronization",
+          "description": "False selects wireless; true selects wired."
+        },
+        "confirm": {
+          "name": "Confirm synchronization change",
+          "description": "Required for synchronization mode changes."
+        },
+        "slot": {
+          "name": "Memory slot",
+          "description": "Source-supported memory slot, 1 or 2."
+        },
+        "recall_on_release": {
+          "name": "Recall after saving",
+          "description": "Memory save only: also send the source recall frame, matching release before the app rebuild. Default saves only. Snore save does not support this option."
+        }
+      }
+    },
+    "richmat_resource_bed": {
+      "name": "Lady Americana / ACAA / STA Homecare / Zero Gravity",
+      "description": "Control the selected app’s bed features. Query optional light support before changing its color or timeout. App commands do not certify a physical memory slot.",
+      "fields": {
+        "device_id": {
+          "name": "Bed",
+          "description": "Configured bed devices."
+        },
+        "operation": {
+          "name": "Action",
+          "description": "Query features, set or cancel an alarm, change lighting, set a massage timer, or request an app command."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Target one side or both sides of a paired bed."
+        },
+        "actions": {
+          "name": "Alarm actions",
+          "description": "One preset with optional massage choices from this bed’s available alarm actions."
+        },
+        "time": {
+          "name": "Alarm time",
+          "description": "Next occurrence of this local time. An unset or matching time means tomorrow."
+        },
+        "rgb_color": {
+          "name": "Light color",
+          "description": "Red, green and blue values."
+        },
+        "seconds": {
+          "name": "Light timeout",
+          "description": "0 to 300 seconds. Zero requests keep on."
+        },
+        "progress": {
+          "name": "Massage timer choice",
+          "description": "D1RM slider choice from 0 to 5."
+        },
+        "command": {
+          "name": "App command",
+          "description": "A command the app can request independently of the remote layout. Use Stop to release movement."
+        },
+        "duration_ms": {
+          "name": "Hold duration",
+          "description": "Duration for a held head or foot app command."
+        }
+      }
+    },
+    "mline_command": {
+      "name": "M Line action",
+      "description": "Configure Sleep privacy or anti-snore, refresh settings/alarm, or transfer raw sensor history. History requires exactly one physical bed side and an explicit acknowledgement after consumption.",
+      "fields": {
+        "device_id": {
+          "name": "Device Id"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "action": {
+          "name": "Action"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "angle": {
+          "name": "Angle"
+        },
+        "position": {
+          "name": "Position"
+        },
+        "all_records": {
+          "name": "All Records"
+        },
+        "transfer": {
+          "name": "Transfer",
+          "description": "Completed transfer token, acknowledged once on the same live BLE session after the caller consumes the raw result."
+        }
+      }
+    },
+    "mline_set_alarm": {
+      "name": "Set M Line alarm",
+      "description": "Set a bed-local recurring or next-occurrence alarm, or disable it. Mode mappings depend on the selected M Line protocol.",
+      "fields": {
+        "device_id": {
+          "name": "Device Id"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "time": {
+          "name": "Time",
+          "description": "Local time with minute precision."
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "Monday 0 through Sunday 6; empty means the next occurrence."
+        },
+        "wake_mode": {
+          "name": "Wake Mode"
+        }
+      }
+    },
+    "sonicsleep": {
+      "name": "SonicSleep bed settings",
+      "description": "Read alarms, create or edit a form alarm, preserve a received alarm while toggling it, delete an alarm, query the bed link name or sync its clock.",
+      "fields": {
+        "device_id": {
+          "name": "Device id"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "operation": {
+          "name": "Operation"
+        },
+        "alarm_id": {
+          "name": "Alarm id",
+          "description": "Received ID for edit, toggle and delete. New alarms allocate their own ID."
+        },
+        "hour": {
+          "name": "Hour"
+        },
+        "minute": {
+          "name": "Minute"
+        },
+        "mode": {
+          "name": "Mode"
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "Monday is 0 and Sunday is 6. Empty means once; select all seven for every day."
+        },
+        "enabled": {
+          "name": "Enabled"
+        }
+      }
     }
   },
   "exceptions": {
@@ -9635,7 +10772,8 @@
         "remote": "SleepFunction or SVEN & SON app, or a Richmat remote: the remote's code",
         "another": "Another app or remote: search every app",
         "luuna": "Luuna + app (Rise, Rise Pro, Rise Pro Light)",
-        "richmat_420": "Richmat 4.2.0 app"
+        "richmat_420": "Richmat 4.2.0 app",
+        "sonicsleep": "SonicSleep / 소닉슬립 (IQRM)"
       }
     },
     "setup_start": {

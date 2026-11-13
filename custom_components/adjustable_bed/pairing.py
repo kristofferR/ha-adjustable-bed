@@ -32,6 +32,7 @@ from .const import (
     BED_TYPE_CASPER_BASE,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORTBASE,
+    BED_TYPE_COMFYDS,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_ERGOMOTION_4,
     BED_TYPE_ESHINE_OKIN,
@@ -42,6 +43,7 @@ from .const import (
     BED_TYPE_ISLEEP,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
+    BED_TYPE_KOMFYD,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_MLILY,
     BED_TYPE_MOTOMOTION,
@@ -52,6 +54,8 @@ from .const import (
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
     BED_TYPE_SLEEP_NUMBER,
+    BED_TYPE_SYMPHONY,
+    BED_TYPE_YAMADA,
     CB24_BED_SELECTION_A,
     CB24_BED_SELECTION_B,
     COMFORT_ENHANCEMENTS_VARIANTS,
@@ -114,6 +118,7 @@ OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_ADJUSTAMATTRESS: frozenset(v for v in ADJUSTAMATTRESS_VARIANTS if v != VARIANT_AUTO),
     BED_TYPE_COMFORT_ENHANCEMENTS: frozenset(COMFORT_ENHANCEMENTS_VARIANTS),
     BED_TYPE_COMFORTBASE: frozenset(COMFORTBASE_PRODUCTS),
+    BED_TYPE_YAMADA: frozenset({"p1", "p2"}),
     BED_TYPE_GOODVIBE: frozenset(GOODVIBE_PROFILES),
     BED_TYPE_MLILY: frozenset(MLILY_PROFILES),
     BED_TYPE_HJBED: frozenset(HJBED_PROFILES),
@@ -199,11 +204,14 @@ SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
         BED_TYPE_SLEEP_NUMBER,
         BED_TYPE_KAIDI,
         BED_TYPE_ISLEEP,
+        BED_TYPE_KOMFYD,
+        BED_TYPE_COMFYDS,
         BED_TYPE_RIZE,
         BED_TYPE_CASPER_BASE,
         "hush_base",
         BED_TYPE_GMMOTOR,
         BED_TYPE_MOTOMOTION,
+        BED_TYPE_SYMPHONY,
     }
 )
 
@@ -219,6 +227,10 @@ def supports_single_address_pairing(
     """Return whether a bed can expose the Phase 3 single-address surface."""
     if bed_type not in SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES:
         return False
+    if bed_type == BED_TYPE_SYMPHONY:
+        return str(product_type) in {"10", "15"}
+    if bed_type in (BED_TYPE_KOMFYD, BED_TYPE_COMFYDS):
+        return str(product_type) == "130"
     if bed_type == "bedtech":
         return protocol_variant in {"bt3000fh", "btx4fh", "btx5fh"}
     if bed_type == BED_TYPE_MOTOMOTION:

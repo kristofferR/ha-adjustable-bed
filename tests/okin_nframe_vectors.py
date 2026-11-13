@@ -8,9 +8,18 @@ DewertOkin, RF ECO BT, CB24, DOT, Sleepy's legacy CB25, AdjustableM5X4, whose
 report is quarantined) list the frames the pre-v5 controller sent.
 """
 
+
+
+from tests.rize_remedy_ii_vectors import VECTORS as RIZE_REMEDY_II_VECTORS
+
 ESHINE = ("eshine_e2000", "eshine_e30003100", "eshine_e5000")
 
 FROZEN_FRAMES: dict[str, frozenset[str]] = {
+    # com.okin.motionbed 1.0 (2), all sixteen reachable literals.
+    "okin_motionbed": frozenset(['e5fe160000000006', 'e5fe160000000105', 'e5fe160000000204', 'e5fe160000000402', 'e5fe160000000501', 'e5fe1600000008fe', 'e5fe160000000afc', 'e5fe1620000014d2', 'e5fe1620000016d0', 'e5fe1621000000e5', 'e5fe1621000001e4', 'e5fe1621000002e3', 'e5fe1621000004e1', 'e5fe1621000006df', 'e5fe1631000000d5', 'e5fe1631000001d4']),
+    "rize_remedy_ii": frozenset(literal for _, literal in RIZE_REMEDY_II_VECTORS),
+    # Accepted row080 P1, source-backed masks including unreachable individual keys.
+    "n32_motion_bed": frozenset({'05020000002000', '05020000001000', '05024000000000', '05020001000000', '05020000000a00', '05020000000000', '05020000000100', '05020000100000', '05028000000000', '05020000000500', '05020000000800', '05020000800000', '05020000000400', '05020000200000', '05020000008000', '05020004000000', '05020000004000', '05020800000000', '05020000000200', '05020000400000'}),
     # Resident Adjustable Base 1.0.0, unit160, frozen 36_33_01a control literals.
     "resident": frozenset(
         {
@@ -1387,3 +1396,15 @@ SETTING_FRAMES: dict[str, frozenset[str]] = dict.fromkeys(
         }
     ),
 )
+
+# Row083 frozen P1 literals, independently retained in the app fixture. The
+# per-profile gates are checked against the complete accepted variant census.
+_APEX_FRAMES = frozenset({
+    "040200000000", "040200000001", "040200000002", "040200000004", "040200000008",
+    "040200000005", "04020000000a", "040200000010", "040200000020", "040200000040",
+    "040200000080", "040200000050", "0402000000a0", "040200000090", "040200001000",
+    "040200002000", "040200003000", "040200004000", "040200008000", "040200010000",
+    "040200020000", "040200000400", "040200000800", "040200400000", "040280000000",
+    "040210000000", "040202000000",
+})
+FROZEN_FRAMES.update({f"apex_{i}": _APEX_FRAMES for i in range(15)})

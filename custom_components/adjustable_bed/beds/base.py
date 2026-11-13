@@ -1042,6 +1042,10 @@ class BedController(GattWriter):
         """Optional held-control metadata for an existing standard button."""
         return None
 
+    def standard_button_requires_confirmation(self, key: str) -> bool:
+        """Whether the native card confirms a standard button before sending it."""
+        return False
+
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         """Return additional, product-gated actions for the button platform."""
@@ -1081,6 +1085,14 @@ class BedController(GattWriter):
 
     def restore_persisted_app_state(self, state: Mapping[str, Any]) -> None:  # noqa: B027
         """Apply stored app-local state; raise ValueError or TypeError if invalid."""
+
+    def on_app_state_replaced(self) -> None:  # noqa: B027
+        """Retire local callbacks when another controller takes this app-state slot."""
+
+    @property
+    def retain_live_controller_offline(self) -> bool:
+        """Keep the latest app-state owner for offline callbacks and local controls."""
+        return False
 
     @property
     def requests_connection_recovery(self) -> bool:
@@ -2024,6 +2036,10 @@ class BedController(GattWriter):
     ) -> None:
         """Configure a weekly alarm with Monday numbered zero."""
         raise NotImplementedError("Clock alarm not supported on this bed")
+
+    def validate_clock_sync(self) -> None:
+        """Validate profile-specific clock requirements before any target writes."""
+        return None
 
     async def sync_clock(self) -> None:
         """Synchronize the device clock to Home Assistant's local time."""

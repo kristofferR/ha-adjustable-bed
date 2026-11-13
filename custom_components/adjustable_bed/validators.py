@@ -63,6 +63,7 @@ from .const import (
     BED_TYPE_SOLACE,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_SVANE,
+    BED_TYPE_YAMADA,
     BED_TYPE_ZSERIES,
     BEDSENSE_VARIANTS,
     COMFORT_ENHANCEMENTS_VARIANTS,
@@ -96,11 +97,13 @@ from .const import (
     ZSERIES_VARIANTS,
 )
 from .profiles.casper import CASPER_BASE_VARIANTS
+from .profiles.comfort_enhancement3 import CHOICES as APEX_CHOICES
 from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
 from .profiles.hush import HUSH_BASE_VARIANTS
 from .profiles.luuna import VARIANTS as LUUNA_VARIANTS
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.richmat import BEDTECH_VARIANTS
+from .profiles.symphony import SELECTORS as SYMPHONY_SELECTORS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -130,6 +133,9 @@ def is_valid_octo_pin(pin: str) -> bool:
 
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
+    "smart_sleep": {"p1": "Legacy bed controls (P1)", "p2": "New bed controls (P2)"},
+    "comfort_enhancement3": APEX_CHOICES,
+    "symphony_sleep": {"box1": "Box 1 (P1)", "box2": "Box 2 (P2)", "fallback": "P1 output, parser disabled"},
     "bedtech": BEDTECH_VARIANTS,
     BED_TYPE_GALAXY: GALAXY_PROFILES,
     BED_TYPE_GOODVIBE: GOODVIBE_PROFILES,
@@ -139,12 +145,15 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_RICHMAT_APP: RICHMAT_APP_PRODUCTS,
     BED_TYPE_RICHMAT_APP_SLEEP: RICHMAT_SLEEP_CHOICES,
     BED_TYPE_ESHINE_OKIN: ESHINE_OKIN_PROFILES,
+    "rize_home": {"remedy_iii": "Remedy III", "contempo_iv": "Contempo IV"},
     BED_TYPE_DOUBLESLEEP: DOUBLESLEEP_VARIANTS,
+    "symphony": {"auto": "From advertisement", **SYMPHONY_SELECTORS},
     BED_TYPE_GLIDEAWAY_MOTION: GLIDEAWAY_MOTION_MODELS,
     BED_TYPE_BEDSENSE: BEDSENSE_VARIANTS,
     BED_TYPE_CASPER_BASE: CASPER_BASE_VARIANTS,
     "hush_base": HUSH_BASE_VARIANTS,
     "luuna": LUUNA_VARIANTS,
+    "mline": {key: key.title() for key in ("auto", "sleep", "smart", "smartsainuo", "okin", "unknown")},
     BED_TYPE_KAIDI: KAIDI_VARIANTS,
     BED_TYPE_OKIN_CB24: OKIN_CB24_VARIANTS,
     BED_TYPE_OKIN_CST: OKIN_CST_VARIANTS,
@@ -164,6 +173,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_ADJUSTABLE_LUMBAR: ADJUSTABLE_LUMBAR_VARIANTS,
     BED_TYPE_COMFORT_ENHANCEMENTS: COMFORT_ENHANCEMENTS_VARIANTS,
     BED_TYPE_COMFORTBASE: {key: p.name for key, p in COMFORTBASE_PRODUCTS.items()},
+    BED_TYPE_YAMADA: {"p1": "P1: E6 / ED", "p2": "P2: 05 / A5"},
     **{bed_type: RICHMAT_MH_VARIANTS_BY_APP[app] for bed_type, app in RICHMAT_MH_APPS.items()},
     "richmat_sleep_receiver": {"wsilver2": "W.Silver Products", "americanstar": "AMERICANSTAR",
                                "bailey2": "Bailey's Bed Control", "tx": "TX"},

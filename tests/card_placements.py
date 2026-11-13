@@ -147,6 +147,13 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     offline configuration reaches.
     """
     from custom_components.adjustable_bed.beds.paramount.controller import ParamountController
+    from custom_components.adjustable_bed.beds.richmat_classic.profiles import load_catalog
+    from custom_components.adjustable_bed.beds.richmat_classic.resource_controller import (
+        ResourceBedController,
+    )
+    from custom_components.adjustable_bed.beds.richmat_classic.resource_receive import (
+        ResourceReceiveState,
+    )
     from custom_components.adjustable_bed.beds.ruf_richmat.controller import RufRichmatController
     from custom_components.adjustable_bed.beds.sleeptracker.controller import SleeptrackerController
     from custom_components.adjustable_bed.beds.sleepys.app import (
@@ -197,6 +204,10 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
             yield variant(controller, _model=0x89, _flags=(7, 7, 7), _ready=True)
         elif isinstance(controller, RufRichmatController):
             yield variant(controller, _normal_ready=True)
+        elif isinstance(controller, ResourceBedController):
+            model = load_catalog(controller.app).models["D1RM"]
+            yield variant(controller, layout="D1RM", _model=model, _controls=model.controls,
+                          _receive=ResourceReceiveState(light_capable=True))
 
 
 def controller_entities(controllers: Iterable[BedController]) -> list[Entity]:

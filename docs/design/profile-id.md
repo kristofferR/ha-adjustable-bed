@@ -196,3 +196,7 @@ The explicit `adjustable_bed` app route (unit087) keeps its own identity from
 `adjustable_lumbar` and `okin_64bit`: the STAR-manufacturer route has distinct
 speech movement packets and bounded execution. Shared long-table literals do
 not make their reachable features or configuration equivalent.
+
+Rize Remedy II uses the explicit `rize_remedy_ii` profile id on standalone entries
+and each two-address paired side. Shared OKIN names and the CST frame do not
+merge its setup, capabilities or response parser with another app.

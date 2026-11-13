@@ -150,6 +150,8 @@ from .const import (
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_BEDSENSE,
+    BED_TYPE_COMFORT_ENHANCEMENT3,
+    BED_TYPE_COMFYDS,
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
@@ -165,6 +167,7 @@ from .const import (
     BED_TYPE_ISLEEP,
     BED_TYPE_JENSEN,
     BED_TYPE_KAIDI,
+    BED_TYPE_KOMFYD,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
@@ -177,6 +180,7 @@ from .const import (
     BED_TYPE_MLILY,
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
+    BED_TYPE_N32_MOTION_BED,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CST,
@@ -190,6 +194,7 @@ from .const import (
     BED_TYPE_RICHMAT_APP_SLEEP,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_RIZE,
+    BED_TYPE_RIZE_REMEDY_II,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEPTRACKER,
@@ -411,7 +416,7 @@ CONFIGURED_RETRY_PREFIX = "configured_retry::"
 _AUTO_DETECT_MIN_CONFIDENCE = 0.7
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
-    {BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
+    {BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
      BED_TYPE_GMMOTOR, "gmmotor_sleep_mm", "gmmotor_sleep_sxb"}
 )
 
@@ -820,6 +825,7 @@ def _bed_type_selector(
             ),
             *RICHMAT_MH_BED_TYPES,
             "luuna",
+            "sonicsleep",
             BED_TYPE_MLILY,
             BED_TYPE_JENSEN,
             # Protocol-named routes are off the setup list but stay selectable.
@@ -1233,15 +1239,22 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         # The layout is BedSense's own question.
         BED_TYPE_BEDSENSE,
         # Each app's own answers.
+        BED_TYPE_COMFORT_ENHANCEMENT3,
         BED_TYPE_MOTION_BED,
         BED_TYPE_DOUBLESLEEP,
+        "symphony",
         BED_TYPE_SLEEPTRACKER,
         BED_TYPE_ISLEEP,
+        BED_TYPE_KOMFYD,
+        BED_TYPE_COMFYDS,
         BED_TYPE_RIZE,
+        "rize_home",
         BED_TYPE_GMMOTOR,
         BED_TYPE_MOTOMOTION,
+        "bedgear",
         "hush_base",
         "luuna",
+        "mline",
         BED_TYPE_LEGGETT_LP_LEGACY,
         *STARCODE_FAMILY.direct,
     }
@@ -1256,7 +1269,7 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
 def _name_rule_setup_name(bed_type: str | None, name: str | None) -> dict[str, str]:
     """Keep the raw Bluetooth name an app name rule reads, never the display name."""
     if (
-        bed_type not in NAME_RULE_VARIANTS_BY_BED_TYPE and bed_type not in (BED_TYPE_GMMOTOR, BED_TYPE_MOTOMOTION)
+        bed_type not in NAME_RULE_VARIANTS_BY_BED_TYPE and bed_type not in (BED_TYPE_GMMOTOR, BED_TYPE_MOTOMOTION, "bedgear")
     ) or name is None or is_mac_like_name(name):
         return {}
     return {CONF_BLE_DEVICE_NAME: name}
@@ -1269,12 +1282,17 @@ def _motor_count_options(
     """Return motor counts supported by the selected protocol."""
     if bed_type == BED_TYPE_SVANE and protocol_variant != SVANE_VARIANT_JENSEN_LINON:
         return [2]
+    if bed_type == BED_TYPE_RIZE_REMEDY_II:
+        return [3]
     if bed_type == BED_TYPE_STARCODE_M5X5:
         return [2]
     if bed_type == BED_TYPE_OKIN_RF_ECO_BT:
         return [1]
     if bed_type == BED_TYPE_FURNIMOVE:
         return [1, 2, 3, 4]
+    if bed_type == "symphony":
+        # Hidden and derived by the explicit product, including SS800's fifth axis.
+        return [2, 3, 4, 5]
     if bed_type in {
         *OKIN_BEDDING_APP_BED_TYPES,
         BED_TYPE_SIMMONS,
@@ -1284,7 +1302,7 @@ def _motor_count_options(
         BED_TYPE_LOGICDATA_AIR_PUMP,
     }:
         return [2]
-    if bed_type in {BED_TYPE_CUSTOMATIC_REMEDY, BED_TYPE_ADJUSTABLE_LUMBAR, BED_TYPE_ADJUSTABLE_BED}:
+    if bed_type in {BED_TYPE_CUSTOMATIC_REMEDY, BED_TYPE_ADJUSTABLE_LUMBAR, BED_TYPE_ADJUSTABLE_BED, BED_TYPE_N32_MOTION_BED}:
         return [3]
     if bed_type in RICHMAT_MH_BED_TYPES:
         # The selected app model's catalog fixes the axes; the count is unused.
@@ -1321,9 +1339,9 @@ def _richmat_mh_variant_error(
 
 
 def _invalid_pulse_count(bed_type: str | None, pulse_count: int) -> bool:
-    """Reject counts whose Z-Series press would fall outside the 0.1-60 s hold window."""
+    """Keep these 100 ms app profiles within HA's 0.1-60 s press window."""
     low, high = ZSERIES_PULSE_COUNT_RANGE
-    return bed_type == BED_TYPE_ZSERIES and not low <= pulse_count <= high
+    return bed_type in {BED_TYPE_ZSERIES, BED_TYPE_RIZE_REMEDY_II} and not low <= pulse_count <= high
 
 
 def _normalize_fixed_motor_count(
@@ -1347,7 +1365,7 @@ def _default_motor_count(
         and device_name.strip().lower().startswith("rtv")
     ):
         return 1
-    if bed_type in {BED_TYPE_OKIN_CST, BED_TYPE_CUSTOMATIC_REMEDY}:
+    if bed_type in {BED_TYPE_OKIN_CST, BED_TYPE_CUSTOMATIC_REMEDY, BED_TYPE_RIZE_REMEDY_II}:
         return 3
     return DEFAULT_MOTOR_COUNT
 
@@ -2769,6 +2787,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         profile = setup_profile_for(self._manual_data)
         if profile is not None and profile.questions:
             return await self.async_step_profile_questions()
+        if profile is not None:
+            await async_import_profile(self.hass, profile)
+            self._manual_data.update(profile.settled(self._manual_data))
         return await self._async_finish_family_route()
 
     async def async_step_profile_questions(
@@ -3920,6 +3941,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             entry = questions.staged(entry, _profile_answers(questions, submitted, entry, context))
             errors.update(questions.errors(entry, context))
             entry.update(questions.settled(entry))
+        elif (profile := setup_profile_for(entry)) is not None and not profile.questions:
+            # A fixed app still owns its defaults when it has no questions to ask.
+            entry.update(profile.settled(entry))
         entry = self._maybe_add_advertisement_metadata(entry, manufacturer_data=manufacturer_data)
         _LOGGER.info(
             "New bed: address=%s, type=%s, variant=%s, motors=%s, adapter=%s",
@@ -6893,6 +6917,14 @@ class AdjustableBedOptionsFlow(
             return DEFAULT_PROTOCOL_VARIANT
 
         requested_variant = data.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
+        # A profile may offer a setup route, such as entering a remote code,
+        # that it validates and converts to a concrete variant on save.
+        if (profile := setup_profile_for({**data, CONF_BED_TYPE: bed_type})) is not None:
+            for question in profile.questions:
+                if question.key == CONF_PROTOCOL_VARIANT and question.context_choices is None:
+                    choices = question.options(data)
+                    if choices is not None and isinstance(requested_variant, str) and requested_variant in choices:
+                        return requested_variant
         if isinstance(requested_variant, str) and requested_variant in variants:
             return requested_variant
         if VARIANT_AUTO in variants:
@@ -7898,7 +7930,7 @@ class AdjustableBedOptionsFlow(
                 # A profile without questions still fixes the generic fields it
                 # owns, such as MC3's missing massage, even when an entry
                 # switches in from a bed type that had them on.
-                user_input.update(owner.fixed_values())
+                user_input.update(owner.settled({**current_data, **user_input, CONF_BED_TYPE: bed_type}))
             if bed_type == BED_TYPE_SVANE:
                 svane_variant = user_input.get(
                     CONF_PROTOCOL_VARIANT, current_data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO)

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "Nordic",
+    "object": "6c2911",
+    "service": "6e400001-b5a3-f393-e0a9-e50e24dcca9e",
+    "write": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "expected_notify_constant": "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
+    "actual_notify_selection": "first characteristic with notify=true among matching services; UUID not checked",
+    "write_property_required": "write=true",
+    "write_without_response": "selected characteristic.writeWithoutResponse if true, else with response"
+  },
+  {
+    "id": "W1",
+    "object": "6c28e1",
+    "service": "0000fee9-0000-1000-8000-00805f9b34fb",
+    "write": "d44bc439-abfd-45a2-b575-925416129600",
+    "expected_notify_constant": "d44bc439-abfd-45a2-b575-925416129601",
+    "actual_notify_selection": "first characteristic with notify=true among matching services; UUID not checked",
+    "write_property_required": "write=true",
+    "write_without_response": "selected characteristic.writeWithoutResponse if true, else with response"
+  },
+  {
+    "id": "W2",
+    "object": "6c29d1",
+    "service": "0000fee9-0000-1000-8000-00805f9b34bb",
+    "write": "d44bc439-abfd-45a2-b575-925416129622",
+    "expected_notify_constant": "d44bc439-abfd-45a2-b575-925416129611",
+    "actual_notify_selection": "first characteristic with notify=true among matching services; UUID not checked",
+    "write_property_required": "write=true",
+    "write_without_response": "selected characteristic.writeWithoutResponse if true, else with response"
+  },
+  {
+    "id": "W3",
+    "object": "6c29a1",
+    "service": "0000ffe0-0000-1000-8000-00805f9b34fb",
+    "write": "0000ffe2-0000-1000-8000-00805f9b34fb",
+    "expected_notify_constant": "0000ffe1-0000-1000-8000-00805f9b34fb",
+    "actual_notify_selection": "first characteristic with notify=true among matching services; UUID not checked",
+    "write_property_required": "write=true",
+    "write_without_response": "selected characteristic.writeWithoutResponse if true, else with response"
+  },
+  {
+    "id": "W4",
+    "object": "6c2971",
+    "service": "0000fff0-0000-1000-8000-00805f9b34fb",
+    "write": "0000fff2-0000-1000-8000-00805f9b34fb",
+    "expected_notify_constant": "0000fff1-0000-1000-8000-00805f9b34fb",
+    "actual_notify_selection": "first characteristic with notify=true among matching services; UUID not checked",
+    "write_property_required": "write=true",
+    "write_without_response": "selected characteristic.writeWithoutResponse if true, else with response"
+  },
+  {
+    "id": "W5",
+    "object": "6c2941",
+    "service": "0000e0ff-3c17-d293-8e48-14fe2e4da212",
+    "write": "00000002-3c17-d293-8e48-14fe2e4da212",
+    "expected_notify_constant": "00000003-3c17-d293-8e48-14fe2e4da212",
+    "actual_notify_selection": "first characteristic with notify=true among matching services; UUID not checked",
+    "write_property_required": "write=true",
+    "write_without_response": "selected characteristic.writeWithoutResponse if true, else with response"
+  }
+]

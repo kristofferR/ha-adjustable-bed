@@ -21,10 +21,14 @@ from custom_components.adjustable_bed.const import (
     NORDIC_UART_SERVICE_UUID,
     NORDIC_UART_WRITE_CHAR_UUID,
 )
+from custom_components.adjustable_bed.profiles import n32_motion_bed as n32
 from custom_components.adjustable_bed.profiles import okin_nframe as okin_profiles
+from custom_components.adjustable_bed.profiles import rize_home
 from custom_components.adjustable_bed.profiles.adjustable_bed import (
     PROFILES as ADJUSTABLE_BED_PROFILES,
 )
+from custom_components.adjustable_bed.profiles.comfort_enhancement3 import PROFILES as APEX_PROFILES
+from custom_components.adjustable_bed.profiles.n32_motion_bed import N32
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
 GUIDE = "docs/beds/okin-nframe.md"
@@ -121,6 +125,7 @@ _OKIN_KEY_LABELS = {
     "flat_zero_g": "Flat + Zero-G chord",
 }
 _OKIN_GROUPS = {
+    "Comfort Enhancement 3": tuple(APEX_PROFILES.values()),
     "Okimat": (okin_profiles.OKIMAT,),
     "DewertOkin": (okin_profiles.DEWERTOKIN,),
     "RF ECO BT": (okin_profiles.RF_ECO_BT,),
@@ -137,6 +142,8 @@ _OKIN_GROUPS = {
     "eShine": tuple(okin_profiles.ESHINE_PROFILES.values()),
     "Okin CST": tuple(okin_profiles.CST_PROFILES.values()),
     "OKIN Bedding apps": tuple(okin_profiles.BEDDING_PROFILES.values()),
+    "OKIN Motion Bed": (okin_profiles.OKIN_MOTIONBED,),
+    "N32 Motion Bed": (N32,),
     "Resident Adjustable Base": (okin_profiles.RESIDENT,),
     "Okin 64-Bit": tuple(okin_profiles.OKIN_64BIT_PROFILES.values()),
     "Adjustable bed (Lumbar)": tuple(okin_profiles.ADJUSTABLE_LUMBAR_PROFILES.values()),
@@ -178,6 +185,7 @@ def _okin_hold(profile: okin_profiles.OkinNFrameProfile) -> tuple[str, str, str]
 
 _ENVELOPES = {
     "plain": "plain frame",
+    "gateway": "fixed E5 gateway envelope",
     "gateway_detected": "plain; RF-Gateway envelope when detected",
     "revision_selector": "plain (R1) or envelope (R0), by selector characteristic",
     "keeson_e6": "Keeson E6 frame; inclined keys plain",
@@ -270,7 +278,8 @@ def render_okin_nframe_profiles() -> str:
         f"{okin_profiles.STARCODE_ABM5_4_SAVE_HOLD_MS} ms. SleepEase P1 presets are held "
         "keys on its refresh too, as are eShine presets, its Flat + Zero-G chord and its "
         "light; its massage keys are one write. The OKIN Bedding apps hold every action "
-        f"to its own deadline, saves for {okin_profiles.BEDDING_SAVE_HOLD_MS} ms; see their "
+        f"to its own deadline, saves for {okin_profiles.BEDDING_SAVE_HOLD_MS} ms except "
+        "Rize Remedy II, whose save chord has no threshold; see their "
         "profiles.",
     )
 
@@ -307,6 +316,8 @@ def render_okin_nframe_transports() -> str:
 
 
 def _okin_frame(profile: okin_profiles.OkinNFrameProfile, word: int, name: str = "") -> str:
+    if profile.envelope == "gateway":
+        return _hex(okin_codec.gateway_frame(word))
     if profile.envelope == "keeson_e6" and name not in profile.plain_keys:
         return _hex(keeson_codec.frame(word, header=0xE6, side=0))
     if profile.width == 5:
@@ -341,6 +352,16 @@ def _okin_key_table(
             for word in sorted(words):
                 users = [p for p in profiles if getattr(p, table).get(name) == word]
                 label = _OKIN_KEY_LABELS.get(name, f"`{name}`")
+                if profiles[0] is N32:
+                    label = {
+                        "head_up": "Upper up",
+                        "head_down": "Upper down",
+                        "foot_up": "Lower up",
+                        "foot_down": "Lower down",
+                        "cervical_up": "Cervical up",
+                        "cervical_down": "Cervical down",
+                        **n32.PRESET_LABELS,
+                    }.get(name, label)
                 if name.isdigit():
                     label = f"Index {name}"
                 digits = 2 * (8 if table == "long_keys" else max(width, profiles[0].width))
@@ -587,7 +608,150 @@ def render_resident_session() -> str:
     )
 
 
+def render_rize_home() -> str:
+    p = rize_home
+    return _block(
+        _table(
+            ("Profile", "Bed type", "Motors", "Presets", "Programmable", "Poll query starts"),
+            (
+                (
+                    profile.key,
+                    "`rize_home`",
+                    ", ".join(profile.axes),
+                    ", ".join(profile.presets),
+                    ", ".join(profile.programmable),
+                    ", ".join(f"+{ms} ms" for ms in profile.poll_query_offsets_ms),
+                )
+                for profile in p.PROFILES.values()
+            ),
+        ),
+        _table(
+            ("Role", "UUID"),
+            (
+                ("Service", f"`{p.SERVICE_UUID}`"),
+                ("Write without response", f"`{p.WRITE_UUID}`"),
+                ("Notify / indicate", f"`{p.NOTIFY_UUID}`"),
+            ),
+        ),
+        _table(("Action", "Frame"), ((action, _hex(frame)) for action, frame in p.FRAMES.items())),
+        _table(
+            ("Operation", "Timing"),
+            (
+                ("Held refresh", f"{p.REFRESH_MS} ms"),
+                ("Once writes", ", ".join(f"+{ms} ms" for ms in p.ONCE_OFFSETS_MS)),
+                ("Program / reset / sensor", f"{p.SAVE_MS} ms"),
+                ("Intensity poll", f"{p.POLL_MS} ms"),
+                (
+                    "Massage release",
+                    f"STOP at +{p.RELEASE_STOP_MS} ms; query {p.RELEASE_QUERY_MS} ms later",
+                ),
+                ("Startup settling", f"{p.MTU_SETTLE_MS} ms"),
+                ("Subscription retry", f"once after {p.NOTIFY_RETRY_MS} ms"),
+            ),
+        ),
+    )
+
+
+def render_okin_motionbed() -> str:
+    from custom_components.adjustable_bed.const import (
+        KEESON_BASE_NOTIFY_CHAR_UUID,
+        KEESON_BASE_WRITE_CHAR_UUID,
+    )
+    profile = okin_profiles.OKIN_MOTIONBED
+    return _block(
+        _table(("Role", "Service", "Characteristic", "Mode"), (
+            ("Control", "last matching service in Android UUID order", f"`{KEESON_BASE_WRITE_CHAR_UUID}`", "write with response; requires write property"),
+            ("Notification", "last matching service in Android UUID order", f"`{KEESON_BASE_NOTIFY_CHAR_UUID}`", "notify when supported; subscription failure does not gate writes"),
+        )),
+        _table(("Action", "Word", "Final frame"), (
+            (key.replace("_", " "), f"`0x{word:08X}`", _hex(okin_codec.gateway_frame(word)))
+            for key, word in profile.keys.items()
+        )),
+        f"Held directions refresh every {profile.hold.repeat_ms} ms, then send {profile.hold.releases} manual STOP. "
+        f"Memory slots: {profile.memory_slots}. Presets, memory programming and light parameters write once.",
+    )
+
+
+def render_rize_remedy_ii_controls() -> str:
+    profile = okin_profiles.RIZE_REMEDY_II
+    return _block(_table(
+        ("Control", "Frame"),
+        ((action.replace("_", " ").title(), _hex(okin_codec.frame(word, profile.width)))
+         for action, word in profile.keys.items()),
+    ))
+
+
+def render_apex() -> str:
+    from custom_components.adjustable_bed.profiles.comfort_enhancement3 import REMOTES
+    return _block(
+        _table(("Index", "Exact remote codes", "Additional app groups", "Memory", "ZG", "TV / Zzz", "QS", "Massage", "Wake massage", "Flat", "UBL", "Tilt"),
+               ((str(i), ", ".join(r.codes), ", ".join(g[1] for g in r.groups) or "none",
+                 "M1/M2" if r.m2 else "M1", *("yes" if v else "no" for v in (r.zg, r.tv, r.qs, r.massage, r.wake_massage, r.flat, r.light, r.tilt))) for i, r in enumerate(REMOTES))),
+        _okin_key_table(tuple(APEX_PROFILES.values()), envelope=False),
+    )
+
+
+def render_n32_session() -> str:
+    from datetime import datetime
+
+    return _block(
+        _table(
+            ("Role", "UUID"),
+            (
+                ("Service", f"`{NORDIC_UART_SERVICE_UUID}`"),
+                ("Write, with response", f"`{NORDIC_UART_WRITE_CHAR_UUID}`"),
+                ("Notify or indicate", f"`{NORDIC_UART_READ_CHAR_UUID}`"),
+            ),
+        ),
+        _table(
+            ("Operation", "Frame", "Schedule"),
+            (
+                *(
+                    (f"Query slot {slot}", _hex(n32.query_frame(slot)), "startup and on request")
+                    for slot in n32.SLOTS
+                ),
+                (
+                    "Clock (2026-11-12 23:59:01)",
+                    _hex(n32.clock_frame(datetime(2026, 11, 12, 23, 59, 1))),
+                    f"connect +{n32.CLOCK_DELAY_S * 1000:g} ms",
+                ),
+                *(
+                    (
+                        f"Delete slot {slot}",
+                        _hex(n32.alarm_frame(slot, 0, 0, 0, 0, 0)),
+                        "then query the same slot",
+                    )
+                    for slot in n32.SLOTS
+                ),
+                (
+                    "Slot 1, Monday 06:30, M1",
+                    _hex(n32.alarm_frame(1, 6, 30, n32.alarm_week((0,)), n32.ALARM_MODES["m1"], 1)),
+                    "set then query slot 1",
+                ),
+            ),
+        ),
+        _table(
+            ("Property", "Value"),
+            (
+                ("Held refresh", f"{n32.REFRESH_MS} ms"),
+                ("Frame-button threshold", f"{n32.FRAME_HOLD_MS} ms"),
+                ("Release", f"{N32.hold.releases} STOP"),
+                ("Alarm slots", ", ".join(map(str, n32.SLOTS))),
+                (
+                    "Alarm modes",
+                    ", ".join(f"{name}: {code}" for name, code in n32.ALARM_MODES.items()),
+                ),
+            ),
+        ),
+    )
+
+
 BLOCKS: list[Block] = [
+    (GUIDE, "rize-home", render_rize_home),
+    (GUIDE, "okin-motionbed", render_okin_motionbed),
+    (GUIDE, "rize-remedy-ii-controls", render_rize_remedy_ii_controls),
+    (GUIDE, "apex-controls", render_apex),
+    (GUIDE, "n32-session", render_n32_session),
     (GUIDE, "adjustable-bed-commands", render_adjustable_bed),
     (GUIDE, "resident-session", render_resident_session),
     (GUIDE, "okin-nframe-profiles", render_okin_nframe_profiles),

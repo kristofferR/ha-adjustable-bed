@@ -136,6 +136,18 @@ for the current family-specific rules.
 
 ## Not Supported
 
+### TOPSKY TV MOUNT
+
+**TOPSKY TV MOUNT** (`com.okin.topsky`, version **1.2.6 (33)**) controls a
+TV-mount accessory over Bluetooth and is outside this adjustable-bed
+integration's scope. Its reachable controls operate the mount; no reachable
+direct BLE bed controls or shared bed effect were established for this app
+version. Generic bed, head and foot field names and optional bed-project
+metadata do not establish bed support. Hardware behavior remains unverified.
+
+This exclusion applies to this exact app version. Existing support for other
+apps and Okin-based beds is unchanged; see [Okin Protocol Family](#okin-protocol-family).
+
 ### WiFi and Cloud-Based Beds
 
 **[Won't be supported, read reasons here](https://github.com/kristofferR/ha-adjustable-bed/issues/167).** This is a Bluetooth-only integration. WiFi and cloud beds require fundamentally different architecture and would be better served by a separate integration.

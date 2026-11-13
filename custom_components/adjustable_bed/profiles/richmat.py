@@ -19,6 +19,7 @@ from typing import Final, Literal
 from ..codec import richmat as codec
 from ..codec.richmat import COMPAT_STOP, STOP, Framing, Transport, TransportKey
 from ..execution import NO_EXECUTION_CAPABILITIES, STREAM_HOLD, ExecutionCapabilities
+from .richmat_resource_apps import APPS as RESOURCE_APPS
 
 Button = Literal[
     "head_up",
@@ -314,7 +315,7 @@ MLILY: Final = RichmatProfile(key="mlily", transports=("w1", "n1", "w5", "w4", "
 CLASSIC_TRANSPORTS: Final[tuple[TransportKey, ...]] = ("w1", "w2", "n1", "w4")
 RICHMAT_CLASSIC: Final[dict[str, RichmatProfile]] = {
     app: RichmatProfile(key=f"richmat_classic_{app}", transports=CLASSIC_TRANSPORTS)
-    for app in ("avocadoecobase", "coastersleep", "fortywinks", "milemont", "superior", "luunarise2", "powercool")
+    for app in ("avocadoecobase", "coastersleep", "fortywinks", "milemont", "superior", "luunarise2", "powercool", *RESOURCE_APPS)
 }
 
 # Eshine 1.0.1 (row106): the E6000's one fixed table, over the app's transports.

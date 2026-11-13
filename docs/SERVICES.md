@@ -68,6 +68,20 @@ head actions. `stop` cancels refresh and writes no movement STOP packet on
 explicit models. Their massage-off packet is a separate action. Hardware
 behavior for these explicit app profiles remains unverified.
 
+## Symphony Sleep Sense
+
+The [Symphony guide](beds/okin-soundwave.md#symphony-sleep-sense) documents
+`symphony_sense_set_alarm`, `symphony_set_light`, `symphony_anti_snore` and
+`symphony_preset`. Recall and save are explicit actions. All selected receivers
+are validated before requested control frames are sent. Alarm changes on split
+products first require a complete current-session response to preserve the peer.
+Sequential alarm operations hydrate again within their executing session.
+Split P1 Both changes compose one full table; split P3 cannot share one enabled
+alarm time between sides. Serialized pairs offer renewable holds on Left or
+Right, while finite Both actions remain available.
+Motor covers expose renewable holds through the standard `timed_move` and
+`hold_control` actions; presets stay finite.
+
 ## OKIN SleepEase / DoubleSleep
 
 `doublesleep_configure` accepts a bed `device_id` and optional paired target
@@ -920,3 +934,197 @@ Use the usual `device_id` and optional `side` fields. See the
 [Jalon profile](beds/keeson.md#okincomfortbed-ⅱ-jalon) for the wire behavior,
 held gestures and hardware caveats. The generic `sync_clock` action also
 supports this profile.
+
+### KomfyD / ComfyDS
+
+`adjustable_bed.comfy_control` accepts `device_id`, optional paired `side`, and
+`action`: `zero`, `h_increase`, `h_decrease`, `f_increase`, `f_decrease`,
+`timer_start`, `timer_stop`, `lock`, `unlock`, or `query`. Timer duration uses
+the App timer selection entity. H/F and timers retain source semantics with
+unverified physical mapping. All targets are validated before any control
+write. See the [profile guide](beds/kaidi.md#komfyd-and-comfyds).
+
+### `smart_sleep_set_alarm`
+
+Configure a bed-local OKIN Smart Sleep alarm. Fields: `device_id`, `side`,
+`enabled`, minute-precision `time`, `weekdays` (Monday 0 through Sunday 6),
+`action`, optional exact `week_mask` (byte 0–255) and `flexible_wake`.
+All targets are validated before any alarm is written. Flexible wake is only
+legacy model 67. P1 accepts zero_g, flat, memory_1, memory_2 and massage.
+P2 accepts initial, lounge, tv, anti_snore, memory_1, memory_2, light, massage
+and flat, plus the original five `app_*` labels and their source wire mismatch.
+`week_mask` overrides weekday conversion for exact app schedules.
+Use the generic clock sync action to set the bed clock.
+See [Smart Sleep alarm values](beds/smart-sleep.md#alarm-and-clock).
+
+Legacy P1 weekly schedules use `week_mask` directly; the P2 weekday conversion
+is not inferred for legacy masks. Supplying P1 `weekdays` without an exact
+mask is rejected before writing.
+
+### Comfort Enhancement 3 / Comfort Plus3
+
+- `adjustable_bed.comfort_enhancement3_start_massage`: `device_id`, `duration`
+  (10, 20 or 30 minutes), `intensity` (1..3), `kind` (`head`, `feet`, `both`, `wave`).
+  Uses relative steps; does not report measured intensity.
+- `adjustable_bed.comfort_enhancement3_set_wakeup`: `device_id`, `slot`, `time`,
+  `next_day`, optional `massage`, `duration`, `intensity`, `kind`, `light`, `preset`.
+  Preset labels are exact: `None`, `M1`, `M2`, `Zero Gravity`, `TV`, `QS`, subject
+  to the selected remote. Time selects today or tomorrow explicitly.
+- `adjustable_bed.comfort_enhancement3_delete_wakeup`: `device_id`, `slot`.
+
+All support the normal paired `side` routing and preflight every target before
+writing. Slot0..99 is the formatter's two-character decimal-text domain, not a
+claim that firmware has 100 slots. Bed programs persist on the bed independently
+of HA's connection; no complete list/read API is proven. The local due callback
+retains the source's bed massage-stop effect, with session/edit fences.
+
+## N32 Motion Bed alarms
+
+`adjustable_bed.n32_motion_bed_alarm` targets an explicitly configured N32
+Motion Bed and accepts `slot: 1`, `2` or `3`, plus `operation: set`, `disable`,
+`delete` or `query`. Two-address pairs retain normal `side` routing.
+
+For `set`, supply `time` (minute precision), `weekdays` (Monday through Sunday,
+empty for once), and `mode` (`none`, `m1`, `m2`, `m3`, `flat`). Disable preserves
+a fresh reported slot; delete clears it and queries it again. Alarm sensors
+publish actual callback state and freshness. See the [N32 profile](beds/okin-nframe.md#n32-motion-bed).
+
+```yaml
+action: adjustable_bed.n32_motion_bed_alarm
+data:
+  device_id: YOUR_DEVICE_ID
+  slot: 1
+  operation: set
+  time: "06:30:00"
+  weekdays: [monday, tuesday, wednesday, thursday, friday]
+  mode: m1
+```
+
+### Symphony Sleep daily bed alarm
+
+`adjustable_bed.symphony_set_alarm` accepts `device_id`, `enabled`, a
+minute-precision `time` when enabling, and `wake_mode`: `none`, `memory_1`
+(Memory A) or `memory_2` (Memory B). It synchronizes the bed clock, then writes
+the single daily alarm. Disable clears the fields. These memory labels are
+positions; `side` routes only a Home Assistant two-address pair.
+All selected physical targets are validated before the first requested write,
+and a STOP during admission cancels that target. The alarm, timer and clock
+behavior is specific to [Symphony Sleep](beds/keeson.md#symphony-sleep), with
+hardware unverified. Phone sounds and Android scheduling remain separate.
+
+
+### アシステック / Yamada bed alarms
+
+Refresh bed alarms on the target's current connection before calling
+`adjustable_bed.yamada_set_alarm`. It requires an explicit `slot` (1 or 2),
+`enabled`, minute-precision local `time`, `weekday` mask (0–255) and `preset`
+(`memory_1`, `anti_snore`, `zero_g`, `tv` or `flat`). P1 requires the other
+slot's observed record to preserve it; reconnect clears these observations.
+Both slots are independent, and no first-free allocation is inferred.
+
+Sunday is bit 0 and Saturday bit 6. Add 128 for recurring days (129–255);
+0–128 selects the next occurrence of the supplied local time. Disabling zeros
+the weekday without normalization. P1 also zeros the selected position; P2
+keeps the supplied position. Supply the observed time and preset to preserve them.
+The sensors report observed state only. A successful write is not a bed ACK.
+All targets are validated and admitted before requested writes, with normal
+paired `side` routing. A stale session fails safely.
+
+```yaml
+action: adjustable_bed.yamada_set_alarm
+data:
+  device_id: YOUR_DEVICE_ID
+  slot: 1
+  enabled: true
+  time: "07:30"
+  weekday: 190  # Recurring Monday to Friday
+  preset: zero_g
+```
+
+## Bedgear settings
+
+Use `adjustable_bed.bedgear` for source-supported RGB, light shutdown minutes,
+alarm strength/time, bed synchronization and memory/snore save options. See
+the [Bedgear control reference](beds/motomotion.md#bedgear) for parameters.
+Motor covers and the card use the generic held and timed movement actions.
+
+## Lady Americana / ACAA / STA Homecare / Zero Gravity
+
+`adjustable_bed.richmat_resource_bed` uses the explicitly selected app and layout.
+It accepts a configured bed device (or several) and the usual paired `side`.
+
+| Operation | Parameters | Availability |
+|-----------|------------|--------------|
+| `query` | none | Queries layout-owned alarms, LED support and the shared capability channel |
+| `alarm` | `actions`, optional `time` | One layout-owned preset and optional massage choices, in the status entity's `alarm_actions` list |
+| `cancel_alarm` | none | Sends the alarm cancellation pair to each selected bed |
+| `rgb` | `rgb_color` | Requires an LED capability reply in the current session |
+| `lamp_timeout` | `seconds` (0–300) | Requires that same reply; zero requests keep on |
+| `massage_timer` | `progress` (0–5) | D1RM only |
+| `bed_command` | `command`, optional `duration_ms` (1–60000) | The app's generic BED callback requests, independent of remote buttons |
+
+For example, after choosing a layout with zero-gravity and head/foot massage
+alarm choices:
+
+```yaml
+action: adjustable_bed.richmat_resource_bed
+data:
+  device_id: YOUR_BED_DEVICE_ID
+  operation: alarm
+  time: "07:00:00"
+  actions: [zero_gravity, massage_head, massage_foot]
+```
+
+`bed_command` offers head/foot up/down, TV, lounge, zero gravity, anti-snore,
+memory one/two/three, flat and the app's separate `voice_stop_request`.
+Use the normal Stop action to release movement. An app memory request does not
+prove a physical slot exists on the chosen bed. Other controls and programming
+use the layout's labelled buttons. Current held-button metadata drives the
+standard `hold_control` action and dashboard card.
+
+All targets are validated before execution. STOP on a later target while an
+earlier target awaits Bluetooth cancels that later target's admission. Both
+holds require a topology that can maintain both links; sequential pairs use
+one side at a time. Timer values and alarm selections are requests, not observed
+device schedules or timer feedback. See the [protocol guide](beds/richmat.md#lady-americana--acaa--sta-homecare--zero-gravity-family).
+
+## M Line
+
+Choose the M Line app and physical layout in setup or Configure. Covers and
+preset buttons support held control and the dashboard card's renewable leases.
+Clock synchronization uses `sync_clock`; bed-local wake alarms use
+`mline_set_alarm` with `enabled`, minute-precision `time`, Monday 0 through Sunday
+6 `weekdays`, and `wake_mode` (`zg`, `flat`, `m1`, `m2`, `vibration`, `antisnore`).
+An empty weekday list selects the next occurrence. Mode bytes depend on the
+selected protocol, including modes that encode zero.
+
+`mline_command` takes `device_id`, optional `side`, and an `action`:
+
+| Action | Fields / behavior |
+|---|---|
+| `privacy` | Sleep only; `enabled` |
+| `anti_snore` | Sleep only; `enabled`, angle `1`, `3` or `6`, position `1` (head) or `2` (elevation) |
+| `anti_snore_demo` | Sleep only; `position` |
+| `settings_refresh` | Settings-page state request, independent of the normal protocol-gated query |
+| `alarm_refresh` | Clock sync, then alarm query |
+| `live_query` | Sleep only; raw sensor query |
+| `history_read` | Sleep only; exactly one physical side, optional `all_records`; returns raw groups and a `transfer` token |
+| `history_ack` | Same live connection; acknowledge the completed `transfer` token once, after consuming the result |
+
+History reads stop at one second idle or the 30-second/8192-record ceiling.
+They do not automatically acknowledge or generate sleep reports. Consume the
+raw result before acknowledging it; reconnect and cancellation invalidate its
+token, which also expires 30 seconds after completion. This explicit consumer boundary replaces the app's phone report/SQL
+processing, without claiming SQL success. See the [M Line guide](beds/mline.md)
+for field projections, source limitations and the external hardware test status.
+
+### SonicSleep bed settings
+
+`adjustable_bed.sonicsleep` takes `device_id`, optional paired `side`, and
+`operation`: `list`, `new`, `edit`, `toggle`, `delete`, `link_name` or `sync_clock`.
+Alarm form fields are `hour`, `minute`, `mode`, `weekdays` (Monday 0 to Sunday 6)
+and `enabled`. Edit/toggle/delete select a received `alarm_id`; toggle preserves
+all received raw fields except enabled. Clock capability and current alarm cache
+are required before writes. Missing/changed cache rejects the action. A silent
+empty-list query cannot safely allocate a new alarm. All target constraints pass
+before any target's setting changes. See the [SonicSleep reference](beds/richmat.md#sonicsleep).

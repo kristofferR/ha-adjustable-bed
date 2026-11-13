@@ -1,0 +1,10 @@
+[
+ {"id":"remedy-zero","model":"MODEL-1","input_bytes":"a5 0b 0e 00 00 00 00 00 00","expected":{"timer_index":0,"head_level":0,"foot_level":0,"massage_active":false}},
+ {"id":"remedy-ceil","model":"MODEL-1","input_bytes":"a5 0b 0e 00 02 59 00 03 05","expected":{"timer_index":2,"head_level":2,"foot_level":3,"massage_active":true}},
+ {"id":"remedy-exact","model":"MODEL-1","input_bytes":"a5 0b 0e 00 02 58 00 02 04","expected":{"timer_index":1,"head_level":1,"foot_level":2,"massage_active":true}},
+ {"id":"contempo-zero","model":"MODEL-2","input_bytes":"a5 0b 0e 00 00 00 00 00 00","expected":{"timer_index":0,"mode":0,"head_level":0,"foot_level":0,"massage_active":false}},
+ {"id":"contempo-fields","model":"MODEL-2","input_bytes":"a5 0b 0e 00 05 99 02 03 01","expected":{"timer_index":2,"mode":2,"head_level":3,"foot_level":1,"massage_active":true}},
+ {"id":"ignored-header","model":"MODEL-1","input_bytes":"a4 0b 0e 00 00 00 00 00 00","expected":null},
+ {"id":"manager-short","model":"MODEL-2","input_bytes":"a5 0b","expected":null},
+ {"id":"accepted-but-short","model":"MODEL-2","input_bytes":"a5 0b 0e","expected_error":"IndexError"}
+]

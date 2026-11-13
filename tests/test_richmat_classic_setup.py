@@ -25,6 +25,7 @@ from custom_components.adjustable_bed.const import (
     CONF_RICHMAT_CLASSIC_THIRD_SERVICE,
 )
 from custom_components.adjustable_bed.detection import get_bed_type_options
+from custom_components.adjustable_bed.profiles.richmat_resource_apps import APPS as RESOURCE_APPS
 from custom_components.adjustable_bed.setup_questions import SetupProfile, setup_profile
 
 PROFILE = setup_profile(BED_TYPE_RICHMAT_CLASSIC_APPS)
@@ -55,6 +56,7 @@ def test_all_five_app_choices_are_findable_and_model_inventories_are_distinct():
     assert {app: len(models) for app, models in MODEL_CHOICES.items()} == {
         'avocadoecobase': 704, 'coastersleep': 715, 'fortywinks': 725, 'milemont': 700, 'superior': 725,
         'luunarise2': 604, 'powercool': 586,
+        **dict.fromkeys(RESOURCE_APPS, 243),
     }
     for app, models in MODEL_CHOICES.items():
         assert set(models) == set(load_catalog(app).models)
@@ -66,7 +68,7 @@ def test_runtime_catalog_matches_every_frozen_member_layout_contract():
     with gzip.open(path, "rt") as source:
         expected = json.load(source)
     assert len(expected["models"]) == 3569
-    catalogs = {app: load(DATA_DIR, app).entries() for app in APP_NAMES.keys() - RISE_APPS}
+    catalogs = {app: load(DATA_DIR, app).entries() for app in APP_NAMES.keys() - RISE_APPS - RESOURCE_APPS.keys()}
     for catalog in catalogs.values():
         assert catalog["fields"].json() == expected["fields"]
     models = {app: catalog["models"].entries() for app, catalog in catalogs.items()}
@@ -152,7 +154,7 @@ def test_manual_aliases_are_selectable_but_diagnostic_layouts_are_rejected():
 def test_name_admission_is_only_an_app_hint_and_excludes_diagnostic_names():
     from custom_components.adjustable_bed.beds.richmat_classic.discovery import matching_apps
     from custom_components.adjustable_bed.detection import detect_bed_type_detailed
-    assert matching_apps('6BRM-123') == tuple(APP_NAMES)
+    assert set(matching_apps('6BRM-123')) == set(APP_NAMES)
     assert matching_apps(' B6RU') == ()
     assert matching_apps(None) == ()
     raw = SimpleNamespace(name='6BRM-123',service_uuids=[],manufacturer_data={},address='AA:BB:CC:DD:EE:FF')

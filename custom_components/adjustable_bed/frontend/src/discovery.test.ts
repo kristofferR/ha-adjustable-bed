@@ -36,6 +36,38 @@ function hassWith(entries: EntityRegistryDisplayEntry[]): HomeAssistant {
   });
 }
 
+test("OKIN Motion Bed keeps neutral middle holds and raw light actions reachable", () => {
+  const hass = hassWith([
+    entry("cover.middle", "motionbed_middle"),
+    entry("button.light_0", "motionbed_light_parameter_0"),
+    entry("button.light_1", "motionbed_light_parameter_1"),
+    entry("button.preset_stop", "motionbed_preset_stop"),
+    entry("button.release", "motionbed_release"),
+    entry("button.recall_a", "preset_memory_1"),
+    entry("button.save_a", "program_memory_1"),
+  ]);
+  hass.states["cover.middle"] = {
+    entity_id: "cover.middle", state: "unknown", last_changed: "", last_updated: "",
+    attributes: {
+      held_control_up: "middle_up", held_control_down: "middle_down",
+      held_stop_scope: "side", hold_start_delay_ms: 0, hold_release_delay_ms: 0,
+      hold_release_button_key: "motionbed_release",
+    },
+  };
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.motors[0]).toMatchObject({
+    key: "motionbed_middle", cover: "cover.middle", coverStopScope: "side",
+    releaseButton: "button.release",
+    heldControls: {
+      up: { control: "middle_up", startDelayMs: 0, releaseDelayMs: 0 },
+      down: { control: "middle_down", startDelayMs: 0, releaseDelayMs: 0 },
+    },
+  });
+  expect(bed.presets).toEqual(["button.preset_stop"]);
+  expect(bed.memory).toEqual([{ slot: 1, goto: "button.recall_a", save: "button.save_a" }]);
+  expect(bed.lights.buttons).toEqual(["button.light_0", "button.light_1"]);
+});
+
 test("GM product controls and raw session state stay with their physical device", () => {
   const hass = hassWith([
     entry("button.gm_head", "remote_action", "bed"),
@@ -1674,4 +1706,25 @@ test("Hush product actions remain scoped to their physical device", () => {
     entry("button.other_memory", "hush_base_action", "other"),
   ]);
   expect(bedEntitiesForDevice(hass, "bed").utility).toEqual(["button.hush_memory"]);
+});
+
+test("KomfyD/ComfyDS source labels keep motor leases separate from H/F steps", () => {
+  const hass = hassWith([
+    entry("cover.app_head", "comfy_head"),
+    entry("button.app_h", "comfy_h_increase"),
+    entry("button.app_zero", "comfy_zero"),
+    entry("select.app_timer", "comfy_timer_selection"),
+    entry("select.app_side", "comfy_selected_side"),
+  ]);
+  hass.states["cover.app_head"] = {
+    entity_id: "cover.app_head", state: "unknown", last_changed: "", last_updated: "",
+    attributes: { hold_lease_mode: "latched", hold_lease_motor: "back", bed_side: "right" },
+  };
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.motors[0].holdLease).toEqual({ deviceId: "dev1", motor: "back", side: "right" });
+  expect(bed.presets).toContain("button.app_zero");
+  expect(bed.utility).toContain("button.app_h");
+  expect(bed.utilitySelects).toContain("select.app_timer");
+  expect(bed.utilitySelects).toContain("select.app_side");
+  expect(bed.massage.buttons).toEqual([]);
 });

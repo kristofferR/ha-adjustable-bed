@@ -1,0 +1,109 @@
+{
+  "description": "Only focused audit001 repair cases; original34 command fixtures/eight parser cases are unchanged and not rerun.",
+  "schedules": [
+    {
+      "id": "R163-A1-MODEL-1",
+      "model": "MODEL-1",
+      "tick_ms": 1500,
+      "query_starts_ms": [
+        1500,
+        1600
+      ],
+      "nominal_write_times_ms": [
+        1500,
+        1600,
+        1800,
+        2000
+      ]
+    },
+    {
+      "id": "R163-A1-MODEL-2",
+      "model": "MODEL-2",
+      "tick_ms": 1500,
+      "query_starts_ms": [
+        1500
+      ],
+      "nominal_write_times_ms": [
+        1500,
+        1700,
+        1900
+      ]
+    }
+  ],
+  "projections": [
+    {
+      "id": "R163-A2-REMEDY",
+      "model": "MODEL-1",
+      "input_bytes": [
+        "a5 0b 0e 00 00 01 00 02 08",
+        "a5 0b 0e 00 00 01 00 02 0a"
+      ],
+      "computed_foot_levels": [
+        4,
+        5
+      ],
+      "expected_states": [
+        {
+          "timer_index": 1,
+          "combined_intensity": 1,
+          "massage_active": true
+        },
+        {
+          "timer_index": 1,
+          "combined_intensity": 1,
+          "massage_active": true
+        }
+      ]
+    },
+    {
+      "id": "R163-A2-CONTEMPO",
+      "model": "MODEL-2",
+      "input_bytes": [
+        "a5 0b 0e 00 05 99 02 03 01",
+        "a5 0b 0e 00 05 99 02 03 09"
+      ],
+      "expected_states": [
+        {
+          "timer_index": 2,
+          "mode": 2,
+          "head_level": 3,
+          "foot_level": 1,
+          "massage_active": true
+        },
+        {
+          "timer_index": 2,
+          "mode": 2,
+          "head_level": 3,
+          "foot_level": 9,
+          "massage_active": true
+        }
+      ]
+    }
+  ],
+  "short_frame": {
+    "id": "R163-A2-B8-READ",
+    "input_bytes": "a5 0b 0e 00 00 01 00 02",
+    "expected_error": "IndexError"
+  },
+  "lifecycle": {
+    "id": "R163-A3-CALLBACK",
+    "events": [
+      "init-MODEL-1",
+      "init-MODEL-2",
+      "init-MODEL-1",
+      "dispose-MODEL-2"
+    ],
+    "expected_callbacks": [
+      "MODEL-1",
+      "MODEL-2",
+      "MODEL-1",
+      null
+    ],
+    "input_bytes": "a5 0b 0e 00 05 99 02 03 01",
+    "unchanged_session_marker": {
+      "selected_device": "synthetic-selected-device",
+      "poll_timer": "active",
+      "writes": []
+    }
+  }
+}

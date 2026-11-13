@@ -338,3 +338,80 @@ JALON_WRITE: Final = "0000ffe9-0000-1000-8000-00805f9b34fb"
 JALON_NOTIFY_SERVICE: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
 JALON_NOTIFY: Final = "0000ffe4-0000-1000-8000-00805f9b34fb"
 JALON_PREFIX: Final = bytes.fromhex("f4fe16")
+
+
+@dataclass(frozen=True, slots=True)
+class SymphonyTimer:
+    """The source UI's massage minutes, including its P1 comparison quirk."""
+
+    minutes: int
+
+
+@dataclass(frozen=True, slots=True)
+class SymphonyAlarm:
+    """One observed alarm, not an inventory of remote alarm slots."""
+
+    enabled: bool
+    hour: int
+    minute: int
+    wake: str
+
+
+class SymphonyParser:
+    """Row078 notifications, with bounded, consumed, session-owned F4 fragments.
+
+    No checksum, ACK or length-field constraint is invented. Truncated alarm
+    records, invalid BCD/time values and fragment overflow are refused.
+    """
+
+    def __init__(self, *, p2: bool) -> None:
+        self.p2 = p2
+        self.pending: bytes | None = None
+
+    def feed(self, data: bytes, current_minutes: int = 0) -> SymphonyTimer | SymphonyAlarm | None:
+        alarm: SymphonyAlarm | None = None
+        if self.p2:
+            if len(data) < 5:
+                return None
+            if data[1] == 0x0B:
+                code = int.from_bytes(data[4:5], signed=True)
+                return SymphonyTimer(30 if code > 4 else 20 if code > 2 else 10 if code > 0 else 0)
+            if data[1] != 0x0C or len(data) < 10:
+                return None
+            if any((v & 15) > 9 or v >> 4 > 9 for v in (data[6], data[7])):
+                return None
+            hour, minute = (10 * (v >> 4) + (v & 15) for v in (data[6], data[7]))
+            alarm = SymphonyAlarm(data[9] == 1, hour, minute,
+                                  {2: "memory_1", 3: "memory_2"}.get(data[5], "none"))
+        else:
+            prefix, self.pending = self.pending, None
+            if not data:
+                return None
+            if len(data) < 2:
+                if prefix is None or data[0] in (0xE7, 0xED, 0xF4) or not 20 <= len(prefix) + len(data) <= 30:
+                    return None
+                code = (prefix + data)[19]
+                return SymphonyTimer(0 if code == 255 else code * 10 if current_minutes != code else current_minutes)
+            code: int | None = None
+            if data[:2] == b"\xe7\xfe" and len(data) >= 10:
+                code = data[8]
+            elif data[:2] == b"\xed\xfe" and len(data) >= 16:
+                code = data[14]
+            elif data[:2] == b"\xf4\xfe" and 20 < len(data) <= 30:
+                code = data[19]
+            elif data[0] == 0xF4:
+                self.pending = data if len(data) <= 20 else None
+                return None
+            elif data[:2] == b"\xed\x80":
+                if not 7 <= len(data) <= 16:
+                    return None
+                alarm = SymphonyAlarm(any(data[3:7]),
+                    int.from_bytes(data[3:4], signed=True), int.from_bytes(data[4:5], signed=True),
+                    {0x11: "memory_1", 0x13: "memory_2"}.get(data[6], "none"))
+            elif prefix is not None and 20 <= len(prefix) + len(data) <= 30:
+                code = (prefix + data)[19]
+            else:
+                return None
+            if code is not None:
+                return SymphonyTimer(0 if code == 255 else code * 10 if current_minutes != code else current_minutes)
+        return alarm if alarm is not None and 0 <= alarm.hour <= 23 and 0 <= alarm.minute <= 59 else None

@@ -32,6 +32,12 @@ modules that act on it; diagnostics and support bundles also show most keys. "Be
 Paired sides store the same keys in their descriptors, and an absorbed entry's
 original data and options keep them under `origin_data` and `origin_options`.
 
+### M Line local controls
+
+| Key | Class | Set by | Read by |
+|---|---|---|---|
+| `mline_child_mode` | Profile | M Line setup and Configure question | `beds/mline/controller.py` local control admission; no hardware lock command |
+
 ### Route
 
 | Key | Class | Set by | Read by |
@@ -77,6 +83,7 @@ original data and options keep them under `origin_data` and `origin_options`.
 |---|---|---|---|
 | `jiecang_app_layout` | Profile | A question of `jiecang_app` | `beds/jiecang/app.py` |
 | `jiecang_app_transport` | Profile | An Advanced question of `jiecang_app` | `beds/jiecang/app.py` |
+| `comfort_enhancement3_remote_code` | Profile | Exact remote-code question of Comfort Enhancement 3 / Comfort Plus3; saves a canonical remote variant | `profiles/comfort_enhancement3.py`, bed builder |
 | `furnimove_remote` | Profile | A question of `furnimove` | bed builders, `beds/furnimove/repair.py` |
 | `lp_legacy_model` | Profile | A question of `leggett_lp_legacy` | bed builders |
 | `lp_legacy_mode` | Profile | A question of `leggett_lp_legacy` | bed builders |
@@ -109,6 +116,7 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `richmat_remote` | Profile | A question of `richmat` without an RMControl product; the Richmat question stages the code the Bluetooth name carries | `beds/richmat/controller.py`, `coordinator.py`, `profile_recommendations.py` |
 | `rmcontrol_product` | Profile | A question of `richmat`; the Richmat question's RMControl answer requires one | `beds/richmat/controller.py` |
 | `rmcontrol_side` | Profile | A question of `richmat` with an RMControl product | `beds/richmat/controller.py` |
+| `symphony_side` | Profile | Symphony Sleep Sense product questions and Configure; paired child targets bind their own side | `beds/symphony/controller.py`, `app_profiles.py` |
 | `cb24_bed_selection` | User | A question of `okin_cb24` | `beds/okin_cb24.py` |
 | `gmmotor_side` | Profile | A question of `gmmotor` | bed builders |
 | `starcode_abm5_4_command_selector` | User | A question of `starcode_abm5_4` | bed builders |

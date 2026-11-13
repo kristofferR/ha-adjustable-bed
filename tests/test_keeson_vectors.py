@@ -25,6 +25,7 @@ from custom_components.adjustable_bed.beds.keeson.layout_app import AppControlle
 from custom_components.adjustable_bed.beds.malouf import controller as malouf
 from custom_components.adjustable_bed.beds.sleepys import controller as sleepys
 from custom_components.adjustable_bed.codec import keeson as codec
+from custom_components.adjustable_bed.codec import okin_nframe
 from custom_components.adjustable_bed.const import BED_TYPE_KEESON, KEESON_VARIANTS, VARIANT_AUTO
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.profiles import keeson as profiles
@@ -37,7 +38,7 @@ from tests.test_controller_contract import _FactoryCoordinator, _make_connected_
 # Controllers that keep their own key tables; only the frame is profile data.
 E6_CONTROLLERS = frozenset(
     {
-        "jalon_13", "jalon_15", "jalon_24",
+        "jalon_13", "jalon_15", "jalon_24", "yamada_p1", "yamada_p2",
         "glideaway_motion",
         "jalon_bed",
         "malouf_legacy_okin",
@@ -89,6 +90,12 @@ def _decode(data: bytes) -> bytes:
         codec.ALARM_QUERY,
     ):
         return data
+    if data[:3] == b"\xe1\x80\x03":
+        return codec.checked(data[:-1])
+    if len(data) == 2 and data[0] == 0:
+        return okin_nframe.request(data[1])
+    if len(data) == 9 and data[:2] in (b"\x07\x04", b"\x07\x05", b"\x07\x06"):
+        return okin_nframe.record(data[1], data[2:])
     if data[:2] == b"\xef\x02":
         return codec.rename(data[2:17].rstrip(b"\x00"))
     if data[0] in (0xE2, 0xEA, 0xEB) and data[1:3] == b"\xfe\x16":
@@ -208,6 +215,10 @@ def _e6_census(key: str) -> set[bytes]:
     """Key frames the controllers that keep their own tables send."""
     profile = profiles.PROFILES[key]
     words = {codec.RELEASE}
+    if key in ("yamada_p1", "yamada_p2"):
+        from custom_components.adjustable_bed.profiles import yamada as app
+
+        return {profiles.encode(profile, word) for word in app.WORDS.values()}
     if key == "comfortbase":
         from custom_components.adjustable_bed.profiles import comfortbase as app
 
