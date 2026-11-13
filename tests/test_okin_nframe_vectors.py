@@ -18,6 +18,7 @@ from custom_components.adjustable_bed.codec import keeson
 from custom_components.adjustable_bed.codec import okin_nframe as codec
 from custom_components.adjustable_bed.profiles import okin_nframe as profiles
 from custom_components.adjustable_bed.profiles.comfort_enhancement3 import PROFILES as APEX_PROFILES
+from custom_components.adjustable_bed.profiles.n32_motion_bed import N32
 from tests.okin_nframe_vectors import (
     COMPOSED_FRAMES,
     FIELD_FRAMES,
@@ -34,6 +35,7 @@ PROFILES: dict[str, profiles.OkinNFrameProfile] = {
         profiles.OKIMAT,
         profiles.RESIDENT,
         profiles.OKIN_MOTIONBED,
+        N32,
         profiles.DEWERTOKIN,
         profiles.RF_ECO_BT,
         *profiles.CUSTOMATIC_PROFILES.values(),
@@ -163,7 +165,7 @@ def test_alarm_slots() -> None:
     assert codec.alarm(bytes.fromhex("8205071e000101"), 2).hex() == "07068205071e000101"
     assert codec.alarm(bytes(7), 2).hex() == "070600000000000000"
     with pytest.raises(ValueError):
-        codec.alarm(bytes(7), 3)
+        codec.alarm(bytes(7), 4)
 
 
 @pytest.mark.parametrize(
@@ -275,6 +277,7 @@ def test_hold_declarations_follow_the_evidence_matrix():
     assert set(HOLD_PROFILES) == {
         profiles.OKIN_MOTIONBED.key,
         *APEX_PROFILES,
+        N32.key,
         profiles.RESIDENT.key,
         *profiles.LEGGETT_PROFILES,
         *profiles.CUSTOMATIC_PROFILES,

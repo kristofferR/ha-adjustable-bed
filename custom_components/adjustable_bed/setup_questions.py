@@ -77,6 +77,7 @@ from .const import (
     BED_TYPE_MLILY,
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
+    BED_TYPE_N32_MOTION_BED,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CB24,
@@ -2541,6 +2542,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     BED_TYPE_OKIN_MOTIONBED: SetupProfile(
         owns={
             CONF_MOTOR_COUNT: 2,  # Compatibility field, not a physical actuator claim.
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PROTOCOL_VARIANT: "auto",
+            CONF_MOTOR_PULSE_DELAY_MS: 200,
+        },
+    ),
+    BED_TYPE_N32_MOTION_BED: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 3,
             CONF_HAS_MASSAGE: False,
             CONF_DISABLE_ANGLE_SENSING: True,
             CONF_PROTOCOL_VARIANT: "auto",

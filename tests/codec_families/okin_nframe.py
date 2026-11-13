@@ -60,6 +60,7 @@ FAMILY = CodecFamily(
             "rize_home",
             "okin_motionbed",
             "comfort_enhancement3",
+            "n32_motion_bed",
             "okin_64bit",
             "okin_cb24",
             "okin_cst",

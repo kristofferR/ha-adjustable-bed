@@ -28,6 +28,7 @@ Which words an app sends, with which timing and release, belongs to its profile
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import Final
 
 from ..const import (
@@ -119,11 +120,37 @@ def clock(fields: Sequence[int]) -> bytes:
     return record(0x04, fields)
 
 
-def alarm(fields: Sequence[int], slot: int = 1) -> bytes:
-    """Encode an alarm record in ``slot``: ``05`` for slot 1, ``06`` for slot 2."""
-    if slot not in (1, 2):
-        raise ValueError("Alarm slot must be 1 or 2")
-    return record(0x04 + slot, fields)
+def alarm(fields: Sequence[int], slot: int = 1, *, reserved: int | None = None) -> bytes:
+    """Encode a slot record: opcodes ``05``/``06``/``07`` for slots 1/2/3.
+
+    Supported slots and field meanings belong to the app profile. N32 appends
+    a reserved byte outside the counted record; other routes omit it.
+    """
+    if slot not in (1, 2, 3):
+        raise ValueError("Alarm slot must be 1, 2 or 3")
+    encoded = record(0x04 + slot, fields)
+    return encoded if reserved is None else encoded + bytes((reserved,))
+
+
+@dataclass(frozen=True, slots=True)
+class AlarmReport:
+    """Raw fields of an A5 0C/0D/0E slot reply; app normalization is separate."""
+
+    slot: int
+    week: int
+    mode: int
+    hour: int
+    minute: int
+    enabled: int
+    ab: int
+    soft: int
+
+
+def parse_alarm(data: bytes) -> AlarmReport | None:
+    """Decode a complete slot reply, rejecting the app's unsafe short frames."""
+    if len(data) < 12 or data[0] != 0xA5 or data[1] not in (0x0C, 0x0D, 0x0E):
+        return None
+    return AlarmReport(data[1] - 11, *data[4:8], *data[9:12])
 
 
 def word_of(data: bytes) -> int:

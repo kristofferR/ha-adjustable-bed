@@ -102,6 +102,7 @@ from .const import (
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_MOTOSLEEP,
+    BED_TYPE_N32_MOTION_BED,
     BED_TYPE_NECTAR,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
@@ -593,6 +594,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_RIZE_HOME: "Rize Home app (Remedy III / Contempo IV)",
     BED_TYPE_OKIN_MOTIONBED: "OKIN Motion Bed app (com.okin.motionbed)",
     BED_TYPE_COMFORT_ENHANCEMENT3: "Comfort Enhancement 3 / Comfort Plus3 (com.okin.apex)",
+    BED_TYPE_N32_MOTION_BED: "N32 Motion Bed app (com.okin.simmonskorea)",
     BED_TYPE_RESIDENT: "Resident Adjustable Base app (com.okin.resident.release)",
     BED_TYPE_COMFORTBASE: "ComfortBaseForBluetooth / ComfortBase BLE (choose product)",
     BED_TYPE_COMFORT_ENHANCEMENTS: "Comfort Enhancements app (choose MC2/MC3/MC4/MC5)",
@@ -1300,7 +1302,7 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         For detailed detection with confidence scores, use detect_bed_type_detailed().
     """
     result = detect_bed_type_detailed(service_info)
-    if result.bed_type in (BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MOTOMOTION) and result.confidence < 0.7:
+    if result.bed_type in (BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED) and result.confidence < 0.7:
         return None  # An app name hint requires an explicit product choice.
     return result.bed_type
 
@@ -1374,6 +1376,17 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     ) and result.bed_type != BED_TYPE_COMFORT_ENHANCEMENT3:
         result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_COMFORT_ENHANCEMENT3]))
         result.signals.append("service:comfort_enhancement3_candidate")
+    # These shared app names are candidates only. Never replace a confident
+    # receiver signature or infer N32 from the Nordic service alone.
+    if (isinstance(platform_name, str)
+        and platform_name.lower().startswith(("smartbed", "n32 motionbed"))
+        and result.confidence < 0.7
+        and not any(signal.startswith("excluded:") for signal in result.signals)):
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_N32_MOTION_BED, 0.3, ["name:n32_app_candidate"])
+        elif result.bed_type != BED_TYPE_N32_MOTION_BED:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_N32_MOTION_BED]))
+            result.signals.append("name:n32_app_candidate")
     if mlily_scan_matches(service_info.name) and mlily_suggested_profile(service_info.name) and not any(signal.startswith("excluded:") for signal in result.signals):
         if result.bed_type is None:
             result = DetectionResult(BED_TYPE_MLILY, 0.3, ["name:mlily_app_candidate", *result.signals])

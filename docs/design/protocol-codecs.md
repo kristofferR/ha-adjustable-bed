@@ -277,3 +277,10 @@ its distinct motor-neutral and global STOP. `profiles/smart_sleep.py` declares
 both formats and their catalogs; one family controller owns their session.
 The vector harness compares every accepted in-scope literal before reuse.
 See [Smart Sleep](../beds/smart-sleep.md).
+
+N32 Motion Bed 1.1.14 (38), row080, reproduces its four-mask held frames,
+clock and slot queries through Okin N-frame. Its alarm uses the same seven
+counted fields plus an uncounted reserved byte and a third proven slot.
+`alarm(..., reserved=0)` expresses that trailer without changing existing
+profiles' records. Its typed fixed profile uses the shared Okin family
+controller; its own session and alarm callback live in `beds/n32_motion_bed/`.

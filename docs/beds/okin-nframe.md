@@ -37,6 +37,7 @@ the Adjustable bed (Lumbar) app, Rize Home and Resident Adjustable Base.
 | [Adjustable bed app](#adjustable-bed-app) | Beds controlled with Adjustable bed 1.2.1 |
 | [OKIN Motion Bed](#okin-motion-bed) | Beds controlled with OKIN Motion Bed, physical mappings unverified |
 | [Comfort Enhancement 3 / Comfort Plus3](#comfort-enhancement-3) | All 15 app remote profiles, hardware models unverified |
+| [N32 Motion Bed](#n32-motion-bed) | Beds controlled with N32 Motion Bed, hardware models unverified |
 | [Resident Adjustable Base](#resident-adjustable-base) | Beds controlled with Resident Adjustable Base, hardware models unverified |
 | [Adjustable bed (Lumbar)](#adjustable-bed-lumbar) | Beds controlled with the Adjustable bed(Lumbar) app |
 
@@ -81,6 +82,7 @@ Customatic app profiles.
 | ✅ | [Nectar Move](https://play.google.com/store/apps/details?id=com.okin.bedding.nectarmotion) 1.0.1 (2) | `com.okin.bedding.nectarmotion` | [Okin CST](#okin-cst) (Nectar Move) |
 | ✅ | [Jordan's Serenity](https://play.google.com/store/apps/details?id=com.okin.bedding.serenity) 1.0.1 (code 2) | `com.okin.bedding.serenity` | [Jordan's Serenity](#jordans-serenity) |
 | ✅ | [Rize Home](https://play.google.com/store/apps/details?id=com.okin.rize) 1.1.2 (12) | `com.okin.rize` | [Remedy III / Contempo IV](#rize-home-remedy-iii--contempo-iv) |
+| ✅ | [N32 Motion Bed](https://play.google.com/store/apps/details?id=com.okin.simmonskorea) 1.1.14 (38) | `com.okin.simmonskorea` | [N32 Motion Bed](#n32-motion-bed) |
 | ✅ | [Resident Adjustable Base](https://play.google.com/store/apps/details?id=com.okin.resident.release) 1.0.0 (1) | `com.okin.resident.release` | [Resident Adjustable Base](#resident-adjustable-base) |
 | ✅ | [Adjustable bed](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustbed) 1.2.1 (33) | `com.okin.bedding.adjustbed` | [Adjustable bed app](#adjustable-bed-app) |
 | ✅ | [Adjustable bed(Lumbar)](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustablelumbar) 1.2.2 (code 33) | `com.okin.bedding.adjustablelumbar` | [Adjustable bed (Lumbar)](#adjustable-bed-lumbar) |
@@ -264,6 +266,7 @@ are unchanged.
 | Customatic Z-280 | `zseries_z280` | `customatic_zseries` | 96-bit | plain frame | from the characteristic's properties | head, feet | 2 |
 | OKIN Motion Bed | `okin_motionbed` | `okin_motionbed` | 32-bit | fixed E5 gateway envelope | with response | back, middle, legs | 2 |
 | Rize Remedy II | `rize_remedy_ii` | `rize_remedy_ii` | 96-bit | plain frame | from the characteristic's properties | head, feet, lumbar | 3 |
+| N32 Motion Bed | `n32_motion_bed` | `n32_motion_bed` | 40-bit | plain frame | with response | back, legs, head | 3 |
 | Resident Adjustable Base | `resident` | `resident` | 64-bit | plain frame | with response | head, feet | 2 |
 | OKIN 64-bit Nordic UART | `okin_64bit_nordic` | `okin_64bit` | 64-bit | plain frame | without response | head, feet, lumbar | 2 |
 | OKIN 64-bit OKIN service | `okin_64bit_custom` | `okin_64bit` | 64-bit | plain frame | with response | head, feet, lumbar | 2 |
@@ -329,6 +332,7 @@ are unchanged.
 | Customatic Z-280 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
 | OKIN Motion Bed | 200 ms | entry pulse count; until release with a renewable hold | 1 STOP |
 | Rize Remedy II | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| N32 Motion Bed | 200 ms | entry pulse count; until release with a renewable hold | 1 STOP |
 | Resident Adjustable Base | 300 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms |
 | OKIN 64-bit Nordic UART | entry pulse delay | entry pulse count | 1 STOP |
 | OKIN 64-bit OKIN service | entry pulse delay | entry pulse count | 1 STOP |
@@ -396,6 +400,7 @@ Entry pulse settings are the configured motor pulse count and delay.
 | Customatic Z-280 | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
 | OKIN Motion Bed | once, no STOP | once, no STOP | once, no STOP | n/a | once, no STOP | n/a |
 | Rize Remedy II | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
+| N32 Motion Bed | once, 1 STOP | once, 1 STOP | n/a | n/a | n/a | n/a |
 | Resident Adjustable Base | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
 | OKIN 64-bit Nordic UART | once, no STOP | once, no STOP | n/a | n/a | once, no STOP | n/a |
 | OKIN 64-bit OKIN service | once, no STOP | once, no STOP | n/a | n/a | once, no STOP | n/a |
@@ -5309,6 +5314,122 @@ encoder. Hardware remains unverified. External beta/release users can validate
 mechanical mappings, light polarity, memory/preset behavior, release latency,
 GATT properties and reconnect ordering. Notification interpretation needs future
 physical captures; no static proven bed control is waiting on hardware.
+
+### N32 Motion Bed
+
+**App:** [N32 Motion Bed](https://play.google.com/store/apps/details?id=com.okin.simmonskorea) 1.1.14 (38), `com.okin.simmonskorea`
+
+**Status:** ❓ Hardware UNVERIFIED. External beta/release reports are welcome.
+
+#### Setup
+
+Choose **N32 Motion Bed app (com.okin.simmonskorea)** explicitly. The app
+accepts nonempty platform names beginning with `smartbed` or `n32 motionbed`,
+ignoring case. These shared names offer an app choice, and the Nordic UART
+service alone does not identify this app. Confident receiver detection wins.
+Optional company 89 identity reverses the whole payload, then takes bytes
+1 through 6; it never determines the control address, admission or sides.
+
+The profile fixes its three UI groups, disables angle sensing, light and
+massage, and owns its protocol and refresh cadence. Ordinary cover movement
+keeps the user's pulse count. No PIN, bonding, model selection or single-address
+side controls are required. Two independently configured physical receivers can
+use HA's two-address pairing; app-wide device iteration proves no physical sides.
+
+#### Controls
+
+Upper drives the app's combined upper mask. Lower and Cervical use their own
+UI masks; no individual upper motors or other anatomy are exposed. Flat, M1,
+M2, M3, Relax, TV and Zero-G retain the app's labels. The generated N32 key
+table lists the frames. Memory programming has no distinct opcode: the app
+holds the same preset frame and displays a saved tip at its frame-button
+threshold. `hold_control` permits that bounded gesture without claiming
+firmware save success. No massage, light or position telemetry is created.
+
+<!-- generated:n32-session -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Role | UUID |
+|---|---|
+| Service | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` |
+| Write, with response | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` |
+| Notify or indicate | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` |
+
+| Operation | Frame | Schedule |
+|---|---|---|
+| Query slot 1 | `00 C0` | startup and on request |
+| Query slot 2 | `00 D0` | startup and on request |
+| Query slot 3 | `00 E0` | startup and on request |
+| Clock (2026-11-12 23:59:01) | `07 04 1A 0B 0C 04 17 3B 01` | connect +500 ms |
+| Delete slot 1 | `07 05 00 00 00 00 00 00 01 00` | then query the same slot |
+| Delete slot 2 | `07 06 00 00 00 00 00 00 01 00` | then query the same slot |
+| Delete slot 3 | `07 07 00 00 00 00 00 00 01 00` | then query the same slot |
+| Slot 1, Monday 06:30, M1 | `07 05 82 05 06 1E 00 01 01 00` | set then query slot 1 |
+
+| Property | Value |
+|---|---|
+| Held refresh | 200 ms |
+| Frame-button threshold | 5300 ms |
+| Release | 1 STOP |
+| Alarm slots | 1, 2, 3 |
+| Alarm modes | none: 0, m1: 5, m2: 6, m3: 4, flat: 9 |
+<!-- /generated -->
+
+#### Timing
+
+Held actions write immediately and refresh at the profile's interval, then
+send an explicit STOP on release, cancellation or deadline. Frame buttons also
+stop at their app threshold. Cover pulse counts and renewable card leases are
+independent. Missed refresh ticks are skipped after a slow acknowledged write;
+write latency never adds another refresh period to the requested duration.
+Captured link/characteristic ownership prevents old cleanup from writing into
+a new connection. HA schedules commands per selected physical target.
+
+Connection startup subscribes before querying all three source-proven slots,
+then calibrates the clock. The generated session table gives the roles and
+schedule. The clock is generated when its queued write dispatches. HA's
+Bluetooth stack negotiates MTU and handles adapters/proxies; the Android
+plugin's MTU request is not a firmware requirement.
+
+#### Notifications
+
+Complete A5 slot replies update the alarm sensors with time, enabled, mode,
+week, raw `ab` and `soft` fields, and whether the report belongs to this
+connection. Short packets, ignored ACKs and unobserved massage branches create
+no telemetry. Low-bit weeks on enabled alarms become once in the app callback.
+Deletion is tested before old-field preservation: a fully cleared reply
+removes the row, whereas disabled nonempty replies retain previous mode/week.
+Phone music is local and has no wire field.
+
+Display records survive controller recreation on the same physical coordinator;
+freshness and write admission do not. A missing or stale slot is never treated
+as an empty inventory. Disable queries its slot and checks its current report,
+including after reconnect. An already disabled slot needs no overwrite. Full
+set supplies every editable field, and delete explicitly clears every field.
+Only actual callback reports update sensor values.
+
+#### Services
+
+`adjustable_bed.n32_motion_bed_alarm` supports `set`, `disable`, `delete` and
+`query` on slots 1 through 3. Set requires a minute-precision time, weekdays
+(empty for once), and mode `none`, `m1`, `m2`, `m3` or `flat`. All targets pass
+profile/session admission before a requested mutation. Each write rechecks its
+live session; disable also rejects a changed report while waiting for the wire.
+
+Recurring masks retain the app's high bit with Sunday in bit 0. Once and a
+retained empty recurring mask use the next scheduled ISO weekday, including
+Sunday as 128. Disable retains fields and follows the same once conversion.
+Delete bypasses that conversion, zeros all editable fields and queries the
+same slot. No capacity beyond these three UI slots is asserted.
+
+#### Evidence
+
+Accepted APK Protocol Audit row080, `com.okin.simmonskorea` 1.1.14 (38),
+artifact SHA-256 `b7ab9227acf33772e0421baf45f372fa79b592d91357bd7c3112583b556d96b2`.
+The 20 raw masks, original 28 vectors and 36 corrected alarm/identity cases
+are preserved in the N32 test fixture. The former `v-alarm-delete-3` is a
+retained-fields disable, distinct from cleared UI deletion. Physical behavior
+and firmware save/stop effects await external beta/release validation.
 
 ### Resident Adjustable Base
 

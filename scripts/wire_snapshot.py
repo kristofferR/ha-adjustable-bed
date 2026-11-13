@@ -1809,6 +1809,14 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         await controller.start_notify(lambda *_: None)
         if controller._coordinator.bed_type in {"komfyd", "comfyds"}:
             await controller.async_after_connect(None)
+        if controller._coordinator.bed_type == "n32_motion_bed":
+            # The helper already subscribed; run the app-owned startup on this
+            # captured controller without changing older snapshot scenarios.
+            async def subscribed() -> None:
+                return None
+
+            session = SimpleNamespace(async_start_notify=subscribed)
+            await controller.async_on_connect(session)
         for hook in STARTUP_HOOKS.get(controller._coordinator.bed_type, ()):  # noqa: SLF001
             if hasattr(controller, hook):
                 await getattr(controller, hook)()

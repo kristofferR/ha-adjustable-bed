@@ -399,6 +399,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Logicdata SimplicityFrame (SILVERmotion) | `logicdata` | 10 | 30 ms |
 | Malouf (FFE5 protocol) | `malouf_legacy_okin` | 7 | 150 ms |
 | Malouf Base / Lucid Base apps | `malouf_app` | 7 | 150 ms |
+| N32 Motion Bed app (com.okin.simmonskorea) | `n32_motion_bed` | 5 | 200 ms |
 | OCTO Smart Control | `octo` | 3 | 350 ms |
 | OCTO Smart Control: Octo Remote Star2 | `octo` `star2` | 3 | 50 ms |
 | Okin CB24 (SmartBed by Okin, Amada) | `okin_cb24` | 3 | 300 ms |

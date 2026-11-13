@@ -73,6 +73,7 @@ if TYPE_CHECKING:
     from .motion_bed.controller import MotionBedController as MotionBedController
     from .motomotion.controller import MotoMotionController as MotoMotionController
     from .motosleep import MotoSleepController as MotoSleepController
+    from .n32_motion_bed.controller import N32MotionBedController as N32MotionBedController
     from .octo.controller import OctoController as OctoController
     from .okin_7byte import Okin7ByteController as Okin7ByteController
     from .okin_cb24 import OkinCB24Controller as OkinCB24Controller
@@ -134,6 +135,7 @@ if TYPE_CHECKING:
 _EXPORT_MODULES = {
     "RizeHomeController": "rize_home.controller",
     "ComfortEnhancement3Controller": "comfort_enhancement3.controller",
+    "N32MotionBedController": "n32_motion_bed.controller",
     "ResidentController": "resident.controller",
     "SmartSleepController": "smart_sleep.controller",
     "JalonBedController": "jalon_bed.controller",

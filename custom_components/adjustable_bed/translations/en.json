@@ -3220,6 +3220,30 @@
       },
       "apex_massage_both": {
         "name": "Step Head + Feet massage"
+      },
+      "n32_relax": {
+        "name": "Relax"
+      },
+      "n32_refresh_alarms": {
+        "name": "Refresh bed alarms"
+      },
+      "n32_upper_up": {
+        "name": "Upper up"
+      },
+      "n32_upper_down": {
+        "name": "Upper down"
+      },
+      "n32_lower_up": {
+        "name": "Lower up"
+      },
+      "n32_lower_down": {
+        "name": "Lower down"
+      },
+      "n32_cervical_up": {
+        "name": "Cervical up"
+      },
+      "n32_cervical_down": {
+        "name": "Cervical down"
       }
     },
     "cover": {
@@ -3513,6 +3537,15 @@
       },
       "smart_sleep_hips": {
         "name": "Hips (app)"
+      },
+      "n32_upper": {
+        "name": "Upper"
+      },
+      "n32_lower": {
+        "name": "Lower"
+      },
+      "n32_cervical": {
+        "name": "Cervical"
       }
     },
     "sensor": {
@@ -5005,6 +5038,15 @@
       },
       "apex_firmware": {
         "name": "Firmware version"
+      },
+      "n32_alarm_1": {
+        "name": "Bed alarm 1"
+      },
+      "n32_alarm_2": {
+        "name": "Bed alarm 2"
+      },
+      "n32_alarm_3": {
+        "name": "Bed alarm 3"
       }
     },
     "light": {
@@ -9320,6 +9362,40 @@
         "slot": {
           "name": "Slot identifier",
           "description": "0..99 is the wire formatter domain, not the bed capacity. Use the same identifier to edit or delete."
+        }
+      }
+    },
+    "n32_motion_bed_alarm": {
+      "name": "N32 Motion Bed alarm",
+      "description": "Set, disable, delete or query one of the three bed alarm slots. Set requires all alarm fields. Empty weekdays schedules the next occurrence. Hardware remains unverified.",
+      "fields": {
+        "device_id": {
+          "name": "Bed",
+          "description": "The configured N32 physical bed or paired side."
+        },
+        "slot": {
+          "name": "Slot",
+          "description": "App-supported alarm slot 1, 2 or 3."
+        },
+        "operation": {
+          "name": "Operation",
+          "description": "Set uses complete fields. Disable preserves a fresh reported alarm. Delete clears the slot. Query refreshes it."
+        },
+        "time": {
+          "name": "Time",
+          "description": "Local bed alarm time, with minute precision. Required for set."
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "Required for set. Empty means once at the next occurrence; selected days recur weekly."
+        },
+        "mode": {
+          "name": "Mode",
+          "description": "Required for set. None, M1, M2, M3 or Flat. Music and phone notifications are separate."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which physical bed in a two-address pair receives the action."
         }
       }
     }

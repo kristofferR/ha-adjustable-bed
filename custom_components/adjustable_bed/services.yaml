@@ -4034,3 +4034,38 @@ comfort_enhancement3_delete_wakeup:
           min: 0
           max: 99
           mode: box
+
+n32_motion_bed_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    slot:
+      required: true
+      selector:
+        select:
+          options: ["1", "2", "3"]
+    operation:
+      required: true
+      selector:
+        select:
+          options: [set, disable, delete, query]
+    time:
+      selector:
+        time:
+    weekdays:
+      selector:
+        select:
+          multiple: true
+          options: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+    mode:
+      selector:
+        select:
+          options: [none, m1, m2, m3, flat]
+    side:
+      selector:
+        select:
+          options: [both, left, right]
