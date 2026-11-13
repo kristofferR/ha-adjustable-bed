@@ -250,8 +250,14 @@ async def test_registered_all_target_stop_epoch_captured_before_first_await(hass
 
 @pytest.mark.parametrize("renewable", [False, True])
 async def test_sequential_both_hold_rejected_before_claims_or_motion(hass, renewable):
-    pair = MagicMock(spec=PairedBedCoordinator)
-    pair.connection_mode = "sequential"
+    from tests.test_paired_coordinator import _pair
+
+    pair, left, right = _pair([], mode=const.PAIR_CONNECTION_MODE_SEQUENTIAL)
+    pair.hass = hass
+    left.bed_type = const.BED_TYPE_RICHMAT_CLASSIC_APPS
+    right.bed_type = const.BED_TYPE_RICHMAT_CLASSIC_APPS
+    left.claim_hold_lease = MagicMock()
+    right.claim_hold_lease = MagicMock()
     await services.async_register_services(hass)
     data = {"device_id": "bed", "control": "richmat_classic_1", "duration": 1}
     if renewable:
@@ -261,11 +267,13 @@ async def test_sequential_both_hold_rejected_before_claims_or_motion(hass, renew
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(pair, "both")], []),
         ),
+        patch.object(pair, "async_execute_controller_command", new_callable=AsyncMock) as execute,
         pytest.raises(ServiceValidationError, match="one side"),
     ):
         await hass.services.async_call(const.DOMAIN, "hold_control", data, blocking=True)
-    pair._targets_for.assert_not_called()
-    pair.async_execute_controller_command.assert_not_awaited()
+    left.claim_hold_lease.assert_not_called()
+    right.claim_hold_lease.assert_not_called()
+    execute.assert_not_awaited()
 
 
 @pytest.mark.parametrize("app", APPS)

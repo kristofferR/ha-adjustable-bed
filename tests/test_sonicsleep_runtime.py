@@ -230,7 +230,7 @@ async def test_sequential_both_lease_rejected_before_claims_finite_still_runs(ha
     left.claim_hold_lease = MagicMock()
     right.claim_hold_lease = MagicMock()
     resolve.return_value = ([(pair, "both")], [])
-    with pytest.raises(ServiceValidationError, match="concurrent physical"):
+    with pytest.raises(ServiceValidationError, match="one side"):
         await hass.services.async_call(const.DOMAIN, "timed_move", {"device_id": "pair", "motor": "back", "direction": "up", "duration_ms": 1000, "hold_owner": "card", "hold_generation": 1}, blocking=True)
     left.claim_hold_lease.assert_not_called()
     right.claim_hold_lease.assert_not_called()
