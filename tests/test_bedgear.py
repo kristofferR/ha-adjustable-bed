@@ -351,7 +351,7 @@ async def test_short_up_fallback_and_zero_q_asymmetry(runtime, clock):
     )
     await ControllerActionButton(co, release).async_press()
     await task
-    assert writes(co) == [b"$Q"] * 3
+    assert writes(co) == [b"$Q"] * 4  # Immediate finite pulse, then the three short-up writes.
     co.client.write_gatt_char.reset_mock()
     await hass.services.async_call(
         const.DOMAIN,
@@ -364,6 +364,11 @@ async def test_short_up_fallback_and_zero_q_asymmetry(runtime, clock):
 
 async def test_leases_renew_then_expire_and_stale_renewal_after_stop_fails(runtime, clock):
     hass, co = runtime
+    first_tick = []
+    began = clock.time()
+    co.client.write_gatt_char.side_effect = lambda *_args, **_kwargs: first_tick.append(
+        round((clock.time() - began) * 1000)
+    )
 
     async def held(generation):
         await hass.services.async_call(
@@ -385,6 +390,7 @@ async def test_leases_renew_then_expire_and_stale_renewal_after_stop_fails(runti
         await asyncio.sleep(0.1)
         await held(1)
     await task
+    assert first_tick[0] == 100  # Renewable gestures retain the native first-tick delay.
     assert writes(co).count(b"$K") >= 6 and writes(co).count(b"$b") == 5
     assert co._command_scheduler.recent_records[-1].outcome is CommandOutcome.EXPIRED
     task = asyncio.create_task(held(2))
@@ -503,9 +509,9 @@ async def test_precise_first_tick_and_five_stop_timing_through_cover(runtime, cl
     )
     task = asyncio.create_task(cover.async_open_cover())
     await asyncio.sleep(0.05)
-    assert not recorded
+    assert recorded == [(0, b"$K")]
     await task
-    assert recorded[0] == (100, b"$K")
+    assert recorded[0] == (0, b"$K")
     stops = [at for at, data in recorded if data == b"$b"]
     assert stops == [1000, 1030, 1060, 1090, 1120]
 
@@ -595,7 +601,7 @@ async def test_release_offsets_absorb_ble_write_latency(runtime, clock):
     recorded.clear()
     began = clock.time()
     await co.async_execute_controller_command(lambda bed: bed.hold_control("bedgear_tilt_down", 20))
-    assert recorded == [(20, b"$Q"), (120, b"$Q"), (220, b"$Q")]
+    assert recorded == [(0, b"$Q"), (20, b"$Q"), (120, b"$Q"), (220, b"$Q")]
 
 
 async def test_alarm_partial_changes_preserve_the_other_observed_field(runtime, clock):
@@ -688,10 +694,64 @@ async def test_finite_move_does_not_backfill_after_a_slow_write(runtime, clock):
         },
         blocking=True,
     )
-    assert [row for row in recorded if row[1] == b"$K"] == [(100, b"$K")]
-    assert recorded[1] == (400, b"$b")
+    assert [row for row in recorded if row[1] == b"$K"] == [(0, b"$K")]
+    assert recorded[1] == (300, b"$b")
     assert [data for _at, data in recorded[1:]] == [b"$b"] * 5
     assert co._command_scheduler.recent_records[-1].outcome is CommandOutcome.COMPLETED
+
+
+@pytest.mark.parametrize("duration_ms", [100, 200])
+@pytest.mark.parametrize("memory", [False, True])
+async def test_short_finite_holds_survive_event_loop_wake_latency(
+    runtime, clock, duration_ms, memory
+):
+    hass, co = runtime
+    bed = co.controller
+    original_wait = bed._wait
+
+    async def late_wake(seconds, cancel):
+        result = await original_wait(seconds, cancel)
+        if seconds > 0:
+            await asyncio.sleep(0.001)
+        return result
+
+    bed._wait = late_wake
+    recorded = []
+    began = clock.time()
+
+    async def write(_char, data, **_kwargs):
+        recorded.append((round((clock.time() - began) * 1000), bytes(data)))
+
+    co.client.write_gatt_char.side_effect = write
+    if memory:
+        await hass.services.async_call(
+            const.DOMAIN,
+            "hold_control",
+            {"device_id": ["bed"], "control": "bedgear_memory_1", "duration": duration_ms / 1000},
+            blocking=True,
+        )
+    else:
+        await hass.services.async_call(
+            const.DOMAIN,
+            "timed_move",
+            {"device_id": ["bed"], "motor": "head", "direction": "up", "duration_ms": duration_ms},
+            blocking=True,
+        )
+    movement = [(at, data) for at, data in recorded if data != b"$b"]
+    assert [data for _at, data in movement] == [b"$U" if memory else b"$K"] * (duration_ms // 100)
+    assert movement[0][0] == 0
+    assert all(at < duration_ms for at, _data in movement)
+
+
+async def test_expired_finite_hold_in_ble_lane_sends_only_captured_stop(runtime, clock):
+    _hass, co = runtime
+    bed = co.controller
+    await bed.ble_lock.acquire()
+    task = asyncio.create_task(bed.hold_control("bedgear_head_up", 100))
+    await asyncio.sleep(0.2)
+    bed.ble_lock.release()
+    await task
+    assert writes(co) == [b"$b"] * 5
 
 
 async def test_panel_e_save_has_no_release_recall_and_snore_remains_held(runtime, clock):

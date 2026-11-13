@@ -19,7 +19,7 @@ from custom_components.adjustable_bed.command_scheduler import CommandKind, Hold
 from custom_components.adjustable_bed.const import DOMAIN, SIDE_BOTH
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.profiles.smart_sleep import PROFILES
-from custom_components.adjustable_bed.services import handle_timed_move
+from custom_components.adjustable_bed.services import handle_hold_control, handle_timed_move
 from tests.hold_lease_wire import virtual_clock
 from tests.test_smart_sleep import controller
 
@@ -316,3 +316,71 @@ async def test_bounded_move_preserves_a_real_ack_timeout_and_releases(hass):
                 codec.motion("p2", 1, True),
                 codec.stop("p2", motor=True),
             ]
+
+
+@pytest.mark.parametrize("duration_ms", [100, 600])
+@pytest.mark.parametrize("ack_seconds", [0.005, 0.2])
+async def test_finite_ai_zero_bounds_primary_and_duplicate_writes(hass, duration_ms, ack_seconds):
+    async with live_bed(hass, "p1", 8) as (coord, ctrl):
+        with virtual_clock() as clock:
+            events = acknowledged_writer(ctrl, clock, seconds=ack_seconds)
+            call = ServiceCall(
+                hass,
+                DOMAIN,
+                "hold_control",
+                {"device_id": ["bed"], "control": "preset_ai_zero", "duration": duration_ms / 1000},
+            )
+            with patch(
+                "custom_components.adjustable_bed.services._resolve_sided_targets",
+                return_value=([(coord, SIDE_BOTH)], []),
+            ):
+                await handle_hold_control(call)
+            starts = [(frame, at) for kind, frame, at in events if kind == "start"]
+            assert starts[-1] == (codec.stop("p1"), duration_ms + 100)
+            assert all(at < duration_ms for frame, at in starts if frame != codec.stop("p1"))
+            await asyncio.sleep(1)
+            assert [(frame, at) for kind, frame, at in events if kind == "start"] == starts
+
+
+async def test_finite_ai_zero_preserves_transport_timeout_and_cleans_up(hass):
+    async with live_bed(hass, "p1", 8) as (_coord, ctrl):
+        with virtual_clock() as clock:
+
+            def fail(_frame):
+                if _frame != codec.stop("p1"):
+                    raise TimeoutError("AI-zero transport timeout")
+
+            events = acknowledged_writer(ctrl, clock, on_start=fail)
+            with pytest.raises(TimeoutError, match="AI-zero transport timeout"):
+                await ctrl.hold_control("preset_ai_zero", 600)
+            assert [frame for kind, frame, _at in events if kind == "start"] == [
+                codec.preset("p1", "ai_zero"),
+                codec.stop("p1"),
+            ]
+
+
+async def test_ai_zero_renewal_outlives_its_initial_finite_duration(hass):
+    async with live_bed(hass, "p1", 8) as (coord, ctrl):
+        with virtual_clock() as clock:
+            events = acknowledged_writer(ctrl, clock, seconds=0.005)
+
+            async def move(bed):
+                await bed.hold_control("preset_ai_zero", 100)
+
+            async def lease(seconds):
+                await coord.async_execute_controller_command(
+                    move,
+                    resource="preset:ai_zero",
+                    kind=CommandKind.HOLD,
+                    lease=HoldLease(
+                        owner="card", generation=1, action="preset_ai_zero", duration_s=seconds
+                    ),
+                )
+
+            task = asyncio.create_task(lease(0.25))
+            await asyncio.sleep(0.2)
+            await lease(0.4)
+            await task
+            starts = [(frame, at) for kind, frame, at in events if kind == "start"]
+            assert any(frame == codec.preset("p1", "ai_zero") and at >= 300 for frame, at in starts)
+            assert starts[-1] == (codec.stop("p1"), 700)

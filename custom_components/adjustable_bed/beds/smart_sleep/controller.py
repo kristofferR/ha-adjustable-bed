@@ -427,17 +427,23 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
             ):
                 await self.write_command(frame, admit=True)
 
-        count = self.leased_hold_refreshes(self.profile.refresh_ms) or max(
-            1, (duration_ms + self.profile.refresh_ms - 1) // self.profile.refresh_ms
-        )
+        count = self.leased_hold_refreshes(self.profile.refresh_ms)
+        deadline = asyncio.timeout(duration_ms / 1000 if count is None else None)
+        if count is None:
+            count = max(1, (duration_ms + self.profile.refresh_ms - 1) // self.profile.refresh_ms)
         try:
-            for _ in range(count):
-                if self._coordinator.cancel_command.is_set():
-                    break
-                await self.write_command(frame, admit=True)
-                duplicates.append(asyncio.create_task(duplicate()))
-                if await self._wait_cancel(self.profile.refresh_ms):
-                    break
+            try:
+                async with deadline:
+                    for _ in range(count):
+                        if self._coordinator.cancel_command.is_set():
+                            break
+                        await self.write_command(frame, admit=True)
+                        duplicates.append(asyncio.create_task(duplicate()))
+                        if await self._wait_cancel(self.profile.refresh_ms):
+                            break
+            except TimeoutError:
+                if not deadline.expired():
+                    raise
         finally:
             # Delayed refreshes belong to this gesture, never to the next command.
             for task in duplicates:

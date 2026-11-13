@@ -50,6 +50,10 @@ class Link:
     notify: tuple[BleakGATTCharacteristic, ...]
 
 
+class _HoldElapsed(Exception):
+    """A queued finite hold has expired before transmission."""
+
+
 def select_transport(client: BleakClient) -> Link:
     chars = tuple(
         char
@@ -280,9 +284,22 @@ class BedgearController(ProfileExecution[BedgearProfile], BedController):
             for char in link.notify:
                 await link.client.stop_notify(char)
 
-    async def _send(self, command: bytes | None, link: Link, cancel: asyncio.Event) -> None:
+    async def _send(
+        self,
+        command: bytes | None,
+        link: Link,
+        cancel: asyncio.Event,
+        *,
+        deadline: float | None = None,
+    ) -> None:
         if command is None or cancel.is_set():
             return
+
+        def before_write() -> None:
+            self._check_link(link)
+            if deadline is not None and asyncio.get_running_loop().time() >= deadline:
+                raise _HoldElapsed
+
         await self._write_gatt_with_retry(
             link.write.uuid,
             command,
@@ -290,7 +307,7 @@ class BedgearController(ProfileExecution[BedgearProfile], BedController):
             response=False,
             characteristic=link.write,
             expected_client=link.client,
-            before_write=lambda: self._check_link(link),
+            before_write=before_write,
         )
 
     def _check_link(self, link: Link) -> None:
@@ -356,13 +373,32 @@ class BedgearController(ProfileExecution[BedgearProfile], BedController):
         loop = asyncio.get_running_loop()
         start = loop.time()
         deadline = start + duration_ms / 1000
+        interval = self.profile.refresh_ms
+        leased = self.leased_hold_refreshes(interval) is not None
+        # Finite HA windows start with a pulse, rather than making their only
+        # pulse race the deadline. Native leased gestures keep the first tick.
+        ticks = (
+            range(1, duration_ms // interval + 1)
+            if leased
+            else range((duration_ms + interval - 1) // interval)
+        )
         try:
-            for tick in range(1, duration_ms // self.profile.refresh_ms + 1):
-                if not await self._wait(max(0, start + tick * 0.1 - loop.time()), cancel):
+            for tick in ticks:
+                if not await self._wait(
+                    max(0, start + tick * interval / 1000 - loop.time()), cancel
+                ):
                     break
-                if loop.time() > deadline:
+                if loop.time() >= deadline:
                     break
-                await self._send(self._letter(binding.letter), link, cancel)
+                try:
+                    await self._send(
+                        self._letter(binding.letter),
+                        link,
+                        cancel,
+                        deadline=None if leased else deadline,
+                    )
+                except _HoldElapsed:
+                    break
                 if not cancel.is_set():
                     count += 1
             if not cancel.is_set():

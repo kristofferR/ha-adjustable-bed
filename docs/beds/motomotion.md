@@ -726,6 +726,12 @@ the movement command and whose cancellation only ends refresh. Presets use their
 own release policy. Memory recalls and LCD presets end refresh without a STOP;
 classical presets and Zero massage buttons can use the short-up fallback.
 
+The first-tick delay above applies to renewable card gestures. Finite Home
+Assistant holds send their first pulse immediately, then refresh at 100 ms
+intervals within the requested duration. This keeps short memory and motor
+actions usable despite event-loop wake latency. Expired queued pulses are
+discarded; the captured gesture still owns its normal release policy.
+
 HA serializes commands. Each action captures its BLE session, so cancellation,
 reconnection or controller replacement cannot send delayed writes on a new link.
 The RGB transaction captures one requested color and completes in source order;
