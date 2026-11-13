@@ -56,6 +56,7 @@ FAMILY = CodecFamily(
             "okimat",
             "resident",
             "rize_home",
+            "okin_motionbed",
             "okin_64bit",
             "okin_cb24",
             "okin_cst",

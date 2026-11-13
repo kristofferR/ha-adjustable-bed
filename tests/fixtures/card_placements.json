@@ -1088,6 +1088,28 @@
   "card_role": "up",
   "card_motor": "motion_bed_tilt"
  },
+ "button:motionbed_light_parameter_0": {
+  "card_section": "lighting"
+ },
+ "button:motionbed_light_parameter_1": {
+  "card_section": "lighting"
+ },
+ "button:motionbed_middle_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "motionbed_middle"
+ },
+ "button:motionbed_middle_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "motionbed_middle"
+ },
+ "button:motionbed_preset_stop": {
+  "card_section": "presets"
+ },
+ "button:motionbed_release": {
+  "card_section": "hidden"
+ },
  "button:motomotion_action": {
   "card_section": "utility"
  },
@@ -2236,6 +2258,10 @@
  "cover:motion_bed_tilt": {
   "card_section": "motors",
   "card_motor": "motion_bed_tilt"
+ },
+ "cover:motionbed_middle": {
+  "card_section": "motors",
+  "card_motor": "motionbed_middle"
  },
  "cover:motor_3": {
   "card_section": "motors",

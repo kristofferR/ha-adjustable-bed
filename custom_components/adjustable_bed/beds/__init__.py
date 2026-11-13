@@ -76,6 +76,7 @@ if TYPE_CHECKING:
     from .okin_cst import OkinCstController as OkinCstController
     from .okin_dot import OkinDotController as OkinDotController
     from .okin_handle import OkinHandleController as OkinHandleController
+    from .okin_motionbed import OkinMotionBedController as OkinMotionBedController
     from .okin_nordic import OkinNordicController as OkinNordicController
     from .okin_ore import OkinOreController as OkinOreController
     from .okin_rf_eco_bt import OkinRfEcoBtController as OkinRfEcoBtController
@@ -208,6 +209,7 @@ _EXPORT_MODULES = {
     "OkinCstController": "okin_cst",
     "OkinDotController": "okin_dot",
     "OkinHandleController": "okin_handle",
+    "OkinMotionBedController": "okin_motionbed",
     "OkinNordicController": "okin_nordic",
     "BfCherishController": "bf_cherish.controller",
     "OkinOreController": "okin_ore",
@@ -270,6 +272,7 @@ __all__ = [
     "Okin7ByteController",
     "OreComfortBedController",
     "InnovaController",
+    "OkinMotionBedController",
     "OkinNordicController",
     "LeggettGen2Controller",
     "LeggettLpLegacyController",

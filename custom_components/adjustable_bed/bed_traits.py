@@ -73,6 +73,7 @@ from .const import (
     BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_FFE,
+    BED_TYPE_OKIN_MOTIONBED,
     BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
@@ -189,6 +190,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_ADJUSTABLE_BED: _NO_ANGLES,
     BED_TYPE_ADJUSTABLE_LUMBAR: _NO_ANGLES,
     BED_TYPE_RIZE_HOME: _NO_ANGLES_SCOPED,
+    BED_TYPE_OKIN_MOTIONBED: replace(_NO_ANGLES, owns_device_info_reads=True),
     BED_TYPE_RESIDENT: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     BED_TYPE_ADJUSTAMATTRESS: _NO_ANGLES,
     # Measured against the BedJet LCD remote's own degree readout.

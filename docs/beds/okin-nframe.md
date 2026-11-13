@@ -35,6 +35,7 @@ the Adjustable bed (Lumbar) app, Rize Home and Resident Adjustable Base.
 | [Customatic Z-Series](#customatic-z-series) | Customatic Z-230 and Z-280 bases with the Z-Series app |
 | [Okin 64-Bit](#okin-64-bit) | Okin controllers with the Adjustable bed app, including `NORA_CON` / `NORACON` |
 | [Adjustable bed app](#adjustable-bed-app) | Beds controlled with Adjustable bed 1.2.1 |
+| [OKIN Motion Bed](#okin-motion-bed) | Beds controlled with OKIN Motion Bed, physical mappings unverified |
 | [Resident Adjustable Base](#resident-adjustable-base) | Beds controlled with Resident Adjustable Base, hardware models unverified |
 | [Adjustable bed (Lumbar)](#adjustable-bed-lumbar) | Beds controlled with the Adjustable bed(Lumbar) app |
 
@@ -46,6 +47,7 @@ Customatic app profiles.
 
 | Analyzed | App | Package ID | Profile |
 |---|---|---|---|
+| ✅ | OKIN Motion Bed 1.0 (2), hardware unverified | `com.okin.motionbed` | [OKIN Motion Bed](#okin-motion-bed), explicit choice |
 | ⚠️ | [OKIN ComfortBed II-N](https://play.google.com/store/apps/details?id=com.ore.jalon.neworebeding) | `com.ore.jalon.neworebeding` | [Okimat](#okimat), unverified |
 | ✅ | [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) 1.1.6 (8), hardware unverified | `com.ore.okincomfortbed` | [ORE comfort-bed profile](keeson.md#okin-comfort-bed), explicit Keeson profile |
 | ✅ | [OKIN Smart Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.smartbedwifi) | `com.okin.bedding.smartbedwifi` | [OKIN SmartBed CB24](#okin-smartbed-cb24); [Okimat](#okimat) unverified |
@@ -243,6 +245,7 @@ are unchanged.
 | Jordan's Tranquil | `tranquil` | `tranquil` | 96-bit | plain frame | from the characteristic's properties | head, feet | 2 |
 | Customatic Z-230 | `zseries_z230` | `customatic_zseries` | 96-bit | plain frame | from the characteristic's properties | head, feet | 1 |
 | Customatic Z-280 | `zseries_z280` | `customatic_zseries` | 96-bit | plain frame | from the characteristic's properties | head, feet | 2 |
+| OKIN Motion Bed | `okin_motionbed` | `okin_motionbed` | 32-bit | fixed E5 gateway envelope | with response | back, middle, legs | 2 |
 | Resident Adjustable Base | `resident` | `resident` | 64-bit | plain frame | with response | head, feet | 2 |
 | OKIN 64-bit Nordic UART | `okin_64bit_nordic` | `okin_64bit` | 64-bit | plain frame | without response | head, feet, lumbar | 2 |
 | OKIN 64-bit OKIN service | `okin_64bit_custom` | `okin_64bit` | 64-bit | plain frame | with response | head, feet, lumbar | 2 |
@@ -291,6 +294,7 @@ are unchanged.
 | Jordan's Tranquil | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
 | Customatic Z-230 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
 | Customatic Z-280 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| OKIN Motion Bed | 200 ms | entry pulse count; until release with a renewable hold | 1 STOP |
 | Resident Adjustable Base | 300 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms |
 | OKIN 64-bit Nordic UART | entry pulse delay | entry pulse count | 1 STOP |
 | OKIN 64-bit OKIN service | entry pulse delay | entry pulse count | 1 STOP |
@@ -341,6 +345,7 @@ Entry pulse settings are the configured motor pulse count and delay.
 | Jordan's Tranquil | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
 | Customatic Z-230 | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
 | Customatic Z-280 | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
+| OKIN Motion Bed | once, no STOP | once, no STOP | once, no STOP | n/a | once, no STOP | n/a |
 | Resident Adjustable Base | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
 | OKIN 64-bit Nordic UART | once, no STOP | once, no STOP | n/a | n/a | once, no STOP | n/a |
 | OKIN 64-bit OKIN service | once, no STOP | once, no STOP | n/a | n/a | once, no STOP | n/a |
@@ -5144,6 +5149,109 @@ hardware acquisition or testing is required. Phone UI, audio, local locks/themes
 manual/PDF infrastructure and generic network/account/OTA SDK surface are outside
 the direct BLE bed product boundary.
 
+
+### OKIN Motion Bed
+
+**App:** [OKIN Motion Bed](https://apkpure.com/okin-motion-bed/com.okin.motionbed) 1.0 (2), `com.okin.motionbed`
+
+**Status:** ❓ Needs testing
+
+#### Setup
+
+Choose **OKIN Motion Bed app (com.okin.motionbed)** explicitly and select the
+bed's MAC. Detection: none. The app scans without name, service or manufacturer
+filters. Shared advertisements do not identify this app. Home Assistant retains
+MAC ownership and checks fresh Bluetooth reachability; rescanning never retargets
+an entry by a row index. One fixed layout is offered. The saved generic motor
+count is a compatibility field, not proof of physical actuator count. There is
+no app authentication, PIN, pairing handshake, query or startup write.
+
+#### Controls
+
+The dashboard card and covers expose Back, Feet and **Middle controls (lumbar
+icon)**. The middle commands are named head in the app but drawn as lumbar;
+no physical head/lumbar or combined-motor interpretation is assumed. There are
+no measured positions, ranges or light-state entities.
+
+Flat, Zero-G and Memory A/B recall and programming use separate explicit actions.
+Repeated recalls always recall. **Stop preset** sends the distinct preset-stop
+frame that Android sends on a second same-preset tap. Global Stop sends manual
+STOP and preset STOP, so it covers either class of movement. **Bed light parameter
+0/1** are separate card buttons; physical on/off polarity is unverified.
+
+Android shares a last-button/count toggle between presets, lights and phone
+flashlight. An initial memory long-save retains count -1, so the next same-slot
+Android tap is a no-op; prior count 0 recalls and count 1 stops. HA does not carry
+that incidental UI coupling into explicit recall/program actions, does not report
+pre-submit success as bed confirmation, and sends no invented reset command.
+
+<!-- generated:okin-motionbed -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Role | Service | Characteristic | Mode |
+|---|---|---|---|
+| Control | last matching service in Android UUID order | `0000ffe9-0000-1000-8000-00805f9b34fb` | write with response; requires write property |
+| Notification | last matching service in Android UUID order | `0000ffe4-0000-1000-8000-00805f9b34fb` | notify when supported; subscription failure does not gate writes |
+
+| Action | Word | Final frame |
+|---|---|---|
+| back up | `0x00000001` | `E5 FE 16 00 00 00 01 05` |
+| back down | `0x00000002` | `E5 FE 16 00 00 00 02 04` |
+| middle up | `0x00000005` | `E5 FE 16 00 00 00 05 01` |
+| middle down | `0x0000000A` | `E5 FE 16 00 00 00 0A FC` |
+| legs up | `0x00000004` | `E5 FE 16 00 00 00 04 02` |
+| legs down | `0x00000008` | `E5 FE 16 00 00 00 08 FE` |
+| stop | `0x00000000` | `E5 FE 16 00 00 00 00 06` |
+| preset stop | `0x21000000` | `E5 FE 16 21 00 00 00 E5` |
+| zero g | `0x21000001` | `E5 FE 16 21 00 00 01 E4` |
+| flat | `0x21000002` | `E5 FE 16 21 00 00 02 E3` |
+| memory 1 | `0x21000004` | `E5 FE 16 21 00 00 04 E1` |
+| memory 2 | `0x21000006` | `E5 FE 16 21 00 00 06 DF` |
+| save memory 1 | `0x20000014` | `E5 FE 16 20 00 00 14 D2` |
+| save memory 2 | `0x20000016` | `E5 FE 16 20 00 00 16 D0` |
+| light parameter 0 | `0x31000000` | `E5 FE 16 31 00 00 00 D5` |
+| light parameter 1 | `0x31000001` | `E5 FE 16 31 00 00 01 D4` |
+
+Held directions refresh every 200 ms, then send 1 manual STOP. Memory slots: 2.
+Presets, memory programming and light parameters write once.
+<!-- /generated -->
+
+#### Timing
+
+The generated table gives this app's hold cadence. Releasing, cancelling or
+replacing a hold ends the cancellable refresh and sends manual STOP with a fresh
+cancellation event. All controls serialize on one bed-wide movement resource.
+The card uses bounded, renewable holds with a side-scoped release action, so
+pointer-up/cancel sends only the held command's manual STOP. A finite HA tap
+uses the configured pulse count at the app cadence. The Android SDK's FIFO can
+leave queued refreshes ahead of STOP; HA writes directly under its command lock.
+No hardware watchdog is assumed. HA owns bounded reconnect/backoff and intentional
+idle disconnection; every new session reselects GATT roles and subscriptions.
+
+#### Notifications
+
+FFE4 is subscribed when it supports notify. No subscription acknowledgment gates
+commands. Android only forwards an E2FE16 prefix to an event with no consumer;
+HA keeps raw diagnostic bytes and exposes no invented alarm, capability, light
+or position interpretation. Short packets are safe. Old-session callbacks are
+ignored. Writes require the app SDK's write property and use response mode;
+the exact inherited Android writeType remains a physical validation question.
+
+#### Services
+
+Standard `goto_preset`, `save_preset`, `hold_control` and `stop` actions cover
+the controls alongside the entities. `hold_control` accepts `back_up/down`,
+`middle_up/down` and `legs_up/down`. Memory slots 1/2 are A/B. Light parameter
+and preset-stop buttons are also callable through `button.press`.
+
+#### Evidence
+
+Accepted row150 APK Protocol Audit and scoped audit002, `com.okin.motionbed`
+1.0 (2). All reachable command literals reproduce through the existing gateway
+encoder. Hardware remains unverified. External beta/release users can validate
+mechanical mappings, light polarity, memory/preset behavior, release latency,
+GATT properties and reconnect ordering. Notification interpretation needs future
+physical captures; no static proven bed control is waiting on hardware.
 
 ### Resident Adjustable Base
 

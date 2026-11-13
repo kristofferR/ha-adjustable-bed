@@ -3030,6 +3030,24 @@
       },
       "rize_home_save_zero_g": {
         "name": "Save Zero gravity (6 seconds)"
+      },
+      "motionbed_preset_stop": {
+        "name": "Stop preset"
+      },
+      "motionbed_light_parameter_0": {
+        "name": "Bed light parameter 0"
+      },
+      "motionbed_light_parameter_1": {
+        "name": "Bed light parameter 1"
+      },
+      "motionbed_release": {
+        "name": "Release held control"
+      },
+      "motionbed_middle_up": {
+        "name": "Middle controls (lumbar icon) up"
+      },
+      "motionbed_middle_down": {
+        "name": "Middle controls (lumbar icon) down"
       }
     },
     "cover": {
@@ -3296,6 +3314,9 @@
       },
       "richmat_app_tilt2": {
         "name": "Tilt 2"
+      },
+      "motionbed_middle": {
+        "name": "Middle controls (lumbar icon)"
       }
     },
     "sensor": {

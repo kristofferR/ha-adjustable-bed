@@ -31,6 +31,7 @@ PROFILES: dict[str, profiles.OkinNFrameProfile] = {
     for profile in (
         profiles.OKIMAT,
         profiles.RESIDENT,
+        profiles.OKIN_MOTIONBED,
         profiles.DEWERTOKIN,
         profiles.RF_ECO_BT,
         *profiles.CUSTOMATIC_PROFILES.values(),
@@ -97,6 +98,8 @@ def _census(profile: profiles.OkinNFrameProfile) -> set[str]:
     else:
         frames = {codec.frame(word).hex() for word in words}
     frames |= {codec.frame(word, 8).hex() for word in profile.long_keys.values()}
+    if profile.envelope == "gateway":
+        frames = {codec.gateway_frame(word).hex() for word in words}
     if profile.envelope == "revision_selector":
         frames |= {codec.gateway_frame(word).hex() for word in words}
     if profile.envelope == "keeson_e6":
@@ -268,6 +271,7 @@ HOLD_PROFILES = sorted(key for key, profile in PROFILES.items() if profile.execu
 def test_hold_declarations_follow_the_evidence_matrix():
     """Stream-supported rows only; DewertOkin, CB24, DOT, 64-bit and SleepEase are blocked."""
     assert set(HOLD_PROFILES) == {
+        profiles.OKIN_MOTIONBED.key,
         profiles.RESIDENT.key,
         *profiles.LEGGETT_PROFILES,
         *profiles.CUSTOMATIC_PROFILES,

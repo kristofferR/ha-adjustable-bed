@@ -1,0 +1,813 @@
+[
+  {
+    "id": "V.cmd_FLAT_call",
+    "protocol": "P1",
+    "action": "Flat recall",
+    "inputs": {
+      "template": "E5FE1621000002FF",
+      "normalize_count": 2
+    },
+    "expected_bytes": "E5FE1621000002E3",
+    "kind": "outgoing-command",
+    "reachability": "REACHABLE",
+    "evidence": [
+      "E03",
+      "E04",
+      "E05",
+      "E10"
+    ]
+  },
+  {
+    "id": "V.cmd_Light_off",
+    "protocol": "P1",
+    "action": "Bed-light constant Light_off (parameter 1)",
+    "inputs": {
+      "template": "E5FE1631000001FF",
+      "normalize_count": 2
+    },
+    "expected_bytes": "E5FE1631000001D4",
+    "kind": "outgoing-command",
+    "reachability": "REACHABLE",
+    "evidence": [
+      "E03",
+      "E04",
+      "E05",
+      "E10"
+    ]
+  },
+  {
+    "id": "V.cmd_Light_on",
+    "protocol": "P1",
+    "action": "Bed-light constant Light_on (parameter 0)",
+    "inputs": {
+      "template": "E5FE1631000000FF",
+      "normalize_count": 2
+    },
+    "expected_bytes": "E5FE1631000000D5",
+    "kind": "outgoing-command",
+    "reachability": "REACHABLE",
+    "evidence": [
+      "E03",
+      "E04",
+      "E05",
+      "E10"
+    ]
+  },
+  {
+    "id": "V.cmd_MemoryA_call",
+    "protocol": "P1",
+    "action": "Memory A recall",
+    "inputs": {
+      "template": "E5FE1621000004FF",
+      "normalize_count": 2
+    },
+    "expected_bytes": "E5FE1621000004E1",
+    "kind": "outgoing-command",
+    "reachability": "REACHABLE",
+    "evidence": [
+      "E03",
+      "E04",
+      "E05",
+      "E10"
+    ]
+  },
+  {
+    "id": "V.cmd_MemoryA_save",
+    "protocol": "P1",
+    "action": "Memory A save",
+    "inputs": {
+      "template": "E5FE1620000014FF",
+      "normalize_count": 2
+    },
+    "expected_bytes": "E5FE1620000014D2",
+    "kind": "outgoing-command",
+    "reachability": "REACHABLE",
+    "evidence": [
+      "E03",
+      "E04",
+      "E05",
+      "E10"
+    ]
+  },
+  {
+    "id": "V.cmd_MemoryB_call",
+    "protocol": "P1",
+    "action": "Memory B recall",
+    "inputs": {
+      "template": "E5FE1621000006FF",
+      "normalize_count": 2
+    },
+    "expected_bytes": "E5FE1621000006DF",
+    "kind": "outgoing-command",
+    "reachability": "REACHABLE",
+    "evidence": [
+      "E03",
+      "E04",
+      "E05",
+      "E10"
+    ]
+  },
+  {
+    "id": "V.cmd_MemoryB_save",
+    "protocol": "P1",
+    "action": "Memory B save",
+    "inputs": {
+      "template": "E5FE1620000016FF",
+      "normalize_count": 2
+    },
+    "expected_bytes": "E5FE1620000016D0",
+    "kind": "outgoing-command",
+    "reachability": "REACHABLE",
+    "evidence": [
+      "E03",
+      "E04",
+      "E05",
+      "E10"
+    ]
+  },
+  {
+    "id": "V.cmd_QUIETSLEEP_call",
+    "protocol": "P1",
+    "action": "Unused QUIETSLEEP alias, identical bytes to live Memory A recall",
+    "inputs": {
+      "template": "E5FE1621000004FF",
+      "normalize_count": 2
+    },
+    "expected_bytes": "E5FE1621000004E1",
+    "kind": "dead-helper-arithmetic-only",
+    "reachability": "DEAD/UNUSED",
+    "evidence": [
+      "E03",
+      "E04",
+      "E15"
+    ]
+  },
+  {
+    "id": "V.cmd_ZEROG_call",
+    "protocol": "P1",
+    "action": "Zero-gravity recall",
+    "inputs": {
+      "template": "E5FE1621000001FF",
+      "normalize_count": 2
+    },
+    "expected_bytes": "E5FE1621000001E4",
+    "kind": "outgoing-command",
+    "reachability": "REACHABLE",
+    "evidence": [
+      "E03",
+      "E04",
+      "E05",
+      "E10"
+    ]
+  },
+  {
+    "id": "V.cmd_back_off",
+    "protocol": "P1",
+    "action": "Back down",
+    "inputs": {
+      "template": "E5FE1600000002FF",
+      "normalize_count": 2
+    },
+    "expected_bytes": "E5FE160000000204",
+    "kind": "outgoing-command",
+    "reachability": "REACHABLE",
+    "evidence": [
+      "E03",
+      "E04",
+      "E05",
+      "E09"
+    ]
+  },
+  {
+    "id": "V.cmd_back_on",
+    "protocol": "P1",
+    "action": "Back up",
+    "inputs": {
+      "template": "E5FE1600000001FF",
+      "normalize_count": 2
+    },
+    "expected_bytes": "E5FE160000000105",
+    "kind": "outgoing-command",
+    "reachability": "REACHABLE",
+    "evidence": [
+      "E03",
+      "E04",
+      "E05",
+      "E09"
+    ]
+  },
+  {
+    "id": "V.cmd_getAM_Data",
+    "protocol": "P1",
+    "action": "Unused getAM_Data query literal, no live invocation",
+    "inputs": {
+      "template": "E5FE16FFFFFFFFFF",
+      "normalize_count": 2
+    },
+    "expected_bytes": "E5FE16FFFFFFFF0A",
+    "kind": "dead-helper-arithmetic-only",
+    "reachability": "DEAD/UNUSED",
+    "evidence": [
+      "E03",
+      "E04",
+      "E15"
+    ]
+  },
+  {
+    "id": "V.cmd_head_off",
+    "protocol": "P1",
+    "action": "Lumbar down UI (constant named head_off)",
+    "inputs": {
+      "template": "E5FE160000000AFF",
+      "normalize_count": 2
+    },
+    "expected_bytes": "E5FE160000000AFC",
+    "kind": "outgoing-command",
+    "reachability": "REACHABLE",
+    "evidence": [
+      "E03",
+      "E04",
+      "E05",
+      "E09"
+    ]
+  },
+  {
+    "id": "V.cmd_head_on",
+    "protocol": "P1",
+    "action": "Lumbar up UI (constant named head_on)",
+    "inputs": {
+      "template": "E5FE1600000005FF",
+      "normalize_count": 2
+    },
+    "expected_bytes": "E5FE160000000501",
+    "kind": "outgoing-command",
+    "reachability": "REACHABLE",
+    "evidence": [
+      "E03",
+      "E04",
+      "E05",
+      "E09"
+    ]
+  },
+  {
+    "id": "V.cmd_leg_off",
+    "protocol": "P1",
+    "action": "Foot down",
+    "inputs": {
+      "template": "E5FE1600000008FF",
+      "normalize_count": 2
+    },
+    "expected_bytes": "E5FE1600000008FE",
+    "kind": "outgoing-command",
+    "reachability": "REACHABLE",
+    "evidence": [
+      "E03",
+      "E04",
+      "E05",
+      "E09"
+    ]
+  },
+  {
+    "id": "V.cmd_leg_on",
+    "protocol": "P1",
+    "action": "Foot up",
+    "inputs": {
+      "template": "E5FE1600000004FF",
+      "normalize_count": 2
+    },
+    "expected_bytes": "E5FE160000000402",
+    "kind": "outgoing-command",
+    "reachability": "REACHABLE",
+    "evidence": [
+      "E03",
+      "E04",
+      "E05",
+      "E09"
+    ]
+  },
+  {
+    "id": "V.cmd_position_STOP",
+    "protocol": "P1",
+    "action": "Stop preset movement",
+    "inputs": {
+      "template": "E5FE1621000000FF",
+      "normalize_count": 2
+    },
+    "expected_bytes": "E5FE1621000000E5",
+    "kind": "outgoing-command",
+    "reachability": "REACHABLE",
+    "evidence": [
+      "E03",
+      "E04",
+      "E05",
+      "E10"
+    ]
+  },
+  {
+    "id": "V.cmd_stop",
+    "protocol": "P1",
+    "action": "Manual release/cancel STOP",
+    "inputs": {
+      "template": "E5FE1600000000FF",
+      "normalize_count": 2
+    },
+    "expected_bytes": "E5FE160000000006",
+    "kind": "outgoing-command",
+    "reachability": "REACHABLE",
+    "evidence": [
+      "E03",
+      "E04",
+      "E05",
+      "E09"
+    ]
+  },
+  {
+    "id": "H1",
+    "protocol": "P1",
+    "action": "Unused helper set byte5=128",
+    "inputs": {
+      "template": "E5FE1600000000FF",
+      "offset": 5,
+      "value": 128
+    },
+    "expected_bytes": "E5FE160000800086",
+    "kind": "synthetic-dead-helper-only",
+    "reachability": "DEAD/UNUSED",
+    "evidence": [
+      "E04",
+      "E15"
+    ]
+  },
+  {
+    "id": "H2",
+    "protocol": "P1",
+    "action": "Unused helper set byte6=255",
+    "inputs": {
+      "template": "E5FE1600000000FF",
+      "offset": 6,
+      "value": 255
+    },
+    "expected_bytes": "E5FE16000000FF07",
+    "kind": "synthetic-dead-helper-only",
+    "reachability": "DEAD/UNUSED",
+    "evidence": [
+      "E04",
+      "E15"
+    ]
+  },
+  {
+    "id": "H3",
+    "protocol": "P1",
+    "action": "Unused helper bytes3=33,5=128",
+    "inputs": {
+      "template": "E5FE1600000000FF",
+      "updates": {
+        "3": 33,
+        "5": 128
+      }
+    },
+    "expected_bytes": "E5FE162100800065",
+    "kind": "synthetic-dead-helper-only",
+    "reachability": "DEAD/UNUSED",
+    "evidence": [
+      "E04",
+      "E15"
+    ]
+  },
+  {
+    "id": "H4",
+    "protocol": "P1",
+    "action": "Unused helper bytes3..6=1,2,3,4",
+    "inputs": {
+      "template": "E5FE1600000000FF",
+      "updates": {
+        "3": 1,
+        "4": 2,
+        "5": 3,
+        "6": 4
+      }
+    },
+    "expected_bytes": "E5FE1601020304FC",
+    "kind": "synthetic-dead-helper-only",
+    "reachability": "DEAD/UNUSED",
+    "evidence": [
+      "E04",
+      "E15"
+    ]
+  },
+  {
+    "id": "H5",
+    "protocol": "P1",
+    "action": "Unused long-builder low32 truncation",
+    "inputs": {
+      "keycode": "0x123456789abcdef0"
+    },
+    "expected_bytes": "E5FE169ABCDEF0E2",
+    "kind": "synthetic-dead-helper-only",
+    "reachability": "DEAD/UNUSED",
+    "evidence": [
+      "E04",
+      "E15"
+    ]
+  },
+  {
+    "id": "H6",
+    "protocol": "P1",
+    "action": "Unused time builder, Sunday midnight",
+    "inputs": {
+      "second": 0,
+      "minute": 0,
+      "hour": 0,
+      "sunday_zero": 0
+    },
+    "expected_bytes": "E2FE160000000009",
+    "kind": "synthetic-dead-helper-only",
+    "reachability": "DEAD/UNUSED",
+    "evidence": [
+      "E04",
+      "E15"
+    ]
+  },
+  {
+    "id": "H7",
+    "protocol": "P1",
+    "action": "Unused time builder, Saturday23:59:59",
+    "inputs": {
+      "second": 59,
+      "minute": 59,
+      "hour": 23,
+      "sunday_zero": 6
+    },
+    "expected_bytes": "E2FE163B3B170676",
+    "kind": "synthetic-dead-helper-only",
+    "reachability": "DEAD/UNUSED",
+    "evidence": [
+      "E04",
+      "E15"
+    ]
+  },
+  {
+    "id": "N1",
+    "protocol": "P1",
+    "action": "Notification callback replay",
+    "inputs": {
+      "data": "E2FE16",
+      "same_service": true,
+      "same_characteristic": true
+    },
+    "expected_bytes": "E2FE16",
+    "expected_result": "Forward raw bytes to unused ALARM_REFRASH event",
+    "kind": "incoming-input-not-a-write",
+    "evidence": [
+      "E11"
+    ]
+  },
+  {
+    "id": "N2",
+    "protocol": "P1",
+    "action": "Notification callback replay",
+    "inputs": {
+      "data": "E2FE160000000000",
+      "same_service": true,
+      "same_characteristic": true
+    },
+    "expected_bytes": "E2FE160000000000",
+    "expected_result": "Forward despite absent valid checksum",
+    "kind": "incoming-input-not-a-write",
+    "evidence": [
+      "E11"
+    ]
+  },
+  {
+    "id": "N3",
+    "protocol": "P1",
+    "action": "Notification callback replay",
+    "inputs": {
+      "data": "E5FE160000000006",
+      "same_service": true,
+      "same_characteristic": true
+    },
+    "expected_bytes": "E5FE160000000006",
+    "expected_result": "Ignore, different prefix",
+    "kind": "incoming-input-not-a-write",
+    "evidence": [
+      "E11"
+    ]
+  },
+  {
+    "id": "N4",
+    "protocol": "P1",
+    "action": "Notification callback replay",
+    "inputs": {
+      "data": "E2FE",
+      "same_service": true,
+      "same_characteristic": true
+    },
+    "expected_bytes": "E2FE",
+    "expected_result": "String substring bounds exception",
+    "kind": "incoming-input-not-a-write",
+    "evidence": [
+      "E11"
+    ]
+  },
+  {
+    "id": "R.F2.A.initial",
+    "protocol": "P1",
+    "action": "Memory A long-save and following same-slot taps, initial",
+    "inputs": {
+      "initial_state": {
+        "lastpositon": -1,
+        "count": -1,
+        "connected": true
+      },
+      "events": [
+        {
+          "kind": "long-save",
+          "slot": 9
+        },
+        {
+          "kind": "same-slot-tap",
+          "slot": 9
+        }
+      ],
+      "initial_state_origin": "fresh adapter"
+    },
+    "expected_bytes": "E5FE1620000014D2",
+    "expected_writes_by_event": [
+      [
+        "E5FE1620000014D2"
+      ],
+      []
+    ],
+    "expected_state_by_event": [
+      {
+        "lastpositon": 9,
+        "count": -1
+      },
+      {
+        "lastpositon": 9,
+        "count": -1
+      }
+    ],
+    "kind": "audit001-memory-sequence",
+    "evidence": [
+      "E10",
+      "E23"
+    ]
+  },
+  {
+    "id": "R.F2.A.count0",
+    "protocol": "P1",
+    "action": "Memory A long-save and following same-slot taps, count0",
+    "inputs": {
+      "initial_state": {
+        "lastpositon": 6,
+        "count": 0,
+        "connected": true
+      },
+      "events": [
+        {
+          "kind": "long-save",
+          "slot": 9
+        },
+        {
+          "kind": "same-slot-tap",
+          "slot": 9
+        }
+      ],
+      "initial_state_origin": "Prior ZG recall then same ZG tap STOP establishes the listed state; not replayed in events"
+    },
+    "expected_bytes": "E5FE1620000014D2 E5FE1621000004E1",
+    "expected_writes_by_event": [
+      [
+        "E5FE1620000014D2"
+      ],
+      [
+        "E5FE1621000004E1"
+      ]
+    ],
+    "expected_state_by_event": [
+      {
+        "lastpositon": 9,
+        "count": 0
+      },
+      {
+        "lastpositon": 9,
+        "count": 1
+      }
+    ],
+    "kind": "audit001-memory-sequence",
+    "evidence": [
+      "E10",
+      "E23"
+    ]
+  },
+  {
+    "id": "R.F2.A.count1",
+    "protocol": "P1",
+    "action": "Memory A long-save and following same-slot taps, count1",
+    "inputs": {
+      "initial_state": {
+        "lastpositon": 6,
+        "count": 1,
+        "connected": true
+      },
+      "events": [
+        {
+          "kind": "long-save",
+          "slot": 9
+        },
+        {
+          "kind": "same-slot-tap",
+          "slot": 9
+        },
+        {
+          "kind": "same-slot-tap",
+          "slot": 9
+        }
+      ],
+      "initial_state_origin": "Prior ZG recall from fresh establishes the listed state; not replayed in events"
+    },
+    "expected_bytes": "E5FE1620000014D2 E5FE1621000000E5 E5FE1621000004E1",
+    "expected_writes_by_event": [
+      [
+        "E5FE1620000014D2"
+      ],
+      [
+        "E5FE1621000000E5"
+      ],
+      [
+        "E5FE1621000004E1"
+      ]
+    ],
+    "expected_state_by_event": [
+      {
+        "lastpositon": 9,
+        "count": 1
+      },
+      {
+        "lastpositon": 9,
+        "count": 0
+      },
+      {
+        "lastpositon": 9,
+        "count": 1
+      }
+    ],
+    "kind": "audit001-memory-sequence",
+    "evidence": [
+      "E10",
+      "E23"
+    ]
+  },
+  {
+    "id": "R.F2.B.initial",
+    "protocol": "P1",
+    "action": "Memory B long-save and following same-slot taps, initial",
+    "inputs": {
+      "initial_state": {
+        "lastpositon": -1,
+        "count": -1,
+        "connected": true
+      },
+      "events": [
+        {
+          "kind": "long-save",
+          "slot": 11
+        },
+        {
+          "kind": "same-slot-tap",
+          "slot": 11
+        }
+      ],
+      "initial_state_origin": "fresh adapter"
+    },
+    "expected_bytes": "E5FE1620000016D0",
+    "expected_writes_by_event": [
+      [
+        "E5FE1620000016D0"
+      ],
+      []
+    ],
+    "expected_state_by_event": [
+      {
+        "lastpositon": 11,
+        "count": -1
+      },
+      {
+        "lastpositon": 11,
+        "count": -1
+      }
+    ],
+    "kind": "audit001-memory-sequence",
+    "evidence": [
+      "E10",
+      "E23"
+    ]
+  },
+  {
+    "id": "R.F2.B.count0",
+    "protocol": "P1",
+    "action": "Memory B long-save and following same-slot taps, count0",
+    "inputs": {
+      "initial_state": {
+        "lastpositon": 6,
+        "count": 0,
+        "connected": true
+      },
+      "events": [
+        {
+          "kind": "long-save",
+          "slot": 11
+        },
+        {
+          "kind": "same-slot-tap",
+          "slot": 11
+        }
+      ],
+      "initial_state_origin": "Prior ZG recall then same ZG tap STOP establishes the listed state; not replayed in events"
+    },
+    "expected_bytes": "E5FE1620000016D0 E5FE1621000006DF",
+    "expected_writes_by_event": [
+      [
+        "E5FE1620000016D0"
+      ],
+      [
+        "E5FE1621000006DF"
+      ]
+    ],
+    "expected_state_by_event": [
+      {
+        "lastpositon": 11,
+        "count": 0
+      },
+      {
+        "lastpositon": 11,
+        "count": 1
+      }
+    ],
+    "kind": "audit001-memory-sequence",
+    "evidence": [
+      "E10",
+      "E23"
+    ]
+  },
+  {
+    "id": "R.F2.B.count1",
+    "protocol": "P1",
+    "action": "Memory B long-save and following same-slot taps, count1",
+    "inputs": {
+      "initial_state": {
+        "lastpositon": 6,
+        "count": 1,
+        "connected": true
+      },
+      "events": [
+        {
+          "kind": "long-save",
+          "slot": 11
+        },
+        {
+          "kind": "same-slot-tap",
+          "slot": 11
+        },
+        {
+          "kind": "same-slot-tap",
+          "slot": 11
+        }
+      ],
+      "initial_state_origin": "Prior ZG recall from fresh establishes the listed state; not replayed in events"
+    },
+    "expected_bytes": "E5FE1620000016D0 E5FE1621000000E5 E5FE1621000006DF",
+    "expected_writes_by_event": [
+      [
+        "E5FE1620000016D0"
+      ],
+      [
+        "E5FE1621000000E5"
+      ],
+      [
+        "E5FE1621000006DF"
+      ]
+    ],
+    "expected_state_by_event": [
+      {
+        "lastpositon": 11,
+        "count": 1
+      },
+      {
+        "lastpositon": 11,
+        "count": 0
+      },
+      {
+        "lastpositon": 11,
+        "count": 1
+      }
+    ],
+    "kind": "audit001-memory-sequence",
+    "evidence": [
+      "E10",
+      "E23"
+    ]
+  }
+]

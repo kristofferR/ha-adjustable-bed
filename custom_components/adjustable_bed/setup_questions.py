@@ -79,6 +79,7 @@ from .const import (
     BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
+    BED_TYPE_OKIN_MOTIONBED,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_RESIDENT,
     BED_TYPE_REVERIE,
@@ -2427,6 +2428,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             "remedy_iii": "Remedy III", "contempo_iv": "Contempo IV",
         }, "remedy_iii"),),
         title=lambda _data: "Rize Home",
+    ),
+    BED_TYPE_OKIN_MOTIONBED: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 2,  # Compatibility field, not a physical actuator claim.
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PROTOCOL_VARIANT: "auto",
+            CONF_MOTOR_PULSE_DELAY_MS: 200,
+        },
     ),
     # Resident's single fixed screen owns its layout and refresh cadence.
     BED_TYPE_RESIDENT: SetupProfile(

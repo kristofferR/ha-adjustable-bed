@@ -148,6 +148,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     # Move is the Nectar app's CST route; Prodigy CE and U Series also compose (#516).
     "RizeHomeProfile:rize_home_remedy_iii": {"hold": ("rize-home",)},
     "RizeHomeProfile:rize_home_contempo_iv": {"hold": ("rize-home",)},
+    "OkinNFrameProfile:okin_motionbed": {"hold": ("row150",)},
     "OkinNFrameProfile:resident": {"hold": ("resident-base",)},
     "OkinNFrameProfile:adjustable_lumbar_okin": {"hold": ("lumbar",)},
     "OkinNFrameProfile:adjustable_lumbar_star": {"hold": ("lumbar",)},
@@ -310,6 +311,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/rize_home.py:<module>.RizeHomeProfile": (
         "RizeHomeProfile:rize_home_remedy_iii", "RizeHomeProfile:rize_home_contempo_iv",
     ),
+    "profiles/okin_nframe.py:<module>.OKIN_MOTIONBED": ("OkinNFrameProfile:okin_motionbed",),
     "profiles/okin_nframe.py:<module>.RESIDENT": ("OkinNFrameProfile:resident",),
     "profiles/luuna.py:<module>.LuunaProfile": tuple(f"LuunaProfile:{key}" for key in ("rise", "risepro", "riseprolight")),
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController": ("richmat_classic_apps",),

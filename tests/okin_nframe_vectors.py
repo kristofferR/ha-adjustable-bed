@@ -11,6 +11,8 @@ report is quarantined) list the frames the pre-v5 controller sent.
 ESHINE = ("eshine_e2000", "eshine_e30003100", "eshine_e5000")
 
 FROZEN_FRAMES: dict[str, frozenset[str]] = {
+    # com.okin.motionbed 1.0 (2), all sixteen reachable literals.
+    "okin_motionbed": frozenset(['e5fe160000000006', 'e5fe160000000105', 'e5fe160000000204', 'e5fe160000000402', 'e5fe160000000501', 'e5fe1600000008fe', 'e5fe160000000afc', 'e5fe1620000014d2', 'e5fe1620000016d0', 'e5fe1621000000e5', 'e5fe1621000001e4', 'e5fe1621000002e3', 'e5fe1621000004e1', 'e5fe1621000006df', 'e5fe1631000000d5', 'e5fe1631000001d4']),
     # Resident Adjustable Base 1.0.0, unit160, frozen 36_33_01a control literals.
     "resident": frozenset(
         {

@@ -40,6 +40,7 @@ from ..const import (
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_HANDLE,
+    BED_TYPE_OKIN_MOTIONBED,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_RESIDENT,
@@ -66,7 +67,7 @@ from ..const import (
 from ..execution import NO_EXECUTION_CAPABILITIES, STREAM_HOLD, ExecutionCapabilities
 
 WriteMode = Literal["response", "no_response", "characteristic"]
-Envelope = Literal["plain", "gateway_detected", "revision_selector", "keeson_e6"]
+Envelope = Literal["plain", "gateway", "gateway_detected", "revision_selector", "keeson_e6"]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -139,6 +140,34 @@ class OkinNFrameProfile:
     """Lights and massage keys."""
     product: CstProduct | None = None
     """A 96-bit CST product's capabilities and field routing."""
+
+
+# OKIN Motion Bed 1.0 (2), com.okin.motionbed, accepted row150. These are
+# app words, not the gateway handset table. 05/0A have unverified mechanics.
+OKIN_MOTIONBED: Final = OkinNFrameProfile(
+    key="okin_motionbed",
+    name="OKIN Motion Bed",
+    bed_types=(BED_TYPE_OKIN_MOTIONBED,),
+    write="response",
+    envelope="gateway",
+    axes=("back", "middle", "legs"),
+    keys=MappingProxyType({
+        "back_up": 0x01, "back_down": 0x02,
+        "middle_up": 0x05, "middle_down": 0x0A,
+        "legs_up": 0x04, "legs_down": 0x08,
+        "stop": 0,
+        "preset_stop": 0x21000000,
+        "zero_g": 0x21000001, "flat": 0x21000002,
+        "memory_1": 0x21000004, "memory_2": 0x21000006,
+        "save_memory_1": 0x20000014, "save_memory_2": 0x20000016,
+        "light_parameter_0": 0x31000000, "light_parameter_1": 0x31000001,
+    }),
+    hold=Hold(repeat_ms=200, releases=1),
+    execution=STREAM_HOLD,
+    recall=Tap(),
+    memory_slots=2,
+    memory_save=Tap(),
+)
 
 
 OKIMAT: Final = OkinNFrameProfile(

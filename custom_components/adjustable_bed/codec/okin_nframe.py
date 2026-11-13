@@ -1,8 +1,9 @@
 """Okin N-frame wire codec.
 
 Every command is one frame: ``N 02 <N-byte big-endian command word>``, so a
-frame is ``N + 2`` bytes long. The command word is a bit mask: each set bit is
-one held key, and the all-zero word releases every key (STOP). Profiles use
+frame is ``N + 2`` bytes long. Handset command words are bit masks: each set bit
+is one held key, and the all-zero word releases every key (STOP). App profiles
+may instead carry action words, including a separate preset STOP. Profiles use
 32-bit (``04 02``), 40-bit, 48-bit, 64-bit or 96-bit words; the word's width is
 profile data, never inferred from a key.
 

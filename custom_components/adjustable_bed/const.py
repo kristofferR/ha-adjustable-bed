@@ -545,6 +545,7 @@ BED_TYPE_ADJUSTABLE_LUMBAR: Final = "adjustable_lumbar"
 # Resident Adjustable Base 1.0.0, com.okin.resident.release, fixed 36_33_01a table.
 BED_TYPE_RESIDENT: Final = "resident"
 BED_TYPE_RIZE_HOME: Final = "rize_home"
+BED_TYPE_OKIN_MOTIONBED: Final = "okin_motionbed"
 # Explicit Richmat MH app profiles (row055): one shared library, five catalogs.
 BED_TYPE_LUUNA: Final = "luuna"
 BED_TYPE_HUSH_BASE: Final = "hush_base"
@@ -773,6 +774,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_RESIDENT,
     BED_TYPE_RIZE_HOME,
+    BED_TYPE_OKIN_MOTIONBED,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORTBASE,
     BED_TYPE_ESHINE,
@@ -934,6 +936,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_ADJUSTABLE_LUMBAR,
         BED_TYPE_RESIDENT,
         BED_TYPE_RIZE_HOME,
+        BED_TYPE_OKIN_MOTIONBED,
         BED_TYPE_ESHINE,
         # Fixed pump controls; pressure is live-link state only.
         BED_TYPE_LOGICDATA_AIR_PUMP,
@@ -2957,6 +2960,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_ADJUSTAMATTRESS: (5, 200),  # APK 200 ms refresh, bounded HA movement
     BED_TYPE_ADJUSTABLE_BED: (10, 100),  # APK 100 ms hold refresh; ~1 s HA movement
     BED_TYPE_RIZE_HOME: (3, 200),  # Rize Home fixed 200 ms refresh; bounded HA tap.
+    BED_TYPE_OKIN_MOTIONBED: (5, 200),  # Fixed 200 ms app refresh, ~1 s HA tap.
     BED_TYPE_RESIDENT: (4, 300),  # Resident 300 ms refresh; four pulses bound an HA tap.
     BED_TYPE_ADJUSTABLE_LUMBAR: (10, 100),  # APK 100 ms hold refresh; ~1 s HA movement
     # Richmat MH apps: KEEP repeats at each control's own interval (100 ms for
