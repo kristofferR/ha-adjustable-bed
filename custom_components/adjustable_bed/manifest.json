@@ -2196,6 +2196,10 @@
       "local_name": "KSRN*"
     },
     {
+      "local_name": "KSWF07D*",
+      "connectable": true
+    },
+    {
       "local_name": "KTRM*"
     },
     {

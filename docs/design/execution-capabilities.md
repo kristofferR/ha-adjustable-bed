@@ -138,6 +138,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `yamada` (explicit P1/P2) | S stream | U | U | row178 | immediate held refresh every 300 ms and captured zero releases at +100/+400 ms; one control, no composed axes or speed selector |
 | `comfortbase` (all ten products) | S stream | U | U | row161 | one held key refreshed every 100 ms, zero STOP at release; combined is a fixed key, no motor-speed control |
 | `symphony_sleep` (all five models and three transports) | S stream | U | U | symphony078 | Immediate held key, 300 ms refresh, STOP at 0/300/600 ms. Combined head and foot is a fixed key. |
+| `linx` (Quest and Orbes, both BLE routes) | S stream | U | U | linx079 | Fixed 3 ms refresh attempts; Quest JSON release, Orbes individual AA / combined JSON release. Explicit combined keys, no independent motor union. |
 | `comfort_enhancements` | S stream | U | U | enh | STOP 100 ms after release |
 | `glideaway_motion` | S stream | U | U | glide | zero frames at +300 and +600 ms |
 | `adjustamattress` | S stream | U | U | row067 | union movement is a fixed action |
@@ -815,6 +816,7 @@ its APK Protocol Audit report, named here by its file stem:
 | row071 | Independently accepted Lady Americana 1.0.2 (3), ACAA 1.0.4 (5), STA Homecare 1.0.5 (6) and Zero Gravity 1.0.3 (4): mode 1 refreshes until release, ordinarily 150 ms and 170 ms only on a raw advertised 6BRM prefix, followed by 50 ms release. Holds are scoped to current non-null keep controls; no concurrent-motor or single-address side field is declared. |
 | row067 | audit ledger `row067-adjustamattress` |
 | row121 | audit ledger `row121-hjbed` |
+| linx079 | Linx 1.0.7 (27), unit079 accepted VERIFIED SCOPE under PARTIAL, E03/E04/E16: six held directions refresh at 3 ms attempts, Quest JSON release, Orbes individual AA / combined JSON release. R01 alarm catalog does not affect this hold evidence; no independent concurrent axes or general motor-speed control proven. |
 | symphony078 | Accepted Symphony Sleep 1.1.0 (14), row078, all 15 dispatch outcomes; `com.ore.bedding.symphony-1.1.0-2026-11-12-queue001/report/`. |
 | row161 | accepted ComfortBaseForBluetooth 1.1.2 (6), `com.ore.yorkfeng.comfortbaseble2-1.1.2-2026-11-10-maxqueue001/report/` and independent audit001 |
 | row178 | アシステック 1.0.1 (6), verified direct BLE scope under the stall disposition, E07/E08. Both P1/P2 held controls and release literals are proven; the separate report/helper R1 dispatch-equivalence claim remains deferred. |
@@ -836,3 +838,8 @@ commands every 300 ms until release. P1 releases after 100 ms; P2 motor
 release is immediate and differs from global STOP. Preset gestures retain
 their format-specific behavior. No concurrent motor, side addressing or motor
 speed selection is proven. See [Smart Sleep](../beds/smart-sleep.md).
+
+Linx's Quest and Orbes profiles declare streamed movement only. The two
+explicit combined directions are fixed keys, not a concurrent-axis capability.
+Cleanup captures the physical receiver and model-specific release. Finite holds
+use elapsed deadlines and omit stale refreshes; see [Linx](../beds/linx.md).

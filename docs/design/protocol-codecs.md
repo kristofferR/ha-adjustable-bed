@@ -306,3 +306,13 @@ cases live in `tests/fixtures/bedgear/`; `tests/test_bedgear_vectors.py` proves
 the byte matches. The separate `BedgearProfile` owns its 15 layouts, independent
 name gates, timing and control release policies. No sibling app's parameters
 select its capabilities.
+
+## Linx
+
+Linx 1.0.7 (27), unit079, adds `codec/linx.py` and typed Quest/Orbes
+profiles. The existing Keeson JSON encoder does not reproduce the frozen Gson
+field order, and no existing carrier reproduces its complete AA, ASCII startup
+and AB intervention literals. The production harness compares all 39 accepted
+literals byte for byte. The independent transport selection and connection-owned
+release, cache and callback behavior belong to `beds/linx/`, without changing
+any legacy JSON wire scenario. See [Linx](../beds/linx.md).

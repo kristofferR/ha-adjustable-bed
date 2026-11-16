@@ -396,6 +396,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Leggett & Platt WiLinke (MlRM) | `leggett_wilinke` | 10 | 110 ms |
 | Limoss / Stawett (TEA encrypted) | `limoss` | 12 | 80 ms |
 | Linak (Bed Control, Bed Connect and Performance Series apps): Performance Series (legacy, 300 ms hold cadence) | `linak` `performance_legacy` | 4 | 300 ms |
+| Linx app (com.keeson.connectedbed, choose model and BLE transport) | `linx` | 334 | 3 ms |
 | Logicdata SimplicityFrame (SILVERmotion) | `logicdata` | 10 | 30 ms |
 | Malouf (FFE5 protocol) | `malouf_legacy_okin` | 7 | 150 ms |
 | Malouf Base / Lucid Base apps | `malouf_app` | 7 | 150 ms |
@@ -1092,3 +1093,11 @@ it does not write a hardware lock. Protocol, layout and local settings belong
 to each physical side of a two-address pair. See [M Line](beds/mline.md).
 
 SonicSleep selects its fixed one/IQRM product under Richmat. Setup owns the two-motor layout, disabled angle sensing and observed-only massage/light surface. Each physical side keeps its app settings. See [SonicSleep](beds/richmat.md#sonicsleep).
+
+### Linx app
+
+Choose the [Linx](beds/linx.md) model, independent A00A or Nordic UART BLE
+transport and exact Bluetooth name. These belong to each physical receiver,
+including each side of a two-address pair. New app sessions default to Linx
+2.5 Q and A00A. The app profile fixes the motor count, massage gate and held
+refresh interval. No bed Wi-Fi or account setting is needed.

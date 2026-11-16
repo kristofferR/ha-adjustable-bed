@@ -1128,3 +1128,21 @@ all received raw fields except enabled. Clock capability and current alarm cache
 are required before writes. Missing/changed cache rejects the action. A silent
 empty-list query cannot safely allocate a new alarm. All target constraints pass
 before any target's setting changes. See the [SonicSleep reference](beds/richmat.md#sonicsleep).
+
+## Linx static bed controls
+
+`adjustable_bed.linx_clear_alarm` takes one or more `device_id` targets, optional
+`side` and optional `slot` (1–6). Omitting `slot` clears all six resident slots.
+It changes no cloud data, and its submitted-clear diagnostic is not a readback.
+
+`adjustable_bed.linx_snore_intervention` takes the same targets and optional
+`hold_minutes`, `up_speed` and `lift_time`, each defaulting to 10. These are the
+Linx app's stored integer parameters. UART narrows transmitted parameters to
+bytes. A single later status query uses A00A on the same surviving connection;
+it never reconnects or keeps that connection open. This is manual bed control,
+without phone audio, detection or cloud polling.
+
+Catalog-dependent alarm creation, editing, populated-row enable/disable and
+scheduled recall remain unavailable pending a separately supplied lawful offline
+Linx alarm catalog and corresponding rows. No raw catalog-key action is exposed.
+See the [Linx guide](beds/linx.md).

@@ -69,6 +69,7 @@ if TYPE_CHECKING:
     from .limoss.controller import LimossController as LimossController
     from .limoss.remote import LimossRemoteController as LimossRemoteController
     from .linak.controller import LinakController as LinakController
+    from .linx.controller import LinxController as LinxController
     from .logicdata.air_pump import LogicdataAirPumpController as LogicdataAirPumpController
     from .logicdata.app import LogicdataAppController as LogicdataAppController
     from .logicdata.controller import LogicdataController as LogicdataController
@@ -207,6 +208,7 @@ _EXPORT_MODULES = {
     "RizeController": "kaidi.rize",
     "ComfyController": "kaidi.comfy",
     "KaidiController": "kaidi.controller",
+    "LinxController": "linx.controller",
     "SymphonySleepController": ("keeson.symphony_sleep", "SymphonySleepController"),
     "KeesonController": "keeson.controller",
     "LeggettGen2Controller": "leggett.gen2",
@@ -312,6 +314,7 @@ __all__ = [
     "SymphonyController",
     "LimossController",
     "LinakController",
+    "LinxController",
     "LogicdataController",
     "LogicdataAppController",
     "LogicdataAirPumpController",

@@ -91,6 +91,7 @@ from .const import (
     BED_TYPE_LIMOSS,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINAK,
+    BED_TYPE_LINX,
     BED_TYPE_LOGICDATA,
     BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_LOGICDATA_APP,
@@ -604,6 +605,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_N32_MOTION_BED: "N32 Motion Bed app (com.okin.simmonskorea)",
     BED_TYPE_RESIDENT: "Resident Adjustable Base app (com.okin.resident.release)",
     BED_TYPE_YAMADA: "アシステック / ASSISTEC / Yamada app (com.okin.yamada)",
+    BED_TYPE_LINX: "Linx app (com.keeson.connectedbed, choose model and BLE transport)",
     BED_TYPE_COMFORTBASE: "ComfortBaseForBluetooth / ComfortBase BLE (choose product)",
     BED_TYPE_COMFORT_ENHANCEMENTS: "Comfort Enhancements app (choose MC2/MC3/MC4/MC5)",
     BED_TYPE_ESHINE_OKIN: "eShine app (E2000 / E3000 / E3100 / E5000)",
@@ -856,7 +858,7 @@ _HIDDEN_APP_ROWS: Final = frozenset(
 HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_APP_ROWS)
 # Bed types whose one row asks for the product, although each product is an app entry.
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
-    {BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE}
+    {BED_TYPE_LINX, BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE}
 )
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
@@ -1323,6 +1325,14 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     # The first pass matches the declared discovery hints, as the manifest does.
     first = first_pass(service_info)
     result = _detect_bed_type_with_app_candidates(service_info, first)
+    # The current Linx scan filter is a case-sensitive substring, not a model
+    # or service selector. Preserve existing receiver detection as an alternative.
+    if isinstance(service_info.name, str) and "KSWF07D" in service_info.name:
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_LINX, 0.3, ["name:linx_app_candidate"])
+        elif result.bed_type != BED_TYPE_LINX:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_LINX]))
+            result.signals.append("name:linx_app_candidate")
     # The app's scan filter is wider than the manifest gate, so it refines
     # advertisements another matcher admitted; it declares no hint of its own.
     if galaxy_scan_matches(service_info.name) and result.bed_type != BED_TYPE_GALAXY and not any(

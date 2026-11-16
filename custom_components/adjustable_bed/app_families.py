@@ -965,6 +965,7 @@ KEESON_FAMILY: Final = AppFamily(
             group=_keeson_group(
                 (BED_TYPE_KEESON, KEESON_VARIANT_PURPLE),
                 (BED_TYPE_KEESON, KEESON_VARIANT_BASE),
+                ("linx", None),
                 (BED_TYPE_KEESON, KEESON_VARIANT_JSON),
             ),
         ),

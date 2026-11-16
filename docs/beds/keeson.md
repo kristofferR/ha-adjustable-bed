@@ -715,6 +715,10 @@ three-motor screen; see [Hold and release timing](#hold-and-release-timing).
 
 ### JSON/A00A Variant (Juna, Linx, Ergo Health)
 
+For the independently verified Linx 1.0.7 app controls, select the explicit
+[Linx profile](linx.md). This legacy JSON route remains unchanged for existing
+entries and other remotes.
+
 **Status:** ❓ Needs testing
 
 #### Setup

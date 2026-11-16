@@ -3348,6 +3348,21 @@
       },
       "sonicsleep_action": {
         "name": "{action}"
+      },
+      "linx_query_status": {
+        "name": "Refresh status"
+      },
+      "linx_self_check": {
+        "name": "Run bed self-check"
+      },
+      "linx_massage_head": {
+        "name": "Head massage action"
+      },
+      "linx_massage_foot": {
+        "name": "Foot massage action"
+      },
+      "linx_massage_timer": {
+        "name": "Massage timer action"
       }
     },
     "cover": {
@@ -5238,6 +5253,30 @@
       },
       "sonicsleep": {
         "name": "SonicSleep state"
+      },
+      "linx_massage_minutes": {
+        "name": "Massage time"
+      },
+      "linx_massage_mode": {
+        "name": "Reported massage mode"
+      },
+      "linx_bed_mode": {
+        "name": "Bed mode wire selector"
+      },
+      "linx_light_report": {
+        "name": "Raw light report"
+      },
+      "linx_device_version": {
+        "name": "Bed device version"
+      },
+      "linx_setup_reply": {
+        "name": "UART setup reply"
+      },
+      "linx_self_check": {
+        "name": "Bed self-check"
+      },
+      "linx_alarm_clear_submitted": {
+        "name": "Last submitted alarm clear"
       }
     },
     "light": {

@@ -530,6 +530,7 @@ ZSERIES_VARIANTS: Final = {
 # Bed types whose variant is a user choice with no automatic default.
 BED_TYPE_YAMADA: Final = "yamada"
 BED_TYPE_COMFORTBASE: Final = "comfortbase"
+BED_TYPE_LINX: Final = "linx"
 BED_TYPE_COMFORT_ENHANCEMENTS: Final = "comfort_enhancements"
 COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc2": "MC2: AC-1/BC3, Massage Plus / Comfort Position",
@@ -538,7 +539,7 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc5": "MC5: Hi Lo Lift / Massage Plus",
 }
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
-    {BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, "luuna", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
+    {BED_TYPE_LINX, BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, "luuna", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
 )
 # Explicit OKIN Bedding app profiles sharing the Serenity controller core.
 OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
@@ -746,6 +747,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_BEDSENSE,
     BED_TYPE_BF,
     BED_TYPE_JALON_BED,
+    BED_TYPE_LINX,
     BED_TYPE_SYMPHONY_SLEEP,
     BED_TYPE_SYMPHONY,
     BED_TYPE_CHERISH,
@@ -3005,6 +3007,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_OKIN_MOTIONBED: (5, 200),  # Fixed 200 ms app refresh, ~1 s HA tap.
     BED_TYPE_COMFORT_ENHANCEMENT3: (10, 100),
     BED_TYPE_N32_MOTION_BED: (5, 200),  # Finite caller pulse; app refresh is 200 ms.
+    BED_TYPE_LINX: (334, 3),  # HA finite tap bound; Linx attempts held refresh every 3 ms.
     BED_TYPE_SYMPHONY_SLEEP: (4, 300),
     BED_TYPE_YAMADA: (4, 300),  # HA finite tap default at the app refresh cadence.
     BED_TYPE_RESIDENT: (4, 300),  # Resident 300 ms refresh; four pulses bound an HA tap.

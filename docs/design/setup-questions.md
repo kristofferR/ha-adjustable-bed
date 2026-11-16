@@ -299,3 +299,5 @@ former side tables.
 The `richmat_app` profile asks its exact product, with manual and restored entries
 labelled separately; `richmat_app_sleep` asks its independent old/new MM or HJ
 session. Each owns its generic fields and per-side route.
+
+Linx asks for its model, independent BLE route and exact Bluetooth name. It fixes two motors, model-gated massage, disabled angle sensing and its 3 ms refresh.
