@@ -39,6 +39,7 @@ from custom_components.adjustable_bed.execution import (
 )
 from custom_components.adjustable_bed.profiles import keeson as keeson_profiles
 from custom_components.adjustable_bed.profiles import vibradorm as vibradorm_profiles
+from custom_components.adjustable_bed.profiles.suta import PROFILES as SUTA_PROFILES
 from tests.codec_families import families
 from tests.test_controller_contract import (
     _create_controller_for_bed_type,
@@ -106,7 +107,10 @@ KEESON_APP_STREAM: dict[str, tuple[str, ...]] = {
 ERGOMOTION_4_STYLES = frozenset(product.style for product in ERGOMOTION_4_PRODUCTS.values())
 
 # Declaration -> declared field -> evidence keys from the design document.
+SUTA_STREAM = tuple(f"SutaProfile:{p.key}@{p.layout}" for p in SUTA_PROFILES.values() if p.execution.declared)
+
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
+    **{identity: {"hold": ("suta128",), "hold_controls": ("suta128",)} for identity in SUTA_STREAM},
     "SmartSleepProfile:p1": {"hold": ("row094",)},
     "SmartSleepProfile:p2": {"hold": ("row094",), "hold_controls": ("row094",)},
     **{f"OkinNFrameProfile:apex_{i}": {"hold": ("row083",)} for i in range(15)},
@@ -314,6 +318,9 @@ _SIMMONS = ("OkinNFrameProfile:simmons_okin", "OkinNFrameProfile:simmons_smartbe
 # enumeration cannot reach every variant, layout or product, so every place
 # that can declare a capability must be listed and reviewed here.
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
+    "profiles/suta.py:<module>.SutaProfile": SUTA_STREAM,
+    "profiles/suta.py:<module>.SutaProfile.__post_init__": SUTA_STREAM,
+    "beds/suta/controller.py:<module>.SutaController": SUTA_STREAM,
     "profiles/smart_sleep.py:<module>.PROFILES": ("SmartSleepProfile:p2",),
     "profiles/smart_sleep.py:<module>.SmartSleepProfile": ("SmartSleepProfile:p1", "SmartSleepProfile:p2"),
     "profiles/comfort_enhancement3.py:<module>.profile": tuple(f"OkinNFrameProfile:apex_{i}" for i in range(15)),

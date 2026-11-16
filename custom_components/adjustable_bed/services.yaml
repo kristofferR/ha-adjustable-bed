@@ -4548,3 +4548,52 @@ sonicsleep:
       default: true
       selector:
         boolean: null
+
+suta:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options:
+          - both
+          - left
+          - right
+    action:
+      required: true
+      selector:
+        text: null
+    suffix:
+      selector:
+        text: null
+    logical_side:
+      selector:
+        select:
+          options:
+          - label: Left (1)
+            value: '1'
+          - label: Right (2)
+            value: '2'
+    value:
+      selector:
+        number:
+          min: 0
+          max: 40
+          mode: box
+    weekdays:
+      selector:
+        object: null
+    time:
+      selector:
+        text: null
+    loop:
+      selector:
+        select:
+          options:
+          - '00'
+          - '01'

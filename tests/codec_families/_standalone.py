@@ -49,7 +49,6 @@ STANDALONE: dict[str, str] = {
     "starcode_m5x5": "each connection picks codec/okin_5a.py StarCode or codec/okin_nframe.py"
     " legacy frames from the Device Information manufacturer; the app's key catalog, sender"
     " session and notification parsers stay controller code",
-    "suta": "own wire format",
     "svane": "the default Svane Remote route writes LinonPI multi-service frames and the"
     " jensen_linon route the Jensen app's one-byte frames; the JMC400 route and the lamp"
     " frames are built by codec/jmc.py from the SVANE_REMOTE profile",

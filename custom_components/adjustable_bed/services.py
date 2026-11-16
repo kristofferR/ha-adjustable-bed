@@ -1160,10 +1160,6 @@ async def _timed_move_plan(
 ) -> tuple[Callable[[BedController], Coroutine[Any, Any, None]], int, int, str]:
     """Validate one physical side and build its timed command."""
     async with _side_validation(parent, coordinator, preflighted) as controller:
-        if hold_lease:
-            _require_hold_execution(coordinator, controller)
-            duration_ms = _hold_ceiling(controller, duration_ms)
-
         motor_specs = {
             spec.key: spec
             for spec in controller.motor_control_specs
@@ -1186,6 +1182,12 @@ async def _timed_move_plan(
             )
 
         spec = motor_specs[motor]
+        if hold_lease:
+            control = (
+                spec.hold.up_control if direction == "up" else spec.hold.down_control
+            ) if spec.hold is not None else None
+            _require_hold_execution(coordinator, controller, control)
+            duration_ms = _hold_ceiling(controller, duration_ms)
         try:
             controller.validate_timed_movement(motor, direction, duration_ms)
         except ValueError as err:
@@ -2424,6 +2426,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.solace.services import async_register_solace_services
     from .beds.sonicsleep.services import async_register_sonicsleep_services
     from .beds.starcode.accessory_group import register_group_services
+    from .beds.suta.services import register_services as register_suta_services
     from .beds.svane.services import async_register_svane_services
     from .beds.symphony.services import register_services as register_symphony_sense_services
     from .position_estimate_services import async_register_position_estimate_services
@@ -2459,6 +2462,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_linak_services,
         async_register_solace_services,
         async_register_sonicsleep_services,
+        register_suta_services,
         async_register_leggett_okin_services,
         async_register_floyd_services,
         async_register_rize_services,

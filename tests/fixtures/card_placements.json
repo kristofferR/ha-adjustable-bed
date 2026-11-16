@@ -4808,5 +4808,23 @@
   },
   "sensor:sonicsleep": {
     "card_section": "hidden"
+  },
+  "button:suta_action": {
+    "card_section": "utility"
+  },
+  "button:suta_preset": {
+    "card_section": "presets"
+  },
+  "button:suta_release": {
+    "card_section": "utility"
+  },
+  "number:suta_1_setpoint": {
+    "card_section": "utility"
+  },
+  "number:suta_2_setpoint": {
+    "card_section": "utility"
+  },
+  "sensor:suta": {
+    "card_section": "hidden"
   }
 }

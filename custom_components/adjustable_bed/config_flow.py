@@ -826,6 +826,7 @@ def _bed_type_selector(
             *RICHMAT_MH_BED_TYPES,
             "luuna",
             "sonicsleep",
+            "suta",
             BED_TYPE_MLILY,
             BED_TYPE_JENSEN,
             # Protocol-named routes are off the setup list but stay selectable.
@@ -1252,6 +1253,7 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         BED_TYPE_GMMOTOR,
         BED_TYPE_MOTOMOTION,
         "bedgear",
+        "suta",
         "hush_base",
         "luuna",
         "mline",
@@ -1269,7 +1271,7 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
 def _name_rule_setup_name(bed_type: str | None, name: str | None) -> dict[str, str]:
     """Keep the raw Bluetooth name an app name rule reads, never the display name."""
     if (
-        bed_type not in NAME_RULE_VARIANTS_BY_BED_TYPE and bed_type not in (BED_TYPE_GMMOTOR, BED_TYPE_MOTOMOTION, "bedgear")
+        bed_type not in NAME_RULE_VARIANTS_BY_BED_TYPE and bed_type not in (BED_TYPE_GMMOTOR, BED_TYPE_MOTOMOTION, "bedgear", "suta")
     ) or name is None or is_mac_like_name(name):
         return {}
     return {CONF_BLE_DEVICE_NAME: name}

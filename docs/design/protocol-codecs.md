@@ -306,3 +306,14 @@ cases live in `tests/fixtures/bedgear/`; `tests/test_bedgear_vectors.py` proves
 the byte matches. The separate `BedgearProfile` owns its 15 layouts, independent
 name gates, timing and control release policies. No sibling app's parameters
 select its capabilities.
+
+### SUTA P1/P2 (accepted unit128)
+
+SUTA's exact-name application panels now use `codec/suta.py`,
+`profiles/suta.py` and the shared `beds/suta/` controller. P1 adds only UTF-8
+CRLF framing; P2 uses its own 53 59 / payload / additive-sum / 54 43 format.
+No existing family represents both accepted formats and every frozen literal,
+so the new codec is deliberately limited to these two builders. The production
+harness covers all 203 accepted final frames and 56 constructor literals.
+Names, timing and capability gates stay in profile/catalog data. The historical
+standalone SUTA inventory does not describe this expanded route.

@@ -836,3 +836,5 @@ commands every 300 ms until release. P1 releases after 100 ms; P2 motor
 release is immediate and differs from global STOP. Preset gestures retain
 their format-specific behavior. No concurrent motor, side addressing or motor
 speed selection is proven. See [Smart Sleep](../beds/smart-sleep.md).
+
+| suta128 | SUTA Smart Home 3.20.0 (80), accepted unit128. Per-layout motion refresh at 100 or 150 ms, maximum 1,000 source writes and the layout's exact STOP schedule. Seven BED movement owners and four countdown owners use fragment lifecycleScope; source cancellation itself adds no STOP and erases no queued writes. HA owns and drains its admitted physical-session cleanup; renewable leases apply only to motion controls, never recall/save countdowns. Hardware UNVERIFIED. |

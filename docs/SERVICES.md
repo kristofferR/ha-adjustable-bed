@@ -1128,3 +1128,17 @@ all received raw fields except enabled. Clock capability and current alarm cache
 are required before writes. Missing/changed cache rejects the action. A silent
 empty-list query cannot safely allocate a new alarm. All target constraints pass
 before any target's setting changes. See the [SonicSleep reference](beds/richmat.md#sonicsleep).
+
+### SUTA Smart Home
+
+`adjustable_bed.suta` runs only actions declared by the saved Bluetooth-name
+layout. It accepts `device_id`, optional physical paired `side`, `action`,
+and the action's proven text `suffix` or binary `logical_side` / `value`.
+All targets and parameters are validated before any requested control effect.
+
+Text alarm actions use `weekdays`, `time` (four decimal HHmm digits) and
+`loop` (`00` or `01`). The explicit `snore_cycle` action owns the normal
+SNORE burst and delayed FLAT effect; it performs no phone sensing.
+See the [SUTA reference](beds/suta.md) for exact actions, payload domains,
+state prerequisites and the six withheld light schedules.
+Expanded controls are **hardware UNVERIFIED**, for external beta testing.

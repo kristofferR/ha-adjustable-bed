@@ -1639,16 +1639,7 @@ JENSEN_NAME_FRAGMENT: Final = "jmc400"
 # Note: The integration currently targets the bed-frame AT protocol (FFF0 service).
 # Accessory/mattress subtypes use a different binary protocol and are excluded.
 SUTA_NAME_PATTERNS: Final = ("suta-",)
-SUTA_UNSUPPORTED_NAME_PREFIXES: Final = (
-    "suta-moon",
-    "suta-temp",
-    "suta-rbhc",
-    "suta-drawer",
-    "suta-storage",
-    "suta-sofa",
-    "suta-yogabed",
-    "suta-rollsofa",
-)
+SUTA_UNSUPPORTED_NAME_PREFIXES: Final = ("suta-draw",)
 
 # BedJet PowerLayer advertised local names. "BEDJET_BF" is the factory name of the
 # frame; the climate blower advertises its own BEDJET_* name on the same service,
