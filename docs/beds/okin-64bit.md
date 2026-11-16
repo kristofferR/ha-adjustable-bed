@@ -8,6 +8,9 @@
 ## Known Controllers
 
 - `NORA_CON` / `NORACON` Mattress Firm controllers
+- Nectar Premier Adjustable Base / Resident Adjustable Base (`OKIN-` followed by
+  digits, Device Information manufacturer `DewertOkin GmbH`): Custom OKIN variant,
+  pairing required, see [Custom OKIN pairing and session](#custom-okin-pairing-and-session)
 - Other newer Okin controllers using the 10-byte `0x08 0x02` command frame
 
 Reported `NORA_CON` / `NORACON` controllers use the Nordic variant. Their connected
@@ -18,6 +21,7 @@ Device Information Service reports manufacturer `IDT` and model `NORACON`.
 | Analyzed | App | Package ID |
 |----------|-----|------------|
 | ✅ | Adjustable bed | `com.okin.bedding.adjustbed` |
+| ⬜ | Resident Adjustable Base (iOS) | Connection sequence from an iPhone Bluetooth capture, not app analysis |
 
 ## Detection
 
@@ -39,7 +43,51 @@ high-confidence signal for this 64-bit profile.
 | Variant | Service UUID | Write Characteristic | Mode |
 |---------|--------------|----------------------|------|
 | Nordic (`25_42_02`) | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-...` | Fire-and-forget |
-| Custom OKIN (`36_33_04a`) | `62741523-52f9-8864-b1ab-3b3a8d65950b` | `62741525-...` | Wait-for-response |
+| Custom OKIN (`36_33_04a`) | `62741523-52f9-8864-b1ab-3b3a8d65950b` | `62741525-...` | Wait-for-response, bonded link, session on connect |
+
+## Custom OKIN pairing and session
+
+The Custom OKIN variant requires BLE pairing and opens a session on every
+connection. The Nordic variant does neither.
+
+**Notify Characteristic:** `62741625-52f9-8864-b1ab-3b3a8d65950b`
+
+### Pairing
+
+- Bond once while the base is in pairing mode (press the pairing button on the
+  control box), then use **Pair Now** during setup or the pairing repair.
+- Later connections encrypt the link with the stored bond. On an ESPHome
+  Bluetooth proxy that means requesting pairing on each connection, which the
+  integration does once a cached bond proves unreliable.
+- Without encryption, Device Information reads fail with Insufficient
+  Authentication and motor writes fail with ATT Insufficient Authorization (`0x08`).
+
+### Session sequence
+
+Sent after encryption and before any command, all as Write Request (with
+response) to `62741525`, 120 ms after the previous response:
+
+| Step | Action | Bytes |
+|------|--------|-------|
+| 1 | Enable notifications | CCCD of `62741625` |
+| 2 | Clock (twice) | `E7 80 01 YY MM DD hh mm ss` |
+| 3 | Session open (twice) | `08 02 E1 80 01` |
+
+The clock frame carries the current **UTC** time as C `struct tm` fields, with
+no checksum:
+
+| Byte | Field |
+|------|-------|
+| `YY` | Years since 1900 (2026 = `7E`) |
+| `MM` | Month, zero-based (November = `0A`) |
+| `DD` | Day of month |
+| `hh` `mm` `ss` | Hour, minute, second |
+
+Example: 2026-11-15 21:50:53 UTC is `E7 80 01 7E 0A 0F 15 32 35`.
+
+Encryption alone is not enough: without the session the base still answers
+motor writes with Insufficient Authorization. A session write that fails with a
+GATT security error starts the integration's pairing recovery.
 
 ## Packet Format
 
@@ -79,6 +127,12 @@ Mattress Firm Nordic packets with this protocol.
 | Massage Switch | `00 00 01 00 00 00 00 00` | Switch massage mode |
 | Massage Stop | `02 00 00 00 00 00 00 00` | Stop massage |
 
+## Command Timing
+
+Held motor commands repeat at the configured pulse interval, followed by STOP.
+The Resident app repeats a held frame about every 300 ms and sends STOP twice on
+release.
+
 ## Features
 
 | Feature | Supported |
@@ -89,6 +143,7 @@ Mattress Firm Nordic packets with this protocol.
 | Massage | ✅ (timer, wave modes) |
 | Under-bed Lights | ✅ |
 | Zero-G / Anti-Snore / TV / Lounge | ✅ |
+| BLE Pairing | Custom OKIN: ✅ Required; Nordic: ❌ Not required |
 
 ## Related Protocols
 

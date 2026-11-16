@@ -10,16 +10,28 @@ Two protocol variants use the same command format:
 - Protocol 36_33_04a: Custom OKIN service, wait-for-response (withoutResponse=False)
 
 Protocol reverse-engineered from com.okin.bedding.adjustbed app (Flutter/Dart).
+
+The Custom OKIN variant also opens a session on every connection, as captured
+from the Resident Adjustable Base iPhone app on a Nectar Premier / Resident
+base: subscribe to 62741625, then write the UTC clock frame twice and the
+session frame twice. Without it the base answers motor writes with ATT
+"Insufficient Authorization" even on an encrypted, bonded link.
 """
 
 from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
+from bleak.exc import BleakError
+
+from ..ble_auth import is_ble_authentication_error
 from ..const import (
     NORDIC_UART_WRITE_CHAR_UUID,
+    OKIMAT_NOTIFY_CHAR_UUID,
     OKIMAT_WRITE_CHAR_UUID,
 )
 from .base import BedController
@@ -77,6 +89,26 @@ class Okin64BitCommands:
     LIGHT_TOGGLE = bytes([0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
     LIGHT_ON = bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40])
     LIGHT_OFF = bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80])
+
+
+# Session frames the Resident app writes after encryption, before any command.
+OKIN_64BIT_CLOCK_PREFIX = bytes([0xE7, 0x80, 0x01])
+OKIN_64BIT_SESSION_FRAME = bytes([0x08, 0x02, 0xE1, 0x80, 0x01])
+# The app writes each session frame twice; the hardware-verified replay
+# spaced every write 120 ms after its response.
+OKIN_64BIT_SESSION_WRITE_GAP_S = 0.12
+
+
+def build_okin_64bit_clock_frame(now: datetime) -> bytes:
+    """Build the 9-byte session clock frame for ``now`` in UTC.
+
+    The six time bytes are C ``struct tm`` fields: years since 1900, zero-based
+    month, day, hour, minute, second. There is no checksum.
+    """
+    utc = now.astimezone(UTC)
+    return OKIN_64BIT_CLOCK_PREFIX + bytes(
+        [utc.year - 1900, utc.month - 1, utc.day, utc.hour, utc.minute, utc.second]
+    )
 
 
 def build_okin_64bit_command(cmd_bytes: bytes) -> bytes:
@@ -139,6 +171,54 @@ class Okin64BitController(BedController):
     def control_characteristic_uuid(self) -> str:
         """Return the UUID of the control characteristic."""
         return self._char_uuid
+
+    @property
+    def requires_notification_channel(self) -> bool:
+        """Custom OKIN opens its session after subscribing, even without angle sensing."""
+        return self._variant == OKIN_64BIT_VARIANT_CUSTOM
+
+    async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
+        """Subscribe to 62741625 and open the Custom OKIN session.
+
+        Runs on every (re)connection before any command. A GATT security error
+        is raised so the coordinator's pairing recovery runs; other failures
+        are logged and leave the link usable for beds that need no session.
+        """
+        self._notify_callback = callback
+        if self._variant != OKIN_64BIT_VARIANT_CUSTOM:
+            return
+        client = self.client
+        if client is None or not client.is_connected:
+            raise ConnectionError("Cannot open OKIN 64-bit session: not connected")
+        try:
+            async with self._ble_lock:
+                await client.start_notify(OKIMAT_NOTIFY_CHAR_UUID, self._handle_notification)
+            clock = build_okin_64bit_clock_frame(datetime.now(UTC))
+            for frame in (clock, clock, OKIN_64BIT_SESSION_FRAME, OKIN_64BIT_SESSION_FRAME):
+                await self._write_gatt_with_retry(
+                    self._char_uuid, frame, cancel_event=asyncio.Event(), response=True
+                )
+                await asyncio.sleep(OKIN_64BIT_SESSION_WRITE_GAP_S)
+        except BleakError as err:
+            if is_ble_authentication_error(err):
+                raise
+            _LOGGER.warning("OKIN 64-bit session setup incomplete: %s", err)
+
+    def _handle_notification(self, _: object, data: bytearray) -> None:
+        """Forward raw status notifications to diagnostics."""
+        self.forward_raw_notification(OKIMAT_NOTIFY_CHAR_UUID, bytes(data))
+
+    async def stop_notify(self) -> None:
+        """Stop the Custom OKIN status subscription."""
+        self._notify_callback = None
+        client = self.client
+        if self._variant != OKIN_64BIT_VARIANT_CUSTOM or client is None or not client.is_connected:
+            return
+        try:
+            async with self._ble_lock:
+                await client.stop_notify(OKIMAT_NOTIFY_CHAR_UUID)
+        except BleakError as err:
+            _LOGGER.debug("Could not stop OKIN 64-bit notifications: %s", err)
 
     # Capability properties
     @property
