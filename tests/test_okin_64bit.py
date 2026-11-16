@@ -2,15 +2,21 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta, timezone
+
 import pytest
+from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.adjustable_bed.beds import okin_64bit as okin_64bit_module
 from custom_components.adjustable_bed.beds.okin_64bit import (
+    OKIN_64BIT_SESSION_FRAME,
     OKIN_64BIT_VARIANT_CUSTOM,
     OKIN_64BIT_VARIANT_NORDIC,
     Okin64BitCommands,
+    build_okin_64bit_clock_frame,
     build_okin_64bit_command,
 )
 from custom_components.adjustable_bed.const import (
@@ -20,9 +26,12 @@ from custom_components.adjustable_bed.const import (
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
+    CONF_PROTOCOL_VARIANT,
     DOMAIN,
     NORDIC_UART_WRITE_CHAR_UUID,
+    OKIMAT_NOTIFY_CHAR_UUID,
     OKIMAT_WRITE_CHAR_UUID,
+    requires_pairing,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
@@ -377,3 +386,150 @@ class TestOkin64BitVariants:
     def test_custom_variant_uuid_defined(self):
         """Custom variant should use Okimat UUID."""
         assert OKIMAT_WRITE_CHAR_UUID is not None
+
+
+# -----------------------------------------------------------------------------
+# Custom OKIN session (Nectar Premier / Resident Adjustable Base)
+# -----------------------------------------------------------------------------
+
+# Captured from the Resident Adjustable Base iPhone app at 2026-11-15 21:50:53 UTC.
+CAPTURED_CLOCK_FRAME = bytes.fromhex("e780017e0a0f153235")
+CAPTURED_SESSION_FRAME = bytes.fromhex("0802e18001")
+
+
+class TestOkin64BitSessionFrames:
+    """Byte vectors for the Custom OKIN session frames."""
+
+    def test_clock_frame_matches_capture(self):
+        now = datetime(2026, 11, 15, 21, 50, 53, tzinfo=UTC)
+        assert build_okin_64bit_clock_frame(now) == CAPTURED_CLOCK_FRAME
+
+    def test_clock_frame_uses_struct_tm_fields(self):
+        """Year counts from 1900 and the month is zero-based."""
+        frame = build_okin_64bit_clock_frame(datetime(2000, 1, 2, 3, 4, 5, tzinfo=UTC))
+        assert frame == bytes([0xE7, 0x80, 0x01, 100, 0, 2, 3, 4, 5])
+
+    def test_clock_frame_is_utc(self):
+        """A local time is converted to UTC, crossing the day boundary."""
+        local = datetime(2026, 11, 15, 23, 30, 0, tzinfo=timezone(timedelta(hours=-5)))
+        frame = build_okin_64bit_clock_frame(local)
+        assert frame == bytes([0xE7, 0x80, 0x01, 126, 10, 16, 4, 30, 0])
+
+    def test_session_frame_matches_capture(self):
+        assert OKIN_64BIT_SESSION_FRAME == CAPTURED_SESSION_FRAME
+
+    def test_custom_variant_requires_pairing(self):
+        assert requires_pairing(BED_TYPE_OKIN_64BIT, OKIN_64BIT_VARIANT_CUSTOM) is True
+        assert requires_pairing(BED_TYPE_OKIN_64BIT, OKIN_64BIT_VARIANT_NORDIC) is False
+        assert requires_pairing(BED_TYPE_OKIN_64BIT, "auto") is False
+
+
+@pytest.fixture
+def mock_okin_64bit_custom_config_entry(
+    hass: HomeAssistant, mock_okin_64bit_config_entry_data: dict
+) -> MockConfigEntry:
+    """Return a Custom OKIN (wait-for-response) Okin 64-bit config entry."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Okin 64-bit Custom Bed",
+        data={**mock_okin_64bit_config_entry_data, CONF_PROTOCOL_VARIANT: "custom"},
+        unique_id="AA:BB:CC:DD:EE:FF",
+        entry_id="okin_64bit_custom_entry",
+    )
+    entry.add_to_hass(hass)
+    return entry
+
+
+@pytest.fixture
+def no_session_gap(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(okin_64bit_module, "OKIN_64BIT_SESSION_WRITE_GAP_S", 0)
+
+
+class _CaptureTime(datetime):
+    """Pin the session clock to the capture time without freezing the event loop."""
+
+    @classmethod
+    def now(cls, tz=None):  # noqa: ARG003
+        return datetime(2026, 11, 15, 21, 50, 53, tzinfo=UTC)
+
+
+def _writes(mock_client) -> list[tuple[str, bytes, bool]]:
+    return [
+        (c.args[0], bytes(c.args[1]), c.kwargs.get("response"))
+        for c in mock_client.write_gatt_char.call_args_list
+    ]
+
+
+class TestOkin64BitCustomSession:
+    """The Custom OKIN variant opens its session on every connection."""
+
+    @pytest.mark.usefixtures("mock_coordinator_connected", "no_session_gap")
+    async def test_connect_subscribes_then_writes_session_before_commands(
+        self,
+        hass: HomeAssistant,
+        mock_okin_64bit_custom_config_entry,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        monkeypatch.setattr(okin_64bit_module, "datetime", _CaptureTime)
+        coordinator = AdjustableBedCoordinator(hass, mock_okin_64bit_custom_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+
+        # Angle sensing is disabled in the entry, yet the session still runs.
+        assert coordinator.controller.requires_notification_channel is True
+        names = [c[0] for c in mock_client.mock_calls]
+        assert "start_notify" in names
+        assert names.index("start_notify") < names.index("write_gatt_char")
+        assert mock_client.start_notify.call_args.args[0] == OKIMAT_NOTIFY_CHAR_UUID
+        assert _writes(mock_client) == [
+            (OKIMAT_WRITE_CHAR_UUID, CAPTURED_CLOCK_FRAME, True),
+            (OKIMAT_WRITE_CHAR_UUID, CAPTURED_CLOCK_FRAME, True),
+            (OKIMAT_WRITE_CHAR_UUID, CAPTURED_SESSION_FRAME, True),
+            (OKIMAT_WRITE_CHAR_UUID, CAPTURED_SESSION_FRAME, True),
+        ]
+
+        mock_client.write_gatt_char.reset_mock()
+        await coordinator.controller.move_head_down()
+        writes = _writes(mock_client)
+        assert writes[0] == (
+            OKIMAT_WRITE_CHAR_UUID,
+            build_okin_64bit_command(Okin64BitCommands.HEAD_DOWN),
+            True,
+        )
+        assert writes[-1][1] == build_okin_64bit_command(Okin64BitCommands.STOP)
+
+    @pytest.mark.usefixtures("mock_coordinator_connected", "no_session_gap")
+    async def test_session_auth_failure_is_raised_for_pairing_recovery(
+        self, hass: HomeAssistant, mock_okin_64bit_custom_config_entry
+    ):
+        coordinator = AdjustableBedCoordinator(hass, mock_okin_64bit_custom_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+        mock_client.write_gatt_char.side_effect = BleakError(
+            "Bluetooth GATT Error handle=19 error=8 description=Insufficient authorization"
+        )
+
+        with pytest.raises(BleakError):
+            await coordinator.controller.start_notify(None)
+
+    @pytest.mark.usefixtures("mock_coordinator_connected", "no_session_gap")
+    async def test_session_other_failure_leaves_link_usable(
+        self, hass: HomeAssistant, mock_okin_64bit_custom_config_entry
+    ):
+        coordinator = AdjustableBedCoordinator(hass, mock_okin_64bit_custom_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+        mock_client.start_notify.side_effect = BleakError("Characteristic not found")
+
+        await coordinator.controller.start_notify(None)
+
+    @pytest.mark.usefixtures("mock_coordinator_connected")
+    async def test_nordic_variant_sends_no_session(
+        self, hass: HomeAssistant, mock_okin_64bit_config_entry
+    ):
+        coordinator = AdjustableBedCoordinator(hass, mock_okin_64bit_config_entry)
+        await coordinator.async_connect()
+
+        assert coordinator.controller.requires_notification_channel is False
+        assert not coordinator._client.start_notify.called
+        assert _writes(coordinator._client) == []

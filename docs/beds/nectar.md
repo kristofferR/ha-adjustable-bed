@@ -9,6 +9,10 @@
 > Motion app is a separate, explicit **Nectar Move** profile of [Okin CST](okin-cst.md).
 > An `OKIN-*` name, shared OKIN UUID, or Device Information value does not select
 > that app profile automatically.
+>
+> The Nectar Premier / Resident Adjustable Base uses neither: it is the
+> [Okin 64-Bit](okin-64bit.md) bed type with the Custom OKIN variant, which
+> needs pairing and a session on every connection.
 
 ## Known Models
 

@@ -2888,6 +2888,10 @@ BEDS_REQUIRING_PAIRING: Final[set[str]] = {
 # Note: Keeson's "okin" variant (OKIN FFE) does NOT require pairing - it's a different protocol
 BED_TYPE_VARIANTS_REQUIRING_PAIRING: Final[dict[str, set[str]]] = {
     BED_TYPE_LEGGETT_PLATT: {LEGGETT_VARIANT_OKIN, LEGGETT_VARIANT_GEN2},
+    # Custom OKIN (62741525): a Nectar Premier / Resident base rejects motor
+    # writes with ATT Insufficient Authorization until the link is encrypted
+    # with a bond made in the base's pairing mode. The Nordic variant does not.
+    BED_TYPE_OKIN_64BIT: {OKIN_64BIT_VARIANT_CUSTOM},
 }
 
 
