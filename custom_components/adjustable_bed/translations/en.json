@@ -3348,6 +3348,18 @@
       },
       "sonicsleep_action": {
         "name": "{action}"
+      },
+      "richmat_legacy_presets": {
+        "name": "{action}"
+      },
+      "richmat_legacy_lighting": {
+        "name": "{action}"
+      },
+      "richmat_legacy_massage": {
+        "name": "{action}"
+      },
+      "richmat_legacy_utility": {
+        "name": "{action}"
       }
     },
     "cover": {
@@ -5238,6 +5250,9 @@
       },
       "sonicsleep": {
         "name": "SonicSleep state"
+      },
+      "richmat_legacy_profile": {
+        "name": "Selected app profile"
       }
     },
     "light": {
@@ -9964,6 +9979,30 @@
           "name": "Enabled"
         }
       }
+    },
+    "richmat_legacy": {
+      "name": "SleepEvolution / W.Silver 3.x action",
+      "description": "Run a control offered by the selected fixed ASCII app and exact prefix. Local flags are not bed feedback.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "control": {
+          "name": "App control",
+          "description": "Control key from the selected profile in the Richmat guide."
+        },
+        "operation": {
+          "name": "Operation",
+          "description": "Gesture preserves short recall; program reaches one proven save event and suppresses recall on cancellation."
+        },
+        "duration_ms": {
+          "name": "Gesture duration",
+          "description": "Finite elapsed hold in milliseconds, 1 to 60000. Applies to gesture only."
+        }
+      }
     }
   },
   "exceptions": {
@@ -10773,7 +10812,9 @@
         "another": "Another app or remote: search every app",
         "luuna": "Luuna + app (Rise, Rise Pro, Rise Pro Light)",
         "richmat_420": "Richmat 4.2.0 app",
-        "sonicsleep": "SonicSleep / 소닉슬립 (IQRM)"
+        "sonicsleep": "SonicSleep / 소닉슬립 (IQRM)",
+        "sleep_evolution": "SleepEvolution (com.richmat.nu503)",
+        "wsilver_legacy": "W.Silver Products 3.x (com.richmat.silver)"
       }
     },
     "setup_start": {

@@ -1128,3 +1128,40 @@ all received raw fields except enabled. Clock capability and current alarm cache
 are required before writes. Missing/changed cache rejects the action. A silent
 empty-list query cannot safely allocate a new alarm. All target constraints pass
 before any target's setting changes. See the [SonicSleep reference](beds/richmat.md#sonicsleep).
+
+### SleepEvolution / W.Silver Products 3.x
+
+`adjustable_bed.richmat_legacy` runs a listed profile `control` with
+`device_id` and optional paired `side`. Use the exact control keys from the
+selected app and prefix in the
+[Richmat guide](beds/richmat.md#sleepevolution--wsilver-products-3x).
+
+| Field | Behavior |
+|---|---|
+| `operation: gesture` (default) | Run the control's DOWN, scheduled refresh and release phases, including its short-recall or long-save boundary. |
+| `duration_ms` | Gesture duration, 1–60000 ms, default 1000. Motion with only `m` on DOWN waits for its first actual movement refresh before this active window starts. Other finite wire gestures retain their DOWN-to-release interval. |
+| `operation: program` | Only for a control with a proven save event. Wait for the first completed save write, then release. Uses a bounded elapsed budget rather than `duration_ms`; cancellation suppresses short recall. |
+
+For example, this recalls the displayed M1 control on the **A1** profile:
+
+```yaml
+action: adjustable_bed.richmat_legacy
+data:
+  device_id: YOUR_BED_DEVICE_ID
+  control: h26_lounge
+  operation: gesture
+  duration_ms: 100
+```
+
+For that same A1 control, `operation: program` saves M1. Control names and
+displayed slots differ by profile; generic numeric memory actions are
+unavailable. Finite `hold_control` gestures preserve their recall/save boundary.
+Native renewable holds admit proven motion only, excluding programming,
+countdown and massage. Local selectors and cancellation-only actions send no
+wire packet of their own.
+
+All batch targets pass admission before writes. Single-address side selection
+and sequential Both holds are unsupported. Release drains on the original
+physical connection independently of cancellation, and unconditional cleanup is
+attempted even if a short-recall write fails. No arbitrary bytes, phone-torch or
+network/account actions are accepted. Hardware behavior remains unverified.

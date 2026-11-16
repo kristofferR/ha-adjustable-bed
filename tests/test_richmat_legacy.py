@@ -1,0 +1,352 @@
+"""Both accepted literal corpora, decisive phases and safe HA runtime callers."""
+
+from __future__ import annotations
+
+import asyncio
+import re
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
+from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.app_profiles import per_side_profile
+from custom_components.adjustable_bed.beds.richmat_legacy import controller as bed
+from custom_components.adjustable_bed.beds.richmat_legacy.protocol import LocalState, begin, packet
+from custom_components.adjustable_bed.profile_id import resolve_profile_id
+from custom_components.adjustable_bed.profiles.richmat_legacy import (
+    APP_NAMES,
+    choices,
+    matching_profile,
+    profiles,
+)
+from tests.richmat_legacy_vectors import ACCEPTED
+from tests.test_casper_base import char, frames
+from tests.test_controller_contract import _FactoryCoordinator
+
+
+def make(app="sleep_evolution", code="A1"):
+    c = _FactoryCoordinator()
+    c.entry.data.update({const.CONF_BED_TYPE: app, const.CONF_PROTOCOL_VARIANT: code})
+    c.controller_side = None
+    c.record_command_trace = MagicMock()
+    c.handle_controller_state_updates = MagicMock()
+    c.client = MagicMock(is_connected=True)
+    c.client.write_gatt_char = AsyncMock()
+    route = bed.TRANSPORTS["n1"]
+    c.client.services = [
+        SimpleNamespace(uuid=route.service_uuid, characteristics=[char(route.write_uuid, "write")])
+    ]
+    ctrl = bed.RichmatLegacyController(c)
+    c.controller = ctrl
+    return ctrl, c
+
+
+@pytest.fixture
+def clock(monkeypatch):
+    now = [0.0]
+    real = asyncio.sleep
+
+    async def pause(seconds, cancel):
+        now[0] += max(0, seconds)
+        await real(0)
+        return cancel.is_set()
+
+    monkeypatch.setattr(bed, "monotonic", lambda: now[0])
+    monkeypatch.setattr(bed, "_pause", pause)
+    return now
+
+
+def test_complete_frozen_literal_corpora_against_production_encoder():
+    n = [v for v in ACCEPTED["nu503"]["literal"] if v["inputs"]["mode"] == "literal"]
+    s = ACCEPTED["silver"]["literal"]
+    assert len(s) == 1600
+    assert n
+    for row in n + s:
+        literal = row["inputs"].get("text", row["inputs"].get("literal"))
+        assert packet(literal).hex() == row["expected_bytes"], row["id"]
+    assert packet("$") == b"\x24"
+    assert packet("1") == b"\x31"
+    assert packet("A") != packet("a")
+
+
+def phase_frames(profile, control, ticks, *, axis=0, mode=0, led=0):
+    phase = begin(profile.action(control), LocalState(axis, mode, led))
+    actual, count = list(phase.down), 0
+    for _ in range(ticks):
+        writes, count = phase.tick(count)
+        actual.extend(writes)
+    return [packet(v).hex() for v in (*actual, *phase.release(count))]
+
+
+@pytest.mark.parametrize("row", ACCEPTED["silver"]["temporal"], ids=lambda r: r["id"])
+def test_silver_all_frozen_temporal_cases(row):
+    p = row["inputs"]
+    v = next(v for v in ACCEPTED["silver"]["variants"] if v["id"] == p["variant"])
+    code = "BE" if p["variant"] == "YtMassageActivity" else v["selector"][0]
+    profile = profiles()["wsilver_legacy:" + code]
+    key = ("massage_" if p["variant"] == "YtMassageActivity" else "") + p["field"]
+    action = profile.action(key)
+    axis = action.states.index(str(p["state"])) if "state" in p else 0
+    assert phase_frames(profile, key, p["ticks"], axis=axis) == row["expected_attempts"]
+
+
+N_CONTROLS = {
+    "movement-6B": ("6B", "iv_post1"),
+    "movement-A6": ("A6", "iv_post1"),
+    "single-D2-timer": ("D2", "h26_moff"),
+    "single-TH-set": ("TH", "set"),
+    "single-ON-post2": ("ON", "post2"),
+    "A1-memory": ("A1", "h26_lounge"),
+    "A1-memory2": ("A1", "h26_tv"),
+    "A2-memory2": ("A2", "h26_tv"),
+    "A2-memory3": ("A2", "h26_zg"),
+    "BZ-memory3": ("BZ", "h26_memb"),
+    "A6-zg": ("A6", "iv_post6"),
+    "M4-lounge": ("M4", "h26_lounge"),
+    "R5-lounge": ("R5", "h26_lounge"),
+    "T3-lounge": ("T3", "h26_lounge"),
+    "M9-zg": ("M9", "h26_zg"),
+    "GV-head-up": ("GV", "btn_posup"),
+    "GV-foot-up": ("GV", "btn_posup"),
+    "U3-select-mode2": ("U3", "h26_lounge"),
+    "Ml-factory": ("Ml", "h26_tiltup"),
+    "BE-massage-30": ("BE", "massage_h26_min30"),
+    "TL-light": ("TL", "iv_post8"),
+    "phone-bed-side-effect": ("B1", "h26_mhdec"),
+}
+
+
+@pytest.mark.parametrize(
+    "row",
+    [
+        v
+        for v in ACCEPTED["nu503"]["literal"]
+        if v["inputs"]["mode"] in ("held", "dual", "u3", "u5-led")
+    ],
+    ids=lambda r: r["id"],
+)
+def test_sleepevolution_all_frozen_temporal_cases(row):
+    p, id = row["inputs"], row["id"]
+    axis, mode, led = int("foot" in id), p.get("flag", 0), p.get("flag", 0)
+    if p["mode"] == "u3":
+        code, key = "U3", "h26_tiltup" if p["direction"] == "up" else "h26_tiltdn"
+    elif p["mode"] == "u5-led":
+        code, key = "U5", "h26_mhinc"
+    else:
+        code, key = next(
+            value
+            for name, value in sorted(N_CONTROLS.items(), key=lambda item: -len(item[0]))
+            if id.startswith(name)
+        )
+    assert (
+        phase_frames(
+            profiles()["sleep_evolution:" + code],
+            key,
+            p.get("ticks", 0),
+            axis=axis,
+            mode=mode,
+            led=led,
+        )
+        == row["expected_frames"]
+    )
+
+
+@pytest.mark.parametrize("app,member", [("sleep_evolution", "nu503"), ("wsilver_legacy", "silver")])
+def test_every_accepted_reachable_registration_and_phase_is_shipped(app, member):
+    rows = ACCEPTED[member]["commands"]
+    assert len(rows) == (622 if member == "nu503" else 566)
+    for row in rows:
+        code = "BE" if row["profile"] == "BE_massage" else row["profile"]
+        key = ("massage_" if row["profile"] == "BE_massage" else "") + row["key"]
+        action = profiles()[f"{app}:{code}"].action(key)
+        for state, expected in row["branches"].items():
+            branch = dict(action.branches)[state]
+            assert list(branch.writes) == expected.get("strings", expected.get("sends"))
+            threshold = expected.get("counter_threshold")
+            if "counter_limits" in expected:
+                threshold = (
+                    int(expected["counter_limits"][0]) if expected["counter_limits"] else None
+                )
+            assert branch.threshold == threshold
+            assert all(len(packet(v)) == 1 for v in branch.writes)
+        assert list(action.down) == re.findall(r'sendMessage\("(.)"\)', row["down"])
+        assert list(action.short + action.release) == re.findall(
+            r'sendMessage\("(.)"\)', row["release"]
+        )
+        guard = re.search(r"TimerSend < (\d+)", row["release"])
+        assert action.short_guard == (int(guard[1]) if guard else None)
+        assert action.reset_counter == bool(re.search(r"TimerSend\s*=\s*0", row["release"]))
+        assert action.label
+
+
+@pytest.mark.parametrize("key", list(profiles()))
+async def test_all_profile_controls_run_on_captured_gatt_and_expose_specs(clock, key):
+    app, code = key.split(":")
+    ctrl, c = make(app, code)
+    await ctrl.start_notify()
+    assert frames(c) == []
+    specs = {s.key: s for s in ctrl.controller_button_specs}
+    for action in ctrl.profile.actions:
+        assert "richmat_legacy_" + action.key in specs
+        assert bool(specs["richmat_legacy_" + action.key].hold) == action.motion
+        assert ctrl.execution.hold_for(action.key) == ("stream" if action.motion else None)
+        c.client.write_gatt_char.reset_mock()
+        await ctrl.action(action.key, duration_ms=1)
+        assert all(len(call.args[1]) == 1 for call in c.client.write_gatt_char.call_args_list)
+        if action.programmable:
+            c.client.write_gatt_char.reset_mock()
+            await ctrl.action(action.key, program=True)
+            values = frames(c)
+            assert any(
+                v in {packet(x).hex() for _, branch in action.branches for x in branch.writes}
+                for v in values
+            )
+            assert not {packet(x).hex() for x in action.short if x != "n"} & set(values)
+    assert not ctrl.supports_single_address_pairing
+    assert not ctrl.supports_position_feedback
+    assert not ctrl.position_number_specs
+
+
+async def test_initialization_epoch_phase_not_restarted_and_short_motion_usable(clock):
+    ctrl, c = make(code="B6")
+    await ctrl.start_notify()
+    clock[0] = 0.59
+    await ctrl.hold_control("iv_post1", 15)
+    assert frames(c) == ["24", "24", "6e"]  # Tick at .6, not DOWN+.5.
+    ctrl, c = make(code="6B")
+    await ctrl.start_notify()
+    clock[0] += 0.01
+    await ctrl.hold_control("iv_post1", 1)
+    assert frames(c) == ["6d", "24", "6e"]
+
+
+async def test_dedicated_program_ordinary_latency_and_cancel_no_short_recall(clock):
+    ctrl, c = make()
+    await ctrl.start_notify()
+
+    async def slow(*args, **kwargs):
+        clock[0] += 0.04
+
+    c.client.write_gatt_char.side_effect = slow
+    await ctrl.action("h26_lounge", program=True)
+    assert frames(c) == ["2b", "6e"]
+    c.client.write_gatt_char.reset_mock()
+    c.cancel_command.set()
+    await ctrl.action("h26_lounge", program=True)
+    assert frames(c) == []
+    c.cancel_command.clear()
+    real_pause = bed._pause
+
+    async def cancel_wait(seconds, event):
+        c.cancel_command.set()
+        return await real_pause(seconds, event)
+
+    with patch.object(bed, "_pause", cancel_wait):
+        await ctrl.action("h26_lounge", program=True)
+    assert frames(c) == ["6e"]
+
+
+async def test_slow_write_no_motion_backfill_and_replacement_cleanup_fenced(clock):
+    ctrl, c = make(code="A6")
+    await ctrl.start_notify()
+
+    async def slow(*args, **kwargs):
+        clock[0] += 1
+
+    c.client.write_gatt_char.side_effect = slow
+    await ctrl.hold_control("iv_post1", 10)
+    assert frames(c) == ["24", "6e"]
+    old = c.client
+
+    async def replace(*args, **kwargs):
+        c.client = MagicMock(is_connected=True, write_gatt_char=AsyncMock())
+        ctrl.on_disconnect()
+
+    old.write_gatt_char.side_effect = replace
+    with pytest.raises(ConnectionError):
+        await ctrl.hold_control("iv_post1", 1000)
+    c.client.write_gatt_char.assert_not_awaited()
+
+
+async def test_submitted_write_drains_before_cancellation_release():
+    ctrl, c = make(code="B6")
+    await ctrl.start_notify()
+    entered, finish = asyncio.Event(), asyncio.Event()
+
+    async def blocked(_char, value, **_kwargs):
+        if value == b"$":
+            entered.set()
+            await finish.wait()
+
+    c.client.write_gatt_char.side_effect = blocked
+    task = asyncio.create_task(ctrl.hold_control("iv_post1", 100))
+    await entered.wait()
+    task.cancel()
+    await asyncio.sleep(0)
+    assert not task.done()
+    assert frames(c) == ["24"]
+    finish.set()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert frames(c) == ["24", "6e"]
+
+
+@pytest.mark.parametrize("app", APP_NAMES)
+def test_app_qualified_routes_setup_identity_and_side_ownership(app):
+    assert matching_profile(app, "Ml123") == "Ml"
+    assert matching_profile(app, "ML123") == ""
+    assert matching_profile(app, "0B123") == "M4"
+    for rejected in ("01", "02", "Vi", "YT", "MM", "T2"):
+        assert not matching_profile(app, rejected + "123")
+        assert rejected not in choices(app)
+    assert ("A6" in choices(app)) == (app == "sleep_evolution")
+    assert (
+        resolve_profile_id({const.CONF_BED_TYPE: app, const.CONF_PROTOCOL_VARIANT: "GV"})
+        == app + ":GV"
+    )
+    side = per_side_profile(app, "GV")
+    assert side is not None
+    assert {const.CONF_BLE_DEVICE_NAME, const.CONF_PROTOCOL_VARIANT} <= side.keys
+
+
+@pytest.mark.parametrize(
+    "route,control,command",
+    [
+        ("sleep_evolution:GV", "btn_posup", "33"),
+        ("wsilver_legacy:GV", "btn_posup", "24"),
+        ("sleep_evolution:B6", "iv_post1", "24"),
+    ],
+)
+@pytest.mark.parametrize("end", ("expire", "stop"))
+async def test_real_scheduler_renewable_motion(route, control, command, end):
+    from tests.hold_lease_wire import leased_hold
+
+    async def move(controller):
+        await controller.hold_control(control, 30000)
+
+    wire = await leased_hold(route, move, end_after_s=2, end=end)
+    assert len(wire.held) > 2
+    assert {w.data.hex() for w in wire.held} <= {"6d", command}
+    assert [w.data.hex() for w in wire.after] == (["6e", "6e"] if end == "stop" else ["6e"])
+
+
+async def test_cancellation_during_short_recall_still_completes_release(clock):
+    ctrl, c = make(code="A6")
+    await ctrl.start_notify()
+    entered, finish = asyncio.Event(), asyncio.Event()
+
+    async def block(_char, value, **_kwargs):
+        if value == b"E" and not entered.is_set():
+            entered.set()
+            await finish.wait()
+
+    c.client.write_gatt_char.side_effect = block
+    task = asyncio.create_task(ctrl.action("iv_post6", duration_ms=1))
+    await entered.wait()
+    task.cancel()
+    await asyncio.sleep(0)
+    finish.set()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert frames(c) == ["45", "45", "45", "6e", "6e"]

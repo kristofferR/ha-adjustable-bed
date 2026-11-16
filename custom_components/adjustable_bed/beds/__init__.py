@@ -99,6 +99,7 @@ if TYPE_CHECKING:
     from .richmat.controller import RichmatController as RichmatController
     from .richmat_app.controller import RichmatAppController as RichmatAppController
     from .richmat_classic.controller import RichmatClassicController as RichmatClassicController
+    from .richmat_legacy.controller import RichmatLegacyController as RichmatLegacyController
     from .richmat_mh.controller import RichmatMhController as RichmatMhController
     from .rize_home.controller import RizeHomeController as RizeHomeController
     from .rondure import RondureController as RondureController
@@ -166,6 +167,7 @@ _EXPORT_MODULES = {
     'TempurAUController': 'tempur_au',
     "CasperBaseController": "casper_base.controller",
     "HushBaseController": "hush_base.controller",
+    "RichmatLegacyController": "richmat_legacy.controller",
     "LuunaController": "luuna.controller",
     "MLineController": "mline.controller",
     "HushSleepController": "hush_sleep.controller",

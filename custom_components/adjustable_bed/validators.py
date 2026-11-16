@@ -103,6 +103,8 @@ from .profiles.hush import HUSH_BASE_VARIANTS
 from .profiles.luuna import VARIANTS as LUUNA_VARIANTS
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.richmat import BEDTECH_VARIANTS
+from .profiles.richmat_legacy import APP_NAMES as LEGACY_APPS
+from .profiles.richmat_legacy import choices as legacy_choices
 from .profiles.symphony import SELECTORS as SYMPHONY_SELECTORS
 
 _LOGGER = logging.getLogger(__name__)
@@ -133,6 +135,7 @@ def is_valid_octo_pin(pin: str) -> bool:
 
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
+    **{app: legacy_choices(app) for app in LEGACY_APPS},
     "smart_sleep": {"p1": "Legacy bed controls (P1)", "p2": "New bed controls (P2)"},
     "comfort_enhancement3": APEX_CHOICES,
     "symphony_sleep": {"box1": "Box 1 (P1)", "box2": "Box 2 (P2)", "fallback": "P1 output, parser disabled"},

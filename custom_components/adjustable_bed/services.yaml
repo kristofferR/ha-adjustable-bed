@@ -1,3 +1,34 @@
+richmat_legacy:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    control:
+      required: true
+      selector:
+        text:
+    operation:
+      default: gesture
+      selector:
+        select:
+          options: [gesture, program]
+    duration_ms:
+      default: 1000
+      selector:
+        number:
+          min: 1
+          max: 60000
+          step: 1
+          mode: box
+          unit_of_measurement: ms
+    side:
+      selector:
+        select:
+          options: [left, right, both]
+
 configure_alarm_schedule:
   fields:
     device_id:

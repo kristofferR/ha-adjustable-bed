@@ -1171,6 +1171,9 @@ def default_scenario(bed_type: str) -> Scenario:
     from custom_components.adjustable_bed import const
 
     data: dict[str, Any] = {}
+    if bed_type in ("sleep_evolution", "wsilver_legacy"):
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="A1",
+            entry_data={const.CONF_PROTOCOL_VARIANT: "A1"}, layout_id="sonicsleep:Nordic")
     variant: str | None = {
         const.BED_TYPE_LEGGETT_PLATT: const.LEGGETT_VARIANT_OKIN,
         const.BED_TYPE_SBI: const.SBI_VARIANT_BOTH,
@@ -1353,6 +1356,10 @@ def route_scenarios() -> list[Scenario]:
     from custom_components.adjustable_bed import const
 
     scenarios: list[Scenario] = []
+    for app, codes in (("sleep_evolution", ("GV", "B6", "6B", "U3", "U5", "X1", "BE")), ("wsilver_legacy", ("GV",))):
+        for code in codes:
+            scenarios.append(Scenario(id=f"{app}:{code}", bed_type=app, protocol_variant=code,
+                entry_data={const.CONF_PROTOCOL_VARIANT: code}, layout_id="sonicsleep:Nordic"))
     # Distinct Symphony carriers, fixed builders, split routes and fifth axis.
     # Model/selector dispatch itself is exhaustively checked in test_symphony.
     for product, selector in (("0", "3"), ("12", "9"), ("13", "4"), ("15", "4"), ("10", "6"), ("20", "7")):

@@ -22,6 +22,8 @@ APPS = [
     "richmat_420",
     "rmcontrol",
     "luuna",
+    "sleep_evolution",
+    "wsilver_legacy",
     "sonicsleep",
     "mlily",
     "revive",

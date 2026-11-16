@@ -4808,5 +4808,20 @@
   },
   "sensor:sonicsleep": {
     "card_section": "hidden"
+  },
+  "button:richmat_legacy_lighting": {
+    "card_section": "lighting"
+  },
+  "button:richmat_legacy_massage": {
+    "card_section": "massage"
+  },
+  "button:richmat_legacy_presets": {
+    "card_section": "presets"
+  },
+  "button:richmat_legacy_utility": {
+    "card_section": "utility"
+  },
+  "sensor:richmat_legacy_profile": {
+    "card_section": "hidden"
   }
 }

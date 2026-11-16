@@ -39,6 +39,7 @@ from custom_components.adjustable_bed.execution import (
 )
 from custom_components.adjustable_bed.profiles import keeson as keeson_profiles
 from custom_components.adjustable_bed.profiles import vibradorm as vibradorm_profiles
+from custom_components.adjustable_bed.profiles.richmat_legacy import profiles as legacy_profiles
 from tests.codec_families import families
 from tests.test_controller_contract import (
     _create_controller_for_bed_type,
@@ -107,6 +108,7 @@ ERGOMOTION_4_STYLES = frozenset(product.style for product in ERGOMOTION_4_PRODUC
 
 # Declaration -> declared field -> evidence keys from the design document.
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
+    **{f"LegacyProfile:{key}": {"hold": ("cluster023",), "hold_controls": ("cluster023",)} for key in legacy_profiles()},
     "SmartSleepProfile:p1": {"hold": ("row094",)},
     "SmartSleepProfile:p2": {"hold": ("row094",), "hold_controls": ("row094",)},
     **{f"OkinNFrameProfile:apex_{i}": {"hold": ("row083",)} for i in range(15)},
@@ -321,6 +323,8 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     **{f"profiles/symphony.py:<module>.{site}": ("SymphonyWordProfile:symphony",)
        for site in ("EXECUTION", "SymphonyProfile", "word_profile")},
     "profiles/bedgear.py:<module>.BedgearProfile": ("BedgearProfile:bedgear",),
+    "profiles/richmat_legacy.py:<module>.LegacyProfile": tuple(f"LegacyProfile:{key}" for key in legacy_profiles()),
+    "profiles/richmat_legacy.py:<module>.LegacyProfile.__post_init__": tuple(f"LegacyProfile:{key}" for key in legacy_profiles()),
     "profiles/sonicsleep.py:<module>.SonicSleepProfile": ("SonicSleepProfile:one",),
     "profiles/paramount.py:<module>.ParamountProfile": ("ParamountProfile:paramount",),
     **{
@@ -500,6 +504,7 @@ async def _family_profiles() -> dict[str, ExecutionCapabilities]:
         PROFILES as SYMPHONY_PROFILES,
     )
     profiles.extend(SYMPHONY_PROFILES.values())
+    profiles.extend(legacy_profiles().values())
     for bed_type in SUPPORTED_BED_TYPES:
         profiles.append(getattr(await _create_controller_for_bed_type(bed_type), "profile", None))
     # Layouts are built at runtime and never stored; reach every one.

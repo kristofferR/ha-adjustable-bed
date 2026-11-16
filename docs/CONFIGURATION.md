@@ -1092,3 +1092,19 @@ it does not write a hardware lock. Protocol, layout and local settings belong
 to each physical side of a two-address pair. See [M Line](beds/mline.md).
 
 SonicSleep selects its fixed one/IQRM product under Richmat. Setup owns the two-motor layout, disabled angle sensing and observed-only massage/light surface. Each physical side keeps its app settings. See [SonicSleep](beds/richmat.md#sonicsleep).
+
+### SleepEvolution / W.Silver Products 3.x
+
+Choose **SleepEvolution (com.richmat.nu503)** or **W.Silver Products 3.x
+(com.richmat.silver)** under Richmat, then the exact case-sensitive name prefix
+(`protocol_variant`). A matching name can suggest a prefix only after you choose
+the app. Shared prefixes and Nordic UART services cannot identify which app you
+use; the newer W.Silver MH app is a separate choice. **Configure** asks the same
+prefix question. A6, U3, U5 and X1 are offered only for SleepEvolution.
+
+Each receiver in a two-address pair retains its own app and prefix. There is no
+single-address side selector. The selected profile supplies its control labels,
+refresh schedule and release behavior; generic pulse settings do not replace
+that schedule. Angle feedback is disabled, and neither physical motor count nor
+remote light/massage state is inferred. See the
+[fixed ASCII app guide](beds/richmat.md#sleepevolution--wsilver-products-3x).

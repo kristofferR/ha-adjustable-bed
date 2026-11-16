@@ -44,7 +44,8 @@ from custom_components.adjustable_bed.profiles import luuna as luuna_profiles
 from custom_components.adjustable_bed.profiles import richmat as richmat_profiles
 from custom_components.adjustable_bed.profiles import richmat_resource_apps as resource_profiles
 from custom_components.adjustable_bed.profiles import sonicsleep as sonic
-from scripts.codec_docs import _galaxy
+from custom_components.adjustable_bed.profiles.richmat_legacy import profiles as legacy_profiles
+from scripts.codec_docs import _galaxy, _richmat_legacy
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
 GUIDE = "docs/beds/richmat.md"
@@ -157,6 +158,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
     mh_types = {app: bed_type for bed_type, app in _const.RICHMAT_MH_APPS.items()}
     return {
         "one": (_const.BED_TYPE_SONICSLEEP,),
+        **{key: (profile.app,) for key, profile in legacy_profiles().items()},
         **{
             profile.key: (_const.BED_TYPE_RICHMAT,) for profile in richmat_profiles.RICHMAT.values()
         },
@@ -1519,3 +1521,6 @@ def render_resource_apps() -> str:
 
 
 BLOCKS.append((GUIDE, "richmat-resource-apps", render_resource_apps))
+
+
+BLOCKS += _richmat_legacy.BLOCKS

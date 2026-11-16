@@ -159,6 +159,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `gmmotor` | B | B | B | gm | report PARTIAL; release behavior unresolved |
 | `casper_base` | B | B | B | casper | report PARTIAL |
 | `sonicsleep` (one / IQRM) | S stream (no release frame) | U | U | sonicsleep | First held refresh after 100 ms; release ends refresh; no firmware watchdog claim. |
+| `sleep_evolution`, `wsilver_legacy` (selected prefix) | S stream (proven motion controls only) | U | U | cluster023 | App-qualified screen schedule from initialization, optional DOWN write, exact per-control release; no concurrent independent motor streams or physical STOP guarantee. |
 | `luuna` (Rise, Rise Pro, Rise Pro Light) | S stream (no release frame) | U | U | luuna | 100 ms held refresh, cancelled on tap-up/cancel; no live STOP enum caller. No composed axes or speed selector in the complete catalog. |
 | `hush_base` | S stream | B | B | hush, row126 | movement refreshes every 100 ms, first write after 100 ms, until release, then sends STOP `6e` on the same side; massage strength sends once on press and STOP on release; text controls send their short or long gesture with no release. #516 and #591: no shard assesses two held axes or a motor-speed selection. Not declared: the mixed gestures need a per-control scope (see [per-control scope](#per-control-hold-scope)), and Hush runs on the shared Casper Base controller, whose own hold is blocked |
 | **Jiecang F1 (J1)** | | | | | |
@@ -649,6 +650,7 @@ Report workspaces are machine-local under
 |---|---|---|---|---|
 | bedgear | `com.Bedgear.AdjustableBed` | 2.0.1 | COMPLETE | `com.Bedgear.AdjustableBed-2.0.1-2026-11-12-queue001/report/` |
 | mline147 | `com.okin.mline` | 1.2.2 (38) | COMPLETE, independently accepted | `com.okin.mline-1.2.2-2026-11-12-queue001/report/` |
+| cluster023 | `com.richmat.nu503`, `com.richmat.silver` | 3.5.5 / 3.3.7 | COMPLETE, accepted | `cluster-023-reconciliation-2026-11-16-queue001/report/` |
 | sonicsleep | `com.richmat.sonicsleep` | 1.0.4 (10400) | COMPLETE, accepted | `com.richmat.sonicsleep-1.0.4-2026-11-12-queue001/report/` |
 | paramount | `com.paramount.bedcontrol` | 3.0.4 | COMPLETE | `com.paramount.bedcontrol-3.0.4-2026-11-09-queue002/report/` |
 | row094 | `com.bedding.monitor.sleep_monitor.release` | 2.4.9 (263) | COMPLETE, accepted | `com.bedding.monitor.sleep_monitor.release-2.4.9-2026-11-12-queue001/` |
@@ -836,3 +838,14 @@ commands every 300 ms until release. P1 releases after 100 ms; P2 motor
 release is immediate and differs from global STOP. Preset gestures retain
 their format-specific behavior. No concurrent motor, side addressing or motor
 speed selection is proven. See [Smart Sleep](../beds/smart-sleep.md).
+
+#### cluster023
+
+SleepEvolution 3.5.5 and W.Silver Products 3.3.7 use each selected screen's
+initialization-based periodic schedule while its proven motion control is held,
+then the exact control's release. `LegacyProfile.execution` admits renewable
+streaming only for controls whose accepted label/artwork and caller prove motion.
+Countdown, massage, recall/save and local selectors retain finite operations.
+There is no evidence of concurrent independent motor streams, sustain time,
+measured position or a physical STOP guarantee. Accepted cluster-023 command
+and temporal tables are frozen in `tests/fixtures/richmat_legacy/accepted.json.gz`.
