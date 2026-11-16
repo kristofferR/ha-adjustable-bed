@@ -4548,3 +4548,60 @@ sonicsleep:
       default: true
       selector:
         boolean: null
+
+sophie_set_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      default: both
+      selector:
+        select:
+          options:
+          - both
+          - left
+          - right
+    enabled:
+      required: true
+      selector:
+        boolean: null
+    time:
+      default: 00:00:00
+      selector:
+        time: null
+    weekdays:
+      default: []
+      selector:
+        select:
+          multiple: true
+          options:
+          - monday
+          - tuesday
+          - wednesday
+          - thursday
+          - friday
+          - saturday
+          - sunday
+    mode:
+      default: no_action
+      selector:
+        select:
+          options:
+          - zero_g
+          - memory_1
+          - no_action
+          - zero_g_left
+          - zero_g_right
+          - zero_g_both
+    massage:
+      default: false
+      selector:
+        boolean: null
+    ring:
+      default: false
+      selector:
+        boolean: null

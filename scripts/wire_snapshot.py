@@ -1383,6 +1383,15 @@ def route_scenarios() -> list[Scenario]:
                     replies={**base.replies, **ROUTE_REPLIES.get(f"{bed_type}:{variant}", {})},
                 )
             )
+    # Sophie has no fixed service UUID; append app-specific GATT/name cases.
+    for suffix, name in (("named", "QMS-MQ-1520"), ("fallback", "1520"),
+                         ("side_alarm", "QMS-430-1520"), ("qms2", "QMS2-1520")):
+        scenarios.append(Scenario(
+            id=f"solace:sophie:{suffix}", bed_type="solace", protocol_variant="sophie",
+            entry_data={const.CONF_BLE_DEVICE_NAME: name}, layout_id="sophie",
+            replies={"write:ffffffff01000a0b0f": "ffffffff01000a0b01",
+                     "*": "ffffffff010004130f0730008a01020100"},
+        ))
     # Every row084 bed type/alias, without sampling the product inventory.
     for bed_type in (const.BED_TYPE_KOMFYD, const.BED_TYPE_COMFYDS):
         base = default_scenario(bed_type)
@@ -1886,6 +1895,10 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         await controller.start_notify(lambda *_: None)
         if controller._coordinator.bed_type in {"komfyd", "comfyds"}:
             await controller.async_after_connect(None)
+        if controller._coordinator.bed_type == "solace" and controller.profile.key == "sophie":
+            session = SimpleNamespace(is_current=lambda: True)
+            await controller.async_after_connect(session)
+            await controller._startup_task
         if controller._coordinator.bed_type == "n32_motion_bed":
             # The helper already subscribed; run the app-owned startup on this
             # captured controller without changing older snapshot scenarios.

@@ -3348,6 +3348,21 @@
       },
       "sonicsleep_action": {
         "name": "{action}"
+      },
+      "sophie_header": {
+        "name": "Movement / massage header action"
+      },
+      "sophie_program_tv": {
+        "name": "Save / clear TV"
+      },
+      "sophie_program_zero_g": {
+        "name": "Save / clear zero gravity"
+      },
+      "sophie_program_anti_snore": {
+        "name": "Save / clear anti-snore"
+      },
+      "sophie_refresh_light": {
+        "name": "Refresh brightness"
       }
     },
     "cover": {
@@ -5238,6 +5253,15 @@
       },
       "sonicsleep": {
         "name": "SonicSleep state"
+      },
+      "sophie_head_level": {
+        "name": "Head massage level"
+      },
+      "sophie_foot_level": {
+        "name": "Foot massage level"
+      },
+      "sophie_wave": {
+        "name": "Massage wave"
       }
     },
     "light": {
@@ -5589,6 +5613,27 @@
       },
       "mline_anti_enabled": {
         "name": "Anti-snore enabled"
+      },
+      "sophie_alarm_enabled": {
+        "name": "Bed alarm"
+      },
+      "sophie_sync_supported": {
+        "name": "Bed synchronization supported"
+      },
+      "sophie_memory_1_saved": {
+        "name": "Memory 1 saved"
+      },
+      "sophie_memory_2_saved": {
+        "name": "Memory 2 saved"
+      },
+      "sophie_tv_saved": {
+        "name": "Tv saved"
+      },
+      "sophie_zero_g_saved": {
+        "name": "Zero G saved"
+      },
+      "sophie_anti_snore_saved": {
+        "name": "Anti Snore saved"
       }
     },
     "number": {
@@ -6654,6 +6699,13 @@
       },
       "symphony_child_mode": {
         "name": "Local child mode"
+      },
+      "sophie_sync": {
+        "name": "Synchronize beds",
+        "state": {
+          "on": "On",
+          "off": "Off"
+        }
       }
     },
     "climate": {
@@ -9964,6 +10016,37 @@
           "name": "Enabled"
         }
       }
+    },
+    "sophie_set_alarm": {
+      "name": "Set Sophie alarm",
+      "description": "Program a supported Sophie bed alarm using the selected model's available modes.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "time": {
+          "name": "Local time"
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "Leave empty for a one-time alarm."
+        },
+        "mode": {
+          "name": "Action"
+        },
+        "massage": {
+          "name": "Massage"
+        },
+        "ring": {
+          "name": "Ring"
+        }
+      }
     }
   },
   "exceptions": {
@@ -10632,7 +10715,8 @@
         "motion_bed": "Motion Bed app",
         "bedsense": "BedSense app",
         "another": "Another app or remote: search every app",
-        "keep": "I don't know: keep the detected controls"
+        "keep": "I don't know: keep the detected controls",
+        "sophie": "Sophie app"
       }
     },
     "leggett_family_choice": {

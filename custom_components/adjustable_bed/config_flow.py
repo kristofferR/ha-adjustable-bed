@@ -300,6 +300,7 @@ from .const import (
     RUNTIME_BOND_KEYS,
     SIDE_LEFT,
     SIDE_RIGHT,
+    SOLACE_VARIANT_SOPHIE,
     SOLACE_VARIANT_WOOSA,
     STARCODE_APP_CONNECTION_TIMEOUT_SECONDS,
     SVANE_VARIANT_JENSEN_LINON,
@@ -1311,7 +1312,7 @@ def _motor_count_options(
         return [1, 2, 3, 4]
     if bed_type == BED_TYPE_OKIN_CST:
         return [3] if protocol_variant in OKIN_CST_THREE_MOTOR_VARIANTS else [2]
-    if bed_type == BED_TYPE_SOLACE and protocol_variant == SOLACE_VARIANT_WOOSA:
+    if bed_type == BED_TYPE_SOLACE and protocol_variant in (SOLACE_VARIANT_WOOSA, SOLACE_VARIANT_SOPHIE):
         return [2]
     return [2, 3, 4]
 

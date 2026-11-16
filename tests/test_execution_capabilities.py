@@ -244,6 +244,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "SolaceProfile:home_k2": {"hold": ("homekobo",)},
     "SolaceProfile:motion_flex": {"hold": ("motionflex",)},
     "SolaceProfile:woosa": {"hold": ("woosa",)},
+    "SolaceProfile:sophie": {"hold": ("sophie124",)},
     # Standalone controllers. Stream holds need stream evidence; latched holds
     # (#821) a latched row. The generic ``vibradorm`` route keeps finite pulses
     # and ``leggett_lp_legacy`` is not declared yet (see the design note). Svane
@@ -394,6 +395,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
         "SolaceProfile:home_k2",
         "SolaceProfile:motion_flex",
         "SolaceProfile:woosa",
+        "SolaceProfile:sophie",
     ),
     "profiles/jiecang.py:<module>.DREAMASK": ("JiecangProfile:dreamask",),
     "profiles/jiecang.py:<module>.DREAMHD": ("JiecangProfile:dreamhd",),

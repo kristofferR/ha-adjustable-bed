@@ -7,6 +7,7 @@ from collections.abc import Callable, Iterable
 from custom_components.adjustable_bed.codec import ff_frame as ff_codec
 from custom_components.adjustable_bed.profiles import ff_frame as ff_profiles
 from scripts.codec_docs._common import Block, _block, _hex, _table
+from scripts.codec_docs._sophie import BLOCKS as SOPHIE_BLOCKS
 
 GUIDE = "docs/beds/ff_frame.md"
 
@@ -18,6 +19,7 @@ _ROUTE_NAMES = {
     "home_k2": "Home K2",
     "motion_flex": "MotionFlex",
     "woosa": "Woosa Sleep",
+    "sophie": "Sophie",
     "legacy_s4_y": "Legacy S4-Y",
     "unverified": "Unverified",
 }
@@ -70,8 +72,8 @@ def _ff_flags(profile: ff_profiles.SolaceProfile, *names: str) -> str:
 def _ff_startup(profile: ff_profiles.SolaceProfile) -> str:
     if profile.queries is None:
         return "none"
-    if profile.key == "woosa":
-        return "Woosa startup schedule"
+    if profile.key in ("woosa", "sophie"):
+        return f"{_ROUTE_NAMES[profile.key]} startup schedule"
     clock = "clock, " if profile.clock_sync else ""
     light = ", light status" if profile.clock_sync else ""
     return (
@@ -100,7 +102,7 @@ def render_ff_frame_profiles() -> str:
                 ", ".join(profile.axes),
                 "yes" if profile.presets else "no",
                 f"{profile.memory_slots} slot{'' if profile.memory_slots == 1 else 's'}",
-                _FF_QUERIES[profile.queries] if profile.queries else "none, no notifications",
+                ("Named03 / fallback09" if profile.key == "sophie" else _FF_QUERIES[profile.queries]) if profile.queries else "none, no notifications",
                 _ff_flags(profile, "massage", "circulation"),
                 _ff_flags(profile, "light_levels", "light_timer"),
                 _ff_flags(profile, "relaxing_bedtime", "audio", "alarm", "clock_sync"),
@@ -466,3 +468,6 @@ BLOCKS: list[Block] = [
     (GUIDE, "ff-frame-bedsense", render_ff_frame_bedsense),
     (GUIDE, "ff-frame-motion-bed", render_ff_frame_motion_bed),
 ]
+
+
+BLOCKS += SOPHIE_BLOCKS

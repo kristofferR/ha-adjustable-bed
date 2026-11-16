@@ -41,7 +41,7 @@ Each codec has one guide, with a section per profile:
 | [Malouf](beds/malouf.md) | Malouf and the Malouf Base / Lucid Base apps |
 | [Richmat](beds/richmat.md) | Richmat, RMControl, BedTech, L&P MlRM, the L&P legacy app, the Richmat MH apps, HJBed, Eshine, Good Vibe Sleep, Casper Base, Hush Base and Luuna + |
 | [Limoss](beds/limoss.md) | Limoss, Limoss Remote and FSM Relax |
-| [FFFF frame](beds/ff_frame.md) | Solace, Woosa Sleep, BedSense and Motion Bed |
+| [FFFF frame](beds/ff_frame.md) | Solace, Sophie, Woosa Sleep, BedSense and Motion Bed |
 | [HHC `$#` frames](beds/motomotion.md) | MotoMotion, MotoSleep, Power Bob and Bedgear |
 | [JMC400](beds/jmc.md) | Jensen JMC400 and the Svane Remote app's JMC400 route |
 | [Kaidi](beds/kaidi.md) | Rize Beds, Rize Seat, Floyd Home, ISleep, KomfyD and ComfyDS |

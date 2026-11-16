@@ -636,6 +636,8 @@ share the Okin N-frame files.
 
 ## Evidence keys
 
+| sophie124 | Sophie 1.0.6 (8), `com.sddq.sophienew`, accepted unit124 E06: one start on DOWN, no refresh, global release on UP/CANCEL. No composed motors or speed. |
+
 | row133 | Symphony Sleep Sense 2.8.0 (194), `com.okin.ist`, accepted audit002: one motor frame on down, no refresh timer; format-specific STOP on release. Latched motor holds only, finite presets and explicit saves. No composed concurrent motors. |
 
 - **sonicsleep**: accepted SonicSleep 1.0.4 (10400), row179, E-MOTOR/E-QUEUE. Six selected directions refresh at 100 ms and gesture release cancels refresh without any release packet. No concurrent-axis or watchdog proof.

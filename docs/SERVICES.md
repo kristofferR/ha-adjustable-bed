@@ -1128,3 +1128,14 @@ all received raw fields except enabled. Clock capability and current alarm cache
 are required before writes. Missing/changed cache rejects the action. A silent
 empty-list query cannot safely allocate a new alarm. All target constraints pass
 before any target's setting changes. See the [SonicSleep reference](beds/richmat.md#sonicsleep).
+
+### Sophie bed alarms
+
+`adjustable_bed.sophie_set_alarm` programs the direct BLE bed alarm. Supply
+`device_id`, `enabled`, local `time`, `weekdays` (empty for once), `mode`,
+`massage` and `ring`. Ordinary models allow `zero_g`, `memory_1` and `no_action`;
+QMS-DFQ, QMS-430 and QMS-444 names allow `zero_g_left`, `zero_g_right`,
+`zero_g_both` and `no_action`. QMS2 hides alarm massage. Each target must report
+alarm support and pass all model gates before any target is written. The usual
+paired `side` routing applies; alarm side modes do not address ordinary motors.
+Use `adjustable_bed.sync_clock` to synchronize the bed's local clock.

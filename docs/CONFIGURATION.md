@@ -1092,3 +1092,11 @@ it does not write a hardware lock. Protocol, layout and local settings belong
 to each physical side of a two-address pair. See [M Line](beds/mline.md).
 
 SonicSleep selects its fixed one/IQRM product under Richmat. Setup owns the two-motor layout, disabled angle sensing and observed-only massage/light surface. Each physical side keeps its app settings. See [SonicSleep](beds/richmat.md#sonicsleep).
+
+### Sophie app
+
+Choose **Solace → Sophie app**. Two motors, massage and disabled angle sensing
+are profile-owned. Keep the actual Bluetooth name: saved queries, alarm side
+modes and the QMS2 alarm-massage gate use independent name predicates. Each
+physical side keeps its own name when combining two beds. See the
+[Sophie profile](beds/ff_frame.md#sophie) for controls and reported-state gates.
