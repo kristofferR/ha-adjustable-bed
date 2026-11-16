@@ -468,12 +468,23 @@ class SophieController(SolaceController):
                         else:
                             await self.write_command(frame)
 
-                await self._coordinator.async_execute_controller_query(
-                    query,
-                    skip_disconnect=True,
-                    preemptible=True,
-                    run_if=lambda: generation == self._generation and session.is_current(),
-                )
+                try:
+                    await self._coordinator.async_execute_controller_query(
+                        query,
+                        skip_disconnect=True,
+                        preemptible=True,
+                        run_if=lambda: generation == self._generation and session.is_current(),
+                    )
+                except asyncio.CancelledError:
+                    # Command preemption ends this query, not the remaining startup.
+                    task = asyncio.current_task()
+                    if (
+                        task is None
+                        or task.cancelling()
+                        or generation != self._generation
+                        or not session.is_current()
+                    ):
+                        raise
         except (BleakError, ConnectionError, RuntimeError) as err:
             _LOGGER.debug("Sophie startup query ended: %s", err)
 

@@ -794,3 +794,86 @@ async def test_proven_support_survives_idle_disconnect_and_reconnect_without_new
             expected = VECTORS[35]["expected_bytes"]
     assert coordinator.is_connected and coordinator.controller is not previous
     assert written(coordinator.controller) == [expected]
+
+
+@pytest.mark.parametrize("phase", ["waiting", "executing"])
+@pytest.mark.parametrize("transition", ["stop", "task_cancel", "disconnect"])
+async def test_startup_query_preemption_preserves_only_current_session_work(
+    connected_sophie, phase, transition
+):
+    _, coordinator, _ = connected_sophie
+    controller = coordinator.controller
+    coordinator._disconnect_after_command = False
+    session = MagicMock()
+    session.is_current.side_effect = lambda: (
+        coordinator.controller is controller and coordinator.is_connected
+    )
+    entered, blocked = asyncio.Event(), asyncio.Event()
+    execute_query = coordinator.async_execute_controller_query
+
+    async def query(fn, **kwargs):
+        if phase == "waiting":
+            entered.set()
+        await execute_query(fn, **kwargs)
+
+    async def write(_char, frame, **kwargs):
+        if frame == C.QUERY_Q2[0]:
+            entered.set()
+            await blocked.wait()
+
+    owns_lock = phase == "waiting"
+    if owns_lock:
+        await coordinator._command_lock.acquire()
+    else:
+        controller.client.write_gatt_char.side_effect = write
+    with (
+        patch.multiple(
+            app,
+            QUERY_DELAY_MS=0,
+            QUERY_SPACING_MS=0,
+            CLOCK_DELAY_MS=0,
+            SYNC_AFTER_CLOCK_MS=0,
+            LIGHT_QUERY_DELAY_MS=0,
+        ),
+        patch.object(coordinator, "async_execute_controller_query", side_effect=query) as queries,
+        patch.object(controller, "sync_clock", new_callable=AsyncMock) as clock,
+    ):
+        await controller.async_after_connect(session)
+        startup = controller._startup_task
+        assert startup is not None
+        stop: asyncio.Task[None] | None = None
+        try:
+            async with asyncio.timeout(2):
+                await entered.wait()
+                if transition == "stop":
+                    stop = asyncio.create_task(coordinator.async_stop_command())
+                    # Let the real public STOP fence the waiting/active query.
+                    await asyncio.sleep(0)
+                elif transition == "task_cancel":
+                    startup.cancel()
+                else:
+                    controller.on_disconnect()
+                if owns_lock:
+                    coordinator._command_lock.release()
+                    owns_lock = False
+                if transition == "stop":
+                    assert stop is not None
+                    await stop
+                    await startup
+                else:
+                    with pytest.raises(asyncio.CancelledError):
+                        await startup
+        finally:
+            if owns_lock:
+                coordinator._command_lock.release()
+
+        attempted = [C.QUERY_Q2[0].hex().upper()] if phase == "executing" else []
+        if transition == "stop":
+            assert queries.await_count == 8
+            clock.assert_awaited_once()
+            expected = [codec.STOP, *C.QUERY_Q2[1:], app.SYNC_QUERY, C.LIGHT_STATUS_QUERY]
+            assert written(controller) == attempted + [frame.hex().upper() for frame in expected]
+        else:
+            assert queries.await_count == 1
+            clock.assert_not_awaited()
+            assert written(controller) == attempted
