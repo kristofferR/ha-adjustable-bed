@@ -1178,6 +1178,7 @@ def default_scenario(bed_type: str) -> Scenario:
         const.BED_TYPE_CASPER_BASE: "casperpro",
         const.BED_TYPE_HUSH_BASE: "hushl400",
         const.BED_TYPE_LUUNA: "rise",
+        const.BED_TYPE_MLILY_REMOTE: "ms200",
         const.BED_TYPE_COMFORT_ENHANCEMENTS: "mc2",
         const.BED_TYPE_GLIDEAWAY_MOTION: "motion_400",
         const.BED_TYPE_ZSERIES: const.ZSERIES_VARIANT_Z230,
@@ -1193,6 +1194,8 @@ def default_scenario(bed_type: str) -> Scenario:
     }.get(bed_type)
     kwargs: dict[str, Any] = {}
     replies: dict[str, str] = {}
+    if bed_type == const.BED_TYPE_MLILY_REMOTE:
+        data[const.CONF_PRODUCT_TYPE] = "single"
     if bed_type == const.BED_TYPE_SONICSLEEP:
         data[const.CONF_PRODUCT_TYPE] = "one"
     if bed_type in const.KEESON_LAYOUT_APP_BED_TYPES:
@@ -1530,6 +1533,16 @@ def route_scenarios() -> list[Scenario]:
                 id=f"galaxy:{product}" + (":nordic" if layout == "galaxy_nordic" else ""),
                 bed_type="galaxy", protocol_variant=product, layout_id=layout, replies=GALAXY_REPLIES,
             ))
+    if const.BED_TYPE_MLILY_REMOTE in const.SUPPORTED_BED_TYPES:
+        from custom_components.adjustable_bed.profiles.mlily_remote import PROFILES
+
+        for product in PROFILES:
+            for route in ("n1", "w1", "w2", "w3", "w4", "w5"):
+                scenarios.append(Scenario(
+                    id=f"mlily_remote:{product}:{route}", bed_type=const.BED_TYPE_MLILY_REMOTE,
+                    protocol_variant=product, entry_data={const.CONF_PRODUCT_TYPE: "single"},
+                    layout_id=f"mlily_remote:{route}",
+                ))
     # Good Vibe Sleep: products by gesture mix and native sides, the legacy
     # single-byte link, and the two independent sleep sensors.
     if "goodvibe" in const.SUPPORTED_BED_TYPES:

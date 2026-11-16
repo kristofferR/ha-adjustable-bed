@@ -309,6 +309,7 @@ RICHMAT_APP: Final = RichmatProfile(
 # Its controller declares holds per product, on the sustained-press controls.
 GOODVIBE: Final = RichmatProfile(key="goodvibe", transports=("w1", "n1", "w5", "w4", "w3", "w2"))
 MLILY: Final = RichmatProfile(key="mlily", transports=("w1", "n1", "w5", "w4", "w3", "w2"))
+MLILY_REMOTE: Final = RichmatProfile(key="mlily_remote", transports=("n1", "w1", "w2", "w3", "w4", "w5"))
 # The five classic resource-driven apps (row066) share one builder and service
 # order; each keeps its own catalog in ``beds/richmat_classic/data``. The first present
 # service wins, and Nordic UART takes the bare resource bytes.

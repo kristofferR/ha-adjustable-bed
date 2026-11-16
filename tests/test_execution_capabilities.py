@@ -114,6 +114,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "SymphonyWordProfile:symphony": {"hold": ("row133",)},
     "BedgearProfile:bedgear": {"hold": ("bedgear",)},
     **{f"MLineProfile:{key}": {"hold": ("mline147",)} for key in ("sleep", "smart", "smartsainuo", "okin", "unknown")},
+    **{f"MlilyRemoteProfile:{key}": {"hold": ("mlily162",)} for key in ("ms200", "ms300", "ms600", "powercool", "ms300_sh")},
     "SonicSleepProfile:one": {"hold": ("sonicsleep",)},
     "ParamountProfile:paramount": {"hold": ("paramount",)},
     **{f"AdjustableAppProfile:{key}": {"hold": ("adjustbed",)}
@@ -337,6 +338,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/n32_motion_bed.py:<module>.N32": ("OkinNFrameProfile:n32_motion_bed",),
     "profiles/okin_nframe.py:<module>.RESIDENT": ("OkinNFrameProfile:resident",),
     "profiles/mline.py:<module>.MLineProfile": tuple(f"MLineProfile:{key}" for key in ("sleep", "smart", "smartsainuo", "okin", "unknown")),
+    "profiles/mlily_remote.py:<module>.MlilyRemoteProfile": tuple(f"MlilyRemoteProfile:{key}" for key in ("ms200", "ms300", "ms600", "powercool", "ms300_sh")),
     "profiles/luuna.py:<module>.LuunaProfile": tuple(f"LuunaProfile:{key}" for key in ("rise", "risepro", "riseprolight")),
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController": ("richmat_classic_apps",),
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController.execution": ("richmat_classic_apps",),

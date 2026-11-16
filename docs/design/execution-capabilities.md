@@ -654,6 +654,7 @@ Report workspaces are machine-local under
 | row094 | `com.bedding.monitor.sleep_monitor.release` | 2.4.9 (263) | COMPLETE, accepted | `com.bedding.monitor.sleep_monitor.release-2.4.9-2026-11-12-queue001/` |
 | smart-comfort-synargy | `com.synargy.okin` | 1.1.0 (12) | COMPLETE, accepted | `com.synargy.okin-1.1.0-2026-11-09-queue002/` |
 | smart-comfort-synergy | `com.synergy.okin` | 2.2.0 (16) | COMPLETE, accepted | `com.synergy.okin-2.2.0-2026-11-09-queue002/` |
+| mlily162 | `com.richmat.mlilyremote` | 1.0.1 (10103) | COMPLETE, accepted audit001 | `com.richmat.mlilyremote-1.0.1-2026-11-16-queue001/report/` |
 | mlily159 | `com.richmat.mlily2` | 5.0.2 (50200) | COMPLETE, independent audit ACCEPT | `com.richmat.mlily2-5.0.2-2026-11-10-reconciliation002/report/` |
 | abm5_4 | `com.starcode.abm5_4` | 1.0.1 | COMPLETE | `com.starcode.abm5_4-1.0.1-2026-09-30-extra-four-004-005/report/` |
 | abm5_5 | `com.starcode.abm5_5` | 1.2.3 | COMPLETE | `com.starcode.abm5_5-1.2.3-2026-09-30-extra-four-005-005/report/` |
@@ -836,3 +837,7 @@ commands every 300 ms until release. P1 releases after 100 ms; P2 motor
 release is immediate and differs from global STOP. Preset gestures retain
 their format-specific behavior. No concurrent motor, side addressing or motor
 speed selection is proven. See [Smart Sleep](../beds/smart-sleep.md).
+
+MLILY Remote 1.0.1 (unit162) sustains movement at 100 ms, first tick after
+100 ms, then queues STOP after a submitted tick. Presets recall once; a
+3-second hold saves once. No concurrent-motor or speed selection is proven.

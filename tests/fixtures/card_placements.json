@@ -4808,5 +4808,113 @@
   },
   "sensor:sonicsleep": {
     "card_section": "hidden"
+  },
+  "button:mlily_remote_antisnoring": {
+    "card_section": "presets"
+  },
+  "button:mlily_remote_antisnoring_save": {
+    "card_section": "presets"
+  },
+  "button:mlily_remote_bedlight": {
+    "card_section": "lighting"
+  },
+  "button:mlily_remote_cooling_massage10minutetimer": {
+    "card_section": "climate"
+  },
+  "button:mlily_remote_cooling_massage20minutetimer": {
+    "card_section": "climate"
+  },
+  "button:mlily_remote_cooling_massage30minutetimer": {
+    "card_section": "climate"
+  },
+  "button:mlily_remote_cooling_massagefootinstensitystrengthen": {
+    "card_section": "climate"
+  },
+  "button:mlily_remote_cooling_massageheadinstensitystrengthen": {
+    "card_section": "climate"
+  },
+  "button:mlily_remote_cooling_massagemodealloff": {
+    "card_section": "climate"
+  },
+  "button:mlily_remote_cooling_massagemodechange": {
+    "card_section": "climate"
+  },
+  "button:mlily_remote_loungeposition": {
+    "card_section": "presets"
+  },
+  "button:mlily_remote_loungeposition_save": {
+    "card_section": "presets"
+  },
+  "button:mlily_remote_massage10minutetimer": {
+    "card_section": "massage"
+  },
+  "button:mlily_remote_massage20minutetimer": {
+    "card_section": "massage"
+  },
+  "button:mlily_remote_massage30minutetimer": {
+    "card_section": "massage"
+  },
+  "button:mlily_remote_massagefootinstensitystrengthen": {
+    "card_section": "massage"
+  },
+  "button:mlily_remote_massageheadinstensitystrengthen": {
+    "card_section": "massage"
+  },
+  "button:mlily_remote_massagelumbarinstensitystrengthen": {
+    "card_section": "massage"
+  },
+  "button:mlily_remote_massagemodealloff": {
+    "card_section": "massage"
+  },
+  "button:mlily_remote_massagemodechange": {
+    "card_section": "massage"
+  },
+  "button:mlily_remote_memoryposition1": {
+    "card_section": "memory",
+    "card_role": "recall",
+    "card_slot": 1
+  },
+  "button:mlily_remote_memoryposition1_save": {
+    "card_section": "memory",
+    "card_role": "save",
+    "card_slot": 1
+  },
+  "button:mlily_remote_memoryposition2": {
+    "card_section": "memory",
+    "card_role": "recall",
+    "card_slot": 2
+  },
+  "button:mlily_remote_memoryposition2_save": {
+    "card_section": "memory",
+    "card_role": "save",
+    "card_slot": 2
+  },
+  "button:mlily_remote_memoryposition3": {
+    "card_section": "memory",
+    "card_role": "recall",
+    "card_slot": 3
+  },
+  "button:mlily_remote_memoryposition3_save": {
+    "card_section": "memory",
+    "card_role": "save",
+    "card_slot": 3
+  },
+  "button:mlily_remote_motorreset": {
+    "card_section": "presets"
+  },
+  "button:mlily_remote_tvposition": {
+    "card_section": "presets"
+  },
+  "button:mlily_remote_tvposition_save": {
+    "card_section": "presets"
+  },
+  "button:mlily_remote_zerogravity": {
+    "card_section": "presets"
+  },
+  "button:mlily_remote_zerogravity_save": {
+    "card_section": "presets"
+  },
+  "sensor:mlily_remote": {
+    "card_section": "hidden"
   }
 }

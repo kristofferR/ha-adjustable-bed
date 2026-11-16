@@ -1128,3 +1128,11 @@ all received raw fields except enabled. Clock capability and current alarm cache
 are required before writes. Missing/changed cache rejects the action. A silent
 empty-list query cannot safely allocate a new alarm. All target constraints pass
 before any target's setting changes. See the [SonicSleep reference](beds/richmat.md#sonicsleep).
+
+### MLILY Remote
+
+`adjustable_bed.mlily_remote` controls the local clock (`time_sync`), MS600
+countdown alarms (`alarm`, `alarm_cancel`) and the direct default-left
+`anti_snore` action. Alarm mode choices and connection gates are documented in
+the [MLILY Remote guide](beds/richmat.md#mlily-remote). All selected targets are
+validated before commands run. Child-device targeting retains the physical side.

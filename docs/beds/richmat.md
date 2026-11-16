@@ -215,6 +215,7 @@ sends STOP.
 | Casper Base | `casper_base` | N1, W1, W2, W3, W4, W5 | per-product catalog | no |
 | Hush Base | `hush_base` | N1, W1, W2, W3, W4, W5 | per-product catalog | no |
 | Luuna + | `luuna` | N1, W1, W2, W3, W4, W5 | per-product catalog | renewable lease |
+| MLILY Remote | `mlily_remote` | N1, W1, W2, W3, W4, W5 | per-product catalog | renewable lease |
 <!-- /generated -->
 
 ### Catalog app timing
@@ -288,13 +289,13 @@ and timing.
 
 | Key | Service | Write | Notify | Commands | Profiles |
 |---|---|---|---|---|---|
-| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
+| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep |
 | W0 | `8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA |
-| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
-| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
-| W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
-| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
-| W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
+| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep |
+| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep |
+| W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep |
+| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep |
+| W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep |
 
 W0 is the legacy custom service, W4 and W5 are name-guarded (see the Richmat
 profile's Setup). The Richmat routes try W0 to W5, then N1, then fall back to W1.
@@ -3383,6 +3384,154 @@ in `tests/fixtures/luuna/` and exercised by `tests/test_luuna.py`. The existing
 Richmat codec reproduces the app's literal command frames without a new codec.
 Physical movement, stop latency, supported firmware, calibration and negotiated
 MTU remain for real beta/release users to validate.
+
+### MLILY Remote
+
+**App:** [MLILY Remote](https://play.google.com/store/apps/details?id=com.richmat.mlilyremote) 1.0.1 (10103), `com.richmat.mlilyremote`
+
+**Status:** ❓ Needs testing. All five products are statically verified; hardware is unverified.
+
+#### Setup
+
+Choose **Richmat → MLILY Remote**, then the exact product: MS200, MS300,
+MS600, PowerCool or MS300-SH. This is independent of MLILY Control. Choose the
+app's single or double bed layout. The catalog codes are product identifiers,
+not Bluetooth-name mappings. Discovery recognizes the case-sensitive substrings
+`QRRM`, `COOL`, `MPE_`, `209A` and `BED-`; shared service UUIDs never choose a product.
+
+All six Richmat routes are supported. Nordic sends single-byte controls and
+cannot address separate sides. Other routes frame side 0 (left/single) or 1
+(right). Double layout allows opting into HA's single-address Left/Right child
+devices after a framed connection has been established. There is no native
+Both opcode. Clock and alarm packets remain framed even on Nordic.
+
+#### Controls
+
+The model table and every available action/save code come from the shipped
+profile. MS200 has no light or massage. MS600 adds lumbar, pillow, lumbar
+massage, TV and memory 3. MS300 and MS300-SH add combined head/foot controls.
+Only MS600 has alarm-mode choices. No shared receive parser expands these gates.
+
+PowerCool exposes head/foot **fan** intensity, fan mode, cooling off and
+**2/3/5-hour** cooling timers. The same code values on MS300, MS300-SH and
+MS600 are **massage** controls with **10/20/30-minute** labels. Discrete actions
+send once. Preset recall and explicit Save buttons use distinct codes; Save
+waits the app's three-second programming threshold and asks for confirmation.
+
+<!-- generated:mlily-remote-commands -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Product | Catalog code | Motors | Massage/cooling | Alarm modes |
+|---|---|---|---|---|
+| MS200 | EGRM | 2 | none | none |
+| MS300 | JBRM | 2 | massage, 10/20/30 minutes | none |
+| MS300-SH | DYRN | 2 | massage, 10/20/30 minutes | none |
+| PowerCool | D9RM | 2 | cooling, 2/3/5 hours | none |
+| MS600 | ANRN | 4 | massage, 10/20/30 minutes | ZeroGravity, AntiSnoring, TVPosition, MemoryPosition1, MemoryPosition2, MemoryPosition3 |
+
+| Action | Recall/action | Save | Framed left | Products |
+|---|---|---|---|---|
+| HeadUp | `24` | none | `6E 01 00 24 93` | MS200, MS300, MS300-SH, PowerCool, MS600 |
+| HeadDown | `25` | none | `6E 01 00 25 94` | MS200, MS300, MS300-SH, PowerCool, MS600 |
+| FootUp | `26` | none | `6E 01 00 26 95` | MS200, MS300, MS300-SH, PowerCool, MS600 |
+| FootDown | `27` | none | `6E 01 00 27 96` | MS200, MS300, MS300-SH, PowerCool, MS600 |
+| HeadAndFootUp | `29` | none | `6E 01 00 29 98` | MS300, MS300-SH |
+| HeadAndFootDown | `2A` | none | `6E 01 00 2A 99` | MS300, MS300-SH |
+| LumberUp | `3F` | none | `6E 01 00 3F AE` | MS600 |
+| LumberDown | `40` | none | `6E 01 00 40 AF` | MS600 |
+| PillowUp | `41` | none | `6E 01 00 41 B0` | MS600 |
+| PillowDown | `42` | none | `6E 01 00 42 B1` | MS600 |
+| MemoryPosition1 | `2E` | `2B` | `6E 01 00 2E 9D` | MS200, MS300, MS300-SH, PowerCool, MS600 |
+| MemoryPosition2 | `2F` | `2C` | `6E 01 00 2F 9E` | MS200, MS300, MS300-SH, PowerCool, MS600 |
+| MemoryPosition3 | `30` | `2D` | `6E 01 00 30 9F` | MS600 |
+| BedLight | `3C` | none | `6E 01 00 3C AB` | MS300, MS300-SH, PowerCool, MS600 |
+| MotorReset | `31` | none | `6E 01 00 31 A0` | MS200, MS300, MS300-SH, PowerCool, MS600 |
+| MassageHeadInstensityStrengthen | `4C` | none | `6E 01 00 4C BB` | MS300, MS300-SH, PowerCool, MS600 |
+| MassageFootInstensityStrengthen | `4E` | none | `6E 01 00 4E BD` | MS300, MS300-SH, PowerCool, MS600 |
+| MassageLumbarInstensityStrengthen | `E0` | none | `6E 01 00 E0 4F` | MS600 |
+| MassageModeChange | `48` | none | `6E 01 00 48 B7` | MS300, MS300-SH, PowerCool, MS600 |
+| MassageModeAllOff | `5E` | none | `6E 01 00 5E CD` | MS300, MS300-SH, PowerCool, MS600 |
+| Massage10MinuteTimer | `5F` | none | `6E 01 00 5F CE` | MS300, MS300-SH, PowerCool, MS600 |
+| Massage20MinuteTimer | `63` | none | `6E 01 00 63 D2` | MS300, MS300-SH, PowerCool, MS600 |
+| Massage30MinuteTimer | `61` | none | `6E 01 00 61 D0` | MS300, MS300-SH, PowerCool, MS600 |
+| ZeroGravity | `45` | `66` | `6E 01 00 45 B4` | MS200, MS300, MS300-SH, PowerCool, MS600 |
+| AntiSnoring | `46` | `69` | `6E 01 00 46 B5` | MS200, MS300, MS300-SH, PowerCool, MS600 |
+| TVPosition | `58` | `64` | `6E 01 00 58 C7` | MS600 |
+| LoungePosition | `59` | `65` | `6E 01 00 59 C8` | MS200 |
+
+| Alarm/time/release | Write |
+|---|---|
+| STOP left | `6E 01 00 6E DD` |
+| STOP right | `6E 01 01 6E DE` |
+| Cancel countdown, low then high | `6E 05 00 00 73` / `6E 06 00 00 74` |
+| 300 minutes, memory 1, low then high | `6E 05 2C 00 9F` / `6E 06 01 2E A3` |
+| Calendar, 2026-11-16 12:34:56 | `6E 20 0D 08 03 01 38 0B 10 0C 22 38 60` |
+
+| Startup | Framed | Nordic |
+|---|---|---|
+| ExitLimit | `6E 02 01 00 71` | `00` |
+| CheckClock | `6E 08 01 01 78` | `01` |
+<!-- /generated -->
+
+#### Timing
+
+Movement starts after 100 ms, refreshes every 100 ms while held, and queues one
+side-scoped STOP after a submitted movement. HA captures the original side and
+connection for cleanup, serializes writes, and drops missed ticks rather than
+backfilling old movement. A 100 ms hold tolerates up to one tick of scheduling
+latency for its first write. A disconnected or replaced session receives no
+old cleanup. Native cover taps use a finite one-second hold; renewable holds
+end through the scheduler's lease. Entry pulse overrides do not change the
+app's cadence. Presets, flat, light, massage and fan buttons add no release STOP.
+
+Startup subscribes, exits limit mode, queries clock support and synchronizes
+the local calendar, in that order at the 100 ms queue cadence. Writes use
+without-response when offered, otherwise with-response. No application command
+retry, authentication, PIN or encryption handshake is proven. HA owns adapter
+selection, connection budgets and reconnect-on-demand.
+
+#### Notifications
+
+A diagnostic status sensor retains received BED events, without inventing
+position, massage, RGB, detector or recurring-alarm entities. Clock support is
+announced by its exact response. Alarm add/cancel acknowledgements commit or
+remove the local saved alarm. Six-field extended alarm records remain opaque;
+no hour, minute, repeat or record identity is inferred from their offsets.
+
+HA keeps complete five-byte common notifications across fragments, validates
+extended checksums, guards truncated records and rejects zero-length frames.
+This avoids the app's incomplete-common-frame, embedded-delimiter and
+non-progressing-scanner defects. Subscriptions, pending acknowledgements and
+receive buffers are bound to the current connection. The saved acknowledged
+alarm is local metadata, not a guarantee that a bed retained it after power loss.
+
+#### Services
+
+`adjustable_bed.mlily_remote` accepts `operation`, `device_id` and paired
+`side`. Operations are `time_sync`, `alarm`, `alarm_cancel` and `anti_snore`.
+For MS600 alarms, set `hour` (0–23), `minute` (0–59) and `mode`: `zero_g`,
+`anti_snore`, `tv`, `memory_1`, `memory_2` or `memory_3`. A live clock-support
+announcement is required. The low countdown half precedes the high/action half;
+cancellation sends both halves as zero. Countdown uses minute-truncated epoch
+differences, adding 86,400 seconds when nonpositive, so an equal time means
+1,440 minutes, preserving the app's behavior through local offset changes.
+
+`anti_snore` is restricted to MS300-SH and exposes the direct BED consequence of the app's excluded phone
+microphone algorithm: one normal anti-snore command on the default left side.
+It does not enable phone sensing or configure a bed detector. On a single-address
+pair, a Right-only target is rejected; parent/Both targets execute once through
+the left owner. The ordinary anti-snore preset button follows the targeted child
+side instead.
+
+#### Evidence
+
+Accepted APK Protocol Audit unit162, all 17 gates passing and independent
+audit001 accepted with no material findings. The existing Richmat codec passes
+all 119 frozen TX vectors; 80 RX cases cover BED parsing, ignored branches and
+explicit audio diagnostic exclusions. Fixtures are in `tests/fixtures/mlily_remote/`.
+Artifact-set SHA-256: `b85664ee88d148a67473997d6ead917f43bcc4c320c5109308af70dde7467871`.
+No new extraction or artifact audit was required. Hardware qualification belongs
+to external beta/release users.
 
 ### MLILY Control
 

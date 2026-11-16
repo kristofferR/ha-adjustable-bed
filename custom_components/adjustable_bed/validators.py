@@ -102,6 +102,7 @@ from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
 from .profiles.hush import HUSH_BASE_VARIANTS
 from .profiles.luuna import VARIANTS as LUUNA_VARIANTS
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
+from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
 from .profiles.richmat import BEDTECH_VARIANTS
 from .profiles.symphony import SELECTORS as SYMPHONY_SELECTORS
 
@@ -153,6 +154,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_CASPER_BASE: CASPER_BASE_VARIANTS,
     "hush_base": HUSH_BASE_VARIANTS,
     "luuna": LUUNA_VARIANTS,
+    "mlily_remote": MLILY_REMOTE_PROFILES,
     "mline": {key: key.title() for key in ("auto", "sleep", "smart", "smartsainuo", "okin", "unknown")},
     BED_TYPE_KAIDI: KAIDI_VARIANTS,
     BED_TYPE_OKIN_CB24: OKIN_CB24_VARIANTS,

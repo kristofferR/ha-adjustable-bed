@@ -1092,3 +1092,8 @@ it does not write a hardware lock. Protocol, layout and local settings belong
 to each physical side of a two-address pair. See [M Line](beds/mline.md).
 
 SonicSleep selects its fixed one/IQRM product under Richmat. Setup owns the two-motor layout, disabled angle sensing and observed-only massage/light surface. Each physical side keeps its app settings. See [SonicSleep](beds/richmat.md#sonicsleep).
+
+MLILY Remote 1.0.1 has five explicit product choices and single/double layouts.
+It owns motor layout, massage availability, disabled angle sensing and its
+100 ms movement cadence. PowerCool uses fan/cooling labels. Product and layout
+are stored per side of a two-address pair. See [MLILY Remote](beds/richmat.md#mlily-remote).

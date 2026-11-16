@@ -109,6 +109,7 @@ Each linked guide has a Status line with the details.
 | [eShine](docs/beds/okin-nframe.md#eshine) | [eShine app: E2000, E3000 / E3100 and E5000](docs/beds/okin-nframe.md#eshine) 🧪 | eShine |
 | [Eshine E6000](docs/beds/richmat.md#eshine) | [Eshine app: E6000](docs/beds/richmat.md#eshine) 🧪 | Eshine |
 | [GM Control](docs/beds/gmmotor.md) | [GM Control app](docs/beds/gmmotor.md) 🧪, [GM Control sleep module, MM or SXB](docs/beds/gmmotor.md#sleep-modules) 🧪 | GM Control |
+| [MLILY Remote](docs/beds/richmat.md#mlily-remote) | MS200, MS300, MS600, PowerCool and MS300-SH 🧪 | MLILY |
 | [MLILY Control](docs/beds/richmat.md#mlily-control) | MLILY Control app and its admitted product/remote profiles 🧪, independent RM-/HJ- sleep sensors 🧪 | MLILY |
 | [Galaxy Bed Control](docs/beds/richmat.md#galaxy-bed-control) | [Galaxy Bed Control app](docs/beds/richmat.md#galaxy-bed-control) 🧪 | Star International |
 | [Good Vibe Sleep](docs/beds/richmat.md#good-vibe-sleep) | [Good Vibe Sleep app](docs/beds/richmat.md#good-vibe-sleep) 🧪, [Good Vibe Sleep sleep sensor, RM- or HJ-](docs/beds/richmat.md#sleep-controls-and-reports) 🧪 | Good Vibe Sleep |
