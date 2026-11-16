@@ -9969,6 +9969,46 @@
         }
       }
     },
+    "linx_clear_alarm": {
+      "name": "Linx clear bed alarm",
+      "description": "Clear one of the six resident Linx alarm slots, or all six when slot is omitted. No cloud alarm is changed.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "slot": {
+          "name": "Alarm slot",
+          "description": "Omit to clear all six slots."
+        }
+      }
+    },
+    "linx_snore_intervention": {
+      "name": "Linx manual snore intervention",
+      "description": "Send the app's direct bed intervention and one session-owned status follow-up. Does not record audio or detect snoring.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "hold_minutes": {
+          "name": "Hold duration",
+          "description": "Stored hold duration. UART narrows the transmitted value to one byte."
+        },
+        "up_speed": {
+          "name": "Up speed",
+          "description": "The app's stored up-speed parameter, not a general motor-speed setting."
+        },
+        "lift_time": {
+          "name": "Lift time",
+          "description": "The app's stored lift-time parameter. UART narrows it to one byte."
+        }
+      }
+    },
     "sonicsleep": {
       "name": "SonicSleep bed settings",
       "description": "Read alarms, create or edit a form alarm, preserve a received alarm while toggling it, delete an alarm, query the bed link name or sync its clock.",

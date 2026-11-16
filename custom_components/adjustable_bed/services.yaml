@@ -4549,8 +4549,6 @@ sonicsleep:
       selector:
         boolean: null
 linx_clear_alarm:
-  name: Linx clear bed alarm
-  description: Clear one of the six resident Linx alarm slots, or all six when slot is omitted. No cloud alarm is changed.
   fields:
     device_id:
       required: true
@@ -4563,15 +4561,12 @@ linx_clear_alarm:
         select:
           options: [both, left, right]
     slot:
-      description: Omit to clear all six slots.
       selector:
         number:
           min: 1
           max: 6
           mode: box
 linx_snore_intervention:
-  name: Linx manual snore intervention
-  description: Send the app's direct bed intervention and one session-owned status follow-up. Does not record audio or detect snoring.
   fields:
     device_id:
       required: true
@@ -4585,7 +4580,6 @@ linx_snore_intervention:
           options: [both, left, right]
     hold_minutes:
       default: 10
-      description: Stored hold duration. UART narrows the transmitted value to one byte.
       selector:
         number:
           min: 0
@@ -4593,7 +4587,6 @@ linx_snore_intervention:
           mode: box
     up_speed:
       default: 10
-      description: The app's stored up-speed parameter, not a general motor-speed setting.
       selector:
         number:
           min: 0
@@ -4601,7 +4594,6 @@ linx_snore_intervention:
           mode: box
     lift_time:
       default: 10
-      description: The app's stored lift-time parameter. UART narrows it to one byte.
       selector:
         number:
           min: 0
