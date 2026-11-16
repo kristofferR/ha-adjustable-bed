@@ -2037,7 +2037,32 @@ def _symphony_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return {}
 
 
+def _nerum_seed(_hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
+    from .profiles.nerum import advertisement
+
+    result = dict(data)
+    if discovered is not None:
+        name = discovered.device.name or discovered.name
+        found = advertisement(name)
+        if found is not None:
+            if result.get(CONF_PROTOCOL_VARIANT) not in ("p1", "p2", "p3"):
+                result[CONF_PROTOCOL_VARIANT] = found.protocol
+            result.setdefault(CONF_BLE_DEVICE_NAME, name)
+    return result
+
+
 SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
+    "nerum": SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: False,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 300},
+        questions=(
+            Question(CONF_PROTOCOL_VARIANT, {"p1": "P1: ORE / 1000", "p2": "P2: Okin / FFE5", "p3": "P3: Smartbed / Nordic"}, "p2"),
+            Question(CONF_PRODUCT_TYPE, {"nerum": "Nerum: head and foot", "2": "2 motors with combined control", "3": "3 motors with head tilt", "4": "4 motors with head tilt and lumbar"}, "nerum"),
+        ),
+        seed=_nerum_seed,
+        derive=lambda data: {CONF_MOTOR_COUNT: {"nerum": 2, "2": 2, "3": 3, "4": 4}.get(data.get(CONF_PRODUCT_TYPE, "nerum"), 2)},
+        imports=("profiles.nerum",),
+    ),
     "smart_sleep": SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
               CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},

@@ -544,6 +544,7 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
 # are NOT included here - they're only kept for backward compatibility with
 # existing config entries. New users should select the protocol-based equivalents.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
+    "nerum": "Nerum (com.okin.bedding.nerum)",
     "smart_sleep": "OKIN Smart Sleep (com.bedding.monitor.sleep_monitor.release)",
     "smart_comfort_synargy": "Smart Comfort by SYNARGY (com.synargy.okin)",
     "smart_comfort_synergy": "Smart Comfort (com.synergy.okin)",
@@ -1424,6 +1425,14 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         elif result.bed_type != BED_TYPE_YAMADA:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_YAMADA]))
             result.signals.append("name:yamada_app_candidate")
+    # Nerum's names overlap existing receivers. Offer explicit app selection.
+    if (result.confidence < 0.85 and isinstance(platform_name, str)
+        and platform_name.lower().startswith(("okin", "smartbed"))
+        and not any(signal.startswith("excluded:") for signal in result.signals)):
+        if result.bed_type is None:
+            result = DetectionResult("nerum", 0.3, ["name:nerum_app_candidate"])
+        elif result.bed_type != "nerum":
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "nerum"]))
     # Shared names offer the app; they never replace a stronger receiver match.
     if first.name(BED_TYPE_MLINE) and not any(
         signal.startswith("excluded:") for signal in result.signals

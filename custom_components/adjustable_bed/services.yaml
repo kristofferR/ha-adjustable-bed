@@ -4548,3 +4548,20 @@ sonicsleep:
       default: true
       selector:
         boolean: null
+
+nerum_set_alarms:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+    alarms:
+      required: true
+      selector:
+        object:

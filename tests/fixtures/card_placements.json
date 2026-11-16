@@ -4808,5 +4808,41 @@
   },
   "sensor:sonicsleep": {
     "card_section": "hidden"
+  },
+  "binary_sensor:nerum_light": {
+    "card_section": "hidden"
+  },
+  "binary_sensor:nerum_massage": {
+    "card_section": "hidden"
+  },
+  "button:nerum_alarm_refresh": {
+    "card_section": "utility"
+  },
+  "button:nerum_light": {
+    "card_section": "utility"
+  },
+  "sensor:nerum_alarm_1": {
+    "card_section": "hidden"
+  },
+  "sensor:nerum_alarm_2": {
+    "card_section": "hidden"
+  },
+  "sensor:nerum_alarm_3": {
+    "card_section": "hidden"
+  },
+  "sensor:nerum_foot_massage": {
+    "card_section": "hidden"
+  },
+  "sensor:nerum_head_massage": {
+    "card_section": "hidden"
+  },
+  "sensor:nerum_minutes": {
+    "card_section": "hidden"
+  },
+  "sensor:nerum_operate": {
+    "card_section": "hidden"
+  },
+  "sensor:nerum_wave": {
+    "card_section": "hidden"
   }
 }

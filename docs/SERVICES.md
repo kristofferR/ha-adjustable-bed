@@ -1128,3 +1128,13 @@ all received raw fields except enabled. Clock capability and current alarm cache
 are required before writes. Missing/changed cache rejects the action. A silent
 empty-list query cannot safely allocate a new alarm. All target constraints pass
 before any target's setting changes. See the [SonicSleep reference](beds/richmat.md#sonicsleep).
+
+## Nerum alarm bank
+
+`adjustable_bed.nerum_set_alarms` accepts one or more `device_id` targets and
+optional paired `side`. Supply exactly three `alarms` records, each containing
+`hour` (0–23), `minute` (0–59), `enabled`, `repeat` (0–255) and `action`
+(`none`, `memory_1`, `memory_2`, `light`). Bits 0–6 of repeat are Sunday–Saturday;
+bit 7 means recurring. A one-shot uses today's or tomorrow's day bit.
+All targets are admitted and validated before writes. P1 has no alarm output.
+See [Nerum](beds/nerum.md#alarms) for field mapping and timing.

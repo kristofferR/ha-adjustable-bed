@@ -77,6 +77,7 @@ if TYPE_CHECKING:
     from .motomotion.controller import MotoMotionController as MotoMotionController
     from .motosleep import MotoSleepController as MotoSleepController
     from .n32_motion_bed.controller import N32MotionBedController as N32MotionBedController
+    from .nerum.controller import NerumController as NerumController
     from .octo.controller import OctoController as OctoController
     from .okin_7byte import Okin7ByteController as Okin7ByteController
     from .okin_cb24 import OkinCB24Controller as OkinCB24Controller
@@ -143,6 +144,7 @@ _EXPORT_MODULES = {
     "N32MotionBedController": "n32_motion_bed.controller",
     "SonicSleepController": "sonicsleep.controller",
     "ResidentController": "resident.controller",
+    "NerumController": "nerum.controller",
     "SmartSleepController": "smart_sleep.controller",
     "JalonBedController": "jalon_bed.controller",
     "SymphonyController": "symphony.controller",

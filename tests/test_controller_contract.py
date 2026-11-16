@@ -236,6 +236,9 @@ async def _create_controller_for_bed_type(
 
     if bed_type == "mline":
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "two"
+    if bed_type == "nerum":
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "nerum"
+
     if bed_type == const.BED_TYPE_JALON_BED:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "40"
     if bed_type in const.KEESON_LAYOUT_APP_BED_TYPES:
