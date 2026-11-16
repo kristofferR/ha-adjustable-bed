@@ -2796,6 +2796,10 @@ BEDS_REQUIRING_PAIRING: Final[set[str]] = {
     # advertising. The controller-side reason remains hardware behavior, not
     # something the APK can prove.
     BED_TYPE_LEGGETT_GEN2,
+    # Resident Adjustable Base (Nectar Premier): an iPhone capture and a proxy
+    # replay show its motor writes fail with ATT Insufficient Authorization
+    # until the link is encrypted with a bond made in pairing mode.
+    BED_TYPE_RESIDENT,
 }
 
 # Bed type + variant combinations that require BLE pairing
@@ -2803,6 +2807,9 @@ BEDS_REQUIRING_PAIRING: Final[set[str]] = {
 # Note: Keeson's "okin" variant (OKIN FFE) does NOT require pairing - it's a different protocol
 BED_TYPE_VARIANTS_REQUIRING_PAIRING: Final[dict[str, set[str]]] = {
     BED_TYPE_LEGGETT_PLATT: {LEGGETT_VARIANT_OKIN, LEGGETT_VARIANT_GEN2},
+    # Custom OKIN (62741525) drives the same Resident base, which needs the
+    # bond above. The Nordic variant does not.
+    BED_TYPE_OKIN_64BIT: {OKIN_64BIT_VARIANT_CUSTOM},
 }
 
 

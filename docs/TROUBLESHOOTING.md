@@ -474,7 +474,7 @@ See [Motor Pulse Settings](CONFIGURATION.md#motor-pulse-settings) for default va
 
 ## Pairing Required Beds
 
-Some beds require an OS-level Bluetooth **bond** before they can be controlled: Okimat / OKIN, the OKIN Smart Remote / RF ECO BT stair lift, Okin CST (except the explicit Nectar Move app profile), the Leggett & Platt Okin and Gen2 (LP Comfort Connect) routes, Logicdata SimplicityFrame, Vibradorm (legacy setup and the VMAT, Caresse Diamant and Werkmeister apps) and Sleep Number Climate 360 / FlexFit Fuzion. The [connection guide](CONNECTION_GUIDE.md#beds-requiring-bluetooth-pairing) lists the beds that do not. The integration requests pairing automatically; the steps below are for putting the bed into pairing mode and recovering when a bond fails.
+Some beds require an OS-level Bluetooth **bond** before they can be controlled: Okimat / OKIN, the OKIN Smart Remote / RF ECO BT stair lift, Okin CST (except the explicit Nectar Move app profile), the Resident Adjustable Base app and the Okin 64-Bit Custom OKIN variant (Nectar Premier), the Leggett & Platt Okin and Gen2 (LP Comfort Connect) routes, Logicdata SimplicityFrame, Vibradorm (legacy setup and the VMAT, Caresse Diamant and Werkmeister apps) and Sleep Number Climate 360 / FlexFit Fuzion. The [connection guide](CONNECTION_GUIDE.md#beds-requiring-bluetooth-pairing) lists the beds that do not. The integration requests pairing automatically; the steps below are for putting the bed into pairing mode and recovering when a bond fails.
 
 ### Putting the bed in pairing mode
 

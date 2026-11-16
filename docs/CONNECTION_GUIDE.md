@@ -49,6 +49,7 @@ Some beds require OS-level Bluetooth pairing before the integration can communic
 | Okimat/Okin | ✅ Yes |
 | OKIN Smart Remote / RF ECO BT single-actuator stair lift | ✅ Yes |
 | Okin CST (incl. OKIN-* Nectar Motion / Mattress Firm 900-O / Rize MF900) | ✅ Yes, except the explicit Nectar Move app profile |
+| Resident Adjustable Base app, and Okin 64-Bit with the Custom OKIN variant (Nectar Premier) | ✅ Yes |
 | Leggett & Platt Okin variant (Prodigy CE, Prodigy 2, Prodigy 2L, U Series, or LP Control with an LP BED receiver) | ✅ Yes |
 | Leggett & Platt Gen2 (LP Control with an LP Comfort Connect base) | ✅ Yes |
 | Logicdata SimplicityFrame | ✅ Yes |

@@ -22,6 +22,7 @@ from custom_components.adjustable_bed.const import (
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
+    requires_pairing,
 )
 from custom_components.adjustable_bed.profiles.okin_nframe import RESIDENT
 from custom_components.adjustable_bed.setup_questions import setup_profile_for
@@ -324,6 +325,20 @@ async def test_startup_clock_queries_info_and_timer_init(bed, monkeypatch):
     )
 
 
+def test_requires_pairing():
+    assert requires_pairing(BED_TYPE_RESIDENT) is True
+
+
+async def test_startup_security_error_reaches_pairing_recovery_unwrapped(bed):
+    """The coordinator only recognizes a bare BleakError, not the TaskGroup's group."""
+    c, _, client = await connected(bed)
+    client.write_gatt_char.side_effect = BleakError(
+        "Bluetooth GATT Error handle=19 error=8 description=Insufficient authorization"
+    )
+    with pytest.raises(BleakError, match="Insufficient authorization"):
+        await c.async_on_connect(SimpleNamespace(async_start_notify=c.start_notify))
+
+
 async def test_hold_all_controls_validation_and_write_timeout(bed):
     c, coordinator, client = await connected(bed)
     for key in c.held_control_options:
@@ -433,7 +448,11 @@ async def test_real_coordinator_respects_owned_device_info_reads(hass, mock_blea
     ):
         assert await coordinator.async_connect()
         generic_read.assert_not_awaited()
-        mock_bleak_client.read_gatt_char.assert_awaited_once_with(model)
+        # The pairing bond probe reads the model by UUID; startup reads it once.
+        assert [c.args[0] for c in mock_bleak_client.read_gatt_char.await_args_list] == [
+            resident.MODEL_UUID,
+            model,
+        ]
         await coordinator.async_disconnect()
 
 

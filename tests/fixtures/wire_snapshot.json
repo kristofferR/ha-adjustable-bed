@@ -19391,7 +19391,7 @@
 "okin_64bit:custom": {
 "info": {"bed_type": "okin_64bit", "controller": "Okin64BitController", "module": "okin_64bit", "pulse": [10, 100]},
 "commands": {
-"connect": {"status":"no_writes"},
+"connect": {"status":"ok","writes":[[0,"62741625","notify","",1,0],[0,"62741525",true,"e780017e0002030405",2,127],[254,"62741525",true,"0802e18001",2,127]]},
 "head_up": {"status":"ok","writes":[[0,"62741525",true,"08020000000100000000",10,107],[970,"62741525",true,"08020000000000000000",1,0]]},
 "head_down": {"status":"ok","writes":[[0,"62741525",true,"08020000000200000000",10,107],[970,"62741525",true,"08020000000000000000",1,0]]},
 "head_stop": {"status":"ok","writes":[[0,"62741525",true,"08020000000000000000",1,0]]},
