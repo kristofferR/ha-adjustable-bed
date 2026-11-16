@@ -417,3 +417,27 @@ async def test_luuna_asks_explicit_product_and_derives_its_controls(hass):
     assert saved[const.CONF_MOTOR_COUNT] == 4
     assert saved[const.CONF_HAS_MASSAGE] is True
     assert saved[const.CONF_DISABLE_ANGLE_SENSING] is True
+
+
+async def test_configure_can_switch_a_richmat_remote_to_mlily_remote(hass):
+    entry = entry_for(hass, **{const.CONF_RMCONTROL_PRODUCT: ""})
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass, flow.handler = hass, entry.entry_id
+    form = await flow.async_step_settings()
+    selector = form["data_schema"].schema[fields(form)[const.CONF_BED_TYPE]]
+    choice = selector(f"{bed_type_label(const.BED_TYPE_MLILY_REMOTE)} · Richmat")
+    assert choice == const.BED_TYPE_MLILY_REMOTE
+    form = await flow.async_step_settings({const.CONF_BED_TYPE: choice})
+    assert {const.CONF_PROTOCOL_VARIANT, const.CONF_PRODUCT_TYPE} <= fields(form).keys()
+    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_RICHMAT
+    with patch.object(hass.config_entries, "async_schedule_reload"):
+        result = await flow.async_step_settings(
+            {const.CONF_PROTOCOL_VARIANT: "ms200", const.CONF_PRODUCT_TYPE: "single"}
+        )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert (
+        entry.data[const.CONF_BED_TYPE],
+        entry.data[const.CONF_PROTOCOL_VARIANT],
+        entry.data[const.CONF_PRODUCT_TYPE],
+    ) == (const.BED_TYPE_MLILY_REMOTE, "ms200", "single")
+    assert entry.data[const.CONF_MOTOR_COUNT] == 2

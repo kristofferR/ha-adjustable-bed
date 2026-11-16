@@ -178,6 +178,7 @@ from .const import (
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MLILY,
+    BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_N32_MOTION_BED,
@@ -827,6 +828,7 @@ def _bed_type_selector(
             "luuna",
             "sonicsleep",
             BED_TYPE_MLILY,
+            BED_TYPE_MLILY_REMOTE,
             BED_TYPE_JENSEN,
             # Protocol-named routes are off the setup list but stay selectable.
             *PROTOCOL_ROUTES,
