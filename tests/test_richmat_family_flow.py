@@ -24,6 +24,7 @@ APPS = [
     "luuna",
     "sonicsleep",
     "mlily",
+    "mlily_remote",
     "revive",
     "best_mattress",
     "blvd_home",
