@@ -157,7 +157,7 @@ The 64-bit profiles:
 | Massage | ✅ Toggle, intensity, wave mode | ✅ Waves, intensity, stop, check |
 | Under-bed lights | ✅ Toggle, on, off | ✅ Toggle |
 | Hold until release | ❌ | ✅ |
-| BLE pairing | ❌ | ❌ |
+| BLE pairing | ⚠️ Custom OKIN variant | ❌ |
 
 ## Choosing a profile
 
@@ -4632,6 +4632,10 @@ the back-to-back clock and alarm frames) and notification contents.
 ##### Known Controllers
 
 - `NORA_CON` / `NORACON` Mattress Firm controllers
+- Nectar Premier Adjustable Base / Resident Adjustable Base (`OKIN-` followed by
+  digits, Device Information manufacturer `DewertOkin GmbH`): Custom OKIN variant,
+  see [Custom OKIN pairing and session](#custom-okin-pairing-and-session). The
+  [Resident Adjustable Base](#resident-adjustable-base) app profile also drives it.
 - Other newer Okin controllers using the 10-byte `0x08 0x02` command frame
 
 Reported `NORA_CON` / `NORACON` controllers use the Nordic variant. Their connected
@@ -4657,7 +4661,41 @@ high-confidence signal for this 64-bit profile.
 | Variant | Service UUID | Write Characteristic | Mode |
 |---------|--------------|----------------------|------|
 | Nordic (`25_42_02`) | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-...` | Fire-and-forget |
-| Custom OKIN (`36_33_04a`) | `62741523-52f9-8864-b1ab-3b3a8d65950b` | `62741525-...` | Wait-for-response |
+| Custom OKIN (`36_33_04a`) | `62741523-52f9-8864-b1ab-3b3a8d65950b` | `62741525-...` | Wait-for-response, bonded link, session on connect |
+
+##### Custom OKIN pairing and session
+
+The Custom OKIN variant requires BLE pairing and opens a session on every
+connection. The Nordic variant does neither.
+
+- Bond once while the base is in pairing mode (see
+  [putting the bed in pairing mode](../TROUBLESHOOTING.md#putting-the-bed-in-pairing-mode)),
+  then use **Pair Now** during setup or in the pairing repair.
+- Later connections encrypt the link with the stored bond. On an ESPHome
+  Bluetooth proxy that means requesting pairing on each connection, which the
+  integration does once a cached bond proves unreliable.
+- Without encryption, Device Information reads fail with Insufficient
+  Authentication and motor writes fail with ATT Insufficient Authorization (`0x08`).
+- Encryption alone is not enough: without the session the base still answers
+  motor writes with Insufficient Authorization. A session write that fails with
+  a GATT security error starts the integration's pairing recovery; other
+  failures are logged and the link stays usable.
+
+The session is sent after encryption and before any command, every write with
+response to `62741525`, 120 ms after the previous response:
+
+| Step | Action | Bytes |
+|------|--------|-------|
+| 1 | Enable notifications | CCCD of `62741625-52f9-8864-b1ab-3b3a8d65950b` |
+| 2 | Clock record, twice | `E7 80 01 YY MM DD hh mm ss` |
+| 3 | Clock query, twice | `08 02 E1 80 01` |
+
+The clock record carries the current **UTC** time as C `struct tm` fields,
+with no checksum: years since 1900 (2026 = `7E`), zero-based month
+(November = `0A`), day, hour, minute, second. For example,
+2026-11-15 21:50:53 UTC is `E7 80 01 7E 0A 0F 15 32 35`. The
+[Resident Adjustable Base](#resident-adjustable-base) profile sends the same two
+frames from its Android app's schedule, with local time.
 
 ##### Packet Format
 
@@ -4709,8 +4747,16 @@ Mattress Firm Nordic packets with this protocol.
 | Massage | ✅ (timer, wave modes) |
 | Under-bed Lights | ✅ |
 | Zero-G / Anti-Snore / TV / Lounge | ✅ |
+| BLE Pairing | Custom OKIN: ✅ Required; Nordic: ❌ Not required |
 
 #### Evidence
+
+The Custom OKIN session and pairing requirement come from a Bluetooth capture
+of the Resident Adjustable Base iPhone app on a Nectar Premier base, not from
+app analysis: LE encryption with a stored bond, the notification subscription,
+then the four session writes. A replay over an ESPHome proxy confirmed that the
+bond and the session are both needed and, together, enough to move the bed with
+a held frame repeated about every 300 ms followed by STOP.
 
 ##### Related Protocols
 
@@ -5457,7 +5503,11 @@ model-read result does not change controls.
 
 The layout is fixed at two axes, with massage enabled and angle sensing off.
 The app needs all three GATT roles below. It requests no app-specific PIN,
-authentication or bonding sequence. BLE link security remains hardware-specific.
+authentication or bonding sequence, but the base refuses an unencrypted link,
+so this profile **requires BLE pairing** (see Evidence). Bond once while the
+base is in [pairing mode](../TROUBLESHOOTING.md#putting-the-bed-in-pairing-mode).
+A startup write that fails with a GATT security error starts the integration's
+pairing recovery.
 Two-address pairs retain independent profiles; there is no one-address side
 selector or bed-side synchronization command.
 
@@ -5534,8 +5584,14 @@ time zone, then query the clock. Clock setting is unrelated to motor calibration
 APK Protocol Audit unit160, accepted audit001, proves the single fixed profile,
 all command builders, response handling and lifecycle timings from Resident
 1.0.0. Its frozen vectors are in `tests/fixtures/resident_vectors.json` and the
-N-frame command census. Hardware compatibility and physical response remain
-unverified; real users can validate these after beta or release.
+N-frame command census.
+
+A Nectar Premier base proved the link security the APK cannot show: a Bluetooth
+capture of the iPhone app and a replay over an ESPHome proxy (see
+[Custom OKIN pairing and session](#custom-okin-pairing-and-session)). Its motor
+writes fail with ATT Insufficient Authorization until the link is encrypted with
+a bond and the clock record and clock query were written on that connection.
+This profile's own startup and controls have not yet run on that hardware.
 
 ## Notes
 

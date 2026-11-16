@@ -20,6 +20,11 @@ architecture.
 > (`com.okin.bedding.rizemf900`) and advertising as `OKIN-XXXXXX` are
 > [Okin CST](okin-nframe.md#okin-cst) too. Neither is selected by an `OKIN-*` name, a
 > shared OKIN UUID or a Device Information value.
+>
+> The Nectar Premier / Resident Adjustable Base uses neither: choose the
+> [Resident Adjustable Base](okin-nframe.md#resident-adjustable-base) app profile,
+> or [Okin 64-Bit](okin-nframe.md#okin-64-bit) with the Custom OKIN variant. Both
+> need pairing.
 
 ## Known Models
 

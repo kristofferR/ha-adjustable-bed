@@ -17,6 +17,7 @@ from bleak import BleakClient
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ...ble_auth import is_ble_authentication_error
 from ...card import CARD_MASSAGE, CARD_UTILITY
 from ...codec import okin_nframe as codec
 from ...controller_state import StateKey
@@ -36,7 +37,8 @@ from ..entity_specs import (
     MotorControlSpec,
 )
 from ..lifecycle import ControllerSession
-from ..okin_64bit import Okin64BitController
+from ..okin_64bit import CLOCK_QUERY as QUERY_CLOCK
+from ..okin_64bit import Okin64BitController, clock_record
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -49,7 +51,6 @@ INFO_SERVICE: Final = "0000180a-0000-1000-8000-00805f9b34fb"
 MODEL_UUID: Final = "00002a24-0000-1000-8000-00805f9b34fb"
 MASSAGE_TIMER: Final = StateKey[int | None]("resident_massage_timer")
 QUERY_MASSAGE: Final = codec.request(4)
-QUERY_CLOCK: Final = codec.prefixed_query((0xE1, 0x80, 0x01))
 _MASSAGE_KEYS: Final = frozenset(
     {"massage_switch", "massage_off", "strength_up", "strength_down", "massage_timer"}
 )
@@ -309,31 +310,21 @@ class ResidentController(Okin64BitController):
 
         # Await startup so commands cannot race its clock/query writes. Each
         # branch stays bound to this link; no Android UI callback tasks survive it.
-        async with asyncio.TaskGroup() as tasks:
-            tasks.create_task(clock())
-            tasks.create_task(info())
-            tasks.create_task(self.check_massage())
+        try:
+            async with asyncio.TaskGroup() as tasks:
+                tasks.create_task(clock())
+                tasks.create_task(info())
+                tasks.create_task(self.check_massage())
+        except ExceptionGroup as group:
+            # Unwrapped, a GATT security error reaches the coordinator's pairing recovery.
+            errors = group.exceptions
+            raise next((e for e in errors if is_ble_authentication_error(e)), errors[0]) from None
 
     async def sync_clock(self) -> None:
         link = self._live()
-        now = dt_util.now()
         loop = asyncio.get_running_loop()
         query_at = loop.time() + RESIDENT_CLOCK_QUERY_DELAY_MS / 1000
-        await self._write(
-            link,
-            codec.calendar_record(
-                0xE7,
-                (
-                    now.year - 1900,
-                    now.month - 1,
-                    now.day,
-                    now.hour,
-                    now.minute,
-                    now.second,
-                ),
-            ),
-            self._coordinator.cancel_command,
-        )
+        await self._write(link, clock_record(dt_util.now()), self._coordinator.cancel_command)
         if not await _pause(
             max(0.0, (query_at - loop.time()) * 1000), self._coordinator.cancel_command
         ):
