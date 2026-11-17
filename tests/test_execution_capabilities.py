@@ -68,6 +68,7 @@ KEESON_STREAM: dict[str, tuple[str, ...]] = {
     "maxcoil_una": ("maxcoil",),
     "americanstar": ("americanstar",),
     "okin_comfort_bed": ("okincomfort",),
+    "comfortfurniture": ("unit085",),
     "simon_li": ("simon",),
     "heal_every_night": ("heal",),
     "okin_seating": ("minghua",),

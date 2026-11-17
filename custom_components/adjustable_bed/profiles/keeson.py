@@ -483,6 +483,7 @@ _ORE: Final = KeesonProfile(
     release=Release(steps=((100, codec.RELEASE),)),
     tap_wait_ms=100,
 )
+COMFORTFURNITURE: Final = replace(_ORE, key="comfortfurniture", execution=STREAM_HOLD)
 OKIN_COMFORT_BED: Final = replace(_ORE, key="okin_comfort_bed", execution=STREAM_HOLD)
 AMERICANSTAR: Final = replace(_ORE, key="americanstar", execution=STREAM_HOLD)
 AVANTI_BASES: Final = replace(_ORE, key="avanti_bases", execution=STREAM_HOLD)
@@ -597,6 +598,7 @@ PROFILES: Final[dict[str, KeesonProfile]] = {
         OKIN_SEATING,
         HEAL_EVERY_NIGHT,
         OKIN_COMFORT_BED,
+        COMFORTFURNITURE,
         AMERICANSTAR,
         AVANTI_BASES,
         BEDSENSE_BASES,

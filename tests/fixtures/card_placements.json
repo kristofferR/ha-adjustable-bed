@@ -556,6 +556,21 @@
   "button:comfortbase_save_zero_g": {
     "card_section": "presets"
   },
+  "button:comfortfurniture_massage_start": {
+    "card_section": "massage"
+  },
+  "button:comfortfurniture_preset_stop": {
+    "card_section": "presets"
+  },
+  "button:comfortfurniture_reset_label": {
+    "card_section": "utility"
+  },
+  "button:comfortfurniture_save": {
+    "card_section": "utility"
+  },
+  "button:comfortfurniture_timer_cycle": {
+    "card_section": "massage"
+  },
   "button:connect": {
     "card_section": "connection",
     "card_role": "connect"
@@ -2346,6 +2361,12 @@
     "card_section": "massage"
   },
   "number:bf_cherish_wave": {
+    "card_section": "massage"
+  },
+  "number:comfortfurniture_intensity_progress": {
+    "card_section": "massage"
+  },
+  "number:comfortfurniture_wave_progress": {
     "card_section": "massage"
   },
   "number:fan_level": {

@@ -81,6 +81,7 @@ APK Protocol Audit row044.
 | ✅ | [Bedsense Bases](https://play.google.com/store/apps/details?id=com.ore.sfmc2bedsence) 1.1 (3) | `com.ore.sfmc2bedsence` | [ORE comfort-bed](#ore-comfort-bed-profiles) |
 | ✅ | [Avanti Bases](https://play.google.com/store/apps/details?id=com.ore.AvantiBases) 1.0.5 (7) | `com.ore.AvantiBases` | [ORE comfort-bed](#ore-comfort-bed-profiles) |
 | ✅ | [AMERICANSTAR](https://play.google.com/store/apps/details?id=com.ore.americanstar) 1.0 (1), hardware unverified | `com.ore.americanstar` | [ORE comfort-bed](#ore-comfort-bed-profiles) |
+| ✅ | ComfortFurniture 2.3 (10) | `com.ore.comfortfurniture` | [ComfortFurniture](#comfortfurniture) |
 | ✅ | [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) 1.1.6 (8), hardware unverified | `com.ore.okincomfortbed` | [OKIN Comfort Bed](#okin-comfort-bed) |
 | ✅ | [Glideaway Motion](https://play.google.com/store/apps/details?id=com.ore.bedding.glideawaymontion) 1.0.3 (11) | `com.ore.bedding.glideawaymontion` | [Glideaway Motion](#glideaway-motion) |
 | ✅ | [AdjustaMattress](https://play.google.com/store/apps/details?id=com.okin.adjustamattress) 1.6.0 (10) | `com.okin.adjustamattress` | [AdjustaMattress](#adjustamattress) |
@@ -211,6 +212,7 @@ only through **Reconfigure**, and the app review in Repairs opens it.
 | OKIN-Seating | `keeson` `okin_seating` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller | renewable lease |
 | Heal Every Night | `keeson` `heal_every_night` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller | renewable lease |
 | OKIN Comfort Bed | `keeson` `okin_comfort_bed` | K1 `E5`, big-endian | live FFE9 / FFE4 | app controller | app controller | renewable lease |
+| ComfortFurniture | bed type `keeson:comfortfurniture` | K1 `E5`, big-endian | app controller | app controller | app controller | renewable lease |
 | AMERICANSTAR | `keeson` `americanstar` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller | renewable lease |
 | Avanti Bases | `keeson` `avanti_bases` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller | renewable lease |
 | Bedsense Bases | `keeson` `bedsense_bases` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller | renewable lease |
@@ -280,11 +282,12 @@ release refreshes at its app interval until the lease ends or STOP arrives, up t
 
 Words, encoded in the profile's frame. AdjustaMattress P1, AdjustaMattress P2,
 AMERICANSTAR, Avanti Bases, Bedsense Bases, BF, Cherish, Comfort Enhancements,
-ComfortBaseForBluetooth, Cool Base, Dynasty Bases, Glideaway Motion, Heal Every
-Night, INNOVA, OkinComfortBed II P1, OkinComfortBed II P2, OkinComfortBed II P3,
-OkinComfortBed Ⅱ (Jalon), Malouf legacy OKIN, MaxCoil Una, OKIN Comfort Bed,
-OKIN-Seating, Rondure, SBI, Scott Living, Simon Li, Sleepy's BOX15, アシステック P1,
-アシステック P2 keep their key tables with their app controllers; see their sections.
+ComfortBaseForBluetooth, ComfortFurniture, Cool Base, Dynasty Bases, Glideaway
+Motion, Heal Every Night, INNOVA, OkinComfortBed II P1, OkinComfortBed II P2,
+OkinComfortBed II P3, OkinComfortBed Ⅱ (Jalon), Malouf legacy OKIN, MaxCoil Una,
+OKIN Comfort Bed, OKIN-Seating, Rondure, SBI, Scott Living, Simon Li, Sleepy's
+BOX15, アシステック P1, アシステック P2 keep their key tables with their app controllers; see
+their sections.
 
 | Profile | Flat | Zero G | Lounge | TV | Anti-snore | Memory recall | Memory save |
 |---|---|---|---|---|---|---|---|
@@ -411,7 +414,7 @@ family's codec exists.
 | P2 7-byte (`05`) | `05 02` + big-endian word + `00` | `05 02 00 00 00 01 00` | OkinComfortBed II P3, アシステック P2 |
 | K1 `E5`, little-endian | `header FE 16` + word + checksum | `E5 FE 16 01 00 00 00 05` | Base (BaseI4/I5), Ergomotion, Serta, Purple Premium, Restonic BT remote A, Restonic BT remote B, INNOVA, SBI, Rondure, Cool Base |
 | K1 `E6`, little-endian | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 04` | OKIN FFE, BetterLiving CB1322 |
-| K1 `E5`, big-endian | `header FE 16` + word + checksum | `E5 FE 16 00 00 00 01 05` | Sino, BetterLiving, Simon Li, OKIN-Seating, Heal Every Night, OKIN Comfort Bed, AMERICANSTAR, Avanti Bases, Bedsense Bases, Dynasty Bases, MaxCoil Una, AdjustaMattress P2, BF, Cherish, Comfort Enhancements |
+| K1 `E5`, big-endian | `header FE 16` + word + checksum | `E5 FE 16 00 00 00 01 05` | Sino, BetterLiving, Simon Li, OKIN-Seating, Heal Every Night, OKIN Comfort Bed, ComfortFurniture, AMERICANSTAR, Avanti Bases, Bedsense Bases, Dynasty Bases, MaxCoil Una, AdjustaMattress P2, BF, Cherish, Comfort Enhancements |
 | JSON | JSON envelope, see below | see JSON envelope | JSON/A00A |
 | P2 6-byte | `04 02` + big-endian word | `04 02 00 00 00 01` | KSBT, KSBT03C, Adjustable Lite (KSBT01C), Adjustable Lite (KSBT03C) |
 | P2 7-byte (`05`) | `05 02` + big-endian word + `00` | `05 02 00 00 00 01 00` | KSBT03CR |
@@ -1401,6 +1404,144 @@ the physical axis for each layout (especially 2M's combined key and 4M's waist),
 hold and release behavior, preset save/recall, massage levels and timer
 durations, and the actual write type.
 
+
+### ComfortFurniture
+
+**App:** [ComfortFurniture](https://apkpure.com/comfortfurniture/com.ore.comfortfurniture) 2.3 (10), `com.ore.comfortfurniture`
+
+**Status:** ❓ Hardware unverified. Static app behavior is established; the frozen July delivery carries no fresh store-version claim.
+
+#### Setup
+
+Choose **ComfortFurniture app, bedding (Keeson)** explicitly. Detection: none.
+The app lists every scanned LE device and selects an address without a name,
+manufacturer or service rule. HA uses its ordinary Bluetooth setup and proxy
+selection. This route fixes four axes, massage, binary light and no angle feedback.
+Seating and accessory pages are separate products and do not add BED capabilities.
+
+Both FFE9 (write) and FFE4 (notify) must exist. The last matching characteristic
+of each UUID across all services wins, without assuming a parent service or
+requiring the roles to share one. HA selects ATT write mode from live properties
+and subscribes with its Bluetooth stack. The app leaves ATT mode at the Android
+runtime default and enables notifications only locally, without writing a CCCD.
+Actual properties, numeric ATT mode and peripheral subscription needs remain
+unverified. There is no setup write, authentication or capability handshake.
+Two separate receivers can use HA's paired infrastructure; no single-address
+side selector is established.
+
+#### Controls
+
+Back, foot, head and waist retain the app's labels. Back+foot is the explicit
+combined control. These controls share one stream and global release; there is
+no arbitrary multi-axis composition. All five named presets support save and
+recall. The indexed Memory action maps only to the named Memory target.
+A second recall of the same selected preset sends preset stop. Saves send once,
+without an automatic recall. Reset is exposed with its physical effect explicitly
+unknown and a confirmation in the native card; no factory-reset or calibration
+meaning is claimed.
+
+Massage has one intensity slider and one wave slider. The raw app progress is
+retained and quantized into three bins, whose physical strengths and patterns
+are unknown. Bin zero is not massage off. Start sends the initial command, then
+current wave, then current intensity; stop sends its own word and clears the
+local timer selection. The timer selects each of the app's three durations.
+Light on/off is assumed from local commands, without peripheral feedback.
+
+<!-- generated:keeson-comfortfurniture -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+#### Axis frames
+
+| Control | Up | Down |
+|---|---|---|
+| back | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 02 04` |
+| feet | `E5 FE 16 00 00 00 04 02` | `E5 FE 16 00 00 00 08 FE` |
+| both | `E5 FE 16 00 00 00 05 01` | `E5 FE 16 00 00 00 0A FC` |
+| head | `E5 FE 16 00 00 00 10 F6` | `E5 FE 16 00 00 00 20 E6` |
+| waist | `E5 FE 16 00 00 00 40 C6` | `E5 FE 16 00 00 00 80 86` |
+
+#### Named target frames
+
+| Target | Recall | Save |
+|---|---|---|
+| Zero G | `E5 FE 16 21 00 00 01 E4` | `E5 FE 16 21 00 00 11 D4` |
+| Flat | `E5 FE 16 21 00 00 02 E3` | `E5 FE 16 21 00 00 12 D3` |
+| AS | `E5 FE 16 21 00 00 03 E2` | `E5 FE 16 21 00 00 13 D2` |
+| Reading | `E5 FE 16 21 00 00 04 E1` | `E5 FE 16 21 00 00 14 D1` |
+| Memory | `E5 FE 16 21 00 00 06 DF` | `E5 FE 16 21 00 00 16 CF` |
+
+#### Other frames
+
+| Action | Frame |
+|---|---|
+| Movement release | `E5 FE 16 00 00 00 00 06` |
+| Preset stop | `E5 FE 16 21 00 00 00 E5` |
+| Reset label (physical effect unknown) | `E5 FE 16 FF FF FF FF 0A` |
+| Massage start, initial | `E5 FE 16 10 00 00 11 E5` |
+| Massage off | `E5 FE 16 10 00 00 10 E6` |
+| wave bin 0 | `E5 FE 16 10 00 00 21 D5` |
+| wave bin 1 | `E5 FE 16 10 00 00 22 D4` |
+| wave bin 2 | `E5 FE 16 10 00 00 23 D3` |
+| intensity bin 0 | `E5 FE 16 10 00 00 11 E5` |
+| intensity bin 1 | `E5 FE 16 10 00 00 12 E4` |
+| intensity bin 2 | `E5 FE 16 10 00 00 13 E3` |
+| Timer 10 minutes | `E5 FE 16 10 00 00 30 C6` |
+| Timer 20 minutes | `E5 FE 16 10 00 00 31 C5` |
+| Timer 30 minutes | `E5 FE 16 10 00 00 32 C4` |
+| Light off | `E5 FE 16 31 00 00 00 D5` |
+| Light on | `E5 FE 16 31 00 00 01 D4` |
+
+#### App parameters
+
+| Parameter | Value |
+|---|---|
+| Held refresh | 100 ms, first write immediate |
+| One-shot / release pre-send wait | 100 ms |
+| Slider raw progress / default | 0..29 / 10 |
+| Quantization | floor(progress / 10), bins 0..2 |
+<!-- /generated -->
+
+#### Timing
+
+The generated app parameters apply to this route only. Finite HA holds use an
+elapsed deadline; slow writes never accumulate catch-up refreshes. Leased holds
+run until release or expiry. Movement always attempts the proven zero release
+with cancellation-independent cleanup on the captured connection. Presets use a
+distinct stop word. One-shots have no automatic trailing release.
+
+HA serializes commands and keeps immutable payloads instead of reproducing the
+app's mutable-characteristic queue, whose callbacks ignore failed status and
+whose backlog can overwrite payloads. The app does not guarantee lifecycle STOP.
+HA invalidates old commands and callbacks on disconnect; old cleanup never writes
+to a replacement session. Slider preferences survive restart; timer/preset
+selection is local session state, with no assertion that the bed acknowledged it.
+
+#### Notifications
+
+FFE4 messages are accepted only at exactly nine bytes, with no invented header,
+checksum, footer or fragment rules. Accessory lamp and F0 audio/fridge branches
+take priority and are ignored safely rather than reproducing the app's invalid
+BED-fragment casts. Remaining byte7 values 07, 06 and 0A end held refresh.
+The app sends no STOP on this incoming path; HA still performs the proven
+movement release as command cleanup. No BED position, light or massage state
+is decoded, and no query packet is invented.
+
+#### Services
+
+Use the standard movement, timed movement, STOP, memory and save-memory actions.
+The declared buttons and sliders expose the remaining named saves, preset stop,
+qualified reset and massage actions. No raw-word or accessory action is added.
+
+#### Evidence
+
+Unit085 accepted direct-BLE BED report and audit001, all five bedding pages.
+Frozen command and synthetic notification fixtures are in
+`tests/fixtures/comfortfurniture/vectors.json`; production callers and
+session/cancellation behavior are checked by `tests/test_comfortfurniture.py`.
+Artifact SHA256: `7c8d3f5636de6936242bae4e2d97366889be9f021dd73a2c7fa4e30eac096f46`.
+Physical reset effects, massage-bin meaning and disconnect safety remain external
+beta/release qualification only.
+
 ### OKIN Comfort Bed
 
 **App:** [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) 1.1.6 (8), `com.ore.okincomfortbed`
@@ -2102,6 +2243,7 @@ frames of other families and keep it.
 
 | Profile | Bed type | Frame | Word `0x1` | Zero word | Hold until release | Guide |
 |---|---|---|---|---|---|---|
+| ComfortFurniture | `keeson:comfortfurniture` | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | renewable lease | [ComfortFurniture](#comfortfurniture) |
 | アシステック P1 | `yamada`, P1 | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | renewable lease | [アシステック](#アシステック--yamada) |
 | アシステック P2 | `yamada`, P2 | P2 7-byte (`05`) | `05 02 00 00 00 01 00` | `05 02 00 00 00 00 00` | renewable lease | [アシステック](#アシステック--yamada) |
 | OkinComfortBed II P1 | `jalon` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | renewable lease | [OkinComfortBed II](#okincomfortbed-ii) |

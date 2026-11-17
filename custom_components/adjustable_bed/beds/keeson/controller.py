@@ -32,6 +32,7 @@ from ...const import (
     KEESON_JSON_SERVICE_UUID,
     KEESON_SINO_NAME_PATTERNS,
     KEESON_VARIANT_ADJUSTABLE_LITE,
+    KEESON_VARIANT_COMFORTFURNITURE,
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
     KEESON_VARIANT_INNOVA,
@@ -1259,6 +1260,11 @@ async def build_controller(ctx: BuildContext) -> BedController:
     coordinator = ctx.coordinator
     device_name = ctx.device_name
     variant = ctx.variant
+    if variant == KEESON_VARIANT_COMFORTFURNITURE:
+        await ctx.preload("keeson.comfortfurniture")
+        from .comfortfurniture import ComfortFurnitureController
+
+        return ComfortFurnitureController(coordinator)
     if variant in ORE_COMFORT_BED_VARIANTS:
         # Explicit app profile with its own controller; Auto never selects it.
         await ctx.preload("ore_comfort_bed")

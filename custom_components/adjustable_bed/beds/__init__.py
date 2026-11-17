@@ -58,6 +58,7 @@ if TYPE_CHECKING:
     from .kaidi.comfy import ComfyController as ComfyController
     from .kaidi.controller import KaidiController as KaidiController
     from .kaidi.rize import RizeController as RizeController
+    from .keeson.comfortfurniture import ComfortFurnitureController as ComfortFurnitureController
     from .keeson.controller import KeesonController as KeesonController
     from .keeson.jalon import JalonController as JalonController
     from .keeson.symphony_sleep import SymphonySleepController as SymphonySleepController
@@ -236,6 +237,7 @@ _EXPORT_MODULES = {
     "OkinOreController": "okin_ore",
     "OkinRfEcoBtController": "okin_rf_eco_bt",
     "OkinUuidController": "okin_uuid.controller",
+    "ComfortFurnitureController": "keeson.comfortfurniture",
     "OreComfortBedController": "ore_comfort_bed",
     "RemacroController": "remacro.controller",
     "ReverieController": "reverie.controller",
@@ -291,6 +293,7 @@ __all__ = [
     "OkinRfEcoBtController",
     "OkinUuidController",
     "Okin7ByteController",
+    "ComfortFurnitureController",
     "OreComfortBedController",
     "InnovaController",
     "OkinMotionBedController",

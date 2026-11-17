@@ -128,6 +128,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `sbi` (all routes), `qplus_app` | S stream | U | U | costco | zero-mask release |
 | `ergo_slim` | S stream | U | U | slim | zero-mask release |
 | `keeson:okin_comfort_bed` | S stream | U | U | okincomfort | global zero-word release; no concurrent key composition |
+| `keeson:comfortfurniture` | S stream | U | U | unit085 | Four axes and fixed back+foot key; global zero release; no arbitrary concurrency |
 | `omazz_adjusto_iii` | S stream | U | U | omazz | zero at release |
 | `row_control` | S stream | U | U | row | zero mask at release |
 | `tempur_au` | S stream | U | U | tempur_au | zero frame at release |
@@ -744,6 +745,7 @@ Report workspaces are machine-local under
 | motosleep | `com.HHC.MotoSleep` | 5.1.5 | COMPLETE | Not retained; accepted in #447, `analysis.json` hash in the [MotoSleep guide](../beds/motomotion.md#analysis-provenance) |
 | nectar | `com.okin.bedding.nectarmotion` | 1.0.1 | COMPLETE | `com.okin.bedding.nectarmotion-1.0.1-2026-10-26-39bdcafa-003/report/` |
 | octo | `de.octoactuators.octosmartcontrolapp` | 1.03.02 | COMPLETE | `de.octoactuators.octosmartcontrolapp-1.03.02-2026-10-26-39bdcafa-repair-001/report/` |
+| unit085 | `com.ore.comfortfurniture` | 2.3 (10) | COMPLETE | `com.ore.comfortfurniture-2.3-2026-11-17-queue001/report/`, E07/E08/E12; accepted audit001 |
 | okincomfort | `com.ore.okincomfortbed` | 1.1.6 (8) | COMPLETE | `com.ore.okincomfortbed-1.1.6-2026-11-10-maxqueue001/report/` |
 | omazz | `com.sfd.Omazz` | 1.0.5 | COMPLETE | `com.sfd.Omazz-1.0.5-2026-10-26-39bdcafa-repair-001/report/` |
 | p2 | `com.leggett.prodigy2` | 2.2.0 | COMPLETE | `com.leggett.prodigy2-2.2.0-20260827/report/` |
