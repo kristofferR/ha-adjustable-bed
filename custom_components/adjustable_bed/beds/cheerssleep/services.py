@@ -93,9 +93,12 @@ async def handle_request(call: ServiceCall) -> None:
 
     async def execute(controller: CheersSleepController) -> None:
         validate(controller)
-        # Both child lanes share the color light on one physical receiver.
+        # These actions address one shared actuator or light on the receiver.
         receiver = id(controller._coordinator)
-        if request.operation == "color_light_toggle" and receiver in executed:
+        shared = request.operation in ("color_light_toggle", "ten_motion", "newten_motion") or (
+            request.operation == "seven_motion" and request.axis == "legs"
+        )
+        if shared and receiver in executed:
             return
         await controller.execute_request(request)
         executed.add(receiver)

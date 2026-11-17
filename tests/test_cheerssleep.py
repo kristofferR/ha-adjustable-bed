@@ -659,6 +659,33 @@ async def test_real_ha_native_child_target_keeps_right_side_and_rejects_conflict
 async def test_native_p1_movement_runs_shared_foot_once(
     hass, clock, key, motor, direction, side, connection_state, service
 ):
+    await _exercise_native_p1_movement(
+        hass, clock, key, motor, direction, side, connection_state, service
+    )
+
+
+@pytest.mark.parametrize("key", [51, 52])
+@pytest.mark.parametrize(
+    "operation,motor",
+    [
+        ("seven_motion", "legs"),
+        ("seven_motion", "back"),
+        ("seven_motion", "lumbar"),
+        ("ten_motion", "all"),
+        ("ten_motion", "back"),
+        ("newten_motion", "legs"),
+        ("newten_motion", "lumbar"),
+    ],
+)
+async def test_native_auxiliary_actions_run_shared_movement_once(hass, clock, key, operation, motor):
+    await _exercise_native_p1_movement(
+        hass, clock, key, motor, "up", "both", "connected", operation
+    )
+
+
+async def _exercise_native_p1_movement(
+    hass, clock, key, motor, direction, side, connection_state, service
+):
     from homeassistant.config_entries import ConfigEntryState
     from homeassistant.helpers import device_registry as dr
 
@@ -720,33 +747,49 @@ async def test_native_p1_movement_runs_shared_foot_once(
         inner.async_ensure_connected = AsyncMock(side_effect=connect)
         inner.async_execute_controller_command = AsyncMock(side_effect=execute)
         await async_register_services(hass)
+        fields = (
+            {"motor": motor, "direction": direction, "duration_ms": 1000}
+            if service == "timed_move"
+            else {"control": f"{motor}_{direction}", "duration": 1}
+            if service == "hold_control"
+            else {
+                "operation": service,
+                "axis": motor,
+                "position": ("all", "back", "legs", "lumbar").index(motor) + 1,
+                "up": direction == "up",
+                "duration_ms": 1000,
+            }
+        )
         for _ in range(2):
             await hass.services.async_call(
                 DOMAIN,
-                service,
+                service if service in ("timed_move", "hold_control") else "cheerssleep",
                 {
                     "device_id": [parent.id],
-                    **(
-                        {"motor": motor, "direction": direction, "duration_ms": 1000}
-                        if service == "timed_move"
-                        else {"control": f"{motor}_{direction}", "duration": 1}
-                    ),
+                    **fields,
                     "side": side,
                 },
                 blocking=True,
             )
-        # Independent numeric caller values from the frozen P1 split vectors.
-        codes = {
+        # Independent numeric caller values from the frozen P1 vectors.
+        ordinary = service in ("ten_motion", "newten_motion")
+        codes = ({
+            "all": {"left": 0x110, "right": 0x110},
+            "back": {"left": 0x101, "right": 0x101},
+            "legs": {"left": 0x105, "right": 0x105},
+            "lumbar": {"left": 0x109, "right": 0x109},
+        } if ordinary else {
             "legs": {"left": 0x640D, "right": 0x640D},
             "back": {"left": 0x6401, "right": 0x6404},
             "lumbar": {"left": 0x6407, "right": 0x640A},
-        }[motor]
-        sides = ["left", "right"] if side == "both" and motor != "legs" else [side]
+        })[motor]
+        sides = ["left", "right"] if side == "both" and motor != "legs" and not ordinary else [side]
         expected = []
         for selected in sides:
             up = codes["left" if selected == "both" else selected]
-            expected.extend([up + (direction == "down"), up - 1])
-        assert command_count == len(sides) * 2
+            expected.extend([up + (direction == "down"), 1 if ordinary and motor == "all" else up - 1])
+        if service in ("timed_move", "hold_control"):
+            assert command_count == len(sides) * 2
         assert [
             int.from_bytes(bytes.fromhex(frame)[2:4], "little") for frame in frames(transport)
         ] == expected * 2
