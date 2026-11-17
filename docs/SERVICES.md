@@ -1128,3 +1128,24 @@ all received raw fields except enabled. Clock capability and current alarm cache
 are required before writes. Missing/changed cache rejects the action. A silent
 empty-list query cannot safely allocate a new alarm. All target constraints pass
 before any target's setting changes. See the [SonicSleep reference](beds/richmat.md#sonicsleep).
+
+### Majestic Home alarms
+
+Supply an explicit `alarm_id` for `new`, `set`, `toggle` and `delete`.
+New IDs use 1 through 7. Partial alarm replies cannot prove a free slot, so
+Home Assistant never chooses an ID automatically. Sequential pairs refresh
+required fields on the execution connection; toggles reject changed fields.
+
+`adjustable_bed.majestichome` accepts `operation: list`, `new`, `set`, `toggle`,
+`delete` or `sync_clock`. Select a configured Majestic Home device or a native
+paired parent/child, with `side` when needed. Alarm operations require the current
+connection's clock response. FARM/JLRM accept `preset: zero_gravity`,
+`anti_snore`, `memory_1` or `memory_2`, `hour`, `minute`, `weekdays` (Monday 0
+through Sunday 6) and `enabled`. An empty weekday list means once.
+
+Supply `alarm_id` explicitly for `new`, `set`, `toggle` or `delete`.
+Neither an empty nor a nonempty cache proves which IDs are free.
+Query `list` again after a mutation before
+using `toggle`; it preserves the received tuple and changes only the enable bit.
+The state sensor's attributes contain the received records. See the
+[Majestic Home profile](beds/richmat.md#majestic-home).

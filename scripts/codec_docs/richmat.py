@@ -41,6 +41,7 @@ from custom_components.adjustable_bed.codec import richmat as richmat_codec
 from custom_components.adjustable_bed.profiles import casper as casper_profiles
 from custom_components.adjustable_bed.profiles import hush as hush_profiles
 from custom_components.adjustable_bed.profiles import luuna as luuna_profiles
+from custom_components.adjustable_bed.profiles import majestichome as majestic
 from custom_components.adjustable_bed.profiles import richmat as richmat_profiles
 from custom_components.adjustable_bed.profiles import richmat_resource_apps as resource_profiles
 from custom_components.adjustable_bed.profiles import sonicsleep as sonic
@@ -72,6 +73,7 @@ _RICHMAT_NAMES = {
     "galaxy": "Galaxy Bed Control",
     "goodvibe": "Good Vibe Sleep",
     "mlily": "MLILY Control",
+    "majestichome": "Majestic Home",
     "leggett_lp_legacy": "L&P legacy app",
     **{
         profile.key: f"Richmat MH {name}"
@@ -147,6 +149,7 @@ def _richmat_profiles() -> dict[str, richmat_profiles.RichmatProfile]:
             richmat_profiles.GALAXY,
             richmat_profiles.GOODVIBE,
             richmat_profiles.MLILY,
+            majestic.catalog("FARM").wire,
             richmat_profiles.LP_LEGACY,
         )
     }
@@ -181,6 +184,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
         "galaxy": (_const.BED_TYPE_GALAXY,),
         "goodvibe": (_const.BED_TYPE_GOODVIBE,),
         "mlily": (_const.BED_TYPE_MLILY,),
+        "majestichome": (_const.BED_TYPE_MAJESTICHOME,),
         "leggett_lp_legacy": (_const.BED_TYPE_LEGGETT_LP_LEGACY,),
         # Each app's own products; the restored ones are choices on the same bed type.
         **{
@@ -197,7 +201,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
 
 
 def _catalog_kind(key: str) -> str:
-    if key in ("hjbed", "goodvibe", "mlily", "galaxy"):
+    if key in ("hjbed", "goodvibe", "mlily", "galaxy", "majestichome"):
         return "per-product catalog"
     if key == "eshine":
         return "[fixed E6000 table](#eshine-commands)"
@@ -220,7 +224,7 @@ def _lease(profile: richmat_profiles.RichmatProfile) -> str:
     if profile.key.startswith("richmat_classic_"):
         # The controller scopes its lease to the keep buttons of the selected layout.
         return "renewable lease on keep buttons"
-    if profile.key in ("goodvibe", "mlily"):
+    if profile.key in ("goodvibe", "mlily", "majestichome"):
         # The controller scopes its lease to the product's sustained-press controls.
         return "renewable lease on sustained controls"
     return "renewable lease" if profile.execution.hold == "stream" else "no"
@@ -1209,7 +1213,6 @@ def render_bedtech_commands() -> str:
     return _block(_table(("Action", "Code", "Frame (bank 0)", "Timing"), rows))
 
 
-
 def render_sonicsleep() -> str:
     actions = {**sonic.DIRECTIONS, "flat": sonic.FLAT}
     for action, (recall, save) in sonic.PRESETS.items():
@@ -1272,6 +1275,7 @@ def render_luuna() -> str:
             ("Warm / cold RGB", " / ".join(str(v) for v in luuna_profiles.LIGHT_COLORS.values())),
         )),
     )
+
 
 def render_mlily_catalog() -> str:
     from custom_components.adjustable_bed.profiles.mlily import catalog
@@ -1519,3 +1523,59 @@ def render_resource_apps() -> str:
 
 
 BLOCKS.append((GUIDE, "richmat-resource-apps", render_resource_apps))
+
+
+def render_majestichome() -> str:
+    return _block(
+        _table(
+            ("Product", "Held directions", "Alarm presets"),
+            (
+                (
+                    key,
+                    ", ".join(c.label for c in layout.controls if c.held) or "none",
+                    ", ".join(layout.control(k).label for k in layout.alarms) or "none",
+                )
+                for key, layout in majestic.LAYOUTS.items()
+            ),
+        ),
+        _table(
+            ("Product", "Action", "Raw", "Framed", "Save raw", "Save framed"),
+            (
+                (
+                    key,
+                    c.label,
+                    _hex(codec.function(c.code, single=True)),
+                    _hex(codec.function(c.code)),
+                    _hex(codec.function(c.save, single=True)) if c.save is not None else "none",
+                    _hex(codec.function(c.save)) if c.save is not None else "none",
+                )
+                for key, layout in majestic.LAYOUTS.items()
+                for c in layout.controls
+            ),
+        ),
+        _table(
+            ("Schedule", "Milliseconds"),
+            (
+                ("First held refresh", str(majestic.TICK_MS)),
+                ("Held refresh / FIFO tick", str(majestic.TICK_MS)),
+                ("Clock menu query", str(majestic.QUERY_MS)),
+            ),
+        ),
+        _table(
+            ("Session / alarm operation", "Frame"),
+            (
+                ("Exit limit", _hex(codec.function(0, action="deviceFunctionItemExitLimit"))),
+                ("Clock query", _hex(codec.function(1, action="deviceFunctionItemCheckClock"))),
+                ("STOP", _hex(codec.function(majestic.STOP))),
+                ("Alarm list", _hex(codec.record(5, 1, 0, (0,)))),
+                ("Delete alarm 1", _hex(codec.record(5, 2, 1, (1,)))),
+                (
+                    "Alarm 1, memory 1, 07:30 weekdays enabled",
+                    _hex(codec.record(5, 1, 1, (1, 0, 7, 30, 46, 249))),
+                ),
+            ),
+        ),
+    )
+
+
+BLOCKS.append((GUIDE, "majestichome", render_majestichome))

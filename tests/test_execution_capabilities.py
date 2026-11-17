@@ -255,6 +255,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "galaxy": {"hold": ("galaxy",), "hold_controls": ("galaxy",)},
     "goodvibe": {"hold": ("goodvibe",), "hold_controls": ("goodvibe",)},
     "mlily": {"hold": ("mlily159",), "hold_controls": ("mlily159",)},
+    "majestichome": {"hold": ("row151",)},
     # Scoped to the held controls that run the keep mode under the current
     # Hold/Release, memory-arm and head/foot selection (row066, five reports).
     "richmat_classic_apps": {
@@ -345,6 +346,8 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "beds/furnimove/controller.py:<module>.FurniMoveController.execution": ("furnimove",),
     "beds/goodvibe/controller.py:<module>.GoodVibeController": ("goodvibe", "mlily", "galaxy"),
     "beds/goodvibe/controller.py:<module>.GoodVibeController.execution": ("goodvibe", "mlily", "galaxy"),
+    "beds/majestichome/controller.py:<module>.MajesticHomeController": ("majestichome",),
+    "beds/majestichome/controller.py:<module>.MajesticHomeController.execution": ("majestichome",),
     "beds/kaidi/app.py:<module>.KaidiAppController": ("isleep",),
     "profiles/comfy.py:<module>.ComfyProfile": ("ComfyProfile:komfyd", "ComfyDSProfile:comfyds"),
     "beds/kaidi/comfy.py:<module>.ComfyController": ("ComfyProfile:komfyd", "ComfyDSProfile:comfyds"),

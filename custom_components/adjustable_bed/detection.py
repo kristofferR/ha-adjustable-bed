@@ -306,6 +306,7 @@ from .discovery_hints import (
     first_pass,
 )
 from .profiles.bedgear import eligible as bedgear_eligible
+from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.motomotion import eligible as motomotion_eligible
 from .profiles.smart_sleep import advertisement as smart_sleep_advertisement
@@ -562,14 +563,14 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "gmmotor": "GM Control (exact app product)",
     "gmmotor_sleep_mm": "GM Control sleep module (MM)",
     "gmmotor_sleep_sxb": "GM Control sleep module (SXB)",
-    'tempur_curve': 'Tempur Curve',
-    'qplus_app': 'Q-Plus Adjustable Remote',
-    'serta_mp_remote': 'Serta MP Remote',
-    'omazz_adjusto_iii': 'Omazz Adjusto III',
-    'ergomotion_app': 'Ergomotion (app)',
-    'row_control': 'ROW Control',
-    'ergo_slim': 'Ergo Slim',
-    'tempur_au': 'TEMPUR AU',
+    "tempur_curve": "Tempur Curve",
+    "qplus_app": "Q-Plus Adjustable Remote",
+    "serta_mp_remote": "Serta MP Remote",
+    "omazz_adjusto_iii": "Omazz Adjusto III",
+    "ergomotion_app": "Ergomotion (app)",
+    "row_control": "ROW Control",
+    "ergo_slim": "Ergo Slim",
+    "tempur_au": "TEMPUR AU",
     BED_TYPE_BEDSENSE: "BedSense app (com.fenmenbielei.bedsense)",
     BED_TYPE_BF: "BF (com.BF app, three motors)",
     BED_TYPE_CHERISH: "Cherish (com.okin.ore.cherish app)",
@@ -584,9 +585,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "hush_sleep_sxb": "Hush Base sleep sensor (HJ / SXB)",
     "casper_sleep_mm": "Casper Base sleep sensor (RM- / MM)",
     "casper_sleep_sxb": "Casper Base sleep sensor (HJ- / SXB)",
-
     BED_TYPE_FSM_RELAX: "FSM Relax app (explicit chair/bed profile)",
-
     BED_TYPE_STARCODE_M5X5: "AdjustableM5X5 app (CB25 / F23 / kneading)",
     BED_TYPE_STARCODE_M1X12: "Adjustable Comfort M1X12 app (CB25 / F23 / kneading)",
     BED_TYPE_FURNIMOVE: "FurniMove / OKIN Smart Remote (choose handset ID)",
@@ -628,6 +627,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_GALAXY: "Galaxy Bed Control app (choose product and remote)",
     BED_TYPE_GOODVIBE: "Good Vibe Sleep app (choose product or sleep sensor)",
     BED_TYPE_MLILY: "MLILY Control app (choose product or sleep sensor)",
+    "majestichome": "Majestic Home app (choose product)",
     BED_TYPE_RICHMAT_CLASSIC_APPS: "Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior",
     BED_TYPE_MOTOMOTION: "MotoMotion app (exact Bluetooth name)",
     BED_TYPE_HJBED: "HJBed app (choose the exact product)",
@@ -732,6 +732,10 @@ def is_jensen_linon_name(name: str | None) -> bool:
 # users find them by app name. A bed type's own entry names the app its auto
 # variant selects; see AGENTS.md "Adding a New Bed Type".
 APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
+    **{
+        ("majestichome", profile): f"Majestic Home ({label})"
+        for profile, label in MAJESTICHOME_PROFILES.items()
+    },
     **{("richmat_sleep_receiver", app): f"{label} separate sleep receiver"
        for app, label in (("wsilver2", "W.Silver Products"), ("americanstar", "AMERICANSTAR"),
                           ("bailey2", "Bailey's Bed Control"), ("tx", "TX"))},
@@ -847,6 +851,7 @@ _HIDDEN_APP_ROWS: Final = frozenset(
         *((BED_TYPE_GALAXY, product) for product in GALAXY_PROFILES),
         *((BED_TYPE_GOODVIBE, product) for product in GOODVIBE_PROFILES),
         *((BED_TYPE_MLILY, product) for product in MLILY_PROFILES),
+        *(("majestichome", product) for product in MAJESTICHOME_PROFILES),
         *((BED_TYPE_HJBED, product) for product in HJBED_PROFILES),
         *((BED_TYPE_RICHMAT_APP, product) for product in RICHMAT_APP_PRODUCTS),
         *((BED_TYPE_RICHMAT_APP_SLEEP, product) for product in RICHMAT_SLEEP_CHOICES),
@@ -856,7 +861,22 @@ _HIDDEN_APP_ROWS: Final = frozenset(
 HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_APP_ROWS)
 # Bed types whose one row asks for the product, although each product is an app entry.
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
-    {BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE}
+    {
+        "majestichome",
+        BED_TYPE_COMFORT_ENHANCEMENT3,
+        BED_TYPE_SYMPHONY_SLEEP,
+        BED_TYPE_YAMADA,
+        BED_TYPE_RICHMAT_APP,
+        BED_TYPE_RICHMAT_APP_SLEEP,
+        BED_TYPE_GALAXY,
+        BED_TYPE_MLILY,
+        "luuna",
+        BED_TYPE_GOODVIBE,
+        BED_TYPE_HJBED,
+        BED_TYPE_CASPER_BASE,
+        BED_TYPE_COMFORT_ENHANCEMENTS,
+        BED_TYPE_COMFORTBASE,
+    }
 )
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
@@ -1325,17 +1345,13 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     result = _detect_bed_type_with_app_candidates(service_info, first)
     # The app's scan filter is wider than the manifest gate, so it refines
     # advertisements another matcher admitted; it declares no hint of its own.
-    if galaxy_scan_matches(service_info.name) and result.bed_type != BED_TYPE_GALAXY and not any(
-        signal.startswith("excluded:") for signal in result.signals
-    ):
+    if galaxy_scan_matches(service_info.name) and result.bed_type != BED_TYPE_GALAXY and not any(signal.startswith("excluded:") for signal in result.signals):
         if result.bed_type is None:
             result = DetectionResult(BED_TYPE_GALAXY, 0.3, ["name:galaxy_app_candidate", *result.signals])
         else:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_GALAXY]))
             result.signals.insert(0, "name:galaxy_app_candidate")
-    if goodvibe_scan_matches(service_info.name) and not any(
-        signal.startswith("excluded:") for signal in result.signals
-    ):
+    if goodvibe_scan_matches(service_info.name) and not any(signal.startswith("excluded:") for signal in result.signals):
         hints = ["name:goodvibe_app_candidate"]
         if suggested := goodvibe_suggested_profile(service_info.name):
             hints.append("goodvibe_profile:" + suggested)
@@ -1382,9 +1398,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         result.signals.append("name:rize_remedy_ii_app_candidate")
     # A shared service makes this app a choice, never overrides a stronger
     # receiver signature and never infers a remote from the Bluetooth name.
-    if OKIMAT_SERVICE_UUID.lower() in {u.lower() for u in (service_info.service_uuids or ())} and not any(
-        signal.startswith("excluded:") for signal in result.signals
-    ) and result.bed_type != BED_TYPE_COMFORT_ENHANCEMENT3:
+    if OKIMAT_SERVICE_UUID.lower() in {u.lower() for u in (service_info.service_uuids or ())} and not any(signal.startswith("excluded:") for signal in result.signals) and result.bed_type != BED_TYPE_COMFORT_ENHANCEMENT3:
         result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_COMFORT_ENHANCEMENT3]))
         result.signals.append("service:comfort_enhancement3_candidate")
     # These shared app names are candidates only. Never replace a confident
@@ -1407,9 +1421,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     from .profiles.symphony import scan_matches as symphony_scan_matches
 
     # Shared app keywords must not question an established receiver signature.
-    if result.confidence < 0.8 and symphony_scan_matches(platform_name or "", service_info.manufacturer_data or {}) and not any(
-        signal.startswith("excluded:") for signal in result.signals
-    ):
+    if result.confidence < 0.8 and symphony_scan_matches(platform_name or "", service_info.manufacturer_data or {}) and not any(signal.startswith("excluded:") for signal in result.signals):
         if result.bed_type is None:
             result = DetectionResult(BED_TYPE_SYMPHONY, 0.3, [*result.signals, "name:symphony_app_candidate"])
         elif result.bed_type != BED_TYPE_SYMPHONY:
@@ -1425,9 +1437,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_YAMADA]))
             result.signals.append("name:yamada_app_candidate")
     # Shared names offer the app; they never replace a stronger receiver match.
-    if first.name(BED_TYPE_MLINE) and not any(
-        signal.startswith("excluded:") for signal in result.signals
-    ):
+    if first.name(BED_TYPE_MLINE) and not any(signal.startswith("excluded:") for signal in result.signals):
         if result.bed_type is None:
             result = DetectionResult(BED_TYPE_MLINE, 0.3, [*result.signals, "name:mline_app_candidate"])
         elif result.bed_type != BED_TYPE_MLINE:
@@ -1442,9 +1452,7 @@ def _detect_bed_type_with_app_candidates(
     """Keep existing receiver detection while offering an explicit app candidate."""
     result = _detect_bed_type_detailed(service_info, first=first)
     # A name-only app hint must not contest an existing Richmat receiver signature.
-    if first.name(BED_TYPE_RICHMAT) and not first.service(BED_TYPE_RICHMAT) and not any(
-        signal.startswith("excluded:") for signal in result.signals
-    ):
+    if first.name(BED_TYPE_RICHMAT) and not first.service(BED_TYPE_RICHMAT) and not any(signal.startswith("excluded:") for signal in result.signals):
         # Luuna's scan keywords identify a family candidate, never its product.
         if result.bed_type is None:
             result.bed_type, result.confidence = BED_TYPE_RICHMAT, 0.3
@@ -1455,9 +1463,7 @@ def _detect_bed_type_with_app_candidates(
         ):
             result.ambiguous_types = [*(result.ambiguous_types or ()), BED_TYPE_RICHMAT]
         result.signals.append("name:richmat_app_candidate")
-    if first.name(BED_TYPE_GMMOTOR) and not any(
-        signal.startswith("excluded:") for signal in result.signals
-    ):
+    if first.name(BED_TYPE_GMMOTOR) and not any(signal.startswith("excluded:") for signal in result.signals):
         if result.bed_type is None and not any(
             (service_info.name or "").lower().startswith(pattern)
             for pattern in LEGGETT_RICHMAT_NAME_PATTERNS
@@ -1526,9 +1532,7 @@ def _detect_bed_type_with_app_candidates(
         result.signals.append("name:richmat_classic_app_candidate")
     # App name rules add candidates without replacing an existing route.
     # Each app reads the exact name, not a normalized shared prefix.
-    if bedgear_eligible(service_info.name) and not any(
-        signal.startswith("excluded:") for signal in result.signals
-    ):
+    if bedgear_eligible(service_info.name) and not any(signal.startswith("excluded:") for signal in result.signals):
         if result.bed_type is None:
             result = DetectionResult(
                 bed_type="bedgear", confidence=0.3,
@@ -1546,17 +1550,13 @@ def _detect_bed_type_with_app_candidates(
             result.signals.append("name:motomotion_app_candidate")
     from .beds.richmat_app.catalog import scan_matches as richmat_app_scan_matches
 
-    if first.name(BED_TYPE_RICHMAT_APP_SLEEP) and not any(
-        signal.startswith("excluded:") for signal in result.signals
-    ):
+    if first.name(BED_TYPE_RICHMAT_APP_SLEEP) and not any(signal.startswith("excluded:") for signal in result.signals):
         if result.bed_type is None:
             result = DetectionResult(BED_TYPE_RICHMAT_APP_SLEEP, 0.3, ["name:richmat_sleep_candidate"])
         elif result.bed_type != BED_TYPE_RICHMAT_APP_SLEEP:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_RICHMAT_APP_SLEEP]))
 
-    if richmat_app_scan_matches(service_info.name) and not any(
-        signal.startswith("excluded:") for signal in result.signals
-    ):
+    if richmat_app_scan_matches(service_info.name) and not any(signal.startswith("excluded:") for signal in result.signals):
         if result.bed_type is None:
             result = DetectionResult(BED_TYPE_RICHMAT_APP, 0.3, ["name:richmat_app_candidate"])
         elif result.bed_type != BED_TYPE_RICHMAT_APP:

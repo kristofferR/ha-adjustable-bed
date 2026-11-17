@@ -1,0 +1,570 @@
+[
+  {
+    "id": "productNone",
+    "object": "8fd691",
+    "identifier": "",
+    "index": 0,
+    "groups": {
+      "motor": [],
+      "massage": [],
+      "preset": [],
+      "alarm_preset": []
+    }
+  },
+  {
+    "id": "productJHRN",
+    "object": "8fd6c1",
+    "identifier": "JHRN",
+    "index": 4,
+    "groups": {
+      "motor": [
+        {
+          "action": "deviceFunctionItemFootUp",
+          "object": "8e6601",
+          "enum_object": "8fdd41",
+          "code": 41,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemFootDown",
+          "object": "8e6581",
+          "enum_object": "8fdd21",
+          "code": 42,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMotorReset",
+          "object": "8e6501",
+          "enum_object": "8fdb61",
+          "code": 49,
+          "save_code": null
+        }
+      ],
+      "massage": [],
+      "preset": [],
+      "alarm_preset": []
+    }
+  },
+  {
+    "id": "productJGRN",
+    "object": "8fd6f1",
+    "identifier": "JGRN",
+    "index": 3,
+    "groups": {
+      "motor": [
+        {
+          "action": "deviceFunctionItemHeadUp",
+          "object": "8e6981",
+          "enum_object": "8fdd81",
+          "code": 36,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemHeadDown",
+          "object": "8e6901",
+          "enum_object": "8fdd61",
+          "code": 37,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemFootUp",
+          "object": "8e6881",
+          "enum_object": "8fdd41",
+          "code": 38,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemFootDown",
+          "object": "8e6801",
+          "enum_object": "8fdd21",
+          "code": 39,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemHeadAndFootUp",
+          "object": "8e6781",
+          "enum_object": "8fdd01",
+          "code": 41,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemHeadAndFootDown",
+          "object": "8e6701",
+          "enum_object": "8fdce1",
+          "code": 42,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMotorReset",
+          "object": "8e6501",
+          "enum_object": "8fdb61",
+          "code": 49,
+          "save_code": null
+        }
+      ],
+      "massage": [],
+      "preset": [
+        {
+          "action": "deviceFunctionItemMemoryPosition1",
+          "object": "8e6681",
+          "enum_object": "8fde41",
+          "code": 46,
+          "save_code": 43
+        }
+      ],
+      "alarm_preset": []
+    }
+  },
+  {
+    "id": "productJLRM",
+    "object": "8fd721",
+    "identifier": "JLRM",
+    "index": 2,
+    "groups": {
+      "motor": [
+        {
+          "action": "deviceFunctionItemHeadUp",
+          "object": "8e6981",
+          "enum_object": "8fdd81",
+          "code": 36,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemHeadDown",
+          "object": "8e6901",
+          "enum_object": "8fdd61",
+          "code": 37,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemFootUp",
+          "object": "8e6881",
+          "enum_object": "8fdd41",
+          "code": 38,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemFootDown",
+          "object": "8e6801",
+          "enum_object": "8fdd21",
+          "code": 39,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemLumberUp",
+          "object": "8e7301",
+          "enum_object": "8fdcc1",
+          "code": 63,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemLumberDown",
+          "object": "8e7281",
+          "enum_object": "8fdca1",
+          "code": 64,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMotorReset",
+          "object": "8e6501",
+          "enum_object": "8fdb61",
+          "code": 49,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemBedLight",
+          "object": "8e7201",
+          "enum_object": "8fdb81",
+          "code": 60,
+          "save_code": null
+        }
+      ],
+      "massage": [
+        {
+          "action": "deviceFunctionItemMassageHeadInstensFirstMode",
+          "object": "8e7181",
+          "enum_object": "8fda81",
+          "code": 153,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageHeadInstensSecondMode",
+          "object": "8e7101",
+          "enum_object": "8fdac1",
+          "code": 154,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageHeadInstensThirdMode",
+          "object": "8e7081",
+          "enum_object": "8fdb01",
+          "code": 155,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageFootInstensFirstMode",
+          "object": "8e7001",
+          "enum_object": "8fda61",
+          "code": 157,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageFootInstensSecondMode",
+          "object": "8e6f81",
+          "enum_object": "8fdaa1",
+          "code": 158,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageFootInstensThirdMode",
+          "object": "8e6f01",
+          "enum_object": "8fdae1",
+          "code": 159,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageModeConstant",
+          "object": "8e6e81",
+          "enum_object": "900121",
+          "code": 58,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageModePulse",
+          "object": "8e6e01",
+          "enum_object": "900101",
+          "code": 56,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageModeWave",
+          "object": "8e6d81",
+          "enum_object": "9000e1",
+          "code": 57,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageModeAllOff",
+          "object": "8e6d01",
+          "enum_object": "8fda21",
+          "code": 94,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassage10MinuteTimer",
+          "object": "8e6c81",
+          "enum_object": "9000c1",
+          "code": 95,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassage20MinuteTimer",
+          "object": "8e6c01",
+          "enum_object": "9000a1",
+          "code": 99,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassage30MinuteTimer",
+          "object": "8e6b81",
+          "enum_object": "900081",
+          "code": 97,
+          "save_code": null
+        }
+      ],
+      "preset": [
+        {
+          "action": "deviceFunctionItemZeroGravity",
+          "object": "8e6b01",
+          "enum_object": "8fdf61",
+          "code": 69,
+          "save_code": 102
+        },
+        {
+          "action": "deviceFunctionItemAntiSnoring",
+          "object": "8e6a81",
+          "enum_object": "8fdf21",
+          "code": 70,
+          "save_code": 105
+        },
+        {
+          "action": "deviceFunctionItemMemoryPosition1",
+          "object": "8e6681",
+          "enum_object": "8fde41",
+          "code": 46,
+          "save_code": 43
+        },
+        {
+          "action": "deviceFunctionItemMemoryPosition2",
+          "object": "8e6a01",
+          "enum_object": "8fde21",
+          "code": 47,
+          "save_code": 44
+        }
+      ],
+      "alarm_preset": [
+        {
+          "action": "deviceFunctionItemZeroGravity",
+          "object": "8e6b01",
+          "enum_object": "8fdf61",
+          "code": 69,
+          "save_code": 102
+        },
+        {
+          "action": "deviceFunctionItemAntiSnoring",
+          "object": "8e6a81",
+          "enum_object": "8fdf21",
+          "code": 70,
+          "save_code": 105
+        },
+        {
+          "action": "deviceFunctionItemMemoryPosition1",
+          "object": "8e6681",
+          "enum_object": "8fde41",
+          "code": 46,
+          "save_code": 43
+        },
+        {
+          "action": "deviceFunctionItemMemoryPosition2",
+          "object": "8e6a01",
+          "enum_object": "8fde21",
+          "code": 47,
+          "save_code": 44
+        }
+      ]
+    }
+  },
+  {
+    "id": "productFARM",
+    "object": "8fd751",
+    "identifier": "FARM",
+    "index": 1,
+    "groups": {
+      "motor": [
+        {
+          "action": "deviceFunctionItemHeadUp",
+          "object": "8e6981",
+          "enum_object": "8fdd81",
+          "code": 36,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemHeadDown",
+          "object": "8e6901",
+          "enum_object": "8fdd61",
+          "code": 37,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemFootUp",
+          "object": "8e6881",
+          "enum_object": "8fdd41",
+          "code": 38,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemFootDown",
+          "object": "8e6801",
+          "enum_object": "8fdd21",
+          "code": 39,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemHeadAndFootUp",
+          "object": "8e6781",
+          "enum_object": "8fdd01",
+          "code": 41,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemHeadAndFootDown",
+          "object": "8e6701",
+          "enum_object": "8fdce1",
+          "code": 42,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMotorReset",
+          "object": "8e6501",
+          "enum_object": "8fdb61",
+          "code": 49,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemBedLight",
+          "object": "8e7201",
+          "enum_object": "8fdb81",
+          "code": 60,
+          "save_code": null
+        }
+      ],
+      "massage": [
+        {
+          "action": "deviceFunctionItemMassageHeadOff",
+          "object": "8e7401",
+          "enum_object": "8fdb41",
+          "code": 152,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageFootOff",
+          "object": "8e7381",
+          "enum_object": "8fdb21",
+          "code": 156,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageHeadInstensFirstMode",
+          "object": "8e7181",
+          "enum_object": "8fda81",
+          "code": 153,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageHeadInstensSecondMode",
+          "object": "8e7101",
+          "enum_object": "8fdac1",
+          "code": 154,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageHeadInstensThirdMode",
+          "object": "8e7081",
+          "enum_object": "8fdb01",
+          "code": 155,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageFootInstensFirstMode",
+          "object": "8e7001",
+          "enum_object": "8fda61",
+          "code": 157,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageFootInstensSecondMode",
+          "object": "8e6f81",
+          "enum_object": "8fdaa1",
+          "code": 158,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageFootInstensThirdMode",
+          "object": "8e6f01",
+          "enum_object": "8fdae1",
+          "code": 159,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageModeConstant",
+          "object": "8e6e81",
+          "enum_object": "900121",
+          "code": 58,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageModePulse",
+          "object": "8e6e01",
+          "enum_object": "900101",
+          "code": 56,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageModeWave",
+          "object": "8e6d81",
+          "enum_object": "9000e1",
+          "code": 57,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassageModeAllOff",
+          "object": "8e6d01",
+          "enum_object": "8fda21",
+          "code": 94,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassage10MinuteTimer",
+          "object": "8e6c81",
+          "enum_object": "9000c1",
+          "code": 95,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassage20MinuteTimer",
+          "object": "8e6c01",
+          "enum_object": "9000a1",
+          "code": 99,
+          "save_code": null
+        },
+        {
+          "action": "deviceFunctionItemMassage30MinuteTimer",
+          "object": "8e6b81",
+          "enum_object": "900081",
+          "code": 97,
+          "save_code": null
+        }
+      ],
+      "preset": [
+        {
+          "action": "deviceFunctionItemZeroGravity",
+          "object": "8e6b01",
+          "enum_object": "8fdf61",
+          "code": 69,
+          "save_code": 102
+        },
+        {
+          "action": "deviceFunctionItemAntiSnoring",
+          "object": "8e6a81",
+          "enum_object": "8fdf21",
+          "code": 70,
+          "save_code": 105
+        },
+        {
+          "action": "deviceFunctionItemMemoryPosition1",
+          "object": "8e6681",
+          "enum_object": "8fde41",
+          "code": 46,
+          "save_code": 43
+        },
+        {
+          "action": "deviceFunctionItemMemoryPosition2",
+          "object": "8e6a01",
+          "enum_object": "8fde21",
+          "code": 47,
+          "save_code": 44
+        }
+      ],
+      "alarm_preset": [
+        {
+          "action": "deviceFunctionItemZeroGravity",
+          "object": "8e6b01",
+          "enum_object": "8fdf61",
+          "code": 69,
+          "save_code": 102
+        },
+        {
+          "action": "deviceFunctionItemAntiSnoring",
+          "object": "8e6a81",
+          "enum_object": "8fdf21",
+          "code": 70,
+          "save_code": 105
+        },
+        {
+          "action": "deviceFunctionItemMemoryPosition1",
+          "object": "8e6681",
+          "enum_object": "8fde41",
+          "code": 46,
+          "save_code": 43
+        },
+        {
+          "action": "deviceFunctionItemMemoryPosition2",
+          "object": "8e6a01",
+          "enum_object": "8fde21",
+          "code": 47,
+          "save_code": 44
+        }
+      ]
+    }
+  }
+]

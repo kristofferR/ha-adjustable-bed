@@ -64,9 +64,13 @@ def delete_alarm(number: int, *, build: codec.Record = codec.record_20_len) -> b
 
 
 def sync_time(
-    now: datetime, offset_now: datetime | None = None, *, build: codec.Record = codec.record_20_len
+    now: datetime,
+    offset_now: datetime | None = None,
+    *,
+    build: codec.Record = codec.record_20_len,
+    first_hex: bool = False,
 ) -> tuple[bytes, bytes]:
-    return codec.time_sync(now, offset_now, build=build)
+    return codec.time_sync(now, offset_now, build=build, first_hex=first_hex)
 
 
 def queries(build: codec.Record) -> dict[str, bytes]:

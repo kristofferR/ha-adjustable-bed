@@ -819,6 +819,7 @@ its APK Protocol Audit report, named here by its file stem:
 | row161 | accepted ComfortBaseForBluetooth 1.1.2 (6), `com.ore.yorkfeng.comfortbaseble2-1.1.2-2026-11-10-maxqueue001/report/` and independent audit001 |
 | row178 | アシステック 1.0.1 (6), verified direct BLE scope under the stall disposition, E07/E08. Both P1/P2 held controls and release literals are proven; the separate report/helper R1 dispatch-equivalence claim remains deferred. |
 | row173 | Richmat 4.2.0 accepted catalog gesture and literal STOP evidence |
+| row151 | Accepted Majestic Home 1.0.4 (10400), E9/E11/E12: product-declared motor directions first refresh at 100 ms, then every 100 ms; up/cancel sends the literal STOP after a submitted refresh. Only held motor controls accept renewable leases. Preset/save/light/massage taps send once without a release. No concurrent-motor, side selector or speed evidence. |
 | row126 | audit ledger `row126-hush-base` |
 | svane-guide | [svane.md](../beds/svane.md) |
 

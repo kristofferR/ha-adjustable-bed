@@ -4808,5 +4808,37 @@
   },
   "sensor:sonicsleep": {
     "card_section": "hidden"
+  },
+  "button:majestichome_light_action": {
+    "card_section": "lighting"
+  },
+  "button:majestichome_massage_action": {
+    "card_section": "massage"
+  },
+  "button:majestichome_memory_1": {
+    "card_section": "memory",
+    "card_role": "recall",
+    "card_slot": 1
+  },
+  "button:majestichome_memory_1_save": {
+    "card_section": "memory",
+    "card_role": "save",
+    "card_slot": 1
+  },
+  "button:majestichome_memory_2": {
+    "card_section": "memory",
+    "card_role": "recall",
+    "card_slot": 2
+  },
+  "button:majestichome_memory_2_save": {
+    "card_section": "memory",
+    "card_role": "save",
+    "card_slot": 2
+  },
+  "button:majestichome_preset_action": {
+    "card_section": "presets"
+  },
+  "sensor:majestichome": {
+    "card_section": "hidden"
   }
 }

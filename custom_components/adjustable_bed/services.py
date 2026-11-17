@@ -1555,9 +1555,8 @@ async def _async_timed_move(
                 )
             admission = command_admissions[(id(coordinator), side)]
             actual_resources = {
-                plans[_plan_key(target)][3]
-                for target in _command_targets(coordinator, side)
-            }
+                    plans[_plan_key(target)][3] for target in _command_targets(coordinator, side)
+                }
             if actual_resources != set(admission.resources):
                 raise ServiceValidationError(
                     "The selected motor resource changed during timed-move preflight"
@@ -2402,6 +2401,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.limoss.remote_services import async_register_limoss_remote_services
     from .beds.linak.services import async_register_linak_services
     from .beds.logicdata.app_services import async_register_logicdata_app_services
+    from .beds.majestichome.services import async_register_majestichome_services
     from .beds.malouf.app_services import async_register_malouf_app_services
     from .beds.mline.services import register_services as register_mline_services
     from .beds.motion_bed.services import async_register_motion_bed_services
@@ -2459,6 +2459,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_linak_services,
         async_register_solace_services,
         async_register_sonicsleep_services,
+        async_register_majestichome_services,
         async_register_leggett_okin_services,
         async_register_floyd_services,
         async_register_rize_services,

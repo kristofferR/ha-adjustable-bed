@@ -236,8 +236,6 @@ def require_logicdata_route(client: BleakClient, data: Mapping[str, Any]) -> Non
     _require_write_endpoint(client, frozenset({LOGICDATA_CHAR_UUID.lower()}), BED_TYPE_LOGICDATA)
 
 
-
-
 @dataclass(frozen=True, slots=True)
 class _ControllerSpec:
     """A controller class built from the coordinator and fixed constructor kwargs.
@@ -381,6 +379,7 @@ _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     BED_TYPE_GALAXY: _BuilderSpec("galaxy.controller"),
     BED_TYPE_GOODVIBE: _BuilderSpec("goodvibe.controller"),
     BED_TYPE_MLILY: _BuilderSpec("mlily"),
+    "majestichome": _BuilderSpec("majestichome.controller"),
     BED_TYPE_HJBED: _BuilderSpec("hjbed.controller"),
     BED_TYPE_BEDTECH: _BuilderSpec("bedtech.controller"),
     BED_TYPE_RICHMAT_APP: _BuilderSpec("richmat_app.controller"),
@@ -553,4 +552,3 @@ async def _detect_leggett_platt_variant(client: BleakClient | None) -> str:
         return LEGGETT_VARIANT_MLRM
     _LOGGER.debug("Auto-detected Gen2 Leggett & Platt variant (no WiLinke UUID found)")
     return LEGGETT_VARIANT_GEN2
-

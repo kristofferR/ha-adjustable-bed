@@ -3348,7 +3348,14 @@
       },
       "sonicsleep_action": {
         "name": "{action}"
-      }
+      },
+      "majestichome_preset_action": {"name": "{action}"},
+      "majestichome_massage_action": {"name": "{action}"},
+      "majestichome_light_action": {"name": "{action}"},
+      "majestichome_memory_1": {"name": "{action}"},
+      "majestichome_memory_1_save": {"name": "{action}"},
+      "majestichome_memory_2": {"name": "{action}"},
+      "majestichome_memory_2_save": {"name": "{action}"}
     },
     "cover": {
       "tv_lift": {
@@ -5238,6 +5245,9 @@
       },
       "sonicsleep": {
         "name": "SonicSleep state"
+      },
+      "majestichome": {
+        "name": "Majestic Home state"
       }
     },
     "light": {
@@ -9930,6 +9940,21 @@
         }
       }
     },
+    "majestichome": {
+      "name": "Majestic Home alarms",
+      "description": "Read, create, edit, enable, disable or delete bed alarms, or synchronize the clock.",
+      "fields": {
+        "device_id": {"name": "Device"},
+        "side": {"name": "Side"},
+        "operation": {"name": "Action"},
+        "alarm_id": {"name": "Alarm ID", "description": "Required for new, set, toggle and delete. Choose an explicit ID from 1 through 7 for new alarms, or a received ID for an existing alarm. Partial replies cannot identify a free slot."},
+        "hour": {"name": "Hour"},
+        "minute": {"name": "Minute"},
+        "preset": {"name": "Preset"},
+        "weekdays": {"name": "Weekdays"},
+        "enabled": {"name": "Enabled"}
+      }
+    },
     "sonicsleep": {
       "name": "SonicSleep bed settings",
       "description": "Read alarms, create or edit a form alarm, preserve a received alarm while toggling it, delete an alarm, query the bed link name or sync its clock.",
@@ -10753,6 +10778,7 @@
     },
     "richmat_family_choice": {
       "options": {
+        "majestichome": "Majestic Home app",
         "rmcontrol": "RMControl app: the exact product and side the app uses",
         "revive": "Revive Control app",
         "best_mattress": "Best Mattress app",

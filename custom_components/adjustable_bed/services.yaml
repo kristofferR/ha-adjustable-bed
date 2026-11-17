@@ -4548,3 +4548,62 @@ sonicsleep:
       default: true
       selector:
         boolean: null
+
+majestichome:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+    operation:
+      required: true
+      selector:
+        select:
+          options: [list, new, set, toggle, delete, sync_clock]
+    alarm_id:
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
+    hour:
+      default: 7
+      selector:
+        number:
+          min: 0
+          max: 23
+          mode: box
+    minute:
+      default: 30
+      selector:
+        number:
+          min: 0
+          max: 59
+          mode: box
+    preset:
+      default: memory_1
+      selector:
+        select:
+          options: [zero_gravity, anti_snore, memory_1, memory_2]
+    weekdays:
+      selector:
+        select:
+          multiple: true
+          options:
+            - {value: "0", label: Monday}
+            - {value: "1", label: Tuesday}
+            - {value: "2", label: Wednesday}
+            - {value: "3", label: Thursday}
+            - {value: "4", label: Friday}
+            - {value: "5", label: Saturday}
+            - {value: "6", label: Sunday}
+    enabled:
+      default: true
+      selector:
+        boolean:

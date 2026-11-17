@@ -1417,7 +1417,7 @@ RICHMAT_FAMILY: Final = AppFamily(
     row=BED_TYPE_RICHMAT,
     name="Richmat",
     apps=(
-        "RMControl, MLILY Control, Revive Control, Best Mattress, Blvd Home, HARMONY, Idealbed, "
+        "RMControl, MLILY Control, Majestic Home, Revive Control, Best Mattress, Blvd Home, HARMONY, Idealbed, "
         "RUF | Betten (Motor 2), W.Silver Products, AMERICANSTAR, Bailey's Bed Control, TX, "
         "Avocado Eco Base, CoasterSleep, Forty Winks, Milemont, Superior, Luuna Rise, Power Cool Sleep System, "
         "Lady Americana, ACAA, STA Homecare, Zero Gravity, SleepFunction and "
@@ -1429,6 +1429,7 @@ RICHMAT_FAMILY: Final = AppFamily(
         "luuna": Answer("luuna", data=_NO_RMCONTROL),
         "sonicsleep": Answer("sonicsleep", data=_NO_RMCONTROL),
         "mlily": Answer(BED_TYPE_MLILY, data=_NO_RMCONTROL),
+        "majestichome": Answer("majestichome", data=_NO_RMCONTROL),
         **{app: Answer(bed_type, data=_NO_RMCONTROL) for bed_type, app in RICHMAT_MH_APPS.items()},
         # The classic apps keep their own declared questions.
         **{
@@ -1437,7 +1438,7 @@ RICHMAT_FAMILY: Final = AppFamily(
         },
         "remote": Answer(BED_TYPE_RICHMAT, data={CONF_RMCONTROL_PRODUCT: ""}),
     },
-    routes=RICHMAT_MH_BED_TYPES | {"luuna", "sonicsleep", BED_TYPE_MLILY},
+    routes=RICHMAT_MH_BED_TYPES | {"luuna", "sonicsleep", "majestichome", BED_TYPE_MLILY},
     routes_show_row=False,
     offers_keep=keep_never,
     offer=_richmat_answers,

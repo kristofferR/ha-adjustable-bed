@@ -36,6 +36,30 @@ function hassWith(entries: EntityRegistryDisplayEntry[]): HomeAssistant {
   });
 }
 
+test("Majestic Home groups literal actions and retains the native child's motor lease", () => {
+  const hass = hassWith([
+    entry("cover.majestic_head", "head", "left"),
+    entry("button.majestic_flat", "majestichome_preset_action", "left"),
+    entry("button.majestic_light", "majestichome_light_action", "left"),
+    entry("button.majestic_massage", "majestichome_massage_action", "left"),
+    entry("button.majestic_memory", "majestichome_memory_1", "left"),
+    entry("button.majestic_save", "majestichome_memory_1_save", "left"),
+    entry("sensor.majestic", "majestichome", "left"),
+    entry("button.other_light", "majestichome_light_action", "right"),
+  ]);
+  hass.states["cover.majestic_head"] = {
+    entity_id: "cover.majestic_head", state: "unknown", last_changed: "", last_updated: "",
+    attributes: { hold_lease_mode: "latched", hold_lease_motor: "back" },
+  };
+  const bed = bedEntitiesForDevice(hass, "left");
+  expect(bed.motors[0].holdLease).toEqual({ deviceId: "left", motor: "back" });
+  expect(bed.presets).toEqual(["button.majestic_flat"]);
+  expect(bed.lights.buttons).toEqual(["button.majestic_light"]);
+  expect(bed.massage.buttons).toEqual(["button.majestic_massage"]);
+  expect(bed.memory).toEqual([{ slot: 1, goto: "button.majestic_memory", save: "button.majestic_save" }]);
+  expect(bed.utilityStates).toEqual([]);
+});
+
 test("OKIN Motion Bed keeps neutral middle holds and raw light actions reachable", () => {
   const hass = hassWith([
     entry("cover.middle", "motionbed_middle"),
