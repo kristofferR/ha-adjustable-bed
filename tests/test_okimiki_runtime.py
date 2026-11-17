@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -129,7 +130,13 @@ async def test_registered_runtime_entities_alarm_light_and_timed_callers(hass, r
     assert written(client)[0] == "6e01002493" and written(client)[-1] == "6e01006edd"
 
 
-async def test_registered_stop_during_lazy_import_fences_first_write(hass, runtime, virtual):
+@pytest.mark.parametrize(
+    ("operation", "fields"),
+    (("press", {"control": "head_up", "duration_ms": 250}), ("light_off", {})),
+)
+async def test_registered_stop_during_lazy_import_fences_first_write(
+    hass, runtime, virtual, operation, fields
+):
     target, client, _ = runtime
     assert await target.async_connect()
     original = app_services.async_import_modules
@@ -140,16 +147,21 @@ async def test_registered_stop_during_lazy_import_fences_first_write(hass, runti
 
     client.write_gatt_char.reset_mock()
     with patch.object(app_services, "async_import_modules", importing):
-        await invoke(hass, "press", control="head_up", duration_ms=250)
+        await invoke(hass, operation, **fields)
     assert written(client) == ["6e01006edd"]  # The explicit STOP itself is allowed.
 
 
-async def test_all_target_preflight_rejects_before_first_settings_write(hass, runtime, virtual):
+@pytest.mark.parametrize("operation", ("light_off", "sync"))
+async def test_all_target_preflight_rejects_before_first_settings_write(
+    hass, runtime, virtual, operation
+):
     from tests.test_generic_services import target as fake_target
 
     target, client, resolve = runtime
     assert await target.async_connect()
     notify(target, "6e0e00037f")
+    if operation == "sync":
+        await target.async_disconnect("idle_timeout")
     other, ctrl = fake_target(family=bed.OkimikiController)
     ctrl.product_key = "IPRM"
     ctrl._address = "AA:BB:CC:DD:EE:70"
@@ -161,7 +173,74 @@ async def test_all_target_preflight_rejects_before_first_settings_write(hass, ru
     resolve.return_value = ([(target, "both"), (other, "both")], [])
     client.write_gatt_char.reset_mock()
     with pytest.raises(ServiceValidationError):
-        await invoke(hass, "light_off")
+        await invoke(hass, operation)
+    assert not written(client)
+
+
+@pytest.mark.parametrize("deferred_reply", (False, True))
+@pytest.mark.parametrize(
+    ("operation", "fields", "expected"),
+    (
+        ("light_off", {}, "6e010075e4"),
+        ("light_color", {"rgb_color": [1, 2, 3]}, "6e0cff017a6e0d020380"),
+        ("light_duration", {"seconds": 300}, "6e0b012ca6"),
+        ("alarms", {}, "6e0820050100009c"),
+        (
+            "repeat",
+            {"alarm_id": 1, "datetime": "2026-11-18T07:30:00+00:00", "mode": "lounge"},
+            bed.p.Alarm(1, 0, 7, 30, 0x59, 1).frame().hex(),
+        ),
+    ),
+)
+async def test_settings_service_reconnects_before_session_validation(
+    hass, runtime, virtual, operation, fields, expected, deferred_reply
+):
+    target, client, _ = runtime
+    await hass.config.async_set_time_zone("UTC")
+    assert await target.async_connect()
+    notify(target, "6e0e00037f")
+    notify(target, "6e09010078")
+    await target.async_disconnect("idle_timeout")
+    assert not target.capability_controller.menu_available("light")
+    assert not target.capability_controller.menu_available("alarm")
+    client.write_gatt_char.reset_mock()
+
+    async def reply(*args, **kwargs):
+        # Replies belong to the new subscription, never the retained controller.
+        callback = client.start_notify.call_args.args[1]
+
+        async def deliver():
+            if deferred_reply:
+                await asyncio.sleep(0.01)
+            callback(None, bytearray.fromhex("6e0e00037f"))
+            callback(None, bytearray.fromhex("6e09010078"))
+
+        if deferred_reply:
+            if args[1] == bed.codec.function(1, action="deviceFunctionItemCheckLight"):
+                # The final startup write completes before either reply arrives.
+                asyncio.create_task(deliver())
+        else:
+            await deliver()
+
+    client.write_gatt_char.side_effect = reply
+    await invoke(hass, operation, **fields)
+    assert target.is_connected
+    assert written(client)[-1] == expected
+
+
+async def test_skipped_target_validation_prevents_all_settings_writes(hass, runtime, virtual):
+    from tests.test_generic_services import target as fake_target
+
+    target, client, resolve = runtime
+    assert await target.async_connect()
+    notify(target, "6e0e00037f")
+    other, _ = fake_target(family=bed.OkimikiController)
+    other.address = "AA:BB:CC:DD:EE:70"
+    # A scheduler can return without calling the operation after STOP admission.
+    other.async_execute_controller_command = AsyncMock()
+    resolve.return_value = ([(target, "both"), (other, "both")], [])
+    client.write_gatt_char.reset_mock()
+    await invoke(hass, "light_off")
     assert not written(client)
 
 
@@ -335,8 +414,19 @@ async def test_discovered_light_registry_survives_idle_and_profile_changes(
             platform.async_unsub_polling()
 
 
+@pytest.mark.parametrize(
+    ("connection_mode", "operation", "target_side"),
+    (
+        ("concurrent", "press", "right"),
+        ("sequential", "press", "right"),
+        ("concurrent", "light_off", "right"),
+        ("sequential", "light_off", "right"),
+        ("sequential", "light_off", "both"),
+        ("sequential", "enable", "right"),
+    ),
+)
 async def test_native_paired_child_target_keeps_physical_bed_and_side_owned_product(
-    hass, runtime, virtual
+    hass, runtime, virtual, connection_mode, operation, target_side
 ):
     from custom_components.adjustable_bed import (
         _async_ensure_paired_device_registry,
@@ -363,7 +453,9 @@ async def test_native_paired_child_target_keeps_physical_bed_and_side_owned_prod
     entry = MockConfigEntry(domain=const.DOMAIN, title="Okimiki pair", data=with_profile_ids(data))
     entry.add_to_hass(hass)
     entry.mock_state(hass, ConfigEntryState.LOADED)
-    pair = PairedBedCoordinator(hass, entry, _build_paired_children(hass, entry))
+    pair = PairedBedCoordinator(
+        hass, entry, _build_paired_children(hass, entry), connection_mode=connection_mode
+    )
     hass.data[const.DOMAIN][entry.entry_id] = pair
     for child in pair.children.values():
         await child.async_prime_offline_controller()
@@ -380,20 +472,42 @@ async def test_native_paired_child_target_keeps_physical_bed_and_side_owned_prod
     assert pair.children["left"].capability_controller.product_key == "IPRM"
     assert pair.children["right"].capability_controller.product_key == "KWRN"
     left = pair.children["left"]
-    left.async_connect = AsyncMock(side_effect=AssertionError("Left must stay disconnected"))
+    if target_side == "right":
+        left.async_connect = AsyncMock(side_effect=AssertionError("Left must stay disconnected"))
+    if operation != "press":
+        async def reply(*args, **kwargs):
+            callback = client.start_notify.call_args.args[1]
+            callback(None, bytearray.fromhex("6e0e00037f"))
+            callback(None, bytearray.fromhex("6e09010078"))
+            if operation == "enable":
+                callback(None, bytearray.fromhex("6e200d0501020100071e5989ab"))
+
+        client.write_gatt_char.side_effect = reply
     # Use real registry targeting, rather than patching a child's side into a test call.
     resolve.side_effect = None
     resolve.side_effect = REAL_RESOLVE
     try:
+        fields = (
+            {"control": "head_up", "duration_ms": 250}
+            if operation == "press"
+            else {"alarm_id": 1, "enabled": False} if operation == "enable" else {}
+        )
         await hass.services.async_call(
             const.DOMAIN,
             "okimiki",
-            {"device_id": right.id, "operation": "press", "control": "head_up", "duration_ms": 250},
+            {"device_id": right.id if target_side == "right" else parent.id,
+             "operation": operation, **fields},
             blocking=True,
         )
-        left.async_connect.assert_not_awaited()
-        assert "6e01002493" in written(client)
-        assert written(client)[-1] == "6e01006edd"
+        if target_side == "right":
+            left.async_connect.assert_not_awaited()
+        if operation == "press":
+            assert "6e01002493" in written(client)
+            assert written(client)[-1] == "6e01006edd"
+        elif operation == "light_off":
+            assert written(client).count("6e010075e4") == (2 if target_side == "both" else 1)
+        else:
+            assert written(client)[-1] == "6e0d200501010100071e5988a9"
         assert all(packet[4:6] == "00" for packet in written(client) if packet.startswith("6e01"))
         with pytest.raises(ServiceValidationError):
             await hass.services.async_call(

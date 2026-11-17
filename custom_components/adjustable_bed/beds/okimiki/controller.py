@@ -345,6 +345,8 @@ class OkimikiController(GoodVibeController):
                 if any(row.id == value.id for row in self._alarms):
                     self._stale_alarm_ids.discard(value.id)
                 self._alarms = [value if row.id == value.id else row for row in self._alarms]
+        if name in ("light", "alarm"):
+            self._menus_changed.set()
         # Add/cancel ACKs are uncorrelated observations, never confirmed schedule state.
         self._publish()
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import TYPE_CHECKING
@@ -21,9 +22,11 @@ from ...services import (
     SIDE_FIELD,
     _call_targets,
     _capture_command_admission,
+    _command_targets,
     _execute_preflighted,
     _family_command,
     _preflight_capability,
+    _release_preflighted,
 )
 from . import protocol as p
 
@@ -45,6 +48,8 @@ OPERATIONS = (
     "sync",
 )
 MODES = ("lounge", "zero_gravity", "memory_1", "memory_2")
+# Service response budget, independent of the bed's query/write timing.
+CAPABILITY_REPLY_TIMEOUT_S = 3.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -234,12 +239,69 @@ async def handle_okimiki(call: ServiceCall) -> None:
             controller._link,
         )
 
-    prepared = await _preflight_capability(targets, OkimikiController, "Okimiki", validate=validate)
+    live_validation = not movement and request.operation != "sync"
+
+    async def wait_for_capability(controller: OkimikiController) -> None:
+        menu = "light" if request.operation.startswith("light_") else "alarm"
+        if menu == "alarm" and controller.model.alarm == "none":
+            return
+        link = controller._link
+        try:
+            async with asyncio.timeout(CAPABILITY_REPLY_TIMEOUT_S):
+                while not controller.menu_available(menu):
+                    if controller._link is not link or link is None:
+                        raise ValueError("The Okimiki session changed while waiting for support")
+                    controller._menus_changed.clear()
+                    await controller._menus_changed.wait()
+        except TimeoutError:
+            pass  # Validation still rejects an unreported capability.
+
+    physical_targets = [
+        (parent, child)
+        for parent, side in targets
+        for child in _command_targets(parent, side)
+    ]
+    prepared = await _preflight_capability(
+        targets, OkimikiController, "Okimiki", validate=None if live_validation else validate
+    )
+    if live_validation and len(physical_targets) > 1:
+        # Session menus and alarm records cannot be validated on an offline controller.
+        # Connect through the normal scheduler/pair lane, but finish EVERY plan
+        # before sending any requested settings writes.
+        prepared.extend(physical_targets)
+
+        async def prepare(controller: OkimikiController) -> None:
+            await wait_for_capability(controller)
+            validate(controller)
+
+        await _execute_preflighted(
+            targets,
+            prepared,
+            _family_command(OkimikiController, "Okimiki", prepare),
+            skip_disconnect=True,
+            resource=resource,
+            admissions=admissions,
+        )
+        if {address for address, _ in plans} != {
+            child.address.upper() for _, child in physical_targets
+        }:
+            await _release_preflighted(prepared)
+            return  # STOP interrupted at least one target's validation.
 
     async def execute(controller: OkimikiController) -> None:
+        if live_validation:
+            await wait_for_capability(controller)
+        if live_validation and len(physical_targets) == 1:
+            validate(controller)
         plan = plans.get((controller._address.upper(), controller.product_key))
-        if plan is None or plan[1] is not None and controller._link is not plan[1]:
+        if plan is None or (
+            plan[1] is not None
+            and controller._link is not plan[1]
+            and (not live_validation or plan[0].record is not None)
+        ):
             raise ValueError("The physical Okimiki controller changed after validation")
+        # Caller-only settings can cross a sequential pair's link switch;
+        # execute_request rechecks the new session's menus and alarm slots.
         await controller.execute_request(plan[0])
 
     await _execute_preflighted(
