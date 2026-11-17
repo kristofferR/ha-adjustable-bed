@@ -107,6 +107,7 @@ from .const import (
     BED_TYPE_NECTAR,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_64BIT,
     # Protocol-based bed types (new)
@@ -308,6 +309,8 @@ from .discovery_hints import (
 from .profiles.bedgear import eligible as bedgear_eligible
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.motomotion import eligible as motomotion_eligible
+from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
+from .profiles.okimiki import scan_matches as okimiki_scan_matches
 from .profiles.smart_sleep import advertisement as smart_sleep_advertisement
 from .profiles.vmatbasic import manufacturer_payload_matches
 
@@ -628,6 +631,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_GALAXY: "Galaxy Bed Control app (choose product and remote)",
     BED_TYPE_GOODVIBE: "Good Vibe Sleep app (choose product or sleep sensor)",
     BED_TYPE_MLILY: "MLILY Control app (choose product or sleep sensor)",
+    BED_TYPE_OKIMIKI: "Okimiki app (choose product)",
     BED_TYPE_RICHMAT_CLASSIC_APPS: "Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior",
     BED_TYPE_MOTOMOTION: "MotoMotion app (exact Bluetooth name)",
     BED_TYPE_HJBED: "HJBed app (choose the exact product)",
@@ -736,6 +740,7 @@ APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
        for app, label in (("wsilver2", "W.Silver Products"), ("americanstar", "AMERICANSTAR"),
                           ("bailey2", "Bailey's Bed Control"), ("tx", "TX"))},
     **{(BED_TYPE_MLILY, profile): f"MLILY Control ({label})" for profile, label in MLILY_PROFILES.items()},
+    **{(BED_TYPE_OKIMIKI, profile): f"Okimiki ({label})" for profile, label in OKIMIKI_PROFILES.items()},
     **{(BED_TYPE_GALAXY, profile): f"Galaxy Bed Control ({label})" for profile, label in GALAXY_PROFILES.items()},
     **{(BED_TYPE_GOODVIBE, profile): f"Good Vibe Sleep ({label})" for profile, label in GOODVIBE_PROFILES.items()},
     **{(BED_TYPE_ESHINE_OKIN, profile): f"eShine app ({label})" for profile, label in ESHINE_OKIN_PROFILES.items()},
@@ -847,6 +852,7 @@ _HIDDEN_APP_ROWS: Final = frozenset(
         *((BED_TYPE_GALAXY, product) for product in GALAXY_PROFILES),
         *((BED_TYPE_GOODVIBE, product) for product in GOODVIBE_PROFILES),
         *((BED_TYPE_MLILY, product) for product in MLILY_PROFILES),
+        *((BED_TYPE_OKIMIKI, product) for product in OKIMIKI_PROFILES),
         *((BED_TYPE_HJBED, product) for product in HJBED_PROFILES),
         *((BED_TYPE_RICHMAT_APP, product) for product in RICHMAT_APP_PRODUCTS),
         *((BED_TYPE_RICHMAT_APP_SLEEP, product) for product in RICHMAT_SLEEP_CHOICES),
@@ -856,7 +862,7 @@ _HIDDEN_APP_ROWS: Final = frozenset(
 HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_APP_ROWS)
 # Bed types whose one row asks for the product, although each product is an app entry.
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
-    {BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE}
+    {BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE}
 )
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
@@ -1403,6 +1409,15 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             result = DetectionResult(BED_TYPE_MLILY, 0.3, ["name:mlily_app_candidate", *result.signals])
         elif result.bed_type != BED_TYPE_MLILY:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_MLILY]))
+
+    if okimiki_scan_matches(service_info.name) and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ):
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_OKIMIKI, 0.3, ["name:okimiki_app_candidate"])
+        elif result.bed_type != BED_TYPE_OKIMIKI:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_OKIMIKI]))
+            result.signals.append("name:okimiki_app_candidate")
 
     from .profiles.symphony import scan_matches as symphony_scan_matches
 

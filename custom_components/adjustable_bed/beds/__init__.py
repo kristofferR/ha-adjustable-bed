@@ -78,6 +78,7 @@ if TYPE_CHECKING:
     from .motosleep import MotoSleepController as MotoSleepController
     from .n32_motion_bed.controller import N32MotionBedController as N32MotionBedController
     from .octo.controller import OctoController as OctoController
+    from .okimiki.controller import OkimikiController as OkimikiController
     from .okin_7byte import Okin7ByteController as Okin7ByteController
     from .okin_cb24 import OkinCB24Controller as OkinCB24Controller
     from .okin_cb35 import OkinCB35Controller as OkinCB35Controller
@@ -224,6 +225,7 @@ _EXPORT_MODULES = {
     "BedgearController": "bedgear.controller",
     "MotoSleepController": "motosleep",
     "OctoController": "octo.controller",
+    "OkimikiController": "okimiki.controller",
     "Okin7ByteController": "okin_7byte",
     "OkinCB24Controller": "okin_cb24",
     "OkinCB35Controller": "okin_cb35",
@@ -318,6 +320,7 @@ __all__ = [
     "BedgearController",
     "MotoSleepController",
     "OctoController",
+    "OkimikiController",
     "RemacroController",
     "ReverieController",
     "ReverieNightstandController",

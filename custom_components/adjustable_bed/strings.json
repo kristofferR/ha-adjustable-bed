@@ -3348,6 +3348,9 @@
       },
       "sonicsleep_action": {
         "name": "{action}"
+      },
+      "okimiki_action": {
+        "name": "{action}"
       }
     },
     "cover": {
@@ -5238,6 +5241,9 @@
       },
       "sonicsleep": {
         "name": "SonicSleep state"
+      },
+      "okimiki_status": {
+        "name": "Okimiki status"
       }
     },
     "light": {
@@ -5876,6 +5882,9 @@
       },
       "richmat_resource_massage_timer": {
         "name": "Massage timer request"
+      },
+      "okimiki_light_seconds": {
+        "name": "Light duration request"
       }
     },
     "select": {
@@ -9964,6 +9973,51 @@
           "name": "Enabled"
         }
       }
+    },
+    "okimiki": {
+      "name": "Okimiki",
+      "description": "Control the selected Okimiki product and its reported lights or alarms.",
+      "fields": {
+        "device_id": {
+          "name": "Bed",
+          "description": "One or more beds, including paired side devices."
+        },
+        "side": {
+          "name": "Side"
+        },
+        "operation": {
+          "name": "Action"
+        },
+        "control": {
+          "name": "Control"
+        },
+        "duration_ms": {
+          "name": "Press duration"
+        },
+        "datetime": {
+          "name": "Alarm date and time"
+        },
+        "alarm_id": {
+          "name": "Observed alarm ID"
+        },
+        "mode": {
+          "name": "Alarm preset"
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "Monday 0 to Sunday 6; empty means once."
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "seconds": {
+          "name": "Light duration",
+          "description": "Zero keeps the light on."
+        },
+        "rgb_color": {
+          "name": "RGB color"
+        }
+      }
     }
   },
   "exceptions": {
@@ -10773,7 +10827,8 @@
         "another": "Another app or remote: search every app",
         "luuna": "Luuna + app (Rise, Rise Pro, Rise Pro Light)",
         "richmat_420": "Richmat 4.2.0 app",
-        "sonicsleep": "SonicSleep / 소닉슬립 (IQRM)"
+        "sonicsleep": "SonicSleep / 소닉슬립 (IQRM)",
+        "okimiki": "Okimiki app"
       }
     },
     "setup_start": {

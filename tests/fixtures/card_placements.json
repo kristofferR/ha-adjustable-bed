@@ -4808,5 +4808,14 @@
   },
   "sensor:sonicsleep": {
     "card_section": "hidden"
+  },
+  "button:okimiki_action": {
+    "card_section": "presets"
+  },
+  "number:okimiki_light_seconds": {
+    "card_section": "lighting"
+  },
+  "sensor:okimiki_status": {
+    "card_section": "utility"
   }
 }

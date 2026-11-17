@@ -1092,3 +1092,12 @@ it does not write a hardware lock. Protocol, layout and local settings belong
 to each physical side of a two-address pair. See [M Line](beds/mline.md).
 
 SonicSleep selects its fixed one/IQRM product under Richmat. Setup owns the two-motor layout, disabled angle sensing and observed-only massage/light surface. Each physical side keeps its app settings. See [SonicSleep](beds/richmat.md#sonicsleep).
+
+#### Okimiki product
+
+Choose the exact HCRN, IPRM, IQRM or KWRN product shown by the Okimiki app.
+The product owns the two-axis layout, preset/memory availability and alarm
+route. Configure keeps this selection; a two-address pair stores each side's
+product separately. Shared Bluetooth names do not select a product. Lighting
+and alarms require the current connection's capability reply. See
+[Okimiki](beds/richmat.md#okimiki) for controls and qualification status.

@@ -80,6 +80,7 @@ from .const import (
     BED_TYPE_N32_MOTION_BED,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
@@ -246,6 +247,7 @@ from .profiles import malouf as malouf_profiles
 from .profiles.comfort_enhancement3 import CHOICES_WITH_CODE, REMOTE_CODE, REMOTES
 from .profiles.comfort_enhancement3 import resolve as resolve_apex
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
+from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.richmat import BEDTECH_APP_PROFILES, BEDTECH_VARIANTS
 
 if TYPE_CHECKING:
@@ -303,6 +305,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_GALAXY: GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_GOODVIBE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_MLILY: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
+    BED_TYPE_OKIMIKI: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_HJBED: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_JALON: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_RICHMAT_APP: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
@@ -2452,6 +2455,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         BED_TYPE_MLILY,
         questions=(Question(CONF_PROTOCOL_VARIANT, MLILY_PROFILES, searchable=True),),
         seed=_mlily_seed,
+    ),
+    BED_TYPE_OKIMIKI: _asking(
+        BED_TYPE_OKIMIKI,
+        owns={**_BASE[BED_TYPE_OKIMIKI].owns, CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False, CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PROTOCOL_VARIANT, OKIMIKI_PROFILES),),
     ),
     BED_TYPE_GALAXY: _asking(
         BED_TYPE_GALAXY,

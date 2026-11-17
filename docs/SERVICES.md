@@ -1128,3 +1128,21 @@ all received raw fields except enabled. Clock capability and current alarm cache
 are required before writes. Missing/changed cache rejects the action. A silent
 empty-list query cannot safely allocate a new alarm. All target constraints pass
 before any target's setting changes. See the [SonicSleep reference](beds/richmat.md#sonicsleep).
+
+### Okimiki
+
+Use `adjustable_bed.okimiki` with `device_id` (one or several physical beds or
+native paired-side devices) and `operation`. The selected product controls
+which operations are available. `press` takes `control` and `duration_ms`;
+`save` waits for the preset's three-second threshold. Standard covers, memory
+buttons and renewable `hold_control` also use the same product-owned session.
+
+Lighting operations are `light_color` (`rgb_color`), `light_duration` (`seconds`,
+0 to 900, zero always on), and `light_off`, after a light capability reply.
+IQRM offers `single` (`datetime`, lounge) and `cancel_single`. KWRN offers
+`alarms`, `repeat` (`datetime`, `mode`, optional `weekdays` and `enabled`),
+`enable` and `delete`. Query the current list before editing with `alarm_id`;
+an edit preserves omitted received fields and the reserved byte. Weekdays are
+Monday 0 to Sunday 6; an empty list means once. `sync` sends the product's clock
+frames. Alarm operations require the current session's clock capability reply.
+These are direct bed requests, not confirmed firmware schedules.

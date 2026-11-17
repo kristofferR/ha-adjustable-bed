@@ -198,6 +198,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `galaxy` | S stream | U | U | galaxy | sustained catalog gestures first tick after 100 ms, refresh until released, then side STOP; memory-latch gestures use one long operand; no concurrent axes or motor-speed proof |
 | `goodvibe` | S stream | U | U | goodvibe | sustained controls refresh every 100 ms, then release `6e`; hold declared per control, on the held controls whose effective gesture is a sustained press (see [per-control scope](#per-control-hold-scope)). Each frame carries one operand and the only release is the side's STOP; all-motor moves are fixed operands; speed rows are massage and music shake |
 | `mlily` | S stream | U | U | mlily159 | Sustained controls only, after a 100 ms tick and at 100 ms intervals; submitted ticks release with STOP. Memory, force-long and 3 s gestures retain the exact selected product rules. |
+| `okimiki` | S stream | U | U | okimiki169 | Six motor controls refresh after 100 ms; captured-session STOP after a submitted tick. Flat release and finite 3 s saves remain distinct. |
 | `sleepys_elite_app` | S stream | U | U | sleepy | selector STOP once at release; hold declared |
 | `motosleep` | S stream | B | B | motosleep, powerbob, motosleep-guide | movement repeats every 100 ms while held; release sends `$b` five times (MotoSleep HHC and the Power Bob profiles whose release has it) or the MOTO release frame (zero five times, or `0x9088/0x0001` six times on WR219); other Power Bob profiles stop when the refresh ends. #516 and #591: the guide covers only the commands the integration sends, and the frozen reports that would show composition and the full command inventory are not retained. MotoMotion is another app, with its own row |
 | `motomotion` | S stream | B | B | motomotion, row113 | held motor keys refresh every 100 ms, first write after 100 ms, then send STOP three times 50 ms after release; memory recall refreshes the same way but stops only on `SOFA` names with index 12 `E`, and the shared Home control ends by stopping its refresh with no release frame. Not declared: the controls need a per-control scope (see [per-control scope](#per-control-hold-scope)) and their own review. #516 and #591 not assessed yet |
@@ -655,6 +656,7 @@ Report workspaces are machine-local under
 | smart-comfort-synargy | `com.synargy.okin` | 1.1.0 (12) | COMPLETE, accepted | `com.synargy.okin-1.1.0-2026-11-09-queue002/` |
 | smart-comfort-synergy | `com.synergy.okin` | 2.2.0 (16) | COMPLETE, accepted | `com.synergy.okin-2.2.0-2026-11-09-queue002/` |
 | mlily159 | `com.richmat.mlily2` | 5.0.2 (50200) | COMPLETE, independent audit ACCEPT | `com.richmat.mlily2-5.0.2-2026-11-10-reconciliation002/report/` |
+| okimiki169 | `com.richmat.okimiki` | 1.0.1 (10101) | COMPLETE, independent audit ACCEPT | `com.richmat.okimiki-1.0.1-2026-11-17-queue001/report/` |
 | abm5_4 | `com.starcode.abm5_4` | 1.0.1 | COMPLETE | `com.starcode.abm5_4-1.0.1-2026-09-30-extra-four-004-005/report/` |
 | abm5_5 | `com.starcode.abm5_5` | 1.2.3 | COMPLETE | `com.starcode.abm5_5-1.2.3-2026-09-30-extra-four-005-005/report/` |
 | adjlite | `com.keeson.adjustablelite` | 1.0.2 | COMPLETE | `com.keeson.adjustablelite-1.0.2-2026-10-01-queue-e0bb6807-20261001-051-003/report/` |
@@ -836,3 +838,10 @@ commands every 300 ms until release. P1 releases after 100 ms; P2 motor
 release is immediate and differs from global STOP. Preset gestures retain
 their format-specific behavior. No concurrent motor, side addressing or motor
 speed selection is proven. See [Smart Sleep](../beds/smart-sleep.md).
+
+Okimiki row169 (`okimiki169`): the accepted `com.richmat.okimiki` 1.0.1
+(10101) report, frozen 2026-07-14, independently accepted, proves six sustained
+head/foot/combined controls at 100 ms and STOP after a submitted tick. Flat
+sends STOP on release. Recall/save gestures are finite, with a separate save
+at three seconds, and cannot use renewable leases. Side bytes 1/2 are builder
+cases only; these products offer side 0. Hardware remains UNVERIFIED.

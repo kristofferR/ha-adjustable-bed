@@ -4548,3 +4548,65 @@ sonicsleep:
       default: true
       selector:
         boolean: null
+
+okimiki:
+  name: Okimiki
+  description: Control an Okimiki product and its reported lights or alarms.
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [left, right, both]
+    operation:
+      required: true
+      selector:
+        select:
+          options: [press, save, light_color, light_duration, light_off, single, cancel_single, alarms, repeat, enable, delete, sync]
+    control:
+      selector:
+        select:
+          options: [head_up, head_down, foot_up, foot_down, head_foot_up, head_foot_down, flat, memory_1, memory_2, lounge, zero_gravity]
+    duration_ms:
+      default: 1000
+      selector:
+        number:
+          min: 0
+          max: 60000
+          unit_of_measurement: ms
+          mode: box
+    datetime:
+      selector:
+        datetime:
+    alarm_id:
+      selector:
+        number:
+          min: 1
+          max: 7
+          mode: box
+    mode:
+      selector:
+        select:
+          options: [lounge, zero_gravity, memory_1, memory_2]
+    weekdays:
+      description: Monday 0 to Sunday 6; empty means once.
+      selector:
+        object:
+    enabled:
+      selector:
+        boolean:
+    seconds:
+      selector:
+        number:
+          min: 0
+          max: 900
+          unit_of_measurement: s
+          mode: slider
+    rgb_color:
+      selector:
+        color_rgb:

@@ -324,6 +324,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         )
         self._light_turn_on_in_progress = False
         self._light_turn_off_in_progress = False
+        self._last_controller_entity_available = self.available
 
     @property
     def available(self) -> bool:
@@ -337,7 +338,10 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                 and bool(octo.supported_color_modes)
                 and octo.normal_controls_available
             )
-        return super().available
+        return super().available and (
+            controller is None
+            or self.entity_description.key not in controller.unavailable_controller_entity_keys
+        )
 
     async def async_added_to_hass(self) -> None:
         """Restore the last light state and subscribe to live light state."""
@@ -382,7 +386,9 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         Only writes HA state when a value actually changes, to avoid event churn
         on repeated/identical telemetry packets.
         """
-        changed = False
+        available = self.available
+        changed = available != self._last_controller_entity_available
+        self._last_controller_entity_available = available
         was_on = self._attr_is_on
         controller = self._coordinator.capability_controller
         octo = octo_controller(controller)

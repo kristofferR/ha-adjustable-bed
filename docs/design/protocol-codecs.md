@@ -306,3 +306,12 @@ cases live in `tests/fixtures/bedgear/`; `tests/test_bedgear_vectors.py` proves
 the byte matches. The separate `BedgearProfile` owns its 15 layouts, independent
 name gates, timing and control release policies. No sibling app's parameters
 select its capabilities.
+
+Okimiki 1.0.1 (10101), standalone row169, freezes the accepted original 42
+and focused 29 literal rows in `tests/fixtures/okimiki/`. All 71 passed the
+production Richmat codec before selecting it. `profiles/okimiki.py` retains
+four concrete factory/CID/body identities, including IPRM and IQRM's distinct
+alarm getter despite sharing KWRN's menu body. Its shared catalog-controller
+extension owns the app's whole-buffer common parser, captured-session writes,
+strict elapsed deadlines, flat release, three-second save threshold and local
+alarm records. No existing wire builder or profile changes.

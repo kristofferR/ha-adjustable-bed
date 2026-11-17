@@ -2217,3 +2217,20 @@ def _cluster017_frames() -> dict[str, frozenset[str]]:
 
 
 FROZEN_FRAMES.update(_cluster017_frames())
+
+
+def _okimiki() -> frozenset[str]:
+    """Accepted standalone row169, unchanged original42 plus focused29 literals."""
+    root = Path(__file__).parent / "fixtures" / "okimiki"
+    frames = set()
+    for file in ("vectors.json", "focused_vectors.json"):
+        for row in json.loads((root / file).read_text()):
+            data = bytes.fromhex(row["expected_bytes"])
+            if row["kind"] in ("light_color", "one_shot"):
+                frames.update(data[i:i + 5].hex() for i in range(0, len(data), 5))
+            else:
+                frames.add(data.hex())
+    return frozenset(frames)
+
+
+FROZEN_FRAMES["okimiki"] = _okimiki()
