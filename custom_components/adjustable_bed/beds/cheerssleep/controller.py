@@ -403,8 +403,13 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
 
     async def stop_all(self) -> None:
         link = self._live()
-        frame = self._counters.control(1) if self.model.format == "p1" else codec.normal(0)
-        self._invalidate_preset(0)
+        selected = 0 if self.model.format == "p1" else self._side()
+        frame = (
+            self._counters.control(1)
+            if self.model.format == "p1"
+            else codec.normal(0x40000000, selected)
+        )
+        self._invalidate_preset(selected)
         await self._release(link, frame)
 
     move_head_stop = stop_all

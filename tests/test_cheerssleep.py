@@ -214,6 +214,35 @@ async def test_burst_seven_writes_and_interrupted_counter(clock):
     assert frames(c) == ["ee010508000000aac0"] + ["ee010500000000aac0"] * 4
 
 
+@pytest.mark.parametrize(
+    "key,selected,expected",
+    [
+        (46, None, "01010000000000"),
+        (51, "right", "01010000000000"),
+        (135, None, "ee01054000000000c0"),
+        (140, None, "ee010540000000aac0"),
+        (140, "left", "ee010540000000aac0"),
+        (140, "right", "ee010540000000bbc0"),
+    ],
+)
+@pytest.mark.parametrize("recall", ["preset", "memory"])
+async def test_explicit_stop_cancels_automatic_movement(clock, key, selected, expected, recall):
+    ctrl, c = make(key)
+    await ctrl.start_notify()
+    with ctrl.side_scope(selected):
+        if recall == "preset":
+            await ctrl.preset_zero_g()
+        else:
+            await ctrl.preset_memory(1)
+        c.client.write_gatt_char.reset_mock()
+        c.cancel_command.set()
+        await ctrl.stop_all()
+    sent = frames(c)
+    assert len(sent) == 1
+    # P1 serials depend on the preceding recall, but the STOP payload is fixed.
+    assert (sent[0][2:] if ctrl.model.format == "p1" else sent[0]) == expected
+
+
 @pytest.mark.parametrize("key", [46, 51, 135, 140])
 @pytest.mark.parametrize("movement", ["flat", "memory", "manual", "stop"])
 async def test_superseded_preset_is_recalled_on_first_press(clock, key, movement):

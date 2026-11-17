@@ -289,6 +289,8 @@ D0 requires seventeen bytes for all consumed fields. RGB4–6 is unsigned; brigh
 
 Every held operation has an elapsed deadline and cancellation-independent cleanup bound to the original physical link. P1 sends the matching axis/group STOP after its release delay. P2 preserves the common unscoped zero-key release and the separate side-specific releases supplied by tap bursts. A fresh burst has seven writes over six callbacks; its final callback sends release twice. Interruption retains the runnable counter.
 
+Explicit STOP sends the distinct motor-stop action once, including during automatic preset or memory movement. P2 targets the selected side; P1 uses its shared motor-stop action. These writes remain independent of command cancellation.
+
 Non-split I/HI sonic mode holds schedule a D0 query200ms after release. **Position500i omits this follow-up.** Its separate side-toggle D0 query remains; NewNine queries on side change, NewEight and P1 split screens do not.
 
 ### Vectors
