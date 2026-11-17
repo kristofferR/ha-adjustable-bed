@@ -815,3 +815,145 @@ async def test_registered_ten_services_keep_ordinary_arrays_on_split_models(
     c.client.write_gatt_char.reset_mock()
     await ctrl.move_back_up()
     assert frames(c) == [codec.p1(6, 1, 0x6404).hex(), codec.p1(7, 1, 0x6403).hex()]
+
+
+@pytest.mark.parametrize("key", [153, 172])
+async def test_native_rgb_turn_on_uses_guarded_power_before_color(hass, clock, key):
+    from homeassistant.exceptions import ServiceValidationError
+
+    from custom_components.adjustable_bed.light import _light_entities_for
+
+    ctrl, c = make(key)
+    await ctrl.start_notify()
+    light = _light_entities_for(hass, entity_runtime(ctrl, c))[0]
+    light.hass = hass
+    light.async_write_ha_state = MagicMock()
+    light.async_get_last_state = AsyncMock(return_value=None)
+    await light.async_added_to_hass()
+    try:
+        with pytest.raises(ServiceValidationError, match="unknown"):
+            await light.async_turn_on(rgb_color=(9, 8, 7))
+        assert not frames(c) and not light.is_on
+        callback = c.client.start_notify.call_args.args[1]
+        data = bytearray.fromhex("eed00000112233000100003c0100000000")
+        callback(None, data)
+        assert light.is_on is False
+        await light.async_turn_on(rgb_color=(9, 8, 7))
+        assert frames(c) == (
+            ["ee01050002000000c0"] * 3
+            + ["ee01050000000000c0"] * 4
+            + ["ee02050509080700c0"] * 3
+            + ["ee0205aa00000000c0"] * 4
+        )
+        with pytest.raises(ServiceValidationError, match="Awaiting"):
+            await light.async_turn_on(rgb_color=(9, 8, 7))
+        assert len(frames(c)) == 14
+        data[4:7] = bytes((9, 8, 7))
+        data[16] = 1
+        callback(None, data)
+        assert light.is_on is True and light.rgb_color == (9, 8, 7)
+        c.client.write_gatt_char.reset_mock()
+        await light.async_turn_on(rgb_color=(9, 8, 7))
+        assert frames(c) == ["ee02050509080700c0"] * 3 + ["ee0205aa00000000c0"] * 4
+    finally:
+        await light.async_will_remove_from_hass()
+
+
+@pytest.mark.parametrize("key", [140, 141])
+async def test_native_paired_lights_keep_independent_feedback_and_action_sides(hass, clock, key):
+    from homeassistant.config_entries import ConfigEntryState
+    from homeassistant.exceptions import ServiceValidationError
+
+    from custom_components.adjustable_bed import _async_ensure_paired_device_registry
+    from custom_components.adjustable_bed.const import CONF_PAIR_MODE, PAIR_MODE_SINGLE_ADDRESS
+    from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+    from custom_components.adjustable_bed.light import _light_entities_for
+    from custom_components.adjustable_bed.paired_coordinator import (
+        SingleAddressPairedCoordinator,
+        entity_runtimes,
+    )
+    from custom_components.adjustable_bed.paired_devices import async_register_children
+    from tests.test_paired_setup import LEFT_ADDR, _paired_entry
+
+    entry = _paired_entry(hass)
+    hass.config_entries.async_update_entry(
+        entry,
+        data={
+            **entry.data,
+            CONF_PAIR_MODE: PAIR_MODE_SINGLE_ADDRESS,
+            "address": LEFT_ADDR,
+            CONF_BED_TYPE: "cheerssleep",
+            CONF_PRODUCT_TYPE: str(key),
+        },
+    )
+    inner = AdjustableBedCoordinator(hass, entry)
+    inner._schedule_controller_state_refresh = MagicMock()
+    _, transport = make(key)
+    inner._client = transport.client
+    ctrl = bed.CheersSleepController(inner, app.MODELS[key])
+    inner._controller = ctrl
+    await ctrl.start_notify()
+    pair = SingleAddressPairedCoordinator(hass, entry, inner)
+    _async_ensure_paired_device_registry(hass, entry, pair)
+    async_register_children(hass, pair)
+    entry.mock_state(hass, ConfigEntryState.LOADED)
+
+    async def execute(command, **_kwargs):
+        await command(ctrl)
+
+    inner.async_execute_controller_command = AsyncMock(side_effect=execute)
+    lights = {
+        runtime.entity_side: _light_entities_for(hass, runtime)[0]
+        for runtime in entity_runtimes(pair)
+    }
+    for light in lights.values():
+        light.hass = hass
+        light.async_write_ha_state = MagicMock()
+        await light.async_added_to_hass()
+    callback = transport.client.start_notify.call_args.args[1]
+
+    def report(tag, enabled):
+        data = bytearray.fromhex("eeb00000000002020300")
+        data[3], data[9] = tag, int(enabled)
+        callback(None, data)
+
+    try:
+        assert lights["left"].is_on is None and lights["right"].is_on is None
+        report(0xAA, False)
+        report(0xBB, True)
+        assert lights["left"].is_on is False and lights["right"].is_on is True
+        assert inner.controller_state[UNDER_BED_LIGHTS_ON] is False
+        await ctrl.select_side("right")
+        assert inner.controller_state[UNDER_BED_LIGHTS_ON] is True
+        assert lights["left"].is_on is False and lights["right"].is_on is True
+        report(0, False)  # An unowned/wrong-side report cannot overwrite either child.
+        assert lights["left"].is_on is False and lights["right"].is_on is True
+        transport.client.write_gatt_char.reset_mock()
+        await lights["left"].async_turn_on()
+        await lights["right"].async_turn_off()
+        assert frames(transport) == (
+            ["ee010500020000aac0"] * 3
+            + ["ee010500000000aac0"] * 4
+            + ["ee010500020000bbc0"] * 3
+            + ["ee010500000000bbc0"] * 4
+        )
+        report(0xAA, False)  # Stale left echo must not acknowledge the pending toggle.
+        with pytest.raises(ServiceValidationError, match="Awaiting"):
+            await lights["left"].async_turn_on()
+        assert lights["right"].is_on is True
+        report(0xAA, True)
+        report(0xBB, False)
+        assert lights["left"].is_on is True and lights["right"].is_on is False
+        assert inner.controller_state[UNDER_BED_LIGHTS_ON] is False
+        ctrl.on_disconnect()
+        assert lights["left"].is_on is None and lights["right"].is_on is None
+        await ctrl.start_notify()
+        report(0xBB, True)  # Old callback is tied to the previous physical link.
+        assert lights["left"].is_on is None and lights["right"].is_on is None
+        with pytest.raises(ServiceValidationError, match="unknown"):
+            await lights["right"].async_turn_on()
+    finally:
+        for light in lights.values():
+            await light.async_will_remove_from_hass()
+        entry.mock_state(hass, ConfigEntryState.NOT_LOADED)
+        await pair.async_shutdown()

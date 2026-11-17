@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 from bleak.exc import BleakError
 
 from .app_families import FAMILY_STEP_ROUTES, family_row_label
+from .beds.cheerssleep.catalog import advertisement as cheerssleep_advertisement
 from .beds.doublesleep.protocol import discover as discover_doublesleep
 from .beds.fsm_relax.discovery import matches_fsm_relax_candidate
 from .beds.galaxy.catalog import PROFILE_CHOICES as GALAXY_PROFILES
@@ -1324,8 +1325,9 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     # The first pass matches the declared discovery hints, as the manifest does.
     first = first_pass(service_info)
     result = _detect_bed_type_with_app_candidates(service_info, first)
-    from .profiles.cheerssleep import advertisement as cheerssleep_advertisement
-    if REMACRO_SERVICE_UUID in {uuid.lower() for uuid in service_info.service_uuids} and cheerssleep_advertisement(service_info.manufacturer_data or {}):
+    if REMACRO_SERVICE_UUID in {
+        uuid.lower() for uuid in service_info.service_uuids or ()
+    } and cheerssleep_advertisement(service_info.manufacturer_data or {}):
         result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "cheerssleep"]))
         result.signals.append("manufacturer:cheerssleep_model_candidate")
     # The app's scan filter is wider than the manifest gate, so it refines

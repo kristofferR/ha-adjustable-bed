@@ -4550,8 +4550,6 @@ sonicsleep:
         boolean: null
 
 cheerssleep:
-  name: CheersSleep bed action
-  description: Direct BLE bed controls and conditional exported P1 screens.
   fields:
     device_id:
       required: true

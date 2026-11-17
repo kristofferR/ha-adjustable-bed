@@ -3392,6 +3392,30 @@
       },
       "cheerssleep_combined_down": {
         "name": "All down"
+      },
+      "cheerssleep_all_up": {
+        "name": "Raise bed"
+      },
+      "cheerssleep_all_down": {
+        "name": "Lower bed"
+      },
+      "cheerssleep_lift_up": {
+        "name": "Raise bed height"
+      },
+      "cheerssleep_lift_down": {
+        "name": "Lower bed height"
+      },
+      "cheerssleep_lift_head_up": {
+        "name": "Raise head lift"
+      },
+      "cheerssleep_lift_head_down": {
+        "name": "Lower head lift"
+      },
+      "cheerssleep_lift_foot_up": {
+        "name": "Raise foot lift"
+      },
+      "cheerssleep_lift_foot_down": {
+        "name": "Lower foot lift"
       }
     },
     "cover": {

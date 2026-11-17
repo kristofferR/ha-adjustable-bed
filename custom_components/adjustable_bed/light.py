@@ -27,7 +27,7 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from .beds.octo.runtime import octo_controller
 from .card import CARD_LIGHTING
 from .const import DOMAIN
-from .controller_state import ControllerState
+from .controller_state import ControllerState, sided
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
@@ -770,9 +770,12 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         Feedback controllers publish what the bed reported on the current link,
         so the light is unknown while no controller is connected.
         """
-        if UNDER_BED_LIGHTS_ON not in state:
+        key = sided(UNDER_BED_LIGHTS_ON, self._coordinator.controller_side)
+        if key not in state:
+            key = UNDER_BED_LIGHTS_ON
+        if key not in state:
             return
-        value = state[UNDER_BED_LIGHTS_ON]
+        value = state[key]
         if self._feedback_only and self._coordinator.controller is None:
             value = None
         self._attr_is_on = None if value is None else bool(value)

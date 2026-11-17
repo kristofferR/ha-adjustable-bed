@@ -97,6 +97,13 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
             keys.MODEL(model.key),
             keys.SIDE({1: "left", 2: "right"}[self.local.selected] if model.split else None),
         )
+        if model.format == "p2" and model.light:
+            self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(None))
+            if model.split and not model.rgb:
+                self.forward_controller_state_updates(
+                    sided(UNDER_BED_LIGHTS_ON, "left")(None),
+                    sided(UNDER_BED_LIGHTS_ON, "right")(None),
+                )
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -165,6 +172,10 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
     @property
     def supports_discrete_light_control(self) -> bool:
         return self.model.light and self.model.format == "p1"
+
+    @property
+    def supports_explicit_light_on_control(self) -> bool:
+        return self.model.light
 
     @property
     def supports_light_state_feedback(self) -> bool:
@@ -488,8 +499,14 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
         self._light_feedback[selected] = enabled
         if selected in self._light_pending and self._light_pending[selected] in (None, enabled):
             del self._light_pending[selected]
-        if not selected or selected == self._side():
-            self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(enabled))
+        updates = (
+            [sided(UNDER_BED_LIGHTS_ON, {1: "left", 2: "right"}[selected])(enabled)]
+            if selected
+            else []
+        )
+        if not selected or selected == self.local.selected:
+            updates.append(UNDER_BED_LIGHTS_ON(enabled))
+        self.forward_controller_state_updates(*updates)
 
     async def _light(self, enabled: bool) -> None:
         if not self.model.light:
@@ -1009,6 +1026,11 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
         self._brightness = None
         self._light_feedback.clear()
         self._light_pending.clear()
+        if self.model.split and not self.model.rgb and self.model.format == "p2":
+            self.forward_controller_state_updates(
+                sided(UNDER_BED_LIGHTS_ON, "left")(None),
+                sided(UNDER_BED_LIGHTS_ON, "right")(None),
+            )
         self.forward_controller_state_updates(
             UNDER_BED_LIGHTS_ON(None),
             UNDER_BED_LIGHTS_RGB(None),
