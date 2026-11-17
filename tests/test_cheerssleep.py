@@ -1,5 +1,6 @@
 """Real CheersSleep factory, HA callers, model gates and session ownership."""
 
+
 from __future__ import annotations
 
 import asyncio
@@ -1052,6 +1053,94 @@ async def test_native_paired_lights_keep_independent_feedback_and_action_sides(h
         assert lights["left"].is_on is None and lights["right"].is_on is None
         with pytest.raises(ServiceValidationError, match="unknown"):
             await lights["right"].async_turn_on()
+    finally:
+        for light in lights.values():
+            await light.async_will_remove_from_hass()
+        entry.mock_state(hass, ConfigEntryState.NOT_LOADED)
+        await pair.async_shutdown()
+
+async def test_native_paired_rgb_off_waits_for_shared_receiver_feedback(hass, clock):
+    from homeassistant.config_entries import ConfigEntryState
+    from homeassistant.exceptions import ServiceValidationError
+
+    from custom_components.adjustable_bed import _async_ensure_paired_device_registry
+    from custom_components.adjustable_bed.const import CONF_PAIR_MODE, PAIR_MODE_SINGLE_ADDRESS
+    from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+    from custom_components.adjustable_bed.light import _light_entities_for
+    from custom_components.adjustable_bed.paired_coordinator import (
+        SingleAddressPairedCoordinator,
+        entity_runtimes,
+    )
+    from custom_components.adjustable_bed.paired_devices import async_register_children
+    from tests.test_paired_setup import LEFT_ADDR, _paired_entry
+
+    entry = _paired_entry(hass)
+    hass.config_entries.async_update_entry(
+        entry,
+        data={
+            **entry.data,
+            CONF_PAIR_MODE: PAIR_MODE_SINGLE_ADDRESS,
+            "address": LEFT_ADDR,
+            CONF_BED_TYPE: "cheerssleep",
+            CONF_PRODUCT_TYPE: "172",
+        },
+    )
+    inner = AdjustableBedCoordinator(hass, entry)
+    inner._schedule_controller_state_refresh = MagicMock()
+    _, transport = make(172)
+    inner._client = transport.client
+    ctrl = bed.CheersSleepController(inner, app.MODELS[172])
+    inner._controller = ctrl
+    await ctrl.start_notify()
+    pair = SingleAddressPairedCoordinator(hass, entry, inner)
+    _async_ensure_paired_device_registry(hass, entry, pair)
+    async_register_children(hass, pair)
+    entry.mock_state(hass, ConfigEntryState.LOADED)
+    command_lock = asyncio.Lock()
+
+    async def execute(command, **_kwargs):
+        async with command_lock:
+            await command(ctrl)
+
+    inner.async_execute_controller_command = AsyncMock(side_effect=execute)
+    lights = {
+        runtime.entity_side: _light_entities_for(hass, runtime)[0]
+        for runtime in entity_runtimes(pair)
+    }
+    for light in lights.values():
+        light.hass = hass
+        light.async_write_ha_state = MagicMock()
+        await light.async_added_to_hass()
+    callback = transport.client.start_notify.call_args.args[1]
+    data = bytearray.fromhex("eed00000112233000100003c0100000001")
+    toggle = ["ee01050002000000c0"] * 3 + ["ee01050000000000c0"] * 4
+    try:
+        with pytest.raises(ServiceValidationError, match="unknown"):
+            await lights["left"].async_turn_off()
+        assert not frames(transport)
+        callback(None, data)
+        assert all(light.is_on for light in lights.values())
+        await lights["left"].async_turn_off()
+        assert frames(transport) == toggle
+        with pytest.raises(ServiceValidationError, match="Awaiting"):
+            await lights["right"].async_turn_off()
+        callback(None, data)  # An old on report cannot acknowledge the pending off.
+        with pytest.raises(ServiceValidationError, match="Awaiting"):
+            await lights["right"].async_turn_off()
+        assert frames(transport) == toggle
+        data[16] = 0
+        callback(None, data)
+        assert all(light.is_on is False for light in lights.values())
+        for light in lights.values():
+            await light.async_turn_off()
+        assert frames(transport) == toggle
+        ctrl.on_disconnect()
+        await ctrl.start_notify()
+        data[16] = 1
+        callback(None, data)  # Previous-session feedback cannot re-enable either light.
+        with pytest.raises(ServiceValidationError, match="unknown"):
+            await lights["right"].async_turn_off()
+        assert frames(transport) == toggle
     finally:
         for light in lights.values():
             await light.async_will_remove_from_hass()

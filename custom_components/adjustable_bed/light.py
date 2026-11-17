@@ -275,8 +275,8 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             self._attr_color_mode = next(iter(supported_modes), None)
 
         default_rgb = controller.default_light_rgb_color if controller is not None else None
-        self._supports_discrete_light_control = (
-            controller is not None and controller.supports_discrete_light_control
+        self._supports_desired_light_off = controller is not None and (
+            controller.supports_discrete_light_control or controller.supports_light_state_feedback
         )
         self._default_rgb_color = _normalize_rgb_color(default_rgb)
         # HA brightness maps onto the bed's native 1..max levels when it has them.
@@ -610,7 +610,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         """Turn the light off using the controller's light-off semantics."""
         del kwargs
 
-        if not self._attr_is_on and not self._supports_discrete_light_control:
+        if not self._attr_is_on and not self._supports_desired_light_off:
             _LOGGER.debug(
                 "Skipping toggle-based light off for %s because HA already believes it is off",
                 self._coordinator.name,
@@ -618,7 +618,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             return
 
         async def _turn_off(ctrl: BedController) -> None:
-            if ctrl.supports_discrete_light_control:
+            if ctrl.supports_discrete_light_control or ctrl.supports_light_state_feedback:
                 await ctrl.lights_off()
                 return
             if ctrl.supports_light_toggle_control:
