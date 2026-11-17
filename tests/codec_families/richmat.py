@@ -27,6 +27,7 @@ _VARIANTS = {
     "richmat_app": "6BRM",
     "goodvibe": "selector-0001",
     "mlily": "6brm",
+    "bobpowerbase": "elite",
     **{f"richmat_classic_{app}": app for app in RICHMAT_CLASSIC},
 }
 # The Casper Base and Hush Base products are their bed type's protocol variant.
@@ -77,6 +78,7 @@ FAMILY = CodecFamily(
             "galaxy",
             "goodvibe",
             "mlily",
+            "bobpowerbase",
             "hjbed",
             "richmat_app",
             "hush_base",
@@ -103,6 +105,7 @@ FAMILY = CodecFamily(
         frozen=_FROZEN,
         variant=lambda key, bed_type: key if bed_type in _PRODUCT_VARIANTS else _VARIANTS.get(key),
         entry_data={
+            "bobpowerbase": {const.CONF_PRODUCT_TYPE: "standard"},
             "sonicsleep": {const.CONF_PRODUCT_TYPE: "one"},
             # A layout every classic app ships.
             "richmat_classic_apps": {const.CONF_PRODUCT_TYPE: "6BRM"},

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "bleServiceUUIDNordic",
+    "object": "ae73b1",
+    "service": "6e400001-b5a3-f393-e0a9-e50e24dcca9e",
+    "write": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "notify": "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
+    "evidence": [
+      "E-GATT"
+    ]
+  },
+  {
+    "id": "bleServiceUUIDW1",
+    "object": "ae7381",
+    "service": "0000fee9-0000-1000-8000-00805f9b34fb",
+    "write": "d44bc439-abfd-45a2-b575-925416129600",
+    "notify": "d44bc439-abfd-45a2-b575-925416129601",
+    "evidence": [
+      "E-GATT"
+    ]
+  },
+  {
+    "id": "bleServiceUUIDW2",
+    "object": "ae7471",
+    "service": "0000fee9-0000-1000-8000-00805f9b34bb",
+    "write": "d44bc439-abfd-45a2-b575-925416129622",
+    "notify": "d44bc439-abfd-45a2-b575-925416129611",
+    "evidence": [
+      "E-GATT"
+    ]
+  },
+  {
+    "id": "bleServiceUUIDW3",
+    "object": "ae7441",
+    "service": "0000ffe0-0000-1000-8000-00805f9b34fb",
+    "write": "0000ffe2-0000-1000-8000-00805f9b34fb",
+    "notify": "0000ffe1-0000-1000-8000-00805f9b34fb",
+    "evidence": [
+      "E-GATT"
+    ]
+  },
+  {
+    "id": "bleServiceUUIDW4",
+    "object": "ae7411",
+    "service": "0000fff0-0000-1000-8000-00805f9b34fb",
+    "write": "0000fff2-0000-1000-8000-00805f9b34fb",
+    "notify": "0000fff1-0000-1000-8000-00805f9b34fb",
+    "evidence": [
+      "E-GATT"
+    ]
+  },
+  {
+    "id": "bleServiceUUIDW5",
+    "object": "ae73e1",
+    "service": "0000e0ff-3c17-d293-8e48-14fe2e4da212",
+    "write": "00000002-3c17-d293-8e48-14fe2e4da212",
+    "notify": "00000003-3c17-d293-8e48-14fe2e4da212",
+    "evidence": [
+      "E-GATT"
+    ]
+  }
+]

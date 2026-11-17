@@ -730,6 +730,24 @@ the distinct wire builders and raw-data limitations.
 
 `adjustable_bed.hjbed` exposes product-gated single/repeat alarms, alarm query/delete/toggle, clock synchronization, light timeout/RGB and Normal-layout control mode. Use the exact product alarm action key. All targets validate before writing; feature acknowledgements cannot override static profile flags. See the [operation fields and eligibility](beds/richmat.md#hjbed).
 
+### Power Bob Base configuration
+
+`adjustable_bed.bobpowerbase` manages repeat alarms, synchronizes the local
+calendar and changes lighting after the connected bed reports its light menu.
+Use `repeat`, `delete`, `alarms`, `sync`, `light_color`, `light_duration` or
+`light_off`. Alarm presets are `anti_snore`, `zero_gravity`, `tv`, `memory_1`
+and `memory_2`; a new alarm takes a timezone-aware `datetime`. Weekdays use
+Monday=0 through Sunday=6, with an empty list for once, and `enabled` controls
+the low repeat bit. Supply `alarm_id` explicitly when the observed list may be
+incomplete. Light duration is a whole minute from 0 to 15, supplied as seconds;
+zero means always on. RGB channels use `rgb_color`.
+
+The normal buttons expose product-specific movement, recall and programming.
+Held movement uses `hold_control` with its declared `goodvibe_` control key.
+SH products have framed Left/Right controls; a raw Nordic command cannot
+address Right. Renewable Both requires simultaneous side execution; finite
+holds can run serially. See [Power Bob Base](beds/richmat.md#power-bob-base).
+
 ### MLILY Control configuration
 
 `adjustable_bed.mlily` exposes the selected MLILY product's alarms, RGB light and

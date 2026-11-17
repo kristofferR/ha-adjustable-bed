@@ -36,6 +36,18 @@ function hassWith(entries: EntityRegistryDisplayEntry[]): HomeAssistant {
   });
 }
 
+test("Power Bob Base state and actions stay on their physical device", () => {
+  const hass = hassWith([
+    entry("button.bob_head", "goodvibe_action", "bob"),
+    entry("sensor.bob_state", "bobpowerbase_status", "bob"),
+    entry("sensor.other_state", "bobpowerbase_status", "other"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "bob");
+  expect(bed.utility).toContain("button.bob_head");
+  expect(bed.utilityStates).toEqual(["sensor.bob_state"]);
+  expect(bedEntitiesForDevice(hass, "other").utilityStates).toEqual(["sensor.other_state"]);
+});
+
 test("OKIN Motion Bed keeps neutral middle holds and raw light actions reachable", () => {
   const hass = hassWith([
     entry("cover.middle", "motionbed_middle"),

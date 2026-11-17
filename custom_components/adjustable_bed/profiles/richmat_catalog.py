@@ -24,6 +24,17 @@ class Runtime:
 
 
 @dataclass(frozen=True, slots=True)
+class BedRuntime:
+    """App-owned rules for the direct-bed catalog route."""
+
+    tick_ms: int
+    program_ms: int
+    light_delay_ms: int
+    receive_expiry_s: float
+    light_minutes: tuple[int, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class Catalog:
     key: str
     name: str
@@ -31,6 +42,7 @@ class Catalog:
     actions: Mapping[str, Action]
     products: Mapping[str, Product]
     expansions: Mapping[str, tuple[str, ...]]
+    bed: BedRuntime | None = None
     record: Record = record_20_len
     # Galaxy's reconciled runtime state differs from Good Vibe's accepted route.
     substitute_when_release: bool = False

@@ -198,6 +198,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `galaxy` | S stream | U | U | galaxy | sustained catalog gestures first tick after 100 ms, refresh until released, then side STOP; memory-latch gestures use one long operand; no concurrent axes or motor-speed proof |
 | `goodvibe` | S stream | U | U | goodvibe | sustained controls refresh every 100 ms, then release `6e`; hold declared per control, on the held controls whose effective gesture is a sustained press (see [per-control scope](#per-control-hold-scope)). Each frame carries one operand and the only release is the side's STOP; all-motor moves are fixed operands; speed rows are massage and music shake |
 | `mlily` | S stream | U | U | mlily159 | Sustained controls only, after a 100 ms tick and at 100 ms intervals; submitted ticks release with STOP. Memory, force-long and 3 s gestures retain the exact selected product rules. |
+| `bobpowerbase` | S stream | U | U | bob096 | Movement only, first refresh after 100 ms, then until release with side-scoped STOP. Presets recall once or program at 3 s. Finite holds use elapsed deadlines without backfill; no arbitrary motor composition or speed selector. |
 | `sleepys_elite_app` | S stream | U | U | sleepy | selector STOP once at release; hold declared |
 | `motosleep` | S stream | B | B | motosleep, powerbob, motosleep-guide | movement repeats every 100 ms while held; release sends `$b` five times (MotoSleep HHC and the Power Bob profiles whose release has it) or the MOTO release frame (zero five times, or `0x9088/0x0001` six times on WR219); other Power Bob profiles stop when the refresh ends. #516 and #591: the guide covers only the commands the integration sends, and the frozen reports that would show composition and the full command inventory are not retained. MotoMotion is another app, with its own row |
 | `motomotion` | S stream | B | B | motomotion, row113 | held motor keys refresh every 100 ms, first write after 100 ms, then send STOP three times 50 ms after release; memory recall refreshes the same way but stops only on `SOFA` names with index 12 `E`, and the shared Home control ends by stopping its refresh with no release frame. Not declared: the controls need a per-control scope (see [per-control scope](#per-control-hold-scope)) and their own review. #516 and #591 not assessed yet |
@@ -635,6 +636,10 @@ share the Okin N-frame files.
    no accepted artifact.
 
 ## Evidence keys
+
+| Key | Source |
+|---|---|
+| bob096 | Independently accepted Power Bob Base 1.0.9 (10900), `com.richmat.bobpowerbase`, row096, E-UI/E-WRITE, with resolved BOB-AUDIT-001. Hardware is unverified. |
 
 | row133 | Symphony Sleep Sense 2.8.0 (194), `com.okin.ist`, accepted audit002: one motor frame on down, no refresh timer; format-specific STOP on release. Latched motor holds only, finite presets and explicit saves. No composed concurrent motors. |
 

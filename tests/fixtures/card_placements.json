@@ -4808,5 +4808,8 @@
   },
   "sensor:sonicsleep": {
     "card_section": "hidden"
+  },
+  "sensor:bobpowerbase_status": {
+    "card_section": "utility"
   }
 }

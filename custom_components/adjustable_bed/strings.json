@@ -4964,6 +4964,9 @@
       "goodvibe_r_snore": {
         "name": "Right snoring"
       },
+      "bobpowerbase_status": {
+        "name": "Power Bob Base status"
+      },
       "goodvibe_status": {
         "name": "Good Vibe Sleep status"
       },
@@ -8790,6 +8793,22 @@
           "name": "Motors",
           "description": "Estimated motors to include. Leave unset for every estimated motor."
         }
+      }
+    },
+    "bobpowerbase": {
+      "name": "Power Bob Base settings",
+      "description": "Manage repeat alarms, synchronize local time, or set lighting reported by the connected bed.",
+      "fields": {
+        "device_id": {"name": "Bed"},
+        "side": {"name": "Side"},
+        "operation": {"name": "Action"},
+        "action": {"name": "Alarm preset"},
+        "datetime": {"name": "Alarm date and time", "description": "ISO 8601 with a timezone offset."},
+        "alarm_id": {"name": "Alarm id", "description": "Use an explicit id when the reported alarm list may be incomplete."},
+        "weekdays": {"name": "Repeat weekdays", "description": "Monday is 0, Sunday is 6. Empty means once."},
+        "enabled": {"name": "Enabled"},
+        "seconds": {"name": "Light duration", "description": "Whole minutes from 0 to 15, supplied as seconds. Zero means always on."},
+        "rgb_color": {"name": "Light color"}
       }
     },
     "goodvibe": {

@@ -1649,6 +1649,15 @@ _LP_LEGACY: frozenset[str] = frozenset(
 )
 
 FROZEN_FRAMES: dict[str, frozenset[str]] = {
+    "bobpowerbase": frozenset(
+        frame
+        for row in json.loads((Path(__file__).parent / "fixtures/bobpowerbase/vectors.json").read_text())
+        if row["scope"] == "BED" and not row["builder"].startswith("parse_") and row["builder"] != "repeat_code"
+        for frame in (
+            [row["expected_bytes"][offset:offset + 10] for offset in (0, 10)]
+            if row["builder"] == "light_rgb" else [row["expected_bytes"]]
+        )
+    ),
     # pre-v5 RichmatController, WiLinke framing, every remote code (smartbed-mqtt and app catalogs)
     "richmat_wilinke": frozenset(
         {

@@ -277,10 +277,11 @@ def common(b: list[int]) -> list[Event]:
 class Notifications:
     """Retained framing with the shipped 500 ms partial-record expiry."""
 
-    def __init__(self, emit: Callable[[str, object], None], *, mlily: bool = False, timer_pair: bool = False) -> None:
+    def __init__(self, emit: Callable[[str, object], None], *, mlily: bool = False, timer_pair: bool = False, direct_bed: bool = False) -> None:
         self.emit = emit
         self.mlily = mlily
         self.timer_pair = timer_pair
+        self.direct_bed = direct_bed
         self.buffer = bytearray()
         self.rejection: str | None = None
 
@@ -323,10 +324,19 @@ class Notifications:
                 if code == 0x20:
                     if len(frame) < 7 or not codec.is_valid(bytes(frame)):
                         continue
-                    events = extended(frame, mlily=self.mlily, timer_pair=self.timer_pair)
+                    if self.direct_bed and frame[3] == 10:
+                        # Bob passes total LEN to the check selector, whose 1..6
+                        # branches are unreachable for a valid extended frame.
+                        continue
+                    if self.direct_bed and frame[3:5] == [6, 5]:
+                        events = [("deviceAntiSnoreConfigCountEvent" if frame[7] == 1 else "deviceAntiSnoreConfigTimeEvent", {"raw_frame": frame})] if len(frame) > 7 and frame[5] in (2, 3) and frame[7] in (1, 2) else []
+                    else:
+                        events = extended(frame, mlily=self.mlily, timer_pair=self.timer_pair)
                 else:
                     events = common(frame)
                 for event, value in events:
+                    if self.direct_bed and event == "deviceDetectionMessageEvent":
+                        value = {"raw_frame": frame}
                     self.emit(event, value)
             self.rejection = None
         except (ValueError, IndexError, NotImplementedError) as err:

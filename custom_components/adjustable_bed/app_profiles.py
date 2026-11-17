@@ -184,6 +184,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_GALAXY: SideProfile("Galaxy Bed Control", variant_owned=True),
     BED_TYPE_GOODVIBE: SideProfile("Good Vibe Sleep", variant_owned=True),
     BED_TYPE_MLILY: SideProfile("MLILY Control", variant_owned=True),
+    "bobpowerbase": SideProfile("Power Bob Base", variant_owned=True),
     BED_TYPE_RICHMAT_CLASSIC_APPS: SideProfile("Classic Richmat apps", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
     "bedgear": SideProfile("Bedgear"),
     BED_TYPE_MOTOMOTION: SideProfile("MotoMotion"),

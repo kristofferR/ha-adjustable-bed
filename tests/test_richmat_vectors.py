@@ -20,6 +20,7 @@ from custom_components.adjustable_bed.beds.richmat_mh import protocol as mh
 from custom_components.adjustable_bed.beds.ruf_richmat import controller as ruf_richmat
 from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.profiles import richmat as profiles
+from custom_components.adjustable_bed.profiles.bobpowerbase import WIRE as BOB_WIRE
 from custom_components.adjustable_bed.profiles.richmat_resource_apps import APPS as RESOURCE_APPS
 from tests.richmat_vectors import FROZEN_FRAMES
 
@@ -36,6 +37,7 @@ PROFILES = {
     "eshine": profiles.ESHINE,
     "goodvibe": profiles.GOODVIBE,
     "mlily": profiles.MLILY,
+    "bobpowerbase": BOB_WIRE,
     "galaxy": profiles.GALAXY,
     "leggett_lp_legacy": profiles.LP_LEGACY,
     **{profile.key: profile for profile in profiles.RICHMAT_MH.values()},
@@ -215,6 +217,18 @@ def _lp_legacy_census() -> set[str]:
 
 
 def _census(key: str) -> set[str]:
+    if key == "bobpowerbase":
+        from custom_components.adjustable_bed.profiles.bobpowerbase import ACTIONS, CATALOG
+
+        return {
+            codec.function(code, side, single=raw, action=action.label).hex()
+            for action in ACTIONS.values() for side in (0, 1) for raw in (False, True)
+            for code in ((action.short, action.long) if action.long else (action.short,))
+        } | {
+            codec.function(code, single=raw, action=name).hex()
+            for name, code in (*CATALOG.startup, ("deviceFunctionItemStop", 0x6E))
+            for raw in (False, True)
+        }
     if key == "mlily":
         from custom_components.adjustable_bed.profiles.mlily import catalog
 
