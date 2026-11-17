@@ -2021,18 +2021,27 @@ async def _hold_targets(
 ) -> None:
     """Preflight the whole selection before starting any held write sequence."""
     _require_hold_topology(targets)
+    shared_receivers: set[int] = set()
 
     def check(target: BedChild, controller: BedController) -> None:
         _require_held_control(target, controller, control)
         if lease is not None:
             _require_hold_execution(target, controller, control)
         controller.validate_hold_control(control, duration_ms)
+        if isinstance(target, SingleAddressSideCoordinator) and any(
+            spec.shared_across_sides
+            and spec.hold is not None
+            and control in (spec.hold.up_control, spec.hold.down_control)
+            for spec in controller.motor_control_specs
+        ):
+            shared_receivers.add(_plan_key(target))
 
     # A STOP during any per-side capability/connect wait owns the event that
     # was current when the user pressed. Capture before _preflight_each awaits.
     if admissions is None:
         admissions = [_capture_command_admission(coordinator, side) for coordinator, side in targets]
     preflighted = await _preflight_each(targets, check)
+    completed_shared_receivers: set[int] = set()
 
     async def hold(controller: BedController) -> None:
         # Automatic link-slot fallback may have changed topology after admission.
@@ -2043,6 +2052,40 @@ async def _hold_targets(
 
     try:
         for (coordinator, side), admission in zip(targets, admissions, strict=True):
+            if isinstance(coordinator, SingleAddressPairedCoordinator) and any(
+                _plan_key(target) in shared_receivers
+                for target in _command_targets(coordinator, side)
+            ):
+                stop_epochs = {
+                    id(child): admission.expected_stop_epochs.get(target_side)
+                    for target_side, child in coordinator._targets_for(side)
+                }
+
+                async def hold_shared(
+                    target: BedChild,
+                    _stop_epochs: dict[int, int | None] = stop_epochs,
+                ) -> None:
+                    receiver = _plan_key(target)
+                    # Skip the duplicate before its scheduler can reconnect the receiver.
+                    if receiver in completed_shared_receivers:
+                        return
+                    await target.async_execute_controller_command(
+                        track_held_control(getattr(target, "hass", None), control, hold),
+                        cancel_running=True,
+                        expected_stop_epoch=_stop_epochs[id(target)],
+                        lease=lease,
+                    )
+                    if receiver in shared_receivers:
+                        completed_shared_receivers.add(receiver)
+
+                await coordinator.async_run_child_operation(
+                    "hold control",
+                    hold_shared,
+                    side=side,
+                    expected_pair_generations=admission.expected_pair_generations,
+                    expected_stop_epochs=admission.expected_stop_epochs,
+                )
+                continue
             await _execute_sided(
                 coordinator,
                 side,

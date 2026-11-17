@@ -655,8 +655,9 @@ async def test_real_ha_native_child_target_keeps_right_side_and_rejects_conflict
 @pytest.mark.parametrize("direction", ["up", "down"])
 @pytest.mark.parametrize("side", ["left", "right", "both"])
 @pytest.mark.parametrize("connection_state", ["connected", "offline", "disconnect_after_first"])
-async def test_native_p1_timed_move_runs_shared_foot_once(
-    hass, clock, key, motor, direction, side, connection_state
+@pytest.mark.parametrize("service", ["timed_move", "hold_control"])
+async def test_native_p1_movement_runs_shared_foot_once(
+    hass, clock, key, motor, direction, side, connection_state, service
 ):
     from homeassistant.config_entries import ConfigEntryState
     from homeassistant.helpers import device_registry as dr
@@ -722,13 +723,15 @@ async def test_native_p1_timed_move_runs_shared_foot_once(
         for _ in range(2):
             await hass.services.async_call(
                 DOMAIN,
-                "timed_move",
+                service,
                 {
                     "device_id": [parent.id],
-                    "motor": motor,
-                    "direction": direction,
+                    **(
+                        {"motor": motor, "direction": direction, "duration_ms": 1000}
+                        if service == "timed_move"
+                        else {"control": f"{motor}_{direction}", "duration": 1}
+                    ),
                     "side": side,
-                    "duration_ms": 1000,
                 },
                 blocking=True,
             )
@@ -743,6 +746,7 @@ async def test_native_p1_timed_move_runs_shared_foot_once(
         for selected in sides:
             up = codes["left" if selected == "both" else selected]
             expected.extend([up + (direction == "down"), up - 1])
+        assert command_count == len(sides) * 2
         assert [
             int.from_bytes(bytes.fromhex(frame)[2:4], "little") for frame in frames(transport)
         ] == expected * 2
