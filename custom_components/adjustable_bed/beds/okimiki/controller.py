@@ -165,10 +165,12 @@ class OkimikiController(GoodVibeController):
         # HA identity metadata only, never a remembered permission to send BLE.
         if self._light_entity_identity != self._entity_identity():
             return frozenset()
-        return frozenset({
-            ("light", "under_bed_lights"),
-            ("number", "controller_number_okimiki_light_seconds"),
-        })
+        return frozenset(
+            {
+                ("light", "under_bed_lights"),
+                ("number", "controller_number_okimiki_light_seconds"),
+            }
+        )
 
     @property
     def unavailable_controller_entity_keys(self) -> tuple[str, ...]:
@@ -345,7 +347,10 @@ class OkimikiController(GoodVibeController):
                 if any(row.id == value.id for row in self._alarms):
                     self._stale_alarm_ids.discard(value.id)
                 self._alarms = [value if row.id == value.id else row for row in self._alarms]
-        if name in ("light", "alarm"):
+        if name in ("light", "alarm") or (
+            isinstance(value, p.Alarm) and self.model.alarm == "repeat"
+        ):
+            # A record read can complete the same service readiness wait.
             self._menus_changed.set()
         # Add/cancel ACKs are uncorrelated observations, never confirmed schedule state.
         self._publish()

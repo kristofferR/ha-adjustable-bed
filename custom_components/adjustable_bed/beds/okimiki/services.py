@@ -14,8 +14,9 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
 from ...codec import richmat as codec
-from ...const import DOMAIN
+from ...const import CONF_PROTOCOL_VARIANT, DOMAIN, PAIR_CONNECTION_MODE_SEQUENTIAL
 from ...import_executor import async_import_modules
+from ...paired_coordinator import PairedBedCoordinator
 from ...profiles.okimiki import CONTROLS
 from ...services import (
     DEVICE_IDS,
@@ -31,6 +32,8 @@ from ...services import (
 from . import protocol as p
 
 if TYPE_CHECKING:
+    from ...paired_coordinator import BedChild
+    from ..goodvibe.controller import Link
     from .controller import OkimikiController
 
 OPERATIONS = (
@@ -127,9 +130,13 @@ class Request:
                 )
                 if self.record.id in controller._stale_alarm_ids or current != self.record:
                     raise ValueError("Query a fresh record before changing this alarm again")
-            if op == "repeat" and self.record is None and (
-                self.alarm_id in controller._stale_alarm_ids
-                or any(row.id == self.alarm_id for row in controller._alarms)
+            if (
+                op == "repeat"
+                and self.record is None
+                and (
+                    self.alarm_id in controller._stale_alarm_ids
+                    or any(row.id == self.alarm_id for row in controller._alarms)
+                )
             ):
                 raise ValueError("Query a fresh record before changing this alarm")
 
@@ -210,10 +217,31 @@ FIELDS: dict[vol.Marker, object] = {
 FIELDS.update(SIDE_FIELD.items())
 
 
+@dataclass(frozen=True, slots=True)
+class _PreparedPlan:
+    request: Request
+    owner: BedChild
+    controller: OkimikiController
+    link: Link | None
+
+
 async def handle_okimiki(call: ServiceCall) -> None:
     targets = _call_targets(call)
     movement = call.data["operation"] in ("press", "save")
     resource = "movement" if movement else "configuration"
+    physical_routes = [
+        (parent, side, child, child.address.upper(), child.entry.data.get(CONF_PROTOCOL_VARIANT))
+        for parent, side in targets
+        for child in _command_targets(parent, side)
+    ]
+    physical_targets = [(parent, child) for parent, _, child, _, _ in physical_routes]
+    sequential_owners = {
+        id(child)
+        for parent, side, child, _, _ in physical_routes
+        if isinstance(parent, PairedBedCoordinator)
+        and parent.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL
+        and len(_command_targets(parent, side)) > 1
+    }
     # Freeze every physical owner's STOP epoch before the very first await.
     admissions = [_capture_command_admission(c, side, (resource,)) for c, side in targets]
     await async_import_modules(call.hass, "beds.okimiki.controller")
@@ -231,36 +259,96 @@ async def handle_okimiki(call: ServiceCall) -> None:
         seconds=call.data.get("seconds"),
         rgb=call.data.get("rgb_color"),
     )
-    plans: dict[tuple[str, str], tuple[Request, object | None]] = {}
+    plans: dict[tuple[str, str], _PreparedPlan] = {}
+    # An observed slot is a reason to request fresh data, never permission to
+    # reuse its old bytes after a reconnect. Explicit new-slot IDs stay required.
+    observed_owners = {
+        id(child)
+        for _, child in physical_targets
+        if isinstance(previous := child.capability_controller, OkimikiController)
+        and any(row.id == request.alarm_id for row in previous._alarms)
+    }
+
+    def check_owner(controller: OkimikiController) -> None:
+        # An invalidated second owner must also stop the first concurrent side
+        # before its requested mutation, not merely fail its own later callback.
+        if any(
+            address != child.address.upper()
+            or product != child.entry.data.get(CONF_PROTOCOL_VARIANT)
+            or not any(current is child for current in _command_targets(parent, side))
+            for parent, side, child, address, product in physical_routes
+        ) or not any(
+            child is controller._coordinator
+            and address == child.address.upper() == controller._address.upper()
+            and (product is None or product == controller.product_key)
+            for _, _, child, address, product in physical_routes
+        ):
+            raise ValueError("The physical Okimiki owner changed after admission")
 
     def validate(controller: OkimikiController) -> None:
-        plans[(controller._address.upper(), controller.product_key)] = (
-            request.plan(controller),
-            controller._link,
+        check_owner(controller)
+        plans[(controller._address.upper(), controller.product_key)] = _PreparedPlan(
+            request.plan(controller), controller._coordinator, controller, controller._link
         )
 
     live_validation = not movement and request.operation != "sync"
 
-    async def wait_for_capability(controller: OkimikiController) -> None:
+    async def wait_for_capability(
+        controller: OkimikiController, expected_record: p.Alarm | None = None
+    ) -> None:
+        check_owner(controller)
         menu = "light" if request.operation.startswith("light_") else "alarm"
         if menu == "alarm" and controller.model.alarm == "none":
             return
-        link = controller._link
+        link = controller._current_link()
+
+        def check_session() -> None:
+            check_owner(controller)
+            if controller._current_link() is not link:
+                raise ValueError("The Okimiki session changed while waiting for support")
+
+        def observed_record() -> p.Alarm | None:
+            return next(
+                (row for row in reversed(controller._alarms) if row.id == request.alarm_id), None
+            )
+
+        need_record = (
+            expected_record is not None
+            or request.operation in ("enable", "delete")
+            or (
+                request.operation == "repeat"
+                and (
+                    request.when is None
+                    or request.mode is None
+                    or id(controller._coordinator) in observed_owners
+                )
+            )
+        )
         try:
             async with asyncio.timeout(CAPABILITY_REPLY_TIMEOUT_S):
                 while not controller.menu_available(menu):
-                    if controller._link is not link or link is None:
-                        raise ValueError("The Okimiki session changed while waiting for support")
+                    check_session()
                     controller._menus_changed.clear()
                     await controller._menus_changed.wait()
+                if need_record:
+                    if observed_record() is None or request.alarm_id in controller._stale_alarm_ids:
+                        # Existing proven query, through normal pacing and the
+                        # current command admission. Never replay a cached record.
+                        await controller.execute_request(Request("alarms"))
+                    while (
+                        observed_record() is None or request.alarm_id in controller._stale_alarm_ids
+                    ):
+                        check_session()
+                        controller._menus_changed.clear()
+                        await controller._menus_changed.wait()
+                    if expected_record is not None and observed_record() != expected_record:
+                        raise ValueError("The Okimiki alarm record changed after validation")
+                check_session()
         except TimeoutError:
-            pass  # Validation still rejects an unreported capability.
+            raise ValueError(
+                "The bed did not report current Okimiki support or alarm data"
+            ) from None
 
-    physical_targets = [
-        (parent, child)
-        for parent, side in targets
-        for child in _command_targets(parent, side)
-    ]
     prepared = await _preflight_capability(
         targets, OkimikiController, "Okimiki", validate=None if live_validation else validate
     )
@@ -288,21 +376,57 @@ async def handle_okimiki(call: ServiceCall) -> None:
             await _release_preflighted(prepared)
             return  # STOP interrupted at least one target's validation.
 
+    # Only the sequential topology's completed validation cycle deliberately
+    # released these links. A replacement owner or an unrelated reconnect gets
+    # no exemption from the original link fence.
+    sequential_handoffs = {
+        key
+        for key, plan in plans.items()
+        if id(plan.owner) in sequential_owners
+        and not plan.owner.is_connected
+        and plan.controller._link is None
+        and plan.link is not None
+        and not plan.link.client.is_connected
+    }
+
     async def execute(controller: OkimikiController) -> None:
+        check_owner(controller)
+        if any(
+            other.request.record is not None
+            and other_key not in sequential_handoffs
+            and (
+                other.owner.controller is not other.controller
+                or other.controller._link is not other.link
+            )
+            for other_key, other in plans.items()
+        ):
+            raise ValueError("The physical Okimiki controller changed after validation")
+        key = (controller._address.upper(), controller.product_key)
+        plan = plans.get(key)
+        if live_validation and len(physical_targets) == 1:
+            await wait_for_capability(controller)
+            validate(controller)
+            plan = plans.get(key)
+        if plan is None or plan.owner is not controller._coordinator:
+            raise ValueError("The physical Okimiki controller changed after validation")
+        changed_link = plan.link is not None and controller._link is not plan.link
+        if changed_link and (not live_validation or plan.request.record is not None):
+            if key not in sequential_handoffs or plan.request.record is None:
+                raise ValueError("The physical Okimiki controller changed after validation")
+            await wait_for_capability(controller, plan.request.record)
+            # Rebuild only from this live receiver's matching immutable tuple.
+            rebuilt = request.plan(controller)
+            if rebuilt.record != plan.request.record:
+                raise ValueError("The Okimiki alarm record changed after validation")
+            await controller.execute_request(rebuilt)
+            return
         if live_validation:
             await wait_for_capability(controller)
-        if live_validation and len(physical_targets) == 1:
-            validate(controller)
-        plan = plans.get((controller._address.upper(), controller.product_key))
-        if plan is None or (
-            plan[1] is not None
-            and controller._link is not plan[1]
-            and (not live_validation or plan[0].record is not None)
-        ):
+        if not live_validation and controller._link is not plan.link and plan.link is not None:
             raise ValueError("The physical Okimiki controller changed after validation")
         # Caller-only settings can cross a sequential pair's link switch;
         # execute_request rechecks the new session's menus and alarm slots.
-        await controller.execute_request(plan[0])
+        await controller.execute_request(plan.request)
 
     await _execute_preflighted(
         targets,
