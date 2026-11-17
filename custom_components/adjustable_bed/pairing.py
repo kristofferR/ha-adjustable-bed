@@ -194,6 +194,7 @@ KEY_SINGLE_ADDRESS_ORIGIN_ENTITY_UNIQUE_IDS: Final = (
 PAIR_LAYOUT_CAPABILITY_KEY: Final = "pair_layout"
 SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
     {
+        "cheerssleep",
         "bedtech",
         BED_TYPE_ERGOMOTION,
         BED_TYPE_ERGOMOTION_4,
@@ -227,6 +228,8 @@ def supports_single_address_pairing(
     """Return whether a bed can expose the Phase 3 single-address surface."""
     if bed_type not in SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES:
         return False
+    if bed_type == "cheerssleep":
+        return str(product_type) in {"51", "52", "140", "141", "172"}
     if bed_type == BED_TYPE_SYMPHONY:
         return str(product_type) in {"10", "15"}
     if bed_type in (BED_TYPE_KOMFYD, BED_TYPE_COMFYDS):

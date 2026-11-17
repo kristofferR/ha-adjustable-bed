@@ -306,3 +306,11 @@ cases live in `tests/fixtures/bedgear/`; `tests/test_bedgear_vectors.py` proves
 the byte matches. The separate `BedgearProfile` owns its 15 layouts, independent
 name gates, timing and control release policies. No sibling app's parameters
 select its capabilities.
+
+CheersSleep's accepted row098 adds `codec/cheerssleep.py`: the serial/PID P1
+encoder is extracted from Remacro's existing `build_frame`, retaining that import
+API and all app-specific counters. The accepted P1 literals prove identical
+framing; CheersSleep's distinct counters and timing remain in its own profile.
+P2's EE normal/setting/query frames require a new encoder, since no existing
+codec reproduces them. Neither UI labels nor shared service identity establish
+byte equivalence. `tests/test_cheerssleep_vectors.py` covers both formats.

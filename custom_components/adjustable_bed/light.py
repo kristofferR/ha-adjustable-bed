@@ -493,8 +493,12 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                     elif reported_state is False:
                         self._cancel_light_auto_off_timer()
         level = state.get(LIGHT_LEVEL)
-        if self._light_level_max is not None and type(level) is int and level > 0:
-            brightness = _level_to_brightness(level, self._light_level_max)
+        if LIGHT_LEVEL in state and self._light_level_max is not None:
+            brightness = (
+                _level_to_brightness(level, self._light_level_max)
+                if type(level) is int and 0 <= level <= self._light_level_max
+                else None
+            )
             if brightness != self._attr_brightness:
                 self._attr_brightness = brightness
                 changed = True

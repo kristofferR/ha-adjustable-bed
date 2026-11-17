@@ -4808,5 +4808,166 @@
   },
   "sensor:sonicsleep": {
     "card_section": "hidden"
+  },
+  "button:cheerssleep_all_down": {
+    "card_section": "motors",
+    "card_role": "down",
+    "card_motor": "cheerssleep_all"
+  },
+  "button:cheerssleep_all_up": {
+    "card_section": "motors",
+    "card_role": "up",
+    "card_motor": "cheerssleep_all"
+  },
+  "button:cheerssleep_combined_down": {
+    "card_section": "utility"
+  },
+  "button:cheerssleep_combined_up": {
+    "card_section": "utility"
+  },
+  "button:cheerssleep_lift_down": {
+    "card_section": "motors",
+    "card_role": "down",
+    "card_motor": "cheerssleep_lift"
+  },
+  "button:cheerssleep_lift_foot_down": {
+    "card_section": "motors",
+    "card_role": "down",
+    "card_motor": "cheerssleep_lift_foot"
+  },
+  "button:cheerssleep_lift_foot_up": {
+    "card_section": "motors",
+    "card_role": "up",
+    "card_motor": "cheerssleep_lift_foot"
+  },
+  "button:cheerssleep_lift_head_down": {
+    "card_section": "motors",
+    "card_role": "down",
+    "card_motor": "cheerssleep_lift_head"
+  },
+  "button:cheerssleep_lift_head_up": {
+    "card_section": "motors",
+    "card_role": "up",
+    "card_motor": "cheerssleep_lift_head"
+  },
+  "button:cheerssleep_lift_up": {
+    "card_section": "motors",
+    "card_role": "up",
+    "card_motor": "cheerssleep_lift"
+  },
+  "button:cheerssleep_massage_foot": {
+    "card_section": "massage"
+  },
+  "button:cheerssleep_massage_head": {
+    "card_section": "massage"
+  },
+  "button:cheerssleep_massage_mode": {
+    "card_section": "massage"
+  },
+  "button:cheerssleep_refresh": {
+    "card_section": "utility"
+  },
+  "button:cheerssleep_sonic_back": {
+    "card_section": "massage"
+  },
+  "button:cheerssleep_sonic_decrease": {
+    "card_section": "massage"
+  },
+  "button:cheerssleep_sonic_foot": {
+    "card_section": "massage"
+  },
+  "button:cheerssleep_sonic_increase": {
+    "card_section": "massage"
+  },
+  "button:cheerssleep_sonic_mode_1": {
+    "card_section": "massage"
+  },
+  "button:cheerssleep_sonic_mode_2": {
+    "card_section": "massage"
+  },
+  "button:cheerssleep_sonic_switch": {
+    "card_section": "massage"
+  },
+  "button:cheerssleep_sonic_toggle": {
+    "card_section": "massage"
+  },
+  "cover:cheerssleep_all": {
+    "card_section": "motors",
+    "card_motor": "cheerssleep_all"
+  },
+  "cover:cheerssleep_lift": {
+    "card_section": "motors",
+    "card_motor": "cheerssleep_lift"
+  },
+  "cover:cheerssleep_lift_foot": {
+    "card_section": "motors",
+    "card_motor": "cheerssleep_lift_foot"
+  },
+  "cover:cheerssleep_lift_head": {
+    "card_section": "motors",
+    "card_motor": "cheerssleep_lift_head"
+  },
+  "number:cheerssleep_sonic_level": {
+    "card_section": "massage"
+  },
+  "select:cheerssleep_side": {
+    "card_section": "utility"
+  },
+  "sensor:cheerssleep_asleep": {
+    "card_section": "hidden"
+  },
+  "sensor:cheerssleep_breath": {
+    "card_section": "hidden"
+  },
+  "sensor:cheerssleep_brightness": {
+    "card_section": "hidden"
+  },
+  "sensor:cheerssleep_color_light": {
+    "card_section": "hidden"
+  },
+  "sensor:cheerssleep_foot_massage": {
+    "card_section": "hidden"
+  },
+  "sensor:cheerssleep_gatem": {
+    "card_section": "hidden"
+  },
+  "sensor:cheerssleep_gateo": {
+    "card_section": "hidden"
+  },
+  "sensor:cheerssleep_head_massage": {
+    "card_section": "hidden"
+  },
+  "sensor:cheerssleep_heart": {
+    "card_section": "hidden"
+  },
+  "sensor:cheerssleep_massage_mode": {
+    "card_section": "hidden"
+  },
+  "sensor:cheerssleep_model": {
+    "card_section": "hidden"
+  },
+  "sensor:cheerssleep_on_bed": {
+    "card_section": "hidden"
+  },
+  "sensor:cheerssleep_position_light": {
+    "card_section": "hidden"
+  },
+  "sensor:cheerssleep_sleep_mac": {
+    "card_section": "hidden"
+  },
+  "sensor:cheerssleep_snore": {
+    "card_section": "hidden"
+  },
+  "sensor:cheerssleep_snore_count": {
+    "card_section": "hidden"
+  },
+  "sensor:cheerssleep_snore_power": {
+    "card_section": "hidden"
+  },
+  "sensor:cheerssleep_sonic_level": {
+    "card_section": "hidden"
+  },
+  "sensor:cheerssleep_sonic_mode": {
+    "card_section": "hidden"
   }
 }

@@ -651,6 +651,7 @@ Report workspaces are machine-local under
 | mline147 | `com.okin.mline` | 1.2.2 (38) | COMPLETE, independently accepted | `com.okin.mline-1.2.2-2026-11-12-queue001/report/` |
 | sonicsleep | `com.richmat.sonicsleep` | 1.0.4 (10400) | COMPLETE, accepted | `com.richmat.sonicsleep-1.0.4-2026-11-12-queue001/report/` |
 | paramount | `com.paramount.bedcontrol` | 3.0.4 | COMPLETE | `com.paramount.bedcontrol-3.0.4-2026-11-09-queue002/report/` |
+| row098 | `com.cheers.sleep` | v2.7.0 (40) | COMPLETE, accepted | `com.cheers.sleep-v2.7.0-2026-11-17-queue001/report/` |
 | row094 | `com.bedding.monitor.sleep_monitor.release` | 2.4.9 (263) | COMPLETE, accepted | `com.bedding.monitor.sleep_monitor.release-2.4.9-2026-11-12-queue001/` |
 | smart-comfort-synargy | `com.synargy.okin` | 1.1.0 (12) | COMPLETE, accepted | `com.synargy.okin-1.1.0-2026-11-09-queue002/` |
 | smart-comfort-synergy | `com.synergy.okin` | 2.2.0 (16) | COMPLETE, accepted | `com.synergy.okin-2.2.0-2026-11-09-queue002/` |
@@ -836,3 +837,12 @@ commands every 300 ms until release. P1 releases after 100 ms; P2 motor
 release is immediate and differs from global STOP. Preset gestures retain
 their format-specific behavior. No concurrent motor, side addressing or motor
 speed selection is proven. See [Smart Sleep](../beds/smart-sleep.md).
+
+### `row098`: CheersSleep
+
+Accepted `com.cheers.sleep` v2.7.0/code40 proves one latched P1 press with
+axis STOP120ms after release, and P2 held frames refreshed every100ms with
+an unscoped zero-key release. Both use bounded/renewable held controls;
+P1 uses the integration's10-second latched ceiling. No concurrent independent
+motion capability or physical sustain duration is inferred. The split sonic
+mode handler omits the non-split200ms follow-up query.

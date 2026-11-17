@@ -794,7 +794,8 @@
       "apex_remote_code": "This exact remote code is not supported. Check capitalization and spaces.",
       "symphony_profile": "Choose a Symphony Sleep Sense product and BLE selector. The advertisement does not identify the product.",
       "symphony_unpair_first": "Restore the standalone bed before selecting a product without split-side controls.",
-      "bedgear_profile": "Enter the exact Bedgear Bluetooth local name: 14 UTF-16 units, containing uppercase HHC."
+      "bedgear_profile": "Enter the exact Bedgear Bluetooth local name: 14 UTF-16 units, containing uppercase HHC.",
+      "cheerssleep_model_required": "Choose one of the CheersSleep model keys from the app catalog."
     }
   },
   "options": {
@@ -1501,7 +1502,8 @@
       "apex_remote_required": "Choose the remote printed on the bed controller or enter its exact code.",
       "apex_remote_code": "This exact remote code is not supported. Check capitalization and spaces.",
       "symphony_profile": "Choose a Symphony Sleep Sense product and BLE selector. The advertisement does not identify the product.",
-      "symphony_unpair_first": "Restore the standalone bed before selecting a product without split-side controls."
+      "symphony_unpair_first": "Restore the standalone bed before selecting a product without split-side controls.",
+      "cheerssleep_model_required": "Choose one of the CheersSleep model keys from the app catalog."
     },
     "progress": {
       "connecting": "Connecting over Bluetooth…",
@@ -3348,6 +3350,48 @@
       },
       "sonicsleep_action": {
         "name": "{action}"
+      },
+      "cheerssleep_refresh": {
+        "name": "Refresh bed state"
+      },
+      "cheerssleep_massage_head": {
+        "name": "Cycle head massage"
+      },
+      "cheerssleep_massage_foot": {
+        "name": "Cycle foot massage"
+      },
+      "cheerssleep_massage_mode": {
+        "name": "Cycle massage mode"
+      },
+      "cheerssleep_sonic_back": {
+        "name": "Sonic back zone"
+      },
+      "cheerssleep_sonic_foot": {
+        "name": "Sonic foot zone"
+      },
+      "cheerssleep_sonic_toggle": {
+        "name": "Toggle sonic massage"
+      },
+      "cheerssleep_sonic_mode_1": {
+        "name": "Sonic massage mode 1"
+      },
+      "cheerssleep_sonic_mode_2": {
+        "name": "Sonic massage mode 2"
+      },
+      "cheerssleep_sonic_switch": {
+        "name": "Switch sonic control mode"
+      },
+      "cheerssleep_sonic_increase": {
+        "name": "Increase sonic level"
+      },
+      "cheerssleep_sonic_decrease": {
+        "name": "Decrease sonic level"
+      },
+      "cheerssleep_combined_up": {
+        "name": "All up"
+      },
+      "cheerssleep_combined_down": {
+        "name": "All down"
       }
     },
     "cover": {
@@ -3677,6 +3721,18 @@
       },
       "bedgear_combined": {
         "name": "Head and foot"
+      },
+      "cheerssleep_all": {
+        "name": "Storage lift"
+      },
+      "cheerssleep_lift": {
+        "name": "Bed lift"
+      },
+      "cheerssleep_lift_head": {
+        "name": "Head lift"
+      },
+      "cheerssleep_lift_foot": {
+        "name": "Foot lift"
       }
     },
     "sensor": {
@@ -5238,6 +5294,63 @@
       },
       "sonicsleep": {
         "name": "SonicSleep state"
+      },
+      "cheerssleep_model": {
+        "name": "CheersSleep model key"
+      },
+      "cheerssleep_sleep_mac": {
+        "name": "Sleep sensor MAC"
+      },
+      "cheerssleep_head_massage": {
+        "name": "Head massage level"
+      },
+      "cheerssleep_foot_massage": {
+        "name": "Foot massage level"
+      },
+      "cheerssleep_massage_mode": {
+        "name": "Massage mode"
+      },
+      "cheerssleep_brightness": {
+        "name": "Reported brightness"
+      },
+      "cheerssleep_sonic_level": {
+        "name": "Reported sonic level"
+      },
+      "cheerssleep_sonic_mode": {
+        "name": "Sonic control mode"
+      },
+      "cheerssleep_snore": {
+        "name": "Snore flags"
+      },
+      "cheerssleep_on_bed": {
+        "name": "On bed"
+      },
+      "cheerssleep_asleep": {
+        "name": "Asleep"
+      },
+      "cheerssleep_heart": {
+        "name": "Heart rate"
+      },
+      "cheerssleep_breath": {
+        "name": "Breath rate"
+      },
+      "cheerssleep_gatem": {
+        "name": "Raw gatem"
+      },
+      "cheerssleep_gateo": {
+        "name": "Raw gateo"
+      },
+      "cheerssleep_snore_count": {
+        "name": "Snore count"
+      },
+      "cheerssleep_snore_power": {
+        "name": "Snore power"
+      },
+      "cheerssleep_position_light": {
+        "name": "Position-page light state"
+      },
+      "cheerssleep_color_light": {
+        "name": "Color-page light state"
       }
     },
     "light": {
@@ -5876,6 +5989,9 @@
       },
       "richmat_resource_massage_timer": {
         "name": "Massage timer request"
+      },
+      "cheerssleep_sonic_level": {
+        "name": "Sonic massage level"
       }
     },
     "select": {
@@ -6176,19 +6292,19 @@
       "sleeptracker_massage_head_level": {
         "name": "Head massage strength",
         "state": {
-          "off": "Off",
           "1": "1",
           "2": "2",
-          "3": "3"
+          "3": "3",
+          "off": "Off"
         }
       },
       "sleeptracker_massage_foot_level": {
         "name": "Foot massage strength",
         "state": {
-          "off": "Off",
           "1": "1",
           "2": "2",
-          "3": "3"
+          "3": "3",
+          "off": "Off"
         }
       },
       "sleeptracker_massage_pattern_option": {
@@ -6552,11 +6668,11 @@
       "paramount_duration": {
         "name": "Tap movement duration",
         "state": {
-          "hold": "Hold",
           "1": "1 second",
           "2": "2 seconds",
           "3": "3 seconds",
-          "4": "4 seconds"
+          "4": "4 seconds",
+          "hold": "Hold"
         }
       },
       "paramount_head_range": {
@@ -6654,6 +6770,13 @@
       },
       "symphony_child_mode": {
         "name": "Local child mode"
+      },
+      "cheerssleep_side": {
+        "name": "Selected bed side",
+        "state": {
+          "left": "Left",
+          "right": "Right"
+        }
       }
     },
     "climate": {
@@ -9962,6 +10085,52 @@
         },
         "enabled": {
           "name": "Enabled"
+        }
+      }
+    },
+    "cheerssleep": {
+      "name": "CheersSleep bed action",
+      "description": "Run direct BLE CheersSleep bed controls. All selected targets are validated before any control writes.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "operation": {
+          "name": "Bed action",
+          "description": "Select a model-supported bed action or a conditional P1 exported screen."
+        },
+        "value": {
+          "name": "Value",
+          "description": "Model-specific level, memory slot, boolean or legacy delay setting."
+        },
+        "rgb": {
+          "name": "RGB",
+          "description": "Three values from 0 to 255."
+        },
+        "brightness": {
+          "name": "Brightness",
+          "description": "Legacy RGB brightness from 0 to 255."
+        },
+        "duration_ms": {
+          "name": "Duration or Yb timer parameter",
+          "description": "Hold duration in milliseconds. Yb uses parameter 300 or 900, whose time selection is 5 or 15 minutes."
+        },
+        "axis": {
+          "name": "Axis"
+        },
+        "up": {
+          "name": "Move up"
+        },
+        "position": {
+          "name": "Position selector",
+          "description": "Ten/NewTen position 1 all, 2 back, 3 feet, 4 waist."
+        },
+        "side": {
+          "name": "Side"
+        },
+        "sleeper": {
+          "name": "Auxiliary sleeper",
+          "description": "Seven screen local side selector. Must match a targeted paired child."
         }
       }
     }

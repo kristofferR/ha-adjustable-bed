@@ -2037,7 +2037,35 @@ def _symphony_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return {}
 
 
+
+def _cheerssleep_models(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.cheerssleep import MODELS
+    return {str(key): f"{model.label} ({key}, {model.format.upper()})" for key, model in MODELS.items()}
+
+
+def _cheerssleep_seed(hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
+    from .profiles.cheerssleep import advertisement
+    result = dict(data)
+    if discovered and (found := advertisement(discovered.manufacturer_data or {})) and CONF_PRODUCT_TYPE not in result:
+        result[CONF_PRODUCT_TYPE] = str(found[0].key)
+    return result
+
+
+def _cheerssleep_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    return {} if str(data.get(CONF_PRODUCT_TYPE, "45")) in _cheerssleep_models(data) else {CONF_PRODUCT_TYPE: "cheerssleep_model_required"}
+
+
+def _cheerssleep_settings(data: Mapping[str, Any]) -> dict[str, Any]:
+    from .profiles.cheerssleep import MODELS
+    model = MODELS.get(int(data.get(CONF_PRODUCT_TYPE, 45)), MODELS[45])
+    return {CONF_MOTOR_COUNT: min(4, max(2, len(model.axes))), CONF_HAS_MASSAGE: model.massage or model.sonic or model.as_layout}
+
 SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
+    "cheerssleep": SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: SET_BY_PROFILE, CONF_DISABLE_ANGLE_SENSING: True, CONF_PROTOCOL_VARIANT: "auto", CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PRODUCT_TYPE, _cheerssleep_models, "45", searchable=True),),
+        seed=_cheerssleep_seed, validate=_cheerssleep_errors, derive=_cheerssleep_settings, imports=("profiles.cheerssleep",),
+    ),
     "smart_sleep": SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
               CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},

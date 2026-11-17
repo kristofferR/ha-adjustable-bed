@@ -1,0 +1,13 @@
+{
+  "provenance": "Constructed decoder/counter fixtures preserved from accepted row098 report assertions; not peripheral captures",
+  "b0": [
+    {"frame": "eeb000aa000002030201", "selected": 1, "light": true, "mode": 1, "head": 3, "foot": 2},
+    {"frame": "eeb000bb000002030201", "selected": 1, "light": true, "mode": null, "head": null, "foot": null},
+    {"frame": "eeb000aa000000030201", "selected": 1, "light": true, "mode": null, "head": null, "foot": null}
+  ],
+  "d0": {"frame": "eed00000112233640132463c2100000001", "rgb": [17, 34, 51], "brightness": 100, "music": true, "left_mode": 1, "right_mode": 2, "light": true, "level": 60},
+  "sleep": {"frame": "01870f481200000205", "side": "left", "snore": 3, "on_bed": true, "asleep": true, "heart": 72, "breath": 18, "gatem": 0, "gateo": 0, "snore_count": 2, "snore_power": 5},
+  "burst": {"initial_count": 0, "command_ms": [0, 100, 200], "release_ms": [300, 400, 500, 500]},
+  "interrupted_burst": {"initial_count": 3, "command_ms": [], "release_ms": [0, 100, 200, 200]},
+  "color_selection": {"ui_from": [255, 255, 255], "ui_to": [255, 255, 0], "fraction": 0.5, "selected_rgb": [255, 255, 127], "frame": "ee020505ffff7f00c0"}
+}

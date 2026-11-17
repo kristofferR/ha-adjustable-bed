@@ -544,6 +544,7 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
 # are NOT included here - they're only kept for backward compatibility with
 # existing config entries. New users should select the protocol-based equivalents.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
+    "cheerssleep": "CheersSleep (com.cheers.sleep)",
     "smart_sleep": "OKIN Smart Sleep (com.bedding.monitor.sleep_monitor.release)",
     "smart_comfort_synargy": "Smart Comfort by SYNARGY (com.synargy.okin)",
     "smart_comfort_synergy": "Smart Comfort (com.synergy.okin)",
@@ -1323,6 +1324,10 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     # The first pass matches the declared discovery hints, as the manifest does.
     first = first_pass(service_info)
     result = _detect_bed_type_with_app_candidates(service_info, first)
+    from .profiles.cheerssleep import advertisement as cheerssleep_advertisement
+    if REMACRO_SERVICE_UUID in {uuid.lower() for uuid in service_info.service_uuids} and cheerssleep_advertisement(service_info.manufacturer_data or {}):
+        result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "cheerssleep"]))
+        result.signals.append("manufacturer:cheerssleep_model_candidate")
     # The app's scan filter is wider than the manifest gate, so it refines
     # advertisements another matcher admitted; it declares no hint of its own.
     if galaxy_scan_matches(service_info.name) and result.bed_type != BED_TYPE_GALAXY and not any(

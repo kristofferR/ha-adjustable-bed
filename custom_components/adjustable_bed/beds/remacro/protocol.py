@@ -18,6 +18,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any, Final, Literal
 
+from ...codec.cheerssleep import p1
 from ...const import CONF_REMACRO_LED_LEVEL, CONF_REMACRO_MODEL
 
 APP_SLUMBERLAND: Final = "slumberland"
@@ -43,12 +44,8 @@ STREAM_INTERVAL_S: Final = 0.100
 
 
 def build_frame(serial: int, pid: int, code: int, parameter: int = 0) -> bytes:
-    """Return ``[S, PID, LE16 code, LE32 parameter]`` with Java bit patterns."""
-    return (
-        bytes((serial & 0xFF, pid & 0xFF))
-        + (code & 0xFFFF).to_bytes(2, "little")
-        + (parameter & 0xFFFFFFFF).to_bytes(4, "little")
-    )
+    """Preserve the legacy keyword API over the proven shared P1 encoder."""
+    return p1(serial, pid, code, parameter)
 
 
 class SynDataSerial:

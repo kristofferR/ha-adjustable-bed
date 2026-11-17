@@ -1128,3 +1128,29 @@ all received raw fields except enabled. Clock capability and current alarm cache
 are required before writes. Missing/changed cache rejects the action. A silent
 empty-list query cannot safely allocate a new alarm. All target constraints pass
 before any target's setting changes. See the [SonicSleep reference](beds/richmat.md#sonicsleep).
+
+### CheersSleep bed action
+
+`adjustable_bed.cheerssleep` targets one or more device IDs, including native
+paired child devices, and accepts `side` (`left`, `right`, `both`). Every target
+is validated before control writes. Choose a supported `operation`:
+
+- `query`, `query_shared`: B0/D0 state queries. `position_light_toggle` and
+  `color_light_toggle` retain the position-side and shared color-page callers.
+- `massage_head`, `massage_foot`, `massage_mode`: conventional cycles. P1 head/foot
+  `value`1–4 selects levels0–3; `value`0 cycles. P2 accepts cycles only.
+- `sonic_back`, `sonic_foot`, `sonic_toggle`, `sonic_mode_1`, `sonic_mode_2`,
+  `sonic_switch`, `sonic_increase`, `sonic_decrease`, `sonic_level`: model-specific
+  physical bed massage. Absolute `value` is0–100; holds use `duration_ms`.
+- Conditional legacy screens: `rgb_preview`, `rgb2_preview`, `rgb_commit`,
+  `rgb2_commit` use `rgb`, `brightness`0–255 and commit delay `value`10–120.
+  RGB2 uses white. `snore_setting` and `out_of_bed_setting` accept `value`0/1.
+  `yb_massage` uses speed `value`1–3 and timer parameter `duration_ms`300 or900.
+- `seven_motion` uses the conditional split axis (`axis`: all/back/legs/lumbar)
+  and optional local `sleeper` (left/right), which must agree with a targeted child.
+  `ten_motion`/`newten_motion` use `position`1–4 (all/back/legs/waist), `up` and
+  `duration_ms`. `ten_recall`/`newten_recall` and `ten_save`/`newten_save` use
+  memory `value`1/2. These screens remain P1 even where their class name says New.
+
+Model gates and shared versus side-specific packets are described in the
+[CheersSleep guide](beds/cheerssleep.md). Hardware remains unverified.
