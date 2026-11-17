@@ -72,7 +72,7 @@ async def test_ore_app_asks_its_screen_for_the_motor_count(hass):
     flow = setup_flow(hass, const.BED_TYPE_KEESON)
     result = await flow.async_step_keeson_family({"choice": "ore_apps"})
     assert result["step_id"] == "keeson_app"
-    assert len(options(result)) == 6
+    assert len(options(result)) == 7
     result = await flow.async_step_keeson_app({"choice": "keeson:avanti_bases"})
     assert result["step_id"] == "profile_questions"
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
