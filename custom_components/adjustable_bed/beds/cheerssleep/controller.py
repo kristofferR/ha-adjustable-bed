@@ -373,6 +373,9 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
                 ),
                 lambda ctrl: ctrl.stop_all(),
                 hold=ControllerMotorHoldSpec(f"{axis}_up", f"{axis}_down", press_hold_ms=None),
+                shared_across_sides=self.model.format == "p1"
+                and self.model.split
+                and axis == "legs",
             )
             for axis in self.model.axes
         )

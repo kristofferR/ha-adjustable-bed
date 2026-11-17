@@ -1,6 +1,5 @@
 """Real CheersSleep factory, HA callers, model gates and session ownership."""
 
-
 from __future__ import annotations
 
 import asyncio
@@ -622,6 +621,108 @@ async def test_real_ha_native_child_target_keeps_right_side_and_rejects_conflict
         await pair.async_shutdown()
 
 
+@pytest.mark.parametrize("key", [51, 52])
+@pytest.mark.parametrize("motor", ["legs", "back", "lumbar"])
+@pytest.mark.parametrize("direction", ["up", "down"])
+@pytest.mark.parametrize("side", ["left", "right", "both"])
+@pytest.mark.parametrize("connection_state", ["connected", "offline", "disconnect_after_first"])
+async def test_native_p1_timed_move_runs_shared_foot_once(
+    hass, clock, key, motor, direction, side, connection_state
+):
+    from homeassistant.config_entries import ConfigEntryState
+    from homeassistant.helpers import device_registry as dr
+
+    from custom_components.adjustable_bed import _async_ensure_paired_device_registry
+    from custom_components.adjustable_bed.const import CONF_PAIR_MODE, PAIR_MODE_SINGLE_ADDRESS
+    from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+    from custom_components.adjustable_bed.paired_coordinator import SingleAddressPairedCoordinator
+    from custom_components.adjustable_bed.services import async_register_services
+    from tests.test_paired_setup import LEFT_ADDR, _paired_entry
+
+    entry = _paired_entry(hass)
+    hass.config_entries.async_update_entry(
+        entry,
+        data={
+            **entry.data,
+            CONF_PAIR_MODE: PAIR_MODE_SINGLE_ADDRESS,
+            "address": LEFT_ADDR,
+            CONF_BED_TYPE: "cheerssleep",
+            CONF_PRODUCT_TYPE: str(key),
+        },
+    )
+    inner = AdjustableBedCoordinator(hass, entry)
+    pair = SingleAddressPairedCoordinator(hass, entry, inner)
+    _async_ensure_paired_device_registry(hass, entry, pair)
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = pair
+    parent = dr.async_get(hass).async_get_device_by_identifier(
+        next(iter(pair.device_info["identifiers"])), entry.entry_id
+    )
+    assert parent is not None
+    entry.mock_state(hass, ConfigEntryState.LOADED)
+    try:
+        _, transport = make(key)
+        inner._client = transport.client
+        live = bed.CheersSleepController(inner, app.MODELS[key])
+        inner._controller = live
+        await live.start_notify()
+        if connection_state == "offline":
+            inner._offline_controller = bed.CheersSleepController(inner, app.MODELS[key])
+            inner._controller = None
+            transport.client.is_connected = False
+
+        command_count = 0
+
+        async def connect(reset_timer=True):
+            inner._controller = live
+            transport.client.is_connected = True
+            return True
+
+        async def execute(command, **_kwargs):
+            nonlocal command_count
+            await connect()
+            await command(live)
+            command_count += 1
+            if connection_state == "disconnect_after_first" and command_count == 1:
+                inner._controller = None
+                inner._offline_controller = None
+                transport.client.is_connected = False
+
+        inner.async_ensure_connected = AsyncMock(side_effect=connect)
+        inner.async_execute_controller_command = AsyncMock(side_effect=execute)
+        await async_register_services(hass)
+        for _ in range(2):
+            await hass.services.async_call(
+                DOMAIN,
+                "timed_move",
+                {
+                    "device_id": [parent.id],
+                    "motor": motor,
+                    "direction": direction,
+                    "side": side,
+                    "duration_ms": 1000,
+                },
+                blocking=True,
+            )
+        # Independent numeric caller values from the frozen P1 split vectors.
+        codes = {
+            "legs": {"left": 0x640D, "right": 0x640D},
+            "back": {"left": 0x6401, "right": 0x6404},
+            "lumbar": {"left": 0x6407, "right": 0x640A},
+        }[motor]
+        sides = ["left", "right"] if side == "both" and motor != "legs" else [side]
+        expected = []
+        for selected in sides:
+            up = codes["left" if selected == "both" else selected]
+            expected.extend([up + (direction == "down"), up - 1])
+        assert [
+            int.from_bytes(bytes.fromhex(frame)[2:4], "little") for frame in frames(transport)
+        ] == expected * 2
+        assert clock[0] == len(sides) * 2
+    finally:
+        entry.mock_state(hass, ConfigEntryState.NOT_LOADED)
+        await pair.async_shutdown()
+
+
 async def test_conditional_seven_local_sleeper_and_child_conflict(clock):
     ctrl, c = make(45)
     await ctrl.start_notify()
@@ -1058,6 +1159,7 @@ async def test_native_paired_lights_keep_independent_feedback_and_action_sides(h
             await light.async_will_remove_from_hass()
         entry.mock_state(hass, ConfigEntryState.NOT_LOADED)
         await pair.async_shutdown()
+
 
 async def test_native_paired_rgb_off_waits_for_shared_receiver_feedback(hass, clock):
     from homeassistant.config_entries import ConfigEntryState

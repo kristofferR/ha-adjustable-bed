@@ -1157,6 +1157,7 @@ async def _timed_move_plan(
     svane_admission: SvaneHoldAdmission | None = None,
     *,
     hold_lease: bool = False,
+    shared_motors: set[int] | None = None,
 ) -> tuple[Callable[[BedController], Coroutine[Any, Any, None]], int, int, str]:
     """Validate one physical side and build its timed command."""
     async with _side_validation(parent, coordinator, preflighted) as controller:
@@ -1190,6 +1191,13 @@ async def _timed_move_plan(
             controller.validate_timed_movement(motor, direction, duration_ms)
         except ValueError as err:
             raise ServiceValidationError(str(err)) from err
+
+        if (
+            shared_motors is not None
+            and isinstance(coordinator, SingleAddressSideCoordinator)
+            and spec.shared_across_sides
+        ):
+            shared_motors.add(_plan_key(coordinator))
 
         if coordinator.bed_type == BED_TYPE_SVANE:
             # The factory imported the Svane controller module, off the event loop.
@@ -1531,6 +1539,7 @@ async def _async_timed_move(
         tuple[Callable[[BedController], Coroutine[Any, Any, None]], int, int, str],
     ] = {}
     stop_epoch_by_target: dict[int, int] = {}
+    shared_motors: set[int] = set()
     try:
         for coordinator, side in targets:
             for target in _command_targets(coordinator, side):
@@ -1552,6 +1561,7 @@ async def _async_timed_move(
                     coordinator, target, preflighted, motor, direction, duration_ms,
                     svane_admissions.get(target_key),
                     hold_lease=lease is not None,
+                    shared_motors=shared_motors,
                 )
             admission = command_admissions[(id(coordinator), side)]
             actual_resources = {
@@ -1581,8 +1591,13 @@ async def _async_timed_move(
         for target in physical
     )
 
+    completed_shared_motors: set[int] = set()
+
     async def move(target: BedChild) -> None:
-        command, pulse_count, pulse_delay_ms, resource = plans[_plan_key(target)]
+        target_key = _plan_key(target)
+        if target_key in completed_shared_motors:
+            return
+        command, pulse_count, pulse_delay_ms, resource = plans[target_key]
         if streamed:
             assert not isinstance(target, SingleAddressSideCoordinator)
             svane_admission = svane_admissions.get(_plan_key(target))
@@ -1621,14 +1636,16 @@ async def _async_timed_move(
                 expected_stop_epoch=stop_epoch_by_target.get(_plan_key(target)),
                 lease=lease,
             )
-            return
-        await target.async_execute_controller_command(
-            command,
-            resource=resource,
-            pulse_count=pulse_count,
-            pulse_delay_ms=pulse_delay_ms,
-            expected_stop_epoch=stop_epoch_by_target.get(_plan_key(target)),
-        )
+        else:
+            await target.async_execute_controller_command(
+                command,
+                resource=resource,
+                pulse_count=pulse_count,
+                pulse_delay_ms=pulse_delay_ms,
+                expected_stop_epoch=stop_epoch_by_target.get(_plan_key(target)),
+            )
+        if target_key in shared_motors:
+            completed_shared_motors.add(target_key)
 
     try:
         for coordinator, side in targets:

@@ -307,7 +307,7 @@ Non-split I/HI sonic mode holds schedule a D0 query200ms after release. **Positi
 
 Discovery requires the advertised service and the first manufacturer entry in sorted numeric order. ID89 adds89 to signed payload byte2; every other first ID is the direct model key. Short/unknown records are ignored. New installation, Configure and imported entries store the selected `product_type`; each side of a two-address pair owns its model setting.
 
-For supported split keys, optional native Left/Right child devices retain side targeting. Standalone side selection initially defaults left and survives controller reconstruction. P1 shared foot and global flat remain shared. The P2 common release can affect either/both sides according to firmware; its exact physical effect remains unverified.
+For supported split keys, optional native Left/Right child devices retain side targeting. Standalone side selection initially defaults left and survives controller reconstruction. P1 shared foot and global flat remain shared. A timed foot move targeting both P1 children runs once per receiver for the requested duration; back and lumbar moves retain separate side execution. The P2 common release can affect either/both sides according to firmware; its exact physical effect remains unverified.
 
 #### Controls
 
